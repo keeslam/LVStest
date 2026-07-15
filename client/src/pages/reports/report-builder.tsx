@@ -73,7 +73,8 @@ export default function ReportBuilder() {
 
   const runReportMutation = useMutation({
     mutationFn: async (config: ReportConfiguration) => {
-      return await apiRequest('/api/reports/execute', 'POST', config);
+      const res = await apiRequest('POST', '/api/reports/execute', config);
+      return await res.json();
     },
     onSuccess: (data) => {
       setReportResults(data);
@@ -94,7 +95,7 @@ export default function ReportBuilder() {
 
   const saveReportMutation = useMutation({
     mutationFn: async (config: ReportConfiguration) => {
-      return await apiRequest('/api/reports/saved', 'POST', config);
+      return await apiRequest('POST', '/api/reports/saved', config);
     },
     onSuccess: () => {
       invalidateByPrefix('/api/reports/saved');
@@ -117,7 +118,7 @@ export default function ReportBuilder() {
 
   const deleteReportMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest(`/api/reports/saved/${id}`, 'DELETE');
+      await apiRequest('DELETE', `/api/reports/saved/${id}`);
     },
     onSuccess: () => {
       invalidateByPrefix('/api/reports/saved');

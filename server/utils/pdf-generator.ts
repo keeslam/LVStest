@@ -332,10 +332,10 @@ export async function generateRentalContractFromTemplate(reservation: Reservatio
                   // Safely check if the property exists in contractData
                   if (source in contractData) {
                     value = String(contractData[source as keyof typeof contractData]);
-                    console.log(`  Found direct property ${source} = ${value}`);
+                    console.log(`  Found direct property ${source}`);
                   } else if (propertyName in contractData) {
                     value = String(contractData[propertyName as keyof typeof contractData]);
-                    console.log(`  Found direct property ${propertyName} = ${value}`);
+                    console.log(`  Found direct property ${propertyName}`);
                   }
                 } catch (error) {
                   console.error(`Error accessing property ${source}:`, error);
@@ -377,7 +377,7 @@ export async function generateRentalContractFromTemplate(reservation: Reservatio
           
           // Log in preview mode to help with debugging
           if (previewMode) {
-            console.log(`Rendering preview field: ${value} at position (${field.x}, ${field.y})`);
+            console.log(`Rendering preview field at position (${field.x}, ${field.y})`);
           }
           
           // Ensure we have a value to display
@@ -490,7 +490,7 @@ export async function generateRentalContractFromTemplate(reservation: Reservatio
             }
           }
           
-          console.log(`Drawing field: ${field.label || field.source} at position (${options.x}, ${options.y}) with value: ${value}, align: ${field.textAlign || 'left'}`);
+          console.log(`Drawing field: ${field.label || field.source} at position (${options.x}, ${options.y}), align: ${field.textAlign || 'left'}`);
           page.drawText(value, options);
         } catch (error) {
           console.error(`Error drawing field ${field.label || field.source}:`, error);

@@ -2615,15 +2615,6 @@ export default function ReservationCalendarPage() {
       </Dialog>
       {/* Status Change Dialog */}
       {selectedReservation && (() => {
-        console.log('🚀 Rendering StatusChangeDialog with selectedReservation:', {
-          id: selectedReservation.id,
-          licensePlate: selectedReservation.vehicle?.licensePlate,
-          fuelLevelPickup: selectedReservation.fuelLevelPickup,
-          fuelLevelReturn: selectedReservation.fuelLevelReturn,
-          fuelCost: selectedReservation.fuelCost,
-          fuelCardNumber: selectedReservation.fuelCardNumber,
-          fuelNotes: selectedReservation.fuelNotes,
-        });
         return (
           <StatusChangeDialog
             open={statusDialogOpen}

@@ -30,6 +30,14 @@ import {
   getStatusOnReturn,
   VehicleAvailabilityStatus
 } from "./vehicle-status-helper";
+import { getDataSource, getField as getReportField } from "../shared/report-builder-config";
+
+export class ReportValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ReportValidationError";
+  }
+}
 import { addMonths, addDays, parseISO, isBefore, isAfter, isEqual } from "date-fns";
 import { db } from "./db";
 import { eq, ne, and, gte, lte, desc, sql, inArray, not, or, ilike, isNull, isNotNull } from "drizzle-orm";
@@ -2758,73 +2766,195 @@ export class DatabaseStorage implements IStorage {
   }
 
   async executeReport(configuration: any): Promise<any[]> {
-    const { columns, filters, groupBy, dataSources } = configuration;
-    
-    if (!columns || columns.length === 0) {
+    const { columns, filters, groupBy, dataSources } = configuration ?? {};
+
+    if (!Array.isArray(columns) || columns.length === 0) {
       return [];
     }
+    if (!Array.isArray(dataSources) || dataSources.length === 0) {
+      throw new ReportValidationError("No data source specified");
+    }
 
-    const mainTable = dataSources[0];
-    let query = '';
-    const selectedFields: string[] = [];
+    // Whitelist of queryable tables mapped to their Drizzle table objects.
+    const reportTables: Record<string, any> = {
+      vehicles,
+      customers,
+      reservations,
+      expenses,
+      drivers,
+    };
 
-    columns.forEach((col: any) => {
-      if (col.aggregation) {
-        selectedFields.push(`${col.aggregation}(${col.table}.${col.field}) as ${col.field}`);
-      } else {
-        selectedFields.push(`${col.table}.${col.field}`);
+    const mainSource = getDataSource(String(dataSources[0]));
+    if (!mainSource) {
+      throw new ReportValidationError(`Unknown data source: ${dataSources[0]}`);
+    }
+    const mainTable = mainSource.table;
+    const tableObj = reportTables[mainTable];
+    if (!tableObj) {
+      throw new ReportValidationError(`Data source not queryable: ${mainTable}`);
+    }
+
+    // Validates a table/field pair against the shared report-builder config
+    // and returns the real (snake_case) database column name.
+    const resolveColumn = (table: string, field: string): string => {
+      const def = getReportField(table, field);
+      if (!def) {
+        throw new ReportValidationError(`Unknown field: ${table}.${field}`);
       }
+      if (table !== mainTable) {
+        throw new ReportValidationError(
+          `Field ${table}.${field} does not belong to the selected data source (${mainTable})`
+        );
+      }
+      const col = tableObj[field];
+      if (!col || typeof col.name !== "string") {
+        throw new ReportValidationError(`Field not queryable: ${table}.${field}`);
+      }
+      return col.name;
+    };
+
+    const identFor = (table: string, field: string) =>
+      sql`${sql.identifier(mainTable)}.${sql.identifier(resolveColumn(table, field))}`;
+
+    // SELECT list — every column is aliased to its camelCase config name so the
+    // frontend can read row[col.field] regardless of the DB column casing.
+    const selectParts = columns.map((col: any) => {
+      const ident = identFor(col.table, col.field);
+      const alias = sql.identifier(String(col.field));
+      if (col.aggregation) {
+        const def = getReportField(col.table, col.field)!;
+        const agg = String(col.aggregation).toUpperCase();
+        if (agg !== "COUNT" && agg !== "COUNT_DISTINCT" && !def.aggregatable) {
+          throw new ReportValidationError(
+            `Field ${col.table}.${col.field} cannot be aggregated with ${agg}`
+          );
+        }
+        switch (agg) {
+          case "SUM":
+            return sql`SUM(${ident}) AS ${alias}`;
+          case "AVG":
+            return sql`AVG(${ident}) AS ${alias}`;
+          case "COUNT":
+            return sql`COUNT(${ident}) AS ${alias}`;
+          case "MIN":
+            return sql`MIN(${ident}) AS ${alias}`;
+          case "MAX":
+            return sql`MAX(${ident}) AS ${alias}`;
+          case "COUNT_DISTINCT":
+            return sql`COUNT(DISTINCT ${ident}) AS ${alias}`;
+          default:
+            throw new ReportValidationError(`Unknown aggregation: ${col.aggregation}`);
+        }
+      }
+      return sql`${ident} AS ${alias}`;
     });
 
-    query = `SELECT ${selectedFields.join(', ')} FROM ${mainTable}`;
+    // WHERE clause — operators validated per-field against the config,
+    // all values passed as bound parameters (never string-concatenated).
+    const whereParts: ReturnType<typeof sql>[] = [];
+    for (const filter of Array.isArray(filters) ? filters : []) {
+      const def = getReportField(filter.table, filter.field);
+      if (!def) {
+        throw new ReportValidationError(`Unknown filter field: ${filter.table}.${filter.field}`);
+      }
+      const operator = String(filter.operator);
+      if (!def.operators.includes(operator as any)) {
+        throw new ReportValidationError(
+          `Operator ${operator} is not allowed for ${filter.table}.${filter.field}`
+        );
+      }
+      const ident = identFor(filter.table, filter.field);
+      const value = filter.value;
 
-    if (filters && filters.length > 0) {
-      const whereClause = filters.map((filter: any) => {
-        const { field, table, operator, value } = filter;
-        
-        switch (operator) {
-          case 'equals':
-            return `${table}.${field} = '${value}'`;
-          case 'not_equals':
-            return `${table}.${field} != '${value}'`;
-          case 'contains':
-            return `${table}.${field} LIKE '%${value}%'`;
-          case 'not_contains':
-            return `${table}.${field} NOT LIKE '%${value}%'`;
-          case 'starts_with':
-            return `${table}.${field} LIKE '${value}%'`;
-          case 'ends_with':
-            return `${table}.${field} LIKE '%${value}'`;
-          case 'greater_than':
-            return `${table}.${field} > ${value}`;
-          case 'less_than':
-            return `${table}.${field} < ${value}`;
-          case 'greater_or_equal':
-            return `${table}.${field} >= ${value}`;
-          case 'less_or_equal':
-            return `${table}.${field} <= ${value}`;
-          case 'is_null':
-            return `${table}.${field} IS NULL`;
-          case 'is_not_null':
-            return `${table}.${field} IS NOT NULL`;
-          default:
-            return '';
+      switch (operator) {
+        case "equals":
+          whereParts.push(sql`${ident} = ${value}`);
+          break;
+        case "not_equals":
+          whereParts.push(sql`${ident} != ${value}`);
+          break;
+        case "contains":
+          whereParts.push(sql`${ident} LIKE ${"%" + String(value) + "%"}`);
+          break;
+        case "not_contains":
+          whereParts.push(sql`${ident} NOT LIKE ${"%" + String(value) + "%"}`);
+          break;
+        case "starts_with":
+          whereParts.push(sql`${ident} LIKE ${String(value) + "%"}`);
+          break;
+        case "ends_with":
+          whereParts.push(sql`${ident} LIKE ${"%" + String(value)}`);
+          break;
+        case "greater_than":
+          whereParts.push(sql`${ident} > ${value}`);
+          break;
+        case "less_than":
+          whereParts.push(sql`${ident} < ${value}`);
+          break;
+        case "greater_or_equal":
+          whereParts.push(sql`${ident} >= ${value}`);
+          break;
+        case "less_or_equal":
+          whereParts.push(sql`${ident} <= ${value}`);
+          break;
+        case "between": {
+          const value2 = filter.value2;
+          if (value === undefined || value === null || value2 === undefined || value2 === null) {
+            throw new ReportValidationError(`Operator between requires two values`);
+          }
+          whereParts.push(sql`${ident} BETWEEN ${value} AND ${value2}`);
+          break;
         }
-      }).filter(Boolean);
-
-      if (whereClause.length > 0) {
-        query += ` WHERE ${whereClause.join(' AND ')}`;
+        case "in":
+        case "not_in": {
+          const values = Array.isArray(value)
+            ? value
+            : String(value ?? "")
+                .split(",")
+                .map((v) => v.trim())
+                .filter((v) => v.length > 0);
+          if (values.length === 0) {
+            throw new ReportValidationError(`Operator ${operator} requires at least one value`);
+          }
+          const list = sql.join(
+            values.map((v: any) => sql`${v}`),
+            sql`, `
+          );
+          whereParts.push(
+            operator === "in" ? sql`${ident} IN (${list})` : sql`${ident} NOT IN (${list})`
+          );
+          break;
+        }
+        case "is_null":
+          whereParts.push(sql`${ident} IS NULL`);
+          break;
+        case "is_not_null":
+          whereParts.push(sql`${ident} IS NOT NULL`);
+          break;
+        default:
+          throw new ReportValidationError(`Unknown operator: ${operator}`);
       }
     }
 
-    if (groupBy && groupBy.length > 0) {
-      const groupFields = groupBy.map((g: any) => `${g.table}.${g.field}`);
-      query += ` GROUP BY ${groupFields.join(', ')}`;
+    // Reservations support soft-delete — never report on deleted rows.
+    if (mainTable === "reservations") {
+      whereParts.push(sql`${sql.identifier(mainTable)}.${sql.identifier("deleted_at")} IS NULL`);
     }
 
-    query += ' LIMIT 1000';
+    const groupParts = (Array.isArray(groupBy) ? groupBy : []).map((g: any) =>
+      identFor(g.table, g.field)
+    );
 
-    const results = await db.execute(sql.raw(query));
+    let query = sql`SELECT ${sql.join(selectParts, sql`, `)} FROM ${sql.identifier(mainTable)}`;
+    if (whereParts.length > 0) {
+      query = sql`${query} WHERE ${sql.join(whereParts, sql` AND `)}`;
+    }
+    if (groupParts.length > 0) {
+      query = sql`${query} GROUP BY ${sql.join(groupParts, sql`, `)}`;
+    }
+    query = sql`${query} LIMIT 1000`;
+
+    const results = await db.execute(query);
     return results.rows;
   }
 

@@ -2,6 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { format } from "date-fns";
 import { storage } from "./storage";
+import { ReportValidationError } from "./database-storage";
 import { fetchVehicleInfoByLicensePlate, RDWNotFoundError, RDWTimeoutError, RDWUpstreamError } from "./utils/rdw-api";
 import { generateRentalContract, generateRentalContractFromTemplate, prepareContractData } from "./utils/pdf-generator";
 import { processInvoiceWithAI, generateInvoiceHash, validateParsedInvoice, type ParsedInvoice } from "./utils/invoice-scanner";
@@ -8397,7 +8398,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         '--exclude=backups',
         '--exclude=uploads',
         '--exclude=*.log',
-        '--exclude=.env.local',
+        '--exclude=.env',
+        '--exclude=.env.*',
+        '--exclude=cookies.txt',
         '--exclude=dist',
         '--exclude=build'
       ].join(' ');
@@ -10592,6 +10595,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       const results = await storage.executeReport(config);
       res.json(results);
     } catch (error) {
+      if (error instanceof ReportValidationError) {
+        return res.status(400).json({ message: error.message });
+      }
       console.error("Error executing report:", error);
       res.status(500).json({ message: "Error executing report" });
     }
