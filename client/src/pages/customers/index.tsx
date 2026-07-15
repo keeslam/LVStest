@@ -36,6 +36,11 @@ export default function CustomersIndex() {
   const [viewDialogCustomerId, setViewDialogCustomerId] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState("name-asc");
   const [filters, setFilters] = useState<Set<string>>(new Set());
+  // Page-level dialog state — dialogs must not live inside table cells because
+  // cells are remounted on every refetch-driven re-render, which would close an
+  // open dialog on its own (e.g. seconds after a save when refreshes land).
+  const [reserveCustomerId, setReserveCustomerId] = useState<string | null>(null);
+  const [deleteCustomerTarget, setDeleteCustomerTarget] = useState<Customer | null>(null);
   const queryClient = useQueryClient();
   
   const { data: customers, isLoading } = useQuery<Customer[]>({
@@ -275,20 +280,21 @@ export default function CustomersIndex() {
             >
               View
             </Button>
-            <ReservationAddDialog initialCustomerId={customer.id.toString()}>
-              <Button variant="outline" size="sm">
-                New Reservation
-              </Button>
-            </ReservationAddDialog>
-            <CustomerDeleteDialog 
-              customerId={customer.id} 
-              customerName={customer.name}
-              onSuccess={handleCustomerAdded}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setReserveCustomerId(customer.id.toString())}
             >
-              <Button variant="destructive" size="sm" data-testid={`button-delete-customer-${customer.id}`}>
-                Delete
-              </Button>
-            </CustomerDeleteDialog>
+              New Reservation
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              data-testid={`button-delete-customer-${customer.id}`}
+              onClick={() => setDeleteCustomerTarget(customer)}
+            >
+              Delete
+            </Button>
           </div>
         );
       },
@@ -297,6 +303,34 @@ export default function CustomersIndex() {
   
   return (
     <div className="space-y-6">
+      {/* Page-level dialogs. Kept here (not inside table cells) so they survive
+          table refetches that would otherwise unmount an open dialog. */}
+      {reserveCustomerId !== null && (
+        <ReservationAddDialog
+          key={reserveCustomerId}
+          initialCustomerId={reserveCustomerId}
+          open={true}
+          onOpenChange={(next) => {
+            if (!next) setReserveCustomerId(null);
+          }}
+          onSuccess={() => {
+            setReserveCustomerId(null);
+          }}
+        />
+      )}
+      {deleteCustomerTarget !== null && (
+        <CustomerDeleteDialog
+          key={deleteCustomerTarget.id}
+          customerId={deleteCustomerTarget.id}
+          customerName={deleteCustomerTarget.name}
+          open={true}
+          onOpenChange={(next) => {
+            if (!next) setDeleteCustomerTarget(null);
+          }}
+          onSuccess={handleCustomerAdded}
+        />
+      )}
+
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">{t('Customers')}</h1>
         <CustomerAddDialog onSuccess={handleCustomerAdded} />

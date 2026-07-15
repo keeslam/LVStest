@@ -19,15 +19,33 @@ interface CustomerDeleteDialogProps {
   customerName: string;
   children?: React.ReactNode;
   onSuccess?: () => void;
+  /**
+   * Optional controlled mode. When `open`/`onOpenChange` are provided the
+   * dialog renders without its own trigger and its open state is owned by the
+   * parent (e.g. page-level state that survives table re-renders).
+   */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function CustomerDeleteDialog({ 
   customerId, 
   customerName, 
   children, 
-  onSuccess 
+  onSuccess,
+  open: controlledOpen,
+  onOpenChange,
 }: CustomerDeleteDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (next: boolean) => {
+    if (isControlled) {
+      onOpenChange?.(next);
+    } else {
+      setInternalOpen(next);
+    }
+  };
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -94,9 +112,11 @@ export function CustomerDeleteDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger}
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          {trigger}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Delete Customer</DialogTitle>

@@ -25,7 +25,7 @@ import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { displayLicensePlate } from "@/lib/utils";
 import { isTrueValue } from "@/lib/utils";
 import { getDaysUntil } from "@/lib/date-utils";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Feature-based filter options. Each maps a user-facing label to the boolean
@@ -58,6 +58,12 @@ export default function VehiclesIndex() {
   // survives table refetches that would otherwise unmount the dialog and lose the
   // user's form data (e.g. when adding a quick driver triggers a vehicles refetch).
   const [reserveDialogVehicleId, setReserveDialogVehicleId] = useState<string | null>(null);
+  
+  // Page-level edit/delete dialog state — same reason as above: dialogs that
+  // live inside table cells get unmounted (and close) whenever a background
+  // refetch re-renders the table, e.g. a few seconds after saving a vehicle.
+  const [editVehicleId, setEditVehicleId] = useState<number | null>(null);
+  const [deleteVehicleTarget, setDeleteVehicleTarget] = useState<Vehicle | null>(null);
   
   // Vehicle remarks warning dialog state
   const [remarksWarningOpen, setRemarksWarningOpen] = useState(false);
@@ -226,17 +232,23 @@ export default function VehiclesIndex() {
             >
               View
             </Button>
-            <VehicleEditDialog 
-              vehicleId={vehicle.id}
-              onSuccess={handleDialogSuccess}
-            />
-            <VehicleDeleteDialog 
-              vehicleId={vehicle.id}
-              vehicleBrand={vehicle.brand}
-              vehicleModel={vehicle.model}
-              vehicleLicensePlate={vehicle.licensePlate}
-              onSuccess={handleDialogSuccess}
-            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setEditVehicleId(vehicle.id)}
+              data-testid={`button-edit-vehicle-${vehicle.id}`}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-red-500"
+              onClick={() => setDeleteVehicleTarget(vehicle)}
+              data-testid={`button-delete-vehicle-${vehicle.id}`}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
             {(() => {
               const isRented = vehicle.availabilityStatus === 'rented';
               const isNotForRental = vehicle.availabilityStatus === 'not_for_rental';
@@ -539,6 +551,36 @@ export default function VehiclesIndex() {
               setReservationViewDialogOpen(true);
             }
           }}
+        />
+      )}
+
+      {/* Page-level Edit/Delete dialogs. Same pattern as above: table cells are
+          remounted on every refetch-driven re-render, so an open dialog inside a
+          cell would close on its own (e.g. ~5s after a save when background
+          refreshes land). Keeping them here makes them survive table updates. */}
+      {editVehicleId !== null && (
+        <VehicleEditDialog
+          key={editVehicleId}
+          vehicleId={editVehicleId}
+          open={true}
+          onOpenChange={(next) => {
+            if (!next) setEditVehicleId(null);
+          }}
+          onSuccess={handleDialogSuccess}
+        />
+      )}
+      {deleteVehicleTarget !== null && (
+        <VehicleDeleteDialog
+          key={deleteVehicleTarget.id}
+          vehicleId={deleteVehicleTarget.id}
+          vehicleBrand={deleteVehicleTarget.brand}
+          vehicleModel={deleteVehicleTarget.model}
+          vehicleLicensePlate={deleteVehicleTarget.licensePlate}
+          open={true}
+          onOpenChange={(next) => {
+            if (!next) setDeleteVehicleTarget(null);
+          }}
+          onSuccess={handleDialogSuccess}
         />
       )}
       

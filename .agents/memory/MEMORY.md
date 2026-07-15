@@ -1,1 +1,2 @@
 - [Cache invalidation strategy](cache-invalidation-strategy.md) — mutation invalidations refetchType 'active', websocket soft; shared client singletons (QueryClient, handler registries) must live on globalThis or Vite HMR forks them.
+- [Dialogs in table cells](dialogs-in-table-cells.md) — never put stateful dialogs in DataTable cell renderers; flexRender remounts cells every re-render, closing open dialogs. Lift to page-level controlled state.

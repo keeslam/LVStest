@@ -17,10 +17,32 @@ interface VehicleEditDialogProps {
   vehicleId: number;
   children?: React.ReactNode;
   onSuccess?: () => void;
+  /**
+   * Optional controlled mode. When `open`/`onOpenChange` are provided the
+   * dialog renders without its own trigger and its open state is owned by the
+   * parent (e.g. page-level state that survives table re-renders).
+   */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function VehicleEditDialog({ vehicleId, children, onSuccess }: VehicleEditDialogProps) {
-  const [open, setOpen] = useState(false);
+export function VehicleEditDialog({
+  vehicleId,
+  children,
+  onSuccess,
+  open: controlledOpen,
+  onOpenChange,
+}: VehicleEditDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (next: boolean) => {
+    if (isControlled) {
+      onOpenChange?.(next);
+    } else {
+      setInternalOpen(next);
+    }
+  };
 
   // Fetch vehicle data for editing
   const { data: vehicle, isLoading } = useQuery<Vehicle>({
@@ -44,9 +66,11 @@ export function VehicleEditDialog({ vehicleId, children, onSuccess }: VehicleEdi
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger}
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          {trigger}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Vehicle</DialogTitle>
