@@ -3328,10 +3328,13 @@ export default function ReservationCalendarPage() {
             {/* Current Rentals Tab */}
             <TabsContent value="current" className="mt-4">
               {(() => {
-                // Get all currently picked up rentals (active rentals)
-                const currentRentals = reservations?.filter(res => 
+                // Get all currently picked up rentals (active rentals).
+                // IMPORTANT: use the full reservations list, NOT the calendar's
+                // date-range query — rentals picked up outside the visible
+                // calendar window would otherwise be missing here.
+                const currentRentals = allReservationsForLookup.filter(res => 
                   res.status === 'picked_up' && res.type !== 'maintenance_block'
-                ) || [];
+                );
                 
                 // Apply search filter
                 const searchedCurrent = currentRentals.filter(rental => {
