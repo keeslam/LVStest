@@ -2,8 +2,8 @@ import { queryClient } from "./queryClient";
 
 /**
  * Invalidate vehicle-related data.
- * Uses soft invalidation (marks as stale) instead of forced refetch to prevent dialog closures.
- * React Query will refetch in the background when components need fresh data.
+ * Marks matching queries stale and refetches the ones currently on screen.
+ * Inactive queries refetch automatically on next mount.
  */
 export function invalidateVehicleData(vehicleId?: number) {
   queryClient.invalidateQueries({
@@ -16,13 +16,13 @@ export function invalidateVehicleData(vehicleId?: number) {
       
       return false;
     },
-    refetchType: 'none' // Don't force immediate refetch - let components decide when to refetch
+    refetchType: 'active' // Refetch mounted queries so pages update right after a save
   });
 }
 
 /**
  * Invalidate reservation-related data.
- * Uses soft invalidation to prevent UI disruption while keeping data fresh.
+ * Mounted views update immediately after a save.
  */
 export function invalidateReservationData(reservationId?: number, vehicleId?: number) {
   queryClient.invalidateQueries({
@@ -37,7 +37,7 @@ export function invalidateReservationData(reservationId?: number, vehicleId?: nu
       
       return false;
     },
-    refetchType: 'none' // Soft invalidation only
+    refetchType: 'active' // Refetch mounted queries so pages update right after a save
   });
 }
 
@@ -55,7 +55,7 @@ export function invalidateCustomerData(customerId?: number) {
       
       return false;
     },
-    refetchType: 'none'
+    refetchType: 'active'
   });
 }
 
@@ -74,7 +74,7 @@ export function invalidateExpenseData(expenseId?: number, vehicleId?: number) {
       
       return false;
     },
-    refetchType: 'none'
+    refetchType: 'active'
   });
 }
 
@@ -93,7 +93,7 @@ export function invalidateDocumentData(documentId?: number, vehicleId?: number) 
       
       return false;
     },
-    refetchType: 'none'
+    refetchType: 'active'
   });
 }
 
@@ -112,7 +112,7 @@ export function invalidateNotificationData(notificationId?: number) {
       
       return false;
     },
-    refetchType: 'none'
+    refetchType: 'active'
   });
 }
 
@@ -151,6 +151,6 @@ export function invalidateAllRelatedData() {
              key.startsWith('/api/expenses') ||
              key.startsWith('/api/placeholder-reservations');
     },
-    refetchType: 'none' // Soft invalidation only
+    refetchType: 'active' // Refetch mounted queries so pages update right after a save
   });
 }

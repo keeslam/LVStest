@@ -216,8 +216,19 @@ function autoInvalidateCache(mutationKey: string, data?: any) {
 
 /**
  * Prefix-based invalidation utility to invalidate all queries with a matching prefix.
- * Uses soft invalidation (refetchType: 'none') to prevent dialogs from closing.
- * Data is marked stale and will be refetched when components need it.
+ *
+ * Uses refetchType 'active': all matching queries are marked stale, and the
+ * ones currently rendered on screen are refetched immediately. This is what
+ * makes list pages (vehicles, customers, reservations, …) update right after
+ * a save instead of showing stale data until a manual page refresh.
+ *
+ * This is safe for dialogs: a refetch updates data in place and does not
+ * unmount/close dialogs. (The old refetchType 'none' behaviour was a
+ * workaround for dialogs rendered inside table cells losing state on table
+ * re-render — that problem was since fixed properly by lifting dialog state
+ * to page level. Background/websocket invalidations remain soft in
+ * use-socket.tsx so remote changes never yank data out from under an open
+ * form.)
  */
 export function invalidateByPrefix(prefix: string) {
   return queryClient.invalidateQueries({
@@ -225,7 +236,7 @@ export function invalidateByPrefix(prefix: string) {
       const queryKey = query.queryKey;
       return typeof queryKey?.[0] === 'string' && queryKey[0].startsWith(prefix);
     },
-    refetchType: 'none' // Soft invalidation - prevents dialog closures
+    refetchType: 'active' // Refetch mounted queries now; others refetch on next mount
   });
 }
 
@@ -259,11 +270,9 @@ export const createMutationWithoutAutoCache = (options: any) => ({
 });
 
 /**
- * Comprehensive soft invalidation system for all entity types and their relationships.
- * Uses refetchType: 'none' throughout to prevent dialogs from closing unexpectedly.
- * Data is marked as stale and will be refetched when components actively need it.
- * 
- * This ensures real-time updates are reflected without disrupting user interactions.
+ * Comprehensive invalidation system for all entity types and their relationships.
+ * Marks matching queries stale and refetches the ones currently on screen
+ * (via invalidateByPrefix), so views update immediately after a save.
  */
 export function invalidateRelatedQueries(entityType: string, entityData?: { id?: number; vehicleId?: number; customerId?: number }) {
   const id = entityData?.id;

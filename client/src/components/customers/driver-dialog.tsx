@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -117,26 +117,39 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
     },
   });
 
-  // Reset form when dialog opens or driver data changes
+  // Reset form when the dialog opens or the driver being edited changes.
+  // Guarded so a background refetch (new `driver` object reference from the
+  // parent's query) never wipes unsaved edits or a selected license file.
+  const lastResetKeyRef = useRef<string | null>(null);
   useEffect(() => {
-    if (open) {
-      form.reset({
-        displayName: driver?.displayName ?? "",
-        firstName: driver?.firstName ?? "",
-        lastName: driver?.lastName ?? "",
-        email: driver?.email ?? "",
-        phone: driver?.phone ?? "",
-        driverLicenseNumber: driver?.driverLicenseNumber ?? "",
-        licenseExpiry: driver?.licenseExpiry ?? "",
-        licenseOrigin: driver?.licenseOrigin ?? "Netherlands",
-        isPrimaryDriver: driver?.isPrimaryDriver ?? false,
-        status: driver?.status ?? "active",
-        notes: driver?.notes ?? "",
-        preferredLanguage: driver?.preferredLanguage ?? "nl",
-      });
-      setSelectedFile(null);
+    if (!open) {
+      lastResetKeyRef.current = null;
+      return;
     }
-  }, [open, driver, form]);
+    const resetKey = String(driver?.id ?? "new");
+    if (
+      lastResetKeyRef.current === resetKey &&
+      (form.formState.isDirty || selectedFile)
+    ) {
+      return;
+    }
+    lastResetKeyRef.current = resetKey;
+    form.reset({
+      displayName: driver?.displayName ?? "",
+      firstName: driver?.firstName ?? "",
+      lastName: driver?.lastName ?? "",
+      email: driver?.email ?? "",
+      phone: driver?.phone ?? "",
+      driverLicenseNumber: driver?.driverLicenseNumber ?? "",
+      licenseExpiry: driver?.licenseExpiry ?? "",
+      licenseOrigin: driver?.licenseOrigin ?? "Netherlands",
+      isPrimaryDriver: driver?.isPrimaryDriver ?? false,
+      status: driver?.status ?? "active",
+      notes: driver?.notes ?? "",
+      preferredLanguage: driver?.preferredLanguage ?? "nl",
+    });
+    setSelectedFile(null);
+  }, [open, driver, form, selectedFile]);
 
   const mutation = useMutation({
     mutationFn: async (data: DriverFormValues) => {

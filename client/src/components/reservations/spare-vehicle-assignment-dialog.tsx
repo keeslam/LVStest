@@ -123,7 +123,12 @@ export function SpareVehicleAssignmentDialog({
     },
   });
 
-  // Reset form when placeholders change
+  // Reset form only when the actual set of placeholders changes (compared by
+  // ID), not when a background refetch produces a new array reference —
+  // otherwise the user's in-progress vehicle selections would be wiped.
+  const placeholderIdsKey = filteredPlaceholders
+    .map((res: Reservation) => res.id)
+    .join(",");
   useEffect(() => {
     if (filteredPlaceholders.length > 0) {
       form.reset({
@@ -133,7 +138,8 @@ export function SpareVehicleAssignmentDialog({
         })),
       });
     }
-  }, [filteredPlaceholders, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [placeholderIdsKey, form]);
 
   // Assignment mutation
   const assignVehiclesMutation = useMutation({

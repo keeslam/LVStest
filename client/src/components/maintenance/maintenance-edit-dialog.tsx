@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -221,9 +221,22 @@ export function MaintenanceEditDialog({
     enabled: !!(currentVehicleId && currentStartDate && currentEndDate && open),
   });
 
-  // Reset form when reservation changes or when overlapping rentals are loaded
+  // Reset form when the dialog opens or the reservation being edited changes.
+  // Also allows a follow-up reset when related queries (overlapping rentals,
+  // customers) finish loading — but only while the form is still pristine, so
+  // background refetches never wipe unsaved user edits.
+  const lastResetKeyRef = useRef<string | null>(null);
   useEffect(() => {
-    if (reservation && open) {
+    if (!open) {
+      lastResetKeyRef.current = null;
+      return;
+    }
+    if (reservation) {
+      const resetKey = String(reservation.id);
+      if (lastResetKeyRef.current === resetKey && form.formState.isDirty) {
+        return;
+      }
+      lastResetKeyRef.current = resetKey;
       const parsed = parseMaintenanceNotes(reservation.notes || '');
       const duration = reservation.maintenanceDuration || 
         (reservation.startDate && reservation.endDate ? 

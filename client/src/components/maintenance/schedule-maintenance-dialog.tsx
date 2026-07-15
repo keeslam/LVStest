@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -127,13 +127,24 @@ export function ScheduleMaintenanceDialog({
     },
   });
 
-  // Reset form when editing reservation changes or dialog opens/closes
+  // Reset form when the dialog opens or the reservation being edited changes.
+  // Guarded so a background refetch (new object references from the parent)
+  // never wipes unsaved user edits while the dialog is open.
+  const lastResetKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (!open) {
       // Reset active customer when dialog closes
       setActiveCustomer(null);
+      lastResetKeyRef.current = null;
+      return;
     }
-    
+
+    const resetKey = String(editingReservation?.id ?? "new");
+    if (lastResetKeyRef.current === resetKey && form.formState.isDirty) {
+      return;
+    }
+    lastResetKeyRef.current = resetKey;
+
     if (editingReservation) {
       // Parse maintenance data from the reservation
       const noteParts = editingReservation.notes?.split(':') || [];
