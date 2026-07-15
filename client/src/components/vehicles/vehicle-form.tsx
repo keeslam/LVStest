@@ -686,31 +686,30 @@ export function VehicleForm({
         // to maintain the business rule that a car can't be both Opnaam and BV
         let toggleStatus = null;
         
-        // Check which status was actually changed by the user
-        if (newRegisteredTo !== prevRegisteredTo) {
-          if (newRegisteredTo) {
-            toggleStatus = "opnaam"; // Setting to "opnaam"
-            
-            // Auto-disable company status if enabling registeredTo
-            if (prevCompany) {
-              console.log("Automatically disabling BV status because Opnaam is being activated");
-              formattedData.company = "false";
-            }
-          } else {
-            toggleStatus = "not-opnaam"; // Removing "opnaam"
+        // Determine the dominant change: prioritise the field being turned ON (→true)
+        // over the one being turned off. This handles the case where both change
+        // simultaneously (e.g. Opnaam true→false AND BV false→true) and prevents
+        // the wrong toggle status from being sent to the dedicated endpoint.
+        if (newRegisteredTo && !prevRegisteredTo) {
+          // Opnaam is being enabled
+          toggleStatus = "opnaam";
+          if (prevCompany) {
+            console.log("Automatically disabling BV status because Opnaam is being activated");
+            formattedData.company = "false";
           }
-        } else if (newCompany !== prevCompany) {
-          if (newCompany) {
-            toggleStatus = "bv"; // Setting to "bv"
-            
-            // Auto-disable registeredTo status if enabling company
-            if (prevRegisteredTo) {
-              console.log("Automatically disabling Opnaam status because BV is being activated");
-              formattedData.registeredTo = "false";
-            }
-          } else {
-            toggleStatus = "not-bv"; // Removing "bv"
+        } else if (newCompany && !prevCompany) {
+          // BV is being enabled
+          toggleStatus = "bv";
+          if (prevRegisteredTo) {
+            console.log("Automatically disabling Opnaam status because BV is being activated");
+            formattedData.registeredTo = "false";
           }
+        } else if (!newRegisteredTo && prevRegisteredTo) {
+          // Opnaam is being disabled (and BV is NOT being enabled)
+          toggleStatus = "not-opnaam";
+        } else if (!newCompany && prevCompany) {
+          // BV is being disabled (and Opnaam is NOT being enabled)
+          toggleStatus = "not-bv";
         }
         
         console.log(`Selected toggle status: ${toggleStatus}`);
