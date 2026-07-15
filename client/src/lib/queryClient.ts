@@ -152,9 +152,12 @@ export const getQueryFn: <T>(options: {
       }
     }
     
+    const startedAt = Date.now();
     const res = await fetch(url, {
       credentials: "include",
+      cache: "no-store", // Bypass browser HTTP cache entirely - always get fresh data from the server
     });
+    console.debug(`[query] GET ${url} -> ${res.status} in ${Date.now() - startedAt}ms`);
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;
@@ -231,13 +234,26 @@ function autoInvalidateCache(mutationKey: string, data?: any) {
  * form.)
  */
 export function invalidateByPrefix(prefix: string) {
-  return queryClient.invalidateQueries({
+  let matched = 0;
+  let active = 0;
+  const startedAt = Date.now();
+  const result = queryClient.invalidateQueries({
     predicate: (query) => {
       const queryKey = query.queryKey;
-      return typeof queryKey?.[0] === 'string' && queryKey[0].startsWith(prefix);
+      const isMatch = typeof queryKey?.[0] === 'string' && queryKey[0].startsWith(prefix);
+      if (isMatch) {
+        matched++;
+        if (query.getObserversCount() > 0) active++;
+      }
+      return isMatch;
     },
     refetchType: 'active' // Refetch mounted queries now; others refetch on next mount
   });
+  result.then(
+    () => console.debug(`[cache] invalidate "${prefix}": ${matched} matched, ${active} active, done in ${Date.now() - startedAt}ms`),
+    (err) => console.debug(`[cache] invalidate "${prefix}" FAILED:`, err)
+  );
+  return result;
 }
 
 /**
