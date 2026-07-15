@@ -20,3 +20,13 @@ Dialogs that call `form.reset(...)` inside a `useEffect` keyed on query-derived 
 - Clear the ref when the dialog closes so reopening always resets fresh.
 
 **Residual known risk:** VehicleEditDialog/VehicleDeleteDialog are still rendered inside DataTable cells (rows keyed by index); a list refetch that reorders rows while one is open could rebind/close it. Low exposure (only own-mutation refetches fire while modal open). Proper hardening = lift dialog state to page level like the vehicles-page view-dialog pattern.
+
+## Real root cause of the stale-after-save bug: duplicated module instances in Vite dev
+
+The refetchType fix alone did NOT resolve the user-visible bug. In-browser telemetry proved invalidation ran against an EMPTY QueryClient (`invalidate "/api/vehicles": 0 matched` while the same console showed the cache being populated minutes earlier). Vite dev HMR can evaluate a module twice (timestamped `?t=` URL + bare URL served to different importers), so module-level singletons silently fork: queries lived in copy A, mutations invalidated empty copy B.
+
+**Rule:** Any client module holding module-level mutable state that is shared across the app (the QueryClient, handler registries like session-expiry and admin-password-prompt) must store that state on `globalThis` (e.g. `globalThis.__appQueryClient ?? new QueryClient(...)`, Prisma-singleton idiom).
+
+**Why:** Without it, a dev-session HMR sequence forks the state and features fail invisibly (saves look ignored, auto-logout stops firing) until a manual full reload — and it recurs every session where files were edited. Production bundles evaluate modules once, so the bug is dev-only and extremely confusing to reproduce.
+
+**How to apply:** When adding a new module-level registry/singleton in client/src/lib, use the globalThis-backed pattern. Diagnostic tell: an invalidation/predicate reporting 0 matched queries while the page clearly has data mounted.

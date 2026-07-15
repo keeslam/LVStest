@@ -1,1 +1,1 @@
-- [Cache invalidation strategy](cache-invalidation-strategy.md) — mutation invalidations must be refetchType 'active', websocket ones stay soft; guard dialog form.reset effects against background refetches.
+- [Cache invalidation strategy](cache-invalidation-strategy.md) — mutation invalidations refetchType 'active', websocket soft; shared client singletons (QueryClient, handler registries) must live on globalThis or Vite HMR forks them.

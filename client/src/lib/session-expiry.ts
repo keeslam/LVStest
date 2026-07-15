@@ -5,15 +5,31 @@
 
 type SessionExpiredHandler = () => void | Promise<void>;
 
-let sessionExpiredHandler: SessionExpiredHandler | null = null;
-let isHandlingExpiry = false; // Prevent double calls
+// Keep the registry on globalThis so there is exactly ONE copy of this state,
+// even if Vite dev HMR evaluates this module twice (duplicate module copies
+// would otherwise register the handler in one copy while apiRequest invokes
+// the other, silently breaking auto-logout on 401).
+type SessionExpiryRegistry = {
+  handler: SessionExpiredHandler | null;
+  isHandlingExpiry: boolean; // Prevent double calls
+};
+
+const globalForSessionExpiry = globalThis as unknown as {
+  __sessionExpiryRegistry?: SessionExpiryRegistry;
+};
+
+const registry: SessionExpiryRegistry =
+  globalForSessionExpiry.__sessionExpiryRegistry ??
+  { handler: null, isHandlingExpiry: false };
+
+globalForSessionExpiry.__sessionExpiryRegistry = registry;
 
 /**
  * Register a handler to be called when session expires
  * Should be called from AuthProvider on mount
  */
 export function registerSessionExpiredHandler(handler: SessionExpiredHandler) {
-  sessionExpiredHandler = handler;
+  registry.handler = handler;
 }
 
 /**
@@ -21,8 +37,8 @@ export function registerSessionExpiredHandler(handler: SessionExpiredHandler) {
  * Should be called from AuthProvider on unmount
  */
 export function unregisterSessionExpiredHandler() {
-  sessionExpiredHandler = null;
-  isHandlingExpiry = false;
+  registry.handler = null;
+  registry.isHandlingExpiry = false;
 }
 
 /**
@@ -31,25 +47,25 @@ export function unregisterSessionExpiredHandler() {
  */
 export async function invokeSessionExpired() {
   // Prevent double calls
-  if (isHandlingExpiry) {
+  if (registry.isHandlingExpiry) {
     return;
   }
   
-  if (!sessionExpiredHandler) {
+  if (!registry.handler) {
     console.warn('Session expired but no handler registered');
     return;
   }
   
-  isHandlingExpiry = true;
+  registry.isHandlingExpiry = true;
   
   try {
-    await sessionExpiredHandler();
+    await registry.handler();
   } catch (error) {
     console.error('Error handling session expiration:', error);
   } finally {
     // Reset after a delay to allow for any async operations
     setTimeout(() => {
-      isHandlingExpiry = false;
+      registry.isHandlingExpiry = false;
     }, 1000);
   }
 }

@@ -167,22 +167,35 @@ export const getQueryFn: <T>(options: {
     return await res.json();
   };
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: false, // Don't auto-refresh on a timer
-      refetchOnWindowFocus: false, // Disabled - prevents dialogs from closing when switching tabs. Real-time updates come via WebSocket instead.
-      refetchOnReconnect: false, // Disabled - prevents refetch on network reconnect which can close dialogs
-      staleTime: 30000, // Cache data for 30 seconds to reduce refetches while maintaining freshness
-      gcTime: 300000, // Keep unused data for 5 minutes
-      retry: false,
+// Store the QueryClient on globalThis so there is exactly ONE cache instance,
+// even if this module gets evaluated twice (e.g. Vite dev HMR can load both a
+// timestamped and non-timestamped copy of this module, which previously caused
+// invalidations to run against an empty duplicate cache — saves then appeared
+// to "not update" until a manual page refresh).
+const globalForQueryClient = globalThis as unknown as {
+  __appQueryClient?: QueryClient;
+};
+
+export const queryClient =
+  globalForQueryClient.__appQueryClient ??
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        queryFn: getQueryFn({ on401: "throw" }),
+        refetchInterval: false, // Don't auto-refresh on a timer
+        refetchOnWindowFocus: false, // Disabled - prevents dialogs from closing when switching tabs. Real-time updates come via WebSocket instead.
+        refetchOnReconnect: false, // Disabled - prevents refetch on network reconnect which can close dialogs
+        staleTime: 30000, // Cache data for 30 seconds to reduce refetches while maintaining freshness
+        gcTime: 300000, // Keep unused data for 5 minutes
+        retry: false,
+      },
+      mutations: {
+        retry: false,
+      },
     },
-    mutations: {
-      retry: false,
-    },
-  },
-});
+  });
+
+globalForQueryClient.__appQueryClient = queryClient;
 
 /**
  * Automatic cache invalidation based on mutation patterns.

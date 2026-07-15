@@ -16,16 +16,31 @@ type AdminPasswordPromptHandler = (
   opts: AdminPasswordPromptOptions,
 ) => Promise<string | null>;
 
-let promptHandler: AdminPasswordPromptHandler | null = null;
+// Keep the registry on globalThis so there is exactly ONE copy of this state,
+// even if Vite dev HMR evaluates this module twice (duplicate module copies
+// would otherwise register the handler in one copy while apiRequest invokes
+// the other, silently breaking the admin-password prompt).
+type AdminPasswordPromptRegistry = {
+  handler: AdminPasswordPromptHandler | null;
+};
+
+const globalForAdminPrompt = globalThis as unknown as {
+  __adminPasswordPromptRegistry?: AdminPasswordPromptRegistry;
+};
+
+const registry: AdminPasswordPromptRegistry =
+  globalForAdminPrompt.__adminPasswordPromptRegistry ?? { handler: null };
+
+globalForAdminPrompt.__adminPasswordPromptRegistry = registry;
 
 export function registerAdminPasswordPromptHandler(
   handler: AdminPasswordPromptHandler,
 ) {
-  promptHandler = handler;
+  registry.handler = handler;
 }
 
 export function unregisterAdminPasswordPromptHandler() {
-  promptHandler = null;
+  registry.handler = null;
 }
 
 /**
@@ -35,11 +50,11 @@ export function unregisterAdminPasswordPromptHandler() {
 export async function promptForAdminPassword(
   opts: AdminPasswordPromptOptions = {},
 ): Promise<string | null> {
-  if (!promptHandler) {
+  if (!registry.handler) {
     console.warn(
       "[admin-password] Admin password required but no prompt UI is mounted.",
     );
     return null;
   }
-  return promptHandler(opts);
+  return registry.handler(opts);
 }
