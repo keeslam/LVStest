@@ -1,4 +1,3 @@
-# Coolify deployment configuration using Nixpacks
 [variables]
 NIXPACKS_NODE_VERSION = "20"
 NPM_CONFIG_PRODUCTION = "false"
@@ -19,4 +18,4 @@ cmds = [
 ]
 
 [start]
-cmd = "node startup-migration.js && npm run db:push && npm start "
+cmd = "echo '=== CAR RENTAL MANAGER STARTING ===' && echo '=== RUNNING STARTUP MIGRATION ===' && node startup-migration.js && echo '=== RUNNING DATABASE PUSH ===' && npm run db:push && echo '=== DATABASE PUSH COMPLETED ===' && echo '=== STARTING APPLICATION ===' && npm start"
