@@ -19,4 +19,4 @@ cmds = [
 ]
 
 [start]
-cmd = "node startup-migration.js && npm start"
+cmd = "node startup-migration.js && npm run db:push && npm start "
