@@ -18,4 +18,4 @@ cmds = [
 ]
 
 [start]
-cmd = "echo '=== CAR RENTAL MANAGER STARTING ===' && echo '=== RUNNING STARTUP MIGRATION ===' && node startup-migration.js && echo '=== RUNNING DATABASE PUSH ===' && npm run db:push && echo '=== DATABASE PUSH COMPLETED ===' && echo '=== STARTING APPLICATION ===' && npm start"
+cmd = "echo '=== CAR RENTAL MANAGER STARTING ===' && echo '=== RUNNING DATABASE PUSH ===' && npm run db:push && echo '=== DATABASE PUSH COMPLETED ===' && echo '=== RUNNING STARTUP MIGRATION ===' && node startup-migration.js && echo '=== MIGRATION COMPLETED ===' && echo '=== STARTING APPLICATION ===' && npm start"
