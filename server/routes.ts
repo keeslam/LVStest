@@ -4693,6 +4693,17 @@ export async function registerRoutes(app: Express): Promise<void> {
           template = allTemplates.find(t => t.isDefault) || allTemplates[0];
         }
 
+        if (!template) {
+          // The pickup dialog tells the user a contract is generated automatically.
+          // With no template configured nothing is produced and nothing is said,
+          // which is easy to miss on a fresh deployment until a customer asks
+          // for their contract.
+          console.warn(
+            `⚠️ No PDF contract template configured — skipping contract generation for reservation ${reservationId}. ` +
+            `Add a template under Documents → Contract Templates to enable it.`
+          );
+        }
+
         if (template && updatedReservation.vehicle) {
           console.log(`📝 Generating contract for reservation ${reservationId} using template ${template.id}`);
           
