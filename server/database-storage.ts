@@ -706,27 +706,43 @@ export class DatabaseStorage implements IStorage {
       reservationsData = await db.select().from(reservations).where(isNull(reservations.deletedAt));
     }
     
-    const result: Reservation[] = [];
-    
-    // Fetch vehicle and customer data for each reservation
-    for (const reservation of reservationsData) {
-      // Handle null vehicleId for placeholder spare reservations
-      let vehicle: Vehicle | undefined = undefined;
-      if (reservation.vehicleId !== null) {
-        const [v] = await db.select().from(vehicles).where(eq(vehicles.id, reservation.vehicleId));
-        vehicle = v ?? undefined;
-      }
-      
-      const [c] = await db.select().from(customers).where(eq(customers.id, reservation.customerId));
-      
-      result.push({
-        ...reservation,
-        vehicle,
-        customer: c ?? undefined
-      });
-    }
-    
-    return result;
+    // Batch-load the related rows. Fetching them per reservation meant two
+    // sequential queries per row — ~3k round-trips for 1.5k reservations, which
+    // put this endpoint into the multi-second range and grew linearly with the
+    // booking history.
+    const vehicleIds = Array.from(new Set(
+      reservationsData
+        .map(r => r.vehicleId)
+        .filter((id): id is number => id !== null && id !== undefined)
+    ));
+    const customerIds = Array.from(new Set(
+      reservationsData
+        .map(r => r.customerId)
+        .filter((id): id is number => id !== null && id !== undefined)
+    ));
+
+    const [vehicleRows, customerRows] = await Promise.all([
+      vehicleIds.length
+        ? db.select().from(vehicles).where(inArray(vehicles.id, vehicleIds))
+        : Promise.resolve([]),
+      customerIds.length
+        ? db.select().from(customers).where(inArray(customers.id, customerIds))
+        : Promise.resolve([]),
+    ]);
+
+    const vehicleById = new Map(vehicleRows.map(v => [v.id, v]));
+    const customerById = new Map(customerRows.map(c => [c.id, c]));
+
+    return reservationsData.map(reservation => ({
+      ...reservation,
+      // Placeholder spare reservations have no vehicle yet
+      vehicle: reservation.vehicleId !== null && reservation.vehicleId !== undefined
+        ? vehicleById.get(reservation.vehicleId)
+        : undefined,
+      customer: reservation.customerId !== null && reservation.customerId !== undefined
+        ? customerById.get(reservation.customerId)
+        : undefined,
+    }));
   }
 
   async getReservation(id: number): Promise<Reservation | undefined> {
@@ -1132,22 +1148,27 @@ export class DatabaseStorage implements IStorage {
       .from(reservations)
       .where(and(...baseConditions));
     
-    const result: Reservation[] = [];
-    
-    // Fetch vehicle and customer data for each reservation
     const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, vehicleId));
-    
-    for (const reservation of reservationsData) {
-      const [customer] = await db.select().from(customers).where(eq(customers.id, reservation.customerId));
-      
-      result.push({
-        ...reservation,
-        vehicle,
-        customer
-      });
-    }
-    
-    return result;
+
+    // Batch-load customers instead of one query per reservation.
+    const customerIds = Array.from(new Set(
+      reservationsData
+        .map(r => r.customerId)
+        .filter((id): id is number => id !== null && id !== undefined)
+    ));
+
+    const customerRows = customerIds.length
+      ? await db.select().from(customers).where(inArray(customers.id, customerIds))
+      : [];
+    const customerById = new Map(customerRows.map(c => [c.id, c]));
+
+    return reservationsData.map(reservation => ({
+      ...reservation,
+      vehicle,
+      customer: reservation.customerId !== null && reservation.customerId !== undefined
+        ? customerById.get(reservation.customerId)
+        : undefined,
+    }));
   }
 
   async pickupReservation(
@@ -1302,19 +1323,25 @@ export class DatabaseStorage implements IStorage {
   // Expense methods
   async getAllExpenses(): Promise<Expense[]> {
     const expensesData = await db.select().from(expenses);
-    const result: Expense[] = [];
-    
-    // Fetch vehicle data for each expense
-    for (const expense of expensesData) {
-      const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, expense.vehicleId));
-      
-      result.push({
-        ...expense,
-        vehicle
-      });
-    }
-    
-    return result;
+
+    // Batch-load vehicles instead of one query per expense.
+    const vehicleIds = Array.from(new Set(
+      expensesData
+        .map(e => e.vehicleId)
+        .filter((id): id is number => id !== null && id !== undefined)
+    ));
+
+    const vehicleRows = vehicleIds.length
+      ? await db.select().from(vehicles).where(inArray(vehicles.id, vehicleIds))
+      : [];
+    const vehicleById = new Map(vehicleRows.map(v => [v.id, v]));
+
+    return expensesData.map(expense => ({
+      ...expense,
+      vehicle: expense.vehicleId !== null && expense.vehicleId !== undefined
+        ? vehicleById.get(expense.vehicleId)
+        : undefined,
+    })) as Expense[];
   }
 
   async getExpense(id: number): Promise<Expense | undefined> {
