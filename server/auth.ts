@@ -15,6 +15,7 @@ import { AuditLogger } from "./utils/security/auditLogger.js";
 import { checkAccountLockout, recordLoginAttempt, clearFailedAttempts, loginLimiter } from "./middleware/security/rateLimiter.js";
 import { trackSession } from "./utils/security/sessionManager.js";
 import { csrfProtection } from "./middleware/security/csrf.js";
+import { useSecureCookies } from "./utils/secure-cookies.js";
 
 // Extend Express.User interface with our User type properties
 declare global {
@@ -81,7 +82,7 @@ export function setupAuth(app: Express) {
     store: createSessionStore(useDatabase),
     cookie: {
       maxAge: 15 * 60 * 1000, // 15 minutes inactivity timeout
-      secure: process.env.NODE_ENV === 'production' || process.env.SECURE_COOKIES === 'true', // Auto-enable in production
+      secure: useSecureCookies(), // On in production; set SECURE_COOKIES=false for an HTTP-only deployment
       httpOnly: true, // Prevent XSS attacks
       sameSite: 'strict' // Strict CSRF protection - blocks all cross-site requests
     }

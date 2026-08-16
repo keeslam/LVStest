@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
+import { useSecureCookies } from '../../utils/secure-cookies.js';
 
 declare module 'express-session' {
   interface SessionData {
@@ -100,7 +101,7 @@ export function attachCsrfToken(req: Request & { session: any }, res: Response, 
   // Set cookie for client-side access
   res.cookie('XSRF-TOKEN', token, {
     httpOnly: false, // Allow JavaScript to read it
-    secure: process.env.NODE_ENV === 'production',
+    secure: useSecureCookies(),
     sameSite: 'strict',
   });
 
