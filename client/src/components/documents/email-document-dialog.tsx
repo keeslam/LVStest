@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, FileText, Loader2, AlertCircle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { isContractDocument, isDamageCheckDocument } from "@shared/document-types";
 import type { Document, Customer, Vehicle, Reservation } from "@shared/schema";
 
 interface EmailDocumentDialogProps {
@@ -68,8 +69,8 @@ export function EmailDocumentDialog({
     
     // For single document, detect type and use appropriate template
     const selectedDocs = documents.filter(doc => selectedDocIds.includes(doc.id));
-    const hasContract = selectedDocs.some(doc => doc.documentType === 'contract');
-    const hasDamageCheck = selectedDocs.some(doc => doc.documentType === 'damage_check');
+    const hasContract = selectedDocs.some(doc => isContractDocument(doc.documentType));
+    const hasDamageCheck = selectedDocs.some(doc => isDamageCheckDocument(doc.documentType));
     
     if (hasContract) {
       setTemplateType('contract');
@@ -226,9 +227,9 @@ export function EmailDocumentDialog({
   };
 
   // Group documents by type
-  const contracts = documents.filter(doc => doc.documentType === 'contract');
-  const damageChecks = documents.filter(doc => doc.documentType === 'damage_check');
-  const otherDocs = documents.filter(doc => doc.documentType !== 'contract' && doc.documentType !== 'damage_check');
+  const contracts = documents.filter(doc => isContractDocument(doc.documentType));
+  const damageChecks = documents.filter(doc => isDamageCheckDocument(doc.documentType));
+  const otherDocs = documents.filter(doc => !isContractDocument(doc.documentType) && !isDamageCheckDocument(doc.documentType));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

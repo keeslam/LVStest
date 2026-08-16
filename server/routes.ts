@@ -46,6 +46,7 @@ import {
   VehicleAvailabilityStatus 
 } from "./vehicle-status-helper";
 import { calculateDutchHolidays, mergeHolidaysWithOverrides } from "../shared/holidays";
+import { isDamageCheckDocument } from "../shared/document-types";
 import { 
   createSecureMulterFilter, 
   validateAfterUpload,
@@ -5891,7 +5892,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.get("/api/documents/damage-checks", hasPermission(UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
     try {
       const allDocuments = await storage.getAllDocuments();
-      const damageChecks = allDocuments.filter(doc => doc.documentType === 'damage_check');
+      const damageChecks = allDocuments.filter(doc => isDamageCheckDocument(doc.documentType));
       res.json(damageChecks);
     } catch (error) {
       console.error("Error fetching damage checks:", error);
