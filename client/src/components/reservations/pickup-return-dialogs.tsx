@@ -395,7 +395,11 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      {/* z-[60]: this can open on top of the New Reservation dialog, which also
+          renders at z-50. Equal z-index falls back to DOM order, and the parent's
+          portal is re-appended when it re-renders after save — which left the
+          pickup dialog open but completely hidden behind it. */}
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto z-[60]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Car className="h-5 w-5" />
@@ -1302,7 +1306,8 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      {/* z-[60]: same stacking issue as the pickup dialog above. */}
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto z-[60]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Car className="h-5 w-5" />
