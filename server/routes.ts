@@ -3048,7 +3048,23 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       
       const reservationData = insertReservationSchema.parse(bodyData);
-      
+
+      // Refuse blacklisted vehicle/customer pairings. The reservation form hides
+      // them from its dropdowns, but nothing stopped a booking created any other
+      // way (calendar drag, a stale page, a direct API call) from going through.
+      if (reservationData.vehicleId && reservationData.customerId) {
+        const blacklisted = await storage.isCustomerBlacklistedForVehicle(
+          reservationData.vehicleId,
+          reservationData.customerId
+        );
+        if (blacklisted) {
+          return res.status(409).json({
+            message: "This customer is blacklisted for this vehicle and cannot be booked on it.",
+            field: "customerId",
+          });
+        }
+      }
+
       // Add user tracking information
       const user = req.user;
       const dataWithTracking = {
