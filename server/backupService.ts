@@ -1,6 +1,7 @@
 import { spawn } from 'child_process';
 import { createReadStream, createWriteStream, existsSync, readFileSync, writeFileSync, copyFileSync, readdirSync, statSync } from 'fs';
 import { readdir, stat, mkdir, unlink } from 'fs/promises';
+import { pipeline } from 'stream/promises';
 import { join, dirname } from 'path';
 import { createGzip } from 'zlib';
 import { createHash } from 'crypto';
@@ -165,16 +166,13 @@ export class BackupService {
     const gzip = createGzip({ level: 9 });
     const writeStream = createWriteStream(tempFile);
 
-    // Pipe pg_dump output through gzip to file
-    pgDumpProcess.stdout.pipe(gzip).pipe(writeStream);
-
     // Handle errors
     pgDumpProcess.stderr.on('data', (data) => {
       console.log(`pg_dump: ${data}`);
     });
 
-    // Wait for completion
-    await new Promise<void>((resolve, reject) => {
+    const pgDumpExited = new Promise<void>((resolve, reject) => {
+      pgDumpProcess.on('error', reject);
       pgDumpProcess.on('close', (code) => {
         if (code === 0) {
           resolve();
@@ -183,6 +181,16 @@ export class BackupService {
         }
       });
     });
+
+    // Wait for the gzip output to be fully flushed to disk, not just for
+    // pg_dump to exit. Measuring the file while the stream was still writing
+    // recorded a partial size in the manifest (a 21KB dump reported as 10
+    // bytes) and could just as easily have checksummed a truncated file,
+    // which would make a good backup fail its integrity check on restore.
+    await Promise.all([
+      pipeline(pgDumpProcess.stdout, gzip, writeStream),
+      pgDumpExited,
+    ]);
 
     // Calculate file stats
     const fileStats = await stat(tempFile);
