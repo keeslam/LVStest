@@ -255,7 +255,7 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
 
   const getDuration = (startDate: string | null, endDate: string | null) => {
     if (!startDate || !endDate) return null;
-    const days = differenceInDays(parseISO(endDate), parseISO(startDate));
+    const days = differenceInDays(parseISO(endDate), parseISO(startDate)) + 1; // Inclusive of both days
     return days === 1 ? '1 day' : `${days} days`;
   };
 

@@ -24,6 +24,16 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { invalidateVehicleData } from "@/lib/cache-utils";
 
+// Older rows stored "full"/"empty" lowercase; the app now writes "Full"/"Empty"
+// everywhere. Normalize so legacy values still preselect in the dropdown.
+function normalizeFuelLevel(level?: string): string {
+  if (!level) return "";
+  const lower = level.toLowerCase();
+  if (lower === "full") return "Full";
+  if (lower === "empty") return "Empty";
+  return level;
+}
+
 interface FuelStatusUpdateDialogProps {
   vehicleId: number;
   currentFuelLevel?: string;
@@ -42,7 +52,7 @@ export function FuelStatusUpdateDialog({
   onOpenChange: externalOnOpenChange
 }: FuelStatusUpdateDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
-  const [fuelLevel, setFuelLevel] = useState<string>(currentFuelLevel || "");
+  const [fuelLevel, setFuelLevel] = useState<string>(normalizeFuelLevel(currentFuelLevel));
   const [cost, setCost] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [receipt, setReceipt] = useState<File | null>(null);
@@ -99,7 +109,7 @@ export function FuelStatusUpdateDialog({
       invalidateVehicleData(vehicleId);
       
       // Reset form
-      setFuelLevel(currentFuelLevel || "");
+      setFuelLevel(normalizeFuelLevel(currentFuelLevel));
       setCost("");
       setNotes("");
       setReceipt(null);
@@ -176,11 +186,11 @@ export function FuelStatusUpdateDialog({
                 } />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="empty">Empty</SelectItem>
+                <SelectItem value="Empty">Empty</SelectItem>
                 <SelectItem value="1/4">1/4</SelectItem>
                 <SelectItem value="1/2">1/2</SelectItem>
                 <SelectItem value="3/4">3/4</SelectItem>
-                <SelectItem value="full">Full</SelectItem>
+                <SelectItem value="Full">Full</SelectItem>
               </SelectContent>
             </Select>
           </div>

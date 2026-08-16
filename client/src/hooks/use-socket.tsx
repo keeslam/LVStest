@@ -40,8 +40,11 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
   useEffect(() => {
     // Create socket connection
+    // Polling first, then upgrade to websocket. Reverse order fails hard behind
+    // proxies that don't pass the WS upgrade through (e.g. Traefik in Coolify)
+    // instead of quietly falling back.
     const socketInstance = io({
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       timeout: 20000,
     });
 

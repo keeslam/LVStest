@@ -559,7 +559,7 @@ export function ReservationForm({
     const start = parseISO(startDateWatch);
     const end = parseISO(endDateWatch);
     const days = differenceInDays(end, start) + 1; // Include the start day
-    return days > 0 ? days : 1;
+    return days > 0 ? days : null; // null = invalid range; the date field shows the error
   }, [startDateWatch, endDateWatch, isOpenEndedWatch]);
   
   // Check for reservation conflicts
@@ -1366,7 +1366,7 @@ export function ReservationForm({
 
               {/* Duration display */}
               <div className="text-sm text-muted-foreground">
-                {startDateWatch && (
+                {startDateWatch && rentalDuration !== null && (
                   <div className="flex items-center gap-2">
                     <span>Duration:</span>
                     <Badge variant="outline" className="text-xs">
@@ -1912,7 +1912,7 @@ export function ReservationForm({
                 <div className="flex flex-col justify-end">
                   <FormLabel className="mb-2 opacity-0">Duration</FormLabel>
                   <div className="border rounded-md h-10 flex items-center px-3 bg-muted">
-                    <span className="font-medium">{rentalDuration}</span>
+                    <span className="font-medium">{rentalDuration ?? '—'}</span>
                     {typeof rentalDuration === 'number' && (
                       <span className="ml-1 text-muted-foreground">
                         {rentalDuration === 1 ? "day" : "days"}
@@ -1934,7 +1934,7 @@ export function ReservationForm({
                     <span className="font-medium">End Date:</span> {isOpenEndedWatch ? 'Open-ended' : (endDateWatch || 'Not selected')}
                   </div>
                   <div>
-                    <span className="font-medium">Duration:</span> {rentalDuration}
+                    <span className="font-medium">Duration:</span> {rentalDuration ?? '—'}
                     {typeof rentalDuration === 'number' && (
                       <span className="ml-1">
                         {rentalDuration === 1 ? "day" : "days"}
