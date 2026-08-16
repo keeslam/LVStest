@@ -4914,7 +4914,10 @@ export async function registerRoutes(app: Express): Promise<void> {
               vehicleId: updatedReservation.vehicleId,
               reservationId: updatedReservation.id,
               documentType: 'Damage Check',
+              fileName: fileName,
               filePath: relativePath,
+              fileSize: damageCheckPdf.length,
+              contentType: 'application/pdf',
               uploadedBy: (req as any).user?.username || 'system'
             });
             

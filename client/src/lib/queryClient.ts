@@ -20,7 +20,16 @@ async function throwIfResNotOk(res: Response) {
     }
     
     const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    let message = text;
+    try {
+      const parsed = JSON.parse(text);
+      if (typeof parsed?.message === "string") {
+        message = parsed.message;
+      }
+    } catch {
+      // Response body wasn't JSON; use the raw text as-is.
+    }
+    throw new Error(`${res.status}: ${message}`);
   }
 }
 
@@ -247,26 +256,54 @@ function autoInvalidateCache(mutationKey: string, data?: any) {
  * form.)
  */
 export function invalidateByPrefix(prefix: string) {
-  let matched = 0;
-  let active = 0;
-  const startedAt = Date.now();
-  const result = queryClient.invalidateQueries({
-    predicate: (query) => {
-      const queryKey = query.queryKey;
-      const isMatch = typeof queryKey?.[0] === 'string' && queryKey[0].startsWith(prefix);
-      if (isMatch) {
-        matched++;
-        if (query.getObserversCount() > 0) active++;
-      }
-      return isMatch;
-    },
-    refetchType: 'active' // Refetch mounted queries now; others refetch on next mount
-  });
-  result.then(
-    () => console.debug(`[cache] invalidate "${prefix}": ${matched} matched, ${active} active, done in ${Date.now() - startedAt}ms`),
-    (err) => console.debug(`[cache] invalidate "${prefix}" FAILED:`, err)
-  );
-  return result;
+  return scheduleInvalidation((key) => key.startsWith(prefix));
+}
+
+const INVALIDATION_BATCH_MS = 50;
+
+let pendingMatchers: Array<(key: string) => boolean> = [];
+let pendingFlush: Promise<void> | null = null;
+let resolvePendingFlush: (() => void) | null = null;
+
+/**
+ * Coalesces invalidation requests fired within a short window into one refetch pass.
+ *
+ * A single mutation is invalidated by three independent layers: the mutation's own
+ * onSuccess, the page-level dialog success handler, and the WebSocket data-update
+ * listener. Overlapping prefixes compound it further ('/api/vehicles' already covers
+ * '/api/vehicles/apk-expiring'). Without batching, every list endpoint refetches once
+ * per layer, so one save cost 3x the requests.
+ */
+export function scheduleInvalidation(matcher: (key: string) => boolean): Promise<void> {
+  pendingMatchers.push(matcher);
+
+  if (!pendingFlush) {
+    pendingFlush = new Promise<void>((resolve) => {
+      resolvePendingFlush = resolve;
+    });
+    setTimeout(flushInvalidations, INVALIDATION_BATCH_MS);
+  }
+
+  return pendingFlush;
+}
+
+function flushInvalidations() {
+  const matchers = pendingMatchers;
+  const done = resolvePendingFlush;
+  pendingMatchers = [];
+  pendingFlush = null;
+  resolvePendingFlush = null;
+
+  queryClient
+    .invalidateQueries({
+      predicate: (query) => {
+        const key = query.queryKey?.[0];
+        if (typeof key !== 'string') return false;
+        return matchers.some((matches) => matches(key));
+      },
+      refetchType: 'active', // Refetch mounted queries now; others refetch on next mount
+    })
+    .finally(() => done?.());
 }
 
 /**
@@ -329,25 +366,6 @@ export function invalidateRelatedQueries(entityType: string, entityData?: { id?:
       if (customerId) {
         invalidateByPrefix(`/api/reservations/customer/${customerId}`);
       }
-      // Active refetch of list/calendar views so they update immediately after
-      // a reservation/maintenance is created, edited, or deleted. These query
-      // keys belong to non-dialog views, so refetching is safe and won't close
-      // any open dialogs.
-      queryClient.refetchQueries({
-        predicate: (query) => {
-          const key = query.queryKey?.[0];
-          if (typeof key !== 'string') return false;
-          return (
-            key.startsWith('/api/reservations/range') ||
-            key === '/api/reservations' ||
-            key.startsWith('/api/reservations/upcoming') ||
-            key.startsWith('/api/reservations/upcoming-maintenance') ||
-            key.startsWith('/api/reservations/overdue') ||
-            key.startsWith('/api/placeholder-reservations')
-          );
-        },
-        type: 'active',
-      });
       break;
       
     case 'expenses':

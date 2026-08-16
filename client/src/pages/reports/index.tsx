@@ -16,7 +16,7 @@ import { UtilizationChart, type UtilizationChartData } from "@/components/report
 import { Vehicle, Expense, Reservation, Customer } from "@shared/schema";
 import { formatDate, formatCurrency, formatLicensePlate } from "@/lib/format-utils";
 import { isTrueValue } from "@/lib/utils";
-import { addDays, format, subMonths, subDays, startOfMonth, endOfMonth, isWithinInterval, differenceInDays, parseISO } from "date-fns";
+import { addDays, format, subMonths, subDays, startOfMonth, endOfMonth, isWithinInterval, differenceInDays, parseISO, startOfDay } from "date-fns";
 import { 
   Calendar, Download, FileText, TrendingUp, Car, Settings, User, 
   DollarSign, AlertTriangle, Printer, Search, ExternalLink, Database, LineChart, X
@@ -144,9 +144,11 @@ export default function ReportsPage() {
     // Skip date filter if dates are undefined
     if (!dateRange.from || !dateRange.to) return false;
     
-    const startDate = new Date(reservation.startDate);
-    const endDate = new Date(reservation.endDate);
-    
+    if (!reservation.startDate || !reservation.endDate) return false;
+
+    const startDate = parseISO(reservation.startDate);
+    const endDate = parseISO(reservation.endDate);
+
     // Consider reservation within range if any part of it falls within the selected date range
     const overlapsDateRange = (
       (startDate <= dateRange.to && startDate >= dateRange.from) || // Start date within range
@@ -195,8 +197,9 @@ export default function ReportsPage() {
       // Calculate total reservation days for this vehicle
       let totalReservationDays = 0;
       vehicleReservations.forEach(reservation => {
-        const startDate = new Date(reservation.startDate);
-        const endDate = new Date(reservation.endDate);
+        if (!reservation.startDate || !reservation.endDate) return;
+        const startDate = parseISO(reservation.startDate);
+        const endDate = parseISO(reservation.endDate);
         const days = differenceInDays(endDate, startDate) + 1;
         totalReservationDays += days;
       });
@@ -227,10 +230,14 @@ export default function ReportsPage() {
         
         // For each day in the range, check if the vehicle was reserved
         for (let d = 0; d < totalDaysInRange; d++) {
-          const currentDate = addDays(dateRange.from, d);
+          // Compare whole days: dateRange carries the current time-of-day, while
+          // reservation dates are date-only (local midnight via parseISO). Without
+          // startOfDay the `<=` end check fails and single-day rentals count as zero.
+          const currentDate = startOfDay(addDays(dateRange.from, d));
           const isReserved = vehicleReservations.some(reservation => {
-            const startDate = new Date(reservation.startDate);
-            const endDate = new Date(reservation.endDate);
+            if (!reservation.startDate || !reservation.endDate) return false;
+            const startDate = startOfDay(parseISO(reservation.startDate));
+            const endDate = startOfDay(parseISO(reservation.endDate));
             return currentDate >= startDate && currentDate <= endDate;
           });
           
@@ -785,7 +792,7 @@ export default function ReportsPage() {
                   <div class="stat-label">
                     ${dateRange.from && dateRange.to && dateRange.from.getFullYear() <= 2000 && dateRange.to.getFullYear() >= 2050
                       ? `Based on yearly utilization of ${vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length} vehicles`
-                      : `Average across ${vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length} active vehicles`
+                      : `Average across ${vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length} ${vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length === 1 ? 'vehicle' : 'vehicles'} with rentals`
                     }
                   </div>
                 </div>
@@ -1358,7 +1365,7 @@ export default function ReportsPage() {
                 <p className="text-xs text-muted-foreground mt-1">
                   {dateRange.from && dateRange.to && dateRange.from.getFullYear() <= 2000 && dateRange.to.getFullYear() >= 2050
                     ? `Based on yearly utilization of ${vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length} vehicles`
-                    : `Average across ${vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length} active vehicles`
+                    : `Average across ${vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length} ${vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length === 1 ? 'vehicle' : 'vehicles'} with rentals`
                   }
                 </p>
               </CardContent>
@@ -1385,7 +1392,7 @@ export default function ReportsPage() {
                   {formatCurrency(Number(avgExpensePerVehicle))}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  For {activeVehicleCount} active vehicles
+                  For {activeVehicleCount} active {activeVehicleCount === 1 ? 'vehicle' : 'vehicles'}
                 </p>
               </CardContent>
             </Card>

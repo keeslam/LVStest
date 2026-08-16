@@ -1,4 +1,4 @@
-import { queryClient } from "./queryClient";
+import { queryClient, scheduleInvalidation } from "./queryClient";
 
 /**
  * Invalidate vehicle-related data.
@@ -6,17 +6,11 @@ import { queryClient } from "./queryClient";
  * Inactive queries refetch automatically on next mount.
  */
 export function invalidateVehicleData(vehicleId?: number) {
-  queryClient.invalidateQueries({
-    predicate: (query) => {
-      const key = query.queryKey[0];
-      if (typeof key !== 'string') return false;
-      
-      if (key.startsWith('/api/vehicles')) return true;
-      if (vehicleId && key.includes(`/${vehicleId}`)) return true;
-      
-      return false;
-    },
-    refetchType: 'active' // Refetch mounted queries so pages update right after a save
+  scheduleInvalidation((key) => {
+    if (key.startsWith('/api/vehicles')) return true;
+    if (vehicleId && key.includes(`/${vehicleId}`)) return true;
+
+    return false;
   });
 }
 
@@ -25,19 +19,13 @@ export function invalidateVehicleData(vehicleId?: number) {
  * Mounted views update immediately after a save.
  */
 export function invalidateReservationData(reservationId?: number, vehicleId?: number) {
-  queryClient.invalidateQueries({
-    predicate: (query) => {
-      const key = query.queryKey[0];
-      if (typeof key !== 'string') return false;
-      
-      if (key.startsWith('/api/reservations')) return true;
-      if (key.startsWith('/api/placeholder-reservations')) return true;
-      if (reservationId && key.includes(`/${reservationId}`)) return true;
-      if (vehicleId && key.includes(`/${vehicleId}`)) return true;
-      
-      return false;
-    },
-    refetchType: 'active' // Refetch mounted queries so pages update right after a save
+  scheduleInvalidation((key) => {
+    if (key.startsWith('/api/reservations')) return true;
+    if (key.startsWith('/api/placeholder-reservations')) return true;
+    if (reservationId && key.includes(`/${reservationId}`)) return true;
+    if (vehicleId && key.includes(`/${vehicleId}`)) return true;
+
+    return false;
   });
 }
 
@@ -45,17 +33,11 @@ export function invalidateReservationData(reservationId?: number, vehicleId?: nu
  * Invalidate customer-related data.
  */
 export function invalidateCustomerData(customerId?: number) {
-  queryClient.invalidateQueries({
-    predicate: (query) => {
-      const key = query.queryKey[0];
-      if (typeof key !== 'string') return false;
-      
-      if (key.startsWith('/api/customers')) return true;
-      if (customerId && key.includes(`/${customerId}`)) return true;
-      
-      return false;
-    },
-    refetchType: 'active'
+  scheduleInvalidation((key) => {
+    if (key.startsWith('/api/customers')) return true;
+    if (customerId && key.includes(`/${customerId}`)) return true;
+
+    return false;
   });
 }
 
@@ -63,18 +45,12 @@ export function invalidateCustomerData(customerId?: number) {
  * Invalidate expense-related data.
  */
 export function invalidateExpenseData(expenseId?: number, vehicleId?: number) {
-  queryClient.invalidateQueries({
-    predicate: (query) => {
-      const key = query.queryKey[0];
-      if (typeof key !== 'string') return false;
-      
-      if (key.startsWith('/api/expenses')) return true;
-      if (expenseId && key.includes(`/${expenseId}`)) return true;
-      if (vehicleId && key.includes(`/vehicle/${vehicleId}`)) return true;
-      
-      return false;
-    },
-    refetchType: 'active'
+  scheduleInvalidation((key) => {
+    if (key.startsWith('/api/expenses')) return true;
+    if (expenseId && key.includes(`/${expenseId}`)) return true;
+    if (vehicleId && key.includes(`/vehicle/${vehicleId}`)) return true;
+
+    return false;
   });
 }
 
@@ -82,18 +58,12 @@ export function invalidateExpenseData(expenseId?: number, vehicleId?: number) {
  * Invalidate document-related data.
  */
 export function invalidateDocumentData(documentId?: number, vehicleId?: number) {
-  queryClient.invalidateQueries({
-    predicate: (query) => {
-      const key = query.queryKey[0];
-      if (typeof key !== 'string') return false;
-      
-      if (key.startsWith('/api/documents')) return true;
-      if (documentId && key.includes(`/${documentId}`)) return true;
-      if (vehicleId && key.includes(`/vehicle/${vehicleId}`)) return true;
-      
-      return false;
-    },
-    refetchType: 'active'
+  scheduleInvalidation((key) => {
+    if (key.startsWith('/api/documents')) return true;
+    if (documentId && key.includes(`/${documentId}`)) return true;
+    if (vehicleId && key.includes(`/vehicle/${vehicleId}`)) return true;
+
+    return false;
   });
 }
 
@@ -101,18 +71,12 @@ export function invalidateDocumentData(documentId?: number, vehicleId?: number) 
  * Invalidate notification-related data.
  */
 export function invalidateNotificationData(notificationId?: number) {
-  queryClient.invalidateQueries({
-    predicate: (query) => {
-      const key = query.queryKey[0];
-      if (typeof key !== 'string') return false;
-      
-      if (key.startsWith('/api/notifications')) return true;
-      if (key.startsWith('/api/custom-notifications')) return true;
-      if (notificationId && key.includes(`/${notificationId}`)) return true;
-      
-      return false;
-    },
-    refetchType: 'active'
+  scheduleInvalidation((key) => {
+    if (key.startsWith('/api/notifications')) return true;
+    if (key.startsWith('/api/custom-notifications')) return true;
+    if (notificationId && key.includes(`/${notificationId}`)) return true;
+
+    return false;
   });
 }
 
@@ -125,8 +89,8 @@ export function forceRefreshLists() {
     predicate: (query) => {
       const key = query.queryKey[0];
       if (typeof key !== 'string') return false;
-      
-      return key === '/api/vehicles' || 
+
+      return key === '/api/vehicles' ||
              key === '/api/reservations' ||
              key === '/api/customers' ||
              key === '/api/expenses';
@@ -140,17 +104,11 @@ export function forceRefreshLists() {
  * Prefer specific invalidation functions instead.
  */
 export function invalidateAllRelatedData() {
-  queryClient.invalidateQueries({
-    predicate: (query) => {
-      const key = query.queryKey[0];
-      if (typeof key !== 'string') return false;
-      
-      return key.startsWith('/api/vehicles') || 
-             key.startsWith('/api/reservations') ||
-             key.startsWith('/api/customers') ||
-             key.startsWith('/api/expenses') ||
-             key.startsWith('/api/placeholder-reservations');
-    },
-    refetchType: 'active' // Refetch mounted queries so pages update right after a save
+  scheduleInvalidation((key) => {
+    return key.startsWith('/api/vehicles') ||
+           key.startsWith('/api/reservations') ||
+           key.startsWith('/api/customers') ||
+           key.startsWith('/api/expenses') ||
+           key.startsWith('/api/placeholder-reservations');
   });
 }
