@@ -2305,7 +2305,11 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(reservations.id, replacementReservationId),
-          isNull(reservations.deletedAt)
+          isNull(reservations.deletedAt),
+          // Only genuine replacement reservations may be closed here. Without
+          // this the id of an ordinary rental would close that rental instead,
+          // marking a live customer booking 'completed' and reporting success.
+          isNotNull(reservations.replacementForReservationId)
         )
       )
       .returning();
