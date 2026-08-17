@@ -1172,6 +1172,7 @@ function DamageCheckManager({ vehicles }: { vehicles: Vehicle[] }) {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [templatesDialogOpen, setTemplatesDialogOpen] = useState(false);
   const [fieldsDialogOpen, setFieldsDialogOpen] = useState(false);
+  const [templateLibraryOpen, setTemplateLibraryOpen] = useState(false);
   const { user } = useAuth();
   const isAdmin = user?.role === UserRole.ADMIN;
 
@@ -1274,11 +1275,19 @@ function DamageCheckManager({ vehicles }: { vehicles: Vehicle[] }) {
             )}
             <Button
               variant="outline"
+              onClick={() => setTemplateLibraryOpen(true)}
+              data-testid="button-damage-check-template-library"
+            >
+              <SettingsIcon className="mr-2 h-4 w-4" />
+              Template Library
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => setTemplatesDialogOpen(true)}
               data-testid="button-manage-damage-check-templates"
             >
               <SettingsIcon className="mr-2 h-4 w-4" />
-              Manage Templates
+              Edit Layout
             </Button>
             <Button onClick={() => setUploadDialogOpen(true)} data-testid="button-upload-damage-check">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
@@ -1475,6 +1484,22 @@ function DamageCheckManager({ vehicles }: { vehicles: Vehicle[] }) {
           </DialogHeader>
           <div className="flex-1 overflow-auto bg-white">
             {templatesDialogOpen && <DamageCheckTemplateCanvasEditor embedded />}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Template library — create, clone, import/export and set the default template.
+          Previously only reachable by typing /settings/damage-check-templates. */}
+      <Dialog open={templateLibraryOpen} onOpenChange={setTemplateLibraryOpen}>
+        <DialogContent className="max-w-[95vw] w-[95vw] max-h-[92vh] h-[92vh] flex flex-col p-0 gap-0" data-testid="dialog-damage-check-template-library">
+          <DialogHeader className="px-4 py-2 border-b">
+            <DialogTitle>Damage Check Template Library</DialogTitle>
+            <DialogDescription className="sr-only">
+              Create, clone, import, export and set the default damage check template.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto">
+            {templateLibraryOpen && <DamageCheckTemplatesPage embedded />}
           </div>
         </DialogContent>
       </Dialog>

@@ -391,7 +391,7 @@ function DiagramPlacementPanel({
 // Templates list page
 // ---------------------------------------------------------------------------
 
-export default function DamageCheckTemplates() {
+export default function DamageCheckTemplates({ embedded = false }: { embedded?: boolean } = {}) {
   const { toast } = useToast();
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<DamageCheckTemplate | null>(null);
@@ -522,16 +522,20 @@ export default function DamageCheckTemplates() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
+    <div className={embedded ? "p-4 md:p-6" : "container mx-auto p-6 max-w-7xl"}>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Car className="h-8 w-8" />
-            Damage Check Templates
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Create custom vehicle inspection templates for different makes and models
-          </p>
+          {!embedded && (
+            <>
+              <h1 className="text-3xl font-bold flex items-center gap-2">
+                <Car className="h-8 w-8" />
+                Damage Check Templates
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Create custom vehicle inspection templates for different makes and models
+              </p>
+            </>
+          )}
         </div>
         <div className="flex gap-2 flex-wrap justify-end">
           <input

@@ -40,9 +40,6 @@ import MileageOverridePasswordPage from "@/pages/profile/mileage-override-passwo
 import BackupPage from "@/pages/admin/backup";
 import MaintenanceCalendar from "@/pages/maintenance/calendar";
 import SettingsPage from "@/pages/settings/index";
-import DamageCheckTemplatesPage from "@/pages/settings/damage-check-templates";
-import DamageCheckTemplateEditorPage from "@/pages/settings/damage-check-template-editor";
-import DamageCheckFieldsPage from "@/pages/settings/damage-check-fields";
 import CommunicationsPage from "@/pages/communications";
 import InteractiveDamageCheck from "@/pages/interactive-damage-check";
 import NotFound from "@/pages/not-found";
@@ -126,9 +123,6 @@ function AppRoutes() {
               <ProtectedRoute path="/profile/mileage-override-password" component={MileageOverridePasswordPage} />
               <ProtectedRoute path="/admin/backup" component={BackupPage} />
               <ProtectedRoute path="/communications" component={CommunicationsPage} />
-              <ProtectedRoute path="/settings/damage-check-templates" component={DamageCheckTemplatesPage} />
-              <ProtectedRoute path="/settings/damage-check-template-editor" component={DamageCheckTemplateEditorPage} />
-              <ProtectedRoute path="/settings/damage-check-fields" component={DamageCheckFieldsPage} />
               <ProtectedRoute path="/settings" component={SettingsPage} />
               <Route path="/auth" component={AuthPage} />
               <Route component={NotFound} />
