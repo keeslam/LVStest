@@ -24,4 +24,9 @@ cmds = [
 ]
 
 [start]
-cmd = "echo '=== CAR RENTAL MANAGER STARTING ===' && echo '=== RUNNING DATABASE PUSH ===' && npm run db:push && echo '=== DATABASE PUSH COMPLETED ===' && echo '=== RUNNING STARTUP MIGRATION ===' && node startup-migration.js && echo '=== MIGRATION COMPLETED ===' && echo '=== STARTING APPLICATION ===' && npm start"
+# db:push and the migration are chained with || rather than && so a schema step
+# that fails cannot stop the app from booting. Previously any failure aborted
+# the chain, the container exited, Coolify restarted it, and it looped without
+# ever serving traffic. startup-migration.js applies the additive changes the
+# app actually needs; db:push is a convenience on top of it.
+cmd = "echo '=== CAR RENTAL MANAGER STARTING ===' && echo '=== RUNNING DATABASE PUSH ===' && (npm run db:push || echo '⚠️ db:push failed — continuing, see startup-migration output below') && echo '=== RUNNING STARTUP MIGRATION ===' && (node startup-migration.js || echo '⚠️ startup migration reported errors — continuing') && echo '=== STARTING APPLICATION ===' && npm start"

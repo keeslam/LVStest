@@ -98,10 +98,15 @@ export function attachCsrfToken(req: Request & { session: any }, res: Response, 
   // Attach to response locals for templates
   res.locals.csrfToken = token;
   
+  // res.cookie only takes a boolean, so resolve 'auto' against this request.
+  // req.secure accounts for X-Forwarded-Proto because the app sets trust proxy.
+  const secureSetting = useSecureCookies();
+  const secure = secureSetting === 'auto' ? req.secure : secureSetting;
+
   // Set cookie for client-side access
   res.cookie('XSRF-TOKEN', token, {
     httpOnly: false, // Allow JavaScript to read it
-    secure: useSecureCookies(),
+    secure,
     sameSite: 'strict',
   });
 

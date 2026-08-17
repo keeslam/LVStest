@@ -111,7 +111,7 @@ export function setupAuth(app: Express) {
     store: createSessionStore(useDatabase),
     cookie: {
       maxAge: 15 * 60 * 1000, // 15 minutes inactivity timeout
-      secure: useSecureCookies(), // On in production; set SECURE_COOKIES=false for an HTTP-only deployment
+      secure: useSecureCookies(), // 'auto' by default: Secure only when the request is HTTPS
       httpOnly: true, // Prevent XSS attacks
       sameSite: 'strict' // Strict CSRF protection - blocks all cross-site requests
     }
@@ -125,8 +125,10 @@ export function setupAuth(app: Express) {
     `🔐 Session cookie: secure=${cookieCfg.secure} sameSite=${cookieCfg.sameSite} ` +
     `store=${useDatabase ? 'postgres' : 'memory'} secret=${process.env.SESSION_SECRET ? 'from env' : 'RANDOM (not configured)'}`
   );
-  if (cookieCfg.secure) {
-    console.log('   Serving over plain HTTP? Set SECURE_COOKIES=false or the browser will discard the session cookie.');
+  if (cookieCfg.secure === true) {
+    console.log('   secure=true forces HTTPS-only cookies. Over plain http:// the browser discards them and every request after login returns 401.');
+  } else if (cookieCfg.secure === 'auto') {
+    console.log('   auto: the cookie is marked Secure only for HTTPS requests (X-Forwarded-Proto is honoured behind a proxy).');
   }
 
   app.set("trust proxy", 1);

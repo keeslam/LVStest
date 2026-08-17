@@ -1,18 +1,20 @@
 /**
  * Whether cookies should be sent with the Secure flag.
  *
- * Defaults to enabled in production, but SECURE_COOKIES is an explicit override
- * so a deployment reachable over plain HTTP (a LAN test box, a staging VM with
- * no TLS yet) can turn it off.
+ * Default is 'auto': express-session marks the cookie Secure only when the
+ * request actually arrived over HTTPS. Combined with `trust proxy`, that covers
+ * both cases without configuration — TLS terminated at a proxy sets
+ * X-Forwarded-Proto and the cookie is Secure, while a box reached over plain
+ * http:// gets a normal cookie instead of one the browser silently discards.
  *
- * Without that escape hatch the failure is silent and confusing: the browser
- * refuses to store a Secure cookie over HTTP, so POST /api/login returns 200
- * and the UI reports a successful login, while every request after it arrives
- * with no session and comes back 401.
+ * Hardcoding secure=true in production was the cause of a confusing failure:
+ * POST /api/login returned 200 while every request after it returned 401,
+ * because no cookie was ever issued.
  *
- * Mirrors the DATABASE_SSL handling in server/db.ts.
+ * SECURE_COOKIES still forces the decision either way when you want to be
+ * explicit — set it to true to require HTTPS-only cookies.
  */
-export function useSecureCookies(): boolean {
+export function useSecureCookies(): boolean | 'auto' {
   const setting = process.env.SECURE_COOKIES?.toLowerCase();
 
   if (setting === 'false' || setting === '0' || setting === 'disable') {
@@ -24,5 +26,5 @@ export function useSecureCookies(): boolean {
     return true;
   }
 
-  return process.env.NODE_ENV === 'production';
+  return 'auto';
 }
