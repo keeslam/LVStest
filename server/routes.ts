@@ -8491,6 +8491,49 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.log('🔄 Starting database restore from:', req.file.path);
       console.log('📊 File size:', req.file.size, 'bytes');
 
+      // The scheduled backups are written as .sql.gz, and .gz is an accepted
+      // upload extension, but psql cannot read gzip. Restoring one used to drop
+      // every table and only then fail on the binary, leaving an empty database
+      // with nothing to roll back to. Decompress first, and verify the result
+      // actually looks like a dump *before* anything is dropped.
+      let restoreFilePath = req.file.path;
+      let decompressedPath: string | null = null;
+
+      const header = Buffer.alloc(2);
+      const fd = await fs.promises.open(req.file.path, 'r');
+      try {
+        await fd.read(header, 0, 2, 0);
+      } finally {
+        await fd.close();
+      }
+
+      if (header[0] === 0x1f && header[1] === 0x8b) {
+        const { createGunzip } = await import('zlib');
+        const { pipeline } = await import('stream/promises');
+        decompressedPath = path.join(os.tmpdir(), `restore-${Date.now()}.sql`);
+        console.log('📦 Backup is gzipped — decompressing before restore');
+        await pipeline(
+          fs.createReadStream(req.file.path),
+          createGunzip(),
+          fs.createWriteStream(decompressedPath)
+        );
+        restoreFilePath = decompressedPath;
+      }
+
+      // Refuse anything that is not recognisably a SQL dump, while the existing
+      // data is still intact.
+      const probe = await fs.promises.readFile(restoreFilePath, { encoding: 'utf8', flag: 'r' })
+        .then(text => text.slice(0, 4096))
+        .catch(() => '');
+      if (!/PostgreSQL database dump|CREATE TABLE|SET statement_timeout|INSERT INTO|COPY /i.test(probe)) {
+        if (decompressedPath) {
+          try { await fs.promises.unlink(decompressedPath); } catch {}
+        }
+        return res.status(400).json({
+          error: 'That file does not look like a PostgreSQL dump, so the restore was cancelled. Nothing was changed.',
+        });
+      }
+
       // Step 1: Drop all tables with CASCADE to remove dependencies
       console.log('🗑️ Dropping all existing tables...');
       const dropTablesQuery = `
@@ -8522,7 +8565,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Step 2: Restore database using psql
       console.log('📥 Restoring database from backup...');
       const { stdout, stderr } = await execAsync(
-        `psql "${databaseUrl}" -f "${req.file.path}" 2>&1`,
+        `psql "${databaseUrl}" -f "${restoreFilePath}" 2>&1`,
         { maxBuffer: 10 * 1024 * 1024 } // 10MB buffer for large restores
       );
 
@@ -8538,6 +8581,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Clean up uploaded file
       try {
         await fs.promises.unlink(req.file.path);
+        if (decompressedPath) await fs.promises.unlink(decompressedPath);
       } catch (cleanupError) {
         console.error('Error cleaning up uploaded file:', cleanupError);
       }
