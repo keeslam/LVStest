@@ -54,6 +54,35 @@ function generateSessionSecret(): string {
   return randomBytes(32).toString('hex');
 }
 
+/**
+ * The signing secret for session cookies.
+ *
+ * Falling back to a random value is fine for a throwaway dev run, but in a
+ * deployment it means the secret changes on every container start, and differs
+ * between replicas. Cookies signed with one secret are rejected by the other,
+ * which looks exactly like a broken login: the request succeeds, and every
+ * request after it comes back 401. Say so loudly rather than limping on.
+ */
+function resolveSessionSecret(): string {
+  const configured = process.env.SESSION_SECRET;
+  if (configured && configured.trim().length > 0) {
+    return configured;
+  }
+
+  const message =
+    'SESSION_SECRET is not set — falling back to a random secret. ' +
+    'Sessions will be dropped on every restart, and will fail immediately if more ' +
+    'than one instance is running. Set SESSION_SECRET in the deployment environment.';
+
+  if (process.env.NODE_ENV === 'production') {
+    console.error(`❌ ${message}`);
+  } else {
+    console.warn(`⚠️ ${message}`);
+  }
+
+  return generateSessionSecret();
+}
+
 // Create session store based on whether we're using a database or memory storage
 function createSessionStore(useDatabase: boolean) {
   if (useDatabase) {
@@ -75,7 +104,7 @@ export function setupAuth(app: Express) {
   const useDatabase = storage.constructor.name === 'DatabaseStorage';
   
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || generateSessionSecret(),
+    secret: resolveSessionSecret(),
     resave: false,
     saveUninitialized: false,
     rolling: true, // Reset session maxAge on every request
@@ -87,6 +116,18 @@ export function setupAuth(app: Express) {
       sameSite: 'strict' // Strict CSRF protection - blocks all cross-site requests
     }
   };
+
+  // Print what the session cookie will actually look like. A "Secure" cookie
+  // over plain HTTP is silently dropped by the browser, which presents as a
+  // successful login followed by 401 on everything.
+  const cookieCfg = sessionSettings.cookie!;
+  console.log(
+    `🔐 Session cookie: secure=${cookieCfg.secure} sameSite=${cookieCfg.sameSite} ` +
+    `store=${useDatabase ? 'postgres' : 'memory'} secret=${process.env.SESSION_SECRET ? 'from env' : 'RANDOM (not configured)'}`
+  );
+  if (cookieCfg.secure) {
+    console.log('   Serving over plain HTTP? Set SECURE_COOKIES=false or the browser will discard the session cookie.');
+  }
 
   app.set("trust proxy", 1);
   app.use(session(sessionSettings));
