@@ -9771,8 +9771,15 @@ export async function registerRoutes(app: Express): Promise<void> {
           return res.sendFile(absolute);
         }
       }
+      // The old fallback pointed at attached_assets/, which is gitignored and so
+      // never exists in a deployed build. Report "no header configured" instead
+      // of failing on a file that cannot be there; the UI shows a placeholder
+      // and admins can upload one on this page.
       const fallback = path.join(process.cwd(), 'attached_assets', 'image_1779471993617.png');
-      return res.sendFile(fallback);
+      if (fs.existsSync(fallback)) {
+        return res.sendFile(fallback);
+      }
+      return res.status(204).end();
     } catch (e) {
       res.status(500).json({ message: 'Error loading header image' });
     }

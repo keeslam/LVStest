@@ -240,7 +240,18 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
                 alt="Current damage check header"
                 className="w-full h-auto block"
                 style={{ maxHeight: 120, objectFit: 'contain' }}
+                onError={(e) => {
+                  // No header configured yet: show a hint instead of a broken image.
+                  const img = e.currentTarget;
+                  img.style.display = 'none';
+                  const hint = img.nextElementSibling as HTMLElement | null;
+                  if (hint) hint.style.display = 'block';
+                }}
               />
+              <p className="hidden text-sm text-muted-foreground py-4 text-center">
+                No header image set — damage check PDFs are generated without a branded header.
+                Upload one below.
+              </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Label htmlFor="header-upload" className="inline-flex">

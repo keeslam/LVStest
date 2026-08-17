@@ -424,6 +424,18 @@ async function generateDamageCheckPDFFromCanvas(
         try { await fs.access(candidate); headerPath = candidate; } catch {}
       }
     } catch {}
+    try {
+      await fs.access(headerPath);
+    } catch {
+      // attached_assets/ is gitignored, so the "bundled default" is not present
+      // in a deployed build. Without an uploaded header the damage check PDF is
+      // produced without its branded top — say so rather than failing silently.
+      console.warn(
+        '⚠️ No damage check header image available — generating the PDF without it. ' +
+        'Upload one under Settings → Damage Check Fields to restore the branded header.'
+      );
+      throw new Error('damage check header image not available');
+    }
     const headerBytes = await fs.readFile(headerPath);
     const isJpeg = headerPath.toLowerCase().endsWith('.jpg') || headerPath.toLowerCase().endsWith('.jpeg');
     const headerImg = isJpeg
