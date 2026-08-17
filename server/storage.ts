@@ -174,13 +174,6 @@ export interface IStorage {
   deleteSavedReport(id: number): Promise<boolean>;
   executeReport(configuration: any): Promise<any[]>;
   
-  // WhatsApp Messages methods
-  getAllWhatsAppMessages(): Promise<any[]>;
-  getWhatsAppMessage(id: number): Promise<any | undefined>;
-  getWhatsAppMessagesByCustomer(customerId: number): Promise<any[]>;
-  createWhatsAppMessage(message: any): Promise<any>;
-  updateWhatsAppMessage(id: number, messageData: any): Promise<any | undefined>;
-  
   // Damage Check Template methods
   getAllDamageCheckTemplates(): Promise<any[]>;
   getDamageCheckTemplate(id: number): Promise<any | undefined>;
@@ -855,7 +848,6 @@ export class MemStorage implements IStorage {
       corporateDiscount: customerData.corporateDiscount ?? null,
       paymentTermDays: customerData.paymentTermDays ?? null,
       creditLimit: customerData.creditLimit ?? null,
-      whatsappOptIn: customerData.whatsappOptIn ?? null,
       emergencyContactName: customerData.emergencyContactName ?? null,
       emergencyContactPhone: customerData.emergencyContactPhone ?? null
     };
@@ -2051,25 +2043,10 @@ export class MemStorage implements IStorage {
     throw new Error('Not implemented in MemStorage');
   }
 
-  async getAllWhatsAppMessages(): Promise<any[]> {
-    throw new Error('Not implemented in MemStorage');
-  }
 
-  async getWhatsAppMessage(id: number): Promise<any | undefined> {
-    throw new Error('Not implemented in MemStorage');
-  }
 
-  async getWhatsAppMessagesByCustomer(customerId: number): Promise<any[]> {
-    throw new Error('Not implemented in MemStorage');
-  }
 
-  async createWhatsAppMessage(message: any): Promise<any> {
-    throw new Error('Not implemented in MemStorage');
-  }
 
-  async updateWhatsAppMessage(id: number, messageData: any): Promise<any | undefined> {
-    throw new Error('Not implemented in MemStorage');
-  }
 
   async getAllDamageCheckTemplates(): Promise<any[]> {
     throw new Error('Not implemented in MemStorage');

@@ -145,13 +145,6 @@ function getNavIcon(iconName: string, isActive: boolean) {
           <polyline points="22,6 12,13 2,6" />
         </svg>
       );
-    case "whatsapp":
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`lucide lucide-message-circle ${className}`}>
-          <path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z" />
-          <circle cx="12" cy="12" r="9" />
-        </svg>
-      );
     case "extension":
       return (
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`lucide lucide-clock-arrow-up ${className}`}>

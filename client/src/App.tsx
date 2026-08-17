@@ -40,12 +40,9 @@ import MileageOverridePasswordPage from "@/pages/profile/mileage-override-passwo
 import BackupPage from "@/pages/admin/backup";
 import MaintenanceCalendar from "@/pages/maintenance/calendar";
 import SettingsPage from "@/pages/settings/index";
-import WhatsAppSettingsPage from "@/pages/settings/whatsapp";
-import WhatsAppTemplatesPage from "@/pages/settings/whatsapp-templates";
 import DamageCheckTemplatesPage from "@/pages/settings/damage-check-templates";
 import DamageCheckTemplateEditorPage from "@/pages/settings/damage-check-template-editor";
 import DamageCheckFieldsPage from "@/pages/settings/damage-check-fields";
-import WhatsAppMessagingPage from "@/pages/whatsapp/messaging";
 import CommunicationsPage from "@/pages/communications";
 import InteractiveDamageCheck from "@/pages/interactive-damage-check";
 import NotFound from "@/pages/not-found";
@@ -128,10 +125,7 @@ function AppRoutes() {
               <ProtectedRoute path="/profile/change-password" component={ChangePasswordPage} />
               <ProtectedRoute path="/profile/mileage-override-password" component={MileageOverridePasswordPage} />
               <ProtectedRoute path="/admin/backup" component={BackupPage} />
-              <ProtectedRoute path="/whatsapp/messaging" component={WhatsAppMessagingPage} />
               <ProtectedRoute path="/communications" component={CommunicationsPage} />
-              <ProtectedRoute path="/settings/whatsapp/templates" component={WhatsAppTemplatesPage} />
-              <ProtectedRoute path="/settings/whatsapp" component={WhatsAppSettingsPage} />
               <ProtectedRoute path="/settings/damage-check-templates" component={DamageCheckTemplatesPage} />
               <ProtectedRoute path="/settings/damage-check-template-editor" component={DamageCheckTemplateEditorPage} />
               <ProtectedRoute path="/settings/damage-check-fields" component={DamageCheckFieldsPage} />

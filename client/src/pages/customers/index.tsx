@@ -2,7 +2,6 @@ import { invalidateByPrefix } from "@/lib/queryClient";
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { useTranslation } from 'react-i18next';
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
 import { CustomerAddDialog } from "@/components/customers/customer-add-dialog";
 import { CustomerViewDialog } from "@/components/customers/customer-view-dialog";
@@ -31,7 +30,6 @@ type EnrichedCustomer = Customer & {
 };
 
 export default function CustomersIndex() {
-  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewDialogCustomerId, setViewDialogCustomerId] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState("name-asc");
@@ -332,7 +330,7 @@ export default function CustomersIndex() {
       )}
 
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">{t('Customers')}</h1>
+        <h1 className="text-2xl font-bold">Customers</h1>
         <CustomerAddDialog onSuccess={handleCustomerAdded} />
       </div>
       
@@ -348,7 +346,7 @@ export default function CustomersIndex() {
             {/* Search, Sort, and Filter Controls */}
             <div className="flex flex-wrap gap-4 items-center">
               <Input
-                placeholder={t('Search Customers')}
+                placeholder="Search Customers"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="max-w-sm"

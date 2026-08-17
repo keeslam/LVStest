@@ -59,7 +59,6 @@ import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { format, addDays, parseISO, differenceInDays } from "date-fns";
 import { Customer, Vehicle, Reservation, Document, Driver, type InteractiveDamageCheck } from "@shared/schema";
 import { PlusCircle, FileCheck, Upload, Check, X, Edit, FileText, Eye, ClipboardCheck } from "lucide-react";
-import { useTranslation } from 'react-i18next';
 import { ReadonlyVehicleDisplay } from "@/components/ui/readonly-vehicle-display";
 import { DriverDialog } from "@/components/customers/driver-dialog";
 import { ReservationViewDialog } from "@/components/reservations/reservation-view-dialog";
@@ -199,7 +198,6 @@ export function ReservationForm({
   onTriggerReturnDialog
 }: ReservationFormProps) {
   const { toast } = useToast();
-  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [_, navigate] = useLocation();
   
