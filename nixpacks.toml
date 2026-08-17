@@ -3,7 +3,13 @@ NIXPACKS_NODE_VERSION = "20"
 NPM_CONFIG_PRODUCTION = "false"
 
 [phases.setup]
-nixPkgs = ["nodejs_20", "postgresql"]
+# postgresql_17 must match the major version of the database server.
+# pg_dump refuses to dump from a server newer than itself, so an unpinned
+# "postgresql" that resolves to 16.x against a PostgreSQL 17 server makes every
+# backup fail with:
+#   pg_dump: error: server version: 17.x; pg_dump version: 16.x
+# Bump this in step with the database.
+nixPkgs = ["nodejs_20", "postgresql_17"]
 
 [phases.install]
 cmds = [

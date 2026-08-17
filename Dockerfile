@@ -18,6 +18,13 @@ RUN npm run build
 # Production stage
 FROM node:20-alpine
 
+# pg_dump and psql are spawned at runtime by the backup service and the restore
+# endpoint. The plain node image does not ship them, so without this every
+# backup fails with "spawn pg_dump ENOENT" and restore cannot run at all.
+# Keep the major version in step with the database server: pg_dump refuses to
+# dump from a server newer than itself.
+RUN apk add --no-cache postgresql17-client || apk add --no-cache postgresql-client
+
 WORKDIR /app
 
 # Copy package files
