@@ -19,7 +19,8 @@ import {
   passwordHistory, type PasswordHistory, type InsertPasswordHistory,
   loginAttempts, type LoginAttempt, type InsertLoginAttempt,
   activeSessions, type ActiveSession, type InsertActiveSession,
-  vehicleCustomerBlacklist, type VehicleCustomerBlacklist, type InsertVehicleCustomerBlacklist
+  vehicleCustomerBlacklist, type VehicleCustomerBlacklist, type InsertVehicleCustomerBlacklist,
+  vehicleTransports, type VehicleTransport, type InsertVehicleTransport
 } from "../shared/schema";
 import { addMonths, addDays, parseISO, isBefore, isAfter, isEqual } from "date-fns";
 
@@ -62,7 +63,7 @@ export interface IStorage {
   getReservationsByVehicle(vehicleId: number): Promise<Reservation[]>;
   getReservationsByCustomer(customerId: number): Promise<Reservation[]>;
   getAllOverdueReservations(): Promise<Reservation[]>;
-  checkReservationConflicts(vehicleId: number, startDate: string, endDate: string, excludeReservationId: number | null, isMaintenanceBlock?: boolean): Promise<Reservation[]>;
+  checkReservationConflicts(vehicleId: number, startDate: string, endDate: string, excludeReservationId: number | null, isMaintenanceBlock?: boolean, startTime?: string | null, endTime?: string | null): Promise<Reservation[]>;
   pickupReservation(reservationId: number, pickupData: {
     pickupMileage: number;
     fuelLevelPickup: string;
@@ -102,7 +103,14 @@ export interface IStorage {
   getExpensesByVehicle(vehicleId: number): Promise<Expense[]>;
   getRecentExpenses(limit: number): Promise<Expense[]>;
   deleteExpense(id: number): Promise<boolean>;
-  
+
+  // Vehicle transport methods (swap/tow/repossession/delivery jobs)
+  getAllTransports(): Promise<VehicleTransport[]>;
+  getTransport(id: number): Promise<VehicleTransport | undefined>;
+  createTransport(transport: InsertVehicleTransport): Promise<VehicleTransport>;
+  updateTransport(id: number, transportData: Partial<InsertVehicleTransport>): Promise<VehicleTransport | undefined>;
+  deleteTransport(id: number): Promise<boolean>;
+
   // Document methods
   getAllDocuments(): Promise<Document[]>;
   getDocument(id: number): Promise<Document | undefined>;
@@ -282,6 +290,7 @@ export class MemStorage implements IStorage {
   private customers: Map<number, Customer>;
   private reservations: Map<number, Reservation>;
   private expenses: Map<number, Expense>;
+  private transports: Map<number, VehicleTransport>;
   private documents: Map<number, Document>;
   private pdfTemplates: Map<number, PdfTemplate>;
   private customNotifications: Map<number, CustomNotification>;
@@ -292,6 +301,7 @@ export class MemStorage implements IStorage {
   private customerId: number;
   private reservationId: number;
   private expenseId: number;
+  private transportId: number;
   private documentId: number;
   private pdfTemplateId: number;
   private customNotificationId: number;
@@ -303,6 +313,7 @@ export class MemStorage implements IStorage {
     this.customers = new Map();
     this.reservations = new Map();
     this.expenses = new Map();
+    this.transports = new Map();
     this.documents = new Map();
     this.pdfTemplates = new Map();
     this.customNotifications = new Map();
@@ -313,6 +324,7 @@ export class MemStorage implements IStorage {
     this.customerId = 1;
     this.reservationId = 1;
     this.expenseId = 1;
+    this.transportId = 1;
     this.documentId = 1;
     this.pdfTemplateId = 1;
     this.customNotificationId = 1;
@@ -1101,11 +1113,13 @@ export class MemStorage implements IStorage {
   }
 
   async checkReservationConflicts(
-    vehicleId: number, 
-    startDate: string, 
-    endDate: string, 
+    vehicleId: number,
+    startDate: string,
+    endDate: string,
     excludeReservationId: number | null,
-    isMaintenanceBlock: boolean = false
+    isMaintenanceBlock: boolean = false,
+    startTime: string | null = null,
+    endTime: string | null = null
   ): Promise<Reservation[]> {
     const conflicts = Array.from(this.reservations.values()).filter(r => {
       // Skip the reservation we're checking against (for updates)
@@ -1133,10 +1147,21 @@ export class MemStorage implements IStorage {
       
       // Check if this is for the same vehicle and if dates overlap. Same-day
       // turnover (existing.endDate === new.startDate, or vice versa) is allowed —
-      // dates have no time-of-day, and a same-day return/pickup handover is normal,
-      // not a double-booking. A genuine overlap or identical range still conflicts.
+      // unless both sides recorded a scheduled time and those times actually
+      // overlap (existing returns later in the day than the new pickup). Missing
+      // a time on either side falls back to the permissive date-only behavior.
+      // A genuine multi-day overlap or identical range always still conflicts.
+      const existingEndsWhenNewStarts = r.endDate === startDate;
+      const newEndsWhenExistingStarts = endDate === r.startDate;
+      const endingTouchIsSafe =
+        existingEndsWhenNewStarts &&
+        (!r.endTime || !startTime || r.endTime <= startTime);
+      const startingTouchIsSafe =
+        newEndsWhenExistingStarts &&
+        (!endTime || !r.startTime || endTime <= r.startTime);
       const touchesBoundaryOnly =
-        r.endDate === startDate || endDate === r.startDate;
+        (existingEndsWhenNewStarts && endingTouchIsSafe) ||
+        (newEndsWhenExistingStarts && startingTouchIsSafe);
 
       return (
         r.vehicleId === vehicleId &&
@@ -1258,6 +1283,84 @@ export class MemStorage implements IStorage {
   
   async deleteExpense(id: number): Promise<boolean> {
     return this.expenses.delete(id);
+  }
+
+  async getAllTransports(): Promise<VehicleTransport[]> {
+    return Array.from(this.transports.values())
+      .map(t => ({
+        ...t,
+        vehicle: this.vehicles.get(t.vehicleId),
+        relatedVehicle: t.relatedVehicleId ? this.vehicles.get(t.relatedVehicleId) : undefined,
+        customer: t.customerId ? this.customers.get(t.customerId) : undefined,
+      }))
+      .sort((a, b) => b.scheduledDate.localeCompare(a.scheduledDate));
+  }
+
+  async getTransport(id: number): Promise<VehicleTransport | undefined> {
+    const transport = this.transports.get(id);
+    if (!transport) return undefined;
+    return {
+      ...transport,
+      vehicle: this.vehicles.get(transport.vehicleId),
+      relatedVehicle: transport.relatedVehicleId ? this.vehicles.get(transport.relatedVehicleId) : undefined,
+      customer: transport.customerId ? this.customers.get(transport.customerId) : undefined,
+    };
+  }
+
+  async createTransport(transportData: InsertVehicleTransport): Promise<VehicleTransport> {
+    const id = this.transportId++;
+    const now = new Date();
+    const transport: VehicleTransport = {
+      id,
+      vehicleId: transportData.vehicleId,
+      relatedVehicleId: transportData.relatedVehicleId ?? null,
+      reservationId: transportData.reservationId ?? null,
+      customerId: transportData.customerId ?? null,
+      transportType: transportData.transportType,
+      status: transportData.status ?? "scheduled",
+      originAddress: transportData.originAddress ?? null,
+      originCity: transportData.originCity ?? null,
+      destinationAddress: transportData.destinationAddress ?? null,
+      destinationCity: transportData.destinationCity ?? null,
+      distanceKm: transportData.distanceKm != null ? String(transportData.distanceKm) : null,
+      tollCost: transportData.tollCost != null ? String(transportData.tollCost) : null,
+      billable: transportData.billable ?? false,
+      billableAmount: transportData.billableAmount != null ? String(transportData.billableAmount) : null,
+      invoiced: transportData.invoiced ?? false,
+      invoicedDate: transportData.invoicedDate ?? null,
+      scheduledDate: transportData.scheduledDate,
+      completedDate: transportData.completedDate ?? null,
+      driverName: transportData.driverName ?? null,
+      reason: transportData.reason ?? null,
+      notes: transportData.notes ?? null,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: transportData.createdBy ?? null,
+      updatedBy: transportData.updatedBy ?? null,
+      createdByUser: null,
+      updatedByUser: null,
+    };
+    this.transports.set(id, transport);
+    return transport;
+  }
+
+  async updateTransport(id: number, transportData: Partial<InsertVehicleTransport>): Promise<VehicleTransport | undefined> {
+    const existing = this.transports.get(id);
+    if (!existing) return undefined;
+    const updated: VehicleTransport = {
+      ...existing,
+      ...transportData,
+      distanceKm: transportData.distanceKm !== undefined ? (transportData.distanceKm != null ? String(transportData.distanceKm) : null) : existing.distanceKm,
+      tollCost: transportData.tollCost !== undefined ? (transportData.tollCost != null ? String(transportData.tollCost) : null) : existing.tollCost,
+      billableAmount: transportData.billableAmount !== undefined ? (transportData.billableAmount != null ? String(transportData.billableAmount) : null) : existing.billableAmount,
+      updatedAt: new Date(),
+    };
+    this.transports.set(id, updated);
+    return updated;
+  }
+
+  async deleteTransport(id: number): Promise<boolean> {
+    return this.transports.delete(id);
   }
 
   // Document methods

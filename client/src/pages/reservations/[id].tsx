@@ -307,7 +307,7 @@ export default function ReservationDetails() {
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Rental Period</h3>
                 <p className="text-base mt-1">
-                  {formatDate(reservation.startDate)} - {reservation.endDate ? formatDate(reservation.endDate) : 'Open-ended'}
+                  {formatDate(reservation.startDate)}{reservation.startTime && ` ${reservation.startTime}`} - {reservation.endDate ? `${formatDate(reservation.endDate)}${reservation.endTime ? ` ${reservation.endTime}` : ''}` : 'Open-ended'}
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
                   {reservation.endDate ? `${rentalDuration} day${rentalDuration !== 1 ? 's' : ''}` : 'Open-ended'}

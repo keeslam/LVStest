@@ -379,6 +379,8 @@ export function ReservationForm({
       driverId: null,
       startDate: selectedStartDate,
       endDate: defaultEndDate,
+      startTime: undefined,
+      endTime: undefined,
       isOpenEnded: isOpenEnded,
       status: "booked",
       totalPrice: 0,
@@ -669,6 +671,9 @@ export function ReservationForm({
     }
   }, [isOpenEndedWatch, form, startDateWatch, selectedStartDate, editMode]);
   
+  const startTimeWatch = form.watch("startTime");
+  const endTimeWatch = form.watch("endTime");
+
   useEffect(() => {
     if (vehicleIdWatch && startDateWatch) {
       // Skip conflict checking for open-ended rentals
@@ -676,9 +681,9 @@ export function ReservationForm({
         setHasOverlap(false);
         return;
       }
-      
+
       if (!endDateWatch) return;
-      
+
       const checkConflicts = async () => {
         try {
           // Build query parameters
@@ -689,10 +694,16 @@ export function ReservationForm({
           if (endDateWatch) {
             params.append('endDate', endDateWatch);
           }
+          if (startTimeWatch) {
+            params.append('startTime', startTimeWatch);
+          }
+          if (endTimeWatch) {
+            params.append('endTime', endTimeWatch);
+          }
           if (initialData?.id) {
             params.append('excludeReservationId', initialData.id.toString());
           }
-          
+
           const response = await fetch(`/api/reservations/check-conflicts?${params.toString()}`);
           if (response.ok) {
             const conflicts = await response.json();
@@ -702,10 +713,10 @@ export function ReservationForm({
           console.error("Failed to check reservation conflicts:", error);
         }
       };
-      
+
       checkConflicts();
     }
-  }, [vehicleIdWatch, startDateWatch, endDateWatch, isOpenEndedWatch, initialData?.id]);
+  }, [vehicleIdWatch, startDateWatch, endDateWatch, isOpenEndedWatch, startTimeWatch, endTimeWatch, initialData?.id]);
   
   // Format customer options for searchable combobox (using filtered list)
   const customerOptions = useMemo(() => {
@@ -1366,6 +1377,51 @@ export function ReservationForm({
                             data-testid="input-end-date"
                             type="date" 
                             {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Pickup Time */}
+                <FormField
+                  control={form.control}
+                  name="startTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Pickup Time <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                      <FormControl>
+                        <Input
+                          type="time"
+                          data-testid="input-start-time"
+                          {...field}
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormDescription>Lets same-day handovers with another rental be scheduled without a false conflict</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Return Time - only meaningful when there's an end date */}
+                {!isOpenEndedWatch && (
+                  <FormField
+                    control={form.control}
+                    name="endTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Return Time <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                        <FormControl>
+                          <Input
+                            type="time"
+                            data-testid="input-end-time"
+                            {...field}
+                            value={field.value ?? ""}
                           />
                         </FormControl>
                         <FormMessage />

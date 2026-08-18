@@ -105,6 +105,7 @@ export default function Settings() {
   const [defaultFuelPolicy, setDefaultFuelPolicy] = useState("full-to-full");
   const [eigenrisicoBinnenland, setEigenrisicoBinnenland] = useState("500");
   const [eigenrisicoBuitenland, setEigenrisicoBuitenland] = useState("1000");
+  const [tollRatePerKm, setTollRatePerKm] = useState("0.15");
   
   // Notification Preferences state
   const [apkReminderDays, setApkReminderDays] = useState("60");
@@ -229,6 +230,7 @@ export default function Settings() {
     showMaintenanceBlocks?: boolean;
     apkReminderDays?: number;
     warrantyReminderDays?: number;
+    tollRatePerKm?: string;
   }>({
     queryKey: ['/api/system-settings'],
   });
@@ -253,6 +255,9 @@ export default function Settings() {
     }
     if (systemSettings.warrantyReminderDays) {
       setWarrantyReminderThresholdDays(String(systemSettings.warrantyReminderDays));
+    }
+    if (systemSettings.tollRatePerKm) {
+      setTollRatePerKm(String(systemSettings.tollRatePerKm));
     }
   }, [systemSettings]);
 
@@ -455,6 +460,20 @@ export default function Settings() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to save maintenance calendar settings", variant: "destructive" });
+    },
+  });
+
+  // Save Toll Rate Settings (to /api/system-settings)
+  const saveTollRateSettings = useMutation({
+    mutationFn: async () => {
+      await apiRequest('PUT', '/api/system-settings', { tollRatePerKm });
+    },
+    onSuccess: () => {
+      invalidateByPrefix('/api/system-settings');
+      toast({ title: "Success", description: "Toll rate saved successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to save toll rate", variant: "destructive" });
     },
   });
 
@@ -760,13 +779,51 @@ export default function Settings() {
                 </div>
               </div>
 
-              <Button 
+              <Button
                 onClick={() => saveBusinessRules.mutate()}
                 disabled={saveBusinessRules.isPending}
                 className="w-full md:w-auto"
                 data-testid="button-save-business-rules"
               >
                 {saveBusinessRules.isPending ? "Saving..." : "Save Business Rules"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Transport & Toll Costs
+              </CardTitle>
+              <CardDescription>
+                Default rate used to suggest toll costs when logging a vehicle transport
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="tollRatePerKm">Toll Rate (€ per km)</Label>
+                  <Input
+                    id="tollRatePerKm"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={tollRatePerKm}
+                    onChange={(e) => setTollRatePerKm(e.target.value)}
+                    data-testid="input-toll-rate-per-km"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Used to suggest a toll cost from the distance entered on a transport</p>
+                </div>
+              </div>
+
+              <Button
+                onClick={() => saveTollRateSettings.mutate()}
+                disabled={saveTollRateSettings.isPending}
+                className="w-full md:w-auto"
+                data-testid="button-save-toll-rate"
+              >
+                {saveTollRateSettings.isPending ? "Saving..." : "Save Toll Rate"}
               </Button>
             </CardContent>
           </Card>

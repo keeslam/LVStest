@@ -22,7 +22,8 @@ import {
   damageCheckPdfTemplateThemes, type DamageCheckPdfTemplateTheme,
   damageCheckPdfSectionPresets, type DamageCheckPdfSectionPreset,
   type TemplateSection,
-  vehicleCustomerBlacklist, type VehicleCustomerBlacklist, type InsertVehicleCustomerBlacklist
+  vehicleCustomerBlacklist, type VehicleCustomerBlacklist, type InsertVehicleCustomerBlacklist,
+  vehicleTransports, type VehicleTransport, type InsertVehicleTransport
 } from "../shared/schema";
 import {
   getVehicleStatusContext,
@@ -1106,15 +1107,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async checkReservationConflicts(
-    vehicleId: number, 
-    startDate: string, 
-    endDate: string | null, 
+    vehicleId: number,
+    startDate: string,
+    endDate: string | null,
     excludeReservationId: number | null,
-    isMaintenanceBlock: boolean = false
+    isMaintenanceBlock: boolean = false,
+    startTime: string | null = null,
+    endTime: string | null = null
   ): Promise<Reservation[]> {
     // For open-ended rentals (null endDate), use a far-future date for conflict checking
     // This ensures that an open-ended rental conflicts with all future reservations
     const effectiveEndDate = endDate || '9999-12-31';
+    const newStartTime = startTime || null;
+    const newEndTime = endTime || null;
 
     // Build the base conditions
     const baseConditions = [
@@ -1123,19 +1128,34 @@ export class DatabaseStorage implements IStorage {
       sql`${reservations.status} != 'completed'`,
       sql`${reservations.status} != 'returned'`,
       isNull(reservations.deletedAt),
-      // Overlap check with same-day turnover allowed: dates have no time-of-day, and
-      // a rental ending the same calendar day another begins is a normal handover
-      // (return in the morning, new pickup that afternoon), not a double-booking.
-      // Only excluded when the ranges touch at exactly that one boundary — a genuine
-      // overlap (or an identical range) still conflicts.
+      // Overlap check with same-day turnover allowed: a rental ending the same
+      // calendar day another begins is a normal handover (return in the morning,
+      // new pickup that afternoon), not a double-booking — UNLESS both sides
+      // recorded a scheduled time and those times actually overlap (e.g. existing
+      // returns at 18:00 but the new pickup wants 09:00 the same day, so the car
+      // genuinely isn't back yet). Missing a time on either side falls back to the
+      // permissive date-only behavior, since there's nothing more precise to check.
+      // A genuine multi-day overlap (or an identical range) always still conflicts.
       sql`(
         (
           (${reservations.startDate} <= ${effectiveEndDate} AND ${reservations.endDate} >= ${startDate})
           OR (${reservations.startDate} <= ${effectiveEndDate} AND (${reservations.endDate} IS NULL OR ${reservations.endDate} = 'undefined'))
         )
         AND NOT (
-          (${reservations.endDate} IS NOT NULL AND ${reservations.endDate} = ${startDate})
-          OR ${effectiveEndDate} = ${reservations.startDate}
+          (
+            ${reservations.endDate} IS NOT NULL AND ${reservations.endDate} = ${startDate}
+            AND (
+              ${reservations.endTime} IS NULL OR ${newStartTime}::text IS NULL
+              OR ${reservations.endTime} <= ${newStartTime}
+            )
+          )
+          OR (
+            ${effectiveEndDate} = ${reservations.startDate}
+            AND (
+              ${newEndTime}::text IS NULL OR ${reservations.startTime} IS NULL
+              OR ${newEndTime} <= ${reservations.startTime}
+            )
+          )
         )
       )`
     ];
@@ -1453,13 +1473,72 @@ export class DatabaseStorage implements IStorage {
       const result = await db
         .delete(expenses)
         .where(eq(expenses.id, id));
-      
+
       // Check if any rows were affected by the deletion
       return result.rowCount !== null && result.rowCount > 0;
     } catch (error) {
       console.error("Error deleting expense:", error);
       return false;
     }
+  }
+
+  // Batch-loads vehicles/customers instead of one query per transport (same
+  // pattern used for reservations — see checkReservationConflicts history).
+  private async attachTransportRelations(rows: (typeof vehicleTransports.$inferSelect)[]): Promise<VehicleTransport[]> {
+    const vehicleIds = Array.from(new Set(
+      rows.flatMap(t => [t.vehicleId, t.relatedVehicleId]).filter((id): id is number => id != null)
+    ));
+    const customerIds = Array.from(new Set(
+      rows.map(t => t.customerId).filter((id): id is number => id != null)
+    ));
+
+    const [vehicleRows, customerRows] = await Promise.all([
+      vehicleIds.length ? db.select().from(vehicles).where(inArray(vehicles.id, vehicleIds)) : Promise.resolve([]),
+      customerIds.length ? db.select().from(customers).where(inArray(customers.id, customerIds)) : Promise.resolve([]),
+    ]);
+    const vehicleById = new Map(vehicleRows.map(v => [v.id, v]));
+    const customerById = new Map(customerRows.map(c => [c.id, c]));
+
+    return rows.map(t => ({
+      ...t,
+      vehicle: vehicleById.get(t.vehicleId),
+      relatedVehicle: t.relatedVehicleId != null ? vehicleById.get(t.relatedVehicleId) : undefined,
+      customer: t.customerId != null ? customerById.get(t.customerId) : undefined,
+    }));
+  }
+
+  async getAllTransports(): Promise<VehicleTransport[]> {
+    const rows = await db.select().from(vehicleTransports).orderBy(desc(vehicleTransports.scheduledDate), desc(vehicleTransports.id));
+    return this.attachTransportRelations(rows);
+  }
+
+  async getTransport(id: number): Promise<VehicleTransport | undefined> {
+    const [row] = await db.select().from(vehicleTransports).where(eq(vehicleTransports.id, id));
+    if (!row) return undefined;
+    const [withRelations] = await this.attachTransportRelations([row]);
+    return withRelations;
+  }
+
+  async createTransport(transportData: InsertVehicleTransport): Promise<VehicleTransport> {
+    const [row] = await db.insert(vehicleTransports).values(transportData).returning();
+    const [withRelations] = await this.attachTransportRelations([row]);
+    return withRelations;
+  }
+
+  async updateTransport(id: number, transportData: Partial<InsertVehicleTransport>): Promise<VehicleTransport | undefined> {
+    const [row] = await db
+      .update(vehicleTransports)
+      .set({ ...transportData, updatedAt: new Date() })
+      .where(eq(vehicleTransports.id, id))
+      .returning();
+    if (!row) return undefined;
+    const [withRelations] = await this.attachTransportRelations([row]);
+    return withRelations;
+  }
+
+  async deleteTransport(id: number): Promise<boolean> {
+    const result = await db.delete(vehicleTransports).where(eq(vehicleTransports.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   // Document methods

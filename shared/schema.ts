@@ -406,6 +406,10 @@ export const reservations = pgTable("reservations", {
   driverId: integer("driver_id").references(() => drivers.id, { onDelete: "set null" }), // Link to specific driver (nullable for backward compatibility)
   startDate: text("start_date").notNull(), // Immutable booking/scheduled start date
   endDate: text("end_date"), // Allow null for open-ended rentals
+  startTime: text("start_time"), // Optional scheduled pickup time, "HH:MM" 24h. Lets same-day
+  // turnovers (see checkReservationConflicts) tell an early pickup from a late one instead of
+  // treating every same-day touch as fine by default.
+  endTime: text("end_time"), // Optional scheduled return time, "HH:MM" 24h — same as above.
   actualPickupDate: text("actual_pickup_date"), // Date when vehicle was actually picked up
   actualReturnDate: text("actual_return_date"), // Date when vehicle was actually returned
   completionDate: text("completion_date"), // Date when vehicle was actually returned (for backlog/future tracking)
@@ -504,6 +508,8 @@ export const insertReservationSchemaBase = createInsertSchema(reservations).omit
     })
   ),
   endDate: z.string().optional().or(z.null()), // Make end date optional for open-ended rentals
+  startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use 24-hour HH:MM").optional().or(z.literal('')).or(z.null()),
+  endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use 24-hour HH:MM").optional().or(z.literal('')).or(z.null()),
   type: z.enum(["standard", "replacement", "maintenance_block"]).optional(),
   replacementForReservationId: z.number().optional().or(z.null()), // Allow null
   customerId: z.number().optional().or(z.null()), // Make customerId optional for maintenance blocks
@@ -1108,6 +1114,77 @@ export type DeliveryTask = typeof deliveryTasks.$inferSelect & {
 };
 export type InsertDeliveryTask = z.infer<typeof insertDeliveryTaskSchema>;
 
+// ============= VEHICLE TRANSPORT FEATURE =============
+// Standalone transport jobs that aren't a normal rental delivery: swapping a
+// vehicle mid-rental, towing one in for service, or repossessing one. Unlike
+// deliveryTasks above, a transport does NOT require a reservation — a
+// repossession or breakdown tow often has none. Tracks distance and toll cost
+// (Dutch per-km road toll) so the business knows what it paid, and separately
+// whether/how much to bill the customer for the trip.
+export const vehicleTransports = pgTable("vehicle_transports", {
+  id: serial("id").primaryKey(),
+  vehicleId: integer("vehicle_id").notNull().references(() => vehicles.id, { onDelete: "cascade" }),
+  relatedVehicleId: integer("related_vehicle_id").references(() => vehicles.id, { onDelete: "set null" }), // the other vehicle in a swap
+  reservationId: integer("reservation_id").references(() => reservations.id, { onDelete: "set null" }), // optional link
+  customerId: integer("customer_id").references(() => customers.id, { onDelete: "set null" }), // who to bill, if billable
+
+  transportType: text("transport_type").notNull(), // 'swap' | 'tow' | 'repossession' | 'delivery' | 'other'
+  status: text("status").notNull().default("scheduled"), // 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
+
+  originAddress: text("origin_address"),
+  originCity: text("origin_city"),
+  destinationAddress: text("destination_address"),
+  destinationCity: text("destination_city"),
+  distanceKm: numeric("distance_km"),
+
+  // Cost we pay (e.g. road toll) vs. what we charge the customer — kept separate
+  // since they're often different amounts, or the trip may not be billable at all.
+  tollCost: numeric("toll_cost"),
+  billable: boolean("billable").notNull().default(false),
+  billableAmount: numeric("billable_amount"),
+  invoiced: boolean("invoiced").notNull().default(false),
+  invoicedDate: text("invoiced_date"),
+
+  scheduledDate: text("scheduled_date").notNull(),
+  completedDate: text("completed_date"),
+  driverName: text("driver_name"),
+  reason: text("reason"),
+  notes: text("notes"),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: text("created_by"),
+  updatedBy: text("updated_by"),
+  createdByUser: integer("created_by_user_id").references(() => users.id),
+  updatedByUser: integer("updated_by_user_id").references(() => users.id),
+}, (table) => ({
+  vehicleIdIdx: index("vehicle_transports_vehicle_id_idx").on(table.vehicleId),
+  statusIdx: index("vehicle_transports_status_idx").on(table.status),
+}));
+
+export const insertVehicleTransportSchema = createInsertSchema(vehicleTransports).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  createdByUser: true,
+  updatedByUser: true,
+}).extend({
+  distanceKm: z.union([z.number(), z.string().transform(v => v === '' ? null : parseFloat(v))]).nullish()
+    .refine(v => v === null || v === undefined || v >= 0, { message: "Distance cannot be negative" }),
+  tollCost: z.union([z.number(), z.string().transform(v => v === '' ? null : parseFloat(v))]).nullish()
+    .refine(v => v === null || v === undefined || v >= 0, { message: "Toll cost cannot be negative" }),
+  billableAmount: z.union([z.number(), z.string().transform(v => v === '' ? null : parseFloat(v))]).nullish()
+    .refine(v => v === null || v === undefined || v >= 0, { message: "Billable amount cannot be negative" }),
+});
+
+export type VehicleTransport = typeof vehicleTransports.$inferSelect & {
+  vehicle?: Vehicle;
+  relatedVehicle?: Vehicle;
+  customer?: Customer;
+  reservation?: Reservation;
+};
+export type InsertVehicleTransport = z.infer<typeof insertVehicleTransportSchema>;
+
 // ============= CUSTOM REPORT BUILDER FEATURE =============
 
 // Saved Reports table - for storing user-created custom reports
@@ -1610,6 +1687,10 @@ export const settings = pgTable("settings", {
   showWarrantyReminders: boolean("show_warranty_reminders").notNull().default(true),
   warrantyReminderDays: integer("warranty_reminder_days").notNull().default(30),
   showMaintenanceBlocks: boolean("show_maintenance_blocks").notNull().default(true),
+  // Dutch road toll ("vrachtwagenheffing"), charged per km — used to suggest a toll
+  // cost when logging a vehicle transport, editable per transport if the actual
+  // cost differs.
+  tollRatePerKm: numeric("toll_rate_per_km").notNull().default("0.15"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   updatedBy: text("updated_by"),
   updatedByUser: integer("updated_by_user_id").references(() => users.id),
@@ -1630,6 +1711,7 @@ export const updateSettingsSchema = createInsertSchema(settings).pick({
   showWarrantyReminders: true,
   warrantyReminderDays: true,
   showMaintenanceBlocks: true,
+  tollRatePerKm: true,
   updatedBy: true,
 }).partial();
 

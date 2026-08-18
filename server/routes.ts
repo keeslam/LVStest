@@ -20,6 +20,7 @@ import {
   insertTemplateBackgroundSchema,
   insertDriverSchema,
   insertDamageCheckTemplateSchema,
+  insertVehicleTransportSchema,
   createPlaceholderReservationSchema,
   placeholderQuerySchema,
   placeholderNeedingAssignmentQuerySchema,
@@ -2816,10 +2817,12 @@ export async function registerRoutes(app: Express): Promise<void> {
     const vehicleId = parseInt(req.query.vehicleId as string);
     const startDate = req.query.startDate as string;
     const endDate = req.query.endDate as string;
-    const excludeReservationId = req.query.excludeReservationId 
+    const excludeReservationId = req.query.excludeReservationId
       ? parseInt(req.query.excludeReservationId as string)
       : null;
-    
+    const startTime = (req.query.startTime as string) || null;
+    const endTime = (req.query.endTime as string) || null;
+
     if (isNaN(vehicleId)) {
       return res.status(400).json({ message: "Invalid vehicle ID" });
     }
@@ -2833,10 +2836,13 @@ export async function registerRoutes(app: Express): Promise<void> {
 
     try {
       const conflicts = await storage.checkReservationConflicts(
-        vehicleId, 
-        startDate, 
-        effectiveEndDate, 
-        isNaN(excludeReservationId) ? null : excludeReservationId
+        vehicleId,
+        startDate,
+        effectiveEndDate,
+        isNaN(excludeReservationId) ? null : excludeReservationId,
+        false,
+        startTime,
+        endTime
       );
       res.json(conflicts);
     } catch (error) {
@@ -3154,7 +3160,10 @@ export async function registerRoutes(app: Express): Promise<void> {
           reservationData.vehicleId,
           reservationData.startDate,
           reservationData.endDate,
-          null
+          null,
+          false,
+          reservationData.startTime,
+          reservationData.endTime
         );
         
         if (conflicts.length > 0) {
@@ -3658,7 +3667,10 @@ export async function registerRoutes(app: Express): Promise<void> {
         reservationData.vehicleId,
         reservationData.startDate,
         reservationData.endDate,
-        id
+        id,
+        false,
+        reservationData.startTime,
+        reservationData.endTime
       );
       
       // Special handling for maintenance_block edits: customer rentals during the
@@ -4184,7 +4196,9 @@ export async function registerRoutes(app: Express): Promise<void> {
           reservationData.startDate,
           reservationData.endDate || null,
           id,
-          isMaintenanceBlock
+          isMaintenanceBlock,
+          reservationData.startTime,
+          reservationData.endTime
         );
         
         if (conflicts.length > 0) {
@@ -10073,14 +10087,15 @@ export async function registerRoutes(app: Express): Promise<void> {
       const settings = await storage.getSettings();
       if (!settings) {
         // Return default settings if none exist
-        return res.json({ 
+        return res.json({
           contractNumberStart: 1,
           maintenanceExcludedStatuses: ["not_for_rental"],
           showApkReminders: true,
           showWarrantyReminders: true,
           showMaintenanceBlocks: true,
           apkReminderDays: 30,
-          warrantyReminderDays: 30
+          warrantyReminderDays: 30,
+          tollRatePerKm: "0.15"
         });
       }
       res.json(settings);
@@ -10094,14 +10109,15 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.put("/api/system-settings", requireAuth, async (req: Request, res: Response) => {
     try {
       const user = req.user;
-      const { 
+      const {
         contractNumberStart,
         maintenanceExcludedStatuses,
         showApkReminders,
         showWarrantyReminders,
         showMaintenanceBlocks,
         apkReminderDays,
-        warrantyReminderDays
+        warrantyReminderDays,
+        tollRatePerKm
       } = req.body;
 
       const updated = await storage.updateSettings({
@@ -10112,6 +10128,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         showMaintenanceBlocks,
         apkReminderDays,
         warrantyReminderDays,
+        tollRatePerKm,
         updatedBy: user ? user.username : null,
       });
 
@@ -12248,6 +12265,98 @@ export async function registerRoutes(app: Express): Promise<void> {
     } catch (error) {
       console.error('Error serving object storage file:', error);
       res.status(500).send('Error loading file from object storage');
+    }
+  });
+
+  // ============================================
+  // VEHICLE TRANSPORT ROUTES (swap / tow / repossession / delivery jobs)
+  // ============================================
+
+  app.get("/api/transports", hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES, UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
+    try {
+      const transports = await storage.getAllTransports();
+      res.json(transports);
+    } catch (error) {
+      console.error("Error fetching transports:", error);
+      res.status(500).json({ message: "Failed to fetch transports" });
+    }
+  });
+
+  app.get("/api/transports/:id", hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES, UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid transport ID" });
+      }
+      const transport = await storage.getTransport(id);
+      if (!transport) {
+        return res.status(404).json({ message: "Transport not found" });
+      }
+      res.json(transport);
+    } catch (error) {
+      console.error("Error fetching transport:", error);
+      res.status(500).json({ message: "Failed to fetch transport" });
+    }
+  });
+
+  app.post("/api/transports", hasPermission(UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
+    try {
+      const user = req.user;
+      const transportData = insertVehicleTransportSchema.parse({
+        ...req.body,
+        createdBy: user ? user.username : null,
+        updatedBy: user ? user.username : null,
+      });
+      const transport = await storage.createTransport(transportData);
+      res.status(201).json(transport);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid transport data", errors: error.errors });
+      }
+      console.error("Error creating transport:", error);
+      res.status(500).json({ message: "Failed to create transport" });
+    }
+  });
+
+  app.patch("/api/transports/:id", hasPermission(UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid transport ID" });
+      }
+      const user = req.user;
+      const transportData = insertVehicleTransportSchema.partial().parse({
+        ...req.body,
+        updatedBy: user ? user.username : null,
+      });
+      const transport = await storage.updateTransport(id, transportData);
+      if (!transport) {
+        return res.status(404).json({ message: "Transport not found" });
+      }
+      res.json(transport);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid transport data", errors: error.errors });
+      }
+      console.error("Error updating transport:", error);
+      res.status(500).json({ message: "Failed to update transport" });
+    }
+  });
+
+  app.delete("/api/transports/:id", hasPermission(UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid transport ID" });
+      }
+      const success = await storage.deleteTransport(id);
+      if (!success) {
+        return res.status(404).json({ message: "Transport not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting transport:", error);
+      res.status(500).json({ message: "Failed to delete transport" });
     }
   });
 

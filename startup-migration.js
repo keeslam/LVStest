@@ -170,6 +170,11 @@ async function runMigrations() {
     await addColumnIfNotExists('reservations', 'placeholder_spare', 'boolean DEFAULT false NOT NULL');
     await addColumnIfNotExists('reservations', 'spare_vehicle_status', 'text DEFAULT \'assigned\'');
     await addColumnIfNotExists('reservations', 'contract_number', 'text');
+
+    // Optional scheduled pickup/return time ("HH:MM"), used to tell an early
+    // same-day pickup from a late one in the booking-conflict check.
+    await addColumnIfNotExists('reservations', 'start_time', 'text');
+    await addColumnIfNotExists('reservations', 'end_time', 'text');
     
     // Backfill unique contract numbers for picked up/returned/completed reservations only
     console.log('🔄 Backfilling contract numbers for picked-up reservations...');
@@ -483,6 +488,47 @@ async function runMigrations() {
     await addColumnIfNotExists('vehicles', 'mileage_decreased_at', 'timestamp');
     await addColumnIfNotExists('vehicles', 'previous_mileage', 'integer');
     
+    // Dutch per-km road toll rate, used to suggest a toll cost when logging a transport
+    await addColumnIfNotExists('settings', 'toll_rate_per_km', "numeric NOT NULL DEFAULT '0.15'");
+
+    // Vehicle transports: standalone swap/tow/repossession/delivery jobs that
+    // don't require a reservation (unlike delivery_tasks, which does).
+    await createTableIfNotExists(
+      'vehicle_transports',
+      `CREATE TABLE vehicle_transports (
+        id SERIAL PRIMARY KEY,
+        vehicle_id INTEGER NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+        related_vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE SET NULL,
+        reservation_id INTEGER REFERENCES reservations(id) ON DELETE SET NULL,
+        customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+        transport_type TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'scheduled',
+        origin_address TEXT,
+        origin_city TEXT,
+        destination_address TEXT,
+        destination_city TEXT,
+        distance_km NUMERIC,
+        toll_cost NUMERIC,
+        billable BOOLEAN NOT NULL DEFAULT false,
+        billable_amount NUMERIC,
+        invoiced BOOLEAN NOT NULL DEFAULT false,
+        invoiced_date TEXT,
+        scheduled_date TEXT NOT NULL,
+        completed_date TEXT,
+        driver_name TEXT,
+        reason TEXT,
+        notes TEXT,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        created_by TEXT,
+        updated_by TEXT,
+        created_by_user_id INTEGER REFERENCES users(id),
+        updated_by_user_id INTEGER REFERENCES users(id)
+      )`
+    );
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS vehicle_transports_vehicle_id_idx ON vehicle_transports(vehicle_id)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS vehicle_transports_status_idx ON vehicle_transports(status)`);
+
     // Update any NULL maintenance_status values
     console.log('🔄 Updating maintenance status defaults...');
     await db.execute(sql`UPDATE vehicles SET maintenance_status = 'ok' WHERE maintenance_status IS NULL`);
