@@ -58,7 +58,7 @@ import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { format, addDays, parseISO, differenceInDays } from "date-fns";
 import { Customer, Vehicle, Reservation, Document, Driver, type InteractiveDamageCheck } from "@shared/schema";
-import { PlusCircle, FileCheck, Upload, Check, X, Edit, FileText, Eye, ClipboardCheck } from "lucide-react";
+import { PlusCircle, FileCheck, Upload, Check, X, Edit, FileText, Eye, ClipboardCheck, AlertTriangle } from "lucide-react";
 import { ReadonlyVehicleDisplay } from "@/components/ui/readonly-vehicle-display";
 import { DriverDialog } from "@/components/customers/driver-dialog";
 import { ReservationViewDialog } from "@/components/reservations/reservation-view-dialog";
@@ -560,6 +560,19 @@ export function ReservationForm({
     return days > 0 ? days : null; // null = invalid range; the date field shows the error
   }, [startDateWatch, endDateWatch, isOpenEndedWatch]);
   
+  // Auto-fill total price from the vehicle's daily rate × duration, for new
+  // fixed-duration reservations only. Stops as soon as the user types into the
+  // price field themselves, so a manual override is never silently clobbered.
+  const priceManuallyEditedRef = useRef(false);
+  useEffect(() => {
+    if (editMode || createdReservationId) return;
+    if (priceManuallyEditedRef.current) return;
+    if (typeof rentalDuration !== "number") return;
+    const dailyPrice = selectedVehicle?.dailyPrice ? Number(selectedVehicle.dailyPrice) : 0;
+    if (!dailyPrice) return;
+    form.setValue("totalPrice", Math.round(dailyPrice * rentalDuration * 100) / 100);
+  }, [selectedVehicle, rentalDuration, editMode, createdReservationId, form]);
+
   // Check for reservation conflicts
   const [hasOverlap, setHasOverlap] = useState(false);
   
@@ -1557,12 +1570,30 @@ export function ReservationForm({
                                 {selectedVehicle.fuel && (
                                   <Badge variant="outline" className="text-xs">{selectedVehicle.fuel}</Badge>
                                 )}
-                                {selectedVehicle.apkDate && (
-                                  <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200 text-xs">
-                                    APK: {new Date(selectedVehicle.apkDate).toLocaleDateString()}
-                                  </Badge>
-                                )}
+                                {selectedVehicle.apkDate && (() => {
+                                  const apkExpired = differenceInDays(new Date(selectedVehicle.apkDate), new Date()) < 0;
+                                  return (
+                                    <Badge
+                                      variant="outline"
+                                      className={apkExpired
+                                        ? "bg-red-50 text-red-800 border-red-200 text-xs"
+                                        : "bg-blue-50 text-blue-800 border-blue-200 text-xs"}
+                                    >
+                                      APK: {new Date(selectedVehicle.apkDate).toLocaleDateString()}
+                                      {apkExpired && " (expired)"}
+                                    </Badge>
+                                  );
+                                })()}
                               </div>
+                              {selectedVehicle.apkDate && differenceInDays(new Date(selectedVehicle.apkDate), new Date()) < 0 && (
+                                <div className="mt-2 flex items-start gap-2 bg-red-50 border border-red-200 text-red-800 rounded-md p-2 text-xs">
+                                  <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                                  <span>
+                                    This vehicle's APK (roadworthiness inspection) expired on{" "}
+                                    {new Date(selectedVehicle.apkDate).toLocaleDateString()}. Confirm it's safe and legal to rent out before proceeding.
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           )}
                         </>
@@ -1831,9 +1862,8 @@ export function ReservationForm({
               <Separator />
             </div>
 
-            {/* Status and Price Section */}
+            {/* Rental period recap (dates were already selected in section 1 above) */}
             <div className="space-y-6">
-              <div className="text-lg font-medium">3. Reservation Details</div>
               {SHOW_DUPLICATE_DATES && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Start Date */}
@@ -2119,9 +2149,12 @@ export function ReservationForm({
                           placeholder="0.00" 
                           {...field}
                           onChange={(e) => {
+                            // Once the user edits this field directly, stop auto-filling it
+                            // from the vehicle's daily rate — their value wins from here on.
+                            priceManuallyEditedRef.current = true;
                             // Allow emptying the field (making it optional)
-                            const value = e.target.value === "" 
-                              ? undefined 
+                            const value = e.target.value === ""
+                              ? undefined
                               : parseFloat(e.target.value) || 0;
                             field.onChange(value);
                           }}
@@ -2129,7 +2162,9 @@ export function ReservationForm({
                         />
                       </FormControl>
                       <FormDescription>
-                        {typeof rentalDuration === 'number' 
+                        {typeof rentalDuration === 'number' && selectedVehicle?.dailyPrice
+                          ? `Auto-filled from the €${Number(selectedVehicle.dailyPrice).toFixed(2)}/day rate for ${rentalDuration} day${rentalDuration !== 1 ? 's' : ''} — edit to override`
+                          : typeof rentalDuration === 'number'
                           ? `Enter the total price for the ${rentalDuration}-day rental`
                           : "Enter the total price for this open-ended rental"}
                       </FormDescription>
@@ -2385,7 +2420,7 @@ export function ReservationForm({
                                 size="sm"
                                 onClick={() => {
                                   if (isPdf) {
-                                    window.open(`/${doc.filePath}`, '_blank');
+                                    window.open(`/api/documents/view/${doc.id}`, '_blank');
                                   } else {
                                     setPreviewDocument(doc);
                                     setPreviewDialogOpen(true);
@@ -2632,7 +2667,7 @@ export function ReservationForm({
               return (
                 <div className="flex items-center justify-center h-full">
                   <img
-                    src={`/${previewDocument.filePath}`}
+                    src={`/api/documents/view/${previewDocument.id}`}
                     alt={previewDocument.fileName}
                     className="max-w-full max-h-[70vh] object-contain rounded shadow-lg"
                   />
@@ -2642,7 +2677,7 @@ export function ReservationForm({
               return (
                 <div className="flex flex-col items-center justify-center h-full space-y-4">
                   <p className="text-gray-600">Preview not available for this file type.</p>
-                  <Button onClick={() => window.open(`/${previewDocument.filePath}`, '_blank')}>
+                  <Button onClick={() => window.open(`/api/documents/view/${previewDocument.id}`, '_blank')}>
                     Open File
                   </Button>
                 </div>
@@ -2651,7 +2686,7 @@ export function ReservationForm({
           })()}
         </div>
         <div className="flex justify-between items-center pt-4 border-t">
-          <Button variant="outline" onClick={() => window.open(`/${previewDocument?.filePath}`, '_blank')}>
+          <Button variant="outline" onClick={() => window.open(`/api/documents/view/${previewDocument?.id}`, '_blank')}>
             Open in New Tab
           </Button>
           <Button onClick={() => setPreviewDialogOpen(false)}>

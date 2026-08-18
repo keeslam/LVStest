@@ -36,7 +36,7 @@ async function throwIfResNotOk(res: Response) {
 /**
  * Get CSRF token from cookie
  */
-function getCsrfToken(): string | null {
+export function getCsrfToken(): string | null {
   const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
   return match ? match[1] : null;
 }

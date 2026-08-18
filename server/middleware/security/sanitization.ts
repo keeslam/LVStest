@@ -1,30 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
+import DOMPurify from 'isomorphic-dompurify';
 
 /**
- * Strip HTML tags and dangerous characters from a string
+ * Strip HTML tags and dangerous characters from a string using DOMPurify (a
+ * real HTML parser) instead of hand-rolled regexes, which are notoriously easy
+ * to bypass with malformed or nested markup. ALLOWED_TAGS/ALLOWED_ATTR: []
+ * strips every tag and attribute, keeping only the text content — matching
+ * this app's "no rich text anywhere" policy.
  */
 function stripHtml(value: string): string {
-  // Remove HTML tags
-  let sanitized = value.replace(/<[^>]*>/g, '');
-  
-  // Remove script and style content
-  sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-  sanitized = sanitized.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
-  
-  // Remove dangerous protocols
-  sanitized = sanitized.replace(/javascript:/gi, '');
-  sanitized = sanitized.replace(/data:text\/html/gi, '');
-  sanitized = sanitized.replace(/vbscript:/gi, '');
-  
-  // Decode HTML entities to prevent double encoding attacks
-  sanitized = sanitized.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-  sanitized = sanitized.replace(/&quot;/g, '"').replace(/&#39;/g, "'");
-  sanitized = sanitized.replace(/&amp;/g, '&');
-  
-  // Remove the decoded tags again
-  sanitized = sanitized.replace(/<[^>]*>/g, '');
-  
-  return sanitized.trim();
+  return DOMPurify.sanitize(value, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] }).trim();
 }
 
 /**
@@ -73,8 +58,8 @@ export function sanitizeInput(req: Request, res: Response, next: NextFunction): 
  * Sanitize HTML content while preserving safe tags (for rich text editors)
  */
 export function sanitizeHtml(html: string): string {
-  // For now, strip all HTML to prevent XSS
-  // If you need rich text, consider using a dedicated library like sanitize-html
+  // Strips all HTML to prevent XSS. If rich text is ever needed, pass an
+  // ALLOWED_TAGS allowlist to DOMPurify.sanitize() instead of an empty one.
   return stripHtml(html);
 }
 

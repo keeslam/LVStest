@@ -504,7 +504,7 @@ export default function VehiclesIndex() {
         return (
           <div className="flex items-center">
             <span className="mr-2">{formatDate(apkDate)}</span>
-            <Badge className={badgeClass}>{daysUntil} days</Badge>
+            <Badge className={badgeClass}>{daysUntil < 0 ? `${Math.abs(daysUntil)} days overdue` : `${daysUntil} days`}</Badge>
           </div>
         );
       },

@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ExpenseChart, type ExpenseChartData } from "@/components/reports/expense-chart";
 import { UtilizationChart, type UtilizationChartData } from "@/components/reports/utilization-chart";
 import { Vehicle, Expense, Reservation, Customer } from "@shared/schema";
-import { formatDate, formatCurrency, formatLicensePlate } from "@/lib/format-utils";
+import { formatDate, formatCurrency, formatLicensePlate, sumMoney } from "@/lib/format-utils";
 import { isTrueValue } from "@/lib/utils";
 import { addDays, format, subMonths, subDays, startOfMonth, endOfMonth, isWithinInterval, differenceInDays, parseISO, startOfDay } from "date-fns";
 import { 
@@ -172,9 +172,7 @@ export default function ReportsPage() {
   });
   
   // Calculate total expenses
-  const totalExpenses = filteredExpenses.reduce((sum, expense) => {
-    return sum + Number(expense.amount);
-  }, 0);
+  const totalExpenses = sumMoney(filteredExpenses, expense => expense.amount);
   
   // Calculate the number of vehicles with activity (have expenses or reservations) as an alternative to "active" property
   const vehiclesWithActivity = vehicles.filter(v => 
@@ -271,9 +269,7 @@ export default function ReportsPage() {
       e.category === 'maintenance' || e.category === 'repair' || e.category === 'tires'
     );
     
-    const totalMaintenanceCost = maintenanceExpenses.reduce((sum, expense) => {
-      return sum + Number(expense.amount);
-    }, 0);
+    const totalMaintenanceCost = sumMoney(maintenanceExpenses, expense => expense.amount);
     
     return {
       id: vehicle.id,
@@ -452,18 +448,20 @@ export default function ReportsPage() {
     
     // Calculate expense totals by category for this customer
     const expensesByCategory: Record<string, number> = {};
+    const expensesByCategoryGroups: Record<string, Expense[]> = {};
     relatedExpenses.forEach(expense => {
       const category = expense.category;
-      if (!expensesByCategory[category]) {
-        expensesByCategory[category] = 0;
+      if (!expensesByCategoryGroups[category]) {
+        expensesByCategoryGroups[category] = [];
       }
-      expensesByCategory[category] += Number(expense.amount);
+      expensesByCategoryGroups[category].push(expense);
     });
-    
+    Object.entries(expensesByCategoryGroups).forEach(([category, categoryExpenses]) => {
+      expensesByCategory[category] = sumMoney(categoryExpenses, expense => expense.amount);
+    });
+
     // Calculate total expenses
-    const totalExpenses = relatedExpenses.reduce((sum, expense) => {
-      return sum + Number(expense.amount);
-    }, 0);
+    const totalExpenses = sumMoney(relatedExpenses, expense => expense.amount);
     
     // Calculate expense per day metrics
     const expensePerDay = totalReservationDays > 0 ? totalExpenses / totalReservationDays : 0;
@@ -506,20 +504,20 @@ export default function ReportsPage() {
     const previousMonth = startOfMonth(subMonths(now, 1));
     const twoMonthsAgo = startOfMonth(subMonths(now, 2));
     
-    const currentMonthExpenses = expenses.filter(expense => {
+    const currentMonthExpenses = sumMoney(expenses.filter(expense => {
       const expenseDate = new Date(expense.date);
       return expenseDate >= currentMonth && expenseDate <= endOfMonth(currentMonth);
-    }).reduce((sum, expense) => sum + Number(expense.amount), 0);
-    
-    const previousMonthExpenses = expenses.filter(expense => {
+    }), expense => expense.amount);
+
+    const previousMonthExpenses = sumMoney(expenses.filter(expense => {
       const expenseDate = new Date(expense.date);
       return expenseDate >= previousMonth && expenseDate < currentMonth;
-    }).reduce((sum, expense) => sum + Number(expense.amount), 0);
-    
-    const twoMonthsAgoExpenses = expenses.filter(expense => {
+    }), expense => expense.amount);
+
+    const twoMonthsAgoExpenses = sumMoney(expenses.filter(expense => {
       const expenseDate = new Date(expense.date);
       return expenseDate >= twoMonthsAgo && expenseDate < previousMonth;
-    }).reduce((sum, expense) => sum + Number(expense.amount), 0);
+    }), expense => expense.amount);
     
     // Calculate month-over-month change percentages
     const currentVsPrevious = previousMonthExpenses === 0 
@@ -2214,7 +2212,7 @@ export default function ReportsPage() {
                                 : 'Unknown Vehicle'}
                             </TableCell>
                             <TableCell>{formatDate(reservation.startDate)}</TableCell>
-                            <TableCell>{formatDate(reservation.endDate)}</TableCell>
+                            <TableCell>{reservation.endDate ? formatDate(reservation.endDate) : 'Open-ended'}</TableCell>
                             <TableCell className="capitalize">
                               {reservation.status?.replace(/_/g, ' ')}
                             </TableCell>

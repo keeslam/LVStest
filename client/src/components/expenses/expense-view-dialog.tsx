@@ -22,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Eye, Trash2, Wrench, CircleDot, AlertTriangle, Hammer, Fuel, Shield, FileText, Sparkles, Package, MoreHorizontal, Disc, ChevronLeft, ChevronRight } from "lucide-react";
-import { formatDate, formatCurrency } from "@/lib/format-utils";
+import { formatDate, formatCurrency, sumMoney } from "@/lib/format-utils";
 import { Expense, Vehicle } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
@@ -145,7 +145,7 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
   }) || [];
 
   // Calculate total and category breakdown
-  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+  const totalExpenses = sumMoney(filteredExpenses, expense => expense.amount);
   
   // Group expenses by category with sorting (most recent first)
   const expensesByCategory = allCategories.map(category => {
@@ -155,7 +155,7 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
     return {
       category,
       expenses: categoryExpenses,
-      amount: categoryExpenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0),
+      amount: sumMoney(categoryExpenses, expense => expense.amount),
       count: categoryExpenses.length
     };
   }).filter(item => item.count > 0)

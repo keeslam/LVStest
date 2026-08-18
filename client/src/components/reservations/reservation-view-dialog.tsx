@@ -567,7 +567,7 @@ export function ReservationViewDialog({
                                   size="sm"
                                   onClick={() => {
                                     if (isPdf) {
-                                      window.open(`/${doc.filePath}`, '_blank');
+                                      window.open(`/api/documents/view/${doc.id}`, '_blank');
                                     } else {
                                       setPreviewDocument(doc);
                                       setPreviewDialogOpen(true);
@@ -713,7 +713,7 @@ export function ReservationViewDialog({
                                   size="sm"
                                   onClick={() => {
                                     if (isPdf) {
-                                      window.open(`/${doc.filePath}`, '_blank');
+                                      window.open(`/api/documents/view/${doc.id}`, '_blank');
                                     } else {
                                       setPreviewDocument(doc);
                                       setPreviewDialogOpen(true);
@@ -999,7 +999,7 @@ export function ReservationViewDialog({
                 return (
                   <div className="flex items-center justify-center h-full">
                     <img
-                      src={`/${previewDocument.filePath}`}
+                      src={`/api/documents/view/${previewDocument.id}`}
                       alt={previewDocument.fileName}
                       className="max-w-full max-h-[70vh] object-contain rounded shadow-lg"
                     />
@@ -1009,7 +1009,7 @@ export function ReservationViewDialog({
                 return (
                   <div className="flex flex-col items-center justify-center h-full space-y-4">
                     <p className="text-gray-600">Preview not available for this file type.</p>
-                    <Button onClick={() => window.open(`/${previewDocument.filePath}`, '_blank')}>
+                    <Button onClick={() => window.open(`/api/documents/view/${previewDocument.id}`, '_blank')}>
                       Open File
                     </Button>
                   </div>
@@ -1018,7 +1018,7 @@ export function ReservationViewDialog({
             })()}
           </div>
           <div className="flex justify-between items-center pt-4 border-t">
-            <Button variant="outline" onClick={() => window.open(`/${previewDocument?.filePath}`, '_blank')}>
+            <Button variant="outline" onClick={() => window.open(`/api/documents/view/${previewDocument?.id}`, '_blank')}>
               Open in New Tab
             </Button>
             <Button onClick={() => setPreviewDialogOpen(false)}>

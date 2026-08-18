@@ -70,9 +70,11 @@ export function VehicleSelector({
     return vehicles.filter((vehicle) => {
       const licensePlate = vehicle.licensePlate?.toLowerCase() || '';
       const licensePlateWithoutDashes = licensePlate.replace(/-/g, '');
-      
+      const brandAndModel = `${vehicle.brand || ''} ${vehicle.model || ''}`.toLowerCase();
+
       return vehicle.brand?.toLowerCase().includes(query) ||
         vehicle.model?.toLowerCase().includes(query) ||
+        brandAndModel.includes(query) ||
         licensePlate.includes(query) ||
         licensePlateWithoutDashes.includes(queryWithoutDashes) ||
         vehicle.vehicleType?.toLowerCase().includes(query);

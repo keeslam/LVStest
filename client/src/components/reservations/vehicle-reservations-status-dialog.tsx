@@ -265,9 +265,9 @@ export function VehicleReservationsStatusDialog({
                                   {reservation.customer?.name || 'Unknown'}
                                 </td>
                                 <td className="px-4 py-3">
-                                  {reservation.startDate && reservation.endDate ? (
+                                  {reservation.startDate ? (
                                     <>
-                                      {formatDate(reservation.startDate)} - {formatDate(reservation.endDate)}
+                                      {formatDate(reservation.startDate)} - {reservation.endDate ? formatDate(reservation.endDate) : 'Open-ended'}
                                     </>
                                   ) : (
                                     <span className="text-muted-foreground">No dates specified</span>

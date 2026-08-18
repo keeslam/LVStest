@@ -14,7 +14,7 @@ import createMemoryStore from "memorystore";
 import { AuditLogger } from "./utils/security/auditLogger.js";
 import { checkAccountLockout, recordLoginAttempt, clearFailedAttempts, loginLimiter } from "./middleware/security/rateLimiter.js";
 import { trackSession } from "./utils/security/sessionManager.js";
-import { csrfProtection } from "./middleware/security/csrf.js";
+import { csrfProtection, attachCsrfToken } from "./middleware/security/csrf.js";
 import { useSecureCookies } from "./utils/secure-cookies.js";
 
 // Extend Express.User interface with our User type properties
@@ -135,6 +135,15 @@ export function setupAuth(app: Express) {
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // CSRF protection must be wired here, before any route (including the ones
+  // registered below in this same function — /api/login, /api/register,
+  // /api/logout, /api/user) so every response gets the token cookie and every
+  // mutating request is checked. Registering it later in index.ts, after
+  // setupAuth() returns, would skip all of these routes entirely, since
+  // Express only runs middleware registered before the route that matches.
+  app.use(attachCsrfToken);
+  app.use(csrfProtection);
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
@@ -357,7 +366,7 @@ export function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  app.post("/api/logout", csrfProtection, async (req: Request, res: Response, next: NextFunction) => {
+  app.post("/api/logout", async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user as User | undefined;
     const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
     const userAgent = req.get('user-agent') || 'unknown';

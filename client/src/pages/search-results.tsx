@@ -307,7 +307,7 @@ const SearchResults: FC = () => {
                             </div>
                             <div>
                               <span className="text-muted-foreground">To:</span>{' '}
-                              {formatDate(reservation.endDate)}
+                              {reservation.endDate ? formatDate(reservation.endDate) : 'Open-ended'}
                             </div>
                           </div>
                         </CardContent>
@@ -429,7 +429,7 @@ const SearchResults: FC = () => {
                         </div>
                         <div>
                           <span className="text-muted-foreground">To:</span>{' '}
-                          {formatDate(reservation.endDate)}
+                          {reservation.endDate ? formatDate(reservation.endDate) : 'Open-ended'}
                         </div>
                         <div>
                           <span className="text-muted-foreground">Vehicle:</span>{' '}

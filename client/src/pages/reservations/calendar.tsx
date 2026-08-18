@@ -2206,11 +2206,7 @@ export default function ReservationCalendarPage() {
                               
                               // Open PDFs directly in new tab (browsers often block PDF iframes)
                               if (isPdf) {
-                                // Ensure the path has /uploads prefix if it doesn't already
-                                const viewPath = doc.filePath.startsWith('uploads/') 
-                                  ? `/${doc.filePath}` 
-                                  : `/uploads/${doc.filePath}`;
-                                window.open(viewPath, '_blank');
+                                window.open(`/api/documents/view/${doc.id}`, '_blank');
                               } else {
                                 // Show preview for images and other files
                                 setPreviewDocument(doc);
@@ -2906,7 +2902,7 @@ export default function ReservationCalendarPage() {
                 return (
                   <div className="flex items-center justify-center h-full">
                     <img
-                      src={`/${previewDocument.filePath}`}
+                      src={`/api/documents/view/${previewDocument.id}`}
                       alt={previewDocument.fileName}
                       className="max-w-full max-h-[70vh] object-contain rounded shadow-lg"
                     />
@@ -2916,7 +2912,7 @@ export default function ReservationCalendarPage() {
                 return (
                   <div className="flex flex-col items-center justify-center h-full space-y-4">
                     <p className="text-gray-600">Preview not available for this file type.</p>
-                    <Button onClick={() => window.open(`/${previewDocument.filePath}`, '_blank')}>
+                    <Button onClick={() => window.open(`/api/documents/view/${previewDocument.id}`, '_blank')}>
                       Open File
                     </Button>
                   </div>
@@ -2925,7 +2921,7 @@ export default function ReservationCalendarPage() {
             })()}
           </div>
           <div className="flex justify-between items-center pt-4 border-t">
-            <Button variant="outline" onClick={() => window.open(`/${previewDocument?.filePath}`, '_blank')}>
+            <Button variant="outline" onClick={() => window.open(`/api/documents/view/${previewDocument?.id}`, '_blank')}>
               Open in New Tab
             </Button>
             <Button onClick={() => setPreviewDialogOpen(false)}>

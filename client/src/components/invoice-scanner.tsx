@@ -51,7 +51,7 @@ import {
   Trash2,
   Edit3
 } from "lucide-react";
-import { formatCurrency } from "@/lib/format-utils";
+import { formatCurrency, sumMoney } from "@/lib/format-utils";
 import { displayLicensePlate } from "@/lib/utils";
 import { Vehicle } from "@shared/schema";
 
@@ -692,9 +692,10 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
                       <div className="flex justify-between items-center pt-4 border-t">
                         <div className="text-sm text-muted-foreground">
                           Total selected: {formatCurrency(
-                            editableLineItems
-                              .filter((_, index) => selectedItems.has(index))
-                              .reduce((sum, item) => sum + item.amount, 0)
+                            sumMoney(
+                              editableLineItems.filter((_, index) => selectedItems.has(index)),
+                              item => item.amount
+                            )
                           )}
                         </div>
                         <div className="flex gap-2">

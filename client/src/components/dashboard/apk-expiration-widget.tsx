@@ -132,7 +132,7 @@ export function ApkExpirationWidget() {
                   <div className="flex items-center">
                     <div className="text-xs text-gray-500">{formatDate(vehicle.apkDate || '')}</div>
                     <div className={`ml-2 px-1.5 py-0.5 text-xs rounded-full ${getUrgencyClass(vehicle.daysUntilExpiration)}`}>
-                      {vehicle.daysUntilExpiration} days
+                      {vehicle.daysUntilExpiration < 0 ? `${Math.abs(vehicle.daysUntilExpiration)}d overdue` : `${vehicle.daysUntilExpiration} days`}
                     </div>
                   </div>
                 </div>

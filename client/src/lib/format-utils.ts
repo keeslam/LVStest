@@ -30,6 +30,18 @@ export function formatCurrency(amount: number): string {
 }
 
 /**
+ * Sum a list of money values without floating-point drift (0.1 + 0.2 !== 0.3).
+ * Adds in integer cents and converts back, instead of summing raw floats.
+ */
+export function sumMoney<T>(items: T[], getAmount: (item: T) => number | string | null | undefined): number {
+  const totalCents = items.reduce((cents, item) => {
+    const value = Number(getAmount(item)) || 0;
+    return cents + Math.round(value * 100);
+  }, 0);
+  return totalCents / 100;
+}
+
+/**
  * Format a license plate consistently throughout the application
  * Removes dashes and spaces, then formats as XX-LL-00 or similar
  * If the license plate is in a non-standard format, returns it as-is

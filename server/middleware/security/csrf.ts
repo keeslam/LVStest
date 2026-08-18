@@ -66,6 +66,13 @@ export function csrfProtection(req: Request & { session: any }, res: Response, n
     return next();
   }
 
+  // Login has no pre-existing session to forge a request against — the standard
+  // exemption. Every other mutating route runs on an authenticated session and
+  // is in scope, including /api/register (which itself requires an admin session).
+  if (req.path === '/api/login') {
+    return next();
+  }
+
   // Get token from header or body
   const token = req.get('X-CSRF-Token') || req.body._csrf;
 

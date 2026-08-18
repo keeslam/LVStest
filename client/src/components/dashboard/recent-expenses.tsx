@@ -16,7 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { formatDate, formatCurrency, formatLicensePlate } from "@/lib/format-utils";
+import { formatDate, formatCurrency, formatLicensePlate, sumMoney } from "@/lib/format-utils";
 import { Expense } from "@shared/schema";
 import { MoreVertical, Eye, Pencil, Printer, Calendar, Tag, Truck, FileText, FileCheck } from "lucide-react";
 import { ExpenseForm } from "@/components/expenses/expense-form";
@@ -114,7 +114,7 @@ export function RecentExpenses() {
     // Convert to array and calculate totals
     return Array.from(groups.values()).map(expenseGroup => ({
       expenses: expenseGroup,
-      totalAmount: expenseGroup.reduce((sum, exp) => sum + Number(exp.amount || 0), 0),
+      totalAmount: sumMoney(expenseGroup, exp => exp.amount),
       vehicle: expenseGroup[0].vehicle,
       date: expenseGroup[0].date,
       categories: [...new Set(expenseGroup.map(e => e.category))],

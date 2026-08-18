@@ -1131,9 +1131,16 @@ export class MemStorage implements IStorage {
         }
       }
       
-      // Check if this is for the same vehicle and if dates overlap
+      // Check if this is for the same vehicle and if dates overlap. Same-day
+      // turnover (existing.endDate === new.startDate, or vice versa) is allowed —
+      // dates have no time-of-day, and a same-day return/pickup handover is normal,
+      // not a double-booking. A genuine overlap or identical range still conflicts.
+      const touchesBoundaryOnly =
+        r.endDate === startDate || endDate === r.startDate;
+
       return (
         r.vehicleId === vehicleId &&
+        !touchesBoundaryOnly &&
         (
           (r.startDate <= endDate && r.endDate >= startDate) ||
           (r.startDate >= startDate && r.startDate <= endDate) ||

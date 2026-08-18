@@ -252,8 +252,10 @@ export const insertVehicleSchema = createInsertSchema(vehicles).omit({
   createdAt: true,
   updatedAt: true,
   // No longer omit these fields so they can be set during insert/update
-  // createdBy: true, 
+  // createdBy: true,
   // updatedBy: true,
+}).extend({
+  currentMileage: z.number().int().min(0, "Mileage cannot be negative").nullable().optional(),
 });
 
 // Customers table
@@ -329,12 +331,22 @@ export const customers = pgTable("customers", {
   updatedByUser: integer("updated_by_user_id").references(() => users.id),
 });
 
+const optionalEmail = z.string().email("Invalid email address").nullable().optional().or(z.literal(''));
+
 export const insertCustomerSchema = createInsertSchema(customers).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
   createdByUser: true,
   updatedByUser: true,
+}).extend({
+  email: optionalEmail,
+  emailForMOT: optionalEmail,
+  emailForInvoices: optionalEmail,
+  emailGeneral: optionalEmail,
+  primaryContactEmail: optionalEmail,
+  secondaryContactEmail: optionalEmail,
+  billingContactEmail: optionalEmail,
 });
 
 // Drivers table - for managing multiple drivers per customer/company
@@ -699,7 +711,9 @@ export const insertExpenseSchema = createInsertSchema(expenses).omit({
   amount: z.union([
     z.number(),
     z.string().transform(val => parseFloat(val) || 0)
-  ]),
+  ]).refine(val => val > 0 && val <= 1000000, {
+    message: "Amount must be greater than 0 and no more than €1,000,000",
+  }),
   receiptPath: z.string().nullable().optional(),
 });
 

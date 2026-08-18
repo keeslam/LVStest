@@ -54,20 +54,23 @@ export function isWithinNextMonths(dateStr: string | null | undefined, months: n
 }
 
 /**
- * Get days until a date from today
+ * Get days until a date from today. Negative means the date has already
+ * passed — callers must handle that case (e.g. "N days overdue") rather than
+ * clamping to 0, which would make an expired APK/warranty look like it
+ * expires today instead of already having lapsed.
  */
 export function getDaysUntil(dateStr: string | null | undefined): number {
   if (!dateStr) return 0;
-  
+
   try {
     const targetDate = parseISO(dateStr);
     if (!isValid(targetDate)) return 0;
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     targetDate.setHours(0, 0, 0, 0);
-    
-    return Math.max(0, differenceInDays(targetDate, today));
+
+    return differenceInDays(targetDate, today);
   } catch (err) {
     return 0;
   }

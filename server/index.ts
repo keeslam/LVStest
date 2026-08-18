@@ -23,7 +23,6 @@ import { UserPermission } from "../shared/schema.js";
 import { securityHeaders, customSecurityHeaders } from "./middleware/security/headers.js";
 import { sanitizeInput } from "./middleware/security/sanitization.js";
 import { apiLimiter } from "./middleware/security/rateLimiter.js";
-import { attachCsrfToken } from "./middleware/security/csrf.js";
 import { startSessionCleanupScheduler } from "./utils/security/sessionManager.js";
 
 // Graceful shutdown implementation
@@ -154,12 +153,11 @@ app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 // Security: Sanitize all inputs to prevent XSS
 app.use(sanitizeInput);
 
-// Setup authentication (includes session middleware)
-// Note: This also registers /api/login, /api/register, and /api/logout routes
+// Setup authentication (includes session middleware). This also wires up CSRF
+// protection (attachCsrfToken + csrfProtection) and registers /api/login,
+// /api/register, and /api/logout — see setupAuth() in auth.ts for why the
+// CSRF middleware has to live inside that same call rather than after it.
 const { requireAuth } = setupAuth(app);
-
-// Security: Attach CSRF token to all responses (after session middleware)
-app.use(attachCsrfToken);
 
 // Real-time WebSocket event system
 function setupSocketIO(server: any) {
@@ -292,8 +290,11 @@ async function testDatabaseConnection() {
 }
 
 // Serve uploads directory for static files (diagrams, documents, etc.)
+// Gated behind requireAuth: these files include customer contracts, damage-check
+// photos, and license scans, which must never be reachable by an unauthenticated
+// request that merely guesses or obtains a file path.
 const uploadsPath = path.join(process.cwd(), 'uploads');
-app.use('/uploads', express.static(uploadsPath));
+app.use('/uploads', requireAuth, express.static(uploadsPath));
 console.log('📁 Serving uploads from:', uploadsPath);
 
 // API root

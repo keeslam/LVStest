@@ -68,7 +68,7 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
 
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: number) => {
-      const response = await fetch(`/api/users/${userId}`, { method: 'DELETE' });
+      const response = await apiRequest('DELETE', `/api/users/${userId}`);
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Failed to delete user');

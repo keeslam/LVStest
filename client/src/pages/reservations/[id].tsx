@@ -291,7 +291,7 @@ export default function ReservationDetails() {
                 <h3 className="text-sm font-medium text-gray-500">Status</h3>
                 <div className="flex gap-2 mt-1">
                   <Badge className={`${getStatusStyle(reservation.status)}`}>
-                    {reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)}
+                    {reservation.status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                   </Badge>
                   {reservation.type && reservation.type !== 'standard' && (() => {
                     const typeInfo = getReservationTypeInfo(reservation.type);
@@ -307,10 +307,10 @@ export default function ReservationDetails() {
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Rental Period</h3>
                 <p className="text-base mt-1">
-                  {formatDate(reservation.startDate)} - {formatDate(reservation.endDate)}
+                  {formatDate(reservation.startDate)} - {reservation.endDate ? formatDate(reservation.endDate) : 'Open-ended'}
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  {rentalDuration} day{rentalDuration !== 1 ? 's' : ''}
+                  {reservation.endDate ? `${rentalDuration} day${rentalDuration !== 1 ? 's' : ''}` : 'Open-ended'}
                 </p>
               </div>
               <div>
@@ -463,7 +463,7 @@ export default function ReservationDetails() {
                           Replacing reservation #{originalReservation.id}
                         </p>
                         <p className="text-xs text-gray-600 mt-1">
-                          Original dates: {formatDate(originalReservation.startDate)} - {formatDate(originalReservation.endDate)}
+                          Original dates: {formatDate(originalReservation.startDate)} - {originalReservation.endDate ? formatDate(originalReservation.endDate) : 'Open-ended'}
                         </p>
                       </div>
                       <Link href={`/reservations/${originalReservation.id}`}>
@@ -479,7 +479,7 @@ export default function ReservationDetails() {
                           Replacement: {activeReplacement.vehicle?.brand} {activeReplacement.vehicle?.model}
                         </p>
                         <p className="text-xs text-gray-600 mt-1">
-                          Replacement period: {formatDate(activeReplacement.startDate)} - {formatDate(activeReplacement.endDate)}
+                          Replacement period: {formatDate(activeReplacement.startDate)} - {activeReplacement.endDate ? formatDate(activeReplacement.endDate) : 'Open-ended'}
                         </p>
                       </div>
                       <Link href={`/reservations/${activeReplacement.id}`}>

@@ -12251,17 +12251,5 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
-  // Setup static file serving for uploads - now works in any environment
-  app.use('/uploads', (req, res, next) => {
-    const filePath = path.join(getUploadsDir(), req.path);
-    res.sendFile(filePath, (err) => {
-      if (err) {
-        console.error(`File not found: ${filePath}`);
-        // If file not found, continue to next handler
-        next();
-      }
-    });
-  });
-
   // Routes registered successfully
 }

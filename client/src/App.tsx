@@ -22,17 +22,8 @@ import NotificationsPage from "@/pages/notifications/index";
 import CustomNotificationsPage from "@/pages/notifications/custom-notifications";
 import CustomerCommunications from "@/pages/CustomerCommunications";
 import SearchResults from "@/pages/search-results";
-import UsersIndex from "@/pages/users/index";
-import UserAdd from "@/pages/users/add";
-import UserDetails from "@/pages/users/[id]";
-import UserEdit from "@/pages/users/[id]/edit";
-import ProfilePage from "@/pages/profile";
-import ProfileEditPage from "@/pages/profile/edit";
-import ChangePasswordPage from "@/pages/profile/change-password";
-import MileageOverridePasswordPage from "@/pages/profile/mileage-override-password";
 import MaintenanceCalendar from "@/pages/maintenance/calendar";
 import SettingsPage from "@/pages/settings/index";
-import CommunicationsPage from "@/pages/communications";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import MainLayout from "@/layouts/MainLayout";
@@ -95,15 +86,6 @@ function AppRoutes() {
                   return user ? <SearchResults /> : <Redirect to="/auth" />;
                 }}
               </Route>
-              <ProtectedRoute path="/users" component={UsersIndex} />
-              <ProtectedRoute path="/users/add" component={UserAdd} />
-              <ProtectedRoute path="/users/:id/edit" component={UserEdit} />
-              <ProtectedRoute path="/users/:id" component={UserDetails} />
-              <ProtectedRoute path="/profile" component={ProfilePage} />
-              <ProtectedRoute path="/profile/edit" component={ProfileEditPage} />
-              <ProtectedRoute path="/profile/change-password" component={ChangePasswordPage} />
-              <ProtectedRoute path="/profile/mileage-override-password" component={MileageOverridePasswordPage} />
-              <ProtectedRoute path="/communications" component={CommunicationsPage} />
               <ProtectedRoute path="/settings" component={SettingsPage} />
               <Route path="/auth" component={AuthPage} />
               <Route component={NotFound} />

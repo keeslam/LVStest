@@ -1115,7 +1115,7 @@ export class DatabaseStorage implements IStorage {
     // For open-ended rentals (null endDate), use a far-future date for conflict checking
     // This ensures that an open-ended rental conflicts with all future reservations
     const effectiveEndDate = endDate || '9999-12-31';
-    
+
     // Build the base conditions
     const baseConditions = [
       eq(reservations.vehicleId, vehicleId),
@@ -1123,9 +1123,20 @@ export class DatabaseStorage implements IStorage {
       sql`${reservations.status} != 'completed'`,
       sql`${reservations.status} != 'returned'`,
       isNull(reservations.deletedAt),
+      // Overlap check with same-day turnover allowed: dates have no time-of-day, and
+      // a rental ending the same calendar day another begins is a normal handover
+      // (return in the morning, new pickup that afternoon), not a double-booking.
+      // Only excluded when the ranges touch at exactly that one boundary — a genuine
+      // overlap (or an identical range) still conflicts.
       sql`(
-        (${reservations.startDate} <= ${effectiveEndDate} AND ${reservations.endDate} >= ${startDate})
-        OR (${reservations.startDate} <= ${effectiveEndDate} AND (${reservations.endDate} IS NULL OR ${reservations.endDate} = 'undefined'))
+        (
+          (${reservations.startDate} <= ${effectiveEndDate} AND ${reservations.endDate} >= ${startDate})
+          OR (${reservations.startDate} <= ${effectiveEndDate} AND (${reservations.endDate} IS NULL OR ${reservations.endDate} = 'undefined'))
+        )
+        AND NOT (
+          (${reservations.endDate} IS NOT NULL AND ${reservations.endDate} = ${startDate})
+          OR ${effectiveEndDate} = ${reservations.startDate}
+        )
       )`
     ];
     

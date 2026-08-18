@@ -11,7 +11,7 @@ import { ReservationAddDialog } from "@/components/reservations/reservation-add-
 import { ReservationEditDialog } from "@/components/reservations/reservation-edit-dialog";
 import { ExpenseViewDialog } from "@/components/expenses/expense-view-dialog";
 import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
-import { formatDate, formatCurrency, formatLicensePlate } from "@/lib/format-utils";
+import { formatDate, formatCurrency, formatLicensePlate, sumMoney } from "@/lib/format-utils";
 import { isTrueValue } from "@/lib/utils";
 import { getDaysUntil, getUrgencyColorClass } from "@/lib/date-utils";
 import { Vehicle, Expense, Document, Reservation, UserRole, Customer } from "@shared/schema";
@@ -848,7 +848,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
   const warrantyUrgencyClass = getUrgencyColorClass(daysUntilWarranty);
   
   // Calculate total expenses
-  const totalExpenses = expenses?.reduce((sum, expense) => sum + Number(expense.amount), 0) || 0;
+  const totalExpenses = expenses ? sumMoney(expenses, expense => expense.amount) : 0;
   
   // Group expenses by category
   const expensesByCategory = expenses?.reduce((grouped, expense) => {
@@ -866,7 +866,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     return {
       category,
       expenses: sortedExpenses,
-      amount: sortedExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0),
+      amount: sumMoney(sortedExpenses, expense => expense.amount),
       count: sortedExpenses.length
     };
   }).sort((a, b) => b.amount - a.amount);
@@ -1093,7 +1093,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               <p className={`font-semibold ${displayReservation ? 'text-lg' : 'text-2xl'}`}>{vehicle.apkDate ? formatDate(vehicle.apkDate) : "N/A"}</p>
               {vehicle.apkDate && (
                 <Badge className={apkUrgencyClass}>
-                  {daysUntilApk} days
+                  {daysUntilApk < 0 ? `${Math.abs(daysUntilApk)} days overdue` : `${daysUntilApk} days`}
                 </Badge>
               )}
             </div>
@@ -1242,7 +1242,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               <div className="text-sm text-green-700 mt-2 pt-2 border-t border-green-200">
                 <p className="font-medium">Rental Period:</p>
                 <p className="text-xs mt-0.5">
-                  {formatDate(upcomingReservation.startDate)} - {formatDate(upcomingReservation.endDate)}
+                  {formatDate(upcomingReservation.startDate)} - {upcomingReservation.endDate ? formatDate(upcomingReservation.endDate) : 'Open-ended'}
                 </p>
               </div>
             </CardContent>
@@ -2056,9 +2056,9 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                       </div>
                                     )}
                                     <div className="flex justify-between items-center gap-2 mt-2">
-                                      <button 
+                                      <button
                                         onClick={() => window.open(
-                                          `/${document.filePath}`,
+                                          `/api/documents/view/${document.id}`,
                                           'Document Preview',
                                           'width=900,height=700,toolbar=no,menubar=no,location=no,status=no,scrollbars=yes,resizable=yes'
                                         )}
@@ -2084,7 +2084,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                         onClick={(e) => {
                                           e.preventDefault();
                                           const printWindow = window.open(
-                                            `/${document.filePath}`, 
+                                            `/api/documents/view/${document.id}`,
                                             'Print Preview',
                                             'width=900,height=700,toolbar=no,menubar=no,location=no,status=no,scrollbars=yes,resizable=yes'
                                           );
@@ -2195,8 +2195,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              <span>{formatDate(reservation.startDate)}</span> - 
-                              <span> {formatDate(reservation.endDate)}</span>
+                              <span>{formatDate(reservation.startDate)}</span> -
+                              <span> {reservation.endDate ? formatDate(reservation.endDate) : 'Open-ended'}</span>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -2265,7 +2265,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                     <AlertDialogDescription>
                                       This will permanently delete this reservation from {vehicle.brand} {vehicle.model} ({formatLicensePlate(vehicle.licensePlate)}).
                                       <p className="mt-2 font-medium">
-                                        {formatDate(reservation.startDate)} - {formatDate(reservation.endDate)}
+                                        {formatDate(reservation.startDate)} - {reservation.endDate ? formatDate(reservation.endDate) : 'Open-ended'}
                                       </p>
                                       <p className="mt-1 text-sm text-gray-500">
                                         Customer: {reservation.customer?.name}
@@ -2481,10 +2481,10 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                       <p className="text-lg font-medium">{vehicle.apkDate ? formatDate(vehicle.apkDate) : "Not set"}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Days Remaining</p>
+                      <p className="text-sm text-gray-500">{daysUntilApk < 0 ? "Overdue By" : "Days Remaining"}</p>
                       <div className="flex items-center">
-                        <p className="text-lg font-medium mr-2">{daysUntilApk}</p>
-                        {vehicle.apkDate && <Badge className={apkUrgencyClass}>{daysUntilApk <= 30 ? "Action needed soon" : "OK"}</Badge>}
+                        <p className="text-lg font-medium mr-2">{Math.abs(daysUntilApk)}</p>
+                        {vehicle.apkDate && <Badge className={apkUrgencyClass}>{daysUntilApk < 0 ? "Expired" : daysUntilApk <= 30 ? "Action needed soon" : "OK"}</Badge>}
                       </div>
                     </div>
                   </div>

@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getCsrfToken } from "@/lib/queryClient";
 import {
   ArrowLeft, Plus, Trash2, Save, Loader2, ArrowUp, ArrowDown, AlertTriangle, Upload, RotateCcw,
 } from "lucide-react";
@@ -52,7 +52,13 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
     try {
       const fd = new FormData();
       fd.append('header', file);
-      const res = await fetch('/api/damage-check-fields/header', { method: 'POST', body: fd, credentials: 'include' });
+      const csrfToken = getCsrfToken();
+      const res = await fetch('/api/damage-check-fields/header', {
+        method: 'POST',
+        body: fd,
+        credentials: 'include',
+        headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : undefined,
+      });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Upload failed');
       setHeaderCacheBust(Date.now());
       toast({ title: 'Header updated', description: 'New header image uploaded.' });
@@ -66,7 +72,12 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
   const handleHeaderReset = async () => {
     if (!confirm('Reset the header back to the bundled default image?')) return;
     try {
-      const res = await fetch('/api/damage-check-fields/header', { method: 'DELETE', credentials: 'include' });
+      const csrfToken = getCsrfToken();
+      const res = await fetch('/api/damage-check-fields/header', {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : undefined,
+      });
       if (!res.ok) throw new Error('Reset failed');
       setHeaderCacheBust(Date.now());
       toast({ title: 'Header reset', description: 'Default header restored.' });
