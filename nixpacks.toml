@@ -1,0 +1,32 @@
+[variables]
+NIXPACKS_NODE_VERSION = "20"
+NPM_CONFIG_PRODUCTION = "false"
+
+[phases.setup]
+# postgresql_17 must match the major version of the database server.
+# pg_dump refuses to dump from a server newer than itself, so an unpinned
+# "postgresql" that resolves to 16.x against a PostgreSQL 17 server makes every
+# backup fail with:
+#   pg_dump: error: server version: 17.x; pg_dump version: 16.x
+# Bump this in step with the database.
+nixPkgs = ["nodejs_20", "postgresql_17"]
+
+[phases.install]
+cmds = [
+  "npm ci"
+]
+
+[phases.build]
+cmds = [
+  "npm run build",
+  "mkdir -p dist/server/public",
+  "cp -r dist/public/* dist/server/public/"
+]
+
+[start]
+# db:push and the migration are chained with || rather than && so a schema step
+# that fails cannot stop the app from booting. Previously any failure aborted
+# the chain, the container exited, Coolify restarted it, and it looped without
+# ever serving traffic. startup-migration.js applies the additive changes the
+# app actually needs; db:push is a convenience on top of it.
+cmd = "echo '=== CAR RENTAL MANAGER STARTING ===' && echo '=== RUNNING DATABASE PUSH ===' && (npm run db:push || echo '⚠️ db:push failed — continuing, see startup-migration output below') && echo '=== RUNNING STARTUP MIGRATION ===' && (node startup-migration.js || echo '⚠️ startup migration reported errors — continuing') && echo '=== STARTING APPLICATION ===' && npm start"

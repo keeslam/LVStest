@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-10-23T00-00-00-050Z",
+  "type": "files",
+  "filename": "files-backup-2025-10-23T00-00-00-050Z.tar.gz",
+  "size": 23479062,
+  "checksum": "ab9ff2d100a7fa40ea8de30b069a4e3667fab9394407b4584b02b41fbd7d00c1",
+  "metadata": {
+    "fileCount": 89,
+    "compressedSize": 23479062
+  }
+}

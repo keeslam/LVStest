@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-05-22T00-00-00-041Z",
+  "type": "files",
+  "filename": "files-backup-2026-05-22T00-00-00-041Z.tar.gz",
+  "size": 52513643,
+  "checksum": "f99776ce683dfc5d59aa7843011a7ac299d0cb782a52677b64ac7dacf2c2ec44",
+  "metadata": {
+    "fileCount": 158,
+    "compressedSize": 52513643
+  }
+}

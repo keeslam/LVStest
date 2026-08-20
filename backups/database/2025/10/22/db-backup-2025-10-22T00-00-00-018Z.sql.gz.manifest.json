@@ -1,0 +1,10 @@
+{
+  "timestamp": "2025-10-22T00-00-00-018Z",
+  "type": "database",
+  "filename": "db-backup-2025-10-22T00-00-00-018Z.sql.gz",
+  "size": 484114,
+  "checksum": "94603e91d4015a6b2423a80ebc043efe005c710cac17d4bd73cb1e3bee5951bb",
+  "metadata": {
+    "compressedSize": 484114
+  }
+}

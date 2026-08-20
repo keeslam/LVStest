@@ -1,0 +1,10 @@
+{
+  "timestamp": "2025-10-17T00-00-00-017Z",
+  "type": "database",
+  "filename": "db-backup-2025-10-17T00-00-00-017Z.sql.gz",
+  "size": 10,
+  "checksum": "7a7a1e62dd845714cdc77c829ffd925612034be75bb7dfa317413148db2efd08",
+  "metadata": {
+    "compressedSize": 10
+  }
+}
