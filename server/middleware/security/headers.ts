@@ -37,6 +37,7 @@ export const securityHeaders = helmet({
         "wss:", // Secure WebSocket for Socket.IO
       ],
       frameSrc: [
+        "'self'", // In-app document/report preview (Documents page, Delivery dashboard)
         "https://www.google.com", // Route preview embed on the Delivery dashboard
       ],
       objectSrc: ["'none'"],
@@ -44,9 +45,10 @@ export const securityHeaders = helmet({
     },
   },
 
-  // X-Frame-Options: Prevent clickjacking
+  // X-Frame-Options: Prevent clickjacking from other sites, while still allowing
+  // our own document/report preview iframes (same-origin) to embed our own pages.
   frameguard: {
-    action: 'deny',
+    action: 'sameorigin',
   },
 
   // X-Content-Type-Options: Prevent MIME type sniffing
@@ -87,7 +89,9 @@ export function customSecurityHeaders(req: Request, res: Response, next: NextFun
 
   // Add custom headers
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
+  // SAMEORIGIN (not DENY) so the in-app document/report preview iframes
+  // (Documents page, Delivery dashboard) can embed our own pages.
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
 

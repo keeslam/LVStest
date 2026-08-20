@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ToastAction } from "@/components/ui/toast";
 import {
   Dialog,
   DialogContent,
@@ -170,6 +169,9 @@ export default function DeliveryDashboard() {
   const [routeDialogOpen, setRouteDialogOpen] = useState(false);
   const [selectedTransportIds, setSelectedTransportIds] = useState<number[]>([]);
   const [templateEditorOpen, setTemplateEditorOpen] = useState(false);
+  const [reportPreviewOpen, setReportPreviewOpen] = useState(false);
+  const [reportToPreview, setReportToPreview] = useState<{ id: number; fileName: string } | null>(null);
+  const [reportIframeError, setReportIframeError] = useState(false);
 
   const filteredTransports = useMemo(() => {
     const query = transportSearchQuery.trim().toLowerCase();
@@ -259,18 +261,9 @@ export default function DeliveryDashboard() {
     },
     onSuccess: (document) => {
       invalidateByPrefix("/api/documents");
-      toast({
-        title: "Report generated",
-        description: `${document.fileName} was saved to Documents.`,
-        action: (
-          <ToastAction
-            altText="View report"
-            onClick={() => window.open(`/api/documents/view/${document.id}`, "_blank", "noopener,noreferrer")}
-          >
-            View
-          </ToastAction>
-        ),
-      });
+      setReportIframeError(false);
+      setReportToPreview(document);
+      setReportPreviewOpen(true);
       setSelectedTransportIds([]);
     },
     onError: (error: any) => {
@@ -281,6 +274,28 @@ export default function DeliveryDashboard() {
       });
     },
   });
+
+  // Calling .print() on the embedded preview iframe doesn't reliably open the
+  // OS print dialog (printer selection) — the browser's PDF viewer inside a
+  // framed/sandboxed context tends to silently fall back to a download instead,
+  // with no exception to catch. Opening the PDF in its own top-level window and
+  // printing that is what actually gets a real print dialog with printer choice.
+  const printGeneratedReport = () => {
+    if (!reportToPreview) return;
+    const printUrl = `/api/documents/view/${reportToPreview.id}`;
+    const printWindow = window.open(printUrl, "transportReportPrintWindow", "width=900,height=700,noopener");
+    if (!printWindow) {
+      toast({
+        title: "Popup blocked",
+        description: "Please allow popups for this site, then click Print again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    printWindow.addEventListener("load", () => {
+      setTimeout(() => printWindow.print(), 600);
+    });
+  };
 
   const getTransportStatusBadge = (status: string) => {
     switch (status) {
@@ -827,6 +842,52 @@ export default function DeliveryDashboard() {
               data-testid="button-confirm-delete-transport"
             >
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Report preview dialog - opens automatically once a report finishes generating,
+          so the driver report can be reviewed and printed right away instead of only
+          being saved to Documents. */}
+      <AlertDialog open={reportPreviewOpen} onOpenChange={setReportPreviewOpen}>
+        <AlertDialogContent className="max-w-6xl w-[90vw] h-[85vh] flex flex-col">
+          <AlertDialogHeader className="flex-shrink-0">
+            <AlertDialogTitle>{reportToPreview?.fileName}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Report generated and saved to Documents — review and print below
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex-1 overflow-hidden border rounded mb-4">
+            {reportToPreview && !reportIframeError && (
+              <iframe
+                id="transport-report-preview-iframe"
+                src={`/api/documents/view/${reportToPreview.id}`}
+                className="w-full h-full border-0"
+                title="Transport Report Preview"
+                sandbox="allow-same-origin allow-scripts allow-popups allow-top-navigation allow-downloads"
+                onError={() => setReportIframeError(true)}
+              />
+            )}
+            {reportToPreview && reportIframeError && (
+              <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                <p className="text-muted-foreground mb-4">
+                  Your browser blocked the inline preview. You can still open it in a new tab to print it.
+                </p>
+                <Button
+                  onClick={() => window.open(`/api/documents/view/${reportToPreview.id}`, "_blank", "noopener,noreferrer")}
+                  variant="outline"
+                >
+                  Open in New Tab
+                </Button>
+              </div>
+            )}
+          </div>
+          <AlertDialogFooter className="flex-shrink-0">
+            <AlertDialogCancel onClick={() => setReportPreviewOpen(false)}>Close</AlertDialogCancel>
+            <AlertDialogAction onClick={printGeneratedReport} className="bg-blue-600 hover:bg-blue-700">
+              <Printer className="h-4 w-4 mr-2" />
+              Print
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
