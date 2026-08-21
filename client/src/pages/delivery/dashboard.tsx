@@ -405,8 +405,8 @@ export default function DeliveryDashboard() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Delivery Dashboard</h1>
-          <p className="text-muted-foreground">Manage vehicle delivery, transport and pickup services</p>
+          <h1 className="text-3xl font-bold">Transport Dashboard</h1>
+          <p className="text-muted-foreground">Deliveries, swaps, tows, repossessions and other vehicle movements — deliveries are transports too</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setRouteDialogOpen(true)} data-testid="button-route-optimization">
@@ -469,72 +469,87 @@ export default function DeliveryDashboard() {
         </Card>
       </div>
 
-      {/* Delivery Tabs */}
+      {/* Transport Tabs — "Deliveries" is a reservation-driven view (a delivery
+          is scheduled as part of a rental); "All Transports" is the standalone
+          vehicle_transports table, which already has its own transportType
+          'delivery' for loose deliveries not tied to a reservation. Both are
+          transports; this just groups the reservation-flavored ones together
+          instead of flattening them into one 5-tab row. */}
       <Tabs defaultValue="transports" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="pending" data-testid="tab-pending">
-            Pending ({pendingDeliveries.length})
-          </TabsTrigger>
-          <TabsTrigger value="scheduled" data-testid="tab-scheduled">
-            Scheduled ({scheduledDeliveries.length})
-          </TabsTrigger>
-          <TabsTrigger value="enroute" data-testid="tab-enroute">
-            En Route ({enRouteDeliveries.length})
-          </TabsTrigger>
-          <TabsTrigger value="completed" data-testid="tab-completed">
-            Completed ({completedDeliveries.length})
-          </TabsTrigger>
           <TabsTrigger value="transports" data-testid="tab-transports">
-            Transports ({transports.length})
+            All Transports ({transports.length})
+          </TabsTrigger>
+          <TabsTrigger value="deliveries" data-testid="tab-deliveries">
+            Deliveries ({deliveryReservations.length})
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pending" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pending Deliveries</CardTitle>
-              <CardDescription>Deliveries awaiting scheduling</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {renderDeliveryTable(pendingDeliveries, 'pending')}
-            </CardContent>
-          </Card>
-        </TabsContent>
+        <TabsContent value="deliveries" className="space-y-4">
+          <Tabs defaultValue="pending" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="pending" data-testid="tab-pending">
+                Pending ({pendingDeliveries.length})
+              </TabsTrigger>
+              <TabsTrigger value="scheduled" data-testid="tab-scheduled">
+                Scheduled ({scheduledDeliveries.length})
+              </TabsTrigger>
+              <TabsTrigger value="enroute" data-testid="tab-enroute">
+                En Route ({enRouteDeliveries.length})
+              </TabsTrigger>
+              <TabsTrigger value="completed" data-testid="tab-completed">
+                Completed ({completedDeliveries.length})
+              </TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="scheduled" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Scheduled Deliveries</CardTitle>
-              <CardDescription>Deliveries ready to begin</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {renderDeliveryTable(scheduledDeliveries, 'scheduled')}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            <TabsContent value="pending" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pending Deliveries</CardTitle>
+                  <CardDescription>Deliveries awaiting scheduling</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {renderDeliveryTable(pendingDeliveries, 'pending')}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-        <TabsContent value="enroute" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>En Route Deliveries</CardTitle>
-              <CardDescription>Deliveries currently in progress</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {renderDeliveryTable(enRouteDeliveries, 'enroute')}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            <TabsContent value="scheduled" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Scheduled Deliveries</CardTitle>
+                  <CardDescription>Deliveries ready to begin</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {renderDeliveryTable(scheduledDeliveries, 'scheduled')}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-        <TabsContent value="completed" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Completed Deliveries</CardTitle>
-              <CardDescription>Successfully delivered vehicles</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {renderDeliveryTable(completedDeliveries, 'completed')}
-            </CardContent>
-          </Card>
+            <TabsContent value="enroute" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>En Route Deliveries</CardTitle>
+                  <CardDescription>Deliveries currently in progress</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {renderDeliveryTable(enRouteDeliveries, 'enroute')}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="completed" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Completed Deliveries</CardTitle>
+                  <CardDescription>Successfully delivered vehicles</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {renderDeliveryTable(completedDeliveries, 'completed')}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         <TabsContent value="transports" className="space-y-4">
@@ -578,7 +593,7 @@ export default function DeliveryDashboard() {
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
                   <CardTitle>Vehicle Transports</CardTitle>
-                  <CardDescription>Swaps, tows, repossessions and other standalone vehicle movements</CardDescription>
+                  <CardDescription>Deliveries, swaps, tows, repossessions and other standalone vehicle movements — filter by type below</CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <div className="relative">
@@ -865,7 +880,6 @@ export default function DeliveryDashboard() {
                 src={`/api/documents/view/${reportToPreview.id}`}
                 className="w-full h-full border-0"
                 title="Transport Report Preview"
-                sandbox="allow-same-origin allow-scripts allow-popups allow-top-navigation allow-downloads"
                 onError={() => setReportIframeError(true)}
               />
             )}

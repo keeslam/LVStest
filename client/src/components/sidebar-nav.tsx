@@ -22,7 +22,7 @@ export function SidebarNav() {
     { href: "/maintenance", label: "Maintenance", icon: "maintenance", permissions: [UserPermission.MANAGE_MAINTENANCE] },
     { href: "/expenses", label: "Expenses", icon: "euro", permissions: [UserPermission.MANAGE_EXPENSES] },
     { href: "/documents", label: "Documents", icon: "description", permissions: [UserPermission.MANAGE_DOCUMENTS] },
-    { href: "/delivery", label: "Delivery", icon: "delivery", permissions: [UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS] },
+    { href: "/delivery", label: "Transports", icon: "delivery", permissions: [UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS] },
     { href: "/communications", label: "Communications", icon: "email", permissions: [UserPermission.MANAGE_EMAIL_TEMPLATES, UserPermission.MANAGE_NOTIFICATIONS] },
     { href: "/reports", label: "Reports", icon: "assessment", permissions: [UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS] }
   ];

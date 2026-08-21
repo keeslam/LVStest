@@ -1102,7 +1102,6 @@ export default function DocumentsIndex() {
                 src={`/api/documents/view/${documentToPrint.id}`}
                 className="w-full h-full border-0"
                 title="Document Preview"
-                sandbox="allow-same-origin allow-scripts allow-popups allow-top-navigation allow-downloads"
                 onError={handleIframeError}
               />
             )}
