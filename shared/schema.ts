@@ -1295,11 +1295,11 @@ export const damageCheckTemplates = pgTable("damage_check_templates", {
   buildYearFrom: text("build_year_from"), // e.g., "2015" - start of year range
   buildYearTo: text("build_year_to"), // e.g., "2020" - end of year range
   
-  // Vehicle diagram images (paths or URLs)
-  diagramTopView: text("diagram_top_view"), // Path to top-view diagram image
-  diagramFrontView: text("diagram_front_view"), // Path to front-view diagram image
-  diagramRearView: text("diagram_rear_view"), // Path to rear-view diagram image
-  diagramSideView: text("diagram_side_view"), // Path to side-view diagram image
+  // Background page image (optional layer behind the canvas fields) — same
+  // shape as pdfTemplates/transportReportTemplates.
+  backgroundPath: text("background_path"),
+  backgroundPreviewPath: text("background_preview_path"),
+  templatePreviewPath: text("template_preview_path"),
   
   // Inspection points - array of check areas with damage type options
   inspectionPoints: jsonb("inspection_points").$type<Array<{
@@ -1350,7 +1350,7 @@ export const damageCheckTemplates = pgTable("damage_check_templates", {
   // payload. This powers the visual drag-and-drop template editor.
   canvasFields: jsonb("canvas_fields").$type<Array<{
     id: string;
-    type: "text" | "dynamic" | "inspection" | "checkbox" | "signature" | "line" | "box";
+    type: "text" | "dynamic" | "inspection" | "checkbox" | "signature" | "line" | "box" | "diagram";
     x: number;
     y: number;
     width?: number;
@@ -1361,6 +1361,7 @@ export const damageCheckTemplates = pgTable("damage_check_templates", {
     isBold: boolean;
     textAlign: "left" | "center" | "right";
     damageTypes?: string[]; // for type="inspection"
+    diagramTemplateId?: number | null; // for type="diagram"; null = auto-match by vehicle
     locked?: boolean;
     page?: number;        // 1-based; defaults to 1 if absent
   }>>().default([]).notNull(),
@@ -1393,6 +1394,23 @@ export const insertDamageCheckTemplateSchema = createInsertSchema(damageCheckTem
 
 export type DamageCheckTemplate = typeof damageCheckTemplates.$inferSelect;
 export type InsertDamageCheckTemplate = z.infer<typeof insertDamageCheckTemplateSchema>;
+
+// Damage Check Template Backgrounds — per-template background image library,
+// same shape as templateBackgrounds / transportReportTemplateBackgrounds.
+export const damageCheckTemplateBackgrounds = pgTable("damage_check_template_backgrounds", {
+  id: serial("id").primaryKey(),
+  templateId: integer("template_id").notNull().references(() => damageCheckTemplates.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  backgroundPath: text("background_path").notNull(),
+  previewPath: text("preview_path").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertDamageCheckTemplateBackgroundSchema = createInsertSchema(damageCheckTemplateBackgrounds)
+  .omit({ id: true, createdAt: true });
+
+export type DamageCheckTemplateBackground = typeof damageCheckTemplateBackgrounds.$inferSelect;
+export type InsertDamageCheckTemplateBackground = z.infer<typeof insertDamageCheckTemplateBackgroundSchema>;
 
 // Vehicle Diagram Templates - for uploading vehicle diagrams by make/model/year
 export const vehicleDiagramTemplates = pgTable("vehicle_diagram_templates", {
