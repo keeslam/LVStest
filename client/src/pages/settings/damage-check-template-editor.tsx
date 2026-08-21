@@ -37,6 +37,14 @@ interface DiagramTemplateSummary {
   diagramPath?: string | null;
 }
 
+interface TemplateBackground {
+  id: number;
+  templateId: number;
+  name: string;
+  backgroundPath: string;
+  previewPath: string;
+}
+
 interface Template {
   id: number;
   name: string;
@@ -46,6 +54,8 @@ interface Template {
   canvasFields: CanvasField[];
   vehicleMake?: string | null;
   vehicleModel?: string | null;
+  backgroundPath?: string | null;
+  backgroundPreviewPath?: string | null;
 }
 
 const DYNAMIC_SOURCES: { value: string; label: string }[] = [
@@ -90,6 +100,8 @@ export default function DamageCheckTemplateCanvasEditor({ embedded = false }: { 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [isBackgroundLibraryOpen, setIsBackgroundLibraryOpen] = useState(false);
+  const [backgroundName, setBackgroundName] = useState('');
 
   // History (undo/redo) — snapshots of fields array
   const [history, setHistory] = useState<HistoryState[]>([]);
@@ -155,6 +167,8 @@ export default function DamageCheckTemplateCanvasEditor({ embedded = false }: { 
     url.searchParams.set('id', String(t.id));
     window.history.replaceState({}, '', url.toString());
   }
+
+  const currentTemplate = templates.find(t => t.id === currentId) ?? null;
 
   // Mirror live state in refs so event handlers (keyboard, drag, etc.) don't
   // need these in their dependency arrays. Without this, the keyboard `useEffect`
@@ -273,6 +287,86 @@ export default function DamageCheckTemplateCanvasEditor({ embedded = false }: { 
       window.history.replaceState({}, '', url.toString());
     },
     onError: (e: Error) => toast({ title: 'Delete failed', description: e.message, variant: 'destructive' }),
+  });
+
+  const uploadBackgroundMutation = useMutation({
+    mutationFn: async ({ templateId, file }: { templateId: number; file: File }) => {
+      const formData = new FormData();
+      formData.append('background', file);
+      const res = await fetch(`/api/damage-check-templates/${templateId}/background`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error((await res.text()) || 'Upload failed');
+      return res.json();
+    },
+    onSuccess: async () => {
+      await invalidateByPrefix('/api/damage-check-templates');
+      toast({ title: 'Success', description: 'Background uploaded' });
+    },
+    onError: (e: Error) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  });
+
+  const removeBackgroundMutation = useMutation({
+    mutationFn: async (templateId: number) => {
+      const res = await apiRequest('DELETE', `/api/damage-check-templates/${templateId}/background`);
+      return res.json();
+    },
+    onSuccess: async () => {
+      await invalidateByPrefix('/api/damage-check-templates');
+      toast({ title: 'Success', description: 'Background removed' });
+    },
+    onError: (e: Error) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  });
+
+  const { data: backgroundLibrary = [], refetch: refetchBackgrounds } = useQuery<TemplateBackground[]>({
+    queryKey: ['/api/damage-check-templates/backgrounds/all'],
+    enabled: isBackgroundLibraryOpen,
+  });
+
+  const addBackgroundToLibraryMutation = useMutation({
+    mutationFn: async ({ templateId, file, name }: { templateId: number; file: File; name: string }) => {
+      const formData = new FormData();
+      formData.append('background', file);
+      formData.append('name', name);
+      const res = await fetch(`/api/damage-check-templates/${templateId}/backgrounds`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error((await res.text()) || 'Upload failed');
+      return res.json();
+    },
+    onSuccess: async () => {
+      await refetchBackgrounds();
+      setBackgroundName('');
+      toast({ title: 'Success', description: 'Background added to library' });
+    },
+    onError: (e: Error) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  });
+
+  const selectBackgroundMutation = useMutation({
+    mutationFn: async ({ templateId, backgroundId }: { templateId: number; backgroundId: number }) => {
+      const res = await apiRequest('POST', `/api/damage-check-templates/${templateId}/backgrounds/${backgroundId}/select`);
+      return res.json();
+    },
+    onSuccess: async () => {
+      await invalidateByPrefix('/api/damage-check-templates');
+      toast({ title: 'Success', description: 'Background selected' });
+    },
+    onError: (e: Error) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
+  });
+
+  const deleteLibraryBackgroundMutation = useMutation({
+    mutationFn: async ({ templateId, backgroundId }: { templateId: number; backgroundId: number }) => {
+      return apiRequest('DELETE', `/api/damage-check-templates/${templateId}/backgrounds/${backgroundId}`);
+    },
+    onSuccess: async () => {
+      await refetchBackgrounds();
+      toast({ title: 'Success', description: 'Background deleted' });
+    },
+    onError: (e: Error) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
   });
 
   async function handleGeneratePreview() {
@@ -564,6 +658,109 @@ export default function DamageCheckTemplateCanvasEditor({ embedded = false }: { 
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              <Dialog open={isBackgroundLibraryOpen} onOpenChange={setIsBackgroundLibraryOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" disabled={!currentId} data-testid="button-background">
+                    <ImageIcon className="h-4 w-4 mr-1" /> Background
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>Template background</DialogTitle>
+                    <DialogDescription>
+                      Optional page image shown behind the canvas fields. Same background can be reused across templates via the library below.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Current background</Label>
+                      {currentTemplate?.backgroundPath ? (
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={`/${currentTemplate.backgroundPreviewPath ?? currentTemplate.backgroundPath}`}
+                            alt="Current background"
+                            className="h-16 w-auto border rounded"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => currentId && removeBackgroundMutation.mutate(currentId)}
+                            disabled={removeBackgroundMutation.isPending}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">No background set — canvas is blank.</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Upload new background</Label>
+                      <Input
+                        type="file"
+                        accept="image/png,image/jpeg"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file && currentId) uploadBackgroundMutation.mutate({ templateId: currentId, file });
+                        }}
+                        disabled={uploadBackgroundMutation.isPending}
+                      />
+                    </div>
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label className="text-xs">Add to shared library</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Background name"
+                          value={backgroundName}
+                          onChange={(e) => setBackgroundName(e.target.value)}
+                        />
+                        <Input
+                          type="file"
+                          accept="image/png,image/jpeg"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file && currentId && backgroundName.trim()) {
+                              addBackgroundToLibraryMutation.mutate({ templateId: currentId, file, name: backgroundName.trim() });
+                            }
+                          }}
+                          disabled={addBackgroundToLibraryMutation.isPending || !backgroundName.trim()}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2 max-h-48 overflow-auto">
+                      {backgroundLibrary.map(bg => (
+                        <div key={bg.id} className="flex items-center justify-between gap-2 border rounded p-2">
+                          <div className="flex items-center gap-2">
+                            <img src={`/${bg.previewPath}`} alt={bg.name} className="h-10 w-auto border rounded" />
+                            <span className="text-xs">{bg.name}</span>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => currentId && selectBackgroundMutation.mutate({ templateId: currentId, backgroundId: bg.id })}
+                            >
+                              Use
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-600"
+                              onClick={() => currentId && deleteLibraryBackgroundMutation.mutate({ templateId: currentId, backgroundId: bg.id })}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsBackgroundLibraryOpen(false)}>Close</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
               <Button variant="outline" size="sm" onClick={undo} disabled={histIdx <= 0} title="Undo (Ctrl+Z)" data-testid="button-undo">
                 <Undo2 className="h-4 w-4" />
               </Button>
@@ -707,6 +904,23 @@ export default function DamageCheckTemplateCanvasEditor({ embedded = false }: { 
                     onMouseUp={onCanvasMouseUp}
                     onMouseLeave={onCanvasMouseUp}
                   >
+                    {currentTemplate?.backgroundPath && (
+                      <img
+                        src={`/${currentTemplate.backgroundPreviewPath ?? currentTemplate.backgroundPath}`}
+                        alt="Background"
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: PAGE_W * zoom,
+                          height: PAGE_H * zoom,
+                          objectFit: 'cover',
+                          pointerEvents: 'none',
+                          userSelect: 'none',
+                        }}
+                        draggable={false}
+                      />
+                    )}
                     <img
                       src="/api/damage-check-fields/header"
                       alt="Header"
