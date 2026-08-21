@@ -1058,7 +1058,10 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
           refetchDamageChecks();
         }
       }}>
-        <DialogContent className="max-w-[95vw] h-[95vh] overflow-y-auto p-0">
+        {/* z-[70]: must render above this dialog's own z-[60] content (see note
+            near that class above) — otherwise the pickup dialog stays on top and
+            blocks the damage check that was just opened from within it. */}
+        <DialogContent className="max-w-[95vw] h-[95vh] overflow-y-auto p-0 z-[70]">
           <DialogTitle className="sr-only">Interactive Damage Check - Pickup</DialogTitle>
           <InteractiveDamageCheck
             onClose={() => {
@@ -1762,7 +1765,10 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
           refetchDamageChecks();
         }
       }}>
-        <DialogContent className="max-w-[95vw] h-[95vh] overflow-y-auto p-0">
+        {/* z-[70]: must render above this dialog's own z-[60] content (see note
+            near that class above) — otherwise the return dialog stays on top and
+            blocks the damage check that was just opened from within it. */}
+        <DialogContent className="max-w-[95vw] h-[95vh] overflow-y-auto p-0 z-[70]">
           <DialogTitle className="sr-only">Interactive Damage Check - Return</DialogTitle>
           <InteractiveDamageCheck
             onClose={() => {

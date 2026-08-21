@@ -182,6 +182,8 @@ export default function ReservationCalendarPage() {
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [editContractNumberOpen, setEditContractNumberOpen] = useState(false);
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const { user: currentUser } = useAuth();
   const canManageReservations =
     currentUser?.role === UserRole.ADMIN ||
@@ -1661,7 +1663,10 @@ export default function ReservationCalendarPage() {
         </CardContent>
       </Card>
       {/* View Reservation Dialog */}
-      <Dialog open={viewDialogOpen} onOpenChange={(open) => {
+      {/* Hidden (not closed) while Pickup/Return is open, so starting one doesn't
+          leave this dialog stacked underneath it — it reappears once that closes,
+          without going through onOpenChange (which triggers "reopen list view"). */}
+      <Dialog open={viewDialogOpen && !pickupDialogOpen && !returnDialogOpen} onOpenChange={(open) => {
           console.log('View dialog open change:', open);
           setViewDialogOpen(open);
           if (!open) {
@@ -2319,7 +2324,7 @@ export default function ReservationCalendarPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => window.open(`/api/interactive-damage-checks/${check.id}/pdf`, '_blank')}
+                                onClick={() => { setPdfPreviewUrl(`/api/interactive-damage-checks/${check.id}/pdf`); setPdfPreviewOpen(true); }}
                                 className="h-6 px-2 text-xs"
                                 data-testid={`button-view-damage-check-pdf-${check.id}`}
                               >
@@ -2362,7 +2367,7 @@ export default function ReservationCalendarPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => window.open(`/api/interactive-damage-checks/${check.id}/pdf`, '_blank')}
+                              onClick={() => { setPdfPreviewUrl(`/api/interactive-damage-checks/${check.id}/pdf`); setPdfPreviewOpen(true); }}
                               className="h-6 px-2 text-xs"
                               data-testid={`button-view-history-damage-check-pdf-${check.id}`}
                             >
@@ -3838,6 +3843,33 @@ export default function ReservationCalendarPage() {
         }}
         onCancel={() => setDocumentToDelete(null)}
       />
+
+      {/* Damage check PDF preview — in-app iframe instead of window.open, which
+          browsers routinely block and which never let the user view the PDF
+          inline (had to download first). */}
+      <AlertDialog open={pdfPreviewOpen} onOpenChange={setPdfPreviewOpen}>
+        <AlertDialogContent className="max-w-5xl w-[90vw] h-[90vh] flex flex-col">
+          <AlertDialogHeader className="flex-shrink-0">
+            <AlertDialogTitle>Damage Check PDF</AlertDialogTitle>
+            <AlertDialogDescription>Preview</AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex-1 overflow-hidden border rounded">
+            {pdfPreviewUrl && (
+              <iframe
+                src={pdfPreviewUrl}
+                className="w-full h-full border-0"
+                title="Damage Check PDF Preview"
+              />
+            )}
+          </div>
+          <AlertDialogFooter className="flex-shrink-0">
+            <AlertDialogCancel onClick={() => setPdfPreviewOpen(false)}>Close</AlertDialogCancel>
+            <AlertDialogAction onClick={() => pdfPreviewUrl && window.open(pdfPreviewUrl, '_blank')}>
+              Open in New Tab
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
