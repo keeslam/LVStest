@@ -248,6 +248,9 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       await invalidateByPrefix("/api/reservations");
       await invalidateByPrefix("/api/reservations");
       await invalidateByPrefix(`/api/documents/reservation/${reservation.id}`);
+      // Pickup writes the vehicle's mileage and fuel level too - without this,
+      // an already-open Vehicle Details view keeps showing stale values.
+      await invalidateByPrefix("/api/vehicles");
       setOverridePassword("");
       setPendingMileage(null);
       setUploadedPaperCheckIds([]); // Clear tracked IDs - documents are now permanent
@@ -1258,6 +1261,9 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
       await invalidateByPrefix("/api/reservations");
       await invalidateByPrefix("/api/reservations");
       await invalidateByPrefix(`/api/documents/reservation/${reservation.id}`);
+      // Return writes the vehicle's mileage and fuel level too - without this,
+      // an already-open Vehicle Details view keeps showing stale values.
+      await invalidateByPrefix("/api/vehicles");
       setUploadedPaperCheckIds([]); // Clear tracked IDs - documents are now permanent
       
       // Call the success callback first (to reopen view dialog)
