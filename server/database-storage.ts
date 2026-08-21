@@ -7,6 +7,7 @@ import {
   documents, type Document, type InsertDocument,
   pdfTemplates, type PdfTemplate, type InsertPdfTemplate,
   templateBackgrounds, type TemplateBackground, type InsertTemplateBackground,
+  type DamageCheckTemplateBackground, type InsertDamageCheckTemplateBackground,
   transportReportTemplates, type TransportReportTemplate, type InsertTransportReportTemplate,
   transportReportTemplateBackgrounds, type TransportReportTemplateBackground, type InsertTransportReportTemplateBackground,
   customNotifications, type CustomNotification, type InsertCustomNotification,
@@ -17,6 +18,7 @@ import {
   savedReports, type SavedReport, type InsertSavedReport,
 
   damageCheckTemplates, type DamageCheckTemplate, type InsertDamageCheckTemplate,
+  damageCheckTemplateBackgrounds,
   vehicleDiagramTemplates, type VehicleDiagramTemplate, type InsertVehicleDiagramTemplate,
   interactiveDamageChecks, type InteractiveDamageCheck, type InsertInteractiveDamageCheck,
   damageCheckPdfTemplates, type DamageCheckPdfTemplate, type InsertDamageCheckPdfTemplate,
@@ -34,6 +36,7 @@ import {
   VehicleAvailabilityStatus
 } from "./vehicle-status-helper";
 import { getDataSource, getField as getReportField } from "../shared/report-builder-config";
+import { buildDefaultDamageCheckCanvasFields } from "../shared/damage-check-default-layout";
 
 export class ReportValidationError extends Error {
   constructor(message: string) {
@@ -2015,6 +2018,42 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
+  async getAllDamageCheckTemplateBackgrounds(): Promise<DamageCheckTemplateBackground[]> {
+    return await db.select().from(damageCheckTemplateBackgrounds).orderBy(desc(damageCheckTemplateBackgrounds.createdAt));
+  }
+
+  async getDamageCheckTemplateBackgrounds(templateId: number): Promise<DamageCheckTemplateBackground[]> {
+    return await db
+      .select()
+      .from(damageCheckTemplateBackgrounds)
+      .where(eq(damageCheckTemplateBackgrounds.templateId, templateId))
+      .orderBy(desc(damageCheckTemplateBackgrounds.createdAt));
+  }
+
+  async getDamageCheckTemplateBackground(id: number): Promise<DamageCheckTemplateBackground | undefined> {
+    const [background] = await db.select().from(damageCheckTemplateBackgrounds).where(eq(damageCheckTemplateBackgrounds.id, id));
+    return background || undefined;
+  }
+
+  async createDamageCheckTemplateBackground(backgroundData: InsertDamageCheckTemplateBackground): Promise<DamageCheckTemplateBackground> {
+    const [background] = await db.insert(damageCheckTemplateBackgrounds).values(backgroundData).returning();
+    return background;
+  }
+
+  async deleteDamageCheckTemplateBackground(id: number): Promise<boolean> {
+    const [deleted] = await db.delete(damageCheckTemplateBackgrounds).where(eq(damageCheckTemplateBackgrounds.id, id)).returning();
+    return !!deleted;
+  }
+
+  async selectDamageCheckTemplateBackground(templateId: number, backgroundId: number): Promise<DamageCheckTemplate | undefined> {
+    const background = await this.getDamageCheckTemplateBackground(backgroundId);
+    if (!background) return undefined;
+    return await this.updateDamageCheckTemplate(templateId, {
+      backgroundPath: background.backgroundPath,
+      backgroundPreviewPath: background.previewPath,
+    });
+  }
+
   // Custom Notifications methods
   async getAllCustomNotifications(): Promise<CustomNotification[]> {
     return await db
@@ -3201,8 +3240,9 @@ export class DatabaseStorage implements IStorage {
     const [template] = await db.select().from(damageCheckTemplates)
       .where(eq(damageCheckTemplates.isDefault, true))
       .limit(1);
-    
-    // If no default template exists, auto-create one
+
+    // If no default template exists, auto-create one with the shared default
+    // canvas layout, which includes an auto-matched vehicle diagram field.
     if (!template) {
       const defaultTemplate: InsertDamageCheckTemplate = {
         name: 'Auto-Generated Default',
@@ -3222,19 +3262,31 @@ export class DatabaseStorage implements IStorage {
           { id: '5', name: 'Olie - water', category: 'afweez_check', damageTypes: [], required: false },
           { id: '6', name: 'Ruitenwisser vloeistof', category: 'afweez_check', damageTypes: [], required: false },
         ],
-        diagramTopView: null,
-        diagramFrontView: null,
-        diagramSideView: null,
-        diagramRearView: null,
+        canvasFields: buildDefaultDamageCheckCanvasFields() as any,
         createdBy: 'system',
         updatedBy: 'system'
       };
-      
+
       const [created] = await db.insert(damageCheckTemplates).values(defaultTemplate).returning();
       return created;
     }
-    
-    return template || undefined;
+
+    // Backfill: a default template created before canvas-mode diagrams
+    // existed has an empty canvasFields array, which renders with the legacy
+    // structured layout — a layout that no longer has any diagram section
+    // now that the 4-slot mechanism is removed. Give it the shared default
+    // canvas layout (which includes an auto-matched diagram field) once, in
+    // place, so out-of-the-box PDFs always include a vehicle diagram.
+    const existingCanvasFields = Array.isArray((template as any).canvasFields) ? (template as any).canvasFields : [];
+    if (existingCanvasFields.length === 0) {
+      const [updated] = await db.update(damageCheckTemplates)
+        .set({ canvasFields: buildDefaultDamageCheckCanvasFields() as any, updatedAt: new Date() })
+        .where(eq(damageCheckTemplates.id, template.id))
+        .returning();
+      return updated || template;
+    }
+
+    return template;
   }
 
   async createDamageCheckTemplate(template: InsertDamageCheckTemplate): Promise<DamageCheckTemplate> {
@@ -3331,13 +3383,10 @@ export class DatabaseStorage implements IStorage {
       vehicleType: source.vehicleType ?? null,
       buildYearFrom: source.buildYearFrom ?? null,
       buildYearTo: source.buildYearTo ?? null,
-      diagramTopView: source.diagramTopView ?? null,
-      diagramFrontView: source.diagramFrontView ?? null,
-      diagramRearView: source.diagramRearView ?? null,
-      diagramSideView: source.diagramSideView ?? null,
       inspectionPoints: source.inspectionPoints ?? [],
       categories: (source as any).categories ?? [],
       handoverChecklist: (source as any).handoverChecklist ?? [],
+      canvasFields: (source as any).canvasFields ?? [],
       headerText: (source as any).headerText ?? null,
       footerText: (source as any).footerText ?? null,
       isDefault: false,

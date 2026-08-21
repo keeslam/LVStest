@@ -7,6 +7,7 @@ import {
   documents, type Document, type InsertDocument,
   pdfTemplates, type PdfTemplate, type InsertPdfTemplate,
   templateBackgrounds, type TemplateBackground, type InsertTemplateBackground,
+  type DamageCheckTemplateBackground, type InsertDamageCheckTemplateBackground,
   type TransportReportTemplate, type InsertTransportReportTemplate,
   type TransportReportTemplateBackground, type InsertTransportReportTemplateBackground,
   customNotifications, type CustomNotification, type InsertCustomNotification,
@@ -150,6 +151,12 @@ export interface IStorage {
   createTransportReportTemplateBackground(background: InsertTransportReportTemplateBackground): Promise<TransportReportTemplateBackground>;
   deleteTransportReportTemplateBackground(id: number): Promise<boolean>;
   selectTransportReportTemplateBackground(templateId: number, backgroundId: number): Promise<TransportReportTemplate | undefined>;
+  getAllDamageCheckTemplateBackgrounds(): Promise<DamageCheckTemplateBackground[]>;
+  getDamageCheckTemplateBackgrounds(templateId: number): Promise<DamageCheckTemplateBackground[]>;
+  getDamageCheckTemplateBackground(id: number): Promise<DamageCheckTemplateBackground | undefined>;
+  createDamageCheckTemplateBackground(background: InsertDamageCheckTemplateBackground): Promise<DamageCheckTemplateBackground>;
+  deleteDamageCheckTemplateBackground(id: number): Promise<boolean>;
+  selectDamageCheckTemplateBackground(templateId: number, backgroundId: number): Promise<DamageCheckTemplate | undefined>;
 
   // Custom Notification methods
   getAllCustomNotifications(): Promise<CustomNotification[]>;
