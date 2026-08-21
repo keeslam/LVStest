@@ -29,7 +29,7 @@ import { displayLicensePlate } from "@/lib/utils";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import PDFTemplateEditor from "./template-editor";
 import TransportReportTemplateEditor from "./transport-report-template-editor";
-import { FileEdit, Star, Trash2, Printer, Eye, ChevronDown, ChevronRight, FileCheck, Image, Plus, X, Edit, Settings as SettingsIcon, Truck } from "lucide-react";
+import { FileEdit, Star, Trash2, Printer, Eye, ChevronDown, ChevronRight, Image, Plus, X, Edit, Settings as SettingsIcon, Truck } from "lucide-react";
 import DamageCheckTemplatesPage from "@/pages/settings/damage-check-templates";
 import DamageCheckTemplateCanvasEditor from "@/pages/settings/damage-check-template-editor";
 import DamageCheckFieldsPage from "@/pages/settings/damage-check-fields";
@@ -467,7 +467,7 @@ export default function DocumentsIndex() {
           <TabsTrigger value="library">Document Library</TabsTrigger>
           <TabsTrigger value="template-editor">Contract Templates</TabsTrigger>
           <TabsTrigger value="transport-templates" data-testid="tab-transport-templates">Transport Report Templates</TabsTrigger>
-          <TabsTrigger value="damage-check">Damage Check</TabsTrigger>
+          <TabsTrigger value="damage-check">Damage Check Templates</TabsTrigger>
         </TabsList>
         
         <TabsContent value="library">
@@ -1035,7 +1035,7 @@ export default function DocumentsIndex() {
 
         <TabsContent value="damage-check">
           <div className="space-y-6">
-            <DamageCheckManager vehicles={vehicles || []} />
+            <DamageCheckManager />
             <DiagramTemplateManager />
           </div>
         </TabsContent>
@@ -1244,104 +1244,21 @@ export default function DocumentsIndex() {
 }
 
 // Damage Check Manager Component
-function DamageCheckManager({ vehicles }: { vehicles: Vehicle[] }) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [selectedVehicleId, setSelectedVehicleId] = useState("");
-  const [selectedReservationId, setSelectedReservationId] = useState("");
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [filterReservation, setFilterReservation] = useState("all");
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+function DamageCheckManager() {
   const [templatesDialogOpen, setTemplatesDialogOpen] = useState(false);
   const [fieldsDialogOpen, setFieldsDialogOpen] = useState(false);
   const [templateLibraryOpen, setTemplateLibraryOpen] = useState(false);
   const { user } = useAuth();
   const isAdmin = user?.role === UserRole.ADMIN;
 
-  // Fetch all damage check documents
-  const { data: damageChecks = [] } = useQuery<Document[]>({
-    queryKey: ['/api/documents/damage-checks'],
-  });
-
-  // Fetch all reservations for linking
-  const { data: reservations = [] } = useQuery<any[]>({
-    queryKey: ['/api/reservations'],
-  });
-
-  // Upload mutation
-  const uploadMutation = useMutation({
-    mutationFn: async (formData: FormData) => {
-      const response = await fetch('/api/documents', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Upload failed');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      invalidateByPrefix('/api/documents/damage-checks');
-      invalidateByPrefix('/api/documents');
-      toast({
-        title: "Success",
-        description: "Damage check uploaded successfully",
-      });
-      setUploadDialogOpen(false);
-      setUploadFile(null);
-      setSelectedVehicleId("");
-      setSelectedReservationId("");
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to upload damage check",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleUpload = () => {
-    if (!uploadFile || !selectedVehicleId) {
-      toast({
-        title: "Validation Error",
-        description: "Please select a vehicle and file",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const formData = new FormData();
-    // IMPORTANT: vehicleId and documentType must come BEFORE the file
-    // so multer can access them in req.body during upload processing
-    formData.append('vehicleId', selectedVehicleId);
-    formData.append('documentType', 'damage_check');
-    if (selectedReservationId && selectedReservationId !== 'none') {
-      formData.append('reservationId', selectedReservationId);
-    }
-    formData.append('file', uploadFile);
-
-    uploadMutation.mutate(formData);
-  };
-
-  // Filter damage checks by reservation
-  const filteredChecks = damageChecks.filter(doc => {
-    if (filterReservation === "all") return true;
-    if (filterReservation === "none") return !doc.reservationId;
-    return doc.reservationId?.toString() === filterReservation;
-  });
-
   return (
     <Card>
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Damage Check Documents</CardTitle>
+            <CardTitle>Damage Check Templates</CardTitle>
             <CardDescription>
-              Upload and manage damage check PDFs for vehicles and reservations
+              Manage the fields, layout, and vehicle diagrams used to build damage check forms. Completed damage check PDFs are in the Document Library, filtered by vehicle.
             </CardDescription>
           </div>
           <div className="flex gap-2">
@@ -1371,174 +1288,9 @@ function DamageCheckManager({ vehicles }: { vehicles: Vehicle[] }) {
               <SettingsIcon className="mr-2 h-4 w-4" />
               Edit Layout
             </Button>
-            <Button onClick={() => setUploadDialogOpen(true)} data-testid="button-upload-damage-check">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" x2="12" y1="3" y2="15" />
-              </svg>
-              Upload Damage Check
-            </Button>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        {/* Filter by Reservation */}
-        <div className="mb-6">
-          <Label>Filter by Reservation</Label>
-          <Select value={filterReservation} onValueChange={setFilterReservation}>
-            <SelectTrigger className="w-full max-w-md">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Damage Checks</SelectItem>
-              <SelectItem value="none">Not Linked to Reservation</SelectItem>
-              {reservations?.map((reservation) => (
-                <SelectItem key={reservation.id} value={reservation.id.toString()}>
-                  Reservation #{reservation.id} - {reservation.customerName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Damage Check List */}
-        {filteredChecks.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            <FileCheck className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-            <p className="text-lg font-medium mb-2">No damage checks found</p>
-            <p className="text-sm">Upload your first damage check PDF to get started</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredChecks.map((doc) => {
-              const vehicle = vehicles.find(v => v.id === doc.vehicleId);
-              const reservation = reservations.find(r => r.id === doc.reservationId);
-
-              return (
-                <Card key={doc.id} className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <FileCheck className="h-10 w-10 text-blue-600" />
-                      <div>
-                        <h4 className="font-medium">{doc.fileName}</h4>
-                        <div className="text-sm text-gray-600">
-                          <p>Vehicle: {vehicle ? `${displayLicensePlate(vehicle.licensePlate)} - ${vehicle.brand} ${vehicle.model}` : 'Unknown'}</p>
-                          {reservation && (
-                            <p>Reservation: #{reservation.id} - {reservation.customerName}</p>
-                          )}
-                          <p className="text-xs text-gray-500 mt-1">
-                            Uploaded {formatDate(doc.uploadDate)} • {formatFileSize(doc.fileSize)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <a
-                        href={`/api/documents/view/${doc.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        data-testid={`button-view-damage-check-${doc.id}`}
-                      >
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4 mr-1" />
-                          View
-                        </Button>
-                      </a>
-                      <a
-                        href={`/api/documents/download/${doc.id}`}
-                        download
-                        data-testid={`button-download-damage-check-${doc.id}`}
-                      >
-                        <Button variant="outline" size="sm">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                            <polyline points="7 10 12 15 17 10" />
-                            <line x1="12" x2="12" y1="15" y2="3" />
-                          </svg>
-                          Download
-                        </Button>
-                      </a>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </CardContent>
-
-      {/* Upload Dialog */}
-      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Upload Damage Check PDF</DialogTitle>
-            <DialogDescription>
-              Upload a completed damage check form and link it to a vehicle and optionally a reservation
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="vehicle">Vehicle *</Label>
-              <Select value={selectedVehicleId} onValueChange={setSelectedVehicleId}>
-                <SelectTrigger data-testid="select-vehicle">
-                  <SelectValue placeholder="Select a vehicle" />
-                </SelectTrigger>
-                <SelectContent>
-                  {vehicles.map((vehicle) => (
-                    <SelectItem key={vehicle.id} value={vehicle.id.toString()}>
-                      {displayLicensePlate(vehicle.licensePlate)} - {vehicle.brand} {vehicle.model}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="reservation">Reservation (Optional)</Label>
-              <Select value={selectedReservationId} onValueChange={setSelectedReservationId}>
-                <SelectTrigger data-testid="select-reservation">
-                  <SelectValue placeholder="Link to a reservation (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No Reservation</SelectItem>
-                  {reservations?.map((reservation) => (
-                    <SelectItem key={reservation.id} value={reservation.id.toString()}>
-                      #{reservation.id} - {reservation.customerName} ({formatDate(reservation.pickupDate)})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="file">Damage Check PDF *</Label>
-              <Input
-                id="file"
-                type="file"
-                accept="application/pdf"
-                onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                data-testid="input-damage-check-file"
-              />
-              {uploadFile && (
-                <p className="text-sm text-gray-600">Selected: {uploadFile.name}</p>
-              )}
-            </div>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleUpload} 
-              disabled={uploadMutation.isPending || !uploadFile || !selectedVehicleId}
-              data-testid="button-submit-upload"
-            >
-              {uploadMutation.isPending ? "Uploading..." : "Upload"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Damage Check Fields Editor — admin-only dialog for the checklist field schema */}
       <Dialog open={fieldsDialogOpen} onOpenChange={setFieldsDialogOpen}>
