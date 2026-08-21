@@ -1163,7 +1163,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
 
         {/* Vehicle Selection - Full Width */}
         <Card className="p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
             <div>
               <Label>Vehicle *</Label>
               <VehicleSelector

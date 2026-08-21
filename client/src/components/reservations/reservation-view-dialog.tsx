@@ -241,7 +241,11 @@ export function ReservationViewDialog({
   // The open prop controls visibility
   return (
     <>
-      <Dialog open={open && !!reservationId} onOpenChange={onOpenChange}>
+      {/* Hidden (not closed) while Pickup/Return is open, so starting one doesn't
+          leave this dialog stacked underneath it — it reappears once that closes,
+          without going through onOpenChange (which would trigger the "reopen the
+          list" logic some callers wire up on close). */}
+      <Dialog open={open && !!reservationId && !pickupDialogOpen && !returnDialogOpen} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="dialog-reservation-view">
           <DialogHeader>
             <DialogTitle>Reservation Details</DialogTitle>
