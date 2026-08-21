@@ -1046,7 +1046,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
       </div>
       
       {/* Vehicle Info Cards */}
-      <div className={`grid grid-cols-1 gap-4 ${displayReservation ? 'md:grid-cols-6' : 'md:grid-cols-4'}`}>
+      <div className={`grid grid-cols-1 gap-4 ${displayReservation ? 'md:grid-cols-7' : 'md:grid-cols-5'}`}>
         <Card className={displayReservation ? 'md:col-span-1' : ''}>
           <CardHeader className={displayReservation ? 'pb-1 pt-3' : 'pb-2'}>
             <CardTitle className="text-sm font-medium text-gray-500">Vehicle Type</CardTitle>
@@ -1085,6 +1085,17 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
           </CardContent>
         </Card>
         
+        <Card className={displayReservation ? 'md:col-span-1' : ''}>
+          <CardHeader className={displayReservation ? 'pb-1 pt-3' : 'pb-2'}>
+            <CardTitle className="text-sm font-medium text-gray-500">Current Fuel Level</CardTitle>
+          </CardHeader>
+          <CardContent className={displayReservation ? 'pb-3' : ''}>
+            <p className={`font-semibold capitalize ${displayReservation ? 'text-lg' : 'text-2xl'}`} data-testid="text-current-fuel-level">
+              {vehicle.currentFuelLevel || "N/A"}
+            </p>
+          </CardContent>
+        </Card>
+
         <Card className={displayReservation ? 'md:col-span-1' : ''}>
           <CardHeader className={displayReservation ? 'pb-1 pt-3' : 'pb-2'}>
             <CardTitle className="text-sm font-medium text-gray-500">APK Expiration</CardTitle>
