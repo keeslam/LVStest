@@ -182,3 +182,18 @@ diagram columns lose that data on migration (2 uploaded files were found
 under `uploads/` during research). Confirmed acceptable since the legacy
 mechanism is not read by the live pickup/return flow — those files are
 already inert.
+
+## Addendum (added during planning, 2026-08-22)
+
+The Documents page's "Damage Check" tab currently mixes two unrelated
+concerns: template management (Edit Fields / Template Library / Edit
+Layout, plus the vehicle-diagram upload library from Goal 4) and a
+narrower, redundant view of completed damage-check PDFs (upload +
+list, filtered by reservation). The completed-PDF view duplicates what
+the "Document Library" tab already shows (both read the same
+`documents` table, keyed by `vehicleId`; `documentType: 'damage_check'`
+is already a filterable type there). Per user direction, this tab is
+trimmed to templates-only — completed damage-check documents are viewed
+exclusively via Document Library, filtered by vehicle/license plate, as
+already supported today. No backend change; this only removes a
+redundant UI surface. See plan Task 8.

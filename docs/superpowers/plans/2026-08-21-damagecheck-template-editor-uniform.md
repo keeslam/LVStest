@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Give the DamageCheck template editor a per-template background image (with a shared library) like the Contract Templates and Transport Report Templates editors already have, ship a default damage-check template whose PDF output embeds an auto-matched vehicle diagram, and remove the legacy 4-slot diagram mechanism that the live pickup/return flow never used.
+**Goal:** Give the DamageCheck template editor a per-template background image (with a shared library) like the Contract Templates and Transport Report Templates editors already have, ship a default damage-check template whose PDF output embeds an auto-matched vehicle diagram, remove the legacy 4-slot diagram mechanism that the live pickup/return flow never used, and separate "damage check templates" management (fields/layout/diagram uploads) from "completed damage check documents" (which belong in the Document Library, filtered by license plate).
 
 **Architecture:** DamageCheck's canvas editor (`damage-check-template-editor.tsx`) already has the same zoom/grid/rulers/undo-redo/multi-select/copy-paste chrome as the other two editors — research during planning found this already built. The only missing piece is the background-image-per-template concept (`backgroundPath`/`backgroundPreviewPath` + a `damageCheckTemplateBackgrounds` library table), ported from the `transportReportTemplates`/`transportReportTemplateBackgrounds` implementation (the cleanest of the two existing precedents — no legacy special-casing). The default-template diagram embedding is done by extracting the client's existing `buildDefaultLayout()` (which already places a diagram field) into `shared/damage-check-default-layout.ts` so both the client editor and the server's auto-create/backfill logic in `getDefaultDamageCheckTemplate()` share one implementation. The legacy 4-slot diagram mechanism (`diagramTopView/FrontView/RearView/SideView`) is removed from schema, server routes, the PDF generator, and the legacy structured editor — except the "Diagram Placement" point-pinning feature in that legacy editor, which is repointed to source its image from the make/model-matched `vehicleDiagramTemplates` entry instead of a bespoke upload, so that feature keeps working without the deprecated columns.
 
@@ -16,6 +16,7 @@
 - `vehicleDiagramTemplates` (make/model-keyed auto-match, mechanism A) is not modified — it already works correctly end-to-end.
 - The legacy 4-slot diagram mechanism (mechanism B: `diagramTopView/FrontView/RearView/SideView`) is removed, but the "Diagram Placement" inspection-point-pinning feature in the legacy structured editor must keep working — repoint it to the matched `vehicleDiagramTemplates` image rather than deleting the feature.
 - Follow the existing `transportReportTemplates`/`transportReportTemplateBackgrounds` pattern exactly for naming, route shape, and storage-method shape when adding the damage-check-template background feature — do not invent a different shape.
+- The Documents page's "Damage Check" tab becomes a pure templates hub (fields, layout, template library, vehicle diagram library) — it does not list or upload completed damage-check PDFs. Those already live in the `documents` table (`documentType: 'damage_check'`, keyed by `vehicleId`) and are already fully browsable/uploadable from the "Document Library" tab, filtered by vehicle/license plate — no backend change needed for that part, only removing the redundant UI surface.
 
 ---
 
@@ -1650,7 +1651,98 @@ git commit -m "refactor: remove legacy 4-slot diagram upload, source diagram pla
 
 ---
 
-## Task 8: End-to-end verification
+## Task 8: Documents page — trim "Damage Check" tab to templates-only
+
+**Files:**
+- Modify: `client/src/pages/documents/index.tsx:470` (tab label), `:1036-1041` (tab content), `:1247-1590` (`DamageCheckManager` function)
+
+**Interfaces:**
+- Consumes: none new — `documents` table and its existing `/api/documents`, `/api/documents/damage-checks` routes are untouched; completed damage-check PDFs continue to live there and remain fully visible/uploadable from the "Document Library" tab (already filters by vehicle/license plate and by document type, confirmed at `index.tsx:466-517`).
+- Produces: no interface change for other tasks — this is a UI-only trim of one tab in one file, independent of Tasks 1-7.
+
+Today, `DamageCheckManager` (current lines 1247-1590) does two unrelated things in one component: (a) renders the "Edit Fields" / "Template Library" / "Edit Layout" buttons and their dialogs — the template-management surface this whole plan is about — and (b) uploads and lists completed damage-check PDF documents, which is a narrower, redundant duplicate of what "Document Library" already shows (its `handleUpload` posts to the generic `POST /api/documents` with `documentType: 'damage_check'` and a `vehicleId`, current lines 1272-1305, so those PDFs already land in the same `documents` table the Document Library tab reads from). The user wants this tab to only be about templates — completed checks stay in Document Library, filtered by license plate, as they already can be today.
+
+- [ ] **Step 1: Strip `DamageCheckManager` down to the template-management surface**
+
+In `client/src/pages/documents/index.tsx`, rewrite the `DamageCheckManager` function (current lines 1247-1590). Remove:
+- State: `selectedVehicleId`, `selectedReservationId`, `uploadFile`, `filterReservation`, `uploadDialogOpen`.
+- The `damageChecks` query (`useQuery<Document[]>({ queryKey: ['/api/documents/damage-checks'] })`) and the `reservations` query.
+- `uploadMutation`, `handleUpload`, `filteredChecks`.
+- JSX: the "Upload Damage Check" button, the "Filter by Reservation" block, the "Damage Check List" block (the `filteredChecks.map(...)` section and its empty state), and the entire "Upload Dialog" (`<Dialog open={uploadDialogOpen} ...>`).
+
+Keep: `isAdmin`/`user` (still gates "Edit Fields"), `fieldsDialogOpen`/`templatesDialogOpen`/`templateLibraryOpen` state, the "Edit Fields" / "Template Library" / "Edit Layout" buttons, and their three dialogs at the bottom of the function (current lines 1543-1587: the `DamageCheckFieldsPage`, `DamageCheckTemplateCanvasEditor`, `DamageCheckTemplatesPage` dialogs) — none of these are touched.
+
+The component no longer needs a `vehicles` prop (it was only used by the removed upload dialog and list) — drop the `{ vehicles }: { vehicles: Vehicle[] }` parameter, making it `function DamageCheckManager() {`.
+
+Update the `CardHeader` copy (current lines 1338-1346) from:
+```tsx
+            <CardTitle>Damage Check Documents</CardTitle>
+            <CardDescription>
+              Upload and manage damage check PDFs for vehicles and reservations
+            </CardDescription>
+```
+to:
+```tsx
+            <CardTitle>Damage Check Templates</CardTitle>
+            <CardDescription>
+              Manage the fields, layout, and vehicle diagrams used to build damage check forms. Completed damage check PDFs are in the Document Library, filtered by vehicle.
+            </CardDescription>
+```
+
+Remove the now-empty `<CardContent>` if nothing remains inside it (the "Filter by Reservation" and "Damage Check List" blocks were its only children) — the header's buttons and the trailing dialogs are enough; a `Card` with just a `CardHeader` and no `CardContent` is fine here (matches this file's `DiagramTemplateManager` pattern immediately below it, which also has `CardContent` only for its own grid — don't force an empty one).
+
+- [ ] **Step 2: Update the call site**
+
+Current lines 1036-1041:
+```tsx
+        <TabsContent value="damage-check">
+          <div className="space-y-6">
+            <DamageCheckManager vehicles={vehicles || []} />
+            <DiagramTemplateManager />
+          </div>
+        </TabsContent>
+```
+becomes:
+```tsx
+        <TabsContent value="damage-check">
+          <div className="space-y-6">
+            <DamageCheckManager />
+            <DiagramTemplateManager />
+          </div>
+        </TabsContent>
+```
+
+- [ ] **Step 3: Rename the tab label**
+
+Current line 470:
+```tsx
+          <TabsTrigger value="damage-check">Damage Check</TabsTrigger>
+```
+becomes:
+```tsx
+          <TabsTrigger value="damage-check">Damage Check Templates</TabsTrigger>
+```
+(The `value="damage-check"` stays unchanged — only the visible label changes — so no other reference to this tab's identity breaks.)
+
+- [ ] **Step 4: Typecheck**
+
+Run: `npm run check`
+Expected: no errors in `documents/index.tsx`. If `tsc` flags now-unused imports (e.g. `FileCheck`, `Eye`, `formatFileSize`, `formatDate` if they were only used by the removed list — check each is still used elsewhere in the file, e.g. by the Document Library tab, before removing it), remove only the ones actually unused; leave any still referenced elsewhere untouched.
+
+- [ ] **Step 5: Manual browser verification**
+
+Open the Documents page. Confirm the fourth tab now reads "Damage Check Templates" and its content shows only: Edit Fields / Template Library / Edit Layout buttons (each dialog still opens correctly) and the "Vehicle Diagram Templates" section below it — no upload-PDF button, no "Filter by Reservation", no completed-checks list. Switch to "Document Library", filter by a vehicle that has a damage-check PDF uploaded (or upload one via the generic "Upload Document" button with type "damage_check") — confirm it appears there, filterable by that vehicle's license plate.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add client/src/pages/documents/index.tsx
+git commit -m "refactor: trim Documents 'Damage Check' tab to templates-only, completed checks stay in Document Library"
+```
+
+---
+
+## Task 9: End-to-end verification
 
 **Files:** none (verification only)
 
@@ -1681,3 +1773,7 @@ In Documents → Damage Check → Edit Layout: open the default template, confir
 - [ ] **Step 6: Legacy editor — no dead code paths**
 
 In Documents → Damage Check → Template Library, open the legacy structured editor for a non-default template, confirm there is no "Vehicle Diagrams" upload section, confirm "Diagram Placement" works off the matched vehicle diagram, save successfully.
+
+- [ ] **Step 7: Documents tab split holds together**
+
+Confirm the "Damage Check Templates" tab (renamed in Task 8) shows only template-management UI, and that a damage-check PDF uploaded via "Document Library" → "Upload Document" (type "damage_check", a chosen vehicle) shows up there filtered by that vehicle's license plate.
