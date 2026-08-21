@@ -96,10 +96,6 @@ interface DamageCheckTemplate {
   vehicleType: string | null;
   buildYearFrom: string | null;
   buildYearTo: string | null;
-  diagramTopView: string | null;
-  diagramFrontView: string | null;
-  diagramRearView: string | null;
-  diagramSideView: string | null;
   inspectionPoints: InspectionPoint[];
   categories: TemplateCategory[];
   handoverChecklist: HandoverChecklistItem[];
@@ -259,7 +255,7 @@ function DiagramPlacementPanel({
   if (!topViewPath) {
     return (
       <div className="border-2 border-dashed rounded-lg p-6 text-center text-gray-500 text-xs">
-        Upload a Top View diagram above to start placing inspection points on it.
+        Set this template's vehicle make and model above, and upload a matching diagram under Documents → Damage Check → Diagram Templates, to start placing inspection points on it.
       </div>
     );
   }
@@ -901,26 +897,31 @@ function TemplateEditor({
   const [pointEditorOpen, setPointEditorOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
 
-  // Diagram files
-  const [topViewFile, setTopViewFile] = useState<File | null>(null);
-  const [frontViewFile, setFrontViewFile] = useState<File | null>(null);
-  const [rearViewFile, setRearViewFile] = useState<File | null>(null);
-  const [sideViewFile, setSideViewFile] = useState<File | null>(null);
-  const [uploadingDiagrams, setUploadingDiagrams] = useState(false);
-
-  // Stable object URL for the freshly-selected top-view file. Created once
-  // per file selection and explicitly revoked on change/unmount so we don't
-  // leak blob URLs across long editing sessions.
-  const [topViewPreviewUrl, setTopViewPreviewUrl] = useState<string | null>(null);
-  useEffect(() => {
-    if (!topViewFile) {
-      setTopViewPreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(topViewFile);
-    setTopViewPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [topViewFile]);
+  // Vehicle diagram used by the "Diagram Placement" panel below — sourced
+  // from the make/model-keyed vehicleDiagramTemplates library (the same one
+  // used by the live pickup/return flow and the canvas editor's 'diagram'
+  // field), matched against this template's own vehicleMake/vehicleModel.
+  // Replaces the old per-template 4-slot diagram upload.
+  const { data: vehicleDiagramTemplates = [] } = useQuery<Array<{
+    id: number; make: string; model: string; yearFrom?: number | null; yearTo?: number | null;
+  }>>({
+    queryKey: ["/api/vehicle-diagram-templates"],
+  });
+  const matchedDiagramUrl = useMemo(() => {
+    if (!vehicleMake.trim() || !vehicleModel.trim()) return null;
+    const nm = vehicleMake.trim().toLowerCase();
+    const nmo = vehicleModel.trim().toLowerCase();
+    const year = buildYearFrom.trim() ? parseInt(buildYearFrom.trim(), 10) : undefined;
+    const match = vehicleDiagramTemplates.find((t) => {
+      if (t.make.trim().toLowerCase() !== nm || t.model.trim().toLowerCase() !== nmo) return false;
+      if (year !== undefined && !Number.isNaN(year)) {
+        if (t.yearFrom != null && t.yearFrom > year) return false;
+        if (t.yearTo != null && t.yearTo < year) return false;
+      }
+      return true;
+    });
+    return match ? `/api/vehicle-diagram-templates/${match.id}/image` : null;
+  }, [vehicleDiagramTemplates, vehicleMake, vehicleModel, buildYearFrom]);
 
   // Phase 3 — live PDF preview. Debounced POST of the current draft to a
   // dedicated preview endpoint that renders the PDF in memory and streams
@@ -934,17 +935,6 @@ function TemplateEditor({
   // after a newer one was scheduled simply no-op.
   const previewReqIdRef = useRef(0);
 
-  // Phase 3 — once a user picks a new diagram file in the editor, upload it
-  // immediately so the live preview can render the in-flight selection. The
-  // resulting server-relative path is stored in `pendingDiagramPaths` and is
-  // used both by the preview pane and the final save flow.
-  const [pendingDiagramPaths, setPendingDiagramPaths] = useState<{
-    diagramTopView?: string | null;
-    diagramFrontView?: string | null;
-    diagramRearView?: string | null;
-    diagramSideView?: string | null;
-  }>({});
-
   // Revoke the previous preview blob URL whenever it changes or unmounts so
   // long editing sessions don't accumulate blobs in memory.
   useEffect(() => {
@@ -952,73 +942,6 @@ function TemplateEditor({
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
   }, [previewUrl]);
-
-  // Auto-upload each newly-selected diagram file to the existing upload
-  // endpoint so the live preview can render the in-flight selection. One
-  // effect per slot keeps uploads independent. AbortController guards
-  // against rapid file changes superseding an in-flight upload.
-  const uploadDiagramForPreview = (
-    file: File,
-    fieldName: "topView" | "frontView" | "rearView" | "sideView",
-    pathKey: "diagramTopView" | "diagramFrontView" | "diagramRearView" | "diagramSideView",
-    signal: AbortSignal,
-  ) => {
-    const fd = new FormData();
-    fd.append(fieldName, file);
-    fetch("/api/damage-check-templates/upload-diagrams", {
-      method: "POST",
-      body: fd,
-      credentials: "include",
-      signal,
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("upload failed");
-        return res.json();
-      })
-      .then((paths) => {
-        if (paths?.[pathKey]) {
-          setPendingDiagramPaths((prev) => ({ ...prev, [pathKey]: paths[pathKey] }));
-        }
-      })
-      .catch((err) => {
-        if (err?.name !== "AbortError") {
-          console.warn(`Diagram preview upload failed for ${fieldName}:`, err);
-        }
-      });
-  };
-  useEffect(() => {
-    if (!topViewFile) return;
-    const c = new AbortController();
-    uploadDiagramForPreview(topViewFile, "topView", "diagramTopView", c.signal);
-    return () => c.abort();
-  }, [topViewFile]);
-  useEffect(() => {
-    if (!frontViewFile) return;
-    const c = new AbortController();
-    uploadDiagramForPreview(frontViewFile, "frontView", "diagramFrontView", c.signal);
-    return () => c.abort();
-  }, [frontViewFile]);
-  useEffect(() => {
-    if (!rearViewFile) return;
-    const c = new AbortController();
-    uploadDiagramForPreview(rearViewFile, "rearView", "diagramRearView", c.signal);
-    return () => c.abort();
-  }, [rearViewFile]);
-  useEffect(() => {
-    if (!sideViewFile) return;
-    const c = new AbortController();
-    uploadDiagramForPreview(sideViewFile, "sideView", "diagramSideView", c.signal);
-    return () => c.abort();
-  }, [sideViewFile]);
-
-  // Effective diagram paths for preview + save: pending uploads win over the
-  // persisted template paths.
-  const effectiveDiagrams = {
-    diagramTopView: pendingDiagramPaths.diagramTopView ?? template?.diagramTopView ?? null,
-    diagramFrontView: pendingDiagramPaths.diagramFrontView ?? template?.diagramFrontView ?? null,
-    diagramRearView: pendingDiagramPaths.diagramRearView ?? template?.diagramRearView ?? null,
-    diagramSideView: pendingDiagramPaths.diagramSideView ?? template?.diagramSideView ?? null,
-  };
 
   useEffect(() => {
     if (template) {
@@ -1054,13 +977,8 @@ function TemplateEditor({
       setHandoverChecklist([]);
       setInspectionPoints([]);
     }
-    setTopViewFile(null);
-    setFrontViewFile(null);
-    setRearViewFile(null);
-    setSideViewFile(null);
     // Reset Phase 3 live-preview transient state so values from a previous
     // edit session can't leak into a different template's preview/save.
-    setPendingDiagramPaths({});
     setPreviewError(null);
     setPreviewUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev);
@@ -1126,46 +1044,6 @@ function TemplateEditor({
       return;
     }
 
-    // Start from current effective paths (pending live-preview uploads have
-    // priority over persisted template paths). Only re-upload diagram files
-    // that haven't already been uploaded by the live-preview auto-upload.
-    let diagramPaths = { ...effectiveDiagrams };
-
-    const filesNeedingUpload: { field: string; file: File }[] = [];
-    if (topViewFile && !pendingDiagramPaths.diagramTopView)
-      filesNeedingUpload.push({ field: "topView", file: topViewFile });
-    if (frontViewFile && !pendingDiagramPaths.diagramFrontView)
-      filesNeedingUpload.push({ field: "frontView", file: frontViewFile });
-    if (rearViewFile && !pendingDiagramPaths.diagramRearView)
-      filesNeedingUpload.push({ field: "rearView", file: rearViewFile });
-    if (sideViewFile && !pendingDiagramPaths.diagramSideView)
-      filesNeedingUpload.push({ field: "sideView", file: sideViewFile });
-
-    if (filesNeedingUpload.length > 0) {
-      try {
-        setUploadingDiagrams(true);
-        const formData = new FormData();
-        filesNeedingUpload.forEach(({ field, file }) => formData.append(field, file));
-        const response = await fetch("/api/damage-check-templates/upload-diagrams", {
-          method: "POST",
-          body: formData,
-        });
-        if (!response.ok) throw new Error("Failed to upload diagrams");
-        const uploadedPaths = await response.json();
-        diagramPaths = { ...diagramPaths, ...uploadedPaths };
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to upload diagram images",
-          variant: "destructive",
-        });
-        setUploadingDiagrams(false);
-        return;
-      } finally {
-        setUploadingDiagrams(false);
-      }
-    }
-
     // Normalise per-category order so the backend gets a stable ordering hint.
     const orderedPoints = (() => {
       const grouped = new Map<string, InspectionPoint[]>();
@@ -1197,7 +1075,6 @@ function TemplateEditor({
       categories: categories.map((c, idx) => ({ ...c, order: idx })),
       handoverChecklist: handoverChecklist.map((h, idx) => ({ ...h, order: idx })),
       inspectionPoints: orderedPoints,
-      ...diagramPaths,
     };
 
     saveMutation.mutate(data);
@@ -1457,7 +1334,6 @@ function TemplateEditor({
           categories,
           inspectionPoints,
           handoverChecklist,
-          ...effectiveDiagrams,
         };
         const res = await fetch("/api/damage-check-templates/preview-pdf", {
           method: "POST",
@@ -1501,10 +1377,6 @@ function TemplateEditor({
     categories,
     inspectionPoints,
     handoverChecklist,
-    effectiveDiagrams.diagramTopView,
-    effectiveDiagrams.diagramFrontView,
-    effectiveDiagrams.diagramRearView,
-    effectiveDiagrams.diagramSideView,
   ]);
 
   return (
@@ -1867,68 +1739,6 @@ function TemplateEditor({
             )}
           </section>
 
-          {/* Vehicle Diagrams */}
-          <section className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-700">Vehicle Diagrams</h3>
-            <p className="text-xs text-gray-600">
-              Upload vehicle diagram images that will appear on the damage check PDF
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="topView">Top View</Label>
-                <Input
-                  id="topView"
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg"
-                  onChange={(e) => setTopViewFile(e.target.files?.[0] || null)}
-                  data-testid="input-top-view"
-                />
-                {template?.diagramTopView && !topViewFile && (
-                  <p className="text-xs text-green-600">Current: {template.diagramTopView}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="sideView">Side View</Label>
-                <Input
-                  id="sideView"
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg"
-                  onChange={(e) => setSideViewFile(e.target.files?.[0] || null)}
-                  data-testid="input-side-view"
-                />
-                {template?.diagramSideView && !sideViewFile && (
-                  <p className="text-xs text-green-600">Current: {template.diagramSideView}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="frontView">Front View</Label>
-                <Input
-                  id="frontView"
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg"
-                  onChange={(e) => setFrontViewFile(e.target.files?.[0] || null)}
-                  data-testid="input-front-view"
-                />
-                {template?.diagramFrontView && !frontViewFile && (
-                  <p className="text-xs text-green-600">Current: {template.diagramFrontView}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="rearView">Rear View</Label>
-                <Input
-                  id="rearView"
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg"
-                  onChange={(e) => setRearViewFile(e.target.files?.[0] || null)}
-                  data-testid="input-rear-view"
-                />
-                {template?.diagramRearView && !rearViewFile && (
-                  <p className="text-xs text-green-600">Current: {template.diagramRearView}</p>
-                )}
-              </div>
-            </div>
-          </section>
-
           {/* Diagram Placement */}
           <section className="space-y-3">
             <div>
@@ -1942,7 +1752,7 @@ function TemplateEditor({
               </p>
             </div>
             <DiagramPlacementPanel
-              topViewPath={topViewPreviewUrl ?? template?.diagramTopView ?? null}
+              topViewPath={matchedDiagramUrl}
               points={inspectionPoints}
               onSetPosition={setPointPosition}
             />
@@ -2235,12 +2045,10 @@ function TemplateEditor({
           </Button>
           <Button
             onClick={handleSave}
-            disabled={saveMutation.isPending || uploadingDiagrams}
+            disabled={saveMutation.isPending}
             data-testid="button-save-template"
           >
-            {uploadingDiagrams
-              ? "Uploading Diagrams..."
-              : saveMutation.isPending
+            {saveMutation.isPending
               ? "Saving..."
               : template
               ? "Update Template"
