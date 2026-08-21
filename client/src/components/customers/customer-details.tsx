@@ -256,11 +256,11 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
       return true;
     };
 
-    // Active rentals: pending, confirmed, or active status (regardless of date)
+    // Active rentals: booked (upcoming) or picked_up (ongoing) status
     const active = reservations
-      .filter(r => ["pending", "confirmed", "active"].includes(r.status.toLowerCase()))
+      .filter(r => ["booked", "picked_up"].includes(r.status.toLowerCase()))
       .filter(applyFilters);
-    
+
     // Past rentals: completed or cancelled status
     const past = reservations
       .filter(r => ["completed", "cancelled"].includes(r.status.toLowerCase()))
@@ -289,7 +289,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
       pastRentals: sortedPast,
       rentalStats: {
         totalRentals: reservations.length,
-        activeRentals: reservations.filter(r => ["pending", "confirmed", "active"].includes(r.status.toLowerCase())).length,
+        activeRentals: reservations.filter(r => ["booked", "picked_up"].includes(r.status.toLowerCase())).length,
         completedRentals: completedCount,
         totalKilometersDriven: totalKm
       }
