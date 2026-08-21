@@ -1473,7 +1473,9 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-1">Fuel Level at Pickup</h4>
                       <p className="text-base capitalize">
-                        {currentActiveReservation?.fuelLevelPickup || "Not recorded"}
+                        {currentActiveReservation?.fuelLevelPickup
+                          || (vehicle.departureMileage != null ? vehicle.currentFuelLevel : null)
+                          || "Not recorded"}
                       </p>
                     </div>
                     
