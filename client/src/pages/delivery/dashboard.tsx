@@ -284,7 +284,7 @@ export default function DeliveryDashboard() {
   const printGeneratedReport = () => {
     if (!reportToPreview) return;
     const printUrl = `/api/documents/view/${reportToPreview.id}`;
-    const printWindow = window.open(printUrl, "transportReportPrintWindow", "width=900,height=700,noopener");
+    const printWindow = window.open(printUrl, "transportReportPrintWindow", "width=900,height=700");
     if (!printWindow) {
       toast({
         title: "Popup blocked",

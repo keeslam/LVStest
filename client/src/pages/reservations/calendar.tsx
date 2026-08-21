@@ -55,7 +55,7 @@ import { CalendarLegend } from "@/components/calendar/calendar-legend";
 import { formatReservationStatus } from "@/lib/format-utils";
 import { formatCurrency } from "@/lib/utils";
 import { getCustomReservationStyle, getCustomReservationStyleObject, getCustomIndicatorStyle, getCustomTBDStyle } from "@/lib/calendar-styling";
-import { Calendar, User, Car, CreditCard, Edit, Eye, ClipboardEdit, Palette, Trash2, Wrench, ClipboardCheck, Mail, Search, FileText, Building, MapPin, Clock, History, AlertTriangle, Phone, RotateCcw } from "lucide-react";
+import { Calendar, User, Car, CreditCard, Edit, Eye, ClipboardEdit, Palette, Trash2, Wrench, ClipboardCheck, Mail, Search, FileText, Building, MapPin, Clock, History, AlertTriangle, Phone, RotateCcw, Printer } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -2207,17 +2207,8 @@ export default function ReservationCalendarPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              const ext = doc.fileName.split('.').pop()?.toLowerCase();
-                              const isPdf = doc.contentType?.includes('pdf') || ext === 'pdf';
-                              
-                              // Open PDFs directly in new tab (browsers often block PDF iframes)
-                              if (isPdf) {
-                                window.open(`/api/documents/view/${doc.id}`, '_blank');
-                              } else {
-                                // Show preview for images and other files
-                                setPreviewDocument(doc);
-                                setPreviewDialogOpen(true);
-                              }
+                              setPreviewDocument(doc);
+                              setPreviewDialogOpen(true);
                             }}
                             className="flex items-center gap-2 pr-8"
                             title={`${doc.documentType || 'Document'}${doc.uploadDate ? ` | Uploaded: ${format(new Date(doc.uploadDate), 'PPp')}` : ''}`}
@@ -2226,7 +2217,7 @@ export default function ReservationCalendarPage() {
                             <div className="text-left">
                               <div className="text-xs font-semibold truncate max-w-[150px]">{doc.documentType}</div>
                               <div className="text-[10px] text-gray-500 truncate max-w-[150px]">
-                                {doc.documentType?.startsWith('Damage Check') 
+                                {doc.documentType?.startsWith('Damage Check')
                                   ? doc.fileName.replace('.pdf', '').replace('.PDF', '')
                                   : doc.fileName.split('.').pop()?.toUpperCase() || 'FILE'
                                 }
@@ -2892,7 +2883,7 @@ export default function ReservationCalendarPage() {
       />
       {/* Document Preview Dialog */}
       <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-5xl w-[90vw] h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>{previewDocument?.documentType || 'Document Preview'}</DialogTitle>
             <DialogDescription>
@@ -2903,6 +2894,7 @@ export default function ReservationCalendarPage() {
             {previewDocument && (() => {
               const ext = previewDocument.fileName.split('.').pop()?.toLowerCase();
               const isImage = previewDocument.contentType?.includes('image') || ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext || '');
+              const isPdf = previewDocument.contentType?.includes('pdf') || ext === 'pdf';
 
               if (isImage) {
                 return (
@@ -2913,6 +2905,14 @@ export default function ReservationCalendarPage() {
                       className="max-w-full max-h-[70vh] object-contain rounded shadow-lg"
                     />
                   </div>
+                );
+              } else if (isPdf) {
+                return (
+                  <iframe
+                    src={`/api/documents/view/${previewDocument.id}`}
+                    className="w-full h-full border-0 rounded bg-white"
+                    title={previewDocument.fileName}
+                  />
                 );
               } else {
                 return (
@@ -2930,9 +2930,32 @@ export default function ReservationCalendarPage() {
             <Button variant="outline" onClick={() => window.open(`/api/documents/view/${previewDocument?.id}`, '_blank')}>
               Open in New Tab
             </Button>
-            <Button onClick={() => setPreviewDialogOpen(false)}>
-              Close
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!previewDocument) return;
+                  const printWindow = window.open(`/api/documents/view/${previewDocument.id}`, '_blank');
+                  if (printWindow) {
+                    printWindow.addEventListener('load', () => {
+                      setTimeout(() => printWindow.print(), 500);
+                    });
+                  } else {
+                    toast({
+                      title: "Popup blocked",
+                      description: "Please allow popups for this site, then click Print again.",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                Print
+              </Button>
+              <Button onClick={() => setPreviewDialogOpen(false)}>
+                Close
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

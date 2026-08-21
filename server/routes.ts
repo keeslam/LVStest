@@ -4699,34 +4699,39 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       let contractDocument = null;
       try {
-        const { generateRentalContractFromTemplate } = await import('./utils/pdf-generator');
-        
+        const { generateRentalContractFromTemplate, generateRentalContract } = await import('./utils/pdf-generator');
+
         let template = null;
         if (templateId) {
           template = await storage.getPdfTemplate(parseInt(templateId));
         }
-        
+
         if (!template) {
           const allTemplates = await storage.getAllPdfTemplates();
           template = allTemplates.find(t => t.isDefault) || allTemplates[0];
         }
 
         if (!template) {
-          // The pickup dialog tells the user a contract is generated automatically.
-          // With no template configured nothing is produced and nothing is said,
-          // which is easy to miss on a fresh deployment until a customer asks
-          // for their contract.
+          // No custom template configured — fall back to the built-in default
+          // contract layout so a "Contract (Unsigned)" document is still produced
+          // (the pickup dialog always tells the user a contract was generated).
           console.warn(
-            `⚠️ No PDF contract template configured — skipping contract generation for reservation ${reservationId}. ` +
-            `Add a template under Documents → Contract Templates to enable it.`
+            `⚠️ No PDF contract template configured for reservation ${reservationId} — using built-in default contract layout. ` +
+            `Add a template under Documents → Contract Templates to customize it.`
           );
         }
 
-        if (template && updatedReservation.vehicle) {
-          console.log(`📝 Generating contract for reservation ${reservationId} using template ${template.id}`);
-          
-          const contractPdf = await generateRentalContractFromTemplate(updatedReservation, template);
-          
+        if (updatedReservation.vehicle) {
+          console.log(
+            template
+              ? `📝 Generating contract for reservation ${reservationId} using template ${template.id}`
+              : `📝 Generating contract for reservation ${reservationId} using built-in default template`
+          );
+
+          const contractPdf = template
+            ? await generateRentalContractFromTemplate(updatedReservation, template)
+            : await generateRentalContract(updatedReservation);
+
           const sanitizedPlate = updatedReservation.vehicle.licensePlate.replace(/[^a-zA-Z0-9]/g, '');
           const uploadsDir = getUploadsDir();
           const contractsDir = path.join(uploadsDir, sanitizedPlate, 'contracts');
