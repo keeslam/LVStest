@@ -21,15 +21,23 @@ async function throwIfResNotOk(res: Response) {
     
     const text = (await res.text()) || res.statusText;
     let message = text;
+    let parsed: any = null;
     try {
-      const parsed = JSON.parse(text);
+      parsed = JSON.parse(text);
       if (typeof parsed?.message === "string") {
         message = parsed.message;
       }
     } catch {
       // Response body wasn't JSON; use the raw text as-is.
     }
-    throw new Error(`${res.status}: ${message}`);
+    const error = new Error(`${res.status}: ${message}`);
+    // Callers (e.g. mileage-decrease override flows) check custom fields the
+    // server sent alongside the error message (requiresOverride, code, etc.) -
+    // merge them onto the thrown Error so `error.requiresOverride` etc. work.
+    if (parsed && typeof parsed === "object") {
+      Object.assign(error, parsed);
+    }
+    throw error;
   }
 }
 

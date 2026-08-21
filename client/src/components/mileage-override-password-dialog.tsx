@@ -70,7 +70,10 @@ export function MileageOverridePasswordDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]" data-testid="dialog-mileage-override">
+      {/* z-[70]: this opens on top of the pickup/return dialog, which forces
+          its own content to z-[60] - must render above that (see similar note
+          in pickup-return-dialogs.tsx). */}
+      <DialogContent className="sm:max-w-[500px] z-[70]" data-testid="dialog-mileage-override">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Lock className="h-5 w-5 text-amber-600" />
