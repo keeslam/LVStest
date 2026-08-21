@@ -89,10 +89,6 @@ interface DamageCheckTemplate {
   buildYearFrom?: number | null;
   buildYearTo?: number | null;
   inspectionPoints: InspectionPoint[];
-  diagramTopView?: string | null;
-  diagramFrontView?: string | null;
-  diagramRearView?: string | null;
-  diagramSideView?: string | null;
   isDefault?: boolean;
   // Phase 1 additions
   categories?: TemplateCategory[] | null;
@@ -1213,115 +1209,9 @@ export async function generateDamageCheckPDF(
     yPosition -= 10;
   }
   
-  // Ensure space for diagrams and signatures
-  page = ensureSpace(250);
-  
-  yPosition -= 20;
-  
-  // Vehicle Diagram Section
-  page.drawText('VOERTUIGSCHEMA', {
-    x: margin,
-    y: yPosition,
-    size: 10,
-    font: boldFont,
-  });
-  
-  yPosition -= 15;
-  
-  // Try to load and embed vehicle diagrams if available
-  const diagramBoxWidth = (width - margin * 2 - 10) / 2;
-  const diagramBoxHeight = 80;
-  
-  // Helper function to load and embed a diagram
-  const loadDiagram = async (diagramPath: string | null | undefined) => {
-    if (!diagramPath) return null;
-    
-    try {
-      const diagramFullPath = path.join(process.cwd(), diagramPath);
-      const diagramExists = await fs.access(diagramFullPath).then(() => true).catch(() => false);
-      
-      if (diagramExists) {
-        const diagramBytes = await fs.readFile(diagramFullPath);
-        
-        if (diagramPath.toLowerCase().endsWith('.png')) {
-          return await pdfDoc.embedPng(diagramBytes);
-        } else if (diagramPath.toLowerCase().endsWith('.jpg') || diagramPath.toLowerCase().endsWith('.jpeg')) {
-          return await pdfDoc.embedJpg(diagramBytes);
-        }
-      }
-    } catch (error) {
-      console.warn('Could not load vehicle diagram:', diagramPath, error);
-    }
-    
-    return null;
-  };
-  
-  // Load all available diagrams
-  const topViewImage = await loadDiagram(template.diagramTopView);
-  const sideViewImage = await loadDiagram(template.diagramSideView);
-  const frontViewImage = await loadDiagram(template.diagramFrontView);
-  const rearViewImage = await loadDiagram(template.diagramRearView);
-  
-  const diagramEmbedded = !!(topViewImage || sideViewImage || frontViewImage || rearViewImage);
-  
-  // Display diagrams (top row: Top & Side, bottom row: Front & Rear)
-  const drawDiagramOrPlaceholder = (image: any, x: number, y: number, width: number, height: number, label: string) => {
-    if (image) {
-      // Add padding around the diagram (10 points on each side)
-      const padding = 10;
-      const availableWidth = width - (padding * 2);
-      const availableHeight = height - (padding * 2);
-      
-      const dims = image.scale(1);
-      const scale = Math.min(availableWidth / dims.width, availableHeight / dims.height);
-      const imgWidth = dims.width * scale;
-      const imgHeight = dims.height * scale;
-      const xOffset = (width - imgWidth) / 2;
-      const yOffset = (height - imgHeight) / 2;
-      
-      page.drawImage(image, {
-        x: x + xOffset,
-        y: y - height + yOffset,
-        width: imgWidth,
-        height: imgHeight,
-      });
-    } else {
-      page.drawRectangle({
-        x,
-        y: y - height,
-        width,
-        height,
-        borderColor: rgb(0, 0, 0),
-        borderWidth: 1,
-      });
-      page.drawText(label, {
-        x: x + width / 2 - (label.length * 2.5),
-        y: y - height / 2,
-        size: 9,
-        font: boldFont,
-        color: rgb(0.5, 0.5, 0.5),
-      });
-    }
-  };
-  
-  // Top row: Top view and Side view
-  drawDiagramOrPlaceholder(topViewImage, margin, yPosition, diagramBoxWidth, diagramBoxHeight, 'BOVENAANZICHT');
-  drawDiagramOrPlaceholder(sideViewImage, margin + diagramBoxWidth + 10, yPosition, diagramBoxWidth, diagramBoxHeight, 'ZIJAANZICHT');
-  
-  yPosition -= diagramBoxHeight + 10;
-  
-  // Bottom row: Front view and Rear view (if we have any diagrams at all)
-  if (diagramEmbedded) {
-    page = ensureSpace(diagramBoxHeight + 20);
-    drawDiagramOrPlaceholder(frontViewImage, margin, yPosition, diagramBoxWidth, diagramBoxHeight, 'VOORAANZICHT');
-    drawDiagramOrPlaceholder(rearViewImage, margin + diagramBoxWidth + 10, yPosition, diagramBoxWidth, diagramBoxHeight, 'ACHTERAANZICHT');
-    yPosition -= diagramBoxHeight + 20;
-  } else {
-    yPosition -= 20;
-  }
-  
   // Ensure space for signatures
-  page = ensureSpace(100);
+  page = ensureSpace(250);
+  yPosition -= 20;
   
   // Signature Section
   page.drawText('HANDTEKENINGEN', {
@@ -2012,19 +1902,7 @@ export async function generateDamageCheckPDFWithTemplate(
                 console.warn('Could not load diagram from filesystem:', error);
               }
             }
-            
-            // Fallback to damage template diagram (old system)
-            if (!diagramBytes && damageTemplate.diagramTopView) {
-              try {
-                const diagramPath = path.join(process.cwd(), damageTemplate.diagramTopView);
-                diagramBytes = await fs.readFile(diagramPath);
-                diagramFormat = damageTemplate.diagramTopView.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
-                console.log(`✅ Loaded damage template diagram from filesystem: ${damageTemplate.diagramTopView}`);
-              } catch (error) {
-                console.warn('Could not load damage template diagram:', error);
-              }
-            }
-            
+
             // Embed and render the diagram if loaded
             if (diagramBytes && diagramFormat) {
               const diagramImage = diagramFormat === 'png' 
