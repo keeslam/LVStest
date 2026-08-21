@@ -2231,12 +2231,16 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       const { fuelLevel, cost, notes } = req.body;
-      
-      // Validate fuel level
-      const validFuelLevels = ['empty', '1/4', '1/2', '3/4', 'full'];
-      if (fuelLevel && !validFuelLevels.includes(fuelLevel)) {
-        return res.status(400).json({ 
-          message: "Invalid fuel level. Must be one of: empty, 1/4, 1/2, 3/4, full" 
+
+      // Canonical casing the app writes everywhere ("Full"/"Empty"); accept
+      // any case (and legacy lowercase rows) and normalize before storing.
+      const fuelLevelCanonical: Record<string, string> = {
+        'empty': 'Empty', '1/4': '1/4', '1/2': '1/2', '3/4': '3/4', 'full': 'Full',
+      };
+      const normalizedFuelLevel = fuelLevel ? fuelLevelCanonical[fuelLevel.toLowerCase()] : undefined;
+      if (fuelLevel && !normalizedFuelLevel) {
+        return res.status(400).json({
+          message: "Invalid fuel level. Must be one of: Empty, 1/4, 1/2, 3/4, Full"
         });
       }
 
@@ -2245,8 +2249,8 @@ export async function registerRoutes(app: Express): Promise<void> {
         updatedBy: req.user ? (req.user as any).username : null,
       };
 
-      if (fuelLevel) {
-        updateData.currentFuelLevel = fuelLevel;
+      if (normalizedFuelLevel) {
+        updateData.currentFuelLevel = normalizedFuelLevel;
         updateData.fuelRefillDate = new Date();
       }
       
