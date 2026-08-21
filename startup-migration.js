@@ -137,6 +137,9 @@ async function runMigrations() {
       `INSERT INTO settings (contract_number_start) VALUES (1)`
     );
     
+    // Per-user "hide prices" flag, admin-assignable like role/permissions/active
+    await addColumnIfNotExists('users', 'hide_prices', 'boolean DEFAULT false NOT NULL');
+
     // Add ALL settings table columns (complete list from schema)
     // Contract number settings
     await addColumnIfNotExists('settings', 'contract_number_override', 'integer');

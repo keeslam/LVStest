@@ -8,6 +8,7 @@ import { Link, useLocation } from "wouter";
 import { Vehicle, Reservation, Document, Driver } from "@shared/schema";
 import { displayLicensePlate } from "@/lib/utils";
 import { formatLicensePlate } from "@/lib/format-utils";
+import { Price } from "@/components/ui/price";
 import { 
   Select, 
   SelectContent, 
@@ -1539,7 +1540,7 @@ export default function ReservationCalendarPage() {
                                         <div className="grid grid-cols-2 gap-2 text-xs">
                                           {res.totalPrice && (
                                             <div>
-                                              <span className="text-gray-500">Price:</span> {formatCurrency(Number(res.totalPrice))}
+                                              <span className="text-gray-500">Price:</span> {<Price value={Number(res.totalPrice)} />}
                                             </div>
                                           )}
                                           <div>
@@ -1995,7 +1996,7 @@ export default function ReservationCalendarPage() {
                       {selectedReservation.deliveryFee !== null && selectedReservation.deliveryFee !== undefined && (
                         <div>
                           <p className="text-[10px] text-green-600 font-medium">Delivery Fee</p>
-                          <p className="text-xs font-semibold text-green-900 mt-0.5">{formatCurrency(Number(selectedReservation.deliveryFee))}</p>
+                          <p className="text-xs font-semibold text-green-900 mt-0.5">{<Price value={Number(selectedReservation.deliveryFee)} />}</p>
                         </div>
                       )}
                     </div>
@@ -2029,7 +2030,7 @@ export default function ReservationCalendarPage() {
                     {selectedReservation.fuelCost && (
                       <div>
                         <p className="text-[10px] text-blue-600 font-medium">Cost</p>
-                        <p className="text-xs font-semibold text-blue-900 mt-0.5">{formatCurrency(Number(selectedReservation.fuelCost))}</p>
+                        <p className="text-xs font-semibold text-blue-900 mt-0.5">{<Price value={Number(selectedReservation.fuelCost)} />}</p>
                       </div>
                     )}
                     {selectedReservation.fuelCardNumber && (
@@ -3092,7 +3093,7 @@ export default function ReservationCalendarPage() {
                             )}
                             {rental.totalPrice && (
                               <p className="text-sm font-medium text-green-600 mt-1">
-                                Total: {formatCurrency(Number(rental.totalPrice))}
+                                Total: {<Price value={Number(rental.totalPrice)} />}
                               </p>
                             )}
                           </div>

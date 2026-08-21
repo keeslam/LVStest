@@ -12,6 +12,7 @@ import { ReservationEditDialog } from "@/components/reservations/reservation-edi
 import { ExpenseViewDialog } from "@/components/expenses/expense-view-dialog";
 import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
 import { formatDate, formatCurrency, formatLicensePlate, sumMoney } from "@/lib/format-utils";
+import { Price } from "@/components/ui/price";
 import { isTrueValue } from "@/lib/utils";
 import { getDaysUntil, getUrgencyColorClass } from "@/lib/date-utils";
 import { Vehicle, Expense, Document, Reservation, UserRole, Customer } from "@shared/schema";
@@ -1625,7 +1626,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                 </span>
                               </div>
                               <div className="font-semibold text-right">
-                                {formatCurrency(amount)}
+                                {<Price value={amount} />}
                               </div>
                             </div>
                           </AccordionTrigger>
@@ -1640,7 +1641,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                         <span className="text-sm text-gray-500">{formatDate(expense.date)}</span>
                                       </div>
                                     </div>
-                                    <p className="text-lg font-semibold">{formatCurrency(Number(expense.amount))}</p>
+                                    <p className="text-lg font-semibold">{<Price value={Number(expense.amount)} />}</p>
                                   </div>
                                 </div>
                               ))}
@@ -1704,7 +1705,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               <CardContent>
                 <div className="mb-6">
                   <h3 className="text-sm font-medium text-gray-500 mb-1">Total Expenses</h3>
-                  <p className="text-3xl font-bold">{formatCurrency(totalExpenses)}</p>
+                  <p className="text-3xl font-bold">{<Price value={totalExpenses} />}</p>
                 </div>
                 
                 <div className="space-y-3">
@@ -1723,7 +1724,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                     totalByCategory.map(({ category, amount }) => (
                       <div key={category} className="flex justify-between items-center">
                         <span className="text-sm">{category}</span>
-                        <span className="font-medium">{formatCurrency(amount)}</span>
+                        <span className="font-medium">{<Price value={amount} />}</span>
                       </div>
                     ))
                   )}
@@ -2203,7 +2204,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                             <StatusBadge status={reservation.status} />
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatCurrency(reservation.totalPrice)}
+                            {<Price value={reservation.totalPrice} />}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div className="flex items-center justify-end space-x-2">
@@ -3136,7 +3137,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                               <h4 className="font-medium text-sm">{expense.category} expense added</h4>
                               <span className="text-xs text-gray-500">{formatDate(expense.date)}</span>
                             </div>
-                            <p className="text-sm">{formatCurrency(Number(expense.amount))}</p>
+                            <p className="text-sm">{<Price value={Number(expense.amount)} />}</p>
                             <p className="text-xs text-gray-500">
                               {expense.createdBy ? `Added by ${expense.createdBy}` : "Added by unknown user"}
                             </p>
@@ -3212,7 +3213,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               <div>
                 <Label className="text-sm font-medium text-gray-500">Total Price</Label>
                 <p className="text-lg font-semibold text-green-600">
-                  {formatCurrency(selectedReservation.totalPrice)}
+                  {<Price value={selectedReservation.totalPrice} />}
                 </p>
               </div>
 

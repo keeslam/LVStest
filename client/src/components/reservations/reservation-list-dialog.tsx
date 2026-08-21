@@ -27,6 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient, invalidateRelatedQueries , invalidateByPrefix } from "@/lib/queryClient";
 import { Reservation, Vehicle } from "@shared/schema";
 import { formatLicensePlate, formatCurrency } from "@/lib/format-utils";
+import { Price } from "@/components/ui/price";
 import { format, parseISO, differenceInDays } from "date-fns";
 
 interface ReservationListDialogProps {
@@ -312,7 +313,7 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
               <span className="font-mono">{reservation.returnMileage?.toLocaleString() || '-'}</span>
             </div>
             {reservation.totalPrice && (
-              <div className="font-semibold text-green-700">{formatCurrency(Number(reservation.totalPrice))}</div>
+              <div className="font-semibold text-green-700">{<Price value={Number(reservation.totalPrice)} />}</div>
             )}
           </div>
 

@@ -17,6 +17,7 @@ import { ExpenseChart, type ExpenseChartData } from "@/components/reports/expens
 import { UtilizationChart, type UtilizationChartData } from "@/components/reports/utilization-chart";
 import { Vehicle, Expense, Reservation, Customer, VehicleTransport } from "@shared/schema";
 import { formatDate, formatCurrency, formatLicensePlate, sumMoney } from "@/lib/format-utils";
+import { Price } from "@/components/ui/price";
 import { isTrueValue } from "@/lib/utils";
 import { addDays, format, subMonths, subDays, startOfMonth, endOfMonth, isWithinInterval, differenceInDays, parseISO, startOfDay } from "date-fns";
 import { 
@@ -1476,7 +1477,7 @@ export default function ReportsPage() {
                 <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(Number(totalExpenses))}</div>
+                <div className="text-2xl font-bold">{<Price value={Number(totalExpenses)} />}</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Across {filteredExpenses.length} expense entries
                 </p>
@@ -1489,7 +1490,7 @@ export default function ReportsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {formatCurrency(Number(avgExpensePerVehicle))}
+                  {<Price value={Number(avgExpensePerVehicle)} />}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   For {activeVehicleCount} active {activeVehicleCount === 1 ? 'vehicle' : 'vehicles'}
@@ -1555,7 +1556,7 @@ export default function ReportsPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="text-sm font-medium">{expenseTrend.currentMonth.name}</h4>
-                      <p className="text-2xl font-bold">{formatCurrency(Number(expenseTrend.currentMonth.total))}</p>
+                      <p className="text-2xl font-bold">{<Price value={Number(expenseTrend.currentMonth.total)} />}</p>
                     </div>
                     <div className={`text-sm px-2 py-1 rounded-md ${expenseTrend.currentMonth.changePercentage > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
                       {expenseTrend.currentMonth.changePercentage > 0 ? '+' : ''}{Math.round(expenseTrend.currentMonth.changePercentage)}%
@@ -1568,7 +1569,7 @@ export default function ReportsPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="text-sm font-medium">{expenseTrend.previousMonth.name}</h4>
-                      <p className="text-2xl font-bold">{formatCurrency(Number(expenseTrend.previousMonth.total))}</p>
+                      <p className="text-2xl font-bold">{<Price value={Number(expenseTrend.previousMonth.total)} />}</p>
                     </div>
                     <div className={`text-sm px-2 py-1 rounded-md ${expenseTrend.previousMonth.changePercentage > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
                       {expenseTrend.previousMonth.changePercentage > 0 ? '+' : ''}{Math.round(expenseTrend.previousMonth.changePercentage)}%
@@ -1586,7 +1587,7 @@ export default function ReportsPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="text-sm font-medium">{expenseTrend.twoMonthsAgo.name}</h4>
-                      <p className="text-2xl font-bold">{formatCurrency(Number(expenseTrend.twoMonthsAgo.total))}</p>
+                      <p className="text-2xl font-bold">{<Price value={Number(expenseTrend.twoMonthsAgo.total)} />}</p>
                     </div>
                   </div>
                   <Progress 
@@ -1637,7 +1638,7 @@ export default function ReportsPage() {
                           <span className="text-muted-foreground text-sm">
                             {filteredExpenses.filter(e => e.category === category).length} items
                           </span>
-                          <span className="font-medium">{formatCurrency(Number(amount))}</span>
+                          <span className="font-medium">{<Price value={Number(amount)} />}</span>
                         </div>
                       </div>
                     ))
@@ -1684,7 +1685,7 @@ export default function ReportsPage() {
                             </TableCell>
                             <TableCell className="capitalize">{expense.category}</TableCell>
                             <TableCell>{expense.description}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(Number(expense.amount))}</TableCell>
+                            <TableCell className="text-right">{<Price value={Number(expense.amount)} />}</TableCell>
                           </TableRow>
                         );
                       })
@@ -1792,7 +1793,7 @@ export default function ReportsPage() {
                           <TableCell>{vehicle.brand} {vehicle.model}</TableCell>
                           <TableCell>{formatLicensePlate(vehicle.licensePlate)}</TableCell>
                           <TableCell>{vehicle.expenseCount} entries</TableCell>
-                          <TableCell className="text-right">{formatCurrency(Number(vehicle.maintenanceCost))}</TableCell>
+                          <TableCell className="text-right">{<Price value={Number(vehicle.maintenanceCost)} />}</TableCell>
                         </TableRow>
                       ))
                   ) : (
@@ -2170,9 +2171,9 @@ export default function ReportsPage() {
                           <TableCell>{customer.reservationCount}</TableCell>
                           <TableCell>{customer.totalReservationDays} days</TableCell>
                           <TableCell>{customer.vehicleCount}</TableCell>
-                          <TableCell>{formatCurrency(Number(customer.totalExpenses))}</TableCell>
+                          <TableCell>{<Price value={Number(customer.totalExpenses)} />}</TableCell>
                           <TableCell className="text-right font-medium">
-                            {formatCurrency(Number(customer.expensePerDay))}
+                            {<Price value={Number(customer.expensePerDay)} />}
                             {customer.expensePerDay > 0 && (
                               <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
                                 customer.expensePerDay > (avgExpensePerVehicle / 30) * 2
@@ -2340,7 +2341,7 @@ export default function ReportsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500">Total Toll Cost</p>
-                    <p className="text-2xl font-bold">{formatCurrency(sumMoney(filteredTransportsForReport.filter(t => t.tollCost), t => Number(t.tollCost)))}</p>
+                    <p className="text-2xl font-bold">{<Price value={sumMoney(filteredTransportsForReport.filter(t => t.tollCost), t => Number(t.tollCost))} />}</p>
                   </div>
                   <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
                     <DollarSign className="h-6 w-6 text-blue-600" />
@@ -2353,7 +2354,7 @@ export default function ReportsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500">Pending Customer Billing</p>
-                    <p className="text-2xl font-bold">{formatCurrency(sumMoney(filteredTransportsForReport.filter(t => t.billable && !t.invoiced), t => Number(t.billableAmount || 0)))}</p>
+                    <p className="text-2xl font-bold">{<Price value={sumMoney(filteredTransportsForReport.filter(t => t.billable && !t.invoiced), t => Number(t.billableAmount || 0))} />}</p>
                   </div>
                   <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
                     <FileText className="h-6 w-6 text-amber-600" />

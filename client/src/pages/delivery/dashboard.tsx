@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { formatDate, formatCurrency, sumMoney } from "@/lib/format-utils";
+import { Price } from "@/components/ui/price";
 import { Reservation, Customer, Vehicle, VehicleTransport } from "@shared/schema";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -145,7 +146,7 @@ export default function DeliveryDashboard() {
                 </div>
               </TableCell>
               <TableCell>{formatDate(reservation.startDate)}</TableCell>
-              <TableCell>{reservation.deliveryFee ? formatCurrency(parseFloat(reservation.deliveryFee.toString())) : '-'}</TableCell>
+              <TableCell>{reservation.deliveryFee ? <Price value={parseFloat(reservation.deliveryFee.toString())} /> : '-'}</TableCell>
               <TableCell>{getStatusBadge(reservation.deliveryStatus || 'pending')}</TableCell>
               <TableCell>
                 <Button size="sm" variant="outline" data-testid={`button-view-${reservation.id}`}>
@@ -560,7 +561,7 @@ export default function DeliveryDashboard() {
                 <Route className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold" data-testid="stat-toll-cost-month">{formatCurrency(tollCostThisMonth)}</div>
+                <div className="text-2xl font-bold" data-testid="stat-toll-cost-month"><Price value={tollCostThisMonth} /></div>
                 <p className="text-xs text-muted-foreground">What we've paid in tolls</p>
               </CardContent>
             </Card>
@@ -571,7 +572,7 @@ export default function DeliveryDashboard() {
                 <Receipt className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold" data-testid="stat-pending-billing">{formatCurrency(pendingBillableAmount)}</div>
+                <div className="text-2xl font-bold" data-testid="stat-pending-billing"><Price value={pendingBillableAmount} /></div>
                 <p className="text-xs text-muted-foreground">Billable, not yet invoiced</p>
               </CardContent>
             </Card>
@@ -739,12 +740,12 @@ export default function DeliveryDashboard() {
                         </TableCell>
                         <TableCell>{formatDate(transport.scheduledDate)}</TableCell>
                         <TableCell>{transport.distanceKm ? `${Number(transport.distanceKm)} km` : '-'}</TableCell>
-                        <TableCell>{transport.tollCost ? formatCurrency(Number(transport.tollCost)) : '-'}</TableCell>
+                        <TableCell>{transport.tollCost ? <Price value={Number(transport.tollCost)} /> : '-'}</TableCell>
                         <TableCell>
                           {transport.billable ? (
                             <div className="flex items-center gap-1 text-sm">
                               <Euro className="h-3 w-3 text-muted-foreground shrink-0" />
-                              {transport.billableAmount ? formatCurrency(Number(transport.billableAmount)) : '-'}
+                              {transport.billableAmount ? <Price value={Number(transport.billableAmount)} /> : '-'}
                               {transport.invoiced ? (
                                 <Badge className="bg-green-100 text-green-800 ml-1">Invoiced</Badge>
                               ) : (

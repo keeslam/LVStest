@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatDate, formatCurrency, formatLicensePlate } from "@/lib/format-utils";
+import { Price } from "@/components/ui/price";
 import { Reservation, Vehicle, Customer } from "@shared/schema";
 import { differenceInDays, parseISO } from "date-fns";
 import { Calendar, List, ArrowLeft, Trash2, Wrench, Car, ArrowRightLeft, CheckCircle, ClipboardCheck, FileText } from "lucide-react";
@@ -316,7 +317,7 @@ export default function ReservationDetails() {
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Total Price</h3>
                 <p className="text-base font-medium mt-1">
-                  {formatCurrency(reservation.totalPrice)}
+                  {<Price value={reservation.totalPrice} />}
                 </p>
               </div>
             </div>

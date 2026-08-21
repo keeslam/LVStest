@@ -489,6 +489,7 @@ const userFormSchema = z.object({
   role: z.string().default(UserRole.USER),
   permissions: z.array(z.string()).default([]),
   active: z.boolean().default(true),
+  hidePrices: z.boolean().default(false),
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
@@ -513,6 +514,7 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
       role: user?.role || UserRole.USER,
       permissions: user?.permissions || [],
       active: user?.active !== undefined ? user?.active : true,
+      hidePrices: (user as any)?.hidePrices || false,
     },
   });
 
@@ -663,6 +665,24 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
                 </div>
                 <FormControl>
                   <Switch checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="hidePrices"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                <div className="space-y-0.5">
+                  <FormLabel>Hide Prices</FormLabel>
+                  <FormDescription className="text-xs">
+                    User never sees price/money amounts anywhere in the app
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-hide-prices" />
                 </FormControl>
               </FormItem>
             )}

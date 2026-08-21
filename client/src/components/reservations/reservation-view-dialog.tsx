@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatDate, formatCurrency, formatLicensePlate, formatReservationStatus } from "@/lib/format-utils";
+import { Price } from "@/components/ui/price";
 import { Reservation, Vehicle, Customer, Driver, Document } from "@shared/schema";
 import { differenceInDays, parseISO } from "date-fns";
 import { Wrench, Car, ArrowRightLeft, Trash2, Edit, FileText, Upload, FileCheck, X, Camera, AlertCircle } from "lucide-react";
@@ -782,7 +783,7 @@ export function ReservationViewDialog({
                       {reservation.fuelCost && (
                         <div>
                           <p className="text-xs text-blue-600 font-medium">Fuel Cost</p>
-                          <p className="text-sm font-semibold text-blue-900 mt-1">{formatCurrency(Number(reservation.fuelCost))}</p>
+                          <p className="text-sm font-semibold text-blue-900 mt-1">{<Price value={Number(reservation.fuelCost)} />}</p>
                         </div>
                       )}
                       {reservation.fuelCardNumber && (

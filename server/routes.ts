@@ -957,6 +957,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         delete userData.role;
         delete userData.permissions;
         delete userData.active;
+        delete userData.hidePrices;
       }
       
       // Handle password separately

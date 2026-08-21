@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate, formatCurrency } from "@/lib/format-utils";
+import { Price } from "@/components/ui/price";
 import { displayLicensePlate } from "@/lib/utils";
 import { Expense, Vehicle } from "@shared/schema";
 
@@ -239,7 +240,7 @@ export default function ExpenseDetailsPage() {
                   <div>
                     <h3 className="text-sm font-medium text-muted-foreground mb-1">Amount</h3>
                     <div className="text-xl font-bold">
-                      {formatCurrency(Number(expense.amount || 0))}
+                      {<Price value={Number(expense.amount || 0)} />}
                     </div>
                   </div>
                 </div>

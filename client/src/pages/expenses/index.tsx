@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Expense } from "@shared/schema";
 import { formatDate, formatCurrency } from "@/lib/format-utils";
+import { Price } from "@/components/ui/price";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -265,7 +266,7 @@ export default function ExpensesIndex() {
       header: "Amount",
       cell: ({ row }) => {
         const amount = row.getValue("amount") as number;
-        return <span className="font-medium">{formatCurrency(amount)}</span>;
+        return <span className="font-medium">{<Price value={amount} />}</span>;
       },
     },
     {
@@ -386,7 +387,7 @@ export default function ExpensesIndex() {
                                 </span>
                               </div>
                               <div className="font-semibold text-right">
-                                {formatCurrency(categoryTotal)}
+                                {<Price value={categoryTotal} />}
                               </div>
                             </div>
                           </AccordionTrigger>
@@ -463,7 +464,7 @@ export default function ExpensesIndex() {
                                               {expense.description || "—"}
                                             </TableCell>
                                             <TableCell>
-                                              <span className="font-medium">{formatCurrency(Number(expense.amount) || 0)}</span>
+                                              <span className="font-medium">{<Price value={Number(expense.amount) || 0} />}</span>
                                             </TableCell>
                                             <TableCell className="text-right">
                                               <div className="flex gap-1 justify-end">
@@ -523,7 +524,7 @@ export default function ExpensesIndex() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">Total Expenses</h3>
-                <p className="text-3xl font-bold">{formatCurrency(totalAmount)}</p>
+                <p className="text-3xl font-bold">{<Price value={totalAmount} />}</p>
               </div>
               
               {!isLoading && (
@@ -543,7 +544,7 @@ export default function ExpensesIndex() {
                           {getCategoryIcon(category)}
                           <span>{category}</span>
                         </div>
-                        <span className="font-medium">{formatCurrency(amount)}</span>
+                        <span className="font-medium">{<Price value={amount} />}</span>
                       </div>
                     ))}
                 </div>
@@ -586,7 +587,7 @@ export default function ExpensesIndex() {
                   <div>
                     <h3 className="text-sm font-medium text-muted-foreground mb-1">Amount</h3>
                     <div className="text-2xl font-bold">
-                      {formatCurrency(Number(selectedExpense.amount || 0))}
+                      {<Price value={Number(selectedExpense.amount || 0)} />}
                     </div>
                   </div>
                 </div>

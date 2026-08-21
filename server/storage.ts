@@ -626,6 +626,7 @@ export class MemStorage implements IStorage {
       role: insertUser.role ?? 'user',
       permissions: insertUser.permissions ?? [],
       active: insertUser.active ?? true,
+      hidePrices: insertUser.hidePrices ?? false,
       mileageOverridePasswordHash: insertUser.mileageOverridePasswordHash ?? null,
       createdAt: now,
       updatedAt: now,

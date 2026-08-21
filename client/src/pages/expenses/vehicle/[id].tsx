@@ -35,6 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDate, formatCurrency } from "@/lib/format-utils";
+import { Price } from "@/components/ui/price";
 import { displayLicensePlate } from "@/lib/utils";
 import { Expense, Vehicle } from "@shared/schema";
 import { PlusCircle, ArrowLeft, Eye, Trash2, Wrench, CircleDot, AlertTriangle, Hammer, Fuel, Shield, FileText, Sparkles, Package, MoreHorizontal, Disc } from "lucide-react";
@@ -355,7 +356,7 @@ export default function VehicleExpensesPage() {
                                 </span>
                               </div>
                               <div className="font-semibold text-right">
-                                {formatCurrency(categoryTotal)}
+                                {<Price value={categoryTotal} />}
                               </div>
                             </div>
                           </AccordionTrigger>
@@ -410,7 +411,7 @@ export default function VehicleExpensesPage() {
                                           <TableRow key={expense.id}>
                                             <TableCell>{formatDate(expense.date)}</TableCell>
                                             <TableCell data-description>{expense.description || "—"}</TableCell>
-                                            <TableCell className="font-medium">{formatCurrency(Number(expense.amount))}</TableCell>
+                                            <TableCell className="font-medium">{<Price value={Number(expense.amount)} />}</TableCell>
                                             <TableCell className="text-right">
                                               <Link href={`/expenses/${expense.id}`}>
                                                 <Button variant="ghost" size="sm">
@@ -450,7 +451,7 @@ export default function VehicleExpensesPage() {
           <CardHeader>
             <CardTitle>Expense Summary</CardTitle>
             <CardDescription>
-              Total expenses: <span className="font-bold">{formatCurrency(totalExpenses)}</span>
+              Total expenses: <span className="font-bold">{<Price value={totalExpenses} />}</span>
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -469,7 +470,7 @@ export default function VehicleExpensesPage() {
                         <span className="text-xs text-muted-foreground ml-2">({count} items)</span>
                       </div>
                     </div>
-                    <span className="font-medium">{formatCurrency(amount)}</span>
+                    <span className="font-medium">{<Price value={amount} />}</span>
                   </div>
                 ))}
               </div>

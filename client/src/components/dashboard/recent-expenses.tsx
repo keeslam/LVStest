@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, formatCurrency, formatLicensePlate, sumMoney } from "@/lib/format-utils";
+import { Price } from "@/components/ui/price";
 import { Expense } from "@shared/schema";
 import { MoreVertical, Eye, Pencil, Printer, Calendar, Tag, Truck, FileText, FileCheck } from "lucide-react";
 import { ExpenseForm } from "@/components/expenses/expense-form";
@@ -185,7 +186,7 @@ export function RecentExpenses() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <div className="text-sm font-semibold text-gray-900">{formatCurrency(group.totalAmount)}</div>
+                  <div className="text-sm font-semibold text-gray-900">{<Price value={group.totalAmount} />}</div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-gray-100">
@@ -197,7 +198,7 @@ export function RecentExpenses() {
                         <div key={expense.id}>
                           <DropdownMenuItem onClick={() => handleViewExpense(expense)}>
                             <Eye className="h-3 w-3 mr-2" />
-                            View {expense.category} - {formatCurrency(Number(expense.amount || 0))}
+                            View {expense.category} - {<Price value={Number(expense.amount || 0)} />}
                           </DropdownMenuItem>
                         </div>
                       ))}
@@ -239,7 +240,7 @@ export function RecentExpenses() {
                   <div>
                     <h3 className="text-sm font-medium text-muted-foreground mb-1">Amount</h3>
                     <div className="text-xl font-bold">
-                      {formatCurrency(Number(selectedExpense.amount || 0))}
+                      {<Price value={Number(selectedExpense.amount || 0)} />}
                     </div>
                   </div>
                 </div>
@@ -352,7 +353,7 @@ export function RecentExpenses() {
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground">Amount</h4>
                         <div className="text-lg font-bold">
-                          {formatCurrency(Number(expense.amount || 0))}
+                          {<Price value={Number(expense.amount || 0)} />}
                         </div>
                       </div>
                     </div>
@@ -399,7 +400,7 @@ export function RecentExpenses() {
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-semibold">Total</span>
                   <span className="text-2xl font-bold text-primary">
-                    {formatCurrency(selectedGroup.totalAmount)}
+                    {<Price value={selectedGroup.totalAmount} />}
                   </span>
                 </div>
               </div>

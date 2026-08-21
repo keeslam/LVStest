@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency } from "@/lib/format-utils";
+import { Price } from "@/components/ui/price";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { TrendingUp, TrendingDown, DollarSign, Wrench, Car, Calendar } from "lucide-react";
 
@@ -98,7 +99,7 @@ export default function MaintenanceCostsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-total-costs">
-              {formatCurrency(costData.totalCosts)}
+              {<Price value={costData.totalCosts} />}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Across {costData.totalVehicles} vehicles
@@ -113,7 +114,7 @@ export default function MaintenanceCostsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-avg-per-vehicle">
-              {formatCurrency(costData.averageCostPerVehicle)}
+              {<Price value={costData.averageCostPerVehicle} />}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Per vehicle average
@@ -128,7 +129,7 @@ export default function MaintenanceCostsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-cost-per-km">
-              {formatCurrency(costData.averageCostPerKm)}
+              {<Price value={costData.averageCostPerKm} />}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Efficiency metric
@@ -200,7 +201,7 @@ export default function MaintenanceCostsPage() {
                         />
                         <span>{cat.category}</span>
                       </div>
-                      <span className="font-medium">{formatCurrency(cat.amount)}</span>
+                      <span className="font-medium">{<Price value={cat.amount} />}</span>
                     </div>
                   ))}
                 </div>
@@ -230,7 +231,7 @@ export default function MaintenanceCostsPage() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-bold">{formatCurrency(vehicle.totalCost)}</div>
+                          <div className="font-bold">{<Price value={vehicle.totalCost} />}</div>
                           <div className="text-xs text-gray-600">{vehicle.expenseCount} expenses</div>
                         </div>
                       </div>
@@ -296,8 +297,8 @@ export default function MaintenanceCostsPage() {
                           <tr key={brand.brand} className="border-b hover:bg-gray-50">
                             <td className="p-2 font-medium">{brand.brand}</td>
                             <td className="text-right p-2">{brand.vehicleCount}</td>
-                            <td className="text-right p-2">{formatCurrency(brand.totalCost)}</td>
-                            <td className="text-right p-2">{formatCurrency(brand.avgCost)}</td>
+                            <td className="text-right p-2">{<Price value={brand.totalCost} />}</td>
+                            <td className="text-right p-2">{<Price value={brand.avgCost} />}</td>
                             <td className={`text-right p-2 font-medium ${efficiencyColor}`}>{efficiency}</td>
                           </tr>
                         );
@@ -336,8 +337,8 @@ export default function MaintenanceCostsPage() {
                         <tr key={vehicle.vehicleId} className="border-b hover:bg-gray-50" data-testid={`row-vehicle-${vehicle.vehicleId}`}>
                           <td className="p-2 font-medium">{vehicle.licensePlate}</td>
                           <td className="p-2">{vehicle.brand} {vehicle.model}</td>
-                          <td className="text-right p-2">{formatCurrency(vehicle.totalCost)}</td>
-                          <td className="text-right p-2">{formatCurrency(vehicle.costPerKm)}</td>
+                          <td className="text-right p-2">{<Price value={vehicle.totalCost} />}</td>
+                          <td className="text-right p-2">{<Price value={vehicle.costPerKm} />}</td>
                           <td className="text-right p-2">{vehicle.currentMileage?.toLocaleString() || 'N/A'} km</td>
                           <td className="text-right p-2">{vehicle.expenseCount}</td>
                         </tr>

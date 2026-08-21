@@ -15,6 +15,7 @@ import { CustomerEditDialog } from "./customer-edit-dialog";
 import { DriverDialog } from "./driver-dialog";
 import { DriverViewDialog } from "./driver-view-dialog";
 import { formatDate, formatCurrency, formatPhoneNumber, formatReservationStatus, formatLicensePlate } from "@/lib/format-utils";
+import { Price } from "@/components/ui/price";
 import { displayLicensePlate } from "@/lib/utils";
 import { Customer, Reservation, Driver } from "@shared/schema";
 import { apiRequest, queryClient, invalidateRelatedQueries, invalidateByPrefix } from "@/lib/queryClient";
@@ -400,7 +401,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                     {kmDriven !== null ? `${kmDriven.toLocaleString()} km` : '—'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatCurrency(Number(reservation.totalPrice || 0))}
+                    {<Price value={Number(reservation.totalPrice || 0)} />}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     {reservation.damageCheckPath ? (

@@ -23,6 +23,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Eye, Trash2, Wrench, CircleDot, AlertTriangle, Hammer, Fuel, Shield, FileText, Sparkles, Package, MoreHorizontal, Disc, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatDate, formatCurrency, sumMoney } from "@/lib/format-utils";
+import { Price } from "@/components/ui/price";
 import { Expense, Vehicle } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
@@ -228,7 +229,7 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
                 <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(totalExpenses)}</div>
+                <div className="text-2xl font-bold">{<Price value={totalExpenses} />}</div>
                 <p className="text-xs text-muted-foreground">
                   {filteredExpenses.length} expense{filteredExpenses.length !== 1 ? 's' : ''}
                 </p>
@@ -296,7 +297,7 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
                           </span>
                         </div>
                         <div className="font-semibold text-right">
-                          {formatCurrency(amount)}
+                          {<Price value={amount} />}
                         </div>
                       </div>
                     </AccordionTrigger>
@@ -325,7 +326,7 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
                                   </TableCell>
                                   <TableCell>{formatDate(expense.date)}</TableCell>
                                   <TableCell className="text-right font-medium">
-                                    {formatCurrency(Number(expense.amount))}
+                                    {<Price value={Number(expense.amount)} />}
                                   </TableCell>
                                   <TableCell className="text-center">
                                     <div className="flex items-center justify-center gap-1">
@@ -355,7 +356,7 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
                                           <AlertDialogHeader>
                                             <AlertDialogTitle>Delete Expense</AlertDialogTitle>
                                             <AlertDialogDescription>
-                                              Are you sure you want to delete this {expense.category.toLowerCase()} expense of {formatCurrency(Number(expense.amount))}?
+                                              Are you sure you want to delete this {expense.category.toLowerCase()} expense of {<Price value={Number(expense.amount)} />}?
                                               This action cannot be undone.
                                             </AlertDialogDescription>
                                           </AlertDialogHeader>
