@@ -10469,19 +10469,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       try {
         const draft = req.body ?? {};
 
-        // Diagram path safety: only allow relative paths inside the uploads
-        // directory and reject any traversal attempt. Anything that fails the
-        // check is silently dropped so the preview still renders without it.
-        const isSafeDiagramPath = (p: unknown): p is string => {
-          if (typeof p !== "string" || p.length === 0) return false;
-          if (p.includes("..") || p.includes("\0")) return false;
-          if (path.isAbsolute(p)) return false;
-          const normalized = path.posix.normalize(p.replace(/\\/g, "/"));
-          if (normalized.startsWith("../") || normalized === "..") return false;
-          return normalized.startsWith("uploads/");
-        };
-        const safeDiagram = (p: unknown) => (isSafeDiagramPath(p) ? p : null);
-
         // Build a synthetic template so the generator has all fields it
         // expects. Missing fields default to sensible values so an empty
         // editor still produces a viewable preview.
@@ -10506,10 +10493,6 @@ export async function registerRoutes(app: Express): Promise<void> {
           canvasFields: Array.isArray(draft.canvasFields) ? draft.canvasFields : [],
           headerText: draft.headerText ?? null,
           footerText: draft.footerText ?? null,
-          diagramTopView: safeDiagram(draft.diagramTopView),
-          diagramFrontView: safeDiagram(draft.diagramFrontView),
-          diagramRearView: safeDiagram(draft.diagramRearView),
-          diagramSideView: safeDiagram(draft.diagramSideView),
         };
 
         // Sample vehicle + reservation data for the preview. Editors can
@@ -10590,37 +10573,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
     },
   );
-
-  // Upload diagrams for damage check templates
-  app.post("/api/damage-check-templates/upload-diagrams", hasPermission(UserPermission.MANAGE_DAMAGE_CHECKS), diagramUpload.fields([
-    { name: 'topView', maxCount: 1 },
-    { name: 'frontView', maxCount: 1 },
-    { name: 'rearView', maxCount: 1 },
-    { name: 'sideView', maxCount: 1 }
-  ]), async (req: Request, res: Response) => {
-    try {
-      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      const paths: any = {};
-      
-      if (files.topView) {
-        paths.diagramTopView = getRelativePath(files.topView[0].path);
-      }
-      if (files.frontView) {
-        paths.diagramFrontView = getRelativePath(files.frontView[0].path);
-      }
-      if (files.rearView) {
-        paths.diagramRearView = getRelativePath(files.rearView[0].path);
-      }
-      if (files.sideView) {
-        paths.diagramSideView = getRelativePath(files.sideView[0].path);
-      }
-      
-      res.json(paths);
-    } catch (error) {
-      console.error("Error uploading diagrams:", error);
-      res.status(500).json({ message: "Error uploading diagrams" });
-    }
-  });
 
   // Create new damage check template
   app.post("/api/damage-check-templates", hasPermission(UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
@@ -10742,6 +10694,182 @@ export async function registerRoutes(app: Express): Promise<void> {
     } catch (error) {
       console.error("Error deleting damage check template:", error);
       res.status(500).json({ message: "Error deleting damage check template" });
+    }
+  });
+
+  // Configure multer for damage-check template background uploads — images only
+  const damageCheckTemplateBackgroundUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: createSecureMulterFilter('document'),
+  });
+
+  app.post("/api/damage-check-templates/:id/background", hasPermission(UserPermission.MANAGE_DAMAGE_CHECKS), damageCheckTemplateBackgroundUpload.single('background'), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid template ID" });
+      if (!req.file) return res.status(400).json({ message: "No background file provided" });
+
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      if (!['.jpg', '.jpeg', '.png'].includes(ext)) {
+        return res.status(400).json({ message: "Background must be a JPG or PNG image" });
+      }
+
+      const template = await storage.getDamageCheckTemplate(id);
+      if (!template) return res.status(404).json({ message: "Template not found" });
+
+      const bufferValidation = await validateFileBuffer(req.file.buffer, req.file.mimetype, req.file.originalname, 'document');
+      if (!bufferValidation.valid) return res.status(400).json({ message: bufferValidation.error });
+
+      const templatesDir = path.join(uploadsDir, 'damage-check-templates');
+      if (!fs.existsSync(templatesDir)) fs.mkdirSync(templatesDir, { recursive: true });
+
+      if ((template as any).backgroundPath) {
+        try {
+          await fs.promises.unlink(path.join(process.cwd(), (template as any).backgroundPath));
+        } catch (error) {
+          console.error("Error deleting old damage-check template background:", error);
+        }
+      }
+
+      const filename = `template_${id}_background_${Date.now()}${ext}`;
+      const filePath = path.join(templatesDir, filename);
+      await fs.promises.writeFile(filePath, req.file.buffer);
+      const backgroundPath = path.relative(process.cwd(), filePath);
+
+      const updated = await storage.updateDamageCheckTemplate(id, {
+        backgroundPath,
+        backgroundPreviewPath: backgroundPath,
+      } as any);
+      if (!updated) return res.status(404).json({ message: "Failed to update template" });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error uploading damage-check template background:", error);
+      res.status(400).json({ message: "Failed to upload background" });
+    }
+  });
+
+  app.delete("/api/damage-check-templates/:id/background", hasPermission(UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid template ID" });
+      const template = await storage.getDamageCheckTemplate(id);
+      if (!template) return res.status(404).json({ message: "Template not found" });
+
+      if ((template as any).backgroundPath) {
+        try {
+          await fs.promises.unlink(path.join(process.cwd(), (template as any).backgroundPath));
+        } catch (error) {
+          console.error("Error deleting damage-check template background:", error);
+        }
+      }
+
+      const updated = await storage.updateDamageCheckTemplate(id, {
+        backgroundPath: null,
+        backgroundPreviewPath: null,
+      } as any);
+      if (!updated) return res.status(404).json({ message: "Failed to update template" });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error removing damage-check template background:", error);
+      res.status(500).json({ message: "Failed to remove background" });
+    }
+  });
+
+  app.get("/api/damage-check-templates/backgrounds/all", hasPermission(UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
+    try {
+      const backgrounds = await storage.getAllDamageCheckTemplateBackgrounds();
+      res.json(backgrounds);
+    } catch (error) {
+      console.error("Error fetching damage-check template backgrounds:", error);
+      res.status(500).json({ message: "Failed to fetch backgrounds" });
+    }
+  });
+
+  app.get("/api/damage-check-templates/:id/backgrounds", hasPermission(UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      if (isNaN(templateId)) return res.status(400).json({ message: "Invalid template ID" });
+      const backgrounds = await storage.getDamageCheckTemplateBackgrounds(templateId);
+      res.json(backgrounds);
+    } catch (error) {
+      console.error("Error fetching damage-check template backgrounds:", error);
+      res.status(500).json({ message: "Failed to fetch backgrounds" });
+    }
+  });
+
+  app.post("/api/damage-check-templates/:id/backgrounds", hasPermission(UserPermission.MANAGE_DAMAGE_CHECKS), damageCheckTemplateBackgroundUpload.single('background'), async (req: Request, res: Response) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      if (isNaN(templateId)) return res.status(400).json({ message: "Invalid template ID" });
+      if (!req.file) return res.status(400).json({ message: "No background file provided" });
+
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      if (!['.jpg', '.jpeg', '.png'].includes(ext)) {
+        return res.status(400).json({ message: "Background must be a JPG or PNG image" });
+      }
+
+      const template = await storage.getDamageCheckTemplate(templateId);
+      if (!template) return res.status(404).json({ message: "Template not found" });
+
+      const bufferValidation = await validateFileBuffer(req.file.buffer, req.file.mimetype, req.file.originalname, 'document');
+      if (!bufferValidation.valid) return res.status(400).json({ message: bufferValidation.error });
+
+      const templatesDir = path.join(uploadsDir, 'damage-check-templates');
+      if (!fs.existsSync(templatesDir)) fs.mkdirSync(templatesDir, { recursive: true });
+
+      const name = (req.body.name || req.file.originalname || 'Background').toString().slice(0, 100);
+      const filename = `library_${templateId}_${Date.now()}${ext}`;
+      const filePath = path.join(templatesDir, filename);
+      await fs.promises.writeFile(filePath, req.file.buffer);
+      const backgroundPath = path.relative(process.cwd(), filePath);
+
+      const background = await storage.createDamageCheckTemplateBackground({
+        templateId,
+        name,
+        backgroundPath,
+        previewPath: backgroundPath,
+      });
+      res.status(201).json(background);
+    } catch (error) {
+      console.error("Error uploading damage-check template background to library:", error);
+      res.status(400).json({ message: "Failed to upload background" });
+    }
+  });
+
+  app.post("/api/damage-check-templates/:id/backgrounds/:backgroundId/select", hasPermission(UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      const backgroundId = parseInt(req.params.backgroundId);
+      if (isNaN(templateId) || isNaN(backgroundId)) return res.status(400).json({ message: "Invalid ID" });
+      const updated = await storage.selectDamageCheckTemplateBackground(templateId, backgroundId);
+      if (!updated) return res.status(404).json({ message: "Template or background not found" });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error selecting damage-check template background:", error);
+      res.status(500).json({ message: "Failed to select background" });
+    }
+  });
+
+  app.delete("/api/damage-check-templates/:id/backgrounds/:backgroundId", hasPermission(UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
+    try {
+      const backgroundId = parseInt(req.params.backgroundId);
+      if (isNaN(backgroundId)) return res.status(400).json({ message: "Invalid background ID" });
+      const background = await storage.getDamageCheckTemplateBackground(backgroundId);
+      if (!background) return res.status(404).json({ message: "Background not found" });
+
+      try {
+        await fs.promises.unlink(path.join(process.cwd(), background.backgroundPath));
+      } catch (error) {
+        console.error("Error deleting damage-check template background file:", error);
+      }
+
+      const deleted = await storage.deleteDamageCheckTemplateBackground(backgroundId);
+      if (!deleted) return res.status(500).json({ message: "Failed to delete background" });
+      res.status(200).json({ message: "Background deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting damage-check template background:", error);
+      res.status(500).json({ message: "Failed to delete background" });
     }
   });
 
