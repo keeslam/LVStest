@@ -56,11 +56,15 @@ through a completed check.
    draggable onto the layout instead of the canvas editor having no
    connection to what fields are defined.
 5. A "Generate Preview" action in the Templates tab renders the actual
-   PDF via the real generator (same pattern as
-   `client/src/pages/documents/template-editor.tsx`'s
-   `generatePreviewMutation`, `/api/pdf-templates/:id/preview`) against a
-   sample/chosen record, shown next to the canvas — not a continuous
-   re-render on every edit.
+   PDF via the real generator against sample data, shown next to the
+   canvas — not a continuous re-render on every edit. **Already built**:
+   `damage-check-template-editor.tsx`'s `handleGeneratePreview` +
+   `POST /api/damage-check-templates/preview-pdf`
+   (`server/routes.ts:10466+`) already do exactly this, rendering
+   unsaved draft state (including `headerText`/`footerText`, already
+   accepted at `routes.ts:10494-10495`) against synthetic sample
+   vehicle/reservation data. Carries over unchanged into the unified
+   editor — no new endpoint needed.
 6. Legacy PDF renderer (`generateDamageCheckPDF`, the
    categories/inspectionPoints/handoverChecklist render path in
    `server/pdf-damage-check-generator.ts`) is removed once every template
@@ -74,9 +78,11 @@ through a completed check.
    (`generateDamageCheckPDFWithTemplate`,
    `pdf-damage-check-generator.ts:1472-1490`). Removing it collapses the
    render cascade from three paths to one.
-8. `headerText`/`footerText` become editable as plain text inputs in the
-   Templates tab's canvas editor settings — currently written nowhere in
-   the UI despite being read by both PDF render paths.
+8. `headerText`/`footerText` editing is relocated from the deleted
+   structured "Edit Template" form (where it lives today,
+   `damage-check-templates.tsx:883-884,950-957,1066-1074`) into the
+   Templates tab's canvas editor, so the capability isn't lost when that
+   form goes away.
 
 ## Non-goals
 
@@ -121,17 +127,15 @@ similar), tabs `Templates` | `Fields`.
     the definition's `key`, `name` from its `label`, and (for
     `inputType: "checkbox"`) type `"checkbox"`, (for `"select"`) type
     `"inspection"` with `damageTypes` from `options`.
-  - "Generate Preview" button calls a new endpoint
-    `GET /api/damage-check-templates/:id/preview` (mirroring
-    `/api/pdf-templates/:id/preview`), rendering through
-    `generateDamageCheckPDFFromCanvas` against either a sample/blank
-    record or an existing `interactiveDamageChecks` row the user picks,
-    and displays the returned PDF next to the canvas (embed/iframe, same
-    as the contract editor's preview panel).
+  - "Generate Preview" carries over unchanged (already built, see
+    Goal 5) — opens the rendered PDF in a new tab via the existing
+    `preview-pdf` endpoint.
   - `headerText`/`footerText` get two plain text inputs in the canvas
-    editor's settings/toolbar area, wired to the existing columns —
-    matches the data model exactly (`shared/schema.ts:1343-1344`), no new
-    field type or storage shape.
+    editor's settings/toolbar area, wired to the existing columns
+    (`shared/schema.ts:1343-1344`) and to both the save mutation's
+    request body and the preview draft payload (the preview endpoint
+    already reads them; the save mutation currently doesn't send them —
+    that's the one gap to close).
 
 ### 2. Data migration — legacy vocabulary → canvasFields
 
