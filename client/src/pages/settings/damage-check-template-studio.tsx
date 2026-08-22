@@ -11,7 +11,7 @@ export default function DamageCheckTemplateStudio({ embedded = false }: { embedd
           <TabsTrigger value="templates" data-testid="tab-studio-templates">Templates</TabsTrigger>
           <TabsTrigger value="fields" data-testid="tab-studio-fields">Fields</TabsTrigger>
         </TabsList>
-        <TabsContent value="templates" className="flex-1 overflow-auto">
+        <TabsContent value="templates" forceMount className="flex-1 overflow-auto data-[state=inactive]:hidden">
           <DamageCheckTemplates embedded />
         </TabsContent>
         <TabsContent value="fields" className="flex-1 overflow-auto">
