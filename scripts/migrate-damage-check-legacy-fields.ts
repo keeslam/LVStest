@@ -5,9 +5,20 @@
 // canvasFields entries. Templates that already have non-empty
 // canvasFields are left alone. Run once via:
 //   npx tsx scripts/migrate-damage-check-legacy-fields.ts
+//
+// This script talks to the database via raw SQL (db.execute(sql`...`))
+// rather than the Drizzle-typed `damageCheckTemplates` table helper, on
+// purpose: its whole job is bridging between an old schema shape (which
+// had categories/inspection_points/handover_checklist columns) and the
+// current one (shared/schema.ts, which no longer declares those columns).
+// It therefore requires the legacy columns to still physically exist in
+// the database — it does NOT depend on shared/schema.ts declaring them.
+// For a production database where a deploy has already dropped those
+// columns, use the equivalent backfill-then-drop step built into
+// startup-migration.js instead (which runs this same conversion before
+// the columns are dropped, every deploy, safely a no-op once done).
 import { db } from '../server/db';
-import { damageCheckTemplates } from '../shared/schema';
-import { eq } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { newId, type CanvasField, type FieldType } from '../shared/damage-check-default-layout';
 
 interface LegacyInspectionPoint {
@@ -109,32 +120,41 @@ function convertTemplate(
 }
 
 async function main() {
-  const rows = await db.select().from(damageCheckTemplates);
+  const result = await db.execute(sql`
+    SELECT id, name, canvas_fields, categories, inspection_points, handover_checklist
+    FROM damage_check_templates
+  `);
+  const rows = result.rows as Array<{
+    id: number;
+    name: string;
+    canvas_fields: unknown;
+    categories: unknown;
+    inspection_points: unknown;
+    handover_checklist: unknown;
+  }>;
   let migrated = 0;
   let skipped = 0;
   for (const row of rows) {
-    const hasLegacyData =
-      (row.categories && row.categories.length > 0) ||
-      (row.inspectionPoints && row.inspectionPoints.length > 0) ||
-      (row.handoverChecklist && row.handoverChecklist.length > 0);
-    const hasCanvasFields = Array.isArray(row.canvasFields) && row.canvasFields.length > 0;
+    const categories = (Array.isArray(row.categories) ? row.categories : []) as LegacyCategory[];
+    const inspectionPoints = (Array.isArray(row.inspection_points) ? row.inspection_points : []) as LegacyInspectionPoint[];
+    const handoverChecklist = (Array.isArray(row.handover_checklist) ? row.handover_checklist : []) as LegacyHandoverItem[];
+    const hasLegacyData = categories.length > 0 || inspectionPoints.length > 0 || handoverChecklist.length > 0;
+    const hasCanvasFields = Array.isArray(row.canvas_fields) && row.canvas_fields.length > 0;
 
     if (!hasLegacyData || hasCanvasFields) {
       skipped++;
       continue;
     }
 
-    const converted = convertTemplate(
-      (row.categories as LegacyCategory[]) || [],
-      (row.inspectionPoints as LegacyInspectionPoint[]) || [],
-      (row.handoverChecklist as LegacyHandoverItem[]) || [],
-    );
+    const converted = convertTemplate(categories, inspectionPoints, handoverChecklist);
 
-    await db.update(damageCheckTemplates)
-      .set({ canvasFields: converted })
-      .where(eq(damageCheckTemplates.id, row.id));
+    await db.execute(sql`
+      UPDATE damage_check_templates
+      SET canvas_fields = ${JSON.stringify(converted)}::jsonb
+      WHERE id = ${row.id}
+    `);
 
-    console.log(`Migrated template ${row.id} ("${row.name}"): ${converted.length} canvasFields from ${(row.inspectionPoints || []).length} inspection points, ${(row.categories || []).length} categories, ${(row.handoverChecklist || []).length} handover items.`);
+    console.log(`Migrated template ${row.id} ("${row.name}"): ${converted.length} canvasFields from ${inspectionPoints.length} inspection points, ${categories.length} categories, ${handoverChecklist.length} handover items.`);
     migrated++;
   }
   console.log(`Done. Migrated ${migrated} templates, skipped ${skipped} (no legacy data or already has canvasFields).`);
