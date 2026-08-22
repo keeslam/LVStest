@@ -51,6 +51,7 @@ import {
 import { calculateDutchHolidays, mergeHolidaysWithOverrides } from "../shared/holidays";
 import { geocodeAddress, haversineDistanceKm, nearestNeighborOrder, getRoadRouteDistances } from "./geocoding";
 import { isDamageCheckDocument } from "../shared/document-types";
+import { getUploadsDir } from "../shared/paths";
 import { 
   createSecureMulterFilter, 
   validateAfterUpload,
@@ -58,12 +59,6 @@ import {
   isDangerousExtension,
   sanitizeFilename 
 } from "./utils/security/fileUploadSecurity";
-
-// Helper function to get uploads directory - works in any environment
-function getUploadsDir(): string {
-  // Use environment variable if set, otherwise default to uploads in current directory
-  return process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads');
-}
 
 // Helper function to convert absolute paths to relative paths - works for any deployment
 function getRelativePath(absolutePath: string): string {

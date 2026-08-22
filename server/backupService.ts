@@ -9,6 +9,7 @@ import archiver from 'archiver';
 import { ObjectStorageService } from './objectStorage';
 import { db } from './db';
 import { backupSettings } from '@shared/schema';
+import { getUploadsDir } from '@shared/paths';
 
 export interface BackupManifest {
   timestamp: string;
@@ -283,7 +284,7 @@ export class BackupService {
     archive.pipe(writeStream);
 
     // Add uploads directory if it exists (contains all user-uploaded files and templates)
-    const uploadsDir = join(process.cwd(), 'uploads');
+    const uploadsDir = getUploadsDir();
     let fileCount = 0;
     
     if (existsSync(uploadsDir)) {
