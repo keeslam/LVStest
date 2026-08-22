@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,16 +20,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Document, Vehicle, insertDamageCheckPdfTemplateSchema } from "@shared/schema";
+import { Document, Vehicle } from "@shared/schema";
 import { formatDate, formatFileSize } from "@/lib/format-utils";
 import { displayLicensePlate } from "@/lib/utils";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import PDFTemplateEditor from "./template-editor";
 import TransportReportTemplateEditor from "./transport-report-template-editor";
 import { FileEdit, Star, Trash2, Printer, Eye, ChevronDown, ChevronRight, Image, Plus, X, Edit, Settings as SettingsIcon, Truck } from "lucide-react";
-import DamageCheckTemplatesPage from "@/pages/settings/damage-check-templates";
-import DamageCheckTemplateCanvasEditor from "@/pages/settings/damage-check-template-editor";
-import DamageCheckFieldsPage from "@/pages/settings/damage-check-fields";
+import DamageCheckTemplateStudio from "@/pages/settings/damage-check-template-studio";
 import { useAuth } from "@/hooks/use-auth";
 import { UserRole } from "@shared/schema";
 
@@ -1245,9 +1240,7 @@ export default function DocumentsIndex() {
 
 // Damage Check Manager Component
 function DamageCheckManager() {
-  const [templatesDialogOpen, setTemplatesDialogOpen] = useState(false);
-  const [fieldsDialogOpen, setFieldsDialogOpen] = useState(false);
-  const [templateLibraryOpen, setTemplateLibraryOpen] = useState(false);
+  const [studioOpen, setStudioOpen] = useState(false);
   const { user } = useAuth();
   const isAdmin = user?.role === UserRole.ADMIN;
 
@@ -1258,82 +1251,30 @@ function DamageCheckManager() {
           <div>
             <CardTitle>Damage Check Templates</CardTitle>
             <CardDescription>
-              Manage the fields, layout, and vehicle diagrams used to build damage check forms. Completed damage check PDFs are in the Document Library, filtered by vehicle.
+              Manage the fields, layout, and checklist vocabulary used to build damage check forms. Completed damage check PDFs are in the Document Library, filtered by vehicle. Vehicle diagrams are managed below.
             </CardDescription>
           </div>
-          <div className="flex gap-2">
-            {isAdmin && (
-              <Button
-                variant="outline"
-                onClick={() => setFieldsDialogOpen(true)}
-                data-testid="button-edit-damage-check-fields"
-              >
-                <SettingsIcon className="mr-2 h-4 w-4" />
-                Edit Fields
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              onClick={() => setTemplateLibraryOpen(true)}
-              data-testid="button-damage-check-template-library"
-            >
-              <SettingsIcon className="mr-2 h-4 w-4" />
-              Template Library
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setTemplatesDialogOpen(true)}
-              data-testid="button-manage-damage-check-templates"
-            >
-              <SettingsIcon className="mr-2 h-4 w-4" />
-              Edit Layout
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            onClick={() => setStudioOpen(true)}
+            data-testid="button-open-damage-check-studio"
+          >
+            <SettingsIcon className="mr-2 h-4 w-4" />
+            Damage Check Templates
+          </Button>
         </div>
       </CardHeader>
 
-      {/* Damage Check Fields Editor — admin-only dialog for the checklist field schema */}
-      <Dialog open={fieldsDialogOpen} onOpenChange={setFieldsDialogOpen}>
-        <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] h-[90vh] flex flex-col p-0 gap-0" data-testid="dialog-damage-check-fields">
+      <Dialog open={studioOpen} onOpenChange={setStudioOpen}>
+        <DialogContent className="max-w-[98vw] w-[98vw] max-h-[98vh] h-[98vh] flex flex-col p-0 gap-0" data-testid="dialog-damage-check-studio">
           <DialogHeader className="px-4 py-2 border-b">
-            <DialogTitle>Damage Check Fields</DialogTitle>
+            <DialogTitle>Damage Check Templates</DialogTitle>
             <DialogDescription className="sr-only">
-              Edit the checklist fields used by the interactive damage check and PDF template editor.
+              Manage damage check templates, their layout, and the checklist field vocabulary.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-auto bg-background">
-            {fieldsDialogOpen && <DamageCheckFieldsPage embedded />}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Damage Check Templates Editor — fullscreen dialog wrapping the canvas editor route */}
-      <Dialog open={templatesDialogOpen} onOpenChange={setTemplatesDialogOpen}>
-        <DialogContent className="max-w-[98vw] w-[98vw] max-h-[98vh] h-[98vh] flex flex-col p-0 gap-0" data-testid="dialog-damage-check-templates">
-          <DialogHeader className="px-4 py-2 border-b">
-            <DialogTitle>Damage Check Template Editor</DialogTitle>
-            <DialogDescription className="sr-only">
-              Visual canvas editor for damage check templates.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 overflow-auto bg-white">
-            {templatesDialogOpen && <DamageCheckTemplateCanvasEditor embedded />}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Template library — create, clone, import/export and set the default template.
-          Previously only reachable by typing /settings/damage-check-templates. */}
-      <Dialog open={templateLibraryOpen} onOpenChange={setTemplateLibraryOpen}>
-        <DialogContent className="max-w-[95vw] w-[95vw] max-h-[92vh] h-[92vh] flex flex-col p-0 gap-0" data-testid="dialog-damage-check-template-library">
-          <DialogHeader className="px-4 py-2 border-b">
-            <DialogTitle>Damage Check Template Library</DialogTitle>
-            <DialogDescription className="sr-only">
-              Create, clone, import, export and set the default damage check template.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 overflow-auto">
-            {templateLibraryOpen && <DamageCheckTemplatesPage embedded />}
+          <div className="flex-1 overflow-hidden bg-background">
+            {studioOpen && <DamageCheckTemplateStudio embedded isAdmin={isAdmin} />}
           </div>
         </DialogContent>
       </Dialog>
@@ -2135,368 +2076,5 @@ function PDFLayoutPreview({ formValues }: { formValues: any }) {
         </div>
       </div>
     </div>
-  );
-}
-
-function DamageCheckPdfTemplateManager() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<any | null>(null);
-
-  const { data: templates = [] } = useQuery<any[]>({
-    queryKey: ['/api/damage-check-pdf-templates'],
-  });
-
-  const formSchema = insertDamageCheckPdfTemplateSchema.extend({
-    name: z.string().min(1, 'Template name is required'),
-    fontSize: z.number().min(6).max(20),
-    checkboxSize: z.number().min(6).max(20),
-    headerFontSize: z.number().min(8).max(30),
-    headerColorR: z.number().min(0).max(255),
-    headerColorG: z.number().min(0).max(255),
-    headerColorB: z.number().min(0).max(255),
-  });
-
-  type FormValues = z.infer<typeof formSchema>;
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: '',
-      fontSize: 9,
-      checkboxSize: 10,
-      columnSpacing: 5,
-      sidebarWidth: 130,
-      checklistHeight: 280,
-      companyName: 'LAM GROUP',
-      showLogo: true,
-      headerFontSize: 14,
-      headerColorR: 51,
-      headerColorG: 77,
-      headerColorB: 153,
-      showVehicleData: true,
-      showRemarks: true,
-      showSignatures: true,
-      showDiagram: true,
-      isDefault: false,
-    }
-  });
-
-  const saveMutation = useMutation({
-    mutationFn: async (data: any) => {
-      if (editingTemplate) {
-        return await apiRequest('PUT', `/api/damage-check-pdf-templates/${editingTemplate.id}`, data);
-      } else {
-        return await apiRequest('POST', '/api/damage-check-pdf-templates', data);
-      }
-    },
-    onSuccess: () => {
-      invalidateByPrefix('/api/damage-check-pdf-templates');
-      toast({
-        title: "Success",
-        description: editingTemplate ? "PDF template updated" : "PDF template created",
-      });
-      setEditDialogOpen(false);
-      setEditingTemplate(null);
-      form.reset();
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return await apiRequest('DELETE', `/api/damage-check-pdf-templates/${id}`);
-    },
-    onSuccess: () => {
-      invalidateByPrefix('/api/damage-check-pdf-templates');
-      toast({
-        title: "Success",
-        description: "PDF template deleted",
-      });
-    },
-  });
-
-  const handleEdit = (template: any) => {
-    setEditingTemplate(template);
-    form.reset(template);
-    setEditDialogOpen(true);
-  };
-
-  const handleNew = () => {
-    setEditingTemplate(null);
-    form.reset({
-      name: '',
-      fontSize: 9,
-      checkboxSize: 10,
-      columnSpacing: 5,
-      sidebarWidth: 130,
-      checklistHeight: 280,
-      companyName: 'LAM GROUP',
-      showLogo: true,
-      headerFontSize: 14,
-      headerColorR: 51,
-      headerColorG: 77,
-      headerColorB: 153,
-      showVehicleData: true,
-      showRemarks: true,
-      showSignatures: true,
-      showDiagram: true,
-      isDefault: false,
-    });
-    setEditDialogOpen(true);
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle>Damage Check PDF Templates</CardTitle>
-            <CardDescription>
-              Customize the layout and appearance of damage check PDFs
-            </CardDescription>
-          </div>
-          <Button onClick={handleNew}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
-            New Template
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {templates.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p>No PDF templates found. Create one to customize your damage check PDFs.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {templates.map((template) => (
-              <Card key={template.id} className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">{template.name}</h4>
-                    <div className="text-sm text-gray-600 mt-1">
-                      <span>Font: {template.fontSize}pt</span>
-                      {template.isDefault && (
-                        <span className="ml-3 px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">Default</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(template)}>
-                      Edit
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => deleteMutation.mutate(template.id)}
-                      disabled={deleteMutation.isPending}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </CardContent>
-
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle>{editingTemplate ? 'Edit' : 'Create'} PDF Template</DialogTitle>
-            <DialogDescription>
-              Customize the layout, fonts, colors, and content of the damage check PDF - preview updates live
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 overflow-hidden flex gap-6">
-            {/* Form Section */}
-            <div className="w-1/2 overflow-y-auto pr-4">
-              <form onSubmit={form.handleSubmit((data) => saveMutation.mutate(data))} className="space-y-4" id="template-form">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <Label htmlFor="name">Template Name</Label>
-                <Input
-                  id="name"
-                  {...form.register('name')}
-                  placeholder="e.g., Default Layout"
-                />
-              </div>
-
-              <div className="col-span-2">
-                <Label htmlFor="companyName">Company Name</Label>
-                <Input
-                  id="companyName"
-                  {...form.register('companyName')}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="fontSize">Font Size (pt)</Label>
-                <Input
-                  id="fontSize"
-                  type="number"
-                  {...form.register('fontSize', { valueAsNumber: true })}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="headerFontSize">Header Font Size (pt)</Label>
-                <Input
-                  id="headerFontSize"
-                  type="number"
-                  {...form.register('headerFontSize', { valueAsNumber: true })}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="checkboxSize">Checkbox Size (pt)</Label>
-                <Input
-                  id="checkboxSize"
-                  type="number"
-                  {...form.register('checkboxSize', { valueAsNumber: true })}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="columnSpacing">Column Spacing (pt)</Label>
-                <Input
-                  id="columnSpacing"
-                  type="number"
-                  {...form.register('columnSpacing', { valueAsNumber: true })}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="sidebarWidth">Sidebar Width (pt)</Label>
-                <Input
-                  id="sidebarWidth"
-                  type="number"
-                  {...form.register('sidebarWidth', { valueAsNumber: true })}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="checklistHeight">Checklist Height (pt)</Label>
-                <Input
-                  id="checklistHeight"
-                  type="number"
-                  {...form.register('checklistHeight', { valueAsNumber: true })}
-                />
-              </div>
-
-              <div className="col-span-2">
-                <Label>Header Color (RGB 0-255)</Label>
-                <div className="grid grid-cols-3 gap-2 mt-1">
-                  <Input
-                    type="number"
-                    placeholder="R"
-                    {...form.register('headerColorR', { valueAsNumber: true })}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="G"
-                    {...form.register('headerColorG', { valueAsNumber: true })}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="B"
-                    {...form.register('headerColorB', { valueAsNumber: true })}
-                  />
-                </div>
-              </div>
-
-              <div className="col-span-2 space-y-2">
-                <Label>Show/Hide Sections</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="showLogo"
-                      {...form.register('showLogo')}
-                      className="rounded"
-                    />
-                    <Label htmlFor="showLogo" className="font-normal">Show Logo</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="showVehicleData"
-                      {...form.register('showVehicleData')}
-                      className="rounded"
-                    />
-                    <Label htmlFor="showVehicleData" className="font-normal">Show Vehicle Data</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="showRemarks"
-                      {...form.register('showRemarks')}
-                      className="rounded"
-                    />
-                    <Label htmlFor="showRemarks" className="font-normal">Show Remarks</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="showSignatures"
-                      {...form.register('showSignatures')}
-                      className="rounded"
-                    />
-                    <Label htmlFor="showSignatures" className="font-normal">Show Signatures</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="showDiagram"
-                      {...form.register('showDiagram')}
-                      className="rounded"
-                    />
-                    <Label htmlFor="showDiagram" className="font-normal">Show Diagram</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="isDefault"
-                      {...form.register('isDefault')}
-                      className="rounded"
-                    />
-                    <Label htmlFor="isDefault" className="font-normal">Set as Default</Label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" form="template-form" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? 'Saving...' : 'Save Template'}
-              </Button>
-            </div>
-          </form>
-        </div>
-
-          {/* Live Preview Section */}
-          <div className="w-1/2 border-l pl-6 flex flex-col">
-            <h3 className="font-semibold mb-3">Live Preview</h3>
-            <div className="flex-1 overflow-y-auto">
-              <PDFLayoutPreview formValues={form.watch()} />
-            </div>
-          </div>
-        </div>
-        </DialogContent>
-      </Dialog>
-    </Card>
   );
 }

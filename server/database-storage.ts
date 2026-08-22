@@ -21,11 +21,6 @@ import {
   damageCheckTemplateBackgrounds,
   vehicleDiagramTemplates, type VehicleDiagramTemplate, type InsertVehicleDiagramTemplate,
   interactiveDamageChecks, type InteractiveDamageCheck, type InsertInteractiveDamageCheck,
-  damageCheckPdfTemplates, type DamageCheckPdfTemplate, type InsertDamageCheckPdfTemplate,
-  damageCheckPdfTemplateVersions, type DamageCheckPdfTemplateVersion,
-  damageCheckPdfTemplateThemes, type DamageCheckPdfTemplateTheme,
-  damageCheckPdfSectionPresets, type DamageCheckPdfSectionPreset,
-  type TemplateSection,
   vehicleCustomerBlacklist, type VehicleCustomerBlacklist, type InsertVehicleCustomerBlacklist,
   vehicleTransports, type VehicleTransport, type InsertVehicleTransport
 } from "../shared/schema";
@@ -3254,14 +3249,6 @@ export class DatabaseStorage implements IStorage {
         buildYearTo: null,
         isDefault: true,
         language: 'nl',
-        inspectionPoints: [
-          { id: '1', name: 'Binnenzijde auto schoon', category: 'interieur', damageTypes: ['Kapot', 'Vuil', 'Beschadigd'], required: false },
-          { id: '2', name: 'Vloermatten', category: 'interieur', damageTypes: ['Ontbreekt', 'Vuil'], required: false },
-          { id: '3', name: 'Buitenzijde auto schoon', category: 'exterieur', damageTypes: ['Vuil', 'Beschadigd'], required: false },
-          { id: '4', name: 'Kentekenplaten', category: 'exterieur', damageTypes: ['Ontbreekt', 'Beschadigd'], required: false },
-          { id: '5', name: 'Olie - water', category: 'afweez_check', damageTypes: [], required: false },
-          { id: '6', name: 'Ruitenwisser vloeistof', category: 'afweez_check', damageTypes: [], required: false },
-        ],
         canvasFields: buildDefaultDamageCheckCanvasFields() as any,
         createdBy: 'system',
         updatedBy: 'system'
@@ -3383,9 +3370,6 @@ export class DatabaseStorage implements IStorage {
       vehicleType: source.vehicleType ?? null,
       buildYearFrom: source.buildYearFrom ?? null,
       buildYearTo: source.buildYearTo ?? null,
-      inspectionPoints: source.inspectionPoints ?? [],
-      categories: (source as any).categories ?? [],
-      handoverChecklist: (source as any).handoverChecklist ?? [],
       canvasFields: (source as any).canvasFields ?? [],
       headerText: (source as any).headerText ?? null,
       footerText: (source as any).footerText ?? null,
@@ -3665,220 +3649,6 @@ export class DatabaseStorage implements IStorage {
     // Delete the damage check record
     const result = await db.delete(interactiveDamageChecks).where(eq(interactiveDamageChecks.id, id));
     return result.rowCount ? result.rowCount > 0 : false;
-  }
-
-  // Damage Check PDF Template methods
-  async getAllDamageCheckPdfTemplates(): Promise<DamageCheckPdfTemplate[]> {
-    return await db.select().from(damageCheckPdfTemplates).orderBy(damageCheckPdfTemplates.name);
-  }
-
-  async getDamageCheckPdfTemplate(id: number): Promise<DamageCheckPdfTemplate | undefined> {
-    const [template] = await db.select().from(damageCheckPdfTemplates).where(eq(damageCheckPdfTemplates.id, id));
-    return template || undefined;
-  }
-
-  async getDefaultDamageCheckPdfTemplate(): Promise<DamageCheckPdfTemplate | undefined> {
-    const [template] = await db.select().from(damageCheckPdfTemplates)
-      .where(eq(damageCheckPdfTemplates.isDefault, true))
-      .limit(1);
-    return template || undefined;
-  }
-
-  async createDamageCheckPdfTemplate(template: InsertDamageCheckPdfTemplate): Promise<DamageCheckPdfTemplate> {
-    const [newTemplate] = await db.insert(damageCheckPdfTemplates).values(template).returning();
-    return newTemplate;
-  }
-
-  async updateDamageCheckPdfTemplate(id: number, templateData: Partial<InsertDamageCheckPdfTemplate>): Promise<DamageCheckPdfTemplate | undefined> {
-    const updateData = {
-      ...templateData,
-      updatedAt: new Date()
-    };
-    
-    const [updatedTemplate] = await db
-      .update(damageCheckPdfTemplates)
-      .set(updateData)
-      .where(eq(damageCheckPdfTemplates.id, id))
-      .returning();
-      
-    return updatedTemplate || undefined;
-  }
-
-  async deleteDamageCheckPdfTemplate(id: number): Promise<boolean> {
-    const result = await db.delete(damageCheckPdfTemplates).where(eq(damageCheckPdfTemplates.id, id));
-    return result.rowCount ? result.rowCount > 0 : false;
-  }
-
-  async ensureDefaultPdfTemplate(): Promise<void> {
-    const templates = await this.getAllDamageCheckPdfTemplates();
-    if (templates.length === 0) {
-      await this.createDamageCheckPdfTemplate({
-        name: 'Default Layout',
-        fontSize: 9,
-        checkboxSize: 10,
-        columnSpacing: 5,
-        sidebarWidth: 130,
-        checklistHeight: 280,
-        companyName: 'LAM GROUP',
-        showLogo: true,
-        headerFontSize: 14,
-        headerColorR: 51,
-        headerColorG: 77,
-        headerColorB: 153,
-        showVehicleData: true,
-        showRemarks: true,
-        showSignatures: true,
-        showDiagram: true,
-        isDefault: true,
-      });
-      console.log('✅ Created default PDF template');
-    }
-  }
-
-  // Template Version methods
-  async getTemplateVersions(templateId: number): Promise<DamageCheckPdfTemplateVersion[]> {
-    return await db.select()
-      .from(damageCheckPdfTemplateVersions)
-      .where(eq(damageCheckPdfTemplateVersions.templateId, templateId))
-      .orderBy(desc(damageCheckPdfTemplateVersions.version));
-  }
-
-  async createTemplateVersion(templateId: number, name: string, sections: TemplateSection[], settings: Record<string, any>, createdBy?: string): Promise<DamageCheckPdfTemplateVersion> {
-    const existingVersions = await this.getTemplateVersions(templateId);
-    const nextVersion = existingVersions.length > 0 ? Math.max(...existingVersions.map(v => v.version)) + 1 : 1;
-    
-    const [version] = await db.insert(damageCheckPdfTemplateVersions).values({
-      templateId,
-      version: nextVersion,
-      name,
-      sections,
-      settings,
-      createdBy
-    }).returning();
-    return version;
-  }
-
-  async getTemplateVersion(versionId: number): Promise<DamageCheckPdfTemplateVersion | undefined> {
-    const [version] = await db.select()
-      .from(damageCheckPdfTemplateVersions)
-      .where(eq(damageCheckPdfTemplateVersions.id, versionId));
-    return version || undefined;
-  }
-
-  async deleteTemplateVersion(versionId: number): Promise<boolean> {
-    const result = await db.delete(damageCheckPdfTemplateVersions)
-      .where(eq(damageCheckPdfTemplateVersions.id, versionId));
-    return result.rowCount ? result.rowCount > 0 : false;
-  }
-
-  // Theme methods
-  async getAllTemplateThemes(): Promise<DamageCheckPdfTemplateTheme[]> {
-    return await db.select().from(damageCheckPdfTemplateThemes).orderBy(damageCheckPdfTemplateThemes.name);
-  }
-
-  async getTemplateTheme(id: number): Promise<DamageCheckPdfTemplateTheme | undefined> {
-    const [theme] = await db.select()
-      .from(damageCheckPdfTemplateThemes)
-      .where(eq(damageCheckPdfTemplateThemes.id, id));
-    return theme || undefined;
-  }
-
-  async createTemplateTheme(name: string, palette: { primary: string; secondary: string; accent: string; background: string; text: string; border: string }, isDefault?: boolean): Promise<DamageCheckPdfTemplateTheme> {
-    const [theme] = await db.insert(damageCheckPdfTemplateThemes).values({
-      name,
-      palette,
-      isDefault: isDefault || false
-    }).returning();
-    return theme;
-  }
-
-  async updateTemplateTheme(id: number, data: Partial<{ name: string; palette: any; isDefault: boolean }>): Promise<DamageCheckPdfTemplateTheme | undefined> {
-    const [theme] = await db.update(damageCheckPdfTemplateThemes)
-      .set(data)
-      .where(eq(damageCheckPdfTemplateThemes.id, id))
-      .returning();
-    return theme || undefined;
-  }
-
-  async deleteTemplateTheme(id: number): Promise<boolean> {
-    const result = await db.delete(damageCheckPdfTemplateThemes)
-      .where(eq(damageCheckPdfTemplateThemes.id, id));
-    return result.rowCount ? result.rowCount > 0 : false;
-  }
-
-  // Section Preset methods
-  async getAllSectionPresets(): Promise<DamageCheckPdfSectionPreset[]> {
-    return await db.select().from(damageCheckPdfSectionPresets).orderBy(damageCheckPdfSectionPresets.category, damageCheckPdfSectionPresets.name);
-  }
-
-  async getSectionPreset(id: number): Promise<DamageCheckPdfSectionPreset | undefined> {
-    const [preset] = await db.select()
-      .from(damageCheckPdfSectionPresets)
-      .where(eq(damageCheckPdfSectionPresets.id, id));
-    return preset || undefined;
-  }
-
-  async createSectionPreset(name: string, description: string | null, type: string, config: TemplateSection, category?: string, isBuiltIn?: boolean): Promise<DamageCheckPdfSectionPreset> {
-    const [preset] = await db.insert(damageCheckPdfSectionPresets).values({
-      name,
-      description,
-      type,
-      config,
-      category,
-      isBuiltIn: isBuiltIn || false
-    }).returning();
-    return preset;
-  }
-
-  async updateSectionPreset(id: number, data: Partial<{ name: string; description: string; type: string; config: TemplateSection; category: string }>): Promise<DamageCheckPdfSectionPreset | undefined> {
-    const [preset] = await db.update(damageCheckPdfSectionPresets)
-      .set(data)
-      .where(eq(damageCheckPdfSectionPresets.id, id))
-      .returning();
-    return preset || undefined;
-  }
-
-  async deleteSectionPreset(id: number): Promise<boolean> {
-    const result = await db.delete(damageCheckPdfSectionPresets)
-      .where(eq(damageCheckPdfSectionPresets.id, id));
-    return result.rowCount ? result.rowCount > 0 : false;
-  }
-
-  // Template usage tracking
-  async incrementTemplateUsage(templateId: number): Promise<void> {
-    await db.update(damageCheckPdfTemplates)
-      .set({
-        usageCount: sql`COALESCE(usage_count, 0) + 1`,
-        lastUsedAt: new Date()
-      })
-      .where(eq(damageCheckPdfTemplates.id, templateId));
-  }
-
-  // Duplicate template
-  async duplicateTemplate(templateId: number, newName: string, createdBy?: string): Promise<DamageCheckPdfTemplate> {
-    const original = await this.getDamageCheckPdfTemplate(templateId);
-    if (!original) {
-      throw new Error('Template not found');
-    }
-
-    const [duplicate] = await db.insert(damageCheckPdfTemplates).values({
-      name: newName,
-      isDefault: false,
-      sections: original.sections,
-      pageMargins: original.pageMargins,
-      pageOrientation: original.pageOrientation,
-      pageSize: original.pageSize,
-      customPageWidth: original.customPageWidth,
-      customPageHeight: original.customPageHeight,
-      pageCount: original.pageCount,
-      tags: original.tags,
-      category: original.category,
-      themeId: original.themeId,
-      backgroundImage: original.backgroundImage,
-      createdBy
-    }).returning();
-    
-    return duplicate;
   }
 
   // Vehicle-Customer Blacklist methods

@@ -89,6 +89,128 @@ async function createTableIfNotExists(tableName, createTableSQL, insertDefaultSQ
   }
 }
 
+async function backfillAndDropLegacyDamageCheckFields() {
+  // One-time backfill: convert any damage_check_templates row that still
+  // only has legacy categories/inspection_points/handover_checklist data
+  // (canvas_fields empty) into equivalent canvas_fields, mirroring
+  // scripts/migrate-damage-check-legacy-fields.ts's algorithm, then drop
+  // the legacy columns and the dead damageCheckPdfTemplates family
+  // tables. Safe to run on every startup — once done, the legacy columns
+  // no longer exist so this is a fast no-op (early return below).
+  const tableCheck = await db.execute(sql`
+    SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = 'damage_check_templates'
+  `);
+  if (tableCheck.rows.length === 0) {
+    console.log('⚠️ Table damage_check_templates does not exist, skipping legacy damage-check backfill');
+    return;
+  }
+
+  const columnCheck = await db.execute(sql`
+    SELECT column_name FROM information_schema.columns
+    WHERE table_name = 'damage_check_templates' AND column_name IN ('categories', 'inspection_points', 'handover_checklist')
+  `);
+  const legacyColumnsPresent = columnCheck.rows.map(r => r.column_name);
+
+  if (legacyColumnsPresent.length > 0) {
+    console.log('📝 Backfilling canvas_fields from legacy damage-check template data...');
+    const result = await db.execute(sql`
+      SELECT id, name, canvas_fields, categories, inspection_points, handover_checklist
+      FROM damage_check_templates
+    `);
+
+    const newId = () => `f_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+    const mkField = (type, x, y, name, extra = {}) => ({
+      id: newId(), type, x, y, fontSize: 11, isBold: false, textAlign: 'left', page: 1, name, ...extra,
+    });
+
+    function convertTemplate(categories, inspectionPoints, handoverChecklist) {
+      const out = [];
+      const sortedCategories = [...categories].sort((a, b) => a.order - b.order);
+      const pointsByCategory = new Map();
+      for (const p of inspectionPoints) {
+        if (!pointsByCategory.has(p.category)) pointsByCategory.set(p.category, []);
+        pointsByCategory.get(p.category).push(p);
+      }
+      let gridY = 30;
+      const GRID_X = 30, ROW_H = 18, HEAD_H = 22;
+      for (const cat of sortedCategories) {
+        const pts = pointsByCategory.get(cat.id) || [];
+        if (pts.length === 0) continue;
+        out.push(mkField('text', GRID_X, gridY, cat.label, { fontSize: 13, isBold: true }));
+        gridY += HEAD_H;
+        for (const p of pts) {
+          if (p.position) {
+            const x = Math.round(p.position.x * 595);
+            const y = Math.round(p.position.y * 842);
+            out.push(mkField('inspection', x, y, p.name, { damageTypes: p.damageTypes }));
+          } else {
+            out.push(mkField('inspection', GRID_X, gridY, p.name, { damageTypes: p.damageTypes }));
+            gridY += ROW_H;
+          }
+        }
+        gridY += 8;
+      }
+      const uncategorized = inspectionPoints.filter(p => !categories.some(c => c.id === p.category));
+      for (const p of uncategorized) {
+        out.push(mkField('inspection', GRID_X, gridY, p.name, { damageTypes: p.damageTypes }));
+        gridY += ROW_H;
+      }
+      gridY += 10;
+      const sortedHandover = [...handoverChecklist].sort((a, b) => a.order - b.order);
+      for (const item of sortedHandover) {
+        if (item.type === 'checkbox') {
+          out.push(mkField('checkbox', GRID_X, gridY, item.label));
+        } else {
+          out.push(mkField('text', GRID_X, gridY, item.label));
+        }
+        gridY += ROW_H;
+      }
+      return out;
+    }
+
+    let migrated = 0;
+    for (const row of result.rows) {
+      const categories = row.categories || [];
+      const inspectionPoints = row.inspection_points || [];
+      const handoverChecklist = row.handover_checklist || [];
+      const hasLegacyData = categories.length > 0 || inspectionPoints.length > 0 || handoverChecklist.length > 0;
+      const hasCanvasFields = Array.isArray(row.canvas_fields) && row.canvas_fields.length > 0;
+      if (!hasLegacyData || hasCanvasFields) continue;
+
+      const converted = convertTemplate(categories, inspectionPoints, handoverChecklist);
+      await db.execute(sql`
+        UPDATE damage_check_templates SET canvas_fields = ${JSON.stringify(converted)}::jsonb WHERE id = ${row.id}
+      `);
+      console.log(`  ✅ Backfilled template ${row.id} ("${row.name}"): ${converted.length} canvasFields from legacy data`);
+      migrated++;
+    }
+    console.log(`✅ Legacy damage-check backfill complete: ${migrated} template(s) converted`);
+
+    // Single atomic statement rather than three separate awaits: if the
+    // process dies between individual DROPs, the next boot would find a
+    // subset of the columns still present and the SELECT above — which
+    // names all three unconditionally — would throw "column does not
+    // exist", exiting non-zero and preventing the app from ever starting.
+    console.log('📝 Dropping legacy damage_check_templates columns...');
+    await db.execute(sql`
+      ALTER TABLE damage_check_templates
+        DROP COLUMN IF EXISTS categories,
+        DROP COLUMN IF EXISTS inspection_points,
+        DROP COLUMN IF EXISTS handover_checklist
+    `);
+    console.log('✅ Dropped legacy damage_check_templates columns');
+  } else {
+    console.log('✅ Legacy damage_check_templates columns already absent, nothing to backfill/drop');
+  }
+
+  console.log('📝 Dropping dead damageCheckPdfTemplates family tables...');
+  await db.execute(sql`DROP TABLE IF EXISTS damage_check_pdf_section_presets`);
+  await db.execute(sql`DROP TABLE IF EXISTS damage_check_pdf_template_versions`);
+  await db.execute(sql`DROP TABLE IF EXISTS damage_check_pdf_template_themes`);
+  await db.execute(sql`DROP TABLE IF EXISTS damage_check_pdf_templates`);
+  console.log('✅ Dropped damageCheckPdfTemplates family tables (if present)');
+}
+
 async function runMigrations() {
   try {
     console.log('🔍 Checking database schema...');
@@ -376,18 +498,18 @@ async function runMigrations() {
     // Canvas-mode field layout for damage check templates (visual editor)
     await addColumnIfNotExists('damage_check_templates', 'canvas_fields', "jsonb NOT NULL DEFAULT '[]'::jsonb");
 
-    // Configurable categories + handover checklist + header/footer text on
-    // damage check templates. These were added after the initial deployment
-    // and must be backfilled on existing production databases or PDF
-    // generation fails with "column does not exist".
-    await addColumnIfNotExists('damage_check_templates', 'categories', "jsonb NOT NULL DEFAULT '[]'::jsonb");
-    await addColumnIfNotExists('damage_check_templates', 'handover_checklist', "jsonb NOT NULL DEFAULT '[]'::jsonb");
+    // Header/footer text + language + default flag on damage check templates.
     await addColumnIfNotExists('damage_check_templates', 'header_text', 'text');
     await addColumnIfNotExists('damage_check_templates', 'footer_text', 'text');
-    await addColumnIfNotExists('damage_check_templates', 'inspection_points', "jsonb NOT NULL DEFAULT '[]'::jsonb");
     await addColumnIfNotExists('damage_check_templates', 'language', "text NOT NULL DEFAULT 'nl'");
     await addColumnIfNotExists('damage_check_templates', 'is_default', 'boolean NOT NULL DEFAULT false');
-    
+
+    // One-time backfill of legacy categories/inspection_points/handover_checklist
+    // data into canvas_fields, then drop those legacy columns and the dead
+    // damageCheckPdfTemplates family tables. Must run after canvas_fields is
+    // guaranteed to exist (immediately above). Safe on every startup.
+    await backfillAndDropLegacyDamageCheckFields();
+
     // Add unique index if it doesn't exist
     const blacklistIndexCheck = await db.execute(sql`
       SELECT indexname 
@@ -410,77 +532,6 @@ async function runMigrations() {
     } else {
       console.log('✅ Unique index already exists on vehicle_customer_blacklist');
     }
-    
-    // Ensure damage_check_pdf_templates base table exists before adding columns/dependents
-    await createTableIfNotExists(
-      'damage_check_pdf_templates',
-      `CREATE TABLE damage_check_pdf_templates (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        is_default BOOLEAN NOT NULL DEFAULT false,
-        sections JSONB NOT NULL DEFAULT '[]',
-        page_margins INTEGER NOT NULL DEFAULT 15,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-      )`
-    );
-    
-    // Add missing columns to damage_check_pdf_templates table
-    await addColumnIfNotExists('damage_check_pdf_templates', 'page_orientation', "text DEFAULT 'portrait'");
-    await addColumnIfNotExists('damage_check_pdf_templates', 'page_size', "text DEFAULT 'A4'");
-    await addColumnIfNotExists('damage_check_pdf_templates', 'custom_page_width', 'integer');
-    await addColumnIfNotExists('damage_check_pdf_templates', 'custom_page_height', 'integer');
-    await addColumnIfNotExists('damage_check_pdf_templates', 'page_count', 'integer DEFAULT 1');
-    await addColumnIfNotExists('damage_check_pdf_templates', 'tags', 'text[]');
-    await addColumnIfNotExists('damage_check_pdf_templates', 'category', 'text');
-    await addColumnIfNotExists('damage_check_pdf_templates', 'theme_id', 'integer');
-    await addColumnIfNotExists('damage_check_pdf_templates', 'background_image', 'text');
-    await addColumnIfNotExists('damage_check_pdf_templates', 'usage_count', 'integer DEFAULT 0');
-    await addColumnIfNotExists('damage_check_pdf_templates', 'last_used_at', 'timestamp');
-    await addColumnIfNotExists('damage_check_pdf_templates', 'created_by', 'text');
-    await addColumnIfNotExists('damage_check_pdf_templates', 'updated_by', 'text');
-    
-    // Create damage_check_pdf_template_versions table
-    await createTableIfNotExists(
-      'damage_check_pdf_template_versions',
-      `CREATE TABLE damage_check_pdf_template_versions (
-        id SERIAL PRIMARY KEY,
-        template_id INTEGER NOT NULL REFERENCES damage_check_pdf_templates(id) ON DELETE CASCADE,
-        version INTEGER NOT NULL,
-        name TEXT NOT NULL,
-        sections JSONB NOT NULL,
-        settings JSONB,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        created_by TEXT
-      )`
-    );
-    
-    // Create damage_check_pdf_template_themes table
-    await createTableIfNotExists(
-      'damage_check_pdf_template_themes',
-      `CREATE TABLE damage_check_pdf_template_themes (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        palette JSONB NOT NULL,
-        is_default BOOLEAN DEFAULT false,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW()
-      )`
-    );
-    
-    // Create damage_check_pdf_section_presets table
-    await createTableIfNotExists(
-      'damage_check_pdf_section_presets',
-      `CREATE TABLE damage_check_pdf_section_presets (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        description TEXT,
-        type TEXT NOT NULL,
-        config JSONB NOT NULL,
-        category TEXT,
-        is_built_in BOOLEAN DEFAULT false,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW()
-      )`
-    );
     
     // Add spare key tracking columns to vehicles table
     await addColumnIfNotExists('vehicles', 'spare_key_with_customer', 'boolean');
