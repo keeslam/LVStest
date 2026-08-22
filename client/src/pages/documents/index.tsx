@@ -30,9 +30,7 @@ import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import PDFTemplateEditor from "./template-editor";
 import TransportReportTemplateEditor from "./transport-report-template-editor";
 import { FileEdit, Star, Trash2, Printer, Eye, ChevronDown, ChevronRight, Image, Plus, X, Edit, Settings as SettingsIcon, Truck } from "lucide-react";
-import DamageCheckTemplatesPage from "@/pages/settings/damage-check-templates";
-import DamageCheckTemplateCanvasEditor from "@/pages/settings/damage-check-template-editor";
-import DamageCheckFieldsPage from "@/pages/settings/damage-check-fields";
+import DamageCheckTemplateStudio from "@/pages/settings/damage-check-template-studio";
 import { useAuth } from "@/hooks/use-auth";
 import { UserRole } from "@shared/schema";
 
@@ -1245,11 +1243,7 @@ export default function DocumentsIndex() {
 
 // Damage Check Manager Component
 function DamageCheckManager() {
-  const [templatesDialogOpen, setTemplatesDialogOpen] = useState(false);
-  const [fieldsDialogOpen, setFieldsDialogOpen] = useState(false);
-  const [templateLibraryOpen, setTemplateLibraryOpen] = useState(false);
-  const { user } = useAuth();
-  const isAdmin = user?.role === UserRole.ADMIN;
+  const [studioOpen, setStudioOpen] = useState(false);
 
   return (
     <Card>
@@ -1258,82 +1252,30 @@ function DamageCheckManager() {
           <div>
             <CardTitle>Damage Check Templates</CardTitle>
             <CardDescription>
-              Manage the fields, layout, and vehicle diagrams used to build damage check forms. Completed damage check PDFs are in the Document Library, filtered by vehicle.
+              Manage the fields, layout, and checklist vocabulary used to build damage check forms. Completed damage check PDFs are in the Document Library, filtered by vehicle. Vehicle diagrams are managed below.
             </CardDescription>
           </div>
-          <div className="flex gap-2">
-            {isAdmin && (
-              <Button
-                variant="outline"
-                onClick={() => setFieldsDialogOpen(true)}
-                data-testid="button-edit-damage-check-fields"
-              >
-                <SettingsIcon className="mr-2 h-4 w-4" />
-                Edit Fields
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              onClick={() => setTemplateLibraryOpen(true)}
-              data-testid="button-damage-check-template-library"
-            >
-              <SettingsIcon className="mr-2 h-4 w-4" />
-              Template Library
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setTemplatesDialogOpen(true)}
-              data-testid="button-manage-damage-check-templates"
-            >
-              <SettingsIcon className="mr-2 h-4 w-4" />
-              Edit Layout
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            onClick={() => setStudioOpen(true)}
+            data-testid="button-open-damage-check-studio"
+          >
+            <SettingsIcon className="mr-2 h-4 w-4" />
+            Damage Check Templates
+          </Button>
         </div>
       </CardHeader>
 
-      {/* Damage Check Fields Editor — admin-only dialog for the checklist field schema */}
-      <Dialog open={fieldsDialogOpen} onOpenChange={setFieldsDialogOpen}>
-        <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] h-[90vh] flex flex-col p-0 gap-0" data-testid="dialog-damage-check-fields">
+      <Dialog open={studioOpen} onOpenChange={setStudioOpen}>
+        <DialogContent className="max-w-[98vw] w-[98vw] max-h-[98vh] h-[98vh] flex flex-col p-0 gap-0" data-testid="dialog-damage-check-studio">
           <DialogHeader className="px-4 py-2 border-b">
-            <DialogTitle>Damage Check Fields</DialogTitle>
+            <DialogTitle>Damage Check Templates</DialogTitle>
             <DialogDescription className="sr-only">
-              Edit the checklist fields used by the interactive damage check and PDF template editor.
+              Manage damage check templates, their layout, and the checklist field vocabulary.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-auto bg-background">
-            {fieldsDialogOpen && <DamageCheckFieldsPage embedded />}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Damage Check Templates Editor — fullscreen dialog wrapping the canvas editor route */}
-      <Dialog open={templatesDialogOpen} onOpenChange={setTemplatesDialogOpen}>
-        <DialogContent className="max-w-[98vw] w-[98vw] max-h-[98vh] h-[98vh] flex flex-col p-0 gap-0" data-testid="dialog-damage-check-templates">
-          <DialogHeader className="px-4 py-2 border-b">
-            <DialogTitle>Damage Check Template Editor</DialogTitle>
-            <DialogDescription className="sr-only">
-              Visual canvas editor for damage check templates.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 overflow-auto bg-white">
-            {templatesDialogOpen && <DamageCheckTemplateCanvasEditor embedded />}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Template library — create, clone, import/export and set the default template.
-          Previously only reachable by typing /settings/damage-check-templates. */}
-      <Dialog open={templateLibraryOpen} onOpenChange={setTemplateLibraryOpen}>
-        <DialogContent className="max-w-[95vw] w-[95vw] max-h-[92vh] h-[92vh] flex flex-col p-0 gap-0" data-testid="dialog-damage-check-template-library">
-          <DialogHeader className="px-4 py-2 border-b">
-            <DialogTitle>Damage Check Template Library</DialogTitle>
-            <DialogDescription className="sr-only">
-              Create, clone, import, export and set the default damage check template.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 overflow-auto">
-            {templateLibraryOpen && <DamageCheckTemplatesPage embedded />}
+          <div className="flex-1 overflow-hidden bg-background">
+            {studioOpen && <DamageCheckTemplateStudio embedded />}
           </div>
         </DialogContent>
       </Dialog>
