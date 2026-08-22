@@ -235,38 +235,6 @@ export interface IStorage {
   updateInteractiveDamageCheck(id: number, checkData: Partial<InsertInteractiveDamageCheck>, updatedBy?: string): Promise<InteractiveDamageCheck | undefined>;
   deleteInteractiveDamageCheck(id: number): Promise<boolean>;
   
-  // Damage Check PDF Template methods (for PDF layout customization)
-  getAllDamageCheckPdfTemplates(): Promise<any[]>;
-  getDamageCheckPdfTemplate(id: number): Promise<any | undefined>;
-  getDefaultDamageCheckPdfTemplate(): Promise<any | undefined>;
-  createDamageCheckPdfTemplate(template: any): Promise<any>;
-  updateDamageCheckPdfTemplate(id: number, templateData: any): Promise<any | undefined>;
-  deleteDamageCheckPdfTemplate(id: number): Promise<boolean>;
-  
-  // Template Version methods
-  getTemplateVersions(templateId: number): Promise<any[]>;
-  createTemplateVersion(templateId: number, name: string, sections: any[], settings: Record<string, any>, createdBy?: string): Promise<any>;
-  getTemplateVersion(versionId: number): Promise<any | undefined>;
-  deleteTemplateVersion(versionId: number): Promise<boolean>;
-  
-  // Theme methods
-  getAllTemplateThemes(): Promise<any[]>;
-  getTemplateTheme(id: number): Promise<any | undefined>;
-  createTemplateTheme(name: string, palette: any, isDefault?: boolean): Promise<any>;
-  updateTemplateTheme(id: number, data: any): Promise<any | undefined>;
-  deleteTemplateTheme(id: number): Promise<boolean>;
-  
-  // Section Preset methods
-  getAllSectionPresets(): Promise<any[]>;
-  getSectionPreset(id: number): Promise<any | undefined>;
-  createSectionPreset(name: string, description: string | null, type: string, config: any, category?: string, isBuiltIn?: boolean): Promise<any>;
-  updateSectionPreset(id: number, data: any): Promise<any | undefined>;
-  deleteSectionPreset(id: number): Promise<boolean>;
-  
-  // Template utility methods
-  incrementTemplateUsage(templateId: number): Promise<void>;
-  duplicateTemplate(templateId: number, newName: string, createdBy?: string): Promise<any>;
-  
   // Security: Audit Log methods
   createAuditLog(log: any): Promise<any>;
   getAuditLogs(filters?: {
@@ -2276,94 +2244,6 @@ export class MemStorage implements IStorage {
   }
 
   async deleteInteractiveDamageCheck(id: number): Promise<boolean> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async getAllDamageCheckPdfTemplates(): Promise<any[]> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async getDamageCheckPdfTemplate(id: number): Promise<any | undefined> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async getDefaultDamageCheckPdfTemplate(): Promise<any | undefined> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async createDamageCheckPdfTemplate(template: any): Promise<any> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async updateDamageCheckPdfTemplate(id: number, templateData: any): Promise<any | undefined> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async deleteDamageCheckPdfTemplate(id: number): Promise<boolean> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async getTemplateVersions(templateId: number): Promise<any[]> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async createTemplateVersion(templateId: number, name: string, sections: any[], settings: Record<string, any>, createdBy?: string): Promise<any> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async getTemplateVersion(versionId: number): Promise<any | undefined> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async deleteTemplateVersion(versionId: number): Promise<boolean> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async getAllTemplateThemes(): Promise<any[]> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async getTemplateTheme(id: number): Promise<any | undefined> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async createTemplateTheme(name: string, palette: any, isDefault?: boolean): Promise<any> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async updateTemplateTheme(id: number, data: any): Promise<any | undefined> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async deleteTemplateTheme(id: number): Promise<boolean> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async getAllSectionPresets(): Promise<any[]> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async getSectionPreset(id: number): Promise<any | undefined> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async createSectionPreset(name: string, description: string | null, type: string, config: any, category?: string, isBuiltIn?: boolean): Promise<any> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async updateSectionPreset(id: number, data: any): Promise<any | undefined> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async deleteSectionPreset(id: number): Promise<boolean> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async incrementTemplateUsage(templateId: number): Promise<void> {
-    throw new Error('Not implemented in MemStorage');
-  }
-
-  async duplicateTemplate(templateId: number, newName: string, createdBy?: string): Promise<any> {
     throw new Error('Not implemented in MemStorage');
   }
 
