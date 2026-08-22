@@ -1301,44 +1301,6 @@ export const damageCheckTemplates = pgTable("damage_check_templates", {
   backgroundPreviewPath: text("background_preview_path"),
   templatePreviewPath: text("template_preview_path"),
   
-  // Inspection points - array of check areas with damage type options
-  inspectionPoints: jsonb("inspection_points").$type<Array<{
-    id: string;
-    name: string; // e.g., "Voorruit" (Windshield), "Bumper voor" (Front Bumper)
-    category: string; // categoryId — must match one of the template's categories
-    damageTypes: string[]; // e.g., ["Kapot", "Gat", "Kras", "Deuk", "Ster"] - available damage type checkboxes
-    position?: { x: number; y: number }; // Position on vehicle diagram for marking damage
-    description?: string; // Optional description of what to check
-    required: boolean; // Whether this point must be checked
-    // New extensible fields (Phase 1):
-    notes?: string; // Inspector notes / instructions specific to this point
-    photoPaths?: string[]; // Reference photos uploaded for this point
-    inputType?: "checkbox" | "text" | "dropdown"; // Default "checkbox" (i.e., damage type checkboxes)
-    dropdownOptions?: string[]; // For inputType="dropdown" — selectable values
-    order?: number; // Ordering hint within the category
-  }>>().default([]).notNull(),
-
-  // Configurable categories (per template). Replaces the hardcoded list of
-  // Interieur / Exterieur / Afweez Check / Documents. If empty the system
-  // falls back to that default list.
-  categories: jsonb("categories").$type<Array<{
-    id: string; // stable identifier referenced by inspectionPoints.category
-    label: string; // human-readable label shown in the editor/PDF
-    order: number;
-    // Phase 2 — layout controls (per category):
-    columns?: 1 | 2 | 3 | 4; // number of columns when rendered on the PDF (default 1)
-    alignment?: "left" | "center" | "right"; // horizontal alignment of column content
-  }>>().default([]).notNull(),
-
-  // Handover checklist — items handed over with the vehicle (keys, fuel card,
-  // jack, registration documents, etc.). Each item is rendered on the PDF.
-  handoverChecklist: jsonb("handover_checklist").$type<Array<{
-    id: string;
-    label: string;
-    type: "checkbox" | "text"; // checkbox = present/absent; text = free-form (e.g., "fuel card #")
-    order: number;
-  }>>().default([]).notNull(),
-
   // Header / footer text rendered on every page of the generated PDF.
   headerText: text("header_text"),
   footerText: text("footer_text"),

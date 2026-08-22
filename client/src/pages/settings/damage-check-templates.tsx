@@ -19,7 +19,6 @@ import {
   Upload,
   Star,
   Copy,
-  ClipboardList,
   Loader2,
   Settings,
 } from "lucide-react";
@@ -28,38 +27,6 @@ import DamageCheckTemplateCanvasEditor from "@/pages/settings/damage-check-templ
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-interface InspectionPoint {
-  id: string;
-  name: string;
-  category: string;
-  damageTypes: string[]; // e.g., ["Kapot", "Gat", "Kras", "Deuk"]
-  description?: string;
-  required: boolean;
-  position?: { x: number; y: number };
-  // Phase 1 additions
-  notes?: string;
-  photoPaths?: string[];
-  inputType?: "checkbox" | "text" | "dropdown";
-  dropdownOptions?: string[];
-  order?: number;
-}
-
-interface TemplateCategory {
-  id: string;
-  label: string;
-  order: number;
-  // Phase 2 layout controls
-  columns?: 1 | 2 | 3 | 4;
-  alignment?: "left" | "center" | "right";
-}
-
-interface HandoverChecklistItem {
-  id: string;
-  label: string;
-  type: "checkbox" | "text";
-  order: number;
-}
 
 interface DamageCheckTemplate {
   id: number;
@@ -70,9 +37,6 @@ interface DamageCheckTemplate {
   vehicleType: string | null;
   buildYearFrom: string | null;
   buildYearTo: string | null;
-  inspectionPoints: InspectionPoint[];
-  categories: TemplateCategory[];
-  handoverChecklist: HandoverChecklistItem[];
   headerText: string | null;
   footerText: string | null;
   isDefault: boolean;
@@ -86,34 +50,6 @@ interface DamageCheckTemplate {
 // ---------------------------------------------------------------------------
 // Defaults
 // ---------------------------------------------------------------------------
-
-const DEFAULT_CATEGORIES: TemplateCategory[] = [
-  { id: "interieur", label: "Interieur", order: 0 },
-  { id: "exterieur", label: "Exterieur", order: 1 },
-  { id: "afweez_check", label: "Afweez Check", order: 2 },
-  { id: "documents", label: "Documents", order: 3 },
-];
-
-const CATEGORY_COLORS = [
-  "bg-green-100 text-green-800",
-  "bg-blue-100 text-blue-800",
-  "bg-orange-100 text-orange-800",
-  "bg-gray-100 text-gray-800",
-  "bg-purple-100 text-purple-800",
-  "bg-pink-100 text-pink-800",
-  "bg-yellow-100 text-yellow-800",
-  "bg-cyan-100 text-cyan-800",
-];
-
-function getCategoryColor(categoryId: string, categories: TemplateCategory[]): string {
-  const idx = categories.findIndex((c) => c.id === categoryId);
-  if (idx < 0) return "bg-gray-100 text-gray-800";
-  return CATEGORY_COLORS[idx % CATEGORY_COLORS.length];
-}
-
-function getCategoryLabel(categoryId: string, categories: TemplateCategory[]): string {
-  return categories.find((c) => c.id === categoryId)?.label || categoryId;
-}
 
 function slugify(input: string): string {
   return (
@@ -352,10 +288,6 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {templates.map((template) => {
-            const categories =
-              template.categories && template.categories.length > 0
-                ? template.categories
-                : DEFAULT_CATEGORIES;
             return (
               <Card key={template.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
@@ -401,41 +333,6 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
                         <span className="text-gray-500 italic">Generic (all vehicles)</span>
                       )}
                     </div>
-
-                    <div className="text-sm">
-                      <div className="font-medium text-gray-700 mb-1">Inspection Points</div>
-                      <div className="text-gray-600">
-                        {template.inspectionPoints?.length || 0} check points
-                        {template.inspectionPoints?.filter((p) => p.required).length > 0 && (
-                          <span className="text-xs text-orange-600 ml-2">
-                            ({template.inspectionPoints.filter((p) => p.required).length} required)
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {template.inspectionPoints && template.inspectionPoints.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {Array.from(new Set(template.inspectionPoints.map((p) => p.category))).map(
-                          (category) => (
-                            <Badge
-                              key={category}
-                              className={`text-xs ${getCategoryColor(category, categories)}`}
-                            >
-                              {getCategoryLabel(category, categories)}
-                            </Badge>
-                          ),
-                        )}
-                      </div>
-                    )}
-
-                    {template.handoverChecklist && template.handoverChecklist.length > 0 && (
-                      <div className="text-xs text-gray-500 flex items-center gap-1">
-                        <ClipboardList className="h-3.5 w-3.5" />
-                        {template.handoverChecklist.length} handover item
-                        {template.handoverChecklist.length === 1 ? "" : "s"}
-                      </div>
-                    )}
 
                     {/* Actions */}
                     <div className="flex gap-2 pt-2 flex-wrap">

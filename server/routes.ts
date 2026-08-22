@@ -10888,7 +10888,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       // Log export data for debugging
       console.log(`Exporting damage check template "${template.name}":`, {
-        inspectionPointsCount: (template.inspectionPoints as any[])?.length || 0,
         exportDataKeys: Object.keys(exportData)
       });
       
@@ -10913,42 +10912,31 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       // Log what we received
       console.log('Importing damage check template:', {
-        receivedInspectionPointsCount: req.body.inspectionPoints?.length || 0,
         receivedKeys: Object.keys(req.body)
       });
-      
+
       // Add defaults for fields that might be missing from export
       const importData = {
         ...req.body,
         // Ensure defaults for required fields
         language: req.body.language || 'nl',
         isDefault: req.body.isDefault ?? false,
-        inspectionPoints: req.body.inspectionPoints || [],
       };
-      
-      console.log('After adding defaults:', {
-        inspectionPointsCount: importData.inspectionPoints?.length || 0
-      });
-      
+
       // Validate the import data using the insert schema
       const validatedData = insertDamageCheckTemplateSchema.parse(importData);
-      
-      console.log('After validation:', {
-        inspectionPointsCount: (validatedData.inspectionPoints as any[])?.length || 0
-      });
-      
+
       const templateData = {
         ...validatedData,
         createdBy: user ? user.username : null,
         updatedBy: user ? user.username : null,
       };
-      
+
       const newTemplate = await storage.createDamageCheckTemplate(templateData);
-      
+
       console.log('Template created:', {
         id: newTemplate.id,
         name: newTemplate.name,
-        inspectionPointsCount: (newTemplate.inspectionPoints as any[])?.length || 0
       });
       
       res.json(newTemplate);
