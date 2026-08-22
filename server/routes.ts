@@ -10923,6 +10923,23 @@ export async function registerRoutes(app: Express): Promise<void> {
         isDefault: req.body.isDefault ?? false,
       };
 
+      // Reject pre-branch exports: they use the old categories/inspectionPoints/
+      // handoverChecklist vocabulary and predate canvasFields entirely. The insert
+      // schema below silently strips unknown keys, so without this check such a
+      // file would "successfully" import as a blank template (empty canvasFields)
+      // with no error or warning.
+      const hasLegacyOnly =
+        ((Array.isArray(importData.inspectionPoints) && importData.inspectionPoints.length > 0) ||
+         (Array.isArray(importData.categories) && importData.categories.length > 0) ||
+         (Array.isArray(importData.handoverChecklist) && importData.handoverChecklist.length > 0)) &&
+        !(Array.isArray(importData.canvasFields) && importData.canvasFields.length > 0);
+
+      if (hasLegacyOnly) {
+        return res.status(400).json({
+          message: "This template export predates the current app version and uses a field format that's no longer supported. Please re-export it from a template that has canvasFields (open it in the layout editor and save), then import again.",
+        });
+      }
+
       // Validate the import data using the insert schema
       const validatedData = insertDamageCheckTemplateSchema.parse(importData);
 
