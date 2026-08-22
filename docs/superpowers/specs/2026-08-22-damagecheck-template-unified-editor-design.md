@@ -65,6 +65,18 @@ through a completed check.
    categories/inspectionPoints/handoverChecklist render path in
    `server/pdf-damage-check-generator.ts`) is removed once every template
    is guaranteed to have equivalent `canvasFields`.
+7. `damageCheckPdfTemplates` (the dead sections/themes/presets system,
+   mechanism 4 from prior investigation) is removed entirely — same
+   "too many ways to manage this" problem this spec exists to fix. It has
+   no reachable UI (`DamageCheckPdfTemplateManager` is never rendered
+   anywhere) but its backend fallback can silently take over PDF
+   rendering if any row ever gets `isDefault = true`
+   (`generateDamageCheckPDFWithTemplate`,
+   `pdf-damage-check-generator.ts:1472-1490`). Removing it collapses the
+   render cascade from three paths to one.
+8. `headerText`/`footerText` become editable as plain text inputs in the
+   Templates tab's canvas editor settings — currently written nowhere in
+   the UI despite being read by both PDF render paths.
 
 ## Non-goals
 
@@ -75,17 +87,13 @@ through a completed check.
   canvas editor's `diagram`-type field properties still read from
   `vehicleDiagramTemplates` to offer auto-match vs. pick-a-specific-one —
   that's read-only reuse of existing data, not a UI move.
-- No change to `damageCheckPdfTemplates` (the dead sections/themes/
-  presets system, mechanism 4 from prior investigation) — separate
-  problem, out of scope here.
 - No change to how `vehicleDiagramTemplates` matching itself works.
 - `headerText`/`footerText` are **not** part of the legacy vocabulary
   being retired — they're plain template-level settings already shared
   by both PDF render paths (`applyHeaderFooterOverlay`, called from both
   the legacy and canvas renderers in
-  `pdf-damage-check-generator.ts:1301` and `:2094`). They get a small
-  settings field in the Templates tab's canvas editor toolbar; no
-  migration needed.
+  `pdf-damage-check-generator.ts:1301` and `:2094`). No migration needed,
+  no new data model — see Goal 8.
 
 ## Design
 
@@ -120,6 +128,10 @@ similar), tabs `Templates` | `Fields`.
     record or an existing `interactiveDamageChecks` row the user picks,
     and displays the returned PDF next to the canvas (embed/iframe, same
     as the contract editor's preview panel).
+  - `headerText`/`footerText` get two plain text inputs in the canvas
+    editor's settings/toolbar area, wired to the existing columns —
+    matches the data model exactly (`shared/schema.ts:1343-1344`), no new
+    field type or storage shape.
 
 ### 2. Data migration — legacy vocabulary → canvasFields
 
@@ -159,8 +171,7 @@ non-interactively).
 - Remove `generateDamageCheckPDF` (the legacy categories/inspectionPoints/
   handoverChecklist renderer) from `server/pdf-damage-check-generator.ts`
   once migration is confirmed complete — `generateDamageCheckPDFFromCanvas`
-  becomes the sole render path (the `damageCheckPdfTemplates` fallback,
-  already dead, is untouched).
+  becomes the sole render path.
 - Remove the `/api/damage-check-templates` structured-form-only fields
   from create/update validation if they're no longer written by any
   client (check `insertDamageCheckTemplateSchema` usage before removing
@@ -168,7 +179,25 @@ non-interactively).
   column-drop step in section 2).
 - Add `GET /api/damage-check-templates/:id/preview` per section 1.
 
-### 4. Client cleanup
+### 4. `damageCheckPdfTemplates` removal
+
+- Schema: drop `damageCheckPdfTemplates`, `damageCheckPdfTemplateVersions`,
+  `damageCheckPdfTemplateThemes`, `damageCheckPdfSectionPresets` tables
+  entirely (`shared/schema.ts:1550-1638`).
+- Server: remove all ~20 routes (`server/routes.ts:11808-12260`) and the
+  matching storage methods (`server/database-storage.ts:3623-3820`).
+- Server: in `generateDamageCheckPDFWithTemplate`
+  (`pdf-damage-check-generator.ts:1472-1490`), remove the
+  `isDefault`-row lookup/fallback branch — the cascade becomes
+  "`canvasFields` present → canvas renderer; otherwise (pre-migration
+  only) legacy renderer," and after section 2's column drop, just the
+  canvas renderer, unconditionally.
+- Client: delete the dead `DamageCheckPdfTemplateManager` component
+  (`client/src/pages/documents/index.tsx:2389+`) — confirm nothing
+  imports/renders it before deleting (prior investigation found no
+  reference).
+
+### 5. Client cleanup
 
 - Delete `damage-check-templates.tsx`'s structured "Edit Template"
   dialog code (categories/inspectionPoints/handoverChecklist form,
@@ -206,6 +235,12 @@ non-interactively).
 - Confirm no remaining references to `categories`/`inspectionPoints`/
   `handoverChecklist` in client or server code after the column-drop
   step.
+- Manual: header/footer text inputs save and appear correctly in
+  Generate Preview output.
+- Confirm no remaining references to `damageCheckPdfTemplates` (or its
+  versions/themes/section-presets siblings) anywhere in client or server
+  code after removal, and that PDF generation for a canvas-only template
+  still succeeds with the fallback branch gone.
 
 ## Open risk
 
