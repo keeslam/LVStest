@@ -63,16 +63,23 @@ is hardwired to a Replit sidecar:
 const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";  // objectStorage.ts:5
 ```
 
-The deployment runs on Coolify, where no such endpoint exists. If the
-deployment's `backup_settings` row still carries `object_storage` from when this
-app ran on Replit, every scheduled backup since the migration has failed at the
-storage step — writing its error to `/tmp` and losing it on the next restart.
-This is the leading explanation for the ten-month gap.
+The deployment runs on Coolify, where no such endpoint exists.
 
-The local development database's row reads `local_filesystem`, so this cannot be
-confirmed from the development environment; the deployment's row is not readable
-from here. The design therefore removes the dependency on that row entirely
-rather than relying on it being correct.
+This alone does **not** explain the gap: `createDatabaseBackup` catches an
+object-storage failure and falls back to the local filesystem
+(`backupService.ts:231-243`). So a stale `object_storage` setting degrades to a
+local write rather than failing outright.
+
+What it does mean is that the deployment has most likely been silently taking
+the fallback path on every run — writing to whatever `localPath` resolves to,
+which by default is the ephemeral application directory (see cause 4). Combined
+with cause 2, an operator has no way to see which path was taken or why.
+
+The local development database's row reads `local_filesystem`; the deployment's
+row is not readable from here, so which branch runs there is unconfirmed. The
+design removes the dependency on that row entirely rather than relying on it
+being correct, and removes the silent fallback so a misconfiguration is
+reported instead of hidden.
 
 ### 4. Backups are written inside the application directory
 
