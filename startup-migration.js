@@ -186,10 +186,18 @@ async function backfillAndDropLegacyDamageCheckFields() {
     }
     console.log(`✅ Legacy damage-check backfill complete: ${migrated} template(s) converted`);
 
+    // Single atomic statement rather than three separate awaits: if the
+    // process dies between individual DROPs, the next boot would find a
+    // subset of the columns still present and the SELECT above — which
+    // names all three unconditionally — would throw "column does not
+    // exist", exiting non-zero and preventing the app from ever starting.
     console.log('📝 Dropping legacy damage_check_templates columns...');
-    await db.execute(sql`ALTER TABLE damage_check_templates DROP COLUMN IF EXISTS categories`);
-    await db.execute(sql`ALTER TABLE damage_check_templates DROP COLUMN IF EXISTS inspection_points`);
-    await db.execute(sql`ALTER TABLE damage_check_templates DROP COLUMN IF EXISTS handover_checklist`);
+    await db.execute(sql`
+      ALTER TABLE damage_check_templates
+        DROP COLUMN IF EXISTS categories,
+        DROP COLUMN IF EXISTS inspection_points,
+        DROP COLUMN IF EXISTS handover_checklist
+    `);
     console.log('✅ Dropped legacy damage_check_templates columns');
   } else {
     console.log('✅ Legacy damage_check_templates columns already absent, nothing to backfill/drop');
