@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,6 +28,7 @@ import {
   Loader2,
   Eye,
   EyeOff,
+  Settings,
 } from "lucide-react";
 import {
   DndContext,
@@ -853,6 +854,206 @@ function ClonePickerDialog({
             {isPending ? "Cloning…" : "Clone"}
           </Button>
         </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Template metadata — create a template, or edit name/description/vehicle
+// targeting/language for an existing one. Layout editing happens separately
+// in the canvas editor; this dialog only owns the fields that used to live
+// in the deleted structured "Edit Template" form's top section.
+// ---------------------------------------------------------------------------
+
+function TemplateMetadataDialog({
+  open,
+  onOpenChange,
+  template,
+  onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  template: DamageCheckTemplate | null;
+  onSaved: (saved: DamageCheckTemplate) => void;
+}) {
+  const { toast } = useToast();
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [vehicleMake, setVehicleMake] = useState("");
+  const [vehicleModel, setVehicleModel] = useState("");
+  const [vehicleType, setVehicleType] = useState("");
+  const [buildYearFrom, setBuildYearFrom] = useState("");
+  const [buildYearTo, setBuildYearTo] = useState("");
+  const [language, setLanguage] = useState<"nl" | "en">("nl");
+
+  useEffect(() => {
+    if (!open) return;
+    setName(template?.name || "");
+    setDescription(template?.description || "");
+    setVehicleMake(template?.vehicleMake || "");
+    setVehicleModel(template?.vehicleModel || "");
+    setVehicleType(template?.vehicleType || "");
+    setBuildYearFrom(template?.buildYearFrom || "");
+    setBuildYearTo(template?.buildYearTo || "");
+    setLanguage((template?.language as "nl" | "en") || "nl");
+  }, [open, template]);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const data = {
+        name: name.trim(),
+        description: description.trim() || null,
+        vehicleMake: vehicleMake.trim() || null,
+        vehicleModel: vehicleModel.trim() || null,
+        vehicleType: vehicleType || null,
+        buildYearFrom: buildYearFrom.trim() || null,
+        buildYearTo: buildYearTo.trim() || null,
+        language,
+      };
+      const url = template
+        ? `/api/damage-check-templates/${template.id}`
+        : "/api/damage-check-templates";
+      const method = template ? "PUT" : "POST";
+      const res = await apiRequest(method, url, data);
+      return res.json();
+    },
+    onSuccess: (saved: DamageCheckTemplate) => {
+      invalidateByPrefix("/api/damage-check-templates");
+      toast({
+        title: "Success",
+        description: template ? "Template updated" : "Template created",
+      });
+      onOpenChange(false);
+      onSaved(saved);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save template",
+        variant: "destructive",
+      });
+    },
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{template ? "Template Settings" : "Create Template"}</DialogTitle>
+          <DialogDescription>
+            Name, description, and vehicle targeting. Field layout is edited separately.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label htmlFor="tmd-name">Name</Label>
+            <Input
+              id="tmd-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              data-testid="input-metadata-name"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="tmd-description">Description</Label>
+            <Textarea
+              id="tmd-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              data-testid="input-metadata-description"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="tmd-make">Vehicle Make</Label>
+              <Input
+                id="tmd-make"
+                value={vehicleMake}
+                onChange={(e) => setVehicleMake(e.target.value)}
+                placeholder="e.g., Toyota"
+                data-testid="input-metadata-make"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="tmd-model">Vehicle Model</Label>
+              <Input
+                id="tmd-model"
+                value={vehicleModel}
+                onChange={(e) => setVehicleModel(e.target.value)}
+                placeholder="e.g., Camry"
+                data-testid="input-metadata-model"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="tmd-type">Vehicle Type</Label>
+              <Select
+                value={vehicleType || "all"}
+                onValueChange={(v) => setVehicleType(v === "all" ? "" : v)}
+              >
+                <SelectTrigger id="tmd-type" data-testid="select-metadata-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any</SelectItem>
+                  <SelectItem value="sedan">Sedan</SelectItem>
+                  <SelectItem value="suv">SUV</SelectItem>
+                  <SelectItem value="van">Van</SelectItem>
+                  <SelectItem value="truck">Truck</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="tmd-year-from">Build Year From</Label>
+              <Input
+                id="tmd-year-from"
+                value={buildYearFrom}
+                onChange={(e) => setBuildYearFrom(e.target.value)}
+                placeholder="2015"
+                data-testid="input-metadata-year-from"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="tmd-year-to">Build Year To</Label>
+              <Input
+                id="tmd-year-to"
+                value={buildYearTo}
+                onChange={(e) => setBuildYearTo(e.target.value)}
+                placeholder="2020"
+                data-testid="input-metadata-year-to"
+              />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="tmd-language">Language</Label>
+            <Select value={language} onValueChange={(v) => setLanguage(v as "nl" | "en")}>
+              <SelectTrigger id="tmd-language" data-testid="select-metadata-language">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nl">Dutch (NL)</SelectItem>
+                <SelectItem value="en">English (EN)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => name.trim() && saveMutation.mutate()}
+            disabled={!name.trim() || saveMutation.isPending}
+            data-testid="button-save-metadata"
+          >
+            {saveMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : null}
+            {template ? "Save" : "Create"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
