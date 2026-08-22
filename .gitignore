@@ -17,3 +17,6 @@ contracts/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Local git worktrees (scratch, not part of the repo)
+.worktrees/
