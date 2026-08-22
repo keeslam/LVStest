@@ -1244,6 +1244,8 @@ export default function DocumentsIndex() {
 // Damage Check Manager Component
 function DamageCheckManager() {
   const [studioOpen, setStudioOpen] = useState(false);
+  const { user } = useAuth();
+  const isAdmin = user?.role === UserRole.ADMIN;
 
   return (
     <Card>
@@ -1275,7 +1277,7 @@ function DamageCheckManager() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-hidden bg-background">
-            {studioOpen && <DamageCheckTemplateStudio embedded />}
+            {studioOpen && <DamageCheckTemplateStudio embedded isAdmin={isAdmin} />}
           </div>
         </DialogContent>
       </Dialog>
