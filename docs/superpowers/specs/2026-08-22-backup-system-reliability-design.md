@@ -250,7 +250,53 @@ Before `restoreDatabase` or `restoreComplete` executes:
 
 The UI requires typing the backup name before the restore button activates.
 
-### 9. Retention
+### 9. Resolve the uploads directory the same way the app does
+
+The files backup hardcodes its source directory:
+
+```js
+const uploadsDir = join(process.cwd(), 'uploads');  // backupService.ts:286
+```
+
+but every upload route resolves it through a helper that honours an
+environment override:
+
+```js
+return process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads');  // routes.ts:65
+```
+
+These agree in the current deployment (`WORKDIR /app`, uploads volume mounted at
+`/app/uploads`, `UPLOADS_DIR` unset), so nothing is being missed today. But if
+`UPLOADS_DIR` were ever set, uploads would move while the backup carried on
+archiving the old — probably empty — directory, reporting success the whole
+time. That is the same silent-failure shape this work exists to remove.
+
+The backup service must use the same resolution as the upload routes. Export
+`getUploadsDir()` (currently a private function in `server/routes.ts`) into a
+shared module and have both call it, so the two cannot drift apart.
+
+Additionally, the files-backup verification (section 6) should fail a backup
+whose archive contains **zero** entries while the source directory is non-empty,
+rather than recording an empty archive as a success.
+
+### What a full restore actually recovers
+
+Recorded here so the coverage is explicit rather than assumed:
+
+- **Database dump** — every table, therefore: all damage-check / contract /
+  transport-report templates and their layouts, vehicle diagram records, all
+  application settings (including the damage-check field configuration in
+  `app_settings`), reservations, vehicles, customers, expenses, document
+  records, users and permissions.
+- **Files archive** — `uploads/` in full, therefore: template background images
+  (`uploads/templates/`), vehicle diagram images (`uploads/vehicle-diagrams/`),
+  damage-check header images (`uploads/damage-check/`), driver documents,
+  receipts and uploaded documents.
+
+Database and files backups are taken as a pair on every run, so a restore of
+both from the same run yields a consistent system.
+
+### 10. Retention
 
 Existing `cleanupOldBackups` behaviour (retention days from settings, default
 30) is kept. When it deletes a backup file, the corresponding `backup_runs` row
