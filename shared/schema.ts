@@ -937,6 +937,32 @@ export const insertBackupSettingsSchema = createInsertSchema(backupSettings).omi
 export type BackupSettings = typeof backupSettings.$inferSelect;
 export type InsertBackupSettings = z.infer<typeof insertBackupSettingsSchema>;
 
+// Backup run history. This replaces the previous /tmp/backup-status.json,
+// which was wiped on every container restart — taking the record of both
+// successes and failures with it, so the UI reported "Never" while backups
+// sat on disk and failures left no trace.
+export const backupRuns = pgTable("backup_runs", {
+  id: serial("id").primaryKey(),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  finishedAt: timestamp("finished_at"),
+  type: text("type").notNull(), // 'database' | 'files'
+  status: text("status").notNull(), // 'running' | 'success' | 'failed'
+  filename: text("filename"),
+  sizeBytes: integer("size_bytes"),
+  checksum: text("checksum"),
+  verified: boolean("verified").default(false).notNull(),
+  filePruned: boolean("file_pruned").default(false).notNull(),
+  error: text("error"),
+  trigger: text("trigger").notNull(), // 'scheduled' | 'manual' | 'catchup' | 'pre-restore'
+});
+
+export const insertBackupRunSchema = createInsertSchema(backupRuns).omit({
+  id: true,
+});
+
+export type BackupRun = typeof backupRuns.$inferSelect;
+export type InsertBackupRun = z.infer<typeof insertBackupRunSchema>;
+
 // App Settings table - for general application settings
 export const appSettings = pgTable("app_settings", {
   id: serial("id").primaryKey(),
