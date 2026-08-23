@@ -6,7 +6,6 @@ import { join, dirname } from 'path';
 import { createGzip } from 'zlib';
 import { createHash } from 'crypto';
 import archiver from 'archiver';
-import { ObjectStorageService } from './objectStorage';
 import { db } from './db';
 import { backupSettings } from '@shared/schema';
 import { getUploadsDir, getBackupPathFromEnv } from '@shared/paths';
@@ -33,14 +32,9 @@ export interface BackupStatus {
 }
 
 export class BackupService {
-  private objectStorage: ObjectStorageService;
   private isRunning = false;
   private statusFile = '/tmp/backup-status.json';
   private defaultBackupPath = join(process.cwd(), 'backups'); // Default backup path relative to project
-
-  constructor() {
-    this.objectStorage = new ObjectStorageService();
-  }
 
   /**
    * Where backups are written.
@@ -524,62 +518,41 @@ export class BackupService {
   async restoreDatabase(backupFilename: string): Promise<void> {
     console.log(`Starting database restore from: ${backupFilename}`);
     
-    // Get backup settings to determine storage type
+    // Get backup settings and resolve where backups are stored
     const settings = await this.getBackupSettings();
-    const storageType = settings?.storageType || 'local_filesystem';
-    const backupPath = settings?.localPath || this.defaultBackupPath;
-    
+    const backupPath = this.resolveBackupPath(settings);
+
     let tempFile = `/tmp/restore-${Date.now()}-${backupFilename}`;
-    
+
     try {
-      if (storageType === 'object_storage') {
-        // Download from object storage
-        const privatePath = this.objectStorage.getPrivateObjectDir();
-        const remotePath = await this.findBackupPath(backupFilename, 'database');
-        
-        if (!remotePath) {
-          throw new Error(`Backup file not found in object storage: ${backupFilename}`);
-        }
+      // Find the backup file on the local filesystem
+      const localBackupPath = join(backupPath, backupFilename);
 
-        const files = await this.objectStorage.listFiles(remotePath);
-        const backupFile = files.find(f => f.name.endsWith(backupFilename));
-        
-        if (!backupFile) {
-          throw new Error(`Could not download backup from object storage: ${backupFilename}`);
-        }
-
-        const [buffer] = await backupFile.download();
-        writeFileSync(tempFile, buffer);
+      if (existsSync(localBackupPath)) {
+        // File is directly in backups directory (uploaded backup)
+        tempFile = localBackupPath;
       } else {
-        // Use local filesystem - find the backup file
-        const localBackupPath = join(backupPath, backupFilename);
-        
-        if (existsSync(localBackupPath)) {
-          // File is directly in backups directory (uploaded backup)
-          tempFile = localBackupPath;
-        } else {
-          // Try to find in organized structure (created backup)
-          const searchPaths = [
-            join(backupPath, 'database', backupFilename),
-            ...this.findFileInDateStructure(join(backupPath, 'database'), backupFilename)
-          ];
-          
-          let found = false;
-          for (const path of searchPaths) {
-            if (existsSync(path)) {
-              tempFile = path;
-              found = true;
-              break;
-            }
-          }
-          
-          if (!found) {
-            throw new Error(`Backup file not found in local filesystem: ${backupFilename}`);
+        // Try to find in organized structure (created backup)
+        const searchPaths = [
+          join(backupPath, 'database', backupFilename),
+          ...this.findFileInDateStructure(join(backupPath, 'database'), backupFilename)
+        ];
+
+        let found = false;
+        for (const path of searchPaths) {
+          if (existsSync(path)) {
+            tempFile = path;
+            found = true;
+            break;
           }
         }
-        
-        console.log(`Found backup file at: ${tempFile}`);
+
+        if (!found) {
+          throw new Error(`Backup file not found in local filesystem: ${backupFilename}`);
+        }
       }
+
+      console.log(`Found backup file at: ${tempFile}`);
     } catch (error) {
       throw new Error(`Failed to locate backup file: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -679,61 +652,41 @@ export class BackupService {
   async restoreFiles(backupFilename: string, targetPath?: string): Promise<void> {
     console.log(`Starting files restore from: ${backupFilename}`);
     
-    // Get backup settings to determine storage type
+    // Get backup settings and resolve where backups are stored
     const settings = await this.getBackupSettings();
-    const storageType = settings?.storageType || 'local_filesystem';
-    const backupPath = settings?.localPath || this.defaultBackupPath;
-    
+    const backupPath = this.resolveBackupPath(settings);
+
     let tempFile = `/tmp/restore-${Date.now()}-${backupFilename}`;
-    
+
     try {
-      if (storageType === 'object_storage') {
-        // Download from object storage
-        const remotePath = await this.findBackupPath(backupFilename, 'files');
-        
-        if (!remotePath) {
-          throw new Error(`Backup file not found in object storage: ${backupFilename}`);
-        }
+      // Find the backup file on the local filesystem
+      const localBackupPath = join(backupPath, backupFilename);
 
-        const files = await this.objectStorage.listFiles(remotePath);
-        const backupFile = files.find(f => f.name.endsWith(backupFilename));
-        
-        if (!backupFile) {
-          throw new Error(`Could not download backup from object storage: ${backupFilename}`);
-        }
-
-        const [buffer] = await backupFile.download();
-        writeFileSync(tempFile, buffer);
+      if (existsSync(localBackupPath)) {
+        // File is directly in backups directory (uploaded backup)
+        tempFile = localBackupPath;
       } else {
-        // Use local filesystem - find the backup file
-        const localBackupPath = join(backupPath, backupFilename);
-        
-        if (existsSync(localBackupPath)) {
-          // File is directly in backups directory (uploaded backup)
-          tempFile = localBackupPath;
-        } else {
-          // Try to find in organized structure (created backup)
-          const searchPaths = [
-            join(backupPath, 'files', backupFilename),
-            ...this.findFileInDateStructure(join(backupPath, 'files'), backupFilename)
-          ];
-          
-          let found = false;
-          for (const path of searchPaths) {
-            if (existsSync(path)) {
-              tempFile = path;
-              found = true;
-              break;
-            }
-          }
-          
-          if (!found) {
-            throw new Error(`Backup file not found in local filesystem: ${backupFilename}`);
+        // Try to find in organized structure (created backup)
+        const searchPaths = [
+          join(backupPath, 'files', backupFilename),
+          ...this.findFileInDateStructure(join(backupPath, 'files'), backupFilename)
+        ];
+
+        let found = false;
+        for (const path of searchPaths) {
+          if (existsSync(path)) {
+            tempFile = path;
+            found = true;
+            break;
           }
         }
-        
-        console.log(`Found backup file at: ${tempFile}`);
+
+        if (!found) {
+          throw new Error(`Backup file not found in local filesystem: ${backupFilename}`);
+        }
       }
+
+      console.log(`Found backup file at: ${tempFile}`);
     } catch (error) {
       throw new Error(`Failed to locate backup file: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -820,41 +773,27 @@ export class BackupService {
     }
   }
 
-  // Helper method to find backup path in object storage
-  private async findBackupPath(filename: string, type: 'database' | 'files'): Promise<string | null> {
-    try {
-      const privatePath = this.objectStorage.getPrivateObjectDir();
-      const basePrefix = `${privatePath}/backups/${type}/`;
-      
-      // Search through year/month/day structure
-      const files = await this.objectStorage.listFiles(basePrefix);
-      
-      for (const file of files) {
-        if (file.name.endsWith(filename)) {
-          return file.name.substring(0, file.name.lastIndexOf('/') + 1);
-        }
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error finding backup path:', error);
-      return null;
-    }
-  }
-
-  // Helper method to get backup manifest
+  // Helper method to get backup manifest from the local filesystem
   private async getBackupManifest(filename: string, type: 'database' | 'files'): Promise<BackupManifest | null> {
     try {
-      const backupPath = await this.findBackupPath(filename, type);
-      if (!backupPath) return null;
+      const settings = await this.getBackupSettings();
+      const backupPath = this.resolveBackupPath(settings);
 
-      const manifestPath = `${backupPath}${filename}.manifest.json`;
-      const files = await this.objectStorage.listFiles(manifestPath);
-      
-      if (files.length === 0) return null;
-      
-      const [buffer] = await files[0].download();
-      return JSON.parse(buffer.toString('utf8'));
+      // Locate the backup file the same way restore does: directly in the
+      // root backups directory (uploaded backup), or in the organized
+      // year/month/day structure (created backup).
+      const candidates = [
+        join(backupPath, filename),
+        join(backupPath, type, filename),
+        ...this.findFileInDateStructure(join(backupPath, type), filename)
+      ];
+      const backupFilePath = candidates.find(existsSync);
+      if (!backupFilePath) return null;
+
+      const manifestPath = `${backupFilePath}.manifest.json`;
+      if (!existsSync(manifestPath)) return null;
+
+      return JSON.parse(readFileSync(manifestPath, 'utf8'));
     } catch (error) {
       console.error('Error getting backup manifest:', error);
       return null;
@@ -865,55 +804,33 @@ export class BackupService {
   async downloadBackup(filename: string, type: 'database' | 'files'): Promise<{ stream: NodeJS.ReadableStream, contentType: string } | null> {
     try {
       const settings = await this.getBackupSettings();
-      const storageType = settings?.storageType || 'local_filesystem';
-      const backupPath = settings?.localPath || this.defaultBackupPath;
+      const backupPath = this.resolveBackupPath(settings);
 
-      if (storageType === 'object_storage') {
-        // Download from object storage
-        const privatePath = this.objectStorage.getPrivateObjectDir();
-        const files = await this.objectStorage.listFiles(`${privatePath}/backups/${type}/`);
-        
-        const backupFile = files.find(file => file.name.includes(filename));
-        if (!backupFile) {
-          console.error(`Backup file not found in object storage: ${filename}`);
-          return null;
-        }
+      // Download from local filesystem
+      let filePath: string | null = null;
 
-        const [buffer] = await backupFile.download();
-        const { Readable } = require('stream');
-        const stream = Readable.from(buffer);
-        
-        return {
-          stream,
-          contentType: 'application/gzip'
-        };
+      // Check root backup directory first (uploaded files)
+      const rootFilePath = join(backupPath, filename);
+      if (existsSync(rootFilePath)) {
+        filePath = rootFilePath;
       } else {
-        // Download from local filesystem
-        let filePath: string | null = null;
-        
-        // Check root backup directory first (uploaded files)
-        const rootFilePath = join(backupPath, filename);
-        if (existsSync(rootFilePath)) {
-          filePath = rootFilePath;
-        } else {
-          // Search in date-organized structure
-          const foundPaths = this.findFileInDateStructure(join(backupPath, type), filename);
-          if (foundPaths.length > 0) {
-            filePath = foundPaths[0];
-          }
+        // Search in date-organized structure
+        const foundPaths = this.findFileInDateStructure(join(backupPath, type), filename);
+        if (foundPaths.length > 0) {
+          filePath = foundPaths[0];
         }
-        
-        if (!filePath || !existsSync(filePath)) {
-          console.error(`Backup file not found in local filesystem: ${filename}`);
-          return null;
-        }
-
-        const stream = createReadStream(filePath);
-        return {
-          stream,
-          contentType: 'application/gzip'
-        };
       }
+
+      if (!filePath || !existsSync(filePath)) {
+        console.error(`Backup file not found in local filesystem: ${filename}`);
+        return null;
+      }
+
+      const stream = createReadStream(filePath);
+      return {
+        stream,
+        contentType: 'application/gzip'
+      };
     } catch (error) {
       console.error(`Error downloading backup ${filename}:`, error);
       return null;
@@ -924,53 +841,38 @@ export class BackupService {
   async deleteBackup(filename: string, type: 'database' | 'files'): Promise<void> {
     try {
       const settings = await this.getBackupSettings();
-      const storageType = settings?.storageType || 'local_filesystem';
-      const backupPath = settings?.localPath || this.defaultBackupPath;
+      const backupPath = this.resolveBackupPath(settings);
 
-      if (storageType === 'object_storage') {
-        // Delete from object storage
-        const privatePath = this.objectStorage.getPrivateObjectDir();
-        const files = await this.objectStorage.listFiles(`${privatePath}/backups/${type}/`);
-        
-        // Find and delete the backup file and its manifest
-        const filesToDelete = files.filter(file => file.name.includes(filename));
-        
-        for (const file of filesToDelete) {
-          await this.objectStorage.deleteFile(file.name);
-          console.log(`Deleted backup file from object storage: ${file.name}`);
-        }
+      // Delete from local filesystem
+      let filePath: string | null = null;
+      let manifestPath: string | null = null;
+
+      // Check root backup directory first (uploaded files)
+      const rootFilePath = join(backupPath, filename);
+      if (existsSync(rootFilePath)) {
+        filePath = rootFilePath;
       } else {
-        // Delete from local filesystem
-        let filePath: string | null = null;
-        let manifestPath: string | null = null;
-        
-        // Check root backup directory first (uploaded files)
-        const rootFilePath = join(backupPath, filename);
-        if (existsSync(rootFilePath)) {
-          filePath = rootFilePath;
-        } else {
-          // Search in date-organized structure
-          const foundPaths = this.findFileInDateStructure(join(backupPath, type), filename);
-          if (foundPaths.length > 0) {
-            filePath = foundPaths[0];
-            // Look for manifest in the same directory
-            const dir = dirname(filePath);
-            const potentialManifest = join(dir, `${filename}.manifest.json`);
-            if (existsSync(potentialManifest)) {
-              manifestPath = potentialManifest;
-            }
+        // Search in date-organized structure
+        const foundPaths = this.findFileInDateStructure(join(backupPath, type), filename);
+        if (foundPaths.length > 0) {
+          filePath = foundPaths[0];
+          // Look for manifest in the same directory
+          const dir = dirname(filePath);
+          const potentialManifest = join(dir, `${filename}.manifest.json`);
+          if (existsSync(potentialManifest)) {
+            manifestPath = potentialManifest;
           }
         }
-        
-        if (filePath && existsSync(filePath)) {
-          await unlink(filePath);
-          console.log(`Deleted backup file from local filesystem: ${filePath}`);
-        }
-        
-        if (manifestPath && existsSync(manifestPath)) {
-          await unlink(manifestPath);
-          console.log(`Deleted manifest file from local filesystem: ${manifestPath}`);
-        }
+      }
+
+      if (filePath && existsSync(filePath)) {
+        await unlink(filePath);
+        console.log(`Deleted backup file from local filesystem: ${filePath}`);
+      }
+
+      if (manifestPath && existsSync(manifestPath)) {
+        await unlink(manifestPath);
+        console.log(`Deleted manifest file from local filesystem: ${manifestPath}`);
       }
     } catch (error) {
       console.error(`Error deleting backup ${filename}:`, error);
@@ -981,17 +883,17 @@ export class BackupService {
   // Cleanup old backups based on retention policy
   async cleanupOldBackups(): Promise<void> {
     console.log('Cleaning up old backups...');
-    
+
     const now = new Date();
     const backups = await this.listBackups();
-    const toDelete: string[] = [];
+    const toDelete: BackupManifest[] = [];
 
     for (const backup of backups) {
       const backupDate = new Date(backup.timestamp);
       const daysOld = Math.floor((now.getTime() - backupDate.getTime()) / (1000 * 60 * 60 * 24));
-      
+
       let shouldDelete = false;
-      
+
       // Retention policy: 14 days for daily, 8 weeks for weekly, 12 months for monthly
       if (daysOld > 365) {
         // Older than 1 year - delete all
@@ -1003,28 +905,22 @@ export class BackupService {
         // Older than 2 weeks - keep only weekly (Sundays)
         shouldDelete = backupDate.getDay() !== 0;
       }
-      
+
       if (shouldDelete) {
-        const privatePath = this.objectStorage.getPrivateObjectDir();
-        const year = backupDate.getFullYear();
-        const month = String(backupDate.getMonth() + 1).padStart(2, '0');
-        const day = String(backupDate.getDate()).padStart(2, '0');
-        
-        toDelete.push(`${privatePath}/backups/${backup.type}/${year}/${month}/${day}/${backup.filename}`);
-        toDelete.push(`${privatePath}/backups/${backup.type}/${year}/${month}/${day}/${backup.filename}.manifest.json`);
+        toDelete.push(backup);
       }
     }
 
-    // Delete old backups
-    for (const path of toDelete) {
+    // Delete old backups from the local filesystem
+    for (const backup of toDelete) {
       try {
-        await this.objectStorage.deleteFile(path);
-        console.log(`Deleted old backup: ${path}`);
+        await this.deleteBackup(backup.filename, backup.type);
+        console.log(`Deleted old backup: ${backup.filename}`);
       } catch (error) {
-        console.error(`Error deleting ${path}:`, error);
+        console.error(`Error deleting ${backup.filename}:`, error);
       }
     }
 
-    console.log(`Cleanup completed. Deleted ${toDelete.length / 2} old backups.`);
+    console.log(`Cleanup completed. Deleted ${toDelete.length} old backups.`);
   }
 }
