@@ -774,9 +774,39 @@ export class BackupService {
   }
 
   // Restore files from backup
-  async restoreFiles(backupFilename: string, targetPath?: string): Promise<void> {
+  async restoreFiles(backupFilename: string, targetPath?: string, opts?: { skipSafetyBackup?: boolean }): Promise<void> {
     console.log(`Starting files restore from: ${backupFilename}`);
-    
+
+    // Restoring overwrites whatever is currently in uploads/ (scanned documents,
+    // vehicle photos, damage-check header images, template backgrounds). Before
+    // touching anything, take a fresh backup of the current files and verify it -
+    // so a mistaken or wrong-file restore is itself reversible. skipSafetyBackup
+    // exists only for the case of restoring *because* backups are broken; it
+    // defaults to off.
+    if (!opts?.skipSafetyBackup) {
+      console.log('Taking safety backup of current files before restore...');
+      try {
+        const safety = await this.createFilesBackup();
+        const safetyPath = await this.locateBackupFile('files', safety.filename);
+        const check = await verifyFilesBackup(safetyPath, safety.checksum, getUploadsDir(), safety.metadata?.fileCount ?? 0);
+        if (!check.ok) {
+          throw new Error(`safety backup failed verification: ${check.reason}`);
+        }
+        const runId = await this.startRun('files', 'pre-restore');
+        await this.finishRun(runId, {
+          status: 'success', filename: safety.filename, sizeBytes: safety.size,
+          checksum: safety.checksum, verified: true,
+        });
+        console.log(`Safety backup written and verified: ${safety.filename}`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `Refusing to restore: could not take a verified safety backup of the current files first (${message}). ` +
+          `Restoring now would overwrite live data with no way back.`
+        );
+      }
+    }
+
     // Get backup settings and resolve where backups are stored
     const settings = await this.getBackupSettings();
     const backupPath = this.resolveBackupPath(settings);
@@ -883,24 +913,39 @@ export class BackupService {
     console.log(`Database backup: ${databaseBackup}`);
     console.log(`Files backup: ${filesBackup}`);
 
-    // Same guard as restoreDatabase: take and verify a safety backup of the
-    // current state before any destructive work, so this composes with a
-    // caller that goes straight to restoreComplete instead of restoreDatabase.
+    // "Complete" restore overwrites BOTH the database and uploads/ (documents,
+    // vehicle photos, damage-check images, template backgrounds). A safety net
+    // that only covers the database half would read as protection while
+    // leaving files unrecoverable, which is worse than no safety net at all -
+    // so take and verify safety backups of both before any destructive work.
     if (!opts?.skipSafetyBackup) {
       console.log('Taking safety backup of current state before restore...');
       try {
-        const safety = await this.createDatabaseBackup();
-        const safetyPath = await this.locateBackupFile('database', safety.filename);
-        const check = await verifyDatabaseBackup(safetyPath, safety.checksum);
-        if (!check.ok) {
-          throw new Error(`safety backup failed verification: ${check.reason}`);
+        const dbSafety = await this.createDatabaseBackup();
+        const dbSafetyPath = await this.locateBackupFile('database', dbSafety.filename);
+        const dbCheck = await verifyDatabaseBackup(dbSafetyPath, dbSafety.checksum);
+        if (!dbCheck.ok) {
+          throw new Error(`database safety backup failed verification: ${dbCheck.reason}`);
         }
-        const runId = await this.startRun('database', 'pre-restore');
-        await this.finishRun(runId, {
-          status: 'success', filename: safety.filename, sizeBytes: safety.size,
-          checksum: safety.checksum, verified: true,
+        const dbRunId = await this.startRun('database', 'pre-restore');
+        await this.finishRun(dbRunId, {
+          status: 'success', filename: dbSafety.filename, sizeBytes: dbSafety.size,
+          checksum: dbSafety.checksum, verified: true,
         });
-        console.log(`Safety backup written and verified: ${safety.filename}`);
+        console.log(`Database safety backup written and verified: ${dbSafety.filename}`);
+
+        const filesSafety = await this.createFilesBackup();
+        const filesSafetyPath = await this.locateBackupFile('files', filesSafety.filename);
+        const filesCheck = await verifyFilesBackup(filesSafetyPath, filesSafety.checksum, getUploadsDir(), filesSafety.metadata?.fileCount ?? 0);
+        if (!filesCheck.ok) {
+          throw new Error(`files safety backup failed verification: ${filesCheck.reason}`);
+        }
+        const filesRunId = await this.startRun('files', 'pre-restore');
+        await this.finishRun(filesRunId, {
+          status: 'success', filename: filesSafety.filename, sizeBytes: filesSafety.size,
+          checksum: filesSafety.checksum, verified: true,
+        });
+        console.log(`Files safety backup written and verified: ${filesSafety.filename}`);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         throw new Error(
@@ -911,12 +956,13 @@ export class BackupService {
     }
 
     try {
-      // Restore database first. The safety backup was already taken above
-      // (or explicitly skipped), so don't take a second one inside restoreDatabase.
+      // Restore database and files. Both safety backups were already taken
+      // above (or explicitly skipped), so don't take them again inside the
+      // individual restore calls.
       await this.restoreDatabase(databaseBackup, { skipSafetyBackup: true });
 
       // Then restore files
-      await this.restoreFiles(filesBackup);
+      await this.restoreFiles(filesBackup, undefined, { skipSafetyBackup: true });
       
       console.log('Complete system restore finished successfully!');
       console.log('IMPORTANT: Please restart the application to ensure all changes take effect.');
