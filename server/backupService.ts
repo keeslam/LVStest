@@ -460,7 +460,7 @@ export class BackupService {
 
       const filesBackup = await this.createFilesBackup();
       const filesPath = await this.locateBackupFile('files', filesBackup.filename);
-      const filesCheck = await verifyFilesBackup(filesPath, filesBackup.checksum, getUploadsDir());
+      const filesCheck = await verifyFilesBackup(filesPath, filesBackup.checksum, getUploadsDir(), filesBackup.metadata?.fileCount ?? 0);
       await this.finishRun(filesRunId, {
         status: filesCheck.ok ? 'success' : 'failed',
         filename: filesBackup.filename,
@@ -501,7 +501,13 @@ export class BackupService {
     if (!existsSync(dir)) return null;
     for (const entry of readdirSync(dir)) {
       const full = join(dir, entry);
-      if (statSync(full).isDirectory()) {
+      let entryStat;
+      try {
+        entryStat = statSync(full);
+      } catch {
+        continue; // dangling symlink or removed mid-walk — skip, don't abort the whole search
+      }
+      if (entryStat.isDirectory()) {
         const hit = this.findFileRecursive(full, filename);
         if (hit) return hit;
       } else if (entry === filename) {
