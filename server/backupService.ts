@@ -610,36 +610,60 @@ export class BackupService {
     }
   }
 
+  /**
+   * Take, verify, and record a safety backup of current state before a
+   * destructive restore. Shared by every restore path in this service
+   * (restoreDatabase, restoreFiles, restoreComplete) AND by the upload-based
+   * restore-data/restore-files routes in routes.ts, which bypass this class's
+   * own restore*() methods entirely and call this directly. Throws
+   * "Refusing to restore: ..." if the backup can't be taken or fails
+   * verification, so a restore never proceeds without a verified, recorded
+   * way back. Returns the safety backup's manifest (callers surface its
+   * filename to the operator, since a database restore's --clean dump wipes
+   * the backup_runs row that recorded it here).
+   */
+  async takeSafetyBackup(type: 'database' | 'files'): Promise<BackupManifest> {
+    const label = type === 'database' ? 'state' : 'files';
+    console.log(`Taking safety backup of current ${label} before restore...`);
+    try {
+      const safety = type === 'database'
+        ? await this.createDatabaseBackup()
+        : await this.createFilesBackup();
+      const safetyPath = await this.locateBackupFile(type, safety.filename);
+      const check = type === 'database'
+        ? await verifyDatabaseBackup(safetyPath, safety.checksum)
+        : await verifyFilesBackup(safetyPath, safety.checksum, getUploadsDir(), safety.metadata?.fileCount ?? 0);
+      if (!check.ok) {
+        throw new Error(`safety backup failed verification: ${check.reason}`);
+      }
+      const runId = await this.startRun(type, 'pre-restore');
+      await this.finishRun(runId, {
+        status: 'success', filename: safety.filename, sizeBytes: safety.size,
+        checksum: safety.checksum, verified: true,
+      });
+      console.log(`Safety backup written and verified: ${safety.filename}`);
+      return safety;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Refusing to restore: could not take a verified safety backup of the current ${type === 'database' ? 'data' : 'files'} first (${message}). ` +
+        `Restoring now would overwrite live data with no way back.`
+      );
+    }
+  }
+
   // Restore database from backup
-  async restoreDatabase(backupFilename: string, opts?: { skipSafetyBackup?: boolean }): Promise<void> {
+  async restoreDatabase(backupFilename: string, opts?: { skipSafetyBackup?: boolean }): Promise<{ safetyBackupFilename?: string }> {
     console.log(`Starting database restore from: ${backupFilename}`);
 
     // Restoring overwrites whatever is currently live. Before touching anything,
     // take a fresh backup of the current state and verify it - so a mistaken or
     // wrong-file restore is itself reversible. skipSafetyBackup exists only for
     // the case of restoring *because* backups are broken; it defaults to off.
+    let safetyBackupFilename: string | undefined;
     if (!opts?.skipSafetyBackup) {
-      console.log('Taking safety backup of current state before restore...');
-      try {
-        const safety = await this.createDatabaseBackup();
-        const safetyPath = await this.locateBackupFile('database', safety.filename);
-        const check = await verifyDatabaseBackup(safetyPath, safety.checksum);
-        if (!check.ok) {
-          throw new Error(`safety backup failed verification: ${check.reason}`);
-        }
-        const runId = await this.startRun('database', 'pre-restore');
-        await this.finishRun(runId, {
-          status: 'success', filename: safety.filename, sizeBytes: safety.size,
-          checksum: safety.checksum, verified: true,
-        });
-        console.log(`Safety backup written and verified: ${safety.filename}`);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new Error(
-          `Refusing to restore: could not take a verified safety backup of the current data first (${message}). ` +
-          `Restoring now would overwrite live data with no way back.`
-        );
-      }
+      const safety = await this.takeSafetyBackup('database');
+      safetyBackupFilename = safety.filename;
     }
 
     // Get backup settings and resolve where backups are stored
@@ -771,10 +795,18 @@ export class BackupService {
         }
       }
     }
+
+    return { safetyBackupFilename };
   }
 
   // Restore files from backup
-  async restoreFiles(backupFilename: string, targetPath?: string, opts?: { skipSafetyBackup?: boolean }): Promise<void> {
+  //
+  // targetPath is NOT wired to any HTTP request body: the extraction target
+  // must always match where the safety backup above just archived from
+  // (getUploadsDir()), or the verified safety net points at the wrong
+  // directory while tar overwrites a different one. Only pass targetPath
+  // from trusted internal callers (e.g. tests), never from user input.
+  async restoreFiles(backupFilename: string, targetPath?: string, opts?: { skipSafetyBackup?: boolean }): Promise<{ safetyBackupFilename?: string }> {
     console.log(`Starting files restore from: ${backupFilename}`);
 
     // Restoring overwrites whatever is currently in uploads/ (scanned documents,
@@ -783,28 +815,10 @@ export class BackupService {
     // so a mistaken or wrong-file restore is itself reversible. skipSafetyBackup
     // exists only for the case of restoring *because* backups are broken; it
     // defaults to off.
+    let safetyBackupFilename: string | undefined;
     if (!opts?.skipSafetyBackup) {
-      console.log('Taking safety backup of current files before restore...');
-      try {
-        const safety = await this.createFilesBackup();
-        const safetyPath = await this.locateBackupFile('files', safety.filename);
-        const check = await verifyFilesBackup(safetyPath, safety.checksum, getUploadsDir(), safety.metadata?.fileCount ?? 0);
-        if (!check.ok) {
-          throw new Error(`safety backup failed verification: ${check.reason}`);
-        }
-        const runId = await this.startRun('files', 'pre-restore');
-        await this.finishRun(runId, {
-          status: 'success', filename: safety.filename, sizeBytes: safety.size,
-          checksum: safety.checksum, verified: true,
-        });
-        console.log(`Safety backup written and verified: ${safety.filename}`);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new Error(
-          `Refusing to restore: could not take a verified safety backup of the current files first (${message}). ` +
-          `Restoring now would overwrite live data with no way back.`
-        );
-      }
+      const safety = await this.takeSafetyBackup('files');
+      safetyBackupFilename = safety.filename;
     }
 
     // Get backup settings and resolve where backups are stored
@@ -905,10 +919,12 @@ export class BackupService {
         }
       }
     }
+
+    return { safetyBackupFilename };
   }
 
   // Complete system restore (database + files)
-  async restoreComplete(databaseBackup: string, filesBackup: string, opts?: { skipSafetyBackup?: boolean }): Promise<void> {
+  async restoreComplete(databaseBackup: string, filesBackup: string, opts?: { skipSafetyBackup?: boolean }): Promise<{ databaseSafetyBackupFilename?: string; filesSafetyBackupFilename?: string }> {
     console.log('Starting complete system restore...');
     console.log(`Database backup: ${databaseBackup}`);
     console.log(`Files backup: ${filesBackup}`);
@@ -918,41 +934,15 @@ export class BackupService {
     // that only covers the database half would read as protection while
     // leaving files unrecoverable, which is worse than no safety net at all -
     // so take and verify safety backups of both before any destructive work.
+    // Each call throws its own "Refusing to restore" error if it fails, and
+    // the files backup is never attempted if the database one already failed.
+    let databaseSafetyBackupFilename: string | undefined;
+    let filesSafetyBackupFilename: string | undefined;
     if (!opts?.skipSafetyBackup) {
-      console.log('Taking safety backup of current state before restore...');
-      try {
-        const dbSafety = await this.createDatabaseBackup();
-        const dbSafetyPath = await this.locateBackupFile('database', dbSafety.filename);
-        const dbCheck = await verifyDatabaseBackup(dbSafetyPath, dbSafety.checksum);
-        if (!dbCheck.ok) {
-          throw new Error(`database safety backup failed verification: ${dbCheck.reason}`);
-        }
-        const dbRunId = await this.startRun('database', 'pre-restore');
-        await this.finishRun(dbRunId, {
-          status: 'success', filename: dbSafety.filename, sizeBytes: dbSafety.size,
-          checksum: dbSafety.checksum, verified: true,
-        });
-        console.log(`Database safety backup written and verified: ${dbSafety.filename}`);
-
-        const filesSafety = await this.createFilesBackup();
-        const filesSafetyPath = await this.locateBackupFile('files', filesSafety.filename);
-        const filesCheck = await verifyFilesBackup(filesSafetyPath, filesSafety.checksum, getUploadsDir(), filesSafety.metadata?.fileCount ?? 0);
-        if (!filesCheck.ok) {
-          throw new Error(`files safety backup failed verification: ${filesCheck.reason}`);
-        }
-        const filesRunId = await this.startRun('files', 'pre-restore');
-        await this.finishRun(filesRunId, {
-          status: 'success', filename: filesSafety.filename, sizeBytes: filesSafety.size,
-          checksum: filesSafety.checksum, verified: true,
-        });
-        console.log(`Files safety backup written and verified: ${filesSafety.filename}`);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new Error(
-          `Refusing to restore: could not take a verified safety backup of the current data first (${message}). ` +
-          `Restoring now would overwrite live data with no way back.`
-        );
-      }
+      const dbSafety = await this.takeSafetyBackup('database');
+      databaseSafetyBackupFilename = dbSafety.filename;
+      const filesSafety = await this.takeSafetyBackup('files');
+      filesSafetyBackupFilename = filesSafety.filename;
     }
 
     try {
@@ -963,14 +953,16 @@ export class BackupService {
 
       // Then restore files
       await this.restoreFiles(filesBackup, undefined, { skipSafetyBackup: true });
-      
+
       console.log('Complete system restore finished successfully!');
       console.log('IMPORTANT: Please restart the application to ensure all changes take effect.');
-      
+
     } catch (error) {
       console.error('Complete restore failed:', error);
       throw new Error(`Complete restore failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+
+    return { databaseSafetyBackupFilename, filesSafetyBackupFilename };
   }
 
   // Helper method to get backup manifest from the local filesystem

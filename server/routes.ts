@@ -8556,6 +8556,13 @@ export async function registerRoutes(app: Express): Promise<void> {
         });
       }
 
+      // This route drops every table and restores over it, bypassing
+      // backupService.restoreDatabase entirely - it has its own destructive
+      // path, so it needs its own safety net. Take and verify a fresh backup
+      // of the CURRENT database before anything is dropped. If this can't be
+      // done, refuse to restore rather than proceed with no way back.
+      const safety = await backupService.takeSafetyBackup('database');
+
       // Step 1: Drop all tables with CASCADE to remove dependencies
       console.log('🗑️ Dropping all existing tables...');
       const dropTablesQuery = `
@@ -8611,6 +8618,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.json({
         success: true,
         message: 'Database restored successfully. Please refresh your browser and log in again.',
+        safetyBackupFilename: safety.filename,
       });
     } catch (error) {
       // Clean up file on error
@@ -8621,9 +8629,9 @@ export async function registerRoutes(app: Express): Promise<void> {
           console.error('Error cleaning up uploaded file:', cleanupError);
         }
       }
-      
+
       console.error("❌ Error restoring app data:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to restore app data",
         details: error instanceof Error ? error.message : "Unknown error"
       });
@@ -8770,6 +8778,13 @@ export async function registerRoutes(app: Express): Promise<void> {
       const { promisify } = await import('util');
       const execAsync = promisify(exec);
 
+      // This route extracts straight over uploads/, bypassing
+      // backupService.restoreFiles entirely - it has its own destructive
+      // path, so it needs its own safety net. Take and verify a fresh backup
+      // of the CURRENT uploads/ before anything is overwritten. If this can't
+      // be done, refuse to restore rather than proceed with no way back.
+      const safety = await backupService.takeSafetyBackup('files');
+
       // Extract tar.gz to current directory (will restore uploads folder)
       await execAsync(`tar -xzf "${req.file.path}" -C "${process.cwd()}"`);
 
@@ -8783,6 +8798,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.json({
         success: true,
         message: 'All uploaded files have been restored successfully.',
+        safetyBackupFilename: safety.filename,
       });
     } catch (error) {
       // Clean up file on error
@@ -8793,9 +8809,9 @@ export async function registerRoutes(app: Express): Promise<void> {
           console.error('Error cleaning up uploaded file:', cleanupError);
         }
       }
-      
+
       console.error("Error restoring uploaded files:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to restore uploaded files",
         details: error instanceof Error ? error.message : "Unknown error"
       });
@@ -9119,17 +9135,24 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       // Run restore
-      await backupService.restoreDatabase(filename);
-      
+      const result = await backupService.restoreDatabase(filename);
+
+      // The safety backup's own backup_runs row was recorded before the
+      // restore ran, but a successful restore's --clean dump drops and
+      // recreates every table, including backup_runs - so that row is gone
+      // by the time this response is built. The file itself is still on disk
+      // and findable via listBackups; surface its name here so the operator
+      // isn't left guessing which file is their way back.
       res.json({
         success: true,
         message: "Database restore completed successfully",
-        warning: "Please restart the application for changes to take full effect"
+        warning: "Please restart the application for changes to take full effect",
+        safetyBackupFilename: result.safetyBackupFilename,
       });
     } catch (error) {
       console.error("Error restoring database:", error);
-      res.status(500).json({ 
-        error: error instanceof Error ? error.message : "Failed to restore database" 
+      res.status(500).json({
+        error: error instanceof Error ? error.message : "Failed to restore database"
       });
     }
   });
@@ -9137,8 +9160,16 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Restore files from backup
   app.post("/api/backups/restore/files", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
     try {
-      const { filename, targetPath } = req.body;
-      
+      // targetPath is intentionally NOT accepted from the request body.
+      // restoreFiles archives getUploadsDir() for its safety backup but would
+      // extract into targetPath if given one - an unvalidated caller-supplied
+      // path would let the safety net be taken over uploads/ while the
+      // destructive tar --overwrite lands somewhere else entirely, defeating
+      // the guard on exactly the path it exists to protect. Nothing in the UI
+      // sends targetPath; restoreFiles(filename) always extracts to its
+      // default (process.cwd()), matching where it archives from.
+      const { filename } = req.body;
+
       if (!filename) {
         return res.status(400).json({ error: "Backup filename is required" });
       }
@@ -9146,22 +9177,23 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Validation: check if backup exists
       const backups = await backupService.listBackups('files');
       const backupExists = backups.some(backup => backup.filename === filename);
-      
+
       if (!backupExists) {
         return res.status(404).json({ error: "Backup file not found" });
       }
 
       // Run restore
-      await backupService.restoreFiles(filename, targetPath);
-      
+      const result = await backupService.restoreFiles(filename);
+
       res.json({
         success: true,
-        message: "Files restore completed successfully"
+        message: "Files restore completed successfully",
+        safetyBackupFilename: result.safetyBackupFilename,
       });
     } catch (error) {
       console.error("Error restoring files:", error);
-      res.status(500).json({ 
-        error: error instanceof Error ? error.message : "Failed to restore files" 
+      res.status(500).json({
+        error: error instanceof Error ? error.message : "Failed to restore files"
       });
     }
   });
@@ -9204,12 +9236,18 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       // Run complete restore
-      await backupService.restoreComplete(databaseBackup, filesBackup);
-      
+      const result = await backupService.restoreComplete(databaseBackup, filesBackup);
+
+      // The database safety backup's own backup_runs row is dropped by the
+      // --clean dump this restore just applied - the file survives on disk,
+      // but the in-app trail doesn't. Surface both filenames here so the
+      // operator knows their way back without having to guess.
       res.json({
         success: true,
         message: "Complete system restore finished successfully!",
-        warning: "IMPORTANT: Please restart the application to ensure all changes take effect"
+        warning: "IMPORTANT: Please restart the application to ensure all changes take effect",
+        databaseSafetyBackupFilename: result.databaseSafetyBackupFilename,
+        filesSafetyBackupFilename: result.filesSafetyBackupFilename,
       });
     } catch (error) {
       console.error("Error performing complete restore:", error);

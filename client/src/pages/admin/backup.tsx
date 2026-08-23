@@ -233,12 +233,16 @@ export default function BackupPage() {
         throw new Error(error.error || 'Failed to restore data');
       }
 
+      const result = await response.json();
+
       toast({
         title: 'Data Restored',
-        description: '⚠️ Your database has been restored. Please refresh your browser and log in again.',
+        description: result.safetyBackupFilename
+          ? `⚠️ Your database has been restored. A backup of your previous data was saved as ${result.safetyBackupFilename}. Please refresh your browser and log in again.`
+          : '⚠️ Your database has been restored. Please refresh your browser and log in again.',
         duration: 10000,
       });
-      
+
       setSelectedDataFile(null);
       
       // Wait a moment then reload the page
@@ -352,9 +356,11 @@ export default function BackupPage() {
 
       toast({
         title: 'Files Restored',
-        description: result.message || 'All uploaded files have been restored successfully.',
+        description: result.safetyBackupFilename
+          ? `${result.message || 'All uploaded files have been restored successfully.'} A backup of your previous files was saved as ${result.safetyBackupFilename}.`
+          : result.message || 'All uploaded files have been restored successfully.',
       });
-      
+
       setSelectedFilesArchive(null);
     } catch (error) {
       toast({
@@ -420,9 +426,12 @@ export default function BackupPage() {
       }
 
       const result = await response.json();
+      const base = result.message || `Database restored from ${filename}. Please refresh your browser and log in again.`;
       toast({
         title: 'Database Restored',
-        description: result.message || `Database restored from ${filename}. Please refresh your browser and log in again.`,
+        description: result.safetyBackupFilename
+          ? `${base} A backup of your previous data was saved as ${result.safetyBackupFilename}.`
+          : base,
         duration: 10000,
       });
 
