@@ -1,13 +1,13 @@
 import * as cron from 'node-cron';
-import { BackupService } from './backupService';
+import { backupService, type BackupService } from './backupService';
 
 export class BackupScheduler {
-  private backupService: BackupService;
+  // Shared singleton (see server/backupService.ts) so the scheduler's
+  // runBackup re-entrancy guard is visible to the HTTP routes' "Back up now"
+  // button and vice versa - otherwise a cron/boot-catchup run and a manual
+  // click could run concurrently.
+  private backupService: BackupService = backupService;
   private scheduledTask: cron.ScheduledTask | null = null;
-  
-  constructor() {
-    this.backupService = new BackupService();
-  }
 
   // Start the backup scheduler
   start(): void {

@@ -1218,3 +1218,14 @@ export class BackupService {
     console.log(`Cleanup completed. Deleted ${deletedCount} old backups.`);
   }
 }
+
+// Single shared instance. `runBackup`'s re-entrancy guard (`isRunning`,
+// above) is an instance field - two separate `BackupService` objects can't
+// see each other's in-flight run. Previously routes.ts and backupScheduler.ts
+// each constructed their own, so the "Back up now" button and status/health
+// endpoints were blind to a scheduler-initiated run (cron or boot catch-up),
+// letting a manual click start a second, concurrent backup. The constructor
+// only initializes plain fields (no DB/filesystem work), so eager
+// construction here is safe and runs at import time like any other module
+// singleton.
+export const backupService = new BackupService();

@@ -38,7 +38,7 @@ import {
 } from "../shared/schema";
 import multer from "multer";
 import { setupAuth, hashPassword, comparePasswords } from "./auth";
-import { BackupService } from "./backupService";
+import { backupService } from "./backupService";
 import { ObjectStorageService } from "./objectStorage";
 import { realtimeEvents } from "./realtime-events";
 import { hasPermission, requireAdmin } from "./middleware/permissions.js";
@@ -800,8 +800,9 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Set up authentication routes and middleware
   const { requireAuth } = setupAuth(app);
 
-  // Initialize backup service
-  const backupService = new BackupService();
+  // Shared BackupService singleton (see server/backupService.ts) - must be
+  // the same instance the scheduler uses so the runBackup re-entrancy guard
+  // and isRunning status reflect scheduled/catch-up runs too.
   const objectStorage = new ObjectStorageService();
 
   // ==================== USER MANAGEMENT ROUTES ====================
@@ -8883,6 +8884,19 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.setHeader('Content-Type', result.contentType);
+      // 'error' fires asynchronously mid-stream (e.g. retention cleanup
+      // pruning the file while it's being sent), after this try/catch has
+      // already returned - an unhandled stream error here would otherwise
+      // crash the process. Headers may already be flushed by the time it
+      // fires, so only attempt a JSON error response if they haven't been.
+      result.stream.on('error', (streamError) => {
+        console.error('Error streaming backup download:', streamError);
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Failed to download backup' });
+        } else {
+          res.destroy(streamError instanceof Error ? streamError : undefined);
+        }
+      });
       result.stream.pipe(res);
     } catch (error) {
       console.error("Error downloading backup:", error);
@@ -8980,10 +8994,24 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Set download headers
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.setHeader('Content-Type', result.contentType);
-      
+
+      // 'error' fires asynchronously mid-stream (e.g. retention cleanup
+      // pruning the file while it's being sent), after this try/catch has
+      // already returned - an unhandled stream error here would otherwise
+      // crash the process. Headers may already be flushed by the time it
+      // fires, so only attempt a JSON error response if they haven't been.
+      result.stream.on('error', (streamError) => {
+        console.error('Error streaming backup download:', streamError);
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Failed to download backup' });
+        } else {
+          res.destroy(streamError instanceof Error ? streamError : undefined);
+        }
+      });
+
       // Stream the file
       result.stream.pipe(res);
-      
+
     } catch (error) {
       console.error("Error downloading backup:", error);
       res.status(500).json({ error: "Failed to download backup" });
