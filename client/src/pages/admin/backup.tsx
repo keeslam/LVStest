@@ -20,7 +20,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { UserRole } from "@shared/schema";
 import { Redirect } from "wouter";
-import { Database, Code, Download, CheckCircle2, Clock, Calendar, AlertCircle, Upload, RotateCcw, FileText } from "lucide-react";
+import { Database, Code, Download, CheckCircle2, Clock, Calendar, AlertCircle, Upload, RotateCcw, FileText, Loader2, PlayCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 
@@ -39,6 +39,15 @@ interface BackupStatus {
   lastError?: string;
   isRunning: boolean;
   nextScheduled?: string;
+}
+
+interface BackupHealth {
+  lastSuccessAt: string | null;
+  ageHours: number | null;
+  stale: boolean;
+  lastError: string | null;
+  backupPath?: string;
+  backupPathFromEnv?: boolean;
 }
 
 interface BackupManifest {
@@ -85,6 +94,12 @@ export default function BackupPage() {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
+  // Fetch backup health (staleness, resolved backup path)
+  const { data: health } = useQuery<BackupHealth>({
+    queryKey: ['/api/backups/health'],
+    refetchInterval: 30000,
+  });
+
   // Fetch recent backups (last 3 of each type)
   const { data: recentDatabaseBackups = [] } = useQuery<BackupManifest[]>({
     queryKey: ['/api/backups/list', { type: 'database', limit: 3 }],
@@ -127,7 +142,39 @@ export default function BackupPage() {
       });
     },
   });
-  
+
+  // Run a backup now. This is the only way to trigger one from the UI - it
+  // previously only ran on the 2:00 AM schedule or a boot-time catch-up, so
+  // there was no manual "back up now" a user in a hurry could reach for.
+  // Takes a while (pg_dump + archiving + read-back verification of both), so
+  // the button shows a spinner rather than looking hung.
+  const runBackupMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/backups/run');
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to run backup');
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      invalidateByPrefix('/api/backups');
+      toast({
+        title: 'Backup Complete',
+        description: 'A new database and files backup has been created and verified.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Backup Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   if (!user) {
     return <Redirect to="/auth" />;
   }
@@ -497,17 +544,34 @@ export default function BackupPage() {
                   </CardDescription>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="auto-backup"
-                  checked={settings?.enableAutoBackup ?? false}
-                  onCheckedChange={(checked) => toggleAutoBackupMutation.mutate(checked)}
-                  disabled={toggleAutoBackupMutation.isPending || !settings}
-                  data-testid="auto-backup-toggle"
-                />
-                <Label htmlFor="auto-backup" className="cursor-pointer font-medium text-purple-900">
-                  {settings?.enableAutoBackup ? 'Enabled' : 'Disabled'}
-                </Label>
+              <div className="flex items-center gap-3">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-white"
+                  onClick={() => runBackupMutation.mutate()}
+                  disabled={runBackupMutation.isPending || status?.isRunning}
+                  data-testid="run-backup-now-button"
+                >
+                  {runBackupMutation.isPending || status?.isRunning ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <PlayCircle className="h-4 w-4 mr-2" />
+                  )}
+                  {runBackupMutation.isPending || status?.isRunning ? 'Backing up...' : 'Back up now'}
+                </Button>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="auto-backup"
+                    checked={settings?.enableAutoBackup ?? false}
+                    onCheckedChange={(checked) => toggleAutoBackupMutation.mutate(checked)}
+                    disabled={toggleAutoBackupMutation.isPending || !settings}
+                    data-testid="auto-backup-toggle"
+                  />
+                  <Label htmlFor="auto-backup" className="cursor-pointer font-medium text-purple-900">
+                    {settings?.enableAutoBackup ? 'Enabled' : 'Disabled'}
+                  </Label>
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -548,13 +612,36 @@ export default function BackupPage() {
                 </div>
               </div>
             )}
-            {settings?.enableAutoBackup && (
+            {settings?.enableAutoBackup && health?.lastSuccessAt && !health.stale && (
               <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                   <p className="text-sm text-green-800">
                     <strong>Protection Active:</strong> Your data is automatically backed up every night, ensuring you always have a backup that's max 1 day old.
                   </p>
+                </div>
+              </div>
+            )}
+            {health?.backupPath && (
+              <div className={`mt-4 flex items-start gap-2 p-3 rounded-lg border ${
+                health.backupPathFromEnv
+                  ? 'bg-gray-50 border-gray-200'
+                  : 'bg-amber-50 border-amber-200'
+              }`}>
+                {health.backupPathFromEnv ? (
+                  <CheckCircle2 className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                )}
+                <div>
+                  <p className={`text-xs font-medium ${health.backupPathFromEnv ? 'text-gray-700' : 'text-amber-900'}`}>
+                    Backup location: <span className="font-mono">{health.backupPath}</span>
+                  </p>
+                  {!health.backupPathFromEnv && (
+                    <p className="text-xs text-amber-700 mt-0.5">
+                      BACKUP_PATH is not set - this is a fallback location that may not survive a redeploy. Set BACKUP_PATH to a persistent, mounted volume.
+                    </p>
+                  )}
                 </div>
               </div>
             )}

@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Database, Code, Download, CheckCircle2, Clock, Calendar, AlertCircle, Upload, RotateCcw, FileText } from "lucide-react";
+import { Database, Code, Download, CheckCircle2, Clock, Calendar, AlertCircle, Upload, RotateCcw, FileText, Loader2, PlayCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -44,6 +44,15 @@ interface BackupStatus {
   lastError?: string;
   isRunning: boolean;
   nextScheduled?: string;
+}
+
+interface BackupHealth {
+  lastSuccessAt: string | null;
+  ageHours: number | null;
+  stale: boolean;
+  lastError: string | null;
+  backupPath?: string;
+  backupPathFromEnv?: boolean;
 }
 
 interface BackupManifest {
@@ -96,6 +105,12 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     enabled: open && isAdmin,
   });
 
+  const { data: health } = useQuery<BackupHealth>({
+    queryKey: ['/api/backups/health'],
+    refetchInterval: open && isAdmin ? 30000 : false,
+    enabled: open && isAdmin,
+  });
+
   const { data: recentDatabaseBackups = [] } = useQuery<BackupManifest[]>({
     queryKey: ['/api/backups/list', { type: 'database', limit: 3 }],
     enabled: open && isAdmin,
@@ -133,6 +148,35 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     onError: (error: Error) => {
       toast({
         title: 'Update Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Run a backup now - see the matching mutation/comment in
+  // pages/admin/backup.tsx for why this exists.
+  const runBackupMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/backups/run');
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to run backup');
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      invalidateByPrefix('/api/backups');
+      toast({
+        title: 'Backup Complete',
+        description: 'A new database and files backup has been created and verified.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Backup Failed',
         description: error.message,
         variant: 'destructive',
       });
@@ -466,17 +510,34 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                       </CardDescription>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="auto-backup-dialog"
-                      checked={settings?.enableAutoBackup ?? false}
-                      onCheckedChange={(checked) => toggleAutoBackupMutation.mutate(checked)}
-                      disabled={toggleAutoBackupMutation.isPending || !settings}
-                      data-testid="dialog-auto-backup-toggle"
-                    />
-                    <Label htmlFor="auto-backup-dialog" className="cursor-pointer font-medium text-purple-900">
-                      {settings?.enableAutoBackup ? 'Enabled' : 'Disabled'}
-                    </Label>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-white"
+                      onClick={() => runBackupMutation.mutate()}
+                      disabled={runBackupMutation.isPending || status?.isRunning}
+                      data-testid="dialog-run-backup-now-button"
+                    >
+                      {runBackupMutation.isPending || status?.isRunning ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <PlayCircle className="h-4 w-4 mr-2" />
+                      )}
+                      {runBackupMutation.isPending || status?.isRunning ? 'Backing up...' : 'Back up now'}
+                    </Button>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="auto-backup-dialog"
+                        checked={settings?.enableAutoBackup ?? false}
+                        onCheckedChange={(checked) => toggleAutoBackupMutation.mutate(checked)}
+                        disabled={toggleAutoBackupMutation.isPending || !settings}
+                        data-testid="dialog-auto-backup-toggle"
+                      />
+                      <Label htmlFor="auto-backup-dialog" className="cursor-pointer font-medium text-purple-900">
+                        {settings?.enableAutoBackup ? 'Enabled' : 'Disabled'}
+                      </Label>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -514,6 +575,29 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                     <div>
                       <p className="text-sm font-medium text-red-900">Last backup error:</p>
                       <p className="text-xs text-red-700">{status.lastError}</p>
+                    </div>
+                  </div>
+                )}
+                {health?.backupPath && (
+                  <div className={`mt-3 flex items-start gap-2 p-2 rounded-lg border ${
+                    health.backupPathFromEnv
+                      ? 'bg-gray-50 border-gray-200'
+                      : 'bg-amber-50 border-amber-200'
+                  }`}>
+                    {health.backupPathFromEnv ? (
+                      <CheckCircle2 className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                    )}
+                    <div>
+                      <p className={`text-xs font-medium ${health.backupPathFromEnv ? 'text-gray-700' : 'text-amber-900'}`}>
+                        Backup location: <span className="font-mono">{health.backupPath}</span>
+                      </p>
+                      {!health.backupPathFromEnv && (
+                        <p className="text-xs text-amber-700 mt-0.5">
+                          BACKUP_PATH is not set - this fallback location may not survive a redeploy.
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}

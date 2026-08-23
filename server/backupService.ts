@@ -51,6 +51,19 @@ export class BackupService {
     return getBackupPathFromEnv() || settings?.localPath || join(process.cwd(), 'backups');
   }
 
+  /**
+   * Resolved backup path plus whether it came from BACKUP_PATH, so operators
+   * can tell a correctly-mounted volume from a silent fallback onto ephemeral
+   * container storage (the original 10-month bug: backups succeeded, verified
+   * green, and vanished on the next redeploy). Surfaced via /api/backups/health
+   * and logged once at scheduler startup - never a hard failure, since an
+   * unset BACKUP_PATH is expected and fine in local development.
+   */
+  async getBackupPathInfo(): Promise<{ path: string; fromEnv: boolean }> {
+    const settings = await this.getBackupSettings();
+    return { path: this.resolveBackupPath(settings), fromEnv: !!getBackupPathFromEnv() };
+  }
+
   // Get backup settings from database
   private async getBackupSettings() {
     try {
@@ -150,6 +163,24 @@ export class BackupService {
     return row;
   }
 
+  /**
+   * The OLDER of the two required backup types' last verified success.
+   *
+   * A working database backup must not mask a files backup that has been
+   * failing every night (or vice versa) - staleness and catch-up need to
+   * react to whichever type is actually behind. If either type has never
+   * succeeded, this returns undefined so callers treat it as stale/overdue,
+   * exactly as if nothing had ever succeeded.
+   */
+  async getOldestLastSuccessfulRun(): Promise<BackupRun | undefined> {
+    const [dbLast, filesLast] = await Promise.all([
+      this.getLastSuccessfulRun('database'),
+      this.getLastSuccessfulRun('files'),
+    ]);
+    if (!dbLast?.finishedAt || !filesLast?.finishedAt) return undefined;
+    return new Date(dbLast.finishedAt) < new Date(filesLast.finishedAt) ? dbLast : filesLast;
+  }
+
   // Current backup status, read from run history rather than a temp file.
   async getStatus(): Promise<BackupStatus> {
     try {
@@ -159,12 +190,19 @@ export class BackupService {
         .orderBy(desc(backupRuns.finishedAt))
         .limit(1);
 
+      // Only report an error while it is the most recent event: a single
+      // transient failure that a later success has already superseded must
+      // not pin the red "last backup error" box forever, which trains users
+      // to ignore the one signal this system was built to be believed.
+      const failureIsCurrent = !!lastFailure?.finishedAt
+        && (!lastSuccess?.finishedAt || new Date(lastFailure.finishedAt) > new Date(lastSuccess.finishedAt));
+
       return {
         isRunning: this.isRunning,
         nextScheduled: this.getNextScheduledTime(),
         lastSuccess: lastSuccess?.finishedAt?.toISOString(),
-        lastError: lastFailure
-          ? `${lastFailure.finishedAt?.toISOString() ?? ''}: ${lastFailure.error ?? 'unknown error'}`
+        lastError: failureIsCurrent
+          ? `${lastFailure!.finishedAt?.toISOString() ?? ''}: ${lastFailure!.error ?? 'unknown error'}`
           : undefined,
       };
     } catch (error) {

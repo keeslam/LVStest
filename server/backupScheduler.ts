@@ -16,6 +16,24 @@ export class BackupScheduler {
       return;
     }
 
+    // Log the resolved backup path once at startup. A missing BACKUP_PATH
+    // used to fail completely silently - backups still ran, verified green,
+    // and sat on ephemeral container storage until the next redeploy wiped
+    // them. This does not block startup (unset is normal in local dev), it
+    // just makes the resolved location legible.
+    this.backupService.getBackupPathInfo()
+      .then(({ path, fromEnv }) => {
+        if (fromEnv) {
+          console.log(`Backup path resolved to ${path} (from BACKUP_PATH)`);
+        } else {
+          console.warn(
+            `Backup path resolved to ${path} (BACKUP_PATH is not set - falling back to ` +
+            `database setting/local default; this will NOT survive a redeploy on ephemeral storage)`
+          );
+        }
+      })
+      .catch((error) => console.error('Failed to resolve backup path for logging:', error));
+
     // Schedule backup to run at 2:00 AM every day
     this.scheduledTask = cron.schedule('0 2 * * *', async () => {
       console.log('Starting scheduled backup...');
@@ -51,7 +69,7 @@ export class BackupScheduler {
     const DELAY_MS = 5 * 60 * 1000; // let startup migrations finish first
     setTimeout(async () => {
       try {
-        const last = await this.backupService.getLastSuccessfulRun();
+        const last = await this.backupService.getOldestLastSuccessfulRun();
         const ageMs = last?.finishedAt ? Date.now() - new Date(last.finishedAt).getTime() : Infinity;
         if (ageMs > 24 * 60 * 60 * 1000) {
           const age = Number.isFinite(ageMs) ? `${Math.round(ageMs / 3600000)}h old` : 'none on record';

@@ -461,10 +461,10 @@ async function runMigrations() {
         updated_by TEXT
       )`,
       `INSERT INTO backup_settings (
-        storage_type, 
-        local_path, 
-        enable_auto_backup, 
-        backup_schedule, 
+        storage_type,
+        local_path,
+        enable_auto_backup,
+        backup_schedule,
         retention_days,
         created_by,
         updated_by
@@ -478,7 +478,33 @@ async function runMigrations() {
         'admin'
       )`
     );
-    
+
+    // Create backup_runs table if it doesn't exist. This is the run-history
+    // ledger backupService.startRun/finishRun/getStatus depend on - if it's
+    // missing, every backup attempt throws, getStatus() swallows the
+    // exception and reports no error, and the UI shows "Never" with no
+    // explanation: byte-for-byte the original silent-failure bug. The
+    // Docker path (startup-migration.js, this file) never ran `db:push`,
+    // so this table needs its own explicit DDL here, matching
+    // shared/schema.ts's backupRuns definition column-for-column.
+    await createTableIfNotExists(
+      'backup_runs',
+      `CREATE TABLE backup_runs (
+        id SERIAL PRIMARY KEY,
+        started_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        finished_at TIMESTAMP,
+        type TEXT NOT NULL,
+        status TEXT NOT NULL,
+        filename TEXT,
+        size_bytes INTEGER,
+        checksum TEXT,
+        verified BOOLEAN NOT NULL DEFAULT false,
+        file_pruned BOOLEAN NOT NULL DEFAULT false,
+        error TEXT,
+        trigger TEXT NOT NULL
+      )`
+    );
+
     // Create vehicle_customer_blacklist table if it doesn't exist
     await createTableIfNotExists(
       'vehicle_customer_blacklist',

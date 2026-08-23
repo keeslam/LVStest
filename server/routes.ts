@@ -8847,50 +8847,46 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
-  // Download a specific backup file
+  // Download a specific backup file. The UI (admin/backup.tsx and
+  // backup-dialog.tsx) only knows the filename, not the type, so this
+  // delegates to backupService.downloadBackup - which resolves the backup
+  // directory the same way createDatabaseBackup/createFilesBackup do
+  // (BACKUP_PATH first, see resolveBackupPath) - rather than re-deriving the
+  // path here a third time. Previously this route read only
+  // backupSettings.localPath and never consulted BACKUP_PATH, so every
+  // automated backup 404'd once BACKUP_PATH was set, which is the only
+  // protection this design offers against losing the server itself.
   app.get("/api/backups/download/:filename", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
     try {
       const { filename } = req.params;
-      
+
       // Security: prevent directory traversal
       if (filename.includes('..') || filename.includes('/')) {
         return res.status(400).json({ error: 'Invalid filename' });
       }
-      
-      const backupSettings = await db.select().from(backupSettingsTable).limit(1);
-      const settings = backupSettings[0];
-      const backupPath = settings?.localPath || path.join(process.cwd(), 'backups');
-      
-      // Search for the file in the backup directory structure
-      const findFile = (dir: string): string | null => {
-        if (!fs.existsSync(dir)) return null;
-        
-        const items = fs.readdirSync(dir);
-        for (const item of items) {
-          const itemPath = path.join(dir, item);
-          const stat = fs.statSync(itemPath);
-          
-          if (stat.isDirectory()) {
-            const found = findFile(itemPath);
-            if (found) return found;
-          } else if (item === filename) {
-            return itemPath;
-          }
-        }
-        return null;
-      };
-      
-      const filePath = findFile(backupPath);
-      
-      if (!filePath || !fs.existsSync(filePath)) {
+
+      // This service generates filenames as db-backup-*.sql.gz and
+      // files-backup-*.tar.gz, so the type can usually be inferred; try the
+      // inferred type first and fall back to the other so a differently
+      // named or hand-uploaded backup can still be found.
+      const inferredType: 'database' | 'files' = filename.startsWith('files-backup-') ? 'files' : 'database';
+      const otherType: 'database' | 'files' = inferredType === 'database' ? 'files' : 'database';
+
+      let result = await backupService.downloadBackup(filename, inferredType);
+      if (!result) {
+        result = await backupService.downloadBackup(filename, otherType);
+      }
+
+      if (!result) {
         return res.status(404).json({ error: 'Backup file not found' });
       }
-      
-      // Send the file
-      res.download(filePath, filename);
+
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', result.contentType);
+      result.stream.pipe(res);
     } catch (error) {
       console.error("Error downloading backup:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to download backup",
         details: error instanceof Error ? error.message : "Unknown error"
       });
@@ -8911,8 +8907,13 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Get backup health (staleness) for UI warnings
   app.get("/api/backups/health", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
     try {
-      const last = await backupService.getLastSuccessfulRun();
+      // Use the OLDER of the two required types' last success: a healthy
+      // database backup must not mask a files backup that has been failing
+      // every night (or vice versa). If either type has never succeeded this
+      // is undefined, which correctly reports as stale/overdue.
+      const last = await backupService.getOldestLastSuccessfulRun();
       const status = await backupService.getStatus();
+      const pathInfo = await backupService.getBackupPathInfo();
       const lastSuccessAt = last?.finishedAt ? new Date(last.finishedAt).toISOString() : null;
       const ageHours = lastSuccessAt
         ? Math.round((Date.now() - new Date(lastSuccessAt).getTime()) / 3600000)
@@ -8922,6 +8923,8 @@ export async function registerRoutes(app: Express): Promise<void> {
         ageHours,
         stale: ageHours === null || ageHours > 48,
         lastError: status.lastError ?? null,
+        backupPath: pathInfo.path,
+        backupPathFromEnv: pathInfo.fromEnv,
       });
     } catch (error) {
       console.error('Error reading backup health:', error);
