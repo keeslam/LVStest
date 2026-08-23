@@ -65,6 +65,8 @@ export default function BackupPage() {
   const [restoringData, setRestoringData] = useState(false);
   const [restoringCode, setRestoringCode] = useState(false);
   const [restoringFiles, setRestoringFiles] = useState(false);
+  const [restoringAutomatedBackup, setRestoringAutomatedBackup] = useState<string | null>(null);
+  const [restoreConfirmText, setRestoreConfirmText] = useState<Record<string, string>>({});
   const [selectedDataFile, setSelectedDataFile] = useState<File | null>(null);
   const [selectedCodeFile, setSelectedCodeFile] = useState<File | null>(null);
   const [selectedFilesArchive, setSelectedFilesArchive] = useState<File | null>(null);
@@ -398,6 +400,48 @@ export default function BackupPage() {
     }
   };
 
+  // Restore an existing automated database backup in place. This is the most
+  // destructive action on this page: it overwrites the live database. The
+  // server takes and verifies a fresh safety backup of current state before
+  // it touches anything, and separately requires the typed filename to match
+  // exactly - both are enforced server-side, but the UI mirrors the
+  // confirmation requirement so the button can't even be clicked prematurely.
+  const handleRestoreAutomatedDatabaseBackup = async (filename: string) => {
+    setRestoringAutomatedBackup(filename);
+    try {
+      const response = await apiRequest('POST', '/api/backups/restore/database', {
+        filename,
+        confirmFilename: restoreConfirmText[filename] ?? '',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to restore backup');
+      }
+
+      const result = await response.json();
+      toast({
+        title: 'Database Restored',
+        description: result.message || `Database restored from ${filename}. Please refresh your browser and log in again.`,
+        duration: 10000,
+      });
+
+      setRestoreConfirmText((prev) => ({ ...prev, [filename]: '' }));
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 3000);
+    } catch (error) {
+      toast({
+        title: 'Restore Failed',
+        description: error instanceof Error ? error.message : 'Failed to restore backup',
+        variant: 'destructive',
+      });
+    } finally {
+      setRestoringAutomatedBackup(null);
+    }
+  };
+
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -535,15 +579,66 @@ export default function BackupPage() {
                               {formatDate(backup.timestamp)} • {formatFileSize(backup.size)}
                             </p>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDownloadAutomatedBackup(backup.filename)}
-                            data-testid={`download-auto-db-${index}`}
-                          >
-                            <Download className="h-3 w-3 mr-1" />
-                            Download
-                          </Button>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDownloadAutomatedBackup(backup.filename)}
+                              data-testid={`download-auto-db-${index}`}
+                            >
+                              <Download className="h-3 w-3 mr-1" />
+                              Download
+                            </Button>
+                            <AlertDialog onOpenChange={(isOpen) => {
+                              if (!isOpen) setRestoreConfirmText((prev) => ({ ...prev, [backup.filename]: '' }));
+                            }}>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  data-testid={`restore-auto-db-${index}`}
+                                >
+                                  <RotateCcw className="h-3 w-3 mr-1" />
+                                  Restore
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="text-destructive">⚠️ Warning: Restore This Backup</AlertDialogTitle>
+                                  <AlertDialogDescription asChild>
+                                    <div className="space-y-3">
+                                      <p>
+                                        This will overwrite the <strong>current live database</strong> with the contents of{' '}
+                                        <strong>{backup.filename}</strong>. A fresh backup of the current state is taken and
+                                        verified automatically before the restore runs, but the restore itself cannot be undone.
+                                      </p>
+                                      <p>Type the exact filename below to confirm:</p>
+                                      <Input
+                                        value={restoreConfirmText[backup.filename] ?? ''}
+                                        onChange={(e) => setRestoreConfirmText((prev) => ({ ...prev, [backup.filename]: e.target.value }))}
+                                        placeholder={backup.filename}
+                                        data-testid={`restore-auto-db-confirm-${index}`}
+                                      />
+                                    </div>
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleRestoreAutomatedDatabaseBackup(backup.filename)}
+                                    disabled={
+                                      restoreConfirmText[backup.filename] !== backup.filename ||
+                                      restoringAutomatedBackup === backup.filename
+                                    }
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    data-testid={`restore-auto-db-confirm-button-${index}`}
+                                  >
+                                    {restoringAutomatedBackup === backup.filename ? 'Restoring...' : 'Yes, Restore This Backup'}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </div>
                       ))}
                     </div>

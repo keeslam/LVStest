@@ -9096,10 +9096,18 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Restore database from backup
   app.post("/api/backups/restore/database", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
     try {
-      const { filename } = req.body;
-      
+      const { filename, confirmFilename } = req.body ?? {};
+
       if (!filename) {
         return res.status(400).json({ error: "Backup filename is required" });
+      }
+
+      // Restoring overwrites live data. Require the caller to type/echo the
+      // exact backup filename before any destructive work begins.
+      if (confirmFilename !== filename) {
+        return res.status(400).json({
+          error: 'Confirmation does not match. Type the exact backup filename to confirm this restore.',
+        });
       }
 
       // Validation: check if backup exists
@@ -9161,11 +9169,20 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Complete system restore (database + files)
   app.post("/api/backups/restore/complete", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
     try {
-      const { databaseBackup, filesBackup } = req.body;
-      
+      const { databaseBackup, filesBackup, confirmDatabaseBackup, confirmFilesBackup } = req.body ?? {};
+
       if (!databaseBackup || !filesBackup) {
-        return res.status(400).json({ 
-          error: "Both database and files backup filenames are required" 
+        return res.status(400).json({
+          error: "Both database and files backup filenames are required"
+        });
+      }
+
+      // This is the most destructive restore path (database + files). Require
+      // the caller to type/echo both exact filenames before any destructive
+      // work begins.
+      if (confirmDatabaseBackup !== databaseBackup || confirmFilesBackup !== filesBackup) {
+        return res.status(400).json({
+          error: 'Confirmation does not match. Type the exact database and files backup filenames to confirm this restore.',
         });
       }
 

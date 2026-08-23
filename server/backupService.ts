@@ -611,9 +611,37 @@ export class BackupService {
   }
 
   // Restore database from backup
-  async restoreDatabase(backupFilename: string): Promise<void> {
+  async restoreDatabase(backupFilename: string, opts?: { skipSafetyBackup?: boolean }): Promise<void> {
     console.log(`Starting database restore from: ${backupFilename}`);
-    
+
+    // Restoring overwrites whatever is currently live. Before touching anything,
+    // take a fresh backup of the current state and verify it - so a mistaken or
+    // wrong-file restore is itself reversible. skipSafetyBackup exists only for
+    // the case of restoring *because* backups are broken; it defaults to off.
+    if (!opts?.skipSafetyBackup) {
+      console.log('Taking safety backup of current state before restore...');
+      try {
+        const safety = await this.createDatabaseBackup();
+        const safetyPath = await this.locateBackupFile('database', safety.filename);
+        const check = await verifyDatabaseBackup(safetyPath, safety.checksum);
+        if (!check.ok) {
+          throw new Error(`safety backup failed verification: ${check.reason}`);
+        }
+        const runId = await this.startRun('database', 'pre-restore');
+        await this.finishRun(runId, {
+          status: 'success', filename: safety.filename, sizeBytes: safety.size,
+          checksum: safety.checksum, verified: true,
+        });
+        console.log(`Safety backup written and verified: ${safety.filename}`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `Refusing to restore: could not take a verified safety backup of the current data first (${message}). ` +
+          `Restoring now would overwrite live data with no way back.`
+        );
+      }
+    }
+
     // Get backup settings and resolve where backups are stored
     const settings = await this.getBackupSettings();
     const backupPath = this.resolveBackupPath(settings);
@@ -850,15 +878,43 @@ export class BackupService {
   }
 
   // Complete system restore (database + files)
-  async restoreComplete(databaseBackup: string, filesBackup: string): Promise<void> {
+  async restoreComplete(databaseBackup: string, filesBackup: string, opts?: { skipSafetyBackup?: boolean }): Promise<void> {
     console.log('Starting complete system restore...');
     console.log(`Database backup: ${databaseBackup}`);
     console.log(`Files backup: ${filesBackup}`);
-    
+
+    // Same guard as restoreDatabase: take and verify a safety backup of the
+    // current state before any destructive work, so this composes with a
+    // caller that goes straight to restoreComplete instead of restoreDatabase.
+    if (!opts?.skipSafetyBackup) {
+      console.log('Taking safety backup of current state before restore...');
+      try {
+        const safety = await this.createDatabaseBackup();
+        const safetyPath = await this.locateBackupFile('database', safety.filename);
+        const check = await verifyDatabaseBackup(safetyPath, safety.checksum);
+        if (!check.ok) {
+          throw new Error(`safety backup failed verification: ${check.reason}`);
+        }
+        const runId = await this.startRun('database', 'pre-restore');
+        await this.finishRun(runId, {
+          status: 'success', filename: safety.filename, sizeBytes: safety.size,
+          checksum: safety.checksum, verified: true,
+        });
+        console.log(`Safety backup written and verified: ${safety.filename}`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `Refusing to restore: could not take a verified safety backup of the current data first (${message}). ` +
+          `Restoring now would overwrite live data with no way back.`
+        );
+      }
+    }
+
     try {
-      // Restore database first
-      await this.restoreDatabase(databaseBackup);
-      
+      // Restore database first. The safety backup was already taken above
+      // (or explicitly skipped), so don't take a second one inside restoreDatabase.
+      await this.restoreDatabase(databaseBackup, { skipSafetyBackup: true });
+
       // Then restore files
       await this.restoreFiles(filesBackup);
       
