@@ -9,7 +9,7 @@ import archiver from 'archiver';
 import { ObjectStorageService } from './objectStorage';
 import { db } from './db';
 import { backupSettings } from '@shared/schema';
-import { getUploadsDir } from '@shared/paths';
+import { getUploadsDir, getBackupPathFromEnv } from '@shared/paths';
 
 export interface BackupManifest {
   timestamp: string;
@@ -40,6 +40,18 @@ export class BackupService {
 
   constructor() {
     this.objectStorage = new ObjectStorageService();
+  }
+
+  /**
+   * Where backups are written.
+   *
+   * BACKUP_PATH wins so the deployment's mounted volume cannot be overridden
+   * by a stale database row. Previously this came only from backupSettings,
+   * defaulting to the application directory, which a container wipes on every
+   * redeploy.
+   */
+  private resolveBackupPath(settings: { localPath?: string | null } | null): string {
+    return getBackupPathFromEnv() || settings?.localPath || join(process.cwd(), 'backups');
   }
 
   // Get backup settings from database
@@ -209,54 +221,21 @@ export class BackupService {
       }
     };
 
-    // Get backup settings to determine storage type
+    // Get backup settings and resolve where to write the backup
     const settings = await this.getBackupSettings();
-    const storageType = settings?.storageType || 'local_filesystem';
-    const backupPath = settings?.localPath || this.defaultBackupPath;
-    
-    try {
-      if (storageType === 'object_storage') {
-        // Try to upload to object storage
-        try {
-          const privatePath = this.objectStorage.getPrivateObjectDir();
-          const backupPath = `${privatePath}/backups/database/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${String(new Date().getDate()).padStart(2, '0')}/${filename}`;
-          
-          const readStream = createReadStream(tempFile);
-          await this.objectStorage.uploadStream(backupPath, readStream, 'application/gzip');
+    const backupPath = this.resolveBackupPath(settings);
 
-          // Upload manifest
-          const manifestPath = `${privatePath}/backups/database/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${String(new Date().getDate()).padStart(2, '0')}/${filename}.manifest.json`;
-          await this.objectStorage.uploadBuffer(manifestPath, Buffer.from(JSON.stringify(manifest, null, 2)), 'application/json');
-          
-          console.log(`✅ Database backup uploaded to object storage: ${filename} (${fileStats.size} bytes)`);
-        } catch (objectStorageError) {
-          // Fallback to local filesystem if object storage fails
-          console.warn('⚠️ Object storage failed, falling back to local filesystem:', objectStorageError);
-          await this.saveToLocalFilesystem(tempFile, filename, 'database', backupPath);
-          
-          // Also save manifest
-          const typeDir = join(backupPath, 'database');
-          const fullPath = await this.ensureBackupDirectory(typeDir);
-          const manifestPath = join(fullPath, `${filename}.manifest.json`);
-          writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-          
-          console.log(`✅ Database backup saved to local filesystem (fallback): ${filename} (${fileStats.size} bytes)`);
-        }
-      } else {
-        // Use local filesystem storage
-        await this.saveToLocalFilesystem(tempFile, filename, 'database', backupPath);
-        
-        // Also save manifest
-        const typeDir = join(backupPath, 'database');
-        const fullPath = await this.ensureBackupDirectory(typeDir);
-        const manifestPath = join(fullPath, `${filename}.manifest.json`);
-        writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-        
-        console.log(`✅ Database backup saved to local filesystem: ${filename} (${fileStats.size} bytes)`);
-      }
+    try {
+      await this.saveToLocalFilesystem(tempFile, filename, 'database', backupPath);
+
+      const typeDir = join(backupPath, 'database');
+      const fullPath = await this.ensureBackupDirectory(typeDir);
+      const manifestPath = join(fullPath, `${filename}.manifest.json`);
+      writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+
+      console.log(`✅ Database backup saved: ${filename} (${fileStats.size} bytes) in ${fullPath}`);
     } catch (error) {
-      // If both attempts fail, throw a clear error
-      const errorMessage = `Failed to save database backup. Tried path: ${backupPath}. Error: ${error instanceof Error ? error.message : String(error)}`;
+      const errorMessage = `Failed to save database backup to ${backupPath}: ${error instanceof Error ? error.message : String(error)}`;
       console.error(`❌ ${errorMessage}`);
       throw new Error(errorMessage);
     }
@@ -322,54 +301,21 @@ export class BackupService {
       }
     };
 
-    // Get backup settings to determine storage type
+    // Get backup settings and resolve where to write the backup
     const settings = await this.getBackupSettings();
-    const storageType = settings?.storageType || 'local_filesystem';
-    const backupPath = settings?.localPath || this.defaultBackupPath;
-    
-    try {
-      if (storageType === 'object_storage') {
-        // Try to upload to object storage
-        try {
-          const privatePath = this.objectStorage.getPrivateObjectDir();
-          const backupPath = `${privatePath}/backups/files/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${String(new Date().getDate()).padStart(2, '0')}/${filename}`;
-          
-          const readStream = createReadStream(tempFile);
-          await this.objectStorage.uploadStream(backupPath, readStream, 'application/gzip');
+    const backupPath = this.resolveBackupPath(settings);
 
-          // Upload manifest
-          const manifestPath = `${privatePath}/backups/files/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${String(new Date().getDate()).padStart(2, '0')}/${filename}.manifest.json`;
-          await this.objectStorage.uploadBuffer(manifestPath, Buffer.from(JSON.stringify(manifest, null, 2)), 'application/json');
-          
-          console.log(`✅ Files backup uploaded to object storage: ${filename} (${fileStats.size} bytes, ${fileCount} files)`);
-        } catch (objectStorageError) {
-          // Fallback to local filesystem if object storage fails
-          console.warn('⚠️ Object storage failed, falling back to local filesystem:', objectStorageError);
-          await this.saveToLocalFilesystem(tempFile, filename, 'files', backupPath);
-          
-          // Also save manifest
-          const typeDir = join(backupPath, 'files');
-          const fullPath = await this.ensureBackupDirectory(typeDir);
-          const manifestPath = join(fullPath, `${filename}.manifest.json`);
-          writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-          
-          console.log(`✅ Files backup saved to local filesystem (fallback): ${filename} (${fileStats.size} bytes, ${fileCount} files)`);
-        }
-      } else {
-        // Use local filesystem storage
-        await this.saveToLocalFilesystem(tempFile, filename, 'files', backupPath);
-        
-        // Also save manifest
-        const typeDir = join(backupPath, 'files');
-        const fullPath = await this.ensureBackupDirectory(typeDir);
-        const manifestPath = join(fullPath, `${filename}.manifest.json`);
-        writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-        
-        console.log(`✅ Files backup saved to local filesystem: ${filename} (${fileStats.size} bytes, ${fileCount} files)`);
-      }
+    try {
+      await this.saveToLocalFilesystem(tempFile, filename, 'files', backupPath);
+
+      const typeDir = join(backupPath, 'files');
+      const fullPath = await this.ensureBackupDirectory(typeDir);
+      const manifestPath = join(fullPath, `${filename}.manifest.json`);
+      writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+
+      console.log(`✅ Files backup saved: ${filename} (${fileStats.size} bytes, ${fileCount} files) in ${fullPath}`);
     } catch (error) {
-      // If both attempts fail, throw a clear error
-      const errorMessage = `Failed to save files backup. Tried path: ${backupPath}. Error: ${error instanceof Error ? error.message : String(error)}`;
+      const errorMessage = `Failed to save files backup to ${backupPath}: ${error instanceof Error ? error.message : String(error)}`;
       console.error(`❌ ${errorMessage}`);
       throw new Error(errorMessage);
     }
@@ -472,9 +418,7 @@ export class BackupService {
         this.createFilesBackup()
       ]);
 
-      // Update status file
       const endTime = new Date().toISOString();
-      await this.updateStatusFile(startTime, endTime, { database: databaseBackup, files: filesBackup });
 
       this.updateStatus({
         lastSuccess: endTime,
@@ -499,89 +443,46 @@ export class BackupService {
     }
   }
 
-  // Update status file in object storage
-  private async updateStatusFile(startTime: string, endTime: string, backups: { database: BackupManifest; files: BackupManifest }): Promise<void> {
-    try {
-      const privatePath = this.objectStorage.getPrivateObjectDir();
-      const statusPath = `${privatePath}/backups/status/last.json`;
-      
-      const status = {
-        startTime,
-        endTime,
-        duration: new Date(endTime).getTime() - new Date(startTime).getTime(),
-        backups,
-        success: true
-      };
-
-      await this.objectStorage.uploadBuffer(statusPath, Buffer.from(JSON.stringify(status, null, 2)), 'application/json');
-    } catch (error) {
-      console.error('Error updating status file in object storage:', error);
-    }
-  }
-
   // List available backups
   async listBackups(type?: 'database' | 'files'): Promise<BackupManifest[]> {
     try {
-      // Get backup settings to determine storage type
+      // Get backup settings and resolve where backups are stored
       const settings = await this.getBackupSettings();
-      const storageType = settings?.storageType || 'local_filesystem';
-      const backupPath = settings?.localPath || this.defaultBackupPath;
-      
+      const backupPath = this.resolveBackupPath(settings);
+
       const backupTypes = type ? [type] : ['database', 'files'];
       const manifests: BackupManifest[] = [];
 
-      if (storageType === 'object_storage') {
-        // List from object storage
-        const privatePath = this.objectStorage.getPrivateObjectDir();
-        
-        for (const backupType of backupTypes) {
-          const prefix = `${privatePath}/backups/${backupType}/`;
-          const files = await this.objectStorage.listFiles(prefix);
-          
-          for (const file of files) {
-            if (file.name.endsWith('.manifest.json')) {
-              try {
-                const buffer = await file.download();
-                const manifest = JSON.parse(buffer[0].toString('utf8'));
-                manifests.push(manifest);
-              } catch (error) {
-                console.error(`Error reading manifest ${file.name}:`, error);
-              }
+      // List from local filesystem
+      for (const backupType of backupTypes) {
+        // Check root backups directory for uploaded files (no manifest)
+        const rootFiles = existsSync(backupPath) ? readdirSync(backupPath) : [];
+        for (const file of rootFiles) {
+          const filePath = join(backupPath, file);
+          const fileStat = statSync(filePath);
+
+          if (fileStat.isFile()) {
+            const isDatabase = backupType === 'database' && (file.endsWith('.sql') || file.endsWith('.sql.gz'));
+            const isFiles = backupType === 'files' && (file.endsWith('.tar.gz') || file.endsWith('.tgz'));
+
+            if (isDatabase || isFiles) {
+              // Create manifest for uploaded backup without manifest
+              manifests.push({
+                timestamp: fileStat.mtime.toISOString(),
+                type: backupType,
+                filename: file,
+                size: fileStat.size,
+                checksum: 'uploaded',
+                metadata: { uploaded: true }
+              });
             }
           }
         }
-      } else {
-        // List from local filesystem
-        for (const backupType of backupTypes) {
-          // Check root backups directory for uploaded files (no manifest)
-          const rootFiles = existsSync(backupPath) ? readdirSync(backupPath) : [];
-          for (const file of rootFiles) {
-            const filePath = join(backupPath, file);
-            const fileStat = statSync(filePath);
-            
-            if (fileStat.isFile()) {
-              const isDatabase = backupType === 'database' && (file.endsWith('.sql') || file.endsWith('.sql.gz'));
-              const isFiles = backupType === 'files' && (file.endsWith('.tar.gz') || file.endsWith('.tgz'));
-              
-              if (isDatabase || isFiles) {
-                // Create manifest for uploaded backup without manifest
-                manifests.push({
-                  timestamp: fileStat.mtime.toISOString(),
-                  type: backupType,
-                  filename: file,
-                  size: fileStat.size,
-                  checksum: 'uploaded',
-                  metadata: { uploaded: true }
-                });
-              }
-            }
-          }
-          
-          // Check organized structure for created backups (with manifests)
-          const typeDir = join(backupPath, backupType);
-          if (existsSync(typeDir)) {
-            this.scanDirectoryForManifests(typeDir, manifests);
-          }
+
+        // Check organized structure for created backups (with manifests)
+        const typeDir = join(backupPath, backupType);
+        if (existsSync(typeDir)) {
+          this.scanDirectoryForManifests(typeDir, manifests);
         }
       }
 
