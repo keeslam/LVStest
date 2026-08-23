@@ -8631,8 +8631,13 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       console.error("❌ Error restoring app data:", error);
+      // Surface the real reason (e.g. "Refusing to restore: ...") as `error`,
+      // not a fixed generic string - both restore-data and restore-files are
+      // read by client code that only looks at error.error, so a fixed string
+      // here silently swallowed the safety-backup guard's refusal message and
+      // made it indistinguishable from any other failure.
       res.status(500).json({
-        error: "Failed to restore app data",
+        error: error instanceof Error ? error.message : "Failed to restore app data",
         details: error instanceof Error ? error.message : "Unknown error"
       });
     }
@@ -8811,8 +8816,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       console.error("Error restoring uploaded files:", error);
+      // Surface the real reason (e.g. "Refusing to restore: ...") as `error`,
+      // not a fixed generic string - see the matching comment in
+      // /api/backups/restore-data's catch block above.
       res.status(500).json({
-        error: "Failed to restore uploaded files",
+        error: error instanceof Error ? error.message : "Failed to restore uploaded files",
         details: error instanceof Error ? error.message : "Unknown error"
       });
     }
