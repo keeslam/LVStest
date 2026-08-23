@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Database, Code, Download, CheckCircle2, Clock, Calendar, AlertCircle, Upload, RotateCcw, FileText } from "lucide-react";
+import { Database, Code, Download, CheckCircle2, Clock, Calendar, AlertCircle, Upload, RotateCcw, FileText, Loader2, PlayCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -44,6 +44,15 @@ interface BackupStatus {
   lastError?: string;
   isRunning: boolean;
   nextScheduled?: string;
+}
+
+interface BackupHealth {
+  lastSuccessAt: string | null;
+  ageHours: number | null;
+  stale: boolean;
+  lastError: string | null;
+  backupPath?: string;
+  backupPathFromEnv?: boolean;
 }
 
 interface BackupManifest {
@@ -76,6 +85,8 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
   const [restoringData, setRestoringData] = useState(false);
   const [restoringCode, setRestoringCode] = useState(false);
   const [restoringFiles, setRestoringFiles] = useState(false);
+  const [restoringAutomatedBackup, setRestoringAutomatedBackup] = useState<string | null>(null);
+  const [restoreConfirmText, setRestoreConfirmText] = useState<Record<string, string>>({});
   const [selectedDataFile, setSelectedDataFile] = useState<File | null>(null);
   const [selectedCodeFile, setSelectedCodeFile] = useState<File | null>(null);
   const [selectedFilesArchive, setSelectedFilesArchive] = useState<File | null>(null);
@@ -90,6 +101,12 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
 
   const { data: status } = useQuery<BackupStatus>({
     queryKey: ['/api/backups/status'],
+    refetchInterval: open && isAdmin ? 30000 : false,
+    enabled: open && isAdmin,
+  });
+
+  const { data: health } = useQuery<BackupHealth>({
+    queryKey: ['/api/backups/health'],
     refetchInterval: open && isAdmin ? 30000 : false,
     enabled: open && isAdmin,
   });
@@ -131,6 +148,35 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     onError: (error: Error) => {
       toast({
         title: 'Update Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Run a backup now - see the matching mutation/comment in
+  // pages/admin/backup.tsx for why this exists.
+  const runBackupMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/backups/run');
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to run backup');
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      invalidateByPrefix('/api/backups');
+      toast({
+        title: 'Backup Complete',
+        description: 'A new database and files backup has been created and verified.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Backup Failed',
         description: error.message,
         variant: 'destructive',
       });
@@ -239,12 +285,15 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
         throw new Error(error.error || 'Failed to restore data');
       }
 
+      const result = await response.json();
       toast({
         title: 'Data Restored',
-        description: 'Your database has been restored. Please refresh your browser and log in again.',
+        description: result.safetyBackupFilename
+          ? `Your database has been restored. A backup of your previous data was saved as ${result.safetyBackupFilename}. Please refresh your browser and log in again.`
+          : 'Your database has been restored. Please refresh your browser and log in again.',
         duration: 10000,
       });
-      
+
       setSelectedDataFile(null);
       setTimeout(() => window.location.reload(), 3000);
     } catch (error) {
@@ -316,9 +365,11 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
       const result = await response.json();
       toast({
         title: 'Files Restored',
-        description: result.message || 'All uploaded files have been restored successfully.',
+        description: result.safetyBackupFilename
+          ? `${result.message || 'All uploaded files have been restored successfully.'} A backup of your previous files was saved as ${result.safetyBackupFilename}.`
+          : result.message || 'All uploaded files have been restored successfully.',
       });
-      
+
       setSelectedFilesArchive(null);
     } catch (error) {
       toast({
@@ -356,6 +407,48 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     }
   };
 
+  // Restore an existing automated database backup in place. This overwrites
+  // the live database. The server takes and verifies a fresh safety backup
+  // of current state before it touches anything, and separately requires the
+  // typed filename to match exactly - both are enforced server-side, but the
+  // UI mirrors the confirmation requirement so the button can't be clicked
+  // prematurely.
+  const handleRestoreAutomatedDatabaseBackup = async (filename: string) => {
+    setRestoringAutomatedBackup(filename);
+    try {
+      const response = await apiRequest('POST', '/api/backups/restore/database', {
+        filename,
+        confirmFilename: restoreConfirmText[filename] ?? '',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to restore backup');
+      }
+
+      const result = await response.json();
+      const base = result.message || `Database restored from ${filename}. Please refresh your browser and log in again.`;
+      toast({
+        title: 'Database Restored',
+        description: result.safetyBackupFilename
+          ? `${base} A backup of your previous data was saved as ${result.safetyBackupFilename}.`
+          : base,
+        duration: 10000,
+      });
+
+      setRestoreConfirmText((prev) => ({ ...prev, [filename]: '' }));
+      setTimeout(() => window.location.reload(), 3000);
+    } catch (error) {
+      toast({
+        title: 'Restore Failed',
+        description: error instanceof Error ? error.message : 'Failed to restore backup',
+        variant: 'destructive',
+      });
+    } finally {
+      setRestoringAutomatedBackup(null);
+    }
+  };
+
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -367,6 +460,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Never';
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return 'Unknown date';
     return date.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -416,17 +510,34 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                       </CardDescription>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="auto-backup-dialog"
-                      checked={settings?.enableAutoBackup ?? false}
-                      onCheckedChange={(checked) => toggleAutoBackupMutation.mutate(checked)}
-                      disabled={toggleAutoBackupMutation.isPending || !settings}
-                      data-testid="dialog-auto-backup-toggle"
-                    />
-                    <Label htmlFor="auto-backup-dialog" className="cursor-pointer font-medium text-purple-900">
-                      {settings?.enableAutoBackup ? 'Enabled' : 'Disabled'}
-                    </Label>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-white"
+                      onClick={() => runBackupMutation.mutate()}
+                      disabled={runBackupMutation.isPending || status?.isRunning}
+                      data-testid="dialog-run-backup-now-button"
+                    >
+                      {runBackupMutation.isPending || status?.isRunning ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <PlayCircle className="h-4 w-4 mr-2" />
+                      )}
+                      {runBackupMutation.isPending || status?.isRunning ? 'Backing up...' : 'Back up now'}
+                    </Button>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="auto-backup-dialog"
+                        checked={settings?.enableAutoBackup ?? false}
+                        onCheckedChange={(checked) => toggleAutoBackupMutation.mutate(checked)}
+                        disabled={toggleAutoBackupMutation.isPending || !settings}
+                        data-testid="dialog-auto-backup-toggle"
+                      />
+                      <Label htmlFor="auto-backup-dialog" className="cursor-pointer font-medium text-purple-900">
+                        {settings?.enableAutoBackup ? 'Enabled' : 'Disabled'}
+                      </Label>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -467,6 +578,29 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                     </div>
                   </div>
                 )}
+                {health?.backupPath && (
+                  <div className={`mt-3 flex items-start gap-2 p-2 rounded-lg border ${
+                    health.backupPathFromEnv
+                      ? 'bg-gray-50 border-gray-200'
+                      : 'bg-amber-50 border-amber-200'
+                  }`}>
+                    {health.backupPathFromEnv ? (
+                      <CheckCircle2 className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                    )}
+                    <div>
+                      <p className={`text-xs font-medium ${health.backupPathFromEnv ? 'text-gray-700' : 'text-amber-900'}`}>
+                        Backup location: <span className="font-mono">{health.backupPath}</span>
+                      </p>
+                      {!health.backupPathFromEnv && (
+                        <p className="text-xs text-amber-700 mt-0.5">
+                          BACKUP_PATH is not set - this fallback location may not survive a redeploy.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -495,15 +629,66 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                                   {formatDate(backup.timestamp)} • {formatFileSize(backup.size)}
                                 </p>
                               </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleDownloadAutomatedBackup(backup.filename)}
-                                data-testid={`dialog-download-auto-db-${index}`}
-                              >
-                                <Download className="h-3 w-3 mr-1" />
-                                Download
-                              </Button>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDownloadAutomatedBackup(backup.filename)}
+                                  data-testid={`dialog-download-auto-db-${index}`}
+                                >
+                                  <Download className="h-3 w-3 mr-1" />
+                                  Download
+                                </Button>
+                                <AlertDialog onOpenChange={(isOpen) => {
+                                  if (!isOpen) setRestoreConfirmText((prev) => ({ ...prev, [backup.filename]: '' }));
+                                }}>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      data-testid={`dialog-restore-auto-db-${index}`}
+                                    >
+                                      <RotateCcw className="h-3 w-3 mr-1" />
+                                      Restore
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle className="text-destructive">Warning: Restore This Backup</AlertDialogTitle>
+                                      <AlertDialogDescription asChild>
+                                        <div className="space-y-3">
+                                          <p>
+                                            This will overwrite the <strong>current live database</strong> with the contents of{' '}
+                                            <strong>{backup.filename}</strong>. A fresh backup of the current state is taken and
+                                            verified automatically before the restore runs, but the restore itself cannot be undone.
+                                          </p>
+                                          <p>Type the exact filename below to confirm:</p>
+                                          <Input
+                                            value={restoreConfirmText[backup.filename] ?? ''}
+                                            onChange={(e) => setRestoreConfirmText((prev) => ({ ...prev, [backup.filename]: e.target.value }))}
+                                            placeholder={backup.filename}
+                                            data-testid={`dialog-restore-auto-db-confirm-${index}`}
+                                          />
+                                        </div>
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleRestoreAutomatedDatabaseBackup(backup.filename)}
+                                        disabled={
+                                          restoreConfirmText[backup.filename] !== backup.filename ||
+                                          restoringAutomatedBackup === backup.filename
+                                        }
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        data-testid={`dialog-restore-auto-db-confirm-button-${index}`}
+                                      >
+                                        {restoringAutomatedBackup === backup.filename ? 'Restoring...' : 'Yes, Restore This Backup'}
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
                             </div>
                           ))}
                         </div>

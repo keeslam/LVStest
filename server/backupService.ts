@@ -6,12 +6,16 @@ import { join, dirname } from 'path';
 import { createGzip } from 'zlib';
 import { createHash } from 'crypto';
 import archiver from 'archiver';
-import { ObjectStorageService } from './objectStorage';
+import { eq, and, desc } from 'drizzle-orm';
 import { db } from './db';
-import { backupSettings } from '@shared/schema';
+import { backupSettings, backupRuns, type BackupRun } from '@shared/schema';
+import { getUploadsDir, getBackupPathFromEnv } from '@shared/paths';
+import { verifyDatabaseBackup, verifyFilesBackup } from './backupVerification';
 
 export interface BackupManifest {
   timestamp: string;
+  /** Filename-safe variant of the timestamp (colons and dots replaced). */
+  filenameStamp?: string;
   type: 'database' | 'files';
   filename: string;
   size: number;
@@ -32,13 +36,32 @@ export interface BackupStatus {
 }
 
 export class BackupService {
-  private objectStorage: ObjectStorageService;
   private isRunning = false;
-  private statusFile = '/tmp/backup-status.json';
   private defaultBackupPath = join(process.cwd(), 'backups'); // Default backup path relative to project
 
-  constructor() {
-    this.objectStorage = new ObjectStorageService();
+  /**
+   * Where backups are written.
+   *
+   * BACKUP_PATH wins so the deployment's mounted volume cannot be overridden
+   * by a stale database row. Previously this came only from backupSettings,
+   * defaulting to the application directory, which a container wipes on every
+   * redeploy.
+   */
+  private resolveBackupPath(settings: { localPath?: string | null } | null): string {
+    return getBackupPathFromEnv() || settings?.localPath || join(process.cwd(), 'backups');
+  }
+
+  /**
+   * Resolved backup path plus whether it came from BACKUP_PATH, so operators
+   * can tell a correctly-mounted volume from a silent fallback onto ephemeral
+   * container storage (the original 10-month bug: backups succeeded, verified
+   * green, and vanished on the next redeploy). Surfaced via /api/backups/health
+   * and logged once at scheduler startup - never a hard failure, since an
+   * unset BACKUP_PATH is expected and fine in local development.
+   */
+  async getBackupPathInfo(): Promise<{ path: string; fromEnv: boolean }> {
+    const settings = await this.getBackupSettings();
+    return { path: this.resolveBackupPath(settings), fromEnv: !!getBackupPathFromEnv() };
   }
 
   // Get backup settings from database
@@ -107,31 +130,84 @@ export class BackupService {
     }
   }
 
-  // Get current backup status
-  getStatus(): BackupStatus {
-    try {
-      if (existsSync(this.statusFile)) {
-        const data = JSON.parse(readFileSync(this.statusFile, 'utf8'));
-        return { ...data, isRunning: this.isRunning };
-      }
-    } catch (error) {
-      console.error('Error reading backup status:', error);
-    }
-
-    return {
-      isRunning: this.isRunning,
-      nextScheduled: this.getNextScheduledTime()
-    };
+  /** Open a run row and return its id. */
+  private async startRun(type: 'database' | 'files', trigger: string): Promise<number> {
+    const [row] = await db.insert(backupRuns).values({
+      type, status: 'running', trigger, startedAt: new Date(),
+    }).returning();
+    return row.id;
   }
 
-  // Update backup status
-  private updateStatus(updates: Partial<BackupStatus>): void {
+  /** Close a run row with its outcome. */
+  private async finishRun(id: number, fields: {
+    status: 'success' | 'failed';
+    filename?: string;
+    sizeBytes?: number;
+    checksum?: string;
+    verified?: boolean;
+    error?: string;
+  }): Promise<void> {
+    await db.update(backupRuns)
+      .set({ ...fields, finishedAt: new Date() })
+      .where(eq(backupRuns.id, id));
+  }
+
+  /** Most recent verified-successful run of a type, if any. */
+  async getLastSuccessfulRun(type?: 'database' | 'files'): Promise<BackupRun | undefined> {
+    const conditions = [eq(backupRuns.status, 'success'), eq(backupRuns.verified, true)];
+    if (type) conditions.push(eq(backupRuns.type, type));
+    const [row] = await db.select().from(backupRuns)
+      .where(and(...conditions))
+      .orderBy(desc(backupRuns.finishedAt))
+      .limit(1);
+    return row;
+  }
+
+  /**
+   * The OLDER of the two required backup types' last verified success.
+   *
+   * A working database backup must not mask a files backup that has been
+   * failing every night (or vice versa) - staleness and catch-up need to
+   * react to whichever type is actually behind. If either type has never
+   * succeeded, this returns undefined so callers treat it as stale/overdue,
+   * exactly as if nothing had ever succeeded.
+   */
+  async getOldestLastSuccessfulRun(): Promise<BackupRun | undefined> {
+    const [dbLast, filesLast] = await Promise.all([
+      this.getLastSuccessfulRun('database'),
+      this.getLastSuccessfulRun('files'),
+    ]);
+    if (!dbLast?.finishedAt || !filesLast?.finishedAt) return undefined;
+    return new Date(dbLast.finishedAt) < new Date(filesLast.finishedAt) ? dbLast : filesLast;
+  }
+
+  // Current backup status, read from run history rather than a temp file.
+  async getStatus(): Promise<BackupStatus> {
     try {
-      const currentStatus = this.getStatus();
-      const newStatus = { ...currentStatus, ...updates };
-      writeFileSync(this.statusFile, JSON.stringify(newStatus, null, 2));
+      const lastSuccess = await this.getLastSuccessfulRun();
+      const [lastFailure] = await db.select().from(backupRuns)
+        .where(eq(backupRuns.status, 'failed'))
+        .orderBy(desc(backupRuns.finishedAt))
+        .limit(1);
+
+      // Only report an error while it is the most recent event: a single
+      // transient failure that a later success has already superseded must
+      // not pin the red "last backup error" box forever, which trains users
+      // to ignore the one signal this system was built to be believed.
+      const failureIsCurrent = !!lastFailure?.finishedAt
+        && (!lastSuccess?.finishedAt || new Date(lastFailure.finishedAt) > new Date(lastSuccess.finishedAt));
+
+      return {
+        isRunning: this.isRunning,
+        nextScheduled: this.getNextScheduledTime(),
+        lastSuccess: lastSuccess?.finishedAt?.toISOString(),
+        lastError: failureIsCurrent
+          ? `${lastFailure!.finishedAt?.toISOString() ?? ''}: ${lastFailure!.error ?? 'unknown error'}`
+          : undefined,
+      };
     } catch (error) {
-      console.error('Error updating backup status:', error);
+      console.error('Error reading backup status:', error);
+      return { isRunning: this.isRunning, nextScheduled: this.getNextScheduledTime() };
     }
   }
 
@@ -146,8 +222,13 @@ export class BackupService {
 
   // Create database backup
   async createDatabaseBackup(): Promise<BackupManifest> {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `db-backup-${timestamp}.sql.gz`;
+    // Keep these separate: the filename needs a path-safe stamp, but the
+    // manifest needs a parseable date. Storing the path-safe form as the
+    // timestamp is what produced "Invalid Date" throughout the UI and broke
+    // the newest-first sort, which compared NaN values.
+    const startedAtIso = new Date().toISOString();
+    const filenameStamp = startedAtIso.replace(/[:.]/g, '-');
+    const filename = `db-backup-${filenameStamp}.sql.gz`;
     const tempFile = `/tmp/${filename}`;
     
     console.log('Creating database backup...');
@@ -198,7 +279,8 @@ export class BackupService {
 
     // Create manifest
     const manifest: BackupManifest = {
-      timestamp,
+      timestamp: startedAtIso,
+      filenameStamp,
       type: 'database',
       filename,
       size: fileStats.size,
@@ -208,54 +290,21 @@ export class BackupService {
       }
     };
 
-    // Get backup settings to determine storage type
+    // Get backup settings and resolve where to write the backup
     const settings = await this.getBackupSettings();
-    const storageType = settings?.storageType || 'local_filesystem';
-    const backupPath = settings?.localPath || this.defaultBackupPath;
-    
-    try {
-      if (storageType === 'object_storage') {
-        // Try to upload to object storage
-        try {
-          const privatePath = this.objectStorage.getPrivateObjectDir();
-          const backupPath = `${privatePath}/backups/database/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${String(new Date().getDate()).padStart(2, '0')}/${filename}`;
-          
-          const readStream = createReadStream(tempFile);
-          await this.objectStorage.uploadStream(backupPath, readStream, 'application/gzip');
+    const backupPath = this.resolveBackupPath(settings);
 
-          // Upload manifest
-          const manifestPath = `${privatePath}/backups/database/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${String(new Date().getDate()).padStart(2, '0')}/${filename}.manifest.json`;
-          await this.objectStorage.uploadBuffer(manifestPath, Buffer.from(JSON.stringify(manifest, null, 2)), 'application/json');
-          
-          console.log(`✅ Database backup uploaded to object storage: ${filename} (${fileStats.size} bytes)`);
-        } catch (objectStorageError) {
-          // Fallback to local filesystem if object storage fails
-          console.warn('⚠️ Object storage failed, falling back to local filesystem:', objectStorageError);
-          await this.saveToLocalFilesystem(tempFile, filename, 'database', backupPath);
-          
-          // Also save manifest
-          const typeDir = join(backupPath, 'database');
-          const fullPath = await this.ensureBackupDirectory(typeDir);
-          const manifestPath = join(fullPath, `${filename}.manifest.json`);
-          writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-          
-          console.log(`✅ Database backup saved to local filesystem (fallback): ${filename} (${fileStats.size} bytes)`);
-        }
-      } else {
-        // Use local filesystem storage
-        await this.saveToLocalFilesystem(tempFile, filename, 'database', backupPath);
-        
-        // Also save manifest
-        const typeDir = join(backupPath, 'database');
-        const fullPath = await this.ensureBackupDirectory(typeDir);
-        const manifestPath = join(fullPath, `${filename}.manifest.json`);
-        writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-        
-        console.log(`✅ Database backup saved to local filesystem: ${filename} (${fileStats.size} bytes)`);
-      }
+    try {
+      await this.saveToLocalFilesystem(tempFile, filename, 'database', backupPath);
+
+      const typeDir = join(backupPath, 'database');
+      const fullPath = await this.ensureBackupDirectory(typeDir);
+      const manifestPath = join(fullPath, `${filename}.manifest.json`);
+      writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+
+      console.log(`✅ Database backup saved: ${filename} (${fileStats.size} bytes) in ${fullPath}`);
     } catch (error) {
-      // If both attempts fail, throw a clear error
-      const errorMessage = `Failed to save database backup. Tried path: ${backupPath}. Error: ${error instanceof Error ? error.message : String(error)}`;
+      const errorMessage = `Failed to save database backup to ${backupPath}: ${error instanceof Error ? error.message : String(error)}`;
       console.error(`❌ ${errorMessage}`);
       throw new Error(errorMessage);
     }
@@ -265,8 +314,13 @@ export class BackupService {
 
   // Create files backup
   async createFilesBackup(): Promise<BackupManifest> {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `files-backup-${timestamp}.tar.gz`;
+    // Keep these separate: the filename needs a path-safe stamp, but the
+    // manifest needs a parseable date. Storing the path-safe form as the
+    // timestamp is what produced "Invalid Date" throughout the UI and broke
+    // the newest-first sort, which compared NaN values.
+    const startedAtIso = new Date().toISOString();
+    const filenameStamp = startedAtIso.replace(/[:.]/g, '-');
+    const filename = `files-backup-${filenameStamp}.tar.gz`;
     const tempFile = `/tmp/${filename}`;
     
     console.log('Creating files backup...');
@@ -283,7 +337,7 @@ export class BackupService {
     archive.pipe(writeStream);
 
     // Add uploads directory if it exists (contains all user-uploaded files and templates)
-    const uploadsDir = join(process.cwd(), 'uploads');
+    const uploadsDir = getUploadsDir();
     let fileCount = 0;
     
     if (existsSync(uploadsDir)) {
@@ -310,7 +364,8 @@ export class BackupService {
 
     // Create manifest
     const manifest: BackupManifest = {
-      timestamp,
+      timestamp: startedAtIso,
+      filenameStamp,
       type: 'files',
       filename,
       size: fileStats.size,
@@ -321,54 +376,21 @@ export class BackupService {
       }
     };
 
-    // Get backup settings to determine storage type
+    // Get backup settings and resolve where to write the backup
     const settings = await this.getBackupSettings();
-    const storageType = settings?.storageType || 'local_filesystem';
-    const backupPath = settings?.localPath || this.defaultBackupPath;
-    
-    try {
-      if (storageType === 'object_storage') {
-        // Try to upload to object storage
-        try {
-          const privatePath = this.objectStorage.getPrivateObjectDir();
-          const backupPath = `${privatePath}/backups/files/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${String(new Date().getDate()).padStart(2, '0')}/${filename}`;
-          
-          const readStream = createReadStream(tempFile);
-          await this.objectStorage.uploadStream(backupPath, readStream, 'application/gzip');
+    const backupPath = this.resolveBackupPath(settings);
 
-          // Upload manifest
-          const manifestPath = `${privatePath}/backups/files/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${String(new Date().getDate()).padStart(2, '0')}/${filename}.manifest.json`;
-          await this.objectStorage.uploadBuffer(manifestPath, Buffer.from(JSON.stringify(manifest, null, 2)), 'application/json');
-          
-          console.log(`✅ Files backup uploaded to object storage: ${filename} (${fileStats.size} bytes, ${fileCount} files)`);
-        } catch (objectStorageError) {
-          // Fallback to local filesystem if object storage fails
-          console.warn('⚠️ Object storage failed, falling back to local filesystem:', objectStorageError);
-          await this.saveToLocalFilesystem(tempFile, filename, 'files', backupPath);
-          
-          // Also save manifest
-          const typeDir = join(backupPath, 'files');
-          const fullPath = await this.ensureBackupDirectory(typeDir);
-          const manifestPath = join(fullPath, `${filename}.manifest.json`);
-          writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-          
-          console.log(`✅ Files backup saved to local filesystem (fallback): ${filename} (${fileStats.size} bytes, ${fileCount} files)`);
-        }
-      } else {
-        // Use local filesystem storage
-        await this.saveToLocalFilesystem(tempFile, filename, 'files', backupPath);
-        
-        // Also save manifest
-        const typeDir = join(backupPath, 'files');
-        const fullPath = await this.ensureBackupDirectory(typeDir);
-        const manifestPath = join(fullPath, `${filename}.manifest.json`);
-        writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-        
-        console.log(`✅ Files backup saved to local filesystem: ${filename} (${fileStats.size} bytes, ${fileCount} files)`);
-      }
+    try {
+      await this.saveToLocalFilesystem(tempFile, filename, 'files', backupPath);
+
+      const typeDir = join(backupPath, 'files');
+      const fullPath = await this.ensureBackupDirectory(typeDir);
+      const manifestPath = join(fullPath, `${filename}.manifest.json`);
+      writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+
+      console.log(`✅ Files backup saved: ${filename} (${fileStats.size} bytes, ${fileCount} files) in ${fullPath}`);
     } catch (error) {
-      // If both attempts fail, throw a clear error
-      const errorMessage = `Failed to save files backup. Tried path: ${backupPath}. Error: ${error instanceof Error ? error.message : String(error)}`;
+      const errorMessage = `Failed to save files backup to ${backupPath}: ${error instanceof Error ? error.message : String(error)}`;
       console.error(`❌ ${errorMessage}`);
       throw new Error(errorMessage);
     }
@@ -448,139 +470,145 @@ export class BackupService {
   }
 
   // Run complete backup
-  async runBackup(): Promise<{ database: BackupManifest; files: BackupManifest }> {
+  async runBackup(triggerLabel?: string): Promise<{ database: BackupManifest; files: BackupManifest }> {
     if (this.isRunning) {
       throw new Error('Backup is already running');
     }
 
     this.isRunning = true;
-    const startTime = new Date().toISOString();
-    
-    try {
-      this.updateStatus({
-        lastRun: startTime,
-        isRunning: true,
-        nextScheduled: this.getNextScheduledTime()
-      });
+    const trigger = triggerLabel ?? 'manual';
+    const dbRunId = await this.startRun('database', trigger);
+    const filesRunId = await this.startRun('files', trigger);
 
+    try {
       console.log('Starting backup process...');
 
-      // Create both backups
-      const [databaseBackup, filesBackup] = await Promise.all([
-        this.createDatabaseBackup(),
-        this.createFilesBackup()
-      ]);
-
-      // Update status file
-      const endTime = new Date().toISOString();
-      await this.updateStatusFile(startTime, endTime, { database: databaseBackup, files: filesBackup });
-
-      this.updateStatus({
-        lastSuccess: endTime,
-        isRunning: false
+      const databaseBackup = await this.createDatabaseBackup();
+      const dbPath = await this.locateBackupFile('database', databaseBackup.filename);
+      const dbCheck = await verifyDatabaseBackup(dbPath, databaseBackup.checksum);
+      await this.finishRun(dbRunId, {
+        status: dbCheck.ok ? 'success' : 'failed',
+        filename: databaseBackup.filename,
+        sizeBytes: databaseBackup.size,
+        checksum: databaseBackup.checksum,
+        verified: dbCheck.ok,
+        error: dbCheck.ok ? undefined : dbCheck.reason,
       });
+      if (!dbCheck.ok) throw new Error(`Database backup failed verification: ${dbCheck.reason}`);
+
+      const filesBackup = await this.createFilesBackup();
+      const filesPath = await this.locateBackupFile('files', filesBackup.filename);
+      const filesCheck = await verifyFilesBackup(filesPath, filesBackup.checksum, getUploadsDir(), filesBackup.metadata?.fileCount ?? 0);
+      await this.finishRun(filesRunId, {
+        status: filesCheck.ok ? 'success' : 'failed',
+        filename: filesBackup.filename,
+        sizeBytes: filesBackup.size,
+        checksum: filesBackup.checksum,
+        verified: filesCheck.ok,
+        error: filesCheck.ok ? undefined : filesCheck.reason,
+      });
+      if (!filesCheck.ok) throw new Error(`Files backup failed verification: ${filesCheck.reason}`);
 
       console.log('Backup completed successfully');
       return { database: databaseBackup, files: filesBackup };
-
     } catch (error) {
-      const errorTime = new Date().toISOString();
-      console.error('Backup failed:', error);
-      
-      this.updateStatus({
-        lastError: `${errorTime}: ${error instanceof Error ? error.message : String(error)}`,
-        isRunning: false
-      });
-
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('Backup failed:', message);
+      for (const id of [dbRunId, filesRunId]) {
+        const [row] = await db.select().from(backupRuns).where(eq(backupRuns.id, id));
+        if (row?.status === 'running') {
+          await this.finishRun(id, { status: 'failed', error: message });
+        }
+      }
       throw error;
     } finally {
       this.isRunning = false;
     }
   }
 
-  // Update status file in object storage
-  private async updateStatusFile(startTime: string, endTime: string, backups: { database: BackupManifest; files: BackupManifest }): Promise<void> {
-    try {
-      const privatePath = this.objectStorage.getPrivateObjectDir();
-      const statusPath = `${privatePath}/backups/status/last.json`;
-      
-      const status = {
-        startTime,
-        endTime,
-        duration: new Date(endTime).getTime() - new Date(startTime).getTime(),
-        backups,
-        success: true
-      };
+  /** Absolute path of a backup file inside the dated directory structure. */
+  private async locateBackupFile(type: 'database' | 'files', filename: string): Promise<string> {
+    const settings = await this.getBackupSettings();
+    const typeDir = join(this.resolveBackupPath(settings), type);
+    const found = this.findFileRecursive(typeDir, filename);
+    if (!found) throw new Error(`Backup file not found after writing: ${filename} under ${typeDir}`);
+    return found;
+  }
 
-      await this.objectStorage.uploadBuffer(statusPath, Buffer.from(JSON.stringify(status, null, 2)), 'application/json');
-    } catch (error) {
-      console.error('Error updating status file in object storage:', error);
+  private findFileRecursive(dir: string, filename: string): string | null {
+    if (!existsSync(dir)) return null;
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      let entryStat;
+      try {
+        entryStat = statSync(full);
+      } catch {
+        continue; // dangling symlink or removed mid-walk — skip, don't abort the whole search
+      }
+      if (entryStat.isDirectory()) {
+        const hit = this.findFileRecursive(full, filename);
+        if (hit) return hit;
+      } else if (entry === filename) {
+        return full;
+      }
     }
+    return null;
+  }
+
+  /**
+   * Manifests written before the timestamp fix hold a path-safe string that
+   * Date cannot parse. Fall back to the file's mtime so historical backups
+   * show a real date instead of "Invalid Date".
+   */
+  private manifestTime(manifest: BackupManifest, filePath?: string): Date {
+    const parsed = new Date(manifest.timestamp);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+    if (filePath && existsSync(filePath)) {
+      try { return statSync(filePath).mtime; } catch { /* fall through */ }
+    }
+    return new Date(0);
   }
 
   // List available backups
   async listBackups(type?: 'database' | 'files'): Promise<BackupManifest[]> {
     try {
-      // Get backup settings to determine storage type
+      // Get backup settings and resolve where backups are stored
       const settings = await this.getBackupSettings();
-      const storageType = settings?.storageType || 'local_filesystem';
-      const backupPath = settings?.localPath || this.defaultBackupPath;
-      
+      const backupPath = this.resolveBackupPath(settings);
+
       const backupTypes = type ? [type] : ['database', 'files'];
       const manifests: BackupManifest[] = [];
 
-      if (storageType === 'object_storage') {
-        // List from object storage
-        const privatePath = this.objectStorage.getPrivateObjectDir();
-        
-        for (const backupType of backupTypes) {
-          const prefix = `${privatePath}/backups/${backupType}/`;
-          const files = await this.objectStorage.listFiles(prefix);
-          
-          for (const file of files) {
-            if (file.name.endsWith('.manifest.json')) {
-              try {
-                const buffer = await file.download();
-                const manifest = JSON.parse(buffer[0].toString('utf8'));
-                manifests.push(manifest);
-              } catch (error) {
-                console.error(`Error reading manifest ${file.name}:`, error);
-              }
+      // List from local filesystem
+      for (const backupType of backupTypes) {
+        // Check root backups directory for uploaded files (no manifest)
+        const rootFiles = existsSync(backupPath) ? readdirSync(backupPath) : [];
+        for (const file of rootFiles) {
+          const filePath = join(backupPath, file);
+          const fileStat = statSync(filePath);
+
+          if (fileStat.isFile()) {
+            const isDatabase = backupType === 'database' && (file.endsWith('.sql') || file.endsWith('.sql.gz'));
+            const isFiles = backupType === 'files' && (file.endsWith('.tar.gz') || file.endsWith('.tgz'));
+
+            if (isDatabase || isFiles) {
+              // Create manifest for uploaded backup without manifest
+              manifests.push({
+                timestamp: fileStat.mtime.toISOString(),
+                type: backupType,
+                filename: file,
+                size: fileStat.size,
+                checksum: 'uploaded',
+                metadata: { uploaded: true }
+              });
             }
           }
         }
-      } else {
-        // List from local filesystem
-        for (const backupType of backupTypes) {
-          // Check root backups directory for uploaded files (no manifest)
-          const rootFiles = existsSync(backupPath) ? readdirSync(backupPath) : [];
-          for (const file of rootFiles) {
-            const filePath = join(backupPath, file);
-            const fileStat = statSync(filePath);
-            
-            if (fileStat.isFile()) {
-              const isDatabase = backupType === 'database' && (file.endsWith('.sql') || file.endsWith('.sql.gz'));
-              const isFiles = backupType === 'files' && (file.endsWith('.tar.gz') || file.endsWith('.tgz'));
-              
-              if (isDatabase || isFiles) {
-                // Create manifest for uploaded backup without manifest
-                manifests.push({
-                  timestamp: fileStat.mtime.toISOString(),
-                  type: backupType,
-                  filename: file,
-                  size: fileStat.size,
-                  checksum: 'uploaded',
-                  metadata: { uploaded: true }
-                });
-              }
-            }
-          }
-          
-          // Check organized structure for created backups (with manifests)
-          const typeDir = join(backupPath, backupType);
-          if (existsSync(typeDir)) {
-            this.scanDirectoryForManifests(typeDir, manifests);
-          }
+
+        // Check organized structure for created backups (with manifests)
+        const typeDir = join(backupPath, backupType);
+        if (existsSync(typeDir)) {
+          this.scanDirectoryForManifests(typeDir, manifests);
         }
       }
 
@@ -607,6 +635,8 @@ export class BackupService {
           try {
             const manifestContent = readFileSync(itemPath, 'utf8');
             const manifest = JSON.parse(manifestContent);
+            const backupFile = itemPath.replace(/\.manifest\.json$/, '');
+            manifest.timestamp = this.manifestTime(manifest, backupFile).toISOString();
             manifests.push(manifest);
           } catch (error) {
             console.error(`Error reading manifest ${itemPath}:`, error);
@@ -618,66 +648,97 @@ export class BackupService {
     }
   }
 
-  // Restore database from backup
-  async restoreDatabase(backupFilename: string): Promise<void> {
-    console.log(`Starting database restore from: ${backupFilename}`);
-    
-    // Get backup settings to determine storage type
-    const settings = await this.getBackupSettings();
-    const storageType = settings?.storageType || 'local_filesystem';
-    const backupPath = settings?.localPath || this.defaultBackupPath;
-    
-    let tempFile = `/tmp/restore-${Date.now()}-${backupFilename}`;
-    
+  /**
+   * Take, verify, and record a safety backup of current state before a
+   * destructive restore. Shared by every restore path in this service
+   * (restoreDatabase, restoreFiles, restoreComplete) AND by the upload-based
+   * restore-data/restore-files routes in routes.ts, which bypass this class's
+   * own restore*() methods entirely and call this directly. Throws
+   * "Refusing to restore: ..." if the backup can't be taken or fails
+   * verification, so a restore never proceeds without a verified, recorded
+   * way back. Returns the safety backup's manifest (callers surface its
+   * filename to the operator, since a database restore's --clean dump wipes
+   * the backup_runs row that recorded it here).
+   */
+  async takeSafetyBackup(type: 'database' | 'files'): Promise<BackupManifest> {
+    const label = type === 'database' ? 'state' : 'files';
+    console.log(`Taking safety backup of current ${label} before restore...`);
     try {
-      if (storageType === 'object_storage') {
-        // Download from object storage
-        const privatePath = this.objectStorage.getPrivateObjectDir();
-        const remotePath = await this.findBackupPath(backupFilename, 'database');
-        
-        if (!remotePath) {
-          throw new Error(`Backup file not found in object storage: ${backupFilename}`);
-        }
-
-        const files = await this.objectStorage.listFiles(remotePath);
-        const backupFile = files.find(f => f.name.endsWith(backupFilename));
-        
-        if (!backupFile) {
-          throw new Error(`Could not download backup from object storage: ${backupFilename}`);
-        }
-
-        const [buffer] = await backupFile.download();
-        writeFileSync(tempFile, buffer);
-      } else {
-        // Use local filesystem - find the backup file
-        const localBackupPath = join(backupPath, backupFilename);
-        
-        if (existsSync(localBackupPath)) {
-          // File is directly in backups directory (uploaded backup)
-          tempFile = localBackupPath;
-        } else {
-          // Try to find in organized structure (created backup)
-          const searchPaths = [
-            join(backupPath, 'database', backupFilename),
-            ...this.findFileInDateStructure(join(backupPath, 'database'), backupFilename)
-          ];
-          
-          let found = false;
-          for (const path of searchPaths) {
-            if (existsSync(path)) {
-              tempFile = path;
-              found = true;
-              break;
-            }
-          }
-          
-          if (!found) {
-            throw new Error(`Backup file not found in local filesystem: ${backupFilename}`);
-          }
-        }
-        
-        console.log(`Found backup file at: ${tempFile}`);
+      const safety = type === 'database'
+        ? await this.createDatabaseBackup()
+        : await this.createFilesBackup();
+      const safetyPath = await this.locateBackupFile(type, safety.filename);
+      const check = type === 'database'
+        ? await verifyDatabaseBackup(safetyPath, safety.checksum)
+        : await verifyFilesBackup(safetyPath, safety.checksum, getUploadsDir(), safety.metadata?.fileCount ?? 0);
+      if (!check.ok) {
+        throw new Error(`safety backup failed verification: ${check.reason}`);
       }
+      const runId = await this.startRun(type, 'pre-restore');
+      await this.finishRun(runId, {
+        status: 'success', filename: safety.filename, sizeBytes: safety.size,
+        checksum: safety.checksum, verified: true,
+      });
+      console.log(`Safety backup written and verified: ${safety.filename}`);
+      return safety;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Refusing to restore: could not take a verified safety backup of the current ${type === 'database' ? 'data' : 'files'} first (${message}). ` +
+        `Restoring now would overwrite live data with no way back.`
+      );
+    }
+  }
+
+  // Restore database from backup
+  async restoreDatabase(backupFilename: string, opts?: { skipSafetyBackup?: boolean }): Promise<{ safetyBackupFilename?: string }> {
+    console.log(`Starting database restore from: ${backupFilename}`);
+
+    // Restoring overwrites whatever is currently live. Before touching anything,
+    // take a fresh backup of the current state and verify it - so a mistaken or
+    // wrong-file restore is itself reversible. skipSafetyBackup exists only for
+    // the case of restoring *because* backups are broken; it defaults to off.
+    let safetyBackupFilename: string | undefined;
+    if (!opts?.skipSafetyBackup) {
+      const safety = await this.takeSafetyBackup('database');
+      safetyBackupFilename = safety.filename;
+    }
+
+    // Get backup settings and resolve where backups are stored
+    const settings = await this.getBackupSettings();
+    const backupPath = this.resolveBackupPath(settings);
+
+    let tempFile = `/tmp/restore-${Date.now()}-${backupFilename}`;
+
+    try {
+      // Find the backup file on the local filesystem
+      const localBackupPath = join(backupPath, backupFilename);
+
+      if (existsSync(localBackupPath)) {
+        // File is directly in backups directory (uploaded backup)
+        tempFile = localBackupPath;
+      } else {
+        // Try to find in organized structure (created backup)
+        const searchPaths = [
+          join(backupPath, 'database', backupFilename),
+          ...this.findFileInDateStructure(join(backupPath, 'database'), backupFilename)
+        ];
+
+        let found = false;
+        for (const path of searchPaths) {
+          if (existsSync(path)) {
+            tempFile = path;
+            found = true;
+            break;
+          }
+        }
+
+        if (!found) {
+          throw new Error(`Backup file not found in local filesystem: ${backupFilename}`);
+        }
+      }
+
+      console.log(`Found backup file at: ${tempFile}`);
     } catch (error) {
       throw new Error(`Failed to locate backup file: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -708,17 +769,18 @@ export class BackupService {
         });
       }
       
-      // Verify backup integrity (skip for uploaded backups without manifest)
-      try {
-        const manifest = await this.getBackupManifest(backupFilename, 'database');
-        if (manifest?.checksum && manifest.checksum !== 'uploaded') {
-          const actualChecksum = await this.calculateChecksum(tempFile);
-          if (actualChecksum !== manifest.checksum) {
-            throw new Error('Backup file integrity check failed - checksum mismatch');
-          }
+      // Verify backup integrity. A missing manifest is tolerated (older or
+      // uploaded backups may not have one) and only logs a warning. A checksum
+      // mismatch means the backup is corrupt and must NOT be swallowed here -
+      // it has to abort the restore before psql runs against a live database.
+      const manifest = await this.getBackupManifest(backupFilename, 'database').catch(() => null);
+      if (!manifest) {
+        console.warn('Could not verify backup integrity (manifest may be missing)');
+      } else if (manifest.checksum && manifest.checksum !== 'uploaded') {
+        const actualChecksum = await this.calculateChecksum(tempFile);
+        if (actualChecksum !== manifest.checksum) {
+          throw new Error('Backup file integrity check failed - checksum mismatch');
         }
-      } catch (error) {
-        console.warn('Could not verify backup integrity (manifest may be missing):', error);
       }
 
       // Stop application connections (in production, you'd want more sophisticated handling)
@@ -771,67 +833,67 @@ export class BackupService {
         }
       }
     }
+
+    return { safetyBackupFilename };
   }
 
   // Restore files from backup
-  async restoreFiles(backupFilename: string, targetPath?: string): Promise<void> {
+  //
+  // targetPath is NOT wired to any HTTP request body: the extraction target
+  // must always match where the safety backup above just archived from
+  // (getUploadsDir()), or the verified safety net points at the wrong
+  // directory while tar overwrites a different one. Only pass targetPath
+  // from trusted internal callers (e.g. tests), never from user input.
+  async restoreFiles(backupFilename: string, targetPath?: string, opts?: { skipSafetyBackup?: boolean }): Promise<{ safetyBackupFilename?: string }> {
     console.log(`Starting files restore from: ${backupFilename}`);
-    
-    // Get backup settings to determine storage type
+
+    // Restoring overwrites whatever is currently in uploads/ (scanned documents,
+    // vehicle photos, damage-check header images, template backgrounds). Before
+    // touching anything, take a fresh backup of the current files and verify it -
+    // so a mistaken or wrong-file restore is itself reversible. skipSafetyBackup
+    // exists only for the case of restoring *because* backups are broken; it
+    // defaults to off.
+    let safetyBackupFilename: string | undefined;
+    if (!opts?.skipSafetyBackup) {
+      const safety = await this.takeSafetyBackup('files');
+      safetyBackupFilename = safety.filename;
+    }
+
+    // Get backup settings and resolve where backups are stored
     const settings = await this.getBackupSettings();
-    const storageType = settings?.storageType || 'local_filesystem';
-    const backupPath = settings?.localPath || this.defaultBackupPath;
-    
+    const backupPath = this.resolveBackupPath(settings);
+
     let tempFile = `/tmp/restore-${Date.now()}-${backupFilename}`;
-    
+
     try {
-      if (storageType === 'object_storage') {
-        // Download from object storage
-        const remotePath = await this.findBackupPath(backupFilename, 'files');
-        
-        if (!remotePath) {
-          throw new Error(`Backup file not found in object storage: ${backupFilename}`);
-        }
+      // Find the backup file on the local filesystem
+      const localBackupPath = join(backupPath, backupFilename);
 
-        const files = await this.objectStorage.listFiles(remotePath);
-        const backupFile = files.find(f => f.name.endsWith(backupFilename));
-        
-        if (!backupFile) {
-          throw new Error(`Could not download backup from object storage: ${backupFilename}`);
-        }
-
-        const [buffer] = await backupFile.download();
-        writeFileSync(tempFile, buffer);
+      if (existsSync(localBackupPath)) {
+        // File is directly in backups directory (uploaded backup)
+        tempFile = localBackupPath;
       } else {
-        // Use local filesystem - find the backup file
-        const localBackupPath = join(backupPath, backupFilename);
-        
-        if (existsSync(localBackupPath)) {
-          // File is directly in backups directory (uploaded backup)
-          tempFile = localBackupPath;
-        } else {
-          // Try to find in organized structure (created backup)
-          const searchPaths = [
-            join(backupPath, 'files', backupFilename),
-            ...this.findFileInDateStructure(join(backupPath, 'files'), backupFilename)
-          ];
-          
-          let found = false;
-          for (const path of searchPaths) {
-            if (existsSync(path)) {
-              tempFile = path;
-              found = true;
-              break;
-            }
-          }
-          
-          if (!found) {
-            throw new Error(`Backup file not found in local filesystem: ${backupFilename}`);
+        // Try to find in organized structure (created backup)
+        const searchPaths = [
+          join(backupPath, 'files', backupFilename),
+          ...this.findFileInDateStructure(join(backupPath, 'files'), backupFilename)
+        ];
+
+        let found = false;
+        for (const path of searchPaths) {
+          if (existsSync(path)) {
+            tempFile = path;
+            found = true;
+            break;
           }
         }
-        
-        console.log(`Found backup file at: ${tempFile}`);
+
+        if (!found) {
+          throw new Error(`Backup file not found in local filesystem: ${backupFilename}`);
+        }
       }
+
+      console.log(`Found backup file at: ${tempFile}`);
     } catch (error) {
       throw new Error(`Failed to locate backup file: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -839,17 +901,18 @@ export class BackupService {
     const isTemporaryFile = tempFile.startsWith('/tmp/');
     
     try {
-      // Verify backup integrity (skip for uploaded backups without manifest)
-      try {
-        const manifest = await this.getBackupManifest(backupFilename, 'files');
-        if (manifest?.checksum && manifest.checksum !== 'uploaded') {
-          const actualChecksum = await this.calculateChecksum(tempFile);
-          if (actualChecksum !== manifest.checksum) {
-            throw new Error('Backup file integrity check failed - checksum mismatch');
-          }
+      // Verify backup integrity. A missing manifest is tolerated (older or
+      // uploaded backups may not have one) and only logs a warning. A checksum
+      // mismatch means the backup is corrupt and must NOT be swallowed here -
+      // it has to abort the restore before tar extracts over live files.
+      const manifest = await this.getBackupManifest(backupFilename, 'files').catch(() => null);
+      if (!manifest) {
+        console.warn('Could not verify backup integrity (manifest may be missing)');
+      } else if (manifest.checksum && manifest.checksum !== 'uploaded') {
+        const actualChecksum = await this.calculateChecksum(tempFile);
+        if (actualChecksum !== manifest.checksum) {
+          throw new Error('Backup file integrity check failed - checksum mismatch');
         }
-      } catch (error) {
-        console.warn('Could not verify backup integrity (manifest may be missing):', error);
       }
 
       // Extract files
@@ -894,65 +957,73 @@ export class BackupService {
         }
       }
     }
+
+    return { safetyBackupFilename };
   }
 
   // Complete system restore (database + files)
-  async restoreComplete(databaseBackup: string, filesBackup: string): Promise<void> {
+  async restoreComplete(databaseBackup: string, filesBackup: string, opts?: { skipSafetyBackup?: boolean }): Promise<{ databaseSafetyBackupFilename?: string; filesSafetyBackupFilename?: string }> {
     console.log('Starting complete system restore...');
     console.log(`Database backup: ${databaseBackup}`);
     console.log(`Files backup: ${filesBackup}`);
-    
+
+    // "Complete" restore overwrites BOTH the database and uploads/ (documents,
+    // vehicle photos, damage-check images, template backgrounds). A safety net
+    // that only covers the database half would read as protection while
+    // leaving files unrecoverable, which is worse than no safety net at all -
+    // so take and verify safety backups of both before any destructive work.
+    // Each call throws its own "Refusing to restore" error if it fails, and
+    // the files backup is never attempted if the database one already failed.
+    let databaseSafetyBackupFilename: string | undefined;
+    let filesSafetyBackupFilename: string | undefined;
+    if (!opts?.skipSafetyBackup) {
+      const dbSafety = await this.takeSafetyBackup('database');
+      databaseSafetyBackupFilename = dbSafety.filename;
+      const filesSafety = await this.takeSafetyBackup('files');
+      filesSafetyBackupFilename = filesSafety.filename;
+    }
+
     try {
-      // Restore database first
-      await this.restoreDatabase(databaseBackup);
-      
+      // Restore database and files. Both safety backups were already taken
+      // above (or explicitly skipped), so don't take them again inside the
+      // individual restore calls.
+      await this.restoreDatabase(databaseBackup, { skipSafetyBackup: true });
+
       // Then restore files
-      await this.restoreFiles(filesBackup);
-      
+      await this.restoreFiles(filesBackup, undefined, { skipSafetyBackup: true });
+
       console.log('Complete system restore finished successfully!');
       console.log('IMPORTANT: Please restart the application to ensure all changes take effect.');
-      
+
     } catch (error) {
       console.error('Complete restore failed:', error);
       throw new Error(`Complete restore failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+
+    return { databaseSafetyBackupFilename, filesSafetyBackupFilename };
   }
 
-  // Helper method to find backup path in object storage
-  private async findBackupPath(filename: string, type: 'database' | 'files'): Promise<string | null> {
-    try {
-      const privatePath = this.objectStorage.getPrivateObjectDir();
-      const basePrefix = `${privatePath}/backups/${type}/`;
-      
-      // Search through year/month/day structure
-      const files = await this.objectStorage.listFiles(basePrefix);
-      
-      for (const file of files) {
-        if (file.name.endsWith(filename)) {
-          return file.name.substring(0, file.name.lastIndexOf('/') + 1);
-        }
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error finding backup path:', error);
-      return null;
-    }
-  }
-
-  // Helper method to get backup manifest
+  // Helper method to get backup manifest from the local filesystem
   private async getBackupManifest(filename: string, type: 'database' | 'files'): Promise<BackupManifest | null> {
     try {
-      const backupPath = await this.findBackupPath(filename, type);
-      if (!backupPath) return null;
+      const settings = await this.getBackupSettings();
+      const backupPath = this.resolveBackupPath(settings);
 
-      const manifestPath = `${backupPath}${filename}.manifest.json`;
-      const files = await this.objectStorage.listFiles(manifestPath);
-      
-      if (files.length === 0) return null;
-      
-      const [buffer] = await files[0].download();
-      return JSON.parse(buffer.toString('utf8'));
+      // Locate the backup file the same way restore does: directly in the
+      // root backups directory (uploaded backup), or in the organized
+      // year/month/day structure (created backup).
+      const candidates = [
+        join(backupPath, filename),
+        join(backupPath, type, filename),
+        ...this.findFileInDateStructure(join(backupPath, type), filename)
+      ];
+      const backupFilePath = candidates.find(existsSync);
+      if (!backupFilePath) return null;
+
+      const manifestPath = `${backupFilePath}.manifest.json`;
+      if (!existsSync(manifestPath)) return null;
+
+      return JSON.parse(readFileSync(manifestPath, 'utf8'));
     } catch (error) {
       console.error('Error getting backup manifest:', error);
       return null;
@@ -963,55 +1034,33 @@ export class BackupService {
   async downloadBackup(filename: string, type: 'database' | 'files'): Promise<{ stream: NodeJS.ReadableStream, contentType: string } | null> {
     try {
       const settings = await this.getBackupSettings();
-      const storageType = settings?.storageType || 'local_filesystem';
-      const backupPath = settings?.localPath || this.defaultBackupPath;
+      const backupPath = this.resolveBackupPath(settings);
 
-      if (storageType === 'object_storage') {
-        // Download from object storage
-        const privatePath = this.objectStorage.getPrivateObjectDir();
-        const files = await this.objectStorage.listFiles(`${privatePath}/backups/${type}/`);
-        
-        const backupFile = files.find(file => file.name.includes(filename));
-        if (!backupFile) {
-          console.error(`Backup file not found in object storage: ${filename}`);
-          return null;
-        }
+      // Download from local filesystem
+      let filePath: string | null = null;
 
-        const [buffer] = await backupFile.download();
-        const { Readable } = require('stream');
-        const stream = Readable.from(buffer);
-        
-        return {
-          stream,
-          contentType: 'application/gzip'
-        };
+      // Check root backup directory first (uploaded files)
+      const rootFilePath = join(backupPath, filename);
+      if (existsSync(rootFilePath)) {
+        filePath = rootFilePath;
       } else {
-        // Download from local filesystem
-        let filePath: string | null = null;
-        
-        // Check root backup directory first (uploaded files)
-        const rootFilePath = join(backupPath, filename);
-        if (existsSync(rootFilePath)) {
-          filePath = rootFilePath;
-        } else {
-          // Search in date-organized structure
-          const foundPaths = this.findFileInDateStructure(join(backupPath, type), filename);
-          if (foundPaths.length > 0) {
-            filePath = foundPaths[0];
-          }
+        // Search in date-organized structure
+        const foundPaths = this.findFileInDateStructure(join(backupPath, type), filename);
+        if (foundPaths.length > 0) {
+          filePath = foundPaths[0];
         }
-        
-        if (!filePath || !existsSync(filePath)) {
-          console.error(`Backup file not found in local filesystem: ${filename}`);
-          return null;
-        }
-
-        const stream = createReadStream(filePath);
-        return {
-          stream,
-          contentType: 'application/gzip'
-        };
       }
+
+      if (!filePath || !existsSync(filePath)) {
+        console.error(`Backup file not found in local filesystem: ${filename}`);
+        return null;
+      }
+
+      const stream = createReadStream(filePath);
+      return {
+        stream,
+        contentType: 'application/gzip'
+      };
     } catch (error) {
       console.error(`Error downloading backup ${filename}:`, error);
       return null;
@@ -1019,57 +1068,49 @@ export class BackupService {
   }
 
   // Delete backup file
-  async deleteBackup(filename: string, type: 'database' | 'files'): Promise<void> {
+  // Returns true if a backup file was actually found and deleted, false if it
+  // could not be located (e.g. it predates findFileInDateStructure's two-year
+  // lookback). Callers must not report a deletion that didn't happen.
+  async deleteBackup(filename: string, type: 'database' | 'files'): Promise<boolean> {
     try {
       const settings = await this.getBackupSettings();
-      const storageType = settings?.storageType || 'local_filesystem';
-      const backupPath = settings?.localPath || this.defaultBackupPath;
+      const backupPath = this.resolveBackupPath(settings);
 
-      if (storageType === 'object_storage') {
-        // Delete from object storage
-        const privatePath = this.objectStorage.getPrivateObjectDir();
-        const files = await this.objectStorage.listFiles(`${privatePath}/backups/${type}/`);
-        
-        // Find and delete the backup file and its manifest
-        const filesToDelete = files.filter(file => file.name.includes(filename));
-        
-        for (const file of filesToDelete) {
-          await this.objectStorage.deleteFile(file.name);
-          console.log(`Deleted backup file from object storage: ${file.name}`);
-        }
+      // Delete from local filesystem
+      let filePath: string | null = null;
+      let manifestPath: string | null = null;
+
+      // Check root backup directory first (uploaded files)
+      const rootFilePath = join(backupPath, filename);
+      if (existsSync(rootFilePath)) {
+        filePath = rootFilePath;
       } else {
-        // Delete from local filesystem
-        let filePath: string | null = null;
-        let manifestPath: string | null = null;
-        
-        // Check root backup directory first (uploaded files)
-        const rootFilePath = join(backupPath, filename);
-        if (existsSync(rootFilePath)) {
-          filePath = rootFilePath;
-        } else {
-          // Search in date-organized structure
-          const foundPaths = this.findFileInDateStructure(join(backupPath, type), filename);
-          if (foundPaths.length > 0) {
-            filePath = foundPaths[0];
-            // Look for manifest in the same directory
-            const dir = dirname(filePath);
-            const potentialManifest = join(dir, `${filename}.manifest.json`);
-            if (existsSync(potentialManifest)) {
-              manifestPath = potentialManifest;
-            }
+        // Search in date-organized structure
+        const foundPaths = this.findFileInDateStructure(join(backupPath, type), filename);
+        if (foundPaths.length > 0) {
+          filePath = foundPaths[0];
+          // Look for manifest in the same directory
+          const dir = dirname(filePath);
+          const potentialManifest = join(dir, `${filename}.manifest.json`);
+          if (existsSync(potentialManifest)) {
+            manifestPath = potentialManifest;
           }
         }
-        
-        if (filePath && existsSync(filePath)) {
-          await unlink(filePath);
-          console.log(`Deleted backup file from local filesystem: ${filePath}`);
-        }
-        
-        if (manifestPath && existsSync(manifestPath)) {
-          await unlink(manifestPath);
-          console.log(`Deleted manifest file from local filesystem: ${manifestPath}`);
-        }
       }
+
+      if (!filePath || !existsSync(filePath)) {
+        return false;
+      }
+
+      await unlink(filePath);
+      console.log(`Deleted backup file from local filesystem: ${filePath}`);
+
+      if (manifestPath && existsSync(manifestPath)) {
+        await unlink(manifestPath);
+        console.log(`Deleted manifest file from local filesystem: ${manifestPath}`);
+      }
+
+      return true;
     } catch (error) {
       console.error(`Error deleting backup ${filename}:`, error);
       throw error;
@@ -1079,17 +1120,58 @@ export class BackupService {
   // Cleanup old backups based on retention policy
   async cleanupOldBackups(): Promise<void> {
     console.log('Cleaning up old backups...');
-    
+
     const now = new Date();
     const backups = await this.listBackups();
-    const toDelete: string[] = [];
+
+    // Never delete the newest backup of each type, regardless of age.
+    // Retention must never be able to leave the system with nothing.
+    //
+    // Computed over the non-uploaded subset only: uploaded entries are always
+    // skipped below regardless of age, so if they were allowed to occupy the
+    // "newest" slot, an operator's recently-uploaded copy could shield itself
+    // (already immune) while leaving the newest *created* backup - the one
+    // this rail actually exists to protect - unprotected and deletable.
+    //
+    // getTimeSafe treats an unparseable timestamp as -Infinity so it can
+    // never win the "newest" comparison and can never block a valid
+    // timestamp from replacing it. Without this, a backup with a corrupt
+    // timestamp encountered first would keep the map slot forever, because
+    // `validMs > NaN` is always false - shielding an entry that's already
+    // immune (it's never selected as "shouldDelete" source of truth for
+    // comparison here anyway) while the genuinely newest parseable entry
+    // loses its protection.
+    const getTimeSafe = (backup: BackupManifest): number => {
+      const t = new Date(backup.timestamp).getTime();
+      return Number.isNaN(t) ? -Infinity : t;
+    };
+    const newestByType = new Map<'database' | 'files', BackupManifest>();
+    for (const backup of backups) {
+      if (backup.checksum === 'uploaded') continue;
+      const current = newestByType.get(backup.type);
+      if (!current || getTimeSafe(backup) > getTimeSafe(current)) {
+        newestByType.set(backup.type, backup);
+      }
+    }
+
+    const toDelete: BackupManifest[] = [];
 
     for (const backup of backups) {
+      // listBackups synthesizes an entry (checksum: 'uploaded') for every
+      // loose file sitting in the root of the backup directory, using the
+      // file's mtime as its timestamp. Those are manually kept copies - the
+      // one thing this deployment's off-box safety model depends on - and
+      // retention must never touch them, regardless of age.
+      if (backup.checksum === 'uploaded') continue;
+
+      // Never delete the newest backup of each type.
+      if (newestByType.get(backup.type) === backup) continue;
+
       const backupDate = new Date(backup.timestamp);
       const daysOld = Math.floor((now.getTime() - backupDate.getTime()) / (1000 * 60 * 60 * 24));
-      
+
       let shouldDelete = false;
-      
+
       // Retention policy: 14 days for daily, 8 weeks for weekly, 12 months for monthly
       if (daysOld > 365) {
         // Older than 1 year - delete all
@@ -1101,28 +1183,49 @@ export class BackupService {
         // Older than 2 weeks - keep only weekly (Sundays)
         shouldDelete = backupDate.getDay() !== 0;
       }
-      
+
       if (shouldDelete) {
-        const privatePath = this.objectStorage.getPrivateObjectDir();
-        const year = backupDate.getFullYear();
-        const month = String(backupDate.getMonth() + 1).padStart(2, '0');
-        const day = String(backupDate.getDate()).padStart(2, '0');
-        
-        toDelete.push(`${privatePath}/backups/${backup.type}/${year}/${month}/${day}/${backup.filename}`);
-        toDelete.push(`${privatePath}/backups/${backup.type}/${year}/${month}/${day}/${backup.filename}.manifest.json`);
+        toDelete.push(backup);
       }
     }
 
-    // Delete old backups
-    for (const path of toDelete) {
+    // Delete old backups from the local filesystem, counting only what was
+    // actually removed. findFileInDateStructure only searches the current
+    // and previous calendar year, so a backup older than that is listed but
+    // unreachable - claiming it was deleted would hide that it wasn't.
+    let deletedCount = 0;
+    for (const backup of toDelete) {
       try {
-        await this.objectStorage.deleteFile(path);
-        console.log(`Deleted old backup: ${path}`);
+        const deleted = await this.deleteBackup(backup.filename, backup.type);
+        if (deleted) {
+          deletedCount++;
+          console.log(`Deleted old backup: ${backup.filename}`);
+
+          // Keep the backup_runs history row rather than deleting it - it's
+          // tiny and answers "was this machine backing up in March?" long
+          // after the file itself is gone. Mark it pruned instead.
+          await db.update(backupRuns)
+            .set({ filePruned: true })
+            .where(eq(backupRuns.filename, backup.filename));
+        } else {
+          console.warn(`Could not find old backup to delete (outside the lookup window?): ${backup.filename}`);
+        }
       } catch (error) {
-        console.error(`Error deleting ${path}:`, error);
+        console.error(`Error deleting ${backup.filename}:`, error);
       }
     }
 
-    console.log(`Cleanup completed. Deleted ${toDelete.length / 2} old backups.`);
+    console.log(`Cleanup completed. Deleted ${deletedCount} old backups.`);
   }
 }
+
+// Single shared instance. `runBackup`'s re-entrancy guard (`isRunning`,
+// above) is an instance field - two separate `BackupService` objects can't
+// see each other's in-flight run. Previously routes.ts and backupScheduler.ts
+// each constructed their own, so the "Back up now" button and status/health
+// endpoints were blind to a scheduler-initiated run (cron or boot catch-up),
+// letting a manual click start a second, concurrent backup. The constructor
+// only initializes plain fields (no DB/filesystem work), so eager
+// construction here is safe and runs at import time like any other module
+// singleton.
+export const backupService = new BackupService();

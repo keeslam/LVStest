@@ -7,10 +7,14 @@ import { UpcomingReservations } from "@/components/dashboard/upcoming-reservatio
 import { RecentExpenses } from "@/components/dashboard/recent-expenses";
 import { ReservationCalendar } from "@/components/dashboard/reservation-calendar";
 import { QuickActions } from "@/components/dashboard/quick-actions";
+import { BackupStalenessBanner } from "@/components/backup/backup-staleness-banner";
 
 export default function Dashboard() {
   return (
     <div className="space-y-6">
+      {/* Backup Health */}
+      <BackupStalenessBanner />
+
       {/* Quick Actions */}
       <QuickActions />
       

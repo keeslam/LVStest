@@ -13,6 +13,8 @@
 ## Global Constraints
 
 - No automated test runner exists in this repo (no `test` script, no `*.test.*` files). Every task's verification is a scripted check run via `npx tsx` plus a typecheck, not a test-framework invocation. Where this plan says "write a test", it means a standalone script under `scripts/` that exits non-zero on failure.
+- **Verification scripts that touch the database must start with `import 'dotenv/config';`.** Standalone `tsx` does not load `.env` the way `server/index.ts` does, so `DATABASE_URL` is undefined without it. This line belongs only in the throwaway verification script, never in committed source.
+- **Run the verification scripts from a temp file, not `npx tsx -e "..."`.** The multi-line scripts below contain nested quotes that some shells mangle, producing silent success (exit 0, no output) that looks like a pass. Write the script body to a temporary `.ts` file at the worktree root, run `npx tsx thatfile.ts`, confirm you see its actual output, then delete it. A verification step that prints nothing has not passed — treat missing output as a failure and investigate.
 - `pg_dump` is **not installed on the development machine**. No task may depend on running a real database dump locally. Anything needing `pg_dump` is deferred to deployment verification (Task 9).
 - Baseline typecheck error count is **405** (`npx tsc --noEmit 2>&1 | grep -c "error TS"`). Tasks must not increase it.
 - `BACKUP_PATH=/backups` is the deployment's volume mount. `WORKDIR` is `/app` and uploads are mounted at `/app/uploads`.
