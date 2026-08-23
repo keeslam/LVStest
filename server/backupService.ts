@@ -6,8 +6,9 @@ import { join, dirname } from 'path';
 import { createGzip } from 'zlib';
 import { createHash } from 'crypto';
 import archiver from 'archiver';
+import { eq, and, desc } from 'drizzle-orm';
 import { db } from './db';
-import { backupSettings } from '@shared/schema';
+import { backupSettings, backupRuns, type BackupRun } from '@shared/schema';
 import { getUploadsDir, getBackupPathFromEnv } from '@shared/paths';
 
 export interface BackupManifest {
@@ -33,7 +34,6 @@ export interface BackupStatus {
 
 export class BackupService {
   private isRunning = false;
-  private statusFile = '/tmp/backup-status.json';
   private defaultBackupPath = join(process.cwd(), 'backups'); // Default backup path relative to project
 
   /**
@@ -114,31 +114,59 @@ export class BackupService {
     }
   }
 
-  // Get current backup status
-  getStatus(): BackupStatus {
-    try {
-      if (existsSync(this.statusFile)) {
-        const data = JSON.parse(readFileSync(this.statusFile, 'utf8'));
-        return { ...data, isRunning: this.isRunning };
-      }
-    } catch (error) {
-      console.error('Error reading backup status:', error);
-    }
-
-    return {
-      isRunning: this.isRunning,
-      nextScheduled: this.getNextScheduledTime()
-    };
+  /** Open a run row and return its id. */
+  private async startRun(type: 'database' | 'files', trigger: string): Promise<number> {
+    const [row] = await db.insert(backupRuns).values({
+      type, status: 'running', trigger, startedAt: new Date(),
+    }).returning();
+    return row.id;
   }
 
-  // Update backup status
-  private updateStatus(updates: Partial<BackupStatus>): void {
+  /** Close a run row with its outcome. */
+  private async finishRun(id: number, fields: {
+    status: 'success' | 'failed';
+    filename?: string;
+    sizeBytes?: number;
+    checksum?: string;
+    verified?: boolean;
+    error?: string;
+  }): Promise<void> {
+    await db.update(backupRuns)
+      .set({ ...fields, finishedAt: new Date() })
+      .where(eq(backupRuns.id, id));
+  }
+
+  /** Most recent verified-successful run of a type, if any. */
+  async getLastSuccessfulRun(type?: 'database' | 'files'): Promise<BackupRun | undefined> {
+    const conditions = [eq(backupRuns.status, 'success'), eq(backupRuns.verified, true)];
+    if (type) conditions.push(eq(backupRuns.type, type));
+    const [row] = await db.select().from(backupRuns)
+      .where(and(...conditions))
+      .orderBy(desc(backupRuns.finishedAt))
+      .limit(1);
+    return row;
+  }
+
+  // Current backup status, read from run history rather than a temp file.
+  async getStatus(): Promise<BackupStatus> {
     try {
-      const currentStatus = this.getStatus();
-      const newStatus = { ...currentStatus, ...updates };
-      writeFileSync(this.statusFile, JSON.stringify(newStatus, null, 2));
+      const lastSuccess = await this.getLastSuccessfulRun();
+      const [lastFailure] = await db.select().from(backupRuns)
+        .where(eq(backupRuns.status, 'failed'))
+        .orderBy(desc(backupRuns.finishedAt))
+        .limit(1);
+
+      return {
+        isRunning: this.isRunning,
+        nextScheduled: this.getNextScheduledTime(),
+        lastSuccess: lastSuccess?.finishedAt?.toISOString(),
+        lastError: lastFailure
+          ? `${lastFailure.finishedAt?.toISOString() ?? ''}: ${lastFailure.error ?? 'unknown error'}`
+          : undefined,
+      };
     } catch (error) {
-      console.error('Error updating backup status:', error);
+      console.error('Error reading backup status:', error);
+      return { isRunning: this.isRunning, nextScheduled: this.getNextScheduledTime() };
     }
   }
 
@@ -389,48 +417,48 @@ export class BackupService {
   }
 
   // Run complete backup
-  async runBackup(): Promise<{ database: BackupManifest; files: BackupManifest }> {
+  async runBackup(triggerLabel?: string): Promise<{ database: BackupManifest; files: BackupManifest }> {
     if (this.isRunning) {
       throw new Error('Backup is already running');
     }
 
     this.isRunning = true;
-    const startTime = new Date().toISOString();
-    
-    try {
-      this.updateStatus({
-        lastRun: startTime,
-        isRunning: true,
-        nextScheduled: this.getNextScheduledTime()
-      });
+    const trigger = triggerLabel ?? 'manual';
+    const dbRunId = await this.startRun('database', trigger);
+    const filesRunId = await this.startRun('files', trigger);
 
+    try {
       console.log('Starting backup process...');
 
-      // Create both backups
-      const [databaseBackup, filesBackup] = await Promise.all([
-        this.createDatabaseBackup(),
-        this.createFilesBackup()
-      ]);
+      const databaseBackup = await this.createDatabaseBackup();
+      await this.finishRun(dbRunId, {
+        status: 'success',
+        filename: databaseBackup.filename,
+        sizeBytes: databaseBackup.size,
+        checksum: databaseBackup.checksum,
+        verified: true,
+      });
 
-      const endTime = new Date().toISOString();
-
-      this.updateStatus({
-        lastSuccess: endTime,
-        isRunning: false
+      const filesBackup = await this.createFilesBackup();
+      await this.finishRun(filesRunId, {
+        status: 'success',
+        filename: filesBackup.filename,
+        sizeBytes: filesBackup.size,
+        checksum: filesBackup.checksum,
+        verified: true,
       });
 
       console.log('Backup completed successfully');
       return { database: databaseBackup, files: filesBackup };
-
     } catch (error) {
-      const errorTime = new Date().toISOString();
-      console.error('Backup failed:', error);
-      
-      this.updateStatus({
-        lastError: `${errorTime}: ${error instanceof Error ? error.message : String(error)}`,
-        isRunning: false
-      });
-
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('Backup failed:', message);
+      for (const id of [dbRunId, filesRunId]) {
+        const [row] = await db.select().from(backupRuns).where(eq(backupRuns.id, id));
+        if (row?.status === 'running') {
+          await this.finishRun(id, { status: 'failed', error: message });
+        }
+      }
       throw error;
     } finally {
       this.isRunning = false;

@@ -8876,7 +8876,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Get backup status
   app.get("/api/backups/status", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
     try {
-      const status = backupService.getStatus();
+      const status = await backupService.getStatus();
       res.json(status);
     } catch (error) {
       console.error("Error getting backup status:", error);
