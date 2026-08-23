@@ -10,6 +10,7 @@ import { eq, and, desc } from 'drizzle-orm';
 import { db } from './db';
 import { backupSettings, backupRuns, type BackupRun } from '@shared/schema';
 import { getUploadsDir, getBackupPathFromEnv } from '@shared/paths';
+import { verifyDatabaseBackup, verifyFilesBackup } from './backupVerification';
 
 export interface BackupManifest {
   timestamp: string;
@@ -445,22 +446,30 @@ export class BackupService {
       console.log('Starting backup process...');
 
       const databaseBackup = await this.createDatabaseBackup();
+      const dbPath = await this.locateBackupFile('database', databaseBackup.filename);
+      const dbCheck = await verifyDatabaseBackup(dbPath, databaseBackup.checksum);
       await this.finishRun(dbRunId, {
-        status: 'success',
+        status: dbCheck.ok ? 'success' : 'failed',
         filename: databaseBackup.filename,
         sizeBytes: databaseBackup.size,
         checksum: databaseBackup.checksum,
-        verified: true,
+        verified: dbCheck.ok,
+        error: dbCheck.ok ? undefined : dbCheck.reason,
       });
+      if (!dbCheck.ok) throw new Error(`Database backup failed verification: ${dbCheck.reason}`);
 
       const filesBackup = await this.createFilesBackup();
+      const filesPath = await this.locateBackupFile('files', filesBackup.filename);
+      const filesCheck = await verifyFilesBackup(filesPath, filesBackup.checksum, getUploadsDir());
       await this.finishRun(filesRunId, {
-        status: 'success',
+        status: filesCheck.ok ? 'success' : 'failed',
         filename: filesBackup.filename,
         sizeBytes: filesBackup.size,
         checksum: filesBackup.checksum,
-        verified: true,
+        verified: filesCheck.ok,
+        error: filesCheck.ok ? undefined : filesCheck.reason,
       });
+      if (!filesCheck.ok) throw new Error(`Files backup failed verification: ${filesCheck.reason}`);
 
       console.log('Backup completed successfully');
       return { database: databaseBackup, files: filesBackup };
@@ -477,6 +486,29 @@ export class BackupService {
     } finally {
       this.isRunning = false;
     }
+  }
+
+  /** Absolute path of a backup file inside the dated directory structure. */
+  private async locateBackupFile(type: 'database' | 'files', filename: string): Promise<string> {
+    const settings = await this.getBackupSettings();
+    const typeDir = join(this.resolveBackupPath(settings), type);
+    const found = this.findFileRecursive(typeDir, filename);
+    if (!found) throw new Error(`Backup file not found after writing: ${filename} under ${typeDir}`);
+    return found;
+  }
+
+  private findFileRecursive(dir: string, filename: string): string | null {
+    if (!existsSync(dir)) return null;
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      if (statSync(full).isDirectory()) {
+        const hit = this.findFileRecursive(full, filename);
+        if (hit) return hit;
+      } else if (entry === filename) {
+        return full;
+      }
+    }
+    return null;
   }
 
   /**
