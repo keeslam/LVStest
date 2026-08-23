@@ -409,6 +409,7 @@ export default function BackupPage() {
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Never';
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return 'Unknown date';
     return date.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
