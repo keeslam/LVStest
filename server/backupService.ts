@@ -13,6 +13,8 @@ import { getUploadsDir, getBackupPathFromEnv } from '@shared/paths';
 
 export interface BackupManifest {
   timestamp: string;
+  /** Filename-safe variant of the timestamp (colons and dots replaced). */
+  filenameStamp?: string;
   type: 'database' | 'files';
   filename: string;
   size: number;
@@ -181,8 +183,13 @@ export class BackupService {
 
   // Create database backup
   async createDatabaseBackup(): Promise<BackupManifest> {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `db-backup-${timestamp}.sql.gz`;
+    // Keep these separate: the filename needs a path-safe stamp, but the
+    // manifest needs a parseable date. Storing the path-safe form as the
+    // timestamp is what produced "Invalid Date" throughout the UI and broke
+    // the newest-first sort, which compared NaN values.
+    const startedAtIso = new Date().toISOString();
+    const filenameStamp = startedAtIso.replace(/[:.]/g, '-');
+    const filename = `db-backup-${filenameStamp}.sql.gz`;
     const tempFile = `/tmp/${filename}`;
     
     console.log('Creating database backup...');
@@ -233,7 +240,8 @@ export class BackupService {
 
     // Create manifest
     const manifest: BackupManifest = {
-      timestamp,
+      timestamp: startedAtIso,
+      filenameStamp,
       type: 'database',
       filename,
       size: fileStats.size,
@@ -267,8 +275,13 @@ export class BackupService {
 
   // Create files backup
   async createFilesBackup(): Promise<BackupManifest> {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `files-backup-${timestamp}.tar.gz`;
+    // Keep these separate: the filename needs a path-safe stamp, but the
+    // manifest needs a parseable date. Storing the path-safe form as the
+    // timestamp is what produced "Invalid Date" throughout the UI and broke
+    // the newest-first sort, which compared NaN values.
+    const startedAtIso = new Date().toISOString();
+    const filenameStamp = startedAtIso.replace(/[:.]/g, '-');
+    const filename = `files-backup-${filenameStamp}.tar.gz`;
     const tempFile = `/tmp/${filename}`;
     
     console.log('Creating files backup...');
@@ -312,7 +325,8 @@ export class BackupService {
 
     // Create manifest
     const manifest: BackupManifest = {
-      timestamp,
+      timestamp: startedAtIso,
+      filenameStamp,
       type: 'files',
       filename,
       size: fileStats.size,
@@ -465,6 +479,20 @@ export class BackupService {
     }
   }
 
+  /**
+   * Manifests written before the timestamp fix hold a path-safe string that
+   * Date cannot parse. Fall back to the file's mtime so historical backups
+   * show a real date instead of "Invalid Date".
+   */
+  private manifestTime(manifest: BackupManifest, filePath?: string): Date {
+    const parsed = new Date(manifest.timestamp);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+    if (filePath && existsSync(filePath)) {
+      try { return statSync(filePath).mtime; } catch { /* fall through */ }
+    }
+    return new Date(0);
+  }
+
   // List available backups
   async listBackups(type?: 'database' | 'files'): Promise<BackupManifest[]> {
     try {
@@ -531,6 +559,8 @@ export class BackupService {
           try {
             const manifestContent = readFileSync(itemPath, 'utf8');
             const manifest = JSON.parse(manifestContent);
+            const backupFile = itemPath.replace(/\.manifest\.json$/, '');
+            manifest.timestamp = this.manifestTime(manifest, backupFile).toISOString();
             manifests.push(manifest);
           } catch (error) {
             console.error(`Error reading manifest ${itemPath}:`, error);
