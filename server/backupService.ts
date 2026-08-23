@@ -583,17 +583,18 @@ export class BackupService {
         });
       }
       
-      // Verify backup integrity (skip for uploaded backups without manifest)
-      try {
-        const manifest = await this.getBackupManifest(backupFilename, 'database');
-        if (manifest?.checksum && manifest.checksum !== 'uploaded') {
-          const actualChecksum = await this.calculateChecksum(tempFile);
-          if (actualChecksum !== manifest.checksum) {
-            throw new Error('Backup file integrity check failed - checksum mismatch');
-          }
+      // Verify backup integrity. A missing manifest is tolerated (older or
+      // uploaded backups may not have one) and only logs a warning. A checksum
+      // mismatch means the backup is corrupt and must NOT be swallowed here -
+      // it has to abort the restore before psql runs against a live database.
+      const manifest = await this.getBackupManifest(backupFilename, 'database').catch(() => null);
+      if (!manifest) {
+        console.warn('Could not verify backup integrity (manifest may be missing)');
+      } else if (manifest.checksum && manifest.checksum !== 'uploaded') {
+        const actualChecksum = await this.calculateChecksum(tempFile);
+        if (actualChecksum !== manifest.checksum) {
+          throw new Error('Backup file integrity check failed - checksum mismatch');
         }
-      } catch (error) {
-        console.warn('Could not verify backup integrity (manifest may be missing):', error);
       }
 
       // Stop application connections (in production, you'd want more sophisticated handling)
@@ -694,17 +695,18 @@ export class BackupService {
     const isTemporaryFile = tempFile.startsWith('/tmp/');
     
     try {
-      // Verify backup integrity (skip for uploaded backups without manifest)
-      try {
-        const manifest = await this.getBackupManifest(backupFilename, 'files');
-        if (manifest?.checksum && manifest.checksum !== 'uploaded') {
-          const actualChecksum = await this.calculateChecksum(tempFile);
-          if (actualChecksum !== manifest.checksum) {
-            throw new Error('Backup file integrity check failed - checksum mismatch');
-          }
+      // Verify backup integrity. A missing manifest is tolerated (older or
+      // uploaded backups may not have one) and only logs a warning. A checksum
+      // mismatch means the backup is corrupt and must NOT be swallowed here -
+      // it has to abort the restore before tar extracts over live files.
+      const manifest = await this.getBackupManifest(backupFilename, 'files').catch(() => null);
+      if (!manifest) {
+        console.warn('Could not verify backup integrity (manifest may be missing)');
+      } else if (manifest.checksum && manifest.checksum !== 'uploaded') {
+        const actualChecksum = await this.calculateChecksum(tempFile);
+        if (actualChecksum !== manifest.checksum) {
+          throw new Error('Backup file integrity check failed - checksum mismatch');
         }
-      } catch (error) {
-        console.warn('Could not verify backup integrity (manifest may be missing):', error);
       }
 
       // Extract files
@@ -838,7 +840,10 @@ export class BackupService {
   }
 
   // Delete backup file
-  async deleteBackup(filename: string, type: 'database' | 'files'): Promise<void> {
+  // Returns true if a backup file was actually found and deleted, false if it
+  // could not be located (e.g. it predates findFileInDateStructure's two-year
+  // lookback). Callers must not report a deletion that didn't happen.
+  async deleteBackup(filename: string, type: 'database' | 'files'): Promise<boolean> {
     try {
       const settings = await this.getBackupSettings();
       const backupPath = this.resolveBackupPath(settings);
@@ -865,15 +870,19 @@ export class BackupService {
         }
       }
 
-      if (filePath && existsSync(filePath)) {
-        await unlink(filePath);
-        console.log(`Deleted backup file from local filesystem: ${filePath}`);
+      if (!filePath || !existsSync(filePath)) {
+        return false;
       }
+
+      await unlink(filePath);
+      console.log(`Deleted backup file from local filesystem: ${filePath}`);
 
       if (manifestPath && existsSync(manifestPath)) {
         await unlink(manifestPath);
         console.log(`Deleted manifest file from local filesystem: ${manifestPath}`);
       }
+
+      return true;
     } catch (error) {
       console.error(`Error deleting backup ${filename}:`, error);
       throw error;
@@ -886,9 +895,30 @@ export class BackupService {
 
     const now = new Date();
     const backups = await this.listBackups();
+
+    // Never delete the newest backup of each type, regardless of age.
+    // Retention must never be able to leave the system with nothing.
+    const newestByType = new Map<'database' | 'files', BackupManifest>();
+    for (const backup of backups) {
+      const current = newestByType.get(backup.type);
+      if (!current || new Date(backup.timestamp).getTime() > new Date(current.timestamp).getTime()) {
+        newestByType.set(backup.type, backup);
+      }
+    }
+
     const toDelete: BackupManifest[] = [];
 
     for (const backup of backups) {
+      // listBackups synthesizes an entry (checksum: 'uploaded') for every
+      // loose file sitting in the root of the backup directory, using the
+      // file's mtime as its timestamp. Those are manually kept copies - the
+      // one thing this deployment's off-box safety model depends on - and
+      // retention must never touch them, regardless of age.
+      if (backup.checksum === 'uploaded') continue;
+
+      // Never delete the newest backup of each type.
+      if (newestByType.get(backup.type) === backup) continue;
+
       const backupDate = new Date(backup.timestamp);
       const daysOld = Math.floor((now.getTime() - backupDate.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -911,16 +941,25 @@ export class BackupService {
       }
     }
 
-    // Delete old backups from the local filesystem
+    // Delete old backups from the local filesystem, counting only what was
+    // actually removed. findFileInDateStructure only searches the current
+    // and previous calendar year, so a backup older than that is listed but
+    // unreachable - claiming it was deleted would hide that it wasn't.
+    let deletedCount = 0;
     for (const backup of toDelete) {
       try {
-        await this.deleteBackup(backup.filename, backup.type);
-        console.log(`Deleted old backup: ${backup.filename}`);
+        const deleted = await this.deleteBackup(backup.filename, backup.type);
+        if (deleted) {
+          deletedCount++;
+          console.log(`Deleted old backup: ${backup.filename}`);
+        } else {
+          console.warn(`Could not find old backup to delete (outside the lookup window?): ${backup.filename}`);
+        }
       } catch (error) {
         console.error(`Error deleting ${backup.filename}:`, error);
       }
     }
 
-    console.log(`Cleanup completed. Deleted ${toDelete.length} old backups.`);
+    console.log(`Cleanup completed. Deleted ${deletedCount} old backups.`);
   }
 }
