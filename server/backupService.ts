@@ -1088,10 +1088,30 @@ export class BackupService {
 
     // Never delete the newest backup of each type, regardless of age.
     // Retention must never be able to leave the system with nothing.
+    //
+    // Computed over the non-uploaded subset only: uploaded entries are always
+    // skipped below regardless of age, so if they were allowed to occupy the
+    // "newest" slot, an operator's recently-uploaded copy could shield itself
+    // (already immune) while leaving the newest *created* backup - the one
+    // this rail actually exists to protect - unprotected and deletable.
+    //
+    // getTimeSafe treats an unparseable timestamp as -Infinity so it can
+    // never win the "newest" comparison and can never block a valid
+    // timestamp from replacing it. Without this, a backup with a corrupt
+    // timestamp encountered first would keep the map slot forever, because
+    // `validMs > NaN` is always false - shielding an entry that's already
+    // immune (it's never selected as "shouldDelete" source of truth for
+    // comparison here anyway) while the genuinely newest parseable entry
+    // loses its protection.
+    const getTimeSafe = (backup: BackupManifest): number => {
+      const t = new Date(backup.timestamp).getTime();
+      return Number.isNaN(t) ? -Infinity : t;
+    };
     const newestByType = new Map<'database' | 'files', BackupManifest>();
     for (const backup of backups) {
+      if (backup.checksum === 'uploaded') continue;
       const current = newestByType.get(backup.type);
-      if (!current || new Date(backup.timestamp).getTime() > new Date(current.timestamp).getTime()) {
+      if (!current || getTimeSafe(backup) > getTimeSafe(current)) {
         newestByType.set(backup.type, backup);
       }
     }
@@ -1142,6 +1162,13 @@ export class BackupService {
         if (deleted) {
           deletedCount++;
           console.log(`Deleted old backup: ${backup.filename}`);
+
+          // Keep the backup_runs history row rather than deleting it - it's
+          // tiny and answers "was this machine backing up in March?" long
+          // after the file itself is gone. Mark it pruned instead.
+          await db.update(backupRuns)
+            .set({ filePruned: true })
+            .where(eq(backupRuns.filename, backup.filename));
         } else {
           console.warn(`Could not find old backup to delete (outside the lookup window?): ${backup.filename}`);
         }
