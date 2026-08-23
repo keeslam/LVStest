@@ -8884,6 +8884,27 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  // Get backup health (staleness) for UI warnings
+  app.get("/api/backups/health", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+    try {
+      const last = await backupService.getLastSuccessfulRun();
+      const status = await backupService.getStatus();
+      const lastSuccessAt = last?.finishedAt ? new Date(last.finishedAt).toISOString() : null;
+      const ageHours = lastSuccessAt
+        ? Math.round((Date.now() - new Date(lastSuccessAt).getTime()) / 3600000)
+        : null;
+      res.json({
+        lastSuccessAt,
+        ageHours,
+        stale: ageHours === null || ageHours > 48,
+        lastError: status.lastError ?? null,
+      });
+    } catch (error) {
+      console.error('Error reading backup health:', error);
+      res.status(500).json({ message: 'Error reading backup health' });
+    }
+  });
+
   // List available backups
   app.get("/api/backups", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
     try {
