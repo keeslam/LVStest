@@ -3,12 +3,11 @@ import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
-import { 
-  Loader2, Plus, Edit, Trash2, Check, X, CalendarDays, ClipboardCheck, 
-  Bell, AlertCircle, Info, ArrowLeft, Search, Filter, CheckCheck, 
+import {
+  Loader2, Plus, Edit, Trash2, Check, X, CalendarDays, ClipboardCheck,
+  Bell, AlertCircle, Info, ArrowLeft, Search, Filter, CheckCheck,
   MoreHorizontal, Circle, ArrowUpDown, ArrowUp, ArrowDown
 } from "lucide-react";
-import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,7 +29,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -83,7 +82,13 @@ const iconComponents = {
 
 type IconName = keyof typeof iconComponents;
 
-const CustomNotificationsPage = () => {
+interface CustomNotificationsPanelProps {
+  // Called when the "back" action is used - a dialog-hosted panel closes
+  // itself here instead of navigating to a page.
+  onBack?: () => void;
+}
+
+export function CustomNotificationsPanel({ onBack }: CustomNotificationsPanelProps = {}) {
   const { t } = useTranslation("notifications");
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -109,15 +114,15 @@ const CustomNotificationsPage = () => {
 
   const filteredNotifications = useMemo(() => {
     const priorityOrder = { high: 3, normal: 2, low: 1 };
-    
+
     return notifications
       .filter((n: any) => {
-        const matchesSearch = searchQuery === "" || 
+        const matchesSearch = searchQuery === "" ||
           n.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           n.description?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesPriority = priorityFilter === "all" || n.priority === priorityFilter;
-        const matchesStatus = statusFilter === "all" || 
-          (statusFilter === "read" && n.isRead) || 
+        const matchesStatus = statusFilter === "all" ||
+          (statusFilter === "read" && n.isRead) ||
           (statusFilter === "unread" && !n.isRead);
         return matchesSearch && matchesPriority && matchesStatus;
       })
@@ -128,7 +133,7 @@ const CustomNotificationsPage = () => {
         } else if (sortColumn === "date") {
           comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
         } else if (sortColumn === "priority") {
-          comparison = (priorityOrder[a.priority as keyof typeof priorityOrder] || 2) - 
+          comparison = (priorityOrder[a.priority as keyof typeof priorityOrder] || 2) -
                        (priorityOrder[b.priority as keyof typeof priorityOrder] || 2);
         }
         return sortDirection === "asc" ? comparison : -comparison;
@@ -329,7 +334,7 @@ const CustomNotificationsPage = () => {
     if (sortColumn !== column) {
       return <ArrowUpDown className="ml-1 h-3 w-3 text-muted-foreground" />;
     }
-    return sortDirection === "asc" 
+    return sortDirection === "asc"
       ? <ArrowUp className="ml-1 h-3 w-3" />
       : <ArrowDown className="ml-1 h-3 w-3" />;
   };
@@ -475,7 +480,7 @@ const CustomNotificationsPage = () => {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -486,10 +491,8 @@ const CustomNotificationsPage = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <Link href="/">
-              <ArrowLeft className="mr-2 h-4 w-4" /> {t('customNotificationsPage.backButton')}
-            </Link>
+          <Button variant="outline" onClick={onBack}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> {t('customNotificationsPage.backButton')}
           </Button>
           <Button onClick={() => setIsCreateDialogOpen(true)} data-testid="button-add-notification">
             <Plus className="mr-2 h-4 w-4" /> {t('customNotificationsPage.addNotificationButton')}
@@ -660,8 +663,8 @@ const CustomNotificationsPage = () => {
               </TableHeader>
               <TableBody>
                 {filteredNotifications.map((notification: any) => (
-                  <TableRow 
-                    key={notification.id} 
+                  <TableRow
+                    key={notification.id}
                     className={!notification.isRead ? "bg-primary/5" : ""}
                     data-testid={`row-notification-${notification.id}`}
                   >
@@ -789,6 +792,4 @@ const CustomNotificationsPage = () => {
       </Dialog>
     </div>
   );
-};
-
-export default CustomNotificationsPage;
+}

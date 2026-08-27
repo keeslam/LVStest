@@ -813,11 +813,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
         </AlertDialogContent>
       </AlertDialog>
 
-      <NotificationsDialog
-        open={settingsDialogOpen}
-        onOpenChange={setSettingsDialogOpen}
-        onNavigateAway={() => onOpenChange(false)}
-      />
+      <NotificationsDialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen} />
     </>
   );
 }

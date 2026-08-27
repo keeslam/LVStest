@@ -50,6 +50,7 @@ import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { Link } from "wouter";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
+import { CustomNotificationsDialog } from "@/components/notifications/custom-notifications-dialog";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -65,21 +66,14 @@ const notificationSettingsSchema = z.object({
 
 type NotificationSettings = z.infer<typeof notificationSettingsSchema>;
 
-interface NotificationsPanelProps {
-  // Called right before navigating to /notifications/custom - lets a
-  // dialog-hosted panel close itself first, so the destination page
-  // doesn't render underneath a stale open dialog.
-  onNavigateAway?: () => void;
-}
-
-// Shared content for the notification center - used both by the full
-// /notifications page and by NotificationsDialog, so there is one
-// implementation instead of two copies drifting apart.
-export function NotificationsPanel({ onNavigateAway }: NotificationsPanelProps = {}) {
+// Shared content for the notification center - used by NotificationsDialog,
+// so there is one implementation instead of copies drifting apart.
+export function NotificationsPanel() {
   const { t } = useTranslation("notifications");
   const { toast } = useToast();
   const { openReservationDialog } = useGlobalDialog();
   const [activeTab, setActiveTab] = useState<string>("all");
+  const [customDialogOpen, setCustomDialogOpen] = useState(false);
   const today = new Date();
 
   // Default notification settings (we would normally load these from user preferences)
@@ -224,11 +218,9 @@ export function NotificationsPanel({ onNavigateAway }: NotificationsPanelProps =
             {t('notificationsPage.pageDescription')}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/notifications/custom" onClick={() => onNavigateAway?.()}>
-            <Bell className="mr-2 h-4 w-4" />
-            {t('notificationsPage.manageCustomButton')}
-          </Link>
+        <Button onClick={() => setCustomDialogOpen(true)}>
+          <Bell className="mr-2 h-4 w-4" />
+          {t('notificationsPage.manageCustomButton')}
         </Button>
       </div>
 
@@ -654,8 +646,8 @@ export function NotificationsPanel({ onNavigateAway }: NotificationsPanelProps =
                                       {t('notificationsPage.markReadButton')}
                                     </Button>
                                   )}
-                                  <Button size="sm" asChild className="ml-2">
-                                    <Link href="/notifications/custom" onClick={() => onNavigateAway?.()}>{t('notificationsPage.manageButton')}</Link>
+                                  <Button size="sm" className="ml-2" onClick={() => setCustomDialogOpen(true)}>
+                                    {t('notificationsPage.manageButton')}
                                   </Button>
                                 </TableCell>
                               </TableRow>
@@ -917,8 +909,8 @@ export function NotificationsPanel({ onNavigateAway }: NotificationsPanelProps =
                                     {t('notificationsPage.markReadButton')}
                                   </Button>
                                 )}
-                                <Button size="sm" asChild className="ml-2">
-                                  <Link href="/notifications/custom" onClick={() => onNavigateAway?.()}>{t('notificationsPage.manageButton')}</Link>
+                                <Button size="sm" className="ml-2" onClick={() => setCustomDialogOpen(true)}>
+                                  {t('notificationsPage.manageButton')}
                                 </Button>
                               </TableCell>
                             </TableRow>
@@ -933,6 +925,8 @@ export function NotificationsPanel({ onNavigateAway }: NotificationsPanelProps =
           </CardContent>
         </Card>
       </div>
+
+      <CustomNotificationsDialog open={customDialogOpen} onOpenChange={setCustomDialogOpen} />
     </div>
   );
 }

@@ -15,7 +15,6 @@ import VehicleExpensesPage from "@/pages/expenses/vehicle/[id]";
 import DocumentsIndex from "@/pages/documents/index";
 import ReportsPage from "@/pages/reports/index";
 import DeliveryDashboard from "@/pages/delivery/dashboard";
-import CustomNotificationsPage from "@/pages/notifications/custom-notifications";
 import CustomerCommunications from "@/pages/CustomerCommunications";
 import MaintenanceCalendar from "@/pages/maintenance/calendar";
 import SettingsPage from "@/pages/settings/index";
@@ -70,7 +69,6 @@ function AppRoutes() {
               <ProtectedRoute path="/documents" component={DocumentsIndex} />
               <ProtectedRoute path="/reports" component={ReportsPage} />
               <ProtectedRoute path="/delivery" component={DeliveryDashboard} />
-              <ProtectedRoute path="/notifications/custom" component={CustomNotificationsPage} />
               <ProtectedRoute path="/communications" component={CustomerCommunications} />
               <ProtectedRoute path="/settings" component={SettingsPage} />
               <Route path="/auth" component={AuthPage} />
