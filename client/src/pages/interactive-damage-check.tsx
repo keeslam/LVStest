@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ interface InteractiveDamageCheckProps {
 }
 
 export default function InteractiveDamageCheck({ onClose, editingCheckId: propEditingCheckId, initialVehicleId, initialReservationId, compareWithCheckId, initialCheckType, initialMileage, initialFuelLevel, initialDate }: InteractiveDamageCheckProps = {}) {
+  const { t } = useTranslation("documents");
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -297,14 +299,14 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
         }
 
         toast({
-          title: "Check Loaded",
-          description: "Damage check loaded successfully for editing",
+          title: t('interactiveDamageCheck.toasts.checkLoadedTitle'),
+          description: t('interactiveDamageCheck.toasts.checkLoadedDescription'),
         });
       } catch (error) {
         console.error('Error loading damage check:', error);
         toast({
-          title: "Error",
-          description: "Failed to load damage check",
+          title: t('interactiveDamageCheck.toasts.errorTitle'),
+          description: t('interactiveDamageCheck.toasts.loadCheckFailedDescription'),
           variant: "destructive",
         });
       }
@@ -333,14 +335,14 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
         setCheckType('return'); // Automatically set to return check when comparing
 
         toast({
-          title: "Comparison Mode",
-          description: "Showing pickup check for comparison",
+          title: t('interactiveDamageCheck.toasts.comparisonModeTitle'),
+          description: t('interactiveDamageCheck.toasts.comparisonModeDescription'),
         });
       } catch (error) {
         console.error('Error loading pickup check for comparison:', error);
         toast({
-          title: "Error",
-          description: "Failed to load pickup check for comparison",
+          title: t('interactiveDamageCheck.toasts.errorTitle'),
+          description: t('interactiveDamageCheck.toasts.loadPickupCheckFailedDescription'),
           variant: "destructive",
         });
       }
@@ -398,8 +400,8 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
           setDiagramTemplate(template);
         } else {
           toast({
-            title: "No diagram found",
-            description: "No matching vehicle diagram found for this vehicle",
+            title: t('interactiveDamageCheck.toasts.noDiagramFoundTitle'),
+            description: t('interactiveDamageCheck.toasts.noDiagramFoundDescription'),
             variant: "destructive",
           });
         }
@@ -593,8 +595,8 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
       // Only add marker if a damage type is selected
       if (!selectedDamageType) {
         toast({
-          title: "Select Damage Type",
-          description: "Please select a damage type (Dent, Scratch, etc.) before marking on the diagram",
+          title: t('interactiveDamageCheck.toasts.selectDamageTypeTitle'),
+          description: t('interactiveDamageCheck.toasts.selectDamageTypeDescription'),
           variant: "destructive",
         });
         return;
@@ -848,14 +850,14 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
       }
 
       toast({
-        title: "Check Loaded",
-        description: `Loaded damage check from ${new Date(savedCheck.checkDate || savedCheck.createdAt).toLocaleDateString()}`,
+        title: t('interactiveDamageCheck.toasts.checkLoadedTitle'),
+        description: t('interactiveDamageCheck.toasts.checkLoadedWithDateDescription', { date: new Date(savedCheck.checkDate || savedCheck.createdAt).toLocaleDateString() }),
       });
     } catch (error) {
       console.error('Error loading damage check:', error);
       toast({
-        title: "Error",
-        description: "Failed to load damage check",
+        title: t('interactiveDamageCheck.toasts.errorTitle'),
+        description: t('interactiveDamageCheck.toasts.loadCheckFailedDescription'),
         variant: "destructive",
       });
     } finally {
@@ -956,8 +958,8 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
   const handleSave = async () => {
     if (!selectedVehicleId || !diagramTemplate) {
       toast({
-        title: "Validation Error",
-        description: "Please select a vehicle",
+        title: t('interactiveDamageCheck.toasts.validationErrorTitle'),
+        description: t('interactiveDamageCheck.toasts.selectVehicleDescription'),
         variant: "destructive",
       });
       return;
@@ -1012,8 +1014,8 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
         await apiRequest('PUT', `/api/interactive-damage-checks/${editingCheckId}`, checkData);
         savedId = editingCheckId;
         toast({
-          title: "Success",
-          description: "Damage check updated successfully",
+          title: t('interactiveDamageCheck.toasts.successTitle'),
+          description: t('interactiveDamageCheck.toasts.checkUpdatedDescription'),
         });
       } else {
         try {
@@ -1028,8 +1030,8 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
             // ignore JSON parse errors — we'll just leave Print disabled
           }
           toast({
-            title: "Success",
-            description: "Damage check saved successfully",
+            title: t('interactiveDamageCheck.toasts.successTitle'),
+            description: t('interactiveDamageCheck.toasts.checkSavedDescription'),
           });
         } catch (postError: any) {
           if (postError.message?.includes('already exists') || postError.message?.startsWith('409')) {
@@ -1042,8 +1044,8 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                 await apiRequest('PUT', `/api/interactive-damage-checks/${existing.id}`, checkData);
                 savedId = existing.id;
                 toast({
-                  title: "Success",
-                  description: "Existing damage check updated with your changes",
+                  title: t('interactiveDamageCheck.toasts.successTitle'),
+                  description: t('interactiveDamageCheck.toasts.existingCheckUpdatedDescription'),
                 });
               } else {
                 throw postError;
@@ -1075,8 +1077,8 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
       // keep editing) and close it themselves via the Close button or the X.
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to save damage check",
+        title: t('interactiveDamageCheck.toasts.errorTitle'),
+        description: error.message || t('interactiveDamageCheck.toasts.saveCheckFailedDescription'),
         variant: "destructive",
       });
     } finally {
@@ -1093,15 +1095,15 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold">
-              {showComparison ? 'Create Return Check - Compare with Pickup' : 'Interactive Damage Check'}
+              {showComparison ? t('interactiveDamageCheck.pageTitleComparison') : t('interactiveDamageCheck.pageTitle')}
             </h1>
             <p className="text-gray-600 mt-1">
-              {showComparison ? 'Review pickup damage and mark any new damage found on return' : 'iPad-optimized damage inspection interface'}
+              {showComparison ? t('interactiveDamageCheck.pageSubtitleComparison') : t('interactiveDamageCheck.pageSubtitle')}
             </p>
           </div>
           <Button variant="outline" onClick={() => onClose ? onClose() : navigate('/documents')} data-testid="button-close">
             <X className="h-4 w-4 mr-2" />
-            Close
+            {t('interactiveDamageCheck.closeButton')}
           </Button>
         </div>
 
@@ -1112,39 +1114,39 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
               <div className="flex-1">
                 <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
                   <ClipboardCheck className="h-4 w-4" />
-                  Pickup Check Reference
+                  {t('interactiveDamageCheck.pickupCheckReferenceTitle')}
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                   <div>
-                    <span className="text-blue-700 font-medium">Date:</span>
+                    <span className="text-blue-700 font-medium">{t('interactiveDamageCheck.dateLabel')}</span>
                     <span className="ml-2 text-blue-900">
-                      {pickupCheckData.checkDate ? new Date(pickupCheckData.checkDate).toLocaleDateString() : 'N/A'}
+                      {pickupCheckData.checkDate ? new Date(pickupCheckData.checkDate).toLocaleDateString() : t('interactiveDamageCheck.notAvailable')}
                     </span>
                   </div>
                   {pickupCheckData.mileage && (
                     <div>
-                      <span className="text-blue-700 font-medium">Mileage:</span>
+                      <span className="text-blue-700 font-medium">{t('interactiveDamageCheck.mileageLabel')}</span>
                       <span className="ml-2 text-blue-900">{Number(pickupCheckData.mileage).toLocaleString()} km</span>
                     </div>
                   )}
                   {pickupCheckData.fuelLevel && (
                     <div>
-                      <span className="text-blue-700 font-medium">Fuel:</span>
+                      <span className="text-blue-700 font-medium">{t('interactiveDamageCheck.fuelLabel')}</span>
                       <span className="ml-2 text-blue-900">{pickupCheckData.fuelLevel}</span>
                     </div>
                   )}
                   {pickupCheckData.damageMarkers && JSON.parse(pickupCheckData.damageMarkers).length > 0 && (
                     <div>
-                      <span className="text-blue-700 font-medium">Existing Damage:</span>
+                      <span className="text-blue-700 font-medium">{t('interactiveDamageCheck.existingDamageLabel')}</span>
                       <span className="ml-2 text-blue-900 font-semibold">
-                        {JSON.parse(pickupCheckData.damageMarkers).length} item(s)
+                        {t('interactiveDamageCheck.itemCount', { count: JSON.parse(pickupCheckData.damageMarkers).length })}
                       </span>
                     </div>
                   )}
                 </div>
                 {pickupCheckData.notes && (
                   <div className="mt-2 text-sm">
-                    <span className="text-blue-700 font-medium">Notes:</span>
+                    <span className="text-blue-700 font-medium">{t('interactiveDamageCheck.notesLabel')}</span>
                     <span className="ml-2 text-blue-900 italic">{pickupCheckData.notes}</span>
                   </div>
                 )}
@@ -1155,7 +1157,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                 onClick={() => window.open(`/api/interactive-damage-checks/${pickupCheckData.id}/pdf`, '_blank')}
                 className="bg-white hover:bg-blue-100"
               >
-                View Pickup PDF
+                {t('interactiveDamageCheck.viewPickupPdfButton')}
               </Button>
             </div>
           </Card>
@@ -1165,48 +1167,48 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
         <Card className="p-4 mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
             <div>
-              <Label>Vehicle *</Label>
+              <Label>{t('interactiveDamageCheck.vehicleLabel')}</Label>
               <VehicleSelector
                 vehicles={vehicles}
                 value={selectedVehicleId?.toString() || ""}
                 onChange={(val) => setSelectedVehicleId(parseInt(val))}
-                placeholder="Select a vehicle"
+                placeholder={t('interactiveDamageCheck.selectVehiclePlaceholder')}
               />
             </div>
 
             <div>
-              <Label>Reservation (Optional)</Label>
+              <Label>{t('interactiveDamageCheck.reservationLabel')}</Label>
               <ReservationSelector
                 reservations={reservations}
                 value={selectedReservationId}
                 onChange={setSelectedReservationId}
-                placeholder="Link to reservation"
+                placeholder={t('interactiveDamageCheck.linkToReservationPlaceholder')}
                 allowNone={true}
               />
             </div>
 
             <div>
-              <Label>Check Type</Label>
+              <Label>{t('interactiveDamageCheck.checkTypeLabel')}</Label>
               <Select value={checkType} onValueChange={(val: any) => setCheckType(val)}>
                 <SelectTrigger data-testid="select-check-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pickup">Pickup Inspection</SelectItem>
-                  <SelectItem value="return">Return Inspection</SelectItem>
+                  <SelectItem value="pickup">{t('interactiveDamageCheck.pickupInspection')}</SelectItem>
+                  <SelectItem value="return">{t('interactiveDamageCheck.returnInspection')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="flex flex-col items-stretch gap-2">
-              <Button 
+              <Button
                 onClick={handleSave}
                 disabled={isSaving || !selectedVehicleId || !diagramTemplate}
                 className="w-full"
                 data-testid="button-save-check"
               >
                 <Save className="h-4 w-4 mr-2" />
-                {isSaving ? 'Saving...' : 'Save Check'}
+                {isSaving ? t('interactiveDamageCheck.savingButton') : t('interactiveDamageCheck.saveCheckButton')}
               </Button>
               <Button
                 type="button"
@@ -1219,10 +1221,10 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                 disabled={isSaving || !(lastSavedCheckId ?? editingCheckId)}
                 className="w-full"
                 data-testid="button-print-check"
-                title={!(lastSavedCheckId ?? editingCheckId) ? 'Save the check first to enable printing' : 'Open the generated PDF in a new tab to print'}
+                title={!(lastSavedCheckId ?? editingCheckId) ? t('interactiveDamageCheck.saveCheckFirstTitle') : t('interactiveDamageCheck.openPdfTitle')}
               >
                 <Printer className="h-4 w-4 mr-2" />
-                Print PDF
+                {t('interactiveDamageCheck.printPdfButton')}
               </Button>
             </div>
           </div>
@@ -1232,9 +1234,9 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
             <div className="pt-4 border-t">
               <div className="flex items-center gap-4">
                 <div className="flex-1">
-                  <Label className="text-sm text-gray-600">Load Previous Damage Check</Label>
-                  <Select 
-                    value={editingCheckId?.toString() || "new"} 
+                  <Label className="text-sm text-gray-600">{t('interactiveDamageCheck.loadPreviousCheckLabel')}</Label>
+                  <Select
+                    value={editingCheckId?.toString() || "new"}
                     onValueChange={(val) => {
                       if (val === "new") {
                         setEditingCheckId(null);
@@ -1253,11 +1255,11 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                     disabled={loadingExistingCheck}
                   >
                     <SelectTrigger className="w-full" data-testid="select-previous-check">
-                      <SelectValue placeholder="Create new check..." />
+                      <SelectValue placeholder={t('interactiveDamageCheck.createNewCheckPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="new">
-                        <span className="font-medium">+ Create New Check</span>
+                        <span className="font-medium">{t('interactiveDamageCheck.createNewCheckOption')}</span>
                       </SelectItem>
                       {existingChecks
                         .sort((a, b) => new Date(b.checkDate || b.createdAt).getTime() - new Date(a.checkDate || a.createdAt).getTime())
@@ -1268,11 +1270,11 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                             <SelectItem key={check.id} value={check.id.toString()}>
                               <div className="flex items-center gap-2">
                                 <span className={`px-2 py-0.5 rounded text-xs ${check.checkType === 'pickup' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                                  {check.checkType}
+                                  {check.checkType === 'pickup' ? t('interactiveDamageCheck.pickupInspection') : t('interactiveDamageCheck.returnInspection')}
                                 </span>
                                 <span>{date}</span>
                                 {damageCount > 0 && (
-                                  <span className="text-xs text-gray-500">({damageCount} damage points)</span>
+                                  <span className="text-xs text-gray-500">{t('interactiveDamageCheck.damagePointsCount', { count: damageCount })}</span>
                                 )}
                               </div>
                             </SelectItem>
@@ -1282,7 +1284,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                   </Select>
                 </div>
                 <div className="text-sm text-gray-500">
-                  {existingChecks.length} check(s) found
+                  {t('interactiveDamageCheck.checksFoundCount', { count: existingChecks.length })}
                 </div>
               </div>
             </div>
@@ -1293,19 +1295,19 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
         <Card className="p-4 mb-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-semibold text-lg">
-              {selectedVehicle ? `${selectedVehicle.brand} ${selectedVehicle.model}` : 'Vehicle Diagram'}
+              {selectedVehicle ? `${selectedVehicle.brand} ${selectedVehicle.model}` : t('interactiveDamageCheck.vehicleDiagramFallback')}
             </h3>
             <div className="flex gap-2">
-              <Button 
+              <Button
                 variant={isDrawing ? "default" : "outline"}
                 size="sm"
                 onClick={() => setIsDrawing(!isDrawing)}
                 data-testid="button-toggle-drawing"
               >
                 {isDrawing ? <Eraser className="h-4 w-4 mr-2" /> : <Pencil className="h-4 w-4 mr-2" />}
-                {isDrawing ? 'Stop Drawing' : 'Draw'}
+                {isDrawing ? t('interactiveDamageCheck.stopDrawingButton') : t('interactiveDamageCheck.drawButton')}
               </Button>
-              <Button 
+              <Button
                 variant="outline"
                 size="sm"
                 onClick={clearDrawings}
@@ -1313,14 +1315,14 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                 data-testid="button-clear-drawings"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Clear Drawings
+                {t('interactiveDamageCheck.clearDrawingsButton')}
               </Button>
             </div>
           </div>
 
           {/* Damage Type Selector */}
           <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg">
-            <h4 className="font-semibold text-sm mb-3 text-blue-900">Select Damage Type, Then Click on Diagram:</h4>
+            <h4 className="font-semibold text-sm mb-3 text-blue-900">{t('interactiveDamageCheck.selectDamageTypeHeading')}</h4>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               <Button
                 variant={selectedDamageType === 'dent' ? 'default' : 'outline'}
@@ -1330,7 +1332,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                 data-testid="button-select-dent"
               >
                 <span className="font-bold bg-white text-blue-600 w-10 h-10 md:w-9 md:h-9 lg:w-7 lg:h-7 rounded-full flex items-center justify-center mr-2 text-base md:text-sm">1</span>
-                Dent
+                {t('interactiveDamageCheck.damageTypeDent')}
               </Button>
               <Button
                 variant={selectedDamageType === 'scratch' ? 'default' : 'outline'}
@@ -1340,7 +1342,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                 data-testid="button-select-scratch"
               >
                 <span className="font-bold bg-white text-orange-600 w-10 h-10 md:w-9 md:h-9 lg:w-7 lg:h-7 rounded-full flex items-center justify-center mr-2 text-base md:text-sm">2</span>
-                Scratch
+                {t('interactiveDamageCheck.damageTypeScratch')}
               </Button>
               <Button
                 variant={selectedDamageType === 'crack' ? 'default' : 'outline'}
@@ -1350,7 +1352,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                 data-testid="button-select-crack"
               >
                 <span className="font-bold bg-white text-red-600 w-10 h-10 md:w-9 md:h-9 lg:w-7 lg:h-7 rounded-full flex items-center justify-center mr-2 text-base md:text-sm">3</span>
-                Crack
+                {t('interactiveDamageCheck.damageTypeCrack')}
               </Button>
               <Button
                 variant={selectedDamageType === 'missing' ? 'default' : 'outline'}
@@ -1360,7 +1362,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                 data-testid="button-select-missing"
               >
                 <span className="font-bold bg-white text-purple-600 w-10 h-10 md:w-9 md:h-9 lg:w-7 lg:h-7 rounded-full flex items-center justify-center mr-2 text-base md:text-sm">4</span>
-                Missing Part
+                {t('interactiveDamageCheck.damageTypeMissing')}
               </Button>
               <Button
                 variant={selectedDamageType === 'other' ? 'default' : 'outline'}
@@ -1370,12 +1372,12 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                 data-testid="button-select-other"
               >
                 <span className="font-bold bg-white text-gray-600 w-10 h-10 md:w-9 md:h-9 lg:w-7 lg:h-7 rounded-full flex items-center justify-center mr-2 text-base md:text-sm">5</span>
-                Other
+                {t('interactiveDamageCheck.damageTypeOther')}
               </Button>
             </div>
             {selectedDamageType && (
               <p className="text-xs text-blue-700 mt-2 font-medium">
-                ✓ Selected: <span className="uppercase">{selectedDamageType}</span> - Now click on the diagram to mark damage locations
+                {t('interactiveDamageCheck.selectedDamageTypeHint', { type: selectedDamageType.toUpperCase() })}
               </p>
             )}
           </div>
@@ -1384,15 +1386,15 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
           {showComparison && pickupCheckData && (
             <div className="mb-4 space-y-3">
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm font-medium text-blue-900 mb-2">Comparison View Legend:</p>
+                <p className="text-sm font-medium text-blue-900 mb-2">{t('interactiveDamageCheck.comparisonLegendTitle')}</p>
                 <div className="flex gap-4 text-xs">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded-full bg-gray-400 border-2 border-gray-600"></div>
-                    <span className="text-gray-700">Existing damage from pickup check</span>
+                    <span className="text-gray-700">{t('interactiveDamageCheck.existingDamageFromPickup')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded-full bg-red-500"></div>
-                    <span className="text-gray-700">New damage marked on return</span>
+                    <span className="text-gray-700">{t('interactiveDamageCheck.newDamageOnReturn')}</span>
                   </div>
                 </div>
               </div>
@@ -1400,7 +1402,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
               {/* Pickup Damage Reference */}
               {pickupCheckData.markers && pickupCheckData.markers.length > 0 && (
                 <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm font-medium text-green-900 mb-2">Pickup Check Damage Points (Reference):</p>
+                  <p className="text-sm font-medium text-green-900 mb-2">{t('interactiveDamageCheck.pickupDamagePointsReference')}</p>
                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 text-xs">
                     {pickupCheckData.markers.map((marker: any, index: number) => (
                       <div 
@@ -1427,7 +1429,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                 <img 
                   ref={imageRef}
                   src={`/api/vehicle-diagram-templates/${diagramTemplate.id}/image`}
-                  alt="Vehicle diagram"
+                  alt={t('interactiveDamageCheck.vehicleDiagramAlt')}
                   className="w-full h-auto pointer-events-none"
                   crossOrigin="anonymous"
                 />
@@ -1453,14 +1455,14 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
             </div>
           ) : (
             <div className="text-center py-20 text-gray-500">
-              <p className="text-lg">Select a vehicle to load the diagram</p>
-              <p className="text-sm mt-2">Vehicle diagrams can be added in Documents → Damage Check → Diagram Templates</p>
+              <p className="text-lg">{t('interactiveDamageCheck.selectVehicleToLoadDiagram')}</p>
+              <p className="text-sm mt-2">{t('interactiveDamageCheck.diagramTemplatesHint')}</p>
             </div>
           )}
 
           {markers.length > 0 && (
             <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <h4 className="font-medium text-sm mb-2">Damage Points ({markers.length})</h4>
+              <h4 className="font-medium text-sm mb-2">{t('interactiveDamageCheck.damagePointsHeading', { count: markers.length })}</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 text-sm">
                 {markers.map((marker, index) => (
                   <div 
@@ -1482,60 +1484,60 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
           <Card className="p-4 mb-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold">
-                Damage Point #{markers.indexOf(selectedMarker) + 1} Details
+                {t('interactiveDamageCheck.damagePointDetailsHeading', { number: markers.indexOf(selectedMarker) + 1 })}
               </h3>
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 size="sm"
                 onClick={() => deleteMarker(selectedMarker.id)}
                 data-testid="button-delete-marker"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Delete
+                {t('interactiveDamageCheck.deleteButton')}
               </Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label>Damage Type</Label>
-                <Select 
-                  value={selectedMarker.type} 
+                <Label>{t('interactiveDamageCheck.damageTypeLabel')}</Label>
+                <Select
+                  value={selectedMarker.type}
                   onValueChange={(val: any) => updateMarker({ type: val })}
                 >
                   <SelectTrigger data-testid="select-damage-type">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="dent">1 - Dent</SelectItem>
-                    <SelectItem value="scratch">2 - Scratch</SelectItem>
-                    <SelectItem value="crack">3 - Crack</SelectItem>
-                    <SelectItem value="missing">4 - Missing Part</SelectItem>
-                    <SelectItem value="other">5 - Other</SelectItem>
+                    <SelectItem value="dent">{t('interactiveDamageCheck.damageTypeDentOption')}</SelectItem>
+                    <SelectItem value="scratch">{t('interactiveDamageCheck.damageTypeScratchOption')}</SelectItem>
+                    <SelectItem value="crack">{t('interactiveDamageCheck.damageTypeCrackOption')}</SelectItem>
+                    <SelectItem value="missing">{t('interactiveDamageCheck.damageTypeMissingOption')}</SelectItem>
+                    <SelectItem value="other">{t('interactiveDamageCheck.damageTypeOtherOption')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label>Severity</Label>
-                <Select 
-                  value={selectedMarker.severity} 
+                <Label>{t('interactiveDamageCheck.severityLabel')}</Label>
+                <Select
+                  value={selectedMarker.severity}
                   onValueChange={(val: any) => updateMarker({ severity: val })}
                 >
                   <SelectTrigger data-testid="select-severity">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="minor">Minor</SelectItem>
-                    <SelectItem value="moderate">Moderate</SelectItem>
-                    <SelectItem value="severe">Severe</SelectItem>
+                    <SelectItem value="minor">{t('interactiveDamageCheck.severityMinor')}</SelectItem>
+                    <SelectItem value="moderate">{t('interactiveDamageCheck.severityModerate')}</SelectItem>
+                    <SelectItem value="severe">{t('interactiveDamageCheck.severitySevere')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label>Notes</Label>
-                <Textarea 
-                  placeholder="Describe the damage..." 
+                <Label>{t('interactiveDamageCheck.notesFieldLabel')}</Label>
+                <Textarea
+                  placeholder={t('interactiveDamageCheck.describeDamagePlaceholder')}
                   value={selectedMarker.notes}
                   onChange={(e) => updateMarker({ notes: e.target.value })}
                   rows={3}
@@ -1628,29 +1630,29 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
 
         {/* Vehicle Details */}
         <Card className="p-4 mb-6">
-          <h3 className="font-semibold mb-4">Vehicle Details</h3>
+          <h3 className="font-semibold mb-4">{t('interactiveDamageCheck.vehicleDetailsTitle')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label>Fuel Level</Label>
+              <Label>{t('interactiveDamageCheck.fuelLevelLabel')}</Label>
               <Select value={fuelLevel} onValueChange={setFuelLevel}>
                 <SelectTrigger data-testid="select-fuel-level">
-                  <SelectValue placeholder="Select fuel level" />
+                  <SelectValue placeholder={t('interactiveDamageCheck.selectFuelLevelPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Empty">Empty</SelectItem>
+                  <SelectItem value="Empty">{t('interactiveDamageCheck.fuelEmpty')}</SelectItem>
                   <SelectItem value="1/4">1/4</SelectItem>
                   <SelectItem value="1/2">1/2</SelectItem>
                   <SelectItem value="3/4">3/4</SelectItem>
-                  <SelectItem value="Full">Full</SelectItem>
+                  <SelectItem value="Full">{t('interactiveDamageCheck.fuelFull')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label>Mileage</Label>
-              <Input 
-                type="number" 
-                placeholder="Current mileage" 
+              <Label>{t('interactiveDamageCheck.mileageFieldLabel')}</Label>
+              <Input
+                type="number"
+                placeholder={t('interactiveDamageCheck.currentMileagePlaceholder')}
                 value={mileage}
                 onChange={(e) => setMileage(e.target.value)}
                 data-testid="input-mileage"
@@ -1658,9 +1660,9 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
             </div>
 
             <div>
-              <Label>General Notes</Label>
-              <Textarea 
-                placeholder="Add general observations..." 
+              <Label>{t('interactiveDamageCheck.generalNotesLabel')}</Label>
+              <Textarea
+                placeholder={t('interactiveDamageCheck.generalObservationsPlaceholder')}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
@@ -1674,18 +1676,18 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
           {/* Renter Signature */}
           <Card className="p-4">
-            <h3 className="font-semibold mb-4">Renter Signature</h3>
+            <h3 className="font-semibold mb-4">{t('interactiveDamageCheck.renterSignatureTitle')}</h3>
             {renterSignature ? (
               <div>
-                <img src={renterSignature} alt="Renter signature" className="border rounded h-32 w-full object-contain bg-white" />
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <img src={renterSignature} alt={t('interactiveDamageCheck.renterSignatureAlt')} className="border rounded h-32 w-full object-contain bg-white" />
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => clearSignature(renterSignatureRef, setRenterSignature)}
                   className="mt-2"
                   data-testid="button-clear-renter-signature"
                 >
-                  Clear Signature
+                  {t('interactiveDamageCheck.clearSignatureButton')}
                 </Button>
               </div>
             ) : (
@@ -1698,20 +1700,20 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                   data-testid="canvas-renter-signature"
                 />
                 <div className="flex gap-2 mt-2">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => clearSignature(renterSignatureRef, setRenterSignature)}
                     data-testid="button-clear-renter-canvas"
                   >
-                    Clear
+                    {t('interactiveDamageCheck.clearButton')}
                   </Button>
-                  <Button 
+                  <Button
                     size="sm"
                     onClick={() => saveSignature(renterSignatureRef, setRenterSignature, setIsSigningRenter)}
                     data-testid="button-save-renter-signature"
                   >
-                    Save Signature
+                    {t('interactiveDamageCheck.saveSignatureButton')}
                   </Button>
                 </div>
               </div>
@@ -1720,18 +1722,18 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
 
           {/* Customer Signature */}
           <Card className="p-4">
-            <h3 className="font-semibold mb-4">Customer Signature</h3>
+            <h3 className="font-semibold mb-4">{t('interactiveDamageCheck.customerSignatureTitle')}</h3>
             {customerSignature ? (
               <div>
-                <img src={customerSignature} alt="Customer signature" className="border rounded h-32 w-full object-contain bg-white" />
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <img src={customerSignature} alt={t('interactiveDamageCheck.customerSignatureAlt')} className="border rounded h-32 w-full object-contain bg-white" />
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => clearSignature(customerSignatureRef, setCustomerSignature)}
                   className="mt-2"
                   data-testid="button-clear-customer-signature"
                 >
-                  Clear Signature
+                  {t('interactiveDamageCheck.clearSignatureButton')}
                 </Button>
               </div>
             ) : (
@@ -1744,20 +1746,20 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                   data-testid="canvas-customer-signature"
                 />
                 <div className="flex gap-2 mt-2">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => clearSignature(customerSignatureRef, setCustomerSignature)}
                     data-testid="button-clear-customer-canvas"
                   >
-                    Clear
+                    {t('interactiveDamageCheck.clearButton')}
                   </Button>
-                  <Button 
+                  <Button
                     size="sm"
                     onClick={() => saveSignature(customerSignatureRef, setCustomerSignature, setIsSigningCustomer)}
                     data-testid="button-save-customer-signature"
                   >
-                    Save Signature
+                    {t('interactiveDamageCheck.saveSignatureButton')}
                   </Button>
                 </div>
               </div>
@@ -1781,7 +1783,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                 className="sm:w-auto"
               >
                 <X className="h-4 w-4 mr-2" />
-                Close
+                {t('interactiveDamageCheck.closeButton')}
               </Button>
               <Button
                 type="button"
@@ -1793,11 +1795,11 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                 }}
                 disabled={isSaving || !(lastSavedCheckId ?? editingCheckId)}
                 data-testid="button-print-check-footer"
-                title={!(lastSavedCheckId ?? editingCheckId) ? 'Save the check first to enable printing' : 'Open the generated PDF in a new tab to print'}
+                title={!(lastSavedCheckId ?? editingCheckId) ? t('interactiveDamageCheck.saveCheckFirstTitle') : t('interactiveDamageCheck.openPdfTitle')}
                 className="sm:w-auto"
               >
                 <Printer className="h-4 w-4 mr-2" />
-                Print PDF
+                {t('interactiveDamageCheck.printPdfButton')}
               </Button>
               <Button
                 onClick={handleSave}
@@ -1806,7 +1808,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                 className="sm:w-auto"
               >
                 <Save className="h-4 w-4 mr-2" />
-                {isSaving ? 'Saving...' : 'Save Check'}
+                {isSaving ? t('interactiveDamageCheck.savingButton') : t('interactiveDamageCheck.saveCheckButton')}
               </Button>
             </div>
           </Card>

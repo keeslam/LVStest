@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -223,6 +224,7 @@ interface VehicleBulkImportDialogProps {
 }
 
 export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImportDialogProps) {
+  const { t } = useTranslation("vehicles");
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -552,27 +554,27 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
       
       if (data.length === 0) {
         toast({
-          title: "Invalid File",
-          description: "No valid vehicle data found. Make sure the first row contains headers and subsequent rows contain data.",
+          title: t('bulkImportDialog.toasts.invalidFileTitle'),
+          description: t('bulkImportDialog.toasts.invalidFileDescription'),
           variant: "destructive",
         });
         return;
       }
-      
+
       setCsvHeaders(headers);
       setCsvPreviewData(data);
-      
+
       const validCount = data.length - invalidCount;
       if (invalidCount > 0) {
         toast({
-          title: "File Loaded with Warnings",
-          description: `Found ${validCount} valid vehicles and ${invalidCount} rows with errors.`,
+          title: t('bulkImportDialog.toasts.fileLoadedWithWarningsTitle'),
+          description: t('bulkImportDialog.toasts.fileLoadedWithWarningsDescription', { validCount, invalidCount }),
           variant: "destructive",
         });
       } else {
         toast({
-          title: "File Loaded",
-          description: `Found ${data.length} vehicles ready for import.`,
+          title: t('bulkImportDialog.toasts.fileLoadedTitle'),
+          description: t('bulkImportDialog.toasts.fileLoadedDescription', { count: data.length }),
         });
       }
     };
@@ -594,19 +596,19 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
       invalidateByPrefix("/api/vehicles");
       setImportResults(data);
       toast({
-        title: "Import Complete",
-        description: `Successfully imported ${data.imported.length} vehicles. ${data.failed.length} failed.`,
+        title: t('bulkImportDialog.toasts.importCompleteTitle'),
+        description: t('bulkImportDialog.toasts.importCompleteDescription', { importedCount: data.imported.length, failedCount: data.failed.length }),
         variant: data.failed.length > 0 ? "destructive" : "default",
       });
-      
+
       if (onSuccess) {
         onSuccess();
       }
     },
     onError: (error) => {
       toast({
-        title: "Import Failed",
-        description: "An error occurred during the import process. Please try again.",
+        title: t('bulkImportDialog.toasts.importFailedTitle'),
+        description: t('bulkImportDialog.toasts.importFailedDescription'),
         variant: "destructive",
       });
     },
@@ -625,19 +627,19 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
       setCsvHeaders([]);
       setSelectedFile(null);
       toast({
-        title: "Import Complete",
-        description: `Successfully imported ${data.imported.length} vehicles. ${data.failed.length} failed.`,
+        title: t('bulkImportDialog.toasts.importCompleteTitle'),
+        description: t('bulkImportDialog.toasts.importCompleteDescription', { importedCount: data.imported.length, failedCount: data.failed.length }),
         variant: data.failed.length > 0 ? "destructive" : "default",
       });
-      
+
       if (onSuccess) {
         onSuccess();
       }
     },
     onError: (error) => {
       toast({
-        title: "Import Failed",
-        description: "An error occurred during the CSV import process. Please try again.",
+        title: t('bulkImportDialog.toasts.importFailedTitle'),
+        description: t('bulkImportDialog.toasts.csvImportFailedDescription'),
         variant: "destructive",
       });
     },
@@ -657,8 +659,8 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
     
     if (licensePlates.length === 0) {
       toast({
-        title: "No License Plates Found",
-        description: "Please enter at least one valid license plate.",
+        title: t('bulkImportDialog.toasts.noLicensePlatesFoundTitle'),
+        description: t('bulkImportDialog.toasts.noLicensePlatesFoundDescription'),
         variant: "destructive",
       });
       return;
@@ -680,8 +682,8 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
     
     if (validVehicles.length === 0) {
       toast({
-        title: "No Valid Vehicles",
-        description: "All rows have validation errors. Please fix them and try again.",
+        title: t('bulkImportDialog.toasts.noValidVehiclesTitle'),
+        description: t('bulkImportDialog.toasts.noValidVehiclesDescription'),
         variant: "destructive",
       });
       return;
@@ -704,7 +706,7 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
   const trigger = children || (
     <Button variant="outline" data-testid="button-bulk-import">
       <Download className="mr-2 h-4 w-4" />
-      Bulk Import
+      {t('bulkImportDialog.triggerButton')}
     </Button>
   );
 
@@ -715,32 +717,31 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
       </DialogTrigger>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Bulk Import Vehicles</DialogTitle>
+          <DialogTitle>{t('bulkImportDialog.title')}</DialogTitle>
           <DialogDescription>
-            Import multiple vehicles at once using license plates or CSV file
+            {t('bulkImportDialog.description')}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="mt-4">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="w-full grid grid-cols-2 mb-6">
               <TabsTrigger value="manual">
                 <FileText className="mr-2 h-4 w-4" />
-                Manual Entry
+                {t('bulkImportDialog.tabs.manual')}
               </TabsTrigger>
               <TabsTrigger value="csv">
                 <UploadCloud className="mr-2 h-4 w-4" />
-                CSV Upload
+                {t('bulkImportDialog.tabs.csv')}
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="manual">
               <Card>
                 <CardHeader>
-                  <CardTitle>Enter License Plates</CardTitle>
+                  <CardTitle>{t('bulkImportDialog.manualEntry.title')}</CardTitle>
                   <CardDescription>
-                    Enter one license plate per line, or separate them with commas.
-                    Vehicle data will be automatically fetched from the RDW database.
+                    {t('bulkImportDialog.manualEntry.description')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -751,30 +752,30 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
                         name="licensePlates"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>License Plates</FormLabel>
+                            <FormLabel>{t('bulkImportDialog.manualEntry.licensePlatesLabel')}</FormLabel>
                             <FormControl>
                               <Textarea
-                                placeholder="Enter license plates here, one per line or comma-separated. E.g.&#10;AA-BB-12&#10;XY-12-ZZ&#10;12-ABC-3"
+                                placeholder={t('bulkImportDialog.manualEntry.licensePlatesPlaceholder')}
                                 rows={6}
                                 {...field}
                               />
                             </FormControl>
                             <FormDescription>
-                              Example formats: "AA-BB-12" or "AABB12" or "12-ABC-3"
+                              {t('bulkImportDialog.manualEntry.formatHint')}
                             </FormDescription>
                           </FormItem>
                         )}
                       />
-                      <Button 
-                        type="submit" 
+                      <Button
+                        type="submit"
                         className="w-full"
                         disabled={importMutation.isPending}
                         data-testid="button-start-import"
                       >
                         {importMutation.isPending ? (
-                          <>Processing Import...</>
+                          <>{t('bulkImportDialog.manualEntry.processingButton')}</>
                         ) : (
-                          <>Start Import</>
+                          <>{t('bulkImportDialog.manualEntry.startButton')}</>
                         )}
                       </Button>
                     </form>
@@ -787,9 +788,9 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
               {!csvPreviewData ? (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Upload File</CardTitle>
+                    <CardTitle>{t('bulkImportDialog.upload.title')}</CardTitle>
                     <CardDescription>
-                      Upload a CSV or Excel file with vehicle data. The first row should contain headers (e.g., Kenteken, Merk, Model, etc.)
+                      {t('bulkImportDialog.upload.description')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -810,8 +811,8 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
                       }}
                     >
                       <Upload className="mx-auto h-8 w-8 text-gray-400" />
-                      <h3 className="mt-2 text-sm font-semibold">Drag and drop your file here</h3>
-                      <p className="text-xs text-gray-500 mt-1">Supports CSV and Excel (.xlsx, .xls) files</p>
+                      <h3 className="mt-2 text-sm font-semibold">{t('bulkImportDialog.upload.dragDropTitle')}</h3>
+                      <p className="text-xs text-gray-500 mt-1">{t('bulkImportDialog.upload.supportsHint')}</p>
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -835,17 +836,17 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
                         }}
                         data-testid="button-browse-files"
                       >
-                        Browse Files
+                        {t('bulkImportDialog.upload.browseButton')}
                       </Button>
                     </div>
-                    
+
                     <div className="mt-4 p-4 bg-gray-50 rounded-md">
-                      <h4 className="text-sm font-medium mb-2">Expected CSV Format:</h4>
+                      <h4 className="text-sm font-medium mb-2">{t('bulkImportDialog.upload.expectedFormatTitle')}</h4>
                       <p className="text-xs text-gray-600">
-                        First row: Headers (Kenteken, Merk, Model, Voertuigsoort, Brandstof, Bedrijf, Op naam, Chassisnummer, Productie datum)
+                        {t('bulkImportDialog.upload.expectedFormatHeaders')}
                       </p>
                       <p className="text-xs text-gray-600 mt-1">
-                        Following rows: Vehicle data
+                        {t('bulkImportDialog.upload.expectedFormatRows')}
                       </p>
                     </div>
                   </CardContent>
@@ -856,11 +857,11 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle className="flex items-center gap-2">
-                          Preview Import Data
-                          <Badge variant="secondary">{csvPreviewData.length} vehicles</Badge>
+                          {t('bulkImportDialog.preview.title')}
+                          <Badge variant="secondary">{t('bulkImportDialog.preview.vehiclesCount', { count: csvPreviewData.length })}</Badge>
                         </CardTitle>
                         <CardDescription>
-                          Review the data below before confirming the import
+                          {t('bulkImportDialog.preview.description')}
                           {selectedFile && <span className="ml-2 text-xs">({selectedFile.name})</span>}
                         </CardDescription>
                       </div>
@@ -871,7 +872,7 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
                         data-testid="button-back-to-upload"
                       >
                         <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back
+                        {t('bulkImportDialog.preview.backButton')}
                       </Button>
                     </div>
                   </CardHeader>
@@ -883,7 +884,7 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
                             <TableHead className="w-[50px]">#</TableHead>
                             {csvHeaders.map((header) => (
                               <TableHead key={header}>
-                                {DISPLAY_NAMES[header] || header}
+                                {t(`bulkImportDialog.displayNames.${header}`, { defaultValue: DISPLAY_NAMES[header] || header })}
                               </TableHead>
                             ))}
                           </TableRow>
@@ -917,7 +918,7 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
                         onClick={handleClearPreview}
                         disabled={csvImportMutation.isPending}
                       >
-                        Cancel
+                        {t('bulkImportDialog.preview.cancelButton')}
                       </Button>
                       <Button
                         className="flex-1"
@@ -926,11 +927,11 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
                         data-testid="button-confirm-csv-import"
                       >
                         {csvImportMutation.isPending ? (
-                          <>Processing Import...</>
+                          <>{t('bulkImportDialog.preview.processingButton')}</>
                         ) : validVehicleCount === 0 ? (
-                          <>No Valid Vehicles to Import</>
+                          <>{t('bulkImportDialog.preview.noValidVehiclesButton')}</>
                         ) : (
-                          <>Confirm Import ({validVehicleCount} vehicles)</>
+                          <>{t('bulkImportDialog.preview.confirmButton', { count: validVehicleCount })}</>
                         )}
                       </Button>
                     </div>
@@ -943,12 +944,12 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
           {(importMutation.isPending || csvImportMutation.isPending) && (
             <Card className="mt-6">
               <CardHeader>
-                <CardTitle>Import Progress</CardTitle>
+                <CardTitle>{t('bulkImportDialog.importProgressTitle')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Progress value={importProgress} className="h-2" />
                 <p className="text-center mt-2 text-sm text-gray-500">
-                  Processing vehicle data...
+                  {t('bulkImportDialog.processingVehicleData')}
                 </p>
               </CardContent>
             </Card>
@@ -957,9 +958,9 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
           {importResults && (
             <Card className="mt-6">
               <CardHeader>
-                <CardTitle>Import Results</CardTitle>
+                <CardTitle>{t('bulkImportDialog.results.title')}</CardTitle>
                 <CardDescription>
-                  {importResults.imported.length} vehicles imported successfully, {importResults.failed.length} failed
+                  {t('bulkImportDialog.results.description', { imported: importResults.imported.length, failed: importResults.failed.length })}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -967,7 +968,7 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
                   <>
                     <h3 className="text-md font-medium flex items-center mb-2">
                       <Check className="h-5 w-5 mr-2 text-green-500" />
-                      Successfully Imported ({importResults.imported.length})
+                      {t('bulkImportDialog.results.successTitle', { count: importResults.imported.length })}
                     </h3>
                     <div className="bg-gray-50 p-4 rounded-md mb-6 max-h-32 overflow-y-auto">
                       <ul className="space-y-1">
@@ -986,7 +987,7 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
                   <>
                     <h3 className="text-md font-medium flex items-center mb-2">
                       <X className="h-5 w-5 mr-2 text-red-500" />
-                      Failed Imports ({importResults.failed.length})
+                      {t('bulkImportDialog.results.failedTitle', { count: importResults.failed.length })}
                     </h3>
                     <div className="bg-red-50 p-4 rounded-md max-h-32 overflow-y-auto">
                       <ul className="space-y-1">

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { formatCurrency } from '@/lib/format-utils';
 
@@ -12,6 +13,7 @@ interface ExpenseChartProps {
 }
 
 export function ExpenseChart({ data }: ExpenseChartProps) {
+  const { t } = useTranslation('reports');
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart
@@ -20,14 +22,14 @@ export function ExpenseChart({ data }: ExpenseChartProps) {
       >
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="name" />
-        <YAxis 
+        <YAxis
           tickFormatter={(value) => formatCurrency(value)}
         />
-        <Tooltip 
-          formatter={(value: number) => [formatCurrency(value), 'Expenses']}
+        <Tooltip
+          formatter={(value: number) => [formatCurrency(value), t('expenseChart.expenses')]}
         />
         <Legend />
-        <Bar dataKey="expenses" name="Expenses" fill="#ef4444" />
+        <Bar dataKey="expenses" name={t('expenseChart.expenses')} fill="#ef4444" />
       </BarChart>
     </ResponsiveContainer>
   );

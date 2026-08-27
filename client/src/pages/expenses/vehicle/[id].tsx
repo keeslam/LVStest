@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { queryClient, apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useLocation, Link } from "wouter";
 import { useState } from "react";
@@ -81,6 +82,7 @@ function getExpenseIcon(category: string) {
 }
 
 export default function VehicleExpensesPage() {
+  const { t } = useTranslation("expenses");
   // Get vehicle ID from route parameter using pathname directly
   const [location] = useLocation();
   const { toast } = useToast();
@@ -126,16 +128,16 @@ export default function VehicleExpensesPage() {
     },
     onSuccess: async () => {
       toast({
-        title: "Expense deleted",
-        description: "The expense has been successfully deleted."
+        title: t('viewDialog.expenseDeletedTitle'),
+        description: t('viewDialog.expenseDeletedDescription')
       });
-      
+
       invalidateRelatedQueries('expenses');
     },
     onError: (error: Error) => {
       toast({
-        title: "Error deleting expense",
-        description: error.message || "Failed to delete expense. Please try again.",
+        title: t('viewDialog.deleteExpenseErrorTitle'),
+        description: error.message || t('viewDialog.deleteExpenseErrorDescription'),
         variant: "destructive"
       });
     }
@@ -206,13 +208,13 @@ export default function VehicleExpensesPage() {
           <div className="flex space-x-2">
             <Button variant="outline" size="sm" asChild>
               <Link href="/expenses">
-                <ArrowLeft className="h-4 w-4 mr-2" /> Back to Expenses
+                <ArrowLeft className="h-4 w-4 mr-2" /> {t('detailsPage.backToExpenses')}
               </Link>
             </Button>
             {vehicleId && (
               <Button variant="outline" size="sm" asChild>
                 <Link href={`/vehicles/${vehicleId}`}>
-                  <ArrowLeft className="h-4 w-4 mr-2" /> Back to Vehicle
+                  <ArrowLeft className="h-4 w-4 mr-2" /> {t('vehiclePage.backToVehicleButton')}
                 </Link>
               </Button>
             )}
@@ -233,9 +235,9 @@ export default function VehicleExpensesPage() {
   if (!vehicle) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-2xl font-bold">Vehicle Not Found</h2>
+        <h2 className="text-2xl font-bold">{t('vehiclePage.vehicleNotFoundTitle')}</h2>
         <p className="mt-2 text-muted-foreground">
-          The vehicle you are looking for does not exist or has been removed.
+          {t('vehiclePage.vehicleNotFoundDescription')}
         </p>
         <div className="flex space-x-2 mt-6 justify-center">
           <Button variant="outline" asChild>
@@ -260,7 +262,7 @@ export default function VehicleExpensesPage() {
           <div className="flex space-x-2">
             <Button variant="outline" size="sm" asChild>
               <Link href="/expenses">
-                <ArrowLeft className="h-4 w-4 mr-2" /> Back to Expenses
+                <ArrowLeft className="h-4 w-4 mr-2" /> {t('detailsPage.backToExpenses')}
               </Link>
             </Button>
             <Button variant="outline" size="sm" asChild>
@@ -270,41 +272,41 @@ export default function VehicleExpensesPage() {
             </Button>
           </div>
           <h1 className="text-2xl font-bold">
-            Expenses for {vehicle.brand} {vehicle.model} ({displayLicensePlate(vehicle.licensePlate)})
+            {t('vehiclePage.pageTitleWithVehicle', { brand: vehicle.brand, model: vehicle.model, plate: displayLicensePlate(vehicle.licensePlate) })}
           </h1>
         </div>
         <Button asChild>
           <Link href={`/expenses/add?vehicleId=${vehicleId}`}>
-            <PlusCircle className="h-4 w-4 mr-2" /> Add Expense
+            <PlusCircle className="h-4 w-4 mr-2" /> {t('vehiclePage.addExpenseButton')}
           </Link>
         </Button>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-2">
           <CardHeader>
-            <CardTitle>Expense Records</CardTitle>
+            <CardTitle>{t('indexPage.tableTitle')}</CardTitle>
             <CardDescription>
-              {expenses?.length || 0} expense records for this vehicle
+              {t('vehiclePage.expenseRecordsCountDescription', { count: expenses?.length || 0 })}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col md:flex-row gap-4 mb-4">
               <Input
-                placeholder="Search by category or description..."
+                placeholder={t('vehiclePage.searchByCategoryOrDescriptionPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="max-w-sm"
               />
-              
+
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by category" />
+                  <SelectValue placeholder={t('indexPage.filterByCategoryPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>
-                      {category === "all" ? "All Categories" : category}
+                      {category === "all" ? t('indexPage.allCategoriesOption') : category}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -322,7 +324,7 @@ export default function VehicleExpensesPage() {
               <>
                 {!filteredExpenses?.length ? (
                   <div className="text-center p-10 border rounded-md bg-gray-50">
-                    <p className="text-gray-500">No expenses found matching your search criteria.</p>
+                    <p className="text-gray-500">{t('indexPage.noExpensesFound')}</p>
                   </div>
                 ) : (
                   <Accordion type="multiple" defaultValue={sortedCategories} className="w-full">
@@ -352,7 +354,7 @@ export default function VehicleExpensesPage() {
                                   </Badge>
                                 </div>
                                 <span className="text-gray-500 text-sm">
-                                  ({categoryExpenses.length} {categoryExpenses.length === 1 ? 'expense' : 'expenses'})
+                                  {t('indexPage.expenseCount', { count: categoryExpenses.length })}
                                 </span>
                               </div>
                               <div className="font-semibold text-right">
@@ -364,7 +366,7 @@ export default function VehicleExpensesPage() {
                             <div className="pt-2 pb-4">
                               <div className="space-y-4">
                                 <Input 
-                                  placeholder="Filter by description..." 
+                                  placeholder={t('vehiclePage.filterByDescriptionPlaceholder')}
                                   className="max-w-sm"
                                   onChange={(e) => {
                                     // Store the filter value locally
@@ -393,9 +395,9 @@ export default function VehicleExpensesPage() {
                                   <Table>
                                     <TableHeader>
                                       <TableRow>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Description</TableHead>
-                                        <TableHead>Amount</TableHead>
+                                        <TableHead>{t('indexPage.dateColumnHeader')}</TableHead>
+                                        <TableHead>{t('indexPage.descriptionColumnHeader')}</TableHead>
+                                        <TableHead>{t('indexPage.amountColumnHeader')}</TableHead>
                                         <TableHead></TableHead>
                                       </TableRow>
                                     </TableHeader>
@@ -403,7 +405,7 @@ export default function VehicleExpensesPage() {
                                       {categoryExpenses.length === 0 ? (
                                         <TableRow>
                                           <TableCell colSpan={4} className="h-24 text-center">
-                                            No expenses in this category.
+                                            {t('vehiclePage.noExpensesInCategory')}
                                           </TableCell>
                                         </TableRow>
                                       ) : (
@@ -415,7 +417,7 @@ export default function VehicleExpensesPage() {
                                             <TableCell className="text-right">
                                               <Link href={`/expenses/${expense.id}`}>
                                                 <Button variant="ghost" size="sm">
-                                                  View
+                                                  {t('common:actions.view')}
                                                 </Button>
                                               </Link>
                                             </TableCell>
@@ -425,12 +427,12 @@ export default function VehicleExpensesPage() {
                                     </TableBody>
                                   </Table>
                                 </div>
-                                
+
                                 <div className="flex justify-center pt-2">
                                   <Button variant="outline" size="sm" asChild>
                                     <Link href={`/expenses/add?vehicleId=${vehicleId}&category=${category}`}>
                                       <PlusCircle className="h-4 w-4 mr-2" />
-                                      Add {category} Expense
+                                      {t('indexPage.addCategoryExpenseButton', { category })}
                                     </Link>
                                   </Button>
                                 </div>
@@ -449,15 +451,15 @@ export default function VehicleExpensesPage() {
         
         <Card>
           <CardHeader>
-            <CardTitle>Expense Summary</CardTitle>
+            <CardTitle>{t('indexPage.summaryTitle')}</CardTitle>
             <CardDescription>
-              Total expenses: <span className="font-bold">{<Price value={totalExpenses} />}</span>
+              {t('indexPage.totalExpensesLabel')}: <span className="font-bold">{<Price value={totalExpenses} />}</span>
             </CardDescription>
           </CardHeader>
           <CardContent>
             {totalByCategory.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
-                No expense data available
+                {t('vehiclePage.noExpenseDataAvailable')}
               </div>
             ) : (
               <div className="space-y-4">
@@ -467,7 +469,7 @@ export default function VehicleExpensesPage() {
                       {getExpenseIcon(category)}
                       <div>
                         <Badge variant="outline">{category}</Badge>
-                        <span className="text-xs text-muted-foreground ml-2">({count} items)</span>
+                        <span className="text-xs text-muted-foreground ml-2">{t('vehiclePage.itemCount', { count })}</span>
                       </div>
                     </div>
                     <span className="font-medium">{<Price value={amount} />}</span>

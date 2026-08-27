@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,7 @@ import {
 type PendingResolver = (password: string | null) => void;
 
 export function AdminPasswordPromptDialog() {
+  const { t } = useTranslation(["auth", "common"]);
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [reason, setReason] = useState<string | undefined>(undefined);
@@ -90,16 +92,15 @@ export function AdminPasswordPromptDialog() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShieldAlert className="h-5 w-5 text-amber-600" />
-            Admin approval required
+            {t('adminApproval.title')}
           </DialogTitle>
           <DialogDescription>
-            {reason ||
-              "This rental was picked up more than 3 weeks ago. Enter an admin password to save your changes."}
+            {reason || t('adminApproval.defaultReason')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="space-y-1">
-            <Label htmlFor="admin-password-input">Admin password</Label>
+            <Label htmlFor="admin-password-input">{t('adminApproval.passwordLabel')}</Label>
             <Input
               id="admin-password-input"
               ref={inputRef}
@@ -125,14 +126,14 @@ export function AdminPasswordPromptDialog() {
               onClick={() => finish(null)}
               data-testid="button-admin-password-cancel"
             >
-              Cancel
+              {t('common:actions.cancel')}
             </Button>
             <Button
               type="submit"
               disabled={!password.trim() || submitting}
               data-testid="button-admin-password-submit"
             >
-              Confirm
+              {t('common:actions.confirm')}
             </Button>
           </DialogFooter>
         </form>

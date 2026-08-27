@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { DateRange } from "react-day-picker";
@@ -23,6 +24,7 @@ export function DatePickerWithRange({
   setDate,
   className,
 }: DatePickerWithRangeProps) {
+  const { t } = useTranslation("common");
   // Custom handler to manage the DateRange type compatibility
   const handleSelect = (selectedDateRange: DateRange | undefined) => {
     if (selectedDateRange) {
@@ -53,7 +55,7 @@ export function DatePickerWithRange({
                 format(date.from, "LLL dd, y")
               )
             ) : (
-              <span>Pick a date range</span>
+              <span>{t('datePicker.pickDateRange')}</span>
             )}
           </Button>
         </PopoverTrigger>

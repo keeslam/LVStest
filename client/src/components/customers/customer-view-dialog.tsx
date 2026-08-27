@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Eye } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { CustomerDetails } from "./customer-details";
 
 interface CustomerViewDialogProps {
@@ -24,6 +25,7 @@ export function CustomerViewDialog({
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange 
 }: CustomerViewDialogProps) {
+  const { t } = useTranslation("customers");
   const [internalOpen, setInternalOpen] = useState(false);
   const allowClose = useRef(false);
   
@@ -99,9 +101,9 @@ export function CustomerViewDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>Customer Details</DialogTitle>
+          <DialogTitle>{t('viewDialog.title')}</DialogTitle>
           <DialogDescription>
-            View customer information and reservation history
+            {t('viewDialog.description')}
           </DialogDescription>
         </DialogHeader>
         <div className="mt-4">

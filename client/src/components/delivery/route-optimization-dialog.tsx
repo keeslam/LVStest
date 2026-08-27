@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -52,14 +53,6 @@ interface RouteOptimizationDialogProps {
   customers: Customer[];
 }
 
-const TRANSPORT_TYPE_LABELS: Record<string, string> = {
-  swap: "Swap",
-  tow: "Tow",
-  repossession: "Repossession",
-  delivery: "Delivery",
-  other: "Transport",
-};
-
 export function RouteOptimizationDialog({
   open,
   onOpenChange,
@@ -68,18 +61,25 @@ export function RouteOptimizationDialog({
   vehicles,
   customers,
 }: RouteOptimizationDialogProps) {
+  const { t } = useTranslation("delivery");
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [result, setResult] = useState<OptimizeRouteResult | null>(null);
 
   const getVehicleLabel = (vehicleId: number | null) => {
     const vehicle = vehicles.find((v) => v.id === vehicleId);
-    return vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.licensePlate})` : "Unknown vehicle";
+    return vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.licensePlate})` : t('routeOptimization.unknownVehicle');
   };
 
   const getCustomerName = (customerId: number | null) => {
-    return customers.find((c) => c.id === customerId)?.name || "Unknown customer";
+    return customers.find((c) => c.id === customerId)?.name || t('routeOptimization.unknownCustomer');
   };
+
+  // Named separately (not called `t`) because the transports.map() callback
+  // below uses `t` as its own per-item variable name, which would shadow the
+  // translation function from useTranslation() if this called it directly inline.
+  const transportTypeLabel = (transportType: string) =>
+    t(`routeOptimization.transportTypes.${transportType}`, { defaultValue: transportType });
 
   const stops = useMemo<RouteStop[]>(() => {
     const deliveryStops: RouteStop[] = reservations
@@ -108,7 +108,7 @@ export function RouteOptimizationDialog({
         const city = useOrigin ? t.originCity : t.destinationCity ?? t.originCity;
         return {
           id: `transport-${t.id}`,
-          label: `${TRANSPORT_TYPE_LABELS[t.transportType] || t.transportType} — ${getVehicleLabel(t.vehicleId)}`,
+          label: `${transportTypeLabel(t.transportType)} — ${getVehicleLabel(t.vehicleId)}`,
           type: "transport" as const,
           address: address ?? undefined,
           city: city ?? undefined,
@@ -131,15 +131,15 @@ export function RouteOptimizationDialog({
       setResult(data);
       if (data.failedStops.length > 0) {
         toast({
-          title: "Route optimized with warnings",
-          description: `${data.failedStops.length} stop(s) couldn't be located and were left out.`,
+          title: t('routeOptimization.routeOptimizedWithWarnings'),
+          description: t('routeOptimization.stopsNotLocated', { count: data.failedStops.length }),
         });
       }
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to optimize route",
-        description: error?.message || "Please try again.",
+        title: t('routeOptimization.optimizeFailedTitle'),
+        description: error?.message || t('routeOptimization.tryAgain'),
         variant: "destructive",
       });
     },
@@ -173,15 +173,15 @@ export function RouteOptimizationDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-[95vw] sm:max-w-2xl lg:max-w-4xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Route Optimization</DialogTitle>
+          <DialogTitle>{t('routeOptimization.title')}</DialogTitle>
           <DialogDescription>
-            Plan an efficient visiting order for a day's deliveries and transports, with real driving distances.
+            {t('routeOptimization.description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div>
-            <Label htmlFor="route-date">Date</Label>
+            <Label htmlFor="route-date">{t('routeOptimization.date')}</Label>
             <Input
               id="route-date"
               type="date"
@@ -195,14 +195,14 @@ export function RouteOptimizationDialog({
           </div>
 
           {stops.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No scheduled deliveries or transports on this date.</p>
+            <p className="text-sm text-muted-foreground">{t('routeOptimization.noScheduled')}</p>
           ) : (
             <div className="space-y-2">
-              <p className="text-sm font-medium">{stopsWithAddress.length} stop(s) with an address on {formatDate(selectedDate)}</p>
+              <p className="text-sm font-medium">{t('routeOptimization.stopsWithAddress', { count: stopsWithAddress.length, date: formatDate(selectedDate) })}</p>
               {stopsWithoutAddress.length > 0 && (
                 <div className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 rounded-md p-2">
                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span>{stopsWithoutAddress.length} stop(s) have no address on file and are excluded: {stopsWithoutAddress.map((s) => s.label).join(", ")}</span>
+                  <span>{t('routeOptimization.stopsWithoutAddress', { count: stopsWithoutAddress.length, labels: stopsWithoutAddress.map((s) => s.label).join(", ") })}</span>
                 </div>
               )}
             </div>
@@ -213,19 +213,19 @@ export function RouteOptimizationDialog({
               {!result.depotUsed && (
                 <div className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 rounded-md p-2">
                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span>No depot address is set in Settings, so the route starts from the first stop instead of your home base.</span>
+                  <span>{t('routeOptimization.noDepotAddress')}</span>
                 </div>
               )}
               {result.failedStops.length > 0 && (
                 <div className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 rounded-md p-2">
                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span>Couldn't locate: {result.failedStops.map((s) => s.label).join(", ")}</span>
+                  <span>{t('routeOptimization.couldntLocate', { labels: result.failedStops.map((s) => s.label).join(", ") })}</span>
                 </div>
               )}
               {!result.isRoadDistance && (
                 <div className="flex items-start gap-2 text-sm text-amber-700 bg-amber-50 rounded-md p-2">
                   <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span>The routing service was unreachable, so distances below are straight-line estimates, not actual driving distance.</span>
+                  <span>{t('routeOptimization.routingUnreachable')}</span>
                 </div>
               )}
               <ol className="space-y-2">
@@ -237,7 +237,7 @@ export function RouteOptimizationDialog({
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">{stop.label}</span>
-                        <Badge variant="outline" className="text-xs">{stop.type === "delivery" ? "Delivery" : "Transport"}</Badge>
+                        <Badge variant="outline" className="text-xs">{stop.type === "delivery" ? t('routeOptimization.delivery') : t('routeOptimization.transport')}</Badge>
                       </div>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <MapPin className="h-3 w-3" />
@@ -251,20 +251,20 @@ export function RouteOptimizationDialog({
                 ))}
               </ol>
               <div className="flex items-center justify-between pt-2 border-t">
-                <span className="text-sm font-medium">Total distance {result.isRoadDistance ? "(driving route)" : "(straight-line estimate)"}</span>
+                <span className="text-sm font-medium">{t('routeOptimization.totalDistance')} {result.isRoadDistance ? t('routeOptimization.drivingRoute') : t('routeOptimization.straightLineEstimate')}</span>
                 <span className="text-sm font-semibold">{result.totalDistanceKm} km</span>
               </div>
               {embedMapUrl && (
                 <div className="space-y-1">
                   <iframe
-                    title="Route preview map"
+                    title={t('routeOptimization.mapTitle')}
                     src={embedMapUrl}
                     className="w-full h-64 lg:h-96 rounded-md border"
                     loading="lazy"
                     data-testid="route-map-preview"
                   />
                   <p className="text-xs text-muted-foreground">
-                    The map above is calculated independently by Google and may show a slightly different distance/time than the total above.
+                    {t('routeOptimization.mapDisclaimer')}
                   </p>
                 </div>
               )}
@@ -277,7 +277,7 @@ export function RouteOptimizationDialog({
                   data-testid="link-open-in-maps"
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
-                  Open in Google Maps (new tab)
+                  {t('routeOptimization.openInGoogleMaps')}
                 </Button>
               )}
             </div>
@@ -286,7 +286,7 @@ export function RouteOptimizationDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
-            Close
+            {t('common:actions.close')}
           </Button>
           <Button
             onClick={() => optimizeMutation.mutate()}
@@ -298,7 +298,7 @@ export function RouteOptimizationDialog({
             ) : (
               <Navigation className="mr-2 h-4 w-4" />
             )}
-            {optimizeMutation.isPending ? "Optimizing..." : "Optimize Route"}
+            {optimizeMutation.isPending ? t('routeOptimization.optimizing') : t('routeOptimization.optimizeRoute')}
           </Button>
         </DialogFooter>
       </DialogContent>

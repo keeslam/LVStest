@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation, Link } from "wouter";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
@@ -31,6 +32,7 @@ import { ReturnFromServiceDialog } from "@/components/reservations/return-from-s
 import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
 
 export default function ReservationDetails() {
+  const { t } = useTranslation(["reservations", "common"]);
   const { id } = useParams();
   const [_, navigate] = useLocation();
   const { toast } = useToast();
@@ -72,8 +74,8 @@ export default function ReservationDetails() {
       });
       
       toast({
-        title: "Reservation deleted",
-        description: "The reservation has been successfully deleted",
+        title: t('viewDialog.toasts.reservationDeletedTitle'),
+        description: t('viewDialog.toasts.reservationDeletedDescription'),
       });
       
       // Wait a brief moment before navigating to ensure state is updated
@@ -83,7 +85,7 @@ export default function ReservationDetails() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t('viewDialog.errorTitle'),
         description: error.message,
         variant: "destructive"
       });
@@ -145,13 +147,13 @@ export default function ReservationDetails() {
     switch (type) {
       case "replacement":
         return {
-          text: "Replacement Vehicle",
+          text: t('detailsPage.replacementVehicleBadge'),
           className: "bg-orange-100 text-orange-800 border-orange-200",
           icon: <ArrowRightLeft className="w-3 h-3" />
         };
       case "maintenance_block":
         return {
-          text: "Maintenance Block",
+          text: t('detailsPage.maintenanceBlockBadge'),
           className: "bg-purple-100 text-purple-800 border-purple-200",
           icon: <Wrench className="w-3 h-3" />
         };
@@ -180,14 +182,14 @@ export default function ReservationDetails() {
   if (error || !reservation) {
     return (
       <div className="bg-red-50 border border-red-200 p-4 rounded-md">
-        <h2 className="text-lg font-semibold text-red-800">Error</h2>
-        <p className="text-red-600">Failed to load reservation details. {(error as Error)?.message}</p>
-        <Button 
+        <h2 className="text-lg font-semibold text-red-800">{t('viewDialog.errorTitle')}</h2>
+        <p className="text-red-600">{t('viewDialog.failedToLoad', { error: (error as Error)?.message || '' })}</p>
+        <Button
           variant="outline"
           className="mt-2"
           onClick={() => navigate("/reservations")}
         >
-          Back to Reservations
+          {t('detailsPage.backToReservations')}
         </Button>
       </div>
     );
@@ -203,28 +205,28 @@ export default function ReservationDetails() {
           className="gap-1"
           onClick={() => navigate('/reservations')}
         >
-          <ArrowLeft size={16} /> Back to List View
+          <ArrowLeft size={16} /> {t('detailsPage.backToListView')}
         </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           className="gap-1"
           onClick={() => navigate('/reservations/calendar')}
         >
-          <Calendar size={16} /> Back to Calendar
+          <Calendar size={16} /> {t('detailsPage.backToCalendar')}
         </Button>
       </div>
 
       {/* Header with actions */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Reservation Details</h1>
-          <p className="text-gray-500">Reservation #{reservation.id}</p>
+          <h1 className="text-2xl font-bold">{t('viewDialog.title')}</h1>
+          <p className="text-gray-500">{t('viewDialog.reservationHash', { id: reservation.id })}</p>
         </div>
         <div className="flex gap-2">
           <Link href={`/reservations/edit/${id}`}>
             <Button variant="outline">
-              Edit Reservation
+              {t('detailsPage.editReservationButton')}
             </Button>
           </Link>
           <div className="flex gap-2">
@@ -234,7 +236,7 @@ export default function ReservationDetails() {
                   <path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
                   <path d="M14 3v5h5M16 13H8M16 17H8M10 9H8"/>
                 </svg>
-                View Contract
+                {t('detailsPage.viewContractButton')}
               </Button>
             </Link>
             <UploadContractButton vehicleId={reservation.vehicleId} reservationId={reservation.id} />
@@ -242,20 +244,19 @@ export default function ReservationDetails() {
           <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <AlertDialogTrigger asChild>
               <Button variant="destructive">
-                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                <Trash2 className="mr-2 h-4 w-4" /> {t('viewDialog.deleteButton')}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure you want to delete this reservation?</AlertDialogTitle>
+                <AlertDialogTitle>{t('detailsPage.confirmDeleteTitle')}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete the reservation
-                  and remove its data from our servers.
+                  {t('detailsPage.confirmDeleteDescription')}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction 
+                <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
+                <AlertDialogAction
                   onClick={(e) => {
                     e.preventDefault();
                     deleteReservationMutation.mutate();
@@ -268,9 +269,9 @@ export default function ReservationDetails() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Deleting...
+                      {t('viewDialog.deletingButton')}
                     </>
-                  ) : "Delete"}
+                  ) : t('viewDialog.deleteButton')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -283,16 +284,16 @@ export default function ReservationDetails() {
         {/* Left column - Reservation details */}
         <Card className="md:col-span-2">
           <CardHeader>
-            <CardTitle>Reservation Information</CardTitle>
+            <CardTitle>{t('detailsPage.reservationInfoTitle')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Status and reservation type */}
             <div className="flex flex-col sm:flex-row justify-between gap-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Status</h3>
+                <h3 className="text-sm font-medium text-gray-500">{t('viewDialog.statusLabel')}</h3>
                 <div className="flex gap-2 mt-1">
                   <Badge className={`${getStatusStyle(reservation.status)}`}>
-                    {reservation.status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                    {t(`detailsPage.statusLabels.${reservation.status}`, { defaultValue: reservation.status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') })}
                   </Badge>
                   {reservation.type && reservation.type !== 'standard' && (() => {
                     const typeInfo = getReservationTypeInfo(reservation.type);
@@ -306,16 +307,16 @@ export default function ReservationDetails() {
                 </div>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Rental Period</h3>
+                <h3 className="text-sm font-medium text-gray-500">{t('viewDialog.rentalPeriodLabel')}</h3>
                 <p className="text-base mt-1">
-                  {formatDate(reservation.startDate)}{reservation.startTime && ` ${reservation.startTime}`} - {reservation.endDate ? `${formatDate(reservation.endDate)}${reservation.endTime ? ` ${reservation.endTime}` : ''}` : 'Open-ended'}
+                  {formatDate(reservation.startDate)}{reservation.startTime && ` ${reservation.startTime}`} - {reservation.endDate ? `${formatDate(reservation.endDate)}${reservation.endTime ? ` ${reservation.endTime}` : ''}` : t('detailsPage.openEnded')}
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  {reservation.endDate ? `${rentalDuration} day${rentalDuration !== 1 ? 's' : ''}` : 'Open-ended'}
+                  {reservation.endDate ? t('detailsPage.dayCount', { count: rentalDuration }) : t('detailsPage.openEnded')}
                 </p>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Total Price</h3>
+                <h3 className="text-sm font-medium text-gray-500">{t('viewDialog.totalPriceLabel')}</h3>
                 <p className="text-base font-medium mt-1">
                   {<Price value={reservation.totalPrice} />}
                 </p>
@@ -326,7 +327,7 @@ export default function ReservationDetails() {
 
             {/* Vehicle details */}
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Vehicle</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-2">{t('viewDialog.vehicleLabel')}</h3>
               <div className="bg-gray-50 p-4 rounded-md">
                 {vehicle ? (
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between">
@@ -338,45 +339,45 @@ export default function ReservationDetails() {
                         {vehicle.brand} {vehicle.model}
                       </h4>
                       <p className="text-sm text-gray-500 mt-1">
-                        {vehicle.vehicleType || 'Unknown type'} • {vehicle.fuel || 'Unknown fuel'} • {vehicle.color || 'No color specified'}
+                        {vehicle.vehicleType || t('viewDialog.unknownType')} • {vehicle.fuel || t('viewDialog.unknownFuel')} • {vehicle.color || t('detailsPage.noColorSpecified')}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {vehicle.apkDate && (
                           <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200 font-medium">
-                            APK Expiry: {formatDate(vehicle.apkDate)}
+                            {t('viewDialog.apkExpiryBadge', { date: formatDate(vehicle.apkDate) })}
                           </Badge>
                         )}
                         {vehicle.currentMileage && (
                           <Badge variant="outline" className="bg-gray-50 text-gray-800 border-gray-200">
-                            Mileage: {vehicle.currentMileage.toLocaleString()} km
+                            {t('detailsPage.mileageBadge', { mileage: vehicle.currentMileage.toLocaleString() })}
                           </Badge>
                         )}
                         {vehicle.maintenanceStatus && vehicle.maintenanceStatus !== 'ok' && (
                           <Badge variant="outline" className="bg-red-50 text-red-800 border-red-200 font-medium">
                             <Wrench className="w-3 h-3 mr-1" />
-                            {vehicle.maintenanceStatus === 'needs_service' ? 'Needs Service' : 'In Service'}
+                            {vehicle.maintenanceStatus === 'needs_service' ? t('detailsPage.needsServiceBadge') : t('detailsPage.inServiceBadge')}
                           </Badge>
                         )}
                       </div>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="mt-2 sm:mt-0"
                       onClick={() => handleViewVehicle(vehicle.id)}
                     >
-                      View Vehicle
+                      {t('viewDialog.viewVehicleButton')}
                     </Button>
                   </div>
                 ) : (
-                  <p className="text-gray-500">Vehicle information unavailable</p>
+                  <p className="text-gray-500">{t('viewDialog.vehicleInfoUnavailable')}</p>
                 )}
               </div>
             </div>
 
             {/* Customer details */}
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Customer</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-2">{t('viewDialog.customerLabel')}</h3>
               <div className="bg-gray-50 p-4 rounded-md">
                 {customer ? (
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between">
@@ -440,12 +441,12 @@ export default function ReservationDetails() {
                     </div>
                     <Link href={`/customers/${customer.id}`}>
                       <Button variant="ghost" size="sm" className="mt-2 sm:mt-0">
-                        View Customer
+                        {t('viewDialog.viewCustomerButton')}
                       </Button>
                     </Link>
                   </div>
                 ) : (
-                  <p className="text-gray-500">Customer information unavailable</p>
+                  <p className="text-gray-500">{t('detailsPage.customerInfoUnavailable')}</p>
                 )}
               </div>
             </div>
@@ -454,22 +455,22 @@ export default function ReservationDetails() {
             {(originalReservation || activeReplacement) && (
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-2">
-                  {reservation.type === 'replacement' ? 'Original Reservation' : 'Replacement Vehicle'}
+                  {reservation.type === 'replacement' ? t('detailsPage.originalReservationLabel') : t('detailsPage.replacementVehicleLabel')}
                 </h3>
                 <div className="bg-orange-50 border border-orange-200 p-4 rounded-md">
                   {reservation.type === 'replacement' && originalReservation ? (
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium">
-                          Replacing reservation #{originalReservation.id}
+                          {t('detailsPage.replacingReservation', { id: originalReservation.id })}
                         </p>
                         <p className="text-xs text-gray-600 mt-1">
-                          Original dates: {formatDate(originalReservation.startDate)} - {originalReservation.endDate ? formatDate(originalReservation.endDate) : 'Open-ended'}
+                          {t('detailsPage.originalDatesLabel', { range: `${formatDate(originalReservation.startDate)} - ${originalReservation.endDate ? formatDate(originalReservation.endDate) : t('detailsPage.openEnded')}` })}
                         </p>
                       </div>
                       <Link href={`/reservations/${originalReservation.id}`}>
                         <Button variant="outline" size="sm" data-testid="link-original-reservation">
-                          View Original
+                          {t('detailsPage.viewOriginalButton')}
                         </Button>
                       </Link>
                     </div>
@@ -477,15 +478,15 @@ export default function ReservationDetails() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium">
-                          Replacement: {activeReplacement.vehicle?.brand} {activeReplacement.vehicle?.model}
+                          {t('detailsPage.replacementLabel', { brand: activeReplacement.vehicle?.brand, model: activeReplacement.vehicle?.model })}
                         </p>
                         <p className="text-xs text-gray-600 mt-1">
-                          Replacement period: {formatDate(activeReplacement.startDate)} - {activeReplacement.endDate ? formatDate(activeReplacement.endDate) : 'Open-ended'}
+                          {t('detailsPage.replacementPeriodLabel', { range: `${formatDate(activeReplacement.startDate)} - ${activeReplacement.endDate ? formatDate(activeReplacement.endDate) : t('detailsPage.openEnded')}` })}
                         </p>
                       </div>
                       <Link href={`/reservations/${activeReplacement.id}`}>
                         <Button variant="outline" size="sm" data-testid="link-replacement-reservation">
-                          View Replacement
+                          {t('detailsPage.viewReplacementButton')}
                         </Button>
                       </Link>
                     </div>
@@ -497,7 +498,7 @@ export default function ReservationDetails() {
             {/* Notes */}
             {reservation.notes && (
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-2">Notes</h3>
+                <h3 className="text-sm font-medium text-gray-500 mb-2">{t('detailsPage.notesLabel')}</h3>
                 <div className="bg-gray-50 p-4 rounded-md">
                   <p className="text-sm whitespace-pre-wrap">{reservation.notes}</p>
                 </div>
@@ -509,16 +510,16 @@ export default function ReservationDetails() {
         {/* Right column - Related info and actions */}
         <Card>
           <CardHeader>
-            <CardTitle>Documents & Actions</CardTitle>
+            <CardTitle>{t('detailsPage.documentsActionsTitle')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Damage check document (legacy uploaded file) */}
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Damage Check</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-2">{t('detailsPage.damageCheckLabel')}</h3>
               {reservation.damageCheckPath ? (
-                <a 
-                  href={`/${reservation.damageCheckPath.replace(/^\/home\/runner\/workspace\//, '')}`} 
-                  target="_blank" 
+                <a
+                  href={`/${reservation.damageCheckPath.replace(/^\/home\/runner\/workspace\//, '')}`}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50"
                 >
@@ -526,13 +527,13 @@ export default function ReservationDetails() {
                     <FileText className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="font-medium text-sm">View Damage Check</p>
-                    <p className="text-xs text-gray-500">Click to open document</p>
+                    <p className="font-medium text-sm">{t('detailsPage.viewDamageCheckLink')}</p>
+                    <p className="text-xs text-gray-500">{t('detailsPage.clickToOpenDocument')}</p>
                   </div>
                 </a>
               ) : (
                 <div className="p-3 border border-gray-200 border-dashed rounded-md bg-gray-50 text-gray-500 text-sm">
-                  No damage check document attached
+                  {t('detailsPage.noDamageCheckAttached')}
                 </div>
               )}
             </div>
@@ -541,7 +542,7 @@ export default function ReservationDetails() {
             <div>
               <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-1.5">
                 <ClipboardCheck className="h-4 w-4" />
-                Damage Check Log
+                {t('detailsPage.damageCheckLogLabel')}
               </h3>
               {damageChecks.length > 0 ? (
                 <div className="space-y-2">
@@ -554,18 +555,18 @@ export default function ReservationDetails() {
                       <div className="flex flex-col gap-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <Badge variant={check.checkType === 'pickup' ? 'default' : 'secondary'} className="text-xs">
-                            {check.checkType === 'pickup' ? 'Pickup' : 'Return'}
+                            {check.checkType === 'pickup' ? t('detailsPage.pickupBadge') : t('detailsPage.returnBadge')}
                           </Badge>
                           <span className="text-sm text-gray-700">
                             {check.checkDate ? format(new Date(check.checkDate), 'PP') : (check.createdAt ? format(new Date(check.createdAt), 'PP') : '—')}
                           </span>
                           {check.completedBy && (
-                            <span className="text-xs text-gray-500">by {check.completedBy}</span>
+                            <span className="text-xs text-gray-500">{t('detailsPage.byLabel', { name: check.completedBy })}</span>
                           )}
                         </div>
                         <div className="flex gap-3 text-xs text-gray-500">
-                          {check.mileage && <span>Mileage: {Number(check.mileage).toLocaleString()} km</span>}
-                          {check.fuelLevel && <span>Fuel: {check.fuelLevel}</span>}
+                          {check.mileage && <span>{t('detailsPage.mileageShort', { mileage: Number(check.mileage).toLocaleString() })}</span>}
+                          {check.fuelLevel && <span>{t('detailsPage.fuelShort', { fuel: check.fuelLevel })}</span>}
                         </div>
                       </div>
                       <Button
@@ -574,21 +575,21 @@ export default function ReservationDetails() {
                         onClick={() => window.open(`/api/interactive-damage-checks/${check.id}/pdf`, '_blank')}
                         data-testid={`button-damage-check-pdf-${check.id}`}
                       >
-                        View PDF
+                        {t('detailsPage.viewPdfButton')}
                       </Button>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="p-3 border border-gray-200 border-dashed rounded-md bg-gray-50 text-gray-500 text-sm">
-                  No interactive damage checks recorded for this reservation yet.
+                  {t('detailsPage.noInteractiveDamageChecks')}
                 </div>
               )}
             </div>
 
             {/* Contract Documents */}
             <div className="pt-4">
-              <h3 className="text-sm font-medium text-gray-500 mb-3">Contract Documents</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-3">{t('detailsPage.contractDocumentsTitle')}</h3>
               <div className="space-y-2">
                 <Link href={`/documents/contract/${id}`}>
                   <Button variant="outline" className="w-full justify-start" size="sm">
@@ -596,10 +597,10 @@ export default function ReservationDetails() {
                       <path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
                       <path d="M14 3v5h5M16 13H8M16 17H8M10 9H8"/>
                     </svg>
-                    View Contract
+                    {t('detailsPage.viewContractButton')}
                   </Button>
                 </Link>
-                
+
                 <div className="w-full">
                   <div className="w-full">
                     <UploadContractButton 
@@ -627,7 +628,7 @@ export default function ReservationDetails() {
                     <path d="M14 11h3"/>
                     <path d="M14 15h3"/>
                   </svg>
-                  All Vehicle Documents
+                  {t('detailsPage.allVehicleDocumentsButton')}
                 </Button>
               </div>
             </div>
@@ -635,51 +636,51 @@ export default function ReservationDetails() {
             {/* Spare Vehicle Management */}
             {reservation.type === 'standard' && (
               <div className="pt-4">
-                <h3 className="text-sm font-medium text-gray-500 mb-3">Vehicle Service</h3>
+                <h3 className="text-sm font-medium text-gray-500 mb-3">{t('viewDialog.vehicleServiceLabel')}</h3>
                 <div className="space-y-2">
                   {!activeReplacement && vehicle?.maintenanceStatus === 'ok' && (
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start" 
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
                       size="sm"
                       onClick={() => setIsServiceDialogOpen(true)}
                       data-testid="button-mark-for-service"
                     >
                       <Wrench className="mr-2 h-4 w-4" />
-                      Mark Vehicle for Service
+                      {t('viewDialog.markForServiceButton')}
                     </Button>
                   )}
-                  
+
                   {(vehicle?.maintenanceStatus === 'in_service' || vehicle?.maintenanceStatus === 'needs_service') && !activeReplacement && (
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start" 
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
                       size="sm"
                       onClick={() => setIsSpareDialogOpen(true)}
                       data-testid="button-assign-spare"
                     >
                       <Car className="mr-2 h-4 w-4" />
-                      Assign Spare Vehicle
+                      {t('viewDialog.assignSpareButton')}
                     </Button>
                   )}
-                  
+
                   {activeReplacement && (
                     <div className="space-y-2">
                       <div className="p-3 border border-orange-200 bg-orange-50 rounded-md">
-                        <p className="text-sm font-medium text-orange-800">Spare vehicle assigned</p>
+                        <p className="text-sm font-medium text-orange-800">{t('viewDialog.spareAssignedTitle')}</p>
                         <p className="text-xs text-orange-600 mt-1">
-                          Vehicle is currently being serviced
+                          {t('viewDialog.spareAssignedHint')}
                         </p>
                       </div>
-                      <Button 
-                        variant="outline" 
-                        className="w-full justify-start" 
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start"
                         size="sm"
                         onClick={() => setIsReturnDialogOpen(true)}
                         data-testid="button-return-from-service"
                       >
                         <CheckCircle className="mr-2 h-4 w-4" />
-                        Return from Service
+                        {t('viewDialog.returnFromServiceButton')}
                       </Button>
                     </div>
                   )}
@@ -689,12 +690,12 @@ export default function ReservationDetails() {
 
             {/* Related actions */}
             <div className="pt-4">
-              <h3 className="text-sm font-medium text-gray-500 mb-3">Actions</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-3">{t('detailsPage.actionsTitle')}</h3>
               <div className="space-y-2">
                 {reservation.status === 'booked' && (
-                  <Button 
-                    variant="default" 
-                    className="w-full justify-start" 
+                  <Button
+                    variant="default"
+                    className="w-full justify-start"
                     size="sm"
                     onClick={() => setIsPickupDialogOpen(true)}
                     data-testid="button-start-pickup"
@@ -703,14 +704,14 @@ export default function ReservationDetails() {
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                       <circle cx="12" cy="10" r="3"></circle>
                     </svg>
-                    Start Pickup & Generate Contract
+                    {t('detailsPage.startPickupContractButton')}
                   </Button>
                 )}
-                
+
                 {reservation.status === 'picked_up' && (
-                  <Button 
-                    variant="default" 
-                    className="w-full justify-start" 
+                  <Button
+                    variant="default"
+                    className="w-full justify-start"
                     size="sm"
                     onClick={() => setIsReturnRentalDialogOpen(true)}
                     data-testid="button-start-return"
@@ -720,10 +721,10 @@ export default function ReservationDetails() {
                       <path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9"></path>
                       <path d="M12 3v6"></path>
                     </svg>
-                    Start Return & Generate Damage Check
+                    {t('detailsPage.startReturnDamageCheckButton')}
                   </Button>
                 )}
-                
+
                 <Link href={`/expenses/new?vehicleId=${reservation.vehicleId}`}>
                   <Button variant="outline" className="w-full justify-start" size="sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
@@ -731,35 +732,35 @@ export default function ReservationDetails() {
                       <line x1="12" x2="12" y1="8" y2="16"/>
                       <line x1="8" x2="16" y1="12" y2="12"/>
                     </svg>
-                    Create New Expense
+                    {t('detailsPage.createNewExpenseButton')}
                   </Button>
                 </Link>
               </div>
             </div>
-            
+
             {/* Tracking information */}
             <div className="pt-4 border-t border-gray-100">
-              <h3 className="text-sm font-medium text-gray-500 mb-3">Tracking Information</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-3">{t('detailsPage.trackingInfoTitle')}</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Created By:</span>
-                  <span className="font-medium">{reservation.createdBy || 'Unknown'}</span>
+                  <span className="text-gray-500">{t('detailsPage.createdByLabel')}</span>
+                  <span className="font-medium">{reservation.createdBy || t('detailsPage.unknown')}</span>
                 </div>
                 {reservation.createdAt && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Created On:</span>
+                    <span className="text-gray-500">{t('detailsPage.createdOnLabel')}</span>
                     <span className="font-medium">{new Date(reservation.createdAt).toLocaleString()}</span>
                   </div>
                 )}
                 {reservation.updatedBy && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Last Modified By:</span>
+                    <span className="text-gray-500">{t('detailsPage.lastModifiedByLabel')}</span>
                     <span className="font-medium">{reservation.updatedBy}</span>
                   </div>
                 )}
                 {reservation.updatedAt && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Last Modified On:</span>
+                    <span className="text-gray-500">{t('detailsPage.lastModifiedOnLabel')}</span>
                     <span className="font-medium">{new Date(reservation.updatedAt).toLocaleString()}</span>
                   </div>
                 )}
@@ -767,12 +768,12 @@ export default function ReservationDetails() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="w-full"
               onClick={() => navigate("/reservations")}
             >
-              Back to All Reservations
+              {t('detailsPage.backToAllReservationsButton')}
             </Button>
           </CardFooter>
         </Card>

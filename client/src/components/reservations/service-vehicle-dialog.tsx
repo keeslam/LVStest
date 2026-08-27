@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -62,6 +63,7 @@ export function ServiceVehicleDialog({
   vehicle,
   onSuccess,
 }: ServiceVehicleDialogProps) {
+  const { t } = useTranslation("reservations");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -100,8 +102,8 @@ export function ServiceVehicleDialog({
       invalidateRelatedQueries('vehicles', { id: vehicle?.id });
       
       toast({
-        title: "Vehicle marked for service",
-        description: "The vehicle has been marked as needing service successfully.",
+        title: t('serviceVehicleDialog.toasts.successTitle'),
+        description: t('serviceVehicleDialog.toasts.successDescription'),
       });
       onSuccess?.();
       form.reset();
@@ -109,7 +111,7 @@ export function ServiceVehicleDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t('serviceVehicleDialog.toasts.errorTitle'),
         description: error.message,
         variant: "destructive",
       });
@@ -126,10 +128,10 @@ export function ServiceVehicleDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Wrench className="h-5 w-5" />
-            Mark Vehicle for Service
+            {t('serviceVehicleDialog.title')}
           </DialogTitle>
           <DialogDescription>
-            Mark {vehicle?.brand} {vehicle?.model} ({vehicle?.licensePlate}) as needing service or currently in service.
+            {t('serviceVehicleDialog.description', { brand: vehicle?.brand, model: vehicle?.model, plate: vehicle?.licensePlate })}
           </DialogDescription>
         </DialogHeader>
 
@@ -140,20 +142,20 @@ export function ServiceVehicleDialog({
               name="maintenanceStatus"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Maintenance Status</FormLabel>
+                  <FormLabel>{t('serviceVehicleDialog.maintenanceStatusLabel')}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-maintenance-status">
-                        <SelectValue placeholder="Select maintenance status" />
+                        <SelectValue placeholder={t('serviceVehicleDialog.selectMaintenanceStatusPlaceholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="needs_service">Needs Service</SelectItem>
-                      <SelectItem value="in_service">Currently In Service</SelectItem>
+                      <SelectItem value="needs_service">{t('serviceVehicleDialog.needsServiceOption')}</SelectItem>
+                      <SelectItem value="in_service">{t('serviceVehicleDialog.inServiceOption')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    Choose whether the vehicle needs service or is currently being serviced.
+                    {t('serviceVehicleDialog.maintenanceStatusHint')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -165,16 +167,16 @@ export function ServiceVehicleDialog({
               name="maintenanceNote"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Service Notes</FormLabel>
+                  <FormLabel>{t('serviceVehicleDialog.serviceNotesLabel')}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Describe the service needed or being performed..."
+                      placeholder={t('serviceVehicleDialog.serviceNotesPlaceholder')}
                       {...field}
                       data-testid="textarea-maintenance-note"
                     />
                   </FormControl>
                   <FormDescription>
-                    Optional notes about the service required or being performed.
+                    {t('serviceVehicleDialog.serviceNotesHint')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -187,7 +189,7 @@ export function ServiceVehicleDialog({
                 name="serviceStartDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Service Start Date</FormLabel>
+                    <FormLabel>{t('serviceVehicleDialog.serviceStartDateLabel')}</FormLabel>
                     <FormControl>
                       <Input
                         type="date"
@@ -196,7 +198,7 @@ export function ServiceVehicleDialog({
                       />
                     </FormControl>
                     <FormDescription>
-                      When service begins (optional).
+                      {t('serviceVehicleDialog.serviceStartDateHint')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -208,7 +210,7 @@ export function ServiceVehicleDialog({
                 name="serviceEndDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Service End Date</FormLabel>
+                    <FormLabel>{t('serviceVehicleDialog.serviceEndDateLabel')}</FormLabel>
                     <FormControl>
                       <Input
                         type="date"
@@ -217,7 +219,7 @@ export function ServiceVehicleDialog({
                       />
                     </FormControl>
                     <FormDescription>
-                      Expected service completion (optional).
+                      {t('serviceVehicleDialog.serviceEndDateHint')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -232,7 +234,7 @@ export function ServiceVehicleDialog({
                 onClick={() => onOpenChange(false)}
                 disabled={markForServiceMutation.isPending}
               >
-                Cancel
+                {t('serviceVehicleDialog.cancelButton')}
               </Button>
               <Button
                 type="submit"
@@ -242,10 +244,10 @@ export function ServiceVehicleDialog({
                 {markForServiceMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Marking...
+                    {t('serviceVehicleDialog.markingButton')}
                   </>
                 ) : (
-                  "Mark for Service"
+                  t('serviceVehicleDialog.submitButton')
                 )}
               </Button>
             </DialogFooter>

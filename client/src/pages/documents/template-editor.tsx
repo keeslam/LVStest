@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,19 +75,19 @@ interface HistoryState {
 }
 
 interface PositionPreset {
-  name: string;
+  key: string;
   x: number;
   y: number;
 }
 
 const DEFAULT_PRESETS: PositionPreset[] = [
-  { name: 'Top Left', x: 100, y: 100 },
-  { name: 'Top Center', x: 297.5, y: 100 },
-  { name: 'Top Right', x: 495, y: 100 },
-  { name: 'Center', x: 297.5, y: 421 },
-  { name: 'Bottom Left', x: 100, y: 742 },
-  { name: 'Bottom Center', x: 297.5, y: 742 },
-  { name: 'Bottom Right', x: 495, y: 742 },
+  { key: 'topLeft', x: 100, y: 100 },
+  { key: 'topCenter', x: 297.5, y: 100 },
+  { key: 'topRight', x: 495, y: 100 },
+  { key: 'center', x: 297.5, y: 421 },
+  { key: 'bottomLeft', x: 100, y: 742 },
+  { key: 'bottomCenter', x: 297.5, y: 742 },
+  { key: 'bottomRight', x: 495, y: 742 },
 ];
 
 interface PDFTemplateEditorProps {
@@ -94,6 +95,16 @@ interface PDFTemplateEditorProps {
 }
 
 const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
+  const { t } = useTranslation(["documents", "common"]);
+  const DATA_SOURCE_KEYS: string[] = [
+    'contractNumber', 'contractDate', 'licensePlate', 'brand', 'model', 'chassisNumber',
+    'vehicleType', 'fuelType', 'currentMileage', 'currentFuelLevel', 'apkDate',
+    'customerName', 'customerAddress', 'customerCity', 'customerPostalCode', 'customerPhone',
+    'customerEmail', 'companyName', 'driverLicense', 'driverName', 'driverFirstName',
+    'driverLastName', 'driverEmail', 'driverPhone', 'driverLicenseNumber', 'driverLicenseExpiry',
+    'startDate', 'endDate', 'duration', 'totalPrice', 'pickupMileage', 'returnMileage',
+    'fuelLevelPickup', 'fuelLevelReturn',
+  ];
   const [templates, setTemplates] = useState<Template[]>([]);
   const [currentTemplate, setCurrentTemplate] = useState<Template | null>(null);
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
@@ -159,14 +170,14 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
     onSuccess: () => {
       invalidateByPrefix('/api/pdf-templates');
       toast({
-        title: "Success",
-        description: "Template saved successfully",
+        title: t('common:status.success'),
+        description: t('templateEditor.toasts.templateSavedDescription'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: `Failed to save template: ${error.message}`,
+        title: t('common:status.error'),
+        description: t('templateEditor.toasts.saveTemplateFailed', { message: error.message }),
         variant: "destructive",
       });
     }
@@ -180,8 +191,8 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
     onSuccess: () => {
       invalidateByPrefix('/api/pdf-templates');
       toast({
-        title: "Success",
-        description: "Template deleted successfully",
+        title: t('common:status.success'),
+        description: t('templateEditor.toasts.templateDeletedDescription'),
       });
       if (currentTemplate && templates.length > 1) {
         const nextTemplate = templates.find(t => t.id !== currentTemplate.id);
@@ -194,8 +205,8 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: `Failed to delete template: ${error.message}`,
+        title: t('common:status.error'),
+        description: t('templateEditor.toasts.deleteTemplateFailed', { message: error.message }),
         variant: "destructive",
       });
     }
@@ -226,15 +237,15 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
         setCurrentTemplate(updatedTemplate);
       }
       toast({
-        title: "Success",
-        description: "Background uploaded successfully",
+        title: t('common:status.success'),
+        description: t('templateEditor.toasts.backgroundUploadedDescription'),
       });
     },
     onError: (error: Error) => {
       console.error('Background upload error:', error);
       toast({
-        title: "Error",
-        description: `Failed to upload background: ${error.message}`,
+        title: t('common:status.error'),
+        description: t('templateEditor.toasts.uploadBackgroundFailed', { message: error.message }),
         variant: "destructive",
       });
     }
@@ -254,14 +265,14 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
         setCurrentTemplate(updatedTemplate);
       }
       toast({
-        title: "Success",
-        description: "Background removed, using default",
+        title: t('common:status.success'),
+        description: t('templateEditor.toasts.backgroundRemovedDescription'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: `Failed to remove background: ${error.message}`,
+        title: t('common:status.error'),
+        description: t('templateEditor.toasts.removeBackgroundFailed', { message: error.message }),
         variant: "destructive",
       });
     }
@@ -293,15 +304,15 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
     onSuccess: async () => {
       await refetchBackgrounds();
       toast({
-        title: "Success",
-        description: "Background added to library",
+        title: t('common:status.success'),
+        description: t('templateEditor.toasts.backgroundAddedDescription'),
       });
       setBackgroundName('');
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: `Failed to add background: ${error.message}`,
+        title: t('common:status.error'),
+        description: t('templateEditor.toasts.addBackgroundFailed', { message: error.message }),
         variant: "destructive",
       });
     }
@@ -349,14 +360,14 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
       // Then refetch to ensure everything is in sync
       await invalidateByPrefix('/api/pdf-templates');
       toast({
-        title: "Success",
-        description: "Background selected",
+        title: t('common:status.success'),
+        description: t('templateEditor.toasts.backgroundSelectedDescription'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: `Failed to select background: ${error.message}`,
+        title: t('common:status.error'),
+        description: t('templateEditor.toasts.selectBackgroundFailed', { message: error.message }),
         variant: "destructive",
       });
     }
@@ -370,14 +381,14 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
     onSuccess: async () => {
       await refetchBackgrounds();
       toast({
-        title: "Success",
-        description: "Background deleted from library",
+        title: t('common:status.success'),
+        description: t('templateEditor.toasts.backgroundDeletedDescription'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: `Failed to delete background: ${error.message}`,
+        title: t('common:status.error'),
+        description: t('templateEditor.toasts.deleteBackgroundFailed', { message: error.message }),
         variant: "destructive",
       });
     }
@@ -395,14 +406,14 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
       const url = URL.createObjectURL(data);
       setPreviewPdfUrl(url);
       toast({
-        title: "Preview Generated",
-        description: "Preview shows field labels for better visibility",
+        title: t('templateEditor.toasts.previewGeneratedTitle'),
+        description: t('templateEditor.toasts.previewGeneratedDescription'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: `Failed to generate preview: ${error.message}`,
+        title: t('common:status.error'),
+        description: t('templateEditor.toasts.generatePreviewFailed', { message: error.message }),
         variant: "destructive",
       });
       setPreviewPdfUrl(null);
@@ -547,7 +558,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
         ...currentTemplate,
         fields: JSON.parse(JSON.stringify(history[newIndex].fields))
       });
-      toast({ title: "Undo", description: "Reverted last change" });
+      toast({ title: t('templateEditor.toasts.undoTitle'), description: t('templateEditor.toasts.undoDescription') });
     }
   };
 
@@ -559,7 +570,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
         ...currentTemplate,
         fields: JSON.parse(JSON.stringify(history[newIndex].fields))
       });
-      toast({ title: "Redo", description: "Reapplied change" });
+      toast({ title: t('templateEditor.toasts.redoTitle'), description: t('templateEditor.toasts.redoDescription') });
     }
   };
 
@@ -572,8 +583,8 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
   const handleCreateTemplate = () => {
     if (!newTemplateName) {
       toast({
-        title: "Error",
-        description: "Please enter a template name",
+        title: t('common:status.error'),
+        description: t('templateEditor.toasts.templateNameRequired'),
         variant: "destructive",
       });
       return;
@@ -595,8 +606,8 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
     if (!currentTemplate) return;
     if (!newFieldName || !newFieldSource) {
       toast({
-        title: "Error",
-        description: "Please enter field name and source",
+        title: t('common:status.error'),
+        description: t('templateEditor.toasts.fieldNameSourceRequired'),
         variant: "destructive",
       });
       return;
@@ -631,7 +642,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
 
   const handleMouseDown = (e: React.MouseEvent, field: TemplateField) => {
     if (field.locked) {
-      toast({ title: "Field Locked", description: "Unlock the field to move it" });
+      toast({ title: t('templateEditor.toasts.fieldLockedTitle'), description: t('templateEditor.toasts.fieldLockedDescription') });
       return;
     }
     
@@ -804,7 +815,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
     if (!currentTemplate || selectedFields.length === 0) return;
     const fieldsToCopy = currentTemplate.fields.filter(f => selectedFields.includes(f.id));
     setCopiedFields(fieldsToCopy);
-    toast({ title: "Copied", description: `${fieldsToCopy.length} field(s) copied` });
+    toast({ title: t('templateEditor.toasts.copiedTitle'), description: t('templateEditor.toasts.copiedDescription', { count: fieldsToCopy.length }) });
   };
 
   const handlePasteFields = () => {
@@ -825,7 +836,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
     setCurrentTemplate(updatedTemplate);
     addToHistory(updatedTemplate.fields);
     setSelectedFields(newFields.map(f => f.id));
-    toast({ title: "Pasted", description: `${newFields.length} field(s) pasted` });
+    toast({ title: t('templateEditor.toasts.pastedTitle'), description: t('templateEditor.toasts.pastedDescription', { count: newFields.length }) });
   };
 
   const handleDuplicateFields = () => {
@@ -847,7 +858,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
     setCurrentTemplate(updatedTemplate);
     addToHistory(updatedTemplate.fields);
     setSelectedFields(newFields.map(f => f.id));
-    toast({ title: "Duplicated", description: `${newFields.length} field(s) duplicated` });
+    toast({ title: t('templateEditor.toasts.duplicatedTitle'), description: t('templateEditor.toasts.duplicatedDescription', { count: newFields.length }) });
   };
 
   const handleDeleteSelectedFields = () => {
@@ -857,7 +868,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
     setCurrentTemplate({ ...currentTemplate, fields: updatedFields });
     addToHistory(updatedFields);
     setSelectedFields([]);
-    toast({ title: "Deleted", description: `${selectedFields.length} field(s) deleted` });
+    toast({ title: t('templateEditor.toasts.deletedTitle'), description: t('templateEditor.toasts.deletedDescription', { count: selectedFields.length }) });
   };
 
   const handleAlignFields = (type: 'left' | 'right' | 'top' | 'bottom' | 'centerH' | 'centerV') => {
@@ -900,12 +911,12 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
 
     setCurrentTemplate({ ...currentTemplate, fields: updatedFields });
     addToHistory(updatedFields);
-    toast({ title: "Aligned", description: `Fields aligned to ${type}` });
+    toast({ title: t('templateEditor.toasts.alignedTitle'), description: t('templateEditor.toasts.alignedDescription', { type }) });
   };
 
   const handleDistribute = (direction: 'horizontal' | 'vertical') => {
     if (!currentTemplate || selectedFields.length < 3) {
-      toast({ title: "Error", description: "Select at least 3 fields to distribute" });
+      toast({ title: t('common:status.error'), description: t('templateEditor.toasts.selectAtLeast3ToDistribute') });
       return;
     }
 
@@ -932,7 +943,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
 
     setCurrentTemplate({ ...currentTemplate, fields: updatedFields });
     addToHistory(updatedFields);
-    toast({ title: "Distributed", description: `Fields distributed ${direction}ly` });
+    toast({ title: t('templateEditor.toasts.distributedTitle'), description: t('templateEditor.toasts.distributedDescription', { direction }) });
   };
 
   const handleToggleLock = (fieldId: string) => {
@@ -958,7 +969,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
 
     setCurrentTemplate({ ...currentTemplate, fields: updatedFields });
     addToHistory(updatedFields);
-    toast({ title: "Preset Applied", description: `Moved to ${preset.name}` });
+    toast({ title: t('templateEditor.toasts.presetAppliedTitle'), description: t('templateEditor.toasts.presetAppliedDescription', { presetName: t(`templateEditor.presets.${preset.key}`) }) });
   };
 
   const handleMatchProperty = (property: 'x' | 'y' | 'fontSize') => {
@@ -976,7 +987,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
 
     setCurrentTemplate({ ...currentTemplate, fields: updatedFields });
     addToHistory(updatedFields);
-    toast({ title: "Matched", description: `${property} matched to first selected field` });
+    toast({ title: t('templateEditor.toasts.matchedTitle'), description: t('templateEditor.toasts.matchedDescription', { property }) });
   };
 
   const handleBatchEdit = (property: 'fontSize' | 'isBold' | 'textAlign', value: any) => {
@@ -991,7 +1002,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
 
     setCurrentTemplate({ ...currentTemplate, fields: updatedFields });
     addToHistory(updatedFields);
-    toast({ title: "Batch Edit", description: `${property} updated for ${selectedFields.length} fields` });
+    toast({ title: t('templateEditor.toasts.batchEditTitle'), description: t('templateEditor.toasts.batchEditDescription', { property, count: selectedFields.length }) });
   };
 
   const handleZoomToFit = () => {
@@ -1005,7 +1016,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
     const zoomHeight = containerHeight / 842;
     const idealZoom = Math.min(zoomWidth, zoomHeight);
     setZoomLevel(Math.max(idealZoom, 0.3)); // Only enforce minimum, no maximum
-    toast({ title: "Zoom to Fit", description: "Adjusted zoom to fit page" });
+    toast({ title: t('templateEditor.toasts.zoomToFitTitle'), description: t('templateEditor.toasts.zoomToFitDescription') });
   };
 
   const handleZoomIn = () => {
@@ -1035,8 +1046,8 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
     if (!allowedTypes.includes(file.type)) {
       toast({
-        title: "Error",
-        description: "Only JPG, PNG, and PDF files are allowed",
+        title: t('common:status.error'),
+        description: t('templateEditor.toasts.invalidFileTypeSimple'),
         variant: "destructive",
       });
       return;
@@ -1045,8 +1056,8 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
     // Validate file size (10MB)
     if (file.size > 10 * 1024 * 1024) {
       toast({
-        title: "Error",
-        description: "File size must be less than 10MB",
+        title: t('common:status.error'),
+        description: t('templateEditor.toasts.fileTooLargeSimple'),
         variant: "destructive",
       });
       return;
@@ -1128,8 +1139,8 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
     
     if (saveTemplateMutation.isPending) {
       toast({
-        title: "Template is saving",
-        description: "Please wait until the template is saved before generating preview",
+        title: t('templateEditor.toasts.templateSavingTitle'),
+        description: t('templateEditor.toasts.templateSavingDescription'),
       });
       return;
     }
@@ -1156,7 +1167,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
           {onClose ? (
             <Button variant="ghost" size="sm" onClick={onClose}>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Documents
+              {t('templateEditor.backToDocuments')}
             </Button>
           ) : (
             <Link href="/documents">
@@ -1170,20 +1181,20 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
         
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
-            <CardTitle>Create Your First Template</CardTitle>
+            <CardTitle>{t('templateEditor.createFirstTemplateTitle')}</CardTitle>
             <CardDescription>
-              Get started by creating a contract template
+              {t('templateEditor.createFirstTemplateDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="template-name">Template Name</Label>
+                <Label htmlFor="template-name">{t('templateEditor.templateNameLabel')}</Label>
                 <Input
                   id="template-name"
                   value={newTemplateName}
                   onChange={(e) => setNewTemplateName(e.target.value)}
-                  placeholder="e.g., Rental Contract"
+                  placeholder={t('templateEditor.templateNamePlaceholder')}
                 />
               </div>
             </div>
@@ -1195,7 +1206,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
               ) : (
                 <Plus className="mr-2 h-4 w-4" />
               )}
-              Create Template
+              {t('templateEditor.createTemplateButton')}
             </Button>
           </CardFooter>
         </Card>
@@ -1210,7 +1221,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
           {onClose ? (
             <Button variant="ghost" size="sm" onClick={onClose}>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Documents
+              {t('templateEditor.backToDocuments')}
             </Button>
           ) : (
             <Link href="/documents">
@@ -1221,11 +1232,11 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
             </Link>
           )}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <kbd className="px-2 py-1 rounded bg-muted">Ctrl+Z</kbd> Undo
-            <kbd className="px-2 py-1 rounded bg-muted">Ctrl+Y</kbd> Redo
-            <kbd className="px-2 py-1 rounded bg-muted">Ctrl+C/V</kbd> Copy/Paste
-            <kbd className="px-2 py-1 rounded bg-muted">Ctrl+D</kbd> Duplicate
-            <kbd className="px-2 py-1 rounded bg-muted">↑←↓→</kbd> Move (Shift for 10px)
+            <kbd className="px-2 py-1 rounded bg-muted">Ctrl+Z</kbd> {t('templateEditor.shortcutUndo')}
+            <kbd className="px-2 py-1 rounded bg-muted">Ctrl+Y</kbd> {t('templateEditor.shortcutRedo')}
+            <kbd className="px-2 py-1 rounded bg-muted">Ctrl+C/V</kbd> {t('templateEditor.shortcutCopyPaste')}
+            <kbd className="px-2 py-1 rounded bg-muted">Ctrl+D</kbd> {t('templateEditor.shortcutDuplicate')}
+            <kbd className="px-2 py-1 rounded bg-muted">↑←↓→</kbd> {t('templateEditor.shortcutMove')}
           </div>
         </div>
       </div>
@@ -1235,28 +1246,28 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
           <CardHeader>
             <div className="flex justify-between items-center">
               <div>
-                <CardTitle>Template Selection</CardTitle>
-                <CardDescription>Choose a template to edit or preview</CardDescription>
+                <CardTitle>{t('templateEditor.templateSelectionTitle')}</CardTitle>
+                <CardDescription>{t('templateEditor.templateSelectionDescription')}</CardDescription>
               </div>
               <div className="flex space-x-2">
-                <Button onClick={() => handleUndo()} disabled={historyIndex <= 0} variant="outline" size="sm" title="Undo (Ctrl+Z)">
+                <Button onClick={() => handleUndo()} disabled={historyIndex <= 0} variant="outline" size="sm" title={t('templateEditor.undoTitleAttr')}>
                   <Undo2 className="h-4 w-4" />
                 </Button>
-                <Button onClick={() => handleRedo()} disabled={historyIndex >= history.length - 1} variant="outline" size="sm" title="Redo (Ctrl+Y)">
+                <Button onClick={() => handleRedo()} disabled={historyIndex >= history.length - 1} variant="outline" size="sm" title={t('templateEditor.redoTitleAttr')}>
                   <Redo2 className="h-4 w-4" />
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => setIsBackgroundLibraryOpen(true)}
                   disabled={!currentTemplate}
                 >
                   <FileText className="mr-2 h-4 w-4" />
-                  Background Library
+                  {t('templateEditor.backgroundLibraryButton')}
                 </Button>
                 <Button variant="outline" onClick={handleDeleteTemplate} disabled={saveTemplateMutation.isPending || deleteTemplateMutation.isPending}>
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
+                  {t('templateEditor.deleteButton')}
                 </Button>
                 <Button onClick={handleSaveTemplate} disabled={saveTemplateMutation.isPending}>
                   {saveTemplateMutation.isPending ? (
@@ -1264,7 +1275,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                   ) : (
                     <Save className="mr-2 h-4 w-4" />
                   )}
-                  Save
+                  {t('templateEditor.saveButton')}
                 </Button>
               </div>
             </div>
@@ -1272,7 +1283,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-4">
-                <Label>Select Template</Label>
+                <Label>{t('templateEditor.selectTemplateLabel')}</Label>
                 <Select
                   value={currentTemplate?.id.toString() || ''}
                   onValueChange={(value) => {
@@ -1289,19 +1300,19 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a template" />
+                    <SelectValue placeholder={t('templateEditor.selectTemplatePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     {templates.map(template => (
                       <SelectItem key={template.id} value={template.id.toString()}>
-                        {template.name} {template.isDefault ? ' (Default)' : ''}
+                        {template.name} {template.isDefault ? t('templateEditor.defaultSuffix') : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-4">
-                <Label>Current Background</Label>
+                <Label>{t('templateEditor.currentBackgroundLabel')}</Label>
                 <div className="flex items-center gap-2 p-2 border rounded-md bg-muted/50">
                   <FileText className="h-4 w-4 text-muted-foreground" />
                   <div className="flex-1 min-w-0">
@@ -1310,30 +1321,30 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                         {currentTemplate.backgroundPath.split('/').pop()}
                       </p>
                     ) : (
-                      <p className="text-sm text-muted-foreground">Default background</p>
+                      <p className="text-sm text-muted-foreground">{t('templateEditor.defaultBackground')}</p>
                     )}
                   </div>
                 </div>
               </div>
               {currentTemplate && !currentTemplate.isDefault && (
                 <div className="space-y-4">
-                  <Label>Set as Default</Label>
+                  <Label>{t('templateEditor.setAsDefaultLabel')}</Label>
                   <Button variant="outline" onClick={handleSetDefaultTemplate} className="w-full">
-                    Make Default
+                    {t('templateEditor.makeDefaultButton')}
                   </Button>
                 </div>
               )}
               <div className="space-y-4">
-                <Label>Move Mode</Label>
+                <Label>{t('templateEditor.moveModeLabel')}</Label>
                 <div className="flex items-center space-x-2">
                   <Switch checked={isMoving} onCheckedChange={setIsMoving} id="move-mode" />
                   <Label htmlFor="move-mode">
-                    {isMoving ? 'Active' : 'Inactive'}
+                    {isMoving ? t('templateEditor.moveModeActive') : t('templateEditor.moveModeInactive')}
                   </Label>
                 </div>
               </div>
               <div className="space-y-4">
-                <Label>Snap to Grid ({gridSize}px)</Label>
+                <Label>{t('templateEditor.snapToGridLabel', { size: gridSize })}</Label>
                 <div className="flex items-center space-x-2">
                   <Switch checked={snapToGrid} onCheckedChange={setSnapToGrid} id="snap-grid" />
                   <Input type="number" value={gridSize} onChange={(e) => {
@@ -1355,36 +1366,36 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                 <CardHeader>
                   <div className="flex justify-between items-center">
                     <div>
-                      <CardTitle>Template Editor</CardTitle>
+                      <CardTitle>{t('templateEditor.templateEditorTitle')}</CardTitle>
                       <CardDescription>
-                        {selectedFields.length > 0 
-                          ? `${selectedFields.length} field(s) selected` 
-                          : 'Click fields to select, drag to move'}
+                        {selectedFields.length > 0
+                          ? t('templateEditor.fieldsSelected', { count: selectedFields.length })
+                          : t('templateEditor.clickFieldsHint')}
                       </CardDescription>
                     </div>
                     <div className="flex gap-2 flex-wrap">
                       <div className="flex gap-1 rounded-md border border-input p-1">
-                        <Button variant="ghost" size="icon" onClick={handleZoomOut} title="Zoom Out">
+                        <Button variant="ghost" size="icon" onClick={handleZoomOut} title={t('templateEditor.zoomOutTitle')}>
                           <ZoomOut className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={handleResetZoom} title="Reset Zoom">
+                        <Button variant="ghost" size="icon" onClick={handleResetZoom} title={t('templateEditor.resetZoomTitle')}>
                           <span className="text-xs font-mono">{Math.round(zoomLevel * 100)}%</span>
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={handleZoomIn} title="Zoom In">
+                        <Button variant="ghost" size="icon" onClick={handleZoomIn} title={t('templateEditor.zoomInTitle')}>
                           <ZoomIn className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={handleZoomToFit} title="Zoom to Fit">
+                        <Button variant="ghost" size="icon" onClick={handleZoomToFit} title={t('templateEditor.zoomToFitTitle')}>
                           <Maximize2 className="h-4 w-4" />
                         </Button>
                       </div>
-                      
-                      <Button variant="outline" size="icon" onClick={() => setShowGrid(!showGrid)} className={showGrid ? "bg-slate-100" : ""} title="Toggle Grid">
+
+                      <Button variant="outline" size="icon" onClick={() => setShowGrid(!showGrid)} className={showGrid ? "bg-slate-100" : ""} title={t('templateEditor.toggleGridTitle')}>
                         <Grid className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="icon" onClick={() => setShowRulers(!showRulers)} className={showRulers ? "bg-slate-100" : ""} title="Toggle Rulers">
+                      <Button variant="outline" size="icon" onClick={() => setShowRulers(!showRulers)} className={showRulers ? "bg-slate-100" : ""} title={t('templateEditor.toggleRulersTitle')}>
                         <LayoutGrid className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="icon" onClick={() => setShowAlignmentGuides(!showAlignmentGuides)} className={showAlignmentGuides ? "bg-slate-100" : ""} title="Toggle Alignment Guides">
+                      <Button variant="outline" size="icon" onClick={() => setShowAlignmentGuides(!showAlignmentGuides)} className={showAlignmentGuides ? "bg-slate-100" : ""} title={t('templateEditor.toggleAlignmentGuidesTitle')}>
                         <Move className="h-4 w-4" />
                       </Button>
 
@@ -1394,37 +1405,37 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                             <DropdownMenuTrigger asChild>
                               <Button variant="outline" size="sm">
                                 <AlignCenter className="h-4 w-4 mr-1" />
-                                Align
+                                {t('templateEditor.alignButton')}
                                 <ChevronDown className="h-3 w-3 ml-1" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
-                              <DropdownMenuLabel>Align Fields</DropdownMenuLabel>
+                              <DropdownMenuLabel>{t('templateEditor.alignFieldsLabel')}</DropdownMenuLabel>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleAlignFields('left')}>
                                 <AlignStartHorizontal className="h-4 w-4 mr-2" />
-                                Align Left
+                                {t('templateEditor.alignLeft')}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleAlignFields('centerH')}>
                                 <AlignCenterHorizontal className="h-4 w-4 mr-2" />
-                                Align Center (H)
+                                {t('templateEditor.alignCenterH')}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleAlignFields('right')}>
                                 <AlignEndHorizontal className="h-4 w-4 mr-2" />
-                                Align Right
+                                {t('templateEditor.alignRight')}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleAlignFields('top')}>
                                 <AlignStartVertical className="h-4 w-4 mr-2" />
-                                Align Top
+                                {t('templateEditor.alignTop')}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleAlignFields('centerV')}>
                                 <AlignCenterVertical className="h-4 w-4 mr-2" />
-                                Align Center (V)
+                                {t('templateEditor.alignCenterV')}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleAlignFields('bottom')}>
                                 <AlignEndVertical className="h-4 w-4 mr-2" />
-                                Align Bottom
+                                {t('templateEditor.alignBottom')}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -1433,24 +1444,24 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="outline" size="sm">
-                                  Distribute
+                                  {t('templateEditor.distributeButton')}
                                   <ChevronDown className="h-3 w-3 ml-1" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent>
                                 <DropdownMenuItem onClick={() => handleDistribute('horizontal')}>
                                   <AlignHorizontalDistributeCenter className="h-4 w-4 mr-2" />
-                                  Distribute Horizontally
+                                  {t('templateEditor.distributeHorizontally')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleDistribute('vertical')}>
                                   <AlignVerticalDistributeCenter className="h-4 w-4 mr-2" />
-                                  Distribute Vertically
+                                  {t('templateEditor.distributeVertically')}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           )}
 
-                          <Button variant="outline" size="sm" onClick={handleDuplicateFields} title="Duplicate (Ctrl+D)">
+                          <Button variant="outline" size="sm" onClick={handleDuplicateFields} title={t('templateEditor.duplicateTitleAttr')}>
                             <Copy className="h-4 w-4" />
                           </Button>
                         </>
@@ -1460,76 +1471,45 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                         <DialogTrigger asChild>
                           <Button variant="default">
                             <Plus className="mr-2 h-4 w-4" />
-                            Add Field
+                            {t('templateEditor.addFieldButton')}
                           </Button>
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
-                            <DialogTitle>Add New Field</DialogTitle>
+                            <DialogTitle>{t('templateEditor.addNewFieldTitle')}</DialogTitle>
                             <DialogDescription>
-                              Specify the field details to add to the template
+                              {t('templateEditor.addNewFieldDescription')}
                             </DialogDescription>
                           </DialogHeader>
                           <div className="py-4 space-y-4">
                             <div>
-                              <Label htmlFor="field-name">Field Name</Label>
+                              <Label htmlFor="field-name">{t('templateEditor.fieldNameLabel')}</Label>
                               <Input
                                 id="field-name"
                                 value={newFieldName}
                                 onChange={(e) => setNewFieldName(e.target.value)}
-                                placeholder="e.g., Customer Name"
+                                placeholder={t('templateEditor.fieldNamePlaceholder')}
                               />
                             </div>
                             <div>
-                              <Label htmlFor="field-source">Data Source</Label>
+                              <Label htmlFor="field-source">{t('templateEditor.dataSourceLabel')}</Label>
                               <Select value={newFieldSource} onValueChange={setNewFieldSource}>
                                 <SelectTrigger id="field-source">
-                                  <SelectValue placeholder="Select data source" />
+                                  <SelectValue placeholder={t('templateEditor.dataSourcePlaceholder')} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="contractNumber">Contract Number</SelectItem>
-                                  <SelectItem value="contractDate">Contract Date</SelectItem>
-                                  <SelectItem value="licensePlate">License Plate</SelectItem>
-                                  <SelectItem value="brand">Vehicle Brand</SelectItem>
-                                  <SelectItem value="model">Vehicle Model</SelectItem>
-                                  <SelectItem value="chassisNumber">Chassis Number</SelectItem>
-                                  <SelectItem value="vehicleType">Vehicle Type</SelectItem>
-                                  <SelectItem value="fuelType">Fuel Type</SelectItem>
-                                  <SelectItem value="currentMileage">Current Mileage</SelectItem>
-                                  <SelectItem value="currentFuelLevel">Current Fuel Level</SelectItem>
-                                  <SelectItem value="apkDate">APK Date</SelectItem>
-                                  <SelectItem value="customerName">Customer Name</SelectItem>
-                                  <SelectItem value="customerAddress">Customer Address</SelectItem>
-                                  <SelectItem value="customerCity">Customer City</SelectItem>
-                                  <SelectItem value="customerPostalCode">Customer Postal Code</SelectItem>
-                                  <SelectItem value="customerPhone">Customer Phone</SelectItem>
-                                  <SelectItem value="customerEmail">Customer Email</SelectItem>
-                                  <SelectItem value="companyName">Company Name</SelectItem>
-                                  <SelectItem value="driverLicense">Driver License</SelectItem>
-                                  <SelectItem value="driverName">Driver Name</SelectItem>
-                                  <SelectItem value="driverFirstName">Driver First Name</SelectItem>
-                                  <SelectItem value="driverLastName">Driver Last Name</SelectItem>
-                                  <SelectItem value="driverEmail">Driver Email</SelectItem>
-                                  <SelectItem value="driverPhone">Driver Phone</SelectItem>
-                                  <SelectItem value="driverLicenseNumber">Driver License Number</SelectItem>
-                                  <SelectItem value="driverLicenseExpiry">Driver License Expiry</SelectItem>
-                                  <SelectItem value="startDate">Start Date</SelectItem>
-                                  <SelectItem value="endDate">End Date</SelectItem>
-                                  <SelectItem value="duration">Duration</SelectItem>
-                                  <SelectItem value="totalPrice">Total Price</SelectItem>
-                                  <SelectItem value="pickupMileage">Pickup Mileage</SelectItem>
-                                  <SelectItem value="returnMileage">Return Mileage</SelectItem>
-                                  <SelectItem value="fuelLevelPickup">Fuel Level at Pickup</SelectItem>
-                                  <SelectItem value="fuelLevelReturn">Fuel Level at Return</SelectItem>
+                                  {DATA_SOURCE_KEYS.map((key) => (
+                                    <SelectItem key={key} value={key}>{t(`templateEditor.dataSourceOptions.${key}`)}</SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                             </div>
                           </div>
                           <DialogFooter>
                             <Button variant="outline" onClick={() => setIsAddFieldDialogOpen(false)}>
-                              Cancel
+                              {t('templateEditor.cancelButton')}
                             </Button>
-                            <Button onClick={handleAddField}>Add Field</Button>
+                            <Button onClick={handleAddField}>{t('templateEditor.addFieldButton')}</Button>
                           </DialogFooter>
                         </DialogContent>
                       </Dialog>
@@ -1681,21 +1661,21 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                 <Card>
                   <CardHeader>
                     <CardTitle>
-                      {selectedFields.length === 0 ? 'No Selection' : 
-                       selectedFields.length === 1 ? 'Field Properties' : 
-                       `Batch Edit (${selectedFields.length})`}
+                      {selectedFields.length === 0 ? t('templateEditor.noSelectionTitle') :
+                       selectedFields.length === 1 ? t('templateEditor.fieldPropertiesTitle') :
+                       t('templateEditor.batchEditTitleWithCount', { count: selectedFields.length })}
                     </CardTitle>
                     <CardDescription>
-                      {selectedFields.length === 0 ? 'Select fields to edit' :
-                       selectedFields.length === 1 ? 'Edit the selected field' :
-                       'Edit multiple fields together'}
+                      {selectedFields.length === 0 ? t('templateEditor.selectFieldsToEdit') :
+                       selectedFields.length === 1 ? t('templateEditor.editSelectedField') :
+                       t('templateEditor.editMultipleFieldsTogether')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {selectedField ? (
                     <div className="space-y-4">
                       <div>
-                        <Label>Field Name</Label>
+                        <Label>{t('templateEditor.fieldNameLabel')}</Label>
                         <Input
                           value={selectedField.name}
                           onChange={(e) => {
@@ -1708,12 +1688,12 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                         />
                       </div>
                       <div>
-                        <Label>Data Source</Label>
+                        <Label>{t('templateEditor.dataSourceLabel')}</Label>
                         <Select
                           value={selectedField.source}
                           onValueChange={(value) => {
                             if (!currentTemplate) return;
-                            const updatedFields = currentTemplate.fields.map(f => 
+                            const updatedFields = currentTemplate.fields.map(f =>
                               f.id === selectedField.id ? { ...f, source: value } : f
                             );
                             setCurrentTemplate({ ...currentTemplate, fields: updatedFields });
@@ -1723,46 +1703,15 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="contractNumber">Contract Number</SelectItem>
-                            <SelectItem value="contractDate">Contract Date</SelectItem>
-                            <SelectItem value="licensePlate">License Plate</SelectItem>
-                            <SelectItem value="brand">Vehicle Brand</SelectItem>
-                            <SelectItem value="model">Vehicle Model</SelectItem>
-                            <SelectItem value="chassisNumber">Chassis Number</SelectItem>
-                            <SelectItem value="vehicleType">Vehicle Type</SelectItem>
-                            <SelectItem value="fuelType">Fuel Type</SelectItem>
-                            <SelectItem value="currentMileage">Current Mileage</SelectItem>
-                            <SelectItem value="currentFuelLevel">Current Fuel Level</SelectItem>
-                            <SelectItem value="apkDate">APK Date</SelectItem>
-                            <SelectItem value="customerName">Customer Name</SelectItem>
-                            <SelectItem value="customerAddress">Customer Address</SelectItem>
-                            <SelectItem value="customerCity">Customer City</SelectItem>
-                            <SelectItem value="customerPostalCode">Customer Postal Code</SelectItem>
-                            <SelectItem value="customerPhone">Customer Phone</SelectItem>
-                            <SelectItem value="customerEmail">Customer Email</SelectItem>
-                            <SelectItem value="companyName">Company Name</SelectItem>
-                            <SelectItem value="driverLicense">Driver License</SelectItem>
-                            <SelectItem value="driverName">Driver Name</SelectItem>
-                            <SelectItem value="driverFirstName">Driver First Name</SelectItem>
-                            <SelectItem value="driverLastName">Driver Last Name</SelectItem>
-                            <SelectItem value="driverEmail">Driver Email</SelectItem>
-                            <SelectItem value="driverPhone">Driver Phone</SelectItem>
-                            <SelectItem value="driverLicenseNumber">Driver License Number</SelectItem>
-                            <SelectItem value="driverLicenseExpiry">Driver License Expiry</SelectItem>
-                            <SelectItem value="startDate">Start Date</SelectItem>
-                            <SelectItem value="endDate">End Date</SelectItem>
-                            <SelectItem value="duration">Duration</SelectItem>
-                            <SelectItem value="totalPrice">Total Price</SelectItem>
-                            <SelectItem value="pickupMileage">Pickup Mileage</SelectItem>
-                            <SelectItem value="returnMileage">Return Mileage</SelectItem>
-                            <SelectItem value="fuelLevelPickup">Fuel Level at Pickup</SelectItem>
-                            <SelectItem value="fuelLevelReturn">Fuel Level at Return</SelectItem>
+                            {DATA_SOURCE_KEYS.map((key) => (
+                              <SelectItem key={key} value={key}>{t(`templateEditor.dataSourceOptions.${key}`)}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <Label className="text-xs">X Position</Label>
+                          <Label className="text-xs">{t('templateEditor.xPositionLabel')}</Label>
                           <Input 
                             type="number"
                             value={selectedField.x}
@@ -1777,7 +1726,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                           />
                         </div>
                         <div>
-                          <Label className="text-xs">Y Position</Label>
+                          <Label className="text-xs">{t('templateEditor.yPositionLabel')}</Label>
                           <Input 
                             type="number"
                             value={selectedField.y}
@@ -1793,8 +1742,8 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                         </div>
                       </div>
                       <div>
-                        <Label>Font Size</Label>
-                        <Input 
+                        <Label>{t('templateEditor.fontSizeLabel')}</Label>
+                        <Input
                           type="number"
                           value={selectedField.fontSize}
                           onChange={(e) => {
@@ -1808,7 +1757,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                         />
                       </div>
                       <div className="flex items-center justify-between">
-                        <Label>Bold Text</Label>
+                        <Label>{t('templateEditor.boldTextLabel')}</Label>
                         <Switch
                           checked={selectedField.isBold}
                           onCheckedChange={(checked) => {
@@ -1821,7 +1770,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                         />
                       </div>
                       <div>
-                        <Label>Text Alignment</Label>
+                        <Label>{t('templateEditor.textAlignmentLabel')}</Label>
                         <div className="flex gap-2 mt-2">
                           <Button
                             variant={selectedField.textAlign === 'left' ? 'default' : 'outline'}
@@ -1865,7 +1814,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                         </div>
                       </div>
                       <div className="flex items-center justify-between">
-                        <Label>Lock Field</Label>
+                        <Label>{t('templateEditor.lockFieldLabel')}</Label>
                         <Button
                           variant="outline"
                           size="sm"
@@ -1881,16 +1830,16 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                         className="w-full"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Delete Field
+                        {t('templateEditor.deleteFieldButton')}
                       </Button>
                     </div>
                   ) : selectedFields.length > 1 ? (
                     <div className="space-y-4">
                       <div>
-                        <Label>Batch Font Size</Label>
-                        <Input 
+                        <Label>{t('templateEditor.batchFontSizeLabel')}</Label>
+                        <Input
                           type="number"
-                          placeholder="Enter font size"
+                          placeholder={t('templateEditor.fontSizePlaceholder')}
                           onBlur={(e) => {
                             const value = Number(e.target.value);
                             if (value > 0) handleBatchEdit('fontSize', value);
@@ -1898,18 +1847,18 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                         />
                       </div>
                       <div className="flex items-center justify-between">
-                        <Label>Batch Bold</Label>
+                        <Label>{t('templateEditor.batchBoldLabel')}</Label>
                         <div className="flex gap-2">
                           <Button size="sm" variant="outline" onClick={() => handleBatchEdit('isBold', true)}>
-                            On
+                            {t('templateEditor.onLabel')}
                           </Button>
                           <Button size="sm" variant="outline" onClick={() => handleBatchEdit('isBold', false)}>
-                            Off
+                            {t('templateEditor.offLabel')}
                           </Button>
                         </div>
                       </div>
                       <div>
-                        <Label>Batch Alignment</Label>
+                        <Label>{t('templateEditor.batchAlignmentLabel')}</Label>
                         <div className="flex gap-2 mt-2">
                           <Button size="sm" variant="outline" onClick={() => handleBatchEdit('textAlign', 'left')}>
                             <AlignLeft className="h-4 w-4" />
@@ -1924,26 +1873,26 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                       </div>
                       <Separator />
                       <div>
-                        <Label>Match Property</Label>
+                        <Label>{t('templateEditor.matchPropertyLabel')}</Label>
                         <div className="flex gap-2 mt-2">
-                          <Button size="sm" variant="outline" onClick={() => handleMatchProperty('x')}>X</Button>
-                          <Button size="sm" variant="outline" onClick={() => handleMatchProperty('y')}>Y</Button>
-                          <Button size="sm" variant="outline" onClick={() => handleMatchProperty('fontSize')}>Size</Button>
+                          <Button size="sm" variant="outline" onClick={() => handleMatchProperty('x')}>{t('templateEditor.matchX')}</Button>
+                          <Button size="sm" variant="outline" onClick={() => handleMatchProperty('y')}>{t('templateEditor.matchY')}</Button>
+                          <Button size="sm" variant="outline" onClick={() => handleMatchProperty('fontSize')}>{t('templateEditor.matchSize')}</Button>
                         </div>
                       </div>
                       <Separator />
-                      <Button 
-                        variant="destructive" 
+                      <Button
+                        variant="destructive"
                         onClick={handleDeleteSelectedFields}
                         className="w-full"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Delete All Selected
+                        {t('templateEditor.deleteAllSelectedButton')}
                       </Button>
                     </div>
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
-                      Select one or more fields to edit
+                      {t('templateEditor.selectFieldsPrompt')}
                     </div>
                     )}
                   </CardContent>
@@ -1956,20 +1905,20 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
               {/* Position Presets */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Position Presets</CardTitle>
-                  <CardDescription>Quick positioning for selected fields</CardDescription>
+                  <CardTitle>{t('templateEditor.positionPresetsTitle')}</CardTitle>
+                  <CardDescription>{t('templateEditor.positionPresetsDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-2">
                     {DEFAULT_PRESETS.map((preset) => (
                       <Button
-                        key={preset.name}
+                        key={preset.key}
                         variant="outline"
                         size="sm"
                         onClick={() => handleApplyPreset(preset)}
                         disabled={selectedFields.length === 0}
                       >
-                        {preset.name}
+                        {t(`templateEditor.presets.${preset.key}`)}
                       </Button>
                     ))}
                   </div>
@@ -1981,9 +1930,9 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <History className="h-4 w-4" />
-                    Field History
+                    {t('templateEditor.fieldHistoryTitle')}
                   </CardTitle>
-                  <CardDescription>Recently edited fields</CardDescription>
+                  <CardDescription>{t('templateEditor.fieldHistoryDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {fieldHistory.length > 0 ? (
@@ -2002,7 +1951,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                     </div>
                   ) : (
                     <div className="text-center py-8 text-muted-foreground text-sm">
-                      No recent edits
+                      {t('templateEditor.noRecentEdits')}
                     </div>
                   )}
                 </CardContent>
@@ -2011,12 +1960,12 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
               {/* Preview Template */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Preview Template</CardTitle>
-                  <CardDescription>Generate PDF preview</CardDescription>
+                  <CardTitle>{t('templateEditor.previewTemplateTitle')}</CardTitle>
+                  <CardDescription>{t('templateEditor.previewTemplateDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <Button 
+                    <Button
                       onClick={handlePreviewGenerate}
                       disabled={generatePreviewMutation.isPending}
                       className="w-full"
@@ -2026,16 +1975,16 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                       ) : (
                         <FileText className="mr-2 h-4 w-4" />
                       )}
-                      Generate Preview
+                      {t('templateEditor.generatePreviewButton')}
                     </Button>
                     {previewPdfUrl && (
-                      <a 
+                      <a
                         href={previewPdfUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-blue-600 hover:underline block"
                       >
-                        View Preview PDF →
+                        {t('templateEditor.viewPreviewPdfLink')}
                       </a>
                     )}
                   </div>
@@ -2050,19 +1999,19 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
       <Dialog open={isBackgroundLibraryOpen} onOpenChange={setIsBackgroundLibraryOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Background Library</DialogTitle>
+            <DialogTitle>{t('templateEditor.backgroundLibraryTitle')}</DialogTitle>
             <DialogDescription>
-              Select or upload backgrounds for this template
+              {t('templateEditor.backgroundLibraryDescription')}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6 py-4">
             {/* Upload New Background */}
             <div className="border rounded-lg p-4 bg-muted/20">
-              <h3 className="text-sm font-medium mb-3">Add New Background</h3>
+              <h3 className="text-sm font-medium mb-3">{t('templateEditor.addNewBackgroundTitle')}</h3>
               <div className="flex gap-3">
                 <Input
-                  placeholder="Background name..."
+                  placeholder={t('templateEditor.backgroundNamePlaceholder')}
                   value={backgroundName}
                   onChange={(e) => setBackgroundName(e.target.value)}
                   className="flex-1"
@@ -2077,22 +2026,22 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                   ) : (
                     <Plus className="mr-2 h-4 w-4" />
                   )}
-                  Upload
+                  {t('templateEditor.uploadButton')}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Supports PDF, JPG, and PNG files
+                {t('templateEditor.supportsFileTypesHint')}
               </p>
             </div>
 
             {/* Background Gallery */}
             <div>
-              <h3 className="text-sm font-medium mb-3">Available Backgrounds ({backgroundLibrary.length})</h3>
+              <h3 className="text-sm font-medium mb-3">{t('templateEditor.availableBackgroundsTitle', { count: backgroundLibrary.length })}</h3>
               {backgroundLibrary.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
                   <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>No backgrounds in library yet</p>
-                  <p className="text-sm">Upload your first background above</p>
+                  <p>{t('templateEditor.noBackgroundsTitle')}</p>
+                  <p className="text-sm">{t('templateEditor.noBackgroundsDescription')}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-4">
@@ -2120,7 +2069,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                         {currentTemplate?.backgroundPath === bg.backgroundPath && (
                           <div className="absolute inset-0 bg-blue-500 bg-opacity-20 flex items-center justify-center">
                             <div className="bg-blue-500 text-white px-3 py-1 rounded text-sm font-medium">
-                              Active
+                              {t('templateEditor.activeLabel')}
                             </div>
                           </div>
                         )}
@@ -2157,7 +2106,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsBackgroundLibraryOpen(false)}>
-              Close
+              {t('templateEditor.closeButton')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2176,8 +2125,8 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
           const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
           if (!allowedTypes.includes(file.type) && !file.name.toLowerCase().match(/\.(jpg|jpeg|png|pdf)$/)) {
             toast({
-              title: "Invalid file type",
-              description: "Please upload a JPG, PNG, or PDF file",
+              title: t('templateEditor.toasts.invalidFileTypeTitle'),
+              description: t('templateEditor.toasts.invalidFileTypeDescription'),
               variant: "destructive",
             });
             return;
@@ -2187,8 +2136,8 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
           const maxSize = 10 * 1024 * 1024; // 10MB in bytes
           if (file.size > maxSize) {
             toast({
-              title: "File too large",
-              description: "Please upload a file smaller than 10MB",
+              title: t('templateEditor.toasts.fileTooLargeTitle'),
+              description: t('templateEditor.toasts.fileTooLargeDescription'),
               variant: "destructive",
             });
             return;
@@ -2218,9 +2167,9 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
       <ConfirmDialog
         open={deleteTemplateDialogOpen}
         onOpenChange={setDeleteTemplateDialogOpen}
-        title="Delete Template"
-        description="Are you sure you want to delete this template? This action cannot be undone."
-        confirmLabel="Delete"
+        title={t('templateEditor.deleteTemplateDialogTitle')}
+        description={t('templateEditor.deleteTemplateDialogDescription')}
+        confirmLabel={t('templateEditor.deleteButton')}
         variant="danger"
         onConfirm={confirmDeleteTemplate}
       />
@@ -2232,9 +2181,9 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
           setDeleteBackgroundDialogOpen(open);
           if (!open) setBackgroundToDelete(null);
         }}
-        title="Delete Background"
-        description={`Are you sure you want to delete "${backgroundToDelete?.name}"?`}
-        confirmLabel="Delete"
+        title={t('templateEditor.deleteBackgroundDialogTitle')}
+        description={t('templateEditor.deleteBackgroundDialogDescription', { name: backgroundToDelete?.name })}
+        confirmLabel={t('templateEditor.deleteButton')}
         variant="danger"
         onConfirm={() => {
           if (currentTemplate && backgroundToDelete) {

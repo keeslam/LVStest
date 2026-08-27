@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { format, addDays, subDays, isSameDay, parseISO, startOfMonth, endOfMonth, getDate, getDay, getMonth, getYear, isSameMonth, addMonths, startOfDay, endOfDay, isBefore, isAfter, differenceInDays, startOfWeek, endOfWeek } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -104,32 +105,33 @@ type VehicleFilters = {
 };
 
 // Helper function to parse maintenance type from notes
-const parseMaintenanceType = (notes: string | null | undefined): string | null => {
+const parseMaintenanceType = (notes: string | null | undefined, t: (key: string) => string): string | null => {
   if (!notes) return null;
-  
+
   // Notes format: "maintenanceType: description\nadditional notes"
   const firstLine = notes.split('\n')[0];
   const maintenanceTypeCode = firstLine.split(':')[0].trim();
-  
-  // Map maintenance type codes to user-friendly labels
-  const typeLabels: Record<string, string> = {
-    'breakdown': 'vehicle breakdown',
-    'tire_replacement': 'tire replacement',
-    'brake_service': 'brake service',
-    'engine_repair': 'engine repair',
-    'transmission_repair': 'transmission repair',
-    'electrical_issue': 'electrical issue',
-    'air_conditioning': 'air conditioning',
-    'battery_replacement': 'battery replacement',
-    'oil_change': 'oil change',
-    'regular_maintenance': 'regular maintenance',
-    'apk_inspection': 'APK inspection',
-    'warranty_service': 'warranty service',
-    'accident_damage': 'accident damage',
-    'other': 'maintenance'
+
+  // Map maintenance type codes to translation keys
+  const typeKeys: Record<string, string> = {
+    'breakdown': 'calendarPage.maintenanceTypes.breakdown',
+    'tire_replacement': 'calendarPage.maintenanceTypes.tireReplacement',
+    'brake_service': 'calendarPage.maintenanceTypes.brakeService',
+    'engine_repair': 'calendarPage.maintenanceTypes.engineRepair',
+    'transmission_repair': 'calendarPage.maintenanceTypes.transmissionRepair',
+    'electrical_issue': 'calendarPage.maintenanceTypes.electricalIssue',
+    'air_conditioning': 'calendarPage.maintenanceTypes.airConditioning',
+    'battery_replacement': 'calendarPage.maintenanceTypes.batteryReplacement',
+    'oil_change': 'calendarPage.maintenanceTypes.oilChange',
+    'regular_maintenance': 'calendarPage.maintenanceTypes.regularMaintenance',
+    'apk_inspection': 'calendarPage.maintenanceTypes.apkInspection',
+    'warranty_service': 'calendarPage.maintenanceTypes.warrantyService',
+    'accident_damage': 'calendarPage.maintenanceTypes.accidentDamage',
+    'other': 'calendarPage.maintenanceTypes.other'
   };
-  
-  return typeLabels[maintenanceTypeCode] || null;
+
+  const key = typeKeys[maintenanceTypeCode];
+  return key ? t(key) : null;
 };
 
 // Helper function to find maintenance overlapping with a rental on a specific day
@@ -159,6 +161,7 @@ const findMaintenanceForRental = (
 };
 
 export default function ReservationCalendarPage() {
+  const { t } = useTranslation(["reservations", "common"]);
   // Query client for cache invalidation
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -325,8 +328,8 @@ export default function ReservationCalendarPage() {
       }
 
       toast({
-        title: "Success",
-        description: "Damage check deleted successfully",
+        title: t('common:status.success'),
+        description: t('calendarPage.damageCheckDeletedDescription'),
       });
 
       // Refetch damage checks and documents
@@ -342,8 +345,8 @@ export default function ReservationCalendarPage() {
     } catch (error) {
       console.error('Error deleting damage check:', error);
       toast({
-        title: "Error",
-        description: "Failed to delete damage check",
+        title: t('common:status.error'),
+        description: t('calendarPage.damageCheckDeleteFailedDescription'),
         variant: "destructive",
       });
     }
@@ -384,14 +387,14 @@ export default function ReservationCalendarPage() {
       refetchCalendarData();
       
       toast({
-        title: "Success",
-        description: `Reservation moved to ${format(parseISO(newStartDate), 'MMM d, yyyy')}`,
+        title: t('common:status.success'),
+        description: t('calendarPage.reservationMovedDescription', { date: format(parseISO(newStartDate), 'MMM d, yyyy') }),
       });
     } catch (error) {
       console.error('Error moving reservation:', error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to move reservation",
+        title: t('common:status.error'),
+        description: error instanceof Error ? error.message : t('calendarPage.moveReservationFailedFallback'),
         variant: "destructive",
       });
     }
@@ -455,7 +458,7 @@ export default function ReservationCalendarPage() {
       }
       
       toast({
-        title: "Delete failed",
+        title: t('calendarPage.deleteFailedTitle'),
         description: error.message,
         variant: "destructive",
       });
@@ -463,10 +466,10 @@ export default function ReservationCalendarPage() {
     onSuccess: async () => {
       await invalidateRelatedQueries('reservations');
       refetchCalendarData();
-      
+
       toast({
-        title: "Reservation deleted",
-        description: "The reservation has been deleted successfully.",
+        title: t('listDialog.toasts.deletedTitle'),
+        description: t('listDialog.toasts.deletedDescription'),
       });
     },
   });
@@ -602,6 +605,16 @@ export default function ReservationCalendarPage() {
     });
     return map;
   }, [allReservationsForLookup]);
+
+  // A reservation of type 'replacement' is a spare vehicle standing in for the
+  // vehicle on the reservation it replaces. Used by the admin invoice-data
+  // dialog to show which vehicle a spare covers.
+  const getSpareTargetVehicle = (rental: Reservation): Vehicle | undefined => {
+    if (rental.type !== 'replacement' || !rental.replacementForReservationId) return undefined;
+    const originalVehicleId = reservationVehicleLookup.get(rental.replacementForReservationId);
+    if (!originalVehicleId) return undefined;
+    return vehicles?.find(v => v.id === originalVehicleId);
+  };
   
   // Fetch completed/returned rentals separately for the completed list with vehicle data
   const { data: completedRentals = [] } = useQuery<Reservation[]>({
@@ -960,7 +973,7 @@ export default function ReservationCalendarPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Reservation Calendar</h1>
+        <h1 className="text-2xl font-bold">{t('calendarPage.title')}</h1>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setListDialogOpen(true)} data-testid="button-list-view">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-list mr-2">
@@ -971,24 +984,24 @@ export default function ReservationCalendarPage() {
               <line x1="3" x2="3" y1="12" y2="12" />
               <line x1="3" x2="3" y1="18" y2="18" />
             </svg>
-            List View
+            {t('calendarPage.listViewButton')}
           </Button>
           <Button variant="outline" onClick={() => setCompletedRentalsDialogOpen(true)} data-testid="button-view-completed">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
               <polyline points="22 4 12 14.01 9 11.01"/>
             </svg>
-            View Completed ({completedRentals.length})
+            {t('calendarPage.viewCompletedButton', { count: completedRentals.length })}
           </Button>
           {overdueReservations.length > 0 && (
             <Button variant="destructive" onClick={() => setOverdueDialogOpen(true)} data-testid="button-view-overdue">
               <AlertTriangle className="h-4 w-4 mr-2" />
-              {overdueReservations.length} Overdue
+              {t('calendarPage.overdueButton', { count: overdueReservations.length })}
             </Button>
           )}
           <Button variant="outline" onClick={() => setAdminDialogOpen(true)} data-testid="button-administration">
             <FileText className="h-4 w-4 mr-2" />
-            Administration
+            {t('calendarPage.administrationButton')}
           </Button>
           <ReservationAddDialog
             onSuccess={async (reservation) => {
@@ -1015,7 +1028,7 @@ export default function ReservationCalendarPage() {
                 <line x1="12" x2="12" y1="5" y2="19" />
                 <line x1="5" x2="19" y1="12" y2="12" />
               </svg>
-              New Reservation
+              {t('addDialog.newReservation')}
             </Button>
           </ReservationAddDialog>
         </div>
@@ -1023,15 +1036,15 @@ export default function ReservationCalendarPage() {
       <Card>
         <CardHeader className="flex-row justify-between items-center space-y-0 pb-2">
           <div>
-            <CardTitle>Reservation Schedule</CardTitle>
-            <CardDescription>View and manage vehicle reservations</CardDescription>
+            <CardTitle>{t('calendarPage.scheduleTitle')}</CardTitle>
+            <CardDescription>{t('calendarPage.scheduleDescription')}</CardDescription>
           </div>
           <div className="flex-shrink-0 flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setColorDialogOpen(true)}>
               <Palette className="h-4 w-4 mr-1" />
-              Colors
+              {t('calendarPage.colorsButton')}
             </Button>
-            <Button variant="outline" size="sm" onClick={goToToday}>Today</Button>
+            <Button variant="outline" size="sm" onClick={goToToday}>{t('calendarPage.todayButton')}</Button>
           </div>
         </CardHeader>
         <CardContent className="pt-6">
@@ -1050,45 +1063,45 @@ export default function ReservationCalendarPage() {
                   <path d="m9 18 6-6-6-6"/>
                 </svg>
               </Button>
-              <Button variant="outline" size="sm" onClick={goToToday}>Today</Button>
+              <Button variant="outline" size="sm" onClick={goToToday}>{t('calendarPage.todayButton')}</Button>
             </div>
-            
+
             {/* Vehicle Filters */}
             <div className="flex flex-wrap gap-2">
               <Input
-                placeholder="Search vehicles..."
+                placeholder={t('calendarPage.filters.searchPlaceholder')}
                 value={vehicleFilters.search}
                 onChange={handleSearchChange}
                 className="w-40 h-9"
               />
-              
+
               {vehicleTypes.length > 0 && (
                 <Select value={vehicleFilters.type} onValueChange={handleTypeChange}>
                   <SelectTrigger className="w-40 h-9">
-                    <SelectValue placeholder="Vehicle Type" />
+                    <SelectValue placeholder={t('calendarPage.filters.vehicleTypePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="all">{t('calendarPage.filters.allTypesOption')}</SelectItem>
                     {vehicleTypes.map(type => (
                       <SelectItem key={type} value={type}>{type}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
-              
+
               <Select value={vehicleFilters.availability} onValueChange={handleAvailabilityChange}>
                 <SelectTrigger className="w-40 h-9">
-                  <SelectValue placeholder="Availability" />
+                  <SelectValue placeholder={t('calendarPage.filters.availabilityPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Vehicles</SelectItem>
-                  <SelectItem value="available">Available</SelectItem>
-                  <SelectItem value="reserved">Reserved</SelectItem>
+                  <SelectItem value="all">{t('calendarPage.filters.allVehiclesOption')}</SelectItem>
+                  <SelectItem value="available">{t('common:status.available')}</SelectItem>
+                  <SelectItem value="reserved">{t('calendarPage.filters.reservedOption')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-          
+
           {/* Month View */}
           <div className="mb-6">
             {/* Calendar Header - Hidden in 5-column mode for better alignment */}
@@ -1232,12 +1245,12 @@ export default function ReservationCalendarPage() {
                             </span>
                             {dateStatus.isHoliday && (
                               <Badge variant="outline" className="bg-orange-100 text-orange-700 border-orange-300 text-xs px-1.5 py-0">
-                                🎉 {dateStatus.holidayName || 'Holiday'}
+                                🎉 {dateStatus.holidayName || t('calendarPage.grid.holidayFallback')}
                               </Badge>
                             )}
                             {dateStatus.isBlocked && (
                               <Badge variant="outline" className="bg-red-100 text-red-700 border-red-300 text-xs px-1.5 py-0">
-                                🚫 {dateStatus.blockedReason || 'Blocked'}
+                                🚫 {dateStatus.blockedReason || t('calendarPage.grid.blockedFallback')}
                               </Badge>
                             )}
                           </div>
@@ -1319,19 +1332,19 @@ export default function ReservationCalendarPage() {
                                             className={`px-1.5 py-0.5 rounded text-xs font-semibold mr-1 ${res.placeholderSpare && !res.vehicleId ? 'bg-orange-100 text-orange-800' : 'bg-primary-100 text-primary-800'}`}
                                             style={res.placeholderSpare && !res.vehicleId ? getCustomTBDStyle() : {}}
                                           >
-                                            {res.placeholderSpare && !res.vehicleId ? 'TBD' : formatLicensePlate(res.vehicle?.licensePlate || '')}
+                                            {res.placeholderSpare && !res.vehicleId ? t('indexPage.tbdBadge') : formatLicensePlate(res.vehicle?.licensePlate || '')}
                                           </span>
                                           {overlappingMaintenance && (
                                             <span 
                                               className={`ml-1 inline-flex items-center gap-0.5 text-[10px] px-1 py-0.5 rounded font-bold border ${getMaintenanceBadgeColor(overlappingMaintenance.maintenanceStatus)}`}
-                                              title={`Maintenance: ${parseMaintenanceType(overlappingMaintenance.notes) || 'service'} - ${overlappingMaintenance.maintenanceStatus || 'status unknown'}`}
+                                              title={t('calendarPage.reservationCard.maintenanceTooltip', { type: parseMaintenanceType(overlappingMaintenance.notes, t) || t('calendarPage.reservationCard.serviceFallback'), status: overlappingMaintenance.maintenanceStatus || t('calendarPage.reservationCard.statusUnknown') })}
                                             >
                                               <Wrench className="w-2.5 h-2.5" />
                                             </span>
                                           )}
                                           {res.type === 'replacement' && (
                                             <span className="ml-1 inline-block bg-orange-300 text-orange-900 text-[10px] px-1.5 py-0.5 rounded font-bold border border-orange-400">
-                                              🚗 SPARE
+                                              🚗 {t('indexPage.spareBadge')}
                                             </span>
                                           )}
                                           {isPickupDay && 
@@ -1339,15 +1352,15 @@ export default function ReservationCalendarPage() {
                                               className="ml-1 inline-block bg-green-200 text-green-800 text-[10px] px-1 rounded-sm font-medium"
                                               style={getCustomIndicatorStyle('pickup')}
                                             >
-                                              out
+                                              {t('calendarPage.grid.outIndicator')}
                                             </span>
                                           }
-                                          {isReturnDay && 
-                                            <span 
+                                          {isReturnDay &&
+                                            <span
                                               className="ml-1 inline-block bg-blue-200 text-blue-800 text-[10px] px-1 rounded-sm font-medium"
                                               style={getCustomIndicatorStyle('return')}
                                             >
-                                              in
+                                              {t('calendarPage.grid.inIndicator')}
                                             </span>
                                           }
                                         </div>
@@ -1372,11 +1385,11 @@ export default function ReservationCalendarPage() {
                                         <div className="text-sm text-gray-600 truncate font-medium">
                                           {res.type === 'maintenance_block' ? (
                                             (() => {
-                                              const maintenanceType = parseMaintenanceType(res.notes);
+                                              const maintenanceType = parseMaintenanceType(res.notes, t);
                                               return (
                                                 <span className="flex items-center gap-1 text-purple-700">
                                                   <Wrench className="w-3 h-3 text-purple-600" />
-                                                  Coming in for {maintenanceType || 'service'}
+                                                  {t('calendarPage.reservationCard.comingInFor', { type: maintenanceType || t('calendarPage.reservationCard.serviceFallback') })}
                                                 </span>
                                               );
                                             })()
@@ -1385,18 +1398,18 @@ export default function ReservationCalendarPage() {
                                               // Find the original vehicle using the lookup map (works even if original reservation is outside calendar range)
                                               const originalVehicleId = reservationVehicleLookup.get(res.replacementForReservationId);
                                               const originalVehicle = originalVehicleId ? vehicles?.find(v => v.id === originalVehicleId) : null;
-                                              
+
                                               if (originalVehicle) {
                                                 return (
                                                   <span className="flex items-center gap-1 text-orange-700">
-                                                    Replacing {formatLicensePlate(originalVehicle.licensePlate)}
+                                                    {t('calendarPage.reservationCard.replacingVehicle', { plate: formatLicensePlate(originalVehicle.licensePlate) })}
                                                   </span>
                                                 );
                                               }
-                                              return res.customer?.name || 'No customer';
+                                              return res.customer?.name || t('calendarPage.reservationCard.noCustomer');
                                             })()
                                           ) : (
-                                            res.customer?.name || 'No customer'
+                                            res.customer?.name || t('calendarPage.reservationCard.noCustomer')
                                           )}
                                         </div>
                                         {res.type === 'maintenance_block' && (
@@ -1423,19 +1436,19 @@ export default function ReservationCalendarPage() {
                                     {/* Header with status badge */}
                                     <div className="flex items-center justify-between border-b p-3">
                                       <h4 className="font-medium">
-                                        {res.type === 'maintenance_block' ? 'Maintenance Service' : 
-                                         res.type === 'replacement' ? 'Spare Vehicle Assignment' : 'Reservation Details'}
+                                        {res.type === 'maintenance_block' ? t('calendarPage.hoverCard.maintenanceServiceTitle') :
+                                         res.type === 'replacement' ? t('spareVehicleDialog.title') : t('viewDialog.title')}
                                       </h4>
                                       <div className="flex gap-2">
                                         {res.type === 'maintenance_block' && (
                                           <Badge className="bg-purple-100 text-purple-800 border-purple-200" variant="outline">
                                             <Wrench className="w-3 h-3 mr-1" />
-                                            MAINTENANCE
+                                            {t('calendarPage.hoverCard.maintenanceBadge')}
                                           </Badge>
                                         )}
                                         {res.type === 'replacement' && (
                                           <Badge className="bg-orange-100 text-orange-800 border-orange-200" variant="outline">
-                                            SPARE CAR
+                                            {t('indexPage.spareBadge')}
                                           </Badge>
                                         )}
                                         <Badge 
@@ -1464,10 +1477,10 @@ export default function ReservationCalendarPage() {
                                       <div>
                                         {res.placeholderSpare && !res.vehicleId ? (
                                           <>
-                                            <div className="font-medium text-sm text-orange-700">TBD Spare Vehicle</div>
+                                            <div className="font-medium text-sm text-orange-700">{t('calendarPage.hoverCard.tbdSpareVehicleLabel')}</div>
                                             <div className="text-xs text-gray-600">
                                               <span className="bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded text-xs font-semibold">
-                                                Awaiting assignment
+                                                {t('spareVehicleAssignmentDialog.awaitingAssignment')}
                                               </span>
                                             </div>
                                           </>
@@ -1488,9 +1501,9 @@ export default function ReservationCalendarPage() {
                                     <div className="px-3 py-1 flex items-start space-x-2">
                                       <User className="h-4 w-4 text-gray-500 mt-0.5" />
                                       <div className="flex-1">
-                                        <div className="text-xs font-semibold text-gray-500 mb-1">Customer</div>
+                                        <div className="text-xs font-semibold text-gray-500 mb-1">{t('viewDialog.customerLabel')}</div>
                                         <div className="font-medium text-sm">{res.customer?.name}</div>
-                                        <div className="text-xs text-gray-600">{res.customer?.email || 'No email provided'}</div>
+                                        <div className="text-xs text-gray-600">{res.customer?.email || t('calendarPage.hoverCard.noEmailProvided')}</div>
                                         {res.customer?.phone && <div className="text-xs text-gray-600">{res.customer?.phone}</div>}
                                       </div>
                                     </div>
@@ -1500,39 +1513,39 @@ export default function ReservationCalendarPage() {
                                       <div className="px-3 py-1 flex items-start space-x-2 bg-blue-50 -mx-3 border-t border-blue-100">
                                         <User className="h-4 w-4 text-blue-600 mt-0.5" />
                                         <div className="flex-1">
-                                          <div className="text-xs font-semibold text-blue-600 mb-1">Driver</div>
+                                          <div className="text-xs font-semibold text-blue-600 mb-1">{t('calendarPage.hoverCard.driverLabel')}</div>
                                           <div className="font-medium text-sm text-blue-900 flex items-center gap-1">
                                             {res.driver.displayName}
                                             {res.driver.isPrimaryDriver && (
-                                              <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] px-1 py-0">Primary</Badge>
+                                              <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] px-1 py-0">{t('viewDialog.primaryBadge')}</Badge>
                                             )}
                                           </div>
                                           {res.driver.phone && <div className="text-xs text-blue-700">{res.driver.phone}</div>}
                                           {res.driver.driverLicenseNumber && (
-                                            <div className="text-xs text-blue-600">License: {res.driver.driverLicenseNumber}</div>
+                                            <div className="text-xs text-blue-600">{t('calendarPage.licenseColonLabel')} {res.driver.driverLicenseNumber}</div>
                                           )}
                                         </div>
                                       </div>
                                     )}
-                                    
+
                                     {/* Dates */}
                                     <div className="px-3 py-1 flex items-start space-x-2">
                                       <Calendar className="h-4 w-4 text-gray-500 mt-0.5" />
                                       <div>
                                         <div className="grid grid-cols-2 gap-2 text-xs">
                                           <div>
-                                            <span className="text-gray-500">Start:</span> {startDate ? format(startDate, 'MMM d, yyyy') : 'Invalid date'}
+                                            <span className="text-gray-500">{t('calendarPage.hoverCard.startColonLabel')}</span> {startDate ? format(startDate, 'MMM d, yyyy') : t('calendarPage.invalidDate')}
                                           </div>
                                           <div>
-                                            <span className="text-gray-500">End:</span> {endDate ? format(endDate, 'MMM d, yyyy') : 'Open-ended'}
+                                            <span className="text-gray-500">{t('calendarPage.hoverCard.endColonLabel')}</span> {endDate ? format(endDate, 'MMM d, yyyy') : t('vehicleReservationsStatusDialog.openEnded')}
                                           </div>
                                           <div className="col-span-2">
-                                            <span className="text-gray-500">Duration:</span> {rentalDuration} {rentalDuration === 1 ? 'day' : 'days'}
+                                            <span className="text-gray-500">{t('calendarPage.hoverCard.durationColonLabel')}</span> {t('form.dayCount', { count: rentalDuration })}
                                           </div>
                                         </div>
                                       </div>
                                     </div>
-                                    
+
                                     {/* Price and mileage - hide for maintenance */}
                                     {res.type !== 'maintenance_block' && (
                                       <div className="px-3 py-1 flex items-start space-x-2">
@@ -1540,11 +1553,11 @@ export default function ReservationCalendarPage() {
                                         <div className="grid grid-cols-2 gap-2 text-xs">
                                           {res.totalPrice && (
                                             <div>
-                                              <span className="text-gray-500">Price:</span> {<Price value={Number(res.totalPrice)} />}
+                                              <span className="text-gray-500">{t('calendarPage.hoverCard.priceColonLabel')}</span> {<Price value={Number(res.totalPrice)} />}
                                             </div>
                                           )}
                                           <div>
-                                            <span className="text-gray-500">Status:</span>
+                                            <span className="text-gray-500">{t('calendarPage.hoverCard.statusColonLabel')}</span>
                                             <Badge className="ml-1 text-xs">{formatReservationStatus(res.status)}</Badge>
                                           </div>
                                         </div>
@@ -1574,7 +1587,7 @@ export default function ReservationCalendarPage() {
                                         }}
                                       >
                                         <Eye className="mr-1 h-3 w-3" />
-                                        View
+                                        {t('common:actions.view')}
                                       </Button>
                                       {res.status === 'picked_up' && (
                                         <Button
@@ -1586,14 +1599,14 @@ export default function ReservationCalendarPage() {
                                             e.stopPropagation();
                                             handleStatusChange(res);
                                           }}
-                                          title="Revert to Booked"
+                                          title={t('quickStatusButton.revertToBooked')}
                                         >
                                           <RotateCcw className="mr-1 h-3 w-3" />
-                                          Revert
+                                          {t('calendarPage.hoverCard.revertButton')}
                                         </Button>
                                       )}
-                                      <Button 
-                                        size="sm" 
+                                      <Button
+                                        size="sm"
                                         variant="outline"
                                         className="h-8 text-xs"
                                         onClick={(e) => {
@@ -1604,7 +1617,7 @@ export default function ReservationCalendarPage() {
                                         }}
                                       >
                                         <Edit className="mr-1 h-3 w-3" />
-                                        Edit
+                                        {t('common:actions.edit')}
                                       </Button>
                                     </div>
                                   </div>
@@ -1615,7 +1628,7 @@ export default function ReservationCalendarPage() {
                               console.error('Error rendering reservation:', error, res);
                               return (
                                 <div key={res.id} className="text-xs text-red-500 p-1 border border-red-200 rounded">
-                                  Error displaying reservation
+                                  {t('calendarPage.reservationCard.renderError')}
                                 </div>
                               );
                             }
@@ -1633,7 +1646,7 @@ export default function ReservationCalendarPage() {
                               }}
                               data-testid={`button-more-${safeFormat(day, 'yyyy-MM-dd', 'invalid-date')}`}
                             >
-                              +{dayReservations.length - 5} more
+                              {t('calendarPage.grid.moreButton', { count: dayReservations.length - 5 })}
                             </Button>
                           )}
                         </div>
@@ -1658,7 +1671,7 @@ export default function ReservationCalendarPage() {
           {/* Calendar Legend */}
           <CalendarLegend 
             categories={['reservation-status', 'reservation-type', 'indicators']}
-            title="Reservation Calendar Legend"
+            title={t('calendarPage.legendTitle')}
             compact
           />
         </CardContent>
@@ -1682,15 +1695,15 @@ export default function ReservationCalendarPage() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {selectedReservation?.type === 'replacement' ? 'Spare Vehicle Assignment' : 'Reservation Details'}
+              {selectedReservation?.type === 'replacement' ? t('spareVehicleDialog.title') : t('viewDialog.title')}
               {selectedReservation?.type === 'replacement' && (
                 <Badge className="bg-orange-100 text-orange-800 border-orange-200" variant="outline">
-                  SPARE CAR
+                  {t('indexPage.spareBadge')}
                 </Badge>
               )}
             </DialogTitle>
             <DialogDescription>
-              {selectedReservation ? `Reservation #${selectedReservation.id} - ${selectedReservation.customer?.name || 'No customer'}` : 'View detailed reservation information'}
+              {selectedReservation ? t('calendarPage.reservationHashCustomer', { id: selectedReservation.id, name: selectedReservation.customer?.name || t('calendarPage.reservationCard.noCustomer') }) : t('calendarPage.viewDetailedInfo')}
             </DialogDescription>
           </DialogHeader>
           {selectedReservation && (
@@ -1718,10 +1731,10 @@ export default function ReservationCalendarPage() {
                       const originalVehicle = originalVehicleId ? vehicles?.find(v => v.id === originalVehicleId) : null;
                       
                       if (originalVehicle) {
-                        return `Spare for ${formatLicensePlate(originalVehicle.licensePlate)} (${originalVehicle.brand} ${originalVehicle.model})`;
+                        return t('calendarPage.spareForVehicle', { plate: formatLicensePlate(originalVehicle.licensePlate), brand: originalVehicle.brand, model: originalVehicle.model });
                       }
-                      
-                      return `Spare for #${selectedReservation.replacementForReservationId}`;
+
+                      return t('indexPage.spareForHash', { id: selectedReservation.replacementForReservationId });
                     })()}
                   </Badge>
                 )}
@@ -1731,7 +1744,7 @@ export default function ReservationCalendarPage() {
               {selectedReservation.contractNumber && (
                 <div className="bg-indigo-50 border border-indigo-200 rounded-md p-2.5">
                   <div className="flex items-center gap-2">
-                    <label className="text-[10px] font-medium text-indigo-700 uppercase">Contract Number</label>
+                    <label className="text-[10px] font-medium text-indigo-700 uppercase">{t('editContractNumberDialog.contractNumber')}</label>
                     <span className="text-sm font-semibold text-indigo-900" data-testid="text-contract-number">
                       {selectedReservation.contractNumber}
                     </span>
@@ -1741,7 +1754,7 @@ export default function ReservationCalendarPage() {
                         size="sm"
                         className="h-6 w-6 p-0 text-indigo-700 hover:text-indigo-900 hover:bg-indigo-100 ml-auto"
                         onClick={() => setEditContractNumberOpen(true)}
-                        title="Edit contract number"
+                        title={t('editContractNumberDialog.title')}
                         data-testid="button-edit-contract-number"
                       >
                         <Edit className="h-3 w-3" />
@@ -1757,16 +1770,16 @@ export default function ReservationCalendarPage() {
                 <div className="bg-gray-50 p-3 rounded-md">
                   <h3 className="text-xs font-medium text-gray-700 mb-2 flex items-center gap-2">
                     <Car className="h-3.5 w-3.5" />
-                    Vehicle
+                    {t('viewDialog.vehicleLabel')}
                   </h3>
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2">
                       {selectedReservation.placeholderSpare && !selectedReservation.vehicleId ? (
                         <>
                           <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded text-xs font-semibold">
-                            TBD
+                            {t('indexPage.tbdBadge')}
                           </span>
-                          <span className="text-sm font-medium text-orange-700">Spare Vehicle</span>
+                          <span className="text-sm font-medium text-orange-700">{t('calendarPage.spareVehicleLabel')}</span>
                         </>
                       ) : selectedReservation.vehicle ? (
                         <>
@@ -1776,18 +1789,18 @@ export default function ReservationCalendarPage() {
                           <span className="text-sm font-medium">{selectedReservation.vehicle.brand} {selectedReservation.vehicle.model}</span>
                           {selectedReservation.type === 'replacement' && (
                             <Badge className="bg-green-100 text-green-800 border-green-200 text-[10px]" variant="outline">
-                              Assigned Spare
+                              {t('calendarPage.assignedSpareBadge')}
                             </Badge>
                           )}
                         </>
                       ) : (
-                        <span className="text-sm text-gray-500">No vehicle assigned</span>
+                        <span className="text-sm text-gray-500">{t('calendarPage.noVehicleAssigned')}</span>
                       )}
                     </div>
                     <div className="text-xs text-gray-600">
-                      {selectedReservation.placeholderSpare && !selectedReservation.vehicleId 
-                        ? 'Awaiting assignment'
-                        : `${selectedReservation.vehicle?.vehicleType || 'Unknown type'} • ${selectedReservation.vehicle?.fuel || 'Unknown fuel'}`
+                      {selectedReservation.placeholderSpare && !selectedReservation.vehicleId
+                        ? t('spareVehicleAssignmentDialog.awaitingAssignment')
+                        : `${selectedReservation.vehicle?.vehicleType || t('viewDialog.unknownType')} • ${selectedReservation.vehicle?.fuel || t('viewDialog.unknownFuel')}`
                       }
                     </div>
                     {/* Show Mileage Information */}
@@ -1809,7 +1822,7 @@ export default function ReservationCalendarPage() {
                                 (<>
                                   {selectedReservation.pickupMileage !== null && selectedReservation.pickupMileage !== undefined && (
                                     <div>
-                                      <div className="text-[10px] text-gray-500 uppercase">Pickup</div>
+                                      <div className="text-[10px] text-gray-500 uppercase">{t('form.pickupLabel')}</div>
                                       <div className="text-xs font-semibold text-gray-900">
                                         {selectedReservation.pickupMileage.toLocaleString()} km
                                       </div>
@@ -1817,7 +1830,7 @@ export default function ReservationCalendarPage() {
                                   )}
                                   {selectedReservation.returnMileage !== null && selectedReservation.returnMileage !== undefined && (
                                     <div>
-                                      <div className="text-[10px] text-gray-500 uppercase">Returned</div>
+                                      <div className="text-[10px] text-gray-500 uppercase">{t('calendarPage.returnedShortLabel')}</div>
                                       <div className="text-xs font-semibold text-gray-900">
                                         {selectedReservation.returnMileage.toLocaleString()} km
                                       </div>
@@ -1827,7 +1840,7 @@ export default function ReservationCalendarPage() {
                               ) : (
                                 // Show vehicle's current mileage for scheduled reservations
                                 (vehicleCurrentMileage !== null && vehicleCurrentMileage !== undefined && (<div>
-                                  <div className="text-[10px] text-gray-500 uppercase">Current</div>
+                                  <div className="text-[10px] text-gray-500 uppercase">{t('calendarPage.currentMileageShortLabel')}</div>
                                   <div className="text-xs font-semibold text-gray-900">
                                     {vehicleCurrentMileage.toLocaleString()} km
                                   </div>
@@ -1846,10 +1859,10 @@ export default function ReservationCalendarPage() {
                 <div className="bg-gray-50 p-3 rounded-md">
                   <h3 className="text-xs font-medium text-gray-700 mb-2 flex items-center gap-2">
                     <User className="h-3.5 w-3.5" />
-                    Customer
+                    {t('viewDialog.customerLabel')}
                   </h3>
                   <div className="space-y-1">
-                    <div className="text-sm font-medium">{selectedReservation.customer?.name || 'No customer specified'}</div>
+                    <div className="text-sm font-medium">{selectedReservation.customer?.name || t('calendarPage.noCustomerSpecified')}</div>
                     {selectedReservation.customer?.email && (
                       <div className="text-xs text-gray-600">{selectedReservation.customer.email}</div>
                     )}
@@ -1865,13 +1878,13 @@ export default function ReservationCalendarPage() {
                 <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
                   <h3 className="text-xs font-medium text-blue-900 mb-2 flex items-center gap-2">
                     <User className="h-3.5 w-3.5 text-blue-700" />
-                    Driver
+                    {t('calendarPage.hoverCard.driverLabel')}
                   </h3>
                   <div className="space-y-1">
                     <div className="text-sm font-medium text-blue-900 flex items-center gap-2">
                       {selectedReservation.driver.displayName}
                       {selectedReservation.driver.isPrimaryDriver && (
-                        <Badge className="bg-blue-100 text-blue-800 border-blue-300 text-[10px] px-1.5 py-0">Primary</Badge>
+                        <Badge className="bg-blue-100 text-blue-800 border-blue-300 text-[10px] px-1.5 py-0">{t('viewDialog.primaryBadge')}</Badge>
                       )}
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs text-blue-700">
@@ -1882,13 +1895,13 @@ export default function ReservationCalendarPage() {
                       <div className="grid grid-cols-2 gap-2 mt-1.5 pt-1.5 border-t border-blue-200 text-xs">
                         {selectedReservation.driver.driverLicenseNumber && (
                           <div>
-                            <span className="text-blue-600 font-medium">License:</span>{' '}
+                            <span className="text-blue-600 font-medium">{t('calendarPage.licenseColonLabel')}</span>{' '}
                             <span className="text-blue-900">{selectedReservation.driver.driverLicenseNumber}</span>
                           </div>
                         )}
                         {selectedReservation.driver.licenseExpiry && (
                           <div>
-                            <span className="text-blue-600 font-medium">Expires:</span>{' '}
+                            <span className="text-blue-600 font-medium">{t('calendarPage.expiresColonLabel')}</span>{' '}
                             <span className="text-blue-900">{selectedReservation.driver.licenseExpiry}</span>
                           </div>
                         )}
@@ -1903,21 +1916,21 @@ export default function ReservationCalendarPage() {
                 <div className="bg-gray-50 p-3 rounded-md">
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <label className="text-[10px] font-medium text-gray-500 uppercase">Start Date</label>
-                      <p className="text-xs font-medium mt-0.5">{safeParseDateISO(selectedReservation.startDate) ? format(safeParseDateISO(selectedReservation.startDate)!, 'PP') : 'Invalid'}</p>
+                      <label className="text-[10px] font-medium text-gray-500 uppercase">{t('form.startDateLabel')}</label>
+                      <p className="text-xs font-medium mt-0.5">{safeParseDateISO(selectedReservation.startDate) ? format(safeParseDateISO(selectedReservation.startDate)!, 'PP') : t('calendarPage.invalidDate')}</p>
                     </div>
                     <div>
-                      <label className="text-[10px] font-medium text-gray-500 uppercase">Duration</label>
+                      <label className="text-[10px] font-medium text-gray-500 uppercase">{t('calendarPage.durationLabel')}</label>
                       <p className="text-xs font-medium mt-0.5">
-                        {selectedReservation.maintenanceDuration ? `${selectedReservation.maintenanceDuration} ${selectedReservation.maintenanceDuration === 1 ? 'day' : 'days'}` : 'Not set'}
+                        {selectedReservation.maintenanceDuration ? t('form.dayCount', { count: selectedReservation.maintenanceDuration }) : t('calendarPage.notSet')}
                       </p>
                     </div>
                     <div>
-                      <label className="text-[10px] font-medium text-gray-500 uppercase">Status</label>
+                      <label className="text-[10px] font-medium text-gray-500 uppercase">{t('common:fields.status')}</label>
                       <div className="mt-0.5">
                         {selectedReservation.maintenanceStatus ? (
-                          <Badge 
-                            variant={selectedReservation.maintenanceStatus === "in" ? "default" : "outline"} 
+                          <Badge
+                            variant={selectedReservation.maintenanceStatus === "in" ? "default" : "outline"}
                             className={`text-[10px] px-1.5 py-0 ${
                               selectedReservation.maintenanceStatus === "in" ? "bg-purple-500 text-white" :
                               selectedReservation.maintenanceStatus === "out" ? "bg-green-500 text-white" :
@@ -1927,7 +1940,7 @@ export default function ReservationCalendarPage() {
                           >
                             {selectedReservation.maintenanceStatus.toUpperCase()}
                           </Badge>
-                        ) : <span className="text-xs">Not set</span>}
+                        ) : <span className="text-xs">{t('calendarPage.notSet')}</span>}
                       </div>
                     </div>
                   </div>
@@ -1936,29 +1949,29 @@ export default function ReservationCalendarPage() {
                 <div className="bg-gray-50 p-3 rounded-md">
                   <div className="grid grid-cols-4 gap-3">
                     <div>
-                      <label className="text-[10px] font-medium text-gray-500 uppercase">Start Date</label>
-                      <p className="text-xs font-medium mt-0.5">{safeParseDateISO(selectedReservation.startDate) ? format(safeParseDateISO(selectedReservation.startDate)!, 'PP') : 'Invalid'}</p>
+                      <label className="text-[10px] font-medium text-gray-500 uppercase">{t('form.startDateLabel')}</label>
+                      <p className="text-xs font-medium mt-0.5">{safeParseDateISO(selectedReservation.startDate) ? format(safeParseDateISO(selectedReservation.startDate)!, 'PP') : t('calendarPage.invalidDate')}</p>
                     </div>
                     <div>
-                      <label className="text-[10px] font-medium text-gray-500 uppercase">Completion Date</label>
-                      <p className="text-xs font-medium mt-0.5">{selectedReservation.endDate ? (safeParseDateISO(selectedReservation.endDate) ? format(safeParseDateISO(selectedReservation.endDate)!, 'PP') : 'Invalid') : 'Open-ended'}</p>
+                      <label className="text-[10px] font-medium text-gray-500 uppercase">{t('common:fields.endDate')}</label>
+                      <p className="text-xs font-medium mt-0.5">{selectedReservation.endDate ? (safeParseDateISO(selectedReservation.endDate) ? format(safeParseDateISO(selectedReservation.endDate)!, 'PP') : t('calendarPage.invalidDate')) : t('vehicleReservationsStatusDialog.openEnded')}</p>
                     </div>
                     <div>
-                      <label className="text-[10px] font-medium text-gray-500 uppercase">Duration</label>
+                      <label className="text-[10px] font-medium text-gray-500 uppercase">{t('calendarPage.durationLabel')}</label>
                       <p className="text-xs font-medium mt-0.5">
                         {(() => {
-                          if (!selectedReservation.startDate || !selectedReservation.endDate) return 'Open-ended';
+                          if (!selectedReservation.startDate || !selectedReservation.endDate) return t('vehicleReservationsStatusDialog.openEnded');
                           const startDate = safeParseDateISO(selectedReservation.startDate);
                           const endDate = safeParseDateISO(selectedReservation.endDate);
-                          if (!startDate || !endDate) return 'Invalid';
+                          if (!startDate || !endDate) return t('calendarPage.invalidDate');
                           const duration = differenceInDays(endDate, startDate) + 1;
-                          return `${duration} ${duration === 1 ? 'day' : 'days'}`;
+                          return t('form.dayCount', { count: duration });
                         })()}
                       </p>
                     </div>
                     <div>
-                      <label className="text-[10px] font-medium text-gray-500 uppercase">Price</label>
-                      <p className="text-xs font-semibold mt-0.5">{selectedReservation.totalPrice ? formatCurrency(Number(selectedReservation.totalPrice)) : 'Not set'}</p>
+                      <label className="text-[10px] font-medium text-gray-500 uppercase">{t('common:fields.price')}</label>
+                      <p className="text-xs font-semibold mt-0.5">{selectedReservation.totalPrice ? formatCurrency(Number(selectedReservation.totalPrice)) : t('calendarPage.notSet')}</p>
                     </div>
                   </div>
                 </div>
@@ -1967,7 +1980,7 @@ export default function ReservationCalendarPage() {
               {/* Notes */}
               {selectedReservation.notes && (
                 <div className="bg-amber-50 border border-amber-200 p-2.5 rounded-md">
-                  <label className="text-[10px] font-medium text-amber-700 uppercase">Notes</label>
+                  <label className="text-[10px] font-medium text-amber-700 uppercase">{t('common:fields.notes')}</label>
                   <p className="text-xs text-amber-900 mt-1 whitespace-pre-wrap">{selectedReservation.notes}</p>
                 </div>
               )}
@@ -1979,12 +1992,12 @@ export default function ReservationCalendarPage() {
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                     </svg>
-                    Delivery/Pickup Service
+                    {t('calendarPage.deliveryServiceHeading')}
                   </label>
                   <div className="space-y-2">
                     {(selectedReservation.deliveryAddress || selectedReservation.deliveryCity || selectedReservation.deliveryPostalCode) && (
                       <div>
-                        <p className="text-[10px] text-green-600 font-medium">Delivery Address</p>
+                        <p className="text-[10px] text-green-600 font-medium">{t('form.deliveryAddressLabel')}</p>
                         <p className="text-xs font-semibold text-green-900 mt-0.5">
                           {selectedReservation.deliveryAddress}
                           {selectedReservation.deliveryAddress && (selectedReservation.deliveryCity || selectedReservation.deliveryPostalCode) && ', '}
@@ -1995,14 +2008,14 @@ export default function ReservationCalendarPage() {
                     <div className="grid grid-cols-2 gap-2">
                       {selectedReservation.deliveryFee !== null && selectedReservation.deliveryFee !== undefined && (
                         <div>
-                          <p className="text-[10px] text-green-600 font-medium">Delivery Fee</p>
+                          <p className="text-[10px] text-green-600 font-medium">{t('calendarPage.deliveryFeeLabel')}</p>
                           <p className="text-xs font-semibold text-green-900 mt-0.5">{<Price value={Number(selectedReservation.deliveryFee)} />}</p>
                         </div>
                       )}
                     </div>
                     {selectedReservation.deliveryNotes && (
                       <div className="pt-2 border-t border-green-200">
-                        <p className="text-[10px] text-green-600 font-medium">Special Instructions</p>
+                        <p className="text-[10px] text-green-600 font-medium">{t('calendarPage.specialInstructionsLabel')}</p>
                         <p className="text-xs text-green-900 mt-0.5 whitespace-pre-wrap">{selectedReservation.deliveryNotes}</p>
                       </div>
                     )}
@@ -2013,36 +2026,36 @@ export default function ReservationCalendarPage() {
               {/* Fuel Tracking Information */}
               {(selectedReservation.fuelLevelPickup || selectedReservation.fuelLevelReturn || selectedReservation.fuelCost || selectedReservation.fuelCardNumber || selectedReservation.fuelNotes) && (
                 <div className="bg-blue-50 border border-blue-200 rounded-md p-2.5">
-                  <label className="text-[10px] font-medium text-blue-700 uppercase mb-2 block">Fuel Tracking</label>
+                  <label className="text-[10px] font-medium text-blue-700 uppercase mb-2 block">{t('viewDialog.fuelTrackingLabel')}</label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {selectedReservation.fuelLevelPickup && (
                       <div>
-                        <p className="text-[10px] text-blue-600 font-medium">Pickup</p>
+                        <p className="text-[10px] text-blue-600 font-medium">{t('form.pickupLabel')}</p>
                         <p className="text-xs font-semibold text-blue-900 mt-0.5">{selectedReservation.fuelLevelPickup}</p>
                       </div>
                     )}
                     {selectedReservation.fuelLevelReturn && (
                       <div>
-                        <p className="text-[10px] text-blue-600 font-medium">Return</p>
+                        <p className="text-[10px] text-blue-600 font-medium">{t('form.returnLabel')}</p>
                         <p className="text-xs font-semibold text-blue-900 mt-0.5">{selectedReservation.fuelLevelReturn}</p>
                       </div>
                     )}
                     {selectedReservation.fuelCost && (
                       <div>
-                        <p className="text-[10px] text-blue-600 font-medium">Cost</p>
+                        <p className="text-[10px] text-blue-600 font-medium">{t('viewDialog.fuelCostLabelShort')}</p>
                         <p className="text-xs font-semibold text-blue-900 mt-0.5">{<Price value={Number(selectedReservation.fuelCost)} />}</p>
                       </div>
                     )}
                     {selectedReservation.fuelCardNumber && (
                       <div>
-                        <p className="text-[10px] text-blue-600 font-medium">Card #</p>
+                        <p className="text-[10px] text-blue-600 font-medium">{t('viewDialog.fuelCardNumberLabel')}</p>
                         <p className="text-xs font-semibold text-blue-900 mt-0.5">{selectedReservation.fuelCardNumber}</p>
                       </div>
                     )}
                   </div>
                   {selectedReservation.fuelNotes && (
                     <div className="mt-2 pt-2 border-t border-blue-200">
-                      <p className="text-[10px] text-blue-600 font-medium">Notes</p>
+                      <p className="text-[10px] text-blue-600 font-medium">{t('common:fields.notes')}</p>
                       <p className="text-xs text-blue-900 mt-0.5 whitespace-pre-wrap">{selectedReservation.fuelNotes}</p>
                     </div>
                   )}
@@ -2052,18 +2065,18 @@ export default function ReservationCalendarPage() {
               {/* Contract and Documents */}
               {selectedReservation.vehicleId && (
                 <div className="bg-gray-50 p-2.5 rounded-md">
-                  <label className="text-[10px] font-medium text-gray-700 uppercase block mb-2">Documents</label>
-                  
+                  <label className="text-[10px] font-medium text-gray-700 uppercase block mb-2">{t('viewDialog.documentsLabel')}</label>
+
                   {/* Quick Upload Buttons */}
                   <div className="flex flex-wrap gap-1.5 mb-2">
-                    <span className="text-[10px] text-gray-600 w-full mb-0.5">Quick Upload:</span>
+                    <span className="text-[10px] text-gray-600 w-full mb-0.5">{t('viewDialog.quickUploadLabel')}</span>
                     {[
-                      { type: 'Contract (Signed)', accept: '.pdf' },
-                      { type: 'Damage Check (Signed)', accept: '.pdf' },
-                      { type: 'Damage Report Photo', accept: '.jpg,.jpeg,.png' },
-                      { type: 'Fuel Receipt', accept: 'image/*,.pdf' },
-                      { type: 'Other', accept: '.pdf,.jpg,.jpeg,.png,.doc,.docx' }
-                    ].map(({ type, accept }) => (
+                      { type: 'Contract (Signed)', labelKey: 'form.docTypes.contractSigned', accept: '.pdf' },
+                      { type: 'Damage Check (Signed)', labelKey: 'calendarPage.quickUploadTypes.damageCheckSigned', accept: '.pdf' },
+                      { type: 'Damage Report Photo', labelKey: 'form.docTypes.damageReportPhoto', accept: '.jpg,.jpeg,.png' },
+                      { type: 'Fuel Receipt', labelKey: 'calendarPage.quickUploadTypes.fuelReceipt', accept: 'image/*,.pdf' },
+                      { type: 'Other', labelKey: 'form.docTypes.other', accept: '.pdf,.jpg,.jpeg,.png,.doc,.docx' }
+                    ].map(({ type, labelKey, accept }) => (
                       <Button
                         key={type}
                         variant="outline"
@@ -2097,14 +2110,14 @@ export default function ReservationCalendarPage() {
                               
                               invalidateByPrefix(`/api/documents/reservation/${selectedReservation.id}`);
                               toast({
-                                title: "Success",
-                                description: `${type} uploaded successfully`,
+                                title: t('common:status.success'),
+                                description: t('calendarPage.documentUploadedDescription', { type: t(labelKey) }),
                               });
                             } catch (error) {
                               console.error('Upload failed:', error);
                               toast({
-                                title: "Error",
-                                description: "Failed to upload document",
+                                title: t('common:status.error'),
+                                description: t('calendarPage.documentUploadFailedDescription'),
                                 variant: "destructive",
                               });
                             } finally {
@@ -2116,16 +2129,16 @@ export default function ReservationCalendarPage() {
                         disabled={uploadingDoc}
                         className="text-[10px] h-7"
                       >
-                        + {type}
+                        + {t(labelKey)}
                       </Button>
                     ))}
                   </div>
-                  
+
                   {/* Uploaded Documents */}
                   {reservationDocuments && reservationDocuments.length > 0 && (
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-semibold text-gray-700">Uploaded:</span>
+                        <span className="text-[10px] font-semibold text-gray-700">{t('calendarPage.uploadedColonLabel')}</span>
                         <Button
                           variant="outline"
                           size="sm"
@@ -2134,7 +2147,7 @@ export default function ReservationCalendarPage() {
                           data-testid="button-email-documents"
                         >
                           <Mail className="h-3 w-3" />
-                          Email to Customer
+                          {t('calendarPage.emailToCustomerButton')}
                         </Button>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
@@ -2231,7 +2244,7 @@ export default function ReservationCalendarPage() {
                               setDeleteDocDialogOpen(true);
                             }}
                             className="absolute top-1 right-1 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-opacity"
-                            title="Delete document"
+                            title={t('viewDialog.deleteDocumentTooltip')}
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -2253,7 +2266,7 @@ export default function ReservationCalendarPage() {
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-[10px] font-medium text-purple-700 uppercase flex items-center gap-1.5">
                       <ClipboardCheck className="h-3.5 w-3.5" />
-                      Damage Checks
+                      {t('calendarPage.damageChecksLabel')}
                     </label>
                     <div className="flex gap-2">
                       {/* Show Create Return Check button if there's a pickup check */}
@@ -2270,7 +2283,7 @@ export default function ReservationCalendarPage() {
                           className="h-7 text-xs bg-green-50 hover:bg-green-100 border-green-300 text-green-700"
                           data-testid="button-create-return-check"
                         >
-                          + Create Return Check
+                          {t('calendarPage.createReturnCheckButton')}
                         </Button>
                       )}
                       <Button
@@ -2280,7 +2293,7 @@ export default function ReservationCalendarPage() {
                         className="h-7 text-xs"
                         data-testid="button-create-damage-check"
                       >
-                        + Create Damage Check
+                        {t('calendarPage.createDamageCheckButton')}
                       </Button>
                     </div>
                   </div>
@@ -2288,16 +2301,16 @@ export default function ReservationCalendarPage() {
                   {/* Reservation's Damage Checks */}
                   {reservationDamageChecks && reservationDamageChecks.length > 0 && (
                     <div className="mb-3">
-                      <span className="text-[10px] font-semibold text-purple-700 block mb-1.5">This Reservation:</span>
+                      <span className="text-[10px] font-semibold text-purple-700 block mb-1.5">{t('form.thisReservationLabel')}</span>
                       <div className="space-y-1.5">
                         {reservationDamageChecks.map((check) => (
                           <div key={check.id} className="flex items-center justify-between bg-white p-2 rounded border border-purple-200">
                             <div className="flex items-center gap-2">
                               <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-purple-100 text-purple-800 border-purple-300">
-                                {check.checkType === 'pickup' ? 'Pickup' : 'Return'}
+                                {check.checkType === 'pickup' ? t('form.pickupLabel') : t('form.returnLabel')}
                               </Badge>
                               <span className="text-xs text-purple-900">
-                                {check.createdAt ? format(new Date(check.createdAt), 'PP') : 'No date'}
+                                {check.createdAt ? format(new Date(check.createdAt), 'PP') : t('calendarPage.noDate')}
                               </span>
                               {check.mileage && (
                                 <span className="text-xs text-purple-600">• {Number(check.mileage).toLocaleString()} km</span>
@@ -2311,7 +2324,7 @@ export default function ReservationCalendarPage() {
                                 className="h-6 px-2 text-xs"
                                 data-testid={`button-edit-damage-check-${check.id}`}
                               >
-                                Edit
+                                {t('common:actions.edit')}
                               </Button>
                               <Button
                                 variant="ghost"
@@ -2320,7 +2333,7 @@ export default function ReservationCalendarPage() {
                                 className="h-6 px-2 text-xs"
                                 data-testid={`button-view-damage-check-pdf-${check.id}`}
                               >
-                                View PDF
+                                {t('detailsPage.viewPdfButton')}
                               </Button>
                               <Button
                                 variant="ghost"
@@ -2329,7 +2342,7 @@ export default function ReservationCalendarPage() {
                                 className="h-6 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
                                 data-testid={`button-delete-damage-check-${check.id}`}
                               >
-                                Delete
+                                {t('common:actions.delete')}
                               </Button>
                             </div>
                           </div>
@@ -2341,16 +2354,16 @@ export default function ReservationCalendarPage() {
                   {/* Recent History */}
                   {recentDamageChecks && recentDamageChecks.length > 0 && (
                     <div className="text-[20px]">
-                      <span className="text-[10px] font-semibold text-purple-700 block mb-1.5">Recent History (Vehicle + Customer):</span>
+                      <span className="text-[10px] font-semibold text-purple-700 block mb-1.5">{t('form.recentHistoryLabel')}</span>
                       <div className="space-y-1.5">
                         {recentDamageChecks.slice(0, 3).map((check) => (
                           <div key={check.id} className="flex items-center justify-between bg-purple-100/50 p-2 rounded border border-purple-200">
                             <div className="flex items-center gap-2">
                               <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-purple-200 text-purple-900 border-purple-300">
-                                {check.checkType === 'pickup' ? 'Pickup' : 'Return'}
+                                {check.checkType === 'pickup' ? t('form.pickupLabel') : t('form.returnLabel')}
                               </Badge>
                               <span className="text-xs text-purple-900">
-                                {check.createdAt ? format(new Date(check.createdAt), 'PP') : 'No date'}
+                                {check.createdAt ? format(new Date(check.createdAt), 'PP') : t('calendarPage.noDate')}
                               </span>
                               {check.mileage && (
                                 <span className="text-xs text-purple-600">• {Number(check.mileage).toLocaleString()} km</span>
@@ -2363,7 +2376,7 @@ export default function ReservationCalendarPage() {
                               className="h-6 px-2 text-xs"
                               data-testid={`button-view-history-damage-check-pdf-${check.id}`}
                             >
-                              View PDF
+                              {t('detailsPage.viewPdfButton')}
                             </Button>
                           </div>
                         ))}
@@ -2372,10 +2385,10 @@ export default function ReservationCalendarPage() {
                   )}
 
                   {/* Empty State */}
-                  {(!reservationDamageChecks || reservationDamageChecks.length === 0) && 
+                  {(!reservationDamageChecks || reservationDamageChecks.length === 0) &&
                    (!recentDamageChecks || recentDamageChecks.length === 0) && (
                     <div className="text-center py-3 text-xs text-purple-600">
-                      No damage checks yet. Click "Create Damage Check" to add one.
+                      {t('form.noDamageChecksYetHint')}
                     </div>
                   )}
                 </div>
@@ -2395,12 +2408,12 @@ export default function ReservationCalendarPage() {
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                       <circle cx="12" cy="10" r="3"></circle>
                     </svg>
-                    Start Pickup
+                    {t('viewDialog.startPickupButton')}
                   </Button>
                 )}
-                
+
                 {selectedReservation.status === 'picked_up' && (
-                  <Button 
+                  <Button
                     className="flex-1"
                     onClick={() => {
                       setReturnDialogOpen(true);
@@ -2412,11 +2425,11 @@ export default function ReservationCalendarPage() {
                       <path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9"></path>
                       <path d="M12 3v6"></path>
                     </svg>
-                    Start Return
+                    {t('viewDialog.startReturnButton')}
                   </Button>
                 )}
-                
-                <Button 
+
+                <Button
                   className="flex-1"
                   onClick={() => {
                     handleEditReservation(selectedReservation);
@@ -2424,7 +2437,7 @@ export default function ReservationCalendarPage() {
                   data-testid="button-edit-reservation-dialog"
                 >
                   <Edit className="mr-2 h-4 w-4" />
-                  Edit
+                  {t('common:actions.edit')}
                 </Button>
                 {selectedReservation.status === 'picked_up' && (
                   <Button
@@ -2433,20 +2446,20 @@ export default function ReservationCalendarPage() {
                       handleStatusChange(selectedReservation);
                     }}
                     data-testid="button-change-status-dialog"
-                    title="Revert to Booked"
+                    title={t('quickStatusButton.revertToBooked')}
                   >
                     <RotateCcw className="mr-2 h-4 w-4" />
-                    Revert
+                    {t('calendarPage.hoverCard.revertButton')}
                   </Button>
                 )}
                 {selectedReservation.status === 'picked_up' && (
-                  <Button 
+                  <Button
                     variant="outline"
                     onClick={() => setIsServiceDialogOpen(true)}
                     data-testid="button-send-to-service"
                   >
                     <Wrench className="mr-2 h-4 w-4" />
-                    Service
+                    {t('calendarPage.serviceButton')}
                   </Button>
                 )}
                 <Button 
@@ -2478,14 +2491,14 @@ export default function ReservationCalendarPage() {
                   }}
                   data-testid="button-close-view-dialog"
                 >
-                  Close
+                  {t('common:actions.close')}
                 </Button>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
-      
+
       {/* Service-related dialogs */}
       {selectedReservation && (
         <>
@@ -2531,9 +2544,9 @@ export default function ReservationCalendarPage() {
         }}>
           <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto p-0">
             <DialogHeader className="sr-only">
-              <DialogTitle>{compareWithCheckId ? 'Create Return Check' : 'Damage Check'}</DialogTitle>
+              <DialogTitle>{compareWithCheckId ? t('calendarPage.createReturnCheckTitle') : t('pickupReturn.common.damageCheck')}</DialogTitle>
               <DialogDescription>
-                {compareWithCheckId ? 'Compare with pickup check and mark new damage' : 'Interactive damage check editor'}
+                {compareWithCheckId ? t('calendarPage.compareWithPickupDescription') : t('calendarPage.interactiveDamageCheckEditor')}
               </DialogDescription>
             </DialogHeader>
             <InteractiveDamageCheckPage
@@ -2561,9 +2574,9 @@ export default function ReservationCalendarPage() {
         }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Reservation</DialogTitle>
+            <DialogTitle>{t('editDialog.title')}</DialogTitle>
             <DialogDescription>
-              Modify reservation details including dates, customer information, vehicle selection, and pricing.
+              {t('calendarPage.editReservationDescription')}
             </DialogDescription>
           </DialogHeader>
           {selectedReservation && (
@@ -2707,12 +2720,12 @@ export default function ReservationCalendarPage() {
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Reservations for {selectedDay ? format(selectedDay, 'EEEE, MMMM d, yyyy') : ''}
+              {t('calendarPage.dayDialog.title', { date: selectedDay ? format(selectedDay, 'EEEE, MMMM d, yyyy') : '' })}
             </DialogTitle>
             <DialogDescription>
-              {selectedDay ? 
-                `${getReservationsForDate(selectedDay).length} reservations scheduled for this day.` :
-                'View all reservations for the selected day.'
+              {selectedDay ?
+                t('calendarPage.dayDialog.descriptionCount', { count: getReservationsForDate(selectedDay).length }) :
+                t('calendarPage.dayDialog.descriptionFallback')
               }
             </DialogDescription>
           </DialogHeader>
@@ -2734,11 +2747,11 @@ export default function ReservationCalendarPage() {
                       <div className="flex items-center space-x-3">
                         <div className="font-medium flex items-center gap-2">
                           <span className={`px-1.5 py-0.5 rounded text-xs font-semibold mr-1 ${reservation.placeholderSpare ? 'bg-orange-100 text-orange-800' : 'bg-primary-100 text-primary-800'}`}>
-                            {reservation.placeholderSpare ? 'TBD' : formatLicensePlate(vehicle?.licensePlate || '')}
+                            {reservation.placeholderSpare ? t('indexPage.tbdBadge') : formatLicensePlate(vehicle?.licensePlate || '')}
                           </span>
                           {reservation.type === 'replacement' && (
                             <span className="inline-block bg-orange-300 text-orange-900 text-[10px] px-1.5 py-0.5 rounded font-bold border border-orange-400">
-                              🚗 SPARE
+                              🚗 {t('indexPage.spareBadge')}
                             </span>
                           )}
                         </div>
@@ -2777,10 +2790,10 @@ export default function ReservationCalendarPage() {
                           data-testid={`button-view-${reservation.id}`}
                         >
                           <Eye className="mr-1 h-3 w-3" />
-                          View
+                          {t('common:actions.view')}
                         </Button>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="outline"
                           onClick={() => {
                             handleEditReservation(reservation);
@@ -2789,34 +2802,34 @@ export default function ReservationCalendarPage() {
                           data-testid={`button-edit-${reservation.id}`}
                         >
                           <Edit className="mr-1 h-3 w-3" />
-                          Edit
+                          {t('common:actions.edit')}
                         </Button>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="outline"
                           onClick={() => handleDeleteReservation(reservation)}
                           data-testid={`button-delete-${reservation.id}`}
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
                           <Trash2 className="mr-1 h-3 w-3" />
-                          Delete
+                          {t('common:actions.delete')}
                         </Button>
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-4 text-sm text-gray-600">
                       <div>
-                        <span className="font-medium">Customer:</span> {customer?.name || 'Not specified'}
+                        <span className="font-medium">{t('calendarPage.dayDialog.customerColonLabel')}</span> {customer?.name || t('calendarPage.dayDialog.notSpecified')}
                       </div>
                       <div>
-                        <span className="font-medium">Period:</span> {startDate ? format(startDate, 'MMM d') : 'Invalid'} → {endDate ? format(endDate, 'MMM d') : 'Open'}
+                        <span className="font-medium">{t('calendarPage.dayDialog.periodColonLabel')}</span> {startDate ? format(startDate, 'MMM d') : t('calendarPage.invalidDate')} → {endDate ? format(endDate, 'MMM d') : t('calendarPage.dayDialog.openShort')}
                       </div>
                       <div>
-                        <span className="font-medium">Price:</span> {reservation.totalPrice ? formatCurrency(Number(reservation.totalPrice)) : 'Not set'}
+                        <span className="font-medium">{t('calendarPage.dayDialog.priceColonLabel')}</span> {reservation.totalPrice ? formatCurrency(Number(reservation.totalPrice)) : t('calendarPage.notSet')}
                       </div>
                     </div>
                     {reservation.notes && (
                       <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                        <span className="font-medium">Notes:</span> {reservation.notes}
+                        <span className="font-medium">{t('calendarPage.dayDialog.notesColonLabel')}</span> {reservation.notes}
                       </div>
                     )}
                   </div>
@@ -2824,7 +2837,7 @@ export default function ReservationCalendarPage() {
               })}
               {getReservationsForDate(selectedDay).length === 0 && (
                 <div className="text-center text-gray-500 py-8">
-                  No reservations found for this day.
+                  {t('calendarPage.dayDialog.noReservationsForDay')}
                 </div>
               )}
             </div>
@@ -2838,9 +2851,9 @@ export default function ReservationCalendarPage() {
       >
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>New Reservation</DialogTitle>
+            <DialogTitle>{t('addDialog.newReservation')}</DialogTitle>
             <DialogDescription>
-              Create a new reservation for {selectedDate ? format(parseISO(selectedDate), 'MMMM d, yyyy') : 'the selected date'}
+              {t('calendarPage.newReservationForDate', { date: selectedDate ? format(parseISO(selectedDate), 'MMMM d, yyyy') : t('calendarPage.selectedDateFallback') })}
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4">
@@ -2885,7 +2898,7 @@ export default function ReservationCalendarPage() {
       <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
         <DialogContent className="max-w-5xl w-[90vw] h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>{previewDocument?.documentType || 'Document Preview'}</DialogTitle>
+            <DialogTitle>{previewDocument?.documentType || t('form.documentPreviewTitleFallback')}</DialogTitle>
             <DialogDescription>
               {previewDocument?.fileName}
             </DialogDescription>
@@ -2917,9 +2930,9 @@ export default function ReservationCalendarPage() {
               } else {
                 return (
                   <div className="flex flex-col items-center justify-center h-full space-y-4">
-                    <p className="text-gray-600">Preview not available for this file type.</p>
+                    <p className="text-gray-600">{t('form.documentPreview.previewNotAvailable')}</p>
                     <Button onClick={() => window.open(`/api/documents/view/${previewDocument.id}`, '_blank')}>
-                      Open File
+                      {t('form.documentPreview.openFileButton')}
                     </Button>
                   </div>
                 );
@@ -2928,7 +2941,7 @@ export default function ReservationCalendarPage() {
           </div>
           <div className="flex justify-between items-center pt-4 border-t">
             <Button variant="outline" onClick={() => window.open(`/api/documents/view/${previewDocument?.id}`, '_blank')}>
-              Open in New Tab
+              {t('form.documentPreview.openInNewTabButton')}
             </Button>
             <div className="flex gap-2">
               <Button
@@ -2942,18 +2955,18 @@ export default function ReservationCalendarPage() {
                     });
                   } else {
                     toast({
-                      title: "Popup blocked",
-                      description: "Please allow popups for this site, then click Print again.",
+                      title: t('calendarPage.popupBlockedTitle'),
+                      description: t('calendarPage.popupBlockedDescription'),
                       variant: "destructive",
                     });
                   }
                 }}
               >
                 <Printer className="h-4 w-4 mr-2" />
-                Print
+                {t('common:actions.print')}
               </Button>
               <Button onClick={() => setPreviewDialogOpen(false)}>
-                Close
+                {t('common:actions.close')}
               </Button>
             </div>
           </div>
@@ -2974,20 +2987,20 @@ export default function ReservationCalendarPage() {
       <Dialog open={completedRentalsDialogOpen} onOpenChange={setCompletedRentalsDialogOpen}>
         <DialogContent className="max-w-7xl max-h-[85vh]">
           <DialogHeader>
-            <DialogTitle>Completed Rentals History</DialogTitle>
+            <DialogTitle>{t('calendarPage.completedRentals.title')}</DialogTitle>
             <DialogDescription>
-              View, revert, or delete completed rental records
+              {t('calendarPage.completedRentals.description')}
             </DialogDescription>
           </DialogHeader>
-          
+
           {/* Search and Filter Controls */}
           <div className="flex gap-3 items-end mb-2">
             <div className="flex-1">
-              <label className="text-sm font-medium mb-1.5 block">Search</label>
+              <label className="text-sm font-medium mb-1.5 block">{t('common:actions.search')}</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search by vehicle, customer, or license plate..."
+                  placeholder={t('calendarPage.completedRentals.searchPlaceholder')}
                   value={completedRentalsSearch}
                   onChange={(e) => setCompletedRentalsSearch(e.target.value)}
                   className="pl-9"
@@ -2995,17 +3008,17 @@ export default function ReservationCalendarPage() {
               </div>
             </div>
             <div className="w-48">
-              <label className="text-sm font-medium mb-1.5 block">Time Period</label>
+              <label className="text-sm font-medium mb-1.5 block">{t('calendarPage.completedRentals.timePeriodLabel')}</label>
               <Select value={completedRentalsDateFilter} onValueChange={(value: any) => setCompletedRentalsDateFilter(value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Time</SelectItem>
-                  <SelectItem value="7days">Last 7 Days</SelectItem>
-                  <SelectItem value="30days">Last 30 Days</SelectItem>
-                  <SelectItem value="90days">Last 90 Days</SelectItem>
-                  <SelectItem value="year">Last Year</SelectItem>
+                  <SelectItem value="all">{t('calendarPage.timePeriodOptions.allTime')}</SelectItem>
+                  <SelectItem value="7days">{t('calendarPage.timePeriodOptions.last7Days')}</SelectItem>
+                  <SelectItem value="30days">{t('calendarPage.timePeriodOptions.last30Days')}</SelectItem>
+                  <SelectItem value="90days">{t('calendarPage.timePeriodOptions.last90Days')}</SelectItem>
+                  <SelectItem value="year">{t('calendarPage.timePeriodOptions.lastYear')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -3045,9 +3058,9 @@ export default function ReservationCalendarPage() {
               if (filtered.length === 0) {
                 return (
                   <div className="text-center py-8 text-gray-500">
-                    <p>No completed rentals found</p>
+                    <p>{t('listDialog.noCompletedReservations')}</p>
                     {(completedRentalsSearch || completedRentalsDateFilter !== 'all') && (
-                      <p className="text-sm mt-1">Try adjusting your search or filters</p>
+                      <p className="text-sm mt-1">{t('calendarPage.completedRentals.tryAdjustingFilters')}</p>
                     )}
                   </div>
                 );
@@ -3059,64 +3072,64 @@ export default function ReservationCalendarPage() {
                     .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
                     .map((rental) => {
                     const vehicle = vehicles?.find(v => v.id === rental.vehicleId);
-                    const customerName = rental.customer?.name || 'Unknown Customer';
-                    
+                    const customerName = rental.customer?.name || t('spareVehicleAssignmentDialog.unknownCustomer');
+
                     return (
                       <div key={rental.id} className="border rounded-lg p-4 bg-gray-50">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
-                              <h4 className="font-medium">{vehicle ? `${vehicle.brand} ${vehicle.model} (${formatLicensePlate(vehicle.licensePlate)})` : 'Unknown Vehicle'}</h4>
+                              <h4 className="font-medium">{vehicle ? `${vehicle.brand} ${vehicle.model} (${formatLicensePlate(vehicle.licensePlate)})` : t('calendarPage.completedRentals.unknownVehicle')}</h4>
                               <Badge variant="outline">
                                 {customerName}
                               </Badge>
                             </div>
                             <p className="text-sm text-gray-600">
-                              {format(parseISO(rental.startDate), 'MMM d, yyyy')} - {rental.endDate ? format(parseISO(rental.endDate), 'MMM d, yyyy') : 'TBD'}
+                              {format(parseISO(rental.startDate), 'MMM d, yyyy')} - {rental.endDate ? format(parseISO(rental.endDate), 'MMM d, yyyy') : t('indexPage.tbdDate')}
                             </p>
-                            
+
                             {/* Mileage and Fuel Information */}
                             <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-sm">
                               <div>
-                                <span className="text-gray-600">Pickup mileage:</span>
+                                <span className="text-gray-600">{t('calendarPage.completedRentals.pickupMileageColonLabel')}</span>
                                 <span className="ml-1 font-medium">
-                                  {rental.pickupMileage !== null && rental.pickupMileage !== undefined 
-                                    ? `${rental.pickupMileage.toLocaleString()} km` 
+                                  {rental.pickupMileage !== null && rental.pickupMileage !== undefined
+                                    ? `${rental.pickupMileage.toLocaleString()} km`
                                     : '—'}
                                 </span>
                               </div>
                               <div>
-                                <span className="text-gray-600">Return mileage:</span>
+                                <span className="text-gray-600">{t('calendarPage.completedRentals.returnMileageColonLabel')}</span>
                                 <span className="ml-1 font-medium">
-                                  {(rental as any).displayReturnMileage !== null && (rental as any).displayReturnMileage !== undefined 
-                                    ? `${(rental as any).displayReturnMileage.toLocaleString()} km` 
+                                  {(rental as any).displayReturnMileage !== null && (rental as any).displayReturnMileage !== undefined
+                                    ? `${(rental as any).displayReturnMileage.toLocaleString()} km`
                                     : '—'}
                                 </span>
                               </div>
                               <div>
-                                <span className="text-gray-600">Fuel at pickup:</span>
+                                <span className="text-gray-600">{t('calendarPage.completedRentals.fuelAtPickupColonLabel')}</span>
                                 <span className="ml-1 font-medium">
-                                  {rental.fuelLevelPickup && rental.fuelLevelPickup !== 'not_recorded' 
-                                    ? rental.fuelLevelPickup 
+                                  {rental.fuelLevelPickup && rental.fuelLevelPickup !== 'not_recorded'
+                                    ? rental.fuelLevelPickup
                                     : '—'}
                                 </span>
                               </div>
                               <div>
-                                <span className="text-gray-600">Fuel at return:</span>
+                                <span className="text-gray-600">{t('calendarPage.completedRentals.fuelAtReturnColonLabel')}</span>
                                 <span className="ml-1 font-medium">
-                                  {rental.fuelLevelReturn && rental.fuelLevelReturn !== 'not_recorded' 
-                                    ? rental.fuelLevelReturn 
+                                  {rental.fuelLevelReturn && rental.fuelLevelReturn !== 'not_recorded'
+                                    ? rental.fuelLevelReturn
                                     : '—'}
                                 </span>
                               </div>
                             </div>
-                            
+
                             {rental.notes && (
                               <p className="text-sm mt-2 text-gray-700">{rental.notes}</p>
                             )}
                             {rental.totalPrice && (
                               <p className="text-sm font-medium text-green-600 mt-1">
-                                Total: {<Price value={Number(rental.totalPrice)} />}
+                                {t('calendarPage.completedRentals.totalColonLabel')} <Price value={Number(rental.totalPrice)} />
                               </p>
                             )}
                           </div>
@@ -3134,7 +3147,7 @@ export default function ReservationCalendarPage() {
                                 <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
                                 <circle cx="12" cy="12" r="3"/>
                               </svg>
-                              View
+                              {t('common:actions.view')}
                             </Button>
                             <Button
                               size="sm"
@@ -3151,13 +3164,13 @@ export default function ReservationCalendarPage() {
                                   invalidateRelatedQueries('reservations');
                                   refetchCalendarData();
                                   toast({
-                                    title: "Rental Reverted",
-                                    description: "Rental has been marked as picked up (return data cleared)"
+                                    title: t('calendarPage.completedRentals.toasts.revertedTitle'),
+                                    description: t('calendarPage.completedRentals.toasts.revertedDescription')
                                   });
                                 } catch (error) {
                                   toast({
-                                    title: "Error",
-                                    description: "Failed to revert rental",
+                                    title: t('common:status.error'),
+                                    description: t('calendarPage.completedRentals.toasts.revertFailedDescription'),
                                     variant: "destructive"
                                   });
                                 }
@@ -3170,7 +3183,7 @@ export default function ReservationCalendarPage() {
                                 <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
                                 <path d="M8 16H3v5"/>
                               </svg>
-                              Revert
+                              {t('calendarPage.completedRentals.revertButton')}
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
@@ -3181,18 +3194,18 @@ export default function ReservationCalendarPage() {
                                   data-testid={`button-delete-${rental.id}`}
                                 >
                                   <Trash2 className="h-4 w-4 mr-1" />
-                                  Delete
+                                  {t('common:actions.delete')}
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Completed Rental?</AlertDialogTitle>
+                                  <AlertDialogTitle>{t('calendarPage.completedRentals.deleteTitle')}</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    This will permanently delete this rental record. This action cannot be undone.
+                                    {t('calendarPage.completedRentals.deleteDescription')}
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
                                   <AlertDialogAction
                                     className="bg-red-600 hover:bg-red-700"
                                     onClick={async () => {
@@ -3201,19 +3214,19 @@ export default function ReservationCalendarPage() {
                                         invalidateRelatedQueries('reservations');
                                         refetchCalendarData();
                                         toast({
-                                          title: "Rental Deleted",
-                                          description: "The rental record has been permanently deleted"
+                                          title: t('calendarPage.completedRentals.toasts.deletedTitle'),
+                                          description: t('calendarPage.completedRentals.toasts.deletedDescription')
                                         });
                                       } catch (error) {
                                         toast({
-                                          title: "Error",
-                                          description: "Failed to delete rental",
+                                          title: t('common:status.error'),
+                                          description: t('calendarPage.completedRentals.toasts.deleteFailedDescription'),
                                           variant: "destructive"
                                         });
                                       }
                                     }}
                                   >
-                                    Delete
+                                    {t('common:actions.delete')}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -3229,7 +3242,7 @@ export default function ReservationCalendarPage() {
           </ScrollArea>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCompletedRentalsDialogOpen(false)}>
-              Close
+              {t('common:actions.close')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -3240,10 +3253,10 @@ export default function ReservationCalendarPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <AlertTriangle className="h-5 w-5" />
-              Overdue Rentals
+              {t('indexPage.overdueRentalsDialogTitle')}
             </DialogTitle>
             <DialogDescription>
-              These vehicles should have been returned but customer still has them. Contact them to arrange return.
+              {t('indexPage.overdueRentalsDialogDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-4">
@@ -3271,11 +3284,11 @@ export default function ReservationCalendarPage() {
                     
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <User className="h-3 w-3" />
-                      <span>{reservation.customer?.name || "Unknown Customer"}</span>
+                      <span>{reservation.customer?.name || t('spareVehicleAssignmentDialog.unknownCustomer')}</span>
                       {reservation.customer?.phone && (
                         <>
                           <Phone className="h-3 w-3 ml-2" />
-                          <a 
+                          <a
                             href={`tel:${reservation.customer.phone}`}
                             className="text-blue-600 hover:underline"
                             data-testid={`phone-link-${reservation.id}`}
@@ -3285,18 +3298,18 @@ export default function ReservationCalendarPage() {
                         </>
                       )}
                     </div>
-                    
+
                     <div className="flex items-center gap-2 text-sm">
                       <Calendar className="h-3 w-3 text-muted-foreground" />
                       <span className="text-muted-foreground">
-                        Should have returned: {reservation.endDate ? format(parseISO(reservation.endDate), 'MMM d, yyyy') : 'N/A'}
+                        {t('indexPage.shouldHaveReturnedLabel', { date: reservation.endDate ? format(parseISO(reservation.endDate), 'MMM d, yyyy') : t('indexPage.notAvailable') })}
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="flex flex-col items-end gap-2">
                     <Badge variant="destructive" className="shrink-0">
-                      {daysOverdue} day{daysOverdue !== 1 ? 's' : ''} overdue
+                      {t('listDialog.daysOverdue', { count: daysOverdue })}
                     </Badge>
                     <Button
                       size="sm"
@@ -3307,7 +3320,7 @@ export default function ReservationCalendarPage() {
                       }}
                       data-testid={`button-view-overdue-${reservation.id}`}
                     >
-                      View Details
+                      {t('form.overdueDialog.viewDetailsButton')}
                     </Button>
                   </div>
                 </div>
@@ -3322,22 +3335,22 @@ export default function ReservationCalendarPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              Administration - Invoice Data
+              {t('calendarPage.administration.title')}
             </DialogTitle>
             <DialogDescription>
-              Overview of rental information for external invoicing system
+              {t('calendarPage.administration.description')}
             </DialogDescription>
           </DialogHeader>
-          
+
           <Tabs defaultValue="current" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="current" className="flex items-center gap-2">
                 <Car className="h-4 w-4" />
-                Current Rentals
+                {t('calendarPage.administration.currentRentalsTab')}
               </TabsTrigger>
               <TabsTrigger value="history" className="flex items-center gap-2">
                 <History className="h-4 w-4" />
-                History
+                {t('calendarPage.administration.historyTab')}
               </TabsTrigger>
             </TabsList>
             
@@ -3387,7 +3400,7 @@ export default function ReservationCalendarPage() {
                     <div className="flex items-center gap-4">
                       <div className="flex-1">
                         <Input
-                          placeholder="Search by plate, GPS, company, contract..."
+                          placeholder={t('calendarPage.administration.searchPlaceholder')}
                           value={adminCurrentSearch}
                           onChange={(e) => setAdminCurrentSearch(e.target.value)}
                           className="h-9"
@@ -3396,51 +3409,53 @@ export default function ReservationCalendarPage() {
                       </div>
                       <Select value={adminCurrentSort} onValueChange={(v: any) => setAdminCurrentSort(v)}>
                         <SelectTrigger className="w-[160px] h-9">
-                          <SelectValue placeholder="Sort by..." />
+                          <SelectValue placeholder={t('calendarPage.administration.sortByPlaceholder')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="pickup">Pickup Date</SelectItem>
-                          <SelectItem value="plate">License Plate</SelectItem>
-                          <SelectItem value="company">Company</SelectItem>
-                          <SelectItem value="contract">Contract #</SelectItem>
+                          <SelectItem value="pickup">{t('calendarPage.administration.sortOptions.pickupDate')}</SelectItem>
+                          <SelectItem value="plate">{t('calendarPage.administration.sortOptions.licensePlate')}</SelectItem>
+                          <SelectItem value="company">{t('calendarPage.administration.sortOptions.company')}</SelectItem>
+                          <SelectItem value="contract">{t('calendarPage.administration.sortOptions.contractNumber')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <p className="text-sm text-muted-foreground">
-                      Vehicles currently out on rental ({sortedCurrent.length})
+                      {t('calendarPage.administration.vehiclesCurrentlyOutCount', { count: sortedCurrent.length })}
                     </p>
-                    
+
                     <div className="border rounded-md overflow-hidden">
                       <div className="max-h-[400px] overflow-y-auto">
                         <Table>
                           <TableHeader className="bg-muted/50 sticky top-0 z-10">
                             <TableRow className="border-b-2">
-                              <TableHead className="px-2 py-1 border-r font-semibold text-center whitespace-nowrap">GPS</TableHead>
-                              <TableHead className="px-2 py-1 border-r font-semibold whitespace-nowrap">License Plate</TableHead>
-                              <TableHead className="px-2 py-1 border-r font-semibold whitespace-nowrap">Make / Model</TableHead>
-                              <TableHead className="px-2 py-1 border-r font-semibold whitespace-nowrap">Contract #</TableHead>
-                              <TableHead className="px-2 py-1 border-r font-semibold whitespace-nowrap">Company / Customer</TableHead>
-                              <TableHead className="px-2 py-1 font-semibold whitespace-nowrap">Pickup Date</TableHead>
+                              <TableHead className="px-2 py-1 border-r font-semibold text-center whitespace-nowrap">{t('calendarPage.administration.tableHeaders.gps')}</TableHead>
+                              <TableHead className="px-2 py-1 border-r font-semibold whitespace-nowrap">{t('calendarPage.administration.tableHeaders.licensePlate')}</TableHead>
+                              <TableHead className="px-2 py-1 border-r font-semibold whitespace-nowrap">{t('calendarPage.administration.tableHeaders.makeModel')}</TableHead>
+                              <TableHead className="px-2 py-1 border-r font-semibold whitespace-nowrap">{t('calendarPage.administration.tableHeaders.spareVehicle')}</TableHead>
+                              <TableHead className="px-2 py-1 border-r font-semibold whitespace-nowrap">{t('calendarPage.administration.tableHeaders.contractNumber')}</TableHead>
+                              <TableHead className="px-2 py-1 border-r font-semibold whitespace-nowrap">{t('calendarPage.administration.tableHeaders.companyCustomer')}</TableHead>
+                              <TableHead className="px-2 py-1 font-semibold whitespace-nowrap">{t('calendarPage.administration.tableHeaders.pickupDate')}</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {sortedCurrent.length === 0 ? (
                               <TableRow>
-                                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                                  No vehicles currently rented
+                                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                  {t('calendarPage.administration.noVehiclesCurrentlyRented')}
                                 </TableCell>
                               </TableRow>
                             ) : (
                               sortedCurrent.map((rental) => {
                                 const vehicleData = rental.vehicle || vehicles?.find(v => v.id === rental.vehicleId);
+                                const spareForVehicle = getSpareTargetVehicle(rental);
                                 return (
                                   <TableRow key={rental.id} className="border-b hover:bg-muted/30" data-testid={`admin-current-row-${rental.id}`}>
                                     <TableCell className="px-2 py-1 border-r text-center">
                                       {vehicleData?.gps ? (
-                                        <Badge className="bg-green-100 text-green-800 text-xs">Yes</Badge>
+                                        <Badge className="bg-green-100 text-green-800 text-xs">{t('common:actions.yes')}</Badge>
                                       ) : (
-                                        <Badge variant="secondary" className="text-xs">No</Badge>
+                                        <Badge variant="secondary" className="text-xs">{t('common:actions.no')}</Badge>
                                       )}
                                     </TableCell>
                                     <TableCell className="px-2 py-1 font-semibold border-r">
@@ -3450,6 +3465,16 @@ export default function ReservationCalendarPage() {
                                     </TableCell>
                                     <TableCell className="px-2 py-1 border-r">
                                       {vehicleData?.brand} {vehicleData?.model}
+                                    </TableCell>
+                                    <TableCell className="px-2 py-1 border-r whitespace-nowrap">
+                                      {spareForVehicle ? (
+                                        <span className="text-xs">
+                                          <Badge className="bg-orange-100 text-orange-800 text-xs mr-1">{t('calendarPage.administration.spareForBadge')}</Badge>
+                                          <span className="font-mono">{formatLicensePlate(spareForVehicle.licensePlate)}</span>
+                                        </span>
+                                      ) : (
+                                        <span className="text-muted-foreground text-xs">-</span>
+                                      )}
                                     </TableCell>
                                     <TableCell className="px-2 py-1 font-mono font-semibold border-r">
                                       {rental.contractNumber || '-'}
@@ -3520,7 +3545,7 @@ export default function ReservationCalendarPage() {
                   return {
                     exists: true,
                     date: check.checkDate || check.createdAt,
-                    completedBy: check.completedBy || 'Unknown'
+                    completedBy: check.completedBy || t('detailsPage.unknown')
                   };
                 };
                 
@@ -3582,7 +3607,7 @@ export default function ReservationCalendarPage() {
                     <div className="flex items-center gap-4">
                       <div className="flex-1">
                         <Input
-                          placeholder="Search by plate, GPS, company, contract..."
+                          placeholder={t('calendarPage.administration.searchPlaceholder')}
                           value={adminHistorySearch}
                           onChange={(e) => setAdminHistorySearch(e.target.value)}
                           className="h-9"
@@ -3594,103 +3619,107 @@ export default function ReservationCalendarPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="7days">Last 7 days</SelectItem>
-                          <SelectItem value="30days">Last 30 days</SelectItem>
-                          <SelectItem value="90days">Last 90 days</SelectItem>
-                          <SelectItem value="all">All time</SelectItem>
+                          <SelectItem value="7days">{t('calendarPage.timePeriodOptions.last7Days')}</SelectItem>
+                          <SelectItem value="30days">{t('calendarPage.timePeriodOptions.last30Days')}</SelectItem>
+                          <SelectItem value="90days">{t('calendarPage.timePeriodOptions.last90Days')}</SelectItem>
+                          <SelectItem value="all">{t('calendarPage.timePeriodOptions.allTime')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <p className="text-sm text-muted-foreground">
-                      Completed rentals ({sortedHistory.length})
+                      {t('calendarPage.administration.completedRentalsCount', { count: sortedHistory.length })}
                     </p>
-                    
+
                     <div className="border rounded-md overflow-hidden">
                       <div className="max-h-[400px] overflow-y-auto">
                         <Table>
                           <TableHeader className="bg-muted/50 sticky top-0 z-10">
                             <TableRow className="border-b-2">
-                              <TableHead 
+                              <TableHead
                                 className="px-2 py-1 border-r font-semibold text-center whitespace-nowrap cursor-pointer hover:bg-muted/80 select-none"
                                 onClick={() => toggleSort('gps')}
                               >
-                                GPS<SortIcon column="gps" />
+                                {t('calendarPage.administration.tableHeaders.gps')}<SortIcon column="gps" />
                               </TableHead>
-                              <TableHead 
+                              <TableHead
                                 className="px-2 py-1 border-r font-semibold whitespace-nowrap cursor-pointer hover:bg-muted/80 select-none"
                                 onClick={() => toggleSort('plate')}
                               >
-                                License Plate<SortIcon column="plate" />
+                                {t('calendarPage.administration.tableHeaders.licensePlate')}<SortIcon column="plate" />
                               </TableHead>
-                              <TableHead 
+                              <TableHead
                                 className="px-2 py-1 border-r font-semibold whitespace-nowrap cursor-pointer hover:bg-muted/80 select-none"
                                 onClick={() => toggleSort('model')}
                               >
-                                Make / Model<SortIcon column="model" />
+                                {t('calendarPage.administration.tableHeaders.makeModel')}<SortIcon column="model" />
                               </TableHead>
-                              <TableHead 
+                              <TableHead className="px-2 py-1 border-r font-semibold whitespace-nowrap">
+                                {t('calendarPage.administration.tableHeaders.spareVehicle')}
+                              </TableHead>
+                              <TableHead
                                 className="px-2 py-1 border-r font-semibold whitespace-nowrap cursor-pointer hover:bg-muted/80 select-none"
                                 onClick={() => toggleSort('contract')}
                               >
-                                Contract #<SortIcon column="contract" />
+                                {t('calendarPage.administration.tableHeaders.contractNumber')}<SortIcon column="contract" />
                               </TableHead>
-                              <TableHead 
+                              <TableHead
                                 className="px-2 py-1 border-r font-semibold whitespace-nowrap cursor-pointer hover:bg-muted/80 select-none"
                                 onClick={() => toggleSort('company')}
                               >
-                                Company / Customer<SortIcon column="company" />
+                                {t('calendarPage.administration.tableHeaders.companyCustomer')}<SortIcon column="company" />
                               </TableHead>
-                              <TableHead 
+                              <TableHead
                                 className="px-2 py-1 border-r font-semibold whitespace-nowrap cursor-pointer hover:bg-muted/80 select-none"
                                 onClick={() => toggleSort('pickup')}
                               >
-                                Pickup<SortIcon column="pickup" />
+                                {t('calendarPage.administration.tableHeaders.pickup')}<SortIcon column="pickup" />
                               </TableHead>
-                              <TableHead 
+                              <TableHead
                                 className="px-2 py-1 border-r font-semibold whitespace-nowrap cursor-pointer hover:bg-muted/80 select-none"
                                 onClick={() => toggleSort('return')}
                               >
-                                Return<SortIcon column="return" />
+                                {t('calendarPage.administration.tableHeaders.return')}<SortIcon column="return" />
                               </TableHead>
-                              <TableHead 
+                              <TableHead
                                 className="px-2 py-1 border-r font-semibold whitespace-nowrap cursor-pointer hover:bg-muted/80 select-none"
                                 onClick={() => toggleSort('damage')}
                               >
-                                Damage Check<SortIcon column="damage" />
+                                {t('calendarPage.administration.tableHeaders.damageCheck')}<SortIcon column="damage" />
                               </TableHead>
-                              <TableHead 
+                              <TableHead
                                 className="px-2 py-1 border-r font-semibold whitespace-nowrap cursor-pointer hover:bg-muted/80 select-none"
                                 onClick={() => toggleSort('kmout')}
                               >
-                                KM Out<SortIcon column="kmout" />
+                                {t('calendarPage.administration.tableHeaders.kmOut')}<SortIcon column="kmout" />
                               </TableHead>
-                              <TableHead 
+                              <TableHead
                                 className="px-2 py-1 font-semibold whitespace-nowrap cursor-pointer hover:bg-muted/80 select-none"
                                 onClick={() => toggleSort('kmin')}
                               >
-                                KM In<SortIcon column="kmin" />
+                                {t('calendarPage.administration.tableHeaders.kmIn')}<SortIcon column="kmin" />
                               </TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {sortedHistory.length === 0 ? (
                               <TableRow>
-                                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
-                                  No completed rentals found
+                                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                                  {t('listDialog.noCompletedReservations')}
                                 </TableCell>
                               </TableRow>
                             ) : (
                               sortedHistory.map((rental) => {
                                 const damageCheck = getDamageCheckInfo(rental.id);
                                 const vehicleData = rental.vehicle || vehicles?.find(v => v.id === rental.vehicleId);
+                                const spareForVehicle = getSpareTargetVehicle(rental);
                                 return (
                                   <TableRow key={rental.id} className="border-b hover:bg-muted/30" data-testid={`admin-history-row-${rental.id}`}>
                                     <TableCell className="px-2 py-1 border-r text-center whitespace-nowrap">
                                       {vehicleData?.gps ? (
-                                        <Badge className="bg-green-100 text-green-800 text-xs">Yes</Badge>
+                                        <Badge className="bg-green-100 text-green-800 text-xs">{t('common:actions.yes')}</Badge>
                                       ) : (
-                                        <Badge variant="secondary" className="text-xs">No</Badge>
+                                        <Badge variant="secondary" className="text-xs">{t('common:actions.no')}</Badge>
                                       )}
                                     </TableCell>
                                     <TableCell className="px-2 py-1 font-semibold border-r whitespace-nowrap">
@@ -3700,6 +3729,16 @@ export default function ReservationCalendarPage() {
                                     </TableCell>
                                     <TableCell className="px-2 py-1 border-r text-sm whitespace-nowrap">
                                       {vehicleData?.brand} {vehicleData?.model}
+                                    </TableCell>
+                                    <TableCell className="px-2 py-1 border-r whitespace-nowrap">
+                                      {spareForVehicle ? (
+                                        <span className="text-xs">
+                                          <Badge className="bg-orange-100 text-orange-800 text-xs mr-1">{t('calendarPage.administration.spareForBadge')}</Badge>
+                                          <span className="font-mono">{formatLicensePlate(spareForVehicle.licensePlate)}</span>
+                                        </span>
+                                      ) : (
+                                        <span className="text-muted-foreground text-xs">-</span>
+                                      )}
                                     </TableCell>
                                     <TableCell className="px-2 py-1 font-mono font-semibold border-r whitespace-nowrap">
                                       {rental.contractNumber || '-'}
@@ -3716,13 +3755,13 @@ export default function ReservationCalendarPage() {
                                     <TableCell className="px-2 py-1 border-r whitespace-nowrap">
                                       {damageCheck ? (
                                         <span className="text-xs">
-                                          <Badge variant="default" className="bg-green-100 text-green-800 text-xs">Yes</Badge>
+                                          <Badge variant="default" className="bg-green-100 text-green-800 text-xs">{t('common:actions.yes')}</Badge>
                                           <span className="text-muted-foreground ml-1">
                                             {damageCheck.date ? format(parseISO(damageCheck.date), 'dd MMM yyyy') : ''} {damageCheck.completedBy}
                                           </span>
                                         </span>
                                       ) : (
-                                        <Badge variant="secondary" className="text-xs">No</Badge>
+                                        <Badge variant="secondary" className="text-xs">{t('common:actions.no')}</Badge>
                                       )}
                                     </TableCell>
                                     <TableCell className="px-2 py-1 border-r text-sm font-mono whitespace-nowrap">
@@ -3747,7 +3786,7 @@ export default function ReservationCalendarPage() {
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setAdminDialogOpen(false)}>
-              Close
+              {t('common:actions.close')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -3756,6 +3795,7 @@ export default function ReservationCalendarPage() {
       {selectedReservation && (
         <>
           <PickupDialog
+            key={`pickup-${selectedReservation.id}`}
             open={pickupDialogOpen}
             onOpenChange={setPickupDialogOpen}
             reservation={selectedReservation}
@@ -3782,6 +3822,7 @@ export default function ReservationCalendarPage() {
             }}
           />
           <ReturnDialog
+            key={`return-${selectedReservation.id}`}
             open={returnDialogOpen}
             onOpenChange={setReturnDialogOpen}
             reservation={selectedReservation}
@@ -3812,10 +3853,10 @@ export default function ReservationCalendarPage() {
       <ConfirmDialog
         open={deleteDamageCheckDialogOpen}
         onOpenChange={setDeleteDamageCheckDialogOpen}
-        title="Delete Damage Check"
-        description="Are you sure you want to delete this damage check? This action cannot be undone."
+        title={t('pickupReturn.common.deleteDamageCheckTitle')}
+        description={t('calendarPage.deleteDamageCheckConfirmDescription')}
         variant="danger"
-        confirmLabel="Delete"
+        confirmLabel={t('common:actions.delete')}
         onConfirm={confirmDeleteDamageCheck}
         onCancel={() => setDamageCheckToDelete(null)}
       />
@@ -3823,10 +3864,10 @@ export default function ReservationCalendarPage() {
       <ConfirmDialog
         open={deleteReservationDialogOpen}
         onOpenChange={setDeleteReservationDialogOpen}
-        title="Delete Reservation"
-        description={`Are you sure you want to delete this reservation for ${reservationToDelete?.customer?.name || 'this customer'}? This action cannot be undone.`}
+        title={t('listDialog.deleteDialog.title')}
+        description={t('calendarPage.deleteReservationForCustomerDescription', { name: reservationToDelete?.customer?.name || t('calendarPage.thisCustomerFallback') })}
         variant="danger"
-        confirmLabel="Delete"
+        confirmLabel={t('common:actions.delete')}
         onConfirm={confirmDeleteReservation}
         onCancel={() => setReservationToDelete(null)}
       />
@@ -3834,10 +3875,10 @@ export default function ReservationCalendarPage() {
       <ConfirmDialog
         open={deleteDocDialogOpen}
         onOpenChange={setDeleteDocDialogOpen}
-        title="Delete Document"
-        description={`Are you sure you want to delete ${documentToDelete?.documentType}? This action cannot be undone.`}
+        title={t('form.deleteDocumentDialog.title')}
+        description={t('form.deleteDocumentDialog.description', { type: documentToDelete?.documentType })}
         variant="danger"
-        confirmLabel="Delete"
+        confirmLabel={t('common:actions.delete')}
         onConfirm={async () => {
           if (!documentToDelete) return;
           try {
@@ -3845,21 +3886,21 @@ export default function ReservationCalendarPage() {
               method: 'DELETE',
               credentials: 'include',
             });
-            
+
             if (!response.ok) {
               throw new Error('Delete failed');
             }
-            
+
             invalidateByPrefix(`/api/documents/reservation/${selectedReservation?.id}`);
             toast({
-              title: "Success",
-              description: "Document deleted successfully",
+              title: t('common:status.success'),
+              description: t('form.toasts.documentDeletedDescription'),
             });
           } catch (error) {
             console.error('Delete failed:', error);
             toast({
-              title: "Error",
-              description: "Failed to delete document",
+              title: t('common:status.error'),
+              description: t('form.toasts.failedToDeleteDocumentDescription'),
               variant: "destructive",
             });
           }
@@ -3874,22 +3915,22 @@ export default function ReservationCalendarPage() {
       <AlertDialog open={pdfPreviewOpen} onOpenChange={setPdfPreviewOpen}>
         <AlertDialogContent className="max-w-5xl w-[90vw] h-[90vh] flex flex-col">
           <AlertDialogHeader className="flex-shrink-0">
-            <AlertDialogTitle>Damage Check PDF</AlertDialogTitle>
-            <AlertDialogDescription>Preview</AlertDialogDescription>
+            <AlertDialogTitle>{t('calendarPage.damageCheckPdfTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('calendarPage.previewLabel')}</AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex-1 overflow-hidden border rounded">
             {pdfPreviewUrl && (
               <iframe
                 src={pdfPreviewUrl}
                 className="w-full h-full border-0"
-                title="Damage Check PDF Preview"
+                title={t('calendarPage.damageCheckPdfTitle')}
               />
             )}
           </div>
           <AlertDialogFooter className="flex-shrink-0">
-            <AlertDialogCancel onClick={() => setPdfPreviewOpen(false)}>Close</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setPdfPreviewOpen(false)}>{t('common:actions.close')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => pdfPreviewUrl && window.open(pdfPreviewUrl, '_blank')}>
-              Open in New Tab
+              {t('form.documentPreview.openInNewTabButton')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

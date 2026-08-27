@@ -1,4 +1,5 @@
 import { createContext, ReactNode, useContext, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useQuery,
   useMutation,
@@ -35,6 +36,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 // Provider component
 function AuthProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation("auth");
   const { toast } = useToast();
   const [_, navigate] = useLocation();
   
@@ -56,7 +58,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/login", credentials);
       if (!res.ok) {
-        throw new Error("Login failed");
+        throw new Error(t('authHook.loginFailedError'));
       }
       return await res.json();
     },
@@ -64,15 +66,15 @@ function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/user"], userData);
       refetchUser();
       toast({
-        title: "Logged in successfully",
-        description: `Welcome back, ${userData.username}!`,
+        title: t('authHook.loggedInTitle'),
+        description: t('authHook.welcomeBackDescription', { username: userData.username }),
       });
       navigate("/");
     },
     onError: (error: Error) => {
       toast({
-        title: "Login failed",
-        description: error.message || "Invalid username or password",
+        title: t('authHook.loginFailedTitle'),
+        description: error.message || t('authHook.invalidCredentialsDescription'),
         variant: "destructive",
       });
     },
@@ -84,7 +86,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/register", credentials);
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.message || "Registration failed");
+        throw new Error(errorData.message || t('authHook.registrationFailedError'));
       }
       return await res.json();
     },
@@ -92,14 +94,14 @@ function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/user"], userData);
       refetchUser();
       toast({
-        title: "Registration successful",
-        description: `Welcome, ${userData.username}!`,
+        title: t('authHook.registrationSuccessfulTitle'),
+        description: t('authHook.welcomeDescription', { username: userData.username }),
       });
       navigate("/");
     },
     onError: (error: Error) => {
       toast({
-        title: "Registration failed",
+        title: t('authHook.registrationFailedTitle'),
         description: error.message,
         variant: "destructive",
       });
@@ -113,7 +115,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
         const res = await apiRequest("POST", "/api/logout");
         // Treat 401 as success since session is already gone
         if (!res.ok && res.status !== 401) {
-          throw new Error("Logout failed");
+          throw new Error(t('authHook.logoutFailedError'));
         }
       } catch (error: any) {
         // If 401, session already expired - treat as success
@@ -130,7 +132,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.clear();
       
       toast({
-        title: "Logged out successfully",
+        title: t('authHook.loggedOutTitle'),
       });
       
       // Force navigation to auth page and refresh
@@ -142,7 +144,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.clear();
       
       toast({
-        title: "Logout failed",
+        title: t('authHook.logoutFailedTitle'),
         description: error.message,
         variant: "destructive",
       });

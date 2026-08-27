@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { differenceInDays } from "date-fns";
 import { 
@@ -64,6 +65,7 @@ const notificationSettingsSchema = z.object({
 type NotificationSettings = z.infer<typeof notificationSettingsSchema>;
 
 export default function NotificationsPage() {
+  const { t } = useTranslation("notifications");
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<string>("all");
   const today = new Date();
@@ -94,8 +96,8 @@ export default function NotificationsPage() {
     onSuccess: () => {
       invalidateByPrefix("/api/custom-notifications");
       toast({
-        title: "Notification marked as read",
-        description: "The notification has been marked as read.",
+        title: t('notificationsPage.toasts.markedReadTitle'),
+        description: t('notificationsPage.toasts.markedReadDescription'),
       });
     },
   });
@@ -108,8 +110,8 @@ export default function NotificationsPage() {
     onSuccess: () => {
       invalidateByPrefix("/api/custom-notifications");
       toast({
-        title: "Notification marked as unread",
-        description: "The notification has been marked as unread.",
+        title: t('notificationsPage.toasts.markedUnreadTitle'),
+        description: t('notificationsPage.toasts.markedUnreadDescription'),
       });
     },
   });
@@ -190,8 +192,8 @@ export default function NotificationsPage() {
     console.log("Notification settings updated:", data);
     
     toast({
-      title: "Notification settings updated",
-      description: "Your custom notification settings have been saved.",
+      title: t('notificationsPage.toasts.settingsUpdatedTitle'),
+      description: t('notificationsPage.toasts.settingsUpdatedDescription'),
       variant: "default",
     });
   };
@@ -205,15 +207,15 @@ export default function NotificationsPage() {
     <div className="container mx-auto py-6 space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Notification Center</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('notificationsPage.pageTitle')}</h1>
           <p className="text-muted-foreground">
-            Manage and customize notifications for your car rental business
+            {t('notificationsPage.pageDescription')}
           </p>
         </div>
         <Button asChild>
           <Link href="/notifications/custom">
             <Bell className="mr-2 h-4 w-4" />
-            Manage Custom Notifications
+            {t('notificationsPage.manageCustomButton')}
           </Link>
         </Button>
       </div>
@@ -222,9 +224,9 @@ export default function NotificationsPage() {
         {/* Notification Settings */}
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>Notification Settings</CardTitle>
+            <CardTitle>{t('notificationsPage.settingsCardTitle')}</CardTitle>
             <CardDescription>
-              Customize when and how you receive notifications
+              {t('notificationsPage.settingsCardDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -235,25 +237,25 @@ export default function NotificationsPage() {
                   name="apkExpiryDays"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>APK Expiration Warnings</FormLabel>
+                      <FormLabel>{t('notificationsPage.apkExpiryWarningsLabel')}</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value.toString()}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select days" />
+                            <SelectValue placeholder={t('notificationsPage.selectDaysPlaceholder')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="30">30 days before</SelectItem>
-                          <SelectItem value="60">60 days before</SelectItem>
-                          <SelectItem value="90">90 days before</SelectItem>
-                          <SelectItem value="120">120 days before</SelectItem>
+                          <SelectItem value="30">{t('notificationsPage.daysBefore', { count: 30 })}</SelectItem>
+                          <SelectItem value="60">{t('notificationsPage.daysBefore', { count: 60 })}</SelectItem>
+                          <SelectItem value="90">{t('notificationsPage.daysBefore', { count: 90 })}</SelectItem>
+                          <SelectItem value="120">{t('notificationsPage.daysBefore', { count: 120 })}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        When to notify about APK inspection expirations
+                        {t('notificationsPage.apkExpiryWarningsDescription')}
                       </FormDescription>
                     </FormItem>
                   )}
@@ -264,25 +266,25 @@ export default function NotificationsPage() {
                   name="warrantyExpiryDays"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Warranty Expiration Warnings</FormLabel>
+                      <FormLabel>{t('notificationsPage.warrantyExpiryWarningsLabel')}</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value.toString()}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select days" />
+                            <SelectValue placeholder={t('notificationsPage.selectDaysPlaceholder')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="30">30 days before</SelectItem>
-                          <SelectItem value="60">60 days before</SelectItem>
-                          <SelectItem value="90">90 days before</SelectItem>
-                          <SelectItem value="120">120 days before</SelectItem>
+                          <SelectItem value="30">{t('notificationsPage.daysBefore', { count: 30 })}</SelectItem>
+                          <SelectItem value="60">{t('notificationsPage.daysBefore', { count: 60 })}</SelectItem>
+                          <SelectItem value="90">{t('notificationsPage.daysBefore', { count: 90 })}</SelectItem>
+                          <SelectItem value="120">{t('notificationsPage.daysBefore', { count: 120 })}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        When to notify about warranty expirations
+                        {t('notificationsPage.warrantyExpiryWarningsDescription')}
                       </FormDescription>
                     </FormItem>
                   )}
@@ -293,25 +295,25 @@ export default function NotificationsPage() {
                   name="upcomingReservationDays"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Upcoming Reservation Alerts</FormLabel>
+                      <FormLabel>{t('notificationsPage.upcomingReservationAlertsLabel')}</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value.toString()}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select days" />
+                            <SelectValue placeholder={t('notificationsPage.selectDaysPlaceholder')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="1">1 day before</SelectItem>
-                          <SelectItem value="2">2 days before</SelectItem>
-                          <SelectItem value="3">3 days before</SelectItem>
-                          <SelectItem value="7">7 days before</SelectItem>
+                          <SelectItem value="1">{t('notificationsPage.daysBefore', { count: 1 })}</SelectItem>
+                          <SelectItem value="2">{t('notificationsPage.daysBefore', { count: 2 })}</SelectItem>
+                          <SelectItem value="3">{t('notificationsPage.daysBefore', { count: 3 })}</SelectItem>
+                          <SelectItem value="7">{t('notificationsPage.daysBefore', { count: 7 })}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        When to notify about upcoming reservations
+                        {t('notificationsPage.upcomingReservationAlertsDescription')}
                       </FormDescription>
                     </FormItem>
                   )}
@@ -324,9 +326,9 @@ export default function NotificationsPage() {
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between">
                         <div className="space-y-0.5">
-                          <FormLabel>App Notifications</FormLabel>
+                          <FormLabel>{t('notificationsPage.appNotificationsLabel')}</FormLabel>
                           <FormDescription>
-                            Show notifications in the app
+                            {t('notificationsPage.appNotificationsDescription')}
                           </FormDescription>
                         </div>
                         <FormControl>
@@ -345,9 +347,9 @@ export default function NotificationsPage() {
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between">
                         <div className="space-y-0.5">
-                          <FormLabel>Email Notifications</FormLabel>
+                          <FormLabel>{t('notificationsPage.emailNotificationsLabel')}</FormLabel>
                           <FormDescription>
-                            Receive notifications by email
+                            {t('notificationsPage.emailNotificationsDescription')}
                           </FormDescription>
                         </div>
                         <FormControl>
@@ -361,12 +363,12 @@ export default function NotificationsPage() {
                   />
                 </div>
 
-                <Button 
-                  type="button" 
+                <Button
+                  type="button"
                   onClick={handleApplySettings}
                   className="w-full"
                 >
-                  Apply Settings
+                  {t('notificationsPage.applySettingsButton')}
                 </Button>
               </form>
             </Form>
@@ -376,28 +378,28 @@ export default function NotificationsPage() {
         {/* Notifications Display */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>All Notifications ({totalNotifications})</CardTitle>
+            <CardTitle>{t('notificationsPage.allNotificationsTitle', { count: totalNotifications })}</CardTitle>
             <CardDescription>
-              View and manage your current notifications
+              {t('notificationsPage.allNotificationsDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid grid-cols-5 m-4">
                 <TabsTrigger value="all">
-                  All
+                  {t('notificationsPage.allTab')}
                 </TabsTrigger>
                 <TabsTrigger value="reservations">
-                  Reservations
+                  {t('notificationsPage.reservationsTab')}
                 </TabsTrigger>
                 <TabsTrigger value="apk">
-                  APK
+                  {t('notificationsPage.apkTab')}
                 </TabsTrigger>
                 <TabsTrigger value="warranty">
-                  Warranty
+                  {t('notificationsPage.warrantyTab')}
                 </TabsTrigger>
                 <TabsTrigger value="custom">
-                  Custom
+                  {t('notificationsPage.customTab')}
                 </TabsTrigger>
               </TabsList>
 
@@ -405,9 +407,9 @@ export default function NotificationsPage() {
                 {totalNotifications === 0 ? (
                   <div className="flex flex-col items-center justify-center h-[280px] text-center p-4">
                     <Bell className="h-8 w-8 text-muted-foreground mb-2 opacity-50" />
-                    <h3 className="font-medium">All caught up!</h3>
+                    <h3 className="font-medium">{t('notificationsPage.allCaughtUpTitle')}</h3>
                     <p className="text-sm text-muted-foreground">
-                      No vehicles or reservations require immediate attention.
+                      {t('notificationsPage.allCaughtUpDescription')}
                     </p>
                   </div>
                 ) : (
@@ -416,16 +418,16 @@ export default function NotificationsPage() {
                     {upcomingReservationItems.length > 0 && (
                       <>
                         <div className="px-4 py-2 bg-gray-50 border-y">
-                          <h5 className="font-medium">Upcoming Reservations</h5>
+                          <h5 className="font-medium">{t('notificationsPage.upcomingReservationsHeading')}</h5>
                         </div>
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>ID</TableHead>
-                              <TableHead>Vehicle</TableHead>
-                              <TableHead>Start Date</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead className="text-right">Action</TableHead>
+                              <TableHead>{t('notificationsPage.idColumn')}</TableHead>
+                              <TableHead>{t('notificationsPage.vehicleColumn')}</TableHead>
+                              <TableHead>{t('notificationsPage.startDateColumn')}</TableHead>
+                              <TableHead>{t('notificationsPage.statusColumn')}</TableHead>
+                              <TableHead className="text-right">{t('notificationsPage.actionColumn')}</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -434,20 +436,20 @@ export default function NotificationsPage() {
                               const startDate = new Date(reservation.startDate);
                               const daysUntil = differenceInDays(startDate, today);
                               let statusDisplay = "";
-                              
+
                               if (daysUntil === 0) {
-                                statusDisplay = "Today";
+                                statusDisplay = t('notificationsPage.todayStatus');
                               } else if (daysUntil === 1) {
-                                statusDisplay = "Tomorrow";
+                                statusDisplay = t('notificationsPage.tomorrowStatus');
                               } else {
-                                statusDisplay = `In ${daysUntil} days`;
+                                statusDisplay = t('notificationsPage.inDaysStatus', { count: daysUntil });
                               }
-                              
+
                               return (
                                 <TableRow key={`res-${reservation.id}`}>
                                   <TableCell>{reservation.id}</TableCell>
                                   <TableCell>
-                                    {vehicle ? `${vehicle.brand} ${vehicle.model}` : "Unknown"}
+                                    {vehicle ? `${vehicle.brand} ${vehicle.model}` : t('notificationsPage.unknownVehicle')}
                                   </TableCell>
                                   <TableCell>{formatDate(reservation.startDate)}</TableCell>
                                   <TableCell>
@@ -457,7 +459,7 @@ export default function NotificationsPage() {
                                   </TableCell>
                                   <TableCell className="text-right">
                                     <Button size="sm" asChild>
-                                      <Link href={`/reservations/${reservation.id}`}>View</Link>
+                                      <Link href={`/reservations/${reservation.id}`}>{t('notificationsPage.viewButton')}</Link>
                                     </Button>
                                   </TableCell>
                                 </TableRow>
@@ -472,16 +474,16 @@ export default function NotificationsPage() {
                     {apkExpiringItems.length > 0 && (
                       <>
                         <div className="px-4 py-2 bg-gray-50 border-y">
-                          <h5 className="font-medium">APK Expirations</h5>
+                          <h5 className="font-medium">{t('notificationsPage.apkExpirationsHeading')}</h5>
                         </div>
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Vehicle</TableHead>
-                              <TableHead>License Plate</TableHead>
-                              <TableHead>APK Expires</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead className="text-right">Action</TableHead>
+                              <TableHead>{t('notificationsPage.vehicleColumn')}</TableHead>
+                              <TableHead>{t('notificationsPage.licensePlateColumn')}</TableHead>
+                              <TableHead>{t('notificationsPage.apkExpiresColumn')}</TableHead>
+                              <TableHead>{t('notificationsPage.statusColumn')}</TableHead>
+                              <TableHead className="text-right">{t('notificationsPage.actionColumn')}</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -490,21 +492,21 @@ export default function NotificationsPage() {
                               const daysUntil = apkDate ? differenceInDays(apkDate, today) : null;
                               let statusClass = "";
                               let statusDisplay = "";
-                              
+
                               if (daysUntil === null) {
                                 statusClass = "bg-gray-100 text-gray-800";
-                                statusDisplay = "Not set";
+                                statusDisplay = t('notificationsPage.notSetStatus');
                               } else if (daysUntil <= 7) {
                                 statusClass = "bg-red-100 text-red-800";
-                                statusDisplay = `Expires in ${daysUntil} days`;
+                                statusDisplay = t('notificationsPage.expiresInDays', { count: daysUntil });
                               } else if (daysUntil <= 30) {
                                 statusClass = "bg-amber-100 text-amber-800";
-                                statusDisplay = `Expires in ${daysUntil} days`;
+                                statusDisplay = t('notificationsPage.expiresInDays', { count: daysUntil });
                               } else {
                                 statusClass = "bg-yellow-100 text-yellow-800";
-                                statusDisplay = `Expires in ${daysUntil} days`;
+                                statusDisplay = t('notificationsPage.expiresInDays', { count: daysUntil });
                               }
-                              
+
                               return (
                                 <TableRow key={`apk-${vehicle.id}`}>
                                   <TableCell>{`${vehicle.brand} ${vehicle.model}`}</TableCell>
@@ -517,7 +519,7 @@ export default function NotificationsPage() {
                                   </TableCell>
                                   <TableCell className="text-right">
                                     <Button size="sm" asChild>
-                                      <Link href={`/vehicles/${vehicle.id}`}>View</Link>
+                                      <Link href={`/vehicles/${vehicle.id}`}>{t('notificationsPage.viewButton')}</Link>
                                     </Button>
                                   </TableCell>
                                 </TableRow>
@@ -532,16 +534,16 @@ export default function NotificationsPage() {
                     {warrantyExpiringItems.length > 0 && (
                       <>
                         <div className="px-4 py-2 bg-gray-50 border-y">
-                          <h5 className="font-medium">Warranty Expirations</h5>
+                          <h5 className="font-medium">{t('notificationsPage.warrantyExpirationsHeading')}</h5>
                         </div>
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Vehicle</TableHead>
-                              <TableHead>License Plate</TableHead>
-                              <TableHead>Warranty Expires</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead className="text-right">Action</TableHead>
+                              <TableHead>{t('notificationsPage.vehicleColumn')}</TableHead>
+                              <TableHead>{t('notificationsPage.licensePlateColumn')}</TableHead>
+                              <TableHead>{t('notificationsPage.warrantyExpiresColumn')}</TableHead>
+                              <TableHead>{t('notificationsPage.statusColumn')}</TableHead>
+                              <TableHead className="text-right">{t('notificationsPage.actionColumn')}</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -550,21 +552,21 @@ export default function NotificationsPage() {
                               const daysUntil = warrantyDate ? differenceInDays(warrantyDate, today) : null;
                               let statusClass = "";
                               let statusDisplay = "";
-                              
+
                               if (daysUntil === null) {
                                 statusClass = "bg-gray-100 text-gray-800";
-                                statusDisplay = "Not set";
+                                statusDisplay = t('notificationsPage.notSetStatus');
                               } else if (daysUntil <= 7) {
                                 statusClass = "bg-red-100 text-red-800";
-                                statusDisplay = `Expires in ${daysUntil} days`;
+                                statusDisplay = t('notificationsPage.expiresInDays', { count: daysUntil });
                               } else if (daysUntil <= 30) {
                                 statusClass = "bg-amber-100 text-amber-800";
-                                statusDisplay = `Expires in ${daysUntil} days`;
+                                statusDisplay = t('notificationsPage.expiresInDays', { count: daysUntil });
                               } else {
                                 statusClass = "bg-indigo-100 text-indigo-800";
-                                statusDisplay = `Expires in ${daysUntil} days`;
+                                statusDisplay = t('notificationsPage.expiresInDays', { count: daysUntil });
                               }
-                              
+
                               return (
                                 <TableRow key={`warranty-${vehicle.id}`}>
                                   <TableCell>{`${vehicle.brand} ${vehicle.model}`}</TableCell>
@@ -577,7 +579,7 @@ export default function NotificationsPage() {
                                   </TableCell>
                                   <TableCell className="text-right">
                                     <Button size="sm" asChild>
-                                      <Link href={`/vehicles/${vehicle.id}`}>View</Link>
+                                      <Link href={`/vehicles/${vehicle.id}`}>{t('notificationsPage.viewButton')}</Link>
                                     </Button>
                                   </TableCell>
                                 </TableRow>
@@ -592,15 +594,15 @@ export default function NotificationsPage() {
                     {customNotifications.length > 0 && (
                       <>
                         <div className="px-4 py-2 bg-gray-50 border-y">
-                          <h5 className="font-medium">Custom Notifications</h5>
+                          <h5 className="font-medium">{t('notificationsPage.customNotificationsHeading')}</h5>
                         </div>
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Title</TableHead>
-                              <TableHead>Date</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead className="text-right">Actions</TableHead>
+                              <TableHead>{t('notificationsPage.titleColumn')}</TableHead>
+                              <TableHead>{t('notificationsPage.dateColumn')}</TableHead>
+                              <TableHead>{t('notificationsPage.statusColumn')}</TableHead>
+                              <TableHead className="text-right">{t('notificationsPage.actionsColumn')}</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -615,33 +617,33 @@ export default function NotificationsPage() {
                                 <TableCell>{formatDate(notification.date)}</TableCell>
                                 <TableCell>
                                   <Badge variant={notification.isRead ? "outline" : "default"}>
-                                    {notification.isRead ? "Read" : "Unread"}
+                                    {notification.isRead ? t('notificationsPage.readBadge') : t('notificationsPage.unreadBadge')}
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="text-right space-x-2">
                                   {notification.isRead ? (
-                                    <Button 
-                                      size="sm" 
+                                    <Button
+                                      size="sm"
                                       variant="outline"
                                       onClick={() => handleMarkAsUnread(notification.id)}
                                       disabled={markAsUnreadMutation.isPending}
                                     >
                                       <X className="mr-1 h-4 w-4" />
-                                      Mark Unread
+                                      {t('notificationsPage.markUnreadButton')}
                                     </Button>
                                   ) : (
-                                    <Button 
-                                      size="sm" 
+                                    <Button
+                                      size="sm"
                                       variant="outline"
                                       onClick={() => handleMarkAsRead(notification.id)}
                                       disabled={markAsReadMutation.isPending}
                                     >
                                       <Check className="mr-1 h-4 w-4" />
-                                      Mark Read
+                                      {t('notificationsPage.markReadButton')}
                                     </Button>
                                   )}
                                   <Button size="sm" asChild className="ml-2">
-                                    <Link href="/notifications/custom">Manage</Link>
+                                    <Link href="/notifications/custom">{t('notificationsPage.manageButton')}</Link>
                                   </Button>
                                 </TableCell>
                               </TableRow>
@@ -658,20 +660,20 @@ export default function NotificationsPage() {
                 {upcomingReservationItems.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-[280px] text-center p-4">
                     <Calendar className="h-8 w-8 text-muted-foreground mb-2 opacity-50" />
-                    <h3 className="font-medium">No upcoming reservations</h3>
+                    <h3 className="font-medium">{t('notificationsPage.noUpcomingReservationsTitle')}</h3>
                     <p className="text-sm text-muted-foreground">
-                      No reservations are starting soon.
+                      {t('notificationsPage.noUpcomingReservationsDescription')}
                     </p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Vehicle</TableHead>
-                        <TableHead>Start Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
+                        <TableHead>{t('notificationsPage.idColumn')}</TableHead>
+                        <TableHead>{t('notificationsPage.vehicleColumn')}</TableHead>
+                        <TableHead>{t('notificationsPage.startDateColumn')}</TableHead>
+                        <TableHead>{t('notificationsPage.statusColumn')}</TableHead>
+                        <TableHead className="text-right">{t('notificationsPage.actionColumn')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -680,20 +682,20 @@ export default function NotificationsPage() {
                         const startDate = new Date(reservation.startDate);
                         const daysUntil = differenceInDays(startDate, today);
                         let statusDisplay = "";
-                        
+
                         if (daysUntil === 0) {
-                          statusDisplay = "Today";
+                          statusDisplay = t('notificationsPage.todayStatus');
                         } else if (daysUntil === 1) {
-                          statusDisplay = "Tomorrow";
+                          statusDisplay = t('notificationsPage.tomorrowStatus');
                         } else {
-                          statusDisplay = `In ${daysUntil} days`;
+                          statusDisplay = t('notificationsPage.inDaysStatus', { count: daysUntil });
                         }
-                        
+
                         return (
                           <TableRow key={`res-tab-${reservation.id}`}>
                             <TableCell>{reservation.id}</TableCell>
                             <TableCell>
-                              {vehicle ? `${vehicle.brand} ${vehicle.model}` : "Unknown"}
+                              {vehicle ? `${vehicle.brand} ${vehicle.model}` : t('notificationsPage.unknownVehicle')}
                             </TableCell>
                             <TableCell>{formatDate(reservation.startDate)}</TableCell>
                             <TableCell>
@@ -703,7 +705,7 @@ export default function NotificationsPage() {
                             </TableCell>
                             <TableCell className="text-right">
                               <Button size="sm" asChild>
-                                <Link href={`/reservations/${reservation.id}`}>View</Link>
+                                <Link href={`/reservations/${reservation.id}`}>{t('notificationsPage.viewButton')}</Link>
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -718,20 +720,20 @@ export default function NotificationsPage() {
                 {apkExpiringItems.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-[280px] text-center p-4">
                     <AlertTriangle className="h-8 w-8 text-muted-foreground mb-2 opacity-50" />
-                    <h3 className="font-medium">No APK expirations</h3>
+                    <h3 className="font-medium">{t('notificationsPage.noApkExpirationsTitle')}</h3>
                     <p className="text-sm text-muted-foreground">
-                      No vehicles have APK inspections expiring soon.
+                      {t('notificationsPage.noApkExpirationsDescription')}
                     </p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Vehicle</TableHead>
-                        <TableHead>License Plate</TableHead>
-                        <TableHead>APK Expires</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
+                        <TableHead>{t('notificationsPage.vehicleColumn')}</TableHead>
+                        <TableHead>{t('notificationsPage.licensePlateColumn')}</TableHead>
+                        <TableHead>{t('notificationsPage.apkExpiresColumn')}</TableHead>
+                        <TableHead>{t('notificationsPage.statusColumn')}</TableHead>
+                        <TableHead className="text-right">{t('notificationsPage.actionColumn')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -740,21 +742,21 @@ export default function NotificationsPage() {
                         const daysUntil = apkDate ? differenceInDays(apkDate, today) : null;
                         let statusClass = "";
                         let statusDisplay = "";
-                        
+
                         if (daysUntil === null) {
                           statusClass = "bg-gray-100 text-gray-800";
-                          statusDisplay = "Not set";
+                          statusDisplay = t('notificationsPage.notSetStatus');
                         } else if (daysUntil <= 7) {
                           statusClass = "bg-red-100 text-red-800";
-                          statusDisplay = `Expires in ${daysUntil} days`;
+                          statusDisplay = t('notificationsPage.expiresInDays', { count: daysUntil });
                         } else if (daysUntil <= 30) {
                           statusClass = "bg-amber-100 text-amber-800";
-                          statusDisplay = `Expires in ${daysUntil} days`;
+                          statusDisplay = t('notificationsPage.expiresInDays', { count: daysUntil });
                         } else {
                           statusClass = "bg-yellow-100 text-yellow-800";
-                          statusDisplay = `Expires in ${daysUntil} days`;
+                          statusDisplay = t('notificationsPage.expiresInDays', { count: daysUntil });
                         }
-                        
+
                         return (
                           <TableRow key={`apk-tab-${vehicle.id}`}>
                             <TableCell>{`${vehicle.brand} ${vehicle.model}`}</TableCell>
@@ -767,7 +769,7 @@ export default function NotificationsPage() {
                             </TableCell>
                             <TableCell className="text-right">
                               <Button size="sm" asChild>
-                                <Link href={`/vehicles/${vehicle.id}`}>View</Link>
+                                <Link href={`/vehicles/${vehicle.id}`}>{t('notificationsPage.viewButton')}</Link>
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -782,20 +784,20 @@ export default function NotificationsPage() {
                 {warrantyExpiringItems.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-[280px] text-center p-4">
                     <Car className="h-8 w-8 text-muted-foreground mb-2 opacity-50" />
-                    <h3 className="font-medium">No warranty expirations</h3>
+                    <h3 className="font-medium">{t('notificationsPage.noWarrantyExpirationsTitle')}</h3>
                     <p className="text-sm text-muted-foreground">
-                      No vehicles have warranties expiring soon.
+                      {t('notificationsPage.noWarrantyExpirationsDescription')}
                     </p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Vehicle</TableHead>
-                        <TableHead>License Plate</TableHead>
-                        <TableHead>Warranty Expires</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
+                        <TableHead>{t('notificationsPage.vehicleColumn')}</TableHead>
+                        <TableHead>{t('notificationsPage.licensePlateColumn')}</TableHead>
+                        <TableHead>{t('notificationsPage.warrantyExpiresColumn')}</TableHead>
+                        <TableHead>{t('notificationsPage.statusColumn')}</TableHead>
+                        <TableHead className="text-right">{t('notificationsPage.actionColumn')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -804,21 +806,21 @@ export default function NotificationsPage() {
                         const daysUntil = warrantyDate ? differenceInDays(warrantyDate, today) : null;
                         let statusClass = "";
                         let statusDisplay = "";
-                        
+
                         if (daysUntil === null) {
                           statusClass = "bg-gray-100 text-gray-800";
-                          statusDisplay = "Not set";
+                          statusDisplay = t('notificationsPage.notSetStatus');
                         } else if (daysUntil <= 7) {
                           statusClass = "bg-red-100 text-red-800";
-                          statusDisplay = `Expires in ${daysUntil} days`;
+                          statusDisplay = t('notificationsPage.expiresInDays', { count: daysUntil });
                         } else if (daysUntil <= 30) {
                           statusClass = "bg-amber-100 text-amber-800";
-                          statusDisplay = `Expires in ${daysUntil} days`;
+                          statusDisplay = t('notificationsPage.expiresInDays', { count: daysUntil });
                         } else {
                           statusClass = "bg-indigo-100 text-indigo-800";
-                          statusDisplay = `Expires in ${daysUntil} days`;
+                          statusDisplay = t('notificationsPage.expiresInDays', { count: daysUntil });
                         }
-                        
+
                         return (
                           <TableRow key={`warranty-tab-${vehicle.id}`}>
                             <TableCell>{`${vehicle.brand} ${vehicle.model}`}</TableCell>
@@ -831,7 +833,7 @@ export default function NotificationsPage() {
                             </TableCell>
                             <TableCell className="text-right">
                               <Button size="sm" asChild>
-                                <Link href={`/vehicles/${vehicle.id}`}>View</Link>
+                                <Link href={`/vehicles/${vehicle.id}`}>{t('notificationsPage.viewButton')}</Link>
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -846,23 +848,23 @@ export default function NotificationsPage() {
                 {customNotifications.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-[280px] text-center p-4">
                     <MessageSquare className="h-8 w-8 text-muted-foreground mb-2 opacity-50" />
-                    <h3 className="font-medium">No custom notifications</h3>
+                    <h3 className="font-medium">{t('notificationsPage.noCustomNotificationsTitle')}</h3>
                     <p className="text-sm text-muted-foreground">
-                      You haven't created any custom notifications yet.
+                      {t('notificationsPage.noCustomNotificationsDescription')}
                     </p>
                   </div>
                 ) : (
                   <div>
                     <div className="px-4 py-2 bg-gray-50 border-y">
-                      <h5 className="font-medium">Custom Notifications</h5>
+                      <h5 className="font-medium">{t('notificationsPage.customNotificationsHeading')}</h5>
                     </div>
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Title</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                          <TableHead>{t('notificationsPage.titleColumn')}</TableHead>
+                          <TableHead>{t('notificationsPage.dateColumn')}</TableHead>
+                          <TableHead>{t('notificationsPage.statusColumn')}</TableHead>
+                          <TableHead className="text-right">{t('notificationsPage.actionsColumn')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -878,33 +880,33 @@ export default function NotificationsPage() {
                               <TableCell>{formatDate(notification.date)}</TableCell>
                               <TableCell>
                                 <Badge variant={notification.isRead ? "outline" : "default"}>
-                                  {notification.isRead ? "Read" : "Unread"}
+                                  {notification.isRead ? t('notificationsPage.readBadge') : t('notificationsPage.unreadBadge')}
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-right space-x-2">
                                 {notification.isRead ? (
-                                  <Button 
-                                    size="sm" 
+                                  <Button
+                                    size="sm"
                                     variant="outline"
                                     onClick={() => handleMarkAsUnread(notification.id)}
                                     disabled={markAsUnreadMutation.isPending}
                                   >
                                     <X className="mr-1 h-4 w-4" />
-                                    Mark Unread
+                                    {t('notificationsPage.markUnreadButton')}
                                   </Button>
                                 ) : (
-                                  <Button 
-                                    size="sm" 
+                                  <Button
+                                    size="sm"
                                     variant="outline"
                                     onClick={() => handleMarkAsRead(notification.id)}
                                     disabled={markAsReadMutation.isPending}
                                   >
                                     <Check className="mr-1 h-4 w-4" />
-                                    Mark Read
+                                    {t('notificationsPage.markReadButton')}
                                   </Button>
                                 )}
                                 <Button size="sm" asChild className="ml-2">
-                                  <Link href="/notifications/custom">Manage</Link>
+                                  <Link href="/notifications/custom">{t('notificationsPage.manageButton')}</Link>
                                 </Button>
                               </TableCell>
                             </TableRow>

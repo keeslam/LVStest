@@ -42,6 +42,7 @@ import { backupService } from "./backupService";
 import { ObjectStorageService } from "./objectStorage";
 import { realtimeEvents } from "./realtime-events";
 import { hasPermission, requireAdmin } from "./middleware/permissions.js";
+import { AuditLogger } from "./utils/security/auditLogger.js";
 import { clearEmailConfigCache, sendEmail } from "./utils/email-service";
 import { 
   getVehicleStatusContext, 
@@ -2297,6 +2298,32 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  // What a vehicle delete would take with it. Shown in the confirmation dialog
+  // so nobody removes a car without seeing the rentals attached to it.
+  app.get("/api/vehicles/:id/delete-impact", hasPermission(UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid vehicle ID" });
+      }
+
+      const impact = await storage.getVehicleDeleteImpact?.(id);
+      if (!impact) {
+        return res.status(404).json({ message: "Vehicle not found" });
+      }
+
+      res.json({
+        licensePlate: impact.vehicle.licensePlate,
+        brand: impact.vehicle.brand,
+        model: impact.vehicle.model,
+        counts: impact.counts,
+      });
+    } catch (error) {
+      console.error("Error building vehicle delete impact:", error);
+      res.status(500).json({ message: "Error building delete impact" });
+    }
+  });
+
   // Delete vehicle
   app.delete("/api/vehicles/:id", hasPermission(UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
     try {
@@ -2305,18 +2332,134 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(400).json({ message: "Invalid vehicle ID" });
       }
 
-      const deleted = await storage.deleteVehicle(id);
-      
+      // Require the license plate to be typed back, so a stray click cannot
+      // wipe a vehicle and its rentals.
+      const confirmation = typeof req.body?.confirmLicensePlate === 'string'
+        ? req.body.confirmLicensePlate
+        : '';
+      const impact = await storage.getVehicleDeleteImpact?.(id);
+      if (!impact) {
+        return res.status(404).json({ message: "Vehicle not found" });
+      }
+
+      const normalize = (value: string) => value.replace(/[^a-z0-9]/gi, '').toUpperCase();
+      if (normalize(confirmation) !== normalize(impact.vehicle.licensePlate)) {
+        await AuditLogger.logFromRequest(
+          req,
+          'vehicle.delete',
+          'vehicle',
+          id,
+          { reason: 'confirmation_mismatch', licensePlate: impact.vehicle.licensePlate },
+          'failure',
+        );
+        return res.status(400).json({
+          code: "CONFIRMATION_REQUIRED",
+          message: `Type the license plate ${impact.vehicle.licensePlate} to confirm deleting this vehicle.`,
+        });
+      }
+
+      const deleted = await storage.deleteVehicle(id, {
+        username: req.user?.username ?? null,
+        userId: req.user?.id ?? null,
+      });
+
       if (!deleted) {
         return res.status(404).json({ message: "Vehicle not found" });
       }
-      
+
+      await AuditLogger.logFromRequest(
+        req,
+        'vehicle.delete',
+        'vehicle',
+        id,
+        {
+          licensePlate: impact.vehicle.licensePlate,
+          brand: impact.vehicle.brand,
+          model: impact.vehicle.model,
+          cascaded: impact.counts,
+        },
+      );
+
       // Broadcast real-time update to all connected clients
       realtimeEvents.vehicles.deleted({ id });
-      
-      res.json({ success: true, message: "Vehicle successfully deleted" });
+
+      res.json({
+        success: true,
+        message: "Vehicle successfully deleted",
+        restorable: true,
+      });
     } catch (error) {
+      console.error("Error deleting vehicle:", error);
       res.status(500).json({ message: "Error deleting vehicle", error });
+    }
+  });
+
+  // ==================== RECYCLE BIN ROUTES ====================
+  app.get("/api/deleted-records", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const records = (await storage.getDeletedRecords?.(100)) || [];
+      // The full snapshot can be megabytes; the list only needs the headline.
+      res.json(records.map((record: any) => ({
+        id: record.id,
+        entityType: record.entityType,
+        entityId: record.entityId,
+        label: record.label,
+        relatedCounts: record.relatedCounts,
+        deletedAt: record.deletedAt,
+        deletedBy: record.deletedBy,
+        restoredAt: record.restoredAt,
+        restoredBy: record.restoredBy,
+      })));
+    } catch (error) {
+      console.error("Error listing deleted records:", error);
+      res.status(500).json({ message: "Error listing deleted records" });
+    }
+  });
+
+  app.post("/api/deleted-records/:id/restore", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid record ID" });
+      }
+
+      const result = await storage.restoreDeletedRecord?.(id, {
+        username: req.user?.username ?? null,
+      });
+
+      if (!result || !result.restored) {
+        const reasons: Record<string, string> = {
+          not_found: "That deleted record no longer exists.",
+          already_restored: "This record was already restored.",
+          unsupported_type: "Restoring this record type is not supported yet.",
+          empty_snapshot: "The stored snapshot is empty, so there is nothing to restore.",
+          id_taken: "Another vehicle already uses the original ID, so it cannot be restored.",
+          license_plate_taken: "A vehicle with the same license plate already exists. Delete or rename it first.",
+        };
+        const reason = result?.reason || 'not_found';
+        return res.status(reason === 'not_found' ? 404 : 409).json({
+          code: reason.toUpperCase(),
+          message: reasons[reason] || "Could not restore this record.",
+        });
+      }
+
+      await AuditLogger.logFromRequest(
+        req,
+        'vehicle.update',
+        'vehicle',
+        result.record?.entityId,
+        { restoredFromDeletedRecord: id, label: result.record?.label },
+      );
+
+      realtimeEvents.vehicles.created({ id: result.record?.entityId });
+
+      res.json({ success: true, message: `Restored ${result.record?.label ?? 'record'}.` });
+    } catch (error) {
+      console.error("Error restoring deleted record:", error);
+      res.status(500).json({
+        message: "Error restoring deleted record",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
     }
   });
 
@@ -5338,11 +5481,26 @@ export async function registerRoutes(app: Express): Promise<void> {
         
         // Sync vehicle availability status after deleting reservation
         await storage.syncVehicleAvailabilityWithReservations();
-        
+
+        await AuditLogger.logFromRequest(
+          req,
+          'reservation.delete',
+          'reservation',
+          id,
+          {
+            vehicleId: reservation.vehicleId,
+            customerId: reservation.customerId,
+            status: reservation.status,
+            contractNumber: reservation.contractNumber,
+            startDate: reservation.startDate,
+            endDate: reservation.endDate,
+          },
+        );
+
         // Broadcast real-time update to all connected clients
         realtimeEvents.reservations.deleted({ id });
-        
-        res.status(200).json({ 
+
+        res.status(200).json({
           message: "Reservation deleted successfully",
           deletedBy: user ? user.username : 'Unknown'
         });

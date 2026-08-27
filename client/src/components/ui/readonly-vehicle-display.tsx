@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Vehicle } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { formatLicensePlate } from "@/lib/format-utils";
@@ -8,6 +9,7 @@ export interface ReadonlyVehicleDisplayProps {
 }
 
 export function ReadonlyVehicleDisplay({ vehicleId }: ReadonlyVehicleDisplayProps) {
+  const { t } = useTranslation("vehicles");
   // Fetch vehicle information
   const { data: vehicle, isLoading } = useQuery<Vehicle>({
     queryKey: [`/api/vehicles/${vehicleId}`],
@@ -21,7 +23,7 @@ export function ReadonlyVehicleDisplay({ vehicleId }: ReadonlyVehicleDisplayProp
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
-        <span className="ml-2">Loading vehicle details...</span>
+        <span className="ml-2">{t('readonlyVehicleDisplay.loading')}</span>
       </div>
     );
   }
@@ -29,7 +31,7 @@ export function ReadonlyVehicleDisplay({ vehicleId }: ReadonlyVehicleDisplayProp
   if (!vehicle) {
     return (
       <div className="p-3 border rounded-md bg-muted/30 text-center">
-        <p className="text-destructive">Vehicle not found</p>
+        <p className="text-destructive">{t('readonlyVehicleDisplay.notFound')}</p>
       </div>
     );
   }
@@ -51,13 +53,13 @@ export function ReadonlyVehicleDisplay({ vehicleId }: ReadonlyVehicleDisplayProp
         )}
         {vehicle.apkDate && (
           <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200 text-xs">
-            APK: {new Date(vehicle.apkDate).toLocaleDateString()}
+            {t('readonlyVehicleDisplay.apkLabel', { date: new Date(vehicle.apkDate).toLocaleDateString() })}
           </Badge>
         )}
       </div>
       {vehicle.color && (
         <div className="text-xs text-muted-foreground mt-1">
-          Color: {vehicle.color}
+          {t('readonlyVehicleDisplay.colorLabel', { color: vehicle.color })}
         </div>
       )}
     </div>

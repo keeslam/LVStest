@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
@@ -83,6 +84,7 @@ const iconComponents = {
 type IconName = keyof typeof iconComponents;
 
 const CustomNotificationsPage = () => {
+  const { t } = useTranslation("notifications");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -143,12 +145,12 @@ const CustomNotificationsPage = () => {
     },
     onSuccess: () => {
       invalidateByPrefix("/api/custom-notifications");
-      toast({ title: "Success", description: "Notification created successfully" });
+      toast({ title: t('customNotificationsPage.toasts.successTitle'), description: t('customNotificationsPage.toasts.createdDescription') });
       setIsCreateDialogOpen(false);
       createForm.reset();
     },
     onError: (error: Error) => {
-      toast({ title: "Error", description: `Failed to create: ${error.message}`, variant: "destructive" });
+      toast({ title: t('customNotificationsPage.toasts.errorTitle'), description: t('customNotificationsPage.toasts.createFailedDescription', { message: error.message }), variant: "destructive" });
     },
   });
 
@@ -159,11 +161,11 @@ const CustomNotificationsPage = () => {
     },
     onSuccess: () => {
       invalidateByPrefix("/api/custom-notifications");
-      toast({ title: "Success", description: "Notification updated successfully" });
+      toast({ title: t('customNotificationsPage.toasts.successTitle'), description: t('customNotificationsPage.toasts.updatedDescription') });
       setIsEditDialogOpen(false);
     },
     onError: (error: Error) => {
-      toast({ title: "Error", description: `Failed to update: ${error.message}`, variant: "destructive" });
+      toast({ title: t('customNotificationsPage.toasts.errorTitle'), description: t('customNotificationsPage.toasts.updateFailedDescription', { message: error.message }), variant: "destructive" });
     },
   });
 
@@ -173,12 +175,12 @@ const CustomNotificationsPage = () => {
     },
     onSuccess: () => {
       invalidateByPrefix("/api/custom-notifications");
-      toast({ title: "Success", description: "Notification deleted successfully" });
+      toast({ title: t('customNotificationsPage.toasts.successTitle'), description: t('customNotificationsPage.toasts.deletedDescription') });
       setIsDeleteDialogOpen(false);
       setSelectedIds(new Set());
     },
     onError: (error: Error) => {
-      toast({ title: "Error", description: `Failed to delete: ${error.message}`, variant: "destructive" });
+      toast({ title: t('customNotificationsPage.toasts.errorTitle'), description: t('customNotificationsPage.toasts.deleteFailedDescription', { message: error.message }), variant: "destructive" });
     },
   });
 
@@ -209,7 +211,7 @@ const CustomNotificationsPage = () => {
     },
     onSuccess: (count) => {
       invalidateByPrefix("/api/custom-notifications");
-      toast({ title: "Success", description: `Marked ${count} notification${count !== 1 ? "s" : ""} as read` });
+      toast({ title: t('customNotificationsPage.toasts.successTitle'), description: t('customNotificationsPage.toasts.markedAsRead', { count }) });
       setSelectedIds(new Set());
     },
   });
@@ -221,7 +223,7 @@ const CustomNotificationsPage = () => {
     },
     onSuccess: (count) => {
       invalidateByPrefix("/api/custom-notifications");
-      toast({ title: "Success", description: `Deleted ${count} notification${count !== 1 ? "s" : ""}` });
+      toast({ title: t('customNotificationsPage.toasts.successTitle'), description: t('customNotificationsPage.toasts.bulkDeleted', { count }) });
       setSelectedIds(new Set());
     },
   });
@@ -335,13 +337,13 @@ const CustomNotificationsPage = () => {
   const renderPriorityBadge = (priority: string) => {
     switch(priority) {
       case "high":
-        return <Badge variant="destructive" className="text-xs">High</Badge>;
+        return <Badge variant="destructive" className="text-xs">{t('customNotificationsPage.priorityHigh')}</Badge>;
       case "normal":
-        return <Badge variant="secondary" className="text-xs">Normal</Badge>;
+        return <Badge variant="secondary" className="text-xs">{t('customNotificationsPage.priorityNormal')}</Badge>;
       case "low":
-        return <Badge variant="outline" className="text-xs">Low</Badge>;
+        return <Badge variant="outline" className="text-xs">{t('customNotificationsPage.priorityLow')}</Badge>;
       default:
-        return <Badge variant="secondary" className="text-xs">Normal</Badge>;
+        return <Badge variant="secondary" className="text-xs">{t('customNotificationsPage.priorityNormal')}</Badge>;
     }
   };
 
@@ -353,9 +355,9 @@ const CustomNotificationsPage = () => {
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Title</FormLabel>
+              <FormLabel>{t('customNotificationsPage.titleFieldLabel')}</FormLabel>
               <FormControl>
-                <Input placeholder="Notification title" {...field} data-testid="input-notification-title" />
+                <Input placeholder={t('customNotificationsPage.titleFieldPlaceholder')} {...field} data-testid="input-notification-title" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -366,9 +368,9 @@ const CustomNotificationsPage = () => {
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel>{t('customNotificationsPage.descriptionFieldLabel')}</FormLabel>
               <FormControl>
-                <Textarea placeholder="Detailed description" className="resize-none" {...field} data-testid="input-notification-description" />
+                <Textarea placeholder={t('customNotificationsPage.descriptionFieldPlaceholder')} className="resize-none" {...field} data-testid="input-notification-description" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -380,7 +382,7 @@ const CustomNotificationsPage = () => {
             name="date"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Date</FormLabel>
+                <FormLabel>{t('customNotificationsPage.dateFieldLabel')}</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} data-testid="input-notification-date" />
                 </FormControl>
@@ -393,17 +395,17 @@ const CustomNotificationsPage = () => {
             name="priority"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Priority</FormLabel>
+                <FormLabel>{t('customNotificationsPage.priorityFieldLabel')}</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger data-testid="select-notification-priority">
-                      <SelectValue placeholder="Select priority" />
+                      <SelectValue placeholder={t('customNotificationsPage.selectPriorityPlaceholder')} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="low">{t('customNotificationsPage.priorityLow')}</SelectItem>
+                    <SelectItem value="normal">{t('customNotificationsPage.priorityNormal')}</SelectItem>
+                    <SelectItem value="high">{t('customNotificationsPage.priorityHigh')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -417,19 +419,19 @@ const CustomNotificationsPage = () => {
             name="icon"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Icon</FormLabel>
+                <FormLabel>{t('customNotificationsPage.iconFieldLabel')}</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger data-testid="select-notification-icon">
-                      <SelectValue placeholder="Select icon" />
+                      <SelectValue placeholder={t('customNotificationsPage.selectIconPlaceholder')} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="CalendarDays">Calendar</SelectItem>
-                    <SelectItem value="ClipboardCheck">Clipboard</SelectItem>
-                    <SelectItem value="Bell">Bell</SelectItem>
-                    <SelectItem value="AlertCircle">Alert</SelectItem>
-                    <SelectItem value="Info">Info</SelectItem>
+                    <SelectItem value="CalendarDays">{t('customNotificationsPage.iconCalendar')}</SelectItem>
+                    <SelectItem value="ClipboardCheck">{t('customNotificationsPage.iconClipboard')}</SelectItem>
+                    <SelectItem value="Bell">{t('customNotificationsPage.iconBell')}</SelectItem>
+                    <SelectItem value="AlertCircle">{t('customNotificationsPage.iconAlert')}</SelectItem>
+                    <SelectItem value="Info">{t('customNotificationsPage.iconInfo')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -441,11 +443,11 @@ const CustomNotificationsPage = () => {
             name="type"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Type</FormLabel>
+                <FormLabel>{t('customNotificationsPage.typeFieldLabel')}</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., reminder" {...field} data-testid="input-notification-type" />
+                  <Input placeholder={t('customNotificationsPage.typeFieldPlaceholder')} {...field} data-testid="input-notification-type" />
                 </FormControl>
-                <FormDescription className="text-xs">For filtering</FormDescription>
+                <FormDescription className="text-xs">{t('customNotificationsPage.typeFieldDescription')}</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -453,7 +455,7 @@ const CustomNotificationsPage = () => {
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button type="button" variant="outline">Cancel</Button>
+            <Button type="button" variant="outline">{t('customNotificationsPage.cancelButton')}</Button>
           </DialogClose>
           <Button type="submit" disabled={isLoading} data-testid="button-submit-notification">
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -477,20 +479,20 @@ const CustomNotificationsPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Custom Notifications</h1>
+          <h1 className="text-3xl font-bold">{t('customNotificationsPage.pageTitle')}</h1>
           <p className="text-muted-foreground">
-            {notifications.length} notification{notifications.length !== 1 ? "s" : ""} 
-            {unreadCount > 0 && <span className="text-primary font-medium"> ({unreadCount} unread)</span>}
+            {t('customNotificationsPage.notificationCount', { count: notifications.length })}
+            {unreadCount > 0 && <span className="text-primary font-medium"> {t('customNotificationsPage.unreadSuffix', { count: unreadCount })}</span>}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
             <Link href="/notifications">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back
+              <ArrowLeft className="mr-2 h-4 w-4" /> {t('customNotificationsPage.backButton')}
             </Link>
           </Button>
           <Button onClick={() => setIsCreateDialogOpen(true)} data-testid="button-add-notification">
-            <Plus className="mr-2 h-4 w-4" /> Add Notification
+            <Plus className="mr-2 h-4 w-4" /> {t('customNotificationsPage.addNotificationButton')}
           </Button>
         </div>
       </div>
@@ -502,7 +504,7 @@ const CustomNotificationsPage = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search notifications..."
+                placeholder={t('customNotificationsPage.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -512,34 +514,34 @@ const CustomNotificationsPage = () => {
             <Select value={priorityFilter} onValueChange={setPriorityFilter}>
               <SelectTrigger className="w-[150px]" data-testid="select-filter-priority">
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Priority" />
+                <SelectValue placeholder={t('customNotificationsPage.priorityFilterPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Priorities</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="normal">Normal</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="all">{t('customNotificationsPage.allPriorities')}</SelectItem>
+                <SelectItem value="high">{t('customNotificationsPage.priorityHigh')}</SelectItem>
+                <SelectItem value="normal">{t('customNotificationsPage.priorityNormal')}</SelectItem>
+                <SelectItem value="low">{t('customNotificationsPage.priorityLow')}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[140px]" data-testid="select-filter-status">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t('customNotificationsPage.statusFilterPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="unread">Unread</SelectItem>
-                <SelectItem value="read">Read</SelectItem>
+                <SelectItem value="all">{t('customNotificationsPage.allStatus')}</SelectItem>
+                <SelectItem value="unread">{t('customNotificationsPage.unreadOption')}</SelectItem>
+                <SelectItem value="read">{t('customNotificationsPage.readOption')}</SelectItem>
               </SelectContent>
             </Select>
             {unreadCount > 0 && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={handleMarkAllRead}
                 disabled={bulkMarkAsReadMutation.isPending}
                 data-testid="button-mark-all-read"
               >
                 <CheckCheck className="mr-2 h-4 w-4" />
-                Mark All Read
+                {t('customNotificationsPage.markAllReadButton')}
               </Button>
             )}
           </div>
@@ -552,37 +554,37 @@ const CustomNotificationsPage = () => {
           <CardContent className="py-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">
-                {selectedCount} notification{selectedCount !== 1 ? "s" : ""} selected
+                {t('customNotificationsPage.selectedCount', { count: selectedCount })}
               </span>
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={handleBulkMarkRead}
                   disabled={bulkMarkAsReadMutation.isPending}
                   data-testid="button-bulk-mark-read"
                 >
                   <Check className="mr-2 h-4 w-4" />
-                  Mark as Read
+                  {t('customNotificationsPage.markAsReadButton')}
                 </Button>
-                <Button 
-                  variant="destructive" 
-                  size="sm" 
+                <Button
+                  variant="destructive"
+                  size="sm"
                   onClick={handleBulkDelete}
                   disabled={bulkDeleteMutation.isPending}
                   data-testid="button-bulk-delete"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
+                  {t('customNotificationsPage.deleteButton')}
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setSelectedIds(new Set())}
                   data-testid="button-clear-selection"
                 >
                   <X className="mr-2 h-4 w-4" />
-                  Clear
+                  {t('customNotificationsPage.clearButton')}
                 </Button>
               </div>
             </div>
@@ -597,16 +599,16 @@ const CustomNotificationsPage = () => {
             <div className="flex flex-col items-center justify-center p-12 text-center">
               <Bell className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold">
-                {notifications.length === 0 ? "No notifications yet" : "No matching notifications"}
+                {notifications.length === 0 ? t('customNotificationsPage.noNotificationsYetTitle') : t('customNotificationsPage.noMatchingNotificationsTitle')}
               </h3>
               <p className="text-sm text-muted-foreground mb-4">
-                {notifications.length === 0 
-                  ? "Create your first notification to get started."
-                  : "Try adjusting your search or filters."}
+                {notifications.length === 0
+                  ? t('customNotificationsPage.createFirstNotificationDescription')
+                  : t('customNotificationsPage.adjustSearchOrFiltersDescription')}
               </p>
               {notifications.length === 0 && (
                 <Button onClick={() => setIsCreateDialogOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" /> Add Notification
+                  <Plus className="mr-2 h-4 w-4" /> {t('customNotificationsPage.addNotificationButton')}
                 </Button>
               )}
             </div>
@@ -628,18 +630,18 @@ const CustomNotificationsPage = () => {
                       className="flex items-center font-medium hover:text-primary transition-colors"
                       data-testid="sort-title"
                     >
-                      Title
+                      {t('customNotificationsPage.titleColumn')}
                       <SortIcon column="title" />
                     </button>
                   </TableHead>
-                  <TableHead className="hidden md:table-cell">Description</TableHead>
+                  <TableHead className="hidden md:table-cell">{t('customNotificationsPage.descriptionColumn')}</TableHead>
                   <TableHead className="w-[100px]">
                     <button
                       onClick={() => handleSort("priority")}
                       className="flex items-center font-medium hover:text-primary transition-colors"
                       data-testid="sort-priority"
                     >
-                      Priority
+                      {t('customNotificationsPage.priorityColumn')}
                       <SortIcon column="priority" />
                     </button>
                   </TableHead>
@@ -649,11 +651,11 @@ const CustomNotificationsPage = () => {
                       className="flex items-center font-medium hover:text-primary transition-colors"
                       data-testid="sort-date"
                     >
-                      Date
+                      {t('customNotificationsPage.dateColumn')}
                       <SortIcon column="date" />
                     </button>
                   </TableHead>
-                  <TableHead className="w-[100px] text-right">Actions</TableHead>
+                  <TableHead className="w-[100px] text-right">{t('customNotificationsPage.actionsColumn')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -699,23 +701,23 @@ const CustomNotificationsPage = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => handleEditClick(notification)}>
-                            <Edit className="mr-2 h-4 w-4" /> Edit
+                            <Edit className="mr-2 h-4 w-4" /> {t('customNotificationsPage.editAction')}
                           </DropdownMenuItem>
                           {notification.isRead ? (
                             <DropdownMenuItem onClick={() => markAsUnreadMutation.mutate(notification.id)}>
-                              <X className="mr-2 h-4 w-4" /> Mark as Unread
+                              <X className="mr-2 h-4 w-4" /> {t('customNotificationsPage.markAsUnreadAction')}
                             </DropdownMenuItem>
                           ) : (
                             <DropdownMenuItem onClick={() => markAsReadMutation.mutate(notification.id)}>
-                              <Check className="mr-2 h-4 w-4" /> Mark as Read
+                              <Check className="mr-2 h-4 w-4" /> {t('customNotificationsPage.markAsReadAction')}
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => handleDeleteClick(notification)}
                             className="text-destructive"
                           >
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                            <Trash2 className="mr-2 h-4 w-4" /> {t('customNotificationsPage.deleteAction')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -732,14 +734,14 @@ const CustomNotificationsPage = () => {
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Create Notification</DialogTitle>
-            <DialogDescription>Add a new custom notification.</DialogDescription>
+            <DialogTitle>{t('customNotificationsPage.createDialogTitle')}</DialogTitle>
+            <DialogDescription>{t('customNotificationsPage.createDialogDescription')}</DialogDescription>
           </DialogHeader>
-          <NotificationForm 
-            form={createForm} 
-            onSubmit={onCreateSubmit} 
+          <NotificationForm
+            form={createForm}
+            onSubmit={onCreateSubmit}
             isLoading={createMutation.isPending}
-            submitText="Create"
+            submitText={t('customNotificationsPage.createSubmitButton')}
           />
         </DialogContent>
       </Dialog>
@@ -748,14 +750,14 @@ const CustomNotificationsPage = () => {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Edit Notification</DialogTitle>
-            <DialogDescription>Update the notification details.</DialogDescription>
+            <DialogTitle>{t('customNotificationsPage.editDialogTitle')}</DialogTitle>
+            <DialogDescription>{t('customNotificationsPage.editDialogDescription')}</DialogDescription>
           </DialogHeader>
-          <NotificationForm 
-            form={editForm} 
-            onSubmit={onEditSubmit} 
+          <NotificationForm
+            form={editForm}
+            onSubmit={onEditSubmit}
             isLoading={updateMutation.isPending}
-            submitText="Update"
+            submitText={t('customNotificationsPage.updateSubmitButton')}
           />
         </DialogContent>
       </Dialog>
@@ -764,23 +766,23 @@ const CustomNotificationsPage = () => {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
-            <DialogTitle>Delete Notification</DialogTitle>
+            <DialogTitle>{t('customNotificationsPage.deleteDialogTitle')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{selectedNotification?.title}"? This cannot be undone.
+              {t('customNotificationsPage.deleteDialogDescription', { title: selectedNotification?.title })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline">{t('customNotificationsPage.cancelButton')}</Button>
             </DialogClose>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={() => selectedNotification && deleteMutation.mutate(selectedNotification.id)}
               disabled={deleteMutation.isPending}
               data-testid="button-confirm-delete"
             >
               {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete
+              {t('customNotificationsPage.deleteButton')}
             </Button>
           </DialogFooter>
         </DialogContent>

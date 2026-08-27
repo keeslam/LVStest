@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -144,31 +145,49 @@ interface DriverSearchComboboxProps {
 }
 
 function DriverSearchCombobox({ value, drivers, isLoading, onSelect }: DriverSearchComboboxProps) {
+  const { t } = useTranslation("reservations");
   const options = useMemo(() => {
     const activeDrivers = drivers.filter(d => d.status === "active");
     return [
-      { value: "none", label: "No driver selected", tags: ["Clear"] },
+      { value: "none", label: t('form.driverSearch.noDriverSelected'), tags: [t('form.driverSearch.clearTag')] },
       ...activeDrivers.map(driver => ({
         value: driver.id.toString(),
         label: driver.displayName || `${driver.firstName} ${driver.lastName}`.trim(),
         description: [driver.phone, driver.email].filter(Boolean).join(" • ") || undefined,
-        tags: driver.isPrimaryDriver ? ["Primary"] : [],
+        tags: driver.isPrimaryDriver ? [t('form.driverSearch.primaryTag')] : [],
       }))
     ];
-  }, [drivers]);
+  }, [drivers, t]);
 
   return (
     <SearchableCombobox
       options={options}
       value={value ? value.toString() : "none"}
       onChange={(val) => onSelect(val === "none" ? null : parseInt(val))}
-      placeholder={isLoading ? "Loading drivers..." : "Search drivers..."}
-      emptyMessage={isLoading ? "Loading..." : "No active drivers found"}
-      searchPlaceholder="Search by name, phone, or email..."
+      placeholder={isLoading ? t('form.driverSearch.loadingDrivers') : t('form.driverSearch.searchDrivers')}
+      emptyMessage={isLoading ? t('form.driverSearch.loadingEllipsis') : t('form.driverSearch.noActiveDriversFound')}
+      searchPlaceholder={t('form.driverSearch.searchByNamePhoneEmail')}
       disabled={isLoading}
     />
   );
 }
+
+const STATUS_DISPLAY_KEYS: Record<string, string> = {
+  booked: "booked",
+  picked_up: "pickedUp",
+  returned: "returned",
+  completed: "completed",
+  cancelled: "cancelled",
+};
+
+const DOCUMENT_QUICK_TYPE_KEYS: Record<string, string> = {
+  "Contract (Signed)": "contractSigned",
+  "Damage Report Photo": "damageReportPhoto",
+  "Damage Report PDF": "damageReportPdf",
+  "Invoice": "invoice",
+  "Receipt": "receipt",
+  "Other": "other",
+};
 
 interface ReservationFormProps {
   editMode?: boolean;
@@ -197,6 +216,7 @@ export function ReservationForm({
   onTriggerPickupDialog,
   onTriggerReturnDialog
 }: ReservationFormProps) {
+  const { t } = useTranslation("reservations");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [_, navigate] = useLocation();
@@ -802,8 +822,8 @@ export function ReservationForm({
       
       // Show success toast
       toast({
-        title: "Customer Created",
-        description: `${data.name} has been added and selected for this reservation.`,
+        title: t('form.toasts.customerCreatedTitle'),
+        description: t('form.toasts.customerCreatedDescription', { name: data.name }),
       });
     }, 500); // Small delay to ensure state updates
   };
@@ -872,18 +892,18 @@ export function ReservationForm({
             
             if (convertResponse.ok) {
               toast({
-                title: "Vehicle Registration Updated",
-                description: "Vehicle automatically changed from BV to Opnaam (required for rental - insurance & road tax)",
+                title: t('form.vehicleRegistration.updatedTitle'),
+                description: t('form.vehicleRegistration.updatedDescription'),
               });
-              
+
               // Refresh vehicle data
               invalidateRelatedQueries('vehicles');
             }
           } catch (error) {
             console.error('Failed to convert vehicle from BV to Opnaam:', error);
             toast({
-              title: "Warning",
-              description: "Could not update vehicle registration. Please manually change from BV to Opnaam.",
+              title: t('form.vehicleRegistration.warningTitle'),
+              description: t('form.vehicleRegistration.warningDescription'),
               variant: "destructive",
             });
           }
@@ -941,13 +961,15 @@ export function ReservationForm({
             let attempts = 0;
             let errorMessage =
               code === "INVALID_ADMIN_PASSWORD"
-                ? "Incorrect admin password. Please try again."
+                ? t('form.errors.incorrectAdminPassword')
                 : undefined;
             while (attempts < 3) {
               attempts++;
               const pwd = await promptForAdminPassword({ errorMessage });
               if (!pwd) {
-                throw new Error("Admin password required to edit old reservation");
+                const cancelledErr = new Error(t('form.errors.adminPasswordRequiredError')) as any;
+                cancelledErr.isAdminPasswordCancelled = true;
+                throw cancelledErr;
               }
               response = await sendRequest(pwd);
               if (response.status !== 403) break;
@@ -955,7 +977,7 @@ export function ReservationForm({
                 const c2 = response.clone();
                 const e2 = await c2.json();
                 if (e2?.code !== "INVALID_ADMIN_PASSWORD") break;
-                errorMessage = "Incorrect admin password. Please try again.";
+                errorMessage = t('form.errors.incorrectAdminPassword');
               } catch {
                 break;
               }
@@ -963,7 +985,7 @@ export function ReservationForm({
           }
         } catch (overrideErr) {
           // If we threw above (user cancelled), re-throw to abort save.
-          if (overrideErr instanceof Error && overrideErr.message.includes("Admin password required")) {
+          if ((overrideErr as any)?.isAdminPasswordCancelled) {
             throw overrideErr;
           }
           // Otherwise fall through to normal error handling below.
@@ -972,7 +994,7 @@ export function ReservationForm({
 
       if (!response.ok) {
         // Try to get the error message from the response
-        let errorMessage = "Failed to save reservation";
+        let errorMessage = t('form.errors.failedToSaveReservation');
         try {
           const contentType = response.headers.get("content-type");
           if (contentType && contentType.includes("application/json")) {
@@ -1050,21 +1072,21 @@ export function ReservationForm({
           if (onTriggerPickupDialog) {
             console.log('🔓 Delegating pickup dialog to parent');
             toast({
-              title: "Opening Pickup Dialog",
-              description: "Please complete the pickup details (contract number, mileage, fuel level).",
+              title: t('form.toasts.openingPickupDialogTitle'),
+              description: t('form.toasts.openingPickupDialogDescription'),
             });
             onTriggerPickupDialog(reservationForDialog);
             return; // Parent will handle the dialog
           }
-          
+
           // Fallback to local dialog management
           setPendingDialogReservation(reservationForDialog);
           console.log('🔓 Notifying parent: pickup dialog opening');
           onPickupReturnDialogChange?.(true);
-          
+
           toast({
-            title: "Opening Pickup Dialog",
-            description: "Please complete the pickup details (contract number, mileage, fuel level).",
+            title: t('form.toasts.openingPickupDialogTitle'),
+            description: t('form.toasts.openingPickupDialogDescription'),
           });
           setPickupDialogOpen(true);
           console.log('✅ pickupDialogOpen set to true');
@@ -1073,33 +1095,35 @@ export function ReservationForm({
           if (onTriggerReturnDialog) {
             console.log('🔓 Delegating return dialog to parent');
             toast({
-              title: "Opening Return Dialog",
-              description: "Please complete the return details (mileage, fuel level, damage check).",
+              title: t('form.toasts.openingReturnDialogTitle'),
+              description: t('form.toasts.openingReturnDialogDescription'),
             });
             onTriggerReturnDialog(reservationForDialog);
             return; // Parent will handle the dialog
           }
-          
+
           // Fallback to local dialog management
           setPendingDialogReservation(reservationForDialog);
           console.log('🔓 Notifying parent: return dialog opening');
           onPickupReturnDialogChange?.(true);
-          
+
           toast({
-            title: "Opening Return Dialog",
-            description: "Please complete the return details (mileage, fuel level, damage check).",
+            title: t('form.toasts.openingReturnDialogTitle'),
+            description: t('form.toasts.openingReturnDialogDescription'),
           });
           setReturnDialogOpen(true);
           console.log('✅ returnDialogOpen set to true');
         }
-        
+
         return; // Don't run the onSuccess callback or navigate yet - dialog will handle it
       }
-      
+
       // Show success message (only if no dialog was triggered)
       toast({
-        title: `Reservation ${editMode ? "updated" : "created"} successfully`,
-        description: `Reservation for ${selectedVehicle?.brand} ${selectedVehicle?.model} has been ${editMode ? "updated" : "created"}.`
+        title: editMode ? t('form.toasts.reservationUpdatedTitle') : t('form.toasts.reservationCreatedTitle'),
+        description: editMode
+          ? t('form.toasts.reservationUpdatedDescription', { brand: selectedVehicle?.brand, model: selectedVehicle?.model })
+          : t('form.toasts.reservationCreatedDescription', { brand: selectedVehicle?.brand, model: selectedVehicle?.model }),
       });
       
       invalidateRelatedQueries('reservations');
@@ -1130,14 +1154,16 @@ export function ReservationForm({
       }
       
       toast({
-        title: "Error",
-        description: `Failed to ${editMode ? "update" : "create"} reservation: ${error.message}`,
+        title: t('form.errors.genericTitle'),
+        description: editMode
+          ? t('form.errors.failedToUpdateReservationDescription', { message: error.message })
+          : t('form.errors.failedToCreateReservationDescription', { message: error.message }),
         variant: "destructive",
       });
     },
   });
-  
-  // Update vehicle mileage mutation 
+
+  // Update vehicle mileage mutation
   const updateVehicleMutation = useMutation({
     mutationFn: async (vehicleData: { id: number, departureMileage?: number, currentMileage?: number }) => {
       // Only include properties that are defined
@@ -1156,8 +1182,8 @@ export function ReservationForm({
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: `Failed to update vehicle mileage: ${error.message}`,
+        title: t('form.errors.genericTitle'),
+        description: t('form.errors.failedToUpdateVehicleMileage', { message: error.message }),
         variant: "destructive",
       });
     }
@@ -1219,8 +1245,8 @@ export function ReservationForm({
     } catch (error) {
       console.error("Error in processSubmission:", error);
       toast({
-        title: "Error",
-        description: "An error occurred while processing your request",
+        title: t('form.errors.genericTitle'),
+        description: t('form.errors.processingRequestError'),
         variant: "destructive",
       });
     }
@@ -1267,8 +1293,8 @@ export function ReservationForm({
     } catch (error) {
       console.error("Error in onSubmit:", error);
       toast({
-        title: "Error",
-        description: "An error occurred while processing your request",
+        title: t('form.errors.genericTitle'),
+        description: t('form.errors.processingRequestError'),
         variant: "destructive",
       });
     }
@@ -1286,11 +1312,11 @@ export function ReservationForm({
     <>
     <Card>
       <CardHeader>
-        <CardTitle>{editMode ? "Edit Reservation" : "Create New Reservation"}</CardTitle>
+        <CardTitle>{editMode ? t('form.cardTitleEdit') : t('form.cardTitleCreate')}</CardTitle>
         <CardDescription>
-          {editMode 
-            ? "Update the reservation details below" 
-            : "Enter the details for a new reservation"}
+          {editMode
+            ? t('form.cardDescriptionEdit')
+            : t('form.cardDescriptionCreate')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -1312,9 +1338,9 @@ export function ReservationForm({
           >
             {/* Date Selection Section - Now First */}
             <div className="space-y-6">
-              <div className="text-lg font-medium">1. Select Rental Dates</div>
+              <div className="text-lg font-medium">{t('form.section1Title')}</div>
               <div className="text-sm text-muted-foreground">
-                Choose your rental dates first to see only available vehicles and avoid booking conflicts.
+                {t('form.section1Hint')}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Start Date */}
@@ -1323,11 +1349,11 @@ export function ReservationForm({
                   name="startDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Start Date</FormLabel>
+                      <FormLabel>{t('form.startDateLabel')}</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="date" 
-                          {...field} 
+                        <Input
+                          type="date"
+                          {...field}
                           onChange={(e) => {
                             field.onChange(e);
                             setSelectedStartDate(e.target.value);
@@ -1338,7 +1364,7 @@ export function ReservationForm({
                     </FormItem>
                   )}
                 />
-                
+
                 {/* Open-ended rental checkbox */}
                 <FormField
                   control={form.control}
@@ -1354,10 +1380,10 @@ export function ReservationForm({
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel>
-                          Open-ended rental
+                          {t('form.openEndedLabel')}
                         </FormLabel>
                         <FormDescription>
-                          Check this if the return date is not yet known
+                          {t('form.openEndedHint')}
                         </FormDescription>
                       </div>
                     </FormItem>
@@ -1371,11 +1397,11 @@ export function ReservationForm({
                     name="endDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>End Date</FormLabel>
+                        <FormLabel>{t('form.endDateLabel')}</FormLabel>
                         <FormControl>
-                          <Input 
+                          <Input
                             data-testid="input-end-date"
-                            type="date" 
+                            type="date"
                             {...field}
                           />
                         </FormControl>
@@ -1393,7 +1419,7 @@ export function ReservationForm({
                   name="startTime"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Pickup Time <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                      <FormLabel>{t('form.pickupTimeLabel')} <span className="text-muted-foreground font-normal">{t('form.optionalSuffix')}</span></FormLabel>
                       <FormControl>
                         <Input
                           type="time"
@@ -1402,7 +1428,7 @@ export function ReservationForm({
                           value={field.value ?? ""}
                         />
                       </FormControl>
-                      <FormDescription>Lets same-day handovers with another rental be scheduled without a false conflict</FormDescription>
+                      <FormDescription>{t('form.pickupTimeHint')}</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -1415,7 +1441,7 @@ export function ReservationForm({
                     name="endTime"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Return Time <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                        <FormLabel>{t('form.returnTimeLabel')} <span className="text-muted-foreground font-normal">{t('form.optionalSuffix')}</span></FormLabel>
                         <FormControl>
                           <Input
                             type="time"
@@ -1435,9 +1461,9 @@ export function ReservationForm({
               <div className="text-sm text-muted-foreground">
                 {startDateWatch && rentalDuration !== null && (
                   <div className="flex items-center gap-2">
-                    <span>Duration:</span>
+                    <span>{t('form.durationLabel')}</span>
                     <Badge variant="outline" className="text-xs">
-                      {rentalDuration === "Open-ended" ? "Open-ended" : `${rentalDuration} day${rentalDuration !== 1 ? 's' : ''}`}
+                      {rentalDuration === "Open-ended" ? t('form.openEndedBadge') : t('form.dayCount', { count: rentalDuration as number })}
                     </Badge>
                   </div>
                 )}
@@ -1450,11 +1476,11 @@ export function ReservationForm({
               <div className="flex justify-between items-center">
                 <div>
                   <div className="text-lg font-medium">
-                    {actualVehicleId ? "2. Selected Vehicle & Customer" : "2. Select Vehicle and Customer"}
+                    {actualVehicleId ? t('form.section2TitleSelected') : t('form.section2TitleSelect')}
                   </div>
                   {!showAllVehicles && startDateWatch && (
                     <div className="text-sm text-green-600 mt-1">
-                      Showing only available vehicles for your selected dates
+                      {t('form.showingAvailableVehiclesHint')}
                     </div>
                   )}
                 </div>
@@ -1466,12 +1492,12 @@ export function ReservationForm({
                       onCheckedChange={(checked) => setShowAllVehicles(checked === true)}
                     />
                     <label htmlFor="show-all-vehicles" className="text-sm text-muted-foreground cursor-pointer">
-                      Show all vehicles (for long-term rentals)
+                      {t('form.showAllVehiclesLabel')}
                     </label>
                   </div>
                 )}
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Vehicle Selection - Show read-only or selection based on preSelectedVehicleId */}
                 <FormField
@@ -1482,14 +1508,14 @@ export function ReservationForm({
                       {actualVehicleId ? (
                         // If vehicle is pre-selected, show as read-only with simple label
                         <>
-                          <FormLabel>Vehicle</FormLabel>
+                          <FormLabel>{t('form.vehicleLabel')}</FormLabel>
                           <ReadonlyVehicleDisplay vehicleId={actualVehicleId} />
                         </>
                       ) : (
                         // Otherwise, show selection UI with buttons inline
                         <>
                           <div className="flex justify-between items-center">
-                            <FormLabel>Vehicle</FormLabel>
+                            <FormLabel>{t('form.vehicleLabel')}</FormLabel>
                             <div className="flex gap-2">
                               {/* Edit Vehicle Button - only show if vehicle is selected */}
                               {vehicleIdWatch && (
@@ -1497,14 +1523,14 @@ export function ReservationForm({
                                   <DialogTrigger asChild>
                                     <Button variant="outline" size="sm">
                                       <Edit className="h-3.5 w-3.5 mr-1" />
-                                      Edit
+                                      {t('form.editButton')}
                                     </Button>
                                   </DialogTrigger>
                                 <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
                                   <DialogHeader>
-                                    <DialogTitle>Edit Vehicle</DialogTitle>
+                                    <DialogTitle>{t('form.editVehicleTitle')}</DialogTitle>
                                     <DialogDescription>
-                                      Edit the details of the selected vehicle
+                                      {t('form.editVehicleDescription')}
                                     </DialogDescription>
                                   </DialogHeader>
                                   {selectedVehicle && (
@@ -1528,14 +1554,14 @@ export function ReservationForm({
                                           
                                           // Show success message
                                           toast({
-                                            title: "Vehicle Updated",
-                                            description: `${updatedVehicle.brand} ${updatedVehicle.model} has been successfully updated.`,
+                                            title: t('form.toasts.vehicleUpdatedTitle'),
+                                            description: t('form.toasts.vehicleUpdatedDescription', { brand: updatedVehicle.brand, model: updatedVehicle.model }),
                                           });
                                         } catch (error) {
                                           console.error("Failed to update vehicle:", error);
                                           toast({
-                                            title: "Error",
-                                            description: "Failed to update vehicle. Please try again.",
+                                            title: t('form.errors.genericTitle'),
+                                            description: t('form.toasts.vehicleUpdateFailedDescription'),
                                             variant: "destructive",
                                           });
                                         }
@@ -1545,38 +1571,38 @@ export function ReservationForm({
                                 </DialogContent>
                               </Dialog>
                             )}
-                            
+
                             <Dialog open={vehicleDialogOpen} onOpenChange={setVehicleDialogOpen}>
                               <DialogTrigger asChild>
                                 <Button variant="outline" size="sm">
                                   <PlusCircle className="h-3.5 w-3.5 mr-1" />
-                                  Add New
+                                  {t('form.addNewButton')}
                                 </Button>
                               </DialogTrigger>
                               <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
                                 <DialogHeader>
-                                  <DialogTitle>Add New Vehicle</DialogTitle>
+                                  <DialogTitle>{t('form.addNewVehicleTitle')}</DialogTitle>
                                   <DialogDescription>
-                                    Create a new vehicle to add to the reservation
+                                    {t('form.addNewVehicleDescription')}
                                   </DialogDescription>
                                 </DialogHeader>
                                 <div className="py-4">
                                   {/* Import the VehicleQuickForm component */}
-                                  <VehicleQuickForm 
+                                  <VehicleQuickForm
                                     onSuccess={async (vehicle) => {
                                       // Refresh the vehicles list to include the new vehicle
                                       await refetchVehicles();
-                                      
+
                                       // Set the new vehicle in the form
                                       form.setValue("vehicleId", vehicle.id);
-                                      
+
                                       // Close the dialog
                                       setVehicleDialogOpen(false);
-                                      
+
                                       // Show success message
                                       toast({
-                                        title: "Vehicle Added",
-                                        description: `${vehicle.brand} ${vehicle.model} has been added to your fleet and selected for this reservation.`,
+                                        title: t('form.toasts.vehicleAddedTitle'),
+                                        description: t('form.toasts.vehicleAddedDescription', { brand: vehicle.brand, model: vehicle.model }),
                                       });
                                     }}
                                     onCancel={() => setVehicleDialogOpen(false)}
@@ -1606,7 +1632,7 @@ export function ReservationForm({
                                   }
                                 }
                               }}
-                              placeholder="Search and select a vehicle..."
+                              placeholder={t('form.searchSelectVehiclePlaceholder')}
                               recentVehicleIds={recentVehicles}
                             />
                           </FormControl>
@@ -1635,8 +1661,8 @@ export function ReservationForm({
                                         ? "bg-red-50 text-red-800 border-red-200 text-xs"
                                         : "bg-blue-50 text-blue-800 border-blue-200 text-xs"}
                                     >
-                                      APK: {new Date(selectedVehicle.apkDate).toLocaleDateString()}
-                                      {apkExpired && " (expired)"}
+                                      {t('form.apkLabel', { date: new Date(selectedVehicle.apkDate).toLocaleDateString() })}
+                                      {apkExpired && t('form.apkExpiredSuffix')}
                                     </Badge>
                                   );
                                 })()}
@@ -1645,8 +1671,7 @@ export function ReservationForm({
                                 <div className="mt-2 flex items-start gap-2 bg-red-50 border border-red-200 text-red-800 rounded-md p-2 text-xs">
                                   <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
                                   <span>
-                                    This vehicle's APK (roadworthiness inspection) expired on{" "}
-                                    {new Date(selectedVehicle.apkDate).toLocaleDateString()}. Confirm it's safe and legal to rent out before proceeding.
+                                    {t('form.apkExpiredWarning', { date: new Date(selectedVehicle.apkDate).toLocaleDateString() })}
                                   </span>
                                 </div>
                               )}
@@ -1667,7 +1692,7 @@ export function ReservationForm({
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <div className="flex justify-between items-center">
-                        <FormLabel>Customer</FormLabel>
+                        <FormLabel>{t('form.customerLabel')}</FormLabel>
                         <div className="flex gap-2">
                           {/* Edit Customer Button - only show if customer is selected */}
                           {customerIdWatch && (
@@ -1675,34 +1700,34 @@ export function ReservationForm({
                               <DialogTrigger asChild>
                                 <Button variant="outline" size="sm">
                                   <Edit className="h-3.5 w-3.5 mr-1" />
-                                  Edit
+                                  {t('form.editButton')}
                                 </Button>
                               </DialogTrigger>
                               <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
                                 <DialogHeader>
-                                  <DialogTitle>Edit Customer</DialogTitle>
+                                  <DialogTitle>{t('form.editCustomerTitle')}</DialogTitle>
                                   <DialogDescription>
-                                    Edit the details of the selected customer
+                                    {t('form.editCustomerDescription')}
                                   </DialogDescription>
                                 </DialogHeader>
                                 {selectedCustomer && (
-                                  <CustomerForm 
+                                  <CustomerForm
                                     initialData={selectedCustomer}
                                     editMode={true}
                                     redirectToList={false}
                                     onSuccess={async (updatedCustomer) => {
                                       // Refresh customers list to show updated data
                                       invalidateRelatedQueries('customers');
-                                      
+
                                       // The customer selector will automatically show updated data after cache refresh
-                                      
+
                                       // Close the dialog
                                       setCustomerEditDialogOpen(false);
-                                      
+
                                       // Show success message
                                       toast({
-                                        title: "Customer Updated",
-                                        description: `${updatedCustomer.name} has been successfully updated.`,
+                                        title: t('form.toasts.customerUpdatedTitle'),
+                                        description: t('form.toasts.customerUpdatedDescription', { name: updatedCustomer.name }),
                                       });
                                     }}
                                   />
@@ -1710,24 +1735,24 @@ export function ReservationForm({
                               </DialogContent>
                             </Dialog>
                           )}
-                          
+
                           <Dialog open={customerDialogOpen} onOpenChange={setCustomerDialogOpen}>
                             <DialogTrigger asChild>
                               <Button variant="outline" size="sm">
                                 <PlusCircle className="h-3.5 w-3.5 mr-1" />
-                                Add New
+                                {t('form.addNewButton')}
                               </Button>
                             </DialogTrigger>
                           <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
                             <DialogHeader>
-                              <DialogTitle>Add New Customer</DialogTitle>
+                              <DialogTitle>{t('form.addNewCustomerTitle')}</DialogTitle>
                               <DialogDescription>
-                                Create a new customer to add to the reservation
+                                {t('form.addNewCustomerDescription')}
                               </DialogDescription>
                             </DialogHeader>
-                            <CustomerForm 
-                              onSuccess={handleCustomerCreated} 
-                              redirectToList={false} 
+                            <CustomerForm
+                              onSuccess={handleCustomerCreated}
+                              redirectToList={false}
                             />
                           </DialogContent>
                         </Dialog>
@@ -1746,8 +1771,8 @@ export function ReservationForm({
                               shouldValidate: true
                             });
                           }}
-                          placeholder="Search and select a customer..."
-                          searchPlaceholder="Search by name, phone, or city..."
+                          placeholder={t('form.searchSelectCustomerPlaceholder')}
+                          searchPlaceholder={t('form.searchByNamePhoneCity')}
                           groups={false}
                           recentValues={recentCustomers}
                         />
@@ -1771,7 +1796,7 @@ export function ReservationForm({
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                 <circle cx="12" cy="7" r="4"></circle>
                               </svg>
-                              <span className="text-muted-foreground">Company:</span>
+                              <span className="text-muted-foreground">{t('form.companyLabel')}</span>
                               <span>{selectedCustomer.companyName}</span>
                             </div>
                           )}
@@ -1823,8 +1848,8 @@ export function ReservationForm({
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
                         <div className="flex justify-between items-center">
-                          <FormLabel>Authorized Driver (Optional)</FormLabel>
-                          <DriverDialog 
+                          <FormLabel>{t('form.authorizedDriverLabel')}</FormLabel>
+                          <DriverDialog
                             customerId={Number(customerIdWatch)}
                             onSuccess={async (createdDriverId) => {
                               // Refetch drivers to get the updated list
@@ -1842,7 +1867,7 @@ export function ReservationForm({
                           >
                             <Button type="button" variant="outline" size="sm" data-testid="button-quick-add-driver">
                               <PlusCircle className="h-3.5 w-3.5 mr-1" />
-                              Quick Add Driver
+                              {t('form.quickAddDriverButton')}
                             </Button>
                           </DriverDialog>
                         </div>
@@ -1867,7 +1892,7 @@ export function ReservationForm({
                               <div className="font-medium flex items-center gap-2">
                                 <span>{selectedDriver.displayName || `${selectedDriver.firstName} ${selectedDriver.lastName}`.trim()}</span>
                                 {selectedDriver.isPrimaryDriver && (
-                                  <Badge variant="default" className="text-xs">Primary Driver</Badge>
+                                  <Badge variant="default" className="text-xs">{t('form.primaryDriverBadge')}</Badge>
                                 )}
                               </div>
                               <DriverDialog
@@ -1879,7 +1904,7 @@ export function ReservationForm({
                               >
                                 <Button type="button" variant="ghost" size="sm" className="h-6 px-2">
                                   <Edit className="h-3 w-3 mr-1" />
-                                  Edit
+                                  {t('form.editButton')}
                                 </Button>
                               </DriverDialog>
                             </div>
@@ -1887,7 +1912,7 @@ export function ReservationForm({
                               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
                               </svg>
-                              <span>{selectedDriver.phone || 'No phone'}</span>
+                              <span>{selectedDriver.phone || t('form.noPhone')}</span>
                             </div>
                             {selectedDriver.email && (
                               <div className="flex items-center gap-1 text-muted-foreground mt-1">
@@ -1904,7 +1929,7 @@ export function ReservationForm({
                                   <rect width="20" height="14" x="2" y="5" rx="2"/>
                                   <line x1="2" x2="22" y1="10" y2="10"/>
                                 </svg>
-                                <span className="text-muted-foreground">License:</span>
+                                <span className="text-muted-foreground">{t('form.licenseLabel')}</span>
                                 <span>{selectedDriver.driverLicenseNumber}</span>
                               </div>
                             )}
@@ -1928,7 +1953,7 @@ export function ReservationForm({
                   name="startDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Start Date</FormLabel>
+                      <FormLabel>{t('form.startDateLabel')}</FormLabel>
                       <FormControl>
                         <Input 
                           type="date" 
@@ -1960,10 +1985,10 @@ export function ReservationForm({
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel>
-                          Open-ended rental
+                          {t('form.openEndedLabel')}
                         </FormLabel>
                         <FormDescription>
-                          Check this if the return date is not yet known
+                          {t('form.openEndedHint')}
                         </FormDescription>
                       </div>
                     </FormItem>
@@ -1977,7 +2002,7 @@ export function ReservationForm({
                     name="endDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>End Date</FormLabel>
+                        <FormLabel>{t('form.endDateLabel')}</FormLabel>
                         <FormControl>
                           <Input 
                             data-testid="input-end-date"
@@ -1994,12 +2019,12 @@ export function ReservationForm({
                 
                 {/* Duration Indicator */}
                 <div className="flex flex-col justify-end">
-                  <FormLabel className="mb-2 opacity-0">Duration</FormLabel>
+                  <FormLabel className="mb-2 opacity-0">{t('form.durationLabel')}</FormLabel>
                   <div className="border rounded-md h-10 flex items-center px-3 bg-muted">
                     <span className="font-medium">{rentalDuration ?? '—'}</span>
                     {typeof rentalDuration === 'number' && (
                       <span className="ml-1 text-muted-foreground">
-                        {rentalDuration === 1 ? "day" : "days"}
+                        {t('form.dayUnit', { count: rentalDuration })}
                       </span>
                     )}
                   </div>
@@ -2009,30 +2034,30 @@ export function ReservationForm({
               
               {/* Date Summary - Read-only display of dates selected above */}
               <div className="bg-muted/30 rounded-lg p-4 space-y-2">
-                <div className="text-sm font-medium text-muted-foreground">Rental Period (selected above):</div>
+                <div className="text-sm font-medium text-muted-foreground">{t('form.rentalPeriodSelectedAboveLabel')}</div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                   <div>
-                    <span className="font-medium">Start Date:</span> {startDateWatch || 'Not selected'}
+                    <span className="font-medium">{t('form.startDateLabel')}:</span> {startDateWatch || t('form.notSelectedValue')}
                   </div>
                   <div>
-                    <span className="font-medium">End Date:</span> {isOpenEndedWatch ? 'Open-ended' : (endDateWatch || 'Not selected')}
+                    <span className="font-medium">{t('form.endDateLabel')}:</span> {isOpenEndedWatch ? t('form.openEndedBadge') : (endDateWatch || t('form.notSelectedValue'))}
                   </div>
                   <div>
-                    <span className="font-medium">Duration:</span> {rentalDuration ?? '—'}
-                    {typeof rentalDuration === 'number' && (
-                      <span className="ml-1">
-                        {rentalDuration === 1 ? "day" : "days"}
-                      </span>
-                    )}
+                    <span className="font-medium">{t('form.durationLabel')}</span>{" "}
+                    {typeof rentalDuration === 'number'
+                      ? t('form.dayCount', { count: rentalDuration })
+                      : rentalDuration === 'Open-ended'
+                      ? t('form.openEndedBadge')
+                      : (rentalDuration ?? '—')}
                   </div>
                 </div>
               </div>
               <Separator />
             </div>
-            
+
             {/* Status and Price Section */}
             <div className="space-y-6">
-              <div className="text-lg font-medium">3. Reservation Details</div>
+              <div className="text-lg font-medium">{t('form.section3Title')}</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Status - Made more prominent */}
                 <FormField
@@ -2040,37 +2065,37 @@ export function ReservationForm({
                   name="status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base font-medium">Reservation Status</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
+                      <FormLabel className="text-base font-medium">{t('form.reservationStatusLabel')}</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
                         defaultValue={field.value}
                         value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger className="h-12 text-base">
-                            <SelectValue placeholder="Select status" />
+                            <SelectValue placeholder={t('form.selectStatusPlaceholder')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="booked">Booked</SelectItem>
-                          <SelectItem value="picked_up">Picked Up</SelectItem>
+                          <SelectItem value="booked">{t('form.statuses.booked')}</SelectItem>
+                          <SelectItem value="picked_up">{t('form.statuses.pickedUp')}</SelectItem>
                           {editMode && (
                             <>
-                              <SelectItem value="returned">Returned</SelectItem>
-                              <SelectItem value="completed">Completed</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                              <SelectItem value="returned">{t('form.statuses.returned')}</SelectItem>
+                              <SelectItem value="completed">{t('form.statuses.completed')}</SelectItem>
+                              <SelectItem value="cancelled">{t('form.statuses.cancelled')}</SelectItem>
                             </>
                           )}
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Update the reservation status as needed
+                        {t('form.statusUpdateHint')}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
                 {/* Contract Number - editable when reservation has been picked up */}
                 {editMode && (currentStatus === "picked_up" || currentStatus === "completed") && (
                   <FormField
@@ -2078,11 +2103,11 @@ export function ReservationForm({
                     name="contractNumber"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">Contract Number</FormLabel>
+                        <FormLabel className="text-base font-medium">{t('form.contractNumberLabel')}</FormLabel>
                         <FormControl>
                           <Input
                             type="text"
-                            placeholder="Enter contract number"
+                            placeholder={t('form.contractNumberPlaceholder')}
                             {...field}
                             value={field.value ?? ""}
                             className="h-12 text-base"
@@ -2090,7 +2115,7 @@ export function ReservationForm({
                           />
                         </FormControl>
                         <FormDescription>
-                          Edit the contract number assigned at pickup. Must be unique.
+                          {t('form.contractNumberHint')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -2103,13 +2128,13 @@ export function ReservationForm({
                   <div className="col-span-1">
                     <div className="flex flex-col space-y-1.5">
                       <label htmlFor="departureMileage" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        Mileage When Returned
+                        {t('form.mileageWhenReturnedLabel')}
                       </label>
                       <input
                         id="departureMileage"
                         type="number"
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        placeholder="Enter the final mileage"
+                        placeholder={t('form.mileageWhenReturnedPlaceholder')}
                         value={departureMileage || ""}
                         onChange={(e) => {
                           const value = parseInt(e.target.value) || undefined;
@@ -2118,7 +2143,7 @@ export function ReservationForm({
                         }}
                       />
                       <p className="text-[0.8rem] text-muted-foreground">
-                        Enter the vehicle's odometer reading when it was returned
+                        {t('form.mileageWhenReturnedHint')}
                       </p>
                     </div>
                   </div>
@@ -2130,44 +2155,44 @@ export function ReservationForm({
                     name="fuelLevelReturn"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Fuel Level at Return</FormLabel>
-                        <Select 
+                        <FormLabel>{t('form.fuelLevelAtReturnLabel')}</FormLabel>
+                        <Select
                           onValueChange={(value) => {
                             const newValue = value === "not_recorded" ? undefined : value;
                             field.onChange(newValue);
                             setFuelLevelReturn(newValue);
-                          }} 
+                          }}
                           value={field.value || "not_recorded"}
                         >
                           <FormControl>
                             <SelectTrigger data-testid="select-fuel-level-return">
-                              <SelectValue placeholder="Select fuel level" />
+                              <SelectValue placeholder={t('form.selectFuelLevelPlaceholder')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="not_recorded">Not recorded</SelectItem>
-                            <SelectItem value="Empty">Empty</SelectItem>
+                            <SelectItem value="not_recorded">{t('form.notRecordedOption')}</SelectItem>
+                            <SelectItem value="Empty">{t('pickupReturn.common.fuelEmpty')}</SelectItem>
                             <SelectItem value="1/4">1/4</SelectItem>
                             <SelectItem value="1/2">1/2</SelectItem>
                             <SelectItem value="3/4">3/4</SelectItem>
-                            <SelectItem value="Full">Full</SelectItem>
+                            <SelectItem value="Full">{t('pickupReturn.common.fuelFull')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormDescription>
-                          Record the fuel level when vehicle was returned
+                          {t('form.fuelLevelReturnHint')}
                         </FormDescription>
                       </FormItem>
                     )}
                   />
                 )}
-                
+
                 {currentStatus === "completed" && (
                   <FormField
                     control={form.control}
                     name="fuelCost"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Fuel Cost (€)</FormLabel>
+                        <FormLabel>{t('form.fuelCostLabel')}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -2183,26 +2208,26 @@ export function ReservationForm({
                           />
                         </FormControl>
                         <FormDescription>
-                          Fuel cost charged to customer (if applicable)
+                          {t('form.fuelCostHint')}
                         </FormDescription>
                       </FormItem>
                     )}
                   />
                 )}
-                
+
                 {/* Price */}
                 <FormField
                   control={form.control}
                   name="totalPrice"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Total Price (€) <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                      <FormLabel>{t('form.totalPriceLabel')} <span className="text-muted-foreground font-normal">{t('form.optionalSuffix')}</span></FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01" 
-                          min="0" 
-                          placeholder="0.00" 
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
                           {...field}
                           onChange={(e) => {
                             // Once the user edits this field directly, stop auto-filling it
@@ -2219,10 +2244,10 @@ export function ReservationForm({
                       </FormControl>
                       <FormDescription>
                         {typeof rentalDuration === 'number' && selectedVehicle?.dailyPrice
-                          ? `Auto-filled from the €${Number(selectedVehicle.dailyPrice).toFixed(2)}/day rate for ${rentalDuration} day${rentalDuration !== 1 ? 's' : ''} — edit to override`
+                          ? t('form.totalPriceAutoFilledHint', { price: Number(selectedVehicle.dailyPrice).toFixed(2), dayText: t('form.dayCount', { count: rentalDuration }) })
                           : typeof rentalDuration === 'number'
-                          ? `Enter the total price for the ${rentalDuration}-day rental`
-                          : "Enter the total price for this open-ended rental"}
+                          ? t('form.totalPriceEnterForDaysHint', { dayText: t('form.dayCount', { count: rentalDuration }) })
+                          : t('form.totalPriceEnterOpenEndedHint')}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -2246,15 +2271,15 @@ export function ReservationForm({
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>Delivery Service Required</FormLabel>
+                        <FormLabel>{t('form.deliveryServiceLabel')}</FormLabel>
                         <FormDescription>
-                          Vehicle will be delivered to customer's address
+                          {t('form.deliveryServiceHint')}
                         </FormDescription>
                       </div>
                     </FormItem>
                   )}
                 />
-                
+
                 {deliveryRequired && (
                   <>
                     <FormField
@@ -2262,34 +2287,34 @@ export function ReservationForm({
                       name="deliveryAddress"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Delivery Address</FormLabel>
+                          <FormLabel>{t('form.deliveryAddressLabel')}</FormLabel>
                           <FormControl>
-                            <Input placeholder="Street address" {...field} value={field.value || ""} data-testid="input-delivery-address" />
+                            <Input placeholder={t('form.deliveryAddressPlaceholder')} {...field} value={field.value || ""} data-testid="input-delivery-address" />
                           </FormControl>
                         </FormItem>
                       )}
                     />
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
                         name="deliveryCity"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>City</FormLabel>
+                            <FormLabel>{t('form.cityLabel')}</FormLabel>
                             <FormControl>
-                              <Input placeholder="City" {...field} value={field.value || ""} data-testid="input-delivery-city" />
+                              <Input placeholder={t('form.cityPlaceholder')} {...field} value={field.value || ""} data-testid="input-delivery-city" />
                             </FormControl>
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="deliveryPostalCode"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Postal Code</FormLabel>
+                            <FormLabel>{t('form.postalCodeLabel')}</FormLabel>
                             <FormControl>
                               <Input placeholder="1234 AB" {...field} value={field.value || ""} data-testid="input-delivery-postal-code" />
                             </FormControl>
@@ -2297,13 +2322,13 @@ export function ReservationForm({
                         )}
                       />
                     </div>
-                    
+
                     <FormField
                       control={form.control}
                       name="deliveryFee"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Delivery Fee (€)</FormLabel>
+                          <FormLabel>{t('form.deliveryFeeLabel')}</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
@@ -2322,16 +2347,16 @@ export function ReservationForm({
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="deliveryNotes"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Delivery Notes <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                          <FormLabel>{t('form.deliveryNotesLabel')} <span className="text-muted-foreground font-normal">{t('form.optionalSuffix')}</span></FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Special delivery instructions..."
+                              placeholder={t('form.deliveryNotesPlaceholder')}
                               {...field}
                               value={field.value || ""}
                               data-testid="textarea-delivery-notes"
@@ -2348,13 +2373,13 @@ export function ReservationForm({
               {form.watch("vehicleId") && (
                 <div className="space-y-3 border rounded-lg p-4 bg-blue-50">
                   <label className="text-sm font-semibold text-gray-800">
-                    {initialData?.type === 'maintenance_block' ? '🔧 Service Documentation' : '📄 Contract & Documents'}
+                    {initialData?.type === 'maintenance_block' ? t('form.documentsSectionTitleService') : t('form.documentsSectionTitleContract')}
                   </label>
-                  
+
                   {/* Quick Upload Buttons */}
                   <div className="flex flex-wrap gap-2 p-3 bg-white rounded-md border border-gray-200">
                     <span className="text-xs text-gray-600 w-full mb-1 font-medium">
-                      {!createdReservationId && !editMode ? 'Quick Upload (available after creating reservation):' : 'Quick Upload:'}
+                      {!createdReservationId && !editMode ? t('form.quickUploadHintBeforeCreate') : t('form.quickUploadHint')}
                     </span>
                     {(initialData?.type === 'maintenance_block' ? [
                       { type: 'Damage Report Photo', accept: '.jpg,.jpeg,.png' },
@@ -2379,8 +2404,8 @@ export function ReservationForm({
                           
                           if (!reservationId) {
                             toast({
-                              title: "Create reservation first",
-                              description: "Please save the reservation before uploading documents.",
+                              title: t('form.toasts.createReservationFirstTitle'),
+                              description: t('form.toasts.createReservationFirstDescription'),
                             });
                             return;
                           }
@@ -2412,14 +2437,14 @@ export function ReservationForm({
                               
                               invalidateByPrefix(`/api/documents/reservation/${reservationId}`);
                               toast({
-                                title: "Success",
-                                description: `${type} uploaded successfully`,
+                                title: t('form.toasts.uploadSuccessTitle'),
+                                description: t('form.toasts.uploadSuccessDescription', { type: t(`form.docTypes.${DOCUMENT_QUICK_TYPE_KEYS[type]}`, { defaultValue: type }) }),
                               });
                             } catch (error) {
                               console.error('Upload failed:', error);
                               toast({
-                                title: "Error",
-                                description: "Failed to upload document",
+                                title: t('form.toasts.uploadErrorTitle'),
+                                description: t('form.toasts.uploadErrorDescription'),
                                 variant: "destructive",
                               });
                             } finally {
@@ -2431,15 +2456,15 @@ export function ReservationForm({
                         disabled={uploadingDoc}
                         className="text-xs"
                       >
-                        + {type}
+                        + {t(`form.docTypes.${DOCUMENT_QUICK_TYPE_KEYS[type]}`, { defaultValue: type })}
                       </Button>
                     ))}
                   </div>
-                  
+
                   {/* Uploaded Documents */}
                   {reservationDocuments && reservationDocuments.length > 0 && (
                     <div className="space-y-2">
-                      <span className="text-xs font-semibold text-gray-700">Uploaded Documents:</span>
+                      <span className="text-xs font-semibold text-gray-700">{t('form.uploadedDocumentsLabel')}</span>
                       <div className="flex flex-wrap gap-2">
                         {(() => {
                           const contractDocs = reservationDocuments.filter(d => 
@@ -2483,7 +2508,7 @@ export function ReservationForm({
                                   }
                                 }}
                                 className="flex items-center gap-2 pr-8"
-                                title={doc.documentType || 'Document'}
+                                title={doc.documentType || t('form.documentPreviewTitleFallback')}
                               >
                                 {isPdf ? (
                                   <FileText className="h-4 w-4 text-red-600" />
@@ -2495,7 +2520,7 @@ export function ReservationForm({
                                 <div className="text-left">
                                   <div className="text-xs font-semibold truncate max-w-[150px]">{doc.documentType}</div>
                                   <div className="text-[10px] text-gray-500 truncate max-w-[150px]">
-                                    {doc.documentType?.startsWith('Damage Check') 
+                                    {doc.documentType?.startsWith('Damage Check')
                                       ? doc.fileName.replace('.pdf', '').replace('.PDF', '')
                                       : doc.fileName.split('.').pop()?.toUpperCase() || 'FILE'
                                     }
@@ -2510,7 +2535,7 @@ export function ReservationForm({
                                   setDeleteDocDialogOpen(true);
                                 }}
                                 className="absolute top-1 right-1 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-opacity"
-                                title="Delete document"
+                                title={t('form.deleteDocumentTooltip')}
                               >
                                 <X className="h-3 w-3" />
                               </button>
@@ -2528,13 +2553,13 @@ export function ReservationForm({
                 <div className="space-y-3 border rounded-lg p-4 bg-orange-50">
                   <label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                     <ClipboardCheck className="h-4 w-4" />
-                    🔍 Damage Checks
+                    {t('form.damageChecksSectionTitle')}
                   </label>
-                  
+
                   {/* Reservation's Damage Checks */}
                   {activeReservationId && reservationDamageChecks && reservationDamageChecks.length > 0 && (
                     <div className="space-y-2">
-                      <span className="text-xs font-semibold text-gray-700">This Reservation:</span>
+                      <span className="text-xs font-semibold text-gray-700">{t('form.thisReservationLabel')}</span>
                       <div className="flex flex-wrap gap-2">
                         {reservationDamageChecks.map((check) => (
                           <div key={check.id} className="relative group">
@@ -2560,9 +2585,9 @@ export function ReservationForm({
                             >
                               <Eye className="h-4 w-4 text-orange-600" />
                               <div className="text-left">
-                                <div className="text-xs font-semibold">{check.checkType === 'pickup' ? 'Pickup' : 'Return'} Check</div>
+                                <div className="text-xs font-semibold">{check.checkType === 'pickup' ? t('form.pickupCheckLabel') : t('form.returnCheckLabel')}</div>
                                 <div className="text-[10px] text-gray-500">
-                                  {new Date(check.checkDate).toLocaleDateString()} • {check.mileage ? `${check.mileage} km` : 'No mileage'}
+                                  {new Date(check.checkDate).toLocaleDateString()} • {check.mileage ? t('form.mileageKm', { mileage: check.mileage }) : t('form.noMileage')}
                                 </div>
                               </div>
                             </Button>
@@ -2571,11 +2596,11 @@ export function ReservationForm({
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Recent Damage Checks for Vehicle + Customer */}
                   {recentDamageChecks && recentDamageChecks.length > 0 && (
                     <div className="space-y-2">
-                      <span className="text-xs font-semibold text-gray-700">Recent History (Vehicle + Customer):</span>
+                      <span className="text-xs font-semibold text-gray-700">{t('form.recentHistoryLabel')}</span>
                       <div className="flex flex-wrap gap-2">
                         {recentDamageChecks.map((check) => (
                           <div key={check.id} className="relative">
@@ -2601,7 +2626,7 @@ export function ReservationForm({
                             >
                               <Eye className="h-4 w-4 text-gray-600" />
                               <div className="text-left">
-                                <div className="text-xs">{check.checkType === 'pickup' ? 'Pickup' : 'Return'}</div>
+                                <div className="text-xs">{check.checkType === 'pickup' ? t('form.pickupLabel') : t('form.returnLabel')}</div>
                                 <div className="text-[10px] text-gray-500">
                                   {new Date(check.checkDate).toLocaleDateString()}
                                 </div>
@@ -2612,9 +2637,9 @@ export function ReservationForm({
                       </div>
                     </div>
                   )}
-                  
+
                   {activeReservationId && reservationDamageChecks && reservationDamageChecks.length === 0 && (
-                    <p className="text-xs text-gray-600 italic">No damage checks yet for this reservation. Click "Create Damage Check" below to add one.</p>
+                    <p className="text-xs text-gray-600 italic">{t('form.noDamageChecksYetHint')}</p>
                   )}
                 </div>
               )}
@@ -2625,11 +2650,11 @@ export function ReservationForm({
                 name="notes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Notes</FormLabel>
+                    <FormLabel>{t('form.notesLabel')}</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Add any additional notes or requirements..." 
-                        className="min-h-[100px]" 
+                      <Textarea
+                        placeholder={t('form.notesPlaceholder')}
+                        className="min-h-[100px]"
                         {...field}
                         value={field.value || ""}
                       />
@@ -2639,22 +2664,22 @@ export function ReservationForm({
                 )}
               />
             </div>
-            
+
             {/* Success message after creating reservation */}
             {!editMode && createdReservationId && (
               <div className="p-4 bg-green-50 border border-green-200 rounded-md">
                 <div className="flex items-start gap-3">
                   <Check className="h-5 w-5 text-green-600 mt-0.5" />
                   <div>
-                    <h4 className="font-semibold text-green-800">Reservation Created Successfully!</h4>
+                    <h4 className="font-semibold text-green-800">{t('form.reservationCreatedSuccessTitle')}</h4>
                     <p className="text-sm text-green-700 mt-1">
-                      The unsigned contract has been generated. You can now upload additional documents using the section above.
+                      {t('form.reservationCreatedSuccessDescription')}
                     </p>
                   </div>
                 </div>
               </div>
             )}
-            
+
             {/* Submit Button */}
             <div className="flex flex-col gap-4">
 
@@ -2670,25 +2695,25 @@ export function ReservationForm({
                     }
                   }}
                 >
-                  {createdReservationId || editMode ? "Close" : "Cancel"}
+                  {createdReservationId || editMode ? t('form.closeButton') : t('form.cancelButton')}
                 </Button>
-                
+
                 {/* Submit button - only show when creating new reservation or in edit mode, hide after creation */}
                 {(!createdReservationId || editMode) && (
-                  <Button 
+                  <Button
                     type="submit"
                     disabled={createReservationMutation.isPending || hasOverlap}
                     data-testid="button-submit-reservation"
                   >
-                    {createReservationMutation.isPending 
-                      ? "Saving..." 
-                      : editMode ? "Update Reservation" : "Create Reservation"
+                    {createReservationMutation.isPending
+                      ? t('form.savingButton')
+                      : editMode ? t('form.updateReservationButton') : t('form.createReservationButton')
                     }
                   </Button>
                 )}
               </div>
             </div>
-            
+
             {/* Booking Conflict Warning */}
             {hasOverlap && (
               <div className="p-4 bg-destructive/10 border border-destructive rounded-md flex items-center gap-2 text-destructive mt-4">
@@ -2697,7 +2722,7 @@ export function ReservationForm({
                   <line x1="12" y1="8" x2="12" y2="12" />
                   <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
-                <div>This vehicle is already reserved for the selected dates. Please choose different dates or another vehicle.</div>
+                <div>{t('form.bookingConflictWarning')}</div>
               </div>
             )}
           </form>
@@ -2709,7 +2734,7 @@ export function ReservationForm({
     <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>{previewDocument?.documentType || 'Document Preview'}</DialogTitle>
+          <DialogTitle>{previewDocument?.documentType || t('form.documentPreviewTitleFallback')}</DialogTitle>
           <DialogDescription>
             {previewDocument?.fileName}
           </DialogDescription>
@@ -2732,9 +2757,9 @@ export function ReservationForm({
             } else {
               return (
                 <div className="flex flex-col items-center justify-center h-full space-y-4">
-                  <p className="text-gray-600">Preview not available for this file type.</p>
+                  <p className="text-gray-600">{t('form.documentPreview.previewNotAvailable')}</p>
                   <Button onClick={() => window.open(`/api/documents/view/${previewDocument.id}`, '_blank')}>
-                    Open File
+                    {t('form.documentPreview.openFileButton')}
                   </Button>
                 </div>
               );
@@ -2743,15 +2768,15 @@ export function ReservationForm({
         </div>
         <div className="flex justify-between items-center pt-4 border-t">
           <Button variant="outline" onClick={() => window.open(`/api/documents/view/${previewDocument?.id}`, '_blank')}>
-            Open in New Tab
+            {t('form.documentPreview.openInNewTabButton')}
           </Button>
           <Button onClick={() => setPreviewDialogOpen(false)}>
-            Close
+            {t('form.closeButton')}
           </Button>
         </div>
       </DialogContent>
     </Dialog>
-    
+
     {/* Overdue Reservations Dialog */}
     <AlertDialog open={overdueDialogOpen} onOpenChange={setOverdueDialogOpen}>
       <AlertDialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
@@ -2762,19 +2787,18 @@ export function ReservationForm({
               <line x1="12" y1="9" x2="12" y2="13"/>
               <line x1="12" y1="17" x2="12.01" y2="17"/>
             </svg>
-            Overdue Reservations Found
+            {t('form.overdueDialog.title')}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            This vehicle has {overdueReservations.length} reservation{overdueReservations.length > 1 ? 's' : ''} that ended more than 3 days ago but {overdueReservations.length > 1 ? 'have' : 'has'}n't been completed. 
-            Please resolve {overdueReservations.length > 1 ? 'these' : 'this'} before creating a new reservation.
+            {t('form.overdueDialog.description', { count: overdueReservations.length })}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        
+
         <div className="flex-1 overflow-auto py-4">
           <div className="space-y-3">
             {overdueReservations.map((reservation) => (
-              <div 
-                key={reservation.id} 
+              <div
+                key={reservation.id}
                 className="border rounded-lg p-4 bg-muted/30"
               >
                 <div className="flex justify-between items-start gap-4">
@@ -2783,16 +2807,16 @@ export function ReservationForm({
                       {reservation.customer?.firstName} {reservation.customer?.lastName}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {formatDate(reservation.startDate)} - {reservation.endDate ? formatDate(reservation.endDate) : 'Open-ended'}
+                      {formatDate(reservation.startDate)} - {reservation.endDate ? formatDate(reservation.endDate) : t('form.openEndedBadge')}
                     </div>
                     <Badge variant={
-                      reservation.status === 'picked_up' ? 'default' : 
+                      reservation.status === 'picked_up' ? 'default' :
                       reservation.status === 'returned' ? 'secondary' : 'outline'
                     }>
-                      {reservation.status}
+                      {t(`form.statuses.${STATUS_DISPLAY_KEYS[reservation.status] ?? reservation.status}`, { defaultValue: reservation.status })}
                     </Badge>
                   </div>
-                  
+
                   <div className="flex flex-col gap-2">
                     <Button
                       size="sm"
@@ -2803,9 +2827,9 @@ export function ReservationForm({
                       }}
                     >
                       <Eye className="h-4 w-4 mr-1" />
-                      View Details
+                      {t('form.overdueDialog.viewDetailsButton')}
                     </Button>
-                    
+
                     <Button
                       size="sm"
                       variant="default"
@@ -2817,16 +2841,16 @@ export function ReservationForm({
                             status: "completed"
                           });
                           toast({
-                            title: "Reservation Completed",
-                            description: "The overdue reservation has been marked as completed.",
+                            title: t('form.toasts.reservationCompletedTitle'),
+                            description: t('form.toasts.reservationCompletedDescription'),
                           });
-                          
+
                           // Refetch overdue reservations from server to ensure consistency
                           const vehicleId = Number(pendingFormData?.vehicleId);
                           if (vehicleId) {
                             const freshOverdue = await checkOverdueReservations(vehicleId);
                             setOverdueReservations(freshOverdue);
-                            
+
                             // If no more overdue, proceed with the pending submission
                             if (freshOverdue.length === 0 && pendingFormData) {
                               setOverdueDialogOpen(false);
@@ -2834,21 +2858,21 @@ export function ReservationForm({
                               setPendingFormData(null);
                             }
                           }
-                          
+
                           invalidateRelatedQueries('reservations');
                         } catch (error) {
                           toast({
-                            title: "Error",
-                            description: "Failed to complete reservation",
+                            title: t('form.errors.genericTitle'),
+                            description: t('form.toasts.failedToCompleteDescription'),
                             variant: "destructive",
                           });
                         }
                         setProcessingOverdue(null);
                       }}
                     >
-                      {processingOverdue === reservation.id ? "Processing..." : "Mark Completed"}
+                      {processingOverdue === reservation.id ? t('form.overdueDialog.processingButton') : t('form.overdueDialog.markCompletedButton')}
                     </Button>
-                    
+
                     <Button
                       size="sm"
                       variant="destructive"
@@ -2858,16 +2882,16 @@ export function ReservationForm({
                         try {
                           await apiRequest("DELETE", `/api/reservations/${reservation.id}`);
                           toast({
-                            title: "Reservation Deleted",
-                            description: "The overdue reservation has been deleted.",
+                            title: t('form.toasts.reservationDeletedTitle'),
+                            description: t('form.toasts.reservationDeletedDescription'),
                           });
-                          
+
                           // Refetch overdue reservations from server to ensure consistency
                           const vehicleId = Number(pendingFormData?.vehicleId);
                           if (vehicleId) {
                             const freshOverdue = await checkOverdueReservations(vehicleId);
                             setOverdueReservations(freshOverdue);
-                            
+
                             // If no more overdue, proceed with the pending submission
                             if (freshOverdue.length === 0 && pendingFormData) {
                               setOverdueDialogOpen(false);
@@ -2875,19 +2899,19 @@ export function ReservationForm({
                               setPendingFormData(null);
                             }
                           }
-                          
+
                           invalidateRelatedQueries('reservations');
                         } catch (error) {
                           toast({
-                            title: "Error",
-                            description: "Failed to delete reservation",
+                            title: t('form.errors.genericTitle'),
+                            description: t('form.toasts.failedToDeleteDescription'),
                             variant: "destructive",
                           });
                         }
                         setProcessingOverdue(null);
                       }}
                     >
-                      Delete
+                      {t('form.overdueDialog.deleteButton')}
                     </Button>
                   </div>
                 </div>
@@ -2895,14 +2919,14 @@ export function ReservationForm({
             ))}
           </div>
         </div>
-        
+
         <AlertDialogFooter>
           <AlertDialogCancel onClick={() => {
             setOverdueDialogOpen(false);
             setPendingFormData(null);
             setOverdueReservations([]);
           }}>
-            Cancel
+            {t('form.overdueDialog.cancelButton')}
           </AlertDialogCancel>
           <AlertDialogAction
             disabled={overdueReservations.length > 0}
@@ -2914,7 +2938,7 @@ export function ReservationForm({
               }
             }}
           >
-            Continue with Reservation
+            {t('form.overdueDialog.continueButton')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -2956,8 +2980,8 @@ export function ReservationForm({
           
           // Show success message
           toast({
-            title: "Vehicle Picked Up",
-            description: "Pickup completed successfully with contract number and mileage recorded.",
+            title: t('form.toasts.vehiclePickedUpTitle'),
+            description: t('form.toasts.vehiclePickedUpDescription'),
           });
           
           // Invalidate queries
@@ -3011,8 +3035,8 @@ export function ReservationForm({
           
           // Show success message
           toast({
-            title: "Vehicle Returned",
-            description: "Return completed successfully with mileage and fuel level recorded.",
+            title: t('form.toasts.vehicleReturnedTitle'),
+            description: t('form.toasts.vehicleReturnedDescription'),
           });
           
           // Invalidate queries
@@ -3060,10 +3084,10 @@ export function ReservationForm({
     <ConfirmDialog
       open={deleteDocDialogOpen}
       onOpenChange={setDeleteDocDialogOpen}
-      title="Delete Document"
-      description={`Are you sure you want to delete ${documentToDelete?.documentType}? This action cannot be undone.`}
+      title={t('form.deleteDocumentDialog.title')}
+      description={t('form.deleteDocumentDialog.description', { type: documentToDelete?.documentType })}
       variant="danger"
-      confirmLabel="Delete"
+      confirmLabel={t('form.deleteDocumentDialog.confirmLabel')}
       onConfirm={async () => {
         if (!documentToDelete) return;
         try {
@@ -3071,21 +3095,21 @@ export function ReservationForm({
             method: 'DELETE',
             credentials: 'include',
           });
-          
+
           if (!response.ok) {
             throw new Error('Delete failed');
           }
-          
+
           invalidateByPrefix(`/api/documents/reservation/${createdReservationId}`);
           toast({
-            title: "Success",
-            description: "Document deleted successfully",
+            title: t('form.toasts.uploadSuccessTitle'),
+            description: t('form.toasts.documentDeletedDescription'),
           });
         } catch (error) {
           console.error('Delete failed:', error);
           toast({
-            title: "Error",
-            description: "Failed to delete document",
+            title: t('form.errors.genericTitle'),
+            description: t('form.toasts.failedToDeleteDocumentDescription'),
             variant: "destructive",
           });
         }

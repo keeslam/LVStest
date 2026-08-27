@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ function getUrgencyClass(days: number): string {
 }
 
 export function OverdueReservationsWidget() {
+  const { t } = useTranslation("dashboard");
   const [selectedReservationId, setSelectedReservationId] = useState<number | null>(null);
   
   // Note: No refetchInterval - real-time updates come via WebSocket to prevent dialog closures
@@ -42,7 +44,7 @@ export function OverdueReservationsWidget() {
   return (
     <Card className="overflow-hidden h-full">
       <CardHeader className="bg-red-500 py-3 px-4 flex-row justify-between items-center space-y-0">
-        <CardTitle className="text-base font-medium text-white">Overdue Rentals</CardTitle>
+        <CardTitle className="text-base font-medium text-white">{t('overdueWidget.title')}</CardTitle>
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-alert-circle text-white">
           <circle cx="12" cy="12" r="10" />
           <line x1="12" x2="12" y1="8" y2="12" />
@@ -52,7 +54,7 @@ export function OverdueReservationsWidget() {
       <CardContent className="p-4">
         <div className="mb-3">
           <div className="text-xl font-semibold">{isLoading ? "-" : reservationsWithDays?.length || 0}</div>
-          <p className="text-xs text-gray-500">Vehicles not returned on time</p>
+          <p className="text-xs text-gray-500">{t('overdueWidget.subtitle')}</p>
         </div>
         <div className="space-y-2 max-h-72 overflow-y-auto">
           {isLoading ? (
@@ -63,9 +65,9 @@ export function OverdueReservationsWidget() {
               </svg>
             </div>
           ) : error ? (
-            <div className="text-center py-4 text-red-500">Failed to load overdue rentals</div>
+            <div className="text-center py-4 text-red-500">{t('overdueWidget.loadFailed')}</div>
           ) : reservationsWithDays?.length === 0 ? (
-            <div className="text-center py-4 text-gray-500">No overdue rentals</div>
+            <div className="text-center py-4 text-gray-500">{t('overdueWidget.none')}</div>
           ) : (
             reservationsWithDays?.map(reservation => (
               <div key={reservation.id} className="flex items-center p-2 border rounded-md hover:bg-gray-50" data-testid={`overdue-reservation-${reservation.id}`}>
@@ -80,9 +82,9 @@ export function OverdueReservationsWidget() {
                     {formatLicensePlate(reservation.vehicle?.licensePlate || '')}
                   </div>
                   <div className="flex items-center">
-                    <div className="text-xs text-gray-500 truncate">{reservation.customer?.name || 'Unknown'}</div>
+                    <div className="text-xs text-gray-500 truncate">{reservation.customer?.name || t('overdueWidget.unknownCustomer')}</div>
                     <div className={`ml-2 px-1.5 py-0.5 text-xs rounded-full ${getUrgencyClass(reservation.daysOverdue)}`}>
-                      {reservation.daysOverdue}d late
+                      {t('overdueWidget.daysLate', { count: reservation.daysOverdue })}
                     </div>
                   </div>
                 </div>

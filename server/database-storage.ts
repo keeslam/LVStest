@@ -22,7 +22,9 @@ import {
   vehicleDiagramTemplates, type VehicleDiagramTemplate, type InsertVehicleDiagramTemplate,
   interactiveDamageChecks, type InteractiveDamageCheck, type InsertInteractiveDamageCheck,
   vehicleCustomerBlacklist, type VehicleCustomerBlacklist, type InsertVehicleCustomerBlacklist,
-  vehicleTransports, type VehicleTransport, type InsertVehicleTransport
+  vehicleTransports, type VehicleTransport, type InsertVehicleTransport,
+  vehicleWaitlist,
+  deletedRecords, type DeletedRecord
 } from "../shared/schema";
 import {
   getVehicleStatusContext,
@@ -41,7 +43,7 @@ export class ReportValidationError extends Error {
 }
 import { addMonths, addDays, parseISO, isBefore, isAfter, isEqual } from "date-fns";
 import { db } from "./db";
-import { eq, ne, and, gte, lte, desc, sql, inArray, not, or, ilike, isNull, isNotNull } from "drizzle-orm";
+import { eq, ne, and, gte, lte, desc, sql, inArray, not, or, ilike, isNull, isNotNull, getTableColumns } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { IStorage } from "./storage";
 import * as fs from "fs";
@@ -408,31 +410,232 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async deleteVehicle(id: number): Promise<boolean> {
+  async getVehicleDeleteImpact(id: number): Promise<{
+    vehicle: Vehicle;
+    counts: Record<string, number>;
+  } | undefined> {
+    const vehicle = await this.getVehicle(id);
+    if (!vehicle) return undefined;
+
+    const [res, docs, exp, checks, waitlist, transports, blacklist] = await Promise.all([
+      db.select().from(reservations).where(eq(reservations.vehicleId, id)),
+      db.select().from(documents).where(eq(documents.vehicleId, id)),
+      db.select().from(expenses).where(eq(expenses.vehicleId, id)),
+      db.select().from(interactiveDamageChecks).where(eq(interactiveDamageChecks.vehicleId, id)),
+      db.select().from(vehicleWaitlist).where(eq(vehicleWaitlist.vehicleId, id)),
+      db.select().from(vehicleTransports).where(eq(vehicleTransports.vehicleId, id)),
+      db.select().from(vehicleCustomerBlacklist).where(eq(vehicleCustomerBlacklist.vehicleId, id)),
+    ]);
+
+    return {
+      vehicle,
+      counts: {
+        reservations: res.length,
+        documents: docs.length,
+        expenses: exp.length,
+        damageChecks: checks.length,
+        waitlist: waitlist.length,
+        transports: transports.length,
+        blacklist: blacklist.length,
+      },
+    };
+  }
+
+  /**
+   * Deleting a vehicle wipes its reservations, documents, expenses and damage
+   * checks with it. Everything is snapshotted into `deleted_records` inside the
+   * same transaction first, so the delete stays reversible via
+   * restoreDeletedRecord() and always leaves a trace of who did it.
+   */
+  async deleteVehicle(
+    id: number,
+    actor?: { username?: string | null; userId?: number | null }
+  ): Promise<boolean> {
     // Start a transaction to ensure all related records are deleted
     return await db.transaction(async (tx) => {
       try {
+        const [vehicle] = await tx.select().from(vehicles).where(eq(vehicles.id, id));
+        if (!vehicle) return false;
+
+        // Snapshot everything that is about to disappear, including the rows
+        // Postgres would cascade away without us touching them.
+        const [
+          vehicleReservations,
+          vehicleDocuments,
+          vehicleExpenses,
+          vehicleDamageChecks,
+          vehicleWaitlistEntries,
+          vehicleTransportRows,
+          vehicleBlacklistRows,
+        ] = await Promise.all([
+          tx.select().from(reservations).where(eq(reservations.vehicleId, id)),
+          tx.select().from(documents).where(eq(documents.vehicleId, id)),
+          tx.select().from(expenses).where(eq(expenses.vehicleId, id)),
+          tx.select().from(interactiveDamageChecks).where(eq(interactiveDamageChecks.vehicleId, id)),
+          tx.select().from(vehicleWaitlist).where(eq(vehicleWaitlist.vehicleId, id)),
+          tx.select().from(vehicleTransports).where(eq(vehicleTransports.vehicleId, id)),
+          tx.select().from(vehicleCustomerBlacklist).where(eq(vehicleCustomerBlacklist.vehicleId, id)),
+        ]);
+
+        await tx.insert(deletedRecords).values({
+          entityType: 'vehicle',
+          entityId: id,
+          label: `${vehicle.licensePlate} ${vehicle.brand} ${vehicle.model}`.trim(),
+          payload: {
+            vehicle,
+            reservations: vehicleReservations,
+            documents: vehicleDocuments,
+            expenses: vehicleExpenses,
+            damageChecks: vehicleDamageChecks,
+            waitlist: vehicleWaitlistEntries,
+            transports: vehicleTransportRows,
+            blacklist: vehicleBlacklistRows,
+          },
+          relatedCounts: {
+            reservations: vehicleReservations.length,
+            documents: vehicleDocuments.length,
+            expenses: vehicleExpenses.length,
+            damageChecks: vehicleDamageChecks.length,
+            waitlist: vehicleWaitlistEntries.length,
+            transports: vehicleTransportRows.length,
+            blacklist: vehicleBlacklistRows.length,
+          },
+          deletedBy: actor?.username || null,
+          deletedByUserId: actor?.userId ?? null,
+        });
+
         // Delete related documents first
         await tx.delete(documents).where(eq(documents.vehicleId, id));
-        
+
         // Delete related expenses
         await tx.delete(expenses).where(eq(expenses.vehicleId, id));
-        
+
         // Delete related reservations
         await tx.delete(reservations).where(eq(reservations.vehicleId, id));
-        
+
+        // These two have ON DELETE NO ACTION foreign keys, so leaving them in
+        // place made the whole delete fail with a constraint violation.
+        await tx.delete(interactiveDamageChecks).where(eq(interactiveDamageChecks.vehicleId, id));
+        await tx.delete(vehicleWaitlist).where(eq(vehicleWaitlist.vehicleId, id));
+
         // Finally delete the vehicle
         const [deleted] = await tx
           .delete(vehicles)
           .where(eq(vehicles.id, id))
           .returning();
-        
+
         return !!deleted;
       } catch (error) {
         console.error("Error during vehicle deletion transaction:", error);
         throw error;
       }
     });
+  }
+
+  async getDeletedRecords(limit = 100): Promise<DeletedRecord[]> {
+    return await db
+      .select()
+      .from(deletedRecords)
+      .orderBy(desc(deletedRecords.deletedAt))
+      .limit(limit);
+  }
+
+  async getDeletedRecord(id: number): Promise<DeletedRecord | undefined> {
+    const [record] = await db.select().from(deletedRecords).where(eq(deletedRecords.id, id));
+    return record;
+  }
+
+  /**
+   * Puts a deleted vehicle and everything that went with it back, keeping the
+   * original ids so existing references (contract PDFs, notes) still line up.
+   */
+  async restoreDeletedRecord(
+    id: number,
+    actor?: { username?: string | null }
+  ): Promise<{ restored: boolean; reason?: string; record?: DeletedRecord }> {
+    const record = await this.getDeletedRecord(id);
+    if (!record) return { restored: false, reason: 'not_found' };
+    if (record.restoredAt) return { restored: false, reason: 'already_restored', record };
+    if (record.entityType !== 'vehicle') return { restored: false, reason: 'unsupported_type', record };
+
+    const payload = record.payload as any;
+    const vehicle = payload?.vehicle;
+    if (!vehicle) return { restored: false, reason: 'empty_snapshot', record };
+
+    // The id may have been taken by a later insert, and the license plate may
+    // have been re-created by hand after the delete (which is exactly what
+    // people do when a vehicle disappears). Both block a clean restore.
+    const [idTaken] = await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.id, vehicle.id));
+    if (idTaken) return { restored: false, reason: 'id_taken', record };
+
+    const [plateTaken] = await db
+      .select({ id: vehicles.id })
+      .from(vehicles)
+      .where(eq(vehicles.licensePlate, vehicle.licensePlate));
+    if (plateTaken) return { restored: false, reason: 'license_plate_taken', record };
+
+    await db.transaction(async (tx) => {
+      // JSON has no date type, so every timestamp came back out of the
+      // snapshot as a string. Which columns those are is read from the table
+      // definition — hand-listing them missed uploadDate, checkDate and the
+      // transport times, and drizzle then threw "value.toISOString is not a
+      // function" halfway through the restore.
+      const revive = (table: any, rows: any[] | undefined) => {
+        const columns = getTableColumns(table);
+        const dateKeys = Object.entries(columns)
+          .filter(([, column]: [string, any]) => column?.dataType === 'date')
+          .map(([key]) => key);
+
+        return (rows || []).map((row) => {
+          const revived = { ...row };
+          for (const key of dateKeys) {
+            const value = revived[key];
+            if (typeof value === 'string' || typeof value === 'number') {
+              revived[key] = new Date(value);
+            }
+          }
+          return revived;
+        });
+      };
+
+      await tx.insert(vehicles).values(revive(vehicles, [vehicle])[0]);
+
+      for (const [table, rows] of [
+        [reservations, payload.reservations],
+        [documents, payload.documents],
+        [expenses, payload.expenses],
+        [interactiveDamageChecks, payload.damageChecks],
+        [vehicleWaitlist, payload.waitlist],
+        [vehicleTransports, payload.transports],
+        [vehicleCustomerBlacklist, payload.blacklist],
+      ] as const) {
+        const values = revive(table, rows as any[]);
+        if (values.length > 0) {
+          await tx.insert(table as any).values(values);
+        }
+      }
+
+      // Keep the serial sequences ahead of the ids we just forced back in.
+      for (const tableName of [
+        'vehicles', 'reservations', 'documents', 'expenses',
+        'interactive_damage_checks', 'vehicle_waitlist', 'vehicle_transports',
+        'vehicle_customer_blacklist',
+      ]) {
+        await tx.execute(sql`
+          SELECT setval(
+            pg_get_serial_sequence(${tableName}, 'id'),
+            GREATEST((SELECT COALESCE(MAX(id), 1) FROM ${sql.raw(`"${tableName}"`)}), 1)
+          )
+        `);
+      }
+
+      await tx
+        .update(deletedRecords)
+        .set({ restoredAt: new Date(), restoredBy: actor?.username || null })
+        .where(eq(deletedRecords.id, id));
+    });
+
+    return { restored: true, record };
   }
 
   async getAvailableVehicles(): Promise<Vehicle[]> {
@@ -2832,22 +3035,42 @@ export class DatabaseStorage implements IStorage {
       return String(settingsRecord.contractNumberOverride);
     }
     
-    // Find the highest contract number by checking all reservations
+    // Find the highest contract number by checking live reservations.
+    // Deleted ones are skipped: their number is freed on delete, so counting
+    // them would keep the sequence permanently ahead of reality.
     const allReservations = await db.select({ contractNumber: reservations.contractNumber })
-      .from(reservations);
-    
+      .from(reservations)
+      .where(isNull(reservations.deletedAt));
+
     let maxNumber = startNumber - 1;
-    
-    // Filter and find the highest numeric contract number
+
+    // Filter and find the highest numeric contract number.
+    // One mistyped number (e.g. 234234234 instead of 23423) used to poison the
+    // sequence forever, because every later number was derived from it. Values
+    // far above the running series are treated as typos and ignored here; use
+    // the contract-number override in settings for a deliberate jump.
+    const plausible: number[] = [];
     for (const res of allReservations) {
       if (res.contractNumber) {
         const num = parseInt(res.contractNumber, 10);
-        if (!isNaN(num) && num > maxNumber) {
+        if (!isNaN(num) && num >= startNumber) {
+          plausible.push(num);
+        }
+      }
+    }
+
+    if (plausible.length > 0) {
+      plausible.sort((a, b) => a - b);
+      // Median of the live numbers describes where the series actually sits.
+      const median = plausible[Math.floor(plausible.length / 2)];
+      const ceiling = Math.max(median * 10, startNumber * 10, 1000);
+      for (const num of plausible) {
+        if (num <= ceiling && num > maxNumber) {
           maxNumber = num;
         }
       }
     }
-    
+
     return String(maxNumber + 1);
   }
   

@@ -208,6 +208,9 @@ function setupSocketIO(server: any) {
 app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
   const requestPath = req.path;
+  // Log the query string too. Without it a filtered list request and a full
+  // one both read as "GET /api/vehicles", which makes log forensics guesswork.
+  const requestUrl = req.originalUrl || requestPath;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
   const originalResJson = res.json;
@@ -219,9 +222,13 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (requestPath.startsWith("/api")) {
-      let logLine = `${req.method} ${requestPath} ${res.statusCode} in ${duration}ms`;
+      const actor = (req as any).user?.username;
+      let logLine = `${req.method} ${requestUrl} ${res.statusCode} in ${duration}ms`;
+      // Destructive calls get the user attached — "who deleted this" should
+      // never again be unanswerable from the logs.
+      if (req.method === "DELETE" && actor) logLine += ` [by ${actor}]`;
       if (capturedJsonResponse) logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      if (logLine.length > 120) logLine = logLine.slice(0, 119) + "…";
+      if (logLine.length > 200) logLine = logLine.slice(0, 199) + "…";
       console.log(logLine);
     }
   });

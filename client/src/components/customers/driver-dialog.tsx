@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -58,6 +59,7 @@ interface DriverDialogProps {
 }
 
 export function DriverDialog({ customerId, driver, children, onSuccess }: DriverDialogProps) {
+  const { t } = useTranslation(["customers", "common"]);
   const [open, setOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -184,8 +186,8 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
     },
     onSuccess: async (data: Driver) => {
       toast({
-        title: isEdit ? "Driver updated" : "Driver added",
-        description: `Driver has been successfully ${isEdit ? 'updated' : 'added'}.`,
+        title: isEdit ? t('driverForm.updatedTitle') : t('driverForm.addedTitle'),
+        description: isEdit ? t('driverForm.updatedDescription') : t('driverForm.addedDescription'),
         variant: "default"
       });
       
@@ -203,8 +205,8 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || `Failed to ${isEdit ? 'update' : 'add'} driver`,
+        title: t('common:status.error'),
+        description: error.message || (isEdit ? t('driverForm.updateFailedDescription') : t('driverForm.addFailedDescription')),
         variant: "destructive"
       });
     }
@@ -239,9 +241,9 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
         }}
       >
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Driver" : "Add Driver"}</DialogTitle>
+          <DialogTitle>{isEdit ? t('driverForm.editTitle') : t('driverForm.addTitle')}</DialogTitle>
           <DialogDescription>
-            {isEdit ? "Update driver information" : "Add a new authorized driver for this customer"}
+            {isEdit ? t('driverForm.editDescription') : t('driverForm.addDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -259,11 +261,11 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                 name="displayName"
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
-                    <FormLabel>Display Name *</FormLabel>
+                    <FormLabel>{t('driverForm.displayName')}</FormLabel>
                     <FormControl>
-                      <Input 
-                        {...field} 
-                        placeholder="John Doe" 
+                      <Input
+                        {...field}
+                        placeholder="John Doe"
                         data-testid="input-display-name"
                         onChange={(e) => field.onChange(capitalizeName(e.target.value))}
                       />
@@ -278,7 +280,7 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                 name="firstName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>First Name</FormLabel>
+                    <FormLabel>{t('driverForm.firstName')}</FormLabel>
                     <FormControl>
                       <Input 
                         {...field} 
@@ -298,7 +300,7 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                 name="lastName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Last Name</FormLabel>
+                    <FormLabel>{t('driverForm.lastName')}</FormLabel>
                     <FormControl>
                       <Input 
                         {...field} 
@@ -318,7 +320,7 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t('driverForm.email')}</FormLabel>
                     <FormControl>
                       <Input {...field} value={field.value ?? ""} type="email" placeholder="john@example.com" data-testid="input-email" />
                     </FormControl>
@@ -332,7 +334,7 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone</FormLabel>
+                    <FormLabel>{t('driverForm.phone')}</FormLabel>
                     <FormControl>
                       <Input {...field} value={field.value ?? ""} placeholder="+31 6 12345678" data-testid="input-phone" />
                     </FormControl>
@@ -346,7 +348,7 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                 name="driverLicenseNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Driver License Number</FormLabel>
+                    <FormLabel>{t('driverForm.licenseNumber')}</FormLabel>
                     <FormControl>
                       <Input {...field} value={field.value ?? ""} placeholder="1234567890" data-testid="input-license-number" />
                     </FormControl>
@@ -360,15 +362,15 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                 name="licenseOrigin"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>License Origin (Country)</FormLabel>
+                    <FormLabel>{t('driverForm.licenseOrigin')}</FormLabel>
                     <FormControl>
                       <SearchableCombobox
                         options={countryOptions}
                         value={field.value ?? ""}
                         onChange={field.onChange}
-                        placeholder="Select country..."
-                        searchPlaceholder="Search countries..."
-                        emptyMessage="No countries found"
+                        placeholder={t('driverForm.selectCountry')}
+                        searchPlaceholder={t('driverForm.searchCountries')}
+                        emptyMessage={t('driverForm.noCountriesFound')}
                       />
                     </FormControl>
                     <FormMessage />
@@ -381,7 +383,7 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                 name="licenseExpiry"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>License Expiry Date</FormLabel>
+                    <FormLabel>{t('driverForm.licenseExpiryDate')}</FormLabel>
                     <FormControl>
                       <Input {...field} value={field.value ?? ""} type="date" data-testid="input-license-expiry" />
                     </FormControl>
@@ -391,10 +393,10 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
               />
 
               <FormItem className="md:col-span-2">
-                <FormLabel>Driver's License Copy (Optional)</FormLabel>
+                <FormLabel>{t('driverForm.licenseCopyLabel')}</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="file" 
+                  <Input
+                    type="file"
                     accept="image/*,.pdf"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
@@ -407,16 +409,16 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                 </FormControl>
                 {selectedFile && (
                   <p className="text-sm text-muted-foreground mt-1">
-                    Selected: {selectedFile.name}
+                    {t('driverForm.selectedFile', { name: selectedFile.name })}
                   </p>
                 )}
                 {driver?.licenseFilePath && !selectedFile && (
                   <p className="text-sm text-muted-foreground mt-1">
-                    Current file: {driver.licenseFilePath.split('/').pop()}
+                    {t('driverForm.currentFile', { name: driver.licenseFilePath.split('/').pop() })}
                   </p>
                 )}
                 <p className="text-sm text-muted-foreground">
-                  Upload a copy of the driver's license (JPG, PNG, or PDF, max 10MB)
+                  {t('driverForm.uploadHint')}
                 </p>
               </FormItem>
 
@@ -425,16 +427,16 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                 name="preferredLanguage"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Preferred Language</FormLabel>
+                    <FormLabel>{t('driverForm.preferredLanguageLabel')}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value || "nl"}>
                       <FormControl>
                         <SelectTrigger data-testid="select-language">
-                          <SelectValue placeholder="Select language" />
+                          <SelectValue placeholder={t('driverForm.selectLanguage')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="nl">Dutch</SelectItem>
-                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="nl">{t('common:language.dutch')}</SelectItem>
+                        <SelectItem value="en">{t('common:language.english')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -447,16 +449,16 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                 name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel>{t('common:fields.status')}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value || "active"}>
                       <FormControl>
                         <SelectTrigger data-testid="select-status">
-                          <SelectValue placeholder="Select status" />
+                          <SelectValue placeholder={t('driverForm.selectStatus')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="active">{t('common:status.active')}</SelectItem>
+                        <SelectItem value="inactive">{t('common:status.inactive')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -470,9 +472,9 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                 render={({ field }) => (
                   <FormItem className="flex items-center justify-between rounded-lg border p-4 md:col-span-2">
                     <div className="space-y-0.5">
-                      <FormLabel>Primary Driver</FormLabel>
+                      <FormLabel>{t('driverView.primaryDriver')}</FormLabel>
                       <div className="text-sm text-gray-500">
-                        Mark as the primary driver for this customer
+                        {t('driverForm.primaryDriverHint')}
                       </div>
                     </div>
                     <FormControl>
@@ -491,9 +493,9 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                 name="notes"
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
-                    <FormLabel>Notes</FormLabel>
+                    <FormLabel>{t('common:fields.notes')}</FormLabel>
                     <FormControl>
-                      <Textarea {...field} value={field.value ?? ""} placeholder="Additional notes..." rows={3} data-testid="textarea-notes" />
+                      <Textarea {...field} value={field.value ?? ""} placeholder={t('driverForm.notesPlaceholder')} rows={3} data-testid="textarea-notes" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -508,10 +510,10 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                 onClick={() => setOpen(false)}
                 data-testid="button-cancel"
               >
-                Cancel
+                {t('common:actions.cancel')}
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={mutation.isPending}
                 data-testid="button-submit"
               >
@@ -521,10 +523,10 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    {isEdit ? 'Updating...' : 'Adding...'}
+                    {isEdit ? t('driverForm.updating') : t('driverForm.adding')}
                   </>
                 ) : (
-                  isEdit ? 'Update Driver' : 'Add Driver'
+                  isEdit ? t('driverForm.updateDriver') : t('driverForm.addDriver')
                 )}
               </Button>
             </DialogFooter>

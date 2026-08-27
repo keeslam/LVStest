@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,7 @@ interface DriverViewDialogProps {
 }
 
 export function DriverViewDialog({ driver, activeReservation, open, onOpenChange }: DriverViewDialogProps) {
+  const { t } = useTranslation("customers");
   // Always render the Dialog to prevent unmounting issues
   // Content is only shown when driver is available
   return (
@@ -28,10 +30,10 @@ export function DriverViewDialog({ driver, activeReservation, open, onOpenChange
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
-            Driver Details
+            {t('driverView.title')}
           </DialogTitle>
           <DialogDescription>
-            Complete information for {driver?.displayName || 'Driver'}
+            {t('driverView.description', { name: driver?.displayName || t('driverView.fallbackName') })}
           </DialogDescription>
         </DialogHeader>
 
@@ -44,7 +46,7 @@ export function DriverViewDialog({ driver, activeReservation, open, onOpenChange
                 <div className="flex gap-2">
                   {driver.isPrimaryDriver && (
                     <Badge className="bg-blue-100 text-blue-800 border-blue-200" data-testid="badge-primary-driver">
-                      Primary Driver
+                      {t('driverView.primaryDriver')}
                     </Badge>
                   )}
                   <Badge
@@ -72,35 +74,37 @@ export function DriverViewDialog({ driver, activeReservation, open, onOpenChange
           <Card>
             <CardContent className="pt-6 space-y-3">
               <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                Contact Information
+                {t('driverView.contactInformation')}
               </h4>
               <Separator />
-              
+
               {driver.email && (
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm" data-testid="text-driver-email-view">{driver.email}</span>
                 </div>
               )}
-              
+
               {driver.phone && (
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm" data-testid="text-driver-phone-view">{formatPhoneNumber(driver.phone)}</span>
                 </div>
               )}
-              
+
               {driver.preferredLanguage && (
                 <div className="flex items-center gap-2">
                   <Globe className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm" data-testid="text-driver-language">
-                    Preferred Language: {driver.preferredLanguage === 'nl' ? 'Dutch' : 'English'}
+                    {t('driverView.preferredLanguage', {
+                      language: driver.preferredLanguage === 'nl' ? t('common:language.dutch') : t('common:language.english')
+                    })}
                   </span>
                 </div>
               )}
-              
+
               {!driver.email && !driver.phone && (
-                <div className="text-sm text-muted-foreground">No contact information available</div>
+                <div className="text-sm text-muted-foreground">{t('driverView.noContactInfo')}</div>
               )}
             </CardContent>
           </Card>
@@ -109,48 +113,48 @@ export function DriverViewDialog({ driver, activeReservation, open, onOpenChange
           <Card>
             <CardContent className="pt-6 space-y-3">
               <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                Driver's License
+                {t('driverView.driversLicense')}
               </h4>
               <Separator />
-              
+
               {driver.driverLicenseNumber && (
                 <div className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium" data-testid="text-driver-license-number-view">{driver.driverLicenseNumber}</span>
                 </div>
               )}
-              
+
               {driver.licenseOrigin && (
                 <div className="flex items-center gap-2">
                   <Globe className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm" data-testid="text-driver-license-origin">
-                    Origin: {driver.licenseOrigin}
+                    {t('driverView.origin', { origin: driver.licenseOrigin })}
                   </span>
                 </div>
               )}
-              
+
               {driver.licenseExpiry && (
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm" data-testid="text-driver-license-expiry">
-                    Expires: {formatDate(driver.licenseExpiry)}
+                    {t('driverView.expires', { date: formatDate(driver.licenseExpiry) })}
                     {new Date(driver.licenseExpiry) < new Date() && (
-                      <Badge className="ml-2 bg-red-100 text-red-800 border-red-200" data-testid="badge-license-expired">Expired</Badge>
+                      <Badge className="ml-2 bg-red-100 text-red-800 border-red-200" data-testid="badge-license-expired">{t('driverView.expired')}</Badge>
                     )}
                   </span>
                 </div>
               )}
-              
+
               {driver.licenseFilePath && (
                 <div className="mt-4">
                   <div className="flex items-center gap-2 mb-2">
                     <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">License Document</span>
+                    <span className="text-sm font-medium">{t('driverView.licenseDocument')}</span>
                   </div>
                   <div className="border rounded-lg overflow-hidden">
                     <img
                       src={`/${driver.licenseFilePath}`}
-                      alt="Driver's License"
+                      alt={t('driverView.licenseDocumentAlt')}
                       className="w-full h-auto"
                       data-testid="img-driver-license-preview"
                       onError={(e) => {
@@ -160,9 +164,9 @@ export function DriverViewDialog({ driver, activeReservation, open, onOpenChange
                         if (parent) {
                           parent.innerHTML = `
                             <div class="p-4 text-center text-sm text-muted-foreground">
-                              <p>License document preview not available</p>
+                              <p>${t('driverView.licensePreviewNotAvailable')}</p>
                               <a href="/${driver.licenseFilePath}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">
-                                View document
+                                ${t('driverView.viewDocument')}
                               </a>
                             </div>
                           `;
@@ -172,9 +176,9 @@ export function DriverViewDialog({ driver, activeReservation, open, onOpenChange
                   </div>
                 </div>
               )}
-              
+
               {!driver.driverLicenseNumber && !driver.licenseExpiry && !driver.licenseFilePath && (
-                <div className="text-sm text-muted-foreground">No license information available</div>
+                <div className="text-sm text-muted-foreground">{t('driverView.noLicenseInfo')}</div>
               )}
             </CardContent>
           </Card>
@@ -184,10 +188,10 @@ export function DriverViewDialog({ driver, activeReservation, open, onOpenChange
             <Card data-testid="card-active-rental">
               <CardContent className="pt-6 space-y-3">
                 <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                  Current Rental
+                  {t('driverView.currentRental')}
                 </h4>
                 <Separator />
-                
+
                 <div className="flex items-center gap-2">
                   <Car className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium" data-testid="text-active-rental-vehicle">
@@ -198,15 +202,15 @@ export function DriverViewDialog({ driver, activeReservation, open, onOpenChange
                     )}
                   </span>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <span className="text-muted-foreground">Start Date:</span>
+                    <span className="text-muted-foreground">{t('common:fields.startDate')}:</span>
                     <div className="font-medium" data-testid="text-active-rental-start">{formatDate(activeReservation.startDate)}</div>
                   </div>
                   {activeReservation.endDate && (
                     <div>
-                      <span className="text-muted-foreground">End Date:</span>
+                      <span className="text-muted-foreground">{t('common:fields.endDate')}:</span>
                       <div className="font-medium" data-testid="text-active-rental-end">{formatDate(activeReservation.endDate)}</div>
                     </div>
                   )}
@@ -237,7 +241,7 @@ export function DriverViewDialog({ driver, activeReservation, open, onOpenChange
             <Card>
               <CardContent className="pt-6 space-y-3">
                 <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                  Notes
+                  {t('common:fields.notes')}
                 </h4>
                 <Separator />
                 <p className="text-sm whitespace-pre-wrap" data-testid="text-driver-notes">{driver.notes}</p>

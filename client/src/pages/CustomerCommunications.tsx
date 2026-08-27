@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,7 @@ interface EmailTemplate {
 }
 
 export default function CustomerCommunications() {
+  const { t } = useTranslation("notifications");
   const [activeTab, setActiveTab] = useState("send");
   const [communicationMode, setCommunicationMode] = useState<'apk' | 'maintenance' | 'custom'>('apk');
   const [selectedVehicles, setSelectedVehicles] = useState<Vehicle[]>([]);
@@ -217,17 +219,17 @@ export default function CustomerCommunications() {
     // Check if recipients are selected based on mode
     if (communicationMode === 'custom' && selectedCustomers.length === 0) {
       toast({
-        title: "No Customers Selected",
-        description: "Please select at least one customer",
+        title: t('customerCommunications.toasts.noCustomersSelectedTitle'),
+        description: t('customerCommunications.toasts.noCustomersSelectedDescription'),
         variant: "destructive",
       });
       return;
     }
-    
+
     if (communicationMode !== 'custom' && selectedVehicles.length === 0) {
       toast({
-        title: "No Vehicles Selected",
-        description: "Please select at least one vehicle",
+        title: t('customerCommunications.toasts.noVehiclesSelectedTitle'),
+        description: t('customerCommunications.toasts.noVehiclesSelectedDescription'),
         variant: "destructive",
       });
       return;
@@ -247,8 +249,8 @@ export default function CustomerCommunications() {
         templateType = "custom"; // Use custom when using saved templates
       } else {
         toast({
-          title: "Template Error",
-          description: "Selected template not found",
+          title: t('customerCommunications.toasts.templateErrorTitle'),
+          description: t('customerCommunications.toasts.templateErrorDescription'),
           variant: "destructive",
         });
         return;
@@ -258,8 +260,10 @@ export default function CustomerCommunications() {
       if (communicationMode === 'apk' || communicationMode === 'maintenance') {
         // APK and Maintenance modes require template selection
         toast({
-          title: "Template Required",
-          description: `Please select a template for ${communicationMode} reminders`,
+          title: t('customerCommunications.toasts.templateRequiredTitle'),
+          description: communicationMode === 'apk'
+            ? t('customerCommunications.toasts.templateRequiredDescriptionApk')
+            : t('customerCommunications.toasts.templateRequiredDescriptionMaintenance'),
           variant: "destructive",
         });
         return;
@@ -267,8 +271,8 @@ export default function CustomerCommunications() {
         // Custom mode - require custom message and subject when no template is selected
         if (!customMessage.trim() || !customSubject.trim()) {
           toast({
-            title: "Missing Information",
-            description: "Please enter both subject and message for the notification",
+            title: t('customerCommunications.toasts.missingInformationTitle'),
+            description: t('customerCommunications.toasts.missingInformationDescription'),
             variant: "destructive",
           });
           return;
@@ -314,14 +318,14 @@ export default function CustomerCommunications() {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to send notifications: ${response.statusText}`);
+        throw new Error(t('customerCommunications.toasts.sendNotificationsRequestFailed', { status: response.statusText }));
       }
 
       const result = await response.json();
-      
+
       toast({
-        title: "Notifications Sent Successfully",
-        description: `${result.sent} emails sent, ${result.failed || 0} failed`,
+        title: t('customerCommunications.toasts.notificationsSentTitle'),
+        description: t('customerCommunications.toasts.notificationsSentDescription', { sent: result.sent, failed: result.failed || 0 }),
       });
 
       // Reset form
@@ -334,8 +338,8 @@ export default function CustomerCommunications() {
     } catch (error) {
       console.error('Failed to send notifications:', error);
       toast({
-        title: "Failed to Send Notifications",
-        description: error instanceof Error ? error.message : "An error occurred",
+        title: t('customerCommunications.toasts.sendFailedTitle'),
+        description: error instanceof Error ? error.message : t('customerCommunications.toasts.genericError'),
         variant: "destructive",
       });
     } finally {
@@ -347,18 +351,18 @@ export default function CustomerCommunications() {
     // Check if custom message mode and customers are selected
     if (communicationMode === 'custom' && selectedCustomers.length === 0) {
       toast({
-        title: "No Customers Selected",
-        description: "Please select at least one customer",
+        title: t('customerCommunications.toasts.noCustomersSelectedTitle'),
+        description: t('customerCommunications.toasts.noCustomersSelectedDescription'),
         variant: "destructive",
       });
       return;
     }
-    
-    // Check if APK/Maintenance mode and vehicles are selected  
+
+    // Check if APK/Maintenance mode and vehicles are selected
     if (communicationMode !== 'custom' && selectedVehicles.length === 0) {
       toast({
-        title: "No Vehicles Selected",
-        description: "Please select at least one vehicle",
+        title: t('customerCommunications.toasts.noVehiclesSelectedTitle'),
+        description: t('customerCommunications.toasts.noVehiclesSelectedDescription'),
         variant: "destructive",
       });
       return;
@@ -376,8 +380,8 @@ export default function CustomerCommunications() {
         emailContent = savedTemplate.content;
       } else {
         toast({
-          title: "Template Error",
-          description: "Selected template not found",
+          title: t('customerCommunications.toasts.templateErrorTitle'),
+          description: t('customerCommunications.toasts.templateErrorDescription'),
           variant: "destructive",
         });
         return;
@@ -387,8 +391,10 @@ export default function CustomerCommunications() {
       if (communicationMode === 'apk' || communicationMode === 'maintenance') {
         // APK and Maintenance modes require template selection
         toast({
-          title: "Template Required",
-          description: `Please select a template for ${communicationMode} reminders`,
+          title: t('customerCommunications.toasts.templateRequiredTitle'),
+          description: communicationMode === 'apk'
+            ? t('customerCommunications.toasts.templateRequiredDescriptionApk')
+            : t('customerCommunications.toasts.templateRequiredDescriptionMaintenance'),
           variant: "destructive",
         });
         return;
@@ -396,8 +402,8 @@ export default function CustomerCommunications() {
         // Custom mode - require custom message and subject when no template is selected
         if (!customMessage.trim() || !customSubject.trim()) {
           toast({
-            title: "Missing Information",
-            description: "Please enter both subject and message for the notification",
+            title: t('customerCommunications.toasts.missingInformationTitle'),
+            description: t('customerCommunications.toasts.missingInformationDescription'),
             variant: "destructive",
           });
           return;
@@ -425,45 +431,45 @@ export default function CustomerCommunications() {
         if (customer.email) {
           emailOptions.push({
             value: "email",
-            label: "Primary",
+            label: t('customerCommunications.emailOptionLabels.email'),
             email: customer.email
           });
         }
         if (customer.emailForMOT) {
           emailOptions.push({
             value: "emailForMOT",
-            label: "APK/MOT",
+            label: t('customerCommunications.emailOptionLabels.emailForMOT'),
             email: customer.emailForMOT
           });
         }
         if (customer.emailForInvoices) {
           emailOptions.push({
             value: "emailForInvoices",
-            label: "Invoice",
+            label: t('customerCommunications.emailOptionLabels.emailForInvoices'),
             email: customer.emailForInvoices
           });
         }
         if (customer.emailGeneral) {
           emailOptions.push({
             value: "emailGeneral",
-            label: "General",
+            label: t('customerCommunications.emailOptionLabels.emailGeneral'),
             email: customer.emailGeneral
           });
         }
-        
+
         // Select default email (prioritize primary email)
         let selectedEmailField = "none";
-        let selectedEmail = "No email";
-        
+        let selectedEmail = t('customerCommunications.dialogs.emailPreview.noEmailFallback');
+
         if (emailOptions.length > 0) {
           const primaryOption = emailOptions.find(opt => opt.value === "email");
           const defaultOption = primaryOption || emailOptions[0];
           selectedEmailField = defaultOption.value;
           selectedEmail = defaultOption.email;
         }
-        
+
         return {
-          name: customer?.name || "Customer",
+          name: customer?.name || t('customerCommunications.dialogs.emailPreview.customerFallback'),
           email: selectedEmail,
           vehicleLicense: "N/A", // No specific vehicle for custom messages
           emailField: selectedEmailField,
@@ -488,28 +494,28 @@ export default function CustomerCommunications() {
           if (customer.email) {
             emailOptions.push({
               value: "email",
-              label: "Primary",
+              label: t('customerCommunications.emailOptionLabels.email'),
               email: customer.email
             });
           }
           if (customer.emailForMOT) {
             emailOptions.push({
               value: "emailForMOT",
-              label: "APK/MOT",
+              label: t('customerCommunications.emailOptionLabels.emailForMOT'),
               email: customer.emailForMOT
             });
           }
           if (customer.emailForInvoices) {
             emailOptions.push({
               value: "emailForInvoices",
-              label: "Invoice",
+              label: t('customerCommunications.emailOptionLabels.emailForInvoices'),
               email: customer.emailForInvoices
             });
           }
           if (customer.emailGeneral) {
             emailOptions.push({
               value: "emailGeneral",
-              label: "General",
+              label: t('customerCommunications.emailOptionLabels.emailGeneral'),
               email: customer.emailGeneral
             });
           }
@@ -517,7 +523,7 @@ export default function CustomerCommunications() {
         
         // Select default email (prioritize primary email)
         let selectedEmailField = "none";
-        let selectedEmail = "No email";
+        let selectedEmail = t('customerCommunications.dialogs.emailPreview.noEmailFallback');
         
         if (emailOptions.length > 0) {
           const primaryOption = emailOptions.find(opt => opt.value === "email");
@@ -527,7 +533,7 @@ export default function CustomerCommunications() {
         }
         
         return {
-          name: customer?.name || "Customer",
+          name: customer?.name || t('customerCommunications.dialogs.emailPreview.customerFallback'),
           email: selectedEmail,
           vehicleLicense: vehicle.licensePlate,
           emailField: selectedEmailField,
@@ -543,27 +549,27 @@ export default function CustomerCommunications() {
     }
 
     // Format license plate properly and add all placeholders including apkDate
-    const formattedPlate = sampleVehicle?.licensePlate 
-      ? formatLicensePlate(sampleVehicle.licensePlate) 
-      : "[License Plate]";
-    
-    const formattedApkDate = sampleVehicle?.apkDate 
+    const formattedPlate = sampleVehicle?.licensePlate
+      ? formatLicensePlate(sampleVehicle.licensePlate)
+      : t('customerCommunications.dialogs.emailPreview.fallbackLicensePlate');
+
+    const formattedApkDate = sampleVehicle?.apkDate
       ? new Date(sampleVehicle.apkDate).toLocaleDateString('nl-NL')
-      : "[APK Date]";
+      : t('customerCommunications.dialogs.emailPreview.fallbackApkDate');
 
     // Replace placeholders in both subject and content
     const processedSubject = subject
-      .replace(/\{customerName\}/g, sampleCustomer?.name || "[Customer Name]")
+      .replace(/\{customerName\}/g, sampleCustomer?.name || t('customerCommunications.dialogs.emailPreview.fallbackCustomerName'))
       .replace(/\{vehiclePlate\}/g, formattedPlate)
-      .replace(/\{vehicleBrand\}/g, sampleVehicle?.brand || "[Brand]")
-      .replace(/\{vehicleModel\}/g, sampleVehicle?.model || "[Model]")
+      .replace(/\{vehicleBrand\}/g, sampleVehicle?.brand || t('customerCommunications.dialogs.emailPreview.fallbackBrand'))
+      .replace(/\{vehicleModel\}/g, sampleVehicle?.model || t('customerCommunications.dialogs.emailPreview.fallbackModel'))
       .replace(/\{apkDate\}/g, formattedApkDate);
-    
+
     const processedContent = content
-      .replace(/\{customerName\}/g, sampleCustomer?.name || "[Customer Name]")
+      .replace(/\{customerName\}/g, sampleCustomer?.name || t('customerCommunications.dialogs.emailPreview.fallbackCustomerName'))
       .replace(/\{vehiclePlate\}/g, formattedPlate)
-      .replace(/\{vehicleBrand\}/g, sampleVehicle?.brand || "[Brand]")
-      .replace(/\{vehicleModel\}/g, sampleVehicle?.model || "[Model]")
+      .replace(/\{vehicleBrand\}/g, sampleVehicle?.brand || t('customerCommunications.dialogs.emailPreview.fallbackBrand'))
+      .replace(/\{vehicleModel\}/g, sampleVehicle?.model || t('customerCommunications.dialogs.emailPreview.fallbackModel'))
       .replace(/\{apkDate\}/g, formattedApkDate);
 
     setEmailPreview({
@@ -619,12 +625,12 @@ export default function CustomerCommunications() {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to delete template: ${response.statusText}`);
+        throw new Error(t('customerCommunications.toasts.deleteTemplateRequestFailed', { status: response.statusText }));
       }
 
       toast({
-        title: "Template Deleted",
-        description: `Template "${templateToDelete.name}" has been deleted successfully.`,
+        title: t('customerCommunications.toasts.templateDeletedTitle'),
+        description: t('customerCommunications.toasts.templateDeletedDescription', { name: templateToDelete.name }),
       });
 
       // Refresh templates - this will happen automatically via react-query
@@ -632,8 +638,8 @@ export default function CustomerCommunications() {
     } catch (error) {
       console.error('Failed to delete template:', error);
       toast({
-        title: "Failed to Delete Template",
-        description: error instanceof Error ? error.message : "An error occurred",
+        title: t('customerCommunications.toasts.deleteTemplateFailedTitle'),
+        description: error instanceof Error ? error.message : t('customerCommunications.toasts.genericError'),
         variant: "destructive",
       });
     }
@@ -671,8 +677,8 @@ export default function CustomerCommunications() {
     setTemplateCategory(template.category || "custom");
     
     toast({
-      title: "Template Duplicated",
-      description: "Template content has been copied to the editor. Modify and save as new template.",
+      title: t('customerCommunications.toasts.templateDuplicatedTitle'),
+      description: t('customerCommunications.toasts.templateDuplicatedDescription'),
     });
   };
 
@@ -700,17 +706,17 @@ export default function CustomerCommunications() {
 
   // Available placeholders
   const placeholders = [
-    { key: 'customerName', label: 'Customer Name', description: "Customer's full name" },
-    { key: 'vehiclePlate', label: 'License Plate', description: "Vehicle license plate" },
-    { key: 'vehicleBrand', label: 'Vehicle Brand', description: "Vehicle brand/make" },
-    { key: 'vehicleModel', label: 'Vehicle Model', description: "Vehicle model" },
-    { key: 'apkDate', label: 'APK Date', description: "APK expiry date" },
-    { key: 'companyName', label: 'Company Name', description: "Your company name" },
-    { key: 'maintenanceDate', label: 'Maintenance Date', description: "Last maintenance date" },
-    { key: 'customerEmail', label: 'Customer Email', description: "Customer's email address" },
-    { key: 'customerPhone', label: 'Customer Phone', description: "Customer's phone number" },
-    { key: 'reservationStart', label: 'Reservation Start', description: "Reservation start date" },
-    { key: 'reservationEnd', label: 'Reservation End', description: "Reservation end date" }
+    { key: 'customerName', label: t('customerCommunications.placeholders.customerName.label'), description: t('customerCommunications.placeholders.customerName.description') },
+    { key: 'vehiclePlate', label: t('customerCommunications.placeholders.vehiclePlate.label'), description: t('customerCommunications.placeholders.vehiclePlate.description') },
+    { key: 'vehicleBrand', label: t('customerCommunications.placeholders.vehicleBrand.label'), description: t('customerCommunications.placeholders.vehicleBrand.description') },
+    { key: 'vehicleModel', label: t('customerCommunications.placeholders.vehicleModel.label'), description: t('customerCommunications.placeholders.vehicleModel.description') },
+    { key: 'apkDate', label: t('customerCommunications.placeholders.apkDate.label'), description: t('customerCommunications.placeholders.apkDate.description') },
+    { key: 'companyName', label: t('customerCommunications.placeholders.companyName.label'), description: t('customerCommunications.placeholders.companyName.description') },
+    { key: 'maintenanceDate', label: t('customerCommunications.placeholders.maintenanceDate.label'), description: t('customerCommunications.placeholders.maintenanceDate.description') },
+    { key: 'customerEmail', label: t('customerCommunications.placeholders.customerEmail.label'), description: t('customerCommunications.placeholders.customerEmail.description') },
+    { key: 'customerPhone', label: t('customerCommunications.placeholders.customerPhone.label'), description: t('customerCommunications.placeholders.customerPhone.description') },
+    { key: 'reservationStart', label: t('customerCommunications.placeholders.reservationStart.label'), description: t('customerCommunications.placeholders.reservationStart.description') },
+    { key: 'reservationEnd', label: t('customerCommunications.placeholders.reservationEnd.label'), description: t('customerCommunications.placeholders.reservationEnd.description') }
   ];
 
   // Function to handle email selection changes in preview dialog
@@ -745,28 +751,28 @@ export default function CustomerCommunications() {
     switch (template) {
       case "apk":
         return {
-          title: "APK Reminder",
+          title: t('customerCommunications.templateInfo.apk.title'),
           icon: Shield,
-          description: "Send APK inspection reminders to customers",
+          description: t('customerCommunications.templateInfo.apk.description'),
           color: "text-orange-600"
         };
       case "maintenance":
         return {
-          title: "Maintenance Reminder", 
+          title: t('customerCommunications.templateInfo.maintenance.title'),
           icon: Wrench,
-          description: "Send scheduled maintenance reminders",
+          description: t('customerCommunications.templateInfo.maintenance.description'),
           color: "text-blue-600"
         };
       case "custom":
         return {
-          title: "Custom Message",
+          title: t('customerCommunications.templateInfo.custom.title'),
           icon: Mail,
-          description: "Send custom messages to customers",
+          description: t('customerCommunications.templateInfo.custom.description'),
           color: "text-green-600"
         };
       default:
         return {
-          title: "Unknown",
+          title: t('customerCommunications.templateInfo.unknown.title'),
           icon: Mail,
           description: "",
           color: "text-gray-600"
@@ -778,15 +784,15 @@ export default function CustomerCommunications() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Customer Communications</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('customerCommunications.pageTitle')}</h1>
           <p className="text-muted-foreground">
-            Manage and send notifications to your customers
+            {t('customerCommunications.pageDescription')}
           </p>
         </div>
         <div className="flex items-center space-x-2">
           <Users className="h-5 w-5 text-muted-foreground" />
           <span className="text-sm text-muted-foreground">
-            {customers.length} customers • {vehiclesWithReservations.length} vehicles with reservations
+            {t('customerCommunications.statsLine', { customerCount: customers.length, vehicleCount: vehiclesWithReservations.length })}
           </span>
         </div>
       </div>
@@ -795,19 +801,19 @@ export default function CustomerCommunications() {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="send" className="flex items-center space-x-2">
             <Send className="h-4 w-4" />
-            <span>Send Notifications</span>
+            <span>{t('customerCommunications.tabs.send')}</span>
           </TabsTrigger>
           <TabsTrigger value="templates" className="flex items-center space-x-2">
             <Mail className="h-4 w-4" />
-            <span>Template Builder</span>
+            <span>{t('customerCommunications.tabs.templates')}</span>
           </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center space-x-2">
             <Clock className="h-4 w-4" />
-            <span>Email Log</span>
+            <span>{t('customerCommunications.tabs.history')}</span>
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center space-x-2">
             <AlertTriangle className="h-4 w-4" />
-            <span>Analytics</span>
+            <span>{t('customerCommunications.tabs.analytics')}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -823,15 +829,15 @@ export default function CustomerCommunications() {
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="apk" className="flex items-center space-x-2" data-testid="tab-apk">
                 <Shield className="h-4 w-4" />
-                <span>APK Reminders</span>
+                <span>{t('customerCommunications.modes.apk')}</span>
               </TabsTrigger>
               <TabsTrigger value="maintenance" className="flex items-center space-x-2" data-testid="tab-maintenance">
                 <Wrench className="h-4 w-4" />
-                <span>Maintenance</span>
+                <span>{t('customerCommunications.modes.maintenance')}</span>
               </TabsTrigger>
               <TabsTrigger value="custom" className="flex items-center space-x-2" data-testid="tab-custom">
                 <Mail className="h-4 w-4" />
-                <span>Custom Message</span>
+                <span>{t('customerCommunications.modes.custom')}</span>
               </TabsTrigger>
             </TabsList>
 
@@ -839,18 +845,18 @@ export default function CustomerCommunications() {
             <TabsContent value="apk" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>APK Reminder Notifications</CardTitle>
-                  <CardDescription>Send APK inspection reminders to customers with upcoming or overdue inspections</CardDescription>
+                  <CardTitle>{t('customerCommunications.send.apk.cardTitle')}</CardTitle>
+                  <CardDescription>{t('customerCommunications.send.apk.cardDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Template Selection */}
                   <div className="space-y-2">
                     <Label htmlFor="apk-template-select" className="text-sm font-medium">
-                      Email Template
+                      {t('customerCommunications.send.apk.emailTemplateLabel')}
                     </Label>
                     <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
                       <SelectTrigger className="w-full" data-testid="select-apk-template">
-                        <SelectValue placeholder="Select an APK reminder template" />
+                        <SelectValue placeholder={t('customerCommunications.send.apk.templatePlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
                         {savedTemplates.length > 0 ? (
@@ -861,39 +867,39 @@ export default function CustomerCommunications() {
                           ))
                         ) : (
                           <div className="px-2 py-1 text-xs text-muted-foreground">
-                            No templates available. Create templates in the "Templates" tab.
+                            {t('customerCommunications.send.apk.noTemplatesAvailable')}
                           </div>
                         )}
                       </SelectContent>
                     </Select>
                     {selectedTemplateId && (
                       <div className="text-xs text-muted-foreground">
-                        Template selected: {
-                          savedTemplates.find((t: any) => t.id.toString() === selectedTemplateId)?.name || selectedTemplateId
-                        }
+                        {t('customerCommunications.send.apk.templateSelectedLabel', {
+                          name: savedTemplates.find((t: any) => t.id.toString() === selectedTemplateId)?.name || selectedTemplateId
+                        })}
                       </div>
                     )}
                   </div>
 
                   <div className="flex items-center space-x-4 mb-4">
                     <div className="flex-1">
-                      <Label htmlFor="search-apk" className="text-sm font-medium sr-only">Search</Label>
+                      <Label htmlFor="search-apk" className="text-sm font-medium sr-only">{t('customerCommunications.send.apk.searchLabel')}</Label>
                       <Input
                         id="search-apk"
-                        placeholder="Search by license plate, brand, or model..."
+                        placeholder={t('customerCommunications.send.apk.searchPlaceholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         data-testid="input-search-apk"
                       />
                     </div>
-                    <Button 
+                    <Button
                       disabled={selectedVehicles.length === 0 || !selectedTemplateId}
                       onClick={generateEmailPreview}
                       className="bg-orange-600 hover:bg-orange-700"
                       data-testid="button-preview-apk"
                     >
                       <Send className="h-4 w-4 mr-2" />
-                      Preview & Send to {selectedVehicles.length} vehicles
+                      {t('customerCommunications.send.apk.previewSendButton', { count: selectedVehicles.length })}
                     </Button>
                   </div>
 
@@ -904,10 +910,9 @@ export default function CustomerCommunications() {
                     <div className="flex items-start space-x-2">
                       <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
                       <div>
-                        <p className="font-medium text-blue-900">APK Reminder Filter Active</p>
+                        <p className="font-medium text-blue-900">{t('customerCommunications.send.apk.filterActiveTitle')}</p>
                         <p className="text-sm text-blue-700">
-                          Showing vehicles with APK expiring within 2 months (60 days). 
-                          Vehicles are sorted by urgency: most urgent first.
+                          {t('customerCommunications.send.apk.filterActiveDescription')}
                         </p>
                       </div>
                     </div>
@@ -916,10 +921,9 @@ export default function CustomerCommunications() {
                     <div className="flex items-start space-x-2">
                       <Wrench className="h-5 w-5 text-blue-600 mt-0.5" />
                       <div>
-                        <p className="font-medium text-blue-900">Maintenance Reminder Filter Active</p>
+                        <p className="font-medium text-blue-900">{t('customerCommunications.send.maintenance.filterActiveTitle')}</p>
                         <p className="text-sm text-blue-700">
-                          Showing vehicles that need maintenance (no maintenance recorded in the last year). 
-                          Vehicles never maintained are prioritized.
+                          {t('customerCommunications.send.maintenance.filterActiveDescription')}
                         </p>
                       </div>
                     </div>
@@ -969,9 +973,9 @@ export default function CustomerCommunications() {
                         {vehicle.brand} {vehicle.model}
                       </div>
                       <div className="text-xs text-blue-600 mb-2">
-                        Customer: {customer.name}
+                        {t('customerCommunications.send.apk.customerLabel', { name: customer.name })}
                       </div>
-                      
+
                       {/* Filter-specific information */}
                       {filterInfo && (
                         <div className="mb-2">
@@ -980,15 +984,15 @@ export default function CustomerCommunications() {
                               <div className={`inline-block px-2 py-1 rounded text-xs font-medium ${
                                 getUrgencyColor(filterInfo.urgencyLevel)
                               }`}>
-                                {filterInfo.urgencyLevel === 'overdue' ? 'APK OVERDUE' :
-                                 filterInfo.urgencyLevel === 'urgent' ? 'APK URGENT' :
-                                 filterInfo.urgencyLevel === 'warning' ? 'APK WARNING' : 'APK NOTICE'}
+                                {filterInfo.urgencyLevel === 'overdue' ? t('customerCommunications.send.apk.apkOverdue') :
+                                 filterInfo.urgencyLevel === 'urgent' ? t('customerCommunications.send.apk.apkUrgent') :
+                                 filterInfo.urgencyLevel === 'warning' ? t('customerCommunications.send.apk.apkWarning') : t('customerCommunications.send.apk.apkNotice')}
                               </div>
                               <div className="text-xs text-muted-foreground">
                                 APK: {filterInfo.apkDate}
-                                {filterInfo.daysUntilAPK < 0 ? 
-                                  ` (${Math.abs(filterInfo.daysUntilAPK)} days overdue)` :
-                                  ` (${filterInfo.daysUntilAPK} days remaining)`
+                                {filterInfo.daysUntilAPK < 0 ?
+                                  ` ${t('customerCommunications.send.apk.apkDaysOverdue', { days: Math.abs(filterInfo.daysUntilAPK) })}` :
+                                  ` ${t('customerCommunications.send.apk.apkDaysRemaining', { days: filterInfo.daysUntilAPK })}`
                                 }
                               </div>
                             </div>
@@ -998,24 +1002,24 @@ export default function CustomerCommunications() {
                               <div className={`inline-block px-2 py-1 rounded text-xs font-medium ${
                                 getUrgencyColor(filterInfo.urgencyLevel)
                               }`}>
-                                {filterInfo.urgencyLevel === 'urgent' ? 'NEVER MAINTAINED' :
-                                 filterInfo.urgencyLevel === 'overdue' ? 'MAINTENANCE OVERDUE' :
-                                 filterInfo.urgencyLevel === 'warning' ? 'MAINTENANCE DUE' : 'MAINTENANCE NOTICE'}
+                                {filterInfo.urgencyLevel === 'urgent' ? t('customerCommunications.send.maintenance.neverMaintained') :
+                                 filterInfo.urgencyLevel === 'overdue' ? t('customerCommunications.send.maintenance.maintenanceOverdue') :
+                                 filterInfo.urgencyLevel === 'warning' ? t('customerCommunications.send.maintenance.maintenanceDue') : t('customerCommunications.send.maintenance.maintenanceNotice')}
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                {filterInfo.lastMaintenanceDate ? 
-                                  `Last: ${filterInfo.lastMaintenanceDate} (${filterInfo.daysSinceLastMaintenance} days ago)` :
-                                  'No maintenance recorded'
+                                {filterInfo.lastMaintenanceDate ?
+                                  t('customerCommunications.send.maintenance.lastMaintenance', { date: filterInfo.lastMaintenanceDate, days: filterInfo.daysSinceLastMaintenance }) :
+                                  t('customerCommunications.send.maintenance.noMaintenanceRecorded')
                                 }
                               </div>
                             </div>
                           )}
                         </div>
                       )}
-                      
+
                       <div className="flex items-center space-x-2">
                         <Badge variant="outline" className="text-xs">
-                          {vehicle.vehicleType || 'Vehicle'}
+                          {vehicle.vehicleType || t('customerCommunications.send.apk.vehicleTypeFallback')}
                         </Badge>
                       </div>
                     </div>
@@ -1026,7 +1030,7 @@ export default function CustomerCommunications() {
               {selectedVehicles.length > 0 && (
                 <div className="p-3 bg-green-50 rounded-lg border border-green-200">
                   <div className="text-sm font-medium text-green-900">
-                    {selectedVehicles.length} vehicle(s) selected for notification
+                    {t('customerCommunications.send.apk.selectedCount', { count: selectedVehicles.length })}
                   </div>
                 </div>
               )}
@@ -1039,18 +1043,18 @@ export default function CustomerCommunications() {
         <TabsContent value="maintenance" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Maintenance Reminder Notifications</CardTitle>
-              <CardDescription>Send maintenance reminders to customers with vehicles needing service</CardDescription>
+              <CardTitle>{t('customerCommunications.send.maintenance.cardTitle')}</CardTitle>
+              <CardDescription>{t('customerCommunications.send.maintenance.cardDescription')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Template Selection */}
               <div className="space-y-2">
                 <Label htmlFor="maintenance-template-select" className="text-sm font-medium">
-                  Email Template
+                  {t('customerCommunications.send.maintenance.emailTemplateLabel')}
                 </Label>
                 <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
                   <SelectTrigger className="w-full" data-testid="select-maintenance-template">
-                    <SelectValue placeholder="Select a maintenance reminder template" />
+                    <SelectValue placeholder={t('customerCommunications.send.maintenance.templatePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     {savedTemplates.length > 0 ? (
@@ -1061,39 +1065,39 @@ export default function CustomerCommunications() {
                       ))
                     ) : (
                       <div className="px-2 py-1 text-xs text-muted-foreground">
-                        No templates available. Create templates in the "Templates" tab.
+                        {t('customerCommunications.send.maintenance.noTemplatesAvailable')}
                       </div>
                     )}
                   </SelectContent>
                 </Select>
                 {selectedTemplateId && (
                   <div className="text-xs text-muted-foreground">
-                    Template selected: {
-                      savedTemplates.find((t: any) => t.id.toString() === selectedTemplateId)?.name || selectedTemplateId
-                    }
+                    {t('customerCommunications.send.maintenance.templateSelectedLabel', {
+                      name: savedTemplates.find((t: any) => t.id.toString() === selectedTemplateId)?.name || selectedTemplateId
+                    })}
                   </div>
                 )}
               </div>
 
               <div className="flex items-center space-x-4 mb-4">
                 <div className="flex-1">
-                  <Label htmlFor="search-maintenance" className="text-sm font-medium sr-only">Search</Label>
+                  <Label htmlFor="search-maintenance" className="text-sm font-medium sr-only">{t('customerCommunications.send.maintenance.searchLabel')}</Label>
                   <Input
                     id="search-maintenance"
-                    placeholder="Search by license plate, brand, or model..."
+                    placeholder={t('customerCommunications.send.maintenance.searchPlaceholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     data-testid="input-search-maintenance"
                   />
                 </div>
-                <Button 
+                <Button
                   disabled={selectedVehicles.length === 0 || !selectedTemplateId}
                   onClick={generateEmailPreview}
                   className="bg-blue-600 hover:bg-blue-700"
                   data-testid="button-preview-maintenance"
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  Preview & Send to {selectedVehicles.length} vehicles
+                  {t('customerCommunications.send.maintenance.previewSendButton', { count: selectedVehicles.length })}
                 </Button>
               </div>
 
@@ -1104,10 +1108,9 @@ export default function CustomerCommunications() {
                     <div className="flex items-start space-x-2">
                       <Wrench className="h-5 w-5 text-blue-600 mt-0.5" />
                       <div>
-                        <p className="font-medium text-blue-900">Maintenance Reminder Filter Active</p>
+                        <p className="font-medium text-blue-900">{t('customerCommunications.send.maintenance.filterActiveTitle')}</p>
                         <p className="text-sm text-blue-700">
-                          Showing vehicles that need maintenance (no maintenance recorded in the last year). 
-                          Vehicles never maintained are prioritized.
+                          {t('customerCommunications.send.maintenance.filterActiveDescription')}
                         </p>
                       </div>
                     </div>
@@ -1150,19 +1153,19 @@ export default function CustomerCommunications() {
                           {vehicle.brand} {vehicle.model}
                         </div>
                         <div className="text-xs text-gray-600">
-                          Customer: {customer?.name || 'Unknown'}
+                          {t('customerCommunications.send.maintenance.customerLabel', { name: customer?.name || t('customerCommunications.send.maintenance.unknownCustomer') })}
                         </div>
                         {filterInfo && (
                           <div className="text-xs text-muted-foreground">
-                            {filterInfo.lastMaintenanceDate ? 
-                              `Last: ${filterInfo.lastMaintenanceDate} (${filterInfo.daysSinceLastMaintenance} days ago)` :
-                              'No maintenance recorded'
+                            {filterInfo.lastMaintenanceDate ?
+                              t('customerCommunications.send.maintenance.lastMaintenance', { date: filterInfo.lastMaintenanceDate, days: filterInfo.daysSinceLastMaintenance }) :
+                              t('customerCommunications.send.maintenance.noMaintenanceRecorded')
                             }
                           </div>
                         )}
                         <div className="flex items-center space-x-2">
                           <Badge variant="outline" className="text-xs">
-                            {vehicle.vehicleType || 'Vehicle'}
+                            {vehicle.vehicleType || t('customerCommunications.send.maintenance.vehicleTypeFallback')}
                           </Badge>
                         </div>
                       </div>
@@ -1174,7 +1177,7 @@ export default function CustomerCommunications() {
               {selectedVehicles.length > 0 && (
                 <div className="p-3 bg-green-50 rounded-lg border border-green-200">
                   <div className="text-sm font-medium text-green-900">
-                    {selectedVehicles.length} vehicle(s) selected for notification
+                    {t('customerCommunications.send.maintenance.selectedCount', { count: selectedVehicles.length })}
                   </div>
                 </div>
               )}
@@ -1188,21 +1191,21 @@ export default function CustomerCommunications() {
           {/* Template Selection & Actions */}
           <Card>
             <CardHeader>
-              <CardTitle>Custom Message Notifications</CardTitle>
-              <CardDescription>Send custom messages to customers and optionally include vehicle information</CardDescription>
+              <CardTitle>{t('customerCommunications.send.custom.cardTitle')}</CardTitle>
+              <CardDescription>{t('customerCommunications.send.custom.cardDescription')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Template Selection */}
               <div className="space-y-2">
                 <Label htmlFor="custom-template-select" className="text-sm font-medium">
-                  Email Template (Optional)
+                  {t('customerCommunications.send.custom.emailTemplateOptionalLabel')}
                 </Label>
                 <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
                   <SelectTrigger className="w-full" data-testid="select-custom-template">
-                    <SelectValue placeholder="Select a template or compose custom message below" />
+                    <SelectValue placeholder={t('customerCommunications.send.custom.templatePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No template - Use custom message</SelectItem>
+                    <SelectItem value="none">{t('customerCommunications.send.custom.noTemplateOption')}</SelectItem>
                     {savedTemplates.length > 0 ? (
                       savedTemplates.map((template: any) => (
                         <SelectItem key={template.id} value={template.id.toString()}>
@@ -1211,38 +1214,38 @@ export default function CustomerCommunications() {
                       ))
                     ) : (
                       <div className="px-2 py-1 text-xs text-muted-foreground">
-                        No templates available. Create templates in the "Templates" tab.
+                        {t('customerCommunications.send.custom.noTemplatesAvailable')}
                       </div>
                     )}
                   </SelectContent>
                 </Select>
                 {selectedTemplateId && (
                   <div className="text-xs text-muted-foreground">
-                    Template selected: {
-                      savedTemplates.find((t: any) => t.id.toString() === selectedTemplateId)?.name || selectedTemplateId
-                    }
+                    {t('customerCommunications.send.custom.templateSelectedLabel', {
+                      name: savedTemplates.find((t: any) => t.id.toString() === selectedTemplateId)?.name || selectedTemplateId
+                    })}
                   </div>
                 )}
               </div>
 
               <div className="flex items-center justify-between mb-4">
-                <Button 
+                <Button
                   disabled={(selectedCustomers.length === 0 && selectedVehicles.length === 0) || ((!selectedTemplateId || selectedTemplateId === "none") && (!customMessage.trim() || !customSubject.trim()))}
                   onClick={generateEmailPreview}
                   className="bg-green-600 hover:bg-green-700"
                   data-testid="button-preview-custom"
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  Preview & Send
+                  {t('customerCommunications.send.custom.previewSendButton')}
                 </Button>
                 <div className="text-sm text-muted-foreground">
-                  {selectedCustomers.length > 0 && selectedVehicles.length > 0 
-                    ? `${selectedCustomers.length} customer(s) + ${selectedVehicles.length} vehicle(s) selected`
-                    : selectedCustomers.length > 0 
-                    ? `${selectedCustomers.length} customer(s) selected`
+                  {selectedCustomers.length > 0 && selectedVehicles.length > 0
+                    ? t('customerCommunications.send.custom.recipientsSummaryBoth', { customers: selectedCustomers.length, vehicles: selectedVehicles.length })
+                    : selectedCustomers.length > 0
+                    ? t('customerCommunications.send.custom.recipientsSummaryCustomersOnly', { customers: selectedCustomers.length })
                     : selectedVehicles.length > 0
-                    ? `${selectedVehicles.length} vehicle(s) selected`
-                    : 'No recipients selected'}
+                    ? t('customerCommunications.send.custom.recipientsSummaryVehiclesOnly', { vehicles: selectedVehicles.length })
+                    : t('customerCommunications.send.custom.recipientsSummaryNone')}
                 </div>
               </div>
             </CardContent>
@@ -1253,14 +1256,14 @@ export default function CustomerCommunications() {
             {/* Customers Column */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Select Customers</CardTitle>
-                <CardDescription>Choose customers to send messages to</CardDescription>
+                <CardTitle className="text-lg">{t('customerCommunications.send.custom.selectCustomersTitle')}</CardTitle>
+                <CardDescription>{t('customerCommunications.send.custom.selectCustomersDescription')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center space-x-2">
                   <div className="flex-1">
                     <Input
-                      placeholder="Search by customer name, email..."
+                      placeholder={t('customerCommunications.send.custom.searchCustomersPlaceholder')}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       data-testid="input-search-custom-customers"
@@ -1271,9 +1274,9 @@ export default function CustomerCommunications() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="with-reservations">With Res.</SelectItem>
-                      <SelectItem value="without-reservations">No Res.</SelectItem>
+                      <SelectItem value="all">{t('customerCommunications.send.custom.filterAll')}</SelectItem>
+                      <SelectItem value="with-reservations">{t('customerCommunications.send.custom.filterWithReservations')}</SelectItem>
+                      <SelectItem value="without-reservations">{t('customerCommunications.send.custom.filterWithoutReservations')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1301,7 +1304,7 @@ export default function CustomerCommunications() {
                           <div className="flex-1 min-w-0">
                             <div className="font-medium text-sm truncate">{customer.name}</div>
                             <div className="text-xs text-muted-foreground truncate">
-                              {customer.email || 'No email'}
+                              {customer.email || t('customerCommunications.send.custom.noEmail')}
                             </div>
                           </div>
                           {isSelected && (
@@ -1316,7 +1319,7 @@ export default function CustomerCommunications() {
                 {selectedCustomers.length > 0 && (
                   <div className="p-2 bg-green-50 rounded-lg border border-green-200 text-center">
                     <div className="text-sm font-medium text-green-900">
-                      {selectedCustomers.length} selected
+                      {t('customerCommunications.send.custom.selectedCount', { count: selectedCustomers.length })}
                     </div>
                   </div>
                 )}
@@ -1326,13 +1329,13 @@ export default function CustomerCommunications() {
             {/* Vehicles Column */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Select Vehicles (Optional)</CardTitle>
-                <CardDescription>Choose vehicles to include in the message</CardDescription>
+                <CardTitle className="text-lg">{t('customerCommunications.send.custom.selectVehiclesTitle')}</CardTitle>
+                <CardDescription>{t('customerCommunications.send.custom.selectVehiclesDescription')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <Input
-                    placeholder="Search by license plate, brand, model..."
+                    placeholder={t('customerCommunications.send.custom.searchVehiclesPlaceholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     data-testid="input-search-custom-vehicles"
@@ -1368,7 +1371,7 @@ export default function CustomerCommunications() {
                             </div>
                             {customer && (
                               <div className="text-xs text-blue-600 truncate">
-                                Customer: {customer.name}
+                                {t('customerCommunications.send.custom.customerLabel', { name: customer.name })}
                               </div>
                             )}
                           </div>
@@ -1384,7 +1387,7 @@ export default function CustomerCommunications() {
                 {selectedVehicles.length > 0 && (
                   <div className="p-2 bg-blue-50 rounded-lg border border-blue-200 text-center">
                     <div className="text-sm font-medium text-blue-900">
-                      {selectedVehicles.length} selected
+                      {t('customerCommunications.send.custom.selectedCount', { count: selectedVehicles.length })}
                     </div>
                   </div>
                 )}
@@ -1395,25 +1398,25 @@ export default function CustomerCommunications() {
           {/* Custom Message Composition */}
           <Card>
             <CardHeader>
-              <CardTitle>Custom Message</CardTitle>
-              <CardDescription>Compose your custom message</CardDescription>
+              <CardTitle>{t('customerCommunications.send.custom.messageCardTitle')}</CardTitle>
+              <CardDescription>{t('customerCommunications.send.custom.messageCardDescription')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="custom-subject">Email Subject</Label>
+                <Label htmlFor="custom-subject">{t('customerCommunications.send.custom.subjectLabel')}</Label>
                 <Input
                   id="custom-subject"
-                  placeholder="Enter email subject..."
+                  placeholder={t('customerCommunications.send.custom.subjectPlaceholder')}
                   value={customSubject}
                   onChange={(e) => setCustomSubject(e.target.value)}
                   data-testid="input-custom-subject"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="custom-message">Message</Label>
+                <Label htmlFor="custom-message">{t('customerCommunications.send.custom.messageLabel')}</Label>
                 <Textarea
                   id="custom-message"
-                  placeholder="Enter your custom message to customers..."
+                  placeholder={t('customerCommunications.send.custom.messagePlaceholder')}
                   value={customMessage}
                   onChange={(e) => setCustomMessage(e.target.value)}
                   className="min-h-[120px]"
@@ -1421,13 +1424,13 @@ export default function CustomerCommunications() {
                 />
               </div>
               <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <h4 className="font-medium text-blue-900 text-sm mb-2">Available Placeholders:</h4>
+                <h4 className="font-medium text-blue-900 text-sm mb-2">{t('customerCommunications.send.custom.availablePlaceholdersTitle')}</h4>
                 <div className="grid grid-cols-2 gap-2 text-xs text-blue-700">
-                  <div><code>{"{customerName}"}</code> - Customer's name</div>
-                  <div><code>{"{vehiclePlate}"}</code> - License plate</div>
-                  <div><code>{"{vehicleBrand}"}</code> - Vehicle brand</div>
-                  <div><code>{"{vehicleModel}"}</code> - Vehicle model</div>
-                  <div><code>{"{companyName}"}</code> - Your company name</div>
+                  <div><code>{"{customerName}"}</code> {t('customerCommunications.send.custom.placeholderCustomerName')}</div>
+                  <div><code>{"{vehiclePlate}"}</code> {t('customerCommunications.send.custom.placeholderVehiclePlate')}</div>
+                  <div><code>{"{vehicleBrand}"}</code> {t('customerCommunications.send.custom.placeholderVehicleBrand')}</div>
+                  <div><code>{"{vehicleModel}"}</code> {t('customerCommunications.send.custom.placeholderVehicleModel')}</div>
+                  <div><code>{"{companyName}"}</code> {t('customerCommunications.send.custom.placeholderCompanyName')}</div>
                 </div>
               </div>
             </CardContent>
@@ -1440,8 +1443,8 @@ export default function CustomerCommunications() {
         <TabsContent value="history" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Email Log</CardTitle>
-              <CardDescription>Track sent and failed email notifications</CardDescription>
+              <CardTitle>{t('customerCommunications.history.cardTitle')}</CardTitle>
+              <CardDescription>{t('customerCommunications.history.cardDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -1463,31 +1466,31 @@ export default function CustomerCommunications() {
                           </div>
                         </div>
                         <Badge variant={notification.status === 'sent' ? 'default' : 'destructive'}>
-                          {notification.status}
+                          {t(`customerCommunications.history.statusLabels.${notification.status}`)}
                         </Badge>
                       </div>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
                         <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                          <div className="text-sm font-medium text-green-900">Sent Successfully</div>
+                          <div className="text-sm font-medium text-green-900">{t('customerCommunications.history.sentSuccessfully')}</div>
                           <div className="text-lg font-bold text-green-700">{notification.emailsSent}</div>
                         </div>
-                        
+
                         <div className="p-3 bg-red-50 rounded-lg border border-red-200">
-                          <div className="text-sm font-medium text-red-900">Failed</div>
+                          <div className="text-sm font-medium text-red-900">{t('customerCommunications.history.failed')}</div>
                           <div className="text-lg font-bold text-red-700">{notification.emailsFailed}</div>
                         </div>
-                        
+
                         <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <div className="text-sm font-medium text-blue-900">Success Rate</div>
+                          <div className="text-sm font-medium text-blue-900">{t('customerCommunications.history.successRate')}</div>
                           <div className="text-lg font-bold text-blue-700">{successRate.toFixed(1)}%</div>
                         </div>
                       </div>
-                      
+
                       {notification.failureReason && (
                         <div className="mt-3 p-2 bg-yellow-50 rounded border border-yellow-200">
                           <div className="text-sm text-yellow-800">
-                            <strong>Failure Reason:</strong> {notification.failureReason}
+                            <strong>{t('customerCommunications.history.failureReasonLabel')}</strong> {notification.failureReason}
                           </div>
                         </div>
                       )}
@@ -1511,7 +1514,7 @@ export default function CustomerCommunications() {
                     <p className="text-2xl font-bold text-green-600">
                       {notificationHistory.reduce((sum, n) => sum + n.emailsSent, 0)}
                     </p>
-                    <p className="text-sm text-muted-foreground">Total Emails Sent</p>
+                    <p className="text-sm text-muted-foreground">{t('customerCommunications.analytics.totalEmailsSent')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -1527,7 +1530,7 @@ export default function CustomerCommunications() {
                     <p className="text-2xl font-bold text-red-600">
                       {notificationHistory.reduce((sum, n) => sum + n.emailsFailed, 0)}
                     </p>
-                    <p className="text-sm text-muted-foreground">Failed Emails</p>
+                    <p className="text-sm text-muted-foreground">{t('customerCommunications.analytics.failedEmails')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -1543,7 +1546,7 @@ export default function CustomerCommunications() {
                     <p className="text-2xl font-bold text-blue-600">
                       {notificationHistory.length}
                     </p>
-                    <p className="text-sm text-muted-foreground">Total Campaigns</p>
+                    <p className="text-sm text-muted-foreground">{t('customerCommunications.analytics.totalCampaigns')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -1559,7 +1562,7 @@ export default function CustomerCommunications() {
                     <p className="text-2xl font-bold text-purple-600">
                       {vehiclesWithReservations.length}
                     </p>
-                    <p className="text-sm text-muted-foreground">Active Customers</p>
+                    <p className="text-sm text-muted-foreground">{t('customerCommunications.analytics.activeCustomers')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -1568,34 +1571,34 @@ export default function CustomerCommunications() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Email Performance</CardTitle>
-              <CardDescription>Track your email communication effectiveness</CardDescription>
+              <CardTitle>{t('customerCommunications.analytics.performanceCardTitle')}</CardTitle>
+              <CardDescription>{t('customerCommunications.analytics.performanceCardDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium text-sm mb-2">APK Notifications</h4>
+                    <h4 className="font-medium text-sm mb-2">{t('customerCommunications.analytics.apkNotifications')}</h4>
                     <div className="text-2xl font-bold text-orange-600">
                       {notificationHistory.filter(n => n.type === 'apk').reduce((sum, n) => sum + n.emailsSent, 0)}
                     </div>
-                    <p className="text-xs text-muted-foreground">Emails sent</p>
+                    <p className="text-xs text-muted-foreground">{t('customerCommunications.analytics.emailsSentLabel')}</p>
                   </div>
-                  
+
                   <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium text-sm mb-2">Maintenance Reminders</h4>
+                    <h4 className="font-medium text-sm mb-2">{t('customerCommunications.analytics.maintenanceReminders')}</h4>
                     <div className="text-2xl font-bold text-blue-600">
                       {notificationHistory.filter(n => n.type === 'maintenance').reduce((sum, n) => sum + n.emailsSent, 0)}
                     </div>
-                    <p className="text-xs text-muted-foreground">Emails sent</p>
+                    <p className="text-xs text-muted-foreground">{t('customerCommunications.analytics.emailsSentLabel')}</p>
                   </div>
-                  
+
                   <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium text-sm mb-2">Custom Messages</h4>
+                    <h4 className="font-medium text-sm mb-2">{t('customerCommunications.analytics.customMessages')}</h4>
                     <div className="text-2xl font-bold text-green-600">
                       {notificationHistory.filter(n => n.type === 'custom').reduce((sum, n) => sum + n.emailsSent, 0)}
                     </div>
-                    <p className="text-xs text-muted-foreground">Emails sent</p>
+                    <p className="text-xs text-muted-foreground">{t('customerCommunications.analytics.emailsSentLabel')}</p>
                   </div>
                 </div>
               </div>
@@ -1606,8 +1609,8 @@ export default function CustomerCommunications() {
         <TabsContent value="templates" className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-medium">Email Templates</h3>
-              <p className="text-sm text-muted-foreground">Create and manage custom email templates</p>
+              <h3 className="text-lg font-medium">{t('customerCommunications.templates.sectionTitle')}</h3>
+              <p className="text-sm text-muted-foreground">{t('customerCommunications.templates.sectionDescription')}</p>
             </div>
             <Button
               onClick={() => {
@@ -1619,7 +1622,7 @@ export default function CustomerCommunications() {
               className="bg-green-600 hover:bg-green-700"
             >
               <Mail className="h-4 w-4 mr-2" />
-              New Template
+              {t('customerCommunications.templates.newTemplateButton')}
             </Button>
           </div>
 
@@ -1632,10 +1635,10 @@ export default function CustomerCommunications() {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle>
-                        {editingTemplate ? "Edit Template" : "Create New Template"}
+                        {editingTemplate ? t('customerCommunications.templates.editTemplateTitle') : t('customerCommunications.templates.createTemplateTitle')}
                       </CardTitle>
                       <CardDescription>
-                        Design your email template with placeholders for dynamic content
+                        {t('customerCommunications.templates.builderDescription')}
                       </CardDescription>
                     </div>
                     <Button
@@ -1646,61 +1649,61 @@ export default function CustomerCommunications() {
                       className="text-xs shrink-0"
                     >
                       <Eye className="h-3 w-3 mr-1" />
-                      {showLivePreview ? 'Hide' : 'Show'} Live Preview
+                      {showLivePreview ? t('customerCommunications.templates.hideLivePreview') : t('customerCommunications.templates.showLivePreview')}
                     </Button>
                   </div>
                 </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="template-name">Template Name</Label>
+                  <Label htmlFor="template-name">{t('customerCommunications.templates.templateNameLabel')}</Label>
                   <Input
                     id="template-name"
-                    placeholder="e.g., Service Reminder, Welcome Message"
+                    placeholder={t('customerCommunications.templates.templateNamePlaceholder')}
                     value={templateName}
                     onChange={(e) => setTemplateName(e.target.value)}
                   />
                 </div>
-                
+
                 <div className="space-y-2">
-                  <Label htmlFor="template-subject">Email Subject</Label>
+                  <Label htmlFor="template-subject">{t('customerCommunications.templates.emailSubjectLabel')}</Label>
                   <Input
                     ref={templateSubjectRef}
                     id="template-subject"
-                    placeholder="e.g., Service Reminder for {vehiclePlate}"
+                    placeholder={t('customerCommunications.templates.subjectPlaceholder')}
                     value={templateSubject}
                     onChange={(e) => setTemplateSubject(e.target.value)}
                   />
                 </div>
-                
+
                 <div className="space-y-2">
-                  <Label htmlFor="template-category">Template Category</Label>
+                  <Label htmlFor="template-category">{t('customerCommunications.templates.categoryLabel')}</Label>
                   <Select value={templateCategory} onValueChange={(value: 'apk' | 'maintenance' | 'custom') => setTemplateCategory(value)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder={t('customerCommunications.templates.categoryPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="apk">APK Reminders</SelectItem>
-                      <SelectItem value="maintenance">Maintenance</SelectItem>
-                      <SelectItem value="custom">Custom</SelectItem>
+                      <SelectItem value="apk">{t('customerCommunications.templates.categoryApk')}</SelectItem>
+                      <SelectItem value="maintenance">{t('customerCommunications.templates.categoryMaintenance')}</SelectItem>
+                      <SelectItem value="custom">{t('customerCommunications.templates.categoryCustom')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-2">
-                  <Label htmlFor="template-content">Email Content</Label>
+                  <Label htmlFor="template-content">{t('customerCommunications.templates.emailContentLabel')}</Label>
                   <textarea
                     ref={templateContentRef}
                     id="template-content"
-                    placeholder="Write your email content here... Click the placeholder buttons below to insert dynamic content"
+                    placeholder={t('customerCommunications.templates.contentPlaceholder')}
                     value={templateContent}
                     onChange={(e) => setTemplateContent(e.target.value)}
                     className="w-full min-h-[200px] p-3 border rounded-md resize-vertical font-mono text-sm"
                   />
                 </div>
-                
+
                 {/* Placeholder Buttons */}
                 <div className="space-y-3">
-                  <h4 className="font-medium text-gray-900 text-sm">Insert Placeholders:</h4>
+                  <h4 className="font-medium text-gray-900 text-sm">{t('customerCommunications.templates.insertPlaceholdersTitle')}</h4>
                   
                   {/* Placeholder buttons grid */}
                   <div className={`grid gap-2 ${showLivePreview ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-3'}`}>
@@ -1722,18 +1725,18 @@ export default function CustomerCommunications() {
                   </div>
                   
                   <div className="text-xs text-muted-foreground">
-                    💡 Tip: Click on any field above, position your cursor, then click a placeholder button to insert it at that position.
+                    {t('customerCommunications.templates.insertTip')}
                   </div>
                 </div>
 
-                
+
                 <div className="flex space-x-2">
                   <Button
                     onClick={async () => {
                       if (!templateName.trim() || !templateSubject.trim() || !templateContent.trim()) {
                         toast({
-                          title: "Missing Information",
-                          description: "Please fill in all template fields",
+                          title: t('customerCommunications.toasts.missingInformationTitle'),
+                          description: t('customerCommunications.toasts.templateFieldsMissingDescription'),
                           variant: "destructive",
                         });
                         return;
@@ -1762,14 +1765,14 @@ export default function CustomerCommunications() {
                         });
 
                         if (!response.ok) {
-                          throw new Error(`Failed to save template: ${response.statusText}`);
+                          throw new Error(t('customerCommunications.toasts.saveTemplateRequestFailed', { status: response.statusText }));
                         }
 
                         const result = await response.json();
-                        
+
                         toast({
-                          title: editingTemplate ? "Template Updated" : "Template Created",
-                          description: `Template "${templateName}" saved successfully`,
+                          title: editingTemplate ? t('customerCommunications.toasts.templateUpdatedTitle') : t('customerCommunications.toasts.templateCreatedTitle'),
+                          description: t('customerCommunications.toasts.templateSavedDescription', { name: templateName }),
                         });
 
                         // Reset form
@@ -1783,8 +1786,8 @@ export default function CustomerCommunications() {
                       } catch (error) {
                         console.error('Failed to save template:', error);
                         toast({
-                          title: "Failed to Save Template",
-                          description: error instanceof Error ? error.message : "An error occurred",
+                          title: t('customerCommunications.toasts.saveTemplateFailedTitle'),
+                          description: error instanceof Error ? error.message : t('customerCommunications.toasts.genericError'),
                           variant: "destructive",
                         });
                       } finally {
@@ -1794,9 +1797,9 @@ export default function CustomerCommunications() {
                     disabled={isLoadingTemplates}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
-                    {isLoadingTemplates ? "Saving..." : (editingTemplate ? "Update Template" : "Save Template")}
+                    {isLoadingTemplates ? t('customerCommunications.templates.savingButton') : (editingTemplate ? t('customerCommunications.templates.updateTemplateButton') : t('customerCommunications.templates.saveTemplateButton'))}
                   </Button>
-                  
+
                   {editingTemplate && (
                     <Button
                       variant="outline"
@@ -1807,7 +1810,7 @@ export default function CustomerCommunications() {
                         setTemplateContent("");
                       }}
                     >
-                      Cancel
+                      {t('customerCommunications.templates.cancelButton')}
                     </Button>
                   )}
                 </div>
@@ -1820,28 +1823,28 @@ export default function CustomerCommunications() {
                   <CardHeader>
                     <div className="flex items-center space-x-2">
                       <Eye className="h-4 w-4 text-blue-600" />
-                      <CardTitle className="text-lg">Live Preview</CardTitle>
-                      <Badge variant="secondary" className="text-xs">Sample Data</Badge>
+                      <CardTitle className="text-lg">{t('customerCommunications.templates.livePreviewTitle')}</CardTitle>
+                      <Badge variant="secondary" className="text-xs">{t('customerCommunications.templates.sampleDataBadge')}</Badge>
                     </div>
                     <CardDescription>
-                      See how your template will look with real data
+                      {t('customerCommunications.templates.livePreviewDescription')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="border rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
                       <div className="bg-white border rounded-lg shadow-sm p-4 space-y-3">
                         <div className="border-b pb-3">
-                          <div className="text-xs text-gray-500 mb-1">From: Car Rental System</div>
-                          <div className="text-xs text-gray-500 mb-2">To: john.doe@example.com</div>
+                          <div className="text-xs text-gray-500 mb-1">{t('customerCommunications.templates.fromLabel')}</div>
+                          <div className="text-xs text-gray-500 mb-2">{t('customerCommunications.templates.toLabelSample')}</div>
                           {templateSubject ? (
                             <div className="font-semibold text-gray-900">
                               {getPreviewContent().subject}
                             </div>
                           ) : (
-                            <div className="text-gray-400 italic text-sm">Subject will appear here...</div>
+                            <div className="text-gray-400 italic text-sm">{t('customerCommunications.templates.subjectPreviewPlaceholder')}</div>
                           )}
                         </div>
-                        
+
                         <div className="space-y-2">
                           {templateContent ? (
                             <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
@@ -1849,19 +1852,19 @@ export default function CustomerCommunications() {
                             </div>
                           ) : (
                             <div className="text-sm text-gray-400 italic">
-                              Your email content will appear here as you type...
+                              {t('customerCommunications.templates.contentPreviewPlaceholder')}
                             </div>
                           )}
                         </div>
-                        
+
                         {(templateSubject || templateContent) && (
                           <div className="pt-3 border-t text-xs text-gray-500 bg-gray-50 -mx-4 -mb-3 px-4 py-3 rounded-b-lg">
                             <div className="space-y-1">
-                              <div><strong>Sample Data Used:</strong></div>
-                              <div>• Customer: John Doe</div>
-                              <div>• Vehicle: Toyota Camry (AB-123-CD)</div>
-                              <div>• APK Date: 2024-06-15</div>
-                              <div>• Company: Car Rental Company</div>
+                              <div><strong>{t('customerCommunications.templates.sampleDataUsedLabel')}</strong></div>
+                              <div>{t('customerCommunications.templates.sampleCustomer')}</div>
+                              <div>{t('customerCommunications.templates.sampleVehicle')}</div>
+                              <div>{t('customerCommunications.templates.sampleApkDate')}</div>
+                              <div>{t('customerCommunications.templates.sampleCompany')}</div>
                             </div>
                           </div>
                         )}
@@ -1877,12 +1880,12 @@ export default function CustomerCommunications() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Saved Templates ({savedTemplates.length})</CardTitle>
-                    <CardDescription>Manage your existing email templates</CardDescription>
+                    <CardTitle>{t('customerCommunications.templates.savedTemplatesTitle', { count: savedTemplates.length })}</CardTitle>
+                    <CardDescription>{t('customerCommunications.templates.savedTemplatesDescription')}</CardDescription>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Input
-                      placeholder="Search templates..."
+                      placeholder={t('customerCommunications.templates.searchTemplatesPlaceholder')}
                       value={templateSearchQuery}
                       onChange={(e) => setTemplateSearchQuery(e.target.value)}
                       className="w-40"
@@ -1890,13 +1893,13 @@ export default function CustomerCommunications() {
                     />
                     <Select value={templateCategoryFilter} onValueChange={(value: any) => setTemplateCategoryFilter(value as 'all' | 'apk' | 'maintenance' | 'custom')}>
                       <SelectTrigger className="w-32" data-testid="select-template-category">
-                        <SelectValue placeholder="Category" />
+                        <SelectValue placeholder={t('customerCommunications.templates.categoryFilterPlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All</SelectItem>
-                        <SelectItem value="apk">APK</SelectItem>
-                        <SelectItem value="maintenance">Maintenance</SelectItem>
-                        <SelectItem value="custom">Custom</SelectItem>
+                        <SelectItem value="all">{t('customerCommunications.templates.categoryAll')}</SelectItem>
+                        <SelectItem value="apk">{t('customerCommunications.templates.categoryApkShort')}</SelectItem>
+                        <SelectItem value="maintenance">{t('customerCommunications.templates.categoryMaintenance')}</SelectItem>
+                        <SelectItem value="custom">{t('customerCommunications.templates.categoryCustom')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1906,9 +1909,9 @@ export default function CustomerCommunications() {
                 {savedTemplates.length === 0 ? (
                   <div className="text-center py-8">
                     <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No templates yet</h3>
+                    <h3 className="text-lg font-medium mb-2">{t('customerCommunications.templates.noTemplatesYetTitle')}</h3>
                     <p className="text-muted-foreground mb-4">
-                      Create your first email template to get started
+                      {t('customerCommunications.templates.noTemplatesYetDescription')}
                     </p>
                     <Button
                       onClick={() => {
@@ -1921,7 +1924,7 @@ export default function CustomerCommunications() {
                       className="bg-green-600 hover:bg-green-700"
                     >
                       <Mail className="h-4 w-4 mr-2" />
-                      Create Template
+                      {t('customerCommunications.templates.createTemplateButton')}
                     </Button>
                   </div>
                 ) : (
@@ -1934,42 +1937,42 @@ export default function CustomerCommunications() {
                               <div className="flex items-center space-x-2 mb-2">
                                 <h4 className="font-medium text-sm truncate">{template.name}</h4>
                                 <Badge className={`text-xs ${getCategoryBadgeColor(template.category)}`}>
-                                  {template.category?.toUpperCase() || 'CUSTOM'}
+                                  {template.category?.toUpperCase() || t('customerCommunications.templates.defaultCategoryBadge')}
                                 </Badge>
                               </div>
                               <p className="text-xs text-muted-foreground mb-2 truncate">{template.subject}</p>
                               <p className="text-xs text-gray-500 mb-2 line-clamp-3 leading-relaxed">{template.content}</p>
                               <div className="text-xs text-muted-foreground space-y-1">
-                                <div>Created: {new Date(template.createdAt).toLocaleDateString('nl-NL')}</div>
+                                <div>{t('customerCommunications.templates.createdLabel', { date: new Date(template.createdAt).toLocaleDateString('nl-NL') })}</div>
                                 {template.lastUsed && (
-                                  <div>Last used: {new Date(template.lastUsed).toLocaleDateString('nl-NL')}</div>
+                                  <div>{t('customerCommunications.templates.lastUsedLabel', { date: new Date(template.lastUsed).toLocaleDateString('nl-NL') })}</div>
                                 )}
                               </div>
                             </div>
                           </div>
-                          
+
                           <div className="flex flex-wrap gap-1 pt-2 border-t">
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => handlePreviewTemplate(template)}
                               data-testid={`button-preview-${template.id}`}
-                              title="Preview template"
+                              title={t('customerCommunications.templates.previewTitle')}
                               className="h-8 px-2 text-xs"
                             >
                               <Eye className="h-3 w-3 mr-1" />
-                              Preview
+                              {t('customerCommunications.templates.previewButton')}
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => duplicateTemplate(template)}
                               data-testid={`button-duplicate-${template.id}`}
-                              title="Duplicate template"
+                              title={t('customerCommunications.templates.duplicateTitle')}
                               className="h-8 px-2 text-xs"
                             >
                               <Copy className="h-3 w-3 mr-1" />
-                              Copy
+                              {t('customerCommunications.templates.copyButton')}
                             </Button>
                             <Button
                               size="sm"
@@ -1982,11 +1985,11 @@ export default function CustomerCommunications() {
                                 setTemplateCategory(template.category || "custom");
                               }}
                               data-testid={`button-edit-${template.id}`}
-                              title="Edit template"
+                              title={t('customerCommunications.templates.editTitle')}
                               className="h-8 px-2 text-xs"
                             >
                               <Edit className="h-3 w-3 mr-1" />
-                              Edit
+                              {t('customerCommunications.templates.editButton')}
                             </Button>
                             <Button
                               size="sm"
@@ -1994,10 +1997,10 @@ export default function CustomerCommunications() {
                               className="text-red-600 hover:text-red-700 h-8 px-2 text-xs"
                               onClick={() => handleDeleteTemplate(template)}
                               data-testid={`button-delete-${template.id}`}
-                              title="Delete template"
+                              title={t('customerCommunications.templates.deleteTitle')}
                             >
                               <Trash2 className="h-3 w-3 mr-1" />
-                              Delete
+                              {t('customerCommunications.templates.deleteButton')}
                             </Button>
                           </div>
                         </div>
@@ -2015,25 +2018,25 @@ export default function CustomerCommunications() {
       <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Email Preview</DialogTitle>
+            <DialogTitle>{t('customerCommunications.dialogs.emailPreview.title')}</DialogTitle>
             <DialogDescription>
-              Review your email before sending to {emailPreview?.recipients.length || 0} recipients
+              {t('customerCommunications.dialogs.emailPreview.descriptionReview', { count: emailPreview?.recipients.length || 0 })}
             </DialogDescription>
           </DialogHeader>
-          
+
           {emailPreview && (
             <div className="space-y-6">
               {/* Email Content Preview */}
               <div className="space-y-4">
                 <div>
-                  <Label className="text-sm font-medium">Subject:</Label>
+                  <Label className="text-sm font-medium">{t('customerCommunications.dialogs.emailPreview.subjectLabel')}</Label>
                   <div className="mt-1 p-3 bg-gray-50 rounded border">
                     <p className="font-medium">{emailPreview.subject}</p>
                   </div>
                 </div>
-                
+
                 <div>
-                  <Label className="text-sm font-medium">Email Content:</Label>
+                  <Label className="text-sm font-medium">{t('customerCommunications.dialogs.emailPreview.contentLabel')}</Label>
                   <div className="mt-1 p-4 bg-gray-50 rounded border">
                     <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans">
                       {emailPreview.content}
@@ -2045,7 +2048,7 @@ export default function CustomerCommunications() {
               {/* Recipients List */}
               <div>
                 <Label className="text-sm font-medium">
-                  Recipients ({emailPreview.recipients.length}):
+                  {t('customerCommunications.dialogs.emailPreview.recipientsLabel', { count: emailPreview.recipients.length })}
                 </Label>
                 <div className="mt-2 max-h-48 overflow-y-auto border rounded">
                   <div className="divide-y">
@@ -2060,10 +2063,10 @@ export default function CustomerCommunications() {
                           </div>
                           {recipient.emailField !== "none" && (
                             <Badge variant="outline" className="text-xs">
-                              {recipient.emailField === "email" && "Primary"}
-                              {recipient.emailField === "emailForMOT" && "APK/MOT"}
-                              {recipient.emailField === "emailForInvoices" && "Invoice"}
-                              {recipient.emailField === "emailGeneral" && "General"}
+                              {recipient.emailField === "email" && t('customerCommunications.emailOptionLabels.email')}
+                              {recipient.emailField === "emailForMOT" && t('customerCommunications.emailOptionLabels.emailForMOT')}
+                              {recipient.emailField === "emailForInvoices" && t('customerCommunications.emailOptionLabels.emailForInvoices')}
+                              {recipient.emailField === "emailGeneral" && t('customerCommunications.emailOptionLabels.emailGeneral')}
                             </Badge>
                           )}
                         </div>
@@ -2071,7 +2074,7 @@ export default function CustomerCommunications() {
                         <div className="space-y-2">
                           {recipient.emailOptions.length > 1 ? (
                             <div className="space-y-1">
-                              <Label className="text-xs font-medium">Select Email Address:</Label>
+                              <Label className="text-xs font-medium">{t('customerCommunications.dialogs.emailPreview.selectEmailLabel')}</Label>
                               <Select 
                                 value={recipient.emailField} 
                                 onValueChange={(value) => handleEmailSelection(index, value)}
@@ -2093,7 +2096,7 @@ export default function CustomerCommunications() {
                             </div>
                           ) : (
                             <div className="text-xs text-muted-foreground">
-                              <span className="font-medium">Email:</span> {recipient.email}
+                              <span className="font-medium">{t('customerCommunications.dialogs.emailPreview.emailLabel')}</span> {recipient.email}
                             </div>
                           )}
                         </div>
@@ -2108,11 +2111,11 @@ export default function CustomerCommunications() {
                 <div className="flex items-center space-x-2">
                   <Mail className="h-4 w-4 text-blue-600" />
                   <span className="text-sm font-medium text-blue-900">
-                    Ready to send {emailPreview.recipients.length} emails
+                    {t('customerCommunications.dialogs.emailPreview.readyToSend', { count: emailPreview.recipients.length })}
                   </span>
                 </div>
                 <p className="text-xs text-blue-700 mt-1">
-                  Each recipient will receive a personalized version of this email with their specific vehicle and customer information. You can select which email address to use for each recipient above.
+                  {t('customerCommunications.dialogs.emailPreview.personalizedNote')}
                 </p>
               </div>
             </div>
@@ -2120,14 +2123,14 @@ export default function CustomerCommunications() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setPreviewDialogOpen(false)}>
-              Cancel
+              {t('customerCommunications.dialogs.emailPreview.cancelButton')}
             </Button>
-            <Button 
+            <Button
               onClick={confirmSendNotifications}
               disabled={isLoadingNotifications}
               className="bg-green-600 hover:bg-green-700"
             >
-              {isLoadingNotifications ? "Sending..." : "Confirm & Send Emails"}
+              {isLoadingNotifications ? t('customerCommunications.dialogs.emailPreview.sendingButton') : t('customerCommunications.dialogs.emailPreview.confirmSendButton')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2137,9 +2140,9 @@ export default function CustomerCommunications() {
       <Dialog open={templatePreviewDialog} onOpenChange={setTemplatePreviewDialog}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Template Preview</DialogTitle>
+            <DialogTitle>{t('customerCommunications.dialogs.templatePreview.title')}</DialogTitle>
             <DialogDescription>
-              Preview how this template will appear in emails
+              {t('customerCommunications.dialogs.templatePreview.description')}
             </DialogDescription>
           </DialogHeader>
           {selectedTemplateForPreview && (
@@ -2147,12 +2150,12 @@ export default function CustomerCommunications() {
               <div className="p-4 border rounded-lg bg-white">
                 <div className="border-b pb-3 mb-3">
                   <div className="flex items-center justify-between">
-                    <div className="font-medium text-sm text-gray-600">From: Car Rental System</div>
+                    <div className="font-medium text-sm text-gray-600">{t('customerCommunications.dialogs.templatePreview.fromLabel')}</div>
                     <Badge className={getCategoryBadgeColor(selectedTemplateForPreview.category)}>
-                      {selectedTemplateForPreview.category?.toUpperCase() || 'CUSTOM'}
+                      {selectedTemplateForPreview.category?.toUpperCase() || t('customerCommunications.templates.defaultCategoryBadge')}
                     </Badge>
                   </div>
-                  <div className="font-medium text-sm text-gray-600 mt-1">To: customer@example.com</div>
+                  <div className="font-medium text-sm text-gray-600 mt-1">{t('customerCommunications.dialogs.templatePreview.toLabel')}</div>
                   <div className="font-bold text-lg mt-2">{selectedTemplateForPreview.subject}</div>
                 </div>
                 <div className="whitespace-pre-wrap text-gray-900">
@@ -2160,18 +2163,18 @@ export default function CustomerCommunications() {
                 </div>
               </div>
               <div className="text-xs text-muted-foreground">
-                <div><strong>Template:</strong> {selectedTemplateForPreview.name}</div>
-                <div><strong>Category:</strong> {selectedTemplateForPreview.category || 'custom'}</div>
-                <div><strong>Created:</strong> {new Date(selectedTemplateForPreview.createdAt).toLocaleDateString()}</div>
+                <div><strong>{t('customerCommunications.dialogs.templatePreview.templateLabel')}</strong> {selectedTemplateForPreview.name}</div>
+                <div><strong>{t('customerCommunications.dialogs.templatePreview.categoryLabel')}</strong> {selectedTemplateForPreview.category || t('customerCommunications.dialogs.templatePreview.defaultCategory')}</div>
+                <div><strong>{t('customerCommunications.dialogs.templatePreview.createdLabel')}</strong> {new Date(selectedTemplateForPreview.createdAt).toLocaleDateString()}</div>
                 {selectedTemplateForPreview.lastUsed && (
-                  <div><strong>Last Used:</strong> {new Date(selectedTemplateForPreview.lastUsed).toLocaleDateString()}</div>
+                  <div><strong>{t('customerCommunications.dialogs.templatePreview.lastUsedLabel')}</strong> {new Date(selectedTemplateForPreview.lastUsed).toLocaleDateString()}</div>
                 )}
               </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setTemplatePreviewDialog(false)}>
-              Close
+              {t('customerCommunications.dialogs.templatePreview.closeButton')}
             </Button>
             {selectedTemplateForPreview && (
               <Button onClick={() => {
@@ -2183,7 +2186,7 @@ export default function CustomerCommunications() {
                 setTemplateCategory(selectedTemplateForPreview.category || "custom");
               }}>
                 <Edit className="mr-2 h-4 w-4" />
-                Edit Template
+                {t('customerCommunications.dialogs.templatePreview.editTemplateButton')}
               </Button>
             )}
           </DialogFooter>
@@ -2194,21 +2197,20 @@ export default function CustomerCommunications() {
       <Dialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Delete Template</DialogTitle>
+            <DialogTitle>{t('customerCommunications.dialogs.deleteTemplate.title')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{templateToDelete?.name}"? 
-              This action cannot be undone.
+              {t('customerCommunications.dialogs.deleteTemplate.description', { name: templateToDelete?.name })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTemplateToDelete(null)}>
-              Cancel
+              {t('customerCommunications.dialogs.deleteTemplate.cancelButton')}
             </Button>
-            <Button 
+            <Button
               onClick={confirmDeleteTemplate}
               className="bg-red-600 hover:bg-red-700"
             >
-              Delete Template
+              {t('customerCommunications.dialogs.deleteTemplate.deleteButton')}
             </Button>
           </DialogFooter>
         </DialogContent>

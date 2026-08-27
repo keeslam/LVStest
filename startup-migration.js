@@ -699,6 +699,26 @@ async function runMigrations() {
       console.log('✅ Transport report templates already exist, skipping seed');
     }
 
+    // Recycle bin for vehicle deletes. Without this table a delete cannot be
+    // recorded or undone, so it must exist before the app serves traffic.
+    await createTableIfNotExists('deleted_records', `
+      CREATE TABLE deleted_records (
+        id serial PRIMARY KEY,
+        entity_type text NOT NULL,
+        entity_id integer NOT NULL,
+        label text NOT NULL,
+        payload jsonb NOT NULL,
+        related_counts jsonb,
+        deleted_at timestamp DEFAULT now() NOT NULL,
+        deleted_by text,
+        deleted_by_user_id integer,
+        restored_at timestamp,
+        restored_by text
+      );
+      CREATE INDEX deleted_records_entity_idx ON deleted_records (entity_type, entity_id);
+      CREATE INDEX deleted_records_deleted_at_idx ON deleted_records (deleted_at);
+    `);
+
     // Update any NULL maintenance_status values
     console.log('🔄 Updating maintenance status defaults...');
     await db.execute(sql`UPDATE vehicles SET maintenance_status = 'ok' WHERE maintenance_status IS NULL`);

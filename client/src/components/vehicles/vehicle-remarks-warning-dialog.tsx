@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -36,6 +37,7 @@ export function VehicleRemarksWarningDialog({
   context = "view",
   onRemarksUpdated,
 }: VehicleRemarksWarningDialogProps) {
+  const { t } = useTranslation("vehicles");
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editedRemarks, setEditedRemarks] = useState("");
@@ -60,13 +62,13 @@ export function VehicleRemarksWarningDialog({
     },
     onSuccess: (updatedVehicle: Vehicle) => {
       toast({
-        title: "Remarks Updated",
-        description: "Vehicle remarks have been saved.",
+        title: t('remarksWarningDialog.toasts.remarksUpdatedTitle'),
+        description: t('remarksWarningDialog.toasts.remarksUpdatedDescription'),
       });
       invalidateByPrefix("/api/vehicles");
       invalidateByPrefix(`/api/vehicles/${vehicle?.id}`);
       setIsEditing(false);
-      
+
       // Notify parent component of the update
       if (onRemarksUpdated && updatedVehicle) {
         onRemarksUpdated(updatedVehicle);
@@ -74,8 +76,8 @@ export function VehicleRemarksWarningDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to update remarks",
+        title: t('remarksWarningDialog.toasts.errorTitle'),
+        description: error.message || t('remarksWarningDialog.toasts.updateFailedDescription'),
         variant: "destructive",
       });
     },
@@ -102,27 +104,33 @@ export function VehicleRemarksWarningDialog({
   const getContextMessage = () => {
     switch (context) {
       case "reservation":
-        return "Please review the following remarks before creating this reservation:";
+        return t('remarksWarningDialog.contextReservation');
       case "pickup":
-        return "IMPORTANT: Review these remarks before the vehicle goes out:";
+        return t('remarksWarningDialog.contextPickup');
       case "view":
       default:
-        return "This vehicle has the following remarks:";
+        return t('remarksWarningDialog.contextView');
     }
   };
 
   const getTitle = () => {
     switch (context) {
       case "pickup":
-        return "Vehicle Remarks - Pickup Warning";
+        return t('remarksWarningDialog.titlePickup');
       default:
-        return "Vehicle Remarks Warning";
+        return t('remarksWarningDialog.titleDefault');
     }
   };
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-lg">
+      {/* z-[65]: this auto-opens on top of the Pickup dialog, which renders at
+          z-[60] (see comment there). Without an explicit override this content
+          stays at the default z-50 and renders BEHIND the pickup dialog while
+          Radix still treats it as the active/topmost layer for pointer-events —
+          the pickup dialog then looks normal but stops responding to any click,
+          because the click-through layer Radix left open is this hidden one. */}
+      <AlertDialogContent className="max-w-lg z-[65]">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2 text-amber-600">
             <AlertTriangle className="h-5 w-5" />
@@ -144,7 +152,7 @@ export function VehicleRemarksWarningDialog({
               <Textarea
                 value={editedRemarks}
                 onChange={(e) => setEditedRemarks(e.target.value)}
-                placeholder="Enter vehicle remarks..."
+                placeholder={t('remarksWarningDialog.remarksPlaceholder')}
                 className="min-h-[120px]"
                 data-testid="textarea-edit-remarks"
               />
@@ -159,7 +167,7 @@ export function VehicleRemarksWarningDialog({
                   data-testid="button-cancel-edit-remarks"
                 >
                   <X className="h-4 w-4 mr-1" />
-                  Cancel
+                  {t('remarksWarningDialog.cancelButton')}
                 </Button>
                 <Button
                   size="sm"
@@ -168,7 +176,7 @@ export function VehicleRemarksWarningDialog({
                   data-testid="button-save-remarks"
                 >
                   <Save className="h-4 w-4 mr-1" />
-                  {updateRemarksMutation.isPending ? "Saving..." : "Save"}
+                  {updateRemarksMutation.isPending ? t('remarksWarningDialog.savingButton') : t('remarksWarningDialog.saveButton')}
                 </Button>
               </div>
             </div>
@@ -176,7 +184,7 @@ export function VehicleRemarksWarningDialog({
             <div className="space-y-3">
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                 <p className="text-amber-900 whitespace-pre-wrap" data-testid="text-vehicle-remarks">
-                  {vehicle.remarks || "No remarks"}
+                  {vehicle.remarks || t('remarksWarningDialog.noRemarks')}
                 </p>
               </div>
               <Button
@@ -187,7 +195,7 @@ export function VehicleRemarksWarningDialog({
                 data-testid="button-edit-remarks"
               >
                 <Edit2 className="h-4 w-4 mr-2" />
-                Edit Remarks
+                {t('remarksWarningDialog.editRemarksButton')}
               </Button>
             </div>
           )}
@@ -195,14 +203,14 @@ export function VehicleRemarksWarningDialog({
 
         <AlertDialogFooter>
           <AlertDialogCancel onClick={handleCancel} data-testid="button-cancel-remarks-warning">
-            {context === "view" ? "Close" : "Cancel"}
+            {context === "view" ? t('remarksWarningDialog.closeButton') : t('remarksWarningDialog.cancelButton')}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleAcknowledge}
             className="bg-amber-600 hover:bg-amber-700"
             data-testid="button-acknowledge-remarks"
           >
-            {context === "view" ? "I Understand" : "I Acknowledge & Proceed"}
+            {context === "view" ? t('remarksWarningDialog.understandButton') : t('remarksWarningDialog.acknowledgeButton')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

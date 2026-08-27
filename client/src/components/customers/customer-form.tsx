@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -78,6 +79,7 @@ export function CustomerForm({
   onSuccess, 
   redirectToList = true 
 }: CustomerFormProps) {
+  const { t } = useTranslation(["customers", "common"]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [_, navigate] = useLocation();
@@ -184,8 +186,8 @@ export function CustomerForm({
       
       // Show success message
       toast({
-        title: `Customer ${editMode ? "updated" : "created"} successfully`,
-        description: `The customer has been ${editMode ? "updated" : "added"} to your system.`,
+        title: editMode ? t('form.savedTitleUpdated') : t('form.savedTitleCreated'),
+        description: editMode ? t('form.savedDescriptionUpdated') : t('form.savedDescriptionCreated'),
       });
       
       // Call the onSuccess callback if provided
@@ -199,8 +201,10 @@ export function CustomerForm({
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: `Failed to ${editMode ? "update" : "create"} customer: ${error.message}`,
+        title: t('common:status.error'),
+        description: editMode
+          ? t('form.saveFailedDescriptionUpdate', { error: error.message })
+          : t('form.saveFailedDescriptionCreate', { error: error.message }),
         variant: "destructive",
       });
     },
@@ -224,7 +228,7 @@ export function CustomerForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{editMode ? "Edit Customer" : "Add New Customer"}</CardTitle>
+        <CardTitle>{editMode ? t('editDialog.title') : t('addDialog.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -238,10 +242,10 @@ export function CustomerForm({
           >
             <Tabs defaultValue="basic" className="w-full">
               <TabsList className="grid grid-cols-4 mb-6">
-                <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                <TabsTrigger value="contact">Contact</TabsTrigger>
-                <TabsTrigger value="company">Company</TabsTrigger>
-                <TabsTrigger value="additional">Additional</TabsTrigger>
+                <TabsTrigger value="basic">{t('form.tabBasicInfo')}</TabsTrigger>
+                <TabsTrigger value="contact">{t('form.tabContact')}</TabsTrigger>
+                <TabsTrigger value="company">{t('form.tabCompany')}</TabsTrigger>
+                <TabsTrigger value="additional">{t('form.tabAdditional')}</TabsTrigger>
               </TabsList>
               
               {/* Basic Information Tab */}
@@ -249,37 +253,37 @@ export function CustomerForm({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Personal Information */}
                   <div className="space-y-4 md:col-span-2">
-                    <h3 className="text-lg font-medium">Personal Information</h3>
-                    
+                    <h3 className="text-lg font-medium">{t('details.personalInformation')}</h3>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
                         name="customerType"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Customer Type</FormLabel>
+                            <FormLabel>{t('form.customerType')}</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value || "business"}>
                               <FormControl>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Select customer type" />
+                                  <SelectValue placeholder={t('form.selectCustomerType')} />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="business">Business</SelectItem>
-                                <SelectItem value="individual">Individual</SelectItem>
+                                <SelectItem value="business">{t('form.business')}</SelectItem>
+                                <SelectItem value="individual">{t('form.individual')}</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="debtorNumber"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Debtor Number</FormLabel>
+                            <FormLabel>{t('details.debtorNumber')}</FormLabel>
                             <FormControl>
                               <Input placeholder="123456" {...field} />
                             </FormControl>
@@ -287,13 +291,13 @@ export function CustomerForm({
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Full Name</FormLabel>
+                            <FormLabel>{t('details.fullName')}</FormLabel>
                             <FormControl>
                               <Input 
                                 placeholder="John Doe" 
@@ -313,7 +317,7 @@ export function CustomerForm({
                         name="firstName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>First Name</FormLabel>
+                            <FormLabel>{t('details.firstName')}</FormLabel>
                             <FormControl>
                               <Input 
                                 placeholder="John" 
@@ -331,7 +335,7 @@ export function CustomerForm({
                         name="lastName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Last Name</FormLabel>
+                            <FormLabel>{t('details.lastName')}</FormLabel>
                             <FormControl>
                               <Input 
                                 placeholder="Doe" 
@@ -351,7 +355,7 @@ export function CustomerForm({
                         name="driverName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Driver Name</FormLabel>
+                            <FormLabel>{t('details.driverName')}</FormLabel>
                             <FormControl>
                               <Input 
                                 placeholder="John Doe" 
@@ -369,9 +373,9 @@ export function CustomerForm({
                         name="driverLicenseNumber"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Driver License Number</FormLabel>
+                            <FormLabel>{t('driverForm.licenseNumber')}</FormLabel>
                             <FormControl>
-                              <Input placeholder="License number" {...field} />
+                              <Input placeholder={t('form.licenseNumberPlaceholder')} {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -382,14 +386,14 @@ export function CustomerForm({
                   
                   {/* Address Information */}
                   <div className="space-y-4 md:col-span-2">
-                    <h3 className="text-lg font-medium">Address Information</h3>
-                    
+                    <h3 className="text-lg font-medium">{t('details.addressInformation')}</h3>
+
                     <FormField
                       control={form.control}
                       name="streetName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Street Name</FormLabel>
+                          <FormLabel>{t('details.streetName')}</FormLabel>
                           <FormControl>
                             <Input 
                               placeholder="Main Street" 
@@ -407,7 +411,7 @@ export function CustomerForm({
                       name="address"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Street Address</FormLabel>
+                          <FormLabel>{t('form.streetAddress')}</FormLabel>
                           <FormControl>
                             <Input 
                               placeholder="123 Main St" 
@@ -426,7 +430,7 @@ export function CustomerForm({
                         name="postalCode"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Postal Code</FormLabel>
+                            <FormLabel>{t('common:fields.postalCode')}</FormLabel>
                             <FormControl>
                               <Input placeholder="1234 AB" {...field} />
                             </FormControl>
@@ -440,7 +444,7 @@ export function CustomerForm({
                         name="city"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>City</FormLabel>
+                            <FormLabel>{t('common:fields.city')}</FormLabel>
                             <FormControl>
                               <Input 
                                 placeholder="Amsterdam" 
@@ -459,7 +463,7 @@ export function CustomerForm({
                       name="country"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Country</FormLabel>
+                          <FormLabel>{t('common:fields.country')}</FormLabel>
                           <FormControl>
                             <Input placeholder="Nederland" {...field} />
                           </FormControl>
@@ -474,15 +478,15 @@ export function CustomerForm({
               {/* Contact Information Tab */}
               <TabsContent value="contact" className="space-y-6">
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Communication Details</h3>
-                  
+                  <h3 className="text-lg font-medium">{t('form.communicationDetails')}</h3>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Primary Email</FormLabel>
+                          <FormLabel>{t('details.primaryEmail')}</FormLabel>
                           <FormControl>
                             <Input type="email" placeholder="john.doe@example.com" {...field} />
                           </FormControl>
@@ -490,13 +494,13 @@ export function CustomerForm({
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Primary Phone</FormLabel>
+                          <FormLabel>{t('details.primaryPhone')}</FormLabel>
                           <FormControl>
                             <Input placeholder="+31 6 12345678" {...field} />
                           </FormControl>
@@ -505,29 +509,29 @@ export function CustomerForm({
                       )}
                     />
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="emailForMOT"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email for APK Inspection</FormLabel>
+                          <FormLabel>{t('form.emailForApkInspection')}</FormLabel>
                           <FormControl>
                             <Input type="email" placeholder="apk@example.com" {...field} />
                           </FormControl>
-                          <FormDescription>Email for MOT/APK inspection notifications</FormDescription>
+                          <FormDescription>{t('form.emailForApkDescription')}</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="emailForInvoices"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email for Invoices</FormLabel>
+                          <FormLabel>{t('details.emailForInvoices')}</FormLabel>
                           <FormControl>
                             <Input type="email" placeholder="invoices@example.com" {...field} />
                           </FormControl>
@@ -536,14 +540,14 @@ export function CustomerForm({
                       )}
                     />
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="emailGeneral"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>General Email</FormLabel>
+                          <FormLabel>{t('details.generalEmail')}</FormLabel>
                           <FormControl>
                             <Input type="email" placeholder="info@example.com" {...field} />
                           </FormControl>
@@ -551,13 +555,13 @@ export function CustomerForm({
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="driverPhone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Driver Phone</FormLabel>
+                          <FormLabel>{t('details.driverPhone')}</FormLabel>
                           <FormControl>
                             <Input placeholder="+31 6 87654321" {...field} />
                           </FormControl>
@@ -572,15 +576,15 @@ export function CustomerForm({
               {/* Company Information Tab */}
               <TabsContent value="company" className="space-y-6">
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Company Details</h3>
-                  
+                  <h3 className="text-lg font-medium">{t('form.companyDetails')}</h3>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="companyName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Company Name</FormLabel>
+                          <FormLabel>{t('details.companyName')}</FormLabel>
                           <FormControl>
                             <Input 
                               placeholder="Acme Corporation" 
@@ -598,7 +602,7 @@ export function CustomerForm({
                       name="contactPerson"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Contact Person</FormLabel>
+                          <FormLabel>{t('details.contactPerson')}</FormLabel>
                           <FormControl>
                             <Input 
                               placeholder="Jane Smith" 
@@ -618,7 +622,7 @@ export function CustomerForm({
                       name="chamberOfCommerceNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Chamber of Commerce Number (CoC)</FormLabel>
+                          <FormLabel>{t('form.kvkNumberCoc')}</FormLabel>
                           <FormControl>
                             <Input placeholder="12345678" {...field} />
                           </FormControl>
@@ -632,7 +636,7 @@ export function CustomerForm({
                       name="vatNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>VAT Number</FormLabel>
+                          <FormLabel>{t('details.vatNumber')}</FormLabel>
                           <FormControl>
                             <Input placeholder="NL123456789B01" {...field} />
                           </FormControl>
@@ -647,7 +651,7 @@ export function CustomerForm({
                     name="rsin"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>RSIN (Legal Entity Identification Number)</FormLabel>
+                        <FormLabel>{t('form.rsinLabel')}</FormLabel>
                         <FormControl>
                           <Input placeholder="123456789" {...field} />
                         </FormControl>
@@ -658,7 +662,7 @@ export function CustomerForm({
                 </div>
                 
                 <div className="space-y-4 mt-6">
-                  <h3 className="text-lg font-medium">Billing Contact</h3>
+                  <h3 className="text-lg font-medium">{t('form.billingContact')}</h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField
@@ -666,7 +670,7 @@ export function CustomerForm({
                       name="billingContactName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Billing Contact Name</FormLabel>
+                          <FormLabel>{t('form.billingContactName')}</FormLabel>
                           <FormControl>
                             <Input 
                               placeholder="John Smith" 
@@ -684,7 +688,7 @@ export function CustomerForm({
                       name="billingContactEmail"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Billing Contact Email</FormLabel>
+                          <FormLabel>{t('form.billingContactEmail')}</FormLabel>
                           <FormControl>
                             <Input type="email" placeholder="billing@company.com" {...field} />
                           </FormControl>
@@ -698,7 +702,7 @@ export function CustomerForm({
                       name="billingContactPhone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Billing Contact Phone</FormLabel>
+                          <FormLabel>{t('form.billingContactPhone')}</FormLabel>
                           <FormControl>
                             <Input placeholder="+31 20 1234567" {...field} />
                           </FormControl>
@@ -714,11 +718,11 @@ export function CustomerForm({
                       name="accountManager"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Account Manager</FormLabel>
+                          <FormLabel>{t('form.accountManager')}</FormLabel>
                           <FormControl>
-                            <Input placeholder="Assigned account manager" {...field} />
+                            <Input placeholder={t('form.assignedAccountManagerPlaceholder')} {...field} />
                           </FormControl>
-                          <FormDescription>Staff member managing this corporate account</FormDescription>
+                          <FormDescription>{t('form.accountManagerDescription')}</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -729,11 +733,11 @@ export function CustomerForm({
                       name="corporateDiscount"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Corporate Discount (%)</FormLabel>
+                          <FormLabel>{t('form.corporateDiscount')}</FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
-                          <FormDescription>Discount percentage for corporate clients</FormDescription>
+                          <FormDescription>{t('form.corporateDiscountDescription')}</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -741,14 +745,14 @@ export function CustomerForm({
                   </div>
                   
                   <div className="space-y-4">
-                    <h4 className="text-sm font-medium">Billing Address (if different)</h4>
+                    <h4 className="text-sm font-medium">{t('form.billingAddressSection')}</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
                         name="billingAddress"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Billing Address</FormLabel>
+                            <FormLabel>{t('form.billingAddress')}</FormLabel>
                             <FormControl>
                               <Input 
                                 placeholder="123 Business Street" 
@@ -766,7 +770,7 @@ export function CustomerForm({
                         name="billingCity"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Billing City</FormLabel>
+                            <FormLabel>{t('form.billingCity')}</FormLabel>
                             <FormControl>
                               <Input 
                                 placeholder="Amsterdam" 
@@ -784,7 +788,7 @@ export function CustomerForm({
                         name="billingPostalCode"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Billing Postal Code</FormLabel>
+                            <FormLabel>{t('form.billingPostalCode')}</FormLabel>
                             <FormControl>
                               <Input placeholder="1234 AB" {...field} />
                             </FormControl>
@@ -800,29 +804,29 @@ export function CustomerForm({
               {/* Additional Information Tab */}
               <TabsContent value="additional" className="space-y-6">
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Status & Additional Information</h3>
-                  
+                  <h3 className="text-lg font-medium">{t('form.statusAndAdditional')}</h3>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="status"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Status</FormLabel>
+                          <FormLabel>{t('common:fields.status')}</FormLabel>
                           <FormControl>
-                            <Input placeholder="Active" {...field} />
+                            <Input placeholder={t('common:status.active')} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="statusDate"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Status Date</FormLabel>
+                          <FormLabel>{t('details.statusDate')}</FormLabel>
                           <FormControl>
                             <Input type="date" {...field} />
                           </FormControl>
@@ -831,16 +835,16 @@ export function CustomerForm({
                       )}
                     />
                   </div>
-                  
+
                   <FormField
                     control={form.control}
                     name="notes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Notes</FormLabel>
+                        <FormLabel>{t('common:fields.notes')}</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            placeholder="Any additional notes about this customer" 
+                          <Textarea
+                            placeholder={t('form.notesPlaceholder')}
                             className="min-h-[100px]"
                             {...field} 
                           />
@@ -869,7 +873,7 @@ export function CustomerForm({
                   }
                 }}
               >
-                Cancel
+                {t('common:actions.cancel')}
               </Button>
               <Button
                 type="submit"
@@ -881,10 +885,10 @@ export function CustomerForm({
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Saving...
+                    {t('common:status.saving')}
                   </span>
                 ) : (
-                  editMode ? "Update Customer" : "Add Customer"
+                  editMode ? t('form.updateCustomer') : t('addDialog.trigger')
                 )}
               </Button>
             </div>

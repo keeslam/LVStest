@@ -1,5 +1,6 @@
 import { invalidateByPrefix } from "@/lib/queryClient";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { InlineDocumentUpload } from "@/components/documents/inline-document-upload";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,6 +13,7 @@ interface UploadContractButtonProps {
 }
 
 export function UploadContractButton({ vehicleId, reservationId, onSuccess }: UploadContractButtonProps) {
+  const { t } = useTranslation("documents");
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -34,7 +36,7 @@ export function UploadContractButton({ vehicleId, reservationId, onSuccess }: Up
     >
       <Button variant="outline">
         <Upload className="h-4 w-4 mr-2" />
-        Upload Contract
+        {t('contractUpload.button')}
       </Button>
     </InlineDocumentUpload>
   );

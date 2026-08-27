@@ -1,4 +1,5 @@
 import { invalidateByPrefix } from "@/lib/queryClient";
+import { useTranslation } from "react-i18next";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
@@ -6,6 +7,7 @@ import { ReservationViewDialog } from "@/components/reservations/reservation-vie
 import { VehicleViewDialog } from "@/components/vehicles/vehicle-view-dialog";
 import { VehicleEditDialog } from "@/components/vehicles/vehicle-edit-dialog";
 import { VehicleDeleteDialog } from "@/components/vehicles/vehicle-delete-dialog";
+import { DeletedVehiclesDialog } from "@/components/vehicles/deleted-vehicles-dialog";
 import { VehicleAddDialog } from "@/components/vehicles/vehicle-add-dialog";
 import { VehicleBulkImportDialog } from "@/components/vehicles/vehicle-bulk-import-dialog";
 import { VehicleRemarksWarningDialog } from "@/components/vehicles/vehicle-remarks-warning-dialog";
@@ -25,23 +27,26 @@ import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { displayLicensePlate } from "@/lib/utils";
 import { isTrueValue } from "@/lib/utils";
 import { getDaysUntil } from "@/lib/date-utils";
-import { Search, SlidersHorizontal, Edit, Trash2 } from "lucide-react";
+import { Search, SlidersHorizontal, Edit, Trash2, Archive } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { UserRole } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
 // Feature-based filter options. Each maps a user-facing label to the boolean
 // column on the vehicle record. A vehicle "has" the feature when isTrueValue()
 // is truthy for that column.
-const FEATURE_FILTERS: { key: keyof Vehicle; label: string }[] = [
-  { key: "euroZoneAccess", label: "Emissions Zone Access" },
-  { key: "moveIziRegistered", label: "Move IZI" },
-  { key: "gps", label: "GPS" },
-  { key: "gpsSwapped", label: "GPS Swapped" },
-  { key: "seatcovers", label: "Seat Covers" },
-  { key: "backupbeepers", label: "Backup Beepers" },
-  { key: "spareKey", label: "Spare Key" },
+const FEATURE_FILTERS: { key: keyof Vehicle; labelKey: string }[] = [
+  { key: "euroZoneAccess", labelKey: "emissionsZoneAccessLabel" },
+  { key: "moveIziRegistered", labelKey: "moveIziLabel" },
+  { key: "gps", labelKey: "gpsLabel" },
+  { key: "gpsSwapped", labelKey: "gpsSwappedLabel" },
+  { key: "seatcovers", labelKey: "seatCoversLabel" },
+  { key: "backupbeepers", labelKey: "backupBeepersLabel" },
+  { key: "spareKey", labelKey: "spareKeyLabel" },
 ];
 
 export default function VehiclesIndex() {
+  const { t } = useTranslation("vehicles");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<string>("default");
@@ -64,6 +69,9 @@ export default function VehiclesIndex() {
   // refetch re-renders the table, e.g. a few seconds after saving a vehicle.
   const [editVehicleId, setEditVehicleId] = useState<number | null>(null);
   const [deleteVehicleTarget, setDeleteVehicleTarget] = useState<Vehicle | null>(null);
+  const [deletedVehiclesOpen, setDeletedVehiclesOpen] = useState(false);
+  const { user: currentUser } = useAuth();
+  const isAdmin = currentUser?.role === UserRole.ADMIN;
   
   // Vehicle remarks warning dialog state
   const [remarksWarningOpen, setRemarksWarningOpen] = useState(false);
@@ -218,19 +226,19 @@ export default function VehiclesIndex() {
   const columns: ColumnDef<Vehicle>[] = [
     {
       id: "actions",
-      header: "Actions",
+      header: t('indexPage.actionsColumn'),
       cell: ({ row }) => {
         const vehicle = row.original;
-        
+
         return (
           <div className="flex gap-2">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => handleViewClick(vehicle)}
               data-testid={`button-view-vehicle-${vehicle.id}`}
             >
-              View
+              {t('indexPage.viewButton')}
             </Button>
             <Button
               variant="ghost"
@@ -271,7 +279,7 @@ export default function VehiclesIndex() {
                       }}
                       data-testid={`button-view-reservation-vehicle-${vehicle.id}`}
                     >
-                      View Rental
+                      {t('indexPage.viewRentalButton')}
                     </Button>
                   );
                 }
@@ -291,12 +299,12 @@ export default function VehiclesIndex() {
                             className="opacity-50 cursor-not-allowed"
                             data-testid={`button-reserve-vehicle-${vehicle.id}`}
                           >
-                            Reserve
+                            {t('indexPage.reserveButton')}
                           </Button>
                         </span>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Vehicle is not available for rental</p>
+                        <p>{t('indexPage.vehicleNotAvailableForRental')}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -312,7 +320,7 @@ export default function VehiclesIndex() {
                   data-testid={`button-reserve-vehicle-${vehicle.id}`}
                   onClick={() => setReserveDialogVehicleId(vehicle.id.toString())}
                 >
-                  Reserve
+                  {t('indexPage.reserveButton')}
                 </Button>
               );
             })()}
@@ -322,7 +330,7 @@ export default function VehiclesIndex() {
     },
     {
       accessorKey: "licensePlate",
-      header: "License Plate",
+      header: t('indexPage.licensePlateColumn'),
       cell: ({ row }) => {
         const licensePlate = row.getValue("licensePlate") as string;
         // Display formatted license plate consistently across the app
@@ -335,23 +343,23 @@ export default function VehiclesIndex() {
     },
     {
       accessorKey: "brand",
-      header: "Brand",
+      header: t('indexPage.brandColumn'),
     },
     {
       accessorKey: "model",
-      header: "Model",
+      header: t('indexPage.modelColumn'),
     },
     {
       accessorKey: "vehicleType",
-      header: "Type",
+      header: t('indexPage.typeColumn'),
       cell: ({ row }) => {
         const vehicleType = row.getValue("vehicleType") as string;
-        return vehicleType || "N/A";
+        return vehicleType || t('indexPage.notAvailable');
       },
     },
     {
       id: "status",
-      header: "Status",
+      header: t('indexPage.statusColumn'),
       cell: ({ row }) => {
         const vehicle = row.original;
         const availabilityStatus = vehicle.availabilityStatus || 'available';
@@ -371,7 +379,7 @@ export default function VehiclesIndex() {
         if (availabilityStatus === 'available') {
           return (
             <Badge className="bg-green-100 text-green-800 font-semibold">
-              Available
+              {t('indexPage.availableStatus')}
             </Badge>
           );
         } else if (availabilityStatus === 'scheduled') {
@@ -385,19 +393,19 @@ export default function VehiclesIndex() {
           
           return (
             <Badge className={hasSpareReservation ? "bg-orange-100 text-orange-800 font-semibold" : "bg-purple-100 text-purple-800 font-semibold"}>
-              {hasSpareReservation ? "Spare Vehicle" : hasSpareAssigned ? "Scheduled (Spare Assigned)" : "Scheduled"}
+              {hasSpareReservation ? t('indexPage.spareVehicleStatus') : hasSpareAssigned ? t('indexPage.scheduledSpareAssignedStatus') : t('indexPage.scheduledStatus')}
             </Badge>
           );
         } else if (availabilityStatus === 'needs_fixing') {
           return (
             <Badge className="bg-yellow-100 text-yellow-800 font-semibold">
-              {hasSpareAssigned ? "Needs Fixing (Spare Assigned)" : "Needs Fixing"}
+              {hasSpareAssigned ? t('indexPage.needsFixingSpareAssignedStatus') : t('indexPage.needsFixingStatus')}
             </Badge>
           );
         } else if (availabilityStatus === 'not_for_rental') {
           return (
             <Badge className="bg-gray-200 text-gray-700 font-semibold">
-              Not for Rental
+              {t('indexPage.notForRentalStatus')}
             </Badge>
           );
         } else if (availabilityStatus === 'rented') {
@@ -410,7 +418,7 @@ export default function VehiclesIndex() {
           
           return (
             <Badge className={hasActiveSpareReservation ? "bg-orange-100 text-orange-800 font-semibold" : "bg-blue-100 text-blue-800 font-semibold"}>
-              {hasActiveSpareReservation ? "Spare Vehicle (Active)" : hasSpareAssigned ? "Rented (Spare Assigned)" : "Rented"}
+              {hasActiveSpareReservation ? t('indexPage.spareVehicleActiveStatus') : hasSpareAssigned ? t('indexPage.rentedSpareAssignedStatus') : t('indexPage.rentedStatus')}
             </Badge>
           );
         }
@@ -425,7 +433,7 @@ export default function VehiclesIndex() {
     },
     {
       id: "registration",
-      header: "Registration",
+      header: t('indexPage.registrationColumn'),
       cell: ({ row }) => {
         const vehicle = row.original;
         // Use utility function for consistent boolean/string checks
@@ -436,20 +444,20 @@ export default function VehiclesIndex() {
           <div className="flex flex-col">
             {isRegisteredToPerson ? (
               <>
-                <Badge className="bg-blue-50 text-blue-700 py-0.5 px-1.5">Opnaam</Badge>
+                <Badge className="bg-blue-50 text-blue-700 py-0.5 px-1.5">{t('indexPage.registeredToPersonBadge')}</Badge>
                 {vehicle.registeredToDate && (
-                  <span className="text-xs text-gray-500 mt-1">Since: {formatDate(vehicle.registeredToDate)}</span>
+                  <span className="text-xs text-gray-500 mt-1">{t('indexPage.sinceLabel', { date: formatDate(vehicle.registeredToDate) })}</span>
                 )}
               </>
             ) : isRegisteredToCompany ? (
               <>
-                <Badge className="bg-green-50 text-green-700 py-0.5 px-1.5">BV</Badge>
+                <Badge className="bg-green-50 text-green-700 py-0.5 px-1.5">{t('indexPage.registeredToCompanyBadge')}</Badge>
                 {vehicle.companyDate && (
-                  <span className="text-xs text-gray-500 mt-1">Since: {formatDate(vehicle.companyDate)}</span>
+                  <span className="text-xs text-gray-500 mt-1">{t('indexPage.sinceLabel', { date: formatDate(vehicle.companyDate) })}</span>
                 )}
               </>
             ) : (
-              <span className="text-gray-500">Not specified</span>
+              <span className="text-gray-500">{t('indexPage.notSpecified')}</span>
             )}
           </div>
         );
@@ -457,40 +465,40 @@ export default function VehiclesIndex() {
     },
     {
       id: "gps",
-      header: "GPS",
+      header: t('indexPage.gpsColumn'),
       cell: ({ row }) => {
         const vehicle = row.original;
-        return vehicle.gps ? 
-          <Badge className="bg-blue-50 text-blue-700">Yes</Badge> : 
-          <span className="text-gray-400">No</span>;
+        return vehicle.gps ?
+          <Badge className="bg-blue-50 text-blue-700">{t('indexPage.yesLabel')}</Badge> :
+          <span className="text-gray-400">{t('indexPage.noLabel')}</span>;
       },
     },
     {
       id: "radioCode",
-      header: "Radio Code",
+      header: t('indexPage.radioCodeColumn'),
       cell: ({ row }) => {
         const vehicle = row.original;
-        return vehicle.radioCode ? 
-          <span className="font-medium text-purple-700">{vehicle.radioCode}</span> : 
-          <span className="text-gray-400">N/A</span>;
+        return vehicle.radioCode ?
+          <span className="font-medium text-purple-700">{vehicle.radioCode}</span> :
+          <span className="text-gray-400">{t('indexPage.notAvailable')}</span>;
       },
     },
     {
       id: "tireSize",
-      header: "Tire Size",
+      header: t('indexPage.tireSizeColumn'),
       cell: ({ row }) => {
         const vehicle = row.original;
-        return vehicle.tireSize ? 
-          <span className="font-medium">{vehicle.tireSize}</span> : 
-          <span className="text-gray-400">N/A</span>;
+        return vehicle.tireSize ?
+          <span className="font-medium">{vehicle.tireSize}</span> :
+          <span className="text-gray-400">{t('indexPage.notAvailable')}</span>;
       },
     },
     {
       accessorKey: "apkDate",
-      header: "APK Expires",
+      header: t('indexPage.apkExpiresColumn'),
       cell: ({ row }) => {
         const apkDate = row.getValue("apkDate") as string;
-        if (!apkDate) return <span className="text-gray-500">Not set</span>;
+        if (!apkDate) return <span className="text-gray-500">{t('indexPage.apkNotSet')}</span>;
         
         const daysUntil = getDaysUntil(apkDate);
         let badgeClass = "bg-primary-100 text-primary-600";
@@ -504,7 +512,7 @@ export default function VehiclesIndex() {
         return (
           <div className="flex items-center">
             <span className="mr-2">{formatDate(apkDate)}</span>
-            <Badge className={badgeClass}>{daysUntil < 0 ? `${Math.abs(daysUntil)} days overdue` : `${daysUntil} days`}</Badge>
+            <Badge className={badgeClass}>{daysUntil < 0 ? t('indexPage.daysOverdue', { count: Math.abs(daysUntil) }) : t('indexPage.daysRemaining', { count: daysUntil })}</Badge>
           </div>
         );
       },
@@ -544,8 +552,8 @@ export default function VehiclesIndex() {
             setReserveDialogVehicleId(null);
             if (reservation.status !== 'picked_up') {
               toast({
-                title: "Reservation created",
-                description: "Opening reservation details...",
+                title: t('indexPage.toasts.reservationCreatedTitle'),
+                description: t('indexPage.toasts.openingReservationDetails'),
               });
               setSelectedReservationId(reservation.id);
               setReservationViewDialogOpen(true);
@@ -584,9 +592,25 @@ export default function VehiclesIndex() {
         />
       )}
       
+      <DeletedVehiclesDialog
+        open={deletedVehiclesOpen}
+        onOpenChange={setDeletedVehiclesOpen}
+        onRestored={handleDialogSuccess}
+      />
+
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Vehicle Management</h1>
+        <h1 className="text-2xl font-bold">{t('indexPage.pageTitle')}</h1>
         <div className="flex space-x-2">
+          {isAdmin && (
+            <Button
+              variant="outline"
+              onClick={() => setDeletedVehiclesOpen(true)}
+              data-testid="button-open-recycle-bin"
+            >
+              <Archive className="h-4 w-4 mr-2" />
+              {t('indexPage.deletedVehiclesButton')}
+            </Button>
+          )}
           <VehicleBulkImportDialog onSuccess={handleDialogSuccess} />
           <VehicleAddDialog onSuccess={handleDialogSuccess} />
         </div>
@@ -594,9 +618,9 @@ export default function VehiclesIndex() {
       
       <Card>
         <CardHeader>
-          <CardTitle>Vehicle Fleet</CardTitle>
+          <CardTitle>{t('indexPage.fleetCardTitle')}</CardTitle>
           <CardDescription>
-            Manage your vehicle fleet, view details, and create reservations.
+            {t('indexPage.fleetCardDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -604,7 +628,7 @@ export default function VehiclesIndex() {
             <div className="relative max-w-sm w-full">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by license plate, brand, or model..."
+                placeholder={t('indexPage.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8 w-full"
@@ -626,7 +650,7 @@ export default function VehiclesIndex() {
               <PopoverTrigger asChild>
                 <Button variant="outline" className="gap-2" data-testid="button-feature-filter">
                   <SlidersHorizontal className="h-4 w-4" />
-                  Filter features
+                  {t('indexPage.filterFeaturesButton')}
                   {featureFilters.length > 0 && (
                     <Badge variant="secondary" className="ml-1">{featureFilters.length}</Badge>
                   )}
@@ -634,7 +658,7 @@ export default function VehiclesIndex() {
               </PopoverTrigger>
               <PopoverContent className="w-72 p-0" align="start">
                 <div className="flex items-center justify-between px-4 py-3 border-b">
-                  <span className="text-sm font-medium">Filter by features</span>
+                  <span className="text-sm font-medium">{t('indexPage.filterByFeaturesLabel')}</span>
                   {featureFilters.length > 0 && (
                     <Button
                       variant="ghost"
@@ -643,14 +667,14 @@ export default function VehiclesIndex() {
                       onClick={() => setFeatureFilters([])}
                       data-testid="button-clear-feature-filter"
                     >
-                      Clear
+                      {t('indexPage.clearButton')}
                     </Button>
                   )}
                 </div>
 
                 {/* Match mode toggle: strict (all) vs broad (any) */}
                 <div className="px-4 py-3 border-b">
-                  <div className="text-xs text-muted-foreground mb-2">Show vehicles that have</div>
+                  <div className="text-xs text-muted-foreground mb-2">{t('indexPage.showVehiclesThatHaveLabel')}</div>
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       variant={featureMatchMode === "all" ? "default" : "outline"}
@@ -658,7 +682,7 @@ export default function VehiclesIndex() {
                       onClick={() => setFeatureMatchMode("all")}
                       data-testid="button-match-all"
                     >
-                      All selected
+                      {t('indexPage.allSelectedButton')}
                     </Button>
                     <Button
                       variant={featureMatchMode === "any" ? "default" : "outline"}
@@ -666,13 +690,13 @@ export default function VehiclesIndex() {
                       onClick={() => setFeatureMatchMode("any")}
                       data-testid="button-match-any"
                     >
-                      Any selected
+                      {t('indexPage.anySelectedButton')}
                     </Button>
                   </div>
                 </div>
 
                 <div className="px-2 py-2 max-h-72 overflow-auto">
-                  {FEATURE_FILTERS.map(({ key, label }) => {
+                  {FEATURE_FILTERS.map(({ key, labelKey }) => {
                     const checked = featureFilters.includes(key);
                     return (
                       <label
@@ -688,7 +712,7 @@ export default function VehiclesIndex() {
                             );
                           }}
                         />
-                        <span className="text-sm">{label}</span>
+                        <span className="text-sm">{t(`vehicleForm.${labelKey}`)}</span>
                       </label>
                     );
                   })}
@@ -697,23 +721,23 @@ export default function VehiclesIndex() {
             </Popover>
 
             <div className="flex items-center">
-              <label htmlFor="sortBy" className="mr-2 text-sm font-medium">Sort by:</label>
+              <label htmlFor="sortBy" className="mr-2 text-sm font-medium">{t('indexPage.sortByLabel')}</label>
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-[240px]">
-                  <SelectValue placeholder="Default" />
+                  <SelectValue placeholder={t('indexPage.sortDefaultPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="default">Default (ID)</SelectItem>
-                  <SelectItem value="license">License Plate</SelectItem>
-                  <SelectItem value="brand">Brand</SelectItem>
-                  <SelectItem value="apk-asc">APK Date (earliest first)</SelectItem>
-                  <SelectItem value="apk-desc">APK Date (latest first)</SelectItem>
-                  <SelectItem value="availability-asc">Availability (available first)</SelectItem>
-                  <SelectItem value="availability-desc">Availability (reserved first)</SelectItem>
-                  <SelectItem value="filter-needs-fixing">Needs Fixing</SelectItem>
-                  <SelectItem value="filter-opnaam">Opnaam</SelectItem>
-                  <SelectItem value="filter-bv">BV</SelectItem>
-                  <SelectItem value="filter-unspecified">Not specified</SelectItem>
+                  <SelectItem value="default">{t('indexPage.sortDefaultOption')}</SelectItem>
+                  <SelectItem value="license">{t('indexPage.sortLicenseOption')}</SelectItem>
+                  <SelectItem value="brand">{t('indexPage.sortBrandOption')}</SelectItem>
+                  <SelectItem value="apk-asc">{t('indexPage.sortApkAscOption')}</SelectItem>
+                  <SelectItem value="apk-desc">{t('indexPage.sortApkDescOption')}</SelectItem>
+                  <SelectItem value="availability-asc">{t('indexPage.sortAvailabilityAscOption')}</SelectItem>
+                  <SelectItem value="availability-desc">{t('indexPage.sortAvailabilityDescOption')}</SelectItem>
+                  <SelectItem value="filter-needs-fixing">{t('indexPage.sortNeedsFixingOption')}</SelectItem>
+                  <SelectItem value="filter-opnaam">{t('indexPage.sortOpnaamOption')}</SelectItem>
+                  <SelectItem value="filter-bv">{t('indexPage.sortBvOption')}</SelectItem>
+                  <SelectItem value="filter-unspecified">{t('indexPage.sortUnspecifiedOption')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

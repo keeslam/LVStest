@@ -1,5 +1,6 @@
 import { useState } from "react";
 import * as React from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,7 @@ import { Vehicle, Expense, Document, Reservation, UserRole, Customer } from "@sh
 import { useAuth } from "@/hooks/use-auth";
 import { InlineDocumentUpload } from "@/components/documents/inline-document-upload";
 import { QuickStatusChangeButton } from "@/components/vehicles/quick-status-change-button";
+import { VehicleDeleteDialog } from "@/components/vehicles/vehicle-delete-dialog";
 import { CustomerViewDialog } from "@/components/customers/customer-view-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient, invalidateRelatedQueries, invalidateByPrefix } from "@/lib/queryClient";
@@ -89,6 +91,7 @@ interface VehicleDetailsProps {
 }
 
 export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: VehicleDetailsProps) {
+  const { t } = useTranslation("vehicles");
   const [_, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState("general");
   const [isApkReminderOpen, setIsApkReminderOpen] = useState(false);
@@ -131,37 +134,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     setExpenseCategoryPages(prev => ({ ...prev, [category]: page }));
   };
   
-  // Delete vehicle mutation
-  const deleteVehicleMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("DELETE", `/api/vehicles/${vehicleId}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete vehicle');
-      }
-      return await response.json();
-    },
-    onSuccess: async () => {
-      toast({
-        title: "Vehicle deleted",
-        description: "The vehicle has been successfully deleted."
-      });
-      
-      // Use invalidateRelatedQueries to refresh all affected data
-      invalidateRelatedQueries('vehicles');
-      invalidateRelatedQueries('dashboard');
-      
-      // Navigate back to vehicles list
-      navigate("/vehicles");
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error deleting vehicle",
-        description: error.message || "Failed to delete vehicle. Please try again.",
-        variant: "destructive"
-      });
-    }
-  });
+  // Deleting a vehicle is handled by VehicleDeleteDialog (typed license-plate
+  // confirmation + cascade preview + recycle bin), see the header actions below.
 
   // Fetch vehicle details (MOVED UP to fix hoisting issue)
   const vehicleQueryKey = [`/api/vehicles/${vehicleId}`];
@@ -231,16 +205,16 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     },
     onSuccess: (data) => {
       toast({
-        title: "APK reminder sent",
-        description: `Successfully sent ${data.sent} reminder(s) to customer(s) with reservations for this vehicle.`
+        title: t('details.maintenance.toasts.reminderSentTitle'),
+        description: t('details.maintenance.toasts.reminderSentDescription', { count: data.sent })
       });
       setIsApkReminderOpen(false);
       setCustomMessage("");
     },
     onError: (error: Error) => {
       toast({
-        title: "Error sending APK reminder",
-        description: error.message || "Failed to send APK reminder. Please try again.",
+        title: t('details.maintenance.toasts.errorTitle'),
+        description: error.message || t('details.maintenance.toasts.reminderFailedDescription'),
         variant: "destructive"
       });
     }
@@ -541,8 +515,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     },
     onSuccess: async (data) => {
       toast({
-        title: "Reservation created successfully",
-        description: `Reservation for ${vehicle?.brand} ${vehicle?.model} has been created.`
+        title: t('details.toasts.reservationCreatedTitle'),
+        description: t('details.toasts.reservationCreatedDescription', { brand: vehicle?.brand, model: vehicle?.model })
       });
       
       // Refresh related data
@@ -558,8 +532,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     },
     onError: (error: Error) => {
       toast({
-        title: "Error creating reservation",
-        description: error.message || "Failed to create reservation. Please try again.",
+        title: t('details.toasts.reservationCreateErrorTitle'),
+        description: error.message || t('details.toasts.reservationCreateErrorDescription'),
         variant: "destructive"
       });
     }
@@ -686,14 +660,14 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
       await refetchReservations();
       
       toast({
-        title: "Reservation deleted",
-        description: "The reservation has been successfully deleted."
+        title: t('details.toasts.reservationDeletedTitle'),
+        description: t('details.toasts.reservationDeletedDescription')
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete reservation",
+        title: t('details.toasts.genericErrorTitle'),
+        description: error.message || t('details.toasts.reservationDeleteFailedDescription'),
         variant: "destructive"
       });
     }
@@ -776,14 +750,14 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
       setSelectedBlacklistCustomerId("");
       setBlacklistReason("");
       toast({
-        title: "Customer blacklisted",
-        description: "The customer has been added to this vehicle's blacklist."
+        title: t('details.toasts.customerBlacklistedTitle'),
+        description: t('details.toasts.customerBlacklistedDescription')
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to add customer to blacklist",
+        title: t('details.toasts.genericErrorTitle'),
+        description: error.message || t('details.toasts.blacklistErrorDescription'),
         variant: "destructive"
       });
     }
@@ -802,14 +776,14 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     onSuccess: async () => {
       await refetchBlacklist();
       toast({
-        title: "Customer removed from blacklist",
-        description: "The customer can now rent this vehicle again."
+        title: t('details.toasts.customerRemovedFromBlacklistTitle'),
+        description: t('details.toasts.customerRemovedFromBlacklistDescription')
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to remove from blacklist",
+        title: t('details.toasts.genericErrorTitle'),
+        description: error.message || t('details.toasts.removeBlacklistErrorDescription'),
         variant: "destructive"
       });
     }
@@ -924,9 +898,9 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
   if (!vehicle) {
     return (
       <div className="text-center p-8">
-        <h2 className="text-xl font-semibold mb-2">Vehicle not found</h2>
-        <p className="mb-4 text-gray-600">The vehicle you're looking for doesn't exist or has been removed.</p>
-        <Button onClick={() => navigate("/vehicles")}>Back to Vehicles</Button>
+        <h2 className="text-xl font-semibold mb-2">{t('details.notFound.title')}</h2>
+        <p className="mb-4 text-gray-600">{t('details.notFound.description')}</p>
+        <Button onClick={() => navigate("/vehicles")}>{t('details.notFound.backButton')}</Button>
       </div>
     );
   }
@@ -947,7 +921,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               <path d="m12 19-7-7 7-7"/>
               <path d="M19 12H5"/>
             </svg>
-            {inDialogContext ? "Back" : "Back to Vehicles"}
+            {inDialogContext ? t('details.header.backButton') : t('details.header.backToVehiclesButton')}
           </Button>
 
           <Dialog open={isEditVehicleDialogOpen} onOpenChange={setIsEditVehicleDialogOpen}>
@@ -956,14 +930,14 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil mr-2">
                   <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
                 </svg>
-                Edit
+                {t('details.header.editButton')}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Edit Vehicle</DialogTitle>
+                <DialogTitle>{t('details.header.editDialogTitle')}</DialogTitle>
                 <DialogDescription>
-                  Update the details for {vehicle?.brand} {vehicle?.model} ({formatLicensePlate(vehicle?.licensePlate || "")})
+                  {t('details.header.editDialogDescription', { brand: vehicle?.brand, model: vehicle?.model, plate: formatLicensePlate(vehicle?.licensePlate || "") })}
                 </DialogDescription>
               </DialogHeader>
               <VehicleForm 
@@ -976,12 +950,12 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                   invalidateByPrefix('/api/vehicles');
                 }}
                 customCancelButton={
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={() => setIsEditVehicleDialogOpen(false)}
                   >
-                    Cancel
+                    {t('common:actions.cancel')}
                   </Button>
                 }
               />
@@ -997,46 +971,38 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
             }}
           />
 
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" className="text-red-600 hover:text-red-700">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 mr-2">
-                  <path d="M3 6h18"/>
-                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                  <line x1="10" x2="10" y1="11" y2="17"/>
-                  <line x1="14" x2="14" y1="11" y2="17"/>
-                </svg>
-                Delete
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete the vehicle {vehicle.brand} {vehicle.model} ({formatLicensePlate(vehicle.licensePlate)}).
-                  This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    deleteVehicleMutation.mutate();
-                  }}
-                  className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
-                >
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {/* Same guarded dialog as the vehicles list: shows what cascades and
+              requires the license plate to be typed. The old inline confirm
+              could delete a vehicle plus its rentals on two quick clicks. */}
+          <VehicleDeleteDialog
+            vehicleId={vehicleId}
+            vehicleBrand={vehicle.brand}
+            vehicleModel={vehicle.model}
+            vehicleLicensePlate={vehicle.licensePlate}
+            onSuccess={() => {
+              if (inDialogContext && onClose) {
+                onClose();
+              } else {
+                navigate("/vehicles");
+              }
+            }}
+          >
+            <Button variant="outline" className="text-red-600 hover:text-red-700">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2 mr-2">
+                <path d="M3 6h18"/>
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                <line x1="10" x2="10" y1="11" y2="17"/>
+                <line x1="14" x2="14" y1="11" y2="17"/>
+              </svg>
+              {t('details.header.deleteButton')}
+            </Button>
+          </VehicleDeleteDialog>
 
           <ReservationAddDialog initialVehicleId={vehicleId.toString()}>
             <Button data-testid="button-new-reservation">
               <Calendar className="h-4 w-4 mr-2" />
-              New Reservation
+              {t('details.header.newReservationButton')}
             </Button>
           </ReservationAddDialog>
           
@@ -1049,31 +1015,31 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
       <div className={`grid grid-cols-1 gap-4 ${displayReservation ? 'md:grid-cols-7' : 'md:grid-cols-5'}`}>
         <Card className={displayReservation ? 'md:col-span-1' : ''}>
           <CardHeader className={displayReservation ? 'pb-1 pt-3' : 'pb-2'}>
-            <CardTitle className="text-sm font-medium text-gray-500">Vehicle Type</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">{t('details.infoCards.vehicleType')}</CardTitle>
           </CardHeader>
           <CardContent className={displayReservation ? 'pb-3' : ''}>
-            <p className={`font-semibold ${displayReservation ? 'text-lg' : 'text-2xl'}`}>{vehicle.vehicleType || "N/A"}</p>
+            <p className={`font-semibold ${displayReservation ? 'text-lg' : 'text-2xl'}`}>{vehicle.vehicleType || t('details.general.na')}</p>
           </CardContent>
         </Card>
-        
+
         <Card className={displayReservation ? 'md:col-span-1' : ''}>
           <CardHeader className={displayReservation ? 'pb-1 pt-3' : 'pb-2'}>
-            <CardTitle className="text-sm font-medium text-gray-500">Current Mileage</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">{t('details.infoCards.currentMileage')}</CardTitle>
           </CardHeader>
           <CardContent className={displayReservation ? 'pb-3' : ''}>
             <p className={`font-semibold ${displayReservation ? 'text-lg' : 'text-2xl'}`} data-testid="text-current-mileage">
-              {vehicle.currentMileage != null 
-                ? `${Number(vehicle.currentMileage).toLocaleString()} km` 
-                : "N/A"}
+              {vehicle.currentMileage != null
+                ? `${Number(vehicle.currentMileage).toLocaleString()} km`
+                : t('details.general.na')}
             </p>
             {isAdmin && vehicle.mileageDecreasedBy && (
               <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs">
                 <div className="flex items-center gap-1 text-amber-700 font-medium">
                   <AlertTriangle className="h-3 w-3" />
-                  Mileage Decreased
+                  {t('details.infoCards.mileageDecreased')}
                 </div>
                 <p className="text-amber-600 mt-1">
-                  From {vehicle.previousMileage?.toLocaleString()} km by {vehicle.mileageDecreasedBy}
+                  {t('details.infoCards.fromKmBy', { previous: vehicle.previousMileage?.toLocaleString(), by: vehicle.mileageDecreasedBy })}
                 </p>
                 {vehicle.mileageDecreasedAt && (
                   <p className="text-amber-500">
@@ -1087,41 +1053,41 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
         
         <Card className={displayReservation ? 'md:col-span-1' : ''}>
           <CardHeader className={displayReservation ? 'pb-1 pt-3' : 'pb-2'}>
-            <CardTitle className="text-sm font-medium text-gray-500">Current Fuel Level</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">{t('details.infoCards.currentFuelLevel')}</CardTitle>
           </CardHeader>
           <CardContent className={displayReservation ? 'pb-3' : ''}>
             <p className={`font-semibold capitalize ${displayReservation ? 'text-lg' : 'text-2xl'}`} data-testid="text-current-fuel-level">
-              {vehicle.currentFuelLevel || "N/A"}
+              {vehicle.currentFuelLevel || t('details.general.na')}
             </p>
           </CardContent>
         </Card>
 
         <Card className={displayReservation ? 'md:col-span-1' : ''}>
           <CardHeader className={displayReservation ? 'pb-1 pt-3' : 'pb-2'}>
-            <CardTitle className="text-sm font-medium text-gray-500">APK Expiration</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">{t('details.infoCards.apkExpiration')}</CardTitle>
           </CardHeader>
           <CardContent className={displayReservation ? 'pb-3' : ''}>
             <div className="flex items-center space-x-2">
-              <p className={`font-semibold ${displayReservation ? 'text-lg' : 'text-2xl'}`}>{vehicle.apkDate ? formatDate(vehicle.apkDate) : "N/A"}</p>
+              <p className={`font-semibold ${displayReservation ? 'text-lg' : 'text-2xl'}`}>{vehicle.apkDate ? formatDate(vehicle.apkDate) : t('details.general.na')}</p>
               {vehicle.apkDate && (
                 <Badge className={apkUrgencyClass}>
-                  {daysUntilApk < 0 ? `${Math.abs(daysUntilApk)} days overdue` : `${daysUntilApk} days`}
+                  {daysUntilApk < 0 ? t('details.infoCards.daysOverdue', { count: Math.abs(daysUntilApk) }) : t('details.infoCards.daysCount', { count: daysUntilApk })}
                 </Badge>
               )}
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className={displayReservation ? 'md:col-span-1' : ''}>
           <CardHeader className={displayReservation ? 'pb-1 pt-3' : 'pb-2'}>
-            <CardTitle className="text-sm font-medium text-gray-500">Warranty Expiration</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">{t('details.infoCards.warrantyExpiration')}</CardTitle>
           </CardHeader>
           <CardContent className={displayReservation ? 'pb-3' : ''}>
             <div className="flex items-center space-x-2">
-              <p className={`font-semibold ${displayReservation ? 'text-lg' : 'text-2xl'}`}>{vehicle.warrantyEndDate ? formatDate(vehicle.warrantyEndDate) : "N/A"}</p>
+              <p className={`font-semibold ${displayReservation ? 'text-lg' : 'text-2xl'}`}>{vehicle.warrantyEndDate ? formatDate(vehicle.warrantyEndDate) : t('details.general.na')}</p>
               {vehicle.warrantyEndDate && (
                 <Badge className={warrantyUrgencyClass}>
-                  {daysUntilWarranty} days
+                  {t('details.infoCards.daysCount', { count: daysUntilWarranty })}
                 </Badge>
               )}
             </div>
@@ -1131,39 +1097,39 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
         {activeReservation && (
           <Card className="bg-blue-50 border-blue-200 md:col-span-2">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-blue-700">Current Renter</CardTitle>
+              <CardTitle className="text-sm font-medium text-blue-700">{t('details.infoCards.currentRenter')}</CardTitle>
             </CardHeader>
             <CardContent>
               <CustomerViewDialog customerId={activeReservation.customerId}>
                 <p className="text-2xl font-semibold text-blue-900 hover:text-blue-600 cursor-pointer transition-colors">
-                  {activeReservation.customer?.name || "N/A"}
+                  {activeReservation.customer?.name || t('details.general.na')}
                 </p>
               </CustomerViewDialog>
               {(activeReservation.customer?.phone || activeReservation.customer?.driverPhone) && (
                 <div className="text-sm text-blue-700 mt-1 space-y-0.5">
                   {activeReservation.customer?.phone && (
                     <p>
-                      <span className="font-medium">Phone:</span> {activeReservation.customer.phone}
+                      <span className="font-medium">{t('details.infoCards.phoneLabel')}</span> {activeReservation.customer.phone}
                     </p>
                   )}
                   {activeReservation.customer?.driverPhone && (
                     <p>
-                      <span className="font-medium">Driver:</span> {activeReservation.customer.driverPhone}
+                      <span className="font-medium">{t('details.infoCards.driverLabel')}</span> {activeReservation.customer.driverPhone}
                     </p>
                   )}
                 </div>
               )}
               <div className="text-sm text-blue-700 mt-2 pt-2 border-t border-blue-200">
-                <p className="font-medium">Rental Period:</p>
+                <p className="font-medium">{t('details.infoCards.rentalPeriodLabel')}</p>
                 <p className="text-xs mt-0.5">
-                  {formatDate(activeReservation.startDate)} - {activeReservation.endDate ? formatDate(activeReservation.endDate) : "TBD"}
+                  {formatDate(activeReservation.startDate)} - {activeReservation.endDate ? formatDate(activeReservation.endDate) : t('details.infoCards.tbd')}
                 </p>
               </div>
               {spareAssignment && (
                 <div className="mt-3 pt-3 border-t border-blue-200">
                   <div className="flex items-center gap-2 mb-1">
                     <Car className="h-4 w-4 text-orange-600" />
-                    <span className="text-sm font-medium text-orange-700">Spare Vehicle Assigned</span>
+                    <span className="text-sm font-medium text-orange-700">{t('details.infoCards.spareVehicleAssigned')}</span>
                   </div>
                   <button
                     onClick={() => navigate(`/vehicles/${spareAssignment.spareVehicle.id}`)}
@@ -1173,7 +1139,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                     {spareAssignment.spareVehicle.brand} {spareAssignment.spareVehicle.model} ({formatLicensePlate(spareAssignment.spareVehicle.licensePlate)})
                   </button>
                   <p className="text-xs text-orange-600 mt-1">
-                    Since {formatDate(spareAssignment.replacementReservation.startDate)}
+                    {t('details.infoCards.sinceLabel', { date: formatDate(spareAssignment.replacementReservation.startDate) })}
                     {spareAssignment.replacementReservation.endDate && ` - ${formatDate(spareAssignment.replacementReservation.endDate)}`}
                   </p>
                 </div>
@@ -1187,7 +1153,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-orange-700 flex items-center gap-2">
                 <Car className="h-4 w-4" />
-                Acting as Spare Vehicle
+                {t('details.infoCards.actingAsSpare')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1201,19 +1167,19 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               {actingAsSpareInfo.customer?.phone && (
                 <div className="text-sm text-orange-700 mt-1 space-y-0.5">
                   <p>
-                    <span className="font-medium">Phone:</span> {actingAsSpareInfo.customer.phone}
+                    <span className="font-medium">{t('details.infoCards.phoneLabel')}</span> {actingAsSpareInfo.customer.phone}
                   </p>
                 </div>
               )}
               <div className="text-sm text-orange-700 mt-2 pt-2 border-t border-orange-200">
-                <p className="font-medium">Spare Period:</p>
+                <p className="font-medium">{t('details.infoCards.sparePeriodLabel')}</p>
                 <p className="text-xs mt-0.5">
                   {formatDate(actingAsSpareInfo.replacementReservation.startDate)}
-                  {actingAsSpareInfo.replacementReservation.endDate ? ` - ${formatDate(actingAsSpareInfo.replacementReservation.endDate)}` : ' - TBD'}
+                  {actingAsSpareInfo.replacementReservation.endDate ? ` - ${formatDate(actingAsSpareInfo.replacementReservation.endDate)}` : ` ${t('details.infoCards.spareTbd')}`}
                 </p>
               </div>
               <div className="mt-3 pt-3 border-t border-orange-200">
-                <p className="text-xs text-orange-600 font-medium mb-1">Replacement for:</p>
+                <p className="text-xs text-orange-600 font-medium mb-1">{t('details.infoCards.replacementForLabel')}</p>
                 <button
                   onClick={() => navigate(`/vehicles/${actingAsSpareInfo.originalVehicle.id}`)}
                   className="text-sm text-orange-800 hover:text-orange-600 font-medium cursor-pointer transition-colors"
@@ -1229,206 +1195,206 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
         {upcomingReservation && (
           <Card className="bg-green-50 border-green-200 md:col-span-2">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-green-700">Upcoming Reservation</CardTitle>
+              <CardTitle className="text-sm font-medium text-green-700">{t('details.infoCards.upcomingReservation')}</CardTitle>
             </CardHeader>
             <CardContent>
               <CustomerViewDialog customerId={upcomingReservation.customerId}>
                 <p className="text-2xl font-semibold text-green-900 hover:text-green-600 cursor-pointer transition-colors">
-                  {upcomingReservation.customer?.name || "N/A"}
+                  {upcomingReservation.customer?.name || t('details.general.na')}
                 </p>
               </CustomerViewDialog>
               {(upcomingReservation.customer?.phone || upcomingReservation.customer?.driverPhone) && (
                 <div className="text-sm text-green-700 mt-1 space-y-0.5">
                   {upcomingReservation.customer?.phone && (
                     <p>
-                      <span className="font-medium">Phone:</span> {upcomingReservation.customer.phone}
+                      <span className="font-medium">{t('details.infoCards.phoneLabel')}</span> {upcomingReservation.customer.phone}
                     </p>
                   )}
                   {upcomingReservation.customer?.driverPhone && (
                     <p>
-                      <span className="font-medium">Driver:</span> {upcomingReservation.customer.driverPhone}
+                      <span className="font-medium">{t('details.infoCards.driverLabel')}</span> {upcomingReservation.customer.driverPhone}
                     </p>
                   )}
                 </div>
               )}
               <div className="text-sm text-green-700 mt-2 pt-2 border-t border-green-200">
-                <p className="font-medium">Rental Period:</p>
+                <p className="font-medium">{t('details.infoCards.rentalPeriodLabel')}</p>
                 <p className="text-xs mt-0.5">
-                  {formatDate(upcomingReservation.startDate)} - {upcomingReservation.endDate ? formatDate(upcomingReservation.endDate) : 'Open-ended'}
+                  {formatDate(upcomingReservation.startDate)} - {upcomingReservation.endDate ? formatDate(upcomingReservation.endDate) : t('details.infoCards.openEnded')}
                 </p>
               </div>
             </CardContent>
           </Card>
         )}
       </div>
-      
+
       {/* Tabs */}
       <Tabs defaultValue="general" value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-6 w-full">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="expenses">Expenses</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="reservations">Reservations</TabsTrigger>
-          <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="general">{t('details.tabs.general')}</TabsTrigger>
+          <TabsTrigger value="expenses">{t('details.tabs.expenses')}</TabsTrigger>
+          <TabsTrigger value="documents">{t('details.tabs.documents')}</TabsTrigger>
+          <TabsTrigger value="reservations">{t('details.tabs.reservations')}</TabsTrigger>
+          <TabsTrigger value="maintenance">{t('details.tabs.maintenance')}</TabsTrigger>
+          <TabsTrigger value="history">{t('details.tabs.history')}</TabsTrigger>
         </TabsList>
         
         {/* General Information Tab */}
         <TabsContent value="general" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Vehicle Details</CardTitle>
-              <CardDescription>General information about this vehicle</CardDescription>
+              <CardTitle>{t('details.general.title')}</CardTitle>
+              <CardDescription>{t('details.general.description')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="mb-6">
-                <h3 className="text-lg font-semibold border-b pb-2 mb-4">Basic Information</h3>
+                <h3 className="text-lg font-semibold border-b pb-2 mb-4">{t('details.general.basicInfo.title')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Vehicle ID</h4>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.basicInfo.vehicleId')}</h4>
                     <p className="text-base">{vehicle.id}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">License Plate</h4>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.basicInfo.licensePlate')}</h4>
                     <p className="text-base">{formatLicensePlate(vehicle.licensePlate)}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Brand</h4>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.basicInfo.brand')}</h4>
                     <p className="text-base">{vehicle.brand}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Model</h4>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.basicInfo.model')}</h4>
                     <p className="text-base">{vehicle.model}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Vehicle Type</h4>
-                    <p className="text-base">{vehicle.vehicleType || "N/A"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.basicInfo.vehicleType')}</h4>
+                    <p className="text-base">{vehicle.vehicleType || t('details.general.na')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Chassis Number</h4>
-                    <p className="text-base">{vehicle.chassisNumber || "N/A"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.basicInfo.chassisNumber')}</h4>
+                    <p className="text-base">{vehicle.chassisNumber || t('details.general.na')}</p>
                   </div>
                 </div>
               </div>
 
               <div className="mb-6">
-                <h3 className="text-lg font-semibold border-b pb-2 mb-4">Technical Information</h3>
+                <h3 className="text-lg font-semibold border-b pb-2 mb-4">{t('details.general.technicalInfo.title')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Fuel Type</h4>
-                    <p className="text-base">{vehicle.fuel || "N/A"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.technicalInfo.fuelType')}</h4>
+                    <p className="text-base">{vehicle.fuel || t('details.general.na')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">🛢️ Recommended Oil</h4>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.technicalInfo.recommendedOil')}</h4>
                     <p className="text-base font-semibold" data-testid="text-recommended-oil">
-                      {vehicle.recommendedOil || <span className="text-gray-400 font-normal">Not specified</span>}
+                      {vehicle.recommendedOil || <span className="text-gray-400 font-normal">{t('details.general.technicalInfo.notSpecified')}</span>}
                     </p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">AdBlue</h4>
-                    <p className="text-base">{isTrueValue(vehicle.adBlue) ? "Yes" : "No"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.technicalInfo.adBlue')}</h4>
+                    <p className="text-base">{isTrueValue(vehicle.adBlue) ? t('details.general.yes') : t('details.general.no')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">APK Date</h4>
-                    <p className="text-base">{vehicle.apkDate ? formatDate(vehicle.apkDate) : "N/A"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.technicalInfo.apkDate')}</h4>
+                    <p className="text-base">{vehicle.apkDate ? formatDate(vehicle.apkDate) : t('details.general.na')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Production Date</h4>
-                    <p className="text-base">{vehicle.productionDate ? formatDate(vehicle.productionDate) : "N/A"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.technicalInfo.productionDate')}</h4>
+                    <p className="text-base">{vehicle.productionDate ? formatDate(vehicle.productionDate) : t('details.general.na')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Warranty End Date</h4>
-                    <p className="text-base">{vehicle.warrantyEndDate ? formatDate(vehicle.warrantyEndDate) : "N/A"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.technicalInfo.warrantyEndDate')}</h4>
+                    <p className="text-base">{vehicle.warrantyEndDate ? formatDate(vehicle.warrantyEndDate) : t('details.general.na')}</p>
                   </div>
                 </div>
               </div>
 
               <div className="mb-6">
-                <h3 className="text-lg font-semibold border-b pb-2 mb-4">Status Information</h3>
+                <h3 className="text-lg font-semibold border-b pb-2 mb-4">{t('details.general.statusInfo.title')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Company</h4>
-                    <p className="text-base">{isTrueValue(vehicle.company) ? "Yes" : "No"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.statusInfo.company')}</h4>
+                    <p className="text-base">{isTrueValue(vehicle.company) ? t('details.general.yes') : t('details.general.no')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Registered To</h4>
-                    <p className="text-base">{isTrueValue(vehicle.registeredTo) ? "Yes" : "No"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.statusInfo.registeredTo')}</h4>
+                    <p className="text-base">{isTrueValue(vehicle.registeredTo) ? t('details.general.yes') : t('details.general.no')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Registered To Date</h4>
-                    <p className="text-base">{vehicle.registeredToDate ? formatDate(vehicle.registeredToDate) : "N/A"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.statusInfo.registeredToDate')}</h4>
+                    <p className="text-base">{vehicle.registeredToDate ? formatDate(vehicle.registeredToDate) : t('details.general.na')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Emissions Zone Access</h4>
-                    <p className="text-base">{isTrueValue(vehicle.euroZoneAccess) ? "Yes" : "No"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.statusInfo.emissionsZoneAccess')}</h4>
+                    <p className="text-base">{isTrueValue(vehicle.euroZoneAccess) ? t('details.general.yes') : t('details.general.no')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Paid Permit Access</h4>
-                    <p className="text-base">{isTrueValue(vehicle.euroZonePaidPermitAccess) ? "Yes" : "No"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.statusInfo.paidPermitAccess')}</h4>
+                    <p className="text-base">{isTrueValue(vehicle.euroZonePaidPermitAccess) ? t('details.general.yes') : t('details.general.no')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Euro Zone End Date</h4>
-                    <p className="text-base">{vehicle.euroZoneEndDate ? formatDate(vehicle.euroZoneEndDate) : "N/A"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.statusInfo.euroZoneEndDate')}</h4>
+                    <p className="text-base">{vehicle.euroZoneEndDate ? formatDate(vehicle.euroZoneEndDate) : t('details.general.na')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Move IZI</h4>
-                    <p className="text-base">{isTrueValue(vehicle.moveIziRegistered) ? "Yes" : "No"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.statusInfo.moveIzi')}</h4>
+                    <p className="text-base">{isTrueValue(vehicle.moveIziRegistered) ? t('details.general.yes') : t('details.general.no')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Move IZI Registration Date</h4>
-                    <p className="text-base">{vehicle.moveIziRegistrationDate ? formatDate(vehicle.moveIziRegistrationDate) : "N/A"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.statusInfo.moveIziRegistrationDate')}</h4>
+                    <p className="text-base">{vehicle.moveIziRegistrationDate ? formatDate(vehicle.moveIziRegistrationDate) : t('details.general.na')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Move IZI Expiration Date</h4>
-                    <p className="text-base">{vehicle.moveIziExpirationDate ? formatDate(vehicle.moveIziExpirationDate) : "N/A"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.statusInfo.moveIziExpirationDate')}</h4>
+                    <p className="text-base">{vehicle.moveIziExpirationDate ? formatDate(vehicle.moveIziExpirationDate) : t('details.general.na')}</p>
                   </div>
                   
                   <div className="md:col-span-3">
                     <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
                       <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-1">Availability Status</h4>
+                        <h4 className="text-sm font-medium text-gray-700 mb-1">{t('details.general.availabilityStatus.title')}</h4>
                         <p className="text-base font-semibold">
                           {vehicle.availabilityStatus === 'available' && (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              Available
+                              {t('details.general.availabilityStatus.available')}
                             </span>
                           )}
                           {vehicle.availabilityStatus === 'needs_fixing' && (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                              Needs Fixing
+                              {t('details.general.availabilityStatus.needsFixing')}
                             </span>
                           )}
                           {vehicle.availabilityStatus === 'not_for_rental' && (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                              Not for Rental
+                              {t('details.general.availabilityStatus.notForRental')}
                             </span>
                           )}
                           {vehicle.availabilityStatus === 'rented' && (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              Rented
+                              {t('details.general.availabilityStatus.rented')}
                             </span>
                           )}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          Track vehicle ownership and rental status
+                          {t('details.general.availabilityStatus.hint')}
                         </p>
                       </div>
                       <AvailabilityToggleDialog 
@@ -1446,43 +1412,43 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               {/* Current Rental Mileage & Fuel Status */}
               {(currentActiveReservation || vehicle.departureMileage || vehicle.returnMileage) && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold border-b pb-2 mb-4">Current Rental Status</h3>
+                  <h3 className="text-lg font-semibold border-b pb-2 mb-4">{t('details.general.currentRentalStatus.title')}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-1">Pickup Mileage</h4>
+                      <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.currentRentalStatus.pickupMileage')}</h4>
                       <p className="text-base">
                         {vehicle.departureMileage != null
                           ? `${Number(vehicle.departureMileage).toLocaleString()} km`
-                          : currentActiveReservation?.pickupMileage != null 
+                          : currentActiveReservation?.pickupMileage != null
                           ? `${currentActiveReservation.pickupMileage.toLocaleString()} km`
-                          : "Not recorded"}
+                          : t('details.general.currentRentalStatus.notRecorded')}
                       </p>
                     </div>
-                    
+
                     <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-1">Return Mileage</h4>
+                      <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.currentRentalStatus.returnMileage')}</h4>
                       <p className="text-base">
                         {vehicle.returnMileage != null
                           ? `${Number(vehicle.returnMileage).toLocaleString()} km`
-                          : currentActiveReservation?.returnMileage != null 
+                          : currentActiveReservation?.returnMileage != null
                           ? `${currentActiveReservation.returnMileage.toLocaleString()} km`
-                          : "Not recorded"}
+                          : t('details.general.currentRentalStatus.notRecorded')}
                       </p>
                     </div>
-                    
+
                     <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-1">Fuel Level at Pickup</h4>
+                      <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.currentRentalStatus.fuelLevelAtPickup')}</h4>
                       <p className="text-base capitalize">
                         {currentActiveReservation?.fuelLevelPickup
                           || (vehicle.departureMileage != null ? vehicle.currentFuelLevel : null)
-                          || "Not recorded"}
+                          || t('details.general.currentRentalStatus.notRecorded')}
                       </p>
                     </div>
-                    
+
                     <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-1">Fuel Level at Return</h4>
+                      <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.currentRentalStatus.fuelLevelAtReturn')}</h4>
                       <p className="text-base capitalize">
-                        {currentActiveReservation?.fuelLevelReturn || "Not recorded"}
+                        {currentActiveReservation?.fuelLevelReturn || t('details.general.currentRentalStatus.notRecorded')}
                       </p>
                     </div>
                   </div>
@@ -1490,90 +1456,90 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               )}
 
               <div className="mb-6">
-                <h3 className="text-lg font-semibold border-b pb-2 mb-4">Equipment & Features</h3>
+                <h3 className="text-lg font-semibold border-b pb-2 mb-4">{t('details.general.equipment.title')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">GPS</h4>
-                    <p className="text-base">{isTrueValue(vehicle.gps) ? "Yes" : "No"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.equipment.gps')}</h4>
+                    <p className="text-base">{isTrueValue(vehicle.gps) ? t('details.general.yes') : t('details.general.no')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">GPS Activated</h4>
-                    <p className="text-base">{isTrueValue(vehicle.gpsActivated) ? "Yes" : "No"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.equipment.gpsActivated')}</h4>
+                    <p className="text-base">{isTrueValue(vehicle.gpsActivated) ? t('details.general.yes') : t('details.general.no')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">GPS Swapped</h4>
-                    <p className="text-base">{isTrueValue(vehicle.gpsSwapped) ? "Yes" : "No"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.equipment.gpsSwapped')}</h4>
+                    <p className="text-base">{isTrueValue(vehicle.gpsSwapped) ? t('details.general.yes') : t('details.general.no')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">GPS IMEI</h4>
-                    <p className="text-base">{vehicle.imei || "N/A"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.equipment.gpsImei')}</h4>
+                    <p className="text-base">{vehicle.imei || t('details.general.na')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Roadside Assistance</h4>
-                    <p className="text-base">{isTrueValue(vehicle.roadsideAssistance) ? "Yes" : "No"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.equipment.roadsideAssistance')}</h4>
+                    <p className="text-base">{isTrueValue(vehicle.roadsideAssistance) ? t('details.general.yes') : t('details.general.no')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Spare Key</h4>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.equipment.spareKey')}</h4>
                     <p className="text-base">
                       {isTrueValue(vehicle.spareKey) ? (
                         isTrueValue(vehicle.spareKeyWithCustomer) ? (
                           <span className="text-orange-600 font-medium">
-                            Yes (with customer: {vehicle.spareKeyCustomerName || 'Unknown'})
+                            {t('details.general.equipment.spareKeyWithCustomer', { name: vehicle.spareKeyCustomerName || t('details.general.equipment.spareKeyUnknownCustomer') })}
                           </span>
                         ) : (
-                          "Yes"
+                          t('details.general.yes')
                         )
                       ) : (
-                        "No"
+                        t('details.general.no')
                       )}
                     </p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Winter Tires</h4>
-                    <p className="text-base">{isTrueValue(vehicle.winterTires) ? "Yes" : "No"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.equipment.winterTires')}</h4>
+                    <p className="text-base">{isTrueValue(vehicle.winterTires) ? t('details.general.yes') : t('details.general.no')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Spare Tire</h4>
-                    <p className="text-base">{isTrueValue(vehicle.spareTire) ? "Yes" : "No"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.equipment.spareTire')}</h4>
+                    <p className="text-base">{isTrueValue(vehicle.spareTire) ? t('details.general.yes') : t('details.general.no')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Tools & Jack</h4>
-                    <p className="text-base">{isTrueValue(vehicle.toolsAndJack) ? "Yes" : "No"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.equipment.toolsAndJack')}</h4>
+                    <p className="text-base">{isTrueValue(vehicle.toolsAndJack) ? t('details.general.yes') : t('details.general.no')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Seat Covers</h4>
-                    <p className="text-base">{isTrueValue(vehicle.seatcovers) ? "Yes" : "No"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.equipment.seatCovers')}</h4>
+                    <p className="text-base">{isTrueValue(vehicle.seatcovers) ? t('details.general.yes') : t('details.general.no')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Backup Beepers</h4>
-                    <p className="text-base">{isTrueValue(vehicle.backupbeepers) ? "Yes" : "No"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.equipment.backupBeepers')}</h4>
+                    <p className="text-base">{isTrueValue(vehicle.backupbeepers) ? t('details.general.yes') : t('details.general.no')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Tire Size</h4>
-                    <p className="text-base">{vehicle.tireSize || "N/A"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.equipment.tireSize')}</h4>
+                    <p className="text-base">{vehicle.tireSize || t('details.general.na')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Radio Code</h4>
-                    <p className="text-base">{vehicle.radioCode || "N/A"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.equipment.radioCode')}</h4>
+                    <p className="text-base">{vehicle.radioCode || t('details.general.na')}</p>
                   </div>
                 </div>
               </div>
 
               {vehicle.remarks && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold border-b pb-2 mb-4">Remarks</h3>
+                  <h3 className="text-lg font-semibold border-b pb-2 mb-4">{t('details.general.remarksTitle')}</h3>
                   <p className="text-base whitespace-pre-wrap">{vehicle.remarks}</p>
                 </div>
               )}
@@ -1586,8 +1552,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="md:col-span-2">
               <CardHeader>
-                <CardTitle>Expense History</CardTitle>
-                <CardDescription>All expenses related to this vehicle</CardDescription>
+                <CardTitle>{t('details.expenses.historyTitle')}</CardTitle>
+                <CardDescription>{t('details.expenses.historyDescription')}</CardDescription>
                 <div className="flex justify-end space-x-2">
                   <ExpenseViewDialog 
                     vehicleId={vehicleId}
@@ -1615,7 +1581,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                   </div>
                 ) : totalByCategory.length === 0 ? (
                   <div className="text-center py-6 text-gray-500">
-                    No expenses recorded for this vehicle
+                    {t('details.expenses.noExpenses')}
                   </div>
                 ) : (
                   <Accordion type="multiple" defaultValue={[]} className="w-full">
@@ -1635,7 +1601,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                   {category}
                                 </Badge>
                                 <span className="text-gray-500 text-sm">
-                                  ({count} expense{count !== 1 ? 's' : ''})
+                                  {t('details.expenses.expenseCount', { count })}
                                 </span>
                               </div>
                               <div className="font-semibold text-right">
@@ -1663,7 +1629,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                               {totalPages > 1 && (
                                 <div className="flex items-center justify-between mt-4 px-2 pt-3 border-t">
                                   <p className="text-sm text-muted-foreground">
-                                    Showing {startIndex + 1} to {Math.min(endIndex, count)} of {count} expenses
+                                    {t('details.expenses.showingRange', { start: startIndex + 1, end: Math.min(endIndex, count), count })}
                                   </p>
                                   <div className="flex gap-2">
                                     <Button
@@ -1673,7 +1639,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                       disabled={currentPage === 1}
                                     >
                                       <ChevronLeft className="h-4 w-4" />
-                                      Previous
+                                      {t('details.expenses.previousButton')}
                                     </Button>
                                     <div className="flex items-center gap-1">
                                       {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
@@ -1694,7 +1660,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                       onClick={() => setExpenseCategoryPage(category, currentPage + 1)}
                                       disabled={currentPage === totalPages}
                                     >
-                                      Next
+                                      {t('details.expenses.nextButton')}
                                       <ChevronRight className="h-4 w-4" />
                                     </Button>
                                   </div>
@@ -1712,15 +1678,15 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
             
             <Card>
               <CardHeader>
-                <CardTitle>Expense Summary</CardTitle>
-                <CardDescription>Total expenses by category</CardDescription>
+                <CardTitle>{t('details.expenses.summaryTitle')}</CardTitle>
+                <CardDescription>{t('details.expenses.summaryDescription')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="mb-6">
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Total Expenses</h3>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">{t('details.expenses.totalExpensesLabel')}</h3>
                   <p className="text-3xl font-bold">{<Price value={totalExpenses} />}</p>
                 </div>
-                
+
                 <div className="space-y-3">
                   {isLoadingExpenses ? (
                     <div className="flex justify-center p-6">
@@ -1731,7 +1697,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                     </div>
                   ) : totalByCategory.length === 0 ? (
                     <div className="text-center py-2 text-gray-500">
-                      No expense data available
+                      {t('details.expenses.noExpenseData')}
                     </div>
                   ) : (
                     totalByCategory.map(({ category, amount }) => (
@@ -1753,8 +1719,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
             <CardHeader>
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle>Vehicle Documents</CardTitle>
-                  <CardDescription>All documents related to this vehicle</CardDescription>
+                  <CardTitle>{t('details.documents.title')}</CardTitle>
+                  <CardDescription>{t('details.documents.description')}</CardDescription>
                 </div>
                 <InlineDocumentUpload 
                   vehicleId={vehicleId} 
@@ -1771,7 +1737,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                   can create the first check from this page. */}
               <div className="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-blue-900">Interactive Damage Checks</h3>
+                  <h3 className="text-lg font-semibold text-blue-900">{t('details.documents.interactiveDamageChecksTitle')}</h3>
                   <Button
                     size="sm"
                     onClick={() => {
@@ -1781,12 +1747,12 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                     data-testid="button-new-damage-check"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    New Check
+                    {t('details.documents.newCheckButton')}
                   </Button>
                 </div>
                 {!interactiveDamageChecks || interactiveDamageChecks.length === 0 ? (
                   <div className="text-sm text-blue-700/70 italic">
-                    No damage checks recorded for this vehicle yet.
+                    {t('details.documents.noDamageChecks')}
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -1796,21 +1762,21 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                               <Badge variant={check.checkType === 'pickup' ? 'default' : 'secondary'}>
-                                {check.checkType === 'pickup' ? 'Pick-up' : 'Return'}
+                                {check.checkType === 'pickup' ? t('details.documents.pickupBadge') : t('details.documents.returnBadge')}
                               </Badge>
                               <span className="text-sm text-gray-600">
                                 {new Date(check.checkDate).toLocaleDateString()}
                               </span>
                               {check.completedBy && (
-                                <span className="text-sm text-gray-500">by {check.completedBy}</span>
+                                <span className="text-sm text-gray-500">{t('details.documents.byLabel', { name: check.completedBy })}</span>
                               )}
                             </div>
                             {check.notes && (
                               <p className="text-sm text-gray-600 mt-1">{check.notes}</p>
                             )}
                             <div className="flex gap-2 text-xs text-gray-500 mt-2">
-                              {check.mileage && <span>Mileage: {check.mileage} km</span>}
-                              {check.fuelLevel && <span>Fuel: {check.fuelLevel}</span>}
+                              {check.mileage && <span>{t('details.documents.mileageLabel', { mileage: check.mileage })}</span>}
+                              {check.fuelLevel && <span>{t('details.documents.fuelLabel', { fuel: check.fuelLevel })}</span>}
                             </div>
                           </div>
                           <div className="flex gap-2">
@@ -1840,26 +1806,26 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                   document.body.removeChild(a);
                                   window.URL.revokeObjectURL(url);
                                   
-                                  toast({ 
-                                    title: "PDF Generated", 
-                                    description: "Damage check PDF downloaded successfully" 
+                                  toast({
+                                    title: t('details.documents.toasts.pdfGeneratedTitle'),
+                                    description: t('details.documents.toasts.pdfGeneratedDescription')
                                   });
                                 } catch (error) {
                                   console.error('Error generating PDF:', error);
-                                  toast({ 
-                                    title: "Error", 
-                                    description: "Failed to generate PDF", 
-                                    variant: "destructive" 
+                                  toast({
+                                    title: t('details.documents.toasts.errorTitle'),
+                                    description: t('details.documents.toasts.pdfFailedDescription'),
+                                    variant: "destructive"
                                   });
                                 }
                               }}
                               data-testid={`button-pdf-${check.id}`}
                             >
                               <Printer className="h-4 w-4 mr-1" />
-                              PDF
+                              {t('details.documents.pdfButton')}
                             </Button>
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               size="sm"
                               onClick={() => {
                                 setEditingCheckId(check.id);
@@ -1868,10 +1834,10 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                               data-testid={`button-edit-${check.id}`}
                             >
                               <Edit className="h-4 w-4 mr-1" />
-                              Edit
+                              {t('common:actions.edit')}
                             </Button>
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               size="sm"
                               onClick={() => {
                                 setDamageCheckToDelete({ id: check.id, checkType: check.checkType, checkDate: check.checkDate });
@@ -1880,7 +1846,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                               data-testid={`button-delete-${check.id}`}
                             >
                               <Trash2 className="h-4 w-4 mr-1" />
-                              Delete
+                              {t('common:actions.delete')}
                             </Button>
                           </div>
                         </div>
@@ -1892,7 +1858,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               
               {/* Document Categories */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3">Quick Upload Categories</h3>
+                <h3 className="text-lg font-semibold mb-3">{t('details.documents.quickUploadCategoriesTitle')}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   <div className="flex flex-col items-center bg-slate-50 p-3 rounded-md hover:bg-slate-100 cursor-pointer transition-colors">
                     <InlineDocumentUpload 
@@ -1910,7 +1876,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           <path d="M12 18v-6" />
                           <path d="m9 15 3 3 3-3" />
                         </svg>
-                        <span className="block text-sm font-medium">APK Inspection</span>
+                        <span className="block text-sm font-medium">{t('details.documents.categories.apkInspection')}</span>
                       </div>
                     </InlineDocumentUpload>
                   </div>
@@ -1933,7 +1899,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           <path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4" />
                           <path d="M2 15h6v6H2z" />
                         </svg>
-                        <span className="block text-sm font-medium">Contract</span>
+                        <span className="block text-sm font-medium">{t('details.documents.categories.contract')}</span>
                       </div>
                     </InlineDocumentUpload>
                   </div>
@@ -1952,7 +1918,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
                           <circle cx="12" cy="12" r="3" />
                         </svg>
-                        <span className="block text-sm font-medium">Damage Report</span>
+                        <span className="block text-sm font-medium">{t('details.documents.categories.damageReport')}</span>
                       </div>
                     </InlineDocumentUpload>
                   </div>
@@ -1972,7 +1938,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           <circle cx="9" cy="9" r="2" />
                           <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
                         </svg>
-                        <span className="block text-sm font-medium">Vehicle Photos</span>
+                        <span className="block text-sm font-medium">{t('details.documents.categories.vehiclePhotos')}</span>
                       </div>
                     </InlineDocumentUpload>
                   </div>
@@ -1994,13 +1960,13 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           <line x1="9" x2="15" y1="13" y2="13" />
                           <line x1="9" x2="15" y1="17" y2="17" />
                         </svg>
-                        <span className="block text-sm font-medium">Maintenance</span>
+                        <span className="block text-sm font-medium">{t('details.documents.categories.maintenance')}</span>
                       </div>
                     </InlineDocumentUpload>
                   </div>
                 </div>
               </div>
-            
+
               {/* Document List */}
               {isLoadingDocuments ? (
                 <div className="flex justify-center p-6">
@@ -2011,7 +1977,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                 </div>
               ) : documents?.length === 0 ? (
                 <div className="text-center py-6 text-gray-500">
-                  No documents uploaded for this vehicle
+                  {t('details.documents.noDocuments')}
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -2046,7 +2012,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                             <h3 className="text-lg font-medium">{category}</h3>
                           </div>
                           <Badge variant="outline" className="ml-2">
-                            {docs.length} {docs.length === 1 ? 'document' : 'documents'}
+                            {t('details.documents.documentCount', { count: docs.length })}
                           </Badge>
                         </button>
                         
@@ -2066,7 +2032,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                     </div>
                                     {document.createdBy && (
                                       <div className="text-xs text-gray-500 mb-2">
-                                        Created by: {document.createdBy}
+                                        {t('details.documents.createdByLabel', { name: document.createdBy })}
                                       </div>
                                     )}
                                     <div className="flex justify-between items-center gap-2 mt-2">
@@ -2080,18 +2046,18 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                         data-testid={`button-view-document-${document.id}`}
                                       >
                                         <Eye className="h-3.5 w-3.5" />
-                                        View
+                                        {t('common:actions.view')}
                                       </button>
-                                      
-                                      <a 
-                                        href={`/api/documents/download/${document.id}`} 
+
+                                      <a
+                                        href={`/api/documents/download/${document.id}`}
                                         className="text-gray-600 hover:text-gray-800 text-sm flex items-center gap-1 transition-colors"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         data-testid={`link-download-document-${document.id}`}
                                       >
                                         <Download className="h-3.5 w-3.5" />
-                                        Download
+                                        {t('common:actions.download')}
                                       </a>
                                       
                                       <button 
@@ -2112,10 +2078,10 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                         data-testid={`button-print-document-${document.id}`}
                                       >
                                         <Printer className="h-3.5 w-3.5" />
-                                        Print
+                                        {t('common:actions.print')}
                                       </button>
-                                      
-                                      <button 
+
+                                      <button
                                         className="text-red-600 hover:text-red-800 text-sm flex items-center gap-1 transition-colors"
                                         data-testid={`button-delete-document-${document.id}`}
                                         onClick={() => {
@@ -2124,7 +2090,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                         }}
                                       >
                                         <Trash2 className="h-3.5 w-3.5" />
-                                        Delete
+                                        {t('common:actions.delete')}
                                       </button>
                                     </div>
                                   </CardContent>
@@ -2148,8 +2114,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
             <CardHeader>
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle>Reservation History</CardTitle>
-                  <CardDescription>All reservations for this vehicle</CardDescription>
+                  <CardTitle>{t('details.reservations.historyTitle')}</CardTitle>
+                  <CardDescription>{t('details.reservations.historyDescription')}</CardDescription>
                 </div>
                 <ReservationAddDialog initialVehicleId={vehicleId}>
                   <Button size="sm">
@@ -2161,7 +2127,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                       <line x1="19" x2="19" y1="16" y2="22" />
                       <line x1="16" x2="22" y1="19" y2="19" />
                     </svg>
-                    New Reservation
+                    {t('details.reservations.newReservationButton')}
                   </Button>
                 </ReservationAddDialog>
               </div>
@@ -2176,7 +2142,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                 </div>
               ) : reservations?.length === 0 ? (
                 <div className="text-center py-6 text-gray-500">
-                  No reservations for this vehicle
+                  {t('details.reservations.noReservations')}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -2184,19 +2150,19 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                     <thead className="bg-gray-50">
                       <tr>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Customer
+                          {t('details.reservations.tableHeaders.customer')}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Period
+                          {t('details.reservations.tableHeaders.period')}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
+                          {t('details.reservations.tableHeaders.status')}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Price
+                          {t('details.reservations.tableHeaders.price')}
                         </th>
                         <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
+                          {t('details.reservations.tableHeaders.actions')}
                         </th>
                       </tr>
                     </thead>
@@ -2210,7 +2176,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
                               <span>{formatDate(reservation.startDate)}</span> -
-                              <span> {reservation.endDate ? formatDate(reservation.endDate) : 'Open-ended'}</span>
+                              <span> {reservation.endDate ? formatDate(reservation.endDate) : t('details.reservations.openEnded')}</span>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -2230,19 +2196,19 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                   setViewReservationDialogOpen(true);
                                 }}
                               >
-                                View
+                                {t('common:actions.view')}
                               </Button>
 
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 className="text-blue-600 hover:text-blue-800"
                                 onClick={() => {
                                   setEditReservationId(reservation.id);
                                   setEditReservationDialogOpen(true);
                                 }}
                               >
-                                Edit
+                                {t('common:actions.edit')}
                               </Button>
                               
                               <AlertDialog>
@@ -2259,7 +2225,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
-                                        Deleting...
+                                        {t('common:status.deleting')}
                                       </>
                                     ) : (
                                       <>
@@ -2268,34 +2234,34 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                           <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
                                           <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
                                         </svg>
-                                        Delete
+                                        {t('common:actions.delete')}
                                       </>
                                     )}
                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogTitle>{t('details.reservations.confirmDeleteTitle')}</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      This will permanently delete this reservation from {vehicle.brand} {vehicle.model} ({formatLicensePlate(vehicle.licensePlate)}).
+                                      {t('details.reservations.confirmDeleteDescription', { brand: vehicle.brand, model: vehicle.model, plate: formatLicensePlate(vehicle.licensePlate) })}
                                       <p className="mt-2 font-medium">
-                                        {formatDate(reservation.startDate)} - {reservation.endDate ? formatDate(reservation.endDate) : 'Open-ended'}
+                                        {formatDate(reservation.startDate)} - {reservation.endDate ? formatDate(reservation.endDate) : t('details.reservations.openEnded')}
                                       </p>
                                       <p className="mt-1 text-sm text-gray-500">
-                                        Customer: {reservation.customer?.name}
+                                        {t('details.reservations.customerLabel', { name: reservation.customer?.name })}
                                       </p>
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction 
+                                    <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
+                                    <AlertDialogAction
                                       onClick={(e) => {
                                         e.preventDefault();
                                         deleteReservationMutation.mutate(reservation.id);
                                       }}
                                       className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
                                     >
-                                      Delete
+                                      {t('common:actions.delete')}
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -2321,44 +2287,44 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                       <circle cx="12" cy="12" r="10"/>
                       <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
                     </svg>
-                    Customer Blacklist
+                    {t('details.reservations.blacklist.title')}
                   </CardTitle>
-                  <CardDescription>Customers who are blocked from renting this vehicle</CardDescription>
+                  <CardDescription>{t('details.reservations.blacklist.description')}</CardDescription>
                 </div>
                 <Dialog open={isAddToBlacklistOpen} onOpenChange={setIsAddToBlacklistOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" variant="outline" className="flex items-center gap-2" data-testid="button-add-to-blacklist">
                       <Plus className="h-4 w-4" />
-                      Add to Blacklist
+                      {t('details.reservations.blacklist.addButton')}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[650px] md:max-w-[720px]">
                     <DialogHeader>
-                      <DialogTitle>Add Customer to Blacklist</DialogTitle>
+                      <DialogTitle>{t('details.reservations.blacklist.addDialogTitle')}</DialogTitle>
                       <DialogDescription>
-                        Select a customer to block from renting this vehicle.
+                        {t('details.reservations.blacklist.addDialogDescription')}
                       </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                       <div className="space-y-2">
-                        <Label htmlFor="blacklist-customer">Customer</Label>
+                        <Label htmlFor="blacklist-customer">{t('details.reservations.blacklist.customerLabel')}</Label>
                         <SearchableCombobox
                           options={blacklistCustomerOptions}
                           value={selectedBlacklistCustomerId}
                           onChange={setSelectedBlacklistCustomerId}
-                          placeholder="Search and select a customer..."
-                          searchPlaceholder="Search by name, phone, or city..."
-                          emptyMessage="No customers found"
+                          placeholder={t('details.reservations.blacklist.searchPlaceholder')}
+                          searchPlaceholder={t('details.reservations.blacklist.searchByPlaceholder')}
+                          emptyMessage={t('details.reservations.blacklist.noCustomersFound')}
                           groups={false}
                           className="w-full"
                           data-testid="select-blacklist-customer"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="blacklist-reason">Reason (optional)</Label>
+                        <Label htmlFor="blacklist-reason">{t('details.reservations.blacklist.reasonLabel')}</Label>
                         <Textarea
                           id="blacklist-reason"
-                          placeholder="Enter a reason for blacklisting this customer..."
+                          placeholder={t('details.reservations.blacklist.reasonPlaceholder')}
                           value={blacklistReason}
                           onChange={(e) => setBlacklistReason(e.target.value)}
                           data-testid="input-blacklist-reason"
@@ -2374,7 +2340,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           setBlacklistReason("");
                         }}
                       >
-                        Cancel
+                        {t('common:actions.cancel')}
                       </Button>
                       <Button
                         onClick={() => {
@@ -2394,10 +2360,10 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            Adding...
+                            {t('details.reservations.blacklist.addingButton')}
                           </>
                         ) : (
-                          'Add to Blacklist'
+                          t('details.reservations.blacklist.addButton2')
                         )}
                       </Button>
                     </DialogFooter>
@@ -2415,8 +2381,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                 </div>
               ) : blacklistedCustomers.length === 0 ? (
                 <div className="text-center py-6 text-gray-500">
-                  <p>No customers are blacklisted for this vehicle.</p>
-                  <p className="text-sm mt-1">All customers can rent this vehicle.</p>
+                  <p>{t('details.reservations.blacklist.noBlacklisted')}</p>
+                  <p className="text-sm mt-1">{t('details.reservations.blacklist.allCanRent')}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -2424,19 +2390,20 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                     <div key={entry.id} className="flex items-center justify-between p-4 border rounded-lg bg-red-50 dark:bg-red-900/10" data-testid={`blacklist-entry-${entry.id}`}>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">{entry.customer?.name || 'Unknown Customer'}</span>
+                          <span className="font-medium">{entry.customer?.name || t('details.reservations.blacklist.unknownCustomer')}</span>
                           {entry.customer?.email && (
                             <span className="text-sm text-gray-500">({entry.customer.email})</span>
                           )}
                         </div>
                         {entry.reason && (
                           <p className="text-sm text-gray-600 mt-1">
-                            <span className="font-medium">Reason:</span> {entry.reason}
+                            <span className="font-medium">{t('details.reservations.blacklist.reasonPrefix')}</span> {entry.reason}
                           </p>
                         )}
                         <p className="text-xs text-gray-400 mt-1">
-                          Added {entry.createdAt ? formatDate(entry.createdAt) : 'Unknown date'}
-                          {entry.createdByUsername && ` by ${entry.createdByUsername}`}
+                          {entry.createdByUsername
+                            ? t('details.reservations.blacklist.addedLabelWithBy', { date: entry.createdAt ? formatDate(entry.createdAt) : t('details.reservations.blacklist.unknownDate'), by: entry.createdByUsername })
+                            : t('details.reservations.blacklist.addedLabel', { date: entry.createdAt ? formatDate(entry.createdAt) : t('details.reservations.blacklist.unknownDate') })}
                         </p>
                       </div>
                       <AlertDialog>
@@ -2448,24 +2415,28 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                             data-testid={`button-remove-blacklist-${entry.id}`}
                           >
                             <Trash2 className="h-4 w-4 mr-1" />
-                            Remove
+                            {t('details.reservations.blacklist.removeButton')}
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Remove from Blacklist?</AlertDialogTitle>
+                            <AlertDialogTitle>{t('details.reservations.blacklist.confirmRemoveTitle')}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to remove <strong>{entry.customer?.name}</strong> from this vehicle's blacklist?
-                              They will be able to rent this vehicle again.
+                              <Trans
+                                i18nKey="details.reservations.blacklist.confirmRemoveDescription"
+                                ns="vehicles"
+                                values={{ name: entry.customer?.name }}
+                                components={{ 1: <strong /> }}
+                              />
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction 
+                            <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
+                            <AlertDialogAction
                               onClick={() => removeFromBlacklistMutation.mutate(entry.id)}
                               className="bg-red-600 hover:bg-red-700"
                             >
-                              Remove from Blacklist
+                              {t('details.reservations.blacklist.removeConfirmButton')}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -2482,56 +2453,55 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
         <TabsContent value="maintenance" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Maintenance Schedule</CardTitle>
-              <CardDescription>APK and warranty information</CardDescription>
+              <CardTitle>{t('details.maintenance.scheduleTitle')}</CardTitle>
+              <CardDescription>{t('details.maintenance.scheduleDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
                 <div className="border p-4 rounded-lg">
-                  <h3 className="text-lg font-medium mb-2">APK Inspection</h3>
+                  <h3 className="text-lg font-medium mb-2">{t('details.maintenance.apkInspectionTitle')}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-500">Current APK Valid Until</p>
-                      <p className="text-lg font-medium">{vehicle.apkDate ? formatDate(vehicle.apkDate) : "Not set"}</p>
+                      <p className="text-sm text-gray-500">{t('details.maintenance.currentApkValidUntil')}</p>
+                      <p className="text-lg font-medium">{vehicle.apkDate ? formatDate(vehicle.apkDate) : t('details.maintenance.notSet')}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">{daysUntilApk < 0 ? "Overdue By" : "Days Remaining"}</p>
+                      <p className="text-sm text-gray-500">{daysUntilApk < 0 ? t('details.maintenance.overdueByLabel') : t('details.maintenance.daysRemainingLabel')}</p>
                       <div className="flex items-center">
                         <p className="text-lg font-medium mr-2">{Math.abs(daysUntilApk)}</p>
-                        {vehicle.apkDate && <Badge className={apkUrgencyClass}>{daysUntilApk < 0 ? "Expired" : daysUntilApk <= 30 ? "Action needed soon" : "OK"}</Badge>}
+                        {vehicle.apkDate && <Badge className={apkUrgencyClass}>{daysUntilApk < 0 ? t('details.maintenance.expiredBadge') : daysUntilApk <= 30 ? t('details.maintenance.actionNeededSoonBadge') : t('details.maintenance.okBadge')}</Badge>}
                       </div>
                     </div>
                   </div>
                   <div className="mt-4 flex gap-2">
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant={daysUntilApk <= 30 ? "default" : "outline"}
                       onClick={() => setIsApkInspectionOpen(true)}
                       data-testid="button-schedule-apk-inspection"
                     >
-                      Schedule APK Inspection
+                      {t('details.maintenance.scheduleApkButton')}
                     </Button>
                     <Dialog open={isApkReminderOpen} onOpenChange={setIsApkReminderOpen}>
                       <DialogTrigger asChild>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
+                        <Button
+                          size="sm"
+                          variant="outline"
                           className="flex items-center gap-2"
                           data-testid="button-send-apk-reminder"
                         >
                           <Bell className="h-4 w-4" />
-                          Send APK Reminder
+                          {t('details.maintenance.sendApkReminderButton')}
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
                         <DialogHeader>
                           <DialogTitle className="flex items-center gap-2">
                             <Mail className="h-5 w-5" />
-                            Send APK Reminder - {vehicle?.licensePlate}
+                            {t('details.maintenance.reminderDialogTitle', { plate: vehicle?.licensePlate })}
                           </DialogTitle>
                           <DialogDescription>
-                            Send an APK inspection reminder to customers who have rented this vehicle. 
-                            Review and edit customer emails, customize the message template, and send personalized reminders.
+                            {t('details.maintenance.reminderDialogDescription')}
                           </DialogDescription>
                         </DialogHeader>
                         
@@ -2542,34 +2512,34 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                             <div className="space-y-4">
                               <div className="flex items-center gap-2">
                                 <User className="h-4 w-4" />
-                                <h3 className="text-lg font-medium">Customer Email Addresses</h3>
+                                <h3 className="text-lg font-medium">{t('details.maintenance.customerEmailSectionTitle')}</h3>
                               </div>
-                              
+
                               {customersWithReservations.length > 0 ? (
                                 <div className="space-y-3">
                                   {customersWithReservations.map((item: any, index: number) => {
                                     // Collect all available email addresses for this customer
                                     const customerEmails = [];
-                                    if (item.customer?.emailForMOT) customerEmails.push({ label: 'APK/MOT Email', value: item.customer.emailForMOT });
-                                    if (item.customer?.email) customerEmails.push({ label: 'Main Email', value: item.customer.email });
-                                    if (item.customer?.emailForInvoices) customerEmails.push({ label: 'Invoice Email', value: item.customer.emailForInvoices });
-                                    if (item.customer?.emailGeneral) customerEmails.push({ label: 'General Email', value: item.customer.emailGeneral });
+                                    if (item.customer?.emailForMOT) customerEmails.push({ label: t('details.maintenance.apkMotEmailLabel'), value: item.customer.emailForMOT });
+                                    if (item.customer?.email) customerEmails.push({ label: t('details.maintenance.mainEmailLabel'), value: item.customer.email });
+                                    if (item.customer?.emailForInvoices) customerEmails.push({ label: t('details.maintenance.invoiceEmailLabel'), value: item.customer.emailForInvoices });
+                                    if (item.customer?.emailGeneral) customerEmails.push({ label: t('details.maintenance.generalEmailLabel'), value: item.customer.emailGeneral });
                                     
                                     return (
                                       <div key={item.customer?.id || index} className="border rounded-lg p-4">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                           <div>
-                                            <Label className="text-sm font-medium">Customer Name</Label>
+                                            <Label className="text-sm font-medium">{t('details.maintenance.customerNameLabel')}</Label>
                                             <p className="text-sm">
-                                              {item.customer ? `${item.customer.firstName} ${item.customer.lastName}` : 'Unknown Customer'}
+                                              {item.customer ? `${item.customer.firstName} ${item.customer.lastName}` : t('details.maintenance.unknownCustomer')}
                                             </p>
                                             <p className="text-xs text-gray-500">
-                                              Customer ID: {item.customer?.id || 'N/A'}
+                                              {t('details.maintenance.customerIdLabel', { id: item.customer?.id || t('details.maintenance.na') })}
                                             </p>
                                           </div>
                                           <div>
                                             <Label htmlFor={`email-${item.customer?.id}`} className="text-sm font-medium">
-                                              Email Address
+                                              {t('details.maintenance.emailAddressLabel')}
                                             </Label>
                                             
                                             {customerEmails.length > 1 ? (
@@ -2585,7 +2555,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                                   }
                                                 >
                                                   <SelectTrigger className="mt-1" data-testid={`select-email-${item.customer?.id}`}>
-                                                    <SelectValue placeholder={`Select from ${customerEmails.length} emails`} />
+                                                    <SelectValue placeholder={t('details.maintenance.selectFromEmailsPlaceholder', { count: customerEmails.length })} />
                                                   </SelectTrigger>
                                                   <SelectContent>
                                                     {customerEmails.map((emailOption, idx) => (
@@ -2607,7 +2577,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                                       [item.customer?.id]: e.target.value
                                                     }))
                                                   }
-                                                  placeholder="Type or select email above"
+                                                  placeholder={t('details.maintenance.typeOrSelectPlaceholder')}
                                                   data-testid={`input-email-${item.customer?.id}`}
                                                 />
                                               </div>
@@ -2616,13 +2586,13 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                                 id={`email-${item.customer?.id}`}
                                                 type="email"
                                                 value={editableEmails[item.customer?.id] || ''}
-                                                onChange={(e) => 
+                                                onChange={(e) =>
                                                   setEditableEmails(prev => ({
                                                     ...prev,
                                                     [item.customer?.id]: e.target.value
                                                   }))
                                                 }
-                                                placeholder="Enter email address"
+                                                placeholder={t('details.maintenance.enterEmailPlaceholder')}
                                                 className="mt-1"
                                                 data-testid={`input-email-${item.customer?.id}`}
                                               />
@@ -2630,7 +2600,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                           </div>
                                         </div>
                                         <div className="mt-2 text-xs text-gray-500">
-                                          Reservation: {item.reservation?.startDate} to {item.reservation?.endDate}
+                                          {t('details.maintenance.reservationLabel', { start: item.reservation?.startDate, end: item.reservation?.endDate })}
                                         </div>
                                       </div>
                                     );
@@ -2639,8 +2609,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                               ) : (
                                 <div className="border rounded-lg p-6 text-center text-gray-500">
                                   <User className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                                  <p>No customers found for this vehicle.</p>
-                                  <p className="text-sm">This vehicle has not been rented yet, or customers don't have email addresses on file.</p>
+                                  <p>{t('details.maintenance.noCustomersFoundTitle')}</p>
+                                  <p className="text-sm">{t('details.maintenance.noCustomersFoundHint')}</p>
                                 </div>
                               )}
                             </div>
@@ -2651,21 +2621,21 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                             <div className="space-y-4">
                               <div className="flex items-center gap-2">
                                 <Eye className="h-4 w-4" />
-                                <h3 className="text-lg font-medium">Email Template Selection</h3>
+                                <h3 className="text-lg font-medium">{t('details.maintenance.templateSelectionTitle')}</h3>
                               </div>
-                              
+
                               <div className="space-y-4">
                                 {/* Template Selector */}
                                 <div>
                                   <Label htmlFor="template-select" className="text-sm font-medium">
-                                    Select Email Template
+                                    {t('details.maintenance.selectTemplateLabel')}
                                   </Label>
                                   <Select
                                     value={selectedTemplateId?.toString() || ""}
                                     onValueChange={handleTemplateSelect}
                                   >
                                     <SelectTrigger className="mt-1" data-testid="select-email-template">
-                                      <SelectValue placeholder="Choose a template from Communications" />
+                                      <SelectValue placeholder={t('details.maintenance.chooseTemplatePlaceholder')} />
                                     </SelectTrigger>
                                     <SelectContent>
                                       {emailTemplates.length > 0 ? (
@@ -2676,13 +2646,13 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                         ))
                                       ) : (
                                         <SelectItem value="no-templates" disabled>
-                                          No templates available
+                                          {t('details.maintenance.noTemplatesAvailable')}
                                         </SelectItem>
                                       )}
                                     </SelectContent>
                                   </Select>
                                   <p className="text-xs text-gray-500 mt-1">
-                                    Select a pre-made template from your Communications page
+                                    {t('details.maintenance.templateHint')}
                                   </p>
                                 </div>
 
@@ -2690,33 +2660,33 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
 
                                 <div>
                                   <Label htmlFor="template-subject" className="text-sm font-medium">
-                                    Email Subject
+                                    {t('details.maintenance.emailSubjectLabel')}
                                   </Label>
                                   <Input
                                     id="template-subject"
                                     value={templateSubject}
                                     onChange={(e) => setTemplateSubject(e.target.value)}
-                                    placeholder="Email subject line"
+                                    placeholder={t('details.maintenance.subjectPlaceholder')}
                                     className="mt-1"
                                     data-testid="input-template-subject"
                                   />
                                 </div>
-                                
+
                                 <div>
                                   <Label htmlFor="template-content" className="text-sm font-medium">
-                                    Email Content
+                                    {t('details.maintenance.emailContentLabel')}
                                   </Label>
                                   <Textarea
                                     id="template-content"
                                     value={templateContent}
                                     onChange={(e) => setTemplateContent(e.target.value)}
                                     rows={10}
-                                    placeholder="Email message content"
+                                    placeholder={t('details.maintenance.contentPlaceholder')}
                                     className="mt-1 font-mono text-sm"
                                     data-testid="textarea-template-content"
                                   />
                                   <p className="text-xs text-gray-500 mt-1">
-                                    You can edit this template to customize the message for this vehicle's APK reminder.
+                                    {t('details.maintenance.contentHint')}
                                   </p>
                                 </div>
                               </div>
@@ -2725,10 +2695,10 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                               <div className="border rounded-lg p-4 bg-gray-50">
                                 <h4 className="font-medium mb-2 flex items-center gap-2">
                                   <Mail className="h-4 w-4" />
-                                  Preview
+                                  {t('details.maintenance.previewTitle')}
                                 </h4>
                                 <div className="bg-white border rounded p-3 text-sm">
-                                  <div className="font-medium mb-2">Subject: {templateSubject}</div>
+                                  <div className="font-medium mb-2">{t('details.maintenance.subjectPrefix', { subject: templateSubject })}</div>
                                   <Separator className="my-2" />
                                   <div className="whitespace-pre-wrap">{templateContent}</div>
                                 </div>
@@ -2737,10 +2707,10 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
 
                           </div>
                         </ScrollArea>
-                        
+
                         <DialogFooter className="mt-4">
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             onClick={() => {
                               setIsApkReminderOpen(false);
                               setCustomMessage("");
@@ -2751,27 +2721,27 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                             }}
                             data-testid="button-cancel-reminder"
                           >
-                            Cancel
+                            {t('common:actions.cancel')}
                           </Button>
-                          <Button 
-                            onClick={() => sendApkReminderMutation.mutate({ 
+                          <Button
+                            onClick={() => sendApkReminderMutation.mutate({
                               message: templateContent,
                               subject: templateSubject,
                               customerEmails: editableEmails
                             })}
                             disabled={
-                              sendApkReminderMutation.isPending || 
+                              sendApkReminderMutation.isPending ||
                               customersWithReservations.length === 0 ||
                               Object.keys(editableEmails).length === 0 ||
                               Object.values(editableEmails).some(email => !email || email.trim() === '')
                             }
                             data-testid="button-send-reminder"
                           >
-                            {sendApkReminderMutation.isPending 
-                              ? "Sending..." 
+                            {sendApkReminderMutation.isPending
+                              ? t('details.maintenance.sendingButton')
                               : Object.keys(editableEmails).length === 0
-                              ? "Select email addresses to send"
-                              : `Send to ${Object.keys(editableEmails).length} Customer(s)`}
+                              ? t('details.maintenance.selectEmailsButton')
+                              : t('details.maintenance.sendToButton', { count: Object.keys(editableEmails).length })}
                           </Button>
                         </DialogFooter>
                       </DialogContent>
@@ -2780,23 +2750,23 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                 </div>
                 
                 <div className="border p-4 rounded-lg">
-                  <h3 className="text-lg font-medium mb-2">Warranty Information</h3>
+                  <h3 className="text-lg font-medium mb-2">{t('details.maintenance.warrantyTitle')}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-500">Warranty Valid Until</p>
-                      <p className="text-lg font-medium">{vehicle.warrantyEndDate ? formatDate(vehicle.warrantyEndDate) : "Not set"}</p>
+                      <p className="text-sm text-gray-500">{t('details.maintenance.warrantyValidUntil')}</p>
+                      <p className="text-lg font-medium">{vehicle.warrantyEndDate ? formatDate(vehicle.warrantyEndDate) : t('details.maintenance.notSet')}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Days Remaining</p>
+                      <p className="text-sm text-gray-500">{t('details.maintenance.daysRemaining')}</p>
                       <div className="flex items-center">
                         <p className="text-lg font-medium mr-2">{daysUntilWarranty}</p>
-                        {vehicle.warrantyEndDate && <Badge className={warrantyUrgencyClass}>{daysUntilWarranty <= 30 ? "Expiring soon" : "Active"}</Badge>}
+                        {vehicle.warrantyEndDate && <Badge className={warrantyUrgencyClass}>{daysUntilWarranty <= 30 ? t('details.maintenance.expiringSoonBadge') : t('details.maintenance.activeBadge')}</Badge>}
                       </div>
                     </div>
                   </div>
                   <div className="mt-4">
                     <Button size="sm" variant="outline">
-                      Update Warranty Information
+                      {t('details.maintenance.updateWarrantyButton')}
                     </Button>
                   </div>
                 </div>
@@ -2806,35 +2776,35 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                   <div className={`border p-4 rounded-lg ${serviceDueInfo.isServiceDue ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
                     <h3 className="text-lg font-medium mb-2 flex items-center gap-2">
                       <Calendar className="h-5 w-5" />
-                      Next Service Due
+                      {t('details.maintenance.nextServiceDueTitle')}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {serviceDueInfo.nextServiceByDate && (
                         <div>
-                          <p className="text-sm text-gray-500">Service Due By Date</p>
+                          <p className="text-sm text-gray-500">{t('details.maintenance.serviceDueByDateLabel')}</p>
                           <p className="text-lg font-medium">{formatDate(format(serviceDueInfo.nextServiceByDate, 'yyyy-MM-dd'))}</p>
                           <Badge className={serviceDueInfo.isDueByDate ? 'bg-red-600' : 'bg-green-600'}>
-                            {serviceDueInfo.isDueByDate ? 'Overdue' : `${serviceDueInfo.daysUntilService} days`}
+                            {serviceDueInfo.isDueByDate ? t('details.maintenance.overdueBadge') : t('details.maintenance.daysLabel', { count: serviceDueInfo.daysUntilService })}
                           </Badge>
                         </div>
                       )}
                       {serviceDueInfo.nextServiceByMileage && (
                         <div>
-                          <p className="text-sm text-gray-500">Service Due At Mileage</p>
+                          <p className="text-sm text-gray-500">{t('details.maintenance.serviceDueAtMileageLabel')}</p>
                           <p className="text-lg font-medium">{serviceDueInfo.nextServiceByMileage.toLocaleString()} km</p>
                           <Badge className={serviceDueInfo.isDueByMileage ? 'bg-red-600' : 'bg-green-600'}>
-                            {serviceDueInfo.isDueByMileage ? 'Overdue' : `${serviceDueInfo.kmUntilService} km remaining`}
+                            {serviceDueInfo.isDueByMileage ? t('details.maintenance.overdueBadge') : t('details.maintenance.kmRemainingLabel', { count: serviceDueInfo.kmUntilService })}
                           </Badge>
                         </div>
                       )}
                     </div>
                     <div className="mt-3 text-sm text-gray-600">
-                      <p>Last service: {vehicle.lastServiceDate ? formatDate(vehicle.lastServiceDate) : 'Not recorded'}</p>
+                      <p>{t('details.maintenance.lastServiceLabel', { date: vehicle.lastServiceDate ? formatDate(vehicle.lastServiceDate) : t('details.maintenance.notRecorded') })}</p>
                       {vehicle.lastServiceMileage && (
-                        <p>Last service mileage: {vehicle.lastServiceMileage.toLocaleString()} km</p>
+                        <p>{t('details.maintenance.lastServiceMileageLabel', { mileage: vehicle.lastServiceMileage.toLocaleString() })}</p>
                       )}
                       {vehicle.currentMileage && (
-                        <p>Current mileage: {vehicle.currentMileage.toLocaleString()} km</p>
+                        <p>{t('details.maintenance.currentMileageLabel', { mileage: vehicle.currentMileage.toLocaleString() })}</p>
                       )}
                     </div>
                   </div>
@@ -2844,7 +2814,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                 <div className="border p-4 rounded-lg">
                   <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
-                    Scheduled Maintenance History
+                    {t('details.maintenance.scheduledMaintenanceHistoryTitle')}
                   </h3>
                   {maintenanceHistory.filter((m: any) => m.maintenanceCategory === 'scheduled_maintenance').length > 0 ? (
                     <>
@@ -2854,7 +2824,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           .sort((a: any, b: any) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
                           .slice(0, showAllScheduledMaintenance ? undefined : 5)
                           .map((maintenance: any) => {
-                            const maintenanceType = maintenance.notes?.split(':')[0] || 'General Maintenance';
+                            const maintenanceType = maintenance.notes?.split(':')[0] || t('details.maintenance.generalMaintenanceFallback');
                             const maintenanceDetails = maintenance.notes?.split('\n')?.[1] || '';
                             
                             return (
@@ -2869,9 +2839,9 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                           maintenance.maintenanceStatus === 'in' ? 'secondary' : 
                                           'outline'
                                         }>
-                                          {maintenance.maintenanceStatus === 'out' ? 'Completed' : 
-                                           maintenance.maintenanceStatus === 'in' ? 'In Progress' : 
-                                           'Scheduled'}
+                                          {maintenance.maintenanceStatus === 'out' ? t('details.maintenance.completedBadge') :
+                                           maintenance.maintenanceStatus === 'in' ? t('details.maintenance.inProgressBadge') :
+                                           t('details.maintenance.scheduledBadge')}
                                         </Badge>
                                       )}
                                     </div>
@@ -2897,12 +2867,12 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           {showAllScheduledMaintenance ? (
                             <>
                               <ChevronDown className="h-4 w-4 mr-2" />
-                              Show less
+                              {t('details.maintenance.showLessButton')}
                             </>
                           ) : (
                             <>
                               <ChevronRight className="h-4 w-4 mr-2" />
-                              Show {maintenanceHistory.filter((m: any) => m.maintenanceCategory === 'scheduled_maintenance').length - 5} more
+                              {t('details.maintenance.showMoreButton', { count: maintenanceHistory.filter((m: any) => m.maintenanceCategory === 'scheduled_maintenance').length - 5 })}
                             </>
                           )}
                         </Button>
@@ -2911,8 +2881,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                   ) : (
                     <div className="text-center py-6 text-gray-500">
                       <Calendar className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                      <p>No scheduled maintenance history yet</p>
-                      <p className="text-sm">Oil changes, filters, and routine service will appear here</p>
+                      <p>{t('details.maintenance.noScheduledMaintenance')}</p>
+                      <p className="text-sm">{t('details.maintenance.noScheduledMaintenanceHint')}</p>
                     </div>
                   )}
                 </div>
@@ -2921,7 +2891,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                 <div className="border p-4 rounded-lg">
                   <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
-                    Repair History
+                    {t('details.maintenance.repairHistoryTitle')}
                   </h3>
                   {maintenanceHistory.filter((m: any) => m.maintenanceCategory === 'repair').length > 0 ? (
                     <>
@@ -2931,7 +2901,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           .sort((a: any, b: any) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
                           .slice(0, showAllRepairs ? undefined : 5)
                           .map((maintenance: any) => {
-                            const maintenanceType = maintenance.notes?.split(':')[0] || 'Repair';
+                            const maintenanceType = maintenance.notes?.split(':')[0] || t('details.maintenance.repairFallback');
                             const maintenanceDetails = maintenance.notes?.split('\n')?.[1] || '';
                             
                             return (
@@ -2946,9 +2916,9 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                           maintenance.maintenanceStatus === 'in' ? 'secondary' : 
                                           'outline'
                                         }>
-                                          {maintenance.maintenanceStatus === 'out' ? 'Completed' : 
-                                           maintenance.maintenanceStatus === 'in' ? 'In Progress' : 
-                                           'Scheduled'}
+                                          {maintenance.maintenanceStatus === 'out' ? t('details.maintenance.completedBadge') :
+                                           maintenance.maintenanceStatus === 'in' ? t('details.maintenance.inProgressBadge') :
+                                           t('details.maintenance.scheduledBadge')}
                                         </Badge>
                                       )}
                                     </div>
@@ -2974,12 +2944,12 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           {showAllRepairs ? (
                             <>
                               <ChevronDown className="h-4 w-4 mr-2" />
-                              Show less
+                              {t('details.maintenance.showLessButton')}
                             </>
                           ) : (
                             <>
                               <ChevronRight className="h-4 w-4 mr-2" />
-                              Show {maintenanceHistory.filter((m: any) => m.maintenanceCategory === 'repair').length - 5} more
+                              {t('details.maintenance.showMoreButton', { count: maintenanceHistory.filter((m: any) => m.maintenanceCategory === 'repair').length - 5 })}
                             </>
                           )}
                         </Button>
@@ -2988,8 +2958,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                   ) : (
                     <div className="text-center py-6 text-gray-500">
                       <Calendar className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                      <p>No repair history yet</p>
-                      <p className="text-sm">Breakdowns, tire replacements, and repairs will appear here</p>
+                      <p>{t('details.maintenance.noRepairHistory')}</p>
+                      <p className="text-sm">{t('details.maintenance.noRepairHistoryHint')}</p>
                     </div>
                   )}
                 </div>
@@ -3002,13 +2972,13 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
         <TabsContent value="history" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Activity History</CardTitle>
-              <CardDescription>User activity related to this vehicle</CardDescription>
+              <CardTitle>{t('details.history.activityTitle')}</CardTitle>
+              <CardDescription>{t('details.history.activityDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
                 <div className="border p-4 rounded-lg">
-                  <h3 className="text-lg font-medium mb-2">Record Creation</h3>
+                  <h3 className="text-lg font-medium mb-2">{t('details.history.recordCreationTitle')}</h3>
                   <div className="grid grid-cols-1 gap-4">
                     <div className="flex items-center gap-2">
                       <div className="bg-blue-100 p-2 rounded-full">
@@ -3018,9 +2988,9 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                         </svg>
                       </div>
                       <div>
-                        <p className="font-medium">Created by</p>
+                        <p className="font-medium">{t('details.history.createdByTitle')}</p>
                         <p className="text-sm text-gray-500">
-                          {vehicle.createdBy || "Unknown user"} on {formatDate(vehicle.createdAt.toString())}
+                          {t('details.history.createdByLabel', { name: vehicle.createdBy || t('details.history.unknownUser'), date: formatDate(vehicle.createdAt.toString()) })}
                         </p>
                       </div>
                     </div>
@@ -3028,7 +2998,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                 </div>
 
                 <div className="border p-4 rounded-lg">
-                  <h3 className="text-lg font-medium mb-2">Last Update</h3>
+                  <h3 className="text-lg font-medium mb-2">{t('details.history.lastUpdateTitle')}</h3>
                   <div className="grid grid-cols-1 gap-4">
                     <div className="flex items-center gap-2">
                       <div className="bg-green-100 p-2 rounded-full">
@@ -3038,9 +3008,9 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                         </svg>
                       </div>
                       <div>
-                        <p className="font-medium">Last modified by</p>
+                        <p className="font-medium">{t('details.history.lastModifiedByTitle')}</p>
                         <p className="text-sm text-gray-500">
-                          {vehicle.updatedBy || "Unknown user"} on {formatDate(vehicle.updatedAt.toString())}
+                          {t('details.history.lastModifiedByLabel', { name: vehicle.updatedBy || t('details.history.unknownUser'), date: formatDate(vehicle.updatedAt.toString()) })}
                         </p>
                       </div>
                     </div>
@@ -3049,7 +3019,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
 
                 {/* Registration Status Changes */}
                 <div className="border p-4 rounded-lg">
-                  <h3 className="text-lg font-medium mb-2">Registration Status Changes</h3>
+                  <h3 className="text-lg font-medium mb-2">{t('details.history.registrationChangesTitle')}</h3>
                   <div className="grid grid-cols-1 gap-4">
                     {vehicle.registeredToDate && (
                       <div className="flex items-start gap-2">
@@ -3060,18 +3030,18 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           </svg>
                         </div>
                         <div>
-                          <p className="font-medium">Registration status: Opnaam</p>
+                          <p className="font-medium">{t('details.history.registrationStatusOpnaam')}</p>
                           <div className="text-sm text-gray-500">
-                            <p>Changed on {formatDate(vehicle.registeredToDate)}</p>
-                            <p>By {vehicle.registeredToBy || "admin"}</p>
+                            <p>{t('details.history.changedOnLabel', { date: formatDate(vehicle.registeredToDate) })}</p>
+                            <p>{t('details.history.byLabel', { name: vehicle.registeredToBy || t('details.history.adminFallback') })}</p>
                           </div>
                           <div className="mt-1 text-xs py-1 px-2 bg-gray-100 rounded-md inline-block">
-                            Last updated: {formatDate(vehicle.registeredToDate || vehicle.updatedAt.toString())}
+                            {t('details.history.lastUpdatedLabel', { date: formatDate(vehicle.registeredToDate || vehicle.updatedAt.toString()) })}
                           </div>
                         </div>
                       </div>
                     )}
-                    
+
                     {vehicle.companyDate && (
                       <div className="flex items-start gap-2">
                         <div className="bg-amber-100 p-2 rounded-full mt-1">
@@ -3081,27 +3051,27 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           </svg>
                         </div>
                         <div>
-                          <p className="font-medium">Registration status: BV</p>
+                          <p className="font-medium">{t('details.history.registrationStatusBv')}</p>
                           <div className="text-sm text-gray-500">
-                            <p>Changed on {formatDate(vehicle.companyDate)}</p>
-                            <p>By {vehicle.companyBy || "admin"}</p>
+                            <p>{t('details.history.changedOnLabel', { date: formatDate(vehicle.companyDate) })}</p>
+                            <p>{t('details.history.byLabel', { name: vehicle.companyBy || t('details.history.adminFallback') })}</p>
                           </div>
                           <div className="mt-1 text-xs py-1 px-2 bg-gray-100 rounded-md inline-block">
-                            Last updated: {formatDate(vehicle.companyDate || vehicle.updatedAt.toString())}
+                            {t('details.history.lastUpdatedLabel', { date: formatDate(vehicle.companyDate || vehicle.updatedAt.toString()) })}
                           </div>
                         </div>
                       </div>
                     )}
-                    
+
                     {!vehicle.registeredToDate && !vehicle.companyDate && (
-                      <p className="text-gray-500">No registration status changes recorded</p>
+                      <p className="text-gray-500">{t('details.history.noRegistrationChanges')}</p>
                     )}
                   </div>
                 </div>
-                
+
                 {/* Related Documents Timeline */}
                 <div className="border p-4 rounded-lg">
-                  <h3 className="text-lg font-medium mb-2">Document Timeline</h3>
+                  <h3 className="text-lg font-medium mb-2">{t('details.history.documentTimelineTitle')}</h3>
                   <div className="space-y-4">
                     {documents && documents.length > 0 ? (
                       documents.sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()).map(doc => (
@@ -3114,25 +3084,25 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           </div>
                           <div className="flex-1">
                             <div className="flex justify-between items-center">
-                              <h4 className="font-medium text-sm">{doc.documentType} uploaded</h4>
+                              <h4 className="font-medium text-sm">{t('details.history.documentUploadedSuffix', { type: doc.documentType })}</h4>
                               <span className="text-xs text-gray-500">{formatDate(doc.uploadDate.toString())}</span>
                             </div>
                             <p className="text-sm">{doc.fileName}</p>
                             <p className="text-xs text-gray-500">
-                              {doc.createdBy ? `Uploaded by ${doc.createdBy}` : "Uploaded by unknown user"}
+                              {doc.createdBy ? t('details.history.uploadedByLabel', { name: doc.createdBy }) : t('details.history.uploadedByUnknown')}
                             </p>
                           </div>
                         </div>
                       ))
                     ) : (
-                      <p className="text-gray-500">No documents uploaded yet</p>
+                      <p className="text-gray-500">{t('details.history.noDocumentsUploaded')}</p>
                     )}
                   </div>
                 </div>
-                
+
                 {/* Expenses Timeline */}
                 <div className="border p-4 rounded-lg">
-                  <h3 className="text-lg font-medium mb-2">Expenses Timeline</h3>
+                  <h3 className="text-lg font-medium mb-2">{t('details.history.expensesTimelineTitle')}</h3>
                   <div className="space-y-4">
                     {expenses && expenses.length > 0 ? (
                       expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(expense => (
@@ -3147,18 +3117,18 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                           </div>
                           <div className="flex-1">
                             <div className="flex justify-between items-center">
-                              <h4 className="font-medium text-sm">{expense.category} expense added</h4>
+                              <h4 className="font-medium text-sm">{t('details.history.expenseAddedSuffix', { category: expense.category })}</h4>
                               <span className="text-xs text-gray-500">{formatDate(expense.date)}</span>
                             </div>
                             <p className="text-sm">{<Price value={Number(expense.amount)} />}</p>
                             <p className="text-xs text-gray-500">
-                              {expense.createdBy ? `Added by ${expense.createdBy}` : "Added by unknown user"}
+                              {expense.createdBy ? t('details.history.addedByLabel', { name: expense.createdBy }) : t('details.history.addedByUnknown')}
                             </p>
                           </div>
                         </div>
                       ))
                     ) : (
-                      <p className="text-gray-500">No expenses recorded yet</p>
+                      <p className="text-gray-500">{t('details.history.noExpensesRecorded')}</p>
                     )}
                   </div>
                 </div>
@@ -3172,22 +3142,22 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
       <Dialog open={viewReservationDialogOpen} onOpenChange={setViewReservationDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Reservation Details</DialogTitle>
+            <DialogTitle>{t('details.viewReservationDialog.title')}</DialogTitle>
             <DialogDescription>
-              View complete reservation information
+              {t('details.viewReservationDialog.description')}
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedReservation && (
             <div className="space-y-6">
               {/* Reservation Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">Reservation ID</Label>
+                  <Label className="text-sm font-medium text-gray-500">{t('details.viewReservationDialog.reservationIdLabel')}</Label>
                   <p className="text-sm font-medium">#{selectedReservation.id}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">Status</Label>
+                  <Label className="text-sm font-medium text-gray-500">{t('details.viewReservationDialog.statusLabel')}</Label>
                   <div className="mt-1">
                     <StatusBadge status={selectedReservation.status} />
                   </div>
@@ -3196,9 +3166,9 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
 
               {/* Customer Info */}
               <div>
-                <Label className="text-sm font-medium text-gray-500">Customer</Label>
+                <Label className="text-sm font-medium text-gray-500">{t('details.viewReservationDialog.customerLabel')}</Label>
                 <p className="text-sm font-medium">
-                  {selectedReservation.customer?.name || 'Unknown Customer'}
+                  {selectedReservation.customer?.name || t('details.viewReservationDialog.unknownCustomer')}
                 </p>
                 {selectedReservation.customer?.email && (
                   <p className="text-xs text-gray-500">{selectedReservation.customer.email}</p>
@@ -3208,15 +3178,15 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               {/* Date Range */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">Start Date</Label>
+                  <Label className="text-sm font-medium text-gray-500">{t('details.viewReservationDialog.startDateLabel')}</Label>
                   <p className="text-sm font-medium">{formatDate(selectedReservation.startDate)}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">End Date</Label>
+                  <Label className="text-sm font-medium text-gray-500">{t('details.viewReservationDialog.endDateLabel')}</Label>
                   <p className="text-sm font-medium">
-                    {selectedReservation.endDate && selectedReservation.endDate !== "undefined" 
-                      ? formatDate(selectedReservation.endDate) 
-                      : "Open-ended"
+                    {selectedReservation.endDate && selectedReservation.endDate !== "undefined"
+                      ? formatDate(selectedReservation.endDate)
+                      : t('details.viewReservationDialog.openEnded')
                     }
                   </p>
                 </div>
@@ -3224,7 +3194,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
 
               {/* Price */}
               <div>
-                <Label className="text-sm font-medium text-gray-500">Total Price</Label>
+                <Label className="text-sm font-medium text-gray-500">{t('details.viewReservationDialog.totalPriceLabel')}</Label>
                 <p className="text-lg font-semibold text-green-600">
                   {<Price value={selectedReservation.totalPrice} />}
                 </p>
@@ -3233,7 +3203,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               {/* Notes */}
               {selectedReservation.notes && (
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">Notes</Label>
+                  <Label className="text-sm font-medium text-gray-500">{t('details.viewReservationDialog.notesLabel')}</Label>
                   <p className="text-sm mt-1 p-2 bg-gray-50 rounded border">
                     {selectedReservation.notes}
                   </p>
@@ -3242,30 +3212,30 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
 
               {/* Reservation Type */}
               <div>
-                <Label className="text-sm font-medium text-gray-500">Type</Label>
+                <Label className="text-sm font-medium text-gray-500">{t('details.viewReservationDialog.typeLabel')}</Label>
                 <p className="text-sm font-medium capitalize">
-                  {selectedReservation.type === 'maintenance_block' ? 'Maintenance' : 
-                   selectedReservation.type === 'replacement' ? 'Replacement Vehicle' : 
-                   'Standard Rental'}
+                  {selectedReservation.type === 'maintenance_block' ? t('details.viewReservationDialog.typeMaintenance') :
+                   selectedReservation.type === 'replacement' ? t('details.viewReservationDialog.typeReplacement') :
+                   t('details.viewReservationDialog.typeStandard')}
                 </p>
               </div>
 
               {/* Creation Info */}
               <div className="text-xs text-gray-500 border-t pt-4">
-                <p>Created by {selectedReservation.createdBy || 'Unknown'} on {formatDate(selectedReservation.createdAt.toString())}</p>
+                <p>{t('details.viewReservationDialog.createdByLine', { name: selectedReservation.createdBy || t('details.viewReservationDialog.unknown'), date: formatDate(selectedReservation.createdAt.toString()) })}</p>
                 {selectedReservation.updatedBy && (
-                  <p>Last updated by {selectedReservation.updatedBy} on {formatDate(selectedReservation.updatedAt.toString())}</p>
+                  <p>{t('details.viewReservationDialog.updatedByLine', { name: selectedReservation.updatedBy, date: formatDate(selectedReservation.updatedAt.toString()) })}</p>
                 )}
               </div>
             </div>
           )}
 
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setViewReservationDialogOpen(false)}
             >
-              Close
+              {t('common:actions.close')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -3278,8 +3248,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
         reservationId={editReservationId}
         onSuccess={(reservation) => {
           toast({
-            title: "Reservation updated",
-            description: "The reservation has been successfully updated."
+            title: t('details.toasts.reservationUpdatedTitle'),
+            description: t('details.toasts.reservationUpdatedDescription')
           });
           // Refresh vehicle data and related queries
           invalidateRelatedQueries('vehicles');
@@ -3307,7 +3277,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
       {/* Interactive Damage Check Dialog */}
       <Dialog open={interactiveDamageCheckDialogOpen} onOpenChange={setInteractiveDamageCheckDialogOpen}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh] p-0 overflow-hidden">
-          <DialogTitle className="sr-only">Interactive Damage Check</DialogTitle>
+          <DialogTitle className="sr-only">{t('details.documents.interactiveDamageChecksTitle')}</DialogTitle>
           <div className="h-full overflow-auto">
             <InteractiveDamageCheck 
               onClose={() => {
@@ -3326,10 +3296,10 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
       <ConfirmDialog
         open={deleteDamageCheckDialogOpen}
         onOpenChange={setDeleteDamageCheckDialogOpen}
-        title="Delete Damage Check"
-        description={damageCheckToDelete ? `Are you sure you want to delete this ${damageCheckToDelete.checkType} damage check from ${new Date(damageCheckToDelete.checkDate).toLocaleDateString()}? This action cannot be undone.` : "Are you sure you want to delete this damage check?"}
+        title={t('details.deleteDamageCheckDialog.title')}
+        description={damageCheckToDelete ? t('details.deleteDamageCheckDialog.descriptionWithCheck', { type: damageCheckToDelete.checkType, date: new Date(damageCheckToDelete.checkDate).toLocaleDateString() }) : t('details.deleteDamageCheckDialog.descriptionFallback')}
         variant="danger"
-        confirmLabel="Delete"
+        confirmLabel={t('common:actions.delete')}
         onConfirm={async () => {
           if (damageCheckToDelete) {
             try {
@@ -3337,11 +3307,11 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                 method: 'DELETE',
                 credentials: 'include',
               });
-              
+
               if (!response.ok) {
                 throw new Error('Failed to delete damage check');
               }
-              
+
               invalidateByPrefix(`/api/interactive-damage-checks/vehicle/${vehicleId}`);
               invalidateByPrefix(`/api/vehicles/${vehicleId}`);
               // Active refetch so the vehicle log updates immediately, and
@@ -3351,17 +3321,17 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               if (damageCheckToDelete?.reservationId) {
                 queryClient.invalidateQueries({ queryKey: [`/api/interactive-damage-checks/reservation/${damageCheckToDelete.reservationId}`], refetchType: 'active' });
               }
-              
-              toast({ 
-                title: "Damage Check Deleted", 
-                description: "The damage check has been deleted successfully" 
+
+              toast({
+                title: t('details.deleteDamageCheckDialog.toasts.deletedTitle'),
+                description: t('details.deleteDamageCheckDialog.toasts.deletedDescription')
               });
             } catch (error) {
               console.error('Error deleting damage check:', error);
-              toast({ 
-                title: "Error", 
-                description: "Failed to delete damage check", 
-                variant: "destructive" 
+              toast({
+                title: t('details.deleteDamageCheckDialog.toasts.errorTitle'),
+                description: t('details.deleteDamageCheckDialog.toasts.failedDescription'),
+                variant: "destructive"
               });
             }
           }
@@ -3374,23 +3344,23 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
       <ConfirmDialog
         open={deleteDocumentDialogOpen}
         onOpenChange={setDeleteDocumentDialogOpen}
-        title="Delete Document"
-        description={documentToDelete ? `Are you sure you want to delete the document "${documentToDelete.fileName}"? This action cannot be undone.` : "Are you sure you want to delete this document?"}
+        title={t('details.deleteDocumentDialog.title')}
+        description={documentToDelete ? t('details.deleteDocumentDialog.descriptionWithFile', { fileName: documentToDelete.fileName }) : t('details.deleteDocumentDialog.descriptionFallback')}
         variant="danger"
-        confirmLabel="Delete"
+        confirmLabel={t('common:actions.delete')}
         onConfirm={async () => {
           if (documentToDelete) {
             try {
               const response = await fetch(`/api/documents/${documentToDelete.id}`, {
                 method: 'DELETE',
               });
-              
+
               if (response.ok) {
                 invalidateByPrefix(`/api/documents/vehicle/${vehicleId}`);
                 invalidateByPrefix(`/api/vehicles/${vehicleId}`);
                 toast({
-                  title: "Document deleted",
-                  description: "The document has been deleted successfully.",
+                  title: t('details.deleteDocumentDialog.toasts.deletedTitle'),
+                  description: t('details.deleteDocumentDialog.toasts.deletedDescription'),
                 });
               } else {
                 const errorData = await response.json();
@@ -3399,8 +3369,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
             } catch (error) {
               console.error("Error deleting document:", error);
               toast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to delete document",
+                title: t('details.deleteDocumentDialog.toasts.errorTitle'),
+                description: error instanceof Error ? error.message : t('details.deleteDocumentDialog.toasts.failedFallback'),
                 variant: "destructive",
               });
             }
@@ -3415,17 +3385,18 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
 
 // Helper components
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation("reservations");
   switch (status.toLowerCase()) {
     case "booked":
-      return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">{status}</Badge>;
+      return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">{t('form.statuses.booked')}</Badge>;
     case "picked_up":
-      return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-200">{status}</Badge>;
+      return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-200">{t('form.statuses.pickedUp')}</Badge>;
     case "returned":
-      return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200">{status}</Badge>;
+      return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200">{t('form.statuses.returned')}</Badge>;
     case "completed":
-      return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">{status}</Badge>;
+      return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">{t('form.statuses.completed')}</Badge>;
     case "cancelled":
-      return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">{status}</Badge>;
+      return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">{t('form.statuses.cancelled')}</Badge>;
     default:
       return <Badge variant="outline">{status}</Badge>;
   }
@@ -3464,9 +3435,10 @@ function AvailabilityToggleDialog({
   vehicle, 
   onSuccess 
 }: { 
-  vehicle: Vehicle; 
+  vehicle: Vehicle;
   onSuccess: () => void;
 }) {
+  const { t } = useTranslation("vehicles");
   const [open, setOpen] = useState(false);
   const [availabilityStatus, setAvailabilityStatus] = useState(vehicle.availabilityStatus || 'available');
   const [showRentedWarning, setShowRentedWarning] = useState(false);
@@ -3494,14 +3466,14 @@ function AvailabilityToggleDialog({
     },
     onSuccess: () => {
       const statusLabels: Record<string, string> = {
-        'available': 'Available',
-        'needs_fixing': 'Needs Fixing',
-        'not_for_rental': 'Not for Rental',
-        'rented': 'Rented'
+        'available': t('details.availabilityDialog.available'),
+        'needs_fixing': t('details.availabilityDialog.needsFixing'),
+        'not_for_rental': t('details.availabilityDialog.notForRental'),
+        'rented': t('details.availabilityDialog.rented')
       };
       toast({
-        title: "Success",
-        description: `Vehicle status updated to ${statusLabels[availabilityStatus]}`
+        title: t('details.availabilityDialog.toasts.successTitle'),
+        description: t('details.availabilityDialog.toasts.successDescription', { status: statusLabels[availabilityStatus] })
       });
       onSuccess();
       setOpen(false);
@@ -3509,8 +3481,8 @@ function AvailabilityToggleDialog({
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to update availability",
+        title: t('details.availabilityDialog.toasts.errorTitle'),
+        description: error.message || t('details.availabilityDialog.toasts.errorDescription'),
         variant: "destructive"
       });
     }
@@ -3560,34 +3532,34 @@ function AvailabilityToggleDialog({
     if (!activePickedUpReservation && !activeBookedReservation) {
       return {
         type: 'error' as const,
-        title: 'No Active Reservation',
-        message: 'This vehicle has no active reservation. Setting the status to "Rented" without a reservation will cause data inconsistency.',
-        suggestion: 'Create a reservation and complete the pickup process from the Calendar instead.',
+        title: t('details.availabilityDialog.warnings.noActiveReservationTitle'),
+        message: t('details.availabilityDialog.warnings.noActiveReservationMessage'),
+        suggestion: t('details.availabilityDialog.warnings.noActiveReservationSuggestion'),
         canForce: false,
       };
     }
-    
+
     if (!activePickedUpReservation && activeBookedReservation) {
       return {
         type: 'warning' as const,
-        title: 'Reservation Not Picked Up',
-        message: 'This vehicle has a booked reservation but the pickup has not been completed. The pickup process collects important information like contract number and mileage.',
-        suggestion: 'Use the Calendar to complete the pickup process for this reservation instead.',
+        title: t('details.availabilityDialog.warnings.notPickedUpTitle'),
+        message: t('details.availabilityDialog.warnings.notPickedUpMessage'),
+        suggestion: t('details.availabilityDialog.warnings.notPickedUpSuggestion'),
         canForce: false,
       };
     }
-    
+
     if (activePickedUpReservation) {
       const missingItems = [];
-      if (!activePickedUpReservation.contractNumber) missingItems.push('Contract Number');
-      if (activePickedUpReservation.pickupMileage === null || activePickedUpReservation.pickupMileage === undefined) missingItems.push('Pickup Mileage');
-      
+      if (!activePickedUpReservation.contractNumber) missingItems.push(t('details.availabilityDialog.warnings.contractNumberLabel'));
+      if (activePickedUpReservation.pickupMileage === null || activePickedUpReservation.pickupMileage === undefined) missingItems.push(t('details.availabilityDialog.warnings.pickupMileageLabel'));
+
       if (missingItems.length > 0) {
         return {
           type: 'warning' as const,
-          title: 'Missing Pickup Information',
-          message: `The active reservation is missing: ${missingItems.join(', ')}. This information is typically collected during the pickup process.`,
-          suggestion: 'Consider completing these details before marking the vehicle as rented.',
+          title: t('details.availabilityDialog.warnings.missingInfoTitle'),
+          message: t('details.availabilityDialog.warnings.missingInfoMessage', { items: missingItems.join(', ') }),
+          suggestion: t('details.availabilityDialog.warnings.missingInfoSuggestion'),
           canForce: true,
         };
       }
@@ -3607,39 +3579,39 @@ function AvailabilityToggleDialog({
       }
     }}>
       <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           size="sm"
           data-testid="button-change-availability"
         >
           <Edit className="h-4 w-4 mr-2" />
-          Change
+          {t('details.availabilityDialog.changeButton')}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Change Vehicle Availability</DialogTitle>
+          <DialogTitle>{t('details.availabilityDialog.title')}</DialogTitle>
           <DialogDescription>
-            Update the vehicle's ownership and rental status
+            {t('details.availabilityDialog.description')}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="py-6">
           <div className="space-y-4">
-            <Label className="text-base font-semibold">Availability Status</Label>
+            <Label className="text-base font-semibold">{t('details.availabilityDialog.statusLabel')}</Label>
             <Select value={availabilityStatus} onValueChange={handleStatusChange}>
               <SelectTrigger data-testid="select-dialog-availability">
-                <SelectValue placeholder="Select status" />
+                <SelectValue placeholder={t('details.availabilityDialog.selectPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="available">Available</SelectItem>
-                <SelectItem value="needs_fixing">Needs Fixing</SelectItem>
-                <SelectItem value="not_for_rental">Not for Rental</SelectItem>
-                <SelectItem value="rented">Rented</SelectItem>
+                <SelectItem value="available">{t('details.availabilityDialog.available')}</SelectItem>
+                <SelectItem value="needs_fixing">{t('details.availabilityDialog.needsFixing')}</SelectItem>
+                <SelectItem value="not_for_rental">{t('details.availabilityDialog.notForRental')}</SelectItem>
+                <SelectItem value="rented">{t('details.availabilityDialog.rented')}</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-sm text-muted-foreground">
-              Track vehicle ownership, repair status, and rental availability
+              {t('details.availabilityDialog.hint')}
             </p>
             
             {/* Warning message for rented status */}
@@ -3665,35 +3637,35 @@ function AvailabilityToggleDialog({
         </div>
 
         <DialogFooter>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => {
               setOpen(false);
               setShowRentedWarning(false);
             }}
             disabled={updateAvailabilityMutation.isPending}
           >
-            Cancel
+            {t('common:actions.cancel')}
           </Button>
-          
+
           {warningDetails?.canForce && (
-            <Button 
+            <Button
               variant="destructive"
               onClick={handleForceChange}
               disabled={updateAvailabilityMutation.isPending}
               data-testid="button-force-availability"
             >
-              {updateAvailabilityMutation.isPending ? "Saving..." : "Force Change Anyway"}
+              {updateAvailabilityMutation.isPending ? t('details.availabilityDialog.savingButton') : t('details.availabilityDialog.forceChangeButton')}
             </Button>
           )}
-          
+
           {!warningDetails && (
-            <Button 
+            <Button
               onClick={handleSave}
               disabled={updateAvailabilityMutation.isPending}
               data-testid="button-save-availability"
             >
-              {updateAvailabilityMutation.isPending ? "Saving..." : "Save Changes"}
+              {updateAvailabilityMutation.isPending ? t('details.availabilityDialog.savingButton') : t('details.availabilityDialog.saveChangesButton')}
             </Button>
           )}
         </DialogFooter>

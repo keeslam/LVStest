@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ interface PickupDialogProps {
 }
 
 export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: PickupDialogProps) {
+  const { t } = useTranslation(["reservations", "common"]);
   const { toast } = useToast();
   const isTBDSpare = reservation.placeholderSpare && !reservation.vehicleId;
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
@@ -49,7 +51,18 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
   const [editingDamageCheckId, setEditingDamageCheckId] = useState<number | null>(null);
   const [uploadingPaperDamageCheck, setUploadingPaperDamageCheck] = useState(false);
   const [uploadedPaperCheckIds, setUploadedPaperCheckIds] = useState<number[]>([]);
-  
+  // Mirrored in a ref because cleanup runs from close handlers, which would
+  // otherwise read a stale copy and delete documents that were already saved.
+  const uploadedPaperCheckIdsRef = useRef<number[]>([]);
+  const trackUploadedPaperCheck = (id: number) => {
+    uploadedPaperCheckIdsRef.current = [...uploadedPaperCheckIdsRef.current, id];
+    setUploadedPaperCheckIds(uploadedPaperCheckIdsRef.current);
+  };
+  const clearTrackedPaperChecks = () => {
+    uploadedPaperCheckIdsRef.current = [];
+    setUploadedPaperCheckIds([]);
+  };
+
   // Vehicle remarks warning state - shown when vehicle has remarks before pickup
   const [remarksWarningOpen, setRemarksWarningOpen] = useState(false);
   const [remarksAcknowledged, setRemarksAcknowledged] = useState(false);
@@ -62,7 +75,9 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
 
   // Cleanup function to delete uploaded paper checks on cancel
   const cleanupUploadedPaperChecks = async () => {
-    for (const docId of uploadedPaperCheckIds) {
+    const pending = uploadedPaperCheckIdsRef.current;
+    uploadedPaperCheckIdsRef.current = [];
+    for (const docId of pending) {
       try {
         await fetch(`/api/documents/${docId}`, {
           method: 'DELETE',
@@ -73,6 +88,16 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       }
     }
     setUploadedPaperCheckIds([]);
+  };
+
+  // Closing with the X or Escape used to skip cleanup, so the uploaded ids
+  // survived into the next reservation's pickup — where Cancel then deleted
+  // the previous vehicle's paperwork.
+  const handleOpenChange = async (next: boolean) => {
+    if (!next) {
+      await cleanupUploadedPaperChecks();
+    }
+    onOpenChange(next);
   };
 
   // Fetch available vehicles for TBD spare selection
@@ -242,8 +267,8 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
     },
     onSuccess: async () => {
       toast({
-        title: "Pickup Completed",
-        description: "Vehicle picked up successfully. Contract has been generated.",
+        title: t('pickupReturn.pickup.pickupCompletedTitle'),
+        description: t('pickupReturn.pickup.pickupCompletedDescription'),
       });
       await invalidateByPrefix("/api/reservations");
       await invalidateByPrefix("/api/reservations");
@@ -253,7 +278,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       await invalidateByPrefix("/api/vehicles");
       setOverridePassword("");
       setPendingMileage(null);
-      setUploadedPaperCheckIds([]); // Clear tracked IDs - documents are now permanent
+      clearTrackedPaperChecks(); // Clear tracked IDs - documents are now permanent
       
       // Call the success callback first (to reopen view dialog)
       if (onSuccess) {
@@ -271,8 +296,8 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       }
       toast({
         variant: "destructive",
-        title: "Pickup Failed",
-        description: error.message || "Failed to process pickup. Please try again.",
+        title: t('pickupReturn.pickup.pickupFailedTitle'),
+        description: error.message || t('pickupReturn.pickup.processPickupFailedFallback'),
       });
     },
   });
@@ -313,18 +338,18 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       setRemarksWarningOpen(true);
       toast({
         variant: "destructive",
-        title: "Remarks Not Acknowledged",
-        description: "You must acknowledge the vehicle remarks before proceeding with pickup.",
+        title: t('pickupReturn.pickup.remarksNotAcknowledgedTitle'),
+        description: t('pickupReturn.pickup.remarksNotAcknowledgedDescription'),
       });
       return;
     }
-    
+
     // Validate contract number
     if (!contractNumber || contractNumber.trim() === "") {
       toast({
         variant: "destructive",
-        title: "Contract Number Required",
-        description: "Please enter a contract number before completing pickup.",
+        title: t('pickupReturn.pickup.contractNumberRequiredTitle'),
+        description: t('pickupReturn.pickup.contractNumberRequiredDescription'),
       });
       return;
     }
@@ -346,18 +371,18 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
     if (isTBDSpare && !selectedVehicleId) {
       toast({
         variant: "destructive",
-        title: "Vehicle Required",
-        description: "Please select a vehicle for this spare reservation.",
+        title: t('pickupReturn.pickup.vehicleRequiredTitle'),
+        description: t('pickupReturn.pickup.vehicleRequiredDescription'),
       });
       return;
     }
-    
+
     const mileage = parseInt(pickupMileage);
     if (isNaN(mileage) || mileage < 0) {
       toast({
         variant: "destructive",
-        title: "Invalid Mileage",
-        description: "Please enter a valid mileage value.",
+        title: t('pickupReturn.pickup.invalidMileageTitle'),
+        description: t('pickupReturn.pickup.invalidMileageDescription'),
       });
       return;
     }
@@ -379,8 +404,8 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       } catch (error) {
         toast({
           variant: "destructive",
-          title: "Assignment Failed",
-          description: "Failed to assign vehicle to reservation.",
+          title: t('pickupReturn.pickup.assignmentFailedTitle'),
+          description: t('pickupReturn.pickup.assignmentFailedDescription'),
         });
         return;
       }
@@ -397,7 +422,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       {/* z-[60]: this can open on top of the New Reservation dialog, which also
           renders at z-50. Equal z-index falls back to DOM order, and the parent's
           portal is re-appended when it re-renders after save — which left the
@@ -406,10 +431,10 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Car className="h-5 w-5" />
-            Start Pickup Process
+            {t('pickupReturn.pickup.startPickupProcess')}
           </DialogTitle>
           <DialogDescription>
-            Enter the vehicle's current mileage and fuel level at pickup. A contract will be generated automatically.
+            {t('pickupReturn.pickup.pickupDialogDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -420,27 +445,27 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Car className="h-5 w-5 text-yellow-700" />
-                  <h3 className="font-medium text-yellow-900">TBD Spare Vehicle - Select Vehicle</h3>
+                  <h3 className="font-medium text-yellow-900">{t('pickupReturn.pickup.tbdSpareSelectVehicle')}</h3>
                 </div>
                 <p className="text-sm text-yellow-800">
-                  This is a placeholder spare reservation. Please select the actual vehicle for pickup.
+                  {t('pickupReturn.pickup.placeholderSpareHint')}
                 </p>
                 <div className="space-y-2">
-                  <Label htmlFor="vehicle-select">Select Vehicle</Label>
+                  <Label htmlFor="vehicle-select">{t('pickupReturn.pickup.selectVehicle')}</Label>
                   <VehicleSelector
                     vehicles={vehicles || []}
                     value={selectedVehicleId?.toString() || ""}
                     onChange={(value) => setSelectedVehicleId(parseInt(value))}
-                    placeholder="Choose an available vehicle..."
+                    placeholder={t('pickupReturn.pickup.chooseAvailableVehiclePlaceholder')}
                   />
                 </div>
                 {selectedVehicle && (
                   <div className="space-y-2">
                     <div className="bg-white rounded p-2 text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
-                        <span>Current Mileage: {selectedVehicle.currentMileage?.toLocaleString() || 'N/A'} km</span>
+                        <span>{t('pickupReturn.pickup.currentMileageLabel', { mileage: selectedVehicle.currentMileage?.toLocaleString() || t('pickupReturn.pickup.naValue') })}</span>
                         <span>•</span>
-                        <span>Fuel: {selectedVehicle.currentFuelLevel || 'N/A'}</span>
+                        <span>{t('pickupReturn.pickup.fuelLabel', { fuel: selectedVehicle.currentFuelLevel || t('pickupReturn.pickup.naValue') })}</span>
                       </div>
                     </div>
                     
@@ -455,7 +480,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                           )}
                           <div className="flex-1">
                             <h4 className={`font-medium text-sm ${remarksAcknowledged ? 'text-green-800' : 'text-amber-800'}`}>
-                              {remarksAcknowledged ? 'Vehicle Remarks Acknowledged' : 'Vehicle Has Remarks'}
+                              {remarksAcknowledged ? t('pickupReturn.pickup.vehicleRemarksAcknowledged') : t('pickupReturn.pickup.vehicleHasRemarks')}
                             </h4>
                             <p className={`text-xs mt-1 ${remarksAcknowledged ? 'text-green-700' : 'text-amber-700'}`}>
                               {selectedVehicle.remarks}
@@ -470,7 +495,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                                 data-testid="button-review-spare-remarks"
                               >
                                 <AlertTriangle className="h-3 w-3 mr-1" />
-                                Review & Acknowledge
+                                {t('pickupReturn.pickup.reviewAndAcknowledge')}
                               </Button>
                             )}
                           </div>
@@ -486,24 +511,24 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
             <div className="space-y-2">
               <div className="bg-muted/50 rounded-md p-3">
                 <div className="space-y-1">
-                  <h3 className="font-medium text-sm">Vehicle Information</h3>
+                  <h3 className="font-medium text-sm">{t('pickupReturn.common.vehicleInformation')}</h3>
                   <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
                     <div className="flex items-center">
-                      <span className="text-muted-foreground mr-1">License:</span>
+                      <span className="text-muted-foreground mr-1">{t('pickupReturn.common.licenseLabel')}</span>
                       <span className="font-medium">{reservation.vehicle?.licensePlate}</span>
                     </div>
                     <div className="flex items-center">
-                      <span className="text-muted-foreground mr-1">Vehicle:</span>
+                      <span className="text-muted-foreground mr-1">{t('pickupReturn.common.vehicleLabel')}</span>
                       <span className="font-medium">{reservation.vehicle?.brand} {reservation.vehicle?.model}</span>
                     </div>
                     <div className="flex items-center">
-                      <span className="text-muted-foreground mr-1">Customer:</span>
+                      <span className="text-muted-foreground mr-1">{t('pickupReturn.common.customerLabel')}</span>
                       <span className="font-medium">{reservation.customer?.name}</span>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               {/* Vehicle Remarks Warning - shown if vehicle has remarks */}
               {reservation.vehicle?.remarks && reservation.vehicle.remarks.trim() !== '' && (
                 <div className={`rounded-md p-3 ${remarksAcknowledged ? 'bg-green-50 border border-green-200' : 'bg-amber-50 border border-amber-200'}`}>
@@ -515,7 +540,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                     )}
                     <div className="flex-1">
                       <h4 className={`font-medium text-sm ${remarksAcknowledged ? 'text-green-800' : 'text-amber-800'}`}>
-                        {remarksAcknowledged ? 'Vehicle Remarks Acknowledged' : 'Vehicle Has Remarks'}
+                        {remarksAcknowledged ? t('pickupReturn.pickup.vehicleRemarksAcknowledged') : t('pickupReturn.pickup.vehicleHasRemarks')}
                       </h4>
                       <p className={`text-xs mt-1 ${remarksAcknowledged ? 'text-green-700' : 'text-amber-700'}`}>
                         {reservation.vehicle.remarks}
@@ -530,7 +555,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                           data-testid="button-review-remarks"
                         >
                           <AlertTriangle className="h-3 w-3 mr-1" />
-                          Review & Acknowledge
+                          {t('pickupReturn.pickup.reviewAndAcknowledge')}
                         </Button>
                       )}
                     </div>
@@ -543,43 +568,43 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Combined Pickup Details and Fuel Level */}
             <div className="border rounded-lg p-4 bg-slate-50 space-y-4">
-              <h3 className="font-semibold text-base">Pickup Details</h3>
-              
+              <h3 className="font-semibold text-base">{t('pickupReturn.pickup.pickupDetails')}</h3>
+
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="contractNumber">
-                    Contract Number <span className="text-red-500">*</span>
+                    {t('pickupReturn.pickup.contractNumberLabel')} <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="contractNumber"
                     type="text"
                     value={contractNumber}
                     onChange={(e) => setContractNumber(e.target.value)}
-                    placeholder="Auto-generated (editable)"
+                    placeholder={t('pickupReturn.pickup.autoGeneratedEditablePlaceholder')}
                     required
                     className={`bg-white ${isDuplicateContract ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                     data-testid="input-contract-number"
                   />
                   {isDuplicateContract && (
                     <p className="text-xs text-red-600 font-medium flex items-center gap-1">
-                      ⚠️ This contract number already exists!
+                      {t('pickupReturn.pickup.contractNumberExistsWarning')}
                     </p>
                   )}
                   {isHighContractNumber && !isDuplicateContract && (
                     <p className="text-xs text-amber-600 font-medium flex items-center gap-1">
-                      ⚠️ Unusually high number - please verify
+                      {t('pickupReturn.pickup.unusuallyHighNumberWarning')}
                     </p>
                   )}
                   {!isDuplicateContract && !isHighContractNumber && (
                     <p className="text-xs text-muted-foreground">
-                      Auto-generated, you can edit if needed
+                      {t('pickupReturn.pickup.autoGeneratedEditHint')}
                     </p>
                   )}
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="pickupDate">
-                    Pickup Date
+                    {t('pickupReturn.pickup.pickupDateLabel')}
                   </Label>
                   <Input
                     id="pickupDate"
@@ -591,13 +616,13 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                     data-testid="input-pickup-date"
                   />
                   <p className="text-xs text-muted-foreground">
-                    When the vehicle is being picked up
+                    {t('pickupReturn.pickup.pickupDateHint')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="pickupMileage">
-                    Mileage at pickup
+                    {t('pickupReturn.pickup.mileageAtPickup')}
                   </Label>
                   <Input
                     id="pickupMileage"
@@ -606,38 +631,38 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                     onChange={(e) => setPickupMileage(e.target.value)}
                     placeholder={
                       isTBDSpare && selectedVehicle
-                        ? `Current: ${selectedVehicle.currentMileage?.toLocaleString() || 0} km`
-                        : reservation.vehicle?.currentMileage 
-                        ? `Current: ${reservation.vehicle.currentMileage.toLocaleString()} km` 
-                        : "Enter pickup mileage"
+                        ? t('pickupReturn.pickup.currentMileagePlaceholder', { mileage: selectedVehicle.currentMileage?.toLocaleString() || 0 })
+                        : reservation.vehicle?.currentMileage
+                        ? t('pickupReturn.pickup.currentMileagePlaceholder', { mileage: reservation.vehicle.currentMileage.toLocaleString() })
+                        : t('pickupReturn.pickup.enterPickupMileagePlaceholder')
                     }
                     required
                     className="bg-white"
                     data-testid="input-pickup-mileage"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Odometer reading at pickup
+                    {t('pickupReturn.pickup.odometerAtPickupHint')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="fuelLevelPickup">
-                    Fuel Level at Pickup
+                    {t('pickupReturn.pickup.fuelLevelAtPickup')}
                   </Label>
                   <Select value={fuelLevelPickup} onValueChange={setFuelLevelPickup}>
                     <SelectTrigger className="bg-white" data-testid="select-fuel-level-pickup">
-                      <SelectValue placeholder="Select fuel level" />
+                      <SelectValue placeholder={t('pickupReturn.common.fuelSelectPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Full">Full</SelectItem>
+                      <SelectItem value="Full">{t('pickupReturn.common.fuelFull')}</SelectItem>
                       <SelectItem value="3/4">3/4</SelectItem>
                       <SelectItem value="1/2">1/2</SelectItem>
                       <SelectItem value="1/4">1/4</SelectItem>
-                      <SelectItem value="Empty">Empty</SelectItem>
+                      <SelectItem value="Empty">{t('pickupReturn.common.fuelEmpty')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    Current fuel level in the tank
+                    {t('pickupReturn.common.currentFuelInTankHint')}
                   </p>
                 </div>
               </div>
@@ -645,7 +670,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
 
             {/* Damage Check Section */}
             <div className="border rounded-lg p-4 bg-green-50 space-y-3">
-              <h3 className="font-semibold text-base">Damage Check</h3>
+              <h3 className="font-semibold text-base">{t('pickupReturn.common.damageCheck')}</h3>
               
               {pickupDamageChecks.length > 0 || pickupPaperDamageChecks.length > 0 ? (
                 <div className="space-y-2">
@@ -656,25 +681,25 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                       <div className="bg-white border rounded-md p-3">
                         <div className="flex items-center gap-2 mb-2">
                           <ClipboardCheck className="h-4 w-4 text-green-600" />
-                          <span className="text-xs font-medium text-green-600">Interactive Check</span>
+                          <span className="text-xs font-medium text-green-600">{t('pickupReturn.common.interactiveCheck')}</span>
                         </div>
                         <div className="flex items-center justify-between gap-3">
                           <div className="text-sm flex-1">
                             <p className="font-medium">
-                              Created {new Date(check.createdAt).toLocaleDateString()} at {new Date(check.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {t('pickupReturn.common.createdOnAt', { date: new Date(check.createdAt).toLocaleDateString(), time: new Date(check.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
                             </p>
                             {check.createdBy && (
-                              <p className="text-xs text-muted-foreground">by {check.createdBy}</p>
+                              <p className="text-xs text-muted-foreground">{t('pickupReturn.common.byLabel', { name: check.createdBy })}</p>
                             )}
                             {check.updatedBy && check.updatedBy !== check.createdBy && (
                               <p className="text-xs text-muted-foreground">
-                                Last edited by {check.updatedBy}
+                                {t('pickupReturn.common.lastEditedBy', { name: check.updatedBy })}
                               </p>
                             )}
                             {check.pdfPath && (
                               <p className="text-xs text-green-600 mt-0.5 flex items-center gap-1">
                                 <CheckCircle2 className="h-3 w-3" />
-                                PDF generated
+                                {t('pickupReturn.common.pdfGenerated')}
                               </p>
                             )}
                           </div>
@@ -687,10 +712,10 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                                 setEditingDamageCheckId(check.id);
                                 setDamageCheckDialogOpen(true);
                               }}
-                              title="View/Edit damage check"
+                              title={t('pickupReturn.common.viewEditDamageCheckTitle')}
                             >
                               <Edit className="h-3 w-3 mr-1" />
-                              Edit
+                              {t('pickupReturn.common.editButton')}
                             </Button>
                             {check.pdfPath && (
                               <Button
@@ -698,10 +723,10 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                                 size="sm"
                                 variant="outline"
                                 onClick={() => window.open(check.pdfPath, '_blank')}
-                                title="View PDF"
+                                title={t('pickupReturn.common.viewPdfTitle')}
                               >
                                 <ExternalLink className="h-3 w-3 mr-1" />
-                                PDF
+                                {t('pickupReturn.common.pdfButton')}
                               </Button>
                             )}
                             <Button
@@ -712,7 +737,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                                 setPickupDamageCheckToDelete(check.id);
                                 setDeletePickupDamageCheckDialogOpen(true);
                               }}
-                              title="Delete damage check"
+                              title={t('pickupReturn.common.deleteDamageCheckTitle')}
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
                               <Trash2 className="h-3 w-3" />
@@ -722,19 +747,19 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                       </div>
                     );
                   })()}
-                  
+
                   {/* Paper damage checks */}
                   {pickupPaperDamageChecks.map((doc: any) => (
                     <div key={doc.id} className="bg-white border rounded-md p-3">
                       <div className="flex items-center gap-2 mb-2">
                         <FileText className="h-4 w-4 text-blue-600" />
-                        <span className="text-xs font-medium text-blue-600">Paper Check (Uploaded)</span>
+                        <span className="text-xs font-medium text-blue-600">{t('pickupReturn.common.paperCheckUploaded')}</span>
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <div className="text-sm flex-1">
-                          <p className="font-medium">{doc.fileName || 'Paper Damage Check'}</p>
+                          <p className="font-medium">{doc.fileName || t('pickupReturn.common.paperDamageCheckFallbackName')}</p>
                           <p className="text-xs text-muted-foreground">
-                            Uploaded {new Date(doc.createdAt).toLocaleDateString()} at {new Date(doc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {t('pickupReturn.common.uploadedOnAt', { date: new Date(doc.createdAt).toLocaleDateString(), time: new Date(doc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
                           </p>
                         </div>
                         <div className="flex gap-2">
@@ -743,10 +768,10 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                             size="sm"
                             variant="outline"
                             onClick={() => window.open(doc.filePath, '_blank')}
-                            title="View document"
+                            title={t('pickupReturn.common.viewDocumentTitle')}
                           >
                             <ExternalLink className="h-3 w-3 mr-1" />
-                            View
+                            {t('pickupReturn.common.viewButton')}
                           </Button>
                           <Button
                             type="button"
@@ -756,7 +781,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                               setPickupPaperCheckToDelete(doc.id);
                               setDeletePickupPaperCheckDialogOpen(true);
                             }}
-                            title="Delete paper damage check"
+                            title={t('pickupReturn.common.deletePaperDamageCheckTitle')}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -765,7 +790,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                       </div>
                     </div>
                   ))}
-                  
+
                   {/* Add more buttons */}
                   <div className="flex gap-2 mt-2">
                     {pickupDamageChecks.length === 0 && (
@@ -780,7 +805,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                         }}
                       >
                         <ClipboardCheck className="h-3 w-3 mr-1" />
-                        Add Interactive Check
+                        {t('pickupReturn.common.addInteractiveCheck')}
                       </Button>
                     )}
                     <Button
@@ -802,8 +827,8 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                           const vehicleIdToUse = isTBDSpare && selectedVehicleId ? selectedVehicleId : reservation.vehicleId;
                           if (!vehicleIdToUse) {
                             toast({
-                              title: "Error",
-                              description: "No vehicle selected",
+                              title: t('pickupReturn.common.errorTitle'),
+                              description: t('pickupReturn.common.noVehicleSelected'),
                               variant: "destructive",
                             });
                             setUploadingPaperDamageCheck(false);
@@ -820,23 +845,23 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                               body: formData,
                               credentials: 'include',
                             });
-                            
+
                             if (!response.ok) {
                               throw new Error('Upload failed');
                             }
-                            
+
                             const uploadedDoc = await response.json();
-                            setUploadedPaperCheckIds(prev => [...prev, uploadedDoc.id]);
+                            trackUploadedPaperCheck(uploadedDoc.id);
                             await refetchDocuments();
                             toast({
-                              title: "Success",
-                              description: "Paper damage check uploaded successfully",
+                              title: t('pickupReturn.common.successTitle'),
+                              description: t('pickupReturn.common.paperDamageCheckUploadedDescription'),
                             });
                           } catch (error) {
                             console.error('Upload failed:', error);
                             toast({
-                              title: "Error",
-                              description: "Failed to upload paper damage check",
+                              title: t('pickupReturn.common.errorTitle'),
+                              description: t('pickupReturn.common.failedToUploadPaperDamageCheck'),
                               variant: "destructive",
                             });
                           } finally {
@@ -847,14 +872,14 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                       }}
                     >
                       <Upload className="h-3 w-3 mr-1" />
-                      {uploadingPaperDamageCheck ? "Uploading..." : "Upload Paper Check"}
+                      {uploadingPaperDamageCheck ? t('pickupReturn.common.uploading') : t('pickupReturn.common.uploadPaperCheck')}
                     </Button>
                   </div>
                 </div>
               ) : (
                 <>
                   <p className="text-sm text-muted-foreground">
-                    Create an interactive damage check to document the vehicle's condition at pickup
+                    {t('pickupReturn.pickup.createInteractiveCheckHintPickup')}
                   </p>
                   <div className="flex gap-2">
                     <Button
@@ -868,7 +893,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                       data-testid="button-open-pickup-damage-check"
                     >
                       <ClipboardCheck className="h-4 w-4 mr-2" />
-                      Create Pickup Damage Check
+                      {t('pickupReturn.pickup.createPickupDamageCheck')}
                     </Button>
                     <Button
                       type="button"
@@ -888,8 +913,8 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                           const vehicleIdToUse = isTBDSpare && selectedVehicleId ? selectedVehicleId : reservation.vehicleId;
                           if (!vehicleIdToUse) {
                             toast({
-                              title: "Error",
-                              description: "No vehicle selected",
+                              title: t('pickupReturn.common.errorTitle'),
+                              description: t('pickupReturn.common.noVehicleSelected'),
                               variant: "destructive",
                             });
                             setUploadingPaperDamageCheck(false);
@@ -906,23 +931,23 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                               body: formData,
                               credentials: 'include',
                             });
-                            
+
                             if (!response.ok) {
                               throw new Error('Upload failed');
                             }
-                            
+
                             const uploadedDoc = await response.json();
-                            setUploadedPaperCheckIds(prev => [...prev, uploadedDoc.id]);
+                            trackUploadedPaperCheck(uploadedDoc.id);
                             await refetchDocuments();
                             toast({
-                              title: "Success",
-                              description: "Paper damage check uploaded successfully",
+                              title: t('pickupReturn.common.successTitle'),
+                              description: t('pickupReturn.common.paperDamageCheckUploadedDescription'),
                             });
                           } catch (error) {
                             console.error('Upload failed:', error);
                             toast({
-                              title: "Error",
-                              description: "Failed to upload paper damage check",
+                              title: t('pickupReturn.common.errorTitle'),
+                              description: t('pickupReturn.common.failedToUploadPaperDamageCheck'),
                               variant: "destructive",
                             });
                           } finally {
@@ -934,7 +959,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                       data-testid="button-upload-paper-damage-check"
                     >
                       <Upload className="h-4 w-4 mr-2" />
-                      {uploadingPaperDamageCheck ? "Uploading..." : "Upload Paper Check"}
+                      {uploadingPaperDamageCheck ? t('pickupReturn.common.uploading') : t('pickupReturn.common.uploadPaperCheck')}
                     </Button>
                   </div>
                 </>
@@ -942,12 +967,12 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="pickupNotes">Additional Notes (Optional)</Label>
+              <Label htmlFor="pickupNotes">{t('pickupReturn.common.additionalNotesOptional')}</Label>
               <Textarea
                 id="pickupNotes"
                 value={pickupNotes}
                 onChange={(e) => setPickupNotes(e.target.value)}
-                placeholder="Any additional notes about the pickup..."
+                placeholder={t('pickupReturn.pickup.notesPlaceholderPickup')}
                 rows={3}
                 data-testid="textarea-pickup-notes"
               />
@@ -964,7 +989,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                 disabled={pickupMutation.isPending}
                 data-testid="button-cancel-pickup"
               >
-                Cancel
+                {t('common:actions.cancel')}
               </Button>
               <Button
                 type="submit"
@@ -972,11 +997,11 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                 data-testid="button-confirm-pickup"
               >
                 {pickupMutation.isPending ? (
-                  <>Processing...</>
+                  <>{t('pickupReturn.common.processing')}</>
                 ) : (
                   <>
                     <FileText className="h-4 w-4 mr-2" />
-                    Complete Pickup & Generate Contract
+                    {t('pickupReturn.pickup.completePickupAndGenerateContract')}
                   </>
                 )}
               </Button>
@@ -993,43 +1018,43 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              Duplicate Contract Number
+              {t('pickupReturn.pickup.duplicateContractNumberTitle')}
             </DialogTitle>
             <DialogDescription>
-              This contract number is already in use.
+              {t('pickupReturn.pickup.duplicateContractNumberDescription')}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
               <p className="text-sm font-medium text-amber-900 mb-2">
-                Contract Number {contractNumber} is currently assigned to:
+                {t('pickupReturn.pickup.contractNumberAssignedTo', { number: contractNumber })}
               </p>
               {duplicateReservationInfo && (
                 <div className="text-sm text-amber-800 space-y-1">
-                  <div><strong>Reservation ID:</strong> #{duplicateReservationInfo.id}</div>
+                  <div><strong>{t('pickupReturn.common.reservationIdLabel')}</strong> #{duplicateReservationInfo.id}</div>
                   {duplicateReservationInfo.vehicle && (
-                    <div><strong>Vehicle:</strong> {duplicateReservationInfo.vehicle.licensePlate} - {duplicateReservationInfo.vehicle.brand} {duplicateReservationInfo.vehicle.model}</div>
+                    <div><strong>{t('pickupReturn.common.vehicleLabel')}</strong> {duplicateReservationInfo.vehicle.licensePlate} - {duplicateReservationInfo.vehicle.brand} {duplicateReservationInfo.vehicle.model}</div>
                   )}
                   {duplicateReservationInfo.customer && (
-                    <div><strong>Customer:</strong> {duplicateReservationInfo.customer.name}</div>
+                    <div><strong>{t('pickupReturn.common.customerLabel')}</strong> {duplicateReservationInfo.customer.name}</div>
                   )}
-                  <div><strong>Status:</strong> {duplicateReservationInfo.status}</div>
+                  <div><strong>{t('pickupReturn.common.statusLabel')}</strong> {duplicateReservationInfo.status}</div>
                 </div>
               )}
             </div>
-            
+
             <p className="text-sm text-muted-foreground">
-              If you proceed, the contract number will be removed from the existing reservation and assigned to this one. This is useful for backfilling or correcting mistakes.
+              {t('pickupReturn.pickup.proceedWarning')}
             </p>
-            
+
             <div className="flex gap-2 justify-end">
               <Button
                 variant="outline"
                 onClick={() => setShowDuplicateWarning(false)}
                 data-testid="button-cancel-override"
               >
-                Cancel
+                {t('common:actions.cancel')}
               </Button>
               <Button
                 variant="default"
@@ -1037,7 +1062,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                 onClick={() => proceedWithPickup(true)}
                 data-testid="button-confirm-override"
               >
-                Override & Continue
+                {t('pickupReturn.pickup.overrideAndContinue')}
               </Button>
             </div>
           </div>
@@ -1065,7 +1090,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
             near that class above) — otherwise the pickup dialog stays on top and
             blocks the damage check that was just opened from within it. */}
         <DialogContent className="max-w-[95vw] h-[95vh] overflow-y-auto p-0 z-[70]">
-          <DialogTitle className="sr-only">Interactive Damage Check - Pickup</DialogTitle>
+          <DialogTitle className="sr-only">{t('pickupReturn.pickup.interactiveDamageCheckPickupTitle')}</DialogTitle>
           <InteractiveDamageCheck
             onClose={() => {
               setDamageCheckDialogOpen(false);
@@ -1102,24 +1127,24 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       <ConfirmDialog
         open={deletePickupDamageCheckDialogOpen}
         onOpenChange={setDeletePickupDamageCheckDialogOpen}
-        title="Delete Pickup Damage Check"
-        description="Are you sure you want to delete this pickup damage check? This action cannot be undone."
+        title={t('pickupReturn.pickup.deletePickupDamageCheckTitle')}
+        description={t('pickupReturn.pickup.deletePickupDamageCheckConfirm')}
         variant="danger"
-        confirmLabel="Delete"
+        confirmLabel={t('pickupReturn.common.deleteConfirmLabel')}
         onConfirm={async () => {
           if (pickupDamageCheckToDelete) {
             try {
               await apiRequest('DELETE', `/api/interactive-damage-checks/${pickupDamageCheckToDelete}`, {});
               await refetchDamageChecks();
               toast({
-                title: "Deleted",
-                description: "Pickup damage check deleted successfully",
+                title: t('pickupReturn.common.deletedTitle'),
+                description: t('pickupReturn.pickup.pickupDamageCheckDeletedDescription'),
               });
             } catch (error) {
               toast({
                 variant: "destructive",
-                title: "Error",
-                description: "Failed to delete damage check",
+                title: t('pickupReturn.common.errorTitle'),
+                description: t('pickupReturn.common.failedToDeleteDamageCheck'),
               });
             }
           }
@@ -1132,24 +1157,24 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       <ConfirmDialog
         open={deletePickupPaperCheckDialogOpen}
         onOpenChange={setDeletePickupPaperCheckDialogOpen}
-        title="Delete Paper Damage Check"
-        description="Are you sure you want to delete this paper damage check? This action cannot be undone."
+        title={t('pickupReturn.common.deletePaperDamageCheckDialogTitle')}
+        description={t('pickupReturn.common.deletePaperDamageCheckConfirm')}
         variant="danger"
-        confirmLabel="Delete"
+        confirmLabel={t('pickupReturn.common.deleteConfirmLabel')}
         onConfirm={async () => {
           if (pickupPaperCheckToDelete) {
             try {
               await apiRequest('DELETE', `/api/documents/${pickupPaperCheckToDelete}`, {});
               invalidateByPrefix(`/api/documents/reservation/${reservation.id}`);
               toast({
-                title: "Deleted",
-                description: "Paper damage check deleted successfully",
+                title: t('pickupReturn.common.deletedTitle'),
+                description: t('pickupReturn.common.paperDamageCheckDeletedDescription'),
               });
             } catch (error) {
               toast({
                 variant: "destructive",
-                title: "Error",
-                description: "Failed to delete paper damage check",
+                title: t('pickupReturn.common.errorTitle'),
+                description: t('pickupReturn.common.failedToDeletePaperDamageCheck'),
               });
             }
           }
@@ -1169,6 +1194,7 @@ interface ReturnDialogProps {
 }
 
 export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: ReturnDialogProps) {
+  const { t } = useTranslation(["reservations", "common"]);
   const { toast } = useToast();
   const [returnMileage, setReturnMileage] = useState(
     reservation.pickupMileage?.toString() || reservation.vehicle?.currentMileage?.toString() || ""
@@ -1182,6 +1208,16 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
   const [editingDamageCheckId, setEditingDamageCheckId] = useState<number | null>(null);
   const [uploadingPaperDamageCheck, setUploadingPaperDamageCheck] = useState(false);
   const [uploadedPaperCheckIds, setUploadedPaperCheckIds] = useState<number[]>([]);
+  // Same stale-closure guard as the pickup dialog above.
+  const uploadedPaperCheckIdsRef = useRef<number[]>([]);
+  const trackUploadedPaperCheck = (id: number) => {
+    uploadedPaperCheckIdsRef.current = [...uploadedPaperCheckIdsRef.current, id];
+    setUploadedPaperCheckIds(uploadedPaperCheckIdsRef.current);
+  };
+  const clearTrackedPaperChecks = () => {
+    uploadedPaperCheckIdsRef.current = [];
+    setUploadedPaperCheckIds([]);
+  };
   
   // Delete confirmation dialog states
   const [deleteReturnDamageCheckDialogOpen, setDeleteReturnDamageCheckDialogOpen] = useState(false);
@@ -1191,7 +1227,9 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
 
   // Cleanup function to delete uploaded paper checks on cancel
   const cleanupUploadedPaperChecks = async () => {
-    for (const docId of uploadedPaperCheckIds) {
+    const pending = uploadedPaperCheckIdsRef.current;
+    uploadedPaperCheckIdsRef.current = [];
+    for (const docId of pending) {
       try {
         await fetch(`/api/documents/${docId}`, {
           method: 'DELETE',
@@ -1202,6 +1240,15 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
       }
     }
     setUploadedPaperCheckIds([]);
+  };
+
+  // Closing with X or Escape must clean up too, otherwise the ids leak into
+  // the next reservation opened in this same dialog instance.
+  const handleOpenChange = async (next: boolean) => {
+    if (!next) {
+      await cleanupUploadedPaperChecks();
+    }
+    onOpenChange(next);
   };
 
   // Fetch existing damage checks for this reservation
@@ -1255,8 +1302,8 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
     },
     onSuccess: async () => {
       toast({
-        title: "Return Completed",
-        description: "Vehicle returned successfully. Damage check has been generated.",
+        title: t('pickupReturn.return.returnCompletedTitle'),
+        description: t('pickupReturn.return.returnCompletedDescription'),
       });
       await invalidateByPrefix("/api/reservations");
       await invalidateByPrefix("/api/reservations");
@@ -1264,7 +1311,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
       // Return writes the vehicle's mileage and fuel level too - without this,
       // an already-open Vehicle Details view keeps showing stale values.
       await invalidateByPrefix("/api/vehicles");
-      setUploadedPaperCheckIds([]); // Clear tracked IDs - documents are now permanent
+      clearTrackedPaperChecks(); // Clear tracked IDs - documents are now permanent
       
       // Call the success callback first (to reopen view dialog)
       if (onSuccess) {
@@ -1277,8 +1324,8 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "Return Failed",
-        description: error.message || "Failed to process return. Please try again.",
+        title: t('pickupReturn.return.returnFailedTitle'),
+        description: error.message || t('pickupReturn.return.processReturnFailedFallback'),
       });
     },
   });
@@ -1290,8 +1337,8 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
     if (isNaN(mileage) || mileage < 0) {
       toast({
         variant: "destructive",
-        title: "Invalid Mileage",
-        description: "Please enter a valid mileage value.",
+        title: t('pickupReturn.pickup.invalidMileageTitle'),
+        description: t('pickupReturn.pickup.invalidMileageDescription'),
       });
       return;
     }
@@ -1299,8 +1346,8 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
     if (reservation.pickupMileage && mileage < reservation.pickupMileage) {
       toast({
         variant: "destructive",
-        title: "Invalid Mileage",
-        description: `Return mileage cannot be less than pickup mileage (${reservation.pickupMileage} km).`,
+        title: t('pickupReturn.pickup.invalidMileageTitle'),
+        description: t('pickupReturn.return.returnMileageLessThanPickup', { km: reservation.pickupMileage }),
       });
       return;
     }
@@ -1314,16 +1361,16 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       {/* z-[60]: same stacking issue as the pickup dialog above. */}
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto z-[60]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Car className="h-5 w-5" />
-            Start Return Process
+            {t('pickupReturn.return.startReturnProcess')}
           </DialogTitle>
           <DialogDescription>
-            Enter the vehicle's current mileage and fuel level at return. A damage check will be generated automatically.
+            {t('pickupReturn.return.returnDialogDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -1331,19 +1378,19 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
           {/* Vehicle Information */}
           <div className="bg-muted/50 rounded-md p-3">
             <div className="space-y-1">
-              <h3 className="font-medium text-sm">Vehicle Information</h3>
+              <h3 className="font-medium text-sm">{t('pickupReturn.common.vehicleInformation')}</h3>
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
                 <div className="flex items-center">
-                  <span className="text-muted-foreground mr-1">License:</span>
+                  <span className="text-muted-foreground mr-1">{t('pickupReturn.common.licenseLabel')}</span>
                   <span className="font-medium">{reservation.vehicle?.licensePlate}</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-muted-foreground mr-1">Vehicle:</span>
+                  <span className="text-muted-foreground mr-1">{t('pickupReturn.common.vehicleLabel')}</span>
                   <span className="font-medium">{reservation.vehicle?.brand} {reservation.vehicle?.model}</span>
                 </div>
                 {reservation.pickupMileage && (
                   <div className="flex items-center">
-                    <span className="text-muted-foreground mr-1">At pickup:</span>
+                    <span className="text-muted-foreground mr-1">{t('pickupReturn.return.atPickupLabel')}</span>
                     <span className="font-medium">{reservation.pickupMileage.toLocaleString()} km</span>
                   </div>
                 )}
@@ -1354,12 +1401,12 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Combined Completion Details and Fuel Tracking */}
             <div className="border rounded-lg p-4 bg-slate-50 space-y-4">
-              <h3 className="font-semibold text-base">Completion Details</h3>
-              
+              <h3 className="font-semibold text-base">{t('pickupReturn.return.completionDetails')}</h3>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="returnDate">
-                    Return Date
+                    {t('pickupReturn.return.returnDateLabel')}
                   </Label>
                   <Input
                     id="returnDate"
@@ -1371,50 +1418,50 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                     data-testid="input-return-date"
                   />
                   <p className="text-xs text-muted-foreground">
-                    When the vehicle was actually returned
+                    {t('pickupReturn.return.returnDateHint')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="returnMileage">
-                    Mileage when returned
+                    {t('pickupReturn.return.mileageWhenReturned')}
                   </Label>
                   <Input
                     id="returnMileage"
                     type="number"
                     value={returnMileage}
                     onChange={(e) => setReturnMileage(e.target.value)}
-                    placeholder={reservation.pickupMileage ? `Pickup: ${reservation.pickupMileage.toLocaleString()} km` : "Enter return mileage"}
+                    placeholder={reservation.pickupMileage ? t('pickupReturn.return.pickupMileagePlaceholder', { mileage: reservation.pickupMileage.toLocaleString() }) : t('pickupReturn.return.enterReturnMileagePlaceholder')}
                     required
                     className="bg-white"
                     data-testid="input-return-mileage"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Odometer reading at return
+                    {t('pickupReturn.return.odometerAtReturnHint')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="fuelLevelReturn">
-                    Fuel Level at Return
+                    {t('pickupReturn.return.fuelLevelAtReturn')}
                   </Label>
                   <Select value={fuelLevelReturn} onValueChange={setFuelLevelReturn}>
                     <SelectTrigger className="bg-white" data-testid="select-fuel-level-return">
-                      <SelectValue placeholder="Select fuel level" />
+                      <SelectValue placeholder={t('pickupReturn.common.fuelSelectPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Full">Full</SelectItem>
+                      <SelectItem value="Full">{t('pickupReturn.common.fuelFull')}</SelectItem>
                       <SelectItem value="3/4">3/4</SelectItem>
                       <SelectItem value="1/2">1/2</SelectItem>
                       <SelectItem value="1/4">1/4</SelectItem>
-                      <SelectItem value="Empty">Empty</SelectItem>
+                      <SelectItem value="Empty">{t('pickupReturn.common.fuelEmpty')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    Current fuel level in the tank
+                    {t('pickupReturn.common.currentFuelInTankHint')}
                     {reservation.fuelLevelPickup && (
                       <span className="block text-blue-700 font-medium mt-0.5">
-                        At pickup: {reservation.fuelLevelPickup}
+                        {t('pickupReturn.return.atPickupFuelLabel', { fuel: reservation.fuelLevelPickup })}
                       </span>
                     )}
                   </p>
@@ -1424,7 +1471,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
 
             {/* Damage Check Section */}
             <div className="border rounded-lg p-4 bg-green-50 space-y-3">
-              <h3 className="font-semibold text-base">Damage Check</h3>
+              <h3 className="font-semibold text-base">{t('pickupReturn.common.damageCheck')}</h3>
               
               {returnDamageChecks.length > 0 || returnPaperDamageChecks.length > 0 ? (
                 <div className="space-y-2">
@@ -1435,25 +1482,25 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                       <div className="bg-white border rounded-md p-3">
                         <div className="flex items-center gap-2 mb-2">
                           <ClipboardCheck className="h-4 w-4 text-green-600" />
-                          <span className="text-xs font-medium text-green-600">Interactive Check</span>
+                          <span className="text-xs font-medium text-green-600">{t('pickupReturn.common.interactiveCheck')}</span>
                         </div>
                         <div className="flex items-center justify-between gap-3">
                           <div className="text-sm flex-1">
                             <p className="font-medium">
-                              Created {new Date(check.createdAt).toLocaleDateString()} at {new Date(check.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {t('pickupReturn.common.createdOnAt', { date: new Date(check.createdAt).toLocaleDateString(), time: new Date(check.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
                             </p>
                             {check.createdBy && (
-                              <p className="text-xs text-muted-foreground">by {check.createdBy}</p>
+                              <p className="text-xs text-muted-foreground">{t('pickupReturn.common.byLabel', { name: check.createdBy })}</p>
                             )}
                             {check.updatedBy && check.updatedBy !== check.createdBy && (
                               <p className="text-xs text-muted-foreground">
-                                Last edited by {check.updatedBy}
+                                {t('pickupReturn.common.lastEditedBy', { name: check.updatedBy })}
                               </p>
                             )}
                             {check.pdfPath && (
                               <p className="text-xs text-green-600 mt-0.5 flex items-center gap-1">
                                 <CheckCircle2 className="h-3 w-3" />
-                                PDF generated
+                                {t('pickupReturn.common.pdfGenerated')}
                               </p>
                             )}
                           </div>
@@ -1466,10 +1513,10 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                                 setEditingDamageCheckId(check.id);
                                 setDamageCheckDialogOpen(true);
                               }}
-                              title="View/Edit damage check"
+                              title={t('pickupReturn.common.viewEditDamageCheckTitle')}
                             >
                               <Edit className="h-3 w-3 mr-1" />
-                              Edit
+                              {t('pickupReturn.common.editButton')}
                             </Button>
                             {check.pdfPath && (
                               <Button
@@ -1477,10 +1524,10 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                                 size="sm"
                                 variant="outline"
                                 onClick={() => window.open(check.pdfPath, '_blank')}
-                                title="View PDF"
+                                title={t('pickupReturn.common.viewPdfTitle')}
                               >
                                 <ExternalLink className="h-3 w-3 mr-1" />
-                                PDF
+                                {t('pickupReturn.common.pdfButton')}
                               </Button>
                             )}
                             <Button
@@ -1491,7 +1538,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                                 setReturnDamageCheckToDelete(check.id);
                                 setDeleteReturnDamageCheckDialogOpen(true);
                               }}
-                              title="Delete damage check"
+                              title={t('pickupReturn.common.deleteDamageCheckTitle')}
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
                               <Trash2 className="h-3 w-3" />
@@ -1501,19 +1548,19 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                       </div>
                     );
                   })()}
-                  
+
                   {/* Paper damage checks */}
                   {returnPaperDamageChecks.map((doc: any) => (
                     <div key={doc.id} className="bg-white border rounded-md p-3">
                       <div className="flex items-center gap-2 mb-2">
                         <FileText className="h-4 w-4 text-blue-600" />
-                        <span className="text-xs font-medium text-blue-600">Paper Check (Uploaded)</span>
+                        <span className="text-xs font-medium text-blue-600">{t('pickupReturn.common.paperCheckUploaded')}</span>
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <div className="text-sm flex-1">
-                          <p className="font-medium">{doc.fileName || 'Paper Damage Check'}</p>
+                          <p className="font-medium">{doc.fileName || t('pickupReturn.common.paperDamageCheckFallbackName')}</p>
                           <p className="text-xs text-muted-foreground">
-                            Uploaded {new Date(doc.createdAt).toLocaleDateString()} at {new Date(doc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {t('pickupReturn.common.uploadedOnAt', { date: new Date(doc.createdAt).toLocaleDateString(), time: new Date(doc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
                           </p>
                         </div>
                         <div className="flex gap-2">
@@ -1522,10 +1569,10 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                             size="sm"
                             variant="outline"
                             onClick={() => window.open(doc.filePath, '_blank')}
-                            title="View document"
+                            title={t('pickupReturn.common.viewDocumentTitle')}
                           >
                             <ExternalLink className="h-3 w-3 mr-1" />
-                            View
+                            {t('pickupReturn.common.viewButton')}
                           </Button>
                           <Button
                             type="button"
@@ -1535,7 +1582,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                               setReturnPaperCheckToDelete(doc.id);
                               setDeleteReturnPaperCheckDialogOpen(true);
                             }}
-                            title="Delete paper damage check"
+                            title={t('pickupReturn.common.deletePaperDamageCheckTitle')}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -1544,7 +1591,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                       </div>
                     </div>
                   ))}
-                  
+
                   {/* Add more buttons */}
                   <div className="flex gap-2 mt-2">
                     {returnDamageChecks.length === 0 && (
@@ -1559,7 +1606,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                         }}
                       >
                         <ClipboardCheck className="h-3 w-3 mr-1" />
-                        Add Interactive Check
+                        {t('pickupReturn.common.addInteractiveCheck')}
                       </Button>
                     )}
                     <Button
@@ -1580,8 +1627,8 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                           const formData = new FormData();
                           if (!reservation.vehicleId) {
                             toast({
-                              title: "Error",
-                              description: "No vehicle associated with this reservation",
+                              title: t('pickupReturn.common.errorTitle'),
+                              description: t('pickupReturn.return.noVehicleAssociated'),
                               variant: "destructive",
                             });
                             setUploadingPaperDamageCheck(false);
@@ -1598,23 +1645,23 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                               body: formData,
                               credentials: 'include',
                             });
-                            
+
                             if (!response.ok) {
                               throw new Error('Upload failed');
                             }
-                            
+
                             const uploadedDoc = await response.json();
-                            setUploadedPaperCheckIds(prev => [...prev, uploadedDoc.id]);
+                            trackUploadedPaperCheck(uploadedDoc.id);
                             await refetchDocuments();
                             toast({
-                              title: "Success",
-                              description: "Paper damage check uploaded successfully",
+                              title: t('pickupReturn.common.successTitle'),
+                              description: t('pickupReturn.common.paperDamageCheckUploadedDescription'),
                             });
                           } catch (error) {
                             console.error('Upload failed:', error);
                             toast({
-                              title: "Error",
-                              description: "Failed to upload paper damage check",
+                              title: t('pickupReturn.common.errorTitle'),
+                              description: t('pickupReturn.common.failedToUploadPaperDamageCheck'),
                               variant: "destructive",
                             });
                           } finally {
@@ -1625,14 +1672,14 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                       }}
                     >
                       <Upload className="h-3 w-3 mr-1" />
-                      {uploadingPaperDamageCheck ? "Uploading..." : "Upload Paper Check"}
+                      {uploadingPaperDamageCheck ? t('pickupReturn.common.uploading') : t('pickupReturn.common.uploadPaperCheck')}
                     </Button>
                   </div>
                 </div>
               ) : (
                 <>
                   <p className="text-sm text-muted-foreground">
-                    Create an interactive damage check to document the vehicle's condition at return
+                    {t('pickupReturn.return.createInteractiveCheckHintReturn')}
                   </p>
                   <div className="flex gap-2">
                     <Button
@@ -1646,7 +1693,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                       data-testid="button-open-return-damage-check"
                     >
                       <ClipboardCheck className="h-4 w-4 mr-2" />
-                      Create Return Damage Check
+                      {t('pickupReturn.return.createReturnDamageCheck')}
                     </Button>
                     <Button
                       type="button"
@@ -1665,8 +1712,8 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                           const formData = new FormData();
                           if (!reservation.vehicleId) {
                             toast({
-                              title: "Error",
-                              description: "No vehicle associated with this reservation",
+                              title: t('pickupReturn.common.errorTitle'),
+                              description: t('pickupReturn.return.noVehicleAssociated'),
                               variant: "destructive",
                             });
                             setUploadingPaperDamageCheck(false);
@@ -1683,23 +1730,23 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                               body: formData,
                               credentials: 'include',
                             });
-                            
+
                             if (!response.ok) {
                               throw new Error('Upload failed');
                             }
-                            
+
                             const uploadedDoc = await response.json();
-                            setUploadedPaperCheckIds(prev => [...prev, uploadedDoc.id]);
+                            trackUploadedPaperCheck(uploadedDoc.id);
                             await refetchDocuments();
                             toast({
-                              title: "Success",
-                              description: "Paper damage check uploaded successfully",
+                              title: t('pickupReturn.common.successTitle'),
+                              description: t('pickupReturn.common.paperDamageCheckUploadedDescription'),
                             });
                           } catch (error) {
                             console.error('Upload failed:', error);
                             toast({
-                              title: "Error",
-                              description: "Failed to upload paper damage check",
+                              title: t('pickupReturn.common.errorTitle'),
+                              description: t('pickupReturn.common.failedToUploadPaperDamageCheck'),
                               variant: "destructive",
                             });
                           } finally {
@@ -1711,7 +1758,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                       data-testid="button-upload-paper-return-damage-check"
                     >
                       <Upload className="h-4 w-4 mr-2" />
-                      {uploadingPaperDamageCheck ? "Uploading..." : "Upload Paper Check"}
+                      {uploadingPaperDamageCheck ? t('pickupReturn.common.uploading') : t('pickupReturn.common.uploadPaperCheck')}
                     </Button>
                   </div>
                 </>
@@ -1720,12 +1767,12 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
 
             {/* Notes Section */}
             <div className="space-y-2">
-              <Label htmlFor="returnNotes">Additional Notes (Optional)</Label>
+              <Label htmlFor="returnNotes">{t('pickupReturn.common.additionalNotesOptional')}</Label>
               <Textarea
                 id="returnNotes"
                 value={returnNotes}
                 onChange={(e) => setReturnNotes(e.target.value)}
-                placeholder="Any additional notes about the return (damage, issues, etc.)..."
+                placeholder={t('pickupReturn.return.notesPlaceholderReturn')}
                 rows={3}
                 data-testid="textarea-return-notes"
               />
@@ -1742,7 +1789,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                 disabled={returnMutation.isPending}
                 data-testid="button-cancel-return"
               >
-                Cancel
+                {t('common:actions.cancel')}
               </Button>
               <Button
                 type="submit"
@@ -1750,11 +1797,11 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                 data-testid="button-confirm-return"
               >
                 {returnMutation.isPending ? (
-                  <>Processing...</>
+                  <>{t('pickupReturn.common.processing')}</>
                 ) : (
                   <>
                     <FileText className="h-4 w-4 mr-2" />
-                    Complete Return & Generate Damage Check
+                    {t('pickupReturn.return.completeReturnAndGenerateDamageCheck')}
                   </>
                 )}
               </Button>
@@ -1775,7 +1822,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
             near that class above) — otherwise the return dialog stays on top and
             blocks the damage check that was just opened from within it. */}
         <DialogContent className="max-w-[95vw] h-[95vh] overflow-y-auto p-0 z-[70]">
-          <DialogTitle className="sr-only">Interactive Damage Check - Return</DialogTitle>
+          <DialogTitle className="sr-only">{t('pickupReturn.return.interactiveDamageCheckReturnTitle')}</DialogTitle>
           <InteractiveDamageCheck
             onClose={() => {
               setDamageCheckDialogOpen(false);
@@ -1798,24 +1845,24 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
       <ConfirmDialog
         open={deleteReturnDamageCheckDialogOpen}
         onOpenChange={setDeleteReturnDamageCheckDialogOpen}
-        title="Delete Return Damage Check"
-        description="Are you sure you want to delete this return damage check? This action cannot be undone."
+        title={t('pickupReturn.return.deleteReturnDamageCheckTitle')}
+        description={t('pickupReturn.return.deleteReturnDamageCheckConfirm')}
         variant="danger"
-        confirmLabel="Delete"
+        confirmLabel={t('pickupReturn.common.deleteConfirmLabel')}
         onConfirm={async () => {
           if (returnDamageCheckToDelete) {
             try {
               await apiRequest('DELETE', `/api/interactive-damage-checks/${returnDamageCheckToDelete}`, {});
               await refetchDamageChecks();
               toast({
-                title: "Deleted",
-                description: "Return damage check deleted successfully",
+                title: t('pickupReturn.common.deletedTitle'),
+                description: t('pickupReturn.return.returnDamageCheckDeletedDescription'),
               });
             } catch (error) {
               toast({
                 variant: "destructive",
-                title: "Error",
-                description: "Failed to delete damage check",
+                title: t('pickupReturn.common.errorTitle'),
+                description: t('pickupReturn.common.failedToDeleteDamageCheck'),
               });
             }
           }
@@ -1828,24 +1875,24 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
       <ConfirmDialog
         open={deleteReturnPaperCheckDialogOpen}
         onOpenChange={setDeleteReturnPaperCheckDialogOpen}
-        title="Delete Paper Damage Check"
-        description="Are you sure you want to delete this paper damage check? This action cannot be undone."
+        title={t('pickupReturn.common.deletePaperDamageCheckDialogTitle')}
+        description={t('pickupReturn.common.deletePaperDamageCheckConfirm')}
         variant="danger"
-        confirmLabel="Delete"
+        confirmLabel={t('pickupReturn.common.deleteConfirmLabel')}
         onConfirm={async () => {
           if (returnPaperCheckToDelete) {
             try {
               await apiRequest('DELETE', `/api/documents/${returnPaperCheckToDelete}`, {});
               invalidateByPrefix(`/api/documents/reservation/${reservation.id}`);
               toast({
-                title: "Deleted",
-                description: "Paper damage check deleted successfully",
+                title: t('pickupReturn.common.deletedTitle'),
+                description: t('pickupReturn.common.paperDamageCheckDeletedDescription'),
               });
             } catch (error) {
               toast({
                 variant: "destructive",
-                title: "Error",
-                description: "Failed to delete paper damage check",
+                title: t('pickupReturn.common.errorTitle'),
+                description: t('pickupReturn.common.failedToDeletePaperDamageCheck'),
               });
             }
           }

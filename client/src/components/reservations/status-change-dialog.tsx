@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -83,6 +84,7 @@ export function StatusChangeDialog({
   pickupMileage,
   onStatusChanged,
 }: StatusChangeDialogProps) {
+  const { t } = useTranslation("reservations");
   const { toast } = useToast();
   const [confirmed, setConfirmed] = useState(false);
 
@@ -99,8 +101,8 @@ export function StatusChangeDialog({
     },
     onSuccess: async () => {
       toast({
-        title: "Reservation reverted",
-        description: "The reservation is back to Booked. Pickup data was cleared.",
+        title: t('statusChangeDialog.toasts.successTitle'),
+        description: t('statusChangeDialog.toasts.successDescription'),
       });
       await invalidateByPrefix("/api/reservations");
       await invalidateByPrefix("/api/vehicles");
@@ -112,8 +114,8 @@ export function StatusChangeDialog({
     },
     onError: (error: any) => {
       toast({
-        title: "Revert failed",
-        description: error?.message || "Could not revert the reservation status.",
+        title: t('statusChangeDialog.toasts.failedTitle'),
+        description: error?.message || t('statusChangeDialog.toasts.failedFallback'),
         variant: "destructive",
       });
     },
@@ -128,9 +130,9 @@ export function StatusChangeDialog({
     <Dialog open={open} onOpenChange={handleClose} key={`revert-${reservationId}`}>
       <DialogContent className="sm:max-w-[560px]">
         <DialogHeader>
-          <DialogTitle>Revert Reservation to Booked</DialogTitle>
+          <DialogTitle>{t('statusChangeDialog.title')}</DialogTitle>
           <DialogDescription>
-            This will undo the pickup and put the reservation back to the Booked state.
+            {t('statusChangeDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -138,23 +140,23 @@ export function StatusChangeDialog({
           <div className="bg-muted/50 rounded-md p-3 space-y-2">
             {vehicle && (
               <div className="space-y-1">
-                <h3 className="font-medium text-sm">Vehicle</h3>
+                <h3 className="font-medium text-sm">{t('statusChangeDialog.vehicleLabel')}</h3>
                 <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
                   <div>
-                    <span className="text-muted-foreground mr-1">License:</span>
+                    <span className="text-muted-foreground mr-1">{t('statusChangeDialog.licenseLabel')}</span>
                     <span className="font-medium">
                       {formatDisplayLicensePlate(vehicle.licensePlate)}
                     </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground mr-1">Vehicle:</span>
+                    <span className="text-muted-foreground mr-1">{t('statusChangeDialog.vehicleColonLabel')}</span>
                     <span className="font-medium">
                       {vehicle.brand} {vehicle.model}
                     </span>
                   </div>
                   {pickupMileage !== undefined && pickupMileage !== null && (
                     <div>
-                      <span className="text-muted-foreground mr-1">At pickup:</span>
+                      <span className="text-muted-foreground mr-1">{t('statusChangeDialog.atPickupLabel')}</span>
                       <span className="font-medium">
                         {pickupMileage.toLocaleString()} km
                       </span>
@@ -166,11 +168,11 @@ export function StatusChangeDialog({
 
             {customer && (
               <div className="space-y-1">
-                <h3 className="font-medium text-sm">Customer</h3>
+                <h3 className="font-medium text-sm">{t('statusChangeDialog.customerLabel')}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 text-sm">
                   {(customer.name || customer.firstName || customer.lastName) && (
                     <div>
-                      <span className="text-muted-foreground mr-1">Name:</span>
+                      <span className="text-muted-foreground mr-1">{t('statusChangeDialog.nameLabel')}</span>
                       <span className="font-medium">
                         {customer.name ||
                           [customer.firstName, customer.lastName].filter(Boolean).join(" ")}
@@ -179,19 +181,19 @@ export function StatusChangeDialog({
                   )}
                   {customer.companyName && (
                     <div>
-                      <span className="text-muted-foreground mr-1">Company:</span>
+                      <span className="text-muted-foreground mr-1">{t('statusChangeDialog.companyLabel')}</span>
                       <span className="font-medium">{customer.companyName}</span>
                     </div>
                   )}
                   {customer.phone && (
                     <div>
-                      <span className="text-muted-foreground mr-1">Phone:</span>
+                      <span className="text-muted-foreground mr-1">{t('statusChangeDialog.phoneLabel')}</span>
                       <span className="font-medium">{customer.phone}</span>
                     </div>
                   )}
                   {customer.email && (
                     <div>
-                      <span className="text-muted-foreground mr-1">Email:</span>
+                      <span className="text-muted-foreground mr-1">{t('statusChangeDialog.emailLabel')}</span>
                       <span className="font-medium">{customer.email}</span>
                     </div>
                   )}
@@ -202,7 +204,7 @@ export function StatusChangeDialog({
         )}
 
         <div className="flex items-center gap-2 text-sm">
-          <span>Current status:</span>
+          <span>{t('statusChangeDialog.currentStatusLabel')}</span>
           <Badge className={getStatusBadgeClass(initialStatus)}>
             {formatReservationStatus(initialStatus)}
           </Badge>
@@ -212,33 +214,35 @@ export function StatusChangeDialog({
           <div className="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
             <AlertTriangle className="h-5 w-5 mt-0.5 shrink-0" />
             <div>
-              <p className="font-medium">This action is only available for picked-up reservations.</p>
+              <p className="font-medium">{t('statusChangeDialog.notPickedUpTitle')}</p>
               <p className="text-amber-800/80 mt-1">
-                You can only revert a reservation that is currently in the Picked Up state.
+                {t('statusChangeDialog.notPickedUpHint')}
               </p>
             </div>
           </div>
         ) : !confirmed ? (
           <div className="rounded-md border bg-white p-3 text-sm space-y-2">
-            <p className="font-medium">Are you sure you want to revert this reservation back to Booked?</p>
+            <p className="font-medium">{t('statusChangeDialog.confirmTitle')}</p>
             <p className="text-muted-foreground">
-              The contract number, pickup mileage and fuel level at pickup will be cleared. The
-              actual pickup date will also be removed. This cannot be undone.
+              {t('statusChangeDialog.confirmHint')}
             </p>
           </div>
         ) : (
           <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-            <p className="font-medium">Please confirm one more time.</p>
+            <p className="font-medium">{t('statusChangeDialog.finalConfirmTitle')}</p>
             <p className="text-red-800/80 mt-1">
-              Clicking <span className="font-semibold">Yes, revert</span> will immediately undo
-              the pickup.
+              <Trans
+                i18nKey="statusChangeDialog.finalConfirmHint"
+                ns="reservations"
+                components={{ 1: <span className="font-semibold" /> }}
+              />
             </p>
           </div>
         )}
 
         <DialogFooter>
           <Button variant="outline" type="button" onClick={() => handleClose(false)}>
-            Cancel
+            {t('statusChangeDialog.cancelButton')}
           </Button>
           {canRevert && !confirmed && (
             <Button
@@ -248,7 +252,7 @@ export function StatusChangeDialog({
               data-testid="button-revert-to-booked"
             >
               <RotateCcw className="mr-2 h-4 w-4" />
-              Revert to Booked
+              {t('statusChangeDialog.revertToBookedButton')}
             </Button>
           )}
           {canRevert && confirmed && (
@@ -262,12 +266,12 @@ export function StatusChangeDialog({
               {revertMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Reverting...
+                  {t('statusChangeDialog.revertingButton')}
                 </>
               ) : (
                 <>
                   <RotateCcw className="mr-2 h-4 w-4" />
-                  Yes, revert
+                  {t('statusChangeDialog.confirmRevertButton')}
                 </>
               )}
             </Button>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { 
@@ -40,6 +41,13 @@ import { VehicleViewDialog } from "@/components/vehicles/vehicle-view-dialog";
 import { ReservationDocumentsDialog } from "@/components/reservations/reservation-documents-dialog";
 import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
 
+const DOCUMENT_QUICK_TYPE_KEYS: Record<string, string> = {
+  "Contract (Signed)": "contractSigned",
+  "Damage Report Photo": "damageReportPhoto",
+  "Damage Report PDF": "damageReportPdf",
+  "Other": "other",
+};
+
 interface ReservationViewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -53,6 +61,7 @@ export function ReservationViewDialog({
   reservationId,
   onEdit 
 }: ReservationViewDialogProps) {
+  const { t } = useTranslation("reservations");
   const { toast } = useToast();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
@@ -95,15 +104,15 @@ export function ReservationViewDialog({
       });
       
       toast({
-        title: "Reservation deleted",
-        description: "The reservation has been successfully deleted",
+        title: t('viewDialog.toasts.reservationDeletedTitle'),
+        description: t('viewDialog.toasts.reservationDeletedDescription'),
       });
-      
+
       onOpenChange(false);
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t('viewDialog.errorTitle'),
         description: error.message,
         variant: "destructive"
       });
@@ -223,13 +232,13 @@ export function ReservationViewDialog({
     switch (type) {
       case "replacement":
         return {
-          text: "Replacement Vehicle",
+          text: t('viewDialog.reservationTypeInfo.replacementVehicle'),
           className: "bg-orange-100 text-orange-800 border-orange-200",
           icon: <ArrowRightLeft className="w-3 h-3" />
         };
       case "maintenance_block":
         return {
-          text: "Maintenance Block",
+          text: t('viewDialog.reservationTypeInfo.maintenanceBlock'),
           className: "bg-purple-100 text-purple-800 border-purple-200",
           icon: <Wrench className="w-3 h-3" />
         };
@@ -249,8 +258,8 @@ export function ReservationViewDialog({
       <Dialog open={open && !!reservationId && !pickupDialogOpen && !returnDialogOpen} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="dialog-reservation-view">
           <DialogHeader>
-            <DialogTitle>Reservation Details</DialogTitle>
-            <p className="text-gray-500">Reservation #{reservationId}</p>
+            <DialogTitle>{t('viewDialog.title')}</DialogTitle>
+            <p className="text-gray-500">{t('viewDialog.reservationHash', { id: reservationId })}</p>
           </DialogHeader>
 
           {isLoading ? (
@@ -259,15 +268,15 @@ export function ReservationViewDialog({
             </div>
           ) : error || !reservation ? (
             <div className="bg-red-50 border border-red-200 p-4 rounded-md">
-              <h3 className="text-lg font-semibold text-red-800">Error</h3>
-              <p className="text-red-600">Failed to load reservation details. {(error as Error)?.message}</p>
+              <h3 className="text-lg font-semibold text-red-800">{t('viewDialog.errorTitle')}</h3>
+              <p className="text-red-600">{t('viewDialog.failedToLoad', { error: (error as Error)?.message || '' })}</p>
             </div>
           ) : (
             <div className="space-y-6">
               {/* Status and basic info */}
               <div className="flex flex-col sm:flex-row justify-between gap-4">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500">Status</h3>
+                  <h3 className="text-sm font-medium text-gray-500">{t('viewDialog.statusLabel')}</h3>
                   <div className="flex gap-2 mt-1 flex-wrap">
                     <Badge className={`${getStatusStyle(reservation.status)}`}>
                       {formatReservationStatus(reservation.status)}
@@ -281,28 +290,28 @@ export function ReservationViewDialog({
                         </Badge>
                       ) : null;
                     })()}
-                    {reservation.status === 'picked_up' && reservation.endDate && 
+                    {reservation.status === 'picked_up' && reservation.endDate &&
                       differenceInDays(new Date(), parseISO(reservation.endDate)) > 0 && (
                         <Badge className="bg-red-100 text-red-800 border-red-200 flex items-center gap-1" data-testid="badge-overdue">
                           <AlertCircle className="w-3 h-3" />
-                          {differenceInDays(new Date(), parseISO(reservation.endDate))}d Overdue
+                          {t('viewDialog.overdueDays', { count: differenceInDays(new Date(), parseISO(reservation.endDate)) })}
                         </Badge>
                     )}
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500">Rental Period</h3>
+                  <h3 className="text-sm font-medium text-gray-500">{t('viewDialog.rentalPeriodLabel')}</h3>
                   <p className="text-base mt-1">
-                    {formatDate(reservation.startDate)} - {reservation.endDate ? formatDate(reservation.endDate) : 'N/A'}
+                    {formatDate(reservation.startDate)} - {reservation.endDate ? formatDate(reservation.endDate) : t('viewDialog.naValue')}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    {rentalDuration} day{rentalDuration !== 1 ? 's' : ''}
+                    {t('form.dayCount', { count: rentalDuration })}
                   </p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500">Total Price</h3>
+                  <h3 className="text-sm font-medium text-gray-500">{t('viewDialog.totalPriceLabel')}</h3>
                   <p className="text-base font-medium mt-1">
-                    {reservation.totalPrice ? formatCurrency(Number(reservation.totalPrice)) : 'N/A'}
+                    {reservation.totalPrice ? formatCurrency(Number(reservation.totalPrice)) : t('viewDialog.naValue')}
                   </p>
                 </div>
               </div>
@@ -311,7 +320,7 @@ export function ReservationViewDialog({
 
               {/* Vehicle details */}
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-2">Vehicle</h3>
+                <h3 className="text-sm font-medium text-gray-500 mb-2">{t('viewDialog.vehicleLabel')}</h3>
                 <div className="bg-gray-50 p-4 rounded-md">
                   {vehicle ? (
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between">
@@ -323,35 +332,35 @@ export function ReservationViewDialog({
                           {vehicle.brand} {vehicle.model}
                         </h4>
                         <p className="text-sm text-gray-500 mt-1">
-                          {vehicle.vehicleType || 'Unknown type'} • {vehicle.fuel || 'Unknown fuel'}
+                          {vehicle.vehicleType || t('viewDialog.unknownType')} • {vehicle.fuel || t('viewDialog.unknownFuel')}
                         </p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {vehicle.apkDate && (
                             <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200 font-medium">
-                              APK Expiry: {formatDate(vehicle.apkDate)}
+                              {t('viewDialog.apkExpiryBadge', { date: formatDate(vehicle.apkDate) })}
                             </Badge>
                           )}
                           {vehicle.departureMileage && (
                             <Badge variant="outline" className="bg-gray-50 text-gray-800 border-gray-200">
-                              Pickup Mileage: {vehicle.departureMileage.toLocaleString()} km
+                              {t('viewDialog.pickupMileageBadge', { mileage: vehicle.departureMileage.toLocaleString() })}
                             </Badge>
                           )}
                           {vehicle.returnMileage && (
                             <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">
-                              Return Mileage: {vehicle.returnMileage.toLocaleString()} km
+                              {t('viewDialog.returnMileageBadge', { mileage: vehicle.returnMileage.toLocaleString() })}
                             </Badge>
                           )}
                           {vehicle.maintenanceStatus && vehicle.maintenanceStatus !== 'ok' && (
                             <Badge variant="outline" className="bg-red-50 text-red-800 border-red-200 font-medium">
                               <Wrench className="w-3 h-3 mr-1" />
-                              {vehicle.maintenanceStatus === 'needs_service' ? 'Needs Service' : 'In Service'}
+                              {vehicle.maintenanceStatus === 'needs_service' ? t('viewDialog.needsServiceBadge') : t('viewDialog.inServiceBadge')}
                             </Badge>
                           )}
                         </div>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="mt-2 sm:mt-0"
                         onClick={() => {
                           setViewVehicleId(vehicle.id);
@@ -359,11 +368,11 @@ export function ReservationViewDialog({
                         }}
                         data-testid="button-view-vehicle"
                       >
-                        View Vehicle
+                        {t('viewDialog.viewVehicleButton')}
                       </Button>
                     </div>
                   ) : (
-                    <p className="text-gray-500">Vehicle information unavailable</p>
+                    <p className="text-gray-500">{t('viewDialog.vehicleInfoUnavailable')}</p>
                   )}
                 </div>
               </div>
@@ -371,9 +380,9 @@ export function ReservationViewDialog({
               {/* Customer details */}
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-2">
-                  Customer
+                  {t('viewDialog.customerLabel')}
                   {reservation.type === 'maintenance_block' && displayCustomer && (
-                    <span className="ml-2 text-xs text-gray-400 font-normal">(from active rental)</span>
+                    <span className="ml-2 text-xs text-gray-400 font-normal">{t('viewDialog.fromActiveRentalSuffix')}</span>
                   )}
                 </h3>
                 <div className="bg-gray-50 p-4 rounded-md">
@@ -439,12 +448,12 @@ export function ReservationViewDialog({
                       </div>
                       <CustomerViewDialog customerId={displayCustomer.id}>
                         <Button variant="ghost" size="sm" className="mt-2 sm:mt-0" data-testid="button-view-customer">
-                          View Customer
+                          {t('viewDialog.viewCustomerButton')}
                         </Button>
                       </CustomerViewDialog>
                     </div>
                   ) : (
-                    <p className="text-gray-500">No customer assigned to this reservation</p>
+                    <p className="text-gray-500">{t('viewDialog.noCustomerAssigned')}</p>
                   )}
                 </div>
               </div>
@@ -453,9 +462,9 @@ export function ReservationViewDialog({
               {displayDriver && (
                 <div>
                   <h3 className="text-sm font-medium text-gray-500 mb-2">
-                    Assigned Driver
+                    {t('viewDialog.assignedDriverLabel')}
                     {reservation.type === 'maintenance_block' && displayDriver && (
-                      <span className="ml-2 text-xs text-gray-400 font-normal">(from active rental)</span>
+                      <span className="ml-2 text-xs text-gray-400 font-normal">{t('viewDialog.fromActiveRentalSuffix')}</span>
                     )}
                   </h3>
                   <div className="bg-blue-50 p-4 rounded-md border border-blue-200">
@@ -467,7 +476,7 @@ export function ReservationViewDialog({
                         </svg>
                         {displayDriver.displayName}
                         {displayDriver.isPrimaryDriver && (
-                          <Badge className="bg-blue-100 text-blue-800 border-blue-200">Primary</Badge>
+                          <Badge className="bg-blue-100 text-blue-800 border-blue-200">{t('viewDialog.primaryBadge')}</Badge>
                         )}
                       </h4>
                       
@@ -502,9 +511,9 @@ export function ReservationViewDialog({
                               <rect width="20" height="14" x="2" y="5" rx="2"/>
                               <line x1="2" x2="22" y1="10" y2="10"/>
                             </svg>
-                            <span>License: {displayDriver.driverLicenseNumber}</span>
+                            <span>{t('viewDialog.licenseLabel', { number: displayDriver.driverLicenseNumber })}</span>
                             {displayDriver.licenseExpiry && (
-                              <span className="text-blue-600">(Exp: {formatDate(displayDriver.licenseExpiry)})</span>
+                              <span className="text-blue-600">{t('viewDialog.licenseExpiry', { date: formatDate(displayDriver.licenseExpiry) })}</span>
                             )}
                           </div>
                         )}
@@ -517,7 +526,7 @@ export function ReservationViewDialog({
               {/* Documents Section */}
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-3">
-                  {reservation.type === 'maintenance_block' ? 'Service Documentation' : 'Documents'}
+                  {reservation.type === 'maintenance_block' ? t('viewDialog.serviceDocumentationLabel') : t('viewDialog.documentsLabel')}
                 </h3>
                 
                 {reservation.type === 'maintenance_block' ? (
@@ -534,12 +543,12 @@ export function ReservationViewDialog({
                         >
                           <Button variant="outline" size="sm">
                             <FileText className="mr-2 h-4 w-4" />
-                            Add Expense
+                            {t('viewDialog.addExpenseButton')}
                           </Button>
                         </ExpenseAddDialog>
                       )}
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => {
                           if (reservation.vehicleId) {
@@ -550,14 +559,14 @@ export function ReservationViewDialog({
                         data-testid="button-upload-documents"
                       >
                         <Camera className="mr-2 h-4 w-4" />
-                        Upload Documents
+                        {t('viewDialog.uploadDocumentsButton')}
                       </Button>
                     </div>
 
                     {/* Uploaded Documents Display */}
                     {reservationDocuments && reservationDocuments.length > 0 && (
                       <div className="space-y-2">
-                        <span className="text-xs font-semibold text-gray-700">Uploaded Documents:</span>
+                        <span className="text-xs font-semibold text-gray-700">{t('viewDialog.uploadedDocumentsLabel')}</span>
                         <div className="flex flex-wrap gap-2">
                           {reservationDocuments.map((doc) => {
                             const ext = doc.fileName.split('.').pop()?.toLowerCase();
@@ -602,7 +611,7 @@ export function ReservationViewDialog({
                                     setDeleteDocDialogOpen(true);
                                   }}
                                   className="absolute top-1 right-1 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-opacity"
-                                  title="Delete document"
+                                  title={t('viewDialog.deleteDocumentTooltip')}
                                 >
                                   <X className="h-3 w-3" />
                                 </button>
@@ -618,7 +627,7 @@ export function ReservationViewDialog({
                     {/* Quick Upload Buttons */}
                     {reservation.vehicleId && (
                       <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-md">
-                        <span className="text-xs text-gray-600 w-full mb-1">Quick Upload:</span>
+                        <span className="text-xs text-gray-600 w-full mb-1">{t('viewDialog.quickUploadLabel')}</span>
                         {[
                           { type: 'Contract (Signed)', accept: '.pdf' },
                           { type: 'Damage Report Photo', accept: '.jpg,.jpeg,.png' },
@@ -657,14 +666,14 @@ export function ReservationViewDialog({
                                   
                                   invalidateByPrefix(`/api/documents/reservation/${reservation.id}`);
                                   toast({
-                                    title: "Success",
-                                    description: `${type} uploaded successfully`,
+                                    title: t('form.toasts.uploadSuccessTitle'),
+                                    description: t('form.toasts.uploadSuccessDescription', { type: t(`form.docTypes.${DOCUMENT_QUICK_TYPE_KEYS[type]}`, { defaultValue: type }) }),
                                   });
                                 } catch (error) {
                                   console.error('Upload failed:', error);
                                   toast({
-                                    title: "Error",
-                                    description: "Failed to upload document",
+                                    title: t('form.toasts.uploadErrorTitle'),
+                                    description: t('form.toasts.uploadErrorDescription'),
                                     variant: "destructive",
                                   });
                                 } finally {
@@ -676,16 +685,16 @@ export function ReservationViewDialog({
                             disabled={uploadingDoc}
                             className="text-xs"
                           >
-                            + {type}
+                            + {t(`form.docTypes.${DOCUMENT_QUICK_TYPE_KEYS[type]}`, { defaultValue: type })}
                           </Button>
                         ))}
                       </div>
                     )}
-                    
+
                     {/* Uploaded Documents */}
                     {reservationDocuments && reservationDocuments.length > 0 && (
                       <div className="space-y-2">
-                        <span className="text-xs font-semibold text-gray-700">Uploaded Documents:</span>
+                        <span className="text-xs font-semibold text-gray-700">{t('viewDialog.uploadedDocumentsLabel')}</span>
                         <div className="flex flex-wrap gap-2">
                           {(() => {
                             const contractDocs = reservationDocuments.filter(d => 
@@ -748,7 +757,7 @@ export function ReservationViewDialog({
                                     setDeleteDocDialogOpen(true);
                                   }}
                                   className="absolute top-1 right-1 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-opacity"
-                                  title="Delete document"
+                                  title={t('viewDialog.deleteDocumentTooltip')}
                                 >
                                   <X className="h-3 w-3" />
                                 </button>
@@ -765,37 +774,37 @@ export function ReservationViewDialog({
               {/* Fuel Tracking Information */}
               {(reservation.fuelLevelPickup || reservation.fuelLevelReturn || reservation.fuelCost || reservation.fuelCardNumber || reservation.fuelNotes) && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Fuel Tracking</h3>
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">{t('viewDialog.fuelTrackingLabel')}</h3>
                   <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {reservation.fuelLevelPickup && (
                         <div>
-                          <p className="text-xs text-blue-600 font-medium">Fuel at Pickup</p>
+                          <p className="text-xs text-blue-600 font-medium">{t('viewDialog.fuelAtPickupLabel')}</p>
                           <p className="text-sm font-semibold text-blue-900 mt-1">{reservation.fuelLevelPickup}</p>
                         </div>
                       )}
                       {reservation.fuelLevelReturn && (
                         <div>
-                          <p className="text-xs text-blue-600 font-medium">Fuel at Return</p>
+                          <p className="text-xs text-blue-600 font-medium">{t('viewDialog.fuelAtReturnLabel')}</p>
                           <p className="text-sm font-semibold text-blue-900 mt-1">{reservation.fuelLevelReturn}</p>
                         </div>
                       )}
                       {reservation.fuelCost && (
                         <div>
-                          <p className="text-xs text-blue-600 font-medium">Fuel Cost</p>
+                          <p className="text-xs text-blue-600 font-medium">{t('viewDialog.fuelCostLabelShort')}</p>
                           <p className="text-sm font-semibold text-blue-900 mt-1">{<Price value={Number(reservation.fuelCost)} />}</p>
                         </div>
                       )}
                       {reservation.fuelCardNumber && (
                         <div>
-                          <p className="text-xs text-blue-600 font-medium">Fuel Card Number</p>
+                          <p className="text-xs text-blue-600 font-medium">{t('viewDialog.fuelCardNumberLabel')}</p>
                           <p className="text-sm font-semibold text-blue-900 mt-1">{reservation.fuelCardNumber}</p>
                         </div>
                       )}
                     </div>
                     {reservation.fuelNotes && (
                       <div className="mt-3 pt-3 border-t border-blue-200">
-                        <p className="text-xs text-blue-600 font-medium">Fuel Notes</p>
+                        <p className="text-xs text-blue-600 font-medium">{t('viewDialog.fuelNotesLabel')}</p>
                         <p className="text-sm text-blue-800 mt-1">{reservation.fuelNotes}</p>
                       </div>
                     )}
@@ -806,51 +815,51 @@ export function ReservationViewDialog({
               {/* Spare Vehicle Management */}
               {reservation.type === 'standard' && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-3">Vehicle Service</h3>
+                  <h3 className="text-sm font-medium text-gray-500 mb-3">{t('viewDialog.vehicleServiceLabel')}</h3>
                   <div className="space-y-2">
                     {!activeReplacement && vehicle?.maintenanceStatus === 'ok' && (
-                      <Button 
-                        variant="outline" 
-                        className="w-full justify-start" 
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start"
                         size="sm"
                         onClick={() => setIsServiceDialogOpen(true)}
                         data-testid="button-mark-for-service"
                       >
                         <Wrench className="mr-2 h-4 w-4" />
-                        Mark Vehicle for Service
+                        {t('viewDialog.markForServiceButton')}
                       </Button>
                     )}
-                    
+
                     {(vehicle?.maintenanceStatus === 'in_service' || vehicle?.maintenanceStatus === 'needs_service') && !activeReplacement && (
-                      <Button 
-                        variant="outline" 
-                        className="w-full justify-start" 
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start"
                         size="sm"
                         onClick={() => setIsSpareDialogOpen(true)}
                         data-testid="button-assign-spare"
                       >
                         <Car className="mr-2 h-4 w-4" />
-                        Assign Spare Vehicle
+                        {t('viewDialog.assignSpareButton')}
                       </Button>
                     )}
-                    
+
                     {activeReplacement && (
                       <div className="space-y-2">
                         <div className="p-3 border border-orange-200 bg-orange-50 rounded-md">
-                          <p className="text-sm font-medium text-orange-800">Spare vehicle assigned</p>
+                          <p className="text-sm font-medium text-orange-800">{t('viewDialog.spareAssignedTitle')}</p>
                           <p className="text-xs text-orange-600 mt-1">
-                            Vehicle is currently being serviced
+                            {t('viewDialog.spareAssignedHint')}
                           </p>
                         </div>
-                        <Button 
-                          variant="outline" 
-                          className="w-full justify-start" 
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start"
                           size="sm"
                           onClick={() => setIsReturnDialogOpen(true)}
                           data-testid="button-return-from-service"
                         >
                           <Car className="mr-2 h-4 w-4" />
-                          Return from Service
+                          {t('viewDialog.returnFromServiceButton')}
                         </Button>
                       </div>
                     )}
@@ -862,7 +871,7 @@ export function ReservationViewDialog({
 
           <DialogFooter className="flex gap-2">
             {reservation?.status === 'booked' && (
-              <Button 
+              <Button
                 onClick={() => {
                   setPickupDialogOpen(true);
                 }}
@@ -872,12 +881,12 @@ export function ReservationViewDialog({
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                   <circle cx="12" cy="10" r="3"></circle>
                 </svg>
-                Start Pickup
+                {t('viewDialog.startPickupButton')}
               </Button>
             )}
-            
+
             {reservation?.status === 'picked_up' && (
-              <Button 
+              <Button
                 onClick={() => {
                   setReturnDialogOpen(true);
                 }}
@@ -888,19 +897,19 @@ export function ReservationViewDialog({
                   <path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9"></path>
                   <path d="M12 3v6"></path>
                 </svg>
-                Start Return
+                {t('viewDialog.startReturnButton')}
               </Button>
             )}
-            
-            <Button 
+
+            <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
               data-testid="button-close-reservation"
             >
-              Close
+              {t('viewDialog.closeButton')}
             </Button>
-            
-            <Button 
+
+            <Button
               variant="outline"
               onClick={() => {
                 console.log('Edit button clicked', { reservationId, onEdit });
@@ -909,30 +918,30 @@ export function ReservationViewDialog({
               data-testid="button-edit-reservation"
             >
               <Edit className="mr-2 h-4 w-4" />
-              Edit
+              {t('viewDialog.editButton')}
             </Button>
-            
+
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" data-testid="button-delete-reservation">
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
+                  {t('viewDialog.deleteButton')}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogTitle>{t('viewDialog.deleteConfirm.title')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete reservation #{reservationId}.
+                    {t('viewDialog.deleteConfirm.description', { id: reservationId })}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel>{t('viewDialog.deleteConfirm.cancelButton')}</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => deleteReservationMutation.mutate()}
                     disabled={deleteReservationMutation.isPending}
                   >
-                    {deleteReservationMutation.isPending ? "Deleting..." : "Delete"}
+                    {deleteReservationMutation.isPending ? t('viewDialog.deletingButton') : t('viewDialog.deleteButton')}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -993,7 +1002,7 @@ export function ReservationViewDialog({
       <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>{previewDocument?.documentType || 'Document Preview'}</DialogTitle>
+            <DialogTitle>{previewDocument?.documentType || t('form.documentPreviewTitleFallback')}</DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-auto bg-gray-100 rounded-md p-4">
             {previewDocument && (() => {
@@ -1013,9 +1022,9 @@ export function ReservationViewDialog({
               } else {
                 return (
                   <div className="flex flex-col items-center justify-center h-full space-y-4">
-                    <p className="text-gray-600">Preview not available for this file type.</p>
+                    <p className="text-gray-600">{t('form.documentPreview.previewNotAvailable')}</p>
                     <Button onClick={() => window.open(`/api/documents/view/${previewDocument.id}`, '_blank')}>
-                      Open File
+                      {t('form.documentPreview.openFileButton')}
                     </Button>
                   </div>
                 );
@@ -1024,10 +1033,10 @@ export function ReservationViewDialog({
           </div>
           <div className="flex justify-between items-center pt-4 border-t">
             <Button variant="outline" onClick={() => window.open(`/api/documents/view/${previewDocument?.id}`, '_blank')}>
-              Open in New Tab
+              {t('form.documentPreview.openInNewTabButton')}
             </Button>
             <Button onClick={() => setPreviewDialogOpen(false)}>
-              Close
+              {t('viewDialog.closeButton')}
             </Button>
           </div>
         </DialogContent>
@@ -1037,11 +1046,13 @@ export function ReservationViewDialog({
       {reservation && (
         <>
           <PickupDialog
+            key={`pickup-${reservation.id}`}
             open={pickupDialogOpen}
             onOpenChange={setPickupDialogOpen}
             reservation={reservation}
           />
           <ReturnDialog
+            key={`return-${reservation.id}`}
             open={returnDialogOpen}
             onOpenChange={setReturnDialogOpen}
             reservation={reservation}
@@ -1052,10 +1063,10 @@ export function ReservationViewDialog({
       <ConfirmDialog
         open={deleteDocDialogOpen}
         onOpenChange={setDeleteDocDialogOpen}
-        title="Delete Document"
-        description={`Are you sure you want to delete ${documentToDelete?.documentType}? This action cannot be undone.`}
+        title={t('form.deleteDocumentDialog.title')}
+        description={t('form.deleteDocumentDialog.description', { type: documentToDelete?.documentType })}
         variant="danger"
-        confirmLabel="Delete"
+        confirmLabel={t('form.deleteDocumentDialog.confirmLabel')}
         onConfirm={async () => {
           if (!documentToDelete) return;
           try {
@@ -1063,21 +1074,21 @@ export function ReservationViewDialog({
               method: 'DELETE',
               credentials: 'include',
             });
-            
+
             if (!response.ok) {
               throw new Error('Delete failed');
             }
-            
+
             invalidateByPrefix(`/api/documents/reservation/${reservationId}`);
             toast({
-              title: "Success",
-              description: "Document deleted successfully",
+              title: t('form.toasts.uploadSuccessTitle'),
+              description: t('form.toasts.documentDeletedDescription'),
             });
           } catch (error) {
             console.error('Delete failed:', error);
             toast({
-              title: "Error",
-              description: "Failed to delete document",
+              title: t('viewDialog.errorTitle'),
+              description: t('form.toasts.failedToDeleteDocumentDescription'),
               variant: "destructive",
             });
           }

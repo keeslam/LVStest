@@ -1,0 +1,26 @@
+{
+  "dashboard": "Dashboard",
+  "vehicles": "Voertuigen",
+  "customers": "Klanten",
+  "reservations": "Reserveringen",
+  "maintenance": "Onderhoud",
+  "expenses": "Kosten",
+  "documents": "Documenten",
+  "transports": "Transporten",
+  "communications": "Communicatie",
+  "reports": "Rapporten",
+  "settings": "Instellingen",
+  "logout": "Uitloggen",
+  "profile": "Profiel",
+  "searchResults": "Zoekresultaten",
+  "notifications": "Meldingen",
+  "userMenu": {
+    "profile": "Profiel",
+    "administration": "Beheer",
+    "users": "Gebruikers",
+    "backupManagement": "Back-upbeheer",
+    "appSettings": "App-instellingen",
+    "logout": "Uitloggen",
+    "noEmailSet": "Geen e-mailadres ingesteld"
+  }
+}

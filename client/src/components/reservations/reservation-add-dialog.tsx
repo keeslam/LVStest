@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -41,6 +42,7 @@ export function ReservationAddDialog({
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
 }: ReservationAddDialogProps) {
+  const { t } = useTranslation("reservations");
   const isControlled = controlledOpen !== undefined;
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const open = isControlled ? controlledOpen : uncontrolledOpen;
@@ -84,8 +86,8 @@ export function ReservationAddDialog({
 
     if (!newOpen && isInPreviewMode) {
       toast({
-        title: "Preview in Progress",
-        description: "Please finalize the reservation or click 'Back to Edit' before closing.",
+        title: t('addDialog.previewInProgressTitle'),
+        description: t('addDialog.previewInProgressDescription'),
         variant: "default",
       });
       return;
@@ -138,7 +140,7 @@ export function ReservationAddDialog({
   const trigger = children || (
     <Button data-testid="button-new-reservation">
       <PlusCircle className="mr-2 h-4 w-4" />
-      New Reservation
+      {t('addDialog.newReservation')}
     </Button>
   );
 
@@ -192,9 +194,9 @@ export function ReservationAddDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>New Reservation</DialogTitle>
+          <DialogTitle>{t('addDialog.newReservation')}</DialogTitle>
           <DialogDescription>
-            Create a new reservation by selecting a vehicle and customer
+            {t('addDialog.description')}
           </DialogDescription>
         </DialogHeader>
         <div className="mt-4">

@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,7 @@ interface ReservationListDialogProps {
 }
 
 export function ReservationListDialog({ open, onOpenChange, onViewReservation, onEditReservation }: ReservationListDialogProps) {
+  const { t } = useTranslation("reservations");
   const [currentSearch, setCurrentSearch] = useState("");
   const [historySearch, setHistorySearch] = useState("");
   const [currentSort, setCurrentSort] = useState<{ column: string; direction: 'asc' | 'desc' }>({ column: 'pickup', direction: 'asc' });
@@ -68,15 +70,15 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
     onSuccess: async () => {
       await invalidateRelatedQueries('reservations');
       toast({
-        title: "Reservation deleted",
-        description: "The reservation has been successfully deleted.",
+        title: t('listDialog.toasts.deletedTitle'),
+        description: t('listDialog.toasts.deletedDescription'),
         variant: "default"
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete reservation",
+        title: t('listDialog.toasts.errorTitle'),
+        description: error.message || t('listDialog.toasts.deleteFailedFallback'),
         variant: "destructive"
       });
     }
@@ -198,15 +200,15 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'booked':
-        return <Badge className="bg-blue-100 text-blue-800">Booked</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800">{t('form.statuses.booked')}</Badge>;
       case 'picked_up':
-        return <Badge className="bg-green-100 text-green-800">Picked Up</Badge>;
+        return <Badge className="bg-green-100 text-green-800">{t('form.statuses.pickedUp')}</Badge>;
       case 'returned':
-        return <Badge className="bg-yellow-100 text-yellow-800">Returned</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800">{t('form.statuses.returned')}</Badge>;
       case 'completed':
-        return <Badge className="bg-gray-100 text-gray-800">Completed</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800">{t('form.statuses.completed')}</Badge>;
       case 'cancelled':
-        return <Badge className="bg-red-100 text-red-800">Cancelled</Badge>;
+        return <Badge className="bg-red-100 text-red-800">{t('form.statuses.cancelled')}</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -257,7 +259,7 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
   const getDuration = (startDate: string | null, endDate: string | null) => {
     if (!startDate || !endDate) return null;
     const days = differenceInDays(parseISO(endDate), parseISO(startDate)) + 1; // Inclusive of both days
-    return days === 1 ? '1 day' : `${days} days`;
+    return t('form.dayCount', { count: days });
   };
 
   // Reservation Card Component - Compact
@@ -294,11 +296,11 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
           {/* Dates */}
           <div className="text-xs">
             <div className="flex items-center gap-1">
-              <span className="text-gray-500">Out:</span>
+              <span className="text-gray-500">{t('listDialog.outLabel')}</span>
               <span className="font-medium">{reservation.startDate ? format(parseISO(reservation.startDate), 'dd MMM yy') : '-'}</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-gray-500">In:</span>
+              <span className="text-gray-500">{t('listDialog.inLabel')}</span>
               <span className="font-medium">{reservation.endDate ? format(parseISO(reservation.endDate), 'dd MMM yy') : '-'}</span>
               {duration && <span className="text-gray-400">({duration})</span>}
             </div>
@@ -307,7 +309,7 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
           {/* Mileage & Price */}
           <div className="text-xs">
             <div className="flex items-center gap-2">
-              <span className="text-gray-500">KM:</span>
+              <span className="text-gray-500">{t('listDialog.kmLabel')}</span>
               <span className="font-mono">{reservation.pickupMileage?.toLocaleString() || '-'}</span>
               <span className="text-gray-400">→</span>
               <span className="font-mono">{reservation.returnMileage?.toLocaleString() || '-'}</span>
@@ -346,9 +348,9 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="w-[95vw] max-w-[95vw] max-h-[90vh]" data-testid="dialog-reservation-list">
           <DialogHeader>
-            <DialogTitle>Reservations</DialogTitle>
+            <DialogTitle>{t('listDialog.title')}</DialogTitle>
             <DialogDescription>
-              View and manage all reservations
+              {t('listDialog.description')}
             </DialogDescription>
           </DialogHeader>
 
@@ -356,15 +358,15 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="current" className="flex items-center gap-2">
                 <Car className="h-4 w-4" />
-                Current ({currentReservations.length})
+                {t('listDialog.currentTab', { count: currentReservations.length })}
               </TabsTrigger>
               <TabsTrigger value="overdue" className="flex items-center gap-2">
                 <AlertTriangle className={`h-4 w-4 ${overdueReservations.length > 0 ? 'text-red-500' : ''}`} />
-                Overdue ({overdueReservations.length})
+                {t('listDialog.overdueTab', { count: overdueReservations.length })}
               </TabsTrigger>
               <TabsTrigger value="history" className="flex items-center gap-2">
                 <History className="h-4 w-4" />
-                History ({historyReservations.length})
+                {t('listDialog.historyTab', { count: historyReservations.length })}
               </TabsTrigger>
             </TabsList>
 
@@ -373,7 +375,7 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
                   <Input
-                    placeholder="Search by plate, customer, contract, ID..."
+                    placeholder={t('listDialog.searchPlaceholder')}
                     value={currentSearch}
                     onChange={(e) => setCurrentSearch(e.target.value)}
                     className="flex-1 h-8 text-sm"
@@ -381,27 +383,27 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
                   />
                   <div className="flex items-center gap-1 text-xs text-gray-500">
                     <Button variant={currentSort.column === 'pickup' ? 'secondary' : 'ghost'} size="sm" className="h-7 text-xs px-2" onClick={() => toggleCurrentSort('pickup')}>
-                      Pickup {currentSort.column === 'pickup' && (currentSort.direction === 'asc' ? '↑' : '↓')}
+                      {t('listDialog.sortPickup')} {currentSort.column === 'pickup' && (currentSort.direction === 'asc' ? '↑' : '↓')}
                     </Button>
                     <Button variant={currentSort.column === 'customer' ? 'secondary' : 'ghost'} size="sm" className="h-7 text-xs px-2" onClick={() => toggleCurrentSort('customer')}>
-                      Customer {currentSort.column === 'customer' && (currentSort.direction === 'asc' ? '↑' : '↓')}
+                      {t('listDialog.sortCustomer')} {currentSort.column === 'customer' && (currentSort.direction === 'asc' ? '↑' : '↓')}
                     </Button>
                     <Button variant={currentSort.column === 'plate' ? 'secondary' : 'ghost'} size="sm" className="h-7 text-xs px-2" onClick={() => toggleCurrentSort('plate')}>
-                      Plate {currentSort.column === 'plate' && (currentSort.direction === 'asc' ? '↑' : '↓')}
+                      {t('listDialog.sortPlate')} {currentSort.column === 'plate' && (currentSort.direction === 'asc' ? '↑' : '↓')}
                     </Button>
                   </div>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {filteredCurrentReservations.length} active
+                    {t('listDialog.activeCount', { count: filteredCurrentReservations.length })}
                   </span>
                 </div>
-                
+
                 <div className="border rounded-md overflow-hidden">
                   <ScrollArea className="h-[calc(70vh-180px)]">
                     <div className="divide-y">
                       {isLoadingReservations ? (
-                        <div className="text-center py-8 text-gray-500">Loading...</div>
+                        <div className="text-center py-8 text-gray-500">{t('listDialog.loading')}</div>
                       ) : filteredCurrentReservations.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">No active reservations found</div>
+                        <div className="text-center py-8 text-gray-500">{t('listDialog.noActiveReservations')}</div>
                       ) : (
                         filteredCurrentReservations.map((reservation) => (
                           <ReservationCard key={reservation.id} reservation={reservation} />
@@ -419,15 +421,15 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
                 <div className="flex items-center gap-3 mb-2">
                   <span className="text-sm text-red-600 font-medium flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4" />
-                    Vehicles that should have been returned but customer still has them
+                    {t('listDialog.overdueHint')}
                   </span>
                 </div>
-                
+
                 <div className="border rounded-md overflow-hidden">
                   <ScrollArea className="h-[calc(70vh-180px)]">
                     <div className="divide-y">
                       {overdueReservations.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">No overdue reservations</div>
+                        <div className="text-center py-8 text-gray-500">{t('listDialog.noOverdueReservations')}</div>
                       ) : (
                         overdueReservations.map((reservation) => {
                           const daysOverdue = reservation.endDate 
@@ -450,16 +452,16 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
                                       {reservation.vehicle?.brand} {reservation.vehicle?.model}
                                     </span>
                                     <Badge variant="destructive" className="text-xs">
-                                      {daysOverdue} day{daysOverdue !== 1 ? 's' : ''} overdue
+                                      {t('listDialog.daysOverdue', { count: daysOverdue })}
                                     </Badge>
                                   </div>
                                   <div className="flex items-center gap-4 text-sm text-gray-600">
                                     <span className="flex items-center gap-1">
                                       <User className="h-3 w-3" />
-                                      {reservation.customer?.name || 'Unknown'}
+                                      {reservation.customer?.name || t('listDialog.unknownCustomer')}
                                     </span>
                                     {reservation.customer?.phone && (
-                                      <a 
+                                      <a
                                         href={`tel:${reservation.customer.phone}`}
                                         className="flex items-center gap-1 text-blue-600 hover:underline"
                                       >
@@ -469,14 +471,14 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
                                     )}
                                     <span className="flex items-center gap-1">
                                       <Calendar className="h-3 w-3" />
-                                      Due: {reservation.endDate ? format(parseISO(reservation.endDate), 'MMM d') : 'N/A'}
+                                      {t('listDialog.dueLabel', { date: reservation.endDate ? format(parseISO(reservation.endDate), 'MMM d') : 'N/A' })}
                                     </span>
                                   </div>
                                 </div>
                                 <div className="flex gap-1">
                                   <Button size="sm" variant="outline" onClick={(e) => handleView(e, reservation)}>
                                     <Eye className="h-3 w-3 mr-1" />
-                                    View
+                                    {t('listDialog.viewButton')}
                                   </Button>
                                 </div>
                               </div>
@@ -495,7 +497,7 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
                   <Input
-                    placeholder="Search by plate, customer, contract, ID..."
+                    placeholder={t('listDialog.searchPlaceholder')}
                     value={historySearch}
                     onChange={(e) => setHistorySearch(e.target.value)}
                     className="flex-1 h-8 text-sm"
@@ -503,27 +505,27 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
                   />
                   <div className="flex items-center gap-1 text-xs text-gray-500">
                     <Button variant={historySort.column === 'return' ? 'secondary' : 'ghost'} size="sm" className="h-7 text-xs px-2" onClick={() => toggleHistorySort('return')}>
-                      Return {historySort.column === 'return' && (historySort.direction === 'asc' ? '↑' : '↓')}
+                      {t('listDialog.sortReturn')} {historySort.column === 'return' && (historySort.direction === 'asc' ? '↑' : '↓')}
                     </Button>
                     <Button variant={historySort.column === 'customer' ? 'secondary' : 'ghost'} size="sm" className="h-7 text-xs px-2" onClick={() => toggleHistorySort('customer')}>
-                      Customer {historySort.column === 'customer' && (historySort.direction === 'asc' ? '↑' : '↓')}
+                      {t('listDialog.sortCustomer')} {historySort.column === 'customer' && (historySort.direction === 'asc' ? '↑' : '↓')}
                     </Button>
                     <Button variant={historySort.column === 'plate' ? 'secondary' : 'ghost'} size="sm" className="h-7 text-xs px-2" onClick={() => toggleHistorySort('plate')}>
-                      Plate {historySort.column === 'plate' && (historySort.direction === 'asc' ? '↑' : '↓')}
+                      {t('listDialog.sortPlate')} {historySort.column === 'plate' && (historySort.direction === 'asc' ? '↑' : '↓')}
                     </Button>
                   </div>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {filteredHistoryReservations.length} completed
+                    {t('listDialog.completedCount', { count: filteredHistoryReservations.length })}
                   </span>
                 </div>
-                
+
                 <div className="border rounded-md overflow-hidden">
                   <ScrollArea className="h-[calc(70vh-180px)]">
                     <div className="divide-y">
                       {isLoadingReservations ? (
-                        <div className="text-center py-8 text-gray-500">Loading...</div>
+                        <div className="text-center py-8 text-gray-500">{t('listDialog.loading')}</div>
                       ) : filteredHistoryReservations.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">No completed reservations found</div>
+                        <div className="text-center py-8 text-gray-500">{t('listDialog.noCompletedReservations')}</div>
                       ) : (
                         filteredHistoryReservations.map((reservation) => (
                           <ReservationCard key={reservation.id} reservation={reservation} />
@@ -538,7 +540,7 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
 
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Close
+              {t('listDialog.closeButton')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -601,8 +603,8 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
             customerId: updatedReservation.customerId ?? undefined
           });
           toast({
-            title: "Reservation updated",
-            description: "The reservation has been successfully updated",
+            title: t('listDialog.toasts.updatedTitle'),
+            description: t('listDialog.toasts.updatedDescription'),
           });
         }}
       />
@@ -611,10 +613,10 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
       <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        title="Delete Reservation"
-        description={`Are you sure you want to delete reservation #${reservationToDelete?.id}? This action cannot be undone.`}
+        title={t('listDialog.deleteDialog.title')}
+        description={t('listDialog.deleteDialog.description', { id: reservationToDelete?.id })}
         variant="danger"
-        confirmLabel="Delete"
+        confirmLabel={t('listDialog.deleteDialog.confirmLabel')}
         onConfirm={confirmDelete}
         onCancel={() => setReservationToDelete(null)}
       />

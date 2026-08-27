@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLocation, Link } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient, invalidateByPrefix } from '@/lib/queryClient';
@@ -60,21 +61,21 @@ interface Template {
   footerText?: string | null;
 }
 
-const DYNAMIC_SOURCES: { value: string; label: string }[] = [
-  { value: 'licensePlate', label: 'License Plate' },
-  { value: 'brand', label: 'Vehicle Brand' },
-  { value: 'model', label: 'Vehicle Model' },
-  { value: 'buildYear', label: 'Build Year' },
-  { value: 'fuel', label: 'Fuel Type' },
-  { value: 'currentMileage', label: 'Current Mileage' },
-  { value: 'customerName', label: 'Customer Name' },
-  { value: 'contractNumber', label: 'Contract Number' },
-  { value: 'startDate', label: 'Start Date' },
-  { value: 'endDate', label: 'End Date' },
-  { value: 'rentalDays', label: 'Rental Days' },
-  { value: 'currentDate', label: 'Today\'s Date' },
-  { value: 'notes', label: 'Inspection Notes' },
-  { value: 'inspectorName', label: 'Inspector / Logged-in User (Controle door)' },
+const DYNAMIC_SOURCES: { value: string; labelKey: string }[] = [
+  { value: 'licensePlate', labelKey: 'licensePlate' },
+  { value: 'brand', labelKey: 'brand' },
+  { value: 'model', labelKey: 'model' },
+  { value: 'buildYear', labelKey: 'buildYear' },
+  { value: 'fuel', labelKey: 'fuel' },
+  { value: 'currentMileage', labelKey: 'currentMileage' },
+  { value: 'customerName', labelKey: 'customerName' },
+  { value: 'contractNumber', labelKey: 'contractNumber' },
+  { value: 'startDate', labelKey: 'startDate' },
+  { value: 'endDate', labelKey: 'endDate' },
+  { value: 'rentalDays', labelKey: 'rentalDays' },
+  { value: 'currentDate', labelKey: 'currentDate' },
+  { value: 'notes', labelKey: 'notes' },
+  { value: 'inspectorName', labelKey: 'inspectorName' },
 ];
 
 const PAGE_W = 595;
@@ -87,6 +88,7 @@ export default function DamageCheckTemplateCanvasEditor({
   templateId = null,
   onBack,
 }: { embedded?: boolean; templateId?: number | null; onBack?: () => void } = {}) {
+  const { t } = useTranslation("settings");
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -266,9 +268,9 @@ export default function DamageCheckTemplateCanvasEditor({
         setHistory(snap);
         setHistIdx(0);
       }
-      toast({ title: 'Saved', description: 'Template saved successfully' });
+      toast({ title: t('templateEditorPage.toasts.savedTitle'), description: t('templateEditorPage.toasts.templateSavedDescription') });
     },
-    onError: (e: Error) => toast({ title: 'Save failed', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.saveFailedTitle'), description: e.message, variant: 'destructive' }),
   });
 
   const createMutation = useMutation({
@@ -280,12 +282,12 @@ export default function DamageCheckTemplateCanvasEditor({
     },
     onSuccess: (created: Template) => {
       invalidateByPrefix('/api/damage-check-templates');
-      toast({ title: 'Created', description: `Template "${created.name}" created` });
+      toast({ title: t('templateEditorPage.toasts.createdTitle'), description: t('templateEditorPage.toasts.templateCreatedDescription', { name: created.name }) });
       setCreateOpen(false);
       setNewName('');
       loadTemplate({ ...created, canvasFields: [] });
     },
-    onError: (e: Error) => toast({ title: 'Create failed', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.createFailedTitle'), description: e.message, variant: 'destructive' }),
   });
 
   const deleteMutation = useMutation({
@@ -295,7 +297,7 @@ export default function DamageCheckTemplateCanvasEditor({
     },
     onSuccess: () => {
       invalidateByPrefix('/api/damage-check-templates');
-      toast({ title: 'Deleted', description: 'Template deleted' });
+      toast({ title: t('templateEditorPage.toasts.deletedTitle'), description: t('templateEditorPage.toasts.templateDeletedDescription') });
       setDeleteOpen(false);
       setCurrentId(null);
       setName('');
@@ -305,7 +307,7 @@ export default function DamageCheckTemplateCanvasEditor({
       url.searchParams.delete('id');
       window.history.replaceState({}, '', url.toString());
     },
-    onError: (e: Error) => toast({ title: 'Delete failed', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.deleteFailedTitle'), description: e.message, variant: 'destructive' }),
   });
 
   const uploadBackgroundMutation = useMutation({
@@ -317,14 +319,14 @@ export default function DamageCheckTemplateCanvasEditor({
         body: formData,
         credentials: 'include',
       });
-      if (!res.ok) throw new Error((await res.text()) || 'Upload failed');
+      if (!res.ok) throw new Error((await res.text()) || t('templateEditorPage.toasts.uploadFailedFallback'));
       return res.json();
     },
     onSuccess: async () => {
       await invalidateByPrefix('/api/damage-check-templates');
-      toast({ title: 'Success', description: 'Background uploaded' });
+      toast({ title: t('templateEditorPage.toasts.successTitle'), description: t('templateEditorPage.toasts.backgroundUploadedDescription') });
     },
-    onError: (e: Error) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.errorTitle'), description: e.message, variant: 'destructive' }),
   });
 
   const removeBackgroundMutation = useMutation({
@@ -334,9 +336,9 @@ export default function DamageCheckTemplateCanvasEditor({
     },
     onSuccess: async () => {
       await invalidateByPrefix('/api/damage-check-templates');
-      toast({ title: 'Success', description: 'Background removed' });
+      toast({ title: t('templateEditorPage.toasts.successTitle'), description: t('templateEditorPage.toasts.backgroundRemovedDescription') });
     },
-    onError: (e: Error) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.errorTitle'), description: e.message, variant: 'destructive' }),
   });
 
   const { data: backgroundLibrary = [], refetch: refetchBackgrounds } = useQuery<TemplateBackground[]>({
@@ -354,15 +356,15 @@ export default function DamageCheckTemplateCanvasEditor({
         body: formData,
         credentials: 'include',
       });
-      if (!res.ok) throw new Error((await res.text()) || 'Upload failed');
+      if (!res.ok) throw new Error((await res.text()) || t('templateEditorPage.toasts.uploadFailedFallback'));
       return res.json();
     },
     onSuccess: async () => {
       await refetchBackgrounds();
       setBackgroundName('');
-      toast({ title: 'Success', description: 'Background added to library' });
+      toast({ title: t('templateEditorPage.toasts.successTitle'), description: t('templateEditorPage.toasts.backgroundAddedDescription') });
     },
-    onError: (e: Error) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.errorTitle'), description: e.message, variant: 'destructive' }),
   });
 
   const selectBackgroundMutation = useMutation({
@@ -372,9 +374,9 @@ export default function DamageCheckTemplateCanvasEditor({
     },
     onSuccess: async () => {
       await invalidateByPrefix('/api/damage-check-templates');
-      toast({ title: 'Success', description: 'Background selected' });
+      toast({ title: t('templateEditorPage.toasts.successTitle'), description: t('templateEditorPage.toasts.backgroundSelectedDescription') });
     },
-    onError: (e: Error) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.errorTitle'), description: e.message, variant: 'destructive' }),
   });
 
   const deleteLibraryBackgroundMutation = useMutation({
@@ -383,9 +385,9 @@ export default function DamageCheckTemplateCanvasEditor({
     },
     onSuccess: async () => {
       await refetchBackgrounds();
-      toast({ title: 'Success', description: 'Background deleted' });
+      toast({ title: t('templateEditorPage.toasts.successTitle'), description: t('templateEditorPage.toasts.backgroundDeletedDescription') });
     },
-    onError: (e: Error) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.errorTitle'), description: e.message, variant: 'destructive' }),
   });
 
   async function handleGeneratePreview() {
@@ -411,7 +413,7 @@ export default function DamageCheckTemplateCanvasEditor({
       setPreviewUrl(url);
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (e: any) {
-      toast({ title: 'Preview failed', description: e.message, variant: 'destructive' });
+      toast({ title: t('templateEditorPage.toasts.previewFailedTitle'), description: e.message, variant: 'destructive' });
     } finally {
       setPreviewLoading(false);
     }
@@ -616,16 +618,16 @@ export default function DamageCheckTemplateCanvasEditor({
         <div className="flex items-center gap-3">
           {!embedded && (
             <Link href="/documents">
-              <Button variant="ghost" size="sm"><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
+              <Button variant="ghost" size="sm"><ArrowLeft className="mr-2 h-4 w-4" /> {t('templateEditorPage.backButton')}</Button>
             </Link>
           )}
-          {!embedded && <h1 className="text-xl font-semibold">Damage Check Template Editor</h1>}
+          {!embedded && <h1 className="text-xl font-semibold">{t('templateEditorPage.pageTitle')}</h1>}
         </div>
         <div className="text-xs text-muted-foreground hidden md:flex items-center gap-2">
-          <kbd className="px-1.5 py-0.5 bg-muted rounded">Ctrl+Z</kbd> Undo
-          <kbd className="px-1.5 py-0.5 bg-muted rounded">Ctrl+Y</kbd> Redo
-          <kbd className="px-1.5 py-0.5 bg-muted rounded">Ctrl+C/V/D</kbd> Copy/Paste/Dup
-          <kbd className="px-1.5 py-0.5 bg-muted rounded">↑←↓→</kbd> Move (Shift=10px)
+          <kbd className="px-1.5 py-0.5 bg-muted rounded">Ctrl+Z</kbd> {t('templateEditorPage.shortcutUndo')}
+          <kbd className="px-1.5 py-0.5 bg-muted rounded">Ctrl+Y</kbd> {t('templateEditorPage.shortcutRedo')}
+          <kbd className="px-1.5 py-0.5 bg-muted rounded">Ctrl+C/V/D</kbd> {t('templateEditorPage.shortcutCopyPasteDup')}
+          <kbd className="px-1.5 py-0.5 bg-muted rounded">↑←↓→</kbd> {t('templateEditorPage.shortcutMove')}
         </div>
       </div>
 
@@ -635,19 +637,19 @@ export default function DamageCheckTemplateCanvasEditor({
           <div className="flex flex-wrap items-end gap-3">
             {templateId == null && (
               <div className="flex-1 min-w-[200px] space-y-1.5">
-                <Label className="text-xs">Template</Label>
+                <Label className="text-xs">{t('templateEditorPage.templateLabel')}</Label>
                 <Select
                   value={currentId?.toString() ?? ''}
                   onValueChange={(v) => {
-                    const t = templates.find(x => x.id.toString() === v);
-                    if (t) loadTemplate(t);
+                    const tmpl = templates.find(x => x.id.toString() === v);
+                    if (tmpl) loadTemplate(tmpl);
                   }}
                 >
-                  <SelectTrigger data-testid="select-template"><SelectValue placeholder={isLoading ? 'Loading…' : 'Select template'} /></SelectTrigger>
+                  <SelectTrigger data-testid="select-template"><SelectValue placeholder={isLoading ? t('templateEditorPage.loadingPlaceholder') : t('templateEditorPage.selectTemplatePlaceholder')} /></SelectTrigger>
                   <SelectContent>
-                    {templates.map(t => (
-                      <SelectItem key={t.id} value={t.id.toString()}>
-                        {t.name}{t.isDefault ? ' (Default)' : ''}
+                    {templates.map(tmpl => (
+                      <SelectItem key={tmpl.id} value={tmpl.id.toString()}>
+                        {tmpl.name}{tmpl.isDefault ? t('templateEditorPage.defaultSuffix') : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -662,31 +664,31 @@ export default function DamageCheckTemplateCanvasEditor({
             <div className="flex gap-2">
               {onBack && (
                 <Button variant="ghost" size="sm" onClick={onBack} data-testid="button-back-to-gallery">
-                  <ArrowLeft className="h-4 w-4 mr-1" /> Back to templates
+                  <ArrowLeft className="h-4 w-4 mr-1" /> {t('templateEditorPage.backToTemplatesButton')}
                 </Button>
               )}
               {templateId == null && (
                 <Dialog open={createOpen} onOpenChange={setCreateOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" data-testid="button-new-template"><Plus className="h-4 w-4 mr-1" /> New</Button>
+                    <Button variant="outline" size="sm" data-testid="button-new-template"><Plus className="h-4 w-4 mr-1" /> {t('templateEditorPage.newButton')}</Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Create new template</DialogTitle>
-                      <DialogDescription>Start a blank canvas damage check template.</DialogDescription>
+                      <DialogTitle>{t('templateEditorPage.createNewTemplateTitle')}</DialogTitle>
+                      <DialogDescription>{t('templateEditorPage.createNewTemplateDescription')}</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-2">
-                      <Label>Template name</Label>
-                      <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g., Sedan generic" data-testid="input-new-template-name" />
+                      <Label>{t('templateEditorPage.templateNameLabel')}</Label>
+                      <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder={t('templateEditorPage.templateNamePlaceholder')} data-testid="input-new-template-name" />
                     </div>
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
+                      <Button variant="outline" onClick={() => setCreateOpen(false)}>{t('templateEditorPage.cancelButton')}</Button>
                       <Button
                         onClick={() => newName.trim() && createMutation.mutate(newName.trim())}
                         disabled={!newName.trim() || createMutation.isPending}
                         data-testid="button-confirm-create-template"
                       >
-                        {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create'}
+                        {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t('templateEditorPage.createButton')}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -695,24 +697,24 @@ export default function DamageCheckTemplateCanvasEditor({
               <Dialog open={isBackgroundLibraryOpen} onOpenChange={setIsBackgroundLibraryOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm" disabled={!currentId} data-testid="button-background">
-                    <ImageIcon className="h-4 w-4 mr-1" /> Background
+                    <ImageIcon className="h-4 w-4 mr-1" /> {t('templateEditorPage.backgroundButton')}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-lg">
                   <DialogHeader>
-                    <DialogTitle>Template background</DialogTitle>
+                    <DialogTitle>{t('templateEditorPage.templateBackgroundTitle')}</DialogTitle>
                     <DialogDescription>
-                      Optional page image shown behind the canvas fields. Same background can be reused across templates via the library below.
+                      {t('templateEditorPage.templateBackgroundDescription')}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-xs">Current background</Label>
+                      <Label className="text-xs">{t('templateEditorPage.currentBackgroundLabel')}</Label>
                       {currentTemplate?.backgroundPath ? (
                         <div className="flex items-center gap-2">
                           <img
                             src={`/${currentTemplate.backgroundPreviewPath ?? currentTemplate.backgroundPath}`}
-                            alt="Current background"
+                            alt={t('templateEditorPage.currentBackgroundAlt')}
                             className="h-16 w-auto border rounded"
                           />
                           <Button
@@ -721,15 +723,15 @@ export default function DamageCheckTemplateCanvasEditor({
                             onClick={() => currentId && removeBackgroundMutation.mutate(currentId)}
                             disabled={removeBackgroundMutation.isPending}
                           >
-                            Remove
+                            {t('templateEditorPage.removeButton')}
                           </Button>
                         </div>
                       ) : (
-                        <p className="text-xs text-muted-foreground">No background set — canvas is blank.</p>
+                        <p className="text-xs text-muted-foreground">{t('templateEditorPage.noBackgroundSetHint')}</p>
                       )}
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs">Upload new background</Label>
+                      <Label className="text-xs">{t('templateEditorPage.uploadNewBackgroundLabel')}</Label>
                       <Input
                         type="file"
                         accept="image/png,image/jpeg"
@@ -742,10 +744,10 @@ export default function DamageCheckTemplateCanvasEditor({
                     </div>
                     <Separator />
                     <div className="space-y-2">
-                      <Label className="text-xs">Add to shared library</Label>
+                      <Label className="text-xs">{t('templateEditorPage.addToSharedLibraryLabel')}</Label>
                       <div className="flex gap-2">
                         <Input
-                          placeholder="Background name"
+                          placeholder={t('templateEditorPage.backgroundNamePlaceholder')}
                           value={backgroundName}
                           onChange={(e) => setBackgroundName(e.target.value)}
                         />
@@ -775,7 +777,7 @@ export default function DamageCheckTemplateCanvasEditor({
                               size="sm"
                               onClick={() => currentId && selectBackgroundMutation.mutate({ templateId: currentId, backgroundId: bg.id })}
                             >
-                              Use
+                              {t('templateEditorPage.useButton')}
                             </Button>
                             <Button
                               variant="ghost"
@@ -791,14 +793,14 @@ export default function DamageCheckTemplateCanvasEditor({
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsBackgroundLibraryOpen(false)}>Close</Button>
+                    <Button variant="outline" onClick={() => setIsBackgroundLibraryOpen(false)}>{t('templateEditorPage.closeButton')}</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-              <Button variant="outline" size="sm" onClick={undo} disabled={histIdx <= 0} title="Undo (Ctrl+Z)" data-testid="button-undo">
+              <Button variant="outline" size="sm" onClick={undo} disabled={histIdx <= 0} title={t('templateEditorPage.undoTitleAttr')} data-testid="button-undo">
                 <Undo2 className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={redo} disabled={histIdx >= history.length - 1} title="Redo (Ctrl+Y)" data-testid="button-redo">
+              <Button variant="outline" size="sm" onClick={redo} disabled={histIdx >= history.length - 1} title={t('templateEditorPage.redoTitleAttr')} data-testid="button-redo">
                 <Redo2 className="h-4 w-4" />
               </Button>
               {templateId == null && (
@@ -807,7 +809,7 @@ export default function DamageCheckTemplateCanvasEditor({
                   onClick={() => setDeleteOpen(true)}
                   disabled={!currentId}
                   data-testid="button-delete-template"
-                ><Trash2 className="h-4 w-4 mr-1" /> Delete</Button>
+                ><Trash2 className="h-4 w-4 mr-1" /> {t('templateEditorPage.deleteButton')}</Button>
               )}
               <Button
                 size="sm"
@@ -816,26 +818,26 @@ export default function DamageCheckTemplateCanvasEditor({
                 data-testid="button-save-template"
               >
                 {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
-                Save
+                {t('templateEditorPage.saveButton')}
               </Button>
             </div>
           </div>
           {currentId && (
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3 mt-3">
-              <div className="space-y-1.5"><Label className="text-xs">Name</Label><Input value={name} onChange={e => setName(e.target.value)} data-testid="input-template-name" /></div>
-              <div className="space-y-1.5"><Label className="text-xs">Description</Label><Input value={description} onChange={e => setDescription(e.target.value)} data-testid="input-template-description" /></div>
+              <div className="space-y-1.5"><Label className="text-xs">{t('templateEditorPage.nameLabel')}</Label><Input value={name} onChange={e => setName(e.target.value)} data-testid="input-template-name" /></div>
+              <div className="space-y-1.5"><Label className="text-xs">{t('templateEditorPage.descriptionLabel')}</Label><Input value={description} onChange={e => setDescription(e.target.value)} data-testid="input-template-description" /></div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Language</Label>
+                <Label className="text-xs">{t('templateEditorPage.languageLabel')}</Label>
                 <Select value={language} onValueChange={(v) => setLanguage(v as 'nl' | 'en')}>
                   <SelectTrigger data-testid="select-language"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="nl">Dutch (NL)</SelectItem>
-                    <SelectItem value="en">English (EN)</SelectItem>
+                    <SelectItem value="nl">{t('templateEditorPage.dutchOption')}</SelectItem>
+                    <SelectItem value="en">{t('templateEditorPage.englishOption')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5"><Label className="text-xs">Header text</Label><Input value={headerText} onChange={e => setHeaderText(e.target.value)} placeholder="Printed at the top of every page" data-testid="input-header-text" /></div>
-              <div className="space-y-1.5"><Label className="text-xs">Footer text</Label><Input value={footerText} onChange={e => setFooterText(e.target.value)} placeholder="Printed at the bottom of every page" data-testid="input-footer-text" /></div>
+              <div className="space-y-1.5"><Label className="text-xs">{t('templateEditorPage.headerTextLabel')}</Label><Input value={headerText} onChange={e => setHeaderText(e.target.value)} placeholder={t('templateEditorPage.headerTextPlaceholder')} data-testid="input-header-text" /></div>
+              <div className="space-y-1.5"><Label className="text-xs">{t('templateEditorPage.footerTextLabel')}</Label><Input value={footerText} onChange={e => setFooterText(e.target.value)} placeholder={t('templateEditorPage.footerTextPlaceholder')} data-testid="input-footer-text" /></div>
             </div>
           )}
         </CardContent>
@@ -845,20 +847,20 @@ export default function DamageCheckTemplateCanvasEditor({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Left palette */}
           <Card className="lg:col-span-2 h-fit lg:sticky lg:top-4">
-            <CardHeader className="pb-3"><CardTitle className="text-base">Add Field</CardTitle></CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base">{t('templateEditorPage.addFieldTitle')}</CardTitle></CardHeader>
             <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full justify-start" onClick={() => addField('text')} data-testid="button-add-text"><Type className="h-4 w-4 mr-2" /> Text</Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => addField('dynamic')} data-testid="button-add-dynamic"><Database className="h-4 w-4 mr-2" /> Dynamic</Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => addField('inspection')} data-testid="button-add-inspection"><ClipboardList className="h-4 w-4 mr-2" /> Inspection</Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => addField('checkbox')} data-testid="button-add-checkbox"><CheckSquare className="h-4 w-4 mr-2" /> Checkbox</Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => addField('signature')} data-testid="button-add-signature"><PenLine className="h-4 w-4 mr-2" /> Signature</Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => addField('line')} data-testid="button-add-line"><Minus className="h-4 w-4 mr-2" /> Line</Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => addField('box')} data-testid="button-add-box"><Square className="h-4 w-4 mr-2" /> Box</Button>
-              <Button variant="outline" className="w-full justify-start" onClick={() => addField('diagram')} data-testid="button-add-diagram"><ImageIcon className="h-4 w-4 mr-2" /> Vehicle Diagram</Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => addField('text')} data-testid="button-add-text"><Type className="h-4 w-4 mr-2" /> {t('templateEditorPage.textFieldButton')}</Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => addField('dynamic')} data-testid="button-add-dynamic"><Database className="h-4 w-4 mr-2" /> {t('templateEditorPage.dynamicFieldButton')}</Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => addField('inspection')} data-testid="button-add-inspection"><ClipboardList className="h-4 w-4 mr-2" /> {t('templateEditorPage.inspectionFieldButton')}</Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => addField('checkbox')} data-testid="button-add-checkbox"><CheckSquare className="h-4 w-4 mr-2" /> {t('templateEditorPage.checkboxFieldButton')}</Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => addField('signature')} data-testid="button-add-signature"><PenLine className="h-4 w-4 mr-2" /> {t('templateEditorPage.signatureFieldButton')}</Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => addField('line')} data-testid="button-add-line"><Minus className="h-4 w-4 mr-2" /> {t('templateEditorPage.lineFieldButton')}</Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => addField('box')} data-testid="button-add-box"><Square className="h-4 w-4 mr-2" /> {t('templateEditorPage.boxFieldButton')}</Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => addField('diagram')} data-testid="button-add-diagram"><ImageIcon className="h-4 w-4 mr-2" /> {t('templateEditorPage.diagramFieldButton')}</Button>
               {damageCheckFields.groups.length > 0 && (
                 <>
                   <Separator />
-                  <p className="text-xs font-medium text-muted-foreground px-1">From Fields config</p>
+                  <p className="text-xs font-medium text-muted-foreground px-1">{t('templateEditorPage.fromFieldsConfigHint')}</p>
                   <div className="space-y-1 max-h-48 overflow-y-auto">
                     {damageCheckFields.groups.flatMap(group =>
                       group.fields.map(f => (
@@ -894,22 +896,22 @@ export default function DamageCheckTemplateCanvasEditor({
                 variant="secondary"
                 className="w-full justify-start"
                 onClick={() => {
-                  if (fields.length > 0 && !confirm('Replace current fields with the default layout?')) return;
+                  if (fields.length > 0 && !confirm(t('templateEditorPage.confirmReplaceLayout'))) return;
                   updateFields(buildDefaultLayout(damageCheckFields));
                   setSelectedIds([]);
                 }}
                 data-testid="button-insert-default-layout"
               >
-                <Sparkles className="h-4 w-4 mr-2" /> Insert Default Layout
+                <Sparkles className="h-4 w-4 mr-2" /> {t('templateEditorPage.insertDefaultLayoutButton')}
               </Button>
               <Separator />
               <Button variant="outline" className="w-full" onClick={handleGeneratePreview} disabled={previewLoading} data-testid="button-generate-preview">
                 {previewLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileText className="h-4 w-4 mr-2" />}
-                Generate Preview
+                {t('templateEditorPage.generatePreviewButton')}
               </Button>
               {previewUrl && (
                 <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline block text-center" data-testid="link-open-preview">
-                  Open last preview →
+                  {t('templateEditorPage.openLastPreviewLink')}
                 </a>
               )}
             </CardContent>
@@ -920,20 +922,20 @@ export default function DamageCheckTemplateCanvasEditor({
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div>
-                  <CardTitle className="text-base">Canvas (A4 portrait)</CardTitle>
+                  <CardTitle className="text-base">{t('templateEditorPage.canvasTitle')}</CardTitle>
                   <CardDescription className="text-xs">
-                    {selectedIds.length === 0 ? 'Click a field to select. Drag to move.' : `${selectedIds.length} selected`}
+                    {selectedIds.length === 0 ? t('templateEditorPage.clickFieldToSelectHint') : t('templateEditorPage.selectedCount', { count: selectedIds.length })}
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.max(0.25, z - 0.1))} title="Zoom out"><ZoomOut className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.max(0.25, z - 0.1))} title={t('templateEditorPage.zoomOutTitle')}><ZoomOut className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="sm" onClick={() => setZoom(1)} className="font-mono text-xs">{Math.round(zoom * 100)}%</Button>
-                  <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.min(2, z + 0.1))} title="Zoom in"><ZoomIn className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => setZoom(0.75)} title="Fit"><Maximize2 className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.min(2, z + 0.1))} title={t('templateEditorPage.zoomInTitle')}><ZoomIn className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => setZoom(0.75)} title={t('templateEditorPage.fitTitle')}><Maximize2 className="h-4 w-4" /></Button>
                   <Separator orientation="vertical" className="h-6 mx-1" />
-                  <Button variant={showGrid ? 'secondary' : 'ghost'} size="icon" onClick={() => setShowGrid(g => !g)} title="Toggle grid"><Grid className="h-4 w-4" /></Button>
-                  <Button variant={showRulers ? 'secondary' : 'ghost'} size="icon" onClick={() => setShowRulers(r => !r)} title="Toggle rulers"><LayoutGrid className="h-4 w-4" /></Button>
-                  <Button variant={snapToGrid ? 'secondary' : 'ghost'} size="icon" onClick={() => setSnapToGrid(s => !s)} title="Snap to grid"><Move className="h-4 w-4" /></Button>
+                  <Button variant={showGrid ? 'secondary' : 'ghost'} size="icon" onClick={() => setShowGrid(g => !g)} title={t('templateEditorPage.toggleGridTitle')}><Grid className="h-4 w-4" /></Button>
+                  <Button variant={showRulers ? 'secondary' : 'ghost'} size="icon" onClick={() => setShowRulers(r => !r)} title={t('templateEditorPage.toggleRulersTitle')}><LayoutGrid className="h-4 w-4" /></Button>
+                  <Button variant={snapToGrid ? 'secondary' : 'ghost'} size="icon" onClick={() => setSnapToGrid(s => !s)} title={t('templateEditorPage.snapToGridTitle')}><Move className="h-4 w-4" /></Button>
                 </div>
               </div>
             </CardHeader>
@@ -979,7 +981,7 @@ export default function DamageCheckTemplateCanvasEditor({
                     {currentTemplate?.backgroundPath && (
                       <img
                         src={`/${currentTemplate.backgroundPreviewPath ?? currentTemplate.backgroundPath}`}
-                        alt="Background"
+                        alt={t('templateEditorPage.backgroundAlt')}
                         style={{
                           position: 'absolute',
                           top: 0,
@@ -995,7 +997,7 @@ export default function DamageCheckTemplateCanvasEditor({
                     )}
                     <img
                       src="/api/damage-check-fields/header"
-                      alt="Header"
+                      alt={t('templateEditorPage.headerAlt')}
                       style={{
                         position: 'absolute',
                         top: 0,
@@ -1038,43 +1040,43 @@ export default function DamageCheckTemplateCanvasEditor({
           <Card className="lg:col-span-3 h-fit lg:sticky lg:top-4">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">
-                {selectedField ? 'Properties' : selectedIds.length > 1 ? `${selectedIds.length} selected` : 'No selection'}
+                {selectedField ? t('templateEditorPage.propertiesTitle') : selectedIds.length > 1 ? t('templateEditorPage.selectedCount', { count: selectedIds.length }) : t('templateEditorPage.noSelectionTitle')}
               </CardTitle>
               <CardDescription className="text-xs">
-                {selectedField ? `Type: ${selectedField.type}` : 'Click a field to edit'}
+                {selectedField ? t('templateEditorPage.typeLabel', { type: selectedField.type }) : t('templateEditorPage.clickFieldToEditHint')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {selectedField ? (
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">{selectedField.type === 'text' ? 'Text' : 'Label'}</Label>
+                    <Label className="text-xs">{selectedField.type === 'text' ? t('templateEditorPage.textFieldLabel') : t('templateEditorPage.labelFieldLabel')}</Label>
                     <Input value={selectedField.name} onChange={e => updateSelected({ name: e.target.value })} data-testid="input-field-name" />
                   </div>
                   {selectedField.type === 'dynamic' && (
                     <div className="space-y-1">
-                      <Label className="text-xs">Data source</Label>
+                      <Label className="text-xs">{t('templateEditorPage.dataSourceLabel')}</Label>
                       <Select value={selectedField.source || ''} onValueChange={(v) => {
                         const opt = DYNAMIC_SOURCES.find(o => o.value === v);
-                        updateSelected({ source: v, name: opt?.label || v });
+                        updateSelected({ source: v, name: opt ? t(`templateEditorPage.dynamicSources.${opt.labelKey}`) : v });
                       }}>
                         <SelectTrigger data-testid="select-field-source"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {DYNAMIC_SOURCES.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                          {DYNAMIC_SOURCES.map(o => <SelectItem key={o.value} value={o.value}>{t(`templateEditorPage.dynamicSources.${o.labelKey}`)}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
                   )}
                   {selectedField.type === 'diagram' && (
                     <div className="space-y-1">
-                      <Label className="text-xs">Vehicle diagram</Label>
+                      <Label className="text-xs">{t('templateEditorPage.vehicleDiagramLabel')}</Label>
                       <Select
                         value={selectedField.diagramTemplateId ? String(selectedField.diagramTemplateId) : 'auto'}
                         onValueChange={(v) => updateSelected({ diagramTemplateId: v === 'auto' ? null : Number(v) })}
                       >
                         <SelectTrigger data-testid="select-diagram-template"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="auto">Auto (match vehicle)</SelectItem>
+                          <SelectItem value="auto">{t('templateEditorPage.autoMatchVehicleOption')}</SelectItem>
                           {diagramTemplates.map(d => (
                             <SelectItem key={d.id} value={String(d.id)}>{d.make} {d.model}{d.year ? ` (${d.year})` : ''}</SelectItem>
                           ))}
@@ -1084,7 +1086,7 @@ export default function DamageCheckTemplateCanvasEditor({
                   )}
                   {selectedField.type === 'inspection' && (
                     <div className="space-y-1">
-                      <Label className="text-xs">Damage types (comma separated)</Label>
+                      <Label className="text-xs">{t('templateEditorPage.damageTypesLabel')}</Label>
                       <Input
                         value={(selectedField.damageTypes || []).join(', ')}
                         onChange={e => updateSelected({ damageTypes: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
@@ -1094,34 +1096,34 @@ export default function DamageCheckTemplateCanvasEditor({
                     </div>
                   )}
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1"><Label className="text-xs">X</Label>
+                    <div className="space-y-1"><Label className="text-xs">{t('templateEditorPage.xLabel')}</Label>
                       <Input type="number" value={Math.round(selectedField.x)} onChange={e => updateSelected({ x: Number(e.target.value) })} data-testid="input-field-x" />
                     </div>
-                    <div className="space-y-1"><Label className="text-xs">Y</Label>
+                    <div className="space-y-1"><Label className="text-xs">{t('templateEditorPage.yLabel')}</Label>
                       <Input type="number" value={Math.round(selectedField.y)} onChange={e => updateSelected({ y: Number(e.target.value) })} data-testid="input-field-y" />
                     </div>
                   </div>
                   {(selectedField.type === 'signature' || selectedField.type === 'line' || selectedField.type === 'box' || selectedField.type === 'diagram') && (
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1"><Label className="text-xs">Width</Label>
+                      <div className="space-y-1"><Label className="text-xs">{t('templateEditorPage.widthLabel')}</Label>
                         <Input type="number" value={selectedField.width ?? 100} onChange={e => updateSelected({ width: Number(e.target.value) })} data-testid="input-field-width" />
                       </div>
-                      <div className="space-y-1"><Label className="text-xs">Height</Label>
+                      <div className="space-y-1"><Label className="text-xs">{t('templateEditorPage.heightLabel')}</Label>
                         <Input type="number" value={selectedField.height ?? 20} onChange={e => updateSelected({ height: Number(e.target.value) })} data-testid="input-field-height" />
                       </div>
                     </div>
                   )}
                   {(selectedField.type === 'text' || selectedField.type === 'dynamic' || selectedField.type === 'inspection' || selectedField.type === 'checkbox') && (
                     <>
-                      <div className="space-y-1"><Label className="text-xs">Font size</Label>
+                      <div className="space-y-1"><Label className="text-xs">{t('templateEditorPage.fontSizeLabel')}</Label>
                         <Input type="number" value={selectedField.fontSize} onChange={e => updateSelected({ fontSize: Number(e.target.value) })} data-testid="input-field-fontsize" />
                       </div>
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs">Bold</Label>
+                        <Label className="text-xs">{t('templateEditorPage.boldLabel')}</Label>
                         <Switch checked={selectedField.isBold} onCheckedChange={(c) => updateSelected({ isBold: c })} data-testid="switch-field-bold" />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs">Text alignment</Label>
+                        <Label className="text-xs">{t('templateEditorPage.textAlignmentLabel')}</Label>
                         <div className="flex gap-1">
                           <Button size="sm" variant={selectedField.textAlign === 'left' ? 'default' : 'outline'} onClick={() => updateSelected({ textAlign: 'left' })}><AlignLeft className="h-4 w-4" /></Button>
                           <Button size="sm" variant={selectedField.textAlign === 'center' ? 'default' : 'outline'} onClick={() => updateSelected({ textAlign: 'center' })}><AlignCenter className="h-4 w-4" /></Button>
@@ -1131,23 +1133,23 @@ export default function DamageCheckTemplateCanvasEditor({
                     </>
                   )}
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs">Lock</Label>
+                    <Label className="text-xs">{t('templateEditorPage.lockLabel')}</Label>
                     <Button size="sm" variant="outline" onClick={() => updateSelected({ locked: !selectedField.locked })} data-testid="button-toggle-lock">
                       {selectedField.locked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
                     </Button>
                   </div>
                   <Separator />
-                  <Button variant="destructive" className="w-full" onClick={deleteSelected} data-testid="button-delete-field"><Trash2 className="h-4 w-4 mr-2" /> Delete field</Button>
+                  <Button variant="destructive" className="w-full" onClick={deleteSelected} data-testid="button-delete-field"><Trash2 className="h-4 w-4 mr-2" /> {t('templateEditorPage.deleteFieldButton')}</Button>
                 </div>
               ) : selectedIds.length > 1 ? (
                 <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground">Batch actions:</p>
-                  <Button variant="outline" className="w-full" onClick={duplicateSelected}>Duplicate all (Ctrl+D)</Button>
-                  <Button variant="outline" className="w-full" onClick={copySelected}>Copy (Ctrl+C)</Button>
-                  <Button variant="destructive" className="w-full" onClick={deleteSelected}><Trash2 className="h-4 w-4 mr-2" /> Delete all</Button>
+                  <p className="text-xs text-muted-foreground">{t('templateEditorPage.batchActionsLabel')}</p>
+                  <Button variant="outline" className="w-full" onClick={duplicateSelected}>{t('templateEditorPage.duplicateAllButton')}</Button>
+                  <Button variant="outline" className="w-full" onClick={copySelected}>{t('templateEditorPage.copyButton')}</Button>
+                  <Button variant="destructive" className="w-full" onClick={deleteSelected}><Trash2 className="h-4 w-4 mr-2" /> {t('templateEditorPage.deleteAllButton')}</Button>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Click a field on the canvas to edit its properties, or use the palette to add a new field.</p>
+                <p className="text-sm text-muted-foreground">{t('templateEditorPage.clickFieldOrPaletteHint')}</p>
               )}
             </CardContent>
           </Card>
@@ -1155,8 +1157,8 @@ export default function DamageCheckTemplateCanvasEditor({
       ) : (
         <Card>
           <CardContent className="p-12 text-center text-muted-foreground">
-            <p className="mb-4">Select a template above, or create a new one to begin.</p>
-            <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-2" /> New template</Button>
+            <p className="mb-4">{t('templateEditorPage.selectTemplateAboveHint')}</p>
+            <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-2" /> {t('templateEditorPage.newTemplateButton')}</Button>
           </CardContent>
         </Card>
       )}
@@ -1164,9 +1166,9 @@ export default function DamageCheckTemplateCanvasEditor({
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title="Delete template?"
-        description="This permanently deletes the template. This action cannot be undone."
-        confirmLabel="Delete"
+        title={t('templateEditorPage.deleteTemplateDialogTitle')}
+        description={t('templateEditorPage.deleteTemplateDialogDescription')}
+        confirmLabel={t('templateEditorPage.deleteButton')}
         variant="danger"
         onConfirm={() => deleteMutation.mutate()}
         isLoading={deleteMutation.isPending}
@@ -1180,6 +1182,7 @@ function FieldRender({ field, zoom, selected, onMouseDown, diagramTemplates }: {
   field: CanvasField; zoom: number; selected: boolean; onMouseDown: (e: React.MouseEvent) => void;
   diagramTemplates?: DiagramTemplateSummary[];
 }) {
+  const { t } = useTranslation("settings");
   const baseStyle: React.CSSProperties = {
     position: 'absolute',
     left: field.x * zoom,
@@ -1203,7 +1206,7 @@ function FieldRender({ field, zoom, selected, onMouseDown, diagramTemplates }: {
   if (field.type === 'signature') {
     return (
       <div onMouseDown={onMouseDown} style={{ ...baseStyle, width: (field.width ?? 200) * zoom, height: (field.height ?? 40) * zoom, borderBottom: '1px solid #111', display: 'flex', alignItems: 'flex-end', paddingBottom: 2 * zoom, fontSize: 9 * zoom, color: '#666' }}>
-        {field.name || 'Signature'}
+        {field.name || t('templateEditorPage.signaturePlaceholder')}
       </div>
     );
   }
@@ -1226,9 +1229,9 @@ function FieldRender({ field, zoom, selected, onMouseDown, diagramTemplates }: {
         style={{ ...baseStyle, width: w, height: h, border: '1px dashed #6b7280', background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
       >
         {imgSrc ? (
-          <img src={imgSrc} alt="Vehicle diagram" style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} draggable={false} />
+          <img src={imgSrc} alt={t('templateEditorPage.vehicleDiagramAlt')} style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} draggable={false} />
         ) : (
-          <span style={{ fontSize: 11 * zoom, color: '#6b7280' }}>Vehicle diagram (no templates uploaded)</span>
+          <span style={{ fontSize: 11 * zoom, color: '#6b7280' }}>{t('templateEditorPage.noDiagramTemplatesUploaded')}</span>
         )}
       </div>
     );

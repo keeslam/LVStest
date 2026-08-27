@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useTranslation, Trans } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -65,6 +66,7 @@ interface BackupManifest {
 }
 
 export default function BackupPage() {
+  const { t } = useTranslation(["settings", "common"]);
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -120,23 +122,23 @@ export default function BackupPage() {
       
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to update settings');
+        throw new Error(error.error || t('backupDialog.updateSettingsFailed'));
       }
-      
+
       return await response.json();
     },
     onSuccess: (data) => {
       invalidateByPrefix('/api/backup-settings');
       toast({
-        title: data.enableAutoBackup ? 'Auto Backup Enabled' : 'Auto Backup Disabled',
-        description: data.enableAutoBackup 
-          ? 'Daily backups will run automatically at 2:00 AM' 
-          : 'Automatic backups have been disabled',
+        title: data.enableAutoBackup ? t('backupDialog.autoBackupEnabledTitle') : t('backupDialog.autoBackupDisabledTitle'),
+        description: data.enableAutoBackup
+          ? t('backupDialog.autoBackupEnabledDescription')
+          : t('backupDialog.autoBackupDisabledDescription'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Update Failed',
+        title: t('backupDialog.updateFailedTitle'),
         description: error.message,
         variant: 'destructive',
       });
@@ -154,7 +156,7 @@ export default function BackupPage() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to run backup');
+        throw new Error(error.error || t('backupDialog.runBackupFailed'));
       }
 
       return await response.json();
@@ -162,13 +164,13 @@ export default function BackupPage() {
     onSuccess: () => {
       invalidateByPrefix('/api/backups');
       toast({
-        title: 'Backup Complete',
-        description: 'A new database and files backup has been created and verified.',
+        title: t('backupDialog.backupCompleteTitle'),
+        description: t('backupDialog.backupCompleteDescription'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Backup Failed',
+        title: t('backupDialog.backupFailedTitle'),
         description: error.message,
         variant: 'destructive',
       });
@@ -178,13 +180,13 @@ export default function BackupPage() {
   if (!user) {
     return <Redirect to="/auth" />;
   }
-  
+
   if (user.role !== UserRole.ADMIN) {
     return (
       <div className="p-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You don't have permission to access this page.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('backupDialog.accessDeniedTitle')}</h1>
+          <p className="text-gray-600">{t('backupPage.accessDeniedMessage')}</p>
         </div>
       </div>
     );
@@ -198,7 +200,7 @@ export default function BackupPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to download data backup');
+        throw new Error(t('backupDialog.downloadDataFailed'));
       }
 
       const blob = await response.blob();
@@ -212,13 +214,13 @@ export default function BackupPage() {
       document.body.removeChild(a);
 
       toast({
-        title: 'Data Downloaded',
-        description: 'Your app data has been downloaded successfully.',
+        title: t('backupDialog.dataDownloadedTitle'),
+        description: t('backupDialog.dataDownloadedDescription'),
       });
     } catch (error) {
       toast({
-        title: 'Download Failed',
-        description: error instanceof Error ? error.message : 'Failed to download data',
+        title: t('backupDialog.downloadFailedTitle'),
+        description: error instanceof Error ? error.message : t('backupDialog.downloadDataFailed'),
         variant: 'destructive',
       });
     } finally {
@@ -234,7 +236,7 @@ export default function BackupPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to download code backup');
+        throw new Error(t('backupDialog.downloadCodeFailed'));
       }
 
       const blob = await response.blob();
@@ -248,13 +250,13 @@ export default function BackupPage() {
       document.body.removeChild(a);
 
       toast({
-        title: 'Code Downloaded',
-        description: 'Your app code has been downloaded successfully.',
+        title: t('backupDialog.codeDownloadedTitle'),
+        description: t('backupDialog.codeDownloadedDescription'),
       });
     } catch (error) {
       toast({
-        title: 'Download Failed',
-        description: error instanceof Error ? error.message : 'Failed to download code',
+        title: t('backupDialog.downloadFailedTitle'),
+        description: error instanceof Error ? error.message : t('backupDialog.downloadCodeFailed'),
         variant: 'destructive',
       });
     } finally {
@@ -277,29 +279,29 @@ export default function BackupPage() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to restore data');
+        throw new Error(error.error || t('backupDialog.restoreDataFailed'));
       }
 
       const result = await response.json();
 
       toast({
-        title: 'Data Restored',
-        description: result.safetyBackupFilename
-          ? `⚠️ Your database has been restored. A backup of your previous data was saved as ${result.safetyBackupFilename}. Please refresh your browser and log in again.`
-          : '⚠️ Your database has been restored. Please refresh your browser and log in again.',
+        title: t('backupDialog.dataRestoredTitle'),
+        description: '⚠️ ' + (result.safetyBackupFilename
+          ? t('backupDialog.dataRestoredWithSafetyDescription', { filename: result.safetyBackupFilename })
+          : t('backupDialog.dataRestoredDescription')),
         duration: 10000,
       });
 
       setSelectedDataFile(null);
-      
+
       // Wait a moment then reload the page
       setTimeout(() => {
         window.location.reload();
       }, 3000);
     } catch (error) {
       toast({
-        title: 'Restore Failed',
-        description: error instanceof Error ? error.message : 'Failed to restore data',
+        title: t('backupDialog.restoreFailedTitle'),
+        description: error instanceof Error ? error.message : t('backupDialog.restoreDataFailed'),
         variant: 'destructive',
       });
     } finally {
@@ -322,22 +324,22 @@ export default function BackupPage() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to restore code');
+        throw new Error(error.error || t('backupDialog.restoreCodeFailed'));
       }
 
       const result = await response.json();
 
       toast({
-        title: 'Code Restored',
-        description: result.message || 'Code files have been restored. The application will restart.',
+        title: t('backupDialog.codeRestoredTitle'),
+        description: result.message || t('backupDialog.codeRestoredDefaultDescription'),
         duration: 10000,
       });
-      
+
       setSelectedCodeFile(null);
     } catch (error) {
       toast({
-        title: 'Restore Failed',
-        description: error instanceof Error ? error.message : 'Failed to restore code',
+        title: t('backupDialog.restoreFailedTitle'),
+        description: error instanceof Error ? error.message : t('backupDialog.restoreCodeFailed'),
         variant: 'destructive',
       });
     } finally {
@@ -353,7 +355,7 @@ export default function BackupPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to download files backup');
+        throw new Error(t('backupDialog.downloadFilesFailed'));
       }
 
       const blob = await response.blob();
@@ -367,13 +369,13 @@ export default function BackupPage() {
       document.body.removeChild(a);
 
       toast({
-        title: 'Files Downloaded',
-        description: 'Your uploaded files have been downloaded successfully.',
+        title: t('backupDialog.filesDownloadedTitle'),
+        description: t('backupDialog.filesDownloadedDescription'),
       });
     } catch (error) {
       toast({
-        title: 'Download Failed',
-        description: error instanceof Error ? error.message : 'Failed to download files',
+        title: t('backupDialog.downloadFailedTitle'),
+        description: error instanceof Error ? error.message : t('backupDialog.downloadFilesFailed'),
         variant: 'destructive',
       });
     } finally {
@@ -396,23 +398,23 @@ export default function BackupPage() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to restore files');
+        throw new Error(error.error || t('backupDialog.restoreFilesFailed'));
       }
 
       const result = await response.json();
 
       toast({
-        title: 'Files Restored',
+        title: t('backupDialog.filesRestoredTitle'),
         description: result.safetyBackupFilename
-          ? `${result.message || 'All uploaded files have been restored successfully.'} A backup of your previous files was saved as ${result.safetyBackupFilename}.`
-          : result.message || 'All uploaded files have been restored successfully.',
+          ? t('backupDialog.filesRestoredWithSafetyDescription', { message: result.message || t('backupDialog.filesRestoredDefaultDescription'), filename: result.safetyBackupFilename })
+          : result.message || t('backupDialog.filesRestoredDefaultDescription'),
       });
 
       setSelectedFilesArchive(null);
     } catch (error) {
       toast({
-        title: 'Restore Failed',
-        description: error instanceof Error ? error.message : 'Failed to restore files',
+        title: t('backupDialog.restoreFailedTitle'),
+        description: error instanceof Error ? error.message : t('backupDialog.restoreFilesFailed'),
         variant: 'destructive',
       });
     } finally {
@@ -427,7 +429,7 @@ export default function BackupPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to download backup');
+        throw new Error(t('backupDialog.downloadBackupFailed'));
       }
 
       const blob = await response.blob();
@@ -441,13 +443,13 @@ export default function BackupPage() {
       document.body.removeChild(a);
 
       toast({
-        title: 'Backup Downloaded',
-        description: `${filename} has been downloaded successfully.`,
+        title: t('backupDialog.backupDownloadedTitle'),
+        description: t('backupDialog.backupDownloadedDescription', { filename }),
       });
     } catch (error) {
       toast({
-        title: 'Download Failed',
-        description: error instanceof Error ? error.message : 'Failed to download backup',
+        title: t('backupDialog.downloadFailedTitle'),
+        description: error instanceof Error ? error.message : t('backupDialog.downloadBackupFailed'),
         variant: 'destructive',
       });
     }
@@ -469,15 +471,15 @@ export default function BackupPage() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to restore backup');
+        throw new Error(error.error || t('backupDialog.restoreBackupFailed'));
       }
 
       const result = await response.json();
-      const base = result.message || `Database restored from ${filename}. Please refresh your browser and log in again.`;
+      const base = result.message || t('backupDialog.databaseRestoredDefaultDescription', { filename });
       toast({
-        title: 'Database Restored',
+        title: t('backupDialog.databaseRestoredTitle'),
         description: result.safetyBackupFilename
-          ? `${base} A backup of your previous data was saved as ${result.safetyBackupFilename}.`
+          ? t('backupDialog.databaseRestoredWithSafetyDescription', { message: base, filename: result.safetyBackupFilename })
           : base,
         duration: 10000,
       });
@@ -489,8 +491,8 @@ export default function BackupPage() {
       }, 3000);
     } catch (error) {
       toast({
-        title: 'Restore Failed',
-        description: error instanceof Error ? error.message : 'Failed to restore backup',
+        title: t('backupDialog.restoreFailedTitle'),
+        description: error instanceof Error ? error.message : t('backupDialog.restoreBackupFailed'),
         variant: 'destructive',
       });
     } finally {
@@ -507,9 +509,9 @@ export default function BackupPage() {
   };
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Never';
+    if (!dateString) return t('backupDialog.never');
     const date = new Date(dateString);
-    if (Number.isNaN(date.getTime())) return 'Unknown date';
+    if (Number.isNaN(date.getTime())) return t('backupDialog.unknownDate');
     return date.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -523,9 +525,9 @@ export default function BackupPage() {
     <div className="p-6 max-w-5xl mx-auto">
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Backup & Recovery</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('backupPage.title')}</h1>
           <p className="text-gray-600 mt-2">
-            Download backups of your app data and source code
+            {t('backupPage.subtitle')}
           </p>
         </div>
 
@@ -538,9 +540,9 @@ export default function BackupPage() {
                   <Calendar className="h-5 w-5 text-purple-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg text-purple-900">Automatic Backup Schedule</CardTitle>
+                  <CardTitle className="text-lg text-purple-900">{t('backupDialog.scheduleTitle')}</CardTitle>
                   <CardDescription className="text-purple-700">
-                    Backups run daily at 2:00 AM to keep your data safe
+                    {t('backupPage.scheduleDescriptionFull')}
                   </CardDescription>
                 </div>
               </div>
@@ -558,7 +560,7 @@ export default function BackupPage() {
                   ) : (
                     <PlayCircle className="h-4 w-4 mr-2" />
                   )}
-                  {runBackupMutation.isPending || status?.isRunning ? 'Backing up...' : 'Back up now'}
+                  {runBackupMutation.isPending || status?.isRunning ? t('backupDialog.backingUp') : t('backupDialog.backUpNow')}
                 </Button>
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -569,7 +571,7 @@ export default function BackupPage() {
                     data-testid="auto-backup-toggle"
                   />
                   <Label htmlFor="auto-backup" className="cursor-pointer font-medium text-purple-900">
-                    {settings?.enableAutoBackup ? 'Enabled' : 'Disabled'}
+                    {settings?.enableAutoBackup ? t('backupDialog.enabled') : t('backupDialog.disabled')}
                   </Label>
                 </div>
               </div>
@@ -580,25 +582,25 @@ export default function BackupPage() {
               <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-purple-100">
                 <Clock className="h-5 w-5 text-purple-600 flex-shrink-0" />
                 <div>
-                  <p className="text-xs text-gray-600">Schedule</p>
-                  <p className="font-semibold text-gray-900">Daily at 2:00 AM</p>
+                  <p className="text-xs text-gray-600">{t('backupDialog.scheduleLabel')}</p>
+                  <p className="font-semibold text-gray-900">{t('backupDialog.dailyAt2am')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-purple-100">
                 <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
                 <div>
-                  <p className="text-xs text-gray-600">Last Backup</p>
+                  <p className="text-xs text-gray-600">{t('backupDialog.lastBackup')}</p>
                   <p className="font-semibold text-gray-900 text-sm">
-                    {status?.lastSuccess ? formatDate(status.lastSuccess) : 'Never'}
+                    {status?.lastSuccess ? formatDate(status.lastSuccess) : t('backupDialog.never')}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-purple-100">
                 <Calendar className="h-5 w-5 text-blue-600 flex-shrink-0" />
                 <div>
-                  <p className="text-xs text-gray-600">Next Backup</p>
+                  <p className="text-xs text-gray-600">{t('backupDialog.nextBackup')}</p>
                   <p className="font-semibold text-gray-900 text-sm">
-                    {settings?.enableAutoBackup ? 'Tonight at 2:00 AM' : 'Disabled'}
+                    {settings?.enableAutoBackup ? t('backupDialog.tonightAt2am') : t('backupDialog.disabled')}
                   </p>
                 </div>
               </div>
@@ -607,7 +609,7 @@ export default function BackupPage() {
               <div className="mt-4 flex items-start gap-2 p-3 bg-red-50 rounded-lg border border-red-200">
                 <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-red-900">Last backup error:</p>
+                  <p className="text-sm font-medium text-red-900">{t('backupDialog.lastBackupError')}</p>
                   <p className="text-xs text-red-700">{status.lastError}</p>
                 </div>
               </div>
@@ -617,7 +619,7 @@ export default function BackupPage() {
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                   <p className="text-sm text-green-800">
-                    <strong>Protection Active:</strong> Your data is automatically backed up every night, ensuring you always have a backup that's max 1 day old.
+                    <strong>{t('backupPage.protectionActiveLabel')}</strong> {t('backupPage.protectionActiveText')}
                   </p>
                 </div>
               </div>
@@ -635,11 +637,11 @@ export default function BackupPage() {
                 )}
                 <div>
                   <p className={`text-xs font-medium ${health.backupPathFromEnv ? 'text-gray-700' : 'text-amber-900'}`}>
-                    Backup location: <span className="font-mono">{health.backupPath}</span>
+                    {t('backupDialog.backupLocation')} <span className="font-mono">{health.backupPath}</span>
                   </p>
                   {!health.backupPathFromEnv && (
                     <p className="text-xs text-amber-700 mt-0.5">
-                      BACKUP_PATH is not set - this is a fallback location that may not survive a redeploy. Set BACKUP_PATH to a persistent, mounted volume.
+                      {t('backupPage.backupPathNotSetFull')}
                     </p>
                   )}
                 </div>
@@ -652,8 +654,8 @@ export default function BackupPage() {
         {(recentDatabaseBackups.length > 0 || recentFilesBackups.length > 0) && (
           <Card>
             <CardHeader>
-              <CardTitle>Recent Automated Backups</CardTitle>
-              <CardDescription>Download backups created by the automatic backup system (saved to: ./backups/)</CardDescription>
+              <CardTitle>{t('backupDialog.recentBackupsTitle')}</CardTitle>
+              <CardDescription>{t('backupPage.recentBackupsDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-6 md:grid-cols-2">
@@ -661,10 +663,10 @@ export default function BackupPage() {
                 <div>
                   <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
                     <Database className="h-4 w-4 mr-2 text-blue-600" />
-                    Database Backups (Last 3)
+                    {t('backupPage.databaseBackupsLast3')}
                   </h3>
                   {recentDatabaseBackups.length === 0 ? (
-                    <p className="text-sm text-gray-500">No automated database backups yet</p>
+                    <p className="text-sm text-gray-500">{t('backupDialog.noAutoDatabaseBackups')}</p>
                   ) : (
                     <div className="space-y-2">
                       {recentDatabaseBackups.map((backup, index) => (
@@ -683,7 +685,7 @@ export default function BackupPage() {
                               data-testid={`download-auto-db-${index}`}
                             >
                               <Download className="h-3 w-3 mr-1" />
-                              Download
+                              {t('backupDialog.download')}
                             </Button>
                             <AlertDialog onOpenChange={(isOpen) => {
                               if (!isOpen) setRestoreConfirmText((prev) => ({ ...prev, [backup.filename]: '' }));
@@ -695,20 +697,23 @@ export default function BackupPage() {
                                   data-testid={`restore-auto-db-${index}`}
                                 >
                                   <RotateCcw className="h-3 w-3 mr-1" />
-                                  Restore
+                                  {t('backupDialog.restore')}
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle className="text-destructive">⚠️ Warning: Restore This Backup</AlertDialogTitle>
+                                  <AlertDialogTitle className="text-destructive">{t('backupPage.restoreWarningTitleFull')}</AlertDialogTitle>
                                   <AlertDialogDescription asChild>
                                     <div className="space-y-3">
                                       <p>
-                                        This will overwrite the <strong>current live database</strong> with the contents of{' '}
-                                        <strong>{backup.filename}</strong>. A fresh backup of the current state is taken and
-                                        verified automatically before the restore runs, but the restore itself cannot be undone.
+                                        <Trans
+                                          i18nKey="backupDialog.restoreWarningBody"
+                                          ns="settings"
+                                          values={{ filename: backup.filename }}
+                                          components={{ 1: <strong /> }}
+                                        />
                                       </p>
-                                      <p>Type the exact filename below to confirm:</p>
+                                      <p>{t('backupDialog.typeFilenameConfirm')}</p>
                                       <Input
                                         value={restoreConfirmText[backup.filename] ?? ''}
                                         onChange={(e) => setRestoreConfirmText((prev) => ({ ...prev, [backup.filename]: e.target.value }))}
@@ -719,7 +724,7 @@ export default function BackupPage() {
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => handleRestoreAutomatedDatabaseBackup(backup.filename)}
                                     disabled={
@@ -729,7 +734,7 @@ export default function BackupPage() {
                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                     data-testid={`restore-auto-db-confirm-button-${index}`}
                                   >
-                                    {restoringAutomatedBackup === backup.filename ? 'Restoring...' : 'Yes, Restore This Backup'}
+                                    {restoringAutomatedBackup === backup.filename ? t('backupDialog.restoring') : t('backupDialog.yesRestoreThisBackup')}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -745,10 +750,10 @@ export default function BackupPage() {
                 <div>
                   <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
                     <FileText className="h-4 w-4 mr-2 text-orange-600" />
-                    Files Backups (Last 3)
+                    {t('backupPage.filesBackupsLast3')}
                   </h3>
                   {recentFilesBackups.length === 0 ? (
-                    <p className="text-sm text-gray-500">No automated files backups yet</p>
+                    <p className="text-sm text-gray-500">{t('backupDialog.noAutoFilesBackups')}</p>
                   ) : (
                     <div className="space-y-2">
                       {recentFilesBackups.map((backup, index) => (
@@ -757,7 +762,7 @@ export default function BackupPage() {
                             <p className="text-sm font-medium text-gray-900 truncate">{backup.filename}</p>
                             <p className="text-xs text-gray-500">
                               {formatDate(backup.timestamp)} • {formatFileSize(backup.size)}
-                              {backup.metadata?.fileCount && ` • ${backup.metadata.fileCount} files`}
+                              {backup.metadata?.fileCount && ` • ${t('backupDialog.filesCount', { count: backup.metadata.fileCount })}`}
                             </p>
                           </div>
                           <Button
@@ -767,7 +772,7 @@ export default function BackupPage() {
                             data-testid={`download-auto-files-${index}`}
                           >
                             <Download className="h-3 w-3 mr-1" />
-                            Download
+                            {t('backupDialog.download')}
                           </Button>
                         </div>
                       ))}
@@ -781,7 +786,7 @@ export default function BackupPage() {
 
         {/* Manual Download Buttons */}
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Manual Backup & Restore</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('backupPage.manualSectionTitle')}</h2>
           <div className="grid gap-6 md:grid-cols-3">
             {/* App Data Backup */}
             <Card className="border-2 hover:border-blue-300 transition-colors">
@@ -791,46 +796,46 @@ export default function BackupPage() {
                     <Database className="h-8 w-8 text-blue-600" />
                   </div>
                 </div>
-                <CardTitle className="text-xl">App Data</CardTitle>
+                <CardTitle className="text-xl">{t('backupPage.appDataCardTitle')}</CardTitle>
                 <CardDescription>
-                  Download all your business data
+                  {t('backupPage.appDataCardDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2 text-sm text-gray-600">
                   <div className="flex items-start">
                     <CheckCircle2 className="h-4 w-4 mr-2 mt-0.5 text-green-600 flex-shrink-0" />
-                    <span>All vehicles, customers & reservations</span>
+                    <span>{t('backupPage.appDataBullet1')}</span>
                   </div>
                   <div className="flex items-start">
                     <CheckCircle2 className="h-4 w-4 mr-2 mt-0.5 text-green-600 flex-shrink-0" />
-                    <span>Expenses, documents & maintenance records</span>
+                    <span>{t('backupPage.appDataBullet2')}</span>
                   </div>
                   <div className="flex items-start">
                     <CheckCircle2 className="h-4 w-4 mr-2 mt-0.5 text-green-600 flex-shrink-0" />
-                    <span>User accounts & settings</span>
+                    <span>{t('backupPage.appDataBullet3')}</span>
                   </div>
                   <div className="flex items-start">
                     <CheckCircle2 className="h-4 w-4 mr-2 mt-0.5 text-green-600 flex-shrink-0" />
-                    <span>Templates & notifications</span>
+                    <span>{t('backupPage.appDataBullet4')}</span>
                   </div>
                 </div>
-                
-                <Button 
-                  className="w-full" 
+
+                <Button
+                  className="w-full"
                   size="lg"
                   onClick={handleDownloadData}
                   disabled={downloadingData}
                   data-testid="download-data-button"
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  {downloadingData ? 'Downloading...' : 'Download App Data'}
+                  {downloadingData ? t('backupDialog.downloading') : t('backupPage.downloadAppDataButton')}
                 </Button>
 
                 <div className="border-t pt-4">
                   <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
                     <RotateCcw className="h-4 w-4 mr-2" />
-                    Restore Data
+                    {t('backupPage.restoreDataLabel')}
                   </p>
                   <div className="space-y-2">
                     <Input
@@ -842,44 +847,44 @@ export default function BackupPage() {
                       data-testid="data-file-input"
                     />
                     {selectedDataFile && (
-                      <p className="text-xs text-gray-600">Selected: {selectedDataFile.name}</p>
+                      <p className="text-xs text-gray-600">{t('backupPage.selectedFileLabel', { filename: selectedDataFile.name })}</p>
                     )}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button 
+                        <Button
                           variant="outline"
-                          className="w-full" 
+                          className="w-full"
                           disabled={!selectedDataFile || restoringData}
                           data-testid="restore-data-button"
                         >
                           <Upload className="h-4 w-4 mr-2" />
-                          {restoringData ? 'Restoring...' : 'Restore Data'}
+                          {restoringData ? t('backupDialog.restoring') : t('backupPage.restoreDataButton')}
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle className="text-destructive">⚠️ Warning: Data Restore</AlertDialogTitle>
+                          <AlertDialogTitle className="text-destructive">{t('backupPage.dataRestoreWarningTitleFull')}</AlertDialogTitle>
                           <AlertDialogDescription asChild>
                             <div>
-                              <p>This will replace ALL your current data with the backup file. This action cannot be undone.</p>
-                              <p className="mt-4"><strong>What will be replaced:</strong></p>
+                              <p>{t('backupPage.dataRestoreWarningIntro')}</p>
+                              <p className="mt-4"><strong>{t('backupPage.whatWillBeReplacedLabel')}</strong></p>
                               <ul className="list-disc list-inside mt-2 space-y-1">
-                                <li>All vehicles, customers & reservations</li>
-                                <li>All expenses & documents</li>
-                                <li>All user accounts & settings</li>
-                                <li>All templates & notifications</li>
+                                <li>{t('backupPage.dataReplaceBullet1')}</li>
+                                <li>{t('backupPage.dataReplaceBullet2')}</li>
+                                <li>{t('backupPage.dataReplaceBullet3')}</li>
+                                <li>{t('backupPage.dataReplaceBullet4')}</li>
                               </ul>
-                              <p className="mt-4">Your session will be reset and you'll need to refresh and log in again.</p>
+                              <p className="mt-4">{t('backupPage.sessionResetNote')}</p>
                             </div>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction 
+                          <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
+                          <AlertDialogAction
                             onClick={handleRestoreData}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
-                            Yes, Restore Data
+                            {t('backupDialog.yesRestoreData')}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -888,7 +893,7 @@ export default function BackupPage() {
                 </div>
 
                 <p className="text-xs text-gray-500 text-center">
-                  Upload .sql file to restore
+                  {t('backupPage.uploadSqlHint')}
                 </p>
               </CardContent>
             </Card>
@@ -901,46 +906,46 @@ export default function BackupPage() {
                     <FileText className="h-8 w-8 text-orange-600" />
                   </div>
                 </div>
-                <CardTitle className="text-xl">Uploaded Files</CardTitle>
+                <CardTitle className="text-xl">{t('backupPage.uploadedFilesCardTitle')}</CardTitle>
                 <CardDescription>
-                  Download all documents & contracts
+                  {t('backupPage.uploadedFilesCardDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2 text-sm text-gray-600">
                   <div className="flex items-start">
                     <CheckCircle2 className="h-4 w-4 mr-2 mt-0.5 text-green-600 flex-shrink-0" />
-                    <span>All uploaded documents</span>
+                    <span>{t('backupPage.filesBullet1')}</span>
                   </div>
                   <div className="flex items-start">
                     <CheckCircle2 className="h-4 w-4 mr-2 mt-0.5 text-green-600 flex-shrink-0" />
-                    <span>Driver licenses & contracts</span>
+                    <span>{t('backupPage.filesBullet2')}</span>
                   </div>
                   <div className="flex items-start">
                     <CheckCircle2 className="h-4 w-4 mr-2 mt-0.5 text-green-600 flex-shrink-0" />
-                    <span>Expense receipts & photos</span>
+                    <span>{t('backupPage.filesBullet3')}</span>
                   </div>
                   <div className="flex items-start">
                     <CheckCircle2 className="h-4 w-4 mr-2 mt-0.5 text-green-600 flex-shrink-0" />
-                    <span>PDF template backgrounds</span>
+                    <span>{t('backupPage.filesBullet4')}</span>
                   </div>
                 </div>
-                
-                <Button 
-                  className="w-full" 
+
+                <Button
+                  className="w-full"
                   size="lg"
                   onClick={handleDownloadFiles}
                   disabled={downloadingFiles}
                   data-testid="download-files-button"
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  {downloadingFiles ? 'Downloading...' : 'Download Uploaded Files'}
+                  {downloadingFiles ? t('backupDialog.downloading') : t('backupPage.downloadUploadedFilesButton')}
                 </Button>
 
                 <div className="border-t pt-4">
                   <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
                     <RotateCcw className="h-4 w-4 mr-2" />
-                    Restore Files
+                    {t('backupPage.restoreFilesLabel')}
                   </p>
                   <div className="space-y-2">
                     <Input
@@ -952,44 +957,44 @@ export default function BackupPage() {
                       data-testid="files-file-input"
                     />
                     {selectedFilesArchive && (
-                      <p className="text-xs text-gray-600">Selected: {selectedFilesArchive.name}</p>
+                      <p className="text-xs text-gray-600">{t('backupPage.selectedFileLabel', { filename: selectedFilesArchive.name })}</p>
                     )}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button 
+                        <Button
                           variant="outline"
-                          className="w-full" 
+                          className="w-full"
                           disabled={!selectedFilesArchive || restoringFiles}
                           data-testid="restore-files-button"
                         >
                           <Upload className="h-4 w-4 mr-2" />
-                          {restoringFiles ? 'Restoring...' : 'Restore Files'}
+                          {restoringFiles ? t('backupDialog.restoring') : t('backupPage.restoreFilesButton')}
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle className="text-destructive">⚠️ Warning: Files Restore</AlertDialogTitle>
+                          <AlertDialogTitle className="text-destructive">{t('backupPage.filesRestoreWarningTitleFull')}</AlertDialogTitle>
                           <AlertDialogDescription asChild>
                             <div>
-                              <p>This will replace ALL your uploaded files with the backup archive.</p>
-                              <p className="mt-4"><strong>What will be replaced:</strong></p>
+                              <p>{t('backupPage.filesRestoreWarningIntro')}</p>
+                              <p className="mt-4"><strong>{t('backupPage.whatWillBeReplacedLabel')}</strong></p>
                               <ul className="list-disc list-inside mt-2 space-y-1">
-                                <li>All uploaded documents</li>
-                                <li>Driver licenses & contracts</li>
-                                <li>Expense receipts & photos</li>
-                                <li>PDF template backgrounds</li>
+                                <li>{t('backupPage.filesReplaceBullet1')}</li>
+                                <li>{t('backupPage.filesReplaceBullet2')}</li>
+                                <li>{t('backupPage.filesReplaceBullet3')}</li>
+                                <li>{t('backupPage.filesReplaceBullet4')}</li>
                               </ul>
-                              <p className="mt-4"><strong>Note:</strong> Your database and code will NOT be affected. Only uploaded files will be restored.</p>
+                              <p className="mt-4"><strong>{t('backupPage.noteLabel')}</strong> {t('backupPage.filesRestoreNote')}</p>
                             </div>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction 
+                          <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
+                          <AlertDialogAction
                             onClick={handleRestoreFiles}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
-                            Yes, Restore Files
+                            {t('backupDialog.yesRestoreFiles')}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -998,7 +1003,7 @@ export default function BackupPage() {
                 </div>
 
                 <p className="text-xs text-gray-500 text-center">
-                  Upload .tar.gz file to restore
+                  {t('backupPage.uploadTarGzHint')}
                 </p>
               </CardContent>
             </Card>
@@ -1011,46 +1016,46 @@ export default function BackupPage() {
                     <Code className="h-8 w-8 text-green-600" />
                   </div>
                 </div>
-                <CardTitle className="text-xl">App Code</CardTitle>
+                <CardTitle className="text-xl">{t('backupPage.appCodeCardTitle')}</CardTitle>
                 <CardDescription>
-                  Download all your source code files
+                  {t('backupPage.appCodeCardDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2 text-sm text-gray-600">
                   <div className="flex items-start">
                     <CheckCircle2 className="h-4 w-4 mr-2 mt-0.5 text-green-600 flex-shrink-0" />
-                    <span>Complete source code</span>
+                    <span>{t('backupPage.codeBullet1')}</span>
                   </div>
                   <div className="flex items-start">
                     <CheckCircle2 className="h-4 w-4 mr-2 mt-0.5 text-green-600 flex-shrink-0" />
-                    <span>Configuration files</span>
+                    <span>{t('backupPage.codeBullet2')}</span>
                   </div>
                   <div className="flex items-start">
                     <CheckCircle2 className="h-4 w-4 mr-2 mt-0.5 text-green-600 flex-shrink-0" />
-                    <span>Package dependencies list</span>
+                    <span>{t('backupPage.codeBullet3')}</span>
                   </div>
                   <div className="flex items-start">
                     <CheckCircle2 className="h-4 w-4 mr-2 mt-0.5 text-green-600 flex-shrink-0" />
-                    <span>Ready to restore & run</span>
+                    <span>{t('backupPage.codeBullet4')}</span>
                   </div>
                 </div>
-                
-                <Button 
-                  className="w-full" 
+
+                <Button
+                  className="w-full"
                   size="lg"
                   onClick={handleDownloadCode}
                   disabled={downloadingCode}
                   data-testid="download-code-button"
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  {downloadingCode ? 'Downloading...' : 'Download App Code'}
+                  {downloadingCode ? t('backupDialog.downloading') : t('backupPage.downloadAppCodeButton')}
                 </Button>
 
                 <div className="border-t pt-4">
                   <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
                     <RotateCcw className="h-4 w-4 mr-2" />
-                    Restore Code
+                    {t('backupPage.restoreCodeLabel')}
                   </p>
                   <div className="space-y-2">
                     <Input
@@ -1062,43 +1067,43 @@ export default function BackupPage() {
                       data-testid="code-file-input"
                     />
                     {selectedCodeFile && (
-                      <p className="text-xs text-gray-600">Selected: {selectedCodeFile.name}</p>
+                      <p className="text-xs text-gray-600">{t('backupPage.selectedFileLabel', { filename: selectedCodeFile.name })}</p>
                     )}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button 
+                        <Button
                           variant="outline"
-                          className="w-full" 
+                          className="w-full"
                           disabled={!selectedCodeFile || restoringCode}
                           data-testid="restore-code-button"
                         >
                           <Upload className="h-4 w-4 mr-2" />
-                          {restoringCode ? 'Restoring...' : 'Restore Code'}
+                          {restoringCode ? t('backupDialog.restoring') : t('backupPage.restoreCodeButton')}
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle className="text-destructive">⚠️ Warning: Code Restore</AlertDialogTitle>
+                          <AlertDialogTitle className="text-destructive">{t('backupPage.codeRestoreWarningTitleFull')}</AlertDialogTitle>
                           <AlertDialogDescription asChild>
                             <div>
-                              <p>This will replace ALL your application source code with the backup archive. The application will restart automatically.</p>
-                              <p className="mt-4"><strong>What will be replaced:</strong></p>
+                              <p>{t('backupPage.codeRestoreWarningIntro')}</p>
+                              <p className="mt-4"><strong>{t('backupPage.whatWillBeReplacedLabel')}</strong></p>
                               <ul className="list-disc list-inside mt-2 space-y-1">
-                                <li>All source code files</li>
-                                <li>Configuration files</li>
-                                <li>Package dependencies</li>
+                                <li>{t('backupPage.codeReplaceBullet1')}</li>
+                                <li>{t('backupPage.codeReplaceBullet2')}</li>
+                                <li>{t('backupPage.codeReplaceBullet3')}</li>
                               </ul>
-                              <p className="mt-4"><strong>Note:</strong> Your database and uploaded files will NOT be affected. Only code files will be restored.</p>
+                              <p className="mt-4"><strong>{t('backupPage.noteLabel')}</strong> {t('backupPage.codeRestoreNote')}</p>
                             </div>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction 
+                          <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
+                          <AlertDialogAction
                             onClick={handleRestoreCode}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
-                            Yes, Restore Code
+                            {t('backupDialog.yesRestoreCode')}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -1107,7 +1112,7 @@ export default function BackupPage() {
                 </div>
 
                 <p className="text-xs text-gray-500 text-center">
-                  Upload .tar.gz file to restore
+                  {t('backupPage.uploadTarGzHint')}
                 </p>
               </CardContent>
             </Card>
@@ -1117,22 +1122,22 @@ export default function BackupPage() {
         {/* Info Section */}
         <Card className="bg-blue-50 border-blue-200">
           <CardHeader>
-            <CardTitle className="text-lg text-blue-900">Recovery Instructions</CardTitle>
+            <CardTitle className="text-lg text-blue-900">{t('backupDialog.recoveryInstructionsTitle')}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-blue-800 space-y-2">
-            <p><strong>To recover your app data:</strong></p>
+            <p><strong>{t('backupPage.recoveryDataStepsLabel')}</strong></p>
             <ol className="list-decimal list-inside space-y-1 ml-2">
-              <li>Import the SQL file into your PostgreSQL database</li>
-              <li>Restart your application</li>
-              <li>Login with your admin account</li>
+              <li>{t('backupPage.recoveryDataStep1')}</li>
+              <li>{t('backupPage.recoveryDataStep2')}</li>
+              <li>{t('backupPage.recoveryDataStep3')}</li>
             </ol>
-            
-            <p className="mt-4"><strong>To recover your app code:</strong></p>
+
+            <p className="mt-4"><strong>{t('backupPage.recoveryCodeStepsLabel')}</strong></p>
             <ol className="list-decimal list-inside space-y-1 ml-2">
-              <li>Extract the .tar.gz archive</li>
-              <li>Run "npm install" to install dependencies</li>
-              <li>Configure your database connection</li>
-              <li>Run "npm run dev" to start the application</li>
+              <li>{t('backupPage.recoveryCodeStep1')}</li>
+              <li>{t('backupPage.recoveryCodeStep2')}</li>
+              <li>{t('backupPage.recoveryCodeStep3')}</li>
+              <li>{t('backupPage.recoveryCodeStep4')}</li>
             </ol>
           </CardContent>
         </Card>

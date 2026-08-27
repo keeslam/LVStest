@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,6 +19,7 @@ interface ExpenseAddDialogProps {
 }
 
 export function ExpenseAddDialog({ vehicleId, children, onSuccess }: ExpenseAddDialogProps) {
+  const { t } = useTranslation("expenses");
   const [open, setOpen] = useState(false);
 
   const handleSuccess = () => {
@@ -31,7 +33,7 @@ export function ExpenseAddDialog({ vehicleId, children, onSuccess }: ExpenseAddD
   const trigger = children || (
     <Button size="sm" data-testid={`button-add-expense${vehicleId ? `-${vehicleId}` : ''}`}>
       <Plus className="mr-2 h-4 w-4" />
-      Add Expense
+      {t('addDialog.addExpense')}
     </Button>
   );
 
@@ -42,9 +44,9 @@ export function ExpenseAddDialog({ vehicleId, children, onSuccess }: ExpenseAddD
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Expense</DialogTitle>
+          <DialogTitle>{t('addDialog.title')}</DialogTitle>
           <DialogDescription>
-            Record a new expense for your vehicle fleet
+            {t('addDialog.description')}
           </DialogDescription>
         </DialogHeader>
         <div className="mt-4">

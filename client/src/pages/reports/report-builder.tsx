@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ interface SavedReport {
 }
 
 export default function ReportBuilder() {
+  const { t } = useTranslation("reports");
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'builder' | 'saved'>('builder');
   
@@ -80,14 +82,14 @@ export default function ReportBuilder() {
       setReportResults(data);
       setShowResultsDialog(true);
       toast({
-        title: "Report executed successfully",
-        description: `Found ${data.length} results`,
+        title: t('reportBuilderPage.toasts.reportExecutedTitle'),
+        description: t('reportBuilderPage.toasts.reportExecutedDescription', { count: data.length }),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Error executing report",
-        description: error.message || "Failed to run report",
+        title: t('reportBuilderPage.toasts.executeErrorTitle'),
+        description: error.message || t('reportBuilderPage.toasts.executeErrorDescription'),
         variant: "destructive",
       });
     },
@@ -103,14 +105,14 @@ export default function ReportBuilder() {
       setReportName('');
       setReportDescription('');
       toast({
-        title: "Report saved successfully",
-        description: "Your report configuration has been saved",
+        title: t('reportBuilderPage.toasts.reportSavedTitle'),
+        description: t('reportBuilderPage.toasts.reportSavedDescription'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Error saving report",
-        description: error.message || "Failed to save report",
+        title: t('reportBuilderPage.toasts.saveErrorTitle'),
+        description: error.message || t('reportBuilderPage.toasts.saveErrorDescription'),
         variant: "destructive",
       });
     },
@@ -123,8 +125,8 @@ export default function ReportBuilder() {
     onSuccess: () => {
       invalidateByPrefix('/api/reports/saved');
       toast({
-        title: "Report deleted",
-        description: "Report has been removed",
+        title: t('reportBuilderPage.toasts.reportDeletedTitle'),
+        description: t('reportBuilderPage.toasts.reportDeletedDescription'),
       });
     },
   });
@@ -142,15 +144,15 @@ export default function ReportBuilder() {
   const handleRunReport = () => {
     if (columns.length === 0) {
       toast({
-        title: "No columns selected",
-        description: "Please add at least one column to your report",
+        title: t('reportBuilderPage.toasts.noColumnsTitle'),
+        description: t('reportBuilderPage.toasts.noColumnsDescription'),
         variant: "destructive",
       });
       return;
     }
 
     const config: ReportConfiguration = {
-      name: reportName || 'Untitled Report',
+      name: reportName || t('reportBuilderPage.untitledReport'),
       description: reportDescription,
       dataSources: selectedDataSources,
       columns,
@@ -164,8 +166,8 @@ export default function ReportBuilder() {
   const handleSaveReport = () => {
     if (!reportName) {
       toast({
-        title: "Report name required",
-        description: "Please enter a name for your report",
+        title: t('reportBuilderPage.toasts.reportNameRequiredTitle'),
+        description: t('reportBuilderPage.toasts.reportNameRequiredDescription'),
         variant: "destructive",
       });
       return;
@@ -187,8 +189,8 @@ export default function ReportBuilder() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Custom Report Builder</h1>
-          <p className="text-muted-foreground">Create custom reports from your data</p>
+          <h1 className="text-3xl font-bold">{t('reportBuilderPage.pageTitle')}</h1>
+          <p className="text-muted-foreground">{t('reportBuilderPage.pageDescription')}</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -197,7 +199,7 @@ export default function ReportBuilder() {
             data-testid="button-builder-tab"
           >
             <Settings className="h-4 w-4 mr-2" />
-            Builder
+            {t('reportBuilderPage.builderTabButton')}
           </Button>
           <Button
             variant={activeTab === 'saved' ? 'default' : 'outline'}
@@ -205,7 +207,7 @@ export default function ReportBuilder() {
             data-testid="button-saved-tab"
           >
             <BarChart3 className="h-4 w-4 mr-2" />
-            Saved Reports
+            {t('reportBuilderPage.savedReportsTabButton')}
           </Button>
         </div>
       </div>
@@ -215,8 +217,8 @@ export default function ReportBuilder() {
           <div className="col-span-3">
             <Card>
               <CardHeader>
-                <CardTitle>Data Sources</CardTitle>
-                <CardDescription>Select tables to query</CardDescription>
+                <CardTitle>{t('reportBuilderPage.dataSourcesTitle')}</CardTitle>
+                <CardDescription>{t('reportBuilderPage.dataSourcesDescription')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {DATA_SOURCES.map(source => (
@@ -255,7 +257,7 @@ export default function ReportBuilder() {
                         ))}
                         {source.fields.length > 5 && (
                           <span className="text-xs text-muted-foreground">
-                            +{source.fields.length - 5} more...
+                            {t('reportBuilderPage.moreFieldsCount', { count: source.fields.length - 5 })}
                           </span>
                         )}
                       </div>
@@ -271,8 +273,8 @@ export default function ReportBuilder() {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <div>
-                    <CardTitle>Report Configuration</CardTitle>
-                    <CardDescription>Build your custom report</CardDescription>
+                    <CardTitle>{t('reportBuilderPage.reportConfigTitle')}</CardTitle>
+                    <CardDescription>{t('reportBuilderPage.reportConfigDescription')}</CardDescription>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -282,7 +284,7 @@ export default function ReportBuilder() {
                       data-testid="button-save-report"
                     >
                       <Save className="h-4 w-4 mr-2" />
-                      Save
+                      {t('reportBuilderPage.saveButton')}
                     </Button>
                     <Button
                       onClick={handleRunReport}
@@ -290,7 +292,7 @@ export default function ReportBuilder() {
                       data-testid="button-run-report"
                     >
                       <Play className="h-4 w-4 mr-2" />
-                      {runReportMutation.isPending ? 'Running...' : 'Run Report'}
+                      {runReportMutation.isPending ? t('reportBuilderPage.runningButton') : t('reportBuilderPage.runReportButton')}
                     </Button>
                   </div>
                 </div>
@@ -298,12 +300,12 @@ export default function ReportBuilder() {
               <CardContent className="space-y-6">
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <Label>Columns ({columns.length})</Label>
+                    <Label>{t('reportBuilderPage.columnsLabelWithCount', { count: columns.length })}</Label>
                   </div>
                   <div className="border rounded-lg p-4 space-y-2 min-h-[100px]">
                     {columns.length === 0 ? (
                       <p className="text-muted-foreground text-sm text-center py-4">
-                        Click on fields from data sources to add columns
+                        {t('reportBuilderPage.clickFieldsHint')}
                       </p>
                     ) : (
                       columns.map((col, idx) => (
@@ -349,37 +351,37 @@ export default function ReportBuilder() {
       <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
         <DialogContent className="max-h-[90vh] overflow-y-auto" data-testid="dialog-save-report">
           <DialogHeader>
-            <DialogTitle>Save Report</DialogTitle>
-            <DialogDescription>Give your report a name and description</DialogDescription>
+            <DialogTitle>{t('reportBuilderPage.saveReportDialogTitle')}</DialogTitle>
+            <DialogDescription>{t('reportBuilderPage.saveReportDialogDescription')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="report-name">Report Name *</Label>
+              <Label htmlFor="report-name">{t('reportBuilderPage.reportNameLabel')}</Label>
               <Input
                 id="report-name"
                 value={reportName}
                 onChange={(e) => setReportName(e.target.value)}
-                placeholder="e.g., Monthly Revenue Report"
+                placeholder={t('reportBuilderPage.reportNamePlaceholder')}
                 data-testid="input-report-name"
               />
             </div>
             <div>
-              <Label htmlFor="report-description">Description</Label>
+              <Label htmlFor="report-description">{t('reportBuilderPage.descriptionLabel')}</Label>
               <Textarea
                 id="report-description"
                 value={reportDescription}
                 onChange={(e) => setReportDescription(e.target.value)}
-                placeholder="Describe what this report shows..."
+                placeholder={t('reportBuilderPage.describeReportPlaceholder')}
                 data-testid="textarea-report-description"
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSaveDialog(false)} data-testid="button-cancel-save">
-              Cancel
+              {t('reportBuilderPage.cancelButton')}
             </Button>
             <Button onClick={handleSaveReport} disabled={!reportName || saveReportMutation.isPending} data-testid="button-confirm-save">
-              {saveReportMutation.isPending ? 'Saving...' : 'Save Report'}
+              {saveReportMutation.isPending ? t('reportBuilderPage.savingButton') : t('reportBuilderPage.saveReportButton')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -406,6 +408,7 @@ function FilterBuilder({
   onAddFilter: (filter: ReportFilter) => void;
   onRemoveFilter: (index: number) => void;
 }) {
+  const { t } = useTranslation("reports");
   const [showAddFilter, setShowAddFilter] = useState(false);
   const [newFilter, setNewFilter] = useState<Partial<ReportFilter>>({});
 
@@ -428,7 +431,7 @@ function FilterBuilder({
   return (
     <div>
       <div className="flex justify-between items-center mb-2">
-        <Label>Filters ({filters.length})</Label>
+        <Label>{t('reportBuilderPage.filtersLabelWithCount', { count: filters.length })}</Label>
         <Button
           variant="outline"
           size="sm"
@@ -436,15 +439,15 @@ function FilterBuilder({
           data-testid="button-add-filter"
         >
           <Plus className="h-4 w-4 mr-1" />
-          Add Filter
+          {t('reportBuilderPage.addFilterButton')}
         </Button>
       </div>
-      
+
       {showAddFilter && (
         <Card className="p-4 mb-4">
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label>Field</Label>
+              <Label>{t('reportBuilderPage.fieldLabel')}</Label>
               <Select
                 value={newFilter.field}
                 onValueChange={(value) => {
@@ -455,7 +458,7 @@ function FilterBuilder({
                 }}
               >
                 <SelectTrigger data-testid="select-filter-field">
-                  <SelectValue placeholder="Select field" />
+                  <SelectValue placeholder={t('reportBuilderPage.selectFieldPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {availableFields.map(field => (
@@ -467,14 +470,14 @@ function FilterBuilder({
               </Select>
             </div>
             <div>
-              <Label>Operator</Label>
+              <Label>{t('reportBuilderPage.operatorLabel')}</Label>
               <Select
                 value={newFilter.operator}
                 onValueChange={(value) => setNewFilter({ ...newFilter, operator: value as FilterOperator })}
                 disabled={!selectedField}
               >
                 <SelectTrigger data-testid="select-filter-operator">
-                  <SelectValue placeholder="Select operator" />
+                  <SelectValue placeholder={t('reportBuilderPage.selectOperatorPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {selectedField?.operators.map(op => (
@@ -486,21 +489,21 @@ function FilterBuilder({
               </Select>
             </div>
             <div>
-              <Label>Value</Label>
+              <Label>{t('reportBuilderPage.valueLabel')}</Label>
               <Input
                 value={newFilter.value?.toString() || ''}
                 onChange={(e) => setNewFilter({ ...newFilter, value: e.target.value })}
-                placeholder="Enter value"
+                placeholder={t('reportBuilderPage.enterValuePlaceholder')}
                 data-testid="input-filter-value"
               />
             </div>
           </div>
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" size="sm" onClick={() => setShowAddFilter(false)} data-testid="button-cancel-filter">
-              Cancel
+              {t('reportBuilderPage.cancelButton')}
             </Button>
             <Button size="sm" onClick={handleAddFilter} data-testid="button-confirm-filter">
-              Add Filter
+              {t('reportBuilderPage.addFilterButton')}
             </Button>
           </div>
         </Card>
@@ -509,7 +512,7 @@ function FilterBuilder({
       <div className="border rounded-lg p-4 space-y-2 min-h-[80px]">
         {filters.length === 0 ? (
           <p className="text-muted-foreground text-sm text-center py-4">
-            No filters applied
+            {t('reportBuilderPage.noFiltersApplied')}
           </p>
         ) : (
           filters.map((filter, idx) => (
@@ -548,8 +551,10 @@ function SavedReportsTab({
   onRunReport: (report: SavedReport) => void;
   onDeleteReport: (id: number) => void;
 }) {
+  const { t } = useTranslation("reports");
+
   if (loading) {
-    return <div className="text-center py-8 text-muted-foreground">Loading saved reports...</div>;
+    return <div className="text-center py-8 text-muted-foreground">{t('reportBuilderPage.loadingSavedReports')}</div>;
   }
 
   if (reports.length === 0) {
@@ -558,8 +563,8 @@ function SavedReportsTab({
         <CardContent className="py-12">
           <div className="text-center text-muted-foreground">
             <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No saved reports yet</p>
-            <p className="text-sm">Create and save a report to see it here</p>
+            <p>{t('reportBuilderPage.noSavedReportsTitle')}</p>
+            <p className="text-sm">{t('reportBuilderPage.noSavedReportsDescription')}</p>
           </div>
         </CardContent>
       </Card>
@@ -578,8 +583,8 @@ function SavedReportsTab({
                   <CardDescription>{report.description}</CardDescription>
                 )}
                 <div className="flex gap-2 mt-2">
-                  <Badge variant="outline">{report.configuration.columns.length} columns</Badge>
-                  <Badge variant="outline">{report.configuration.filters.length} filters</Badge>
+                  <Badge variant="outline">{t('reportBuilderPage.columnsCount', { count: report.configuration.columns.length })}</Badge>
+                  <Badge variant="outline">{t('reportBuilderPage.filtersCount', { count: report.configuration.filters.length })}</Badge>
                   <Badge variant="outline">{report.configuration.dataSources.join(', ')}</Badge>
                 </div>
               </div>
@@ -592,7 +597,7 @@ function SavedReportsTab({
                   data-testid={`button-load-report-${report.id}`}
                 >
                   <Settings className="h-4 w-4 mr-1" />
-                  {loadingReport === report.id ? 'Loading...' : 'Edit'}
+                  {loadingReport === report.id ? t('reportBuilderPage.loadingButton') : t('reportBuilderPage.editButton')}
                 </Button>
                 <Button
                   size="sm"
@@ -600,7 +605,7 @@ function SavedReportsTab({
                   data-testid={`button-run-saved-${report.id}`}
                 >
                   <Play className="h-4 w-4 mr-1" />
-                  Run
+                  {t('reportBuilderPage.runButton')}
                 </Button>
                 <Button
                   variant="destructive"
@@ -630,12 +635,13 @@ function ReportResultsDialog({
   results: any[];
   columns: ReportColumn[];
 }) {
+  const { t } = useTranslation("reports");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[80vh] overflow-auto" data-testid="dialog-report-results">
         <DialogHeader>
-          <DialogTitle>Report Results</DialogTitle>
-          <DialogDescription>Found {results.length} results</DialogDescription>
+          <DialogTitle>{t('reportBuilderPage.reportResultsTitle')}</DialogTitle>
+          <DialogDescription>{t('reportBuilderPage.foundResultsCount', { count: results.length })}</DialogDescription>
         </DialogHeader>
         <div className="overflow-x-auto">
           <Table>
@@ -650,7 +656,7 @@ function ReportResultsDialog({
               {results.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="text-center text-muted-foreground">
-                    No results found
+                    {t('reportBuilderPage.noResultsFound')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -671,7 +677,7 @@ function ReportResultsDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-close-results">
-            Close
+            {t('reportBuilderPage.closeButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

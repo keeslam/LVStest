@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -74,6 +75,7 @@ const EMAIL_PURPOSES = [
 ] as const;
 
 export default function Settings() {
+  const { t } = useTranslation("settings");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("business");
@@ -370,7 +372,7 @@ export default function Settings() {
     },
     onSuccess: () => {
       invalidateByPrefix('/api/app-settings');
-      toast({ title: "Success", description: "Business rules saved successfully" });
+      toast({ title: t('common:status.success'), description: t('settingsPage.toasts.businessRulesSavedDescription') });
     },
   });
 
@@ -394,7 +396,7 @@ export default function Settings() {
     },
     onSuccess: () => {
       invalidateByPrefix('/api/app-settings');
-      toast({ title: "Success", description: "Notification preferences saved successfully" });
+      toast({ title: t('common:status.success'), description: t('settingsPage.toasts.notificationPrefsSavedDescription') });
     },
   });
 
@@ -414,7 +416,7 @@ export default function Settings() {
     },
     onSuccess: () => {
       invalidateByPrefix('/api/app-settings');
-      toast({ title: "Success", description: "Document settings saved successfully" });
+      toast({ title: t('common:status.success'), description: t('settingsPage.toasts.documentSettingsSavedDescription') });
     },
   });
 
@@ -446,7 +448,7 @@ export default function Settings() {
     },
     onSuccess: () => {
       invalidateByPrefix('/api/app-settings');
-      toast({ title: "Success", description: "Calendar settings saved successfully" });
+      toast({ title: t('common:status.success'), description: t('settingsPage.toasts.calendarSettingsSavedDescription') });
     },
   });
   
@@ -465,10 +467,10 @@ export default function Settings() {
     },
     onSuccess: () => {
       invalidateByPrefix('/api/system-settings');
-      toast({ title: "Success", description: "Maintenance calendar settings saved successfully" });
+      toast({ title: t('common:status.success'), description: t('settingsPage.toasts.maintenanceCalendarSavedDescription') });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to save maintenance calendar settings", variant: "destructive" });
+      toast({ title: t('common:status.error'), description: t('settingsPage.toasts.maintenanceCalendarSaveFailedDescription'), variant: "destructive" });
     },
   });
 
@@ -484,10 +486,10 @@ export default function Settings() {
     },
     onSuccess: () => {
       invalidateByPrefix('/api/system-settings');
-      toast({ title: "Success", description: "Transport settings saved successfully" });
+      toast({ title: t('common:status.success'), description: t('settingsPage.toasts.transportSettingsSavedDescription') });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to save transport settings", variant: "destructive" });
+      toast({ title: t('common:status.error'), description: t('settingsPage.toasts.transportSettingsSaveFailedDescription'), variant: "destructive" });
     },
   });
 
@@ -503,7 +505,7 @@ export default function Settings() {
     },
     onSuccess: () => {
       invalidateByPrefix('/api/app-settings');
-      toast({ title: "Success", description: "Document email templates saved successfully" });
+      toast({ title: t('common:status.success'), description: t('settingsPage.toasts.docEmailTemplatesSavedDescription') });
     },
   });
 
@@ -519,7 +521,7 @@ export default function Settings() {
     },
     onSuccess: () => {
       invalidateByPrefix('/api/app-settings');
-      toast({ title: "Success", description: "GPS recipient email saved successfully" });
+      toast({ title: t('common:status.success'), description: t('settingsPage.toasts.gpsRecipientSavedDescription') });
     },
   });
 
@@ -539,7 +541,7 @@ export default function Settings() {
     },
     onSuccess: () => {
       invalidateByPrefix('/api/app-settings');
-      toast({ title: "Success", description: "GPS email templates saved successfully" });
+      toast({ title: t('common:status.success'), description: t('settingsPage.toasts.gpsTemplatesSavedDescription') });
     },
   });
 
@@ -555,8 +557,8 @@ export default function Settings() {
     onSuccess: () => {
       invalidateByPrefix('/api/app-settings/email');
       toast({
-        title: "Success",
-        description: editingEmail ? "Email configuration updated successfully" : "Email configuration saved successfully",
+        title: t('common:status.success'),
+        description: editingEmail ? t('settingsPage.toasts.emailConfigUpdatedDescription') : t('settingsPage.toasts.emailConfigSavedDescription'),
       });
       setIsEmailDialogOpen(false);
       resetEmailForm();
@@ -628,14 +630,14 @@ export default function Settings() {
     try {
       await apiRequest('DELETE', `/api/app-settings/${emailConfigToDelete}`);
       invalidateByPrefix('/api/app-settings/email');
-      toast({ 
-        title: "Success", 
-        description: "Email configuration deleted successfully" 
+      toast({
+        title: t('common:status.success'),
+        description: t('settingsPage.toasts.emailConfigDeletedDescription')
       });
     } catch (error: any) {
-      toast({ 
-        title: "Error", 
-        description: error.message || "Failed to delete email configuration",
+      toast({
+        title: t('common:status.error'),
+        description: error.message || t('settingsPage.toasts.emailConfigDeleteFailedDescription'),
         variant: "destructive"
       });
     }
@@ -645,7 +647,7 @@ export default function Settings() {
   // Holiday management
   const handleAddHoliday = () => {
     if (!newHolidayDate || !newHolidayName) {
-      toast({ title: "Error", description: "Please enter both date and name", variant: "destructive" });
+      toast({ title: t('common:status.error'), description: t('settingsPage.toasts.holidayFieldsRequiredDescription'), variant: "destructive" });
       return;
     }
     setHolidays([...holidays, { date: newHolidayDate, name: newHolidayName }]);
@@ -660,7 +662,7 @@ export default function Settings() {
   // Blocked dates management
   const handleAddBlockedDate = () => {
     if (!newBlockedStart || !newBlockedEnd || !newBlockedReason) {
-      toast({ title: "Error", description: "Please fill all fields", variant: "destructive" });
+      toast({ title: t('common:status.error'), description: t('settingsPage.toasts.blockedDateFieldsRequiredDescription'), variant: "destructive" });
       return;
     }
     setBlockedDates([...blockedDates, { 
@@ -682,42 +684,42 @@ export default function Settings() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold flex items-center gap-2">
           <SettingsIcon className="h-8 w-8" />
-          Application Settings
+          {t('settingsPage.header.title')}
         </h1>
-        <p className="text-gray-500 mt-2">Manage your car rental system configuration</p>
+        <p className="text-gray-500 mt-2">{t('settingsPage.header.subtitle')}</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
           <TabsTrigger value="business" className="gap-2">
             <Building2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Business Rules</span>
-            <span className="sm:hidden">Business</span>
+            <span className="hidden sm:inline">{t('settingsPage.tabs.business')}</span>
+            <span className="sm:hidden">{t('settingsPage.tabs.businessShort')}</span>
           </TabsTrigger>
           <TabsTrigger value="notifications" className="gap-2">
             <Bell className="h-4 w-4" />
-            <span className="hidden sm:inline">Notifications</span>
-            <span className="sm:hidden">Notifs</span>
+            <span className="hidden sm:inline">{t('settingsPage.tabs.notifications')}</span>
+            <span className="sm:hidden">{t('settingsPage.tabs.notificationsShort')}</span>
           </TabsTrigger>
           <TabsTrigger value="documents" className="gap-2">
             <FileText className="h-4 w-4" />
-            <span className="hidden sm:inline">Documents</span>
-            <span className="sm:hidden">Docs</span>
+            <span className="hidden sm:inline">{t('settingsPage.tabs.documents')}</span>
+            <span className="sm:hidden">{t('settingsPage.tabs.documentsShort')}</span>
           </TabsTrigger>
           <TabsTrigger value="doc-emails" className="gap-2">
             <Mail className="h-4 w-4" />
-            <span className="hidden sm:inline">Doc Emails</span>
-            <span className="sm:hidden">Emails</span>
+            <span className="hidden sm:inline">{t('settingsPage.tabs.docEmails')}</span>
+            <span className="sm:hidden">{t('settingsPage.tabs.docEmailsShort')}</span>
           </TabsTrigger>
           <TabsTrigger value="calendar" className="gap-2">
             <CalendarIcon className="h-4 w-4" />
-            <span className="hidden sm:inline">Calendar</span>
-            <span className="sm:hidden">Calendar</span>
+            <span className="hidden sm:inline">{t('settingsPage.tabs.calendar')}</span>
+            <span className="sm:hidden">{t('settingsPage.tabs.calendarShort')}</span>
           </TabsTrigger>
           <TabsTrigger value="email" className="gap-2">
             <Mail className="h-4 w-4" />
-            <span className="hidden sm:inline">Email & GPS</span>
-            <span className="sm:hidden">Email</span>
+            <span className="hidden sm:inline">{t('settingsPage.tabs.email')}</span>
+            <span className="sm:hidden">{t('settingsPage.tabs.emailShort')}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -727,16 +729,16 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5" />
-                Rental Defaults & Policies
+                {t('settingsPage.business.rentalDefaultsTitle')}
               </CardTitle>
               <CardDescription>
-                Set default values and business rules for rentals
+                {t('settingsPage.business.rentalDefaultsDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="defaultDuration">Default Rental Duration (days)</Label>
+                  <Label htmlFor="defaultDuration">{t('settingsPage.business.defaultDurationLabel')}</Label>
                   <Input
                     id="defaultDuration"
                     type="number"
@@ -745,10 +747,10 @@ export default function Settings() {
                     onChange={(e) => setDefaultRentalDuration(e.target.value)}
                     data-testid="input-default-rental-duration"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Default duration when creating new rentals</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('settingsPage.business.defaultDurationHint')}</p>
                 </div>
                 <div>
-                  <Label htmlFor="fuelPolicy">Default Fuel Policy</Label>
+                  <Label htmlFor="fuelPolicy">{t('settingsPage.business.fuelPolicyLabel')}</Label>
                   <select
                     id="fuelPolicy"
                     value={defaultFuelPolicy}
@@ -756,17 +758,17 @@ export default function Settings() {
                     className="w-full mt-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
                     data-testid="select-fuel-policy"
                   >
-                    <option value="full-to-full">Full to Full</option>
-                    <option value="same-to-same">Same to Same</option>
-                    <option value="prepaid">Prepaid Full Tank</option>
+                    <option value="full-to-full">{t('settingsPage.business.fuelPolicyFullToFull')}</option>
+                    <option value="same-to-same">{t('settingsPage.business.fuelPolicySameToSame')}</option>
+                    <option value="prepaid">{t('settingsPage.business.fuelPolicyPrepaid')}</option>
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">Standard fuel return policy</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('settingsPage.business.fuelPolicyHint')}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="eigenrisicoBinnenland">Eigenrisico Binnenland (€)</Label>
+                  <Label htmlFor="eigenrisicoBinnenland">{t('settingsPage.business.eigenrisicoBinnenlandLabel')}</Label>
                   <Input
                     id="eigenrisicoBinnenland"
                     type="number"
@@ -776,10 +778,10 @@ export default function Settings() {
                     onChange={(e) => setEigenrisicoBinnenland(e.target.value)}
                     data-testid="input-eigenrisico-binnenland"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Damage deposit for domestic rentals</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('settingsPage.business.eigenrisicoBinnenlandHint')}</p>
                 </div>
                 <div>
-                  <Label htmlFor="eigenrisicoBuitenland">Eigenrisico Buitenland (€)</Label>
+                  <Label htmlFor="eigenrisicoBuitenland">{t('settingsPage.business.eigenrisicoBuitenlandLabel')}</Label>
                   <Input
                     id="eigenrisicoBuitenland"
                     type="number"
@@ -789,7 +791,7 @@ export default function Settings() {
                     onChange={(e) => setEigenrisicoBuitenland(e.target.value)}
                     data-testid="input-eigenrisico-buitenland"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Damage deposit for international rentals</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('settingsPage.business.eigenrisicoBuitenlandHint')}</p>
                 </div>
               </div>
 
@@ -799,7 +801,7 @@ export default function Settings() {
                 className="w-full md:w-auto"
                 data-testid="button-save-business-rules"
               >
-                {saveBusinessRules.isPending ? "Saving..." : "Save Business Rules"}
+                {saveBusinessRules.isPending ? t('common:status.saving') : t('settingsPage.business.saveBusinessRulesButton')}
               </Button>
             </CardContent>
           </Card>
@@ -808,16 +810,16 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5" />
-                Transport, Toll & Route Planning
+                {t('settingsPage.business.transportTitle')}
               </CardTitle>
               <CardDescription>
-                Default toll rate for transports, and your depot address for route optimization
+                {t('settingsPage.business.transportDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="tollRatePerKm">Toll Rate (€ per km)</Label>
+                  <Label htmlFor="tollRatePerKm">{t('settingsPage.business.tollRateLabel')}</Label>
                   <Input
                     id="tollRatePerKm"
                     type="number"
@@ -827,29 +829,29 @@ export default function Settings() {
                     onChange={(e) => setTollRatePerKm(e.target.value)}
                     data-testid="input-toll-rate-per-km"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Used to suggest a toll cost from the distance entered on a transport</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('settingsPage.business.tollRateHint')}</p>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <Label>Depot Address</Label>
-                <p className="text-xs text-gray-500">Your home base — route optimization starts here if it's set</p>
+                <Label>{t('settingsPage.business.depotAddressLabel')}</Label>
+                <p className="text-xs text-gray-500">{t('settingsPage.business.depotAddressHint')}</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                   <Input
-                    placeholder="Street address"
+                    placeholder={t('settingsPage.business.streetAddressPlaceholder')}
                     value={depotAddress}
                     onChange={(e) => setDepotAddress(e.target.value)}
                     data-testid="input-depot-address"
                   />
                   <Input
-                    placeholder="City"
+                    placeholder={t('settingsPage.business.cityPlaceholder')}
                     value={depotCity}
                     onChange={(e) => setDepotCity(e.target.value)}
                     data-testid="input-depot-city"
                   />
                 </div>
                 <Input
-                  placeholder="Postal code"
+                  placeholder={t('settingsPage.business.postalCodePlaceholder')}
                   value={depotPostalCode}
                   onChange={(e) => setDepotPostalCode(e.target.value)}
                   className="max-w-[200px]"
@@ -863,7 +865,7 @@ export default function Settings() {
                 className="w-full md:w-auto"
                 data-testid="button-save-toll-rate"
               >
-                {saveTollRateSettings.isPending ? "Saving..." : "Save Settings"}
+                {saveTollRateSettings.isPending ? t('common:status.saving') : t('settingsPage.business.saveSettingsButton')}
               </Button>
             </CardContent>
           </Card>
@@ -875,16 +877,16 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                Reminder Timing
+                {t('settingsPage.notifications.reminderTimingTitle')}
               </CardTitle>
               <CardDescription>
-                Configure when reminders are sent for upcoming events
+                {t('settingsPage.notifications.reminderTimingDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="apkReminder">APK Expiration Reminder (days before)</Label>
+                  <Label htmlFor="apkReminder">{t('settingsPage.notifications.apkReminderLabel')}</Label>
                   <Input
                     id="apkReminder"
                     type="number"
@@ -893,10 +895,10 @@ export default function Settings() {
                     onChange={(e) => setApkReminderDays(e.target.value)}
                     data-testid="input-apk-reminder-days"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Send reminder this many days before APK expires</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('settingsPage.notifications.apkReminderHint')}</p>
                 </div>
                 <div>
-                  <Label htmlFor="warrantyReminder">Warranty Expiration Reminder (days before)</Label>
+                  <Label htmlFor="warrantyReminder">{t('settingsPage.notifications.warrantyReminderLabel')}</Label>
                   <Input
                     id="warrantyReminder"
                     type="number"
@@ -905,10 +907,10 @@ export default function Settings() {
                     onChange={(e) => setWarrantyReminderDays(e.target.value)}
                     data-testid="input-warranty-reminder-days"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Send reminder this many days before warranty expires</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('settingsPage.notifications.warrantyReminderHint')}</p>
                 </div>
                 <div>
-                  <Label htmlFor="maintenanceReminder">Maintenance Due Reminder (days before)</Label>
+                  <Label htmlFor="maintenanceReminder">{t('settingsPage.notifications.maintenanceReminderLabel')}</Label>
                   <Input
                     id="maintenanceReminder"
                     type="number"
@@ -917,7 +919,7 @@ export default function Settings() {
                     onChange={(e) => setMaintenanceReminderDays(e.target.value)}
                     data-testid="input-maintenance-reminder-days"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Send reminder this many days before maintenance is due</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('settingsPage.notifications.maintenanceReminderHint')}</p>
                 </div>
               </div>
             </CardContent>
@@ -927,17 +929,17 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5" />
-                Notification Preferences
+                {t('settingsPage.notifications.preferencesTitle')}
               </CardTitle>
               <CardDescription>
-                Control which notifications you receive
+                {t('settingsPage.notifications.preferencesDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Email Notifications</Label>
-                  <p className="text-sm text-gray-500">Receive notifications via email</p>
+                  <Label>{t('settingsPage.notifications.emailNotificationsLabel')}</Label>
+                  <p className="text-sm text-gray-500">{t('settingsPage.notifications.emailNotificationsHint')}</p>
                 </div>
                 <Switch
                   checked={emailNotificationsEnabled}
@@ -948,8 +950,8 @@ export default function Settings() {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Real-time Sound Alerts</Label>
-                  <p className="text-sm text-gray-500">Play sound for real-time notifications</p>
+                  <Label>{t('settingsPage.notifications.realtimeSoundLabel')}</Label>
+                  <p className="text-sm text-gray-500">{t('settingsPage.notifications.realtimeSoundHint')}</p>
                 </div>
                 <Switch
                   checked={realtimeSoundEnabled}
@@ -960,8 +962,8 @@ export default function Settings() {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>New Reservation Notifications</Label>
-                  <p className="text-sm text-gray-500">Get notified when a new reservation is created</p>
+                  <Label>{t('settingsPage.notifications.newReservationLabel')}</Label>
+                  <p className="text-sm text-gray-500">{t('settingsPage.notifications.newReservationHint')}</p>
                 </div>
                 <Switch
                   checked={notifyOnNewReservation}
@@ -972,8 +974,8 @@ export default function Settings() {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Vehicle Return Notifications</Label>
-                  <p className="text-sm text-gray-500">Get notified when a vehicle is returned</p>
+                  <Label>{t('settingsPage.notifications.vehicleReturnLabel')}</Label>
+                  <p className="text-sm text-gray-500">{t('settingsPage.notifications.vehicleReturnHint')}</p>
                 </div>
                 <Switch
                   checked={notifyOnVehicleReturn}
@@ -984,8 +986,8 @@ export default function Settings() {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Maintenance Due Notifications</Label>
-                  <p className="text-sm text-gray-500">Get notified when maintenance is due</p>
+                  <Label>{t('settingsPage.notifications.maintenanceDueLabel')}</Label>
+                  <p className="text-sm text-gray-500">{t('settingsPage.notifications.maintenanceDueHint')}</p>
                 </div>
                 <Switch
                   checked={notifyOnMaintenanceDue}
@@ -994,13 +996,13 @@ export default function Settings() {
                 />
               </div>
 
-              <Button 
+              <Button
                 onClick={() => saveNotificationPrefs.mutate()}
                 disabled={saveNotificationPrefs.isPending}
                 className="w-full md:w-auto"
                 data-testid="button-save-notification-prefs"
               >
-                {saveNotificationPrefs.isPending ? "Saving..." : "Save Notification Preferences"}
+                {saveNotificationPrefs.isPending ? t('common:status.saving') : t('settingsPage.notifications.savePreferencesButton')}
               </Button>
             </CardContent>
           </Card>
@@ -1012,16 +1014,16 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                Invoice & Contract Settings
+                {t('settingsPage.documents.invoiceContractTitle')}
               </CardTitle>
               <CardDescription>
-                Configure document numbering and auto-generation
+                {t('settingsPage.documents.invoiceContractDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="invoiceFormat">Invoice Number Format</Label>
+                  <Label htmlFor="invoiceFormat">{t('settingsPage.documents.invoiceFormatLabel')}</Label>
                   <Input
                     id="invoiceFormat"
                     value={invoiceNumberFormat}
@@ -1030,11 +1032,11 @@ export default function Settings() {
                     data-testid="input-invoice-format"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Use {'{YEAR}'}, {'{MONTH}'}, {'{NUMBER}'} as placeholders
+                    {t('settingsPage.documents.invoiceFormatHintPrefix')} {'{YEAR}'}, {'{MONTH}'}, {'{NUMBER}'} {t('settingsPage.documents.invoiceFormatHintSuffix')}
                   </p>
                 </div>
                 <div>
-                  <Label htmlFor="invoiceStartNumber">Starting Invoice Number</Label>
+                  <Label htmlFor="invoiceStartNumber">{t('settingsPage.documents.invoiceStartNumberLabel')}</Label>
                   <Input
                     id="invoiceStartNumber"
                     type="number"
@@ -1043,45 +1045,45 @@ export default function Settings() {
                     onChange={(e) => setInvoiceStartingNumber(e.target.value)}
                     data-testid="input-invoice-start-number"
                   />
-                  <p className="text-xs text-gray-500 mt-1">First invoice number to use</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('settingsPage.documents.invoiceStartNumberHint')}</p>
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="contractTerms">Contract Terms & Conditions</Label>
+                <Label htmlFor="contractTerms">{t('settingsPage.documents.contractTermsLabel')}</Label>
                 <Textarea
                   id="contractTerms"
                   value={contractTerms}
                   onChange={(e) => setContractTerms(e.target.value)}
                   rows={8}
-                  placeholder="Enter standard contract terms and conditions..."
+                  placeholder={t('settingsPage.documents.contractTermsPlaceholder')}
                   data-testid="textarea-contract-terms"
                   className="font-mono text-sm"
                 />
-                <p className="text-xs text-gray-500 mt-1">These terms will appear in rental contracts</p>
+                <p className="text-xs text-gray-500 mt-1">{t('settingsPage.documents.contractTermsHint')}</p>
               </div>
 
               <div>
-                <Label htmlFor="invoiceFooter">Invoice Footer Text</Label>
+                <Label htmlFor="invoiceFooter">{t('settingsPage.documents.invoiceFooterLabel')}</Label>
                 <Textarea
                   id="invoiceFooter"
                   value={invoiceFooter}
                   onChange={(e) => setInvoiceFooter(e.target.value)}
                   rows={4}
-                  placeholder="Enter invoice footer (payment terms, bank details, etc.)..."
+                  placeholder={t('settingsPage.documents.invoiceFooterPlaceholder')}
                   data-testid="textarea-invoice-footer"
                   className="font-mono text-sm"
                 />
-                <p className="text-xs text-gray-500 mt-1">This appears at the bottom of all invoices</p>
+                <p className="text-xs text-gray-500 mt-1">{t('settingsPage.documents.invoiceFooterHint')}</p>
               </div>
 
-              <Button 
+              <Button
                 onClick={() => saveDocumentSettings.mutate()}
                 disabled={saveDocumentSettings.isPending}
                 className="w-full md:w-auto"
                 data-testid="button-save-document-settings"
               >
-                {saveDocumentSettings.isPending ? "Saving..." : "Save Document Settings"}
+                {saveDocumentSettings.isPending ? t('common:status.saving') : t('settingsPage.documents.saveDocumentSettingsButton')}
               </Button>
             </CardContent>
           </Card>
@@ -1091,10 +1093,10 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileCheck className="h-5 w-5" />
-                Contract Number Settings
+                {t('settingsPage.documents.contractNumberCardTitle')}
               </CardTitle>
               <CardDescription>
-                Configure the starting number for auto-generated contract numbers
+                {t('settingsPage.documents.contractNumberCardDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -1109,26 +1111,26 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Mail className="h-5 w-5" />
-                Document Email Templates
+                {t('settingsPage.docEmails.title')}
               </CardTitle>
               <CardDescription>
-                Configure email templates for sending contracts and damage checks to customers in English and Dutch
+                {t('settingsPage.docEmails.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
-                  <strong>Available Placeholders:</strong> {'{customerName}'}, {'{vehiclePlate}'}, {'{startDate}'}, {'{endDate}'}
+                  <strong>{t('settingsPage.docEmails.placeholdersLabel')}</strong> {'{customerName}'}, {'{vehiclePlate}'}, {'{startDate}'}, {'{endDate}'}
                 </p>
                 <p className="text-xs text-blue-600 mt-1">
-                  All placeholders are automatically filled with reservation and customer data when sending emails.
+                  {t('settingsPage.docEmails.placeholdersHint')}
                 </p>
               </div>
 
               <Tabs defaultValue="en" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="en">English Templates</TabsTrigger>
-                  <TabsTrigger value="nl">Dutch Templates</TabsTrigger>
+                  <TabsTrigger value="en">{t('settingsPage.docEmails.englishTemplatesTab')}</TabsTrigger>
+                  <TabsTrigger value="nl">{t('settingsPage.docEmails.dutchTemplatesTab')}</TabsTrigger>
                 </TabsList>
 
                 {/* English Templates */}
@@ -1137,11 +1139,11 @@ export default function Settings() {
                   <div className="space-y-4 border rounded-lg p-4 bg-gray-50">
                     <h4 className="font-semibold text-lg flex items-center gap-2">
                       <FileText className="h-4 w-4" />
-                      Contract Email (English)
+                      {t('settingsPage.docEmails.contractEmailEnglishTitle')}
                     </h4>
                     <div className="space-y-3">
                       <div>
-                        <Label htmlFor="contract-en-subject">Subject Line</Label>
+                        <Label htmlFor="contract-en-subject">{t('settingsPage.docEmails.subjectLineLabel')}</Label>
                         <Input
                           id="contract-en-subject"
                           value={docEmailTemplates.contract.en.subject}
@@ -1152,12 +1154,12 @@ export default function Settings() {
                               en: { ...prev.contract.en, subject: e.target.value }
                             }
                           }))}
-                          placeholder="Email subject..."
+                          placeholder={t('settingsPage.docEmails.emailSubjectPlaceholder')}
                           data-testid="input-contract-en-subject"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="contract-en-message">Email Message</Label>
+                        <Label htmlFor="contract-en-message">{t('settingsPage.docEmails.emailMessageLabel')}</Label>
                         <Textarea
                           id="contract-en-message"
                           value={docEmailTemplates.contract.en.message}
@@ -1169,7 +1171,7 @@ export default function Settings() {
                             }
                           }))}
                           rows={6}
-                          placeholder="Email message body..."
+                          placeholder={t('settingsPage.docEmails.emailMessageBodyPlaceholder')}
                           data-testid="textarea-contract-en-message"
                         />
                       </div>
@@ -1180,11 +1182,11 @@ export default function Settings() {
                   <div className="space-y-4 border rounded-lg p-4 bg-gray-50">
                     <h4 className="font-semibold text-lg flex items-center gap-2">
                       <FileCheck className="h-4 w-4" />
-                      Damage Check Email (English)
+                      {t('settingsPage.docEmails.damageEmailEnglishTitle')}
                     </h4>
                     <div className="space-y-3">
                       <div>
-                        <Label htmlFor="damage-en-subject">Subject Line</Label>
+                        <Label htmlFor="damage-en-subject">{t('settingsPage.docEmails.subjectLineLabel')}</Label>
                         <Input
                           id="damage-en-subject"
                           value={docEmailTemplates.damage_check.en.subject}
@@ -1195,12 +1197,12 @@ export default function Settings() {
                               en: { ...prev.damage_check.en, subject: e.target.value }
                             }
                           }))}
-                          placeholder="Email subject..."
+                          placeholder={t('settingsPage.docEmails.emailSubjectPlaceholder')}
                           data-testid="input-damage-en-subject"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="damage-en-message">Email Message</Label>
+                        <Label htmlFor="damage-en-message">{t('settingsPage.docEmails.emailMessageLabel')}</Label>
                         <Textarea
                           id="damage-en-message"
                           value={docEmailTemplates.damage_check.en.message}
@@ -1212,7 +1214,7 @@ export default function Settings() {
                             }
                           }))}
                           rows={6}
-                          placeholder="Email message body..."
+                          placeholder={t('settingsPage.docEmails.emailMessageBodyPlaceholder')}
                           data-testid="textarea-damage-en-message"
                         />
                       </div>
@@ -1223,12 +1225,12 @@ export default function Settings() {
                   <div className="space-y-4 border rounded-lg p-4 bg-indigo-50">
                     <h4 className="font-semibold text-lg flex items-center gap-2">
                       <FileText className="h-4 w-4" />
-                      Combined Documents Email (English)
+                      {t('settingsPage.docEmails.combinedEmailEnglishTitle')}
                     </h4>
-                    <p className="text-sm text-gray-600">Used when sending both contract AND damage check together</p>
+                    <p className="text-sm text-gray-600">{t('settingsPage.docEmails.combinedUsedHint')}</p>
                     <div className="space-y-3">
                       <div>
-                        <Label htmlFor="combined-en-subject">Subject Line</Label>
+                        <Label htmlFor="combined-en-subject">{t('settingsPage.docEmails.subjectLineLabel')}</Label>
                         <Input
                           id="combined-en-subject"
                           value={docEmailTemplates.combined.en.subject}
@@ -1239,12 +1241,12 @@ export default function Settings() {
                               en: { ...prev.combined.en, subject: e.target.value }
                             }
                           }))}
-                          placeholder="Email subject..."
+                          placeholder={t('settingsPage.docEmails.emailSubjectPlaceholder')}
                           data-testid="input-combined-en-subject"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="combined-en-message">Email Message</Label>
+                        <Label htmlFor="combined-en-message">{t('settingsPage.docEmails.emailMessageLabel')}</Label>
                         <Textarea
                           id="combined-en-message"
                           value={docEmailTemplates.combined.en.message}
@@ -1256,7 +1258,7 @@ export default function Settings() {
                             }
                           }))}
                           rows={8}
-                          placeholder="Email message..."
+                          placeholder={t('settingsPage.docEmails.emailMessagePlaceholder')}
                           data-testid="textarea-combined-en-message"
                         />
                       </div>
@@ -1270,11 +1272,11 @@ export default function Settings() {
                   <div className="space-y-4 border rounded-lg p-4 bg-gray-50">
                     <h4 className="font-semibold text-lg flex items-center gap-2">
                       <FileText className="h-4 w-4" />
-                      Huurcontract E-mail (Nederlands)
+                      {t('settingsPage.docEmails.contractEmailDutchTitle')}
                     </h4>
                     <div className="space-y-3">
                       <div>
-                        <Label htmlFor="contract-nl-subject">Onderwerp</Label>
+                        <Label htmlFor="contract-nl-subject">{t('settingsPage.docEmails.subjectLineLabel')}</Label>
                         <Input
                           id="contract-nl-subject"
                           value={docEmailTemplates.contract.nl.subject}
@@ -1285,12 +1287,12 @@ export default function Settings() {
                               nl: { ...prev.contract.nl, subject: e.target.value }
                             }
                           }))}
-                          placeholder="E-mail onderwerp..."
+                          placeholder={t('settingsPage.docEmails.emailSubjectPlaceholder')}
                           data-testid="input-contract-nl-subject"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="contract-nl-message">Bericht</Label>
+                        <Label htmlFor="contract-nl-message">{t('settingsPage.docEmails.emailMessageLabel')}</Label>
                         <Textarea
                           id="contract-nl-message"
                           value={docEmailTemplates.contract.nl.message}
@@ -1302,7 +1304,7 @@ export default function Settings() {
                             }
                           }))}
                           rows={6}
-                          placeholder="E-mail bericht..."
+                          placeholder={t('settingsPage.docEmails.emailMessageBodyPlaceholder')}
                           data-testid="textarea-contract-nl-message"
                         />
                       </div>
@@ -1313,11 +1315,11 @@ export default function Settings() {
                   <div className="space-y-4 border rounded-lg p-4 bg-gray-50">
                     <h4 className="font-semibold text-lg flex items-center gap-2">
                       <FileCheck className="h-4 w-4" />
-                      Schade Controle E-mail (Nederlands)
+                      {t('settingsPage.docEmails.damageEmailDutchTitle')}
                     </h4>
                     <div className="space-y-3">
                       <div>
-                        <Label htmlFor="damage-nl-subject">Onderwerp</Label>
+                        <Label htmlFor="damage-nl-subject">{t('settingsPage.docEmails.subjectLineLabel')}</Label>
                         <Input
                           id="damage-nl-subject"
                           value={docEmailTemplates.damage_check.nl.subject}
@@ -1328,12 +1330,12 @@ export default function Settings() {
                               nl: { ...prev.damage_check.nl, subject: e.target.value }
                             }
                           }))}
-                          placeholder="E-mail onderwerp..."
+                          placeholder={t('settingsPage.docEmails.emailSubjectPlaceholder')}
                           data-testid="input-damage-nl-subject"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="damage-nl-message">Bericht</Label>
+                        <Label htmlFor="damage-nl-message">{t('settingsPage.docEmails.emailMessageLabel')}</Label>
                         <Textarea
                           id="damage-nl-message"
                           value={docEmailTemplates.damage_check.nl.message}
@@ -1345,7 +1347,7 @@ export default function Settings() {
                             }
                           }))}
                           rows={6}
-                          placeholder="E-mail bericht..."
+                          placeholder={t('settingsPage.docEmails.emailMessageBodyPlaceholder')}
                           data-testid="textarea-damage-nl-message"
                         />
                       </div>
@@ -1356,12 +1358,12 @@ export default function Settings() {
                   <div className="space-y-4 border rounded-lg p-4 bg-indigo-50">
                     <h4 className="font-semibold text-lg flex items-center gap-2">
                       <FileText className="h-4 w-4" />
-                      Gecombineerde Documenten E-mail (Nederlands)
+                      {t('settingsPage.docEmails.combinedEmailDutchTitle')}
                     </h4>
-                    <p className="text-sm text-gray-600">Gebruikt bij het verzenden van zowel contract ALS schadecontrole</p>
+                    <p className="text-sm text-gray-600">{t('settingsPage.docEmails.combinedUsedHintDutchTab')}</p>
                     <div className="space-y-3">
                       <div>
-                        <Label htmlFor="combined-nl-subject">Onderwerp</Label>
+                        <Label htmlFor="combined-nl-subject">{t('settingsPage.docEmails.subjectLineLabel')}</Label>
                         <Input
                           id="combined-nl-subject"
                           value={docEmailTemplates.combined.nl.subject}
@@ -1372,12 +1374,12 @@ export default function Settings() {
                               nl: { ...prev.combined.nl, subject: e.target.value }
                             }
                           }))}
-                          placeholder="E-mail onderwerp..."
+                          placeholder={t('settingsPage.docEmails.emailSubjectPlaceholder')}
                           data-testid="input-combined-nl-subject"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="combined-nl-message">Bericht</Label>
+                        <Label htmlFor="combined-nl-message">{t('settingsPage.docEmails.emailMessageLabel')}</Label>
                         <Textarea
                           id="combined-nl-message"
                           value={docEmailTemplates.combined.nl.message}
@@ -1389,7 +1391,7 @@ export default function Settings() {
                             }
                           }))}
                           rows={8}
-                          placeholder="E-mail bericht..."
+                          placeholder={t('settingsPage.docEmails.emailMessageBodyPlaceholder')}
                           data-testid="textarea-combined-nl-message"
                         />
                       </div>
@@ -1398,13 +1400,13 @@ export default function Settings() {
                 </TabsContent>
               </Tabs>
 
-              <Button 
+              <Button
                 onClick={() => saveDocumentEmailTemplates.mutate()}
                 disabled={saveDocumentEmailTemplates.isPending}
                 className="w-full md:w-auto"
                 data-testid="button-save-document-email-templates"
               >
-                {saveDocumentEmailTemplates.isPending ? "Saving..." : "Save Email Templates"}
+                {saveDocumentEmailTemplates.isPending ? t('common:status.saving') : t('settingsPage.docEmails.saveEmailTemplatesButton')}
               </Button>
             </CardContent>
           </Card>
@@ -1416,18 +1418,18 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CalendarIcon className="h-5 w-5" />
-                Holidays & Blocked Dates
+                {t('settingsPage.calendar.holidaysBlockedDatesTitle')}
               </CardTitle>
               <CardDescription>
-                Manage company holidays and closure periods
+                {t('settingsPage.calendar.holidaysBlockedDatesDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Dutch National Holidays */}
               <div>
-                <h4 className="font-medium text-sm mb-3">Dutch National Holidays</h4>
+                <h4 className="font-medium text-sm mb-3">{t('settingsPage.calendar.dutchHolidaysTitle')}</h4>
                 <p className="text-xs text-gray-500 mb-4">
-                  Dates are automatically calculated for {currentYear}. You can override any date manually.
+                  {t('settingsPage.calendar.dutchHolidaysHint', { year: currentYear })}
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {Object.entries(DUTCH_HOLIDAY_NAMES).map(([key, name]) => {
@@ -1441,7 +1443,7 @@ export default function Settings() {
                             {name}
                           </Label>
                           {isOverridden && (
-                            <span className="block text-xs text-blue-600">Manual override</span>
+                            <span className="block text-xs text-blue-600">{t('settingsPage.calendar.manualOverrideBadge')}</span>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
@@ -1472,10 +1474,10 @@ export default function Settings() {
                                   isOverridden: false
                                 }
                               }))}
-                              title={`Reset to calculated date: ${holiday.calculatedDate}`}
+                              title={t('settingsPage.calendar.resetTitleHint', { date: holiday.calculatedDate })}
                               data-testid={`button-reset-holiday-${key}`}
                             >
-                              Reset
+                              {t('settingsPage.calendar.resetButton')}
                             </Button>
                           )}
                           <Switch
@@ -1506,7 +1508,7 @@ export default function Settings() {
               </div>
 
               <div className="border-t pt-6">
-                <h4 className="font-medium text-sm mb-3">Custom Holidays</h4>
+                <h4 className="font-medium text-sm mb-3">{t('settingsPage.calendar.customHolidaysTitle')}</h4>
                 <div className="space-y-2 mb-4">
                   {holidays.map((holiday, index) => (
                     <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
@@ -1525,33 +1527,33 @@ export default function Settings() {
                     </div>
                   ))}
                   {holidays.length === 0 && (
-                    <p className="text-sm text-gray-500 text-center py-4">No holidays defined</p>
+                    <p className="text-sm text-gray-500 text-center py-4">{t('settingsPage.calendar.noHolidaysDefined')}</p>
                   )}
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <Input
                     type="date"
                     value={newHolidayDate}
                     onChange={(e) => setNewHolidayDate(e.target.value)}
-                    placeholder="Date"
+                    placeholder={t('settingsPage.calendar.datePlaceholder')}
                     data-testid="input-new-holiday-date"
                   />
                   <Input
                     value={newHolidayName}
                     onChange={(e) => setNewHolidayName(e.target.value)}
-                    placeholder="Holiday name"
+                    placeholder={t('settingsPage.calendar.holidayNamePlaceholder')}
                     data-testid="input-new-holiday-name"
                   />
                   <Button onClick={handleAddHoliday} data-testid="button-add-holiday">
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Holiday
+                    {t('settingsPage.calendar.addHolidayButton')}
                   </Button>
                 </div>
               </div>
 
               <div className="border-t pt-6">
-                <h4 className="font-medium text-sm mb-3">Blocked Dates (Company Closures)</h4>
+                <h4 className="font-medium text-sm mb-3">{t('settingsPage.calendar.blockedDatesTitle')}</h4>
                 <div className="space-y-2 mb-4">
                   {blockedDates.map((blocked, index) => (
                     <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-red-50">
@@ -1572,43 +1574,43 @@ export default function Settings() {
                     </div>
                   ))}
                   {blockedDates.length === 0 && (
-                    <p className="text-sm text-gray-500 text-center py-4">No blocked dates defined</p>
+                    <p className="text-sm text-gray-500 text-center py-4">{t('settingsPage.calendar.noBlockedDatesDefined')}</p>
                   )}
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <Input
                     type="date"
                     value={newBlockedStart}
                     onChange={(e) => setNewBlockedStart(e.target.value)}
-                    placeholder="Start date"
+                    placeholder={t('settingsPage.calendar.startDatePlaceholder')}
                     data-testid="input-new-blocked-start"
                   />
                   <Input
                     type="date"
                     value={newBlockedEnd}
                     onChange={(e) => setNewBlockedEnd(e.target.value)}
-                    placeholder="End date"
+                    placeholder={t('settingsPage.calendar.endDatePlaceholder')}
                     data-testid="input-new-blocked-end"
                   />
                   <Input
                     value={newBlockedReason}
                     onChange={(e) => setNewBlockedReason(e.target.value)}
-                    placeholder="Reason"
+                    placeholder={t('settingsPage.calendar.reasonPlaceholder')}
                     data-testid="input-new-blocked-reason"
                   />
                   <Button onClick={handleAddBlockedDate} data-testid="button-add-blocked">
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Closure
+                    {t('settingsPage.calendar.addClosureButton')}
                   </Button>
                 </div>
               </div>
 
               <div className="border-t pt-6">
-                <h4 className="font-medium text-sm mb-3">Default Settings</h4>
+                <h4 className="font-medium text-sm mb-3">{t('settingsPage.calendar.defaultSettingsTitle')}</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="defaultMaintenanceDuration">Default Maintenance Duration (days)</Label>
+                    <Label htmlFor="defaultMaintenanceDuration">{t('settingsPage.calendar.defaultMaintenanceDurationLabel')}</Label>
                     <Input
                       id="defaultMaintenanceDuration"
                       type="number"
@@ -1617,10 +1619,10 @@ export default function Settings() {
                       onChange={(e) => setDefaultMaintenanceDuration(e.target.value)}
                       data-testid="input-default-maintenance-duration"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Default duration for maintenance appointments</p>
+                    <p className="text-xs text-gray-500 mt-1">{t('settingsPage.calendar.defaultMaintenanceDurationHint')}</p>
                   </div>
                   <div>
-                    <Label htmlFor="reservationReminder">Reservation Reminder (hours before)</Label>
+                    <Label htmlFor="reservationReminder">{t('settingsPage.calendar.reservationReminderLabel')}</Label>
                     <Input
                       id="reservationReminder"
                       type="number"
@@ -1629,18 +1631,18 @@ export default function Settings() {
                       onChange={(e) => setReservationReminderHours(e.target.value)}
                       data-testid="input-reservation-reminder-hours"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Send reminder this many hours before pickup</p>
+                    <p className="text-xs text-gray-500 mt-1">{t('settingsPage.calendar.reservationReminderHint')}</p>
                   </div>
                 </div>
               </div>
 
-              <Button 
+              <Button
                 onClick={() => saveCalendarSettings.mutate()}
                 disabled={saveCalendarSettings.isPending}
                 className="w-full md:w-auto"
                 data-testid="button-save-calendar-settings"
               >
-                {saveCalendarSettings.isPending ? "Saving..." : "Save Calendar Settings"}
+                {saveCalendarSettings.isPending ? t('common:status.saving') : t('settingsPage.calendar.saveCalendarSettingsButton')}
               </Button>
             </CardContent>
           </Card>
@@ -1650,18 +1652,18 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <SettingsIcon className="h-5 w-5" />
-                Maintenance Calendar Display
+                {t('settingsPage.calendar.maintenanceDisplayTitle')}
               </CardTitle>
               <CardDescription>
-                Control which vehicles and reminders appear in the maintenance calendar
+                {t('settingsPage.calendar.maintenanceDisplayDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Vehicle Status Exclusions */}
               <div>
-                <h4 className="font-medium text-sm mb-3">Exclude Vehicles by Status</h4>
+                <h4 className="font-medium text-sm mb-3">{t('settingsPage.calendar.excludeVehiclesTitle')}</h4>
                 <p className="text-xs text-gray-500 mb-4">
-                  Vehicles with these statuses will not show APK/warranty reminders
+                  {t('settingsPage.calendar.excludeVehiclesHint')}
                 </p>
                 <div className="flex flex-wrap gap-4">
                   <div className="flex items-center space-x-2">
@@ -1669,44 +1671,44 @@ export default function Settings() {
                       id="exclude-not-for-rental"
                       checked={maintenanceExcludedStatuses.includes("not_for_rental")}
                       onCheckedChange={(checked) => {
-                        setMaintenanceExcludedStatuses(prev => 
-                          checked 
+                        setMaintenanceExcludedStatuses(prev =>
+                          checked
                             ? [...prev.filter(s => s !== "not_for_rental"), "not_for_rental"]
                             : prev.filter(s => s !== "not_for_rental")
                         );
                       }}
                       data-testid="switch-exclude-not-for-rental"
                     />
-                    <Label htmlFor="exclude-not-for-rental">Not for Rental</Label>
+                    <Label htmlFor="exclude-not-for-rental">{t('settingsPage.calendar.notForRentalLabel')}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="exclude-needs-fixing"
                       checked={maintenanceExcludedStatuses.includes("needs_fixing")}
                       onCheckedChange={(checked) => {
-                        setMaintenanceExcludedStatuses(prev => 
-                          checked 
+                        setMaintenanceExcludedStatuses(prev =>
+                          checked
                             ? [...prev.filter(s => s !== "needs_fixing"), "needs_fixing"]
                             : prev.filter(s => s !== "needs_fixing")
                         );
                       }}
                       data-testid="switch-exclude-needs-fixing"
                     />
-                    <Label htmlFor="exclude-needs-fixing">Needs Fixing</Label>
+                    <Label htmlFor="exclude-needs-fixing">{t('settingsPage.calendar.needsFixingLabel')}</Label>
                   </div>
                 </div>
               </div>
 
               <div className="border-t pt-6">
-                <h4 className="font-medium text-sm mb-3">Reminder Visibility</h4>
+                <h4 className="font-medium text-sm mb-3">{t('settingsPage.calendar.reminderVisibilityTitle')}</h4>
                 <p className="text-xs text-gray-500 mb-4">
-                  Toggle which reminder types appear in the calendar and notification center
+                  {t('settingsPage.calendar.reminderVisibilityHint')}
                 </p>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label>APK Reminders</Label>
-                      <p className="text-sm text-gray-500">Show APK expiration reminders</p>
+                      <Label>{t('settingsPage.calendar.apkRemindersLabel')}</Label>
+                      <p className="text-sm text-gray-500">{t('settingsPage.calendar.apkRemindersHint')}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-2">
@@ -1720,7 +1722,7 @@ export default function Settings() {
                           disabled={!showApkReminders}
                           data-testid="input-apk-threshold-days"
                         />
-                        <span className="text-sm text-gray-500">days</span>
+                        <span className="text-sm text-gray-500">{t('common:units.days')}</span>
                       </div>
                       <Switch
                         checked={showApkReminders}
@@ -1732,8 +1734,8 @@ export default function Settings() {
 
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label>Warranty Reminders</Label>
-                      <p className="text-sm text-gray-500">Show warranty expiration reminders</p>
+                      <Label>{t('settingsPage.calendar.warrantyRemindersLabel')}</Label>
+                      <p className="text-sm text-gray-500">{t('settingsPage.calendar.warrantyRemindersHint')}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-2">
@@ -1747,7 +1749,7 @@ export default function Settings() {
                           disabled={!showWarrantyReminders}
                           data-testid="input-warranty-threshold-days"
                         />
-                        <span className="text-sm text-gray-500">days</span>
+                        <span className="text-sm text-gray-500">{t('common:units.days')}</span>
                       </div>
                       <Switch
                         checked={showWarrantyReminders}
@@ -1759,8 +1761,8 @@ export default function Settings() {
 
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label>Maintenance Blocks</Label>
-                      <p className="text-sm text-gray-500">Show scheduled maintenance blocks on calendar</p>
+                      <Label>{t('settingsPage.calendar.maintenanceBlocksLabel')}</Label>
+                      <p className="text-sm text-gray-500">{t('settingsPage.calendar.maintenanceBlocksHint')}</p>
                     </div>
                     <Switch
                       checked={showMaintenanceBlocks}
@@ -1771,13 +1773,13 @@ export default function Settings() {
                 </div>
               </div>
 
-              <Button 
+              <Button
                 onClick={() => saveMaintenanceCalendarSettings.mutate()}
                 disabled={saveMaintenanceCalendarSettings.isPending}
                 className="w-full md:w-auto"
                 data-testid="button-save-maintenance-calendar-settings"
               >
-                {saveMaintenanceCalendarSettings.isPending ? "Saving..." : "Save Maintenance Settings"}
+                {saveMaintenanceCalendarSettings.isPending ? t('common:status.saving') : t('settingsPage.calendar.saveMaintenanceSettingsButton')}
               </Button>
             </CardContent>
           </Card>
@@ -1792,33 +1794,33 @@ export default function Settings() {
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <Mail className="h-5 w-5" />
-                    Email Configuration
+                    {t('settingsPage.email.configurationTitle')}
                   </CardTitle>
                   <CardDescription>
-                    Configure email settings for sending notifications and reminders
+                    {t('settingsPage.email.configurationDescription')}
                   </CardDescription>
                 </div>
                 <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
                   <DialogTrigger asChild>
                     <Button onClick={() => handleOpenEmailDialog()} data-testid="button-add-email-config">
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Email Config
+                      {t('settingsPage.email.addConfigButton')}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>
-                        {editingEmail ? 'Edit Email Configuration' : 'Add Email Configuration'}
+                        {editingEmail ? t('settingsPage.email.editConfigDialogTitle') : t('settingsPage.email.addConfigDialogTitle')}
                       </DialogTitle>
                       <DialogDescription>
-                        Configure email service provider and credentials
+                        {t('settingsPage.email.configDialogDescription')}
                       </DialogDescription>
                     </DialogHeader>
-                    
+
                     <div className="space-y-4 py-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="provider">Provider</Label>
+                          <Label htmlFor="provider">{t('settingsPage.email.providerLabel')}</Label>
                           <select
                             id="provider"
                             value={provider}
@@ -1828,11 +1830,11 @@ export default function Settings() {
                           >
                             <option value="mailersend">MailerSend</option>
                             <option value="sendgrid">SendGrid</option>
-                            <option value="smtp">Custom SMTP</option>
+                            <option value="smtp">{t('settingsPage.email.providerSmtp')}</option>
                           </select>
                         </div>
                         <div>
-                          <Label htmlFor="purpose">Email Purpose</Label>
+                          <Label htmlFor="purpose">{t('settingsPage.email.purposeLabel')}</Label>
                           <select
                             id="purpose"
                             value={purpose}
@@ -1841,18 +1843,18 @@ export default function Settings() {
                             data-testid="select-email-purpose"
                           >
                             {EMAIL_PURPOSES.map(p => (
-                              <option key={p.value} value={p.value}>{p.label}</option>
+                              <option key={p.value} value={p.value}>{t(`settingsPage.email.purposes.${p.value}.label`)}</option>
                             ))}
                           </select>
                           <p className="text-xs text-gray-500 mt-1">
-                            {EMAIL_PURPOSES.find(p => p.value === purpose)?.description}
+                            {t(`settingsPage.email.purposes.${purpose}.description`)}
                           </p>
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="fromEmail">From Email</Label>
+                          <Label htmlFor="fromEmail">{t('settingsPage.email.fromEmailLabel')}</Label>
                           <Input
                             id="fromEmail"
                             type="email"
@@ -1863,7 +1865,7 @@ export default function Settings() {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="fromName">From Name</Label>
+                          <Label htmlFor="fromName">{t('settingsPage.email.fromNameLabel')}</Label>
                           <Input
                             id="fromName"
                             value={fromName}
@@ -1873,26 +1875,26 @@ export default function Settings() {
                           />
                         </div>
                       </div>
-                      
+
                       {(provider === 'mailersend' || provider === 'sendgrid') && (
                         <div>
-                          <Label htmlFor="apiKey">API Key</Label>
+                          <Label htmlFor="apiKey">{t('settingsPage.email.apiKeyLabel')}</Label>
                           <Input
                             id="apiKey"
                             type="password"
                             value={apiKey}
                             onChange={(e) => setApiKey(e.target.value)}
-                            placeholder="Enter API key"
+                            placeholder={t('settingsPage.email.apiKeyPlaceholder')}
                             data-testid="input-api-key"
                           />
                         </div>
                       )}
-                      
+
                       {provider === 'smtp' && (
                         <>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <Label htmlFor="smtpHost">SMTP Host</Label>
+                              <Label htmlFor="smtpHost">{t('settingsPage.email.smtpHostLabel')}</Label>
                               <Input
                                 id="smtpHost"
                                 value={smtpHost}
@@ -1902,7 +1904,7 @@ export default function Settings() {
                               />
                             </div>
                             <div>
-                              <Label htmlFor="smtpPort">SMTP Port</Label>
+                              <Label htmlFor="smtpPort">{t('settingsPage.email.smtpPortLabel')}</Label>
                               <Input
                                 id="smtpPort"
                                 value={smtpPort}
@@ -1912,26 +1914,26 @@ export default function Settings() {
                               />
                             </div>
                           </div>
-                          
+
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <Label htmlFor="smtpUser">SMTP Username</Label>
+                              <Label htmlFor="smtpUser">{t('settingsPage.email.smtpUsernameLabel')}</Label>
                               <Input
                                 id="smtpUser"
                                 value={smtpUser}
                                 onChange={(e) => setSmtpUser(e.target.value)}
-                                placeholder="username"
+                                placeholder={t('settingsPage.email.usernamePlaceholder')}
                                 data-testid="input-smtp-user"
                               />
                             </div>
                             <div>
-                              <Label htmlFor="smtpPassword">SMTP Password</Label>
+                              <Label htmlFor="smtpPassword">{t('settingsPage.email.smtpPasswordLabel')}</Label>
                               <Input
                                 id="smtpPassword"
                                 type="password"
                                 value={smtpPassword}
                                 onChange={(e) => setSmtpPassword(e.target.value)}
-                                placeholder="Enter your password"
+                                placeholder={t('settingsPage.email.passwordPlaceholder')}
                                 data-testid="input-smtp-password"
                               />
                             </div>
@@ -1939,7 +1941,7 @@ export default function Settings() {
                         </>
                       )}
                     </div>
-                    
+
                     <DialogFooter>
                       <Button
                         variant="outline"
@@ -1948,14 +1950,14 @@ export default function Settings() {
                           resetEmailForm();
                         }}
                       >
-                        Cancel
+                        {t('common:actions.cancel')}
                       </Button>
                       <Button
                         onClick={handleSaveEmail}
                         disabled={saveEmailSetting.isPending}
                         data-testid="button-save-email-config"
                       >
-                        {saveEmailSetting.isPending ? "Saving..." : "Save Configuration"}
+                        {saveEmailSetting.isPending ? t('common:status.saving') : t('settingsPage.email.saveConfigButton')}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -1964,7 +1966,7 @@ export default function Settings() {
             </CardHeader>
             <CardContent>
               {loadingEmail ? (
-                <div className="text-center py-8 text-gray-500">Loading email settings...</div>
+                <div className="text-center py-8 text-gray-500">{t('settingsPage.email.loadingEmailSettings')}</div>
               ) : emailSettings && emailSettings.length > 0 ? (
                 <div className="space-y-4">
                   {emailSettings.map((setting) => {
@@ -1973,10 +1975,10 @@ export default function Settings() {
                       <div key={setting.id} className="border rounded-lg p-4 flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-medium">{purposeInfo.label}</h3>
+                            <h3 className="font-medium">{t(`settingsPage.email.purposes.${purposeInfo.value}.label`)}</h3>
                             <Badge variant="outline">{setting.value.provider || 'mailersend'}</Badge>
-                            <Badge 
-                              variant="secondary" 
+                            <Badge
+                              variant="secondary"
                               className={
                                 setting.value.purpose === 'apk' ? 'bg-blue-100 text-blue-800' :
                                 setting.value.purpose === 'maintenance' ? 'bg-green-100 text-green-800' :
@@ -1990,13 +1992,13 @@ export default function Settings() {
                             </Badge>
                           </div>
                           <div className="text-sm text-gray-600 space-y-1">
-                            <p className="text-xs text-gray-500 mb-1">{purposeInfo.description}</p>
-                            <p><strong>From:</strong> {setting.value.fromName} &lt;{setting.value.fromEmail}&gt;</p>
+                            <p className="text-xs text-gray-500 mb-1">{t(`settingsPage.email.purposes.${purposeInfo.value}.description`)}</p>
+                            <p><strong>{t('settingsPage.email.fromDisplayLabel')}</strong> {setting.value.fromName} &lt;{setting.value.fromEmail}&gt;</p>
                             {setting.value.apiKey && (
-                              <p><strong>API Key:</strong> {setting.value.apiKey.substring(0, 10)}...***</p>
+                              <p><strong>{t('settingsPage.email.apiKeyDisplayLabel')}</strong> {setting.value.apiKey.substring(0, 10)}...***</p>
                             )}
                             {setting.value.smtpHost && (
-                              <p><strong>SMTP:</strong> {setting.value.smtpHost}:{setting.value.smtpPort}</p>
+                              <p><strong>{t('settingsPage.email.smtpDisplayLabel')}</strong> {setting.value.smtpHost}:{setting.value.smtpPort}</p>
                             )}
                           </div>
                         </div>
@@ -2008,7 +2010,7 @@ export default function Settings() {
                             data-testid={`button-edit-email-${setting.id}`}
                           >
                             <Edit className="h-4 w-4 mr-2" />
-                            Edit
+                            {t('common:actions.edit')}
                           </Button>
                           <Button
                             variant="ghost"
@@ -2018,7 +2020,7 @@ export default function Settings() {
                             data-testid={`button-delete-email-${setting.id}`}
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
+                            {t('common:actions.delete')}
                           </Button>
                         </div>
                       </div>
@@ -2028,8 +2030,8 @@ export default function Settings() {
               ) : (
                 <div className="text-center py-8 text-gray-500">
                   <Mail className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                  <p>No email configuration set</p>
-                  <p className="text-sm mt-1">Click "Add Email Config" to configure your email service</p>
+                  <p>{t('settingsPage.email.noEmailConfigSet')}</p>
+                  <p className="text-sm mt-1">{t('settingsPage.email.noEmailConfigHint')}</p>
                 </div>
               )}
             </CardContent>
@@ -2040,17 +2042,17 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Server className="h-5 w-5" />
-                GPS Activation Settings
+                {t('settingsPage.gps.activationSettingsTitle')}
               </CardTitle>
               <CardDescription>
-                Configure the GPS company's email address for activation requests
+                {t('settingsPage.gps.activationSettingsDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-2">
-                    <Label htmlFor="gpsRecipientEmail">GPS Company Email</Label>
+                    <Label htmlFor="gpsRecipientEmail">{t('settingsPage.gps.companyEmailLabel')}</Label>
                     <Input
                       id="gpsRecipientEmail"
                       type="email"
@@ -2061,7 +2063,7 @@ export default function Settings() {
                       data-testid="input-gps-recipient-email"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      This email will receive GPS activation and swap requests
+                      {t('settingsPage.gps.companyEmailHint')}
                     </p>
                   </div>
                   <div className="flex items-end">
@@ -2071,7 +2073,7 @@ export default function Settings() {
                       className="w-full"
                       data-testid="button-save-gps-recipient"
                     >
-                      {saveGpsRecipient.isPending ? "Saving..." : "Save GPS Email"}
+                      {saveGpsRecipient.isPending ? t('common:status.saving') : t('settingsPage.gps.saveGpsEmailButton')}
                     </Button>
                   </div>
                 </div>
@@ -2084,13 +2086,13 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Mail className="h-5 w-5" />
-                GPS Email Templates
+                {t('settingsPage.gps.templatesTitle')}
               </CardTitle>
               <CardDescription>
-                Customize GPS activation and swap email messages sent to your GPS provider
+                {t('settingsPage.gps.templatesDescription')}
               </CardDescription>
               <div className="mt-2 text-sm text-muted-foreground bg-blue-50 border border-blue-200 rounded-md p-3">
-                <strong>Available Placeholders:</strong> <code className="mx-1 px-1.5 py-0.5 bg-blue-100 rounded">{'{brand}'}</code>
+                <strong>{t('settingsPage.docEmails.placeholdersLabel')}</strong> <code className="mx-1 px-1.5 py-0.5 bg-blue-100 rounded">{'{brand}'}</code>
                 <code className="mx-1 px-1.5 py-0.5 bg-blue-100 rounded">{'{model}'}</code>
                 <code className="mx-1 px-1.5 py-0.5 bg-blue-100 rounded">{'{licensePlate}'}</code>
                 <code className="mx-1 px-1.5 py-0.5 bg-blue-100 rounded">{'{imei}'}</code>
@@ -2100,10 +2102,10 @@ export default function Settings() {
               <div className="space-y-6">
                 {/* GPS Activation Template */}
                 <div className="space-y-3 p-4 border rounded-lg">
-                  <h4 className="font-medium text-sm">GPS Activation Email</h4>
+                  <h4 className="font-medium text-sm">{t('settingsPage.gps.activationEmailTitle')}</h4>
                   <div className="space-y-3">
                     <div>
-                      <Label htmlFor="gpsActivationSubject">Subject</Label>
+                      <Label htmlFor="gpsActivationSubject">{t('settingsPage.gps.subjectLabel')}</Label>
                       <Input
                         id="gpsActivationSubject"
                         value={gpsActivationSubject}
@@ -2114,12 +2116,12 @@ export default function Settings() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="gpsActivationMessage">Message</Label>
+                      <Label htmlFor="gpsActivationMessage">{t('settingsPage.gps.messageLabel')}</Label>
                       <Textarea
                         id="gpsActivationMessage"
                         value={gpsActivationMessage}
                         onChange={(e) => setGpsActivationMessage(e.target.value)}
-                        placeholder="Enter GPS activation message template..."
+                        placeholder={t('settingsPage.gps.activationMessagePlaceholder')}
                         rows={6}
                         className="mt-1 font-mono text-sm"
                         data-testid="textarea-gps-activation-message"
@@ -2130,10 +2132,10 @@ export default function Settings() {
 
                 {/* GPS Swap Template */}
                 <div className="space-y-3 p-4 border rounded-lg">
-                  <h4 className="font-medium text-sm">GPS Module Swap Email</h4>
+                  <h4 className="font-medium text-sm">{t('settingsPage.gps.swapEmailTitle')}</h4>
                   <div className="space-y-3">
                     <div>
-                      <Label htmlFor="gpsSwapSubject">Subject</Label>
+                      <Label htmlFor="gpsSwapSubject">{t('settingsPage.gps.subjectLabel')}</Label>
                       <Input
                         id="gpsSwapSubject"
                         value={gpsSwapSubject}
@@ -2144,12 +2146,12 @@ export default function Settings() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="gpsSwapMessage">Message</Label>
+                      <Label htmlFor="gpsSwapMessage">{t('settingsPage.gps.messageLabel')}</Label>
                       <Textarea
                         id="gpsSwapMessage"
                         value={gpsSwapMessage}
                         onChange={(e) => setGpsSwapMessage(e.target.value)}
-                        placeholder="Enter GPS swap message template..."
+                        placeholder={t('settingsPage.gps.swapMessagePlaceholder')}
                         rows={6}
                         className="mt-1 font-mono text-sm"
                         data-testid="textarea-gps-swap-message"
@@ -2165,7 +2167,7 @@ export default function Settings() {
                   className="w-full"
                   data-testid="button-save-gps-templates"
                 >
-                  {saveGpsTemplates.isPending ? "Saving..." : "Save GPS Email Templates"}
+                  {saveGpsTemplates.isPending ? t('common:status.saving') : t('settingsPage.gps.saveGpsTemplatesButton')}
                 </Button>
               </div>
             </CardContent>
@@ -2176,10 +2178,10 @@ export default function Settings() {
       <ConfirmDialog
         open={deleteEmailDialogOpen}
         onOpenChange={setDeleteEmailDialogOpen}
-        title="Delete Email Configuration"
-        description="Are you sure you want to delete this email configuration? This action cannot be undone."
+        title={t('settingsPage.email.deleteConfigDialogTitle')}
+        description={t('settingsPage.email.deleteConfigDialogDescription')}
         variant="danger"
-        confirmLabel="Delete"
+        confirmLabel={t('common:actions.delete')}
         onConfirm={confirmDeleteEmailConfig}
         onCancel={() => setEmailConfigToDelete(null)}
       />
@@ -2189,6 +2191,7 @@ export default function Settings() {
 
 // Contract Number Settings Component
 function ContractNumberSettings() {
+  const { t } = useTranslation("settings");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [contractNumberStart, setContractNumberStart] = useState("");
@@ -2224,16 +2227,16 @@ function ContractNumberSettings() {
     },
     onSuccess: () => {
       toast({
-        title: "Settings Updated",
-        description: "Contract number start value has been updated successfully.",
+        title: t('settingsPage.contractNumberSettings.toasts.settingsUpdatedTitle'),
+        description: t('settingsPage.contractNumberSettings.toasts.settingsUpdatedDescription'),
       });
       invalidateByPrefix("/api/system-settings");
       invalidateByPrefix("/api/settings/next-contract-number");
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to update settings. Please try again.",
+        title: t('common:status.error'),
+        description: t('settingsPage.contractNumberSettings.toasts.updateFailedDescription'),
         variant: "destructive",
       });
       console.error("Error updating settings:", error);
@@ -2263,8 +2266,8 @@ function ContractNumberSettings() {
     },
     onSuccess: (data: any) => {
       toast({
-        title: "Override Set",
-        description: data.message || `Next contract number is now ${data.nextContractNumber}`,
+        title: t('settingsPage.contractNumberSettings.toasts.overrideSetTitle'),
+        description: data.message || t('settingsPage.contractNumberSettings.toasts.overrideSetDefaultDescription', { number: data.nextContractNumber }),
       });
       invalidateByPrefix("/api/system-settings");
       invalidateByPrefix("/api/settings/next-contract-number");
@@ -2274,8 +2277,8 @@ function ContractNumberSettings() {
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to set override. Please try again.",
+        title: t('common:status.error'),
+        description: t('settingsPage.contractNumberSettings.toasts.setOverrideFailedDescription'),
         variant: "destructive",
       });
       console.error("Error setting override:", error);
@@ -2289,16 +2292,16 @@ function ContractNumberSettings() {
     },
     onSuccess: (data: any) => {
       toast({
-        title: "Override Cleared",
-        description: data.message || "Now using automatic contract numbering",
+        title: t('settingsPage.contractNumberSettings.toasts.overrideClearedTitle'),
+        description: data.message || t('settingsPage.contractNumberSettings.toasts.overrideClearedDefaultDescription'),
       });
       invalidateByPrefix("/api/system-settings");
       invalidateByPrefix("/api/settings/next-contract-number");
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to clear override. Please try again.",
+        title: t('common:status.error'),
+        description: t('settingsPage.contractNumberSettings.toasts.clearOverrideFailedDescription'),
         variant: "destructive",
       });
       console.error("Error clearing override:", error);
@@ -2335,8 +2338,8 @@ function ContractNumberSettings() {
     const startNum = parseInt(contractNumberStart);
     if (isNaN(startNum) || startNum < 1) {
       toast({
-        title: "Invalid Value",
-        description: "Please enter a valid number greater than 0.",
+        title: t('settingsPage.contractNumberSettings.toasts.invalidValueTitle'),
+        description: t('settingsPage.contractNumberSettings.toasts.invalidStartNumberDescription'),
         variant: "destructive",
       });
       return;
@@ -2348,8 +2351,8 @@ function ContractNumberSettings() {
     const num = parseInt(overrideInput, 10);
     if (isNaN(num) || num < 1) {
       toast({
-        title: "Invalid Value",
-        description: "Please enter a valid positive number.",
+        title: t('settingsPage.contractNumberSettings.toasts.invalidValueTitle'),
+        description: t('settingsPage.contractNumberSettings.toasts.invalidOverrideDescription'),
         variant: "destructive",
       });
       return;
@@ -2369,7 +2372,7 @@ function ContractNumberSettings() {
   };
 
   if (isLoading) {
-    return <div className="text-sm text-muted-foreground">Loading...</div>;
+    return <div className="text-sm text-muted-foreground">{t('common:status.loading')}</div>;
   }
 
   const hasActiveOverride = settings?.contractNumberOverride !== null && settings?.contractNumberOverride !== undefined;
@@ -2378,7 +2381,7 @@ function ContractNumberSettings() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="contractNumberStart">Starting Contract Number</Label>
+          <Label htmlFor="contractNumberStart">{t('settingsPage.contractNumberSettings.startingNumberLabel')}</Label>
           <Input
             id="contractNumberStart"
             type="number"
@@ -2389,21 +2392,21 @@ function ContractNumberSettings() {
             data-testid="input-contract-number-start"
           />
           <p className="text-xs text-gray-500 mt-1">
-            This will be the base for auto-generated contract numbers
+            {t('settingsPage.contractNumberSettings.startingNumberHint')}
           </p>
         </div>
         <div>
-          <Label>Next Contract Number</Label>
+          <Label>{t('settingsPage.contractNumberSettings.nextNumberLabel')}</Label>
           <div className="flex h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm items-center justify-between">
-            <span className="font-medium">{nextContractNumber || "Loading..."}</span>
+            <span className="font-medium">{nextContractNumber || t('common:status.loading')}</span>
             {hasActiveOverride && (
               <Badge variant="secondary" className="ml-2 bg-orange-100 text-orange-800">
-                Override Active
+                {t('settingsPage.contractNumberSettings.overrideActiveBadge')}
               </Badge>
             )}
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            This will be assigned to the next new reservation
+            {t('settingsPage.contractNumberSettings.nextNumberHint')}
           </p>
         </div>
       </div>
@@ -2414,16 +2417,16 @@ function ContractNumberSettings() {
         className="w-full md:w-auto"
         data-testid="button-save-contract-settings"
       >
-        {updateSettings.isPending ? "Saving..." : "Save Starting Number"}
+        {updateSettings.isPending ? t('common:status.saving') : t('settingsPage.contractNumberSettings.saveStartingNumberButton')}
       </Button>
 
       {/* Smart Override Section */}
       <div className="border-t pt-6">
-        <h4 className="font-medium mb-4">Smart Override</h4>
+        <h4 className="font-medium mb-4">{t('settingsPage.contractNumberSettings.smartOverrideTitle')}</h4>
         <p className="text-sm text-gray-600 mb-4">
-          Manually set the next contract number. The system will warn you if this conflicts with existing contract numbers.
+          {t('settingsPage.contractNumberSettings.smartOverrideDescription')}
         </p>
-        
+
         <div className="flex gap-2 items-start">
           <div className="flex-1">
             <Input
@@ -2431,7 +2434,7 @@ function ContractNumberSettings() {
               min="1"
               value={overrideInput}
               onChange={(e) => setOverrideInput(e.target.value)}
-              placeholder="Enter new contract number..."
+              placeholder={t('settingsPage.contractNumberSettings.overrideInputPlaceholder')}
               data-testid="input-contract-override"
             />
           </div>
@@ -2440,7 +2443,7 @@ function ContractNumberSettings() {
             disabled={!overrideInput || setOverride.isPending}
             data-testid="button-set-override"
           >
-            {setOverride.isPending ? "Setting..." : "Set Override"}
+            {setOverride.isPending ? t('settingsPage.contractNumberSettings.settingStatus') : t('settingsPage.contractNumberSettings.setOverrideButton')}
           </Button>
           {hasActiveOverride && (
             <Button
@@ -2449,7 +2452,7 @@ function ContractNumberSettings() {
               disabled={clearOverride.isPending}
               data-testid="button-clear-override"
             >
-              {clearOverride.isPending ? "Clearing..." : "Clear Override"}
+              {clearOverride.isPending ? t('settingsPage.contractNumberSettings.clearingStatus') : t('settingsPage.contractNumberSettings.clearOverrideButton')}
             </Button>
           )}
         </div>
@@ -2458,14 +2461,14 @@ function ContractNumberSettings() {
         {conflictWarning && conflictWarning.count > 0 && (
           <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <p className="text-sm text-yellow-800 font-medium">
-              Warning: {conflictWarning.count} existing contract number{conflictWarning.count > 1 ? 's' : ''} may conflict
+              {t('settingsPage.contractNumberSettings.conflictWarning', { count: conflictWarning.count })}
             </p>
             <p className="text-sm text-yellow-700 mt-1">
-              Numbers that are equal or higher: {conflictWarning.conflicts.join(", ")}
-              {conflictWarning.count > 5 ? ` and ${conflictWarning.count - 5} more...` : ""}
+              {t('settingsPage.contractNumberSettings.conflictingNumbersLabel', { conflicts: conflictWarning.conflicts.join(", ") })}
+              {conflictWarning.count > 5 ? t('settingsPage.contractNumberSettings.andMoreSuffix', { count: conflictWarning.count - 5 }) : ""}
             </p>
             <p className="text-sm text-yellow-700 mt-2">
-              You can still set this override, but future automatic numbering may create duplicates.
+              {t('settingsPage.contractNumberSettings.overrideAnywayWarning')}
             </p>
           </div>
         )}
@@ -2474,7 +2477,7 @@ function ContractNumberSettings() {
         {overrideInput && !checkConflicts.isPending && !conflictWarning && parseInt(overrideInput, 10) > 0 && (
           <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-4">
             <p className="text-sm text-green-800">
-              No conflicts found. This number is safe to use.
+              {t('settingsPage.contractNumberSettings.noConflictsMessage')}
             </p>
           </div>
         )}
@@ -2482,7 +2485,7 @@ function ContractNumberSettings() {
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <p className="text-sm text-blue-800">
-          <strong>Note:</strong> Contract numbers are generated sequentially. Without an override, the system uses the highest existing contract number + 1.
+          <strong>{t('settingsPage.contractNumberSettings.noteLabel')}</strong> {t('settingsPage.contractNumberSettings.noteText')}
         </p>
       </div>
 
@@ -2490,24 +2493,23 @@ function ContractNumberSettings() {
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Confirm Override</DialogTitle>
+            <DialogTitle>{t('settingsPage.contractNumberSettings.confirmOverrideTitle')}</DialogTitle>
             <DialogDescription>
-              There are {conflictWarning?.count} existing contract numbers that may conflict with this value.
-              Are you sure you want to set the next contract number to {overrideInput}?
+              {t('settingsPage.contractNumberSettings.confirmOverrideDescription', { count: conflictWarning?.count, number: overrideInput })}
             </DialogDescription>
           </DialogHeader>
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 my-4">
             <p className="text-sm text-yellow-800">
-              Conflicting numbers: {conflictWarning?.conflicts.join(", ")}
-              {(conflictWarning?.count || 0) > 5 ? ` and ${(conflictWarning?.count || 0) - 5} more...` : ""}
+              {t('settingsPage.contractNumberSettings.conflictingNumbersDialogLabel', { conflicts: conflictWarning?.conflicts.join(", ") })}
+              {(conflictWarning?.count || 0) > 5 ? t('settingsPage.contractNumberSettings.andMoreSuffix', { count: (conflictWarning?.count || 0) - 5 }) : ""}
             </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
-              Cancel
+              {t('common:actions.cancel')}
             </Button>
             <Button onClick={handleConfirmOverride} disabled={setOverride.isPending}>
-              {setOverride.isPending ? "Setting..." : "Override Anyway"}
+              {setOverride.isPending ? t('settingsPage.contractNumberSettings.settingStatus') : t('settingsPage.contractNumberSettings.overrideAnywayButton')}
             </Button>
           </DialogFooter>
         </DialogContent>

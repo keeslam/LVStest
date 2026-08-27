@@ -1,4 +1,5 @@
 import { format, parseISO } from 'date-fns';
+import i18n from '@/i18n';
 
 /**
  * Format a date string or Date object into a readable format: 'MMM dd, yyyy'
@@ -82,26 +83,10 @@ export function formatLicensePlate(licensePlate: string): string {
  * Format a reservation status to a human-readable string
  */
 export function formatReservationStatus(status: string): string {
-  switch (status.toLowerCase()) {
-    case 'booked':
-      return 'Booked';
-    case 'picked_up':
-      return 'Picked Up';
-    case 'returned':
-      return 'Returned';
-    case 'completed':
-      return 'Completed';
-    case 'pending':
-    case 'scheduled':
-      return 'Scheduled';
-    case 'confirmed':
-    case 'active':
-      return 'Active';
-    case 'cancelled':
-      return 'Cancelled';
-    default:
-      return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  }
+  const key = status.toLowerCase();
+  const normalizedKey = key === 'pending' ? 'scheduled' : key === 'confirmed' ? 'active' : key;
+  const fallback = status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  return i18n.t(`reservations:detailsPage.statusLabels.${normalizedKey}`, { defaultValue: fallback });
 }
 
 /**

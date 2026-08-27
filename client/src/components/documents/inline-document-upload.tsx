@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -44,6 +45,24 @@ const documentTypes = [
   "Other"
 ];
 
+// Values are stored verbatim in the database and matched elsewhere (e.g. isContractDocument),
+// so they stay in English; only the displayed label is translated via this key map.
+const DOCUMENT_TYPE_KEYS: Record<string, string> = {
+  "APK Inspection": "apkInspection",
+  "Contract": "contract",
+  "Damage Report": "damageReport",
+  "Insurance": "insurance",
+  "Maintenance Record": "maintenanceRecord",
+  "Receipt": "receipt",
+  "Registration": "registration",
+  "Vehicle Photos": "vehiclePhotos",
+  "Warranty": "warranty",
+  "Tire Replacement": "tireReplacement",
+  "Front Window Replacement": "frontWindowReplacement",
+  "Repair Report": "repairReport",
+  "Other": "other",
+};
+
 // Maximum file size (5 MB)
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -87,6 +106,7 @@ interface InlineDocumentUploadProps {
 }
 
 export function InlineDocumentUpload({ vehicleId, reservationId, onSuccess, preselectedType, children }: InlineDocumentUploadProps) {
+  const { t } = useTranslation(["documents", "common"]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -175,8 +195,8 @@ export function InlineDocumentUpload({ vehicleId, reservationId, onSuccess, pres
       
       // Show success message
       toast({
-        title: "Document uploaded successfully",
-        description: "The document has been added to the system.",
+        title: t('uploadDialog.documentUploadedTitle'),
+        description: t('uploadDialog.documentUploadedDescription'),
       });
       
       // Close dialog and reset form
@@ -197,8 +217,8 @@ export function InlineDocumentUpload({ vehicleId, reservationId, onSuccess, pres
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: `Failed to upload document: ${error.message}`,
+        title: t('uploadDialog.errorTitle'),
+        description: t('uploadDialog.uploadFailedDescription', { error: error.message }),
         variant: "destructive",
       });
     },
@@ -237,13 +257,13 @@ export function InlineDocumentUpload({ vehicleId, reservationId, onSuccess, pres
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" x2="12" y1="3" y2="15" />
             </svg>
-            Upload Document
+            {t('uploadDialog.title')}
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Upload Document</DialogTitle>
+          <DialogTitle>{t('uploadDialog.title')}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -253,21 +273,21 @@ export function InlineDocumentUpload({ vehicleId, reservationId, onSuccess, pres
               name="documentType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Document Type</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
+                  <FormLabel>{t('uploadDialog.documentType')}</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
                     defaultValue={field.value}
                     value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select document type" />
+                        <SelectValue placeholder={t('uploadDialog.selectDocumentType')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {documentTypes.map((type) => (
                         <SelectItem key={type} value={type}>
-                          {type}
+                          {t(`uploadDialog.types.${DOCUMENT_TYPE_KEYS[type]}`)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -283,24 +303,24 @@ export function InlineDocumentUpload({ vehicleId, reservationId, onSuccess, pres
               name="file"
               render={({ field: { value, onChange, ...field } }) => (
                 <FormItem>
-                  <FormLabel>File</FormLabel>
+                  <FormLabel>{t('uploadDialog.file')}</FormLabel>
                   <FormControl>
                     <div className="flex flex-col space-y-2">
-                      <Input 
-                        type="file" 
+                      <Input
+                        type="file"
                         accept={ACCEPTED_FILE_TYPES.join(",")}
                         onChange={handleFileChange}
                         {...field}
                       />
                       {selectedFile && (
                         <p className="text-sm text-gray-500">
-                          Selected: {selectedFile.name} ({formatFileSize(selectedFile.size)})
+                          {t('uploadDialog.selected', { name: selectedFile.name, size: formatFileSize(selectedFile.size) })}
                         </p>
                       )}
                     </div>
                   </FormControl>
                   <FormDescription>
-                    Supported file types: PDF, Word, Excel, images, and text files. Maximum size: 5MB.
+                    {t('uploadDialog.supportedFileTypes')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -310,11 +330,11 @@ export function InlineDocumentUpload({ vehicleId, reservationId, onSuccess, pres
             {/* Preview if it's an image */}
             {previewUrl && (
               <div>
-                <FormLabel>Preview</FormLabel>
+                <FormLabel>{t('uploadDialog.preview')}</FormLabel>
                 <div className="mt-2 max-w-full overflow-hidden border rounded-md">
                   <img 
-                    src={previewUrl} 
-                    alt="File preview" 
+                    src={previewUrl}
+                    alt={t('uploadDialog.preview')}
                     className="max-w-full h-auto object-contain"
                     style={{ maxHeight: '200px' }}
                   />
@@ -329,16 +349,16 @@ export function InlineDocumentUpload({ vehicleId, reservationId, onSuccess, pres
                 name="apkDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>New APK Expiration Date</FormLabel>
+                    <FormLabel>{t('uploadDialog.newApkExpirationDate')}</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="date" 
-                        {...field} 
+                      <Input
+                        type="date"
+                        {...field}
                         data-testid="input-apk-date"
                       />
                     </FormControl>
                     <FormDescription>
-                      Update the vehicle's APK expiration date (optional)
+                      {t('uploadDialog.updateApkDateHint')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -352,12 +372,12 @@ export function InlineDocumentUpload({ vehicleId, reservationId, onSuccess, pres
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes (Optional)</FormLabel>
+                  <FormLabel>{t('uploadDialog.notesOptional')}</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Any additional notes about this document" 
+                    <Textarea
+                      placeholder={t('uploadDialog.notesPlaceholder')}
                       className="min-h-[80px]"
-                      {...field} 
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -371,7 +391,7 @@ export function InlineDocumentUpload({ vehicleId, reservationId, onSuccess, pres
                 variant="outline"
                 onClick={() => setIsOpen(false)}
               >
-                Cancel
+                {t('common:actions.cancel')}
               </Button>
               <Button
                 type="submit"
@@ -383,10 +403,10 @@ export function InlineDocumentUpload({ vehicleId, reservationId, onSuccess, pres
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Uploading...
+                    {t('uploadDialog.uploading')}
                   </span>
                 ) : (
-                  "Upload Document"
+                  t('uploadDialog.title')
                 )}
               </Button>
             </div>

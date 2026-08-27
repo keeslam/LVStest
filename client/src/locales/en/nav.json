@@ -1,0 +1,26 @@
+{
+  "dashboard": "Dashboard",
+  "vehicles": "Vehicles",
+  "customers": "Customers",
+  "reservations": "Reservations",
+  "maintenance": "Maintenance",
+  "expenses": "Expenses",
+  "documents": "Documents",
+  "transports": "Transports",
+  "communications": "Communications",
+  "reports": "Reports",
+  "settings": "Settings",
+  "logout": "Logout",
+  "profile": "Profile",
+  "searchResults": "Search Results",
+  "notifications": "Notifications",
+  "userMenu": {
+    "profile": "Profile",
+    "administration": "Administration",
+    "users": "Users",
+    "backupManagement": "Backup Management",
+    "appSettings": "App Settings",
+    "logout": "Logout",
+    "noEmailSet": "No email set"
+  }
+}

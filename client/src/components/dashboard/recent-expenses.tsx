@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Link } from "wouter";
@@ -81,6 +82,7 @@ interface GroupedExpense {
 }
 
 export function RecentExpenses() {
+  const { t } = useTranslation("dashboard");
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [groupDialogOpen, setGroupDialogOpen] = useState(false);
@@ -148,10 +150,10 @@ export function RecentExpenses() {
   return (
     <Card>
       <CardHeader className="px-4 py-3 border-b flex-row justify-between items-center space-y-0">
-        <CardTitle className="text-base font-medium text-gray-800">Recent Expenses</CardTitle>
+        <CardTitle className="text-base font-medium text-gray-800">{t('recentExpenses.title')}</CardTitle>
         <Link href="/expenses">
           <Button variant="link" className="text-primary-600 hover:text-primary-700 text-sm font-medium h-8 px-0">
-            View All
+            {t('recentExpenses.viewAll')}
           </Button>
         </Link>
       </CardHeader>
@@ -164,7 +166,7 @@ export function RecentExpenses() {
             </svg>
           </div>
         ) : groupedExpenses?.length === 0 ? (
-          <div className="text-center py-4 text-gray-500">No recent expenses</div>
+          <div className="text-center py-4 text-gray-500">{t('recentExpenses.none')}</div>
         ) : (
           <div className="max-h-[265px] overflow-y-auto pr-1 space-y-2">
             {groupedExpenses?.map((group, index) => (
@@ -181,7 +183,7 @@ export function RecentExpenses() {
                     <span className="font-medium">{formatLicensePlate(group.vehicle?.licensePlate || '')}</span>
                     <span className="text-gray-500">: {group.categories.join(', ')}</span>
                     {group.expenses.length > 1 && (
-                      <span className="text-xs text-gray-400 ml-1">({group.expenses.length} items)</span>
+                      <span className="text-xs text-gray-400 ml-1">{t('recentExpenses.itemsCount', { count: group.expenses.length })}</span>
                     )}
                   </div>
                 </div>
@@ -198,7 +200,7 @@ export function RecentExpenses() {
                         <div key={expense.id}>
                           <DropdownMenuItem onClick={() => handleViewExpense(expense)}>
                             <Eye className="h-3 w-3 mr-2" />
-                            View {expense.category} - {<Price value={Number(expense.amount || 0)} />}
+                            {t('common:actions.view')} {expense.category} - {<Price value={Number(expense.amount || 0)} />}
                           </DropdownMenuItem>
                         </div>
                       ))}
@@ -215,64 +217,64 @@ export function RecentExpenses() {
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Expense Details</DialogTitle>
+            <DialogTitle>{t('recentExpenses.expenseDetailsTitle')}</DialogTitle>
           </DialogHeader>
           {selectedExpense && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Date</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('common:fields.date')}</h3>
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 mr-2 text-primary" />
                       <span>{formatDate(selectedExpense.date)}</span>
                     </div>
                   </div>
-                  
+
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Category</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('recentExpenses.category')}</h3>
                     <div className="flex items-center">
                       <Tag className="h-4 w-4 mr-2 text-primary" />
                       <Badge>{selectedExpense.category}</Badge>
                     </div>
                   </div>
-                  
+
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Amount</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('common:fields.amount')}</h3>
                     <div className="text-xl font-bold">
                       {<Price value={Number(selectedExpense.amount || 0)} />}
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-3">
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Vehicle</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('recentExpenses.vehicle')}</h3>
                     <div className="flex items-center">
                       <Truck className="h-4 w-4 mr-2 text-primary" />
                       <span>
                         {selectedExpense.vehicle ? (
                           `${selectedExpense.vehicle.brand} ${selectedExpense.vehicle.model} (${formatLicensePlate(selectedExpense.vehicle.licensePlate)})`
                         ) : (
-                          'Vehicle not found'
+                          t('recentExpenses.vehicleNotFound')
                         )}
                       </span>
                     </div>
                   </div>
-                  
+
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Description</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('common:fields.description')}</h3>
                     <div className="flex items-start">
                       <FileText className="h-4 w-4 mr-2 mt-1 text-primary" />
                       <p className="text-sm">
-                        {selectedExpense.description || "No description provided"}
+                        {selectedExpense.description || t('recentExpenses.noDescriptionProvided')}
                       </p>
                     </div>
                   </div>
-                  
+
                   {selectedExpense.receiptFilePath && (
                     <div>
-                      <h3 className="text-sm font-medium text-muted-foreground mb-1">Receipt</h3>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('recentExpenses.receipt')}</h3>
                       <div className="flex items-center">
                         <FileCheck className="h-4 w-4 mr-2 text-primary" />
                         <a
@@ -281,7 +283,7 @@ export function RecentExpenses() {
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:underline text-sm"
                         >
-                          View Receipt
+                          {t('recentExpenses.viewReceipt')}
                         </a>
                       </div>
                     </div>
@@ -297,7 +299,7 @@ export function RecentExpenses() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Expense</DialogTitle>
+            <DialogTitle>{t('recentExpenses.editExpenseTitle')}</DialogTitle>
           </DialogHeader>
           {selectedExpense && (
             <ExpenseForm
@@ -316,9 +318,9 @@ export function RecentExpenses() {
             <DialogTitle>
               {selectedGroup && (
                 <div className="flex items-center gap-2">
-                  <span>Expenses for {formatLicensePlate(selectedGroup.vehicle?.licensePlate || '')}</span>
+                  <span>{t('recentExpenses.expensesForVehicle', { plate: formatLicensePlate(selectedGroup.vehicle?.licensePlate || '') })}</span>
                   {selectedGroup.expenses.length > 1 && (
-                    <Badge variant="secondary">{selectedGroup.expenses.length} items</Badge>
+                    <Badge variant="secondary">{t('recentExpenses.itemsBadge', { count: selectedGroup.expenses.length })}</Badge>
                   )}
                 </div>
               )}
@@ -343,29 +345,29 @@ export function RecentExpenses() {
                       </div>
                       
                       <div>
-                        <h4 className="text-sm font-medium text-muted-foreground">Date</h4>
+                        <h4 className="text-sm font-medium text-muted-foreground">{t('common:fields.date')}</h4>
                         <div className="flex items-center text-sm">
                           <Calendar className="h-4 w-4 mr-2 text-primary" />
                           {formatDate(expense.date)}
                         </div>
                       </div>
-                      
+
                       <div>
-                        <h4 className="text-sm font-medium text-muted-foreground">Amount</h4>
+                        <h4 className="text-sm font-medium text-muted-foreground">{t('common:fields.amount')}</h4>
                         <div className="text-lg font-bold">
                           {<Price value={Number(expense.amount || 0)} />}
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <div>
-                        <h4 className="text-sm font-medium text-muted-foreground">Description</h4>
+                        <h4 className="text-sm font-medium text-muted-foreground">{t('common:fields.description')}</h4>
                         <p className="text-sm">
-                          {expense.description || "No description"}
+                          {expense.description || t('recentExpenses.noDescription')}
                         </p>
                       </div>
-                      
+
                       <div className="flex gap-2">
                         {expense.receiptFilePath && (
                           <a
@@ -375,7 +377,7 @@ export function RecentExpenses() {
                             className="text-sm text-blue-600 hover:underline flex items-center"
                           >
                             <FileCheck className="h-4 w-4 mr-1" />
-                            View Receipt
+                            {t('recentExpenses.viewReceipt')}
                           </a>
                         )}
                         <Button
@@ -388,17 +390,17 @@ export function RecentExpenses() {
                           className="text-sm"
                         >
                           <Pencil className="h-3 w-3 mr-1" />
-                          Edit
+                          {t('common:actions.edit')}
                         </Button>
                       </div>
                     </div>
                   </div>
                 </div>
               ))}
-              
+
               <div className="pt-4 border-t">
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold">Total</span>
+                  <span className="text-lg font-semibold">{t('recentExpenses.total')}</span>
                   <span className="text-2xl font-bold text-primary">
                     {<Price value={selectedGroup.totalAmount} />}
                   </span>

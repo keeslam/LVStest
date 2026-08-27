@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient , invalidateByPrefix } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -93,7 +94,23 @@ const EXPENSE_CATEGORIES = [
   'Other'
 ];
 
+// Values are stored verbatim in the database, so they stay in English; only the
+// displayed label is translated via this key map.
+const EXPENSE_CATEGORY_KEYS: Record<string, string> = {
+  'Maintenance': 'maintenance',
+  'Tires': 'tires',
+  'Brakes': 'brakes',
+  'Damage': 'damage',
+  'Fuel': 'fuel',
+  'Insurance': 'insurance',
+  'Registration': 'registration',
+  'Cleaning': 'cleaning',
+  'Accessories': 'accessories',
+  'Other': 'other',
+};
+
 export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: InvoiceScannerProps) {
+  const { t } = useTranslation(["expenses", "common"]);
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -121,8 +138,8 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
       if (matchingVehicle && !vehicleId) {
         setVehicleId(matchingVehicle.id.toString());
         toast({
-          title: "Vehicle Auto-Selected",
-          description: `Found matching vehicle: ${matchingVehicle.brand} ${matchingVehicle.model} (${matchingVehicle.licensePlate})`,
+          title: t('invoiceScanner.vehicleAutoSelectedTitle'),
+          description: t('invoiceScanner.vehicleAutoSelectedDescription', { brand: matchingVehicle.brand, model: matchingVehicle.model, plate: matchingVehicle.licensePlate }),
         });
       }
     }
@@ -196,7 +213,7 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to scan invoice');
+        throw new Error(error.message || t('invoiceScanner.scanInvoiceFailedFallback'));
       }
 
       return await response.json();
@@ -220,13 +237,15 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
       }
       
       toast({
-        title: "Invoice scanned successfully",
-        description: `Found ${processedItems.length} ${groupByCategory ? 'category groups' : 'line items'} from ${data.invoice.vendor}`,
+        title: t('invoiceScanner.invoiceScannedTitle'),
+        description: groupByCategory
+          ? t('invoiceScanner.invoiceScannedDescriptionGroups', { count: processedItems.length, vendor: data.invoice.vendor })
+          : t('invoiceScanner.invoiceScannedDescriptionItems', { count: processedItems.length, vendor: data.invoice.vendor }),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to scan invoice",
+        title: t('invoiceScanner.scanFailedTitle'),
         description: error.message,
         variant: "destructive",
       });
@@ -242,16 +261,16 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
     }
 
     setScanProgress(0);
-    setScanStage('Uploading invoice...');
-    
+    setScanStage(t('invoiceScanner.stageUploading'));
+
     const stages = [
-      { progress: 10, stage: 'Uploading invoice...', delay: 200 },
-      { progress: 20, stage: 'Trying fastest AI model...', delay: 600 },
-      { progress: 40, stage: 'Reading invoice with AI...', delay: 1200 },
-      { progress: 60, stage: 'Processing text & numbers...', delay: 2000 },
-      { progress: 75, stage: 'Extracting line items...', delay: 3000 },
-      { progress: 85, stage: 'Categorizing expenses...', delay: 4000 },
-      { progress: 95, stage: 'Finalizing...', delay: 5000 }
+      { progress: 10, stage: t('invoiceScanner.stageUploading'), delay: 200 },
+      { progress: 20, stage: t('invoiceScanner.stageTryingFastestModel'), delay: 600 },
+      { progress: 40, stage: t('invoiceScanner.stageReadingWithAI'), delay: 1200 },
+      { progress: 60, stage: t('invoiceScanner.stageProcessingTextNumbers'), delay: 2000 },
+      { progress: 75, stage: t('invoiceScanner.stageExtractingLineItems'), delay: 3000 },
+      { progress: 85, stage: t('invoiceScanner.stageCategorizingExpenses'), delay: 4000 },
+      { progress: 95, stage: t('invoiceScanner.stageFinalizing'), delay: 5000 }
     ];
 
     const timeouts: NodeJS.Timeout[] = [];
@@ -281,14 +300,14 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
       const response = await apiRequest("POST", "/api/expenses/from-invoice", data);
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Failed to create expenses");
+        throw new Error(error.message || t('invoiceScanner.createExpensesFailedFallback'));
       }
       return await response.json();
     },
     onSuccess: async (data) => {
       toast({
-        title: "Expenses created successfully",
-        description: `Created ${data.expenses?.length || 0} expense records`,
+        title: t('invoiceScanner.expensesCreatedTitle'),
+        description: t('invoiceScanner.expensesCreatedDescription', { count: data.expenses?.length || 0 }),
       });
       
       // Invalidate queries to refresh expense lists
@@ -306,7 +325,7 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to create expenses",
+        title: t('invoiceScanner.createExpensesFailedTitle'),
         description: error.message,
         variant: "destructive",
       });
@@ -318,8 +337,8 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
     if (selectedFile) {
       if (selectedFile.type !== 'application/pdf') {
         toast({
-          title: "Invalid file type",
-          description: "Please select a PDF file",
+          title: t('invoiceScanner.invalidFileTypeTitle'),
+          description: t('invoiceScanner.pleaseSelectPdf'),
           variant: "destructive",
         });
         return;
@@ -331,8 +350,8 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
   const handleScan = () => {
     if (!file) {
       toast({
-        title: "No file selected",
-        description: "Please select a PDF invoice to scan",
+        title: t('invoiceScanner.noFileSelectedTitle'),
+        description: t('invoiceScanner.pleaseSelectPdfToScan'),
         variant: "destructive",
       });
       return;
@@ -351,8 +370,8 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
     
     if (selectedLineItems.length === 0) {
       toast({
-        title: "No items selected",
-        description: "Please select at least one line item to create expenses",
+        title: t('invoiceScanner.noItemsSelectedTitle'),
+        description: t('invoiceScanner.pleaseSelectAtLeastOneItem'),
         variant: "destructive",
       });
       return;
@@ -415,14 +434,14 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
           data-testid="button-scan-invoice"
         >
           <Upload className="h-4 w-4" />
-          Scan Invoice
+          {t('invoiceScanner.scanInvoice')}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Scan Invoice</DialogTitle>
+          <DialogTitle>{t('invoiceScanner.scanInvoice')}</DialogTitle>
           <DialogDescription>
-            Upload a PDF invoice to automatically extract and categorize expenses
+            {t('invoiceScanner.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -431,7 +450,7 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
           {!scannedInvoice && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="invoice-file">Upload Invoice PDF</Label>
+                <Label htmlFor="invoice-file">{t('invoiceScanner.uploadInvoicePdf')}</Label>
                 <Input
                   id="invoice-file"
                   type="file"
@@ -441,7 +460,7 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
                 />
                 {file && (
                   <div className="text-sm text-muted-foreground">
-                    Selected: {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                    {t('invoiceScanner.selected', { name: file.name, size: (file.size / 1024 / 1024).toFixed(2) })}
                   </div>
                 )}
               </div>
@@ -456,7 +475,7 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
                       </div>
                       <Progress value={scanProgress} className="h-2" />
                       <p className="text-xs text-blue-600 text-center">
-                        AI is analyzing your invoice...
+                        {t('invoiceScanner.aiAnalyzing')}
                       </p>
                     </div>
                   </CardContent>
@@ -472,12 +491,12 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
                 {scanInvoiceMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processing...
+                    {t('invoiceScanner.processing')}
                   </>
                 ) : (
                   <>
                     <FileText className="h-4 w-4 mr-2" />
-                    Scan Invoice
+                    {t('invoiceScanner.scanInvoice')}
                   </>
                 )}
               </Button>
@@ -492,12 +511,12 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-green-600" />
-                    Select Vehicle for Expenses
+                    {t('invoiceScanner.selectVehicleForExpenses')}
                   </CardTitle>
                   <CardDescription>
-                    {scannedInvoice.invoice.vehicleInfo?.licensePlate 
-                      ? `Found license plate "${displayLicensePlate(scannedInvoice.invoice.vehicleInfo.licensePlate)}" in invoice. Auto-selected matching vehicle if found.`
-                      : "Choose which vehicle these expenses belong to."
+                    {scannedInvoice.invoice.vehicleInfo?.licensePlate
+                      ? t('invoiceScanner.foundLicensePlateDescription', { plate: displayLicensePlate(scannedInvoice.invoice.vehicleInfo.licensePlate) })
+                      : t('invoiceScanner.chooseVehicleDescription')
                     }
                   </CardDescription>
                 </CardHeader>
@@ -507,15 +526,15 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
                       vehicles={vehicles || []}
                       value={vehicleId}
                       onChange={setVehicleId}
-                      placeholder="Select a vehicle..."
+                      placeholder={t('invoiceScanner.selectVehiclePlaceholder')}
                       disabled={loadingVehicles}
                       className="w-full"
                     />
                     {scannedInvoice.invoice.vehicleInfo?.licensePlate && !vehicleId && (
                       <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded border border-amber-200">
-                        <span className="font-medium">License plate detected:</span> {displayLicensePlate(scannedInvoice.invoice.vehicleInfo.licensePlate)}
+                        <span className="font-medium">{t('invoiceScanner.licensePlateDetected')}</span> {displayLicensePlate(scannedInvoice.invoice.vehicleInfo.licensePlate)}
                         <br />
-                        <span className="text-xs">No matching vehicle found in your system. Please select manually.</span>
+                        <span className="text-xs">{t('invoiceScanner.noMatchingVehicleFound')}</span>
                       </div>
                     )}
                   </div>
@@ -527,45 +546,45 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-green-600" />
-                    Invoice Information
+                    {t('invoiceScanner.invoiceInformation')}
                   </CardTitle>
                   <CardDescription>
-                    Review the extracted invoice details
+                    {t('invoiceScanner.reviewExtractedDetails')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
-                      <Label className="text-sm font-medium text-muted-foreground">Vendor</Label>
+                      <Label className="text-sm font-medium text-muted-foreground">{t('invoiceScanner.vendor')}</Label>
                       <p className="font-medium">{scannedInvoice.invoice.vendor}</p>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium text-muted-foreground">Invoice Number</Label>
-                      <p className="font-medium">{scannedInvoice.invoice.invoiceNumber || 'N/A'}</p>
+                      <Label className="text-sm font-medium text-muted-foreground">{t('invoiceScanner.invoiceNumber')}</Label>
+                      <p className="font-medium">{scannedInvoice.invoice.invoiceNumber || t('invoiceScanner.notApplicable')}</p>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium text-muted-foreground">Date</Label>
+                      <Label className="text-sm font-medium text-muted-foreground">{t('invoiceScanner.date')}</Label>
                       <p className="font-medium">{scannedInvoice.invoice.invoiceDate}</p>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium text-muted-foreground">Total</Label>
+                      <Label className="text-sm font-medium text-muted-foreground">{t('invoiceScanner.total')}</Label>
                       <p className="font-medium text-lg">{formatCurrency(scannedInvoice.invoice.totalAmount)}</p>
                     </div>
                   </div>
 
                   {scannedInvoice.invoice.vehicleInfo && (
                     <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                      <Label className="text-sm font-medium text-blue-800">Detected Vehicle Info</Label>
+                      <Label className="text-sm font-medium text-blue-800">{t('invoiceScanner.detectedVehicleInfo')}</Label>
                       <div className="grid grid-cols-2 gap-4 mt-2">
                         {scannedInvoice.invoice.vehicleInfo.licensePlate && (
                           <div>
-                            <Label className="text-xs text-blue-600">License Plate</Label>
+                            <Label className="text-xs text-blue-600">{t('invoiceScanner.licensePlate')}</Label>
                             <p className="text-sm font-medium">{displayLicensePlate(scannedInvoice.invoice.vehicleInfo.licensePlate)}</p>
                           </div>
                         )}
                         {scannedInvoice.invoice.vehicleInfo.chassisNumber && (
                           <div>
-                            <Label className="text-xs text-blue-600">Chassis Number</Label>
+                            <Label className="text-xs text-blue-600">{t('invoiceScanner.chassisNumber')}</Label>
                             <p className="text-sm font-medium">{scannedInvoice.invoice.vehicleInfo.chassisNumber}</p>
                           </div>
                         )}
@@ -580,14 +599,14 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>Expense Line Items</CardTitle>
+                      <CardTitle>{t('invoiceScanner.expenseLineItems')}</CardTitle>
                       <CardDescription>
-                        Review and edit the extracted expense items. Select which items to create as expenses.
+                        {t('invoiceScanner.reviewEditItemsDescription')}
                       </CardDescription>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Label htmlFor="group-toggle" className="text-sm font-medium">
-                        Group by category
+                        {t('invoiceScanner.groupByCategory')}
                       </Label>
                       <Switch
                         id="group-toggle"
@@ -613,7 +632,7 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
                           }}
                         />
                         <Label htmlFor="select-all" className="text-sm font-medium">
-                          Select All ({selectedItems.size}/{editableLineItems.length})
+                          {t('invoiceScanner.selectAll', { selected: selectedItems.size, total: editableLineItems.length })}
                         </Label>
                       </div>
 
@@ -622,9 +641,9 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
                           <TableHeader>
                             <TableRow>
                               <TableHead className="w-12"></TableHead>
-                              <TableHead>Description</TableHead>
-                              <TableHead>Amount</TableHead>
-                              <TableHead>Category</TableHead>
+                              <TableHead>{t('invoiceScanner.descriptionCol')}</TableHead>
+                              <TableHead>{t('invoiceScanner.amountCol')}</TableHead>
+                              <TableHead>{t('invoiceScanner.categoryCol')}</TableHead>
                               <TableHead className="w-12"></TableHead>
                             </TableRow>
                           </TableHeader>
@@ -667,7 +686,7 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
                                     <SelectContent>
                                       {EXPENSE_CATEGORIES.map(category => (
                                         <SelectItem key={category} value={category}>
-                                          {category}
+                                          {t(`form.categories.${EXPENSE_CATEGORY_KEYS[category]}`)}
                                         </SelectItem>
                                       ))}
                                     </SelectContent>
@@ -691,18 +710,20 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
 
                       <div className="flex justify-between items-center pt-4 border-t">
                         <div className="text-sm text-muted-foreground">
-                          Total selected: {formatCurrency(
-                            sumMoney(
-                              editableLineItems.filter((_, index) => selectedItems.has(index)),
-                              item => item.amount
+                          {t('invoiceScanner.totalSelected', {
+                            amount: formatCurrency(
+                              sumMoney(
+                                editableLineItems.filter((_, index) => selectedItems.has(index)),
+                                item => item.amount
+                              )
                             )
-                          )}
+                          })}
                         </div>
                         <div className="flex gap-2">
                           <Button variant="outline" onClick={handleReset}>
-                            Start Over
+                            {t('invoiceScanner.startOver')}
                           </Button>
-                          <Button 
+                          <Button
                             onClick={handleCreateExpenses}
                             disabled={selectedItems.size === 0 || createExpensesMutation.isPending}
                             data-testid="button-create-expenses"
@@ -710,10 +731,10 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
                             {createExpensesMutation.isPending ? (
                               <>
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Creating...
+                                {t('invoiceScanner.creating')}
                               </>
                             ) : (
-                              <>Create {selectedItems.size} Expense(s)</>
+                              <>{t('invoiceScanner.createExpenses', { count: selectedItems.size })}</>
                             )}
                           </Button>
                         </div>
@@ -722,7 +743,7 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                      <p>No line items found in the invoice</p>
+                      <p>{t('invoiceScanner.noLineItemsFound')}</p>
                     </div>
                   )}
                 </CardContent>

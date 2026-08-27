@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,7 @@ export function VehicleViewDialog({
   onOpenChange,
   vehicleId
 }: VehicleViewDialogProps) {
+  const { t } = useTranslation("vehicles");
   // Fetch vehicle data for the dialog title
   const { data: vehicle, isLoading, error } = useQuery<Vehicle>({
     queryKey: [`/api/vehicles/${vehicleId}`],
@@ -40,33 +42,37 @@ export function VehicleViewDialog({
             {isLoading ? (
               <span className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Loading Vehicle Details...
+                {t('viewDialog.loadingTitle')}
               </span>
             ) : error ? (
-              "Vehicle Details"
+              t('viewDialog.title')
             ) : vehicle ? (
-              `Vehicle Details - ${vehicle.brand} ${vehicle.model} (${vehicle.licensePlate ? formatLicensePlate(vehicle.licensePlate) : 'No License Plate'})`
+              t('viewDialog.titleWithVehicle', {
+                brand: vehicle.brand,
+                model: vehicle.model,
+                plate: vehicle.licensePlate ? formatLicensePlate(vehicle.licensePlate) : t('viewDialog.noLicensePlate'),
+              })
             ) : (
-              "Vehicle Details"
+              t('viewDialog.title')
             )}
           </DialogTitle>
           <DialogDescription>
-            View complete vehicle information, reservations, expenses, and documents
+            {t('viewDialog.description')}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="flex-1 overflow-auto">
           {isLoading ? (
             <div className="flex justify-center items-center py-12">
               <div className="flex items-center gap-2">
                 <Loader2 className="h-6 w-6 animate-spin" />
-                <span>Loading vehicle details...</span>
+                <span>{t('viewDialog.loadingBody')}</span>
               </div>
             </div>
           ) : error ? (
             <Alert className="bg-red-50 border-red-200">
               <AlertDescription className="text-red-700">
-                Failed to load vehicle details. Please try again.
+                {t('viewDialog.loadFailed')}
               </AlertDescription>
             </Alert>
           ) : vehicleId ? (

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +21,7 @@ interface CustomerEditDialogProps {
 }
 
 export function CustomerEditDialog({ customerId, children, onSuccess }: CustomerEditDialogProps) {
+  const { t } = useTranslation(["customers", "common"]);
   const [open, setOpen] = useState(false);
 
   // Fetch customer data for editing
@@ -39,7 +41,7 @@ export function CustomerEditDialog({ customerId, children, onSuccess }: Customer
   const trigger = children || (
     <Button variant="outline" data-testid={`button-edit-customer-${customerId}`}>
       <Edit className="mr-2 h-4 w-4" />
-      Edit
+      {t('common:actions.edit')}
     </Button>
   );
 
@@ -50,9 +52,9 @@ export function CustomerEditDialog({ customerId, children, onSuccess }: Customer
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Customer</DialogTitle>
+          <DialogTitle>{t('editDialog.title')}</DialogTitle>
           <DialogDescription>
-            Update customer information and details
+            {t('editDialog.description')}
           </DialogDescription>
         </DialogHeader>
         <div className="mt-4">
@@ -69,7 +71,7 @@ export function CustomerEditDialog({ customerId, children, onSuccess }: Customer
             />
           ) : (
             <div className="text-center py-8 text-gray-500">
-              Failed to load customer data
+              {t('editDialog.loadFailed')}
             </div>
           )}
         </div>

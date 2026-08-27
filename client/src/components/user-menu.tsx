@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   User,
   LogOut,
@@ -8,6 +9,7 @@ import {
   ChevronDown,
   Database,
   Globe,
+  Languages,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { UserRole } from "@shared/schema";
@@ -17,6 +19,7 @@ import { ProfileDialog } from "@/components/dialogs/profile-dialog";
 
 export function UserMenu() {
   const { user, logoutMutation } = useAuth();
+  const { t, i18n } = useTranslation("nav");
   const [isOpen, setIsOpen] = useState(false);
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [usersDialogOpen, setUsersDialogOpen] = useState(false);
@@ -69,6 +72,10 @@ export function UserMenu() {
     setProfileDialogOpen(true);
   };
 
+  const toggleLanguage = () => {
+    i18n.changeLanguage(i18n.language === "nl" ? "en" : "nl");
+  };
+
   if (!user) return null;
 
   return (
@@ -92,9 +99,9 @@ export function UserMenu() {
           <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
             <div className="p-3 border-b border-gray-100">
               <p className="text-sm font-medium">{user.fullName || user.username}</p>
-              <p className="text-xs text-gray-500 truncate">{user.email || 'No email set'}</p>
+              <p className="text-xs text-gray-500 truncate">{user.email || t('userMenu.noEmailSet')}</p>
             </div>
-            
+
             <div className="py-1">
               <button
                 onClick={handleOpenProfileDialog}
@@ -102,13 +109,22 @@ export function UserMenu() {
                 data-testid="menu-profile"
               >
                 <User className="mr-2 h-4 w-4" />
-                Profile
+                {t('userMenu.profile')}
+              </button>
+
+              <button
+                onClick={toggleLanguage}
+                className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left"
+                data-testid="menu-language"
+              >
+                <Languages className="mr-2 h-4 w-4" />
+                {i18n.language === 'nl' ? 'English' : 'Nederlands'}
               </button>
 
               {user.role === UserRole.ADMIN && (
                 <>
                   <div className="px-3 py-1 border-t border-gray-100">
-                    <p className="text-xs font-medium text-gray-500">Administration</p>
+                    <p className="text-xs font-medium text-gray-500">{t('userMenu.administration')}</p>
                   </div>
                   <button
                     onClick={handleOpenUsersDialog}
@@ -116,7 +132,7 @@ export function UserMenu() {
                     data-testid="menu-users"
                   >
                     <UserCog className="mr-2 h-4 w-4" />
-                    Users
+                    {t('userMenu.users')}
                   </button>
                   <button
                     onClick={handleOpenBackupDialog}
@@ -124,7 +140,7 @@ export function UserMenu() {
                     data-testid="menu-backup"
                   >
                     <Database className="mr-2 h-4 w-4" />
-                    Backup Management
+                    {t('userMenu.backupManagement')}
                   </button>
                   <Link
                     href="/settings"
@@ -133,12 +149,12 @@ export function UserMenu() {
                     data-testid="menu-settings"
                   >
                     <Globe className="mr-2 h-4 w-4" />
-                    App Settings
+                    {t('userMenu.appSettings')}
                   </Link>
                 </>
               )}
             </div>
-            
+
             <div className="py-1 border-t border-gray-100">
               <button
                 className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
@@ -146,7 +162,7 @@ export function UserMenu() {
                 data-testid="menu-logout"
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                Logout
+                {t('userMenu.logout')}
               </button>
             </div>
           </div>

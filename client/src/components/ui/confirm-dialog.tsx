@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,13 +30,16 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   description,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  confirmLabel,
+  cancelLabel,
   variant = "danger",
   onConfirm,
   onCancel,
   isLoading = false,
 }: ConfirmDialogProps) {
+  const { t } = useTranslation("common");
+  const finalConfirmLabel = confirmLabel ?? t('actions.confirm');
+  const finalCancelLabel = cancelLabel ?? t('actions.cancel');
   const handleConfirm = () => {
     onConfirm();
     onOpenChange(false);
@@ -91,7 +95,7 @@ export function ConfirmDialog({
             disabled={isLoading}
             data-testid="confirm-dialog-cancel"
           >
-            {cancelLabel}
+            {finalCancelLabel}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
@@ -99,7 +103,7 @@ export function ConfirmDialog({
             className={getConfirmButtonClass()}
             data-testid="confirm-dialog-confirm"
           >
-            {isLoading ? "Processing..." : confirmLabel}
+            {isLoading ? t('status.processing') : finalConfirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,6 +52,7 @@ export function FuelStatusUpdateDialog({
   open: externalOpen,
   onOpenChange: externalOnOpenChange
 }: FuelStatusUpdateDialogProps) {
+  const { t } = useTranslation("vehicles");
   const [internalOpen, setInternalOpen] = useState(false);
   const [fuelLevel, setFuelLevel] = useState<string>(normalizeFuelLevel(currentFuelLevel));
   const [cost, setCost] = useState<string>("");
@@ -101,8 +103,8 @@ export function FuelStatusUpdateDialog({
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Fuel status updated successfully",
+        title: t('fuelStatusUpdateDialog.toasts.successTitle'),
+        description: t('fuelStatusUpdateDialog.toasts.successDescription'),
       });
       
       // Use comprehensive cache invalidation
@@ -122,7 +124,7 @@ export function FuelStatusUpdateDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t('fuelStatusUpdateDialog.toasts.errorTitle'),
         description: error.message,
         variant: "destructive",
       });
@@ -131,11 +133,11 @@ export function FuelStatusUpdateDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!fuelLevel && !cost && !notes && !receipt) {
       toast({
-        title: "Error",
-        description: "Please provide at least one field to update",
+        title: t('fuelStatusUpdateDialog.toasts.errorTitle'),
+        description: t('fuelStatusUpdateDialog.toasts.provideOneFieldDescription'),
         variant: "destructive",
       });
       return;
@@ -157,7 +159,7 @@ export function FuelStatusUpdateDialog({
   const trigger = children || (
     <Button size="sm" variant="outline" data-testid="button-update-fuel-status">
       <Fuel className="mr-2 h-4 w-4" />
-      Update Fuel Status
+      {t('fuelStatusUpdateDialog.updateFuelStatusButton')}
     </Button>
   );
 
@@ -168,41 +170,41 @@ export function FuelStatusUpdateDialog({
       </DialogTrigger>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Update Fuel Status</DialogTitle>
+          <DialogTitle>{t('fuelStatusUpdateDialog.updateFuelStatusButton')}</DialogTitle>
           <DialogDescription>
-            Update the current fuel level after refilling the vehicle
+            {t('fuelStatusUpdateDialog.description')}
           </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="fuelLevel">Fuel Level</Label>
+            <Label htmlFor="fuelLevel">{t('fuelStatusUpdateDialog.fuelLevelLabel')}</Label>
             <Select value={fuelLevel} onValueChange={setFuelLevel}>
               <SelectTrigger id="fuelLevel" data-testid="select-fuel-level">
                 <SelectValue placeholder={
-                  currentFuelLevel 
-                    ? `Current: ${formatFuelLevel(currentFuelLevel)}` 
-                    : "Select fuel level"
+                  currentFuelLevel
+                    ? t('fuelStatusUpdateDialog.currentFuelPlaceholder', { level: formatFuelLevel(currentFuelLevel) })
+                    : t('fuelStatusUpdateDialog.selectFuelLevelPlaceholder')
                 } />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Empty">Empty</SelectItem>
+                <SelectItem value="Empty">{t('fuelStatusUpdateDialog.fuelEmpty')}</SelectItem>
                 <SelectItem value="1/4">1/4</SelectItem>
                 <SelectItem value="1/2">1/2</SelectItem>
                 <SelectItem value="3/4">3/4</SelectItem>
-                <SelectItem value="Full">Full</SelectItem>
+                <SelectItem value="Full">{t('fuelStatusUpdateDialog.fuelFull')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="cost">Refill Cost (€)</Label>
+            <Label htmlFor="cost">{t('fuelStatusUpdateDialog.refillCostLabel')}</Label>
             <Input
               id="cost"
               type="number"
               step="0.01"
               min="0"
-              placeholder="e.g., 75.50"
+              placeholder={t('fuelStatusUpdateDialog.refillCostPlaceholder')}
               value={cost}
               onChange={(e) => setCost(e.target.value)}
               data-testid="input-fuel-cost"
@@ -210,7 +212,7 @@ export function FuelStatusUpdateDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="receipt">Receipt (Optional)</Label>
+            <Label htmlFor="receipt">{t('fuelStatusUpdateDialog.receiptLabel')}</Label>
             <div className="flex items-center gap-2">
               <Input
                 id="receipt"
@@ -228,7 +230,7 @@ export function FuelStatusUpdateDialog({
                 data-testid="button-upload-receipt"
               >
                 <Upload className="mr-2 h-4 w-4" />
-                {receipt ? "Change Receipt" : "Upload Receipt"}
+                {receipt ? t('fuelStatusUpdateDialog.changeReceiptButton') : t('fuelStatusUpdateDialog.uploadReceiptButton')}
               </Button>
               {receipt && (
                 <div className="flex items-center gap-2 text-sm">
@@ -250,10 +252,10 @@ export function FuelStatusUpdateDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes (Optional)</Label>
+            <Label htmlFor="notes">{t('fuelStatusUpdateDialog.notesLabel')}</Label>
             <Textarea
               id="notes"
-              placeholder="e.g., Filled up at Shell station, odometer shows 50,000 km"
+              placeholder={t('fuelStatusUpdateDialog.notesPlaceholder')}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
@@ -268,14 +270,14 @@ export function FuelStatusUpdateDialog({
               onClick={() => setOpen(false)}
               data-testid="button-cancel-fuel-update"
             >
-              Cancel
+              {t('fuelStatusUpdateDialog.cancelButton')}
             </Button>
             <Button
               type="submit"
               disabled={updateMutation.isPending}
               data-testid="button-submit-fuel-update"
             >
-              {updateMutation.isPending ? "Updating..." : "Update Fuel Status"}
+              {updateMutation.isPending ? t('fuelStatusUpdateDialog.updatingButton') : t('fuelStatusUpdateDialog.updateFuelStatusButton')}
             </Button>
           </div>
         </form>

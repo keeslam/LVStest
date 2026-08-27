@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -88,6 +89,7 @@ export function MaintenanceEditDialog({
   onOpenChange,
   reservation
 }: MaintenanceEditDialogProps) {
+  const { t } = useTranslation(["maintenance", "common"]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -326,8 +328,8 @@ export function MaintenanceEditDialog({
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Maintenance reservation updated successfully",
+        title: t('editDialog.successTitle'),
+        description: t('editDialog.updateSuccessDescription'),
       });
       
       // Invalidate all reservation-related queries
@@ -358,8 +360,8 @@ export function MaintenanceEditDialog({
     onError: (error) => {
       console.error("Error updating maintenance:", error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to update maintenance reservation",
+        title: t('editDialog.errorTitle'),
+        description: error.message || t('editDialog.updateFailedDescription'),
         variant: "destructive",
       });
     },
@@ -380,9 +382,9 @@ export function MaintenanceEditDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Maintenance Reservation</DialogTitle>
+          <DialogTitle>{t('editDialog.title')}</DialogTitle>
           <DialogDescription>
-            Update the maintenance details for this reservation.
+            {t('editDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -391,13 +393,13 @@ export function MaintenanceEditDialog({
             {/* Active Rental Context - Show if exists */}
             {(rentalCustomer || rentalDriver) && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
-                <h3 className="text-sm font-semibold text-blue-900">Active Rental Information</h3>
-                
+                <h3 className="text-sm font-semibold text-blue-900">{t('editDialog.activeRentalInfo')}</h3>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Active Rental Customer */}
                   {rentalCustomer && (
                     <div>
-                      <label className="text-xs font-medium text-blue-700">Customer (from active rental)</label>
+                      <label className="text-xs font-medium text-blue-700">{t('editDialog.customerFromActiveRental')}</label>
                       <div className="mt-1 flex items-center gap-2 text-sm text-blue-900">
                         <User className="h-4 w-4" />
                         <span className="font-medium">{rentalCustomer.name}</span>
@@ -414,12 +416,12 @@ export function MaintenanceEditDialog({
                   {/* Active Rental Driver */}
                   {rentalDriver && (
                     <div>
-                      <label className="text-xs font-medium text-blue-700">Driver (from active rental)</label>
+                      <label className="text-xs font-medium text-blue-700">{t('editDialog.driverFromActiveRental')}</label>
                       <div className="mt-1 flex items-center gap-2 text-sm text-blue-900">
                         <User className="h-4 w-4" />
                         <span className="font-medium">{rentalDriver.displayName}</span>
                         {rentalDriver.isPrimaryDriver && (
-                          <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs">Primary</Badge>
+                          <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs">{t('editDialog.primary')}</Badge>
                         )}
                       </div>
                       {rentalDriver.phone && (
@@ -437,12 +439,12 @@ export function MaintenanceEditDialog({
             {/* Vehicle (Display Only) - Full Width */}
             <div>
               <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                Vehicle
+                {t('editDialog.vehicle')}
               </label>
               <div className="mt-1 p-3 bg-gray-50 dark:bg-gray-800 rounded-md border text-base font-medium" data-testid="display-vehicle">
                 {vehicles.find((v: Vehicle) => v.id === reservation?.vehicleId)
                   ? `${vehicles.find((v: Vehicle) => v.id === reservation?.vehicleId)?.brand} ${vehicles.find((v: Vehicle) => v.id === reservation?.vehicleId)?.model} (${vehicles.find((v: Vehicle) => v.id === reservation?.vehicleId)?.licensePlate})`
-                  : 'Not specified'}
+                  : t('editDialog.notSpecified')}
               </div>
             </div>
             
@@ -453,28 +455,28 @@ export function MaintenanceEditDialog({
                 name="maintenanceType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Maintenance Type</FormLabel>
+                    <FormLabel>{t('editDialog.maintenanceType')}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-maintenance-type">
-                          <SelectValue placeholder="Select maintenance type" />
+                          <SelectValue placeholder={t('editDialog.selectMaintenanceType')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="breakdown">Breakdown</SelectItem>
-                        <SelectItem value="tire_replacement">Tire Replacement</SelectItem>
-                        <SelectItem value="brake_service">Brake Service</SelectItem>
-                        <SelectItem value="engine_repair">Engine Repair</SelectItem>
-                        <SelectItem value="transmission_repair">Transmission Repair</SelectItem>
-                        <SelectItem value="electrical_issue">Electrical Issue</SelectItem>
-                        <SelectItem value="air_conditioning">Air Conditioning</SelectItem>
-                        <SelectItem value="battery_replacement">Battery Replacement</SelectItem>
-                        <SelectItem value="oil_change">Oil Change</SelectItem>
-                        <SelectItem value="regular_maintenance">Regular Maintenance</SelectItem>
-                        <SelectItem value="apk_inspection">APK Inspection</SelectItem>
-                        <SelectItem value="warranty_service">Warranty Service</SelectItem>
-                        <SelectItem value="accident_damage">Accident Damage</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        <SelectItem value="breakdown">{t('editDialog.types.breakdown')}</SelectItem>
+                        <SelectItem value="tire_replacement">{t('editDialog.types.tire_replacement')}</SelectItem>
+                        <SelectItem value="brake_service">{t('editDialog.types.brake_service')}</SelectItem>
+                        <SelectItem value="engine_repair">{t('editDialog.types.engine_repair')}</SelectItem>
+                        <SelectItem value="transmission_repair">{t('editDialog.types.transmission_repair')}</SelectItem>
+                        <SelectItem value="electrical_issue">{t('editDialog.types.electrical_issue')}</SelectItem>
+                        <SelectItem value="air_conditioning">{t('editDialog.types.air_conditioning')}</SelectItem>
+                        <SelectItem value="battery_replacement">{t('editDialog.types.battery_replacement')}</SelectItem>
+                        <SelectItem value="oil_change">{t('editDialog.types.oil_change')}</SelectItem>
+                        <SelectItem value="regular_maintenance">{t('editDialog.types.regular_maintenance')}</SelectItem>
+                        <SelectItem value="apk_inspection">{t('editDialog.types.apk_inspection')}</SelectItem>
+                        <SelectItem value="warranty_service">{t('editDialog.types.warranty_service')}</SelectItem>
+                        <SelectItem value="accident_damage">{t('editDialog.types.accident_damage')}</SelectItem>
+                        <SelectItem value="other">{t('editDialog.types.other')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -488,16 +490,16 @@ export function MaintenanceEditDialog({
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>{t('editDialog.description_field')}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Brief description of the maintenance work"
+                        placeholder={t('editDialog.descriptionPlaceholder')}
                         {...field}
                         data-testid="input-maintenance-description"
                       />
                     </FormControl>
                     <FormDescription>
-                      What needs to be done? (e.g., "front brakes", "oil and filter change")
+                      {t('editDialog.descriptionHint')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -510,13 +512,13 @@ export function MaintenanceEditDialog({
                 name="contactPhone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Contact Phone Number</FormLabel>
+                    <FormLabel>{t('editDialog.contactPhoneNumber')}</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
                         <Input
                           type="tel"
-                          placeholder="Phone number for drop-off contact"
+                          placeholder={t('editDialog.contactPhonePlaceholder')}
                           {...field}
                           className="pl-10"
                           data-testid="input-contact-phone"
@@ -524,7 +526,7 @@ export function MaintenanceEditDialog({
                       </div>
                     </FormControl>
                     <FormDescription>
-                      Direct number to reach the person dropping off the vehicle
+                      {t('editDialog.contactPhoneHint')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -537,7 +539,7 @@ export function MaintenanceEditDialog({
                 name="startDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Scheduled Date</FormLabel>
+                    <FormLabel>{t('editDialog.scheduledDate')}</FormLabel>
                     <FormControl>
                       <Input
                         type="date"
@@ -556,13 +558,13 @@ export function MaintenanceEditDialog({
                 name="maintenanceDuration"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Duration (days)</FormLabel>
+                    <FormLabel>{t('editDialog.durationDays')}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         min="1"
                         max="90"
-                        placeholder="Number of days"
+                        placeholder={t('editDialog.numberOfDaysPlaceholder')}
                         {...field}
                         onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
                         value={field.value}
@@ -570,7 +572,7 @@ export function MaintenanceEditDialog({
                       />
                     </FormControl>
                     <FormDescription>
-                      How long will the maintenance take?
+                      {t('editDialog.durationHint')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -583,7 +585,7 @@ export function MaintenanceEditDialog({
                 name="maintenanceStatus"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel>{t('editDialog.status')}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-maintenance-status">
@@ -591,13 +593,13 @@ export function MaintenanceEditDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="scheduled">Scheduled (vehicle not yet arrived)</SelectItem>
-                        <SelectItem value="in">In (vehicle is in maintenance)</SelectItem>
-                        <SelectItem value="out">Out (maintenance completed)</SelectItem>
+                        <SelectItem value="scheduled">{t('editDialog.statuses.scheduled')}</SelectItem>
+                        <SelectItem value="in">{t('editDialog.statuses.in')}</SelectItem>
+                        <SelectItem value="out">{t('editDialog.statuses.out')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      Current status of the maintenance
+                      {t('editDialog.statusHint')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -612,11 +614,11 @@ export function MaintenanceEditDialog({
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes</FormLabel>
+                  <FormLabel>{t('editDialog.notes')}</FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
-                      placeholder="Additional notes about this maintenance..."
+                      placeholder={t('editDialog.notesPlaceholder')}
                       className="min-h-[100px]"
                       data-testid="textarea-notes"
                     />
@@ -633,7 +635,7 @@ export function MaintenanceEditDialog({
                 onClick={() => onOpenChange(false)}
                 disabled={updateMutation.isPending}
               >
-                Cancel
+                {t('common:actions.cancel')}
               </Button>
               <Button
                 type="submit"
@@ -643,10 +645,10 @@ export function MaintenanceEditDialog({
                 {updateMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating...
+                    {t('editDialog.updating')}
                   </>
                 ) : (
-                  "Update Maintenance"
+                  t('editDialog.updateMaintenance')
                 )}
               </Button>
             </DialogFooter>

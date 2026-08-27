@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -51,6 +52,7 @@ interface ApkInspectionDialogProps {
 }
 
 export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: ApkInspectionDialogProps) {
+  const { t } = useTranslation("vehicles");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const { toast } = useToast();
@@ -180,10 +182,10 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
       const needsSpare = variables.needsSpareVehicle && checkRentalConflict(variables.scheduledDate, variables.duration);
       
       toast({
-        title: "APK Inspection Scheduled",
-        description: needsSpare 
-          ? `APK inspection scheduled. Spare vehicle assignment created and added to assignment queue.`
-          : `APK inspection for ${formatLicensePlate(vehicle.licensePlate)} has been scheduled successfully.`,
+        title: t('apkInspectionDialog.toasts.scheduledTitle'),
+        description: needsSpare
+          ? t('apkInspectionDialog.toasts.scheduledWithSpareDescription')
+          : t('apkInspectionDialog.toasts.scheduledDescription', { plate: formatLicensePlate(vehicle.licensePlate) }),
       });
       
       // Clear any localStorage dismissal for this vehicle's APK notification
@@ -202,7 +204,7 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t('apkInspectionDialog.toasts.errorTitle'),
         description: error.message,
         variant: "destructive",
       });
@@ -244,10 +246,10 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Wrench className="h-5 w-5" />
-            Schedule APK Inspection - {formatLicensePlate(vehicle.licensePlate)}
+            {t('apkInspectionDialog.title', { plate: formatLicensePlate(vehicle.licensePlate) })}
           </DialogTitle>
           <DialogDescription>
-            Select a date from the workshop calendar and schedule the APK inspection. Existing maintenance is shown to avoid conflicts.
+            {t('apkInspectionDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -258,7 +260,7 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center justify-between">
-                    <span>Workshop Calendar</span>
+                    <span>{t('apkInspectionDialog.workshopCalendar')}</span>
                     <div className="flex items-center gap-2">
                       <Button variant="ghost" size="sm" onClick={previousMonth}>
                         <ChevronLeft className="h-4 w-4" />
@@ -271,12 +273,12 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
                       </Button>
                     </div>
                   </CardTitle>
-                  <CardDescription>Click a date to schedule APK inspection</CardDescription>
+                  <CardDescription>{t('apkInspectionDialog.clickDateHint')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-7 gap-1">
                     {/* Day headers */}
-                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                    {(t('apkInspectionDialog.weekdaysShort', { returnObjects: true }) as string[]).map(day => (
                       <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
                         {day}
                       </div>
@@ -327,27 +329,27 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
                   
                   {/* Legend */}
                   <div className="mt-4 pt-4 border-t space-y-2">
-                    <p className="text-xs font-medium text-gray-500">Legend:</p>
+                    <p className="text-xs font-medium text-gray-500">{t('apkInspectionDialog.legend')}</p>
                     <div className="flex flex-wrap gap-3 text-xs">
                       <div className="flex items-center gap-1">
                         <div className="w-4 h-4 bg-green-500 rounded"></div>
-                        <span>Selected</span>
+                        <span>{t('apkInspectionDialog.selected')}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <div className="w-4 h-4 bg-blue-100 rounded"></div>
-                        <span>Today</span>
+                        <span>{t('apkInspectionDialog.today')}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-[8px] px-1 h-4">1</Badge>
-                        <span>Low (1)</span>
+                        <span>{t('apkInspectionDialog.low')}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Badge variant="secondary" className="bg-amber-100 text-amber-800 text-[8px] px-1 h-4">2</Badge>
-                        <span>Medium (2)</span>
+                        <span>{t('apkInspectionDialog.medium')}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Badge variant="secondary" className="bg-red-100 text-red-800 text-[8px] px-1 h-4">3+</Badge>
-                        <span>Busy (3+)</span>
+                        <span>{t('apkInspectionDialog.busy')}</span>
                       </div>
                     </div>
                   </div>
@@ -359,7 +361,7 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-sm">
-                      Scheduled for {format(selectedDate, 'MMMM d, yyyy')}
+                      {t('apkInspectionDialog.scheduledFor', { date: format(selectedDate, 'MMMM d, yyyy') })}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -386,7 +388,7 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
                     ) : (
                       <p className="text-sm text-gray-500 flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        No maintenance scheduled - Workshop available
+                        {t('apkInspectionDialog.noMaintenanceScheduled')}
                       </p>
                     )}
                   </CardContent>
@@ -403,17 +405,17 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
                     name="scheduledDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Selected Date *</FormLabel>
+                        <FormLabel>{t('apkInspectionDialog.selectedDateLabel')}</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="date" 
-                            {...field} 
+                          <Input
+                            type="date"
+                            {...field}
                             className="font-mono"
                             data-testid="input-apk-date"
                           />
                         </FormControl>
                         <FormDescription>
-                          Select from calendar or enter date manually
+                          {t('apkInspectionDialog.selectedDateHint')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -425,11 +427,11 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
                     name="duration"
                     render={({ field: { onChange, value, ...rest } }) => (
                       <FormItem>
-                        <FormLabel>Duration (days) *</FormLabel>
+                        <FormLabel>{t('apkInspectionDialog.durationLabel')}</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            min="1" 
+                          <Input
+                            type="number"
+                            min="1"
                             max="7"
                             {...rest}
                             value={value || ''}
@@ -438,7 +440,7 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
                           />
                         </FormControl>
                         <FormDescription>
-                          How many days will the APK inspection take? (1-7 days)
+                          {t('apkInspectionDialog.durationHint')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -450,11 +452,11 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
                     name="notes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Notes</FormLabel>
+                        <FormLabel>{t('apkInspectionDialog.notesLabel')}</FormLabel>
                         <FormControl>
-                          <Textarea 
+                          <Textarea
                             {...field}
-                            placeholder="Additional notes about the APK inspection..."
+                            placeholder={t('apkInspectionDialog.notesPlaceholder')}
                             rows={2}
                             data-testid="textarea-apk-notes"
                           />
@@ -473,21 +475,23 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
                           <div className="flex gap-2">
                             <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
                             <div className="text-sm space-y-2">
-                              <p className="font-medium text-orange-900">Active Rental Detected</p>
+                              <p className="font-medium text-orange-900">{t('apkInspectionDialog.activeRentalDetected')}</p>
                               <p className="text-orange-700">
-                                This vehicle has an active rental during the APK inspection period:
+                                {t('apkInspectionDialog.activeRentalHint')}
                               </p>
                               <div className="bg-orange-100 rounded p-2 space-y-1">
                                 <p className="font-medium text-orange-900">
-                                  {conflictingRental.customer?.name || 'Customer'}
+                                  {conflictingRental.customer?.name || t('apkInspectionDialog.customerFallback')}
                                 </p>
                                 <p className="text-orange-700 text-xs">
-                                  Rental: {format(parseISO(conflictingRental.startDate), 'MMM d, yyyy')} - 
-                                  {conflictingRental.endDate ? format(parseISO(conflictingRental.endDate), 'MMM d, yyyy') : 'Open-ended'}
+                                  {t('apkInspectionDialog.rentalLabel', {
+                                    start: format(parseISO(conflictingRental.startDate), 'MMM d, yyyy'),
+                                    end: conflictingRental.endDate ? format(parseISO(conflictingRental.endDate), 'MMM d, yyyy') : t('apkInspectionDialog.openEnded'),
+                                  })}
                                 </p>
                               </div>
                               <p className="text-orange-700 font-medium">
-                                ⚠️ A spare vehicle assignment will be required for this customer.
+                                {t('apkInspectionDialog.spareVehicleWarning')}
                               </p>
                             </div>
                           </div>
@@ -515,12 +519,12 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
                           </FormControl>
                           <div className="space-y-1 leading-none">
                             <FormLabel className={conflictingRental ? 'text-orange-900 font-semibold' : ''}>
-                              Request Spare Vehicle Assignment
+                              {t('apkInspectionDialog.requestSpareVehicleLabel')}
                             </FormLabel>
                             <FormDescription className={conflictingRental ? 'text-orange-700' : ''}>
-                              {conflictingRental 
-                                ? 'Creates a spare vehicle assignment request - you can assign a vehicle now or later from the Spare Assignments tab' 
-                                : 'Check this to create a spare vehicle assignment request (optional - customer may arrange their own transportation)'}
+                              {conflictingRental
+                                ? t('apkInspectionDialog.requestSpareVehicleHintConflict')
+                                : t('apkInspectionDialog.requestSpareVehicleHintNoConflict')}
                             </FormDescription>
                           </div>
                         </FormItem>
@@ -532,12 +536,12 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
                     <div className="flex gap-2">
                       <AlertTriangle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                       <div className="text-sm">
-                        <p className="font-medium text-blue-900">APK Inspection Details</p>
+                        <p className="font-medium text-blue-900">{t('apkInspectionDialog.detailsTitle')}</p>
                         <p className="text-blue-700 mt-1">
-                          Vehicle: <strong>{vehicle.brand} {vehicle.model}</strong> ({formatLicensePlate(vehicle.licensePlate)})
+                          {t('apkInspectionDialog.vehicleLabelPrefix')} <strong>{vehicle.brand} {vehicle.model}</strong> ({formatLicensePlate(vehicle.licensePlate)})
                         </p>
                         <p className="text-blue-700">
-                          Current APK Date: <strong>{vehicle.apkDate ? format(parseISO(vehicle.apkDate), 'MMM d, yyyy') : 'Not set'}</strong>
+                          {t('apkInspectionDialog.currentApkDateLabelPrefix')} <strong>{vehicle.apkDate ? format(parseISO(vehicle.apkDate), 'MMM d, yyyy') : t('apkInspectionDialog.notSet')}</strong>
                         </p>
                       </div>
                     </div>
@@ -549,14 +553,14 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
         </ScrollArea>
 
         <DialogFooter>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => onOpenChange(false)}
             data-testid="button-cancel-apk"
           >
-            Cancel
+            {t('apkInspectionDialog.cancelButton')}
           </Button>
-          <Button 
+          <Button
             onClick={form.handleSubmit(onSubmit)}
             disabled={scheduleApkMutation.isPending || !form.formState.isValid}
             data-testid="button-schedule-apk"
@@ -564,12 +568,12 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
             {scheduleApkMutation.isPending ? (
               <>
                 <Clock className="mr-2 h-4 w-4 animate-spin" />
-                Scheduling...
+                {t('apkInspectionDialog.schedulingButton')}
               </>
             ) : (
               <>
                 <Calendar className="mr-2 h-4 w-4" />
-                Schedule APK Inspection
+                {t('apkInspectionDialog.scheduleButton')}
               </>
             )}
           </Button>

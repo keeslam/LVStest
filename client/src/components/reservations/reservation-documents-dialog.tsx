@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
@@ -28,6 +29,7 @@ export function ReservationDocumentsDialog({
   reservationId,
   vehicleId
 }: ReservationDocumentsDialogProps) {
+  const { t } = useTranslation("reservations");
   const { data: documents, isLoading, error } = useQuery<Document[]>({
     queryKey: [`/api/documents/vehicle/${vehicleId}`],
     enabled: open && vehicleId !== null,
@@ -40,7 +42,7 @@ export function ReservationDocumentsDialog({
 
   // Group documents by type
   const documentsByType = reservationDocuments.reduce((acc, doc) => {
-    const type = doc.documentType || 'Other';
+    const type = doc.documentType || t('documentsDialog.otherType');
     if (!acc[type]) acc[type] = [];
     acc[type].push(doc);
     return acc;
@@ -53,39 +55,39 @@ export function ReservationDocumentsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-blue-500" />
-            Reservation Documents
+            {t('documentsDialog.title')}
           </DialogTitle>
           <DialogDescription>
-            Documents specifically linked to this reservation (contracts, damage reports, photos)
+            {t('documentsDialog.description')}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="flex-1 overflow-auto">
           {isLoading ? (
             <div className="flex justify-center items-center py-12">
               <div className="flex items-center gap-2">
                 <Loader2 className="h-6 w-6 animate-spin" />
-                <span>Loading documents...</span>
+                <span>{t('documentsDialog.loadingDocuments')}</span>
               </div>
             </div>
           ) : error ? (
             <Alert className="bg-red-50 border-red-200">
               <AlertDescription className="text-red-700">
-                Failed to load documents. Please try again.
+                {t('documentsDialog.failedToLoad')}
               </AlertDescription>
             </Alert>
           ) : reservationDocuments.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-              <p className="text-gray-500 mb-4">No documents found for this reservation</p>
+              <p className="text-gray-500 mb-4">{t('documentsDialog.noDocumentsFound')}</p>
               {vehicleId && (
-                <InlineDocumentUpload 
+                <InlineDocumentUpload
                   vehicleId={vehicleId}
                   onSuccess={() => {
                     invalidateByPrefix(`/api/documents/vehicle/${vehicleId}`);
                   }}
                 >
-                  <Button variant="outline">Upload Document</Button>
+                  <Button variant="outline">{t('documentsDialog.uploadDocument')}</Button>
                 </InlineDocumentUpload>
               )}
             </div>
@@ -97,16 +99,16 @@ export function ReservationDocumentsDialog({
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-medium text-blue-900">Upload New Document</h3>
-                        <p className="text-sm text-blue-700">Add contracts, damage reports, or photos</p>
+                        <h3 className="font-medium text-blue-900">{t('documentsDialog.uploadNewDocument')}</h3>
+                        <p className="text-sm text-blue-700">{t('documentsDialog.addContractsHint')}</p>
                       </div>
-                      <InlineDocumentUpload 
+                      <InlineDocumentUpload
                         vehicleId={vehicleId}
                         onSuccess={() => {
                           invalidateByPrefix(`/api/documents/vehicle/${vehicleId}`);
                         }}
                       >
-                        <Button variant="outline" className="bg-white">Upload Document</Button>
+                        <Button variant="outline" className="bg-white">{t('documentsDialog.uploadDocument')}</Button>
                       </InlineDocumentUpload>
                     </div>
                   </CardContent>
@@ -129,11 +131,11 @@ export function ReservationDocumentsDialog({
                             <div className="flex-1">
                               <h4 className="font-medium text-gray-900">{doc.fileName}</h4>
                               <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                                <span>Uploaded: {formatDate(doc.uploadDate)}</span>
-                                {doc.createdBy && <span>By: {doc.createdBy}</span>}
+                                <span>{t('documentsDialog.uploadedLabel', { date: formatDate(doc.uploadDate) })}</span>
+                                {doc.createdBy && <span>{t('documentsDialog.byLabel', { name: doc.createdBy })}</span>}
                                 {doc.reservationId && (
                                   <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">
-                                    Reservation #{doc.reservationId}
+                                    {t('documentsDialog.reservationHash', { id: doc.reservationId })}
                                   </span>
                                 )}
                               </div>

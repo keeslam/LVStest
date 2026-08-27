@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,17 +37,18 @@ import { RouteOptimizationDialog } from "@/components/delivery/route-optimizatio
 import { Truck, MapPin, Clock, CheckCircle, Package, Navigation, Plus, Pencil, Trash2, Euro, Route, Receipt, Search, Printer, FileText, Settings2, Loader2 } from "lucide-react";
 import { differenceInDays, isSameMonth, isSameYear } from "date-fns";
 
-const TRANSPORT_TYPE_LABELS: Record<string, string> = {
-  swap: "Swap",
-  tow: "Tow",
-  repossession: "Repossession",
-  delivery: "Delivery",
-  other: "Other",
-};
-
 export default function DeliveryDashboard() {
+  const { t } = useTranslation("delivery");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const TRANSPORT_TYPE_LABELS: Record<string, string> = {
+    swap: t('transportDialog.typeLabels.swap'),
+    tow: t('transportDialog.typeLabels.tow'),
+    repossession: t('transportDialog.typeLabels.repossession'),
+    delivery: t('transportDialog.typeLabels.delivery'),
+    other: t('transportDialog.typeLabels.other'),
+  };
 
   // Fetch reservations with delivery service
   const { data: reservations = [], isLoading: reservationsLoading } = useQuery<Reservation[]>({
@@ -84,27 +86,27 @@ export default function DeliveryDashboard() {
 
   const getCustomerName = (customerId: number | null) => {
     const customer = customers.find(c => c.id === customerId);
-    return customer?.name || 'Unknown';
+    return customer?.name || t('dashboardPage.deliveryStatus.unknown');
   };
 
   const getVehicleInfo = (vehicleId: number | null) => {
     const vehicle = vehicles.find(v => v.id === vehicleId);
-    return vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.licensePlate})` : 'Unknown';
+    return vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.licensePlate})` : t('dashboardPage.deliveryStatus.unknown');
   };
 
   const getStatusBadge = (status?: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="secondary" data-testid={`badge-status-pending`}>Pending</Badge>;
+        return <Badge variant="secondary" data-testid={`badge-status-pending`}>{t('dashboardPage.deliveryStatus.pending')}</Badge>;
       case 'scheduled':
-        return <Badge className="bg-blue-100 text-blue-800" data-testid={`badge-status-scheduled`}>Scheduled</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800" data-testid={`badge-status-scheduled`}>{t('dashboardPage.deliveryStatus.scheduled')}</Badge>;
       case 'en_route':
-        return <Badge className="bg-amber-100 text-amber-800" data-testid={`badge-status-en-route`}>En Route</Badge>;
+        return <Badge className="bg-amber-100 text-amber-800" data-testid={`badge-status-en-route`}>{t('dashboardPage.deliveryStatus.enRoute')}</Badge>;
       case 'delivered':
       case 'completed':
-        return <Badge className="bg-green-100 text-green-800" data-testid={`badge-status-completed`}>Delivered</Badge>;
+        return <Badge className="bg-green-100 text-green-800" data-testid={`badge-status-completed`}>{t('dashboardPage.deliveryStatus.delivered')}</Badge>;
       default:
-        return <Badge variant="outline" data-testid={`badge-status-unknown`}>Unknown</Badge>;
+        return <Badge variant="outline" data-testid={`badge-status-unknown`}>{t('dashboardPage.deliveryStatus.unknown')}</Badge>;
     }
   };
 
@@ -112,21 +114,21 @@ export default function DeliveryDashboard() {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Reservation</TableHead>
-          <TableHead>Customer</TableHead>
-          <TableHead>Vehicle</TableHead>
-          <TableHead>Address</TableHead>
-          <TableHead>Delivery Date</TableHead>
-          <TableHead>Fee</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Actions</TableHead>
+          <TableHead>{t('dashboardPage.columnReservation')}</TableHead>
+          <TableHead>{t('dashboardPage.columnCustomer')}</TableHead>
+          <TableHead>{t('dashboardPage.columnVehicle')}</TableHead>
+          <TableHead>{t('dashboardPage.columnAddress')}</TableHead>
+          <TableHead>{t('dashboardPage.columnDeliveryDate')}</TableHead>
+          <TableHead>{t('dashboardPage.columnFee')}</TableHead>
+          <TableHead>{t('dashboardPage.columnStatus')}</TableHead>
+          <TableHead>{t('dashboardPage.columnActions')}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {deliveries.length === 0 ? (
           <TableRow>
             <TableCell colSpan={8} className="text-center py-4">
-              No deliveries in this category
+              {t('dashboardPage.noDeliveriesInCategory')}
             </TableCell>
           </TableRow>
         ) : (
@@ -150,7 +152,7 @@ export default function DeliveryDashboard() {
               <TableCell>{getStatusBadge(reservation.deliveryStatus || 'pending')}</TableCell>
               <TableCell>
                 <Button size="sm" variant="outline" data-testid={`button-view-${reservation.id}`}>
-                  View
+                  {t('dashboardPage.viewButton')}
                 </Button>
               </TableCell>
             </TableRow>
@@ -223,13 +225,13 @@ export default function DeliveryDashboard() {
     },
     onSuccess: () => {
       invalidateByPrefix("/api/transports");
-      toast({ title: "Transport deleted" });
+      toast({ title: t('dashboardPage.toasts.transportDeleted') });
       setDeletingTransport(null);
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to delete transport",
-        description: error?.message || "Please try again.",
+        title: t('dashboardPage.toasts.deleteFailedTitle'),
+        description: error?.message || t('dashboardPage.toasts.genericTryAgain'),
         variant: "destructive",
       });
     },
@@ -244,12 +246,12 @@ export default function DeliveryDashboard() {
     },
     onSuccess: () => {
       invalidateByPrefix("/api/transports");
-      toast({ title: "Transport marked as completed" });
+      toast({ title: t('dashboardPage.toasts.transportCompleted') });
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to update transport",
-        description: error?.message || "Please try again.",
+        title: t('dashboardPage.toasts.updateFailedTitle'),
+        description: error?.message || t('dashboardPage.toasts.genericTryAgain'),
         variant: "destructive",
       });
     },
@@ -269,8 +271,8 @@ export default function DeliveryDashboard() {
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to generate report",
-        description: error?.message || "Please try again.",
+        title: t('dashboardPage.toasts.generateReportFailedTitle'),
+        description: error?.message || t('dashboardPage.toasts.genericTryAgain'),
         variant: "destructive",
       });
     },
@@ -287,8 +289,8 @@ export default function DeliveryDashboard() {
     const printWindow = window.open(printUrl, "transportReportPrintWindow", "width=900,height=700");
     if (!printWindow) {
       toast({
-        title: "Popup blocked",
-        description: "Please allow popups for this site, then click Print again.",
+        title: t('dashboardPage.toasts.popupBlockedTitle'),
+        description: t('dashboardPage.toasts.popupBlockedDescription'),
         variant: "destructive",
       });
       return;
@@ -301,19 +303,20 @@ export default function DeliveryDashboard() {
   const getTransportStatusBadge = (status: string) => {
     switch (status) {
       case 'scheduled':
-        return <Badge className="bg-blue-100 text-blue-800">Scheduled</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800">{t('transportDialog.statusScheduled')}</Badge>;
       case 'in_progress':
-        return <Badge className="bg-amber-100 text-amber-800">In Progress</Badge>;
+        return <Badge className="bg-amber-100 text-amber-800">{t('transportDialog.statusInProgress')}</Badge>;
       case 'completed':
-        return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
+        return <Badge className="bg-green-100 text-green-800">{t('transportDialog.statusCompleted')}</Badge>;
       case 'cancelled':
-        return <Badge variant="outline" className="text-muted-foreground">Cancelled</Badge>;
+        return <Badge variant="outline" className="text-muted-foreground">{t('transportDialog.statusCancelled')}</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   const printTransports = () => {
+    const tt = t;
     const escapeHtml = (value: unknown) =>
       String(value ?? '').replace(/[&<>"']/g, (char) => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -325,8 +328,8 @@ export default function DeliveryDashboard() {
         : getVehicleInfo(t.vehicleId);
       const route = [t.originCity, t.destinationCity].filter(Boolean).join(' → ') || '-';
       const billing = t.billable
-        ? `${t.billableAmount ? formatCurrency(Number(t.billableAmount)) : '-'} (${t.invoiced ? 'Invoiced' : 'Not invoiced'})`
-        : 'Not billable';
+        ? `${t.billableAmount ? formatCurrency(Number(t.billableAmount)) : '-'} (${t.invoiced ? tt('dashboardPage.invoicedBadge') : tt('dashboardPage.notInvoicedBadge')})`
+        : tt('dashboardPage.notBillable');
       return `
         <tr>
           <td>${escapeHtml(vehicleLabel)}</td>
@@ -362,7 +365,7 @@ export default function DeliveryDashboard() {
       }
 
       doc.head.innerHTML = `
-        <title>Vehicle Transports</title>
+        <title>${escapeHtml(tt('dashboardPage.printReport.docTitle'))}</title>
         <style>
           body { font-family: Arial, sans-serif; line-height: 1.5; color: #333; padding: 20px; }
           h1 { font-size: 22px; margin-bottom: 4px; }
@@ -378,18 +381,18 @@ export default function DeliveryDashboard() {
       `;
 
       doc.body.innerHTML = `
-        <h1>Vehicle Transports</h1>
-        <div class="meta">Generated ${escapeHtml(new Date().toLocaleString())}${filteredTransports.length !== transports.length ? ` &middot; ${filteredTransports.length} of ${transports.length} shown (filtered)` : ''}</div>
+        <h1>${escapeHtml(tt('dashboardPage.printReport.heading'))}</h1>
+        <div class="meta">${escapeHtml(tt('dashboardPage.printReport.generatedLabel', { date: new Date().toLocaleString() }))}${filteredTransports.length !== transports.length ? ` ${escapeHtml(tt('dashboardPage.printReport.shownFiltered', { shown: filteredTransports.length, total: transports.length }))}` : ''}</div>
         <div class="summary">
-          <div><div class="value">${escapeHtml(formatCurrency(totalToll))}</div><div class="label">Total toll cost</div></div>
-          <div><div class="value">${escapeHtml(formatCurrency(totalBillable))}</div><div class="label">Pending customer billing</div></div>
-          <div><div class="value">${filteredTransports.length}</div><div class="label">Transports listed</div></div>
+          <div><div class="value">${escapeHtml(formatCurrency(totalToll))}</div><div class="label">${escapeHtml(tt('dashboardPage.printReport.totalTollCost'))}</div></div>
+          <div><div class="value">${escapeHtml(formatCurrency(totalBillable))}</div><div class="label">${escapeHtml(tt('dashboardPage.printReport.pendingCustomerBilling'))}</div></div>
+          <div><div class="value">${filteredTransports.length}</div><div class="label">${escapeHtml(tt('dashboardPage.printReport.transportsListed'))}</div></div>
         </div>
         <table>
           <thead>
-            <tr><th>Vehicle</th><th>Type</th><th>Route</th><th>Date</th><th>Distance</th><th>Toll Cost</th><th>Billing</th><th>Status</th></tr>
+            <tr><th>${escapeHtml(tt('dashboardPage.columnVehicle'))}</th><th>${escapeHtml(tt('dashboardPage.columnType'))}</th><th>${escapeHtml(tt('dashboardPage.columnRoute'))}</th><th>${escapeHtml(tt('dashboardPage.columnDate'))}</th><th>${escapeHtml(tt('dashboardPage.columnDistance'))}</th><th>${escapeHtml(tt('dashboardPage.columnTollCost'))}</th><th>${escapeHtml(tt('dashboardPage.columnBilling'))}</th><th>${escapeHtml(tt('dashboardPage.columnStatus'))}</th></tr>
           </thead>
-          <tbody>${rows || '<tr><td colspan="8">No transports</td></tr>'}</tbody>
+          <tbody>${rows || `<tr><td colspan="8">${escapeHtml(tt('dashboardPage.printReport.noTransports'))}</td></tr>`}</tbody>
         </table>
       `;
 
@@ -406,13 +409,13 @@ export default function DeliveryDashboard() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Transport Dashboard</h1>
-          <p className="text-muted-foreground">Deliveries, swaps, tows, repossessions and other vehicle movements — deliveries are transports too</p>
+          <h1 className="text-3xl font-bold">{t('dashboardPage.title')}</h1>
+          <p className="text-muted-foreground">{t('dashboardPage.subtitle')}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setRouteDialogOpen(true)} data-testid="button-route-optimization">
             <Navigation className="h-4 w-4 mr-2" />
-            Route Optimization
+            {t('dashboardPage.routeOptimizationButton')}
           </Button>
         </div>
       </div>
@@ -421,40 +424,40 @@ export default function DeliveryDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboardPage.statPending')}</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="stat-pending">{pendingDeliveries.length}</div>
-            <p className="text-xs text-muted-foreground">Awaiting schedule</p>
+            <p className="text-xs text-muted-foreground">{t('dashboardPage.statAwaitingSchedule')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Scheduled</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboardPage.statScheduled')}</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="stat-scheduled">{scheduledDeliveries.length}</div>
-            <p className="text-xs text-muted-foreground">Ready for delivery</p>
+            <p className="text-xs text-muted-foreground">{t('dashboardPage.statReadyForDelivery')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">En Route</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboardPage.statEnRoute')}</CardTitle>
             <Truck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="stat-enroute">{enRouteDeliveries.length}</div>
-            <p className="text-xs text-muted-foreground">In progress</p>
+            <p className="text-xs text-muted-foreground">{t('dashboardPage.statInProgress')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Today</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboardPage.statCompletedToday')}</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -465,7 +468,7 @@ export default function DeliveryDashboard() {
                 return differenceInDays(today, deliveryDate) === 0;
               }).length}
             </div>
-            <p className="text-xs text-muted-foreground">Deliveries completed</p>
+            <p className="text-xs text-muted-foreground">{t('dashboardPage.statDeliveriesCompleted')}</p>
           </CardContent>
         </Card>
       </div>
@@ -479,10 +482,10 @@ export default function DeliveryDashboard() {
       <Tabs defaultValue="transports" className="space-y-4">
         <TabsList>
           <TabsTrigger value="transports" data-testid="tab-transports">
-            All Transports ({transports.length})
+            {t('dashboardPage.tabAllTransports', { count: transports.length })}
           </TabsTrigger>
           <TabsTrigger value="deliveries" data-testid="tab-deliveries">
-            Deliveries ({deliveryReservations.length})
+            {t('dashboardPage.tabDeliveries', { count: deliveryReservations.length })}
           </TabsTrigger>
         </TabsList>
 
@@ -490,24 +493,24 @@ export default function DeliveryDashboard() {
           <Tabs defaultValue="pending" className="space-y-4">
             <TabsList>
               <TabsTrigger value="pending" data-testid="tab-pending">
-                Pending ({pendingDeliveries.length})
+                {t('dashboardPage.tabPending', { count: pendingDeliveries.length })}
               </TabsTrigger>
               <TabsTrigger value="scheduled" data-testid="tab-scheduled">
-                Scheduled ({scheduledDeliveries.length})
+                {t('dashboardPage.tabScheduled', { count: scheduledDeliveries.length })}
               </TabsTrigger>
               <TabsTrigger value="enroute" data-testid="tab-enroute">
-                En Route ({enRouteDeliveries.length})
+                {t('dashboardPage.tabEnroute', { count: enRouteDeliveries.length })}
               </TabsTrigger>
               <TabsTrigger value="completed" data-testid="tab-completed">
-                Completed ({completedDeliveries.length})
+                {t('dashboardPage.tabCompleted', { count: completedDeliveries.length })}
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="pending" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Pending Deliveries</CardTitle>
-                  <CardDescription>Deliveries awaiting scheduling</CardDescription>
+                  <CardTitle>{t('dashboardPage.pendingDeliveriesTitle')}</CardTitle>
+                  <CardDescription>{t('dashboardPage.pendingDeliveriesDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {renderDeliveryTable(pendingDeliveries, 'pending')}
@@ -518,8 +521,8 @@ export default function DeliveryDashboard() {
             <TabsContent value="scheduled" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Scheduled Deliveries</CardTitle>
-                  <CardDescription>Deliveries ready to begin</CardDescription>
+                  <CardTitle>{t('dashboardPage.scheduledDeliveriesTitle')}</CardTitle>
+                  <CardDescription>{t('dashboardPage.scheduledDeliveriesDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {renderDeliveryTable(scheduledDeliveries, 'scheduled')}
@@ -530,8 +533,8 @@ export default function DeliveryDashboard() {
             <TabsContent value="enroute" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>En Route Deliveries</CardTitle>
-                  <CardDescription>Deliveries currently in progress</CardDescription>
+                  <CardTitle>{t('dashboardPage.enRouteDeliveriesTitle')}</CardTitle>
+                  <CardDescription>{t('dashboardPage.enRouteDeliveriesDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {renderDeliveryTable(enRouteDeliveries, 'enroute')}
@@ -542,8 +545,8 @@ export default function DeliveryDashboard() {
             <TabsContent value="completed" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Completed Deliveries</CardTitle>
-                  <CardDescription>Successfully delivered vehicles</CardDescription>
+                  <CardTitle>{t('dashboardPage.completedDeliveriesTitle')}</CardTitle>
+                  <CardDescription>{t('dashboardPage.completedDeliveriesDescription')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {renderDeliveryTable(completedDeliveries, 'completed')}
@@ -557,34 +560,34 @@ export default function DeliveryDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Toll Cost This Month</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('dashboardPage.tollCostThisMonthTitle')}</CardTitle>
                 <Route className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold" data-testid="stat-toll-cost-month"><Price value={tollCostThisMonth} /></div>
-                <p className="text-xs text-muted-foreground">What we've paid in tolls</p>
+                <p className="text-xs text-muted-foreground">{t('dashboardPage.tollCostThisMonthDescription')}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Customer Billing</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('dashboardPage.pendingCustomerBillingTitle')}</CardTitle>
                 <Receipt className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold" data-testid="stat-pending-billing"><Price value={pendingBillableAmount} /></div>
-                <p className="text-xs text-muted-foreground">Billable, not yet invoiced</p>
+                <p className="text-xs text-muted-foreground">{t('dashboardPage.pendingCustomerBillingDescription')}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('dashboardPage.activeJobsTitle')}</CardTitle>
                 <Truck className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold" data-testid="stat-active-transports">{scheduledTransportsCount}</div>
-                <p className="text-xs text-muted-foreground">Scheduled or in progress</p>
+                <p className="text-xs text-muted-foreground">{t('dashboardPage.activeJobsDescription')}</p>
               </CardContent>
             </Card>
           </div>
@@ -593,8 +596,8 @@ export default function DeliveryDashboard() {
             <CardHeader>
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
-                  <CardTitle>Vehicle Transports</CardTitle>
-                  <CardDescription>Deliveries, swaps, tows, repossessions and other standalone vehicle movements — filter by type below</CardDescription>
+                  <CardTitle>{t('dashboardPage.vehicleTransportsTitle')}</CardTitle>
+                  <CardDescription>{t('dashboardPage.vehicleTransportsDescription')}</CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <div className="relative">
@@ -602,17 +605,17 @@ export default function DeliveryDashboard() {
                     <Input
                       value={transportSearchQuery}
                       onChange={(e) => setTransportSearchQuery(e.target.value)}
-                      placeholder="Search transports..."
+                      placeholder={t('dashboardPage.searchTransportsPlaceholder')}
                       className="w-[200px] pl-8"
                       data-testid="input-search-transports"
                     />
                   </div>
                   <Select value={transportTypeFilter} onValueChange={setTransportTypeFilter}>
                     <SelectTrigger className="w-[150px]" data-testid="select-filter-transport-type">
-                      <SelectValue placeholder="All types" />
+                      <SelectValue placeholder={t('dashboardPage.allTypesPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="all">{t('dashboardPage.allTypes')}</SelectItem>
                       {Object.entries(TRANSPORT_TYPE_LABELS).map(([value, label]) => (
                         <SelectItem key={value} value={value}>{label}</SelectItem>
                       ))}
@@ -620,14 +623,14 @@ export default function DeliveryDashboard() {
                   </Select>
                   <Select value={transportStatusFilter} onValueChange={setTransportStatusFilter}>
                     <SelectTrigger className="w-[150px]" data-testid="select-filter-transport-status">
-                      <SelectValue placeholder="All statuses" />
+                      <SelectValue placeholder={t('dashboardPage.allStatusesPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="all">{t('dashboardPage.allStatuses')}</SelectItem>
+                      <SelectItem value="scheduled">{t('transportDialog.statusScheduled')}</SelectItem>
+                      <SelectItem value="in_progress">{t('transportDialog.statusInProgress')}</SelectItem>
+                      <SelectItem value="completed">{t('transportDialog.statusCompleted')}</SelectItem>
+                      <SelectItem value="cancelled">{t('transportDialog.statusCancelled')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button
@@ -637,7 +640,7 @@ export default function DeliveryDashboard() {
                     data-testid="button-print-transports"
                   >
                     <Printer className="h-4 w-4 mr-2" />
-                    Print
+                    {t('dashboardPage.printButton')}
                   </Button>
                   <Button
                     variant="outline"
@@ -650,13 +653,15 @@ export default function DeliveryDashboard() {
                     ) : (
                       <FileText className="h-4 w-4 mr-2" />
                     )}
-                    Generate Report{selectedTransportIds.length > 0 ? ` (${selectedTransportIds.length})` : ""}
+                    {selectedTransportIds.length > 0
+                      ? t('dashboardPage.generateReportButtonWithCount', { count: selectedTransportIds.length })
+                      : t('dashboardPage.generateReportButton')}
                   </Button>
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={() => setTemplateEditorOpen(true)}
-                    title="Manage report templates"
+                    title={t('dashboardPage.manageReportTemplatesTitle')}
                     data-testid="button-manage-report-templates"
                   >
                     <Settings2 className="h-4 w-4" />
@@ -666,7 +671,7 @@ export default function DeliveryDashboard() {
                     data-testid="button-new-transport"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    New Transport
+                    {t('dashboardPage.newTransportButton')}
                   </Button>
                 </div>
               </div>
@@ -684,25 +689,25 @@ export default function DeliveryDashboard() {
                         data-testid="checkbox-select-all-transports"
                       />
                     </TableHead>
-                    <TableHead>Vehicle</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Route</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Distance</TableHead>
-                    <TableHead>Toll Cost</TableHead>
-                    <TableHead>Billing</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>{t('dashboardPage.columnVehicle')}</TableHead>
+                    <TableHead>{t('dashboardPage.columnType')}</TableHead>
+                    <TableHead>{t('dashboardPage.columnRoute')}</TableHead>
+                    <TableHead>{t('dashboardPage.columnDate')}</TableHead>
+                    <TableHead>{t('dashboardPage.columnDistance')}</TableHead>
+                    <TableHead>{t('dashboardPage.columnTollCost')}</TableHead>
+                    <TableHead>{t('dashboardPage.columnBilling')}</TableHead>
+                    <TableHead>{t('dashboardPage.columnStatus')}</TableHead>
+                    <TableHead>{t('dashboardPage.columnActions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {transportsLoading ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center py-4">Loading transports...</TableCell>
+                      <TableCell colSpan={10} className="text-center py-4">{t('dashboardPage.loadingTransports')}</TableCell>
                     </TableRow>
                   ) : filteredTransports.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center py-4">No transports found</TableCell>
+                      <TableCell colSpan={10} className="text-center py-4">{t('dashboardPage.noTransportsFound')}</TableCell>
                     </TableRow>
                   ) : (
                     filteredTransports.map((transport) => (
@@ -747,13 +752,13 @@ export default function DeliveryDashboard() {
                               <Euro className="h-3 w-3 text-muted-foreground shrink-0" />
                               {transport.billableAmount ? <Price value={Number(transport.billableAmount)} /> : '-'}
                               {transport.invoiced ? (
-                                <Badge className="bg-green-100 text-green-800 ml-1">Invoiced</Badge>
+                                <Badge className="bg-green-100 text-green-800 ml-1">{t('dashboardPage.invoicedBadge')}</Badge>
                               ) : (
-                                <Badge variant="outline" className="ml-1">Not invoiced</Badge>
+                                <Badge variant="outline" className="ml-1">{t('dashboardPage.notInvoicedBadge')}</Badge>
                               )}
                             </div>
                           ) : (
-                            <span className="text-muted-foreground text-sm">Not billable</span>
+                            <span className="text-muted-foreground text-sm">{t('dashboardPage.notBillable')}</span>
                           )}
                         </TableCell>
                         <TableCell>{getTransportStatusBadge(transport.status)}</TableCell>
@@ -765,7 +770,7 @@ export default function DeliveryDashboard() {
                                 variant="ghost"
                                 onClick={() => completeTransportMutation.mutate(transport.id)}
                                 disabled={completeTransportMutation.isPending}
-                                title="Mark as completed"
+                                title={t('dashboardPage.markAsCompletedTitle')}
                                 data-testid={`button-complete-transport-${transport.id}`}
                               >
                                 <CheckCircle className="h-4 w-4 text-green-600" />
@@ -776,7 +781,7 @@ export default function DeliveryDashboard() {
                               variant="ghost"
                               onClick={() => generateReportMutation.mutate([transport.id])}
                               disabled={generateReportMutation.isPending}
-                              title="Print / generate report"
+                              title={t('dashboardPage.printGenerateReportTitle')}
                               data-testid={`button-print-transport-${transport.id}`}
                             >
                               {generateReportMutation.isPending ? (
@@ -831,9 +836,9 @@ export default function DeliveryDashboard() {
       <Dialog open={templateEditorOpen} onOpenChange={setTemplateEditorOpen}>
         <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] max-h-[95vh] p-0 overflow-hidden flex flex-col">
           <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
-            <DialogTitle>Transport Report Template Editor</DialogTitle>
+            <DialogTitle>{t('dashboardPage.templateEditorTitle')}</DialogTitle>
             <DialogDescription>
-              Design the driver-facing report — drag fields onto the page, one big page per transport
+              {t('dashboardPage.templateEditorDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto overflow-x-hidden">
@@ -845,19 +850,19 @@ export default function DeliveryDashboard() {
       <AlertDialog open={!!deletingTransport} onOpenChange={(open) => !open && setDeletingTransport(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this transport?</AlertDialogTitle>
+            <AlertDialogTitle>{t('dashboardPage.deleteTransportTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove this transport record. This action cannot be undone.
+              {t('dashboardPage.deleteTransportDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deletingTransport && deleteTransportMutation.mutate(deletingTransport.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete-transport"
             >
-              Delete
+              {t('common:actions.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -871,7 +876,7 @@ export default function DeliveryDashboard() {
           <AlertDialogHeader className="flex-shrink-0">
             <AlertDialogTitle>{reportToPreview?.fileName}</AlertDialogTitle>
             <AlertDialogDescription>
-              Report generated and saved to Documents — review and print below
+              {t('dashboardPage.reportPreviewDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex-1 overflow-hidden border rounded mb-4">
@@ -880,29 +885,29 @@ export default function DeliveryDashboard() {
                 id="transport-report-preview-iframe"
                 src={`/api/documents/view/${reportToPreview.id}`}
                 className="w-full h-full border-0"
-                title="Transport Report Preview"
+                title={t('dashboardPage.reportPreviewIframeTitle')}
                 onError={() => setReportIframeError(true)}
               />
             )}
             {reportToPreview && reportIframeError && (
               <div className="flex flex-col items-center justify-center h-full p-8 text-center">
                 <p className="text-muted-foreground mb-4">
-                  Your browser blocked the inline preview. You can still open it in a new tab to print it.
+                  {t('dashboardPage.previewBlockedMessage')}
                 </p>
                 <Button
                   onClick={() => window.open(`/api/documents/view/${reportToPreview.id}`, "_blank", "noopener,noreferrer")}
                   variant="outline"
                 >
-                  Open in New Tab
+                  {t('dashboardPage.openInNewTabButton')}
                 </Button>
               </div>
             )}
           </div>
           <AlertDialogFooter className="flex-shrink-0">
-            <AlertDialogCancel onClick={() => setReportPreviewOpen(false)}>Close</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setReportPreviewOpen(false)}>{t('common:actions.close')}</AlertDialogCancel>
             <AlertDialogAction onClick={printGeneratedReport} className="bg-blue-600 hover:bg-blue-700">
               <Printer className="h-4 w-4 mr-2" />
-              Print
+              {t('dashboardPage.printButton')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

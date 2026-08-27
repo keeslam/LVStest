@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import { UserRole } from "@shared/schema";
 import { z } from "zod";
@@ -71,6 +72,7 @@ type PasswordChangeValues = z.infer<typeof passwordChangeSchema>;
 type MileageOverridePasswordValues = z.infer<typeof mileageOverridePasswordSchema>;
 
 export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
+  const { t } = useTranslation(["auth", "common"]);
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
@@ -125,21 +127,21 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
       const res = await apiRequest("PATCH", `/api/users/${user?.id}`, data);
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || "Failed to update profile");
+        throw new Error(error.message || t('profileDialog.updateProfileFailed'));
       }
       return await res.json();
     },
     onSuccess: () => {
       invalidateByPrefix("/api/user");
       toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully.",
+        title: t('profileDialog.profileUpdatedTitle'),
+        description: t('profileDialog.profileUpdatedDescription'),
       });
       setActiveTab("profile");
     },
     onError: (error: Error) => {
       toast({
-        title: "Update failed",
+        title: t('profileDialog.updateFailedTitle'),
         description: error.message,
         variant: "destructive",
       });
@@ -151,21 +153,21 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
       const res = await apiRequest("POST", "/api/users/change-password", data);
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to change password");
+        throw new Error(errorData.message || t('profileDialog.changePasswordFailed'));
       }
       return await res.json();
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Your password has been changed successfully!",
+        title: t('profileDialog.successTitle'),
+        description: t('profileDialog.passwordChangedDescription'),
       });
       passwordForm.reset();
       setActiveTab("profile");
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t('profileDialog.errorTitle'),
         description: error.message,
         variant: "destructive",
       });
@@ -180,63 +182,63 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
       });
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || "Failed to set mileage override password");
+        throw new Error(error.message || t('profileDialog.setMileagePasswordFailed'));
       }
       return await res.json();
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Mileage override password has been set successfully.",
+        title: t('profileDialog.successTitle'),
+        description: t('profileDialog.mileagePasswordSetDescription'),
       });
       mileageForm.reset();
       setActiveTab("profile");
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t('profileDialog.errorTitle'),
         description: error.message,
         variant: "destructive",
       });
     },
   });
 
-  const createdAt = user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "Unknown";
+  const createdAt = user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : t('profileDialog.unknown');
 
   // Always render the Dialog to prevent unmounting issues
   return (
     <Dialog open={open && !!user} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>My Profile</DialogTitle>
+          <DialogTitle>{t('profileDialog.title')}</DialogTitle>
         </DialogHeader>
 
         {user && (<Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile" data-testid="tab-profile">
               <UserIcon className="h-4 w-4 mr-1" />
-              Profile
+              {t('profileDialog.tabs.profile')}
             </TabsTrigger>
             <TabsTrigger value="edit" data-testid="tab-edit-profile">
               <Pencil className="h-4 w-4 mr-1" />
-              Edit
+              {t('profileDialog.tabs.edit')}
             </TabsTrigger>
             <TabsTrigger value="password" data-testid="tab-change-password">
               <KeyRound className="h-4 w-4 mr-1" />
-              Password
+              {t('profileDialog.tabs.password')}
             </TabsTrigger>
             <TabsTrigger value="mileage" data-testid="tab-mileage-override">
               <Shield className="h-4 w-4 mr-1" />
-              Mileage
+              {t('profileDialog.tabs.mileage')}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="space-y-4 mt-4">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">User Information</h3>
+                <h3 className="text-lg font-semibold">{t('profileDialog.userInformation')}</h3>
                 <Badge variant={user.active ? "default" : "destructive"}>
-                  {user.active ? "Active" : "Inactive"}
+                  {user.active ? t('profileDialog.active') : t('profileDialog.inactive')}
                 </Badge>
               </div>
 
@@ -244,7 +246,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                 <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                   <UserIcon className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="text-sm text-muted-foreground">Username</p>
+                    <p className="text-sm text-muted-foreground">{t('profileDialog.username')}</p>
                     <p className="font-medium">{user.username}</p>
                   </div>
                 </div>
@@ -253,7 +255,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                   <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                     <UserIcon className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Full Name</p>
+                      <p className="text-sm text-muted-foreground">{t('profileDialog.fullName')}</p>
                       <p className="font-medium">{user.fullName}</p>
                     </div>
                   </div>
@@ -263,7 +265,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                   <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                     <Mail className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="text-sm text-muted-foreground">{t('profileDialog.email')}</p>
                       <p className="font-medium">{user.email}</p>
                     </div>
                   </div>
@@ -272,12 +274,12 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                 <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                   <Shield className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="text-sm text-muted-foreground">Role</p>
+                    <p className="text-sm text-muted-foreground">{t('profileDialog.role')}</p>
                     <div className="font-medium mt-1">
                       {user.role === UserRole.ADMIN ? (
-                        <Badge variant="destructive">Administrator</Badge>
+                        <Badge variant="destructive">{t('profileDialog.administrator')}</Badge>
                       ) : user.role === UserRole.MANAGER ? (
-                        <Badge>Manager</Badge>
+                        <Badge>{t('profileDialog.manager')}</Badge>
                       ) : (
                         <Badge variant="outline">{user.role}</Badge>
                       )}
@@ -288,7 +290,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                 <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                   <Calendar className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="text-sm text-muted-foreground">Member Since</p>
+                    <p className="text-sm text-muted-foreground">{t('profileDialog.memberSince')}</p>
                     <p className="font-medium">{createdAt}</p>
                   </div>
                 </div>
@@ -296,7 +298,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
 
               {user.permissions && user.permissions.length > 0 && (
                 <div className="mt-4">
-                  <h4 className="font-medium mb-2">Additional Permissions</h4>
+                  <h4 className="font-medium mb-2">{t('profileDialog.additionalPermissions')}</h4>
                   <div className="flex flex-wrap gap-2">
                     {user.permissions.map((permission) => (
                       <Badge key={permission} variant="outline">
@@ -317,11 +319,11 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username</FormLabel>
+                      <FormLabel>{t('profileDialog.username')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Username" {...field} data-testid="input-username" />
+                        <Input placeholder={t('profileDialog.username')} {...field} data-testid="input-username" />
                       </FormControl>
-                      <FormDescription>This is your login name.</FormDescription>
+                      <FormDescription>{t('profileDialog.usernameHint')}</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -332,7 +334,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                   name="fullName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Full Name</FormLabel>
+                      <FormLabel>{t('profileDialog.fullName')}</FormLabel>
                       <FormControl>
                         <Input placeholder="John Doe" {...field} data-testid="input-fullname" />
                       </FormControl>
@@ -346,7 +348,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t('profileDialog.email')}</FormLabel>
                       <FormControl>
                         <Input placeholder="email@example.com" type="email" {...field} data-testid="input-email" />
                       </FormControl>
@@ -361,14 +363,14 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                     variant="outline"
                     onClick={() => setActiveTab("profile")}
                   >
-                    Cancel
+                    {t('common:actions.cancel')}
                   </Button>
                   <Button
                     type="submit"
                     disabled={updateProfileMutation.isPending || !profileForm.formState.isDirty}
                     data-testid="button-save-profile"
                   >
-                    {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
+                    {updateProfileMutation.isPending ? t('profileDialog.saving') : t('profileDialog.saveChanges')}
                   </Button>
                 </div>
               </form>
@@ -383,9 +385,9 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                   name="currentPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Current Password</FormLabel>
+                      <FormLabel>{t('profileDialog.currentPassword')}</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Enter current password" {...field} data-testid="input-current-password" />
+                        <Input type="password" placeholder={t('profileDialog.currentPasswordPlaceholder')} {...field} data-testid="input-current-password" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -397,11 +399,11 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                   name="newPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>New Password</FormLabel>
+                      <FormLabel>{t('profileDialog.newPassword')}</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Enter new password" {...field} data-testid="input-new-password" />
+                        <Input type="password" placeholder={t('profileDialog.newPasswordPlaceholder')} {...field} data-testid="input-new-password" />
                       </FormControl>
-                      <FormDescription>Password must be at least 6 characters.</FormDescription>
+                      <FormDescription>{t('profileDialog.newPasswordHint')}</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -412,9 +414,9 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Confirm New Password</FormLabel>
+                      <FormLabel>{t('profileDialog.confirmNewPassword')}</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Confirm new password" {...field} data-testid="input-confirm-password" />
+                        <Input type="password" placeholder={t('profileDialog.confirmNewPasswordPlaceholder')} {...field} data-testid="input-confirm-password" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -430,14 +432,14 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                       setActiveTab("profile");
                     }}
                   >
-                    Cancel
+                    {t('common:actions.cancel')}
                   </Button>
                   <Button
                     type="submit"
                     disabled={changePasswordMutation.isPending}
                     data-testid="button-change-password"
                   >
-                    {changePasswordMutation.isPending ? "Updating..." : "Change Password"}
+                    {changePasswordMutation.isPending ? t('profileDialog.updating') : t('profileDialog.changePassword')}
                   </Button>
                 </div>
               </form>
@@ -447,9 +449,9 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
           <TabsContent value="mileage" className="mt-4 space-y-4">
             <Alert>
               <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Important Security Feature</AlertTitle>
+              <AlertTitle>{t('profileDialog.mileageSecurityTitle')}</AlertTitle>
               <AlertDescription>
-                This password is required when decreasing vehicle mileage to prevent accidental or fraudulent odometer rollbacks.
+                {t('profileDialog.mileageSecurityDescription')}
               </AlertDescription>
             </Alert>
 
@@ -460,11 +462,11 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                   name="currentPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Current Account Password</FormLabel>
+                      <FormLabel>{t('profileDialog.currentAccountPassword')}</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Enter your account password" {...field} data-testid="input-mileage-current-password" />
+                        <Input type="password" placeholder={t('profileDialog.currentAccountPasswordPlaceholder')} {...field} data-testid="input-mileage-current-password" />
                       </FormControl>
-                      <FormDescription>Enter your account password to verify identity.</FormDescription>
+                      <FormDescription>{t('profileDialog.currentAccountPasswordHint')}</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -475,9 +477,9 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                   name="newPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>New Mileage Override Password</FormLabel>
+                      <FormLabel>{t('profileDialog.newMileagePassword')}</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Enter new mileage override password" {...field} data-testid="input-mileage-new-password" />
+                        <Input type="password" placeholder={t('profileDialog.newMileagePasswordPlaceholder')} {...field} data-testid="input-mileage-new-password" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -489,9 +491,9 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
+                      <FormLabel>{t('profileDialog.confirmPassword')}</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Confirm password" {...field} data-testid="input-mileage-confirm-password" />
+                        <Input type="password" placeholder={t('profileDialog.confirmPasswordPlaceholder')} {...field} data-testid="input-mileage-confirm-password" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -507,14 +509,14 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                       setActiveTab("profile");
                     }}
                   >
-                    Cancel
+                    {t('common:actions.cancel')}
                   </Button>
                   <Button
                     type="submit"
                     disabled={setMileagePasswordMutation.isPending}
                     data-testid="button-set-mileage-password"
                   >
-                    {setMileagePasswordMutation.isPending ? "Saving..." : "Set Password"}
+                    {setMileagePasswordMutation.isPending ? t('profileDialog.saving') : t('profileDialog.setPassword')}
                   </Button>
                 </div>
               </form>

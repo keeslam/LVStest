@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useTranslation, Trans } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,6 +76,7 @@ interface BackupDialogProps {
 }
 
 export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
+  const { t } = useTranslation(["settings", "common"]);
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -123,31 +125,31 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
 
   const toggleAutoBackupMutation = useMutation({
     mutationFn: async (enabled: boolean) => {
-      if (!settings) throw new Error('Settings not loaded');
-      
+      if (!settings) throw new Error(t('backupDialog.settingsNotLoaded'));
+
       const response = await apiRequest('PUT', `/api/backup-settings/${settings.id}`, {
         enableAutoBackup: enabled,
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to update settings');
+        throw new Error(error.error || t('backupDialog.updateSettingsFailed'));
       }
-      
+
       return await response.json();
     },
     onSuccess: (data) => {
       invalidateByPrefix('/api/backup-settings');
       toast({
-        title: data.enableAutoBackup ? 'Auto Backup Enabled' : 'Auto Backup Disabled',
-        description: data.enableAutoBackup 
-          ? 'Daily backups will run automatically at 2:00 AM' 
-          : 'Automatic backups have been disabled',
+        title: data.enableAutoBackup ? t('backupDialog.autoBackupEnabledTitle') : t('backupDialog.autoBackupDisabledTitle'),
+        description: data.enableAutoBackup
+          ? t('backupDialog.autoBackupEnabledDescription')
+          : t('backupDialog.autoBackupDisabledDescription'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Update Failed',
+        title: t('backupDialog.updateFailedTitle'),
         description: error.message,
         variant: 'destructive',
       });
@@ -162,7 +164,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to run backup');
+        throw new Error(error.error || t('backupDialog.runBackupFailed'));
       }
 
       return await response.json();
@@ -170,13 +172,13 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     onSuccess: () => {
       invalidateByPrefix('/api/backups');
       toast({
-        title: 'Backup Complete',
-        description: 'A new database and files backup has been created and verified.',
+        title: t('backupDialog.backupCompleteTitle'),
+        description: t('backupDialog.backupCompleteDescription'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Backup Failed',
+        title: t('backupDialog.backupFailedTitle'),
         description: error.message,
         variant: 'destructive',
       });
@@ -187,7 +189,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     setDownloadingData(true);
     try {
       const response = await fetch('/api/backups/download-data', { method: 'GET' });
-      if (!response.ok) throw new Error('Failed to download data backup');
+      if (!response.ok) throw new Error(t('backupDialog.downloadDataFailed'));
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -199,11 +201,11 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      toast({ title: 'Data Downloaded', description: 'Your app data has been downloaded successfully.' });
+      toast({ title: t('backupDialog.dataDownloadedTitle'), description: t('backupDialog.dataDownloadedDescription') });
     } catch (error) {
       toast({
-        title: 'Download Failed',
-        description: error instanceof Error ? error.message : 'Failed to download data',
+        title: t('backupDialog.downloadFailedTitle'),
+        description: error instanceof Error ? error.message : t('backupDialog.downloadDataFailed'),
         variant: 'destructive',
       });
     } finally {
@@ -215,7 +217,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     setDownloadingCode(true);
     try {
       const response = await fetch('/api/backups/download-code', { method: 'GET' });
-      if (!response.ok) throw new Error('Failed to download code backup');
+      if (!response.ok) throw new Error(t('backupDialog.downloadCodeFailed'));
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -227,11 +229,11 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      toast({ title: 'Code Downloaded', description: 'Your app code has been downloaded successfully.' });
+      toast({ title: t('backupDialog.codeDownloadedTitle'), description: t('backupDialog.codeDownloadedDescription') });
     } catch (error) {
       toast({
-        title: 'Download Failed',
-        description: error instanceof Error ? error.message : 'Failed to download code',
+        title: t('backupDialog.downloadFailedTitle'),
+        description: error instanceof Error ? error.message : t('backupDialog.downloadCodeFailed'),
         variant: 'destructive',
       });
     } finally {
@@ -243,7 +245,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     setDownloadingFiles(true);
     try {
       const response = await fetch('/api/backups/download-files', { method: 'GET' });
-      if (!response.ok) throw new Error('Failed to download files backup');
+      if (!response.ok) throw new Error(t('backupDialog.downloadFilesFailed'));
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -255,11 +257,11 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      toast({ title: 'Files Downloaded', description: 'Your uploaded files have been downloaded successfully.' });
+      toast({ title: t('backupDialog.filesDownloadedTitle'), description: t('backupDialog.filesDownloadedDescription') });
     } catch (error) {
       toast({
-        title: 'Download Failed',
-        description: error instanceof Error ? error.message : 'Failed to download files',
+        title: t('backupDialog.downloadFailedTitle'),
+        description: error instanceof Error ? error.message : t('backupDialog.downloadFilesFailed'),
         variant: 'destructive',
       });
     } finally {
@@ -282,15 +284,15 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to restore data');
+        throw new Error(error.error || t('backupDialog.restoreDataFailed'));
       }
 
       const result = await response.json();
       toast({
-        title: 'Data Restored',
+        title: t('backupDialog.dataRestoredTitle'),
         description: result.safetyBackupFilename
-          ? `Your database has been restored. A backup of your previous data was saved as ${result.safetyBackupFilename}. Please refresh your browser and log in again.`
-          : 'Your database has been restored. Please refresh your browser and log in again.',
+          ? t('backupDialog.dataRestoredWithSafetyDescription', { filename: result.safetyBackupFilename })
+          : t('backupDialog.dataRestoredDescription'),
         duration: 10000,
       });
 
@@ -298,8 +300,8 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
       setTimeout(() => window.location.reload(), 3000);
     } catch (error) {
       toast({
-        title: 'Restore Failed',
-        description: error instanceof Error ? error.message : 'Failed to restore data',
+        title: t('backupDialog.restoreFailedTitle'),
+        description: error instanceof Error ? error.message : t('backupDialog.restoreDataFailed'),
         variant: 'destructive',
       });
     } finally {
@@ -322,21 +324,21 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to restore code');
+        throw new Error(error.error || t('backupDialog.restoreCodeFailed'));
       }
 
       const result = await response.json();
       toast({
-        title: 'Code Restored',
-        description: result.message || 'Code files have been restored. The application will restart.',
+        title: t('backupDialog.codeRestoredTitle'),
+        description: result.message || t('backupDialog.codeRestoredDefaultDescription'),
         duration: 10000,
       });
-      
+
       setSelectedCodeFile(null);
     } catch (error) {
       toast({
-        title: 'Restore Failed',
-        description: error instanceof Error ? error.message : 'Failed to restore code',
+        title: t('backupDialog.restoreFailedTitle'),
+        description: error instanceof Error ? error.message : t('backupDialog.restoreCodeFailed'),
         variant: 'destructive',
       });
     } finally {
@@ -359,22 +361,22 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to restore files');
+        throw new Error(error.error || t('backupDialog.restoreFilesFailed'));
       }
 
       const result = await response.json();
       toast({
-        title: 'Files Restored',
+        title: t('backupDialog.filesRestoredTitle'),
         description: result.safetyBackupFilename
-          ? `${result.message || 'All uploaded files have been restored successfully.'} A backup of your previous files was saved as ${result.safetyBackupFilename}.`
-          : result.message || 'All uploaded files have been restored successfully.',
+          ? t('backupDialog.filesRestoredWithSafetyDescription', { message: result.message || t('backupDialog.filesRestoredDefaultDescription'), filename: result.safetyBackupFilename })
+          : result.message || t('backupDialog.filesRestoredDefaultDescription'),
       });
 
       setSelectedFilesArchive(null);
     } catch (error) {
       toast({
-        title: 'Restore Failed',
-        description: error instanceof Error ? error.message : 'Failed to restore files',
+        title: t('backupDialog.restoreFailedTitle'),
+        description: error instanceof Error ? error.message : t('backupDialog.restoreFilesFailed'),
         variant: 'destructive',
       });
     } finally {
@@ -385,7 +387,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
   const handleDownloadAutomatedBackup = async (filename: string) => {
     try {
       const response = await fetch(`/api/backups/download/${filename}`, { method: 'GET' });
-      if (!response.ok) throw new Error('Failed to download backup');
+      if (!response.ok) throw new Error(t('backupDialog.downloadBackupFailed'));
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -397,11 +399,11 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      toast({ title: 'Backup Downloaded', description: `${filename} has been downloaded successfully.` });
+      toast({ title: t('backupDialog.backupDownloadedTitle'), description: t('backupDialog.backupDownloadedDescription', { filename }) });
     } catch (error) {
       toast({
-        title: 'Download Failed',
-        description: error instanceof Error ? error.message : 'Failed to download backup',
+        title: t('backupDialog.downloadFailedTitle'),
+        description: error instanceof Error ? error.message : t('backupDialog.downloadBackupFailed'),
         variant: 'destructive',
       });
     }
@@ -423,15 +425,15 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to restore backup');
+        throw new Error(error.error || t('backupDialog.restoreBackupFailed'));
       }
 
       const result = await response.json();
-      const base = result.message || `Database restored from ${filename}. Please refresh your browser and log in again.`;
+      const base = result.message || t('backupDialog.databaseRestoredDefaultDescription', { filename });
       toast({
-        title: 'Database Restored',
+        title: t('backupDialog.databaseRestoredTitle'),
         description: result.safetyBackupFilename
-          ? `${base} A backup of your previous data was saved as ${result.safetyBackupFilename}.`
+          ? t('backupDialog.databaseRestoredWithSafetyDescription', { message: base, filename: result.safetyBackupFilename })
           : base,
         duration: 10000,
       });
@@ -440,8 +442,8 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
       setTimeout(() => window.location.reload(), 3000);
     } catch (error) {
       toast({
-        title: 'Restore Failed',
-        description: error instanceof Error ? error.message : 'Failed to restore backup',
+        title: t('backupDialog.restoreFailedTitle'),
+        description: error instanceof Error ? error.message : t('backupDialog.restoreBackupFailed'),
         variant: 'destructive',
       });
     } finally {
@@ -458,9 +460,9 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
   };
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Never';
+    if (!dateString) return t('backupDialog.never');
     const date = new Date(dateString);
-    if (Number.isNaN(date.getTime())) return 'Unknown date';
+    if (Number.isNaN(date.getTime())) return t('backupDialog.unknownDate');
     return date.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -475,9 +477,9 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Access Denied</DialogTitle>
+            <DialogTitle>{t('backupDialog.accessDeniedTitle')}</DialogTitle>
           </DialogHeader>
-          <p className="text-muted-foreground">You don't have permission to access this feature.</p>
+          <p className="text-muted-foreground">{t('backupDialog.accessDeniedMessage')}</p>
         </DialogContent>
       </Dialog>
     );
@@ -489,7 +491,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
         <DialogHeader className="p-6 pb-0">
           <DialogTitle className="text-2xl flex items-center gap-2">
             <Database className="h-6 w-6" />
-            Backup & Recovery
+            {t('backupDialog.title')}
           </DialogTitle>
         </DialogHeader>
         
@@ -504,9 +506,9 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                       <Calendar className="h-5 w-5 text-purple-600" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg text-purple-900">Automatic Backup Schedule</CardTitle>
+                      <CardTitle className="text-lg text-purple-900">{t('backupDialog.scheduleTitle')}</CardTitle>
                       <CardDescription className="text-purple-700">
-                        Backups run daily at 2:00 AM
+                        {t('backupDialog.scheduleDescription')}
                       </CardDescription>
                     </div>
                   </div>
@@ -524,7 +526,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                       ) : (
                         <PlayCircle className="h-4 w-4 mr-2" />
                       )}
-                      {runBackupMutation.isPending || status?.isRunning ? 'Backing up...' : 'Back up now'}
+                      {runBackupMutation.isPending || status?.isRunning ? t('backupDialog.backingUp') : t('backupDialog.backUpNow')}
                     </Button>
                     <div className="flex items-center space-x-2">
                       <Switch
@@ -535,7 +537,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                         data-testid="dialog-auto-backup-toggle"
                       />
                       <Label htmlFor="auto-backup-dialog" className="cursor-pointer font-medium text-purple-900">
-                        {settings?.enableAutoBackup ? 'Enabled' : 'Disabled'}
+                        {settings?.enableAutoBackup ? t('backupDialog.enabled') : t('backupDialog.disabled')}
                       </Label>
                     </div>
                   </div>
@@ -546,25 +548,25 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                   <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-purple-100">
                     <Clock className="h-4 w-4 text-purple-600 flex-shrink-0" />
                     <div>
-                      <p className="text-xs text-gray-600">Schedule</p>
-                      <p className="font-semibold text-sm text-gray-900">Daily at 2:00 AM</p>
+                      <p className="text-xs text-gray-600">{t('backupDialog.scheduleLabel')}</p>
+                      <p className="font-semibold text-sm text-gray-900">{t('backupDialog.dailyAt2am')}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-purple-100">
                     <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
                     <div>
-                      <p className="text-xs text-gray-600">Last Backup</p>
+                      <p className="text-xs text-gray-600">{t('backupDialog.lastBackup')}</p>
                       <p className="font-semibold text-sm text-gray-900">
-                        {status?.lastSuccess ? formatDate(status.lastSuccess) : 'Never'}
+                        {status?.lastSuccess ? formatDate(status.lastSuccess) : t('backupDialog.never')}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-purple-100">
                     <Calendar className="h-4 w-4 text-blue-600 flex-shrink-0" />
                     <div>
-                      <p className="text-xs text-gray-600">Next Backup</p>
+                      <p className="text-xs text-gray-600">{t('backupDialog.nextBackup')}</p>
                       <p className="font-semibold text-sm text-gray-900">
-                        {settings?.enableAutoBackup ? 'Tonight at 2:00 AM' : 'Disabled'}
+                        {settings?.enableAutoBackup ? t('backupDialog.tonightAt2am') : t('backupDialog.disabled')}
                       </p>
                     </div>
                   </div>
@@ -573,7 +575,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                   <div className="mt-3 flex items-start gap-2 p-2 bg-red-50 rounded-lg border border-red-200">
                     <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-medium text-red-900">Last backup error:</p>
+                      <p className="text-sm font-medium text-red-900">{t('backupDialog.lastBackupError')}</p>
                       <p className="text-xs text-red-700">{status.lastError}</p>
                     </div>
                   </div>
@@ -591,11 +593,11 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                     )}
                     <div>
                       <p className={`text-xs font-medium ${health.backupPathFromEnv ? 'text-gray-700' : 'text-amber-900'}`}>
-                        Backup location: <span className="font-mono">{health.backupPath}</span>
+                        {t('backupDialog.backupLocation')} <span className="font-mono">{health.backupPath}</span>
                       </p>
                       {!health.backupPathFromEnv && (
                         <p className="text-xs text-amber-700 mt-0.5">
-                          BACKUP_PATH is not set - this fallback location may not survive a redeploy.
+                          {t('backupDialog.backupPathNotSet')}
                         </p>
                       )}
                     </div>
@@ -608,17 +610,17 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
             {(recentDatabaseBackups.length > 0 || recentFilesBackups.length > 0) && (
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Recent Automated Backups</CardTitle>
+                  <CardTitle className="text-lg">{t('backupDialog.recentBackupsTitle')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
                       <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
                         <Database className="h-4 w-4 mr-2 text-blue-600" />
-                        Database Backups
+                        {t('backupDialog.databaseBackups')}
                       </h3>
                       {recentDatabaseBackups.length === 0 ? (
-                        <p className="text-sm text-gray-500">No automated database backups yet</p>
+                        <p className="text-sm text-gray-500">{t('backupDialog.noAutoDatabaseBackups')}</p>
                       ) : (
                         <div className="space-y-2">
                           {recentDatabaseBackups.map((backup, index) => (
@@ -637,7 +639,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                                   data-testid={`dialog-download-auto-db-${index}`}
                                 >
                                   <Download className="h-3 w-3 mr-1" />
-                                  Download
+                                  {t('backupDialog.download')}
                                 </Button>
                                 <AlertDialog onOpenChange={(isOpen) => {
                                   if (!isOpen) setRestoreConfirmText((prev) => ({ ...prev, [backup.filename]: '' }));
@@ -649,20 +651,23 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                                       data-testid={`dialog-restore-auto-db-${index}`}
                                     >
                                       <RotateCcw className="h-3 w-3 mr-1" />
-                                      Restore
+                                      {t('backupDialog.restore')}
                                     </Button>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader>
-                                      <AlertDialogTitle className="text-destructive">Warning: Restore This Backup</AlertDialogTitle>
+                                      <AlertDialogTitle className="text-destructive">{t('backupDialog.restoreWarningTitle')}</AlertDialogTitle>
                                       <AlertDialogDescription asChild>
                                         <div className="space-y-3">
                                           <p>
-                                            This will overwrite the <strong>current live database</strong> with the contents of{' '}
-                                            <strong>{backup.filename}</strong>. A fresh backup of the current state is taken and
-                                            verified automatically before the restore runs, but the restore itself cannot be undone.
+                                            <Trans
+                                              i18nKey="backupDialog.restoreWarningBody"
+                                              ns="settings"
+                                              values={{ filename: backup.filename }}
+                                              components={{ 1: <strong /> }}
+                                            />
                                           </p>
-                                          <p>Type the exact filename below to confirm:</p>
+                                          <p>{t('backupDialog.typeFilenameConfirm')}</p>
                                           <Input
                                             value={restoreConfirmText[backup.filename] ?? ''}
                                             onChange={(e) => setRestoreConfirmText((prev) => ({ ...prev, [backup.filename]: e.target.value }))}
@@ -673,7 +678,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
                                       <AlertDialogAction
                                         onClick={() => handleRestoreAutomatedDatabaseBackup(backup.filename)}
                                         disabled={
@@ -683,7 +688,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                         data-testid={`dialog-restore-auto-db-confirm-button-${index}`}
                                       >
-                                        {restoringAutomatedBackup === backup.filename ? 'Restoring...' : 'Yes, Restore This Backup'}
+                                        {restoringAutomatedBackup === backup.filename ? t('backupDialog.restoring') : t('backupDialog.yesRestoreThisBackup')}
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
@@ -698,10 +703,10 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                     <div>
                       <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
                         <FileText className="h-4 w-4 mr-2 text-orange-600" />
-                        Files Backups
+                        {t('backupDialog.filesBackups')}
                       </h3>
                       {recentFilesBackups.length === 0 ? (
-                        <p className="text-sm text-gray-500">No automated files backups yet</p>
+                        <p className="text-sm text-gray-500">{t('backupDialog.noAutoFilesBackups')}</p>
                       ) : (
                         <div className="space-y-2">
                           {recentFilesBackups.map((backup, index) => (
@@ -710,7 +715,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                                 <p className="text-sm font-medium text-gray-900 truncate">{backup.filename}</p>
                                 <p className="text-xs text-gray-500">
                                   {formatDate(backup.timestamp)} • {formatFileSize(backup.size)}
-                                  {backup.metadata?.fileCount && ` • ${backup.metadata.fileCount} files`}
+                                  {backup.metadata?.fileCount && ` • ${t('backupDialog.filesCount', { count: backup.metadata.fileCount })}`}
                                 </p>
                               </div>
                               <Button
@@ -720,7 +725,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                                 data-testid={`dialog-download-auto-files-${index}`}
                               >
                                 <Download className="h-3 w-3 mr-1" />
-                                Download
+                                {t('backupDialog.download')}
                               </Button>
                             </div>
                           ))}
@@ -734,7 +739,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
 
             {/* Manual Backup & Restore */}
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">Manual Backup & Restore</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('backupDialog.manualTitle')}</h2>
               <div className="grid gap-4 md:grid-cols-3">
                 {/* App Data */}
                 <Card className="border hover:border-blue-300 transition-colors">
@@ -744,25 +749,25 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                         <Database className="h-6 w-6 text-blue-600" />
                       </div>
                     </div>
-                    <CardTitle className="text-base">App Data</CardTitle>
-                    <CardDescription className="text-xs">All your business data</CardDescription>
+                    <CardTitle className="text-base">{t('backupDialog.appData')}</CardTitle>
+                    <CardDescription className="text-xs">{t('backupDialog.appDataDescription')}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <Button 
-                      className="w-full" 
+                    <Button
+                      className="w-full"
                       size="sm"
                       onClick={handleDownloadData}
                       disabled={downloadingData}
                       data-testid="dialog-download-data-button"
                     >
                       <Download className="h-4 w-4 mr-2" />
-                      {downloadingData ? 'Downloading...' : 'Download'}
+                      {downloadingData ? t('backupDialog.downloading') : t('backupDialog.download')}
                     </Button>
 
                     <div className="border-t pt-3">
                       <p className="text-xs font-semibold text-gray-700 mb-2 flex items-center">
                         <RotateCcw className="h-3 w-3 mr-1" />
-                        Restore
+                        {t('backupDialog.restore')}
                       </p>
                       <div className="space-y-2">
                         <Input
@@ -783,23 +788,23 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                               data-testid="dialog-restore-data-button"
                             >
                               <Upload className="h-3 w-3 mr-1" />
-                              {restoringData ? 'Restoring...' : 'Restore'}
+                              {restoringData ? t('backupDialog.restoring') : t('backupDialog.restore')}
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle className="text-destructive">Warning: Data Restore</AlertDialogTitle>
+                              <AlertDialogTitle className="text-destructive">{t('backupDialog.dataRestoreWarningTitle')}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This will replace ALL your current data with the backup file. This action cannot be undone. Your session will be reset and you'll need to log in again.
+                                {t('backupDialog.dataRestoreWarningBody')}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
+                              <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
+                              <AlertDialogAction
                                 onClick={handleRestoreData}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
-                                Yes, Restore Data
+                                {t('backupDialog.yesRestoreData')}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
@@ -817,25 +822,25 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                         <FileText className="h-6 w-6 text-orange-600" />
                       </div>
                     </div>
-                    <CardTitle className="text-base">Uploaded Files</CardTitle>
-                    <CardDescription className="text-xs">Documents & contracts</CardDescription>
+                    <CardTitle className="text-base">{t('backupDialog.uploadedFiles')}</CardTitle>
+                    <CardDescription className="text-xs">{t('backupDialog.uploadedFilesDescription')}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <Button 
-                      className="w-full" 
+                    <Button
+                      className="w-full"
                       size="sm"
                       onClick={handleDownloadFiles}
                       disabled={downloadingFiles}
                       data-testid="dialog-download-files-button"
                     >
                       <Download className="h-4 w-4 mr-2" />
-                      {downloadingFiles ? 'Downloading...' : 'Download'}
+                      {downloadingFiles ? t('backupDialog.downloading') : t('backupDialog.download')}
                     </Button>
 
                     <div className="border-t pt-3">
                       <p className="text-xs font-semibold text-gray-700 mb-2 flex items-center">
                         <RotateCcw className="h-3 w-3 mr-1" />
-                        Restore
+                        {t('backupDialog.restore')}
                       </p>
                       <div className="space-y-2">
                         <Input
@@ -856,23 +861,23 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                               data-testid="dialog-restore-files-button"
                             >
                               <Upload className="h-3 w-3 mr-1" />
-                              {restoringFiles ? 'Restoring...' : 'Restore'}
+                              {restoringFiles ? t('backupDialog.restoring') : t('backupDialog.restore')}
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle className="text-destructive">Warning: Files Restore</AlertDialogTitle>
+                              <AlertDialogTitle className="text-destructive">{t('backupDialog.filesRestoreWarningTitle')}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This will replace ALL your uploaded files with the backup archive. Your database and code will NOT be affected.
+                                {t('backupDialog.filesRestoreWarningBody')}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
+                              <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
+                              <AlertDialogAction
                                 onClick={handleRestoreFiles}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
-                                Yes, Restore Files
+                                {t('backupDialog.yesRestoreFiles')}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
@@ -890,25 +895,25 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                         <Code className="h-6 w-6 text-green-600" />
                       </div>
                     </div>
-                    <CardTitle className="text-base">App Code</CardTitle>
-                    <CardDescription className="text-xs">Source code files</CardDescription>
+                    <CardTitle className="text-base">{t('backupDialog.appCode')}</CardTitle>
+                    <CardDescription className="text-xs">{t('backupDialog.appCodeDescription')}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <Button 
-                      className="w-full" 
+                    <Button
+                      className="w-full"
                       size="sm"
                       onClick={handleDownloadCode}
                       disabled={downloadingCode}
                       data-testid="dialog-download-code-button"
                     >
                       <Download className="h-4 w-4 mr-2" />
-                      {downloadingCode ? 'Downloading...' : 'Download'}
+                      {downloadingCode ? t('backupDialog.downloading') : t('backupDialog.download')}
                     </Button>
 
                     <div className="border-t pt-3">
                       <p className="text-xs font-semibold text-gray-700 mb-2 flex items-center">
                         <RotateCcw className="h-3 w-3 mr-1" />
-                        Restore
+                        {t('backupDialog.restore')}
                       </p>
                       <div className="space-y-2">
                         <Input
@@ -929,23 +934,23 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                               data-testid="dialog-restore-code-button"
                             >
                               <Upload className="h-3 w-3 mr-1" />
-                              {restoringCode ? 'Restoring...' : 'Restore'}
+                              {restoringCode ? t('backupDialog.restoring') : t('backupDialog.restore')}
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle className="text-destructive">Warning: Code Restore</AlertDialogTitle>
+                              <AlertDialogTitle className="text-destructive">{t('backupDialog.codeRestoreWarningTitle')}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This will replace ALL your application source code. The application will restart automatically. Your database and uploaded files will NOT be affected.
+                                {t('backupDialog.codeRestoreWarningBody')}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
+                              <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
+                              <AlertDialogAction
                                 onClick={handleRestoreCode}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
-                                Yes, Restore Code
+                                {t('backupDialog.yesRestoreCode')}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
@@ -960,11 +965,11 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
             {/* Recovery Instructions */}
             <Card className="bg-blue-50 border-blue-200">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base text-blue-900">Recovery Instructions</CardTitle>
+                <CardTitle className="text-base text-blue-900">{t('backupDialog.recoveryInstructionsTitle')}</CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-blue-800 space-y-2">
-                <p><strong>Data Recovery:</strong> Import the SQL file into PostgreSQL, restart the app, and log in.</p>
-                <p><strong>Code Recovery:</strong> Extract the archive, run "npm install", configure the database, and run "npm run dev".</p>
+                <p><strong>{t('backupDialog.dataRecoveryLabel')}</strong> {t('backupDialog.dataRecoveryText')}</p>
+                <p><strong>{t('backupDialog.codeRecoveryLabel')}</strong> {t('backupDialog.codeRecoveryText')}</p>
               </CardContent>
             </Card>
           </div>

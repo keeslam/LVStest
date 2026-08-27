@@ -1,4 +1,5 @@
 import { FC, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, Search, Car, User, Calendar } from 'lucide-react';
@@ -7,13 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { formatDate, formatLicensePlate } from '@/lib/format-utils';
+import { formatDate, formatLicensePlate, formatReservationStatus } from '@/lib/format-utils';
 import { displayLicensePlate } from '@/lib/utils';
 import { Vehicle } from '@shared/schema';
 import type { Customer } from '@shared/schema';
 import type { Reservation } from '@shared/schema';
 
 const SearchResults: FC = () => {
+  const { t } = useTranslation("common");
   const [, setLocation] = useLocation();
   const [query, setQuery] = useState('');
   const { toast } = useToast();
@@ -83,8 +85,8 @@ const SearchResults: FC = () => {
   useEffect(() => {
     if (vehiclesError || customersError || reservationsError) {
       toast({
-        title: 'Error',
-        description: 'Failed to fetch search results',
+        title: t('searchPage.toasts.errorTitle'),
+        description: t('searchPage.toasts.searchFailedDescription'),
         variant: 'destructive',
       });
     }
@@ -121,73 +123,73 @@ const SearchResults: FC = () => {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Search Results</h1>
+        <h1 className="text-3xl font-bold">{t('searchPage.pageTitle')}</h1>
         <form onSubmit={handleSearch} className="flex gap-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search..."
+              placeholder={t('searchPage.searchPlaceholder')}
               className="pl-8 h-9 w-[250px] md:w-[300px] rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
-          <Button type="submit">Search</Button>
+          <Button type="submit">{t('searchPage.searchButton')}</Button>
         </form>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2">Searching...</span>
+          <span className="ml-2">{t('searchPage.searchingLabel')}</span>
         </div>
       ) : !query ? (
         <div className="text-center py-12">
           <Search className="h-12 w-12 mx-auto text-muted-foreground" />
-          <h2 className="mt-4 text-xl font-semibold">Enter a search term to begin</h2>
+          <h2 className="mt-4 text-xl font-semibold">{t('searchPage.startSearchTitle')}</h2>
           <p className="mt-2 text-muted-foreground">
-            Search for vehicles, customers, or reservations by typing in the search box above
+            {t('searchPage.startSearchDescription')}
           </p>
         </div>
       ) : !hasResults ? (
         <div className="text-center py-12">
           <Search className="h-12 w-12 mx-auto text-muted-foreground" />
-          <h2 className="mt-4 text-xl font-semibold">No results found</h2>
+          <h2 className="mt-4 text-xl font-semibold">{t('searchPage.noResultsTitle')}</h2>
           <p className="mt-2 text-muted-foreground">
-            Try adjusting your search term or search for something else
+            {t('searchPage.noResultsDescription')}
           </p>
         </div>
       ) : (
         <>
           <div className="mb-6">
             <p className="text-muted-foreground">
-              Found {resultsCount} result{resultsCount !== 1 ? 's' : ''} for "{query}"
+              {t('searchPage.resultsCount', { count: resultsCount, query })}
             </p>
           </div>
 
           <Tabs defaultValue="all" className="w-full" value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-6">
               <TabsTrigger value="all">
-                All Results{' '}
+                {t('searchPage.allResultsTab')}{' '}
                 <Badge variant="secondary" className="ml-2">
                   {resultsCount}
                 </Badge>
               </TabsTrigger>
               <TabsTrigger value="vehicles">
-                Vehicles{' '}
+                {t('searchPage.vehiclesTab')}{' '}
                 <Badge variant="secondary" className="ml-2">
                   {vehicles.length}
                 </Badge>
               </TabsTrigger>
               <TabsTrigger value="customers">
-                Customers{' '}
+                {t('searchPage.customersTab')}{' '}
                 <Badge variant="secondary" className="ml-2">
                   {customers.length}
                 </Badge>
               </TabsTrigger>
               <TabsTrigger value="reservations">
-                Reservations{' '}
+                {t('searchPage.reservationsTab')}{' '}
                 <Badge variant="secondary" className="ml-2">
                   {reservations.length}
                 </Badge>
@@ -200,7 +202,7 @@ const SearchResults: FC = () => {
                 <section>
                   <div className="flex items-center gap-2 mb-4">
                     <Car className="h-5 w-5" />
-                    <h2 className="text-xl font-semibold">Vehicles</h2>
+                    <h2 className="text-xl font-semibold">{t('searchPage.vehiclesHeading')}</h2>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {vehicles.slice(0, 3).map((vehicle) => (
@@ -208,7 +210,7 @@ const SearchResults: FC = () => {
                         <CardHeader className="pb-2">
                           <CardTitle className="flex justify-between items-center">
                             <span className="font-mono">{displayLicensePlate(vehicle.licensePlate)}</span>
-                            <Badge>{vehicle.vehicleType || 'Unknown'}</Badge>
+                            <Badge>{vehicle.vehicleType || t('searchPage.unknownVehicleType')}</Badge>
                           </CardTitle>
                           <CardDescription>
                             {vehicle.brand} {vehicle.model}
@@ -217,12 +219,12 @@ const SearchResults: FC = () => {
                         <CardContent>
                           <div className="grid grid-cols-2 gap-2 text-sm">
                             <div>
-                              <span className="text-muted-foreground">APK Date:</span>{' '}
-                              {vehicle.apkDate ? formatDate(vehicle.apkDate) : 'N/A'}
+                              <span className="text-muted-foreground">{t('searchPage.apkDateLabel')}</span>{' '}
+                              {vehicle.apkDate ? formatDate(vehicle.apkDate) : t('searchPage.notAvailable')}
                             </div>
                             <div>
-                              <span className="text-muted-foreground">Status:</span>{' '}
-                              {vehicle.registeredTo === 'true' ? 'Registered' : 'Not Registered'}
+                              <span className="text-muted-foreground">{t('searchPage.statusLabel')}</span>{' '}
+                              {vehicle.registeredTo === 'true' ? t('searchPage.registeredStatus') : t('searchPage.notRegisteredStatus')}
                             </div>
                           </div>
                         </CardContent>
@@ -231,7 +233,7 @@ const SearchResults: FC = () => {
                   </div>
                   {vehicles.length > 3 && (
                     <Button variant="outline" className="mt-4" onClick={() => setActiveTab('vehicles')}>
-                      View all {vehicles.length} vehicles
+                      {t('searchPage.viewAllVehiclesButton', { count: vehicles.length })}
                     </Button>
                   )}
                 </section>
@@ -242,7 +244,7 @@ const SearchResults: FC = () => {
                 <section>
                   <div className="flex items-center gap-2 mb-4">
                     <User className="h-5 w-5" />
-                    <h2 className="text-xl font-semibold">Customers</h2>
+                    <h2 className="text-xl font-semibold">{t('searchPage.customersHeading')}</h2>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {customers.slice(0, 3).map((customer) => (
@@ -250,18 +252,18 @@ const SearchResults: FC = () => {
                         <CardHeader className="pb-2">
                           <CardTitle>{customer.name}</CardTitle>
                           <CardDescription>
-                            {customer.email || 'No email'}
+                            {customer.email || t('searchPage.noEmail')}
                           </CardDescription>
                         </CardHeader>
                         <CardContent>
                           <div className="grid grid-cols-2 gap-2 text-sm">
                             <div>
-                              <span className="text-muted-foreground">Phone:</span>{' '}
-                              {customer.phone || 'N/A'}
+                              <span className="text-muted-foreground">{t('searchPage.phoneLabel')}</span>{' '}
+                              {customer.phone || t('searchPage.notAvailable')}
                             </div>
                             <div>
-                              <span className="text-muted-foreground">Debtor #:</span>{' '}
-                              {customer.debtorNumber || 'N/A'}
+                              <span className="text-muted-foreground">{t('searchPage.debtorNumberLabel')}</span>{' '}
+                              {customer.debtorNumber || t('searchPage.notAvailable')}
                             </div>
                           </div>
                         </CardContent>
@@ -270,7 +272,7 @@ const SearchResults: FC = () => {
                   </div>
                   {customers.length > 3 && (
                     <Button variant="outline" className="mt-4" onClick={() => setActiveTab('customers')}>
-                      View all {customers.length} customers
+                      {t('searchPage.viewAllCustomersButton', { count: customers.length })}
                     </Button>
                   )}
                 </section>
@@ -281,7 +283,7 @@ const SearchResults: FC = () => {
                 <section>
                   <div className="flex items-center gap-2 mb-4">
                     <Calendar className="h-5 w-5" />
-                    <h2 className="text-xl font-semibold">Reservations</h2>
+                    <h2 className="text-xl font-semibold">{t('searchPage.reservationsHeading')}</h2>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {reservations.slice(0, 3).map((reservation) => (
@@ -289,25 +291,25 @@ const SearchResults: FC = () => {
                         <CardHeader className="pb-2">
                           <CardTitle className="flex justify-between items-center">
                             <span>
-                              {reservation.vehicle?.licensePlate ? displayLicensePlate(reservation.vehicle.licensePlate) : 'Unknown vehicle'}
+                              {reservation.vehicle?.licensePlate ? displayLicensePlate(reservation.vehicle.licensePlate) : t('searchPage.unknownVehicle')}
                             </span>
                             <Badge variant={reservation.status === 'booked' ? 'default' : reservation.status === 'cancelled' ? 'destructive' : 'secondary'}>
-                              {reservation.status}
+                              {formatReservationStatus(reservation.status)}
                             </Badge>
                           </CardTitle>
                           <CardDescription>
-                            {reservation.customer?.name || 'Unknown customer'}
+                            {reservation.customer?.name || t('searchPage.unknownCustomer')}
                           </CardDescription>
                         </CardHeader>
                         <CardContent>
                           <div className="grid grid-cols-2 gap-2 text-sm">
                             <div>
-                              <span className="text-muted-foreground">From:</span>{' '}
+                              <span className="text-muted-foreground">{t('searchPage.fromLabel')}</span>{' '}
                               {formatDate(reservation.startDate)}
                             </div>
                             <div>
-                              <span className="text-muted-foreground">To:</span>{' '}
-                              {reservation.endDate ? formatDate(reservation.endDate) : 'Open-ended'}
+                              <span className="text-muted-foreground">{t('searchPage.toLabel')}</span>{' '}
+                              {reservation.endDate ? formatDate(reservation.endDate) : t('searchPage.openEnded')}
                             </div>
                           </div>
                         </CardContent>
@@ -316,7 +318,7 @@ const SearchResults: FC = () => {
                   </div>
                   {reservations.length > 3 && (
                     <Button variant="outline" className="mt-4" onClick={() => setActiveTab('reservations')}>
-                      View all {reservations.length} reservations
+                      {t('searchPage.viewAllReservationsButton', { count: reservations.length })}
                     </Button>
                   )}
                 </section>
@@ -330,7 +332,7 @@ const SearchResults: FC = () => {
                     <CardHeader className="pb-2">
                       <CardTitle className="flex justify-between items-center">
                         <span className="font-mono">{displayLicensePlate(vehicle.licensePlate)}</span>
-                        <Badge>{vehicle.vehicleType || 'Unknown'}</Badge>
+                        <Badge>{vehicle.vehicleType || t('searchPage.unknownVehicleType')}</Badge>
                       </CardTitle>
                       <CardDescription>
                         {vehicle.brand} {vehicle.model}
@@ -339,22 +341,22 @@ const SearchResults: FC = () => {
                     <CardContent>
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
-                          <span className="text-muted-foreground">APK Date:</span>{' '}
-                          {vehicle.apkDate ? formatDate(vehicle.apkDate) : 'N/A'}
+                          <span className="text-muted-foreground">{t('searchPage.apkDateLabel')}</span>{' '}
+                          {vehicle.apkDate ? formatDate(vehicle.apkDate) : t('searchPage.notAvailable')}
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Status:</span>{' '}
-                          {vehicle.registeredTo === 'true' ? 'Registered' : 'Not Registered'}
+                          <span className="text-muted-foreground">{t('searchPage.statusLabel')}</span>{' '}
+                          {vehicle.registeredTo === 'true' ? t('searchPage.registeredStatus') : t('searchPage.notRegisteredStatus')}
                         </div>
                         {vehicle.departureMileage && (
                           <div>
-                            <span className="text-muted-foreground">Mileage:</span>{' '}
+                            <span className="text-muted-foreground">{t('searchPage.mileageLabel')}</span>{' '}
                             {vehicle.departureMileage} km
                           </div>
                         )}
                         {vehicle.fuel && (
                           <div>
-                            <span className="text-muted-foreground">Fuel:</span>{' '}
+                            <span className="text-muted-foreground">{t('searchPage.fuelLabel')}</span>{' '}
                             {vehicle.fuel}
                           </div>
                         )}
@@ -372,28 +374,28 @@ const SearchResults: FC = () => {
                     <CardHeader className="pb-2">
                       <CardTitle>{customer.name}</CardTitle>
                       <CardDescription>
-                        {customer.email || 'No email'}
+                        {customer.email || t('searchPage.noEmail')}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
-                          <span className="text-muted-foreground">Phone:</span>{' '}
-                          {customer.phone || 'N/A'}
+                          <span className="text-muted-foreground">{t('searchPage.phoneLabel')}</span>{' '}
+                          {customer.phone || t('searchPage.notAvailable')}
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Debtor #:</span>{' '}
-                          {customer.debtorNumber || 'N/A'}
+                          <span className="text-muted-foreground">{t('searchPage.debtorNumberLabel')}</span>{' '}
+                          {customer.debtorNumber || t('searchPage.notAvailable')}
                         </div>
                         {customer.status && (
                           <div>
-                            <span className="text-muted-foreground">Status:</span>{' '}
+                            <span className="text-muted-foreground">{t('searchPage.statusLabel')}</span>{' '}
                             {customer.status}
                           </div>
                         )}
                         {customer.kvk && (
                           <div>
-                            <span className="text-muted-foreground">KVK:</span>{' '}
+                            <span className="text-muted-foreground">{t('searchPage.kvkLabel')}</span>{' '}
                             {customer.kvk}
                           </div>
                         )}
@@ -411,33 +413,33 @@ const SearchResults: FC = () => {
                     <CardHeader className="pb-2">
                       <CardTitle className="flex justify-between items-center">
                         <span>
-                          {reservation.vehicle?.licensePlate ? displayLicensePlate(reservation.vehicle.licensePlate) : 'Unknown vehicle'}
+                          {reservation.vehicle?.licensePlate ? displayLicensePlate(reservation.vehicle.licensePlate) : t('searchPage.unknownVehicle')}
                         </span>
                         <Badge variant={reservation.status === 'booked' ? 'default' : reservation.status === 'cancelled' ? 'destructive' : 'secondary'}>
-                          {reservation.status}
+                          {formatReservationStatus(reservation.status)}
                         </Badge>
                       </CardTitle>
                       <CardDescription>
-                        {reservation.customer?.name || 'Unknown customer'}
+                        {reservation.customer?.name || t('searchPage.unknownCustomer')}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span className="text-muted-foreground">From:</span>{' '}
+                          <span className="text-muted-foreground">{t('searchPage.fromLabel')}</span>{' '}
                           {formatDate(reservation.startDate)}
                         </div>
                         <div>
-                          <span className="text-muted-foreground">To:</span>{' '}
-                          {reservation.endDate ? formatDate(reservation.endDate) : 'Open-ended'}
+                          <span className="text-muted-foreground">{t('searchPage.toLabel')}</span>{' '}
+                          {reservation.endDate ? formatDate(reservation.endDate) : t('searchPage.openEnded')}
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Vehicle:</span>{' '}
-                          {reservation.vehicle ? `${reservation.vehicle.brand} ${reservation.vehicle.model}` : 'N/A'}
+                          <span className="text-muted-foreground">{t('searchPage.vehicleLabel')}</span>{' '}
+                          {reservation.vehicle ? `${reservation.vehicle.brand} ${reservation.vehicle.model}` : t('searchPage.notAvailable')}
                         </div>
                         {reservation.totalPrice && (
                           <div>
-                            <span className="text-muted-foreground">Price:</span>{' '}
+                            <span className="text-muted-foreground">{t('searchPage.priceLabel')}</span>{' '}
                             €{reservation.totalPrice}
                           </div>
                         )}

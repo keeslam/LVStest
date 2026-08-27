@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,6 +36,8 @@ import MaintenanceCostsPage from "@/pages/reports/maintenance-costs";
  * This page focuses on operational aspects rather than revenue
  */
 export default function ReportsPage() {
+  const { t } = useTranslation("reports");
+
   // Tab state - default to operations tab
   const [activeTab, setActiveTab] = useState("operations");
   
@@ -135,7 +138,11 @@ export default function ReportsPage() {
   const [selectedTransportIds, setSelectedTransportIds] = useState<number[]>([]);
 
   const TRANSPORT_TYPE_LABELS: Record<string, string> = {
-    swap: "Swap", tow: "Tow", repossession: "Repossession", delivery: "Delivery", other: "Other",
+    swap: t('reportsPage.transportsTab.transportTypes.swap'),
+    tow: t('reportsPage.transportsTab.transportTypes.tow'),
+    repossession: t('reportsPage.transportsTab.transportTypes.repossession'),
+    delivery: t('reportsPage.transportsTab.transportTypes.delivery'),
+    other: t('reportsPage.transportsTab.transportTypes.other'),
   };
 
   const filteredTransportsForReport = transports.filter(t => {
@@ -573,44 +580,44 @@ export default function ReportsPage() {
     <table>
       <thead>
         <tr>
-          <th>Vehicle</th>
-          <th>License Plate</th>
-          <th>APK Expiry Date</th>
-          <th>Status</th>
+          <th>${t('reportsPage.common.vehicle')}</th>
+          <th>${t('reportsPage.common.licensePlate')}</th>
+          <th>${t('reportsPage.printReport.tableHeaders.apkExpiryDate')}</th>
+          <th>${t('common:fields.status')}</th>
         </tr>
       </thead>
       <tbody>
-        ${vehicles.length > 0 
+        ${vehicles.length > 0
           ? vehicles.map(v => {
               const daysUntilExpiry = v.daysUntilExpiry;
-              
+
               let statusClass = 'status-valid';
-              let statusText = 'Valid';
-              
+              let statusText = t('reportsPage.common.valid');
+
               if (daysUntilExpiry === null) {
                 statusClass = 'status-unknown';
-                statusText = 'Not set';
+                statusText = t('reportsPage.common.notSet');
               } else if (daysUntilExpiry < 0) {
                 statusClass = 'status-expired';
-                statusText = `Expired (${Math.abs(daysUntilExpiry)} days ago)`;
+                statusText = t('reportsPage.common.expiredAgo', { count: Math.abs(daysUntilExpiry) });
               } else if (daysUntilExpiry <= 30) {
                 statusClass = 'status-expiring';
-                statusText = `Expires in ${daysUntilExpiry} days`;
+                statusText = t('reportsPage.common.expiresIn', { count: daysUntilExpiry });
               } else if (daysUntilExpiry <= 90) {
                 statusClass = 'status-expiring';
-                statusText = `Expires in ${daysUntilExpiry} days`;
+                statusText = t('reportsPage.common.expiresIn', { count: daysUntilExpiry });
               }
-              
+
               return `
                 <tr>
                   <td>${v.brand} ${v.model}</td>
                   <td>${formatLicensePlate(v.licensePlate)}</td>
-                  <td>${v.apkDate ? formatDate(v.apkDate) : 'Not set'}</td>
+                  <td>${v.apkDate ? formatDate(v.apkDate) : t('reportsPage.common.notSet')}</td>
                   <td class="${statusClass}">${statusText}</td>
                 </tr>
               `;
             }).join('')
-          : '<tr><td colspan="4" class="text-center">No vehicles found</td></tr>'
+          : `<tr><td colspan="4" class="text-center">${t('reportsPage.printReport.noVehiclesFound')}</td></tr>`
         }
       </tbody>
     </table>
@@ -638,9 +645,18 @@ export default function ReportsPage() {
         return;
       }
       
+      const reportTypeTitles: Record<string, string> = {
+        apk: t('reportsPage.printReport.reportTitles.apk'),
+        utilization: t('reportsPage.printReport.reportTitles.utilization'),
+        expenses: t('reportsPage.printReport.reportTitles.expenses'),
+        warranty: t('reportsPage.printReport.reportTitles.warranty'),
+        'customer-impact': t('reportsPage.printReport.reportTitles.customerImpact'),
+        transports: t('reportsPage.printReport.reportTitles.transports'),
+      };
+
       // Add base styles
       doc.head.innerHTML = `
-        <title>Print Report: ${reportType}</title>
+        <title>${t('reportsPage.printReport.printReportTitle', { type: reportTypeTitles[reportType] || reportType })}</title>
         <style>
           body {
             font-family: Arial, sans-serif;
@@ -729,9 +745,9 @@ export default function ReportsPage() {
       `;
       
       // Get date range string
-      const dateRangeString = dateRange.from && dateRange.to 
-        ? `${format(dateRange.from, 'dd/MM/yyyy')} to ${format(dateRange.to, 'dd/MM/yyyy')}`
-        : 'All Data';
+      const dateRangeString = dateRange.from && dateRange.to
+        ? `${format(dateRange.from, 'dd/MM/yyyy')} ${t('reportsPage.printReport.dateRangeSeparator')} ${format(dateRange.to, 'dd/MM/yyyy')}`
+        : t('reportsPage.common.allData');
         
       let content = '';
       
@@ -750,41 +766,41 @@ export default function ReportsPage() {
           // APK expiration report
           content = `
             <div class="company-info">
-              <h2>Report Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}</h2>
+              <h2>${t('reportsPage.printReport.reportGenerated', { date: format(new Date(), 'dd/MM/yyyy HH:mm') })}</h2>
             </div>
-            <h1>APK Expiration Report</h1>
+            <h1>${t('reportsPage.printReport.reportTitles.apk')}</h1>
             <div class="report-meta">
-              Date range: ${dateRangeString}
+              ${t('reportsPage.printReport.dateRangeLabel', { range: dateRangeString })}
             </div>
-            
+
             <div class="flex-container">
               <div class="flex-item">
                 <div class="stat-card">
                   <div class="stat-value">${vehiclesWithExpiredApk.length}</div>
-                  <div class="stat-label">Expired APKs</div>
+                  <div class="stat-label">${t('reportsPage.printReport.stats.expiredApks')}</div>
                 </div>
               </div>
               <div class="flex-item">
                 <div class="stat-card">
                   <div class="stat-value">${vehiclesWithApkExpiringSoon.length}</div>
-                  <div class="stat-label">APKs Expiring Soon (30 days)</div>
+                  <div class="stat-label">${t('reportsPage.printReport.stats.apkExpiringSoon30')}</div>
                 </div>
               </div>
               <div class="flex-item">
                 <div class="stat-card">
                   <div class="stat-value">${apkExpiringNext2To3Months.length}</div>
-                  <div class="stat-label">APKs Expiring in 2-3 Months</div>
+                  <div class="stat-label">${t('reportsPage.printReport.stats.apkExpiring2to3')}</div>
                 </div>
               </div>
             </div>
-            
-            <h2>Expired APKs</h2>
+
+            <h2>${t('reportsPage.printReport.stats.expiredApks')}</h2>
             ${generateAPKTable(vehiclesWithExpiredApk)}
-            
-            <h2>APKs Expiring Soon (Next 30 Days)</h2>
+
+            <h2>${t('reportsPage.printReport.sections.apkExpiringSoonNext30')}</h2>
             ${generateAPKTable(vehiclesWithApkExpiringSoon)}
-            
-            <h2>APKs Expiring in 2-3 Months</h2>
+
+            <h2>${t('reportsPage.printReport.stats.apkExpiring2to3')}</h2>
             ${generateAPKTable(apkExpiringNext2To3Months)}
           `;
           break;
@@ -793,26 +809,26 @@ export default function ReportsPage() {
           // Vehicle utilization report
           content = `
             <div class="company-info">
-              <h2>Report Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}</h2>
+              <h2>${t('reportsPage.printReport.reportGenerated', { date: format(new Date(), 'dd/MM/yyyy HH:mm') })}</h2>
             </div>
-            <h1>Vehicle Utilization Report</h1>
+            <h1>${t('reportsPage.printReport.reportTitles.utilization')}</h1>
             <div class="report-meta">
-              Date range: ${dateRangeString}
+              ${t('reportsPage.printReport.dateRangeLabel', { range: dateRangeString })}
             </div>
-            
+
             <div class="flex-container">
               <div class="flex-item">
                 <div class="stat-card">
                   <div class="stat-value">
-                    ${vehicleUtilizationData.length > 0 
+                    ${vehicleUtilizationData.length > 0
                       ? `${Math.round(vehicleUtilizationData.reduce((sum, v) => sum + v.utilizationPercentage, 0) / vehicleUtilizationData.length)}%`
                       : '0%'
                     }
                   </div>
                   <div class="stat-label">
                     ${dateRange.from && dateRange.to && dateRange.from.getFullYear() <= 2000 && dateRange.to.getFullYear() >= 2050
-                      ? `Based on yearly utilization of ${vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length} vehicles`
-                      : `Average across ${vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length} ${vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length === 1 ? 'vehicle' : 'vehicles'} with rentals`
+                      ? t('reportsPage.operations.vehicleUtilizationSubtitleYearly', { count: vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length })
+                      : t('reportsPage.operations.vehicleUtilizationSubtitle', { count: vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length })
                     }
                   </div>
                 </div>
@@ -820,7 +836,7 @@ export default function ReportsPage() {
               <div class="flex-item">
                 <div class="stat-card">
                   <div class="stat-value">${filteredReservations.length}</div>
-                  <div class="stat-label">Total Reservations</div>
+                  <div class="stat-label">${t('reportsPage.printReport.stats.totalReservations')}</div>
                 </div>
               </div>
               <div class="flex-item">
@@ -828,20 +844,20 @@ export default function ReportsPage() {
                   <div class="stat-value">
                     ${vehicleUtilizationData.reduce((sum, v) => sum + v.daysReserved, 0)}
                   </div>
-                  <div class="stat-label">Total Days Reserved</div>
+                  <div class="stat-label">${t('reportsPage.printReport.stats.totalDaysReserved')}</div>
                 </div>
               </div>
             </div>
-            
-            <h2>Vehicle Utilization Details</h2>
+
+            <h2>${t('reportsPage.printReport.sections.vehicleUtilizationDetails')}</h2>
             <table>
               <thead>
                 <tr>
-                  <th>Vehicle</th>
-                  <th>License Plate</th>
-                  <th>Days Reserved</th>
-                  <th>Reservations</th>
-                  <th>Utilization %</th>
+                  <th>${t('reportsPage.common.vehicle')}</th>
+                  <th>${t('reportsPage.common.licensePlate')}</th>
+                  <th>${t('reportsPage.vehiclesTab.daysReserved')}</th>
+                  <th>${t('reportsPage.common.reservations')}</th>
+                  <th>${t('utilizationChart.utilizationPercent')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -850,7 +866,7 @@ export default function ReportsPage() {
                     <tr>
                       <td>${vehicle.brand} ${vehicle.model}</td>
                       <td>${formatLicensePlate(vehicle.licensePlate)}</td>
-                      <td>${vehicle.daysReserved} days</td>
+                      <td>${vehicle.daysReserved} ${t('common:units.days')}</td>
                       <td>${vehicle.reservationCount}</td>
                       <td>${vehicle.utilizationPercentage}%</td>
                     </tr>
@@ -864,46 +880,46 @@ export default function ReportsPage() {
           // Expense report
           content = `
             <div class="company-info">
-              <h2>Report Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}</h2>
+              <h2>${t('reportsPage.printReport.reportGenerated', { date: format(new Date(), 'dd/MM/yyyy HH:mm') })}</h2>
             </div>
-            <h1>Expense Report</h1>
+            <h1>${t('reportsPage.printReport.reportTitles.expenses')}</h1>
             <div class="report-meta">
-              Date range: ${dateRangeString}${selectedCategory !== 'all' ? ` | Category: ${selectedCategory}` : ''}
-              ${selectedVehicle !== 'all' ? ` | Vehicle: ${vehicles.find(v => v.id.toString() === selectedVehicle)?.licensePlate || ''}` : ''}
+              ${t('reportsPage.printReport.dateRangeLabel', { range: dateRangeString })}${selectedCategory !== 'all' ? t('reportsPage.printReport.categorySuffix', { category: selectedCategory }) : ''}
+              ${selectedVehicle !== 'all' ? t('reportsPage.printReport.vehicleSuffix', { plate: vehicles.find(v => v.id.toString() === selectedVehicle)?.licensePlate || '' }) : ''}
             </div>
-            
+
             <div class="flex-container">
               <div class="flex-item">
                 <div class="stat-card">
                   <div class="stat-value">${formatCurrency(Number(totalExpenses))}</div>
-                  <div class="stat-label">Total Expenses</div>
+                  <div class="stat-label">${t('reportsPage.common.totalExpenses')}</div>
                 </div>
               </div>
               <div class="flex-item">
                 <div class="stat-card">
                   <div class="stat-value">${filteredExpenses.length}</div>
-                  <div class="stat-label">Number of Expenses</div>
+                  <div class="stat-label">${t('reportsPage.printReport.stats.numberOfExpenses')}</div>
                 </div>
               </div>
               <div class="flex-item">
                 <div class="stat-card">
                   <div class="stat-value">${formatCurrency(Number(avgExpensePerVehicle))}</div>
-                  <div class="stat-label">Average per Vehicle</div>
+                  <div class="stat-label">${t('reportsPage.printReport.stats.averagePerVehicle')}</div>
                 </div>
               </div>
             </div>
-            
-            <h2>Expense Breakdown</h2>
+
+            <h2>${t('reportsPage.printReport.sections.expenseBreakdown')}</h2>
             <table>
               <thead>
                 <tr>
-                  <th>Category</th>
-                  <th>Number of Expenses</th>
-                  <th>Total Amount</th>
+                  <th>${t('reportsPage.common.category')}</th>
+                  <th>${t('reportsPage.printReport.stats.numberOfExpenses')}</th>
+                  <th>${t('reportsPage.printReport.tableHeaders.totalAmount')}</th>
                 </tr>
               </thead>
               <tbody>
-                ${Object.entries(expensesByCategory).length > 0 
+                ${Object.entries(expensesByCategory).length > 0
                   ? Object.entries(expensesByCategory)
                       .sort(([_, a], [__, b]) => b - a)
                       .map(([category, amount]) => `
@@ -913,24 +929,24 @@ export default function ReportsPage() {
                           <td>${formatCurrency(Number(amount))}</td>
                         </tr>
                       `).join('')
-                  : '<tr><td colspan="3" class="text-center">No expenses found for the selected filters</td></tr>'
+                  : `<tr><td colspan="3" class="text-center">${t('reportsPage.expensesTab.noExpensesFiltered')}</td></tr>`
                 }
               </tbody>
             </table>
-            
-            <h2>Recent Expenses Detail</h2>
+
+            <h2>${t('reportsPage.printReport.sections.recentExpensesDetail')}</h2>
             <table>
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Vehicle</th>
-                  <th>Category</th>
-                  <th>Description</th>
-                  <th>Amount</th>
+                  <th>${t('common:fields.date')}</th>
+                  <th>${t('reportsPage.common.vehicle')}</th>
+                  <th>${t('reportsPage.common.category')}</th>
+                  <th>${t('common:fields.description')}</th>
+                  <th>${t('common:fields.amount')}</th>
                 </tr>
               </thead>
               <tbody>
-                ${filteredExpenses.length > 0 
+                ${filteredExpenses.length > 0
                   ? filteredExpenses
                       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                       .slice(0, 20)
@@ -939,16 +955,16 @@ export default function ReportsPage() {
                         return `
                           <tr>
                             <td>${formatDate(expense.date)}</td>
-                            <td>${vehicle 
-                              ? `${vehicle.brand} ${vehicle.model} (${formatLicensePlate(vehicle.licensePlate)})` 
-                              : 'Unknown Vehicle'}</td>
+                            <td>${vehicle
+                              ? `${vehicle.brand} ${vehicle.model} (${formatLicensePlate(vehicle.licensePlate)})`
+                              : t('reportsPage.common.unknownVehicle')}</td>
                             <td style="text-transform: capitalize;">${expense.category}</td>
                             <td>${expense.description}</td>
                             <td>${formatCurrency(Number(expense.amount))}</td>
                           </tr>
                         `;
                       }).join('')
-                  : '<tr><td colspan="5" class="text-center">No expenses found for the selected filters</td></tr>'
+                  : `<tr><td colspan="5" class="text-center">${t('reportsPage.expensesTab.noExpensesFiltered')}</td></tr>`
                 }
               </tbody>
             </table>
@@ -990,18 +1006,18 @@ export default function ReportsPage() {
             <table>
               <thead>
                 <tr>
-                  <th>Vehicle</th>
-                  <th>License Plate</th>
-                  <th>Warranty End Date</th>
-                  <th>Days Remaining</th>
+                  <th>${t('reportsPage.common.vehicle')}</th>
+                  <th>${t('reportsPage.common.licensePlate')}</th>
+                  <th>${t('reportsPage.vehiclesTab.warrantyEndDate')}</th>
+                  <th>${t('reportsPage.printReport.tableHeaders.daysRemaining')}</th>
                 </tr>
               </thead>
               <tbody>
-                ${vehicles.length > 0 
+                ${vehicles.length > 0
                   ? vehicles.map(v => {
                       const warrantyDate = v.warrantyEndDate ? new Date(v.warrantyEndDate) : null;
                       const daysRemaining = warrantyDate ? differenceInDays(warrantyDate, today) : null;
-                      
+
                       let statusClass = 'status-valid';
                       if (daysRemaining !== null) {
                         if (daysRemaining < 0) {
@@ -1010,66 +1026,66 @@ export default function ReportsPage() {
                           statusClass = 'status-expiring';
                         }
                       }
-                      
+
                       return `
                         <tr>
                           <td>${v.brand} ${v.model}</td>
                           <td>${formatLicensePlate(v.licensePlate)}</td>
-                          <td>${v.warrantyEndDate ? format(new Date(v.warrantyEndDate), 'dd/MM/yyyy') : 'N/A'}</td>
-                          <td class="${statusClass}">${daysRemaining !== null 
-                            ? daysRemaining < 0 
-                              ? `Expired (${Math.abs(daysRemaining)} days ago)` 
-                              : `${daysRemaining} days` 
-                            : 'N/A'}</td>
+                          <td>${v.warrantyEndDate ? format(new Date(v.warrantyEndDate), 'dd/MM/yyyy') : t('reportsPage.common.notApplicable')}</td>
+                          <td class="${statusClass}">${daysRemaining !== null
+                            ? daysRemaining < 0
+                              ? t('reportsPage.common.expiredAgo', { count: Math.abs(daysRemaining) })
+                              : `${daysRemaining} ${t('common:units.days')}`
+                            : t('reportsPage.common.notApplicable')}</td>
                         </tr>
                       `;
                     }).join('')
-                  : '<tr><td colspan="4" class="text-center">No vehicles found</td></tr>'
+                  : `<tr><td colspan="4" class="text-center">${t('reportsPage.printReport.noVehiclesFound')}</td></tr>`
                 }
               </tbody>
             </table>
           `;
-          
+
           content = `
             <div class="company-info">
-              <h2>Report Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}</h2>
+              <h2>${t('reportsPage.printReport.reportGenerated', { date: format(new Date(), 'dd/MM/yyyy HH:mm') })}</h2>
             </div>
-            <h1>Warranty Expiration Report</h1>
-            
+            <h1>${t('reportsPage.printReport.reportTitles.warranty')}</h1>
+
             <div class="flex-container">
               <div class="flex-item">
                 <div class="stat-card">
                   <div class="stat-value">${expiredWarranties.length}</div>
-                  <div class="stat-label">Expired Warranties</div>
+                  <div class="stat-label">${t('reportsPage.printReport.stats.expiredWarranties')}</div>
                 </div>
               </div>
               <div class="flex-item">
                 <div class="stat-card">
                   <div class="stat-value">${expiringWarranties.length}</div>
-                  <div class="stat-label">Warranties Expiring Soon (90 days)</div>
+                  <div class="stat-label">${t('reportsPage.printReport.stats.warrantiesExpiringSoon90')}</div>
                 </div>
               </div>
               <div class="flex-item">
                 <div class="stat-card">
                   <div class="stat-value">${validWarranties.length}</div>
-                  <div class="stat-label">Valid Warranties</div>
+                  <div class="stat-label">${t('reportsPage.printReport.stats.validWarranties')}</div>
                 </div>
               </div>
               <div class="flex-item">
                 <div class="stat-card">
                   <div class="stat-value">${vehicles.length - vehiclesWithWarranty.length}</div>
-                  <div class="stat-label">Vehicles without Warranty Date</div>
+                  <div class="stat-label">${t('reportsPage.printReport.stats.vehiclesWithoutWarrantyDate')}</div>
                 </div>
               </div>
             </div>
-            
-            <h2>Expired Warranties</h2>
+
+            <h2>${t('reportsPage.printReport.stats.expiredWarranties')}</h2>
             ${generateWarrantyTable(expiredWarranties)}
-            
-            <h2>Warranties Expiring Soon (Next 90 Days)</h2>
+
+            <h2>${t('reportsPage.printReport.sections.warrantiesExpiringSoonNext90')}</h2>
             ${generateWarrantyTable(expiringWarranties)}
-            
-            <h2>Valid Warranties</h2>
+
+            <h2>${t('reportsPage.printReport.stats.validWarranties')}</h2>
             ${generateWarrantyTable(validWarranties)}
           `;
           break;
@@ -1078,55 +1094,55 @@ export default function ReportsPage() {
           // Customer Impact Report
           content = `
             <div class="company-info">
-              <h2>Report Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}</h2>
+              <h2>${t('reportsPage.printReport.reportGenerated', { date: format(new Date(), 'dd/MM/yyyy HH:mm') })}</h2>
             </div>
-            <h1>Customer Impact Analysis Report</h1>
+            <h1>${t('reportsPage.printReport.reportTitles.customerImpact')}</h1>
             <div class="report-meta">
-              Date range: ${dateRangeString}
+              ${t('reportsPage.printReport.dateRangeLabel', { range: dateRangeString })}
             </div>
-            
-            <h2>Customer Usage and Expense Impact</h2>
+
+            <h2>${t('reportsPage.printReport.sections.customerUsageExpenseImpact')}</h2>
             <table>
               <thead>
                 <tr>
-                  <th>Customer</th>
-                  <th>Reservations</th>
-                  <th>Total Days</th>
-                  <th>Vehicles Used</th>
-                  <th>Related Expenses</th>
-                  <th>Expense Per Day</th>
+                  <th>${t('reportsPage.common.customer')}</th>
+                  <th>${t('reportsPage.common.reservations')}</th>
+                  <th>${t('reportsPage.common.totalDays')}</th>
+                  <th>${t('reportsPage.customersTab.vehiclesUsed')}</th>
+                  <th>${t('reportsPage.customersTab.relatedExpenses')}</th>
+                  <th>${t('reportsPage.customersTab.expensePerDay')}</th>
                 </tr>
               </thead>
               <tbody>
-                ${customerReservationStats.length > 0 
+                ${customerReservationStats.length > 0
                   ? customerReservationStats.map(customer => `
                       <tr>
                         <td>${customer.name}</td>
                         <td>${customer.reservationCount}</td>
-                        <td>${customer.totalReservationDays} days</td>
+                        <td>${customer.totalReservationDays} ${t('common:units.days')}</td>
                         <td>${customer.vehicleCount}</td>
                         <td>${formatCurrency(Number(customer.totalExpenses))}</td>
                         <td>${formatCurrency(Number(customer.expensePerDay))}</td>
                       </tr>
                     `).join('')
-                  : '<tr><td colspan="6" class="text-center">No customer data found for the selected filters</td></tr>'
+                  : `<tr><td colspan="6" class="text-center">${t('reportsPage.printReport.noCustomerDataFound')}</td></tr>`
                 }
               </tbody>
             </table>
-            
-            <h2>Customer Expense Breakdown by Category</h2>
-            ${customerReservationStats.length > 0 
+
+            <h2>${t('reportsPage.printReport.sections.customerExpenseBreakdownByCategory')}</h2>
+            ${customerReservationStats.length > 0
               ? customerReservationStats.filter(c => c.totalExpenses > 0).map(customer => `
                   <h3>${customer.name}</h3>
                   <table>
                     <thead>
                       <tr>
-                        <th>Category</th>
-                        <th>Amount</th>
+                        <th>${t('reportsPage.common.category')}</th>
+                        <th>${t('common:fields.amount')}</th>
                       </tr>
                     </thead>
                     <tbody>
-                      ${Object.entries(customer.expensesByCategory).length > 0 
+                      ${Object.entries(customer.expensesByCategory).length > 0
                         ? Object.entries(customer.expensesByCategory)
                             .sort(([_, a], [__, b]) => b - a)
                             .map(([category, amount]) => `
@@ -1135,12 +1151,12 @@ export default function ReportsPage() {
                                 <td>${formatCurrency(Number(amount))}</td>
                               </tr>
                             `).join('')
-                        : '<tr><td colspan="2" class="text-center">No expenses recorded</td></tr>'
+                        : `<tr><td colspan="2" class="text-center">${t('reportsPage.printReport.noExpensesRecorded')}</td></tr>`
                       }
                     </tbody>
                   </table>
                 `).join('')
-              : '<p class="text-center">No customer expense data available</p>'
+              : `<p class="text-center">${t('reportsPage.printReport.noCustomerExpenseData')}</p>`
             }
           `;
           break;
@@ -1154,30 +1170,30 @@ export default function ReportsPage() {
 
           content = `
             <div class="company-info">
-              <h2>Report Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}</h2>
+              <h2>${t('reportsPage.printReport.reportGenerated', { date: format(new Date(), 'dd/MM/yyyy HH:mm') })}</h2>
             </div>
-            <h1>Vehicle Transports Report</h1>
+            <h1>${t('reportsPage.printReport.reportTitles.transports')}</h1>
             <div class="report-meta">
-              ${selectedTransportIds.length > 0 ? `${transportsToPrint.length} selected transport(s)` : `${transportsToPrint.length} transport(s)`}
+              ${selectedTransportIds.length > 0 ? t('reportsPage.printReport.selectedTransportsCount', { count: transportsToPrint.length }) : t('reportsPage.printReport.transportsCount', { count: transportsToPrint.length })}
             </div>
 
             <div class="flex-container">
               <div class="flex-item">
                 <div class="stat-card">
                   <div class="stat-value">${formatCurrency(totalToll)}</div>
-                  <div class="stat-label">Total Toll Cost</div>
+                  <div class="stat-label">${t('reportsPage.transportsTab.totalTollCost')}</div>
                 </div>
               </div>
               <div class="flex-item">
                 <div class="stat-card">
                   <div class="stat-value">${formatCurrency(totalBillable)}</div>
-                  <div class="stat-label">Pending Customer Billing</div>
+                  <div class="stat-label">${t('reportsPage.transportsTab.pendingBilling')}</div>
                 </div>
               </div>
               <div class="flex-item">
                 <div class="stat-card">
                   <div class="stat-value">${transportsToPrint.length}</div>
-                  <div class="stat-label">Transports Listed</div>
+                  <div class="stat-label">${t('reportsPage.transportsTab.transportsListed')}</div>
                 </div>
               </div>
             </div>
@@ -1185,37 +1201,37 @@ export default function ReportsPage() {
             <table>
               <thead>
                 <tr>
-                  <th>Vehicle</th>
-                  <th>Type</th>
-                  <th>Route</th>
-                  <th>Date</th>
-                  <th>Distance</th>
-                  <th>Toll Cost</th>
-                  <th>Billing</th>
-                  <th>Status</th>
+                  <th>${t('reportsPage.common.vehicle')}</th>
+                  <th>${t('common:fields.type')}</th>
+                  <th>${t('reportsPage.transportsTab.route')}</th>
+                  <th>${t('common:fields.date')}</th>
+                  <th>${t('reportsPage.transportsTab.distance')}</th>
+                  <th>${t('reportsPage.transportsTab.tollCost')}</th>
+                  <th>${t('reportsPage.transportsTab.billing')}</th>
+                  <th>${t('common:fields.status')}</th>
                 </tr>
               </thead>
               <tbody>
-                ${transportsToPrint.length > 0 ? transportsToPrint.map(t => {
-                  const vehicle = t.vehicle || vehicles.find(v => v.id === t.vehicleId);
-                  const vehicleLabel = vehicle ? `${vehicle.brand} ${vehicle.model} (${formatLicensePlate(vehicle.licensePlate)})` : 'Unknown';
-                  const route = [t.originCity, t.destinationCity].filter(Boolean).join(' &rarr; ') || '-';
-                  const billing = t.billable
-                    ? `${t.billableAmount ? formatCurrency(Number(t.billableAmount)) : '-'} (${t.invoiced ? 'Invoiced' : 'Not invoiced'})`
-                    : 'Not billable';
+                ${transportsToPrint.length > 0 ? transportsToPrint.map(transport => {
+                  const vehicle = transport.vehicle || vehicles.find(v => v.id === transport.vehicleId);
+                  const vehicleLabel = vehicle ? `${vehicle.brand} ${vehicle.model} (${formatLicensePlate(vehicle.licensePlate)})` : t('reportsPage.common.unknown');
+                  const route = [transport.originCity, transport.destinationCity].filter(Boolean).join(' &rarr; ') || '-';
+                  const billing = transport.billable
+                    ? `${transport.billableAmount ? formatCurrency(Number(transport.billableAmount)) : '-'} (${transport.invoiced ? t('reportsPage.transportsTab.invoiced') : t('reportsPage.transportsTab.notInvoiced')})`
+                    : t('reportsPage.transportsTab.notBillable');
                   return `
                     <tr>
                       <td>${vehicleLabel}</td>
-                      <td>${TRANSPORT_TYPE_LABELS[t.transportType] || t.transportType}</td>
+                      <td>${TRANSPORT_TYPE_LABELS[transport.transportType] || transport.transportType}</td>
                       <td>${route}</td>
-                      <td>${formatDate(t.scheduledDate)}</td>
-                      <td>${t.distanceKm ? `${Number(t.distanceKm)} km` : '-'}</td>
-                      <td>${t.tollCost ? formatCurrency(Number(t.tollCost)) : '-'}</td>
+                      <td>${formatDate(transport.scheduledDate)}</td>
+                      <td>${transport.distanceKm ? `${Number(transport.distanceKm)} km` : '-'}</td>
+                      <td>${transport.tollCost ? formatCurrency(Number(transport.tollCost)) : '-'}</td>
                       <td>${billing}</td>
-                      <td style="text-transform: capitalize;">${t.status.replace(/_/g, ' ')}</td>
+                      <td style="text-transform: capitalize;">${transport.status.replace(/_/g, ' ')}</td>
                     </tr>
                   `;
-                }).join('') : '<tr><td colspan="8" class="text-center">No transports</td></tr>'}
+                }).join('') : `<tr><td colspan="8" class="text-center">${t('reportsPage.printReport.noTransports')}</td></tr>`}
               </tbody>
             </table>
           `;
@@ -1223,7 +1239,7 @@ export default function ReportsPage() {
         }
 
         default:
-          content = '<h1>Report content not available</h1>';
+          content = `<h1>${t('reportsPage.printReport.reportTitles.notAvailable')}</h1>`;
       }
       
       // Add content to document body
@@ -1248,9 +1264,9 @@ export default function ReportsPage() {
     <div className="container mx-auto py-6 space-y-8">
       <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Reports</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('reportsPage.header.title')}</h1>
           <p className="text-muted-foreground">
-            Generate and analyze reports for your car rental business
+            {t('reportsPage.header.subtitle')}
           </p>
         </div>
         
@@ -1258,33 +1274,33 @@ export default function ReportsPage() {
         <div className="flex flex-wrap gap-2 justify-end">
           <Button variant="outline" size="sm" onClick={() => printReport('apk')} className="h-8">
             <Printer className="mr-1 h-3 w-3" />
-            <span className="text-xs">APK</span>
+            <span className="text-xs">{t('reportsPage.printButtons.apk')}</span>
           </Button>
           <Button variant="outline" size="sm" onClick={() => printReport('warranty')} className="h-8">
             <Printer className="mr-1 h-3 w-3" />
-            <span className="text-xs">Warranty</span>
+            <span className="text-xs">{t('reportsPage.printButtons.warranty')}</span>
           </Button>
           <Button variant="outline" size="sm" onClick={() => printReport('expenses')} className="h-8">
             <Printer className="mr-1 h-3 w-3" />
-            <span className="text-xs">Expenses</span>
+            <span className="text-xs">{t('reportsPage.printButtons.expenses')}</span>
           </Button>
           <Button variant="outline" size="sm" onClick={() => printReport('utilization')} className="h-8">
             <Printer className="mr-1 h-3 w-3" />
-            <span className="text-xs">Utilization</span>
+            <span className="text-xs">{t('reportsPage.printButtons.utilization')}</span>
           </Button>
           <Button variant="outline" size="sm" onClick={() => printReport('customer-impact')} className="h-8">
             <Printer className="mr-1 h-3 w-3" />
-            <span className="text-xs">Customers</span>
+            <span className="text-xs">{t('reportsPage.printButtons.customers')}</span>
           </Button>
           {activeTab !== 'operations' && (
-            <Button 
+            <Button
               variant="default"
               size="sm"
-              className="bg-primary h-8" 
+              className="bg-primary h-8"
               onClick={() => printReport(activeTab)}
             >
               <Printer className="mr-1 h-3 w-3" />
-              <span className="text-xs">Current Tab</span>
+              <span className="text-xs">{t('reportsPage.printButtons.currentTab')}</span>
             </Button>
           )}
         </div>
@@ -1304,8 +1320,8 @@ export default function ReportsPage() {
                   <Database className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <CardTitle>Custom Report Builder</CardTitle>
-                  <CardDescription>Build custom reports with filters and aggregations</CardDescription>
+                  <CardTitle>{t('reportBuilderPage.pageTitle')}</CardTitle>
+                  <CardDescription>{t('reportsPage.quickNav.reportBuilderDescription')}</CardDescription>
                 </div>
               </div>
               <ExternalLink className="h-5 w-5 text-muted-foreground" />
@@ -1325,8 +1341,8 @@ export default function ReportsPage() {
                   <LineChart className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <CardTitle>Maintenance Cost Analysis</CardTitle>
-                  <CardDescription>Analyze vehicle maintenance costs and trends</CardDescription>
+                  <CardTitle>{t('maintenanceCostsPage.pageTitle')}</CardTitle>
+                  <CardDescription>{t('reportsPage.quickNav.maintenanceCostsDescription')}</CardDescription>
                 </div>
               </div>
               <ExternalLink className="h-5 w-5 text-muted-foreground" />
@@ -1338,9 +1354,9 @@ export default function ReportsPage() {
       {/* Filter Controls */}
       <Card>
         <CardHeader>
-          <CardTitle>Report Filters</CardTitle>
+          <CardTitle>{t('reportsPage.filters.cardTitle')}</CardTitle>
           <CardDescription>
-            Adjust the filters to customize your report view
+            {t('reportsPage.filters.cardDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -1351,71 +1367,71 @@ export default function ReportsPage() {
               onClick={resetFilters}
               className="text-xs"
             >
-              Reset Filters
+              {t('reportsPage.filters.resetButton')}
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Date Range</label>
-              <DatePickerWithRange 
+              <label className="text-sm font-medium">{t('reportsPage.filters.dateRangeLabel')}</label>
+              <DatePickerWithRange
                 date={dateRange}
                 setDate={setDateRange}
               />
               <div className="flex flex-wrap gap-2 mt-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setDateRangePreset('all-time')}
                   className="text-xs px-2 py-1 h-7"
                 >
-                  All Data (Past & Future)
+                  {t('reportsPage.filters.allDataButton')}
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setDateRangePreset('this-month')}
                   className="text-xs px-2 py-1 h-7"
                 >
-                  This Month
+                  {t('reportsPage.filters.thisMonthButton')}
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setDateRangePreset('next-month')}
                   className="text-xs px-2 py-1 h-7"
                 >
-                  Next Month
+                  {t('reportsPage.filters.nextMonthButton')}
                 </Button>
               </div>
             </div>
-            
+
             <div className="space-y-2">
-              <label className="text-sm font-medium">Vehicle</label>
+              <label className="text-sm font-medium">{t('reportsPage.common.vehicle')}</label>
               <VehicleSelector
                 vehicles={vehicles || []}
                 value={selectedVehicle}
                 onChange={setSelectedVehicle}
-                placeholder="All Vehicles"
+                placeholder={t('reportsPage.filters.allVehiclesPlaceholder')}
               />
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Expense Category</label>
+              <label className="text-sm font-medium">{t('reportsPage.filters.expenseCategoryLabel')}</label>
               <Select
                 value={selectedCategory}
                 onValueChange={setSelectedCategory}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="All Categories" />
+                  <SelectValue placeholder={t('reportsPage.filters.allCategoriesPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="maintenance">Maintenance</SelectItem>
-                  <SelectItem value="tires">Tires</SelectItem>
-                  <SelectItem value="front window">Front Window</SelectItem>
-                  <SelectItem value="damage">Damage</SelectItem>
-                  <SelectItem value="repair">Repair</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="all">{t('reportsPage.filters.allCategoriesPlaceholder')}</SelectItem>
+                  <SelectItem value="maintenance">{t('reportsPage.categories.maintenance')}</SelectItem>
+                  <SelectItem value="tires">{t('reportsPage.categories.tires')}</SelectItem>
+                  <SelectItem value="front window">{t('reportsPage.categories.frontWindow')}</SelectItem>
+                  <SelectItem value="damage">{t('reportsPage.categories.damage')}</SelectItem>
+                  <SelectItem value="repair">{t('reportsPage.categories.repair')}</SelectItem>
+                  <SelectItem value="other">{t('reportsPage.categories.other')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1428,23 +1444,23 @@ export default function ReportsPage() {
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="operations">
             <Settings className="h-4 w-4 mr-2" />
-            Operations
+            {t('reportsPage.tabs.operations')}
           </TabsTrigger>
           <TabsTrigger value="expenses">
             <DollarSign className="h-4 w-4 mr-2" />
-            Expenses
+            {t('reportsPage.tabs.expenses')}
           </TabsTrigger>
           <TabsTrigger value="vehicles">
             <Car className="h-4 w-4 mr-2" />
-            Vehicles
+            {t('reportsPage.tabs.vehicles')}
           </TabsTrigger>
           <TabsTrigger value="customers">
             <User className="h-4 w-4 mr-2" />
-            Customers
+            {t('reportsPage.tabs.customers')}
           </TabsTrigger>
           <TabsTrigger value="transports" data-testid="tab-report-transports">
             <FileText className="h-4 w-4 mr-2" />
-            Transports
+            {t('reportsPage.tabs.transports')}
           </TabsTrigger>
         </TabsList>
         
@@ -1454,46 +1470,46 @@ export default function ReportsPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Vehicle Utilization</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('reportsPage.common.vehicleUtilization')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {vehicleUtilizationData.length > 0 
+                  {vehicleUtilizationData.length > 0
                     ? `${Math.round(vehicleUtilizationData.reduce((sum, v) => sum + v.utilizationPercentage, 0) / vehicleUtilizationData.length)}%`
                     : '0%'
                   }
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {dateRange.from && dateRange.to && dateRange.from.getFullYear() <= 2000 && dateRange.to.getFullYear() >= 2050
-                    ? `Based on yearly utilization of ${vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length} vehicles`
-                    : `Average across ${vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length} ${vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length === 1 ? 'vehicle' : 'vehicles'} with rentals`
+                    ? t('reportsPage.operations.vehicleUtilizationSubtitleYearly', { count: vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length })
+                    : t('reportsPage.operations.vehicleUtilizationSubtitle', { count: vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length })
                   }
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('reportsPage.common.totalExpenses')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{<Price value={Number(totalExpenses)} />}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Across {filteredExpenses.length} expense entries
+                  {t('reportsPage.operations.acrossExpenseEntries', { count: filteredExpenses.length })}
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Avg. Cost Per Vehicle</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('reportsPage.operations.avgCostPerVehicleCardTitle')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
                   {<Price value={Number(avgExpensePerVehicle)} />}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  For {activeVehicleCount} active {activeVehicleCount === 1 ? 'vehicle' : 'vehicles'}
+                  {t('reportsPage.operations.forActiveVehicles', { count: activeVehicleCount })}
                 </p>
               </CardContent>
             </Card>
@@ -1505,35 +1521,35 @@ export default function ReportsPage() {
             <Card className="xl:col-span-1">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <div>
-                  <CardTitle>Vehicle Utilization</CardTitle>
+                  <CardTitle>{t('reportsPage.common.vehicleUtilization')}</CardTitle>
                   <CardDescription>
                     {dateRange.from && dateRange.to && dateRange.from.getFullYear() <= 2000 && dateRange.to.getFullYear() >= 2050
-                      ? "Top 10 vehicles by total yearly utilization"
-                      : "Top 10 vehicles by utilization rate for selected period"
+                      ? t('reportsPage.operations.top10YearlyDesc')
+                      : t('reportsPage.operations.top10PeriodDesc')
                     }
                   </CardDescription>
                 </div>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={() => printReport('utilization')}
                   className="h-8 gap-1"
                 >
                   <Printer className="h-4 w-4" />
-                  Print
+                  {t('common:actions.print')}
                 </Button>
               </CardHeader>
               <CardContent className="h-80">
                 <UtilizationChart data={utilizationChartData} />
               </CardContent>
             </Card>
-            
+
             {/* Expense by Category Chart */}
             <Card className="xl:col-span-1">
               <CardHeader>
-                <CardTitle>Expenses by Category</CardTitle>
+                <CardTitle>{t('reportsPage.operations.expensesByCategoryTitle')}</CardTitle>
                 <CardDescription>
-                  Distribution of expenses for the selected period
+                  {t('reportsPage.operations.expensesByCategoryDesc')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="h-80">
@@ -1545,9 +1561,9 @@ export default function ReportsPage() {
           {/* Monthly Expense Trend */}
           <Card>
             <CardHeader>
-              <CardTitle>Expense Trends</CardTitle>
+              <CardTitle>{t('reportsPage.operations.expenseTrendsTitle')}</CardTitle>
               <CardDescription>
-                Monthly expense comparison
+                {t('reportsPage.operations.expenseTrendsDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1608,19 +1624,19 @@ export default function ReportsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
-                <CardTitle>Expense Breakdown by Category</CardTitle>
+                <CardTitle>{t('reportsPage.expensesTab.breakdownTitle')}</CardTitle>
                 <CardDescription>
-                  Detailed breakdown of expenses for the selected period
+                  {t('reportsPage.expensesTab.breakdownDesc')}
                 </CardDescription>
               </div>
-              <Button 
-                size="sm" 
-                variant="outline" 
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={() => printReport('expenses')}
                 className="h-8 gap-1"
               >
                 <Printer className="h-4 w-4" />
-                Print
+                {t('common:actions.print')}
               </Button>
             </CardHeader>
             <CardContent>
@@ -1636,36 +1652,36 @@ export default function ReportsPage() {
                         </div>
                         <div className="flex items-center space-x-4">
                           <span className="text-muted-foreground text-sm">
-                            {filteredExpenses.filter(e => e.category === category).length} items
+                            {t('reportsPage.expensesTab.itemsCount', { count: filteredExpenses.filter(e => e.category === category).length })}
                           </span>
                           <span className="font-medium">{<Price value={Number(amount)} />}</span>
                         </div>
                       </div>
                     ))
                 ) : (
-                  <p className="text-muted-foreground text-center py-4">No expenses found for the selected filters</p>
+                  <p className="text-muted-foreground text-center py-4">{t('reportsPage.expensesTab.noExpensesFiltered')}</p>
                 )}
               </div>
             </CardContent>
           </Card>
-          
+
           {/* Expense List */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Expenses</CardTitle>
+              <CardTitle>{t('reportsPage.expensesTab.recentExpensesTitle')}</CardTitle>
               <CardDescription>
-                Detailed list of expenses for the selected period
+                {t('reportsPage.expensesTab.recentExpensesDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Vehicle</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>{t('common:fields.date')}</TableHead>
+                    <TableHead>{t('reportsPage.common.vehicle')}</TableHead>
+                    <TableHead>{t('reportsPage.common.category')}</TableHead>
+                    <TableHead>{t('common:fields.description')}</TableHead>
+                    <TableHead className="text-right">{t('common:fields.amount')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1679,9 +1695,9 @@ export default function ReportsPage() {
                           <TableRow key={expense.id}>
                             <TableCell>{formatDate(expense.date)}</TableCell>
                             <TableCell>
-                              {vehicle 
-                                ? `${vehicle.brand} ${vehicle.model} (${formatLicensePlate(vehicle.licensePlate)})` 
-                                : 'Unknown Vehicle'}
+                              {vehicle
+                                ? `${vehicle.brand} ${vehicle.model} (${formatLicensePlate(vehicle.licensePlate)})`
+                                : t('reportsPage.common.unknownVehicle')}
                             </TableCell>
                             <TableCell className="capitalize">{expense.category}</TableCell>
                             <TableCell>{expense.description}</TableCell>
@@ -1691,20 +1707,20 @@ export default function ReportsPage() {
                       })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-4">No expenses found for the selected filters</TableCell>
+                      <TableCell colSpan={5} className="text-center py-4">{t('reportsPage.expensesTab.noExpensesFiltered')}</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
-          
+
           {/* Expense Chart */}
           <Card>
             <CardHeader>
-              <CardTitle>Expense Visualization</CardTitle>
+              <CardTitle>{t('reportsPage.expensesTab.visualizationTitle')}</CardTitle>
               <CardDescription>
-                Visual breakdown by category
+                {t('reportsPage.expensesTab.visualizationDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="h-96">
@@ -1718,20 +1734,20 @@ export default function ReportsPage() {
           {/* Vehicle Utilization Stats */}
           <Card>
             <CardHeader>
-              <CardTitle>Vehicle Utilization</CardTitle>
+              <CardTitle>{t('reportsPage.common.vehicleUtilization')}</CardTitle>
               <CardDescription>
-                Utilization rates across all vehicles
+                {t('reportsPage.vehiclesTab.utilizationDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Vehicle</TableHead>
-                    <TableHead>License Plate</TableHead>
-                    <TableHead>Days Reserved</TableHead>
-                    <TableHead>Reservations</TableHead>
-                    <TableHead>Utilization</TableHead>
+                    <TableHead>{t('reportsPage.common.vehicle')}</TableHead>
+                    <TableHead>{t('reportsPage.common.licensePlate')}</TableHead>
+                    <TableHead>{t('reportsPage.vehiclesTab.daysReserved')}</TableHead>
+                    <TableHead>{t('reportsPage.common.reservations')}</TableHead>
+                    <TableHead>{t('utilizationChart.utilization')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1742,7 +1758,7 @@ export default function ReportsPage() {
                         <TableRow key={vehicle.id}>
                           <TableCell>{vehicle.brand} {vehicle.model}</TableCell>
                           <TableCell>{formatLicensePlate(vehicle.licensePlate)}</TableCell>
-                          <TableCell>{vehicle.daysReserved} days</TableCell>
+                          <TableCell>{vehicle.daysReserved} {t('common:units.days')}</TableCell>
                           <TableCell>{vehicle.reservationCount}</TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-2">
@@ -1757,30 +1773,30 @@ export default function ReportsPage() {
                       ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-4">No vehicle utilization data available</TableCell>
+                      <TableCell colSpan={5} className="text-center py-4">{t('reportsPage.vehiclesTab.noUtilizationData')}</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
-          
+
           {/* Vehicle Maintenance Costs */}
           <Card>
             <CardHeader>
-              <CardTitle>Maintenance Costs by Vehicle</CardTitle>
+              <CardTitle>{t('reportsPage.vehiclesTab.maintenanceCostsTitle')}</CardTitle>
               <CardDescription>
-                Total maintenance and repair expenses per vehicle
+                {t('reportsPage.vehiclesTab.maintenanceCostsDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Vehicle</TableHead>
-                    <TableHead>License Plate</TableHead>
-                    <TableHead>Expense Count</TableHead>
-                    <TableHead className="text-right">Total Cost</TableHead>
+                    <TableHead>{t('reportsPage.common.vehicle')}</TableHead>
+                    <TableHead>{t('reportsPage.common.licensePlate')}</TableHead>
+                    <TableHead>{t('reportsPage.vehiclesTab.expenseCount')}</TableHead>
+                    <TableHead className="text-right">{t('reportsPage.vehiclesTab.totalCost')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1792,39 +1808,39 @@ export default function ReportsPage() {
                         <TableRow key={vehicle.id}>
                           <TableCell>{vehicle.brand} {vehicle.model}</TableCell>
                           <TableCell>{formatLicensePlate(vehicle.licensePlate)}</TableCell>
-                          <TableCell>{vehicle.expenseCount} entries</TableCell>
+                          <TableCell>{t('reportsPage.vehiclesTab.entriesSuffix', { count: vehicle.expenseCount })}</TableCell>
                           <TableCell className="text-right">{<Price value={Number(vehicle.maintenanceCost)} />}</TableCell>
                         </TableRow>
                       ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-4">No maintenance cost data available</TableCell>
+                      <TableCell colSpan={4} className="text-center py-4">{t('reportsPage.vehiclesTab.noMaintenanceCostData')}</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
-          
+
           {/* APK Inspection Status */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
-                <CardTitle>APK Inspection Overview</CardTitle>
+                <CardTitle>{t('reportsPage.vehiclesTab.apkOverviewTitle')}</CardTitle>
                 <CardDescription>
-                  Vehicle inspection status and expiration dates
+                  {t('reportsPage.vehiclesTab.apkOverviewDesc')}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 <AlertTriangle className={`h-5 w-5 ${apkExpiringVehicles.length > 0 ? 'text-amber-500' : 'text-green-500'}`} />
-                <Button 
-                  size="sm" 
-                  variant="outline" 
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={() => printReport('apk')}
                   className="h-8 gap-1"
                 >
                   <Printer className="h-4 w-4" />
-                  Print
+                  {t('common:actions.print')}
                 </Button>
               </div>
             </CardHeader>
@@ -1833,27 +1849,27 @@ export default function ReportsPage() {
                 {/* APK Status Overview */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="flex flex-col p-4 rounded-md bg-slate-50">
-                    <span className="text-muted-foreground text-sm">Vehicles with valid APK</span>
+                    <span className="text-muted-foreground text-sm">{t('reportsPage.vehiclesTab.validApkStat')}</span>
                     <span className="text-2xl font-bold">{vehiclesWithValidApk.length}</span>
                   </div>
                   <div className="flex flex-col p-4 rounded-md bg-yellow-50">
-                    <span className="text-muted-foreground text-sm">APK expiring in 2-3 months</span>
+                    <span className="text-muted-foreground text-sm">{t('reportsPage.vehiclesTab.apkExpiring2to3Stat')}</span>
                     <span className="text-2xl font-bold">{vehiclesWithApkExpiring2to3Months.length}</span>
                   </div>
                   <div className="flex flex-col p-4 rounded-md bg-amber-50">
-                    <span className="text-muted-foreground text-sm">APK expiring in 30 days</span>
+                    <span className="text-muted-foreground text-sm">{t('reportsPage.vehiclesTab.apkExpiring30Stat')}</span>
                     <span className="text-2xl font-bold">{vehiclesWithApkExpiringSoon.length}</span>
                   </div>
                   <div className="flex flex-col p-4 rounded-md bg-red-50">
-                    <span className="text-muted-foreground text-sm">Expired APK</span>
+                    <span className="text-muted-foreground text-sm">{t('reportsPage.vehiclesTab.expiredApkStat')}</span>
                     <span className="text-2xl font-bold">{vehiclesWithExpiredApk.length}</span>
                   </div>
                 </div>
-                
+
                 {/* APK Expiry Table */}
                 <div className="flex justify-between mb-2">
-                  <Input 
-                    placeholder="Search by license plate, brand, or model..." 
+                  <Input
+                    placeholder={t('reportsPage.vehiclesTab.searchByPlateBrandModel')}
                     className="max-w-sm"
                     value={apkSearchQuery || ''}
                     onChange={(e) => setApkSearchQuery(e.target.value)}
@@ -1863,24 +1879,24 @@ export default function ReportsPage() {
                     onValueChange={setApkFilterStatus}
                   >
                     <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Filter by status" />
+                      <SelectValue placeholder={t('reportsPage.vehiclesTab.filterByStatusPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="expired">Expired</SelectItem>
-                      <SelectItem value="expiring_soon">Expiring Soon (30 days)</SelectItem>
-                      <SelectItem value="expiring_2to3_months">Expiring in 2-3 Months</SelectItem>
-                      <SelectItem value="valid">Valid</SelectItem>
+                      <SelectItem value="all">{t('reportsPage.vehiclesTab.allStatuses')}</SelectItem>
+                      <SelectItem value="expired">{t('reportsPage.common.expired')}</SelectItem>
+                      <SelectItem value="expiring_soon">{t('reportsPage.vehiclesTab.expiringSoon30')}</SelectItem>
+                      <SelectItem value="expiring_2to3_months">{t('reportsPage.vehiclesTab.expiring2to3Months')}</SelectItem>
+                      <SelectItem value="valid">{t('reportsPage.common.valid')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Vehicle</TableHead>
-                      <TableHead>License Plate</TableHead>
-                      <TableHead>APK Expiry</TableHead>
-                      <TableHead className="text-right">Status</TableHead>
+                      <TableHead>{t('reportsPage.common.vehicle')}</TableHead>
+                      <TableHead>{t('reportsPage.common.licensePlate')}</TableHead>
+                      <TableHead>{t('reportsPage.vehiclesTab.apkExpiry')}</TableHead>
+                      <TableHead className="text-right">{t('common:fields.status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1894,19 +1910,19 @@ export default function ReportsPage() {
                           
                           if (daysUntilExpiry === null) {
                             statusClass = 'bg-slate-100 text-slate-800';
-                            statusText = 'Not set';
+                            statusText = t('reportsPage.common.notSet');
                           } else if (daysUntilExpiry < 0) {
                             statusClass = 'bg-red-100 text-red-800';
-                            statusText = 'Expired';
+                            statusText = t('reportsPage.common.expired');
                           } else if (daysUntilExpiry <= 30) {
                             statusClass = 'bg-amber-100 text-amber-800';
-                            statusText = `Expires in ${daysUntilExpiry} days`;
+                            statusText = t('reportsPage.common.expiresIn', { count: daysUntilExpiry });
                           } else if (daysUntilExpiry <= 90) {
                             statusClass = 'bg-yellow-100 text-yellow-800';
-                            statusText = `Expires in ${daysUntilExpiry} days`;
+                            statusText = t('reportsPage.common.expiresIn', { count: daysUntilExpiry });
                           } else {
                             statusClass = 'bg-green-100 text-green-800';
-                            statusText = 'Valid';
+                            statusText = t('reportsPage.common.valid');
                           }
                           
                           return (
@@ -1918,7 +1934,7 @@ export default function ReportsPage() {
                             }>
                               <TableCell>{vehicle.brand} {vehicle.model}</TableCell>
                               <TableCell>{formatLicensePlate(vehicle.licensePlate)}</TableCell>
-                              <TableCell>{vehicle.apkDate ? formatDate(vehicle.apkDate) : 'Not set'}</TableCell>
+                              <TableCell>{vehicle.apkDate ? formatDate(vehicle.apkDate) : t('reportsPage.common.notSet')}</TableCell>
                               <TableCell className="text-right">
                                 <span className={`px-2 py-1 rounded-full text-xs ${statusClass}`}>
                                   {statusText}
@@ -1929,7 +1945,7 @@ export default function ReportsPage() {
                         })
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-4">No APK data available</TableCell>
+                        <TableCell colSpan={4} className="text-center py-4">{t('reportsPage.vehiclesTab.noApkData')}</TableCell>
                       </TableRow>
                     )}
                   </TableBody>
@@ -1950,21 +1966,21 @@ export default function ReportsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
-                <CardTitle>Warranty Status Overview</CardTitle>
+                <CardTitle>{t('reportsPage.vehiclesTab.warrantyOverviewTitle')}</CardTitle>
                 <CardDescription>
-                  Vehicle warranty status and expiration dates
+                  {t('reportsPage.vehiclesTab.warrantyOverviewDesc')}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 <AlertTriangle className={`h-5 w-5 ${vehicles.filter(v => v.warrantyEndDate && differenceInDays(new Date(v.warrantyEndDate), today) >= 0 && differenceInDays(new Date(v.warrantyEndDate), today) <= 90).length > 0 ? 'text-amber-500' : 'text-green-500'}`} />
-                <Button 
-                  size="sm" 
-                  variant="outline" 
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={() => printReport('warranty')}
                   className="h-8 gap-1"
                 >
                   <Printer className="h-4 w-4" />
-                  Print
+                  {t('common:actions.print')}
                 </Button>
               </div>
             </CardHeader>
@@ -2004,15 +2020,15 @@ export default function ReportsPage() {
                     return (
                       <>
                         <div className="flex flex-col p-4 rounded-md bg-slate-50">
-                          <span className="text-muted-foreground text-sm">Vehicles with valid warranty</span>
+                          <span className="text-muted-foreground text-sm">{t('reportsPage.vehiclesTab.validWarrantyStat')}</span>
                           <span className="text-2xl font-bold">{validWarranties.length}</span>
                         </div>
                         <div className="flex flex-col p-4 rounded-md bg-amber-50">
-                          <span className="text-muted-foreground text-sm">Warranty expiring in 90 days</span>
+                          <span className="text-muted-foreground text-sm">{t('reportsPage.vehiclesTab.warrantyExpiring90Stat')}</span>
                           <span className="text-2xl font-bold">{expiringWarranties.length}</span>
                         </div>
                         <div className="flex flex-col p-4 rounded-md bg-red-50">
-                          <span className="text-muted-foreground text-sm">Expired Warranty</span>
+                          <span className="text-muted-foreground text-sm">{t('reportsPage.vehiclesTab.expiredWarrantyStat')}</span>
                           <span className="text-2xl font-bold">{expiredWarranties.length}</span>
                         </div>
                       </>
@@ -2022,8 +2038,8 @@ export default function ReportsPage() {
                 
                 {/* Warranty Expiry Table */}
                 <div className="flex justify-between mb-2">
-                  <Input 
-                    placeholder="Search by license plate, brand, or model..." 
+                  <Input
+                    placeholder={t('reportsPage.vehiclesTab.searchByPlateBrandModel')}
                     className="max-w-sm"
                     value={warrantySearchQuery || ''}
                     onChange={(e) => setWarrantySearchQuery(e.target.value)}
@@ -2033,23 +2049,23 @@ export default function ReportsPage() {
                     onValueChange={setWarrantyFilterStatus}
                   >
                     <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Filter by status" />
+                      <SelectValue placeholder={t('reportsPage.vehiclesTab.filterByStatusPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="expired">Expired</SelectItem>
-                      <SelectItem value="expiring_soon">Expiring Soon</SelectItem>
-                      <SelectItem value="valid">Valid</SelectItem>
+                      <SelectItem value="all">{t('reportsPage.vehiclesTab.allStatuses')}</SelectItem>
+                      <SelectItem value="expired">{t('reportsPage.common.expired')}</SelectItem>
+                      <SelectItem value="expiring_soon">{t('reportsPage.vehiclesTab.expiringSoon')}</SelectItem>
+                      <SelectItem value="valid">{t('reportsPage.common.valid')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Vehicle</TableHead>
-                      <TableHead>License Plate</TableHead>
-                      <TableHead>Warranty End Date</TableHead>
-                      <TableHead className="text-right">Status</TableHead>
+                      <TableHead>{t('reportsPage.common.vehicle')}</TableHead>
+                      <TableHead>{t('reportsPage.common.licensePlate')}</TableHead>
+                      <TableHead>{t('reportsPage.vehiclesTab.warrantyEndDate')}</TableHead>
+                      <TableHead className="text-right">{t('common:fields.status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -2065,16 +2081,16 @@ export default function ReportsPage() {
                           
                           if (daysRemaining === null) {
                             statusClass = 'bg-slate-100 text-slate-800';
-                            statusText = 'Not set';
+                            statusText = t('reportsPage.common.notSet');
                           } else if (daysRemaining < 0) {
                             statusClass = 'bg-red-100 text-red-800';
-                            statusText = `Expired (${Math.abs(daysRemaining)} days ago)`;
+                            statusText = t('reportsPage.common.expiredAgo', { count: Math.abs(daysRemaining) });
                           } else if (daysRemaining <= 90) {
                             statusClass = 'bg-amber-100 text-amber-800';
-                            statusText = `Expires in ${daysRemaining} days`;
+                            statusText = t('reportsPage.common.expiresIn', { count: daysRemaining });
                           } else {
                             statusClass = 'bg-green-100 text-green-800';
-                            statusText = 'Valid';
+                            statusText = t('reportsPage.common.valid');
                           }
                           
                           return (
@@ -2085,7 +2101,7 @@ export default function ReportsPage() {
                             }>
                               <TableCell>{vehicle.brand} {vehicle.model}</TableCell>
                               <TableCell>{formatLicensePlate(vehicle.licensePlate)}</TableCell>
-                              <TableCell>{vehicle.warrantyEndDate ? formatDate(vehicle.warrantyEndDate) : 'Not set'}</TableCell>
+                              <TableCell>{vehicle.warrantyEndDate ? formatDate(vehicle.warrantyEndDate) : t('reportsPage.common.notSet')}</TableCell>
                               <TableCell className="text-right">
                                 <span className={`px-2 py-1 rounded-full text-xs ${statusClass}`}>
                                   {statusText}
@@ -2096,12 +2112,12 @@ export default function ReportsPage() {
                         })
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-4">No warranty data available</TableCell>
+                        <TableCell colSpan={4} className="text-center py-4">{t('reportsPage.vehiclesTab.noWarrantyData')}</TableCell>
                       </TableRow>
                     )}
                   </TableBody>
                 </Table>
-                
+
                 {filteredWarrantyList.length > 0 && (
                   <Pagination
                     currentPage={warrantyCurrentPage}
@@ -2116,9 +2132,9 @@ export default function ReportsPage() {
           {/* Vehicle Utilization Chart */}
           <Card>
             <CardHeader>
-              <CardTitle>Vehicle Utilization Visualization</CardTitle>
+              <CardTitle>{t('reportsPage.vehiclesTab.utilizationVisualizationTitle')}</CardTitle>
               <CardDescription>
-                Top vehicles by utilization percentage
+                {t('reportsPage.vehiclesTab.utilizationVisualizationDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="h-96">
@@ -2133,31 +2149,31 @@ export default function ReportsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
-                <CardTitle>Customer Impact Analysis</CardTitle>
+                <CardTitle>{t('reportsPage.customersTab.impactTitle')}</CardTitle>
                 <CardDescription>
-                  Analysis of customer impact on vehicle expenses and maintenance
+                  {t('reportsPage.customersTab.impactDesc')}
                 </CardDescription>
               </div>
-              <Button 
-                size="sm" 
-                variant="outline" 
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={() => printReport('customer-impact')}
                 className="h-8 gap-1"
               >
                 <Printer className="h-4 w-4" />
-                Print
+                {t('common:actions.print')}
               </Button>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Reservations</TableHead>
-                    <TableHead>Total Days</TableHead>
-                    <TableHead>Total Vehicles</TableHead>
-                    <TableHead>Related Expenses</TableHead>
-                    <TableHead className="text-right">Cost Per Day</TableHead>
+                    <TableHead>{t('reportsPage.common.customer')}</TableHead>
+                    <TableHead>{t('reportsPage.common.reservations')}</TableHead>
+                    <TableHead>{t('reportsPage.common.totalDays')}</TableHead>
+                    <TableHead>{t('reportsPage.customersTab.totalVehicles')}</TableHead>
+                    <TableHead>{t('reportsPage.customersTab.relatedExpenses')}</TableHead>
+                    <TableHead className="text-right">{t('reportsPage.customersTab.costPerDay')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -2169,7 +2185,7 @@ export default function ReportsPage() {
                         <TableRow key={customer.id} className={customer.expensePerDay > 10 ? "bg-red-50" : ""}>
                           <TableCell>{customer.name}</TableCell>
                           <TableCell>{customer.reservationCount}</TableCell>
-                          <TableCell>{customer.totalReservationDays} days</TableCell>
+                          <TableCell>{customer.totalReservationDays} {t('common:units.days')}</TableCell>
                           <TableCell>{customer.vehicleCount}</TableCell>
                           <TableCell>{<Price value={Number(customer.totalExpenses)} />}</TableCell>
                           <TableCell className="text-right font-medium">
@@ -2183,10 +2199,10 @@ export default function ReportsPage() {
                                   : "bg-green-100 text-green-800"
                               }`}>
                                 {customer.expensePerDay > (avgExpensePerVehicle / 30) * 2
-                                  ? "High"
+                                  ? t('reportsPage.customersTab.impactHigh')
                                   : customer.expensePerDay > (avgExpensePerVehicle / 30)
-                                  ? "Medium"
-                                  : "Low"}
+                                  ? t('reportsPage.customersTab.impactMedium')
+                                  : t('reportsPage.customersTab.impactLow')}
                               </span>
                             )}
                           </TableCell>
@@ -2194,32 +2210,32 @@ export default function ReportsPage() {
                       ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-4">No customer analysis data available</TableCell>
+                      <TableCell colSpan={6} className="text-center py-4">{t('reportsPage.customersTab.noCustomerAnalysisData')}</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
-          
+
           {/* Customer Expense Impact Detail */}
           <Card>
             <CardHeader>
-              <CardTitle>Expense Categories by Customer</CardTitle>
+              <CardTitle>{t('reportsPage.customersTab.expenseCategoriesTitle')}</CardTitle>
               <CardDescription>
-                Breakdown of expense categories associated with each customer
+                {t('reportsPage.customersTab.expenseCategoriesDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Tires</TableHead>
-                    <TableHead>Maintenance</TableHead>
-                    <TableHead>Damage</TableHead>
-                    <TableHead>Repair</TableHead>
-                    <TableHead>Other</TableHead>
+                    <TableHead>{t('reportsPage.common.customer')}</TableHead>
+                    <TableHead>{t('reportsPage.categories.tires')}</TableHead>
+                    <TableHead>{t('reportsPage.categories.maintenance')}</TableHead>
+                    <TableHead>{t('reportsPage.categories.damage')}</TableHead>
+                    <TableHead>{t('reportsPage.categories.repair')}</TableHead>
+                    <TableHead>{t('reportsPage.categories.other')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -2270,31 +2286,31 @@ export default function ReportsPage() {
                       })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-4">No expense data available</TableCell>
+                      <TableCell colSpan={6} className="text-center py-4">{t('reportsPage.customersTab.noExpenseData')}</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
-          
+
           {/* Customer Reservation List */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Customer Reservations</CardTitle>
+              <CardTitle>{t('reportsPage.customersTab.recentReservationsTitle')}</CardTitle>
               <CardDescription>
-                Details of recent bookings
+                {t('reportsPage.customersTab.recentReservationsDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Vehicle</TableHead>
-                    <TableHead>Start Date</TableHead>
-                    <TableHead>End Date</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>{t('reportsPage.common.customer')}</TableHead>
+                    <TableHead>{t('reportsPage.common.vehicle')}</TableHead>
+                    <TableHead>{t('common:fields.startDate')}</TableHead>
+                    <TableHead>{t('common:fields.endDate')}</TableHead>
+                    <TableHead>{t('common:fields.status')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -2308,14 +2324,14 @@ export default function ReportsPage() {
                         
                         return (
                           <TableRow key={reservation.id}>
-                            <TableCell>{customer?.name || 'Unknown'}</TableCell>
+                            <TableCell>{customer?.name || t('reportsPage.common.unknown')}</TableCell>
                             <TableCell>
-                              {vehicle 
-                                ? `${vehicle.brand} ${vehicle.model} (${formatLicensePlate(vehicle.licensePlate)})` 
-                                : 'Unknown Vehicle'}
+                              {vehicle
+                                ? `${vehicle.brand} ${vehicle.model} (${formatLicensePlate(vehicle.licensePlate)})`
+                                : t('reportsPage.common.unknownVehicle')}
                             </TableCell>
                             <TableCell>{formatDate(reservation.startDate)}</TableCell>
-                            <TableCell>{reservation.endDate ? formatDate(reservation.endDate) : 'Open-ended'}</TableCell>
+                            <TableCell>{reservation.endDate ? formatDate(reservation.endDate) : t('reportsPage.customersTab.openEnded')}</TableCell>
                             <TableCell className="capitalize">
                               {reservation.status?.replace(/_/g, ' ')}
                             </TableCell>
@@ -2324,7 +2340,7 @@ export default function ReportsPage() {
                       })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-4">No reservation data available</TableCell>
+                      <TableCell colSpan={5} className="text-center py-4">{t('reportsPage.customersTab.noReservationData')}</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -2340,7 +2356,7 @@ export default function ReportsPage() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-500">Total Toll Cost</p>
+                    <p className="text-sm text-gray-500">{t('reportsPage.transportsTab.totalTollCost')}</p>
                     <p className="text-2xl font-bold">{<Price value={sumMoney(filteredTransportsForReport.filter(t => t.tollCost), t => Number(t.tollCost))} />}</p>
                   </div>
                   <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
@@ -2353,7 +2369,7 @@ export default function ReportsPage() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-500">Pending Customer Billing</p>
+                    <p className="text-sm text-gray-500">{t('reportsPage.transportsTab.pendingBilling')}</p>
                     <p className="text-2xl font-bold">{<Price value={sumMoney(filteredTransportsForReport.filter(t => t.billable && !t.invoiced), t => Number(t.billableAmount || 0))} />}</p>
                   </div>
                   <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
@@ -2366,7 +2382,7 @@ export default function ReportsPage() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-500">Transports Listed</p>
+                    <p className="text-sm text-gray-500">{t('reportsPage.transportsTab.transportsListed')}</p>
                     <p className="text-2xl font-bold">{filteredTransportsForReport.length}</p>
                   </div>
                   <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
@@ -2381,16 +2397,16 @@ export default function ReportsPage() {
             <CardHeader>
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
-                  <CardTitle>Vehicle Transports</CardTitle>
-                  <CardDescription>Swaps, tows, repossessions and other standalone vehicle movements</CardDescription>
+                  <CardTitle>{t('reportsPage.transportsTab.cardTitle')}</CardTitle>
+                  <CardDescription>{t('reportsPage.transportsTab.cardDesc')}</CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Select value={transportTypeFilter} onValueChange={setTransportTypeFilter}>
                     <SelectTrigger className="w-[150px]" data-testid="select-report-transport-type">
-                      <SelectValue placeholder="All types" />
+                      <SelectValue placeholder={t('reportsPage.transportsTab.allTypesPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="all">{t('reportsPage.transportsTab.allTypesOption')}</SelectItem>
                       {Object.entries(TRANSPORT_TYPE_LABELS).map(([value, label]) => (
                         <SelectItem key={value} value={value}>{label}</SelectItem>
                       ))}
@@ -2398,14 +2414,14 @@ export default function ReportsPage() {
                   </Select>
                   <Select value={transportStatusFilter} onValueChange={setTransportStatusFilter}>
                     <SelectTrigger className="w-[150px]" data-testid="select-report-transport-status">
-                      <SelectValue placeholder="All statuses" />
+                      <SelectValue placeholder={t('reportsPage.transportsTab.allStatusesPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="all">{t('reportsPage.vehiclesTab.allStatuses')}</SelectItem>
+                      <SelectItem value="scheduled">{t('reportsPage.transportsTab.scheduled')}</SelectItem>
+                      <SelectItem value="in_progress">{t('reportsPage.transportsTab.inProgress')}</SelectItem>
+                      <SelectItem value="completed">{t('common:status.completed')}</SelectItem>
+                      <SelectItem value="cancelled">{t('common:status.cancelled')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button
@@ -2415,7 +2431,7 @@ export default function ReportsPage() {
                     data-testid="button-print-transports-report"
                   >
                     <Printer className="h-4 w-4 mr-2" />
-                    Print {selectedTransportIds.length > 0 ? `Selected (${selectedTransportIds.length})` : 'All'}
+                    {t('common:actions.print')} {selectedTransportIds.length > 0 ? t('reportsPage.transportsTab.printSelected', { count: selectedTransportIds.length }) : t('reportsPage.transportsTab.printAll')}
                   </Button>
                 </div>
               </div>
@@ -2433,19 +2449,19 @@ export default function ReportsPage() {
                         data-testid="checkbox-select-all-transports-report"
                       />
                     </TableHead>
-                    <TableHead>Vehicle</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Route</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Toll Cost</TableHead>
-                    <TableHead>Billing</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>{t('reportsPage.common.vehicle')}</TableHead>
+                    <TableHead>{t('common:fields.type')}</TableHead>
+                    <TableHead>{t('reportsPage.transportsTab.route')}</TableHead>
+                    <TableHead>{t('common:fields.date')}</TableHead>
+                    <TableHead>{t('reportsPage.transportsTab.tollCost')}</TableHead>
+                    <TableHead>{t('reportsPage.transportsTab.billing')}</TableHead>
+                    <TableHead>{t('common:fields.status')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredTransportsForReport.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-4">No transports found</TableCell>
+                      <TableCell colSpan={8} className="text-center py-4">{t('reportsPage.transportsTab.noTransportsFound')}</TableCell>
                     </TableRow>
                   ) : (
                     filteredTransportsForReport.map((transport) => {
@@ -2465,7 +2481,7 @@ export default function ReportsPage() {
                             />
                           </TableCell>
                           <TableCell className="font-medium">
-                            {vehicle ? `${vehicle.brand} ${vehicle.model} (${formatLicensePlate(vehicle.licensePlate)})` : 'Unknown'}
+                            {vehicle ? `${vehicle.brand} ${vehicle.model} (${formatLicensePlate(vehicle.licensePlate)})` : t('reportsPage.common.unknown')}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">{TRANSPORT_TYPE_LABELS[transport.transportType] || transport.transportType}</Badge>
@@ -2475,8 +2491,8 @@ export default function ReportsPage() {
                           <TableCell>{transport.tollCost ? formatCurrency(Number(transport.tollCost)) : '-'}</TableCell>
                           <TableCell>
                             {transport.billable
-                              ? `${transport.billableAmount ? formatCurrency(Number(transport.billableAmount)) : '-'} (${transport.invoiced ? 'Invoiced' : 'Not invoiced'})`
-                              : 'Not billable'}
+                              ? `${transport.billableAmount ? formatCurrency(Number(transport.billableAmount)) : '-'} (${transport.invoiced ? t('reportsPage.transportsTab.invoiced') : t('reportsPage.transportsTab.notInvoiced')})`
+                              : t('reportsPage.transportsTab.notBillable')}
                           </TableCell>
                           <TableCell className="capitalize">{transport.status.replace(/_/g, ' ')}</TableCell>
                         </TableRow>
@@ -2495,7 +2511,7 @@ export default function ReportsPage() {
         <DialogContent className="max-w-[95vw] w-full h-[95vh] max-h-[95vh] p-0">
           <DialogHeader className="px-6 py-4 border-b">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-2xl">Custom Report Builder</DialogTitle>
+              <DialogTitle className="text-2xl">{t('reportBuilderPage.pageTitle')}</DialogTitle>
               <Button
                 variant="ghost"
                 size="icon"
@@ -2517,7 +2533,7 @@ export default function ReportsPage() {
         <DialogContent className="max-w-[95vw] w-full h-[95vh] max-h-[95vh] p-0">
           <DialogHeader className="px-6 py-4 border-b">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-2xl">Maintenance Cost Analysis</DialogTitle>
+              <DialogTitle className="text-2xl">{t('maintenanceCostsPage.pageTitle')}</DialogTitle>
               <Button
                 variant="ghost"
                 size="icon"

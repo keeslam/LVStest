@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -65,13 +66,7 @@ const transportFormSchema = z.object({
 
 type TransportFormData = z.infer<typeof transportFormSchema>;
 
-const TRANSPORT_TYPE_LABELS: Record<string, string> = {
-  swap: "Vehicle Swap",
-  tow: "Tow",
-  repossession: "Repossession",
-  delivery: "Delivery",
-  other: "Other",
-};
+const TRANSPORT_TYPE_VALUES = ["swap", "tow", "repossession", "delivery", "other"] as const;
 
 interface TransportDialogProps {
   open: boolean;
@@ -80,6 +75,7 @@ interface TransportDialogProps {
 }
 
 export function TransportDialog({ open, onOpenChange, editingTransport }: TransportDialogProps) {
+  const { t } = useTranslation(["delivery", "common"]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEditMode = !!editingTransport;
@@ -230,15 +226,15 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
       form.setValue("distanceKm", data.distanceKm.toString());
       if (!data.isRoadDistance) {
         toast({
-          title: "Distance calculated",
-          description: "The routing service was unreachable, so this is a straight-line estimate, not actual driving distance.",
+          title: t('transportDialog.distanceCalculatedTitle'),
+          description: t('transportDialog.distanceCalculatedDescription'),
         });
       }
     },
     onError: (error: any) => {
       toast({
-        title: "Couldn't calculate distance",
-        description: error?.message || "Check that both addresses are complete, or enter the distance manually.",
+        title: t('transportDialog.couldntCalculateTitle'),
+        description: error?.message || t('transportDialog.checkAddresses'),
         variant: "destructive",
       });
     },
@@ -266,15 +262,15 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
     onSuccess: () => {
       invalidateByPrefix("/api/transports");
       toast({
-        title: isEditMode ? "Transport updated" : "Transport logged",
-        description: isEditMode ? "The transport job has been updated." : "The transport job has been recorded.",
+        title: isEditMode ? t('transportDialog.transportUpdated') : t('transportDialog.transportLogged'),
+        description: isEditMode ? t('transportDialog.transportUpdatedDescription') : t('transportDialog.transportLoggedDescription'),
       });
       onOpenChange(false);
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to save transport",
-        description: error?.message || "Please check the form and try again.",
+        title: t('transportDialog.saveFailedTitle'),
+        description: error?.message || t('transportDialog.checkFormTryAgain'),
         variant: "destructive",
       });
     },
@@ -286,9 +282,9 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? "Edit Transport" : "Log Transport"}</DialogTitle>
+          <DialogTitle>{isEditMode ? t('transportDialog.editTitle') : t('transportDialog.addTitle')}</DialogTitle>
           <DialogDescription>
-            Record a standalone vehicle movement — a swap, tow, or repossession — separate from a normal rental delivery.
+            {t('transportDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -300,16 +296,16 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                 name="transportType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type</FormLabel>
+                    <FormLabel>{t('transportDialog.type')}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-transport-type">
-                          <SelectValue placeholder="Select type" />
+                          <SelectValue placeholder={t('transportDialog.selectType')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {Object.entries(TRANSPORT_TYPE_LABELS).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>{label}</SelectItem>
+                        {TRANSPORT_TYPE_VALUES.map((value) => (
+                          <SelectItem key={value} value={value}>{t(`transportDialog.typeLabels.${value}`)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -323,7 +319,7 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                 name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel>{t('transportDialog.status')}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-transport-status">
@@ -331,10 +327,10 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="scheduled">Scheduled</SelectItem>
-                        <SelectItem value="in_progress">In Progress</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        <SelectItem value="scheduled">{t('transportDialog.statusScheduled')}</SelectItem>
+                        <SelectItem value="in_progress">{t('transportDialog.statusInProgress')}</SelectItem>
+                        <SelectItem value="completed">{t('transportDialog.statusCompleted')}</SelectItem>
+                        <SelectItem value="cancelled">{t('transportDialog.statusCancelled')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -348,13 +344,13 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
               name="vehicleId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Vehicle</FormLabel>
+                  <FormLabel>{t('transportDialog.vehicle')}</FormLabel>
                   <FormControl>
                     <VehicleSelector
                       vehicles={vehicles}
                       value={field.value}
                       onChange={field.onChange}
-                      placeholder="Search and select a vehicle..."
+                      placeholder={t('transportDialog.searchSelectVehicle')}
                     />
                   </FormControl>
                   <FormMessage />
@@ -368,13 +364,13 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                 name="relatedVehicleId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Replacement Vehicle <span className="text-muted-foreground font-normal">(the one being swapped in)</span></FormLabel>
+                    <FormLabel>{t('transportDialog.replacementVehicle')} <span className="text-muted-foreground font-normal">{t('transportDialog.replacementVehicleHint')}</span></FormLabel>
                     <FormControl>
                       <VehicleSelector
                         vehicles={vehicles}
                         value={field.value ?? ""}
                         onChange={field.onChange}
-                        placeholder="Search and select the replacement vehicle..."
+                        placeholder={t('transportDialog.searchSelectReplacementVehicle')}
                       />
                     </FormControl>
                     <FormMessage />
@@ -389,7 +385,7 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                 name="scheduledDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Scheduled Date</FormLabel>
+                    <FormLabel>{t('transportDialog.scheduledDate')}</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} data-testid="input-transport-scheduled-date" />
                     </FormControl>
@@ -402,7 +398,7 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                 name="completedDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Completed Date <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                    <FormLabel>{t('transportDialog.completedDate')} <span className="text-muted-foreground font-normal">{t('transportDialog.optional')}</span></FormLabel>
                     <FormControl>
                       <Input type="date" {...field} value={field.value ?? ""} data-testid="input-transport-completed-date" />
                     </FormControl>
@@ -418,9 +414,9 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                 name="originAddress"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>From <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                    <FormLabel>{t('transportDialog.from')} <span className="text-muted-foreground font-normal">{t('transportDialog.optional')}</span></FormLabel>
                     <FormControl>
-                      <Input placeholder="Street address" {...field} value={field.value ?? ""} />
+                      <Input placeholder={t('transportDialog.streetAddress')} {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -433,7 +429,7 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                   <FormItem>
                     <FormLabel>&nbsp;</FormLabel>
                     <FormControl>
-                      <Input placeholder="City" {...field} value={field.value ?? ""} />
+                      <Input placeholder={t('transportDialog.city')} {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -447,9 +443,9 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                 name="destinationAddress"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>To <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                    <FormLabel>{t('transportDialog.to')} <span className="text-muted-foreground font-normal">{t('transportDialog.optional')}</span></FormLabel>
                     <FormControl>
-                      <Input placeholder="Street address" {...field} value={field.value ?? ""} />
+                      <Input placeholder={t('transportDialog.streetAddress')} {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -462,7 +458,7 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                   <FormItem>
                     <FormLabel>&nbsp;</FormLabel>
                     <FormControl>
-                      <Input placeholder="City" {...field} value={field.value ?? ""} />
+                      <Input placeholder={t('transportDialog.city')} {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -476,7 +472,7 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                 name="distanceKm"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Distance (km) <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                    <FormLabel>{t('transportDialog.distanceKm')} <span className="text-muted-foreground font-normal">{t('transportDialog.optional')}</span></FormLabel>
                     <div className="flex gap-2">
                       <FormControl>
                         <Input type="number" step="0.1" min="0" placeholder="0" {...field} value={field.value ?? ""} />
@@ -489,10 +485,10 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                         disabled={!canEstimateDistance || estimateDistanceMutation.isPending}
                         data-testid="button-calculate-distance"
                       >
-                        {estimateDistanceMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Calculate"}
+                        {estimateDistanceMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t('transportDialog.calculate')}
                       </Button>
                     </div>
-                    <FormDescription>Calculated driving distance from the From/To addresses above</FormDescription>
+                    <FormDescription>{t('transportDialog.distanceDescription')}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -502,16 +498,16 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                 name="tollCost"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Toll Cost (€) <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                    <FormLabel>{t('transportDialog.tollCost')} <span className="text-muted-foreground font-normal">{t('transportDialog.optional')}</span></FormLabel>
                     <div className="flex gap-2">
                       <FormControl>
                         <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} value={field.value ?? ""} />
                       </FormControl>
                       <Button type="button" variant="outline" size="sm" onClick={applySuggestedTollCost} disabled={!distanceKmWatch}>
-                        Suggest
+                        {t('transportDialog.suggest')}
                       </Button>
                     </div>
-                    <FormDescription>€{tollRatePerKm.toFixed(2)}/km — configurable in Settings</FormDescription>
+                    <FormDescription>{t('transportDialog.tollRateDescription', { rate: tollRatePerKm.toFixed(2) })}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -526,7 +522,7 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                 data-testid="checkbox-round-trip"
               />
               <label htmlFor="round-trip-toggle" className="text-sm text-muted-foreground">
-                Round trip — suggestion includes the empty return leg
+                {t('transportDialog.roundTrip')}
               </label>
             </div>
 
@@ -547,8 +543,8 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>Breakdown or maintenance swap</FormLabel>
-                      <FormDescription>Our own cost, not the customer's — not billed by default. Check "Bill this to a customer" below to override.</FormDescription>
+                      <FormLabel>{t('transportDialog.breakdownSwapLabel')}</FormLabel>
+                      <FormDescription>{t('transportDialog.breakdownSwapDescription')}</FormDescription>
                     </div>
                   </FormItem>
                 )}
@@ -568,8 +564,8 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel>Bill this to a customer</FormLabel>
-                    <FormDescription>Charge the customer for this transport, separate from what it cost us in toll</FormDescription>
+                    <FormLabel>{t('transportDialog.billableLabel')}</FormLabel>
+                    <FormDescription>{t('transportDialog.billableDescription')}</FormDescription>
                   </div>
                 </FormItem>
               )}
@@ -582,14 +578,14 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                   name="customerId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Customer</FormLabel>
+                      <FormLabel>{t('transportDialog.customer')}</FormLabel>
                       <FormControl>
                         <SearchableCombobox
                           options={customerOptions}
                           value={field.value ?? ""}
                           onChange={field.onChange}
-                          placeholder="Search customers..."
-                          emptyMessage="No customers found"
+                          placeholder={t('transportDialog.searchCustomers')}
+                          emptyMessage={t('transportDialog.noCustomersFound')}
                         />
                       </FormControl>
                       <FormMessage />
@@ -601,7 +597,7 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                   name="billableAmount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Amount to Charge (€)</FormLabel>
+                      <FormLabel>{t('transportDialog.amountToCharge')}</FormLabel>
                       <FormControl>
                         <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} value={field.value ?? ""} />
                       </FormControl>
@@ -621,7 +617,7 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                           data-testid="checkbox-transport-invoiced"
                         />
                       </FormControl>
-                      <FormLabel className="!mt-0">Already invoiced to the customer</FormLabel>
+                      <FormLabel className="!mt-0">{t('transportDialog.alreadyInvoiced')}</FormLabel>
                     </FormItem>
                   )}
                 />
@@ -634,9 +630,9 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                 name="driverName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Driver <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                    <FormLabel>{t('transportDialog.driver')} <span className="text-muted-foreground font-normal">{t('transportDialog.optional')}</span></FormLabel>
                     <FormControl>
-                      <Input placeholder="Who performed the transport" {...field} value={field.value ?? ""} />
+                      <Input placeholder={t('transportDialog.whoPerformedTransport')} {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -647,9 +643,9 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                 name="reason"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Reason <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                    <FormLabel>{t('transportDialog.reason')} <span className="text-muted-foreground font-normal">{t('transportDialog.optional')}</span></FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Non-payment, breakdown" {...field} value={field.value ?? ""} />
+                      <Input placeholder={t('transportDialog.reasonPlaceholder')} {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -662,7 +658,7 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                  <FormLabel>{t('common:fields.notes')} <span className="text-muted-foreground font-normal">{t('transportDialog.optional')}</span></FormLabel>
                   <FormControl>
                     <Textarea rows={2} {...field} value={field.value ?? ""} />
                   </FormControl>
@@ -673,11 +669,11 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
+                {t('common:actions.cancel')}
               </Button>
               <Button type="submit" disabled={mutation.isPending}>
                 {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEditMode ? "Save Changes" : "Log Transport"}
+                {isEditMode ? t('transportDialog.saveChanges') : t('transportDialog.addTitle')}
               </Button>
             </DialogFooter>
           </form>

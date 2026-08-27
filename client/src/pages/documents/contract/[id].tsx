@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useLocation } from 'wouter';
 import { Loader2, FileText, Download, ArrowLeft, RefreshCw } from 'lucide-react';
 import {
@@ -36,6 +37,7 @@ interface ContractData {
 }
 
 export default function ContractViewer() {
+  const { t } = useTranslation("documents");
   const [, setLocation] = useLocation();
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
@@ -83,8 +85,8 @@ export default function ContractViewer() {
       } catch (error) {
         console.error('Error fetching contract:', error);
         toast({
-          title: 'Error',
-          description: 'Failed to load the rental contract. Please try again.',
+          title: t('contractViewer.loadFailedTitle'),
+          description: t('contractViewer.loadFailedDescription'),
           variant: 'destructive',
         });
       } finally {
@@ -105,31 +107,31 @@ export default function ContractViewer() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Rental Contract</h1>
+        <h1 className="text-3xl font-bold">{t('contractViewer.pageTitle')}</h1>
         <div className="flex space-x-2">
-          <Button 
+          <Button
             onClick={() => setLocation('/reservations')}
             variant="outline"
             className="flex items-center"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Reservations
+            {t('contractViewer.backToReservations')}
           </Button>
         </div>
       </div>
 
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Rental Contract</CardTitle>
+          <CardTitle>{t('contractViewer.cardTitle')}</CardTitle>
           <CardDescription>
-            Rental contract for reservation #{id}
+            {t('contractViewer.cardDescription', { id })}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex justify-center items-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="ml-2">Loading contract...</span>
+              <span className="ml-2">{t('contractViewer.loadingContract')}</span>
             </div>
           ) : contractData ? (
             <div className="max-w-3xl mx-auto">
@@ -151,137 +153,137 @@ export default function ContractViewer() {
               
               <div className="text-center mb-8">
                 <h2 className="text-xl font-bold uppercase border-2 border-gray-300 py-2 px-4 inline-block">
-                  Rental Contract
+                  {t('contractViewer.documentHeading')}
                 </h2>
               </div>
-              
+
               <div className="mb-8 grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Contract Number:</p>
+                  <p className="text-sm font-medium text-gray-500">{t('contractViewer.contractNumberLabel')}</p>
                   <p className="text-lg">{contractData.contractNumber}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Date:</p>
+                  <p className="text-sm font-medium text-gray-500">{t('contractViewer.dateLabel')}</p>
                   <p className="text-lg">{contractData.contractDate}</p>
                 </div>
               </div>
-              
+
               <Separator className="my-6" />
-              
+
               {/* Vehicle information */}
               <div className="mb-8">
-                <h3 className="text-lg font-semibold mb-4">VEHICLE INFORMATION</h3>
+                <h3 className="text-lg font-semibold mb-4">{t('contractViewer.vehicleInfoHeading')}</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">License Plate:</p>
+                    <p className="text-sm font-medium text-gray-500">{t('contractViewer.licensePlateLabel')}</p>
                     <p>{contractData.licensePlate}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Brand:</p>
+                    <p className="text-sm font-medium text-gray-500">{t('contractViewer.brandLabel')}</p>
                     <p>{contractData.brand}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Model:</p>
+                    <p className="text-sm font-medium text-gray-500">{t('contractViewer.modelLabel')}</p>
                     <p>{contractData.model}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Chassis Number:</p>
+                    <p className="text-sm font-medium text-gray-500">{t('contractViewer.chassisNumberLabel')}</p>
                     <p>{contractData.chassisNumber}</p>
                   </div>
                 </div>
               </div>
-              
+
               <Separator className="my-6" />
-              
+
               {/* Customer information */}
               <div className="mb-8">
-                <h3 className="text-lg font-semibold mb-4">CUSTOMER INFORMATION</h3>
+                <h3 className="text-lg font-semibold mb-4">{t('contractViewer.customerInfoHeading')}</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Name:</p>
+                    <p className="text-sm font-medium text-gray-500">{t('contractViewer.nameLabel')}</p>
                     <p>{contractData.customerName}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Phone:</p>
+                    <p className="text-sm font-medium text-gray-500">{t('contractViewer.phoneLabel')}</p>
                     <p>{contractData.customerPhone}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Address:</p>
+                    <p className="text-sm font-medium text-gray-500">{t('contractViewer.addressLabel')}</p>
                     <p>{contractData.customerAddress}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">City/Postal Code:</p>
+                    <p className="text-sm font-medium text-gray-500">{t('contractViewer.cityPostalCodeLabel')}</p>
                     <p>{contractData.customerCity} {contractData.customerPostalCode}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Driver License:</p>
+                    <p className="text-sm font-medium text-gray-500">{t('contractViewer.driverLicenseLabel')}</p>
                     <p>{contractData.driverLicense}</p>
                   </div>
                 </div>
               </div>
-              
+
               <Separator className="my-6" />
-              
+
               {/* Rental period */}
               <div className="mb-8">
-                <h3 className="text-lg font-semibold mb-4">RENTAL PERIOD</h3>
+                <h3 className="text-lg font-semibold mb-4">{t('contractViewer.rentalPeriodHeading')}</h3>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Start Date:</p>
+                    <p className="text-sm font-medium text-gray-500">{t('contractViewer.startDateLabel')}</p>
                     <p>{contractData.startDate}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">End Date:</p>
+                    <p className="text-sm font-medium text-gray-500">{t('contractViewer.endDateLabel')}</p>
                     <p>{contractData.endDate}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Duration:</p>
+                    <p className="text-sm font-medium text-gray-500">{t('contractViewer.durationLabel')}</p>
                     <p>{contractData.duration}</p>
                   </div>
                 </div>
               </div>
-              
+
               <Separator className="my-6" />
-              
+
               {/* Pricing */}
               <div className="mb-8">
-                <h3 className="text-lg font-semibold mb-4">RENTAL PRICE</h3>
+                <h3 className="text-lg font-semibold mb-4">{t('contractViewer.rentalPriceHeading')}</h3>
                 <div className="bg-gray-50 p-4 rounded">
-                  <p className="text-xl font-semibold">Total Price: {contractData.totalPrice}</p>
+                  <p className="text-xl font-semibold">{t('contractViewer.totalPriceLabel', { price: contractData.totalPrice })}</p>
                 </div>
               </div>
-              
+
               <Separator className="my-6" />
-              
+
               {/* Terms and conditions */}
               <div className="mb-8">
-                <h3 className="text-lg font-semibold mb-4">TERMS AND CONDITIONS</h3>
+                <h3 className="text-lg font-semibold mb-4">{t('contractViewer.termsHeading')}</h3>
                 <ol className="list-decimal pl-5 space-y-2 text-sm text-gray-700">
-                  <li>The vehicle must be returned in the same condition as at the start of the rental period.</li>
-                  <li>The renter is responsible for any damage to the vehicle during the rental period.</li>
-                  <li>The vehicle must not be used for illegal purposes.</li>
-                  <li>The vehicle must not be driven outside of the Netherlands without prior permission.</li>
-                  <li>The vehicle must be returned with the same amount of fuel as at the start of the rental period.</li>
+                  <li>{t('contractViewer.termCondition1')}</li>
+                  <li>{t('contractViewer.termCondition2')}</li>
+                  <li>{t('contractViewer.termCondition3')}</li>
+                  <li>{t('contractViewer.termCondition4')}</li>
+                  <li>{t('contractViewer.termCondition5')}</li>
                 </ol>
               </div>
-              
+
               <Separator className="my-6" />
-              
+
               {/* Signatures */}
               <div className="mb-8">
-                <h3 className="text-lg font-semibold mb-4">SIGNATURES</h3>
+                <h3 className="text-lg font-semibold mb-4">{t('contractViewer.signaturesHeading')}</h3>
                 <div className="grid grid-cols-2 gap-8 mt-6">
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-6">Auto Lease LAM:</p>
+                    <p className="text-sm font-medium text-gray-500 mb-6">{t('contractViewer.companySignatureLabel')}</p>
                     <div className="border-b border-gray-300 h-8"></div>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-6">Customer:</p>
+                    <p className="text-sm font-medium text-gray-500 mb-6">{t('contractViewer.customerSignatureLabel')}</p>
                     <div className="border-b border-gray-300 h-8"></div>
                   </div>
                 </div>
                 <div className="mt-8">
-                  <p className="text-sm font-medium text-gray-500">Date:</p>
+                  <p className="text-sm font-medium text-gray-500">{t('contractViewer.dateLabel')}</p>
                   <p>{contractData.contractDate}</p>
                 </div>
               </div>
@@ -289,29 +291,29 @@ export default function ContractViewer() {
           ) : (
             <div className="py-20 text-center">
               <p className="text-lg text-gray-500">
-                Failed to load the contract. Please try again.
+                {t('contractViewer.failedToLoadContract')}
               </p>
-              <Button 
+              <Button
                 onClick={() => setLocation(`/reservations/${id}`)}
                 variant="outline"
                 className="mt-4"
               >
-                View Reservation Details
+                {t('contractViewer.viewReservationDetails')}
               </Button>
             </div>
           )}
         </CardContent>
         {contractData && pdfUrl && (
           <CardFooter className="flex justify-center gap-4 pt-4">
-            <Button 
+            <Button
               onClick={() => window.open(pdfUrl, '_blank')}
               variant="outline"
               className="flex items-center"
             >
               <FileText className="mr-2 h-4 w-4" />
-              View PDF Version
+              {t('contractViewer.viewPdfVersion')}
             </Button>
-            <Button 
+            <Button
               onClick={() => {
                 const link = document.createElement('a');
                 link.href = pdfUrl;
@@ -324,7 +326,7 @@ export default function ContractViewer() {
               className="flex items-center"
             >
               <Download className="mr-2 h-4 w-4" />
-              Download PDF
+              {t('contractViewer.downloadPdf')}
             </Button>
           </CardFooter>
         )}

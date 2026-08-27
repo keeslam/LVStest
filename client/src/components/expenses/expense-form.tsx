@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -50,6 +51,21 @@ const expenseCategories = [
   "Accessories",
   "Other"
 ];
+
+// Values are stored verbatim in the database, so they stay in English; only the
+// displayed label is translated via this key map.
+const EXPENSE_CATEGORY_KEYS: Record<string, string> = {
+  "Maintenance": "maintenance",
+  "Tires": "tires",
+  "Brakes": "brakes",
+  "Damage": "damage",
+  "Fuel": "fuel",
+  "Insurance": "insurance",
+  "Registration": "registration",
+  "Cleaning": "cleaning",
+  "Accessories": "accessories",
+  "Other": "other",
+};
 
 // Maximum file size (25 MB) - matching server configuration
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
@@ -109,6 +125,7 @@ export function ExpenseForm({
   preselectedCategory,
   onSuccess
 }: ExpenseFormProps) {
+  const { t } = useTranslation(["expenses", "common"]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [_, navigate] = useLocation();
@@ -246,7 +263,7 @@ export function ExpenseForm({
         if (!response.ok) {
           const errorData = await response.json();
           console.error("Error response from server:", errorData);
-          throw new Error(errorData.message || "Failed to upload receipt");
+          throw new Error(errorData.message || t('form.uploadReceiptFailed'));
         }
         
         const result = await response.json();
@@ -275,8 +292,8 @@ export function ExpenseForm({
       
       // Show success message
       toast({
-        title: `Expense ${editMode ? "updated" : "recorded"} successfully`,
-        description: `The expense has been ${editMode ? "updated" : "added"} to the system.`,
+        title: editMode ? t('form.expenseUpdatedTitle') : t('form.expenseRecordedTitle'),
+        description: editMode ? t('form.expenseUpdatedDescription') : t('form.expenseRecordedDescription'),
       });
       
       // Call custom onSuccess callback if provided
@@ -307,8 +324,10 @@ export function ExpenseForm({
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: `Failed to ${editMode ? "update" : "record"} expense: ${error.message}`,
+        title: t('form.errorTitle'),
+        description: editMode
+          ? t('form.updateExpenseFailedDescription', { error: error.message })
+          : t('form.recordExpenseFailedDescription', { error: error.message }),
         variant: "destructive",
       });
     },
@@ -327,7 +346,7 @@ export function ExpenseForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{editMode ? "Edit Expense" : "Record New Expense"}</CardTitle>
+        <CardTitle>{editMode ? t('form.editTitle') : t('form.recordTitle')}</CardTitle>
       </CardHeader>
       <CardContent>
         {/* Invoice Scanner Section */}
@@ -354,13 +373,13 @@ export function ExpenseForm({
                 name="vehicleId"
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
-                    <FormLabel>Vehicle</FormLabel>
+                    <FormLabel>{t('form.vehicle')}</FormLabel>
                     <FormControl>
                       <VehicleSelector
                         vehicles={vehicles || []}
                         value={field.value > 0 ? field.value.toString() : ""}
                         onChange={(value) => field.onChange(parseInt(value))}
-                        placeholder="Search and select a vehicle..."
+                        placeholder={t('form.searchSelectVehicle')}
                         disabled={vehicleId !== null}
                         recentVehicleIds={recentVehicles}
                       />
@@ -376,21 +395,21 @@ export function ExpenseForm({
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
+                    <FormLabel>{t('form.category')}</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
                       defaultValue={field.value}
                       value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select expense category" />
+                          <SelectValue placeholder={t('form.selectCategory')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {expenseCategories.map((category) => (
                           <SelectItem key={category} value={category}>
-                            {category}
+                            {t(`form.categories.${EXPENSE_CATEGORY_KEYS[category]}`)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -405,7 +424,7 @@ export function ExpenseForm({
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Amount (€)</FormLabel>
+                    <FormLabel>{t('form.amount')}</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -426,7 +445,7 @@ export function ExpenseForm({
                 name="date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Date</FormLabel>
+                    <FormLabel>{t('form.date')}</FormLabel>
                     <FormControl>
                       <Input type="date" max={today} {...field} />
                     </FormControl>
@@ -440,10 +459,10 @@ export function ExpenseForm({
                 name="description"
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>{t('form.description')}</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Describe the expense (e.g. Oil change, New tires, etc.)" 
+                      <Textarea
+                        placeholder={t('form.descriptionPlaceholder')}
                         className="min-h-[80px]"
                         {...field}
                         value={field.value || ''}
@@ -455,13 +474,13 @@ export function ExpenseForm({
               />
               
               <div className="md:col-span-2">
-                <FormLabel className="mb-2 block">Receipt</FormLabel>
+                <FormLabel className="mb-2 block">{t('form.receipt')}</FormLabel>
                 <Tabs defaultValue="url" value={receiptTab} onValueChange={setReceiptTab}>
                   <TabsList className="mb-4">
-                    <TabsTrigger value="url">URL</TabsTrigger>
-                    <TabsTrigger value="upload">Upload File</TabsTrigger>
+                    <TabsTrigger value="url">{t('form.urlTab')}</TabsTrigger>
+                    <TabsTrigger value="upload">{t('form.uploadFileTab')}</TabsTrigger>
                   </TabsList>
-                  
+
                   <TabsContent value="url">
                     <FormField
                       control={form.control}
@@ -469,10 +488,10 @@ export function ExpenseForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input placeholder="URL to receipt image or document" {...field} value={field.value || ''} />
+                            <Input placeholder={t('form.receiptUrlPlaceholder')} {...field} value={field.value || ''} />
                           </FormControl>
                           <FormDescription>
-                            Enter a URL to an online receipt or invoice
+                            {t('form.receiptUrlHint')}
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -491,8 +510,8 @@ export function ExpenseForm({
                             <svg className="w-8 h-8 mb-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                             </svg>
-                            <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                            <p className="text-xs text-muted-foreground">PDF, PNG, JPG or GIF (max. 25MB)</p>
+                            <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">{t('form.clickToUpload')}</span> {t('form.orDragDrop')}</p>
+                            <p className="text-xs text-muted-foreground">{t('form.fileTypesHint')}</p>
                           </div>
                           <input 
                             id="receipt-file-upload" 
@@ -532,7 +551,7 @@ export function ExpenseForm({
                       )}
                       
                       <FormDescription>
-                        Upload a PDF receipt or invoice directly. PDF documents up to 25MB are supported to accommodate larger files such as detailed invoices. The file will be stored securely and organized by vehicle license plate.
+                        {t('form.uploadHint')}
                       </FormDescription>
                       {form.formState.errors.receiptFile && (
                         <p className="text-sm font-medium text-destructive">
@@ -557,7 +576,7 @@ export function ExpenseForm({
                   }
                 }}
               >
-                Cancel
+                {t('common:actions.cancel')}
               </Button>
               <Button
                 type="submit"
@@ -569,10 +588,10 @@ export function ExpenseForm({
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Saving...
+                    {t('form.saving')}
                   </span>
                 ) : (
-                  editMode ? "Update Expense" : "Record Expense"
+                  editMode ? t('form.updateExpense') : t('form.recordExpense')
                 )}
               </Button>
             </div>

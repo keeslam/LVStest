@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/use-auth';
 import { UserRole, UserPermission } from '@shared/schema';
 
@@ -15,6 +16,7 @@ interface BackupHealth {
  * trusted. This surfaces staleness where it will actually be seen.
  */
 export function BackupStalenessBanner() {
+  const { t } = useTranslation('settings');
   const { user } = useAuth();
   const isAdmin = user?.role === UserRole.ADMIN;
   const userPermissions = (user?.permissions as string[]) || [];
@@ -36,13 +38,13 @@ export function BackupStalenessBanner() {
       <div className="text-sm">
         <p className="font-semibold">
           {data.lastSuccessAt
-            ? `No verified backup in ${data.ageHours} hours`
-            : 'No verified backup on record'}
+            ? t('backup.noVerifiedBackupHours', { hours: data.ageHours })
+            : t('backup.noVerifiedBackupEver')}
         </p>
         <p className="mt-0.5">
           {data.lastError
-            ? `Last error: ${data.lastError}`
-            : 'Open Backup & Recovery to run one now.'}
+            ? t('backup.lastError', { error: data.lastError })
+            : t('backup.openBackupPrompt')}
         </p>
       </div>
     </div>

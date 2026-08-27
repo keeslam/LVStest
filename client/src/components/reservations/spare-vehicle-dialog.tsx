@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -52,6 +53,7 @@ export function SpareVehicleDialog({
   originalReservation,
   onSuccess,
 }: SpareVehicleDialogProps) {
+  const { t } = useTranslation("reservations");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -140,8 +142,8 @@ export function SpareVehicleDialog({
       invalidateByPrefix("/api/custom-notifications");
       
       toast({
-        title: "Spare vehicle assigned",
-        description: "The spare vehicle has been assigned successfully.",
+        title: t('spareVehicleDialog.toasts.successTitle'),
+        description: t('spareVehicleDialog.toasts.successDescription'),
       });
       onSuccess?.();
       form.reset();
@@ -149,7 +151,7 @@ export function SpareVehicleDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t('spareVehicleDialog.toasts.errorTitle'),
         description: error.message,
         variant: "destructive",
       });
@@ -166,10 +168,10 @@ export function SpareVehicleDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Car className="h-5 w-5" />
-            Assign Spare Vehicle
+            {t('spareVehicleDialog.title')}
           </DialogTitle>
           <DialogDescription>
-            Assign a spare vehicle to continue serving the customer while the original vehicle is in service.
+            {t('spareVehicleDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -181,7 +183,7 @@ export function SpareVehicleDialog({
                 name="startDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Date</FormLabel>
+                    <FormLabel>{t('spareVehicleDialog.startDateLabel')}</FormLabel>
                     <FormControl>
                       <Input
                         type="date"
@@ -199,7 +201,7 @@ export function SpareVehicleDialog({
                 name="endDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>End Date</FormLabel>
+                    <FormLabel>{t('spareVehicleDialog.endDateLabel')}</FormLabel>
                     <FormControl>
                       <Input
                         type="date"
@@ -208,7 +210,7 @@ export function SpareVehicleDialog({
                       />
                     </FormControl>
                     <FormDescription>
-                      Leave empty for open-ended replacement.
+                      {t('spareVehicleDialog.endDateHint')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -221,19 +223,19 @@ export function SpareVehicleDialog({
               name="spareVehicleId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Available Spare Vehicles</FormLabel>
+                  <FormLabel>{t('spareVehicleDialog.availableSpareVehiclesLabel')}</FormLabel>
                   <FormControl>
                     <VehicleSelector
                       vehicles={availableVehicles || []}
                       value={field.value}
                       onChange={field.onChange}
-                      placeholder="Select a spare vehicle"
+                      placeholder={t('spareVehicleDialog.selectSpareVehiclePlaceholder')}
                       disabled={isLoadingVehicles || !availableVehicles || availableVehicles.length === 0}
                       className="w-full"
                     />
                   </FormControl>
                   <FormDescription>
-                    Only vehicles available during the replacement period are shown.
+                    {t('spareVehicleDialog.availableVehiclesHint')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -244,10 +246,10 @@ export function SpareVehicleDialog({
               <div className="p-3 border border-yellow-200 bg-yellow-50 rounded-md">
                 <div className="flex items-center gap-2 text-yellow-800">
                   <AlertTriangle className="h-4 w-4" />
-                  <p className="text-sm font-medium">No vehicles available</p>
+                  <p className="text-sm font-medium">{t('spareVehicleDialog.noVehiclesAvailableTitle')}</p>
                 </div>
                 <p className="text-xs text-yellow-700 mt-1">
-                  Try adjusting the replacement dates or check if there are other available vehicles.
+                  {t('spareVehicleDialog.noVehiclesAvailableHint')}
                 </p>
               </div>
             )}
@@ -259,7 +261,7 @@ export function SpareVehicleDialog({
                 onClick={() => onOpenChange(false)}
                 disabled={assignSpareMutation.isPending}
               >
-                Cancel
+                {t('spareVehicleDialog.cancelButton')}
               </Button>
               <Button
                 type="submit"
@@ -273,10 +275,10 @@ export function SpareVehicleDialog({
                 {assignSpareMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Assigning...
+                    {t('spareVehicleDialog.assigningButton')}
                   </>
                 ) : (
-                  "Assign Spare Vehicle"
+                  t('spareVehicleDialog.submitButton')
                 )}
               </Button>
             </DialogFooter>

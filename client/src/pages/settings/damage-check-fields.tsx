@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ function autoKeyFromLabel(label: string): string {
 }
 
 export default function DamageCheckFieldsPage({ embedded = false }: { embedded?: boolean } = {}) {
+  const { t } = useTranslation("settings");
   const { user } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
@@ -59,18 +61,18 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
         credentials: 'include',
         headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : undefined,
       });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Upload failed');
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || t('damageCheckFieldsPage.toasts.uploadFailedFallback'));
       setHeaderCacheBust(Date.now());
-      toast({ title: 'Header updated', description: 'New header image uploaded.' });
+      toast({ title: t('damageCheckFieldsPage.toasts.headerUpdatedTitle'), description: t('damageCheckFieldsPage.toasts.headerUpdatedDescription') });
     } catch (err: any) {
-      toast({ title: 'Upload failed', description: err?.message || 'Could not upload', variant: 'destructive' });
+      toast({ title: t('damageCheckFieldsPage.toasts.uploadFailedTitle'), description: err?.message || t('damageCheckFieldsPage.toasts.uploadFailedFallback'), variant: 'destructive' });
     } finally {
       setUploadingHeader(false);
     }
   };
 
   const handleHeaderReset = async () => {
-    if (!confirm('Reset the header back to the bundled default image?')) return;
+    if (!confirm(t('damageCheckFieldsPage.confirmResetHeader'))) return;
     try {
       const csrfToken = getCsrfToken();
       const res = await fetch('/api/damage-check-fields/header', {
@@ -78,11 +80,11 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
         credentials: 'include',
         headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : undefined,
       });
-      if (!res.ok) throw new Error('Reset failed');
+      if (!res.ok) throw new Error(t('damageCheckFieldsPage.toasts.resetFailedFallback'));
       setHeaderCacheBust(Date.now());
-      toast({ title: 'Header reset', description: 'Default header restored.' });
+      toast({ title: t('damageCheckFieldsPage.toasts.headerResetTitle'), description: t('damageCheckFieldsPage.toasts.headerResetDescription') });
     } catch (err: any) {
-      toast({ title: 'Reset failed', description: err?.message || 'Could not reset', variant: 'destructive' });
+      toast({ title: t('damageCheckFieldsPage.toasts.resetFailedTitle'), description: err?.message || t('damageCheckFieldsPage.toasts.resetFailedFallback'), variant: 'destructive' });
     }
   };
 
@@ -96,12 +98,12 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/damage-check-fields'] });
-      toast({ title: "Saved", description: "Damage check fields updated." });
+      toast({ title: t('damageCheckFieldsPage.toasts.savedTitle'), description: t('damageCheckFieldsPage.toasts.savedDescription') });
     },
     onError: (err: any) => {
       toast({
-        title: "Save failed",
-        description: err?.message || "Could not save changes",
+        title: t('damageCheckFieldsPage.toasts.saveFailedTitle'),
+        description: err?.message || t('damageCheckFieldsPage.toasts.saveFailedFallback'),
         variant: "destructive",
       });
     },
@@ -155,20 +157,20 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
       const seen = new Set<string>();
       for (const f of g.fields) {
         if (!f.key.trim()) {
-          toast({ title: "Missing key", description: `A field in "${g.label}" has no key`, variant: "destructive" });
+          toast({ title: t('damageCheckFieldsPage.toasts.missingKeyTitle'), description: t('damageCheckFieldsPage.toasts.missingKeyDescription', { label: g.label }), variant: "destructive" });
           return;
         }
         if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(f.key)) {
-          toast({ title: "Invalid key", description: `Field key "${f.key}" must start with a letter and use only letters / digits / underscore`, variant: "destructive" });
+          toast({ title: t('damageCheckFieldsPage.toasts.invalidKeyTitle'), description: t('damageCheckFieldsPage.toasts.invalidKeyDescription', { key: f.key }), variant: "destructive" });
           return;
         }
         if (seen.has(f.key)) {
-          toast({ title: "Duplicate key", description: `Duplicate field key "${f.key}" in "${g.label}"`, variant: "destructive" });
+          toast({ title: t('damageCheckFieldsPage.toasts.duplicateKeyTitle'), description: t('damageCheckFieldsPage.toasts.duplicateKeyDescription', { key: f.key, label: g.label }), variant: "destructive" });
           return;
         }
         seen.add(f.key);
         if (f.inputType === 'select' && f.options.length === 0) {
-          toast({ title: "Missing options", description: `Select field "${f.label}" needs at least one option`, variant: "destructive" });
+          toast({ title: t('damageCheckFieldsPage.toasts.missingOptionsTitle'), description: t('damageCheckFieldsPage.toasts.missingOptionsDescription', { label: f.label }), variant: "destructive" });
           return;
         }
       }
@@ -177,7 +179,7 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
   };
 
   const resetToDefaults = () => {
-    if (!confirm("Reset all fields back to the original defaults? Your unsaved changes will be lost.")) return;
+    if (!confirm(t('damageCheckFieldsPage.confirmResetDefaults'))) return;
     setConfig(DEFAULT_DAMAGE_CHECK_FIELDS);
   };
 
@@ -187,14 +189,14 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" /> Admin access required
+              <AlertTriangle className="h-5 w-5" /> {t('damageCheckFieldsPage.adminAccessRequiredTitle')}
             </CardTitle>
             <CardDescription>
-              You need an admin account to edit the damage check field list.
+              {t('damageCheckFieldsPage.adminAccessRequiredDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href="/settings"><Button variant="outline"><ArrowLeft className="h-4 w-4 mr-2" />Back to Settings</Button></Link>
+            <Link href="/settings"><Button variant="outline"><ArrowLeft className="h-4 w-4 mr-2" />{t('damageCheckFieldsPage.backToSettingsButton')}</Button></Link>
           </CardContent>
         </Card>
       </div>
@@ -204,7 +206,7 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
   if (isLoading) {
     return (
       <div className="container mx-auto p-6 flex items-center gap-2 text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+        <Loader2 className="h-4 w-4 animate-spin" /> {t('damageCheckFieldsPage.loadingLabel')}
       </div>
     );
   }
@@ -216,22 +218,21 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
           <div className="flex items-center gap-2 mb-1">
             {!embedded && (
               <Button variant="ghost" size="sm" onClick={() => navigate('/settings')} data-testid="button-back">
-                <ArrowLeft className="h-4 w-4 mr-1" /> Back
+                <ArrowLeft className="h-4 w-4 mr-1" /> {t('damageCheckFieldsPage.backButton')}
               </Button>
             )}
-            <Badge variant="secondary">Admin only</Badge>
+            <Badge variant="secondary">{t('damageCheckFieldsPage.adminOnlyBadge')}</Badge>
           </div>
-          {!embedded && <h1 className="text-2xl font-bold">Damage Check Fields</h1>}
+          {!embedded && <h1 className="text-2xl font-bold">{t('damageCheckFieldsPage.pageTitle')}</h1>}
           <p className="text-sm text-muted-foreground mt-1">
-            Edit the checklist used by the interactive damage check and the PDF template editor.
-            Changes apply immediately to new checks; existing saved checks keep their original values.
+            {t('damageCheckFieldsPage.pageDescription')}
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={resetToDefaults} data-testid="button-reset-defaults">Reset to defaults</Button>
+          <Button variant="outline" onClick={resetToDefaults} data-testid="button-reset-defaults">{t('damageCheckFieldsPage.resetToDefaultsButton')}</Button>
           <Button onClick={handleSave} disabled={saveMutation.isPending} data-testid="button-save">
             {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-            Save
+            {t('damageCheckFieldsPage.saveButton')}
           </Button>
         </div>
       </div>
@@ -239,16 +240,16 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Header image</CardTitle>
+            <CardTitle>{t('damageCheckFieldsPage.headerImageTitle')}</CardTitle>
             <CardDescription>
-              Shown at the top of every page of the generated damage check PDF and in the template editor preview. Use a wide image (recommended ~1000×113px or similar landscape ratio) so it fills the page width cleanly.
+              {t('damageCheckFieldsPage.headerImageDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="border rounded bg-muted/30 p-2">
               <img
                 src={`/api/damage-check-fields/header?t=${headerCacheBust}`}
-                alt="Current damage check header"
+                alt={t('damageCheckFieldsPage.currentHeaderAlt')}
                 className="w-full h-auto block"
                 style={{ maxHeight: 120, objectFit: 'contain' }}
                 onError={(e) => {
@@ -260,8 +261,7 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
                 }}
               />
               <p className="hidden text-sm text-muted-foreground py-4 text-center">
-                No header image set — damage check PDFs are generated without a branded header.
-                Upload one below.
+                {t('damageCheckFieldsPage.noHeaderSetHint')}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -269,7 +269,7 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
                 <Button asChild variant="outline" disabled={uploadingHeader}>
                   <span className="cursor-pointer">
                     {uploadingHeader ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-                    Upload new header
+                    {t('damageCheckFieldsPage.uploadNewHeaderButton')}
                   </span>
                 </Button>
               </Label>
@@ -286,7 +286,7 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
                 data-testid="input-header-upload"
               />
               <Button variant="outline" onClick={handleHeaderReset} data-testid="button-header-reset">
-                <RotateCcw className="h-4 w-4 mr-2" /> Reset to default
+                <RotateCcw className="h-4 w-4 mr-2" /> {t('damageCheckFieldsPage.resetToDefaultButton')}
               </Button>
             </div>
           </CardContent>
@@ -301,18 +301,18 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
               </CardTitle>
               <CardDescription>
                 {group.id === 'delivery'
-                  ? 'Checkbox items shown in the Aflever Check column.'
-                  : 'Select-type questions (label + chosen value).'}
+                  ? t('damageCheckFieldsPage.deliveryGroupDescription')
+                  : t('damageCheckFieldsPage.selectGroupDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {group.fields.length === 0 && (
-                <p className="text-sm text-muted-foreground italic">No fields yet.</p>
+                <p className="text-sm text-muted-foreground italic">{t('damageCheckFieldsPage.noFieldsYet')}</p>
               )}
               {group.fields.map((field, index) => (
                 <div key={index} className="grid grid-cols-12 gap-2 items-start border rounded-md p-3 bg-muted/30" data-testid={`field-${group.id}-${index}`}>
                   <div className="col-span-12 md:col-span-3">
-                    <Label className="text-xs">Label</Label>
+                    <Label className="text-xs">{t('damageCheckFieldsPage.labelField')}</Label>
                     <Input
                       value={field.label}
                       onChange={(e) => {
@@ -328,7 +328,7 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
                     />
                   </div>
                   <div className="col-span-6 md:col-span-2">
-                    <Label className="text-xs">Key</Label>
+                    <Label className="text-xs">{t('damageCheckFieldsPage.keyField')}</Label>
                     <Input
                       value={field.key}
                       onChange={(e) => updateField(group.id, index, { key: e.target.value })}
@@ -337,7 +337,7 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
                     />
                   </div>
                   <div className="col-span-6 md:col-span-2">
-                    <Label className="text-xs">Type</Label>
+                    <Label className="text-xs">{t('damageCheckFieldsPage.typeField')}</Label>
                     <Select
                       value={field.inputType}
                       onValueChange={(val: 'select' | 'checkbox') => updateField(group.id, index, {
@@ -347,17 +347,17 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
                     >
                       <SelectTrigger data-testid={`select-type-${group.id}-${index}`}><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="select">Select</SelectItem>
-                        <SelectItem value="checkbox">Checkbox</SelectItem>
+                        <SelectItem value="select">{t('damageCheckFieldsPage.selectOption')}</SelectItem>
+                        <SelectItem value="checkbox">{t('damageCheckFieldsPage.checkboxOption')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="col-span-12 md:col-span-3">
-                    <Label className="text-xs">Options (comma-separated)</Label>
+                    <Label className="text-xs">{t('damageCheckFieldsPage.optionsField')}</Label>
                     <Input
                       value={field.options.join(', ')}
                       disabled={field.inputType === 'checkbox'}
-                      placeholder={field.inputType === 'checkbox' ? '— not used —' : 'schoon, vuil'}
+                      placeholder={field.inputType === 'checkbox' ? t('damageCheckFieldsPage.optionsNotUsedPlaceholder') : 'schoon, vuil'}
                       onChange={(e) => updateField(group.id, index, {
                         options: e.target.value.split(',').map(s => s.trim()).filter(Boolean),
                       })}
@@ -379,7 +379,7 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
               ))}
               <Separator />
               <Button variant="outline" size="sm" onClick={() => addField(group.id)} data-testid={`button-add-${group.id}`}>
-                <Plus className="h-4 w-4 mr-2" /> Add field to {group.label}
+                <Plus className="h-4 w-4 mr-2" /> {t('damageCheckFieldsPage.addFieldToGroupButton', { label: group.label })}
               </Button>
             </CardContent>
           </Card>
@@ -389,7 +389,7 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
       <div className="mt-6 flex justify-end">
         <Button onClick={handleSave} disabled={saveMutation.isPending} size="lg" data-testid="button-save-bottom">
           {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-          Save changes
+          {t('damageCheckFieldsPage.saveChangesButton')}
         </Button>
       </div>
     </div>

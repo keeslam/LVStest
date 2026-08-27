@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ export function EmailDocumentDialog({
   reservation,
   defaultDocumentIds = [],
 }: EmailDocumentDialogProps) {
+  const { t } = useTranslation(["documents", "common"]);
   const { toast } = useToast();
   const [selectedDocIds, setSelectedDocIds] = useState<number[]>([]);
   const [recipientEmail, setRecipientEmail] = useState("");
@@ -160,11 +162,11 @@ export function EmailDocumentDialog({
     mutationFn: async () => {
       const email = getRecipientEmail();
       if (!email) {
-        throw new Error("No recipient email selected");
+        throw new Error(t('emailDialog.noRecipientEmailSelected'));
       }
-      
+
       if (selectedDocIds.length === 0) {
-        throw new Error("No documents selected");
+        throw new Error(t('emailDialog.noDocumentsSelected'));
       }
 
       // Send all documents in one email with multiple attachments
@@ -178,8 +180,8 @@ export function EmailDocumentDialog({
     onSuccess: () => {
       const docCount = selectedDocIds.length;
       toast({
-        title: "Success",
-        description: `Email sent successfully to ${getRecipientEmail()} with ${docCount} document${docCount > 1 ? 's' : ''} attached`,
+        title: t('emailDialog.successTitle'),
+        description: t('emailDialog.emailSentDescription', { email: getRecipientEmail(), count: docCount }),
       });
       onOpenChange(false);
       // Reset form
@@ -188,8 +190,8 @@ export function EmailDocumentDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to send email",
+        title: t('emailDialog.errorTitle'),
+        description: error.message || t('emailDialog.sendEmailFailed'),
         variant: "destructive",
       });
     },
@@ -199,17 +201,17 @@ export function EmailDocumentDialog({
     const email = getRecipientEmail();
     if (!email || !email.includes("@")) {
       toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address",
+        title: t('emailDialog.invalidEmailTitle'),
+        description: t('emailDialog.enterValidEmail'),
         variant: "destructive",
       });
       return;
     }
-    
+
     if (selectedDocIds.length === 0) {
       toast({
-        title: "No Documents",
-        description: "Please select at least one document to send",
+        title: t('emailDialog.noDocumentsTitle'),
+        description: t('emailDialog.selectAtLeastOneDocument'),
         variant: "destructive",
       });
       return;
@@ -237,21 +239,21 @@ export function EmailDocumentDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
-            Email Documents to Customer
+            {t('emailDialog.title')}
           </DialogTitle>
           <DialogDescription>
-            Select documents, recipient, and language for sending to customer
+            {t('emailDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           {/* Document Selection */}
           <div className="space-y-3">
-            <Label className="text-base font-semibold">Select Documents</Label>
-            
+            <Label className="text-base font-semibold">{t('emailDialog.selectDocuments')}</Label>
+
             {contracts.length > 0 && (
               <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-700">Contracts</p>
+                <p className="text-sm font-medium text-gray-700">{t('emailDialog.contracts')}</p>
                 {contracts.map(doc => (
                   <div key={doc.id} className="flex items-center space-x-2 p-2 border rounded hover:bg-gray-50">
                     <Checkbox
@@ -271,7 +273,7 @@ export function EmailDocumentDialog({
 
             {damageChecks.length > 0 && (
               <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-700">Damage Checks</p>
+                <p className="text-sm font-medium text-gray-700">{t('emailDialog.damageChecks')}</p>
                 {damageChecks.map(doc => (
                   <div key={doc.id} className="flex items-center space-x-2 p-2 border rounded hover:bg-gray-50">
                     <Checkbox
@@ -291,7 +293,7 @@ export function EmailDocumentDialog({
 
             {otherDocs.length > 0 && (
               <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-700">Other Documents</p>
+                <p className="text-sm font-medium text-gray-700">{t('emailDialog.otherDocuments')}</p>
                 {otherDocs.map(doc => (
                   <div key={doc.id} className="flex items-center space-x-2 p-2 border rounded hover:bg-gray-50">
                     <Checkbox
@@ -312,37 +314,37 @@ export function EmailDocumentDialog({
             {documents.length === 0 && (
               <div className="p-4 border border-dashed rounded text-center text-gray-500">
                 <AlertCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                <p className="text-sm">No documents available</p>
+                <p className="text-sm">{t('emailDialog.noDocumentsAvailable')}</p>
               </div>
             )}
           </div>
 
           {/* Recipient Selection */}
           <div className="space-y-3">
-            <Label htmlFor="recipient" className="text-base font-semibold">Recipient Email</Label>
+            <Label htmlFor="recipient" className="text-base font-semibold">{t('emailDialog.recipientEmail')}</Label>
             <Select value={recipientEmail} onValueChange={setRecipientEmail}>
               <SelectTrigger id="recipient" data-testid="select-recipient">
-                <SelectValue placeholder="Select recipient email" />
+                <SelectValue placeholder={t('emailDialog.selectRecipientEmail')} />
               </SelectTrigger>
               <SelectContent>
                 {customer?.emailGeneral && (
                   <SelectItem value="general">
-                    General: {customer.emailGeneral}
+                    {t('emailDialog.generalLabel', { email: customer.emailGeneral })}
                   </SelectItem>
                 )}
                 {customer?.emailForInvoices && (
                   <SelectItem value="invoices">
-                    Invoices: {customer.emailForInvoices}
+                    {t('emailDialog.invoicesLabel', { email: customer.emailForInvoices })}
                   </SelectItem>
                 )}
-                <SelectItem value="custom">Custom Email</SelectItem>
+                <SelectItem value="custom">{t('emailDialog.customEmail')}</SelectItem>
               </SelectContent>
             </Select>
-            
+
             {recipientEmail === "custom" && (
               <Input
                 type="email"
-                placeholder="Enter email address"
+                placeholder={t('emailDialog.enterEmailAddress')}
                 value={customEmail}
                 onChange={(e) => setCustomEmail(e.target.value)}
                 data-testid="input-custom-email"
@@ -352,55 +354,55 @@ export function EmailDocumentDialog({
 
           {/* Template Selection */}
           <div className="space-y-3">
-            <Label htmlFor="template-type" className="text-base font-semibold">Email Template</Label>
+            <Label htmlFor="template-type" className="text-base font-semibold">{t('emailDialog.emailTemplate')}</Label>
             <Select value={templateType} onValueChange={(val) => setTemplateType(val as "contract" | "damage_check" | "combined")}>
               <SelectTrigger id="template-type" data-testid="select-template-type">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="contract">Contract Email</SelectItem>
-                <SelectItem value="damage_check">Damage Check Email</SelectItem>
-                <SelectItem value="combined">Combined Documents Email</SelectItem>
+                <SelectItem value="contract">{t('emailDialog.contractEmail')}</SelectItem>
+                <SelectItem value="damage_check">{t('emailDialog.damageCheckEmail')}</SelectItem>
+                <SelectItem value="combined">{t('emailDialog.combinedDocumentsEmail')}</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs text-gray-500">Choose which template to use for this email</p>
+            <p className="text-xs text-gray-500">{t('emailDialog.chooseTemplateHint')}</p>
           </div>
 
           {/* Language Selection */}
           <div className="space-y-3">
-            <Label htmlFor="language" className="text-base font-semibold">Email Language</Label>
+            <Label htmlFor="language" className="text-base font-semibold">{t('emailDialog.emailLanguage')}</Label>
             <Select value={language} onValueChange={(val) => setLanguage(val as "en" | "nl")}>
               <SelectTrigger id="language" data-testid="select-language">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="nl">Dutch (Nederlands)</SelectItem>
+                <SelectItem value="en">{t('emailDialog.english')}</SelectItem>
+                <SelectItem value="nl">{t('emailDialog.dutch')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Subject */}
           <div className="space-y-3">
-            <Label htmlFor="subject" className="text-base font-semibold">Subject</Label>
+            <Label htmlFor="subject" className="text-base font-semibold">{t('emailDialog.subject')}</Label>
             <Input
               id="subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Email subject"
+              placeholder={t('emailDialog.emailSubjectPlaceholder')}
               data-testid="input-email-subject"
             />
           </div>
 
           {/* Message */}
           <div className="space-y-3">
-            <Label htmlFor="message" className="text-base font-semibold">Message</Label>
+            <Label htmlFor="message" className="text-base font-semibold">{t('emailDialog.message')}</Label>
             <Textarea
               id="message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={8}
-              placeholder="Email message"
+              placeholder={t('emailDialog.emailMessagePlaceholder')}
               data-testid="textarea-email-message"
             />
           </div>
@@ -414,7 +416,7 @@ export function EmailDocumentDialog({
             disabled={sendEmail.isPending}
             data-testid="button-cancel-email"
           >
-            Cancel
+            {t('common:actions.cancel')}
           </Button>
           <Button
             onClick={handleSend}
@@ -424,12 +426,12 @@ export function EmailDocumentDialog({
             {sendEmail.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sending...
+                {t('emailDialog.sending')}
               </>
             ) : (
               <>
                 <Mail className="mr-2 h-4 w-4" />
-                Send Email{selectedDocIds.length > 1 ? 's' : ''}
+                {t('emailDialog.sendEmailButton', { count: selectedDocIds.length || 1 })}
               </>
             )}
           </Button>

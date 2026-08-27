@@ -1,4 +1,5 @@
 import { invalidateByPrefix } from "@/lib/queryClient";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -390,7 +391,8 @@ export function QuickActions() {
   const [showFuelStatusUpdateDialog, setShowFuelStatusUpdateDialog] = useState(false);
   
   const { toast } = useToast();
-  
+  const { t } = useTranslation(["dashboard", "common"]);
+
   // Get queryClient for cache invalidation
   const queryClient = useQueryClient();
   
@@ -481,8 +483,8 @@ export function QuickActions() {
   const handleChangeRegistration = async () => {
     if (selectedVehicles.length === 0) {
       toast({
-        title: "Error",
-        description: "Please select at least one vehicle",
+        title: t('common:status.error'),
+        description: t('quickActions.selectAtLeastOneVehicle'),
         variant: "destructive",
       });
       return;
@@ -523,19 +525,26 @@ export function QuickActions() {
       // Determine appropriate message based on results
       if (results.success > 0 && results.failed === 0) {
         toast({
-          title: "Success",
-          description: `Registration updated to ${registrationStatus === "opnaam" ? "Opnaam" : "BV"} for ${results.success} vehicle${results.success > 1 ? 's' : ''}`,
+          title: t('common:status.success'),
+          description: t('quickActions.registrationUpdatedSuccess', {
+            status: registrationStatus === "opnaam" ? "Opnaam" : "BV",
+            count: results.success,
+          }),
         });
       } else if (results.success > 0 && results.failed > 0) {
         toast({
-          title: "Partial Success",
-          description: `Updated ${results.success} vehicle${results.success > 1 ? 's' : ''}, but failed for ${results.failed} vehicle${results.failed > 1 ? 's' : ''}`,
+          title: t('quickActions.partialSuccess'),
+          description: t('quickActions.registrationPartialSuccess', {
+            count: results.success,
+            success: results.success,
+            failed: results.failed,
+          }),
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Failed",
-          description: `Failed to update registration for all ${results.failed} selected vehicles`,
+          title: t('quickActions.failed'),
+          description: t('quickActions.registrationFailed', { count: results.failed }),
           variant: "destructive",
         });
       }
@@ -547,8 +556,8 @@ export function QuickActions() {
       setSelectedVehicles([]);
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update registration status",
+        title: t('common:status.error'),
+        description: error instanceof Error ? error.message : t('quickActions.registrationUpdateFailed'),
         variant: "destructive",
       });
     } finally {
@@ -562,8 +571,8 @@ export function QuickActions() {
   const handleDamageFormUpload = async () => {
     if (!selectedDamageVehicle) {
       toast({
-        title: "Error",
-        description: "Please select a vehicle",
+        title: t('common:status.error'),
+        description: t('quickActions.selectVehicle'),
         variant: "destructive",
       });
       return;
@@ -571,8 +580,8 @@ export function QuickActions() {
     
     if (!damageFormFile && damagePhotos.length === 0) {
       toast({
-        title: "Error",
-        description: "Please upload at least a damage form or damage photos",
+        title: t('common:status.error'),
+        description: t('quickActions.uploadAtLeastOne'),
         variant: "destructive",
       });
       return;
@@ -677,10 +686,14 @@ export function QuickActions() {
       
       // Show success message
       toast({
-        title: uploadCount > 0 ? "Upload Successful" : "Upload Failed",
-        description: uploadCount > 0 
-          ? `Successfully uploaded ${uploadCount} document${uploadCount > 1 ? 's' : ''}${errorCount > 0 ? `, but ${errorCount} failed` : ''} for ${selectedDamageVehicle.licensePlate}`
-          : "Failed to upload any documents",
+        title: uploadCount > 0 ? t('quickActions.uploadSuccessful') : t('quickActions.uploadFailed'),
+        description: uploadCount > 0
+          ? t('quickActions.damageUploadedSuccess', {
+              count: uploadCount,
+              plate: selectedDamageVehicle.licensePlate,
+              errorSuffix: errorCount > 0 ? t('quickActions.damageUploadErrorSuffix', { count: errorCount }) : '',
+            })
+          : t('quickActions.uploadAnyDocumentsFailed'),
         variant: uploadCount > 0 ? "default" : "destructive",
       });
       
@@ -697,23 +710,23 @@ export function QuickActions() {
       
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to upload damage documents",
+        title: t('common:status.error'),
+        description: error instanceof Error ? error.message : t('quickActions.uploadDamageDocumentsFailed'),
         variant: "destructive",
       });
     } finally {
       setIsDamageUploading(false);
     }
   };
-  
+
   // Handler for when a reservation status has been updated
   const handleReservationStatusUpdated = () => {
     // Refetch upcoming reservations to update the list
     invalidateByPrefix("/api/reservations/upcoming");
     // Show a success toast
     toast({
-      title: "Success",
-      description: "Reservation status updated successfully",
+      title: t('common:status.success'),
+      description: t('quickActions.reservationStatusUpdated'),
     });
   };
   
@@ -721,8 +734,8 @@ export function QuickActions() {
   const handleDocumentUpload = async () => {
     if (!selectedUploadVehicle) {
       toast({
-        title: "Error",
-        description: "Please select a vehicle",
+        title: t('common:status.error'),
+        description: t('quickActions.selectVehicle'),
         variant: "destructive",
       });
       return;
@@ -730,8 +743,8 @@ export function QuickActions() {
     
     if (!documentFile) {
       toast({
-        title: "Error",
-        description: "Please select a file to upload",
+        title: t('common:status.error'),
+        description: t('quickActions.selectFileToUpload'),
         variant: "destructive",
       });
       return;
@@ -769,8 +782,8 @@ export function QuickActions() {
       
       // Show success message
       toast({
-        title: "Upload Successful",
-        description: `Successfully uploaded document for ${selectedUploadVehicle.licensePlate}`,
+        title: t('quickActions.uploadSuccessful'),
+        description: t('quickActions.documentUploadSuccess', { plate: selectedUploadVehicle.licensePlate }),
       });
       
       // Reset form
@@ -786,8 +799,8 @@ export function QuickActions() {
       
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to upload document",
+        title: t('common:status.error'),
+        description: error instanceof Error ? error.message : t('quickActions.documentUploadFailed'),
         variant: "destructive",
       });
     } finally {
@@ -799,8 +812,8 @@ export function QuickActions() {
   const handleApkReportUpload = async () => {
     if (!selectedApkVehicle) {
       toast({
-        title: "Error",
-        description: "Please select a vehicle",
+        title: t('common:status.error'),
+        description: t('quickActions.selectVehicle'),
         variant: "destructive",
       });
       return;
@@ -808,8 +821,8 @@ export function QuickActions() {
     
     if (!apkReportFile) {
       toast({
-        title: "Error",
-        description: "Please select a file to upload",
+        title: t('common:status.error'),
+        description: t('quickActions.selectFileToUpload'),
         variant: "destructive",
       });
       return;
@@ -817,8 +830,8 @@ export function QuickActions() {
     
     if (!apkDate) {
       toast({
-        title: "Error",
-        description: "Please enter the APK date",
+        title: t('common:status.error'),
+        description: t('quickActions.enterApkDate'),
         variant: "destructive",
       });
       return;
@@ -877,15 +890,15 @@ export function QuickActions() {
         if (!updateResponse.ok) {
           console.error("Failed to update vehicle APK date:", updateResponse.status);
           toast({
-            title: "Partial Success",
-            description: `APK report uploaded but failed to update vehicle APK date`,
+            title: t('quickActions.partialSuccess'),
+            description: t('quickActions.apkReportPartialFailUpdate'),
             variant: "destructive",
           });
         } else {
           // Successfully updated both document and APK date
           toast({
-            title: "Success",
-            description: `Successfully uploaded APK report and updated APK date for ${selectedApkVehicle.licensePlate}`,
+            title: t('common:status.success'),
+            description: t('quickActions.apkReportUploadSuccess', { plate: selectedApkVehicle.licensePlate }),
           });
           
           // Invalidate cache for this vehicle and for the documents
@@ -907,15 +920,17 @@ export function QuickActions() {
       } catch (error) {
         console.error("Error updating vehicle APK date:", error);
         toast({
-          title: "Partial Success",
-          description: `APK report uploaded but failed to update vehicle APK date: ${error instanceof Error ? error.message : "Unknown error"}`,
+          title: t('quickActions.partialSuccess'),
+          description: t('quickActions.apkReportPartialFailWithError', {
+            error: error instanceof Error ? error.message : t('quickActions.unknownError'),
+          }),
           variant: "destructive",
         });
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to upload APK report",
+        title: t('common:status.error'),
+        description: error instanceof Error ? error.message : t('quickActions.apkReportUploadFailed'),
         variant: "destructive",
       });
     } finally {
@@ -936,7 +951,7 @@ export function QuickActions() {
       
       <Card className="mb-6">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-medium text-gray-800">Quick Actions</CardTitle>
+          <CardTitle className="text-lg font-medium text-gray-800">{t('quickActions.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
@@ -952,7 +967,7 @@ export function QuickActions() {
                   onClick={() => setVehicleReservationDialogOpen(true)}
                 >
                   <ActionIcon name={action.icon || "car"} className="mr-1 h-4 w-4" />
-                  {action.label}
+                  {t(`quickActions.buttons.${action.dialog}`)}
                 </Button>
               );
             }
@@ -968,23 +983,23 @@ export function QuickActions() {
                       size="sm"
                     >
                       <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
-                      {action.label}
+                      {t(`quickActions.buttons.${action.dialog}`)}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>New Reservation</DialogTitle>
+                      <DialogTitle>{t('quickActions.buttons.new-reservation')}</DialogTitle>
                       <DialogDescription>
-                        Create a new reservation by selecting a vehicle and customer.
+                        {t('quickActions.newReservationDescription')}
                       </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
-                      <ReservationForm 
+                      <ReservationForm
                         onSuccess={() => {
                           setReservationDialogOpen(false);
                           invalidateByPrefix("/api/reservations");
                           invalidateByPrefix("/api/reservations/upcoming");
-                          toast({ title: "Success", description: "Reservation created successfully" });
+                          toast({ title: t('common:status.success'), description: t('quickActions.reservationCreated') });
                         }}
                       />
                     </div>
@@ -1004,22 +1019,22 @@ export function QuickActions() {
                       size="sm"
                     >
                       <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
-                      {action.label}
+                      {t(`quickActions.buttons.${action.dialog}`)}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Add New Vehicle</DialogTitle>
+                      <DialogTitle>{t('quickActions.addVehicleTitle')}</DialogTitle>
                       <DialogDescription>
-                        Add a new vehicle to your fleet.
+                        {t('quickActions.addVehicleDescription')}
                       </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
-                      <VehicleForm 
+                      <VehicleForm
                         onSuccess={() => {
                           setVehicleDialogOpen(false);
                           invalidateByPrefix("/api/vehicles");
-                          toast({ title: "Success", description: "Vehicle added successfully" });
+                          toast({ title: t('common:status.success'), description: t('quickActions.vehicleAdded') });
                         }}
                       />
                     </div>
@@ -1039,22 +1054,22 @@ export function QuickActions() {
                       size="sm"
                     >
                       <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
-                      {action.label}
+                      {t(`quickActions.buttons.${action.dialog}`)}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Add New Customer</DialogTitle>
+                      <DialogTitle>{t('quickActions.addCustomerTitle')}</DialogTitle>
                       <DialogDescription>
-                        Add a new customer to your system.
+                        {t('quickActions.addCustomerDescription')}
                       </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
-                      <CustomerForm 
+                      <CustomerForm
                         onSuccess={() => {
                           setCustomerDialogOpen(false);
                           invalidateByPrefix("/api/customers");
-                          toast({ title: "Success", description: "Customer added successfully" });
+                          toast({ title: t('common:status.success'), description: t('quickActions.customerAdded') });
                         }}
                       />
                     </div>
@@ -1074,22 +1089,22 @@ export function QuickActions() {
                       size="sm"
                     >
                       <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
-                      {action.label}
+                      {t(`quickActions.buttons.${action.dialog}`)}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Log New Expense</DialogTitle>
+                      <DialogTitle>{t('quickActions.logExpenseTitle')}</DialogTitle>
                       <DialogDescription>
-                        Record a new expense for a vehicle.
+                        {t('quickActions.logExpenseDescription')}
                       </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
-                      <ExpenseForm 
+                      <ExpenseForm
                         onSuccess={() => {
                           setExpenseDialogOpen(false);
                           invalidateByPrefix("/api/expenses");
-                          toast({ title: "Success", description: "Expense logged successfully" });
+                          toast({ title: t('common:status.success'), description: t('quickActions.expenseLogged') });
                         }}
                       />
                     </div>
@@ -1111,24 +1126,24 @@ export function QuickActions() {
                       size="sm"
                     >
                       <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
-                      {action.label}
+                      {t(`quickActions.buttons.${action.dialog}`)}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Upload Document</DialogTitle>
+                      <DialogTitle>{t('quickActions.documentUploadTitle')}</DialogTitle>
                       <DialogDescription>
-                        Select a vehicle to upload documents for.
+                        {t('quickActions.documentUploadDescription')}
                       </DialogDescription>
                     </DialogHeader>
-                    
+
                     <div className="grid gap-4 py-4">
                       {/* Vehicle Selector */}
                       <div className="grid gap-2">
                         <label className="text-sm font-medium">
-                          Select Vehicle
+                          {t('quickActions.selectVehicleLabel')}
                         </label>
-                        
+
                         {vehicles && vehicles.length > 0 ? (
                           <VehicleSelector 
                             vehicles={vehicles}
@@ -1162,7 +1177,7 @@ export function QuickActions() {
                       <div className="space-y-4 mt-4">
                         <div>
                           <label htmlFor="documentFile" className="text-sm font-medium">
-                            Document (PDF/Image)
+                            {t('quickActions.documentFileLabel')}
                           </label>
                           <div className="mt-1 flex items-center">
                             <input
@@ -1192,7 +1207,7 @@ export function QuickActions() {
                                 onClick={() => setDocumentFile(null)}
                                 className="text-red-500 hover:text-red-700 text-xs"
                               >
-                                Remove
+                                {t('quickActions.remove')}
                               </button>
                             </div>
                           )}
@@ -1200,64 +1215,64 @@ export function QuickActions() {
                         
                         <div>
                           <label htmlFor="documentCategory" className="text-sm font-medium">
-                            Document Category
+                            {t('quickActions.documentCategoryLabel')}
                           </label>
                           <Select value={documentCategory} onValueChange={setDocumentCategory}>
                             <SelectTrigger id="documentCategory" className="w-full">
-                              <SelectValue placeholder="Select category" />
+                              <SelectValue placeholder={t('quickActions.selectCategory')} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="APK Inspection">APK Inspection</SelectItem>
-                              <SelectItem value="Damage Report">Damage Report</SelectItem>
-                              <SelectItem value="Insurance">Insurance</SelectItem>
-                              <SelectItem value="Maintenance Record">Maintenance Record</SelectItem>
-                              <SelectItem value="Receipt">Receipt</SelectItem>
-                              <SelectItem value="Registration">Registration</SelectItem>
-                              <SelectItem value="Vehicle Photos">Vehicle Photos</SelectItem>
-                              <SelectItem value="Warranty">Warranty</SelectItem>
-                              <SelectItem value="Tire Replacement">Tire Replacement</SelectItem>
-                              <SelectItem value="Front Window Replacement">Front Window Replacement</SelectItem>
-                              <SelectItem value="Repair Report">Repair Report</SelectItem>
-                              <SelectItem value="Other">Other</SelectItem>
+                              <SelectItem value="APK Inspection">{t('quickActions.documentCategories.APK Inspection')}</SelectItem>
+                              <SelectItem value="Damage Report">{t('quickActions.documentCategories.Damage Report')}</SelectItem>
+                              <SelectItem value="Insurance">{t('quickActions.documentCategories.Insurance')}</SelectItem>
+                              <SelectItem value="Maintenance Record">{t('quickActions.documentCategories.Maintenance Record')}</SelectItem>
+                              <SelectItem value="Receipt">{t('quickActions.documentCategories.Receipt')}</SelectItem>
+                              <SelectItem value="Registration">{t('quickActions.documentCategories.Registration')}</SelectItem>
+                              <SelectItem value="Vehicle Photos">{t('quickActions.documentCategories.Vehicle Photos')}</SelectItem>
+                              <SelectItem value="Warranty">{t('quickActions.documentCategories.Warranty')}</SelectItem>
+                              <SelectItem value="Tire Replacement">{t('quickActions.documentCategories.Tire Replacement')}</SelectItem>
+                              <SelectItem value="Front Window Replacement">{t('quickActions.documentCategories.Front Window Replacement')}</SelectItem>
+                              <SelectItem value="Repair Report">{t('quickActions.documentCategories.Repair Report')}</SelectItem>
+                              <SelectItem value="Other">{t('quickActions.documentCategories.Other')}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         
                         <div>
                           <label htmlFor="documentNotes" className="text-sm font-medium">
-                            Notes (Optional)
+                            {t('quickActions.notesOptional')}
                           </label>
-                          <Textarea 
-                            id="documentNotes" 
+                          <Textarea
+                            id="documentNotes"
                             value={documentNotes}
                             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDocumentNotes(e.target.value)}
-                            placeholder="Add any notes about this document"
+                            placeholder={t('quickActions.documentNotesPlaceholder')}
                             rows={2}
                             className="resize-none"
                           />
                         </div>
                       </div>
                     )}
-                    
+
                     <DialogFooter className="flex justify-between mt-6">
                       <DialogClose asChild>
                         <Button variant="outline" type="button">
-                          Cancel
+                          {t('common:actions.cancel')}
                         </Button>
                       </DialogClose>
-                      
+
                       <DialogClose asChild data-document-dialog-close>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
+                        <Button
+                          type="button"
+                          variant="outline"
                           className="hidden"
                           ref={documentDialogCloseRef}
                         >
-                          Hidden Close
+                          {t('quickActions.hiddenClose')}
                         </Button>
                       </DialogClose>
-                      
-                      <Button 
+
+                      <Button
                         type="button"
                         disabled={!selectedUploadVehicle || !documentFile || isDocumentUploading}
                         onClick={handleDocumentUpload}
@@ -1265,7 +1280,7 @@ export function QuickActions() {
                         {isDocumentUploading && (
                           <RotateCw className="mr-2 h-4 w-4 animate-spin" />
                         )}
-                        Upload Document
+                        {t('quickActions.uploadDocumentButton')}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -1284,22 +1299,22 @@ export function QuickActions() {
                       size="sm"
                     >
                       <ActionIcon name={action.icon || "hammer"} className="mr-1 h-4 w-4" />
-                      {action.label}
+                      {t(`quickActions.buttons.${action.dialog}`)}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Upload Damage Report</DialogTitle>
+                      <DialogTitle>{t('quickActions.damageReportUploadTitle')}</DialogTitle>
                       <DialogDescription>
-                        Select a vehicle and upload damage report and/or photos.
+                        {t('quickActions.damageReportUploadDescription')}
                       </DialogDescription>
                     </DialogHeader>
-                    
+
                     <div className="grid gap-4 py-4">
                       {/* Vehicle search */}
                       <div className="grid gap-2">
                         <label className="text-sm font-medium">
-                          Select Vehicle
+                          {t('quickActions.selectVehicleLabel')}
                         </label>
                         
                         {vehicles && vehicles.length > 0 ? (
@@ -1335,7 +1350,7 @@ export function QuickActions() {
                       <div className="space-y-4">
                         <div>
                           <label htmlFor="damageForm" className="text-sm font-medium">
-                            Damage Report (PDF/Image)
+                            {t('quickActions.damageReportFileLabel')}
                           </label>
                           <div className="mt-1 flex items-center">
                             <input
@@ -1365,7 +1380,7 @@ export function QuickActions() {
                                 onClick={() => setDamageFormFile(null)}
                                 className="text-red-500 hover:text-red-700 text-xs"
                               >
-                                Remove
+                                {t('quickActions.remove')}
                               </button>
                             </div>
                           )}
@@ -1373,7 +1388,7 @@ export function QuickActions() {
                         
                         <div>
                           <label htmlFor="damagePhotos" className="text-sm font-medium">
-                            Damage Photos (Optional)
+                            {t('quickActions.damagePhotosLabel')}
                           </label>
                           <div className="mt-1 flex items-center">
                             <input
@@ -1399,7 +1414,7 @@ export function QuickActions() {
                           {damagePhotos.length > 0 && (
                             <div className="mt-2 space-y-1">
                               <div className="text-sm font-medium">
-                                Selected Photos ({damagePhotos.length})
+                                {t('quickActions.selectedPhotosCount', { count: damagePhotos.length })}
                               </div>
                               <div className="space-y-1 max-h-24 overflow-y-auto pr-2">
                                 {damagePhotos.map((photo, index) => (
@@ -1415,7 +1430,7 @@ export function QuickActions() {
                                       }}
                                       className="text-red-500 hover:text-red-700 flex-shrink-0"
                                     >
-                                      Remove
+                                      {t('quickActions.remove')}
                                     </button>
                                   </div>
                                 ))}
@@ -1426,7 +1441,7 @@ export function QuickActions() {
                                   onClick={() => setDamagePhotos([])}
                                   className="text-red-500 hover:text-red-700 text-xs"
                                 >
-                                  Remove All Photos
+                                  {t('quickActions.removeAllPhotos')}
                                 </button>
                               )}
                             </div>
@@ -1438,10 +1453,10 @@ export function QuickActions() {
                     <DialogFooter>
                       <DialogClose ref={damageDialogCloseRef} asChild>
                         <Button variant="outline" type="button">
-                          Cancel
+                          {t('common:actions.cancel')}
                         </Button>
                       </DialogClose>
-                      <Button 
+                      <Button
                         type="button"
                         onClick={handleDamageFormUpload}
                         disabled={!selectedDamageVehicle || (!damageFormFile && damagePhotos.length === 0) || isDamageUploading}
@@ -1449,7 +1464,7 @@ export function QuickActions() {
                         {isDamageUploading && (
                           <RotateCw className="mr-2 h-4 w-4 animate-spin" />
                         )}
-                        Upload
+                        {t('quickActions.uploadButton')}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -1468,35 +1483,35 @@ export function QuickActions() {
                       size="sm"
                     >
                       <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
-                      {action.label}
+                      {t(`quickActions.buttons.${action.dialog}`)}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col">
                     <DialogHeader>
-                      <DialogTitle>Send APK Notifications</DialogTitle>
+                      <DialogTitle>{t('quickActions.sendApkNotificationsTitle')}</DialogTitle>
                       <DialogDescription>
-                        Send APK expiry reminders to customers whose vehicles need inspection
+                        {t('quickActions.sendApkNotificationsDescription')}
                       </DialogDescription>
                     </DialogHeader>
-                    
+
                     <div className="flex-1 overflow-y-auto px-1">
                       <div className="space-y-6">
                         {/* Info about APK notifications */}
                         <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
                           <div className="flex items-center mb-2">
                             <ActionIcon name="shield-alert" className="w-4 h-4 text-orange-600 mr-2" />
-                            <h4 className="font-medium text-orange-900 text-sm">APK Inspection Reminders</h4>
+                            <h4 className="font-medium text-orange-900 text-sm">{t('quickActions.apkRemindersHeading')}</h4>
                           </div>
                           <p className="text-xs text-orange-700">
-                            Send reminders to customers whose vehicles have expiring APK certificates.
+                            {t('quickActions.apkRemindersDescription')}
                           </p>
                         </div>
-                        
+
                         {/* Vehicle Selection - Only APK expiring vehicles */}
                         <div className="space-y-3">
-                          <Label>Vehicles Needing APK Inspection</Label>
+                          <Label>{t('quickActions.vehiclesNeedingApk')}</Label>
                           <Input
-                            placeholder="Search by license plate, brand..."
+                            placeholder={t('quickActions.searchByPlateOrBrand')}
                             value={apkSearchQuery}
                             onChange={(e) => setApkSearchQuery(e.target.value)}
                             className="w-full"
@@ -1552,8 +1567,9 @@ export function QuickActions() {
                                           <span className={`ml-2 ${
                                             isOverdue ? 'text-red-600 font-medium' : 'text-orange-600'
                                           }`}>
-                                            APK: {apkDate.toLocaleDateString('nl-NL')}
-                                            {isOverdue ? ' (OVERDUE)' : ` (${daysUntilExpiry} days)`}
+                                            {t('quickActions.apkDateLabel', { date: apkDate.toLocaleDateString('nl-NL') })}
+                                            {' '}
+                                            {isOverdue ? t('quickActions.overdue') : t('quickActions.daysRemainingParen', { count: daysUntilExpiry })}
                                           </span>
                                         </div>
                                       </div>
@@ -1571,7 +1587,7 @@ export function QuickActions() {
                         {selectedApkVehicles.length > 0 && (
                           <div className="p-3 bg-green-50 rounded-lg border border-green-200">
                             <h4 className="font-medium text-green-900 mb-2 text-sm">
-                              Selected for APK Notification ({selectedApkVehicles.length})
+                              {t('quickActions.selectedForApkNotification', { count: selectedApkVehicles.length })}
                             </h4>
                             <div className="space-y-1 text-xs max-h-20 overflow-y-auto">
                               {selectedApkVehicles.map((vehicle) => (
@@ -1587,13 +1603,13 @@ export function QuickActions() {
                         {/* Preview */}
                         {selectedApkVehicles.length > 0 && (
                           <div className="space-y-2">
-                            <Label className="text-sm">Email Preview</Label>
+                            <Label className="text-sm">{t('quickActions.emailPreview')}</Label>
                             <div className="p-3 bg-gray-50 rounded border text-xs">
-                              <strong>Subject:</strong> APK Reminder - [Vehicle] expires soon
+                              <strong>{t('quickActions.subjectLabel')}</strong> {t('quickActions.subjectValue')}
                               <br/><br/>
-                              <strong>Recipients:</strong> Customers with valid email addresses
+                              <strong>{t('quickActions.recipientsLabel')}</strong> {t('quickActions.recipientsValue')}
                               <br/>
-                              <strong>Sender:</strong> Autolease Lam
+                              <strong>{t('quickActions.senderLabel')}</strong> Autolease Lam
                             </div>
                           </div>
                         )}
@@ -1609,14 +1625,14 @@ export function QuickActions() {
                           setApkSearchQuery("");
                         }}
                       >
-                        Cancel
+                        {t('common:actions.cancel')}
                       </Button>
                       <Button
                         onClick={async () => {
                           if (selectedApkVehicles.length === 0) {
                             toast({
-                              title: "No Vehicles Selected",
-                              description: "Please select at least one vehicle",
+                              title: t('quickActions.noVehiclesSelectedTitle'),
+                              description: t('quickActions.selectAtLeastOneVehicle'),
                               variant: "destructive",
                             });
                             return;
@@ -1644,8 +1660,8 @@ export function QuickActions() {
                             const result = await response.json();
                             
                             toast({
-                              title: "APK Notifications Sent Successfully",
-                              description: `${result.sent} emails sent, ${result.failed || 0} failed`,
+                              title: t('quickActions.apkNotificationsSentTitle'),
+                              description: t('quickActions.apkNotificationsSentDescription', { sent: result.sent, failed: result.failed || 0 }),
                             });
 
                             // Reset form
@@ -1655,8 +1671,8 @@ export function QuickActions() {
                           } catch (error) {
                             console.error('Failed to send notifications:', error);
                             toast({
-                              title: "Failed to Send Notifications",
-                              description: error instanceof Error ? error.message : "An error occurred",
+                              title: t('quickActions.failedToSendTitle'),
+                              description: error instanceof Error ? error.message : t('quickActions.anErrorOccurred'),
                               variant: "destructive",
                             });
                           } finally {
@@ -1669,12 +1685,12 @@ export function QuickActions() {
                         {isLoadingApkNotifications ? (
                           <>
                             <ActionIcon name="loader-2" className="w-4 h-4 mr-2 animate-spin" />
-                            Sending...
+                            {t('quickActions.sending')}
                           </>
                         ) : (
                           <>
                             <ActionIcon name="shield-alert" className="w-4 h-4 mr-2" />
-                            Send APK Reminders ({selectedApkVehicles.length})
+                            {t('quickActions.sendApkReminders', { count: selectedApkVehicles.length })}
                           </>
                         )}
                       </Button>
@@ -1695,26 +1711,26 @@ export function QuickActions() {
                       size="sm"
                     >
                       <ActionIcon name={action.icon || "upload"} className="mr-1 h-4 w-4" />
-                      {action.label}
+                      {t(`quickActions.buttons.${action.dialog}`)}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Upload APK Report</DialogTitle>
+                      <DialogTitle>{t('quickActions.apkReportUploadTitle')}</DialogTitle>
                       <DialogDescription>
-                        Select a vehicle and upload the APK inspection report. This will also update the APK date for the vehicle.
+                        {t('quickActions.apkReportUploadDescription')}
                       </DialogDescription>
                     </DialogHeader>
-                    
+
                     <div className="grid gap-4 py-4">
                       {/* Vehicle Selector */}
                       <div className="grid gap-2">
                         <label className="text-sm font-medium">
-                          Select Vehicle
+                          {t('quickActions.selectVehicleLabel')}
                         </label>
-                        
+
                         {vehicles && vehicles.length > 0 ? (
-                          <VehicleSelector 
+                          <VehicleSelector
                             vehicles={vehicles}
                             value={selectedApkVehicle ? selectedApkVehicle.id.toString() : ""}
                             onChange={(value) => {
@@ -1744,7 +1760,7 @@ export function QuickActions() {
                             </div>
                             {selectedApkVehicle.apkDate && (
                               <div className="flex items-center gap-2 text-sm">
-                                <span className="text-muted-foreground">Current APK Date:</span>
+                                <span className="text-muted-foreground">{t('quickActions.currentApkDate')}</span>
                                 <span className="font-medium">{formatDate(selectedApkVehicle.apkDate)}</span>
                               </div>
                             )}
@@ -1758,7 +1774,7 @@ export function QuickActions() {
                       <div className="space-y-4 mt-4">
                         <div>
                           <label htmlFor="apkReportFile" className="text-sm font-medium">
-                            APK Report (PDF/Image)
+                            {t('quickActions.apkReportFileLabel')}
                           </label>
                           <div className="mt-1 flex items-center">
                             <input
@@ -1788,7 +1804,7 @@ export function QuickActions() {
                                 onClick={() => setApkReportFile(null)}
                                 className="text-red-500 hover:text-red-700 text-xs"
                               >
-                                Remove
+                                {t('quickActions.remove')}
                               </button>
                             </div>
                           )}
@@ -1796,11 +1812,11 @@ export function QuickActions() {
                         
                         <div>
                           <label htmlFor="apkDate" className="text-sm font-medium">
-                            New APK Date
+                            {t('quickActions.newApkDate')}
                           </label>
                           {selectedApkVehicle.apkDate && (
                             <div className="text-xs text-muted-foreground mb-1">
-                              Current: {formatDate(selectedApkVehicle.apkDate)}
+                              {t('quickActions.current', { date: formatDate(selectedApkVehicle.apkDate) })}
                             </div>
                           )}
                           <Input
@@ -1814,39 +1830,39 @@ export function QuickActions() {
                         
                         <div>
                           <label htmlFor="apkNotes" className="text-sm font-medium">
-                            Notes (Optional)
+                            {t('quickActions.notesOptional')}
                           </label>
-                          <Textarea 
-                            id="apkNotes" 
+                          <Textarea
+                            id="apkNotes"
                             value={apkNotes}
                             onChange={(e) => setApkNotes(e.target.value)}
-                            placeholder="Add any notes about this APK report"
+                            placeholder={t('quickActions.apkNotesPlaceholder')}
                             rows={2}
                             className="resize-none"
                           />
                         </div>
                       </div>
                     )}
-                    
+
                     <DialogFooter className="flex justify-between mt-6">
                       <DialogClose asChild>
                         <Button variant="outline" type="button">
-                          Cancel
+                          {t('common:actions.cancel')}
                         </Button>
                       </DialogClose>
-                      
+
                       <DialogClose asChild data-apk-dialog-close>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
+                        <Button
+                          type="button"
+                          variant="outline"
                           className="hidden"
                           ref={apkDialogCloseRef}
                         >
-                          Hidden Close
+                          {t('quickActions.hiddenClose')}
                         </Button>
                       </DialogClose>
-                      
-                      <Button 
+
+                      <Button
                         type="button"
                         disabled={!selectedApkVehicle || !apkReportFile || !apkDate || isApkUploading}
                         onClick={handleApkReportUpload}
@@ -1854,7 +1870,7 @@ export function QuickActions() {
                         {isApkUploading && (
                           <RotateCw className="mr-2 h-4 w-4 animate-spin" />
                         )}
-                        Upload APK Report
+                        {t('quickActions.apkReportUploadTitle')}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -1873,28 +1889,28 @@ export function QuickActions() {
                       size="sm"
                     >
                       <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
-                      {action.label}
+                      {t(`quickActions.buttons.${action.dialog}`)}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Change Vehicle Registration</DialogTitle>
+                      <DialogTitle>{t('quickActions.changeRegistrationTitle')}</DialogTitle>
                       <DialogDescription>
-                        Select vehicles and change their registration status to either "Opnaam" or "BV".
+                        {t('quickActions.changeRegistrationDescription')}
                       </DialogDescription>
                     </DialogHeader>
-                    
+
                     <div className="grid gap-4 py-4">
                       {/* Search and select vehicles */}
                       <div className="space-y-2">
                         <label className="text-sm font-medium">
-                          Select Vehicles
+                          {t('quickActions.selectVehiclesLabel')}
                         </label>
-                        
+
                         <div className="relative">
                           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                           <Input
-                            placeholder="Search by license plate, brand or model"
+                            placeholder={t('quickActions.searchByPlateOrBrandModel')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value.toLowerCase())}
                             className="mb-2 pl-8"
@@ -1948,7 +1964,7 @@ export function QuickActions() {
                               
                               return filteredVehicles.length === 0 ? (
                                 <div className="p-2 text-center text-sm text-muted-foreground">
-                                  No vehicles match your search
+                                  {t('quickActions.noVehiclesMatchSearch')}
                                 </div>
                               ) : (
                                 <div className="space-y-2">
@@ -1959,7 +1975,7 @@ export function QuickActions() {
                                     return (
                                       <div key={status} className="space-y-1">
                                         <div className="sticky top-0 z-10 bg-background px-2 py-1 text-xs font-semibold border-b">
-                                          {status} ({vehicles.length})
+                                          {status === 'Unspecified' ? t('quickActions.unspecified') : status} ({vehicles.length})
                                         </div>
                                         <div>
                                           {vehicles.map(vehicle => (
@@ -2008,7 +2024,7 @@ export function QuickActions() {
                         
                         <div className="flex justify-between items-center text-sm">
                           <div>
-                            Selected: {selectedVehicles.length} vehicle{selectedVehicles.length !== 1 && 's'}
+                            {t('quickActions.selectedCount', { count: selectedVehicles.length })}
                           </div>
                           {selectedVehicles.length > 0 && (
                             <Button
@@ -2016,23 +2032,23 @@ export function QuickActions() {
                               size="sm"
                               onClick={() => setSelectedVehicles([])}
                             >
-                              Clear
+                              {t('quickActions.clear')}
                             </Button>
                           )}
                         </div>
                       </div>
-                      
+
                       {/* Registration Status */}
                       <div className="space-y-2">
                         <label className="text-sm font-medium">
-                          Registration Status
+                          {t('quickActions.registrationStatusLabel')}
                         </label>
                         <Select
                           value={registrationStatus}
                           onValueChange={(value) => setRegistrationStatus(value as "opnaam" | "bv")}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
+                            <SelectValue placeholder={t('quickActions.selectStatus')} />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="opnaam">Opnaam</SelectItem>
@@ -2044,9 +2060,9 @@ export function QuickActions() {
                     
                     <DialogFooter>
                       <Button variant="outline" type="button" onClick={() => {}}>
-                        Cancel
+                        {t('common:actions.cancel')}
                       </Button>
-                      <Button 
+                      <Button
                         type="button"
                         onClick={handleChangeRegistration}
                         disabled={selectedVehicles.length === 0 || isLoading}
@@ -2054,7 +2070,7 @@ export function QuickActions() {
                         {isLoading && (
                           <RotateCw className="mr-2 h-4 w-4 animate-spin" />
                         )}
-                        Apply Changes
+                        {t('quickActions.applyChanges')}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -2074,21 +2090,21 @@ export function QuickActions() {
                         size="sm"
                       >
                         <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
-                        {action.label}
+                        {t(`quickActions.buttons.${action.dialog}`)}
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
-                        <DialogTitle>Update Vehicle Fuel Status</DialogTitle>
+                        <DialogTitle>{t('quickActions.updateFuelStatusTitle')}</DialogTitle>
                         <DialogDescription>
-                          Select a vehicle to update its fuel level and record refill details.
+                          {t('quickActions.updateFuelStatusDescription')}
                         </DialogDescription>
                       </DialogHeader>
-                      
+
                       <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
                           <label className="text-sm font-medium">
-                            Select Vehicle
+                            {t('quickActions.selectVehicleLabel')}
                           </label>
                           
                           {vehicles && vehicles.length > 0 ? (
@@ -2122,11 +2138,11 @@ export function QuickActions() {
                       <DialogFooter className="flex justify-between mt-2">
                         <DialogClose asChild>
                           <Button variant="outline" type="button">
-                            Cancel
+                            {t('common:actions.cancel')}
                           </Button>
                         </DialogClose>
-                        
-                        <Button 
+
+                        <Button
                           type="button"
                           disabled={!selectedFuelVehicle}
                           onClick={() => {
@@ -2136,7 +2152,7 @@ export function QuickActions() {
                             }
                           }}
                         >
-                          Continue
+                          {t('quickActions.continue')}
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -2175,7 +2191,7 @@ export function QuickActions() {
                   onClick={() => setInteractiveDamageCheckDialogOpen(true)}
                 >
                   <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
-                  {action.label}
+                  {t(`quickActions.buttons.${action.dialog}`)}
                 </Button>
               );
             }
@@ -2192,7 +2208,7 @@ export function QuickActions() {
                 >
                   <Link to={action.href}>
                     <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
-                    {action.label}
+                    {t(`quickActions.buttons.${action.dialog}`)}
                   </Link>
                 </Button>
               );
@@ -2207,7 +2223,7 @@ export function QuickActions() {
                 size="sm"
               >
                 <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
-                {action.label}
+                {t(`quickActions.buttons.${action.dialog}`)}
               </Button>
             );
           })}
@@ -2218,7 +2234,7 @@ export function QuickActions() {
       {/* Interactive Damage Check Dialog - Kept mounted to preserve state */}
       <Dialog open={interactiveDamageCheckDialogOpen} onOpenChange={setInteractiveDamageCheckDialogOpen}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh] p-0 overflow-hidden">
-          <DialogTitle className="sr-only">Interactive Damage Check</DialogTitle>
+          <DialogTitle className="sr-only">{t('quickActions.buttons.interactive-damage-check')}</DialogTitle>
           <div className="h-full overflow-auto">
             <InteractiveDamageCheck onClose={() => setInteractiveDamageCheckDialogOpen(false)} />
           </div>

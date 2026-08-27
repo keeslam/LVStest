@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { 
   Dialog, 
@@ -24,6 +25,7 @@ export function ReservationEditDialog({
   reservationId,
   onSuccess 
 }: ReservationEditDialogProps) {
+  const { t } = useTranslation("reservations");
   const [initialData, setInitialData] = useState<Reservation | null>(null);
   
   // Fetch reservation data
@@ -73,11 +75,11 @@ export function ReservationEditDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>Edit Reservation</DialogTitle>
+          <DialogTitle>{t('editDialog.title')}</DialogTitle>
           <DialogDescription>
-            Modify reservation details and save changes
+            {t('editDialog.description')}
           </DialogDescription>
-          <p className="text-gray-500">Reservation #{reservationId}</p>
+          <p className="text-gray-500">{t('editDialog.reservationHash', { id: reservationId })}</p>
         </DialogHeader>
 
         {isLoading ? (
@@ -89,8 +91,8 @@ export function ReservationEditDialog({
           </div>
         ) : error || !reservation ? (
           <div className="bg-red-50 border border-red-200 p-4 rounded-md">
-            <h3 className="text-lg font-semibold text-red-800">Error</h3>
-            <p className="text-red-600">Failed to load reservation details. {(error as Error)?.message}</p>
+            <h3 className="text-lg font-semibold text-red-800">{t('editDialog.errorTitle')}</h3>
+            <p className="text-red-600">{t('editDialog.failedToLoad', { error: (error as Error)?.message || '' })}</p>
           </div>
         ) : (
           initialData && (

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +34,7 @@ export function VehicleEditDialog({
   open: controlledOpen,
   onOpenChange,
 }: VehicleEditDialogProps) {
+  const { t } = useTranslation("vehicles");
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
@@ -73,9 +75,9 @@ export function VehicleEditDialog({
       )}
       <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Vehicle</DialogTitle>
+          <DialogTitle>{t('editDialog.title')}</DialogTitle>
           <DialogDescription>
-            Update vehicle information and details
+            {t('editDialog.description')}
           </DialogDescription>
         </DialogHeader>
         <div className="mt-4">
@@ -84,24 +86,24 @@ export function VehicleEditDialog({
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : vehicle ? (
-            <VehicleForm 
+            <VehicleForm
               editMode={true}
               initialData={vehicle}
               onSuccess={handleSuccess}
               redirectToList={false}
               customCancelButton={
-                <Button 
-                  type="button" 
+                <Button
+                  type="button"
                   variant="outline"
                   onClick={() => setOpen(false)}
                 >
-                  Cancel
+                  {t('editDialog.cancelButton')}
                 </Button>
               }
             />
           ) : (
             <div className="text-center py-8 text-gray-500">
-              Failed to load vehicle data
+              {t('editDialog.failedToLoad')}
             </div>
           )}
         </div>

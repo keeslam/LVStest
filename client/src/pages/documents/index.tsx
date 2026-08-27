@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { UserRole } from "@shared/schema";
 
 export default function DocumentsIndex() {
+  const { t } = useTranslation("documents");
   const [searchQuery, setSearchQuery] = useState("");
   const [vehicleFilter, setVehicleFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -85,8 +87,8 @@ export default function DocumentsIndex() {
     },
     onSuccess: () => {
       toast({
-        title: "Document deleted",
-        description: "The document has been successfully deleted.",
+        title: t('indexPage.toasts.documentDeletedTitle'),
+        description: t('indexPage.toasts.documentDeletedDescription'),
       });
       invalidateByPrefix("/api/documents");
       setDeleteDialogOpen(false);
@@ -94,8 +96,8 @@ export default function DocumentsIndex() {
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete document. Please try again.",
+        title: t('indexPage.toasts.errorTitle'),
+        description: error.message || t('indexPage.toasts.deleteDocumentFailed'),
         variant: "destructive",
       });
     },
@@ -109,8 +111,8 @@ export default function DocumentsIndex() {
     },
     onSuccess: () => {
       toast({
-        title: "Email sent",
-        description: "The document has been successfully emailed.",
+        title: t('indexPage.toasts.emailSentTitle'),
+        description: t('indexPage.toasts.emailSentDescription'),
       });
       setEmailDialogOpen(false);
       setDocumentToEmail(null);
@@ -120,8 +122,8 @@ export default function DocumentsIndex() {
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to send email. Please try again.",
+        title: t('indexPage.toasts.errorTitle'),
+        description: error.message || t('indexPage.toasts.sendEmailFailed'),
         variant: "destructive",
       });
     },
@@ -135,8 +137,8 @@ export default function DocumentsIndex() {
     },
     onSuccess: () => {
       toast({
-        title: "Template deleted",
-        description: "The PDF template has been successfully deleted.",
+        title: t('indexPage.toasts.templateDeletedTitle'),
+        description: t('indexPage.toasts.templateDeletedDescription'),
       });
       invalidateByPrefix("/api/pdf-templates");
       setTemplateDeleteDialogOpen(false);
@@ -144,8 +146,8 @@ export default function DocumentsIndex() {
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete template. Please try again.",
+        title: t('indexPage.toasts.errorTitle'),
+        description: error.message || t('indexPage.toasts.deleteTemplateFailed'),
         variant: "destructive",
       });
     },
@@ -167,8 +169,12 @@ export default function DocumentsIndex() {
   // Handle email document
   const handleEmailDocument = (document: Document) => {
     setDocumentToEmail(document);
-    setEmailSubject(`Document: ${document.fileName}`);
-    setEmailMessage(`Please find the attached document: ${document.fileName}\n\nDocument Type: ${document.documentType}\nUpload Date: ${new Date(document.uploadDate || '').toLocaleDateString()}`);
+    setEmailSubject(t('indexPage.emailDefaults.subject', { fileName: document.fileName }));
+    setEmailMessage(t('indexPage.emailDefaults.message', {
+      fileName: document.fileName,
+      documentType: document.documentType,
+      uploadDate: new Date(document.uploadDate || '').toLocaleDateString(),
+    }));
     setEmailDialogOpen(true);
   };
 
@@ -271,32 +277,32 @@ export default function DocumentsIndex() {
               
               // Show success message
               toast({
-                title: "Printing Started",
-                description: "Print dialog should now be open. The popup will close automatically.",
+                title: t('indexPage.toasts.printingStartedTitle'),
+                description: t('indexPage.toasts.printingStartedDescription'),
                 duration: 3000,
               });
-              
+
             } catch (error) {
               console.error('Failed to print from popup window:', error);
               printWindow.close();
-              
+
               // Last resort fallback message
               toast({
-                title: "Print Failed",
-                description: "Your browser blocked printing. Please use the Download button and print manually.",
+                title: t('indexPage.toasts.printFailedTitle'),
+                description: t('indexPage.toasts.printFailedDescription'),
                 variant: "destructive",
                 duration: 5000,
               });
             }
           }, 1500); // Give time for content to fully load
         };
-        
+
         // Handle case where popup is blocked
         printWindow.onerror = () => {
           console.error('Print popup window failed to load');
           toast({
-            title: "Popup Blocked",
-            description: "Please allow popups and try again, or use the Download button.",
+            title: t('indexPage.toasts.popupBlockedTitle'),
+            description: t('indexPage.toasts.popupBlockedDescription'),
             variant: "destructive",
             duration: 5000,
           });
@@ -304,8 +310,8 @@ export default function DocumentsIndex() {
       } else {
         console.error('Failed to open print popup window');
         toast({
-          title: "Popup Blocked",
-          description: "Please allow popups and try again, or use the Download button.",
+          title: t('indexPage.toasts.popupBlockedTitle'),
+          description: t('indexPage.toasts.popupBlockedDescription'),
           variant: "destructive",
           duration: 5000,
         });
@@ -444,7 +450,7 @@ export default function DocumentsIndex() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Document Management</h1>
+        <h1 className="text-2xl font-bold">{t('indexPage.title')}</h1>
         <Link href="/documents/upload">
           <Button>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-upload mr-2">
@@ -452,44 +458,44 @@ export default function DocumentsIndex() {
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" x2="12" y1="3" y2="15" />
             </svg>
-            Upload Document
+            {t('indexPage.uploadDocumentButton')}
           </Button>
         </Link>
       </div>
-      
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="library">Document Library</TabsTrigger>
-          <TabsTrigger value="template-editor">Contract Templates</TabsTrigger>
-          <TabsTrigger value="transport-templates" data-testid="tab-transport-templates">Transport Report Templates</TabsTrigger>
-          <TabsTrigger value="damage-check">Damage Check Templates</TabsTrigger>
+          <TabsTrigger value="library">{t('indexPage.tabLibrary')}</TabsTrigger>
+          <TabsTrigger value="template-editor">{t('indexPage.tabContractTemplates')}</TabsTrigger>
+          <TabsTrigger value="transport-templates" data-testid="tab-transport-templates">{t('indexPage.tabTransportTemplates')}</TabsTrigger>
+          <TabsTrigger value="damage-check">{t('indexPage.tabDamageCheckTemplates')}</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="library">
           <Card>
             <CardHeader>
-              <CardTitle>Document Library</CardTitle>
+              <CardTitle>{t('indexPage.libraryCardTitle')}</CardTitle>
               <CardDescription>
-                Manage all documents related to your vehicles.
+                {t('indexPage.libraryCardDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col md:flex-row gap-4 mb-6">
                 <Input
-                  placeholder="Search documents..."
+                  placeholder={t('indexPage.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="max-w-sm"
                 />
-                
+
                 <div className="flex gap-4">
                   <Select value={vehicleFilter} onValueChange={setVehicleFilter}>
                     <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Filter by vehicle" />
+                      <SelectValue placeholder={t('indexPage.filterByVehiclePlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Vehicles</SelectItem>
-                      <SelectItem value="general">General Reports</SelectItem>
+                      <SelectItem value="all">{t('indexPage.allVehicles')}</SelectItem>
+                      <SelectItem value="general">{t('indexPage.generalReports')}</SelectItem>
                       {vehicles?.map((vehicle) => (
                         <SelectItem key={vehicle.id} value={vehicle.id.toString()}>
                           {displayLicensePlate(vehicle.licensePlate)}
@@ -497,22 +503,22 @@ export default function DocumentsIndex() {
                       ))}
                     </SelectContent>
                   </Select>
-                  
+
                   <Select value={typeFilter} onValueChange={setTypeFilter}>
                     <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Filter by type" />
+                      <SelectValue placeholder={t('indexPage.filterByTypePlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
                       {documentTypes.map((type) => (
                         <SelectItem key={type} value={type}>
-                          {type === "all" ? "All Document Types" : type}
+                          {type === "all" ? t('indexPage.allDocumentTypes') : type}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              
+
               {isLoadingDocuments ? (
                 <div className="flex justify-center items-center h-64">
                   <svg className="animate-spin h-8 w-8 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -522,7 +528,7 @@ export default function DocumentsIndex() {
                 </div>
               ) : filteredDocuments?.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  No documents found matching your filters.
+                  {t('indexPage.noDocumentsFound')}
                 </div>
               ) : (
                 <>
@@ -532,7 +538,7 @@ export default function DocumentsIndex() {
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm text-gray-500">Total Vehicles</p>
+                            <p className="text-sm text-gray-500">{t('indexPage.statTotalVehicles')}</p>
                             <p className="text-2xl font-bold">{vehicleIds.length}</p>
                           </div>
                           <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
@@ -549,7 +555,7 @@ export default function DocumentsIndex() {
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm text-gray-500">Total Documents</p>
+                            <p className="text-sm text-gray-500">{t('indexPage.statTotalDocuments')}</p>
                             <p className="text-2xl font-bold">{filteredDocuments?.length || 0}</p>
                           </div>
                           <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
@@ -565,7 +571,7 @@ export default function DocumentsIndex() {
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm text-gray-500">Document Types</p>
+                            <p className="text-sm text-gray-500">{t('indexPage.statDocumentTypes')}</p>
                             <p className="text-2xl font-bold">{documentTypes.length - 1}</p>
                           </div>
                           <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
@@ -598,11 +604,11 @@ export default function DocumentsIndex() {
                                   <ChevronRight className="h-5 w-5 text-gray-500" />
                                 )}
                                 <h3 className="text-lg font-semibold text-gray-900">
-                                  {vehicleId === "general" ? "General Reports" : getVehicleName(parseInt(vehicleId))}
+                                  {vehicleId === "general" ? t('indexPage.generalReports') : getVehicleName(parseInt(vehicleId))}
                                 </h3>
                               </div>
                               <Badge variant="secondary" className="text-sm">
-                                {totalDocs} document{totalDocs !== 1 ? 's' : ''}
+                                {t('indexPage.documentCount', { count: totalDocs })}
                               </Badge>
                             </div>
                           </button>
@@ -724,7 +730,7 @@ export default function DocumentsIndex() {
                                           data-testid={`button-view-document-${doc.id}`}
                                         >
                                           <Eye className="h-3.5 w-3.5" />
-                                          View
+                                          {t('indexPage.viewButton')}
                                         </button>
                                         
                                         <a 
@@ -739,7 +745,7 @@ export default function DocumentsIndex() {
                                             <polyline points="7 10 12 15 17 10"/>
                                             <line x1="12" x2="12" y1="15" y2="3"/>
                                           </svg>
-                                          Download
+                                          {t('indexPage.downloadButton')}
                                         </a>
                                         
                                         {canEmailDocument(doc.documentType) && (
@@ -752,25 +758,25 @@ export default function DocumentsIndex() {
                                               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                                               <polyline points="22,6 12,13 2,6"/>
                                             </svg>
-                                            Email
+                                            {t('indexPage.emailButton')}
                                           </button>
                                         )}
-                                        
-                                        <button 
+
+                                        <button
                                           onClick={() => handlePrintDocument(doc)}
                                           className="text-green-600 hover:text-green-800 text-sm flex items-center gap-1 transition-colors"
                                           data-testid={`button-print-document-${doc.id}`}
                                         >
                                           <Printer className="h-3.5 w-3.5" />
-                                          Print
+                                          {t('indexPage.printButton')}
                                         </button>
-                                        <button 
+                                        <button
                                           onClick={() => handleDeleteDocument(doc)}
                                           className="text-red-600 hover:text-red-800 text-sm flex items-center gap-1 transition-colors"
                                           data-testid={`button-delete-document-${doc.id}`}
                                         >
                                           <Trash2 className="h-3.5 w-3.5" />
-                                          Delete
+                                          {t('indexPage.deleteButton')}
                                         </button>
                                       </div>
                                     </CardContent>
@@ -797,7 +803,7 @@ export default function DocumentsIndex() {
                         onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                         disabled={currentPage === 1}
                       >
-                        Previous
+                        {t('indexPage.previousButton')}
                       </Button>
                       <div className="flex items-center gap-2">
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -818,7 +824,7 @@ export default function DocumentsIndex() {
                         onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                         disabled={currentPage === totalPages}
                       >
-                        Next
+                        {t('indexPage.nextButton')}
                       </Button>
                     </div>
                   )}
@@ -831,20 +837,20 @@ export default function DocumentsIndex() {
         <TabsContent value="template-editor">
           <Card>
             <CardHeader>
-              <CardTitle>Contract Template Editor</CardTitle>
+              <CardTitle>{t('indexPage.contractTemplateEditorTitle')}</CardTitle>
               <CardDescription>
-                Manage contract templates for your reservations
+                {t('indexPage.contractTemplateEditorDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="mb-6">
-                <p className="mb-4">Open the dedicated template editor to create and manage contract templates.</p>
+                <p className="mb-4">{t('indexPage.openTemplateEditorIntro')}</p>
                 <Button onClick={() => setTemplateEditorDialogOpen(true)} data-testid="button-open-template-editor">
                   <FileEdit className="mr-2 h-4 w-4" />
-                  Open Template Editor
+                  {t('indexPage.openTemplateEditorButton')}
                 </Button>
               </div>
-              
+
               {isLoadingTemplates ? (
                 <div className="flex justify-center items-center h-32">
                   <svg className="animate-spin h-8 w-8 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -854,7 +860,7 @@ export default function DocumentsIndex() {
                 </div>
               ) : templates && Array.isArray(templates) && templates.length > 0 ? (
                 <div>
-                  <h3 className="text-lg font-medium mb-4 border-b pb-2">Available Templates</h3>
+                  <h3 className="text-lg font-medium mb-4 border-b pb-2">{t('indexPage.availableTemplatesTitle')}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {templates.map((template: any) => (
                       <Card key={template.id} className="overflow-hidden">
@@ -902,7 +908,7 @@ export default function DocumentsIndex() {
                             {template.isDefault && (
                               <Badge variant="secondary" className="ml-2">
                                 <Star className="h-3 w-3 mr-1" />
-                                Default
+                                {t('indexPage.defaultBadge')}
                               </Badge>
                             )}
                           </div>
@@ -916,16 +922,16 @@ export default function DocumentsIndex() {
                                 data-testid={`button-edit-template-${template.id}`}
                               >
                                 <FileEdit className="h-3 w-3 mr-1" />
-                                Edit
+                                {t('indexPage.editButton')}
                               </Button>
-                              <a 
+                              <a
                                 href={`/api/pdf-templates/${template.id}/preview`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-3 py-2"
                                 data-testid={`button-preview-template-${template.id}`}
                               >
-                                Preview
+                                {t('indexPage.previewButton')}
                               </a>
                             </div>
                             <Button 
@@ -945,7 +951,7 @@ export default function DocumentsIndex() {
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
-                  No templates found. Create your first template using the editor.
+                  {t('indexPage.noTemplatesFound')}
                 </div>
               )}
             </CardContent>
@@ -955,17 +961,17 @@ export default function DocumentsIndex() {
         <TabsContent value="transport-templates">
           <Card>
             <CardHeader>
-              <CardTitle>Transport Report Template Editor</CardTitle>
+              <CardTitle>{t('indexPage.transportTemplateEditorTitle')}</CardTitle>
               <CardDescription>
-                Manage the driver-facing report — one big, clear page per transport
+                {t('indexPage.transportTemplateEditorDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="mb-6">
-                <p className="mb-4">Open the dedicated template editor to design and manage transport report templates.</p>
+                <p className="mb-4">{t('indexPage.openTransportTemplateEditorIntro')}</p>
                 <Button onClick={() => setTransportTemplateEditorDialogOpen(true)} data-testid="button-open-transport-template-editor">
                   <FileEdit className="mr-2 h-4 w-4" />
-                  Open Template Editor
+                  {t('indexPage.openTemplateEditorButton')}
                 </Button>
               </div>
 
@@ -978,7 +984,7 @@ export default function DocumentsIndex() {
                 </div>
               ) : transportTemplates && transportTemplates.length > 0 ? (
                 <div>
-                  <h3 className="text-lg font-medium mb-4 border-b pb-2">Available Templates</h3>
+                  <h3 className="text-lg font-medium mb-4 border-b pb-2">{t('indexPage.availableTemplatesTitle')}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {transportTemplates.map((template: any) => (
                       <Card key={template.id} className="overflow-hidden">
@@ -1001,7 +1007,7 @@ export default function DocumentsIndex() {
                             {template.isDefault && (
                               <Badge variant="secondary" className="ml-2">
                                 <Star className="h-3 w-3 mr-1" />
-                                Default
+                                {t('indexPage.defaultBadge')}
                               </Badge>
                             )}
                           </div>
@@ -1012,7 +1018,7 @@ export default function DocumentsIndex() {
                             onClick={() => setTransportTemplateEditorDialogOpen(true)}
                           >
                             <FileEdit className="h-3 w-3 mr-1" />
-                            Edit
+                            {t('indexPage.editButton')}
                           </Button>
                         </CardContent>
                       </Card>
@@ -1021,7 +1027,7 @@ export default function DocumentsIndex() {
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
-                  No templates found. Create your first template using the editor.
+                  {t('indexPage.noTemplatesFound')}
                 </div>
               )}
             </CardContent>
@@ -1040,19 +1046,19 @@ export default function DocumentsIndex() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Document</AlertDialogTitle>
+            <AlertDialogTitle>{t('indexPage.deleteDocumentTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{documentToDelete?.fileName}"? This action cannot be undone.
+              {t('indexPage.deleteDocumentDescription', { fileName: documentToDelete?.fileName })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteDocument}
               className="bg-red-600 hover:bg-red-700"
               disabled={deleteDocumentMutation.isPending}
             >
-              {deleteDocumentMutation.isPending ? "Deleting..." : "Delete"}
+              {deleteDocumentMutation.isPending ? t('indexPage.deletingButton') : t('indexPage.deleteButton')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1062,20 +1068,20 @@ export default function DocumentsIndex() {
       <AlertDialog open={templateDeleteDialogOpen} onOpenChange={setTemplateDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete PDF Template</AlertDialogTitle>
+            <AlertDialogTitle>{t('indexPage.deletePdfTemplateTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the template "{templateToDelete?.name}"? This action cannot be undone.
+              {t('indexPage.deletePdfTemplateDescription', { name: templateToDelete?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteTemplate}
               className="bg-red-600 hover:bg-red-700"
               disabled={deleteTemplateMutation.isPending}
               data-testid="button-confirm-delete-template"
             >
-              {deleteTemplateMutation.isPending ? "Deleting..." : "Delete"}
+              {deleteTemplateMutation.isPending ? t('indexPage.deletingButton') : t('indexPage.deleteButton')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1087,7 +1093,7 @@ export default function DocumentsIndex() {
           <AlertDialogHeader className="flex-shrink-0">
             <AlertDialogTitle>{documentToPrint?.fileName}</AlertDialogTitle>
             <AlertDialogDescription>
-              Document preview
+              {t('indexPage.documentPreviewDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex-1 overflow-hidden border rounded mb-4">
@@ -1096,7 +1102,7 @@ export default function DocumentsIndex() {
                 id="print-preview-iframe"
                 src={`/api/documents/view/${documentToPrint.id}`}
                 className="w-full h-full border-0"
-                title="Document Preview"
+                title={t('indexPage.documentPreviewIframeTitle')}
                 onError={handleIframeError}
               />
             )}
@@ -1107,29 +1113,28 @@ export default function DocumentsIndex() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Preview Blocked</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">{t('indexPage.previewBlockedTitle')}</h3>
                 <p className="text-gray-600 mb-4">
-                  Your browser blocked the document preview due to security settings. 
-                  You can still print the document - it will open in a new tab.
+                  {t('indexPage.previewBlockedDescription')}
                 </p>
-                <Button 
+                <Button
                   onClick={() => window.open(`/api/documents/view/${documentToPrint.id}`, '_blank')}
                   variant="outline"
                   className="mb-2"
                 >
-                  Open in New Tab
+                  {t('indexPage.openInNewTabButton')}
                 </Button>
               </div>
             )}
           </div>
           <AlertDialogFooter className="flex-shrink-0">
-            <AlertDialogCancel onClick={() => setPrintDialogOpen(false)}>Close</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setPrintDialogOpen(false)}>{t('indexPage.closeButton')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={printDocument}
               className="bg-blue-600 hover:bg-blue-700"
             >
               <Printer className="h-4 w-4 mr-2" />
-              Print
+              {t('indexPage.printButton')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1139,24 +1144,24 @@ export default function DocumentsIndex() {
       <AlertDialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
         <AlertDialogContent className="max-w-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Email Document</AlertDialogTitle>
+            <AlertDialogTitle>{t('indexPage.emailDocumentTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Send "{documentToEmail?.fileName}" via email
+              {t('indexPage.emailDocumentDescription', { fileName: documentToEmail?.fileName })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label htmlFor="email-recipients">Recipients (comma-separated)</Label>
+              <Label htmlFor="email-recipients">{t('indexPage.recipientsLabel')}</Label>
               <Input
                 id="email-recipients"
-                placeholder="john@example.com, jane@example.com"
+                placeholder={t('indexPage.recipientsPlaceholder')}
                 value={emailRecipients}
                 onChange={(e) => setEmailRecipients(e.target.value)}
                 className="mt-1"
               />
             </div>
             <div>
-              <Label htmlFor="email-subject">Subject</Label>
+              <Label htmlFor="email-subject">{t('indexPage.subjectLabel')}</Label>
               <Input
                 id="email-subject"
                 value={emailSubject}
@@ -1165,19 +1170,19 @@ export default function DocumentsIndex() {
               />
             </div>
             <div>
-              <Label htmlFor="email-message">Message</Label>
+              <Label htmlFor="email-message">{t('indexPage.messageLabel')}</Label>
               <textarea
                 id="email-message"
                 rows={4}
                 className="w-full mt-1 px-3 py-2 border border-input rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 value={emailMessage}
                 onChange={(e) => setEmailMessage(e.target.value)}
-                placeholder="Enter your message..."
+                placeholder={t('indexPage.messagePlaceholder')}
               />
             </div>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmSendEmail}
               disabled={!emailRecipients.trim() || emailDocumentMutation.isPending}
@@ -1189,7 +1194,7 @@ export default function DocumentsIndex() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Sending...
+                  {t('indexPage.sendingButton')}
                 </>
               ) : (
                 <>
@@ -1197,7 +1202,7 @@ export default function DocumentsIndex() {
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                     <polyline points="22,6 12,13 2,6"/>
                   </svg>
-                  Send Email
+                  {t('indexPage.sendEmailButton')}
                 </>
               )}
             </AlertDialogAction>
@@ -1209,9 +1214,9 @@ export default function DocumentsIndex() {
       <Dialog open={templateEditorDialogOpen} onOpenChange={setTemplateEditorDialogOpen}>
         <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] max-h-[95vh] p-0 overflow-hidden flex flex-col">
           <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
-            <DialogTitle>Contract Template Editor</DialogTitle>
+            <DialogTitle>{t('indexPage.contractTemplateEditorTitle')}</DialogTitle>
             <DialogDescription>
-              Create and manage contract templates with drag-and-drop field placement
+              {t('indexPage.contractTemplateEditorDialogDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto overflow-x-hidden">
@@ -1224,9 +1229,9 @@ export default function DocumentsIndex() {
       <Dialog open={transportTemplateEditorDialogOpen} onOpenChange={setTransportTemplateEditorDialogOpen}>
         <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] max-h-[95vh] p-0 overflow-hidden flex flex-col">
           <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
-            <DialogTitle>Transport Report Template Editor</DialogTitle>
+            <DialogTitle>{t('indexPage.transportTemplateEditorTitle')}</DialogTitle>
             <DialogDescription>
-              Design the driver-facing report — drag fields onto the page, one big page per transport
+              {t('indexPage.transportTemplateEditorDialogDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto overflow-x-hidden">
@@ -1240,6 +1245,7 @@ export default function DocumentsIndex() {
 
 // Damage Check Manager Component
 function DamageCheckManager() {
+  const { t } = useTranslation("documents");
   const [studioOpen, setStudioOpen] = useState(false);
   const { user } = useAuth();
   const isAdmin = user?.role === UserRole.ADMIN;
@@ -1249,9 +1255,9 @@ function DamageCheckManager() {
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Damage Check Templates</CardTitle>
+            <CardTitle>{t('indexPage.damageCheck.cardTitle')}</CardTitle>
             <CardDescription>
-              Manage the fields, layout, and checklist vocabulary used to build damage check forms. Completed damage check PDFs are in the Document Library, filtered by vehicle. Vehicle diagrams are managed below.
+              {t('indexPage.damageCheck.cardDescription')}
             </CardDescription>
           </div>
           <Button
@@ -1260,7 +1266,7 @@ function DamageCheckManager() {
             data-testid="button-open-damage-check-studio"
           >
             <SettingsIcon className="mr-2 h-4 w-4" />
-            Damage Check Templates
+            {t('indexPage.damageCheck.openStudioButton')}
           </Button>
         </div>
       </CardHeader>
@@ -1268,9 +1274,9 @@ function DamageCheckManager() {
       <Dialog open={studioOpen} onOpenChange={setStudioOpen}>
         <DialogContent className="max-w-[98vw] w-[98vw] max-h-[98vh] h-[98vh] flex flex-col p-0 gap-0" data-testid="dialog-damage-check-studio">
           <DialogHeader className="px-4 py-2 border-b">
-            <DialogTitle>Damage Check Templates</DialogTitle>
+            <DialogTitle>{t('indexPage.damageCheck.cardTitle')}</DialogTitle>
             <DialogDescription className="sr-only">
-              Manage damage check templates, their layout, and the checklist field vocabulary.
+              {t('indexPage.damageCheck.dialogDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-hidden bg-background">
@@ -1283,6 +1289,7 @@ function DamageCheckManager() {
 }
 
 function DiagramTemplateManager() {
+  const { t } = useTranslation("documents");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -1320,16 +1327,16 @@ function DiagramTemplateManager() {
     onSuccess: () => {
       invalidateByPrefix('/api/vehicle-diagram-templates');
       toast({
-        title: "Success",
-        description: "Vehicle diagram template uploaded successfully",
+        title: t('indexPage.diagramTemplates.toasts.successTitle'),
+        description: t('indexPage.diagramTemplates.toasts.uploadedDescription'),
       });
       setUploadDialogOpen(false);
       resetForm();
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to upload diagram template",
+        title: t('indexPage.diagramTemplates.toasts.errorTitle'),
+        description: error.message || t('indexPage.diagramTemplates.toasts.uploadFailed'),
         variant: "destructive",
       });
     },
@@ -1353,8 +1360,8 @@ function DiagramTemplateManager() {
     onSuccess: () => {
       invalidateByPrefix('/api/vehicle-diagram-templates');
       toast({
-        title: "Success",
-        description: "Vehicle diagram template updated successfully",
+        title: t('indexPage.diagramTemplates.toasts.successTitle'),
+        description: t('indexPage.diagramTemplates.toasts.updatedDescription'),
       });
       setEditDialogOpen(false);
       setEditingTemplate(null);
@@ -1362,8 +1369,8 @@ function DiagramTemplateManager() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to update diagram template",
+        title: t('indexPage.diagramTemplates.toasts.errorTitle'),
+        description: error.message || t('indexPage.diagramTemplates.toasts.updateFailed'),
         variant: "destructive",
       });
     },
@@ -1378,16 +1385,16 @@ function DiagramTemplateManager() {
     onSuccess: () => {
       invalidateByPrefix('/api/vehicle-diagram-templates');
       toast({
-        title: "Success",
-        description: "Diagram template deleted successfully",
+        title: t('indexPage.diagramTemplates.toasts.successTitle'),
+        description: t('indexPage.diagramTemplates.toasts.deletedDescription'),
       });
       setDeleteDialogOpen(false);
       setTemplateToDelete(null);
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete diagram template",
+        title: t('indexPage.diagramTemplates.toasts.errorTitle'),
+        description: error.message || t('indexPage.diagramTemplates.toasts.deleteFailed'),
         variant: "destructive",
       });
     },
@@ -1405,8 +1412,8 @@ function DiagramTemplateManager() {
   const handleUpload = () => {
     if (!make || !model || !diagramFile) {
       toast({
-        title: "Validation Error",
-        description: "Please provide make, model, and diagram image",
+        title: t('indexPage.diagramTemplates.toasts.validationErrorTitle'),
+        description: t('indexPage.diagramTemplates.toasts.makeModelImageRequired'),
         variant: "destructive",
       });
       return;
@@ -1437,8 +1444,8 @@ function DiagramTemplateManager() {
   const handleUpdate = () => {
     if (!editingTemplate || !make || !model) {
       toast({
-        title: "Validation Error",
-        description: "Please provide make and model",
+        title: t('indexPage.diagramTemplates.toasts.validationErrorTitle'),
+        description: t('indexPage.diagramTemplates.toasts.makeModelRequired'),
         variant: "destructive",
       });
       return;
@@ -1471,14 +1478,14 @@ function DiagramTemplateManager() {
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Vehicle Diagram Templates</CardTitle>
+            <CardTitle>{t('indexPage.diagramTemplates.cardTitle')}</CardTitle>
             <CardDescription>
-              Manage vehicle diagram images for interactive damage checks
+              {t('indexPage.diagramTemplates.cardDescription')}
             </CardDescription>
           </div>
           <Button onClick={() => setUploadDialogOpen(true)} data-testid="button-upload-diagram-template">
             <Plus className="h-4 w-4 mr-2" />
-            Add Diagram Template
+            {t('indexPage.diagramTemplates.addButton')}
           </Button>
         </div>
       </CardHeader>
@@ -1486,8 +1493,8 @@ function DiagramTemplateManager() {
         {templates.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
             <Image className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-            <p className="text-lg font-medium mb-2">No diagram templates found</p>
-            <p className="text-sm">Upload your first vehicle diagram to enable interactive damage checks</p>
+            <p className="text-lg font-medium mb-2">{t('indexPage.diagramTemplates.noTemplatesTitle')}</p>
+            <p className="text-sm">{t('indexPage.diagramTemplates.noTemplatesDescription')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1504,14 +1511,14 @@ function DiagramTemplateManager() {
                   <h4 className="font-medium text-lg">{template.make} {template.model}</h4>
                   {(template.yearFrom || template.yearTo) && (
                     <p className="text-sm text-gray-600">
-                      Years: {template.yearFrom || '...'} - {template.yearTo || '...'}
+                      {t('indexPage.diagramTemplates.yearsLabel', { from: template.yearFrom || '...', to: template.yearTo || '...' })}
                     </p>
                   )}
                   {template.description && (
                     <p className="text-sm text-gray-600 mt-2">{template.description}</p>
                   )}
                   <p className="text-xs text-gray-500 mt-2">
-                    Added {formatDate(template.createdAt)}
+                    {t('indexPage.diagramTemplates.addedLabel', { date: formatDate(template.createdAt) })}
                   </p>
                   <div className="flex gap-2 mt-3">
                     <Button
@@ -1522,7 +1529,7 @@ function DiagramTemplateManager() {
                       data-testid={`button-edit-diagram-template-${template.id}`}
                     >
                       <Edit className="h-4 w-4 mr-2" />
-                      Edit
+                      {t('indexPage.diagramTemplates.editButton')}
                     </Button>
                     <Button
                       variant="destructive"
@@ -1532,7 +1539,7 @@ function DiagramTemplateManager() {
                       data-testid={`button-delete-diagram-template-${template.id}`}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
+                      {t('indexPage.diagramTemplates.deleteButton')}
                     </Button>
                   </div>
                 </div>
@@ -1546,28 +1553,28 @@ function DiagramTemplateManager() {
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Add Vehicle Diagram Template</DialogTitle>
+            <DialogTitle>{t('indexPage.diagramTemplates.addDialogTitle')}</DialogTitle>
             <DialogDescription>
-              Upload a vehicle diagram image with make/model information for interactive damage checks
+              {t('indexPage.diagramTemplates.addDialogDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="make">Make *</Label>
+                <Label htmlFor="make">{t('indexPage.diagramTemplates.makeLabel')}</Label>
                 <Input
                   id="make"
-                  placeholder="e.g., Toyota"
+                  placeholder={t('indexPage.diagramTemplates.makePlaceholder')}
                   value={make}
                   onChange={(e) => setMake(e.target.value)}
                   data-testid="input-make"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="model">Model *</Label>
+                <Label htmlFor="model">{t('indexPage.diagramTemplates.modelLabel')}</Label>
                 <Input
                   id="model"
-                  placeholder="e.g., Camry"
+                  placeholder={t('indexPage.diagramTemplates.modelPlaceholder')}
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
                   data-testid="input-model"
@@ -1577,22 +1584,22 @@ function DiagramTemplateManager() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="yearFrom">Year From (Optional)</Label>
+                <Label htmlFor="yearFrom">{t('indexPage.diagramTemplates.yearFromLabel')}</Label>
                 <Input
                   id="yearFrom"
                   type="number"
-                  placeholder="e.g., 2015"
+                  placeholder={t('indexPage.diagramTemplates.yearFromPlaceholder')}
                   value={yearFrom}
                   onChange={(e) => setYearFrom(e.target.value)}
                   data-testid="input-year-from"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="yearTo">Year To (Optional)</Label>
+                <Label htmlFor="yearTo">{t('indexPage.diagramTemplates.yearToLabel')}</Label>
                 <Input
                   id="yearTo"
                   type="number"
-                  placeholder="e.g., 2020"
+                  placeholder={t('indexPage.diagramTemplates.yearToPlaceholder')}
                   value={yearTo}
                   onChange={(e) => setYearTo(e.target.value)}
                   data-testid="input-year-to"
@@ -1601,10 +1608,10 @@ function DiagramTemplateManager() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description (Optional)</Label>
+              <Label htmlFor="description">{t('indexPage.diagramTemplates.descriptionLabel')}</Label>
               <Input
                 id="description"
-                placeholder="e.g., Sedan body style"
+                placeholder={t('indexPage.diagramTemplates.descriptionPlaceholder')}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 data-testid="input-description"
@@ -1612,7 +1619,7 @@ function DiagramTemplateManager() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="diagram">Diagram Image *</Label>
+              <Label htmlFor="diagram">{t('indexPage.diagramTemplates.diagramImageLabel')}</Label>
               <Input
                 id="diagram"
                 type="file"
@@ -1621,20 +1628,20 @@ function DiagramTemplateManager() {
                 data-testid="input-diagram-file"
               />
               {diagramFile && (
-                <p className="text-sm text-gray-600">Selected: {diagramFile.name}</p>
+                <p className="text-sm text-gray-600">{t('indexPage.diagramTemplates.selectedFileLabel', { filename: diagramFile.name })}</p>
               )}
             </div>
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
-              Cancel
+              {t('indexPage.diagramTemplates.cancelButton')}
             </Button>
-            <Button 
-              onClick={handleUpload} 
+            <Button
+              onClick={handleUpload}
               disabled={uploadMutation.isPending || !diagramFile || !make || !model}
               data-testid="button-submit-upload-diagram"
             >
-              {uploadMutation.isPending ? "Uploading..." : "Upload"}
+              {uploadMutation.isPending ? t('indexPage.diagramTemplates.uploadingButton') : t('indexPage.diagramTemplates.uploadButton')}
             </Button>
           </div>
         </DialogContent>
@@ -1650,28 +1657,28 @@ function DiagramTemplateManager() {
       }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit Vehicle Diagram Template</DialogTitle>
+            <DialogTitle>{t('indexPage.diagramTemplates.editDialogTitle')}</DialogTitle>
             <DialogDescription>
-              Update vehicle diagram template information
+              {t('indexPage.diagramTemplates.editDialogDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-make">Make *</Label>
+                <Label htmlFor="edit-make">{t('indexPage.diagramTemplates.makeLabel')}</Label>
                 <Input
                   id="edit-make"
-                  placeholder="e.g., Toyota"
+                  placeholder={t('indexPage.diagramTemplates.makePlaceholder')}
                   value={make}
                   onChange={(e) => setMake(e.target.value)}
                   data-testid="input-edit-make"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-model">Model *</Label>
+                <Label htmlFor="edit-model">{t('indexPage.diagramTemplates.modelLabel')}</Label>
                 <Input
                   id="edit-model"
-                  placeholder="e.g., Camry"
+                  placeholder={t('indexPage.diagramTemplates.modelPlaceholder')}
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
                   data-testid="input-edit-model"
@@ -1681,22 +1688,22 @@ function DiagramTemplateManager() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-yearFrom">Year From (Optional)</Label>
+                <Label htmlFor="edit-yearFrom">{t('indexPage.diagramTemplates.yearFromLabel')}</Label>
                 <Input
                   id="edit-yearFrom"
                   type="number"
-                  placeholder="e.g., 2015"
+                  placeholder={t('indexPage.diagramTemplates.yearFromPlaceholder')}
                   value={yearFrom}
                   onChange={(e) => setYearFrom(e.target.value)}
                   data-testid="input-edit-year-from"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-yearTo">Year To (Optional)</Label>
+                <Label htmlFor="edit-yearTo">{t('indexPage.diagramTemplates.yearToLabel')}</Label>
                 <Input
                   id="edit-yearTo"
                   type="number"
-                  placeholder="e.g., 2020"
+                  placeholder={t('indexPage.diagramTemplates.yearToPlaceholder')}
                   value={yearTo}
                   onChange={(e) => setYearTo(e.target.value)}
                   data-testid="input-edit-year-to"
@@ -1705,10 +1712,10 @@ function DiagramTemplateManager() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-description">Description (Optional)</Label>
+              <Label htmlFor="edit-description">{t('indexPage.diagramTemplates.descriptionLabel')}</Label>
               <Input
                 id="edit-description"
-                placeholder="e.g., Sedan body style"
+                placeholder={t('indexPage.diagramTemplates.descriptionPlaceholder')}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 data-testid="input-edit-description"
@@ -1716,7 +1723,7 @@ function DiagramTemplateManager() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-diagram">New Diagram Image (Optional)</Label>
+              <Label htmlFor="edit-diagram">{t('indexPage.diagramTemplates.newDiagramImageLabel')}</Label>
               <Input
                 id="edit-diagram"
                 type="file"
@@ -1725,10 +1732,10 @@ function DiagramTemplateManager() {
                 data-testid="input-edit-diagram-file"
               />
               {diagramFile && (
-                <p className="text-sm text-green-600">New image selected: {diagramFile.name}</p>
+                <p className="text-sm text-green-600">{t('indexPage.diagramTemplates.newImageSelectedLabel', { filename: diagramFile.name })}</p>
               )}
               {!diagramFile && (
-                <p className="text-xs text-gray-500">Leave empty to keep current diagram</p>
+                <p className="text-xs text-gray-500">{t('indexPage.diagramTemplates.leaveEmptyHint')}</p>
               )}
             </div>
           </div>
@@ -1738,14 +1745,14 @@ function DiagramTemplateManager() {
               setEditingTemplate(null);
               resetForm();
             }}>
-              Cancel
+              {t('indexPage.diagramTemplates.cancelButton')}
             </Button>
-            <Button 
-              onClick={handleUpdate} 
+            <Button
+              onClick={handleUpdate}
               disabled={editMutation.isPending || !make || !model}
               data-testid="button-submit-edit-diagram"
             >
-              {editMutation.isPending ? "Updating..." : "Update"}
+              {editMutation.isPending ? t('indexPage.diagramTemplates.updatingButton') : t('indexPage.diagramTemplates.updateButton')}
             </Button>
           </div>
         </DialogContent>
@@ -1755,19 +1762,19 @@ function DiagramTemplateManager() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Diagram Template</AlertDialogTitle>
+            <AlertDialogTitle>{t('indexPage.diagramTemplates.deleteDialogTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the diagram template for {templateToDelete?.make} {templateToDelete?.model}? This action cannot be undone.
+              {t('indexPage.diagramTemplates.deleteDialogDescription', { make: templateToDelete?.make, model: templateToDelete?.model })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('indexPage.diagramTemplates.cancelButton')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-red-600 hover:bg-red-700"
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              {deleteMutation.isPending ? t('indexPage.deletingButton') : t('indexPage.deleteButton')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

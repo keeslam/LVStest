@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,7 @@ interface UsersDialogProps {
 type ViewMode = "list" | "add" | "view" | "edit";
 
 export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
+  const { t } = useTranslation(["settings", "common"]);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
@@ -50,7 +52,7 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
     queryKey: ["/api/users"],
     queryFn: async () => {
       const response = await fetch("/api/users");
-      if (!response.ok) throw new Error("Failed to fetch users");
+      if (!response.ok) throw new Error(t('usersDialog.fetchUsersFailed'));
       return response.json();
     },
     enabled: open && isAdmin,
@@ -60,7 +62,7 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
     queryKey: ["/api/users", selectedUserId],
     queryFn: async () => {
       const response = await fetch(`/api/users/${selectedUserId}`);
-      if (!response.ok) throw new Error("Failed to fetch user");
+      if (!response.ok) throw new Error(t('usersDialog.fetchUserFailed'));
       return response.json();
     },
     enabled: open && isAdmin && selectedUserId !== null && (viewMode === "view" || viewMode === "edit"),
@@ -71,18 +73,18 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
       const response = await apiRequest('DELETE', `/api/users/${userId}`);
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to delete user');
+        throw new Error(error.message || t('usersDialog.deleteUserFailed'));
       }
       return response.json();
     },
     onSuccess: () => {
       invalidateByPrefix('/api/users');
-      toast({ title: "Success", description: "User deleted successfully" });
+      toast({ title: t('usersDialog.successTitle'), description: t('usersDialog.userDeletedDescription') });
       setDeleteDialogOpen(false);
       setUserToDelete(null);
     },
     onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: t('usersDialog.errorTitle'), description: error.message, variant: "destructive" });
     },
   });
 
@@ -130,19 +132,19 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
   const getRoleBadge = (role: string) => {
     switch (role) {
       case UserRole.ADMIN:
-        return <Badge variant="destructive">Admin</Badge>;
+        return <Badge variant="destructive">{t('usersDialog.roles.admin')}</Badge>;
       case UserRole.MANAGER:
-        return <Badge variant="default">Manager</Badge>;
+        return <Badge variant="default">{t('usersDialog.roles.manager')}</Badge>;
       case UserRole.USER:
-        return <Badge variant="outline">User</Badge>;
+        return <Badge variant="outline">{t('usersDialog.roles.user')}</Badge>;
       case UserRole.CLEANER:
-        return <Badge variant="secondary">Cleaner</Badge>;
+        return <Badge variant="secondary">{t('usersDialog.roles.cleaner')}</Badge>;
       case UserRole.VIEWER:
-        return <Badge variant="secondary">Viewer</Badge>;
+        return <Badge variant="secondary">{t('usersDialog.roles.viewer')}</Badge>;
       case UserRole.ACCOUNTANT:
-        return <Badge variant="secondary">Accountant</Badge>;
+        return <Badge variant="secondary">{t('usersDialog.roles.accountant')}</Badge>;
       case UserRole.MAINTENANCE:
-        return <Badge variant="secondary">Maintenance</Badge>;
+        return <Badge variant="secondary">{t('usersDialog.roles.maintenance')}</Badge>;
       default:
         return <Badge variant="outline">{role}</Badge>;
     }
@@ -152,7 +154,7 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
         <Input
-          placeholder="Search users..."
+          placeholder={t('usersDialog.searchPlaceholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
@@ -160,7 +162,7 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
         />
         <Button onClick={() => setViewMode("add")} data-testid="dialog-add-user-button">
           <Plus className="h-4 w-4 mr-2" />
-          Add User
+          {t('usersDialog.addUser')}
         </Button>
       </div>
 
@@ -170,7 +172,7 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
         </div>
       ) : filteredUsers.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
-          No users found
+          {t('usersDialog.noUsersFound')}
         </div>
       ) : (
         <div className="space-y-2">
@@ -201,7 +203,7 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
                         {getRoleBadge(user.role)}
                       </div>
                       <Badge variant={user.active ? "success" : "secondary"} className="text-xs">
-                        {user.active ? "Active" : "Inactive"}
+                        {user.active ? t('usersDialog.active') : t('usersDialog.inactive')}
                       </Badge>
                     </div>
                     <div className="text-sm text-muted-foreground">
@@ -216,7 +218,7 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
                     onClick={() => handleViewUser(user.id)}
                     data-testid={`dialog-view-user-${user.id}`}
                   >
-                    View
+                    {t('usersDialog.view')}
                   </Button>
                   <Button
                     variant="outline"
@@ -225,7 +227,7 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
                     onClick={() => handleEditUser(user.id)}
                     data-testid={`dialog-edit-user-${user.id}`}
                   >
-                    Edit
+                    {t('usersDialog.edit')}
                   </Button>
                   <Button
                     variant="ghost"
@@ -251,9 +253,9 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" onClick={handleBack}>
           <ArrowLeft className="h-4 w-4 mr-1" />
-          Back
+          {t('usersDialog.back')}
         </Button>
-        <h2 className="text-lg font-semibold">Add New User</h2>
+        <h2 className="text-lg font-semibold">{t('usersDialog.addNewUserTitle')}</h2>
       </div>
       <UserFormInDialog onSuccess={handleFormSuccess} />
     </div>
@@ -269,8 +271,8 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
     }
 
     const isSelf = currentUser?.id === selectedUser.id;
-    const createdAt = selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : "Unknown";
-    const updatedAt = selectedUser.updatedAt ? new Date(selectedUser.updatedAt).toLocaleDateString() : "Unknown";
+    const createdAt = selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : t('usersDialog.unknown');
+    const updatedAt = selectedUser.updatedAt ? new Date(selectedUser.updatedAt).toLocaleDateString() : t('usersDialog.unknown');
 
     return (
       <div className="space-y-4">
@@ -278,14 +280,14 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={handleBack}>
               <ArrowLeft className="h-4 w-4 mr-1" />
-              Back
+              {t('usersDialog.back')}
             </Button>
-            <h2 className="text-lg font-semibold">User: {selectedUser.username}</h2>
+            <h2 className="text-lg font-semibold">{t('usersDialog.userLabel', { username: selectedUser.username })}</h2>
           </div>
           {!isSelf && (
             <Button size="sm" onClick={() => setViewMode("edit")}>
               <Edit className="h-4 w-4 mr-1" />
-              Edit
+              {t('usersDialog.edit')}
             </Button>
           )}
         </div>
@@ -293,16 +295,16 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">User Information</CardTitle>
+              <CardTitle className="text-base">{t('usersDialog.userInformation')}</CardTitle>
               <Badge variant={selectedUser.active ? "success" : "destructive"} className="w-fit">
-                {selectedUser.active ? "Active" : "Inactive"}
+                {selectedUser.active ? t('usersDialog.active') : t('usersDialog.inactive')}
               </Badge>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex items-center gap-2">
                 <UserIcon className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-muted-foreground text-xs">Username</p>
+                  <p className="text-muted-foreground text-xs">{t('usersDialog.username')}</p>
                   <p className="font-medium">{selectedUser.username}</p>
                 </div>
               </div>
@@ -310,7 +312,7 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
                 <div className="flex items-center gap-2">
                   <UserIcon className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-muted-foreground text-xs">Full Name</p>
+                    <p className="text-muted-foreground text-xs">{t('usersDialog.fullName')}</p>
                     <p className="font-medium">{selectedUser.fullName}</p>
                   </div>
                 </div>
@@ -319,7 +321,7 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-muted-foreground text-xs">Email</p>
+                    <p className="text-muted-foreground text-xs">{t('usersDialog.email')}</p>
                     <p className="font-medium">{selectedUser.email}</p>
                   </div>
                 </div>
@@ -327,14 +329,14 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
               <div className="flex items-center gap-2">
                 <Shield className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-muted-foreground text-xs">Role</p>
+                  <p className="text-muted-foreground text-xs">{t('usersDialog.role')}</p>
                   {getRoleBadge(selectedUser.role)}
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-muted-foreground text-xs">Created / Updated</p>
+                  <p className="text-muted-foreground text-xs">{t('usersDialog.createdUpdated')}</p>
                   <p className="font-medium">{createdAt} / {updatedAt}</p>
                 </div>
               </div>
@@ -343,7 +345,7 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Permissions</CardTitle>
+              <CardTitle className="text-base">{t('usersDialog.permissions')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 gap-1 text-sm">
@@ -389,9 +391,9 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={handleBack}>
             <ArrowLeft className="h-4 w-4 mr-1" />
-            Back
+            {t('usersDialog.back')}
           </Button>
-          <h2 className="text-lg font-semibold">Edit User: {selectedUser.username}</h2>
+          <h2 className="text-lg font-semibold">{t('usersDialog.editUserLabel', { username: selectedUser.username })}</h2>
         </div>
         <UserFormInDialog user={selectedUser} isEdit onSuccess={handleFormSuccess} />
       </div>
@@ -403,9 +405,9 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Access Denied</DialogTitle>
+            <DialogTitle>{t('usersDialog.accessDeniedTitle')}</DialogTitle>
           </DialogHeader>
-          <p className="text-muted-foreground">You don't have permission to access this feature.</p>
+          <p className="text-muted-foreground">{t('usersDialog.accessDeniedMessage')}</p>
         </DialogContent>
       </Dialog>
     );
@@ -418,7 +420,7 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
           <DialogHeader className="p-6 pb-0">
             <DialogTitle className="text-xl flex items-center gap-2">
               <UserIcon className="h-5 w-5" />
-              User Management
+              {t('usersDialog.userManagementTitle')}
             </DialogTitle>
           </DialogHeader>
 
@@ -436,20 +438,20 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogTitle>{t('usersDialog.deleteUserTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete user "{userToDelete?.username}"? This action cannot be undone.
+              {t('usersDialog.deleteUserConfirm', { username: userToDelete?.username })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => userToDelete && deleteUserMutation.mutate(userToDelete.id)}
               className="bg-red-600 hover:bg-red-700"
               disabled={deleteUserMutation.isPending}
               data-testid="dialog-confirm-delete-user"
             >
-              {deleteUserMutation.isPending ? "Deleting..." : "Delete"}
+              {deleteUserMutation.isPending ? t('usersDialog.deleting') : t('usersDialog.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -501,6 +503,7 @@ interface UserFormInDialogProps {
 }
 
 function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogProps) {
+  const { t } = useTranslation(["settings", "common"]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -523,7 +526,7 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
       const res = await apiRequest("POST", "/api/users", userData);
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to create user");
+        throw new Error(errorData.message || t('usersDialog.createUserFailed'));
       }
       return res.json();
     },
@@ -532,17 +535,17 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
       onSuccess();
     },
     onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: t('usersDialog.errorTitle'), description: error.message, variant: "destructive" });
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: async (userData: UserFormValues) => {
-      if (!user?.id) throw new Error("User ID required");
+      if (!user?.id) throw new Error(t('usersDialog.userIdRequired'));
       const res = await apiRequest("PATCH", `/api/users/${user.id}`, userData);
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to update user");
+        throw new Error(errorData.message || t('usersDialog.updateUserFailed'));
       }
       return res.json();
     },
@@ -551,7 +554,7 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
       onSuccess();
     },
     onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: t('usersDialog.errorTitle'), description: error.message, variant: "destructive" });
     },
   });
 
@@ -574,9 +577,9 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
             name="username"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Username</FormLabel>
+                <FormLabel>{t('usersDialog.username')}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter username" {...field} disabled={isEdit} />
+                  <Input placeholder={t('usersDialog.usernamePlaceholder')} {...field} disabled={isEdit} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -588,9 +591,9 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{isEdit ? "New Password (leave empty to keep)" : "Password"}</FormLabel>
+                <FormLabel>{isEdit ? t('usersDialog.newPasswordLeaveEmpty') : t('usersDialog.password')}</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="Enter password" {...field} />
+                  <Input type="password" placeholder={t('usersDialog.passwordPlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -602,9 +605,9 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
             name="fullName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Full Name</FormLabel>
+                <FormLabel>{t('usersDialog.fullName')}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter full name" {...field} value={field.value || ""} />
+                  <Input placeholder={t('usersDialog.fullNamePlaceholder')} {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -616,9 +619,9 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>{t('usersDialog.email')}</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="Enter email" {...field} value={field.value || ""} />
+                  <Input type="email" placeholder={t('usersDialog.emailPlaceholder')} {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -630,21 +633,21 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
             name="role"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Role</FormLabel>
+                <FormLabel>{t('usersDialog.role')}</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
+                      <SelectValue placeholder={t('usersDialog.selectRole')} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
-                    <SelectItem value={UserRole.MANAGER}>Manager</SelectItem>
-                    <SelectItem value={UserRole.USER}>User</SelectItem>
-                    <SelectItem value={UserRole.CLEANER}>Cleaner</SelectItem>
-                    <SelectItem value={UserRole.VIEWER}>Viewer</SelectItem>
-                    <SelectItem value={UserRole.ACCOUNTANT}>Accountant</SelectItem>
-                    <SelectItem value={UserRole.MAINTENANCE}>Maintenance</SelectItem>
+                    <SelectItem value={UserRole.ADMIN}>{t('usersDialog.roles.admin')}</SelectItem>
+                    <SelectItem value={UserRole.MANAGER}>{t('usersDialog.roles.manager')}</SelectItem>
+                    <SelectItem value={UserRole.USER}>{t('usersDialog.roles.user')}</SelectItem>
+                    <SelectItem value={UserRole.CLEANER}>{t('usersDialog.roles.cleaner')}</SelectItem>
+                    <SelectItem value={UserRole.VIEWER}>{t('usersDialog.roles.viewer')}</SelectItem>
+                    <SelectItem value={UserRole.ACCOUNTANT}>{t('usersDialog.roles.accountant')}</SelectItem>
+                    <SelectItem value={UserRole.MAINTENANCE}>{t('usersDialog.roles.maintenance')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -658,9 +661,9 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                 <div className="space-y-0.5">
-                  <FormLabel>Active</FormLabel>
+                  <FormLabel>{t('usersDialog.active')}</FormLabel>
                   <FormDescription className="text-xs">
-                    User can log in when active
+                    {t('usersDialog.activeHint')}
                   </FormDescription>
                 </div>
                 <FormControl>
@@ -676,9 +679,9 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                 <div className="space-y-0.5">
-                  <FormLabel>Hide Prices</FormLabel>
+                  <FormLabel>{t('usersDialog.hidePrices')}</FormLabel>
                   <FormDescription className="text-xs">
-                    User never sees price/money amounts anywhere in the app
+                    {t('usersDialog.hidePricesHint')}
                   </FormDescription>
                 </div>
                 <FormControl>
@@ -694,9 +697,9 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
           name="permissions"
           render={() => (
             <FormItem>
-              <FormLabel>Additional Permissions</FormLabel>
+              <FormLabel>{t('usersDialog.additionalPermissions')}</FormLabel>
               <FormDescription className="text-xs">
-                Select additional permissions for this user
+                {t('usersDialog.selectAdditionalPermissions')}
               </FormDescription>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
                 {Object.values(UserPermission).map((permission) => (
@@ -733,7 +736,7 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
 
         <div className="flex justify-end gap-2 pt-4">
           <Button type="submit" disabled={isPending}>
-            {isPending ? "Saving..." : isEdit ? "Update User" : "Create User"}
+            {isPending ? t('usersDialog.saving') : isEdit ? t('usersDialog.updateUser') : t('usersDialog.createUser')}
           </Button>
         </div>
       </form>

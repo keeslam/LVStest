@@ -1,5 +1,6 @@
 import { invalidateByPrefix } from "@/lib/queryClient";
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,7 @@ const DUTCH_HOLIDAY_NAMES: Record<string, string> = {
 };
 
 export function ReservationCalendar() {
+  const { t } = useTranslation(["dashboard", "common"]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [_, navigate] = useLocation();
   const queryClient = useQueryClient();
@@ -301,7 +303,7 @@ export function ReservationCalendar() {
   return (
     <Card className="mt-6 overflow-hidden">
       <CardHeader className="px-4 py-3 border-b flex-row justify-between items-center space-y-0">
-        <CardTitle className="text-base font-medium text-gray-800">Reservation Calendar</CardTitle>
+        <CardTitle className="text-base font-medium text-gray-800">{t('reservationCalendar.title')}</CardTitle>
         <div className="flex space-x-2">
           <ReservationAddDialog>
             <Button 
@@ -434,7 +436,7 @@ export function ReservationCalendar() {
                             </div>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p className="text-xs">Add reservation</p>
+                            <p className="text-xs">{t('reservationCalendar.addReservation')}</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -497,7 +499,7 @@ export function ReservationCalendar() {
                                 <div className="space-y-2">
                                   {/* Header with status badge */}
                                   <div className="flex items-center justify-between border-b p-3">
-                                    <h4 className="font-medium">Reservation Details</h4>
+                                    <h4 className="font-medium">{t('reservationCalendar.reservationDetails')}</h4>
                                     <Badge 
                                       className={`${
                                         res.status?.toLowerCase() === 'booked' ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200' : 
@@ -519,8 +521,8 @@ export function ReservationCalendar() {
                                     <div>
                                       {res.placeholderSpare ? (
                                         <>
-                                          <div className="font-medium text-sm text-orange-700">TBD Spare Vehicle</div>
-                                          <div className="text-xs text-gray-600">Awaiting assignment</div>
+                                          <div className="font-medium text-sm text-orange-700">{t('reservationCalendar.tbdSpareVehicle')}</div>
+                                          <div className="text-xs text-gray-600">{t('reservationCalendar.awaitingAssignment')}</div>
                                         </>
                                       ) : (
                                         <>
@@ -536,7 +538,7 @@ export function ReservationCalendar() {
                                     <User className="h-4 w-4 text-gray-500 mt-0.5" />
                                     <div>
                                       <div className="font-medium text-sm">{res.customer?.name}</div>
-                                      <div className="text-xs text-gray-600">{res.customer?.email || 'No email provided'}</div>
+                                      <div className="text-xs text-gray-600">{res.customer?.email || t('reservationCalendar.noEmailProvided')}</div>
                                       {res.customer?.phone && <div className="text-xs text-gray-600">{res.customer?.phone}</div>}
                                     </div>
                                   </div>
@@ -547,9 +549,9 @@ export function ReservationCalendar() {
                                       <User className="h-4 w-4 text-blue-600 mt-0.5" />
                                       <div>
                                         <div className="font-medium text-sm text-blue-900">
-                                          Driver Assigned
+                                          {t('reservationCalendar.driverAssigned')}
                                         </div>
-                                        <div className="text-xs text-blue-600">Click to view details</div>
+                                        <div className="text-xs text-blue-600">{t('reservationCalendar.clickToViewDetails')}</div>
                                       </div>
                                     </div>
                                   )}
@@ -560,13 +562,13 @@ export function ReservationCalendar() {
                                     <div>
                                       <div className="grid grid-cols-2 gap-2 text-xs">
                                         <div>
-                                          <span className="text-gray-500">Start:</span> {res.startDate ? safeFormat(safeParseDateISO(res.startDate), 'MMM d, yyyy', 'Invalid date') : 'Not set'}
+                                          <span className="text-gray-500">{t('reservationCalendar.start')}</span> {res.startDate ? safeFormat(safeParseDateISO(res.startDate), 'MMM d, yyyy', t('reservationCalendar.invalidDate')) : t('reservationCalendar.notSet')}
                                         </div>
                                         <div>
-                                          <span className="text-gray-500">End:</span> {res.endDate ? safeFormat(safeParseDateISO(res.endDate), 'MMM d, yyyy', 'Invalid date') : 'Open-ended'}
+                                          <span className="text-gray-500">{t('reservationCalendar.end')}</span> {res.endDate ? safeFormat(safeParseDateISO(res.endDate), 'MMM d, yyyy', t('reservationCalendar.invalidDate')) : t('reservationCalendar.openEnded')}
                                         </div>
                                         <div className="col-span-2">
-                                          <span className="text-gray-500">Duration:</span> {rentalDuration} {rentalDuration === 1 ? 'day' : 'days'}
+                                          <span className="text-gray-500">{t('reservationCalendar.duration')}</span> {t('reservationCalendar.day', { count: rentalDuration })}
                                         </div>
                                       </div>
                                     </div>
@@ -578,17 +580,17 @@ export function ReservationCalendar() {
                                     <div className="grid grid-cols-2 gap-2 text-xs">
                                       {(res as any).totalPrice ? (
                                         <div>
-                                          <span className="text-gray-500">Price:</span> {formatCurrency((res as any).totalPrice)}
+                                          <span className="text-gray-500">{t('reservationCalendar.price')}</span> {formatCurrency((res as any).totalPrice)}
                                         </div>
                                       ) : null}
                                       {(res as any).startMileage ? (
                                         <div>
-                                          <span className="text-gray-500">Start Mileage:</span> {(res as any).startMileage} km
+                                          <span className="text-gray-500">{t('reservationCalendar.startMileage')}</span> {(res as any).startMileage} km
                                         </div>
                                       ) : null}
                                       {(res as any).departureMileage ? (
                                         <div>
-                                          <span className="text-gray-500">Return Mileage:</span> {(res as any).departureMileage} km
+                                          <span className="text-gray-500">{t('reservationCalendar.returnMileage')}</span> {(res as any).departureMileage} km
                                         </div>
                                       ) : null}
                                     </div>
@@ -615,16 +617,16 @@ export function ReservationCalendar() {
                                       }}
                                     >
                                       <Eye className="mr-1 h-3 w-3" />
-                                      View
+                                      {t('common:actions.view')}
                                     </Button>
-                                    <Button 
-                                      size="sm" 
+                                    <Button
+                                      size="sm"
                                       variant="outline"
                                       className="h-8 text-xs"
                                       onClick={() => navigate(`/reservations/edit/${res.id}`)}
                                     >
                                       <Edit className="mr-1 h-3 w-3" />
-                                      Edit
+                                      {t('common:actions.edit')}
                                     </Button>
                                     {res.placeholderSpare ? (
                                       <Button 
@@ -638,7 +640,7 @@ export function ReservationCalendar() {
                                         data-testid="button-assign-vehicle"
                                       >
                                         <Car className="mr-1 h-3 w-3" />
-                                        Assign
+                                        {t('reservationCalendar.assign')}
                                       </Button>
                                     ) : (
                                       <ReservationQuickStatusButton 
@@ -665,7 +667,7 @@ export function ReservationCalendar() {
                             className="text-xs text-gray-500 cursor-pointer hover:underline"
                             onClick={() => navigate(`/reservations/calendar?date=${safeFormat(day, 'yyyy-MM-dd', '1970-01-01')}`)}
                           >
-                            +{dayReservations.length - 3} more
+                            {t('reservationCalendar.moreCount', { count: dayReservations.length - 3 })}
                           </div>
                         )}
                       </div>
@@ -687,9 +689,11 @@ export function ReservationCalendar() {
       }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Reservation Details</DialogTitle>
+            <DialogTitle>{t('reservationCalendar.reservationDetails')}</DialogTitle>
             <DialogDescription>
-              {selectedReservation ? `Reservation #${selectedReservation.id} - ${selectedReservation.customer?.name || 'No customer'}` : 'View detailed reservation information'}
+              {selectedReservation
+                ? t('reservationCalendar.reservationSubtitle', { id: selectedReservation.id, customer: selectedReservation.customer?.name || t('reservationCalendar.noCustomer') })
+                : t('reservationCalendar.viewDetailedInfo')}
             </DialogDescription>
           </DialogHeader>
           {selectedReservation && (
@@ -716,11 +720,11 @@ export function ReservationCalendar() {
                 <div className="bg-gray-50 p-3 rounded-md">
                   <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                     <Car className="h-4 w-4" />
-                    Vehicle
+                    {t('reservationCalendar.vehicle')}
                   </h3>
                   <div className="space-y-1">
                     {selectedReservation.placeholderSpare ? (
-                      <div className="text-orange-700 font-medium">TBD Spare Vehicle</div>
+                      <div className="text-orange-700 font-medium">{t('reservationCalendar.tbdSpareVehicle')}</div>
                     ) : (
                       <>
                         <div className="font-medium">{selectedReservation.vehicle?.brand} {selectedReservation.vehicle?.model}</div>
@@ -733,10 +737,10 @@ export function ReservationCalendar() {
                 <div className="bg-gray-50 p-3 rounded-md">
                   <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    Customer
+                    {t('reservationCalendar.customer')}
                   </h3>
                   <div className="space-y-1">
-                    <div className="font-medium">{selectedReservation.customer?.name || 'No customer specified'}</div>
+                    <div className="font-medium">{selectedReservation.customer?.name || t('reservationCalendar.noCustomerSpecified')}</div>
                     {selectedReservation.customer?.email && (
                       <div className="text-sm text-gray-600">{selectedReservation.customer.email}</div>
                     )}
@@ -751,29 +755,29 @@ export function ReservationCalendar() {
               <div className="bg-gray-50 p-3 rounded-md">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div>
-                    <label className="text-xs font-medium text-gray-500 uppercase">Start Date</label>
-                    <p className="text-sm font-medium mt-1">{selectedReservation.startDate ? safeFormat(safeParseDateISO(selectedReservation.startDate), 'MMM d, yyyy', 'Invalid') : 'Not set'}</p>
+                    <label className="text-xs font-medium text-gray-500 uppercase">{t('reservationCalendar.startDate')}</label>
+                    <p className="text-sm font-medium mt-1">{selectedReservation.startDate ? safeFormat(safeParseDateISO(selectedReservation.startDate), 'MMM d, yyyy', t('reservationCalendar.invalid')) : t('reservationCalendar.notSet')}</p>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-gray-500 uppercase">End Date</label>
-                    <p className="text-sm font-medium mt-1">{selectedReservation.endDate ? safeFormat(safeParseDateISO(selectedReservation.endDate), 'MMM d, yyyy', 'Open-ended') : 'Open-ended'}</p>
+                    <label className="text-xs font-medium text-gray-500 uppercase">{t('reservationCalendar.endDate')}</label>
+                    <p className="text-sm font-medium mt-1">{selectedReservation.endDate ? safeFormat(safeParseDateISO(selectedReservation.endDate), 'MMM d, yyyy', t('reservationCalendar.openEnded')) : t('reservationCalendar.openEnded')}</p>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-gray-500 uppercase">Duration</label>
+                    <label className="text-xs font-medium text-gray-500 uppercase">{t('reservationCalendar.duration')}</label>
                     <p className="text-sm font-medium mt-1">
                       {(() => {
-                        if (!selectedReservation.startDate || !selectedReservation.endDate) return 'Open-ended';
+                        if (!selectedReservation.startDate || !selectedReservation.endDate) return t('reservationCalendar.openEnded');
                         const startDate = safeParseDateISO(selectedReservation.startDate);
                         const endDate = safeParseDateISO(selectedReservation.endDate);
-                        if (!startDate || !endDate) return 'Invalid';
+                        if (!startDate || !endDate) return t('reservationCalendar.invalid');
                         const duration = differenceInDays(endDate, startDate) + 1;
-                        return `${duration} ${duration === 1 ? 'day' : 'days'}`;
+                        return t('reservationCalendar.day', { count: duration });
                       })()}
                     </p>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-gray-500 uppercase">Price</label>
-                    <p className="text-sm font-semibold mt-1">{selectedReservation.totalPrice ? formatCurrency(Number(selectedReservation.totalPrice)) : 'Not set'}</p>
+                    <label className="text-xs font-medium text-gray-500 uppercase">{t('reservationCalendar.price')}</label>
+                    <p className="text-sm font-semibold mt-1">{selectedReservation.totalPrice ? formatCurrency(Number(selectedReservation.totalPrice)) : t('reservationCalendar.notSet')}</p>
                   </div>
                 </div>
               </div>
@@ -781,7 +785,7 @@ export function ReservationCalendar() {
               {/* Notes */}
               {selectedReservation.notes && (
                 <div className="bg-amber-50 border border-amber-200 p-3 rounded-md">
-                  <label className="text-xs font-medium text-amber-700 uppercase">Notes</label>
+                  <label className="text-xs font-medium text-amber-700 uppercase">{t('common:fields.notes')}</label>
                   <p className="text-sm text-amber-900 mt-1 whitespace-pre-wrap">{selectedReservation.notes}</p>
                 </div>
               )}
@@ -795,13 +799,13 @@ export function ReservationCalendar() {
                   }}
                 >
                   <Edit className="mr-2 h-4 w-4" />
-                  Edit Reservation
+                  {t('reservationCalendar.editReservation')}
                 </Button>
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => setViewDialogOpen(false)}
                 >
-                  Close
+                  {t('common:actions.close')}
                 </Button>
               </div>
             </div>
@@ -818,9 +822,9 @@ export function ReservationCalendar() {
       }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Reservation</DialogTitle>
+            <DialogTitle>{t('reservationCalendar.editReservation')}</DialogTitle>
             <DialogDescription>
-              Modify reservation details including dates, customer information, vehicle selection, and pricing.
+              {t('reservationCalendar.editReservationDescription')}
             </DialogDescription>
           </DialogHeader>
           {selectedReservation && (

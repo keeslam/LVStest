@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -53,6 +54,7 @@ export function SpareVehicleAssignmentDialog({
   maintenanceId,
   placeholderReservations: providedPlaceholders
 }: SpareVehicleAssignmentDialogProps) {
+  const { t } = useTranslation("reservations");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -163,8 +165,8 @@ export function SpareVehicleAssignmentDialog({
     },
     onSuccess: async () => {
       toast({
-        title: "Vehicles assigned successfully",
-        description: `${filteredPlaceholders.length} spare vehicle(s) have been assigned.`,
+        title: t('spareVehicleAssignmentDialog.toasts.successTitle'),
+        description: t('spareVehicleAssignmentDialog.toasts.successDescription', { count: filteredPlaceholders.length }),
       });
 
       // Invalidate related queries
@@ -181,7 +183,7 @@ export function SpareVehicleAssignmentDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Assignment failed",
+        title: t('spareVehicleAssignmentDialog.toasts.assignmentFailedTitle'),
         description: error.message,
         variant: "destructive",
       });
@@ -191,11 +193,11 @@ export function SpareVehicleAssignmentDialog({
   const onSubmit = (data: AssignmentFormType) => {
     // Filter out assignments with no vehicle selected
     const validAssignments = data.assignments.filter(a => a.vehicleId > 0);
-    
+
     if (validAssignments.length === 0) {
       toast({
-        title: "No vehicles selected",
-        description: "Please select at least one vehicle to assign.",
+        title: t('spareVehicleAssignmentDialog.toasts.noVehiclesSelectedTitle'),
+        description: t('spareVehicleAssignmentDialog.toasts.noVehiclesSelectedDescription'),
         variant: "destructive",
       });
       return;
@@ -210,20 +212,20 @@ export function SpareVehicleAssignmentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Assign Spare Vehicles</DialogTitle>
+          <DialogTitle>{t('spareVehicleAssignmentDialog.title')}</DialogTitle>
           <DialogDescription>
-            Select available vehicles to assign to placeholder spare vehicle reservations.
+            {t('spareVehicleAssignmentDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin mr-2" />
-            Loading placeholder reservations and available vehicles...
+            {t('spareVehicleAssignmentDialog.loadingPlaceholder')}
           </div>
         ) : filteredPlaceholders.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            No placeholder spare vehicle reservations found.
+            {t('spareVehicleAssignmentDialog.noPlaceholdersFound')}
           </div>
         ) : (
           <Form {...form}>
@@ -242,48 +244,52 @@ export function SpareVehicleAssignmentDialog({
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
                               <Badge className="bg-orange-100 text-orange-800">
-                                TBD Spare #{placeholder.id}
+                                {t('spareVehicleAssignmentDialog.tbdSpareBadge', { id: placeholder.id })}
                               </Badge>
                               {placeholder.replacementForReservationId && (
                                 <Badge variant="outline">
-                                  For Reservation #{placeholder.replacementForReservationId}
+                                  {t('spareVehicleAssignmentDialog.forReservationBadge', { id: placeholder.replacementForReservationId })}
                                 </Badge>
                               )}
                               {originalReservation?.vehicle && (
                                 <Badge className="bg-blue-100 text-blue-800 border border-blue-300">
                                   <Wrench className="h-3 w-3 mr-1" />
-                                  Replacing: {formatLicensePlate(originalReservation.vehicle.licensePlate)} {originalReservation.vehicle.brand} {originalReservation.vehicle.model}
+                                  {t('spareVehicleAssignmentDialog.replacingBadge', {
+                                    plate: formatLicensePlate(originalReservation.vehicle.licensePlate),
+                                    brand: originalReservation.vehicle.brand,
+                                    model: originalReservation.vehicle.model,
+                                  })}
                                 </Badge>
                               )}
                             </div>
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                             {/* Customer Info */}
                             <div className="flex items-center gap-2">
                               <User className="h-4 w-4 text-gray-500" />
                               <div>
-                                <div className="font-medium">{placeholder.customer?.name || 'Unknown Customer'}</div>
+                                <div className="font-medium">{placeholder.customer?.name || t('spareVehicleAssignmentDialog.unknownCustomer')}</div>
                                 <div className="text-gray-600">{placeholder.customer?.phone || placeholder.customer?.email}</div>
                               </div>
                             </div>
-                            
+
                             {/* Date Range */}
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-gray-500" />
                               <div>
-                                <div className="font-medium">Assignment Period</div>
+                                <div className="font-medium">{t('spareVehicleAssignmentDialog.assignmentPeriodLabel')}</div>
                                 <div className="text-gray-600">
                                   {formatDate(placeholder.startDate)} - {formatDate(placeholder.endDate || placeholder.startDate)}
                                 </div>
                               </div>
                             </div>
-                            
+
                             {/* Status */}
                             <div className="flex items-center gap-2">
                               <Car className="h-4 w-4 text-gray-500" />
                               <div>
-                                <div className="font-medium">Status</div>
-                                <div className="text-orange-600">Awaiting Assignment</div>
+                                <div className="font-medium">{t('spareVehicleAssignmentDialog.statusLabel')}</div>
+                                <div className="text-orange-600">{t('spareVehicleAssignmentDialog.awaitingAssignment')}</div>
                               </div>
                             </div>
                           </div>
@@ -296,13 +302,13 @@ export function SpareVehicleAssignmentDialog({
                             name={`assignments.${index}.vehicleId`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Select Vehicle</FormLabel>
+                                <FormLabel>{t('spareVehicleAssignmentDialog.selectVehicleLabel')}</FormLabel>
                                 <FormControl>
                                   <VehicleSelector
                                     vehicles={availableVehicles || []}
                                     value={field.value > 0 ? field.value.toString() : ""}
                                     onChange={(value) => field.onChange(value ? parseInt(value) : 0)}
-                                    placeholder="Choose vehicle..."
+                                    placeholder={t('spareVehicleAssignmentDialog.chooseVehiclePlaceholder')}
                                     disabled={assignVehiclesMutation.isPending}
                                   />
                                 </FormControl>
@@ -319,26 +325,26 @@ export function SpareVehicleAssignmentDialog({
               </div>
 
               <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => onOpenChange(false)}
                   disabled={assignVehiclesMutation.isPending}
                 >
-                  Cancel
+                  {t('spareVehicleAssignmentDialog.cancelButton')}
                 </Button>
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={assignVehiclesMutation.isPending}
                   data-testid="button-assign-vehicles"
                 >
                   {assignVehiclesMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Assigning...
+                      {t('spareVehicleAssignmentDialog.assigningButton')}
                     </>
                   ) : (
-                    `Assign ${filteredPlaceholders.length} Vehicle(s)`
+                    t('spareVehicleAssignmentDialog.assignButton', { count: filteredPlaceholders.length })
                   )}
                 </Button>
               </DialogFooter>

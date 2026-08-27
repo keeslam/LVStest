@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,7 @@ import { ReservationAddDialog } from "@/components/reservations/reservation-add-
 import { Vehicle } from "@shared/schema";
 
 export function VehicleAvailabilityWidget() {
+  const { t } = useTranslation("dashboard");
   const { data: vehicles, isLoading } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles/available"],
   });
@@ -15,7 +17,7 @@ export function VehicleAvailabilityWidget() {
   return (
     <Card className="overflow-hidden h-full">
       <CardHeader className="bg-primary-600 py-3 px-4 flex-row justify-between items-center space-y-0">
-        <CardTitle className="text-base font-medium text-gray-900">Available Vehicles</CardTitle>
+        <CardTitle className="text-base font-medium text-gray-900">{t('availabilityWidget.title')}</CardTitle>
         <Car className="w-5 h-5 text-gray-900" />
       </CardHeader>
       <CardContent className="p-4">
@@ -29,12 +31,12 @@ export function VehicleAvailabilityWidget() {
         ) : vehicles?.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Car className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-            <p className="text-sm">No vehicles available</p>
+            <p className="text-sm">{t('availabilityWidget.none')}</p>
           </div>
         ) : (
           <div className="space-y-2 max-h-96 overflow-y-auto">
             <div className="mb-3 text-sm text-gray-600">
-              <span className="font-medium">{vehicles?.length || 0}</span> ready to rent
+              <span className="font-medium">{vehicles?.length || 0}</span> {t('availabilityWidget.readyToRent')}
             </div>
             {vehicles?.map((vehicle) => {
               const isOpnaam = vehicle.registeredTo === "true";

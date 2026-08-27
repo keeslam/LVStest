@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next";
 import { getColorRules, ColorRule } from "@/lib/color-rules";
 import { Info } from "lucide-react";
 
@@ -12,11 +13,13 @@ interface CalendarLegendProps {
   compact?: boolean;
 }
 
-export function CalendarLegend({ 
-  categories, 
-  title = "Color Legend", 
-  compact = false 
+export function CalendarLegend({
+  categories,
+  title,
+  compact = false
 }: CalendarLegendProps) {
+  const { t } = useTranslation("reservations");
+  const resolvedTitle = title ?? t("legend.title");
   const colorRules = getColorRules();
   
   // Filter rules based on categories and only show enabled ones
@@ -39,22 +42,22 @@ export function CalendarLegend({
   }, {} as Record<string, ColorRule[]>);
   
   const getCategoryTitle = (category: string) => {
-    switch (category) {
-      case 'reservation-status': return 'Reservation Status';
-      case 'reservation-type': return 'Reservation Types';
-      case 'maintenance-type': return 'Maintenance Types';
-      case 'maintenance-priority': return 'Priority Levels';
-      case 'indicators': return 'Indicators';
-      default: return category;
-    }
+    return t(`legend.categories.${category}`, { defaultValue: category });
   };
-  
+
+  // Defaults are always the same known ids, so a translated name/description
+  // exists for them; a rule the user renamed wouldn't match a key and just
+  // falls back to what's stored (there's no rename UI today, but this keeps
+  // it safe if one is ever added).
+  const ruleName = (rule: ColorRule) => t(`colorRules.${rule.id}.name`, { defaultValue: rule.name });
+  const ruleDescription = (rule: ColorRule) => t(`colorRules.${rule.id}.description`, { defaultValue: rule.description });
+
   if (compact) {
     return (
       <div className="flex flex-wrap gap-2 items-center text-sm">
         <div className="flex items-center gap-1 text-gray-600">
           <Info className="h-4 w-4" />
-          <span>Legend:</span>
+          <span>{t("legend.legendLabel")}</span>
         </div>
         {filteredRules.map(rule => (
           <div key={rule.id} className="flex items-center gap-2">
@@ -65,7 +68,7 @@ export function CalendarLegend({
                 borderColor: rule.borderColor
               }}
             />
-            <span className="text-gray-700">{rule.name}</span>
+            <span className="text-gray-700">{ruleName(rule)}</span>
           </div>
         ))}
       </div>
@@ -77,7 +80,7 @@ export function CalendarLegend({
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
           <Info className="h-4 w-4" />
-          {title}
+          {resolvedTitle}
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
@@ -99,10 +102,10 @@ export function CalendarLegend({
                         borderColor: rule.borderColor
                       }}
                     >
-                      {rule.name}
+                      {ruleName(rule)}
                     </Badge>
                     <span className="text-xs text-gray-600 truncate">
-                      {rule.description}
+                      {ruleDescription(rule)}
                     </span>
                   </div>
                 ))}

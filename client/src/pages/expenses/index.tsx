@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,7 @@ import {
 } from "lucide-react";
 
 export default function ExpensesIndex() {
+  const { t } = useTranslation(["expenses", "common"]);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -94,8 +96,8 @@ export default function ExpensesIndex() {
     },
     onSuccess: async (data, expenseId) => {
       toast({
-        title: "Expense deleted",
-        description: "The expense has been successfully deleted.",
+        title: t('viewDialog.expenseDeletedTitle'),
+        description: t('viewDialog.expenseDeletedDescription'),
       });
       
       // Use unified invalidation system for comprehensive cache updates
@@ -109,8 +111,8 @@ export default function ExpensesIndex() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Error deleting expense",
-        description: error.message || "Failed to delete expense. Please try again.",
+        title: t('viewDialog.deleteExpenseErrorTitle'),
+        description: error.message || t('viewDialog.deleteExpenseErrorDescription'),
         variant: "destructive",
       });
     }
@@ -226,7 +228,7 @@ export default function ExpensesIndex() {
   const columns: ColumnDef<Expense>[] = [
     {
       accessorKey: "date",
-      header: "Date",
+      header: t('indexPage.dateColumnHeader'),
       cell: ({ row }) => {
         const date = row.getValue("date") as string;
         return formatDate(date);
@@ -234,7 +236,7 @@ export default function ExpensesIndex() {
     },
     {
       accessorKey: "vehicle",
-      header: "Vehicle",
+      header: t('indexPage.vehicleColumnHeader'),
       cell: ({ row }) => {
         const vehicle = row.original.vehicle;
         return vehicle ? (
@@ -247,7 +249,7 @@ export default function ExpensesIndex() {
     },
     {
       accessorKey: "category",
-      header: "Category",
+      header: t('detailsPage.categoryLabel'),
       cell: ({ row }) => {
         const category = row.getValue("category") as string;
         return <Badge variant="outline">{category}</Badge>;
@@ -255,7 +257,7 @@ export default function ExpensesIndex() {
     },
     {
       accessorKey: "description",
-      header: "Description",
+      header: t('indexPage.descriptionColumnHeader'),
       cell: ({ row }) => {
         const description = row.getValue("description") as string;
         return description || "—";
@@ -263,7 +265,7 @@ export default function ExpensesIndex() {
     },
     {
       accessorKey: "amount",
-      header: "Amount",
+      header: t('indexPage.amountColumnHeader'),
       cell: ({ row }) => {
         const amount = row.getValue("amount") as number;
         return <span className="font-medium">{<Price value={amount} />}</span>;
@@ -273,12 +275,12 @@ export default function ExpensesIndex() {
       id: "actions",
       cell: ({ row }) => {
         const expense = row.original;
-        
+
         return (
           <div className="flex justify-end">
             <Link href={`/expenses/${expense.id}`}>
               <Button variant="ghost" size="sm">
-                View
+                {t('common:actions.view')}
               </Button>
             </Link>
           </div>
@@ -290,7 +292,7 @@ export default function ExpensesIndex() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Expense Management</h1>
+        <h1 className="text-2xl font-bold">{t('indexPage.pageTitle')}</h1>
         <div className="flex gap-2">
           <InvoiceScanner
             onExpensesCreated={(expenses) => {
@@ -305,7 +307,7 @@ export default function ExpensesIndex() {
                 <line x1="12" x2="12" y1="5" y2="19" />
                 <line x1="5" x2="19" y1="12" y2="12" />
               </svg>
-              Record Expense
+              {t('indexPage.recordExpenseButton')}
             </Button>
           </Link>
         </div>
@@ -314,28 +316,28 @@ export default function ExpensesIndex() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="md:col-span-3">
           <CardHeader>
-            <CardTitle>Expense Records</CardTitle>
+            <CardTitle>{t('indexPage.tableTitle')}</CardTitle>
             <CardDescription>
-              View and manage all vehicle-related expenses.
+              {t('indexPage.tableDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col md:flex-row gap-4 mb-4">
               <Input
-                placeholder="Search by license plate, category or description..."
+                placeholder={t('indexPage.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="max-w-sm"
               />
-              
+
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by category" />
+                  <SelectValue placeholder={t('indexPage.filterByCategoryPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>
-                      {category === "all" ? "All Categories" : category}
+                      {category === "all" ? t('indexPage.allCategoriesOption') : category}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -353,7 +355,7 @@ export default function ExpensesIndex() {
               <>
                 {!filteredExpenses?.length ? (
                   <div className="text-center p-10 border rounded-md bg-gray-50">
-                    <p className="text-gray-500">No expenses found matching your search criteria.</p>
+                    <p className="text-gray-500">{t('indexPage.noExpensesFound')}</p>
                   </div>
                 ) : (
                   <Accordion type="multiple" defaultValue={allCategories} className="w-full">
@@ -383,7 +385,7 @@ export default function ExpensesIndex() {
                                   </Badge>
                                 </div>
                                 <span className="text-gray-500 text-sm">
-                                  ({categoryExpenses.length} {categoryExpenses.length === 1 ? 'expense' : 'expenses'})
+                                  {t('indexPage.expenseCount', { count: categoryExpenses.length })}
                                 </span>
                               </div>
                               <div className="font-semibold text-right">
@@ -396,7 +398,7 @@ export default function ExpensesIndex() {
                               {/* Custom implementation with license plate filter support */}
                               <div className="space-y-4">
                                 <Input 
-                                  placeholder="Filter by license plate or description..." 
+                                  placeholder={t('indexPage.filterByLicensePlateOrDescriptionPlaceholder')}
                                   className="max-w-sm"
                                   onChange={(e) => {
                                     // Store the filter value locally
@@ -434,10 +436,10 @@ export default function ExpensesIndex() {
                                   <Table>
                                     <TableHeader>
                                       <TableRow>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Vehicle</TableHead>
-                                        <TableHead>Description</TableHead>
-                                        <TableHead>Amount</TableHead>
+                                        <TableHead>{t('indexPage.dateColumnHeader')}</TableHead>
+                                        <TableHead>{t('indexPage.vehicleColumnHeader')}</TableHead>
+                                        <TableHead>{t('indexPage.descriptionColumnHeader')}</TableHead>
+                                        <TableHead>{t('indexPage.amountColumnHeader')}</TableHead>
                                         <TableHead></TableHead>
                                       </TableRow>
                                     </TableHeader>
@@ -445,7 +447,7 @@ export default function ExpensesIndex() {
                                       {categoryExpenses.length === 0 ? (
                                         <TableRow>
                                           <TableCell colSpan={5} className="h-24 text-center">
-                                            No expenses found.
+                                            {t('indexPage.noExpensesFoundInCategory')}
                                           </TableCell>
                                         </TableRow>
                                       ) : (
@@ -475,7 +477,7 @@ export default function ExpensesIndex() {
                                                   data-testid={`button-view-expense-${expense.id}`}
                                                 >
                                                   <Eye className="h-4 w-4 mr-1" />
-                                                  View
+                                                  {t('common:actions.view')}
                                                 </Button>
                                                 <Button 
                                                   variant="ghost" 
@@ -499,7 +501,7 @@ export default function ExpensesIndex() {
                                 <Link href={`/expenses/add?category=${encodeURIComponent(category)}`}>
                                   <Button size="sm" variant="outline" className="gap-1">
                                     <PlusCircle size={16} />
-                                    Add {category} Expense
+                                    {t('indexPage.addCategoryExpenseButton', { category })}
                                   </Button>
                                 </Link>
                               </div>
@@ -517,19 +519,19 @@ export default function ExpensesIndex() {
         
         <Card>
           <CardHeader>
-            <CardTitle>Expense Summary</CardTitle>
-            <CardDescription>Overview of your expenses</CardDescription>
+            <CardTitle>{t('indexPage.summaryTitle')}</CardTitle>
+            <CardDescription>{t('indexPage.summaryDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Total Expenses</h3>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">{t('indexPage.totalExpensesLabel')}</h3>
                 <p className="text-3xl font-bold">{<Price value={totalAmount} />}</p>
               </div>
-              
+
               {!isLoading && (
                 <div className="space-y-4">
-                  <h4 className="text-sm font-medium text-gray-500">By Category</h4>
+                  <h4 className="text-sm font-medium text-gray-500">{t('indexPage.byCategoryLabel')}</h4>
                   {Object.entries(
                     filteredExpenses?.reduce((acc, expense) => {
                       const category = expense.category;
@@ -558,9 +560,9 @@ export default function ExpensesIndex() {
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Expense Details</DialogTitle>
+            <DialogTitle>{t('indexPage.viewExpenseDetailsDialogTitle')}</DialogTitle>
             <DialogDescription>
-              View detailed information about this expense record
+              {t('indexPage.viewExpenseDetailsDialogDescription')}
             </DialogDescription>
           </DialogHeader>
           
@@ -569,32 +571,32 @@ export default function ExpensesIndex() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Date</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('detailsPage.dateLabel')}</h3>
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 mr-2 text-primary" />
                       <span>{formatDate(selectedExpense.date)}</span>
                     </div>
                   </div>
-                  
+
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Category</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('detailsPage.categoryLabel')}</h3>
                     <div className="flex items-center">
                       <Tag className="h-4 w-4 mr-2 text-primary" />
                       <Badge>{selectedExpense.category}</Badge>
                     </div>
                   </div>
-                  
+
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Amount</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('detailsPage.amountLabel')}</h3>
                     <div className="text-2xl font-bold">
                       {<Price value={Number(selectedExpense.amount || 0)} />}
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Vehicle</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('detailsPage.vehicleLabel')}</h3>
                     <div className="flex items-center">
                       <Truck className="h-4 w-4 mr-2 text-primary" />
                       {selectedExpense.vehicle ? (
@@ -603,24 +605,24 @@ export default function ExpensesIndex() {
                           <div className="text-sm text-gray-500">{selectedExpense.vehicle.brand} {selectedExpense.vehicle.model}</div>
                         </div>
                       ) : (
-                        <span className="text-muted-foreground">Vehicle not found</span>
+                        <span className="text-muted-foreground">{t('detailsPage.vehicleNotFound')}</span>
                       )}
                     </div>
                   </div>
-                  
+
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">Description</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('detailsPage.descriptionLabel')}</h3>
                     <div className="flex items-start">
                       <FileText className="h-4 w-4 mr-2 mt-1 text-primary" />
                       <p className="text-sm">
-                        {selectedExpense.description || "No description provided"}
+                        {selectedExpense.description || t('detailsPage.noDescriptionProvided')}
                       </p>
                     </div>
                   </div>
-                  
+
                   {selectedExpense.receiptFilePath && (
                     <div>
-                      <h3 className="text-sm font-medium text-muted-foreground mb-1">Receipt</h3>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('detailsPage.receiptLabel')}</h3>
                       <div className="flex items-center">
                         <FileCheck className="h-4 w-4 mr-2 text-primary" />
                         <a
@@ -629,38 +631,38 @@ export default function ExpensesIndex() {
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:underline"
                         >
-                          View Receipt
+                          {t('detailsPage.viewReceiptLink')}
                         </a>
                       </div>
                     </div>
                   )}
                 </div>
               </div>
-              
+
               <div className="border-t pt-4 mt-4">
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <div>Created: {selectedExpense.createdAt ? formatDate(selectedExpense.createdAt) : 'N/A'}</div>
-                  {selectedExpense.createdBy && <div>By: {selectedExpense.createdBy}</div>}
+                  <div>{t('detailsPage.createdLabel', { date: selectedExpense.createdAt ? formatDate(selectedExpense.createdAt) : t('detailsPage.notAvailable') })}</div>
+                  {selectedExpense.createdBy && <div>{t('detailsPage.byLabel', { name: selectedExpense.createdBy })}</div>}
                 </div>
                 {selectedExpense.updatedAt && selectedExpense.createdAt && selectedExpense.updatedAt !== selectedExpense.createdAt && (
                   <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                    <div>Updated: {formatDate(selectedExpense.updatedAt)}</div>
-                    {selectedExpense.updatedBy && <div>By: {selectedExpense.updatedBy}</div>}
+                    <div>{t('detailsPage.updatedLabel', { date: formatDate(selectedExpense.updatedAt) })}</div>
+                    {selectedExpense.updatedBy && <div>{t('detailsPage.byLabel', { name: selectedExpense.updatedBy })}</div>}
                   </div>
                 )}
               </div>
-              
+
               <div className="flex gap-3 pt-4 border-t">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => handleEditExpense(selectedExpense)}
                   className="flex-1"
                   data-testid="button-edit-from-dialog"
                 >
                   <Pencil className="h-4 w-4 mr-2" />
-                  Edit Expense
+                  {t('detailsPage.editExpenseButton')}
                 </Button>
-                <Button 
+                <Button
                   variant="destructive"
                   onClick={() => {
                     setViewDialogOpen(false);
@@ -669,13 +671,13 @@ export default function ExpensesIndex() {
                   data-testid="button-delete-from-dialog"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
+                  {t('detailsPage.deleteButton')}
                 </Button>
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => setViewDialogOpen(false)}
                 >
-                  Close
+                  {t('common:actions.close')}
                 </Button>
               </div>
             </div>
@@ -687,9 +689,9 @@ export default function ExpensesIndex() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Expense</DialogTitle>
+            <DialogTitle>{t('addPage.editExpenseTitle')}</DialogTitle>
             <DialogDescription>
-              Update the expense details below
+              {t('indexPage.editExpenseDialogDescription')}
             </DialogDescription>
           </DialogHeader>
           
@@ -719,14 +721,14 @@ export default function ExpensesIndex() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>{t('detailsPage.confirmDeleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this expense record. This action cannot be undone.
+              {t('detailsPage.confirmDeleteDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
               onClick={() => expenseToDelete && deleteExpenseMutation.mutate(expenseToDelete.id)}
               disabled={deleteExpenseMutation.isPending}
               className="bg-red-600 hover:bg-red-700"
@@ -737,10 +739,10 @@ export default function ExpensesIndex() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Deleting...
+                  {t('detailsPage.deletingButton')}
                 </>
               ) : (
-                <>Delete</>
+                <>{t('detailsPage.deleteButton')}</>
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
@@ -8,14 +10,14 @@ import { Reservation } from "@shared/schema";
 import { ReservationQuickStatusButton } from "@/components/reservations/reservation-quick-status-button";
 
 // Function to calculate duration between two dates in days
-function getDuration(startDate: string, endDate: string): string {
+function getDuration(startDate: string, endDate: string, t: TFunction): string {
   const start = new Date(startDate);
   const end = new Date(endDate);
-  
+
   const diffTime = Math.abs(end.getTime() - start.getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  return `${diffDays} day${diffDays !== 1 ? 's' : ''}`;
+
+  return t('reservationCalendar.day', { count: diffDays });
 }
 
 // Function to get status badge style
@@ -37,6 +39,7 @@ function getStatusBadge(status: string) {
 }
 
 export function UpcomingReservations() {
+  const { t } = useTranslation("dashboard");
   const { data: reservations, isLoading } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations/upcoming"],
   });
@@ -44,10 +47,10 @@ export function UpcomingReservations() {
   return (
     <Card className="col-span-1 lg:col-span-2">
       <CardHeader className="px-4 py-3 border-b flex-row justify-between items-center space-y-0">
-        <CardTitle className="text-base font-medium text-gray-800">Upcoming Reservations</CardTitle>
+        <CardTitle className="text-base font-medium text-gray-800">{t('upcomingReservations.title')}</CardTitle>
         <Link href="/reservations">
           <Button variant="link" className="text-primary-600 hover:text-primary-700 text-sm font-medium h-8 px-0">
-            View All
+            {t('upcomingReservations.viewAll')}
           </Button>
         </Link>
       </CardHeader>
@@ -57,19 +60,19 @@ export function UpcomingReservations() {
             <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Vehicle
+                  {t('upcomingReservations.colVehicle')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer
+                  {t('upcomingReservations.colCustomer')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Period
+                  {t('upcomingReservations.colPeriod')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  {t('common:fields.status')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  {t('upcomingReservations.colActions')}
                 </th>
               </tr>
             </thead>
@@ -88,7 +91,7 @@ export function UpcomingReservations() {
               ) : reservations?.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                    No upcoming reservations
+                    {t('upcomingReservations.none')}
                   </td>
                 </tr>
               ) : (
@@ -111,7 +114,7 @@ export function UpcomingReservations() {
                         <span>{reservation.startDate ? formatDate(reservation.startDate) : ''}</span> - 
                         <span> {reservation.endDate ? formatDate(reservation.endDate) : ''}</span>
                       </div>
-                      <div className="text-xs text-gray-500">{getDuration(reservation.startDate || '', reservation.endDate || '')}</div>
+                      <div className="text-xs text-gray-500">{getDuration(reservation.startDate || '', reservation.endDate || '', t)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(reservation.status || 'booked')}

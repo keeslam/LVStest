@@ -1,10 +1,11 @@
 import { useLocation, Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import { UserRole, UserPermission } from "@shared/schema";
 
 type NavItem = {
   href: string;
-  label: string;
+  labelKey: string;
   icon: string;
   permissions?: string[];
 };
@@ -12,19 +13,20 @@ type NavItem = {
 export function SidebarNav() {
   const [location] = useLocation();
   const { user } = useAuth();
+  const { t } = useTranslation("nav");
   const isAdmin = user?.role === UserRole.ADMIN;
 
   const navItems: NavItem[] = [
-    { href: "/", label: "Dashboard", icon: "dashboard", permissions: [UserPermission.VIEW_DASHBOARD] },
-    { href: "/vehicles", label: "Vehicles", icon: "directions_car", permissions: [UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES] },
-    { href: "/customers", label: "Customers", icon: "people", permissions: [UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS] },
-    { href: "/reservations", label: "Reservations", icon: "event", permissions: [UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS] },
-    { href: "/maintenance", label: "Maintenance", icon: "maintenance", permissions: [UserPermission.MANAGE_MAINTENANCE] },
-    { href: "/expenses", label: "Expenses", icon: "euro", permissions: [UserPermission.MANAGE_EXPENSES] },
-    { href: "/documents", label: "Documents", icon: "description", permissions: [UserPermission.MANAGE_DOCUMENTS] },
-    { href: "/delivery", label: "Transports", icon: "delivery", permissions: [UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS] },
-    { href: "/communications", label: "Communications", icon: "email", permissions: [UserPermission.MANAGE_EMAIL_TEMPLATES, UserPermission.MANAGE_NOTIFICATIONS] },
-    { href: "/reports", label: "Reports", icon: "assessment", permissions: [UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS] }
+    { href: "/", labelKey: "dashboard", icon: "dashboard", permissions: [UserPermission.VIEW_DASHBOARD] },
+    { href: "/vehicles", labelKey: "vehicles", icon: "directions_car", permissions: [UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES] },
+    { href: "/customers", labelKey: "customers", icon: "people", permissions: [UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS] },
+    { href: "/reservations", labelKey: "reservations", icon: "event", permissions: [UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS] },
+    { href: "/maintenance", labelKey: "maintenance", icon: "maintenance", permissions: [UserPermission.MANAGE_MAINTENANCE] },
+    { href: "/expenses", labelKey: "expenses", icon: "euro", permissions: [UserPermission.MANAGE_EXPENSES] },
+    { href: "/documents", labelKey: "documents", icon: "description", permissions: [UserPermission.MANAGE_DOCUMENTS] },
+    { href: "/delivery", labelKey: "transports", icon: "delivery", permissions: [UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS] },
+    { href: "/communications", labelKey: "communications", icon: "email", permissions: [UserPermission.MANAGE_EMAIL_TEMPLATES, UserPermission.MANAGE_NOTIFICATIONS] },
+    { href: "/reports", labelKey: "reports", icon: "assessment", permissions: [UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS] }
   ];
 
   const hasPermission = (item: NavItem): boolean => {
@@ -57,7 +59,7 @@ export function SidebarNav() {
               <span className="mr-3 text-xl">
                 {getNavIcon(item.icon, isActive)}
               </span>
-              {item.label}
+              {t(item.labelKey)}
             </Link>
           );
         })}

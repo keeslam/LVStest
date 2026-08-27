@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,7 @@ import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 export function SpareVehicleAssignmentsWidget() {
+  const { t } = useTranslation("dashboard");
   const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
   const [selectedPlaceholder, setSelectedPlaceholder] = useState<Reservation | null>(null);
   const [pickupDialogOpen, setPickupDialogOpen] = useState(false);
@@ -158,16 +160,16 @@ export function SpareVehicleAssignmentsWidget() {
     },
     onSuccess: () => {
       toast({
-        title: "Status Updated",
-        description: "Spare vehicle status has been updated successfully."
+        title: t('spareWidget.statusUpdatedTitle'),
+        description: t('spareWidget.statusUpdatedDescription')
       });
       // Invalidate relevant queries
       invalidateRelatedQueries('reservations');
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to update spare vehicle status.",
+        title: t('common:status.error'),
+        description: t('spareWidget.statusUpdateFailed'),
         variant: "destructive"
       });
     }
@@ -220,10 +222,10 @@ export function SpareVehicleAssignmentsWidget() {
 
   const getStatusLabel = (status?: string) => {
     switch (status) {
-      case 'ready': return 'Ready';
-      case 'picked_up': return 'Picked Up';
-      case 'returned': return 'Returned';
-      default: return 'Assigned';
+      case 'ready': return t('spareWidget.statusReady');
+      case 'picked_up': return t('spareWidget.statusPickedUp');
+      case 'returned': return t('spareWidget.statusReturned');
+      default: return t('spareWidget.statusAssigned');
     }
   };
 
@@ -232,7 +234,7 @@ export function SpareVehicleAssignmentsWidget() {
       <Card className="overflow-hidden h-full">
         <CardHeader className="bg-orange-500 py-3 px-4 flex-row justify-between items-center space-y-0">
           <CardTitle className="text-base font-medium text-gray-900">
-            Spare Vehicle Management
+            {t('spareWidget.title')}
           </CardTitle>
           <Car className="w-5 h-5 text-gray-900" />
         </CardHeader>
@@ -240,7 +242,7 @@ export function SpareVehicleAssignmentsWidget() {
           <Tabs defaultValue="pending" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="pending" className="relative text-xs px-2">
-                TBD
+                {t('spareWidget.tabTbd')}
                 {sortedPending.length > 0 && (
                   <Badge variant="destructive" className="ml-1 px-1 py-0 text-xs">
                     {sortedPending.length}
@@ -248,7 +250,7 @@ export function SpareVehicleAssignmentsWidget() {
                 )}
               </TabsTrigger>
               <TabsTrigger value="assigned" className="relative text-xs px-2">
-                Upcoming
+                {t('spareWidget.tabUpcoming')}
                 {upcomingAssigned.length > 0 && (
                   <Badge variant="secondary" className="ml-1 px-1 py-0 text-xs">
                     {upcomingAssigned.length}
@@ -256,7 +258,7 @@ export function SpareVehicleAssignmentsWidget() {
                 )}
               </TabsTrigger>
               <TabsTrigger value="active" className="relative text-xs px-2">
-                Active
+                {t('spareWidget.tabActive')}
                 {activeSpares.length > 0 && (
                   <Badge variant="default" className="ml-1 px-1 py-0 text-xs bg-blue-500">
                     {activeSpares.length}
@@ -267,7 +269,7 @@ export function SpareVehicleAssignmentsWidget() {
             
             <TabsContent value="pending" className="p-4 space-y-3">
               <div className="text-sm text-gray-600 mb-3">
-                Vehicles needed but not yet assigned to specific spare vehicles
+                {t('spareWidget.pendingDescription')}
               </div>
               
               <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -281,7 +283,7 @@ export function SpareVehicleAssignmentsWidget() {
                 ) : sortedPending.length === 0 ? (
                   <div className="text-center py-4 text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-md">
                     <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                    All spare vehicles assigned
+                    {t('spareWidget.allAssigned')}
                   </div>
                 ) : (
                   sortedPending.map(placeholder => (
@@ -290,10 +292,10 @@ export function SpareVehicleAssignmentsWidget() {
                         <AlertCircle className="w-4 h-4 text-red-500" />
                         <div>
                           <div className="font-medium text-sm text-red-700 dark:text-red-400">
-                            TBD Spare Vehicle
+                            {t('spareWidget.tbdSpareVehicle')}
                           </div>
                           <div className="text-xs text-gray-500">
-                            Needed: {formatDate(placeholder.startDate)}
+                            {t('spareWidget.needed', { date: formatDate(placeholder.startDate) })}
                             {placeholder.endDate && ` - ${formatDate(placeholder.endDate)}`}
                           </div>
                         </div>
@@ -304,7 +306,7 @@ export function SpareVehicleAssignmentsWidget() {
                         onClick={() => handleAssignClick(placeholder)}
                         className="text-xs bg-red-500 text-white hover:bg-red-600 border-red-500"
                       >
-                        Assign Vehicle
+                        {t('spareWidget.assignVehicle')}
                       </Button>
                     </div>
                   ))
@@ -314,7 +316,7 @@ export function SpareVehicleAssignmentsWidget() {
             
             <TabsContent value="assigned" className="p-4 space-y-3">
               <div className="text-sm text-gray-600 mb-3">
-                Spare vehicles to be picked up within the next 7 days
+                {t('spareWidget.upcomingDescription')}
               </div>
               
               <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -328,7 +330,7 @@ export function SpareVehicleAssignmentsWidget() {
                 ) : upcomingAssigned.length === 0 ? (
                   <div className="text-center py-4 text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-md">
                     <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                    No upcoming pickups needed
+                    {t('spareWidget.noUpcomingPickups')}
                   </div>
                 ) : (
                   upcomingAssigned.map(spare => {
@@ -340,9 +342,9 @@ export function SpareVehicleAssignmentsWidget() {
                           {getStatusIcon(spare.spareVehicleStatus ?? undefined)}
                           <div>
                             <div className="font-medium text-sm">
-                              {spare.vehicleId && vehicleMap[spare.vehicleId] 
+                              {spare.vehicleId && vehicleMap[spare.vehicleId]
                                 ? `${vehicleMap[spare.vehicleId].brand} ${vehicleMap[spare.vehicleId].model}`
-                                : `Spare Vehicle (ID: ${spare.vehicleId})`
+                                : t('spareWidget.spareVehicleWithId', { id: spare.vehicleId })
                               }
                               {spare.vehicleId && vehicleMap[spare.vehicleId]?.licensePlate && (
                                 <span className="ml-2 text-xs text-gray-500">
@@ -353,12 +355,12 @@ export function SpareVehicleAssignmentsWidget() {
                             {parentInfo && (
                               <div className="text-xs text-gray-600 mt-1 flex items-center gap-1">
                                 <User className="w-3 h-3" />
-                                <span className="font-medium">{parentInfo.customer?.name || 'Unknown'}</span>
+                                <span className="font-medium">{parentInfo.customer?.name || t('spareWidget.unknownCustomer')}</span>
                                 {parentInfo.vehicle && (
                                   <>
                                     <ArrowRight className="w-3 h-3 mx-1" />
                                     <span className="text-gray-500">
-                                      replacing {parentInfo.vehicle.brand} {parentInfo.vehicle.model}
+                                      {t('spareWidget.replacing', { brand: parentInfo.vehicle.brand, model: parentInfo.vehicle.model })}
                                       {parentInfo.vehicle.licensePlate && ` (${formatLicensePlate(parentInfo.vehicle.licensePlate)})`}
                                     </span>
                                   </>
@@ -366,7 +368,7 @@ export function SpareVehicleAssignmentsWidget() {
                               </div>
                             )}
                             <div className="text-xs text-gray-500">
-                              Service dates: {formatDate(spare.startDate)}
+                              {t('spareWidget.serviceDates', { date: formatDate(spare.startDate) })}
                               {spare.endDate && ` - ${formatDate(spare.endDate)}`}
                             </div>
                           </div>
@@ -387,7 +389,7 @@ export function SpareVehicleAssignmentsWidget() {
                               className="text-xs"
                               data-testid="button-start-pickup-spare"
                             >
-                              Start Pickup
+                              {t('spareWidget.startPickup')}
                             </Button>
                           )}
                           {spare.spareVehicleStatus === 'ready' && (
@@ -398,7 +400,7 @@ export function SpareVehicleAssignmentsWidget() {
                               disabled={updateStatusMutation.isPending}
                               className="text-xs"
                             >
-                              Mark Picked Up
+                              {t('spareWidget.markPickedUp')}
                             </Button>
                           )}
                           {spare.spareVehicleStatus === 'picked_up' && (
@@ -409,7 +411,7 @@ export function SpareVehicleAssignmentsWidget() {
                               disabled={updateStatusMutation.isPending}
                               className="text-xs"
                             >
-                              Mark Returned
+                              {t('spareWidget.markReturned')}
                             </Button>
                           )}
                         </div>
@@ -422,7 +424,7 @@ export function SpareVehicleAssignmentsWidget() {
 
             <TabsContent value="active" className="p-4 space-y-3">
               <div className="text-sm text-gray-600 mb-3">
-                Spare vehicles currently in use by customers
+                {t('spareWidget.activeDescription')}
               </div>
               
               <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -436,7 +438,7 @@ export function SpareVehicleAssignmentsWidget() {
                 ) : activeSpares.length === 0 ? (
                   <div className="text-center py-4 text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-md">
                     <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                    No active spare vehicles
+                    {t('spareWidget.noActiveSpares')}
                   </div>
                 ) : (
                   activeSpares.map(spare => (
@@ -446,9 +448,9 @@ export function SpareVehicleAssignmentsWidget() {
                           <Truck className="w-4 h-4 text-blue-500" />
                           <div>
                             <div className="font-medium text-sm">
-                              {spare.vehicleId && vehicleMap[spare.vehicleId] 
+                              {spare.vehicleId && vehicleMap[spare.vehicleId]
                                 ? `${vehicleMap[spare.vehicleId].brand} ${vehicleMap[spare.vehicleId].model}`
-                                : `Spare Vehicle (ID: ${spare.vehicleId})`
+                                : t('spareWidget.spareVehicleWithId', { id: spare.vehicleId })
                               }
                               {spare.vehicleId && vehicleMap[spare.vehicleId]?.licensePlate && (
                                 <span className="ml-2 text-xs text-gray-500">
@@ -457,16 +459,16 @@ export function SpareVehicleAssignmentsWidget() {
                               )}
                             </div>
                             <div className="text-xs text-gray-500">
-                              In use since: {formatDate(spare.startDate)}
-                              {spare.endDate && ` • Expected return: ${formatDate(spare.endDate)}`}
+                              {t('spareWidget.inUseSince', { date: formatDate(spare.startDate) })}
+                              {spare.endDate && t('spareWidget.expectedReturn', { date: formatDate(spare.endDate) })}
                             </div>
                           </div>
                         </div>
                         <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                          In Use
+                          {t('spareWidget.inUse')}
                         </Badge>
                       </div>
-                      
+
                       <div className="flex gap-2 mt-2">
                         <Button
                           size="sm"
@@ -476,7 +478,7 @@ export function SpareVehicleAssignmentsWidget() {
                           className="text-xs"
                           data-testid="button-mark-returned-spare"
                         >
-                          Mark Returned
+                          {t('spareWidget.markReturned')}
                         </Button>
                       </div>
                     </div>
@@ -500,6 +502,7 @@ export function SpareVehicleAssignmentsWidget() {
       {/* Pickup Dialog for Spare Vehicles */}
       {selectedSpareForPickup && (
         <PickupDialog
+          key={`pickup-${selectedSpareForPickup.id}`}
           open={pickupDialogOpen}
           onOpenChange={handlePickupDialogClose}
           reservation={selectedSpareForPickup}

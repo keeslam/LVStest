@@ -1,17 +1,19 @@
 import { useParams } from "wouter";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { VehicleForm } from "@/components/vehicles/vehicle-form";
 import { Vehicle } from "@shared/schema";
 
 export default function EditVehiclePage() {
+  const { t } = useTranslation("vehicles");
   const params = useParams<{ id: string }>();
   const vehicleId = parseInt(params.id);
-  
+
   // Fetch the vehicle data
   const { data: vehicle, isLoading } = useQuery<Vehicle>({
     queryKey: [`/api/vehicles/${vehicleId}`],
   });
-  
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -22,14 +24,14 @@ export default function EditVehiclePage() {
       </div>
     );
   }
-  
+
   if (!vehicle) {
-    return <div className="text-center p-8">Vehicle not found</div>;
+    return <div className="text-center p-8">{t('editPage.vehicleNotFound')}</div>;
   }
-  
+
   return (
     <div className="container mx-auto py-6">
-      <h1 className="text-2xl font-bold mb-6">Edit Vehicle: {vehicle.brand} {vehicle.model}</h1>
+      <h1 className="text-2xl font-bold mb-6">{t('editPage.editVehicleTitle', { brand: vehicle.brand, model: vehicle.model })}</h1>
       <VehicleForm editMode={true} initialData={vehicle} />
     </div>
   );

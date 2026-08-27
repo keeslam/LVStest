@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
@@ -83,14 +85,15 @@ const getUrgencyColor = (days: number): string => {
 };
 
 // Helper function to get urgency text
-const getUrgencyText = (days: number): string => {
-  if (days < 0) return `${Math.abs(days)} days overdue`;
-  if (days === 0) return "Due today";
-  if (days === 1) return "Due tomorrow";
-  return `${days} days remaining`;
+const getUrgencyText = (days: number, t: TFunction): string => {
+  if (days < 0) return t('listDialog.daysOverdue', { count: Math.abs(days) });
+  if (days === 0) return t('listDialog.dueToday');
+  if (days === 1) return t('listDialog.dueTomorrow');
+  return t('listDialog.daysRemaining', { count: days });
 };
 
 export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDialogProps) {
+  const { t } = useTranslation(["maintenance", "common"]);
   const [searchTerm, setSearchTerm] = useState("");
   
   // State for maintenance edit dialog
@@ -165,8 +168,8 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
       invalidateByPrefix('/api/placeholder-reservations');
 
       toast({
-        title: "Maintenance Deleted",
-        description: "The maintenance reservation has been successfully deleted.",
+        title: t('listDialog.maintenanceDeletedTitle'),
+        description: t('listDialog.maintenanceDeletedDescription'),
       });
 
       // Close dialogs
@@ -176,8 +179,8 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
     } catch (error) {
       console.error('Error deleting maintenance:', error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete maintenance reservation",
+        title: t('listDialog.errorTitle'),
+        description: error instanceof Error ? error.message : t('listDialog.deleteFailedDescription'),
         variant: "destructive",
       });
     } finally {
@@ -269,10 +272,10 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Wrench className="h-5 w-5" />
-            Maintenance Overview
+            {t('listDialog.overviewTitle')}
           </DialogTitle>
           <DialogDescription>
-            Comprehensive view of all maintenance-related items and upcoming service requirements
+            {t('listDialog.overviewDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -282,7 +285,7 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search vehicles, license plates, customers..."
+                placeholder={t('listDialog.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -291,7 +294,7 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
             </div>
           </div>
           <div className="flex items-center gap-4 text-sm text-gray-600">
-            <span className="font-medium">Total Items: {totalItems}</span>
+            <span className="font-medium">{t('listDialog.totalItems', { count: totalItems })}</span>
           </div>
         </div>
 
@@ -301,19 +304,19 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="apk" className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" />
-                APK ({filteredApkVehicles.length})
+                {t('listDialog.apkTab', { count: filteredApkVehicles.length })}
               </TabsTrigger>
               <TabsTrigger value="warranty" className="flex items-center gap-2">
                 <Shield className="h-4 w-4" />
-                Warranty ({filteredWarrantyVehicles.length})
+                {t('listDialog.warrantyTab', { count: filteredWarrantyVehicles.length })}
               </TabsTrigger>
               <TabsTrigger value="scheduled" className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                Scheduled ({filteredMaintenanceReservations.length})
+                {t('listDialog.scheduledTab', { count: filteredMaintenanceReservations.length })}
               </TabsTrigger>
               <TabsTrigger value="spares" className="flex items-center gap-2">
                 <Car className="h-4 w-4" />
-                Spares ({filteredSpareAssignments.length})
+                {t('listDialog.sparesTab', { count: filteredSpareAssignments.length })}
               </TabsTrigger>
             </TabsList>
 
@@ -323,10 +326,10 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <AlertTriangle className="h-5 w-5 text-orange-500" />
-                    APK Inspections Due
+                    {t('listDialog.apkInspectionsDue')}
                   </CardTitle>
                   <CardDescription>
-                    Vehicles with APK inspections expiring within 60 days
+                    {t('listDialog.apkInspectionsDescription')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -338,22 +341,22 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                     <Alert className="bg-red-50 border-red-200">
                       <AlertTriangle className="h-4 w-4 text-red-600" />
                       <AlertDescription className="text-red-700">
-                        Failed to load APK expiring vehicles. Please try again.
+                        {t('listDialog.failedToLoadApk')}
                       </AlertDescription>
                     </Alert>
                   ) : filteredApkVehicles.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
-                      {searchTerm ? "No APK expiring vehicles match your search" : "No APK inspections due soon"}
+                      {searchTerm ? t('listDialog.noApkMatchSearch') : t('listDialog.noApkDueSoon')}
                     </div>
                   ) : (
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Vehicle</TableHead>
-                          <TableHead>License Plate</TableHead>
-                          <TableHead>APK Date</TableHead>
-                          <TableHead>Urgency</TableHead>
-                          <TableHead>Actions</TableHead>
+                          <TableHead>{t('listDialog.vehicleCol')}</TableHead>
+                          <TableHead>{t('listDialog.licensePlateCol')}</TableHead>
+                          <TableHead>{t('listDialog.apkDateCol')}</TableHead>
+                          <TableHead>{t('listDialog.urgencyCol')}</TableHead>
+                          <TableHead>{t('listDialog.actionsCol')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -377,18 +380,18 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                                 </code>
                               </TableCell>
                               <TableCell>
-                                {vehicle.apkDate ? format(parseISO(vehicle.apkDate), "dd MMM yyyy") : "Not set"}
+                                {vehicle.apkDate ? format(parseISO(vehicle.apkDate), "dd MMM yyyy") : t('listDialog.notSet')}
                               </TableCell>
                               <TableCell>
                                 <Badge className={getUrgencyColor(vehicle.daysUntil)}>
-                                  {getUrgencyText(vehicle.daysUntil)}
+                                  {getUrgencyText(vehicle.daysUntil, t)}
                                 </Badge>
                               </TableCell>
                               <TableCell>
                                 <div className="flex gap-2">
-                                  <Button 
-                                    size="sm" 
-                                    variant="default" 
+                                  <Button
+                                    size="sm"
+                                    variant="default"
                                     onClick={() => {
                                       setSelectedVehicleIdForSchedule(vehicle.id);
                                       setSelectedMaintenanceTypeForSchedule("apk_inspection");
@@ -397,11 +400,11 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                                     data-testid={`button-schedule-apk-${vehicle.id}`}
                                   >
                                     <Wrench className="h-4 w-4 mr-1" />
-                                    Schedule
+                                    {t('listDialog.schedule')}
                                   </Button>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
                                     onClick={() => {
                                       setSelectedVehicleId(vehicle.id);
                                       setVehicleViewDialogOpen(true);
@@ -409,7 +412,7 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                                     data-testid={`button-view-${vehicle.id}`}
                                   >
                                     <Eye className="h-4 w-4 mr-1" />
-                                    View
+                                    {t('listDialog.view')}
                                   </Button>
                                 </div>
                               </TableCell>
@@ -428,10 +431,10 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Shield className="h-5 w-5 text-blue-500" />
-                    Warranties Expiring
+                    {t('listDialog.warrantiesExpiring')}
                   </CardTitle>
                   <CardDescription>
-                    Vehicles with warranties expiring within 60 days
+                    {t('listDialog.warrantiesDescription')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -443,22 +446,22 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                     <Alert className="bg-red-50 border-red-200">
                       <AlertTriangle className="h-4 w-4 text-red-600" />
                       <AlertDescription className="text-red-700">
-                        Failed to load warranty expiring vehicles. Please try again.
+                        {t('listDialog.failedToLoadWarranty')}
                       </AlertDescription>
                     </Alert>
                   ) : filteredWarrantyVehicles.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
-                      {searchTerm ? "No warranty expiring vehicles match your search" : "No warranties expiring soon"}
+                      {searchTerm ? t('listDialog.noWarrantyMatchSearch') : t('listDialog.noWarrantyExpiringSoon')}
                     </div>
                   ) : (
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Vehicle</TableHead>
-                          <TableHead>License Plate</TableHead>
-                          <TableHead>Warranty End Date</TableHead>
-                          <TableHead>Urgency</TableHead>
-                          <TableHead>Actions</TableHead>
+                          <TableHead>{t('listDialog.vehicleCol')}</TableHead>
+                          <TableHead>{t('listDialog.licensePlateCol')}</TableHead>
+                          <TableHead>{t('listDialog.warrantyEndDateCol')}</TableHead>
+                          <TableHead>{t('listDialog.urgencyCol')}</TableHead>
+                          <TableHead>{t('listDialog.actionsCol')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -482,18 +485,18 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                                 </code>
                               </TableCell>
                               <TableCell>
-                                {vehicle.warrantyEndDate ? format(parseISO(vehicle.warrantyEndDate), "dd MMM yyyy") : "Not set"}
+                                {vehicle.warrantyEndDate ? format(parseISO(vehicle.warrantyEndDate), "dd MMM yyyy") : t('listDialog.notSet')}
                               </TableCell>
                               <TableCell>
                                 <Badge className={getUrgencyColor(vehicle.daysUntil)}>
-                                  {getUrgencyText(vehicle.daysUntil)}
+                                  {getUrgencyText(vehicle.daysUntil, t)}
                                 </Badge>
                               </TableCell>
                               <TableCell>
                                 <div className="flex gap-2">
-                                  <Button 
-                                    size="sm" 
-                                    variant="default" 
+                                  <Button
+                                    size="sm"
+                                    variant="default"
                                     onClick={() => {
                                       setSelectedVehicleIdForSchedule(vehicle.id);
                                       setSelectedMaintenanceTypeForSchedule("warranty_service");
@@ -502,11 +505,11 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                                     data-testid={`button-schedule-warranty-${vehicle.id}`}
                                   >
                                     <Wrench className="h-4 w-4 mr-1" />
-                                    Schedule
+                                    {t('listDialog.schedule')}
                                   </Button>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
                                     onClick={() => {
                                       setSelectedVehicleId(vehicle.id);
                                       setVehicleViewDialogOpen(true);
@@ -514,7 +517,7 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                                     data-testid={`button-view-${vehicle.id}`}
                                   >
                                     <Eye className="h-4 w-4 mr-1" />
-                                    View
+                                    {t('listDialog.view')}
                                   </Button>
                                 </div>
                               </TableCell>
@@ -533,10 +536,10 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-green-500" />
-                    Scheduled Maintenance
+                    {t('listDialog.scheduledMaintenance')}
                   </CardTitle>
                   <CardDescription>
-                    Active maintenance blocks and scheduled service appointments
+                    {t('listDialog.scheduledDescription')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -548,25 +551,25 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                     <Alert className="bg-red-50 border-red-200">
                       <AlertTriangle className="h-4 w-4 text-red-600" />
                       <AlertDescription className="text-red-700">
-                        Failed to load scheduled maintenance. Please try again.
+                        {t('listDialog.failedToLoadScheduled')}
                       </AlertDescription>
                     </Alert>
                   ) : filteredMaintenanceReservations.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
-                      {searchTerm ? "No scheduled maintenance matches your search" : "No scheduled maintenance"}
+                      {searchTerm ? t('listDialog.noScheduledMatchSearch') : t('listDialog.noScheduledMaintenance')}
                     </div>
                   ) : (
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Vehicle</TableHead>
-                          <TableHead>License Plate</TableHead>
-                          <TableHead>Start Date</TableHead>
-                          <TableHead>Duration</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Scheduled By</TableHead>
-                          <TableHead>Actions</TableHead>
+                          <TableHead>{t('listDialog.vehicleCol')}</TableHead>
+                          <TableHead>{t('listDialog.licensePlateCol')}</TableHead>
+                          <TableHead>{t('listDialog.startDateCol')}</TableHead>
+                          <TableHead>{t('listDialog.durationCol')}</TableHead>
+                          <TableHead>{t('listDialog.statusCol')}</TableHead>
+                          <TableHead>{t('listDialog.descriptionCol')}</TableHead>
+                          <TableHead>{t('listDialog.scheduledByCol')}</TableHead>
+                          <TableHead>{t('listDialog.actionsCol')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -589,7 +592,7 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                                 {format(parseISO(reservation.startDate), "dd MMM yyyy")}
                               </TableCell>
                               <TableCell>
-                                {reservation.maintenanceDuration ? `${reservation.maintenanceDuration} ${reservation.maintenanceDuration === 1 ? 'day' : 'days'}` : 'TBD'}
+                                {reservation.maintenanceDuration ? t('listDialog.day', { count: reservation.maintenanceDuration }) : t('listDialog.tbd')}
                               </TableCell>
                               <TableCell>
                                 {reservation.maintenanceStatus ? (
@@ -601,7 +604,7 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                                       "bg-green-500 text-white"
                                     }
                                   >
-                                    {reservation.maintenanceStatus.toUpperCase()}
+                                    {t(`listDialog.statusShort.${reservation.maintenanceStatus}`, { defaultValue: reservation.maintenanceStatus.toUpperCase() })}
                                   </Badge>
                                 ) : (
                                   <Badge variant={reservation.status === "completed" ? "default" : "secondary"}>
@@ -611,27 +614,27 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                               </TableCell>
                               <TableCell className="max-w-xs">
                                 <div className="truncate text-sm">
-                                  {reservation.notes?.split('\n')[0] || 'No description'}
+                                  {reservation.notes?.split('\n')[0] || t('listDialog.noDescription')}
                                 </div>
                               </TableCell>
                               <TableCell>
                                 <div className="text-sm">
-                                  <div className="font-medium">{reservation.createdBy || 'System'}</div>
+                                  <div className="font-medium">{reservation.createdBy || t('listDialog.systemLabel')}</div>
                                   <div className="text-xs text-gray-500">
                                     {reservation.createdAt ? format(new Date(reservation.createdAt), "dd MMM yyyy") : ''}
                                   </div>
                                   {reservation.updatedBy && reservation.updatedBy !== reservation.createdBy && (
                                     <div className="text-xs text-gray-400 mt-1">
-                                      Updated by {reservation.updatedBy}
+                                      {t('listDialog.updatedBy', { name: reservation.updatedBy })}
                                     </div>
                                   )}
                                 </div>
                               </TableCell>
                               <TableCell>
                                 <div className="flex gap-2">
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
                                     onClick={() => {
                                       setSelectedMaintenanceReservation(reservation);
                                       setEditDialogOpen(true);
@@ -639,11 +642,11 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                                     data-testid={`button-edit-${reservation.id}`}
                                   >
                                     <Edit className="h-4 w-4 mr-1" />
-                                    Edit
+                                    {t('listDialog.edit')}
                                   </Button>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
                                     onClick={() => {
                                       setReservationToDelete(reservation);
                                       setDeleteDialogOpen(true);
@@ -652,12 +655,12 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                                     data-testid={`button-delete-${reservation.id}`}
                                   >
                                     <Trash2 className="h-4 w-4 mr-1" />
-                                    Delete
+                                    {t('listDialog.delete')}
                                   </Button>
                                   {reservation.vehicle && (
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline" 
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
                                       onClick={() => {
                                         setSelectedVehicleId(reservation.vehicle.id);
                                         setVehicleViewDialogOpen(true);
@@ -665,7 +668,7 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                                       data-testid={`button-view-vehicle-${reservation.vehicle.id}`}
                                     >
                                       <Eye className="h-4 w-4 mr-1" />
-                                      Vehicle
+                                      {t('listDialog.vehicleAction')}
                                     </Button>
                                   )}
                                 </div>
@@ -685,10 +688,10 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Car className="h-5 w-5 text-purple-500" />
-                    Spare Vehicle Assignments
+                    {t('listDialog.spareVehicleAssignments')}
                   </CardTitle>
                   <CardDescription>
-                    Customers needing spare vehicle assignments
+                    {t('listDialog.spareDescription')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -700,23 +703,23 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                     <Alert className="bg-red-50 border-red-200">
                       <AlertTriangle className="h-4 w-4 text-red-600" />
                       <AlertDescription className="text-red-700">
-                        Failed to load spare assignments. Please try again.
+                        {t('listDialog.failedToLoadSpares')}
                       </AlertDescription>
                     </Alert>
                   ) : filteredSpareAssignments.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
-                      {searchTerm ? "No spare assignments match your search" : "No pending spare vehicle assignments"}
+                      {searchTerm ? t('listDialog.noSparesMatchSearch') : t('listDialog.noPendingSpares')}
                     </div>
                   ) : (
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Customer</TableHead>
-                          <TableHead>Start Date</TableHead>
-                          <TableHead>End Date</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Days Until</TableHead>
-                          <TableHead>Actions</TableHead>
+                          <TableHead>{t('listDialog.customerCol')}</TableHead>
+                          <TableHead>{t('listDialog.startDateCol')}</TableHead>
+                          <TableHead>{t('listDialog.endDateCol')}</TableHead>
+                          <TableHead>{t('listDialog.statusCol')}</TableHead>
+                          <TableHead>{t('listDialog.daysUntilCol')}</TableHead>
+                          <TableHead>{t('listDialog.actionsCol')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -724,9 +727,9 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                           .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
                           .map((assignment) => {
                             const daysUntilStart = getDaysUntil(assignment.startDate);
-                            const customerName = assignment.customer?.name || 
+                            const customerName = assignment.customer?.name ||
                               `${assignment.customer?.firstName || ''} ${assignment.customer?.lastName || ''}`.trim() ||
-                              `Customer #${assignment.customerId}`;
+                              t('listDialog.customerNumberFallback', { id: assignment.customerId });
                             
                             return (
                               <TableRow key={assignment.id} data-testid={`row-spare-${assignment.id}`}>
@@ -737,21 +740,21 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                                   {format(parseISO(assignment.startDate), "dd MMM yyyy")}
                                 </TableCell>
                                 <TableCell>
-                                  {assignment.endDate ? format(parseISO(assignment.endDate), "dd MMM yyyy") : "TBD"}
+                                  {assignment.endDate ? format(parseISO(assignment.endDate), "dd MMM yyyy") : t('listDialog.tbd')}
                                 </TableCell>
                                 <TableCell>
                                   <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                                    Needs Assignment
+                                    {t('listDialog.needsAssignment')}
                                   </Badge>
                                 </TableCell>
                                 <TableCell>
                                   <Badge className={getUrgencyColor(daysUntilStart)}>
-                                    {getUrgencyText(daysUntilStart)}
+                                    {getUrgencyText(daysUntilStart, t)}
                                   </Badge>
                                 </TableCell>
                                 <TableCell>
-                                  <Button 
-                                    size="sm" 
+                                  <Button
+                                    size="sm"
                                     onClick={() => {
                                       setSelectedSpareAssignment(assignment);
                                       setSpareDialogOpen(true);
@@ -759,7 +762,7 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                                     data-testid={`button-assign-${assignment.id}`}
                                   >
                                     <Plus className="h-4 w-4 mr-1" />
-                                    Assign
+                                    {t('listDialog.assign')}
                                   </Button>
                                 </TableCell>
                               </TableRow>
@@ -806,8 +809,8 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
           
           // Show success message
           toast({
-            title: "Maintenance Scheduled",
-            description: "The maintenance has been scheduled successfully.",
+            title: t('listDialog.maintenanceScheduledTitle'),
+            description: t('listDialog.maintenanceScheduledDescription'),
           });
         }}
       />
@@ -844,9 +847,9 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Maintenance</AlertDialogTitle>
+            <AlertDialogTitle>{t('listDialog.deleteMaintenanceTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this maintenance reservation for{' '}
+              {t('listDialog.deleteMaintenanceConfirmPrefix')}
               {reservationToDelete?.vehicle ? (
                 <>
                   <strong>
@@ -855,13 +858,13 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                   ({formatLicensePlate(reservationToDelete.vehicle.licensePlate)})
                 </>
               ) : (
-                <strong>Vehicle {reservationToDelete?.vehicleId}</strong>
+                <strong>{t('listDialog.vehiclePlaceholder', { id: reservationToDelete?.vehicleId })}</strong>
               )}
-              ? This action cannot be undone.
+              {t('listDialog.deleteMaintenanceConfirmSuffix')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <AlertDialogCancel data-testid="button-cancel-delete">{t('common:actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (reservationToDelete) {
@@ -872,7 +875,7 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
               className="bg-red-600 hover:bg-red-700"
               data-testid="button-confirm-delete"
             >
-              {isDeleting ? "Deleting..." : "Delete"}
+              {isDeleting ? t('listDialog.deleting') : t('listDialog.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

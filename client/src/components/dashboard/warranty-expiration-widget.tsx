@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { invalidateByPrefix } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ function getUrgencyClass(days: number): string {
 }
 
 export function WarrantyExpirationWidget() {
+  const { t } = useTranslation("dashboard");
   const [_, navigate] = useLocation();
   const queryClient = useQueryClient();
   const { data: vehicles, isLoading } = useQuery<Vehicle[]>({
@@ -50,7 +52,7 @@ export function WarrantyExpirationWidget() {
   return (
     <Card className="overflow-hidden h-full">
       <CardHeader className="bg-primary-700 py-3 px-4 flex-row justify-between items-center space-y-0">
-        <CardTitle className="text-base font-medium text-gray-900">Warranty Expiring Soon</CardTitle>
+        <CardTitle className="text-base font-medium text-gray-900">{t('warrantyWidget.title')}</CardTitle>
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield-alert text-gray-900">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
           <path d="M12 8v4" />
@@ -60,7 +62,7 @@ export function WarrantyExpirationWidget() {
       <CardContent className="p-4">
         <div className="mb-3">
           <div className="text-xl font-semibold">{isLoading ? "-" : vehiclesWithDays?.length || 0}</div>
-          <p className="text-xs text-gray-500">Vehicles with warranty expiring within 2 months</p>
+          <p className="text-xs text-gray-500">{t('warrantyWidget.subtitle')}</p>
         </div>
         <div className="space-y-2 max-h-72 overflow-y-auto">
           {isLoading ? (
@@ -71,7 +73,7 @@ export function WarrantyExpirationWidget() {
               </svg>
             </div>
           ) : vehiclesWithDays?.length === 0 ? (
-            <div className="text-center py-4 text-gray-500">No warranties expiring soon</div>
+            <div className="text-center py-4 text-gray-500">{t('warrantyWidget.none')}</div>
           ) : (
             vehiclesWithDays?.map(vehicle => (
               <div key={vehicle.id} className="flex items-center p-2 border rounded-md hover:bg-gray-50">
@@ -85,7 +87,9 @@ export function WarrantyExpirationWidget() {
                   <div className="flex items-center">
                     <div className="text-xs text-gray-500">{formatDate(vehicle.warrantyEndDate || '')}</div>
                     <div className={`ml-2 px-1.5 py-0.5 text-xs rounded-full ${getUrgencyClass(vehicle.daysUntilExpiration)}`}>
-                      {vehicle.daysUntilExpiration < 0 ? `${Math.abs(vehicle.daysUntilExpiration)}d overdue` : `${vehicle.daysUntilExpiration} days`}
+                      {vehicle.daysUntilExpiration < 0
+                        ? t('apkWidget.daysOverdue', { count: Math.abs(vehicle.daysUntilExpiration) })
+                        : t('apkWidget.daysRemaining', { count: vehicle.daysUntilExpiration })}
                     </div>
                   </div>
                 </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -35,6 +36,7 @@ export function EditContractNumberDialog({
   currentContractNumber,
   onSaved,
 }: EditContractNumberDialogProps) {
+  const { t } = useTranslation(["reservations", "common"]);
   const { toast } = useToast();
   const [value, setValue] = useState<string>(currentContractNumber ?? "");
   const [duplicate, setDuplicate] = useState<DuplicateInfo>(null);
@@ -93,8 +95,8 @@ export function EditContractNumberDialog({
     },
     onSuccess: (_data, newValue) => {
       toast({
-        title: "Contract number updated",
-        description: `Contract number is now "${newValue}".`,
+        title: t('editContractNumberDialog.contractUpdatedTitle'),
+        description: t('editContractNumberDialog.contractUpdatedDescription', { value: newValue }),
       });
       // Close immediately for snappy UX; fire-and-forget the cache refresh.
       onOpenChange(false);
@@ -106,15 +108,15 @@ export function EditContractNumberDialog({
     onError: (error: any) => {
       const msg = String(error?.message || "");
       // apiRequest throws "<status>: <body>"; try to extract a friendly message.
-      let friendly = "Please try again.";
+      let friendly = t('editContractNumberDialog.tryAgain');
       if (msg.includes("DUPLICATE_CONTRACT_NUMBER") || msg.startsWith("409")) {
-        friendly = "That contract number is already used by another reservation.";
+        friendly = t('editContractNumberDialog.duplicateContractNumber');
         setDuplicate({ reservationId: 0 });
       } else if (msg) {
         friendly = msg.replace(/^\d+:\s*/, "");
       }
       toast({
-        title: "Could not update contract number",
+        title: t('editContractNumberDialog.couldNotUpdateTitle'),
         description: friendly,
         variant: "destructive",
       });
@@ -136,21 +138,20 @@ export function EditContractNumberDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[460px]">
         <DialogHeader>
-          <DialogTitle>Edit Contract Number</DialogTitle>
+          <DialogTitle>{t('editContractNumberDialog.title')}</DialogTitle>
           <DialogDescription>
-            Update the contract number for this reservation. Must be unique across all
-            reservations.
+            {t('editContractNumberDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 py-2">
           <div className="space-y-1.5">
-            <Label htmlFor="edit-contract-number">Contract Number</Label>
+            <Label htmlFor="edit-contract-number">{t('editContractNumberDialog.contractNumber')}</Label>
             <Input
               id="edit-contract-number"
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              placeholder="Enter contract number"
+              placeholder={t('editContractNumberDialog.placeholder')}
               autoFocus
               data-testid="input-edit-contract-number"
               onKeyDown={(e) => {
@@ -165,7 +166,7 @@ export function EditContractNumberDialog({
           {checking && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
-              Checking availability...
+              {t('editContractNumberDialog.checkingAvailability')}
             </div>
           )}
 
@@ -173,8 +174,7 @@ export function EditContractNumberDialog({
             <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-2.5 text-sm text-red-900">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
               <span>
-                Already used by reservation #{duplicate.reservationId}. Choose a different
-                number.
+                {t('editContractNumberDialog.alreadyUsedBy', { id: duplicate.reservationId })}
               </span>
             </div>
           )}
@@ -182,7 +182,7 @@ export function EditContractNumberDialog({
           {!checking && !duplicate && !isEmpty && !isUnchanged && (
             <div className="flex items-center gap-2 text-xs text-emerald-700">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              Available
+              {t('editContractNumberDialog.available')}
             </div>
           )}
         </div>
@@ -194,7 +194,7 @@ export function EditContractNumberDialog({
             onClick={() => onOpenChange(false)}
             disabled={saveMutation.isPending}
           >
-            Cancel
+            {t('common:actions.cancel')}
           </Button>
           <Button
             type="button"
@@ -205,10 +205,10 @@ export function EditContractNumberDialog({
             {saveMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
+                {t('editContractNumberDialog.saving')}
               </>
             ) : (
-              "Save"
+              t('editContractNumberDialog.save')
             )}
           </Button>
         </DialogFooter>

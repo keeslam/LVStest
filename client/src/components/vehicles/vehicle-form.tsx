@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -78,8 +79,29 @@ const fuelTypes = ["Gasoline", "Diesel", "Electric", "Hybrid", "LPG", "CNG"];
 // Euro zone classifications
 const euroZones = ["Euro 3", "Euro 4", "Euro 5", "Euro 6", "Euro 6d"];
 
+const VEHICLE_TYPE_KEYS: Record<string, string> = {
+  Sedan: "sedan",
+  SUV: "suv",
+  Van: "van",
+  Hatchback: "hatchback",
+  Coupe: "coupe",
+  Truck: "truck",
+  Stationwagen: "stationwagen",
+  Other: "other",
+};
+
+const FUEL_TYPE_KEYS: Record<string, string> = {
+  Gasoline: "gasoline",
+  Diesel: "diesel",
+  Electric: "electric",
+  Hybrid: "hybrid",
+  LPG: "lpg",
+  CNG: "cng",
+};
+
 // GPS Activation Dialog Component
 function GPSActivationDialog({ vehicleData, onSuccess, onAutoSave }: { vehicleData: { brand: string; model: string; licensePlate: string; imei: string }, onSuccess?: () => void, onAutoSave?: (isSwap: boolean) => void }) {
+  const { t } = useTranslation("vehicles");
   const [isSwap, setIsSwap] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
@@ -87,8 +109,8 @@ function GPSActivationDialog({ vehicleData, onSuccess, onAutoSave }: { vehicleDa
   const handleSendActivation = async () => {
     if (!vehicleData.imei) {
       toast({
-        title: "IMEI Required",
-        description: "Please enter an IMEI number before requesting activation.",
+        title: t('vehicleForm.gpsActivationDialog.imeiRequiredTitle'),
+        description: t('vehicleForm.gpsActivationDialog.imeiRequiredDescription'),
         variant: "destructive"
       });
       return;
@@ -111,23 +133,25 @@ function GPSActivationDialog({ vehicleData, onSuccess, onAutoSave }: { vehicleDa
       }
 
       toast({
-        title: "GPS Activation Email Sent",
-        description: `Email sent to GPS company for ${isSwap ? 'GPS module swap' : 'activation'}.`
+        title: t('vehicleForm.gpsActivationDialog.emailSentTitle'),
+        description: isSwap
+          ? t('vehicleForm.gpsActivationDialog.emailSentDescriptionSwap')
+          : t('vehicleForm.gpsActivationDialog.emailSentDescriptionActivate')
       });
-      
+
       // Auto-save the form with GPS enabled and activation status
       if (onAutoSave) {
         onAutoSave(isSwap);
       }
-      
+
       // Close dialog on success
       if (onSuccess) {
         onSuccess();
       }
     } catch (error) {
       toast({
-        title: "Failed to Send Email",
-        description: "Could not send GPS activation email. Please try again.",
+        title: t('vehicleForm.gpsActivationDialog.failedTitle'),
+        description: t('vehicleForm.gpsActivationDialog.failedDescription'),
         variant: "destructive"
       });
     } finally {
@@ -139,18 +163,18 @@ function GPSActivationDialog({ vehicleData, onSuccess, onAutoSave }: { vehicleDa
     <div className="space-y-4">
       <div className="space-y-2">
         <div className="text-sm">
-          <span className="font-medium">Vehicle:</span> {vehicleData.brand} {vehicleData.model} ({vehicleData.licensePlate})
+          <span className="font-medium">{t('vehicleForm.gpsActivationDialog.vehicleLabel')}</span> {vehicleData.brand} {vehicleData.model} ({vehicleData.licensePlate})
         </div>
         <div className="text-sm">
-          <span className="font-medium">IMEI:</span> {vehicleData.imei || 'Not set'}
+          <span className="font-medium">{t('vehicleForm.gpsActivationDialog.imeiFieldLabel')}</span> {vehicleData.imei || t('vehicleForm.gpsActivationDialog.notSet')}
         </div>
       </div>
 
       <div className="flex items-center justify-between rounded-md border p-4">
         <div className="space-y-0.5">
-          <Label>GPS Module Swap</Label>
+          <Label>{t('vehicleForm.gpsActivationDialog.gpsModuleSwapLabel')}</Label>
           <p className="text-sm text-muted-foreground">
-            Enable this if replacing an existing GPS module
+            {t('vehicleForm.gpsActivationDialog.gpsModuleSwapDescription')}
           </p>
         </div>
         <Switch
@@ -160,9 +184,9 @@ function GPSActivationDialog({ vehicleData, onSuccess, onAutoSave }: { vehicleDa
       </div>
 
       <div className="rounded-md bg-muted p-4">
-        <p className="text-sm font-medium mb-2">Email Voorbeeld:</p>
+        <p className="text-sm font-medium mb-2">{t('vehicleForm.gpsActivationDialog.emailPreviewLabel')}</p>
         <p className="text-sm text-muted-foreground">
-          {isSwap ? 
+          {isSwap ?
             `Verzoek om GPS module swap voor ${vehicleData.brand} ${vehicleData.model} (${vehicleData.licensePlate}). Nieuwe IMEI: ${vehicleData.imei || 'N.v.t.'}` :
             `Verzoek om GPS activatie voor ${vehicleData.brand} ${vehicleData.model} (${vehicleData.licensePlate}). IMEI: ${vehicleData.imei || 'N.v.t.'}`
           }
@@ -176,7 +200,7 @@ function GPSActivationDialog({ vehicleData, onSuccess, onAutoSave }: { vehicleDa
           disabled={isSending || !vehicleData.imei}
           data-testid="button-send-gps-activation"
         >
-          {isSending ? "Sending..." : "Send Activation Request"}
+          {isSending ? t('vehicleForm.gpsActivationDialog.sendingButton') : t('vehicleForm.gpsActivationDialog.sendButton')}
         </Button>
       </div>
     </div>
@@ -200,6 +224,7 @@ export function VehicleForm({
   onSubmitOverride,
   customCancelButton
 }: VehicleFormProps) {
+  const { t } = useTranslation("vehicles");
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [isGpsDialogOpen, setIsGpsDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -380,10 +405,10 @@ export function VehicleForm({
       
       // Show success message
       toast({
-        title: `Vehicle ${editMode ? "updated" : "created"} successfully`,
-        description: `The vehicle has been ${editMode ? "updated" : "added"} to your fleet.`,
+        title: editMode ? t('vehicleForm.toasts.vehicleUpdatedTitle') : t('vehicleForm.toasts.vehicleCreatedTitle'),
+        description: editMode ? t('vehicleForm.toasts.vehicleUpdatedDescription') : t('vehicleForm.toasts.vehicleCreatedDescription'),
       });
-      
+
       console.log("onSuccess callback exists:", !!onSuccess);
       console.log("redirectToList value:", redirectToList);
       
@@ -423,27 +448,29 @@ export function VehicleForm({
       }
       
       // Handle specific error types based on status code or error content
-      let title = "Error";
-      let description = errorData.message || `Failed to ${editMode ? "update" : "create"} vehicle`;
-      
+      let title = t('vehicleForm.toasts.errorTitle');
+      let description = errorData.message || (editMode
+        ? t('vehicleForm.toasts.genericUpdateFailed')
+        : t('vehicleForm.toasts.genericCreateFailed'));
+
       // Check for duplicate license plate error (409 status or specific message)
-      const isDuplicate = 
-        error.status === 409 || 
+      const isDuplicate =
+        error.status === 409 ||
         errorData.message?.includes("license plate already exists") ||
         errorData.message?.includes("duplicate key");
-      
+
       if (isDuplicate) {
-        title = "Duplicate License Plate";
-        description = errorData.message || "A vehicle with this license plate already exists. Please use a different license plate or edit the existing vehicle.";
-        
+        title = t('vehicleForm.toasts.duplicateLicensePlateTitle');
+        description = errorData.message || t('vehicleForm.toasts.duplicateLicensePlateDescription');
+
         // Highlight the license plate field
         form.setError("licensePlate", {
           type: "duplicate",
-          message: "This license plate is already in use"
+          message: t('vehicleForm.toasts.licensePlateInUseError')
         });
       } else if (errorData.message?.includes("required")) {
-        title = "Missing Information";
-        description = "Please fill in all required fields: License Plate, Brand, and Model.";
+        title = t('vehicleForm.toasts.missingInformationTitle');
+        description = t('vehicleForm.toasts.missingInformationDescription');
       }
       
       toast({
@@ -463,8 +490,8 @@ export function VehicleForm({
       
       // Check if the response is OK before parsing
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
-        const error = new Error(errorData.message || "Failed to lookup vehicle");
+        const errorData = await response.json().catch(() => ({ message: t('vehicleForm.toasts.unknownError') }));
+        const error = new Error(errorData.message || t('vehicleForm.toasts.lookupFailedFallback'));
         (error as any).status = response.status;
         throw error;
       }
@@ -497,26 +524,26 @@ export function VehicleForm({
       });
       
       toast({
-        title: "Vehicle information found",
-        description: "Successfully retrieved vehicle information from RDW database.",
+        title: t('vehicleForm.toasts.vehicleInfoFoundTitle'),
+        description: t('vehicleForm.toasts.vehicleInfoFoundDescription'),
       });
     },
     onError: (error: any) => {
       console.error("RDW lookup error:", error);
-      
+
       // Handle specific error types based on status code
-      let title = "Lookup failed";
-      let description = "Could not retrieve vehicle information";
-      
+      let title = t('vehicleForm.toasts.lookupFailedTitle');
+      let description = t('vehicleForm.toasts.lookupFailedDescriptionDefault');
+
       if (error.status === 404) {
-        title = "Vehicle not found";
-        description = "No vehicle found with this license plate in the RDW database. Please check the plate number and try again.";
+        title = t('vehicleForm.toasts.vehicleNotFoundTitle');
+        description = t('vehicleForm.toasts.vehicleNotFoundDescription');
       } else if (error.status === 504) {
-        title = "Service timeout";
-        description = "The RDW service is taking too long to respond. Please try again later.";
+        title = t('vehicleForm.toasts.serviceTimeoutTitle');
+        description = t('vehicleForm.toasts.serviceTimeoutDescription');
       } else if (error.status === 502) {
-        title = "Service unavailable";
-        description = "The RDW service is currently unavailable. Please try again later.";
+        title = t('vehicleForm.toasts.serviceUnavailableTitle');
+        description = t('vehicleForm.toasts.serviceUnavailableDescription');
       } else {
         description = error.message || description;
       }
@@ -787,10 +814,10 @@ export function VehicleForm({
       }
       
       toast({
-        title: `Vehicle ${editMode ? "updated" : "created"} successfully`,
-        description: `The vehicle has been ${editMode ? "updated" : "added"} to your fleet.`,
+        title: editMode ? t('vehicleForm.toasts.vehicleUpdatedTitle') : t('vehicleForm.toasts.vehicleCreatedTitle'),
+        description: editMode ? t('vehicleForm.toasts.vehicleUpdatedDescription') : t('vehicleForm.toasts.vehicleCreatedDescription'),
       });
-      
+
       // If a success callback was provided, call it with the response data
       if (onSuccess && typeof onSuccess === 'function') {
         console.log("Calling onSuccess callback from onSubmit");
@@ -815,19 +842,21 @@ export function VehicleForm({
     } catch (error: any) {
       console.error("API request failed:", error);
       toast({
-        title: "Error",
-        description: `Failed to ${editMode ? "update" : "create"} vehicle: ${error.message}`,
+        title: t('vehicleForm.toasts.saveFailedTitle'),
+        description: editMode
+          ? t('vehicleForm.toasts.saveFailedDescriptionUpdate', { message: error.message })
+          : t('vehicleForm.toasts.saveFailedDescriptionCreate', { message: error.message }),
         variant: "destructive",
       });
     }
   };
-  
+
   const handleLookup = () => {
     const licensePlate = form.getValues("licensePlate");
     if (!licensePlate) {
       toast({
-        title: "License plate required",
-        description: "Please enter a license plate to look up vehicle information.",
+        title: t('vehicleForm.toasts.licensePlateRequiredTitle'),
+        description: t('vehicleForm.toasts.licensePlateRequiredDescription'),
         variant: "destructive",
       });
       return;
@@ -841,7 +870,7 @@ export function VehicleForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{editMode ? "Edit Vehicle" : "Add New Vehicle"}</CardTitle>
+        <CardTitle>{editMode ? t('editDialog.title') : t('addDialog.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -853,11 +882,11 @@ export function VehicleForm({
                   name="licensePlate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>License Plate</FormLabel>
+                      <FormLabel>{t('vehicleForm.licensePlateLabel')}</FormLabel>
                       <div className="flex gap-2">
                         <FormControl>
-                          <Input 
-                            placeholder="j-794-gh" 
+                          <Input
+                            placeholder={t('vehicleForm.licensePlatePlaceholder')}
                             {...field}
                             onChange={(e) => {
                               const formatted = formatLicensePlate(e.target.value);
@@ -865,9 +894,9 @@ export function VehicleForm({
                             }}
                           />
                         </FormControl>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
+                        <Button
+                          type="button"
+                          variant="outline"
                           onClick={handleLookup}
                           disabled={isLookingUp || lookupVehicleMutation.isPending}
                           data-testid="button-lookup"
@@ -878,15 +907,15 @@ export function VehicleForm({
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                               </svg>
-                              Looking up...
+                              {t('vehicleForm.lookupButtonLoading')}
                             </span>
                           ) : (
-                            "Lookup"
+                            t('vehicleForm.lookupButton')
                           )}
                         </Button>
                       </div>
                       <FormDescription>
-                        Enter the license plate and click "Lookup" to automatically fill vehicle information from the Dutch RDW database.
+                        {t('vehicleForm.licensePlateDescription')}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -897,13 +926,13 @@ export function VehicleForm({
             
             <Tabs defaultValue="general">
               <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="general">General</TabsTrigger>
-                <TabsTrigger value="technical">Technical</TabsTrigger>
-                <TabsTrigger value="dates">Dates</TabsTrigger>
-                <TabsTrigger value="contract">Contract</TabsTrigger>
-                <TabsTrigger value="additional">Additional</TabsTrigger>
+                <TabsTrigger value="general">{t('vehicleForm.tabs.general')}</TabsTrigger>
+                <TabsTrigger value="technical">{t('vehicleForm.tabs.technical')}</TabsTrigger>
+                <TabsTrigger value="dates">{t('vehicleForm.tabs.dates')}</TabsTrigger>
+                <TabsTrigger value="contract">{t('vehicleForm.tabs.contract')}</TabsTrigger>
+                <TabsTrigger value="additional">{t('vehicleForm.tabs.additional')}</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="general" className="space-y-4 mt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Column 1 */}
@@ -912,10 +941,10 @@ export function VehicleForm({
                     name="brand"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Brand</FormLabel>
+                        <FormLabel>{t('vehicleForm.brandLabel')}</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Volkswagen" 
+                          <Input
+                            placeholder={t('vehicleForm.brandPlaceholder')}
                             {...field}
                             onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
                           />
@@ -924,17 +953,17 @@ export function VehicleForm({
                       </FormItem>
                     )}
                   />
-                  
+
                   {/* Column 2 */}
                   <FormField
                     control={form.control}
                     name="model"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Model</FormLabel>
+                        <FormLabel>{t('vehicleForm.modelLabel')}</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Golf" 
+                          <Input
+                            placeholder={t('vehicleForm.modelPlaceholder')}
                             {...field}
                             onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
                           />
@@ -943,26 +972,28 @@ export function VehicleForm({
                       </FormItem>
                     )}
                   />
-                  
+
                   {/* Column 1 - Vehicle Type Dropdown */}
                   <FormField
                     control={form.control}
                     name="vehicleType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Vehicle Type</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
+                        <FormLabel>{t('vehicleForm.vehicleTypeLabel')}</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
                           defaultValue={handleFieldValue(field.value) || undefined}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select vehicle type" />
+                              <SelectValue placeholder={t('vehicleForm.vehicleTypePlaceholder')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {vehicleTypes.map(type => (
-                              <SelectItem key={type} value={type}>{type}</SelectItem>
+                              <SelectItem key={type} value={type}>
+                                {t(`vehicleForm.vehicleTypes.${VEHICLE_TYPE_KEYS[type]}`, { defaultValue: type })}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -970,70 +1001,70 @@ export function VehicleForm({
                       </FormItem>
                     )}
                   />
-                  
+
                   {/* Column 2 - Chassis Number */}
                   <FormField
                     control={form.control}
                     name="chassisNumber"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Chassis Number</FormLabel>
+                        <FormLabel>{t('vehicleForm.chassisNumberLabel')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="VIN/Chassis number" {...field} value={handleFieldValue(field.value)} />
+                          <Input placeholder={t('vehicleForm.chassisNumberPlaceholder')} {...field} value={handleFieldValue(field.value)} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   {/* Column 1 - Custom Vehicle Type Input */}
                   <FormField
                     control={form.control}
                     name="vehicleType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Custom Vehicle Type</FormLabel>
+                        <FormLabel>{t('vehicleForm.customVehicleTypeLabel')}</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="e.g., Bestelwagen, Limousine" 
+                          <Input
+                            placeholder={t('vehicleForm.customVehicleTypePlaceholder')}
                             value={handleFieldValue(field.value)}
                             onChange={field.onChange}
                             data-testid="input-vehicle-type-custom"
                           />
                         </FormControl>
                         <FormDescription className="text-xs">
-                          Type custom vehicle type here
+                          {t('vehicleForm.customVehicleTypeDescription')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   {/* Column 2 - Availability Status */}
                   <FormField
                     control={form.control}
                     name="availabilityStatus"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Availability Status</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
+                        <FormLabel>{t('vehicleForm.availabilityStatusLabel')}</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
                           defaultValue={handleFieldValue(field.value) || "available"}
                         >
                           <FormControl>
                             <SelectTrigger data-testid="select-availability-status">
-                              <SelectValue placeholder="Select availability status" />
+                              <SelectValue placeholder={t('vehicleForm.availabilityStatusPlaceholder')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="available">Available</SelectItem>
-                            <SelectItem value="needs_fixing">Needs Fixing</SelectItem>
-                            <SelectItem value="not_for_rental">Not for Rental</SelectItem>
-                            <SelectItem value="rented">Rented</SelectItem>
+                            <SelectItem value="available">{t('vehicleForm.availabilityStatuses.available')}</SelectItem>
+                            <SelectItem value="needs_fixing">{t('vehicleForm.availabilityStatuses.needsFixing')}</SelectItem>
+                            <SelectItem value="not_for_rental">{t('vehicleForm.availabilityStatuses.notForRental')}</SelectItem>
+                            <SelectItem value="rented">{t('vehicleForm.availabilityStatuses.rented')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormDescription className="text-xs">
-                          Track vehicle ownership and rental status
+                          {t('vehicleForm.availabilityStatusDescription')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -1049,19 +1080,21 @@ export function VehicleForm({
                     name="fuel"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Fuel Type</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
+                        <FormLabel>{t('vehicleForm.fuelTypeLabel')}</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
                           defaultValue={handleFieldValue(field.value) || undefined}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select fuel type" />
+                              <SelectValue placeholder={t('vehicleForm.fuelTypePlaceholder')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {fuelTypes.map(type => (
-                              <SelectItem key={type} value={type}>{type}</SelectItem>
+                              <SelectItem key={type} value={type}>
+                                {t(`vehicleForm.fuelTypes.${FUEL_TYPE_KEYS[type]}`, { defaultValue: type })}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -1069,20 +1102,20 @@ export function VehicleForm({
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="recommendedOil"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Recommended Oil</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
+                        <FormLabel>{t('vehicleForm.recommendedOilLabel')}</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
                           defaultValue={handleFieldValue(field.value) || undefined}
                         >
                           <FormControl>
                             <SelectTrigger data-testid="select-recommended-oil">
-                              <SelectValue placeholder="Select oil grade" />
+                              <SelectValue placeholder={t('vehicleForm.recommendedOilPlaceholder')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="max-h-[300px]">
@@ -1092,11 +1125,11 @@ export function VehicleForm({
                           </SelectContent>
                         </Select>
                         <FormDescription className="text-xs">
-                          Or type custom specification below
+                          {t('vehicleForm.recommendedOilDescription')}
                         </FormDescription>
                         <FormControl>
-                          <Input 
-                            placeholder="e.g., Putoline N-Tech Pro R+ 10W-50" 
+                          <Input
+                            placeholder={t('vehicleForm.recommendedOilCustomPlaceholder')}
                             value={handleFieldValue(field.value)}
                             onChange={field.onChange}
                             data-testid="input-recommended-oil-custom"
@@ -1106,16 +1139,16 @@ export function VehicleForm({
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="adBlue"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
                         <div className="space-y-0.5">
-                          <FormLabel>AdBlue</FormLabel>
+                          <FormLabel>{t('vehicleForm.adBlueLabel')}</FormLabel>
                           <FormDescription>
-                            Vehicle uses AdBlue
+                            {t('vehicleForm.adBlueDescription')}
                           </FormDescription>
                         </div>
                         <FormControl>
@@ -1127,16 +1160,16 @@ export function VehicleForm({
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="gps"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
                         <div className="space-y-0.5">
-                          <FormLabel>GPS</FormLabel>
+                          <FormLabel>{t('vehicleForm.gpsLabel')}</FormLabel>
                           <FormDescription>
-                            Vehicle has GPS tracking
+                            {t('vehicleForm.gpsDescription')}
                           </FormDescription>
                         </div>
                         <FormControl>
@@ -1156,23 +1189,23 @@ export function VehicleForm({
                         name="imei"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>IMEI Number</FormLabel>
+                            <FormLabel>{t('vehicleForm.imeiLabel')}</FormLabel>
                             <div className="flex gap-2">
                               <FormControl>
-                                <Input placeholder="Enter GPS device IMEI number" {...field} value={handleFieldValue(field.value)} />
+                                <Input placeholder={t('vehicleForm.imeiPlaceholder')} {...field} value={handleFieldValue(field.value)} />
                               </FormControl>
                               <Dialog open={isGpsDialogOpen} onOpenChange={setIsGpsDialogOpen}>
                                 <DialogTrigger asChild>
                                   <Button type="button" variant="outline" size="sm" className="whitespace-nowrap" data-testid="button-gps-activation">
                                     <Mail className="h-4 w-4 mr-1" />
-                                    Activate GPS
+                                    {t('vehicleForm.activateGpsButton')}
                                   </Button>
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-[500px]">
                                   <DialogHeader>
-                                    <DialogTitle>Request GPS Activation</DialogTitle>
+                                    <DialogTitle>{t('vehicleForm.gpsActivationRequestTitle')}</DialogTitle>
                                     <DialogDescription>
-                                      Send an email to the GPS company to activate this GPS device
+                                      {t('vehicleForm.gpsActivationRequestDescription')}
                                     </DialogDescription>
                                   </DialogHeader>
                                   <GPSActivationDialog 
@@ -1213,8 +1246,10 @@ export function VehicleForm({
                                             await invalidateByPrefix("/api/vehicles");
                                             
                                             toast({
-                                              title: "GPS Settings Saved",
-                                              description: `GPS has been ${isSwap ? 'marked as swapped and' : ''} activated.`,
+                                              title: t('vehicleForm.toasts.gpsSettingsSavedTitle'),
+                                              description: isSwap
+                                                ? t('vehicleForm.toasts.gpsSettingsSavedDescriptionSwapped')
+                                                : t('vehicleForm.toasts.gpsSettingsSavedDescriptionActivated'),
                                             });
                                           }
                                         } catch (error) {
@@ -1227,13 +1262,13 @@ export function VehicleForm({
                               </Dialog>
                             </div>
                             <FormDescription>
-                              IMEI number for GPS device tracking
+                              {t('vehicleForm.imeiDescription')}
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
@@ -1241,9 +1276,9 @@ export function VehicleForm({
                           render={({ field }) => (
                             <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
                               <div className="space-y-0.5">
-                                <FormLabel>GPS Swapped</FormLabel>
+                                <FormLabel>{t('vehicleForm.gpsSwappedLabel')}</FormLabel>
                                 <FormDescription className="text-xs">
-                                  GPS module was swapped
+                                  {t('vehicleForm.gpsSwappedDescription')}
                                 </FormDescription>
                               </div>
                               <FormControl>
@@ -1255,16 +1290,16 @@ export function VehicleForm({
                             </FormItem>
                           )}
                         />
-                        
+
                         <FormField
                           control={form.control}
                           name="gpsActivated"
                           render={({ field }) => (
                             <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
                               <div className="space-y-0.5">
-                                <FormLabel>GPS Activated</FormLabel>
+                                <FormLabel>{t('vehicleForm.gpsActivatedLabel')}</FormLabel>
                                 <FormDescription className="text-xs">
-                                  GPS is activated
+                                  {t('vehicleForm.gpsActivatedDescription')}
                                 </FormDescription>
                               </div>
                               <FormControl>
@@ -1279,14 +1314,14 @@ export function VehicleForm({
                       </div>
                     </>
                   )}
-                  
+
                   <FormField
                     control={form.control}
                     name="roadsideAssistance"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
                         <div className="space-y-0.5">
-                          <FormLabel>Roadside Assistance</FormLabel>
+                          <FormLabel>{t('vehicleForm.roadsideAssistanceLabel')}</FormLabel>
                         </div>
                         <FormControl>
                           <Switch
@@ -1297,14 +1332,14 @@ export function VehicleForm({
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="spareKey"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
                         <div className="space-y-0.5">
-                          <FormLabel>Spare Key</FormLabel>
+                          <FormLabel>{t('vehicleForm.spareKeyLabel')}</FormLabel>
                         </div>
                         <FormControl>
                           <Switch
@@ -1332,8 +1367,8 @@ export function VehicleForm({
                         render={({ field }) => (
                           <FormItem className="flex flex-row items-center justify-between rounded-md border p-4 ml-4 border-l-4 border-l-orange-400">
                             <div className="space-y-0.5">
-                              <FormLabel>Spare Key with Customer</FormLabel>
-                              <p className="text-xs text-muted-foreground">Is the spare key currently with a customer?</p>
+                              <FormLabel>{t('vehicleForm.spareKeyWithCustomerLabel')}</FormLabel>
+                              <p className="text-xs text-muted-foreground">{t('vehicleForm.spareKeyWithCustomerDescription')}</p>
                             </div>
                             <FormControl>
                               <Switch
@@ -1358,13 +1393,13 @@ export function VehicleForm({
                           name="spareKeyCustomerName"
                           render={({ field }) => (
                             <FormItem className="ml-4 border-l-4 border-l-orange-400 pl-4">
-                              <FormLabel>Customer Name</FormLabel>
+                              <FormLabel>{t('vehicleForm.customerNameLabel')}</FormLabel>
                               <FormControl>
                                 <div className="space-y-2">
-                                  <Input 
-                                    placeholder="Enter customer name who has the spare key" 
-                                    {...field} 
-                                    value={field.value || ''} 
+                                  <Input
+                                    placeholder={t('vehicleForm.customerNamePlaceholder')}
+                                    {...field}
+                                    value={field.value || ''}
                                   />
                                   {currentRenterName && (
                                     <Button
@@ -1375,12 +1410,12 @@ export function VehicleForm({
                                       onClick={() => form.setValue('spareKeyCustomerName', currentRenterName)}
                                       data-testid="button-use-current-renter"
                                     >
-                                      Use current renter: {currentRenterName}
+                                      {t('vehicleForm.useCurrentRenterButton', { name: currentRenterName })}
                                     </Button>
                                   )}
                                 </div>
                               </FormControl>
-                              <p className="text-xs text-muted-foreground">Name of the customer who currently has the spare key</p>
+                              <p className="text-xs text-muted-foreground">{t('vehicleForm.customerNameDescription')}</p>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -1395,7 +1430,7 @@ export function VehicleForm({
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
                         <div className="space-y-0.5">
-                          <FormLabel>Winter Tires</FormLabel>
+                          <FormLabel>{t('vehicleForm.winterTiresLabel')}</FormLabel>
                         </div>
                         <FormControl>
                           <Switch
@@ -1413,7 +1448,7 @@ export function VehicleForm({
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
                         <div className="space-y-0.5">
-                          <FormLabel>WOK Notification</FormLabel>
+                          <FormLabel>{t('vehicleForm.wokNotificationLabel')}</FormLabel>
                         </div>
                         <FormControl>
                           <Switch
@@ -1431,7 +1466,7 @@ export function VehicleForm({
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
                         <div className="space-y-0.5">
-                          <FormLabel>Seat Covers</FormLabel>
+                          <FormLabel>{t('vehicleForm.seatCoversLabel')}</FormLabel>
                         </div>
                         <FormControl>
                           <Switch
@@ -1449,7 +1484,7 @@ export function VehicleForm({
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
                         <div className="space-y-0.5">
-                          <FormLabel>Backup Beepers</FormLabel>
+                          <FormLabel>{t('vehicleForm.backupBeepersLabel')}</FormLabel>
                         </div>
                         <FormControl>
                           <Switch
@@ -1467,7 +1502,7 @@ export function VehicleForm({
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
                         <div className="space-y-0.5">
-                          <FormLabel>Spare Tire</FormLabel>
+                          <FormLabel>{t('vehicleForm.spareTireLabel')}</FormLabel>
                         </div>
                         <FormControl>
                           <Switch
@@ -1485,7 +1520,7 @@ export function VehicleForm({
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
                         <div className="space-y-0.5">
-                          <FormLabel>Onboard Tools & Jack</FormLabel>
+                          <FormLabel>{t('vehicleForm.toolsAndJackLabel')}</FormLabel>
                         </div>
                         <FormControl>
                           <Switch
@@ -1502,32 +1537,32 @@ export function VehicleForm({
                     name="tireSize"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tire Size</FormLabel>
+                        <FormLabel>{t('vehicleForm.tireSizeLabel')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Tire size" {...field} value={handleFieldValue(field.value)} />
+                          <Input placeholder={t('vehicleForm.tireSizePlaceholder')} {...field} value={handleFieldValue(field.value)} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="radioCode"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Radio Code</FormLabel>
+                        <FormLabel>{t('vehicleForm.radioCodeLabel')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Radio code" {...field} value={handleFieldValue(field.value)} />
+                          <Input placeholder={t('vehicleForm.radioCodePlaceholder')} {...field} value={handleFieldValue(field.value)} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="dates" className="space-y-4 mt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
@@ -1535,41 +1570,41 @@ export function VehicleForm({
                     name="apkDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>APK Expiration Date</FormLabel>
+                        <FormLabel>{t('vehicleForm.apkDateLabel')}</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} value={handleFieldValue(field.value)} />
                         </FormControl>
                         <FormDescription>
-                          Date when the APK (inspection) expires
+                          {t('vehicleForm.apkDateDescription')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="warrantyEndDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Warranty Expiration Date</FormLabel>
+                        <FormLabel>{t('vehicleForm.warrantyEndDateLabel')}</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} value={handleFieldValue(field.value)} />
                         </FormControl>
                         <FormDescription>
-                          Date when the warranty expires
+                          {t('vehicleForm.warrantyEndDateDescription')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="productionDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Production Build Date</FormLabel>
+                        <FormLabel>{t('vehicleForm.productionDateLabel')}</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} value={handleFieldValue(field.value)} />
                         </FormControl>
@@ -1577,24 +1612,24 @@ export function VehicleForm({
                       </FormItem>
                     )}
                   />
-                  
+
                   <div className="col-span-2 mb-4">
-                    <h3 className="text-sm font-medium mb-2">Registration Status (select one or none)</h3>
+                    <h3 className="text-sm font-medium mb-2">{t('vehicleForm.registrationStatusHeading')}</h3>
                   </div>
-                  
+
                   <FormField
                     control={form.control}
                     name="registeredTo"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
                         <div className="space-y-0.5">
-                          <FormLabel>Registration: Opnaam</FormLabel>
+                          <FormLabel>{t('vehicleForm.registeredToLabel')}</FormLabel>
                           <FormDescription>
-                            Vehicle is registered to a person (Opnaam)
+                            {t('vehicleForm.registeredToDescription')}
                           </FormDescription>
                           {field.value && (
                             <FormDescription className="text-xs text-muted-foreground">
-                              Last updated: {form.getValues().registeredToDate || 'Not set'}
+                              {t('vehicleForm.lastUpdatedLabel', { date: form.getValues().registeredToDate || t('vehicleForm.notSet') })}
                             </FormDescription>
                           )}
                         </div>
@@ -1630,31 +1665,31 @@ export function VehicleForm({
                     name="registeredToDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Registration Date</FormLabel>
+                        <FormLabel>{t('vehicleForm.registrationDateLabel')}</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} value={handleFieldValue(field.value)} />
                         </FormControl>
                         <FormDescription>
-                          Date when the vehicle was registered to a person
+                          {t('vehicleForm.registrationDateDescription')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="company"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
                         <div className="space-y-0.5">
-                          <FormLabel>Registration: BV</FormLabel>
+                          <FormLabel>{t('vehicleForm.companyLabel')}</FormLabel>
                           <FormDescription>
-                            Vehicle is registered to a company (BV)
+                            {t('vehicleForm.companyDescription')}
                           </FormDescription>
                           {field.value && (
                             <FormDescription className="text-xs text-muted-foreground">
-                              Last updated: {form.getValues().companyDate || 'Not set'}
+                              {t('vehicleForm.lastUpdatedLabel', { date: form.getValues().companyDate || t('vehicleForm.notSet') })}
                             </FormDescription>
                           )}
                         </div>
@@ -1683,35 +1718,35 @@ export function VehicleForm({
                     name="companyDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Company Registration Date</FormLabel>
+                        <FormLabel>{t('vehicleForm.companyDateLabel')}</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} value={handleFieldValue(field.value)} />
                         </FormControl>
                         <FormDescription>
-                          Date when the vehicle was registered to the company
+                          {t('vehicleForm.companyDateDescription')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="euroZoneEndDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Euro Zone End Date</FormLabel>
+                        <FormLabel>{t('vehicleForm.euroZoneEndDateLabel')}</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} value={handleFieldValue(field.value)} />
                         </FormControl>
                         <FormDescription>
-                          Date when the Euro Zone classification expires
+                          {t('vehicleForm.euroZoneEndDateDescription')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="euroZoneAccess"
@@ -1725,17 +1760,17 @@ export function VehicleForm({
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel>
-                            Emissions Zone Access
+                            {t('vehicleForm.emissionsZoneAccessLabel')}
                           </FormLabel>
                           <FormDescription>
-                            Vehicle can enter emissions zones (e.g., Amsterdam milieuzone)
+                            {t('vehicleForm.emissionsZoneAccessDescription')}
                           </FormDescription>
                         </div>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="euroZonePaidPermitAccess"
@@ -1749,17 +1784,17 @@ export function VehicleForm({
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel>
-                            Paid Permit Access
+                            {t('vehicleForm.paidPermitAccessLabel')}
                           </FormLabel>
                           <FormDescription>
-                            Vehicle can enter emissions zones with a paid day permit
+                            {t('vehicleForm.paidPermitAccessDescription')}
                           </FormDescription>
                         </div>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="moveIziRegistered"
@@ -1773,45 +1808,45 @@ export function VehicleForm({
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel>
-                            Move IZI
+                            {t('vehicleForm.moveIziLabel')}
                           </FormLabel>
                           <FormDescription>
-                            Vehicle is registered for the Move IZI toll system
+                            {t('vehicleForm.moveIziDescription')}
                           </FormDescription>
                         </div>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="moveIziRegistrationDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Move IZI Registration Date</FormLabel>
+                        <FormLabel>{t('vehicleForm.moveIziRegistrationDateLabel')}</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} value={handleFieldValue(field.value)} />
                         </FormControl>
                         <FormDescription>
-                          Date when the vehicle was registered for Move IZI
+                          {t('vehicleForm.moveIziRegistrationDateDescription')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="moveIziExpirationDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Move IZI Expiration Date</FormLabel>
+                        <FormLabel>{t('vehicleForm.moveIziExpirationDateLabel')}</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} value={handleFieldValue(field.value)} />
                         </FormControl>
                         <FormDescription>
-                          Date when the Move IZI registration expires
+                          {t('vehicleForm.moveIziExpirationDateDescription')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -1828,7 +1863,7 @@ export function VehicleForm({
                     name="monthlyPrice"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Monthly Price (€)</FormLabel>
+                        <FormLabel>{t('vehicleForm.monthlyPriceLabel')}</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" placeholder="0.00" {...field} value={handleFieldValue(field.value)} />
                         </FormControl>
@@ -1836,13 +1871,13 @@ export function VehicleForm({
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="dailyPrice"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Daily Price (€)</FormLabel>
+                        <FormLabel>{t('vehicleForm.dailyPriceLabel')}</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" placeholder="0.00" {...field} value={handleFieldValue(field.value)} />
                         </FormControl>
@@ -1850,13 +1885,13 @@ export function VehicleForm({
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="returnMileage"
                     render={({ field: { onChange, ...restField } }) => (
                       <FormItem>
-                        <FormLabel>Return Mileage (km) <span className="text-sm font-normal text-muted-foreground">(Optional)</span></FormLabel>
+                        <FormLabel>{t('vehicleForm.returnMileageLabel')} <span className="text-sm font-normal text-muted-foreground">{t('vehicleForm.returnMileageOptional')}</span></FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
@@ -1870,7 +1905,7 @@ export function VehicleForm({
                           />
                         </FormControl>
                         <FormDescription>
-                          Enter return mileage if known
+                          {t('vehicleForm.returnMileageDescription')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -1878,7 +1913,7 @@ export function VehicleForm({
                   />
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="additional" className="space-y-4 mt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="col-span-2">
@@ -1887,12 +1922,12 @@ export function VehicleForm({
                       name="internalAppointments"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Internal Appointments</FormLabel>
+                          <FormLabel>{t('vehicleForm.internalAppointmentsLabel')}</FormLabel>
                           <FormControl>
-                            <textarea 
+                            <textarea
                               className="flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                              placeholder="Internal appointments and notes" 
-                              {...field} 
+                              placeholder={t('vehicleForm.internalAppointmentsPlaceholder')}
+                              {...field}
                               value={handleFieldValue(field.value)}
                             />
                           </FormControl>
@@ -1901,19 +1936,19 @@ export function VehicleForm({
                       )}
                     />
                   </div>
-                  
+
                   <div className="col-span-2">
                     <FormField
                       control={form.control}
                       name="remarks"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Remarks</FormLabel>
+                          <FormLabel>{t('vehicleForm.remarksLabel')}</FormLabel>
                           <FormControl>
-                            <textarea 
+                            <textarea
                               className="flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                              placeholder="Additional remarks" 
-                              {...field} 
+                              placeholder={t('vehicleForm.remarksPlaceholder')}
+                              {...field}
                               value={handleFieldValue(field.value)}
                             />
                           </FormControl>
@@ -1925,7 +1960,7 @@ export function VehicleForm({
                 </div>
               </TabsContent>
             </Tabs>
-            
+
             <div className="flex justify-end space-x-2">
               {customCancelButton ? (
                 customCancelButton
@@ -1935,7 +1970,7 @@ export function VehicleForm({
                   variant="outline"
                   onClick={() => navigate("/vehicles")}
                 >
-                  Cancel
+                  {t('common:actions.cancel')}
                 </Button>
               )}
               <Button
@@ -1966,10 +2001,10 @@ export function VehicleForm({
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Saving...
+                    {t('vehicleForm.savingButton')}
                   </span>
                 ) : (
-                  editMode ? "Update Vehicle" : "Add Vehicle"
+                  editMode ? t('vehicleForm.updateButton') : t('vehicleForm.addButton')
                 )}
               </Button>
             </div>

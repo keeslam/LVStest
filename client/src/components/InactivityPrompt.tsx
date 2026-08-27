@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,7 @@ export function InactivityPrompt({ onLogout }: InactivityPromptProps) {
   const [showWarning, setShowWarning] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const { toast } = useToast();
+  const { t } = useTranslation('auth');
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -68,15 +70,15 @@ export function InactivityPrompt({ onLogout }: InactivityPromptProps) {
           }
           console.log('⏰ Session expired - logging out');
           toast({
-            title: "Session Expired",
-            description: "You've been logged out due to inactivity",
+            title: t('session.expiredTitle'),
+            description: t('session.expiredDescription'),
             variant: "destructive",
           });
           onLogout();
         }
       }, 1000);
     }, INACTIVITY_WARNING);
-  }, [onLogout, toast]);
+  }, [onLogout, toast, t]);
   
   // Handle user activity
   useEffect(() => {
@@ -134,31 +136,31 @@ export function InactivityPrompt({ onLogout }: InactivityPromptProps) {
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>Session Expiring Soon</DialogTitle>
+          <DialogTitle>{t('session.expiringTitle')}</DialogTitle>
           <DialogDescription>
-            You've been inactive for 14 minutes. Your session will expire in {countdown} seconds due to inactivity.
+            {t('session.expiringDescription', { countdown })}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="py-4 text-center">
           <p className="text-lg font-semibold">
-            {countdown} second{countdown !== 1 ? 's' : ''} remaining
+            {t('session.secondsRemaining', { count: countdown })}
           </p>
         </div>
-        
+
         <DialogFooter className="flex gap-2 sm:gap-0">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={handleLogoutNow}
             data-testid="button-logout-now"
           >
-            Logout Now
+            {t('session.logoutNow')}
           </Button>
-          <Button 
+          <Button
             onClick={handleStayLoggedIn}
             data-testid="button-stay-logged-in"
           >
-            Stay Logged In
+            {t('session.stayLoggedIn')}
           </Button>
         </DialogFooter>
       </DialogContent>

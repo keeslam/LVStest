@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ import { getDuration } from "@/lib/date-utils";
 import { format, differenceInDays, addDays, parseISO, startOfToday, endOfToday, isBefore, isAfter, isSameDay, endOfDay } from "date-fns";
 
 export default function ReservationsIndex() {
+  const { t } = useTranslation(["reservations", "common"]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState("all");
@@ -92,18 +94,18 @@ export default function ReservationsIndex() {
       }
       
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete reservation",
+        title: t('listDialog.toasts.errorTitle'),
+        description: error.message || t('listDialog.toasts.deleteFailedFallback'),
         variant: "destructive"
       });
     },
     onSuccess: async () => {
       // Invalidate to refetch and ensure consistency
       await invalidateRelatedQueries('reservations');
-      
+
       toast({
-        title: "Reservation deleted",
-        description: "The reservation has been successfully deleted.",
+        title: t('listDialog.toasts.deletedTitle'),
+        description: t('listDialog.toasts.deletedDescription'),
         variant: "default"
       });
     }
@@ -124,14 +126,14 @@ export default function ReservationsIndex() {
       await invalidateRelatedQueries('reservations');
       
       toast({
-        title: "Status updated",
-        description: "The reservation status has been successfully updated.",
+        title: t('indexPage.toasts.statusUpdatedTitle'),
+        description: t('indexPage.toasts.statusUpdatedDescription'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to update reservation status",
+        title: t('listDialog.toasts.errorTitle'),
+        description: error.message || t('indexPage.toasts.updateStatusFailedFallback'),
         variant: "destructive"
       });
     }
@@ -284,17 +286,17 @@ export default function ReservationsIndex() {
   // Create groups based on the selected grouping
   const reservationGroups = useMemo(() => {
     if (vehicleGrouping === "none" || !filteredReservations.length) {
-      return { "All Reservations": filteredReservations };
+      return { [t('indexPage.allReservationsGroup')]: filteredReservations };
     }
-    
+
     const groups: Record<string, Reservation[]> = {};
-    
+
     filteredReservations.forEach((reservation) => {
       let groupKey: string;
-      
+
       switch (vehicleGrouping) {
         case "vehicleType":
-          groupKey = reservation.vehicle?.vehicleType || "Unknown Type";
+          groupKey = reservation.vehicle?.vehicleType || t('indexPage.unknownType');
           break;
         case "status":
           groupKey = formatReservationStatus(reservation.status);
@@ -303,7 +305,7 @@ export default function ReservationsIndex() {
           groupKey = format(parseISO(reservation.startDate), "MMMM yyyy");
           break;
         default:
-          groupKey = "All Reservations";
+          groupKey = t('indexPage.allReservationsGroup');
       }
       
       if (!groups[groupKey]) {
@@ -343,12 +345,12 @@ export default function ReservationsIndex() {
   const columns: ColumnDef<Reservation>[] = [
     {
       accessorKey: "id",
-      header: "ID",
+      header: t('indexPage.idColumn'),
       cell: ({ row }) => <span>#{row.getValue("id")}</span>,
     },
     {
       accessorKey: "vehicle",
-      header: "Vehicle",
+      header: t('indexPage.vehicleColumn'),
       cell: ({ row }) => {
         const vehicle = row.original.vehicle;
         const reservation = row.original;
@@ -359,20 +361,20 @@ export default function ReservationsIndex() {
             <div>
               <div className="font-medium flex items-center gap-1">
                 <span className="bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded text-xs font-semibold border border-orange-200">
-                  TBD
+                  {t('indexPage.tbdBadge')}
                 </span>
-                <span className="text-orange-700">Spare Vehicle</span>
+                <span className="text-orange-700">{t('indexPage.spareVehicleLabel')}</span>
                 <span className="bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded text-xs font-semibold border border-orange-200">
-                  SPARE
+                  {t('indexPage.spareBadge')}
                 </span>
               </div>
               <div className="text-sm text-gray-500 flex flex-wrap items-center mt-1 gap-2">
                 <span className="px-1.5 py-0.5 rounded-full text-xs bg-orange-50 text-orange-800 border border-orange-100">
-                  Awaiting assignment
+                  {t('indexPage.awaitingAssignment')}
                 </span>
                 {reservation.type === 'replacement' && reservation.replacementForReservationId && (
                   <span className="px-1.5 py-0.5 rounded-full text-xs bg-orange-50 text-orange-800 border border-orange-100">
-                    Spare for #{reservation.replacementForReservationId}
+                    {t('indexPage.spareForHash', { id: reservation.replacementForReservationId })}
                   </span>
                 )}
               </div>
@@ -389,7 +391,7 @@ export default function ReservationsIndex() {
               <span>{vehicle.brand} {vehicle.model}</span>
               {reservation.type === 'replacement' && (
                 <span className="bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded text-xs font-semibold border border-orange-200">
-                  SPARE
+                  {t('indexPage.spareBadge')}
                 </span>
               )}
             </div>
@@ -399,12 +401,12 @@ export default function ReservationsIndex() {
               )}
               {vehicle.apkDate && (
                 <span className="px-1.5 py-0.5 rounded-full text-xs bg-blue-50 text-blue-800 border border-blue-100">
-                  APK: {formatDate(vehicle.apkDate)}
+                  {t('indexPage.apkBadgeShort', { date: formatDate(vehicle.apkDate) })}
                 </span>
               )}
               {reservation.type === 'replacement' && reservation.replacementForReservationId && (
                 <span className="px-1.5 py-0.5 rounded-full text-xs bg-orange-50 text-orange-800 border border-orange-100">
-                  Spare for #{reservation.replacementForReservationId}
+                  {t('indexPage.spareForHash', { id: reservation.replacementForReservationId })}
                 </span>
               )}
             </div>
@@ -414,7 +416,7 @@ export default function ReservationsIndex() {
     },
     {
       accessorKey: "customer",
-      header: "Customer",
+      header: t('indexPage.customerColumn'),
       cell: ({ row }) => {
         const customer = row.original.customer;
         return customer ? (
@@ -455,7 +457,7 @@ export default function ReservationsIndex() {
     },
     {
       accessorKey: "period",
-      header: "Period",
+      header: t('indexPage.periodColumn'),
       cell: ({ row }) => {
         const startDate = row.original.startDate;
         const endDate = row.original.endDate;
@@ -469,30 +471,30 @@ export default function ReservationsIndex() {
         
         let timeIndicator = null;
         if (isPast) {
-          timeIndicator = <span className="px-1.5 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800">Past</span>;
+          timeIndicator = <span className="px-1.5 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800">{t('indexPage.pastBadge')}</span>;
         } else if (isCurrent) {
-          timeIndicator = <span className="px-1.5 py-0.5 rounded-full text-xs bg-green-100 text-green-800">Current</span>;
+          timeIndicator = <span className="px-1.5 py-0.5 rounded-full text-xs bg-green-100 text-green-800">{t('indexPage.currentBadge')}</span>;
         } else if (isUpcoming && start) {
           const daysUntil = differenceInDays(start, today);
           if (daysUntil <= 3) {
-            timeIndicator = <span className="px-1.5 py-0.5 rounded-full text-xs bg-amber-100 text-amber-800">Soon</span>;
+            timeIndicator = <span className="px-1.5 py-0.5 rounded-full text-xs bg-amber-100 text-amber-800">{t('indexPage.soonBadge')}</span>;
           }
         }
-        
+
         return (
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span>{startDate ? formatDate(startDate) : 'TBD'} - {endDate ? formatDate(endDate) : 'TBD'}</span>
+              <span>{startDate ? formatDate(startDate) : t('indexPage.tbdDate')} - {endDate ? formatDate(endDate) : t('indexPage.tbdDate')}</span>
               {timeIndicator}
             </div>
-            <div className="text-sm text-gray-500">{startDate && endDate ? getDuration(startDate, endDate) : 'Duration TBD'}</div>
+            <div className="text-sm text-gray-500">{startDate && endDate ? getDuration(startDate, endDate) : t('indexPage.durationTbd')}</div>
           </div>
         );
       },
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: t('indexPage.statusColumn'),
       cell: ({ row }) => {
         const status = row.getValue("status") as string;
         const reservation = row.original;
@@ -526,7 +528,7 @@ export default function ReservationsIndex() {
               variant="ghost"
               size="sm"
               className="p-0 h-7 w-7"
-              title="Revert to Booked"
+              title={t('indexPage.revertToBookedTitle')}
               onClick={() => {
                 setSelectedReservation(reservation);
                 setStatusDialogOpen(true);
@@ -555,7 +557,7 @@ export default function ReservationsIndex() {
     },
     {
       accessorKey: "totalPrice",
-      header: "Total",
+      header: t('indexPage.totalColumn'),
       cell: ({ row }) => {
         const price = row.getValue("totalPrice") as string;
         return formatCurrency(Number(price || 0));
@@ -570,7 +572,7 @@ export default function ReservationsIndex() {
           <div className="flex justify-end gap-2">
             <Link href={`/reservations/${reservation.id}`}>
               <Button variant="ghost" size="sm" data-testid="button-view-reservation">
-                View
+                {t('indexPage.viewButton')}
               </Button>
             </Link>
             
@@ -588,10 +590,10 @@ export default function ReservationsIndex() {
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                   <circle cx="12" cy="10" r="3"></circle>
                 </svg>
-                Start Pickup
+                {t('indexPage.startPickupButton')}
               </Button>
             )}
-            
+
             {reservation.status === 'picked_up' && (
               <Button
                 variant="default"
@@ -607,13 +609,13 @@ export default function ReservationsIndex() {
                   <path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9"></path>
                   <path d="M12 3v6"></path>
                 </svg>
-                Start Return
+                {t('indexPage.startReturnButton')}
               </Button>
             )}
-            
+
             <Link href={`/documents/contract/${reservation.id}`}>
               <Button variant="outline" size="sm" data-testid="button-contract">
-                Contract
+                {t('indexPage.contractButton')}
               </Button>
             </Link>
             <AlertDialog>
@@ -642,19 +644,19 @@ export default function ReservationsIndex() {
                     <line x1="10" y1="11" x2="10" y2="17"></line>
                     <line x1="14" y1="11" x2="14" y2="17"></line>
                   </svg>
-                  Delete
+                  {t('indexPage.deleteButton')}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Reservation</AlertDialogTitle>
+                  <AlertDialogTitle>{t('indexPage.deleteReservationDialogTitle')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to delete this reservation? This action cannot be undone.
+                    {t('indexPage.deleteReservationDialogDescription')}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction 
+                  <AlertDialogCancel>{t('indexPage.cancelButton')}</AlertDialogCancel>
+                  <AlertDialogAction
                     onClick={() => {
                       deleteReservationMutation.mutate(reservation.id);
                     }}
@@ -666,9 +668,9 @@ export default function ReservationsIndex() {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Deleting...
+                        {t('indexPage.deletingButton')}
                       </>
-                    ) : "Delete"}
+                    ) : t('indexPage.deleteButton')}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -681,29 +683,29 @@ export default function ReservationsIndex() {
   
   // Status tabs config
   const statusTabs = [
-    { id: "all", label: "All", count: getStatusCounts.all },
-    { id: "booked", label: "Booked", count: getStatusCounts.booked },
-    { id: "picked_up", label: "Picked Up", count: getStatusCounts.picked_up },
-    { id: "returned", label: "Returned", count: getStatusCounts.returned },
-    { id: "completed", label: "Completed", count: getStatusCounts.completed },
-    { id: "cancelled", label: "Cancelled", count: getStatusCounts.cancelled },
-    { id: "overdue", label: "Overdue", count: overdueReservations.length, variant: overdueReservations.length > 0 ? "destructive" : undefined },
+    { id: "all", label: t('indexPage.statusTabAll'), count: getStatusCounts.all },
+    { id: "booked", label: t('indexPage.statusTabBooked'), count: getStatusCounts.booked },
+    { id: "picked_up", label: t('indexPage.statusTabPickedUp'), count: getStatusCounts.picked_up },
+    { id: "returned", label: t('indexPage.statusTabReturned'), count: getStatusCounts.returned },
+    { id: "completed", label: t('indexPage.statusTabCompleted'), count: getStatusCounts.completed },
+    { id: "cancelled", label: t('indexPage.statusTabCancelled'), count: getStatusCounts.cancelled },
+    { id: "overdue", label: t('indexPage.statusTabOverdue'), count: overdueReservations.length, variant: overdueReservations.length > 0 ? "destructive" : undefined },
   ];
-  
+
   // Date range tabs
   const dateRangeTabs = [
-    { id: "all", label: "All Dates" },
-    { id: "today", label: "Today" },
-    { id: "week", label: "This Week" },
-    { id: "month", label: "This Month" },
-    { id: "future", label: "Future" },
-    { id: "past", label: "Past" },
+    { id: "all", label: t('indexPage.dateTabAll') },
+    { id: "today", label: t('indexPage.dateTabToday') },
+    { id: "week", label: t('indexPage.dateTabWeek') },
+    { id: "month", label: t('indexPage.dateTabMonth') },
+    { id: "future", label: t('indexPage.dateTabFuture') },
+    { id: "past", label: t('indexPage.dateTabPast') },
   ];
   
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Reservation Management</h1>
+        <h1 className="text-2xl font-bold">{t('indexPage.pageTitle')}</h1>
         <div className="flex gap-2">
           <Link href="/reservations/calendar">
             <Button variant="outline">
@@ -713,20 +715,20 @@ export default function ReservationsIndex() {
                 <line x1="8" x2="8" y1="2" y2="6" />
                 <line x1="3" x2="21" y1="10" y2="10" />
               </svg>
-              Calendar View
+              {t('indexPage.calendarViewButton')}
             </Button>
           </Link>
           <ReservationAddDialog />
         </div>
       </div>
-      
+
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Reservations</CardTitle>
+              <CardTitle>{t('indexPage.cardTitle')}</CardTitle>
               <CardDescription>
-                Manage all your vehicle reservations and rental contracts.
+                {t('indexPage.cardDescription')}
               </CardDescription>
             </div>
             {overdueReservations.length > 0 && (
@@ -734,17 +736,17 @@ export default function ReservationsIndex() {
                 <DialogTrigger asChild>
                   <Button variant="destructive" className="flex items-center gap-2" data-testid="button-view-overdue">
                     <AlertTriangle className="h-4 w-4" />
-                    {overdueReservations.length} Overdue Rental{overdueReservations.length !== 1 ? 's' : ''}
+                    {t('indexPage.overdueRentalsButton', { count: overdueReservations.length })}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-red-600">
                       <AlertTriangle className="h-5 w-5" />
-                      Overdue Rentals
+                      {t('indexPage.overdueRentalsDialogTitle')}
                     </DialogTitle>
                     <DialogDescription>
-                      These vehicles should have been returned but customer still has them. Contact them to arrange return.
+                      {t('indexPage.overdueRentalsDialogDescription')}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-3 mt-4">
@@ -772,7 +774,7 @@ export default function ReservationsIndex() {
                             
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                               <User className="h-3 w-3" />
-                              <span>{reservation.customer?.name || "Unknown Customer"}</span>
+                              <span>{reservation.customer?.name || t('indexPage.unknownCustomer')}</span>
                               {reservation.customer?.phone && (
                                 <>
                                   <Phone className="h-3 w-3 ml-2" />
@@ -790,13 +792,13 @@ export default function ReservationsIndex() {
                             <div className="flex items-center gap-2 text-sm">
                               <Calendar className="h-3 w-3 text-muted-foreground" />
                               <span className="text-muted-foreground">
-                                Should have returned: {reservation.endDate ? format(parseISO(reservation.endDate), 'MMM d, yyyy') : 'N/A'}
+                                {t('indexPage.shouldHaveReturnedLabel', { date: reservation.endDate ? format(parseISO(reservation.endDate), 'MMM d, yyyy') : t('indexPage.notAvailable') })}
                               </span>
                             </div>
                           </div>
-                          
+
                           <Badge variant="destructive" className="shrink-0">
-                            {daysOverdue} day{daysOverdue !== 1 ? 's' : ''} overdue
+                            {t('indexPage.daysOverdue', { count: daysOverdue })}
                           </Badge>
                         </div>
                       );
@@ -830,7 +832,7 @@ export default function ReservationsIndex() {
           <div className="flex flex-wrap gap-4 mb-6">
             <div className="flex-1 min-w-[280px]">
               <Input
-                placeholder="Search vehicle, license plate, customer..."
+                placeholder={t('indexPage.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full"
@@ -841,10 +843,10 @@ export default function ReservationsIndex() {
               <div>
                 <Select value={vehicleTypeFilter} onValueChange={setVehicleTypeFilter}>
                   <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Vehicle Type" />
+                    <SelectValue placeholder={t('indexPage.vehicleTypeFilterPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="all">{t('indexPage.allTypesOption')}</SelectItem>
                     {vehicleTypes.map(type => (
                       <SelectItem key={type} value={type}>{type}</SelectItem>
                     ))}
@@ -856,13 +858,13 @@ export default function ReservationsIndex() {
             <div>
               <Select value={vehicleGrouping} onValueChange={setVehicleGrouping}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Group By" />
+                  <SelectValue placeholder={t('indexPage.groupByPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No Grouping</SelectItem>
-                  <SelectItem value="vehicleType">Vehicle Type</SelectItem>
-                  <SelectItem value="status">Status</SelectItem>
-                  <SelectItem value="month">Month</SelectItem>
+                  <SelectItem value="none">{t('indexPage.noGroupingOption')}</SelectItem>
+                  <SelectItem value="vehicleType">{t('indexPage.groupByVehicleType')}</SelectItem>
+                  <SelectItem value="status">{t('indexPage.groupByStatus')}</SelectItem>
+                  <SelectItem value="month">{t('indexPage.groupByMonth')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -888,9 +890,9 @@ export default function ReservationsIndex() {
                   <path d="m21 17-4 4" />
                 </svg>
               </div>
-              <h3 className="font-medium text-lg mb-2">No Reservations Found</h3>
+              <h3 className="font-medium text-lg mb-2">{t('indexPage.noReservationsFoundTitle')}</h3>
               <p className="text-gray-500 max-w-md mb-4">
-                There are no reservations matching your current filters. Try adjusting your search criteria or create a new reservation.
+                {t('indexPage.noReservationsFoundDescription')}
               </p>
               <ReservationAddDialog>
                 <Button size="sm">
@@ -898,7 +900,7 @@ export default function ReservationsIndex() {
                     <line x1="12" x2="12" y1="5" y2="19" />
                     <line x1="5" x2="19" y1="12" y2="12" />
                   </svg>
-                  New Reservation
+                  {t('indexPage.newReservationButton')}
                 </Button>
               </ReservationAddDialog>
             </div>
@@ -971,9 +973,12 @@ export default function ReservationsIndex() {
         />
       )}
 
-      {/* Pickup Dialog */}
+      {/* Pickup Dialog. Keyed on the reservation so picking up several vehicles
+          in a row cannot carry contract numbers or uploaded paperwork over from
+          the previous one. */}
       {selectedReservation && (
         <PickupDialog
+          key={`pickup-${selectedReservation.id}`}
           open={pickupDialogOpen}
           onOpenChange={setPickupDialogOpen}
           reservation={selectedReservation}
@@ -983,6 +988,7 @@ export default function ReservationsIndex() {
       {/* Return Dialog */}
       {selectedReservation && (
         <ReturnDialog
+          key={`return-${selectedReservation.id}`}
           open={returnDialogOpen}
           onOpenChange={setReturnDialogOpen}
           reservation={selectedReservation}

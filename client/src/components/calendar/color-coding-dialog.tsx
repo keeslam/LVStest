@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,13 @@ export function ColorCodingDialog({ open, onOpenChange }: ColorCodingDialogProps
   const [colorRules, setColorRules] = useState<ColorRule[]>([]);
   const [activeTab, setActiveTab] = useState<string>('reservation-status');
   const { toast } = useToast();
+  const { t } = useTranslation("reservations");
+
+  // Defaults are always the same known ids, so a translated name/description
+  // exists for them; there's no rename UI, so a stored rule's name never
+  // drifts from these defaults.
+  const ruleName = (rule: ColorRule) => t(`colorRules.${rule.id}.name`, { defaultValue: rule.name });
+  const ruleDescription = (rule: ColorRule) => t(`colorRules.${rule.id}.description`, { defaultValue: rule.description });
 
   // Load color rules from localStorage on mount
   useEffect(() => {
@@ -47,15 +55,15 @@ export function ColorCodingDialog({ open, onOpenChange }: ColorCodingDialogProps
     try {
       localStorage.setItem('calendar-color-rules', JSON.stringify(colorRules));
       toast({
-        title: "Color settings saved",
-        description: "Your calendar color preferences have been saved successfully."
+        title: t('colorDialog.savedTitle'),
+        description: t('colorDialog.savedDescription')
       });
       onOpenChange(false);
     } catch (error) {
       console.error('Error saving color rules:', error);
       toast({
-        title: "Error saving colors",
-        description: "Failed to save your color preferences. Please try again.",
+        title: t('colorDialog.saveErrorTitle'),
+        description: t('colorDialog.saveErrorDescription'),
         variant: "destructive"
       });
     }
@@ -64,20 +72,13 @@ export function ColorCodingDialog({ open, onOpenChange }: ColorCodingDialogProps
   const handleReset = () => {
     setColorRules(DEFAULT_COLOR_RULES);
     toast({
-      title: "Colors reset",
-      description: "Color settings have been reset to defaults."
+      title: t('colorDialog.resetTitle'),
+      description: t('colorDialog.resetDescription')
     });
   };
 
   const getCategoryTitle = (category: string) => {
-    switch (category) {
-      case 'reservation-status': return 'Reservation Status';
-      case 'reservation-type': return 'Reservation Type';
-      case 'maintenance-type': return 'Maintenance Type';
-      case 'maintenance-priority': return 'Maintenance Priority';
-      case 'indicators': return 'Calendar Indicators';
-      default: return category;
-    }
+    return t(`colorDialog.categoryTitles.${category}`, { defaultValue: category });
   };
 
   const filteredRules = colorRules.filter(rule => rule.category === activeTab);
@@ -88,21 +89,21 @@ export function ColorCodingDialog({ open, onOpenChange }: ColorCodingDialogProps
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Palette className="h-5 w-5" />
-            Calendar Color Coding
+            {t('colorDialog.title')}
           </DialogTitle>
           <DialogDescription>
-            Customize the colors used for different types of events and statuses in your calendars.
+            {t('colorDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="reservation-status" className="text-sm">Reservation Status</TabsTrigger>
-              <TabsTrigger value="reservation-type" className="text-sm">Reservation Type</TabsTrigger>
-              <TabsTrigger value="maintenance-type" className="text-sm">Maintenance Type</TabsTrigger>
-              <TabsTrigger value="maintenance-priority" className="text-sm">Priority</TabsTrigger>
-              <TabsTrigger value="indicators" className="text-sm">Indicators</TabsTrigger>
+              <TabsTrigger value="reservation-status" className="text-sm">{t('colorDialog.tabs.reservation-status')}</TabsTrigger>
+              <TabsTrigger value="reservation-type" className="text-sm">{t('colorDialog.tabs.reservation-type')}</TabsTrigger>
+              <TabsTrigger value="maintenance-type" className="text-sm">{t('colorDialog.tabs.maintenance-type')}</TabsTrigger>
+              <TabsTrigger value="maintenance-priority" className="text-sm">{t('colorDialog.tabs.maintenance-priority')}</TabsTrigger>
+              <TabsTrigger value="indicators" className="text-sm">{t('colorDialog.tabs.indicators')}</TabsTrigger>
             </TabsList>
 
             {['reservation-status', 'reservation-type', 'maintenance-type', 'maintenance-priority', 'indicators'].map(category => (
@@ -116,7 +117,7 @@ export function ColorCodingDialog({ open, onOpenChange }: ColorCodingDialogProps
                       <div key={rule.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg">
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <Label className="font-medium">{rule.name}</Label>
+                            <Label className="font-medium">{ruleName(rule)}</Label>
                             <input
                               type="checkbox"
                               checked={rule.enabled}
@@ -124,12 +125,12 @@ export function ColorCodingDialog({ open, onOpenChange }: ColorCodingDialogProps
                               className="h-4 w-4"
                             />
                           </div>
-                          <p className="text-sm text-gray-600">{rule.description}</p>
-                          
+                          <p className="text-sm text-gray-600">{ruleDescription(rule)}</p>
+
                           {/* Preview */}
                           <div className="mt-3">
-                            <Label className="text-xs text-gray-500">Preview:</Label>
-                            <div 
+                            <Label className="text-xs text-gray-500">{t('colorDialog.preview')}</Label>
+                            <div
                               className="mt-1 p-2 rounded border text-sm font-medium"
                               style={{
                                 backgroundColor: rule.backgroundColor,
@@ -137,14 +138,14 @@ export function ColorCodingDialog({ open, onOpenChange }: ColorCodingDialogProps
                                 borderColor: rule.borderColor
                               }}
                             >
-                              Sample Event - {rule.name}
+                              {t('colorDialog.sampleEvent', { name: ruleName(rule) })}
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="space-y-3">
                           <div>
-                            <Label htmlFor={`${rule.id}-bg`} className="text-sm">Background Color</Label>
+                            <Label htmlFor={`${rule.id}-bg`} className="text-sm">{t('colorDialog.backgroundColor')}</Label>
                             <div className="flex gap-2 mt-1">
                               <input
                                 id={`${rule.id}-bg`}
@@ -161,9 +162,9 @@ export function ColorCodingDialog({ open, onOpenChange }: ColorCodingDialogProps
                               />
                             </div>
                           </div>
-                          
+
                           <div>
-                            <Label htmlFor={`${rule.id}-text`} className="text-sm">Text Color</Label>
+                            <Label htmlFor={`${rule.id}-text`} className="text-sm">{t('colorDialog.textColor')}</Label>
                             <div className="flex gap-2 mt-1">
                               <input
                                 id={`${rule.id}-text`}
@@ -180,9 +181,9 @@ export function ColorCodingDialog({ open, onOpenChange }: ColorCodingDialogProps
                               />
                             </div>
                           </div>
-                          
+
                           <div>
-                            <Label htmlFor={`${rule.id}-border`} className="text-sm">Border Color</Label>
+                            <Label htmlFor={`${rule.id}-border`} className="text-sm">{t('colorDialog.borderColor')}</Label>
                             <div className="flex gap-2 mt-1">
                               <input
                                 id={`${rule.id}-border`}
@@ -212,15 +213,15 @@ export function ColorCodingDialog({ open, onOpenChange }: ColorCodingDialogProps
           <div className="flex justify-between pt-4 border-t">
             <Button variant="outline" onClick={handleReset}>
               <RotateCcw className="h-4 w-4 mr-2" />
-              Reset to Defaults
+              {t('colorDialog.resetToDefaults')}
             </Button>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
+                {t('common:actions.cancel')}
               </Button>
               <Button onClick={handleSave}>
                 <Save className="h-4 w-4 mr-2" />
-                Save Changes
+                {t('colorDialog.saveChanges')}
               </Button>
             </div>
           </div>

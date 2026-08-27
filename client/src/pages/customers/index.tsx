@@ -1,4 +1,5 @@
 import { invalidateByPrefix } from "@/lib/queryClient";
+import { useTranslation } from "react-i18next";
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -30,6 +31,7 @@ type EnrichedCustomer = Customer & {
 };
 
 export default function CustomersIndex() {
+  const { t } = useTranslation(["customers", "common"]);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewDialogCustomerId, setViewDialogCustomerId] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState("name-asc");
@@ -209,14 +211,14 @@ export default function CustomersIndex() {
 
   // Filter options
   const filterOptions = [
-    { key: "recent-customers", label: "Recent Customers (30 days)" },
-    { key: "frequent-customers", label: "Frequent Customers (3+ reservations)" },
-    { key: "complete-profile", label: "Complete Profile" },
-    { key: "incomplete-profile", label: "Incomplete Profile" },
-    { key: "active-rentals", label: "Active Rentals" },
-    { key: "has-drivers", label: "Has Drivers" },
-    { key: "business", label: "Business" },
-    { key: "individual", label: "Individual" },
+    { key: "recent-customers", label: t('indexPage.filterRecentCustomers') },
+    { key: "frequent-customers", label: t('indexPage.filterFrequentCustomers') },
+    { key: "complete-profile", label: t('indexPage.filterCompleteProfile') },
+    { key: "incomplete-profile", label: t('indexPage.filterIncompleteProfile') },
+    { key: "active-rentals", label: t('indexPage.filterActiveRentals') },
+    { key: "has-drivers", label: t('indexPage.filterHasDrivers') },
+    { key: "business", label: t('indexPage.filterBusiness') },
+    { key: "individual", label: t('indexPage.filterIndividual') },
   ];
   
   // Define table columns with sortable headers
@@ -231,7 +233,7 @@ export default function CustomersIndex() {
           data-testid="header-sort-name"
           className="-ml-3"
         >
-          Name
+          {t('indexPage.columnName')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -241,7 +243,7 @@ export default function CustomersIndex() {
     },
     {
       accessorKey: "email",
-      header: "Email",
+      header: t('indexPage.columnEmail'),
       cell: ({ row }) => {
         const email = row.getValue("email") as string;
         return email || "—";
@@ -249,7 +251,7 @@ export default function CustomersIndex() {
     },
     {
       accessorKey: "phone",
-      header: "Phone",
+      header: t('indexPage.columnPhone'),
       cell: ({ row }) => {
         const phone = row.getValue("phone") as string;
         return phone ? formatPhoneNumber(phone) : "—";
@@ -257,7 +259,7 @@ export default function CustomersIndex() {
     },
     {
       accessorKey: "city",
-      header: "City",
+      header: t('indexPage.columnCity'),
       cell: ({ row }) => {
         const city = row.getValue("city") as string;
         return city || "—";
@@ -270,20 +272,20 @@ export default function CustomersIndex() {
         
         return (
           <div className="flex justify-end gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               data-testid={`button-view-customer-${customer.id}`}
               onClick={() => setViewDialogCustomerId(customer.id)}
             >
-              View
+              {t('common:actions.view')}
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setReserveCustomerId(customer.id.toString())}
             >
-              New Reservation
+              {t('indexPage.newReservationButton')}
             </Button>
             <Button
               variant="destructive"
@@ -291,7 +293,7 @@ export default function CustomersIndex() {
               data-testid={`button-delete-customer-${customer.id}`}
               onClick={() => setDeleteCustomerTarget(customer)}
             >
-              Delete
+              {t('common:actions.delete')}
             </Button>
           </div>
         );
@@ -330,15 +332,15 @@ export default function CustomersIndex() {
       )}
 
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Customers</h1>
+        <h1 className="text-2xl font-bold">{t('indexPage.title')}</h1>
         <CustomerAddDialog onSuccess={handleCustomerAdded} />
       </div>
-      
+
       <Card>
         <CardHeader>
-          <CardTitle>Customer Database</CardTitle>
+          <CardTitle>{t('indexPage.cardTitle')}</CardTitle>
           <CardDescription>
-            Manage your customers, view details, and create reservations.
+            {t('indexPage.cardDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -346,40 +348,40 @@ export default function CustomersIndex() {
             {/* Search, Sort, and Filter Controls */}
             <div className="flex flex-wrap gap-4 items-center">
               <Input
-                placeholder="Search Customers"
+                placeholder={t('indexPage.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="max-w-sm"
                 data-testid="input-search-customers"
               />
-              
+
               {/* Sort Dropdown */}
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-[200px]" data-testid="select-sort-customers">
-                  <SelectValue placeholder="Sort by..." />
+                  <SelectValue placeholder={t('indexPage.sortPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="name-asc">Name (A-Z)</SelectItem>
-                  <SelectItem value="name-desc">Name (Z-A)</SelectItem>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="oldest">Oldest First</SelectItem>
-                  <SelectItem value="most-rentals">Most Rentals</SelectItem>
-                  <SelectItem value="recent-activity">Recent Activity</SelectItem>
-                  <SelectItem value="active-rentals">Active Rentals</SelectItem>
+                  <SelectItem value="name-asc">{t('indexPage.sortNameAsc')}</SelectItem>
+                  <SelectItem value="name-desc">{t('indexPage.sortNameDesc')}</SelectItem>
+                  <SelectItem value="newest">{t('indexPage.sortNewest')}</SelectItem>
+                  <SelectItem value="oldest">{t('indexPage.sortOldest')}</SelectItem>
+                  <SelectItem value="most-rentals">{t('indexPage.sortMostRentals')}</SelectItem>
+                  <SelectItem value="recent-activity">{t('indexPage.sortRecentActivity')}</SelectItem>
+                  <SelectItem value="active-rentals">{t('indexPage.sortActiveRentals')}</SelectItem>
                 </SelectContent>
               </Select>
-              
+
               {/* Filter Dropdown */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" data-testid="button-filter-customers">
                     <Filter className="h-4 w-4 mr-2" />
-                    Filters {filters.size > 0 && `(${filters.size})`}
+                    {t('indexPage.filtersButton')} {filters.size > 0 && `(${filters.size})`}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80" align="start">
                   <div className="space-y-4">
-                    <div className="font-semibold">Filter Customers</div>
+                    <div className="font-semibold">{t('indexPage.filterCustomersTitle')}</div>
                     <div className="space-y-2">
                       {filterOptions.map((option) => (
                         <div key={option.key} className="flex items-center space-x-2">
@@ -404,12 +406,12 @@ export default function CustomersIndex() {
               
               {/* Clear Filters Button - Only show when filters are active */}
               {filters.size > 0 && (
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   onClick={clearFilters}
                   data-testid="button-clear-filters"
                 >
-                  Clear Filters
+                  {t('indexPage.clearFiltersButton')}
                   <X className="h-4 w-4 ml-2" />
                 </Button>
               )}

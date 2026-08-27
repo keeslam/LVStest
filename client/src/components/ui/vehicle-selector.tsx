@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, ChevronsUpDown, Search, CarFront } from "lucide-react";
 import { cn, isTrueValue } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -33,11 +34,13 @@ export function VehicleSelector({
   vehicles,
   value,
   onChange,
-  placeholder = "Select a vehicle...",
+  placeholder,
   disabled = false,
   className,
   recentVehicleIds = [],
 }: VehicleSelectorProps) {
+  const { t } = useTranslation("vehicles");
+  const finalPlaceholder = placeholder ?? t('vehicleSelector.defaultPlaceholder');
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<string>("all");
@@ -119,7 +122,7 @@ export function VehicleSelector({
                   </Badge>
                 </span>
               ) : (
-                <span>{placeholder}</span>
+                <span>{finalPlaceholder}</span>
               )}
             </div>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -138,7 +141,7 @@ export function VehicleSelector({
               <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
               <Input
                 ref={searchInputRef}
-                placeholder="Search by license plate, brand, or model..."
+                placeholder={t('vehicleSelector.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.stopPropagation()}
@@ -148,9 +151,9 @@ export function VehicleSelector({
             
             <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="w-full mb-2 h-8">
-                <TabsTrigger value="all" className="flex-1 text-xs h-7">All</TabsTrigger>
+                <TabsTrigger value="all" className="flex-1 text-xs h-7">{t('vehicleSelector.allTab')}</TabsTrigger>
                 {recentVehicleIds.length > 0 && (
-                  <TabsTrigger value="recent" className="flex-1 text-xs h-7">Recent</TabsTrigger>
+                  <TabsTrigger value="recent" className="flex-1 text-xs h-7">{t('vehicleSelector.recentTab')}</TabsTrigger>
                 )}
                 {vehicleTypes.map(type => (
                   <TabsTrigger key={type} value={type} className="flex-1 text-xs h-7">{type}</TabsTrigger>
@@ -181,7 +184,7 @@ export function VehicleSelector({
     if (displayedVehicles.length === 0) {
       return (
         <div className="text-center py-8 text-sm text-muted-foreground">
-          No vehicles found.
+          {t('vehicleSelector.noVehiclesFound')}
         </div>
       );
     }
@@ -220,7 +223,7 @@ export function VehicleSelector({
                 variant="secondary" 
                 className="text-xs py-0 h-5"
               >
-                {vehicle.vehicleType || "Unknown"}
+                {vehicle.vehicleType || t('vehicleSelector.unknownType')}
               </Badge>
             </div>
             <div className="mt-1 text-xs text-muted-foreground">

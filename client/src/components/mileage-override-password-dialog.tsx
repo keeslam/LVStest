@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,7 @@ export function MileageOverridePasswordDialog({
   currentMileage,
   newMileage,
 }: MileageOverridePasswordDialogProps) {
+  const { t } = useTranslation(["vehicles", "common"]);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -36,7 +38,7 @@ export function MileageOverridePasswordDialog({
     e.preventDefault();
     
     if (!password) {
-      setError("Please enter your mileage override password");
+      setError(t('mileageOverrideDialog.enterPasswordError'));
       return;
     }
 
@@ -51,10 +53,10 @@ export function MileageOverridePasswordDialog({
         setPassword("");
         setError(null);
       } else {
-        setError("Incorrect password. Please try again.");
+        setError(t('mileageOverrideDialog.incorrectPassword'));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : t('mileageOverrideDialog.genericError'));
     } finally {
       setIsVerifying(false);
     }
@@ -77,10 +79,10 @@ export function MileageOverridePasswordDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Lock className="h-5 w-5 text-amber-600" />
-            Mileage Override Required
+            {t('mileageOverrideDialog.title')}
           </DialogTitle>
           <DialogDescription>
-            You are attempting to decrease the vehicle mileage, which requires authorization.
+            {t('mileageOverrideDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -88,26 +90,26 @@ export function MileageOverridePasswordDialog({
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              <div className="font-semibold mb-1">Mileage Decrease Detected</div>
+              <div className="font-semibold mb-1">{t('mileageOverrideDialog.decreaseDetected')}</div>
               <div className="text-sm">
-                Current mileage: <span className="font-mono font-semibold">{currentMileage.toLocaleString()} km</span>
+                {t('mileageOverrideDialog.currentMileage')} <span className="font-mono font-semibold">{currentMileage.toLocaleString()} km</span>
               </div>
               <div className="text-sm">
-                New mileage: <span className="font-mono font-semibold">{newMileage.toLocaleString()} km</span>
+                {t('mileageOverrideDialog.newMileage')} <span className="font-mono font-semibold">{newMileage.toLocaleString()} km</span>
               </div>
               <div className="text-sm mt-1">
-                Decrease: <span className="font-mono font-semibold text-red-600">-{mileageDecrease.toLocaleString()} km</span>
+                {t('mileageOverrideDialog.decrease')} <span className="font-mono font-semibold text-red-600">-{mileageDecrease.toLocaleString()} km</span>
               </div>
             </AlertDescription>
           </Alert>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="override-password">Mileage Override Password</Label>
+              <Label htmlFor="override-password">{t('mileageOverrideDialog.passwordLabel')}</Label>
               <Input
                 id="override-password"
                 type="password"
-                placeholder="Enter your mileage override password"
+                placeholder={t('mileageOverrideDialog.passwordPlaceholder')}
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
@@ -123,8 +125,7 @@ export function MileageOverridePasswordDialog({
                 </p>
               )}
               <p className="text-sm text-muted-foreground">
-                This is not your account password. If you haven't set up a mileage override password, 
-                you can do so in your profile settings.
+                {t('mileageOverrideDialog.notAccountPasswordHint')}
               </p>
             </div>
           </form>
@@ -138,7 +139,7 @@ export function MileageOverridePasswordDialog({
             disabled={isVerifying}
             data-testid="button-cancel-override"
           >
-            Cancel
+            {t('common:actions.cancel')}
           </Button>
           <Button
             type="button"
@@ -146,7 +147,7 @@ export function MileageOverridePasswordDialog({
             disabled={isVerifying || !password}
             data-testid="button-confirm-override"
           >
-            {isVerifying ? "Verifying..." : "Confirm Override"}
+            {isVerifying ? t('mileageOverrideDialog.verifying') : t('mileageOverrideDialog.confirmOverride')}
           </Button>
         </DialogFooter>
       </DialogContent>

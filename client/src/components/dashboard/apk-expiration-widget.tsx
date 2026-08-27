@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { invalidateByPrefix } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +31,7 @@ function getUrgencyClass(days: number): string {
 }
 
 export function ApkExpirationWidget() {
+  const { t } = useTranslation("dashboard");
   const [_, navigate] = useLocation();
   const queryClient = useQueryClient();
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
@@ -95,7 +97,7 @@ export function ApkExpirationWidget() {
   return (
     <Card className="overflow-hidden h-full">
       <CardHeader className="bg-warning-500 py-3 px-4 flex-row justify-between items-center space-y-0">
-        <CardTitle className="text-base font-medium text-gray-900">APK Expiring Soon</CardTitle>
+        <CardTitle className="text-base font-medium text-gray-900">{t('apkWidget.title')}</CardTitle>
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-alert-triangle text-gray-900">
           <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
           <path d="M12 9v4" />
@@ -105,7 +107,7 @@ export function ApkExpirationWidget() {
       <CardContent className="p-4">
         <div className="mb-3">
           <div className="text-xl font-semibold">{isLoading ? "-" : vehiclesWithDays?.length || 0}</div>
-          <p className="text-xs text-gray-500">Vehicles with APK expiring within 2 months</p>
+          <p className="text-xs text-gray-500">{t('apkWidget.subtitle')}</p>
         </div>
         <div className="space-y-2 max-h-72 overflow-y-auto">
           {isLoading ? (
@@ -116,7 +118,7 @@ export function ApkExpirationWidget() {
               </svg>
             </div>
           ) : vehiclesWithDays?.length === 0 ? (
-            <div className="text-center py-4 text-gray-500">No APK expiring soon</div>
+            <div className="text-center py-4 text-gray-500">{t('apkWidget.noneExpiring')}</div>
           ) : (
             vehiclesWithDays?.map(vehicle => (
               <div key={vehicle.id} className="flex items-center p-2 border rounded-md hover:bg-gray-50">
@@ -132,7 +134,9 @@ export function ApkExpirationWidget() {
                   <div className="flex items-center">
                     <div className="text-xs text-gray-500">{formatDate(vehicle.apkDate || '')}</div>
                     <div className={`ml-2 px-1.5 py-0.5 text-xs rounded-full ${getUrgencyClass(vehicle.daysUntilExpiration)}`}>
-                      {vehicle.daysUntilExpiration < 0 ? `${Math.abs(vehicle.daysUntilExpiration)}d overdue` : `${vehicle.daysUntilExpiration} days`}
+                      {vehicle.daysUntilExpiration < 0
+                        ? t('apkWidget.daysOverdue', { count: Math.abs(vehicle.daysUntilExpiration) })
+                        : t('apkWidget.daysRemaining', { count: vehicle.daysUntilExpiration })}
                     </div>
                   </div>
                 </div>

@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, ChevronsUpDown, Search, Calendar, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -34,11 +35,13 @@ export function ReservationSelector({
   reservations,
   value,
   onChange,
-  placeholder = "Select a reservation...",
+  placeholder,
   disabled = false,
   className,
   allowNone = true,
 }: ReservationSelectorProps) {
+  const { t } = useTranslation("reservations");
+  const finalPlaceholder = placeholder ?? t('selector.defaultPlaceholder');
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<string>("all");
@@ -80,13 +83,13 @@ export function ReservationSelector({
     const statusLower = status?.toLowerCase() || '';
     switch (statusLower) {
       case 'booked':
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs">Booked</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs">{t('form.statuses.booked')}</Badge>;
       case 'picked_up':
-        return <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs">Picked Up</Badge>;
+        return <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs">{t('form.statuses.pickedUp')}</Badge>;
       case 'returned':
-        return <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-xs">Returned</Badge>;
+        return <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-xs">{t('form.statuses.returned')}</Badge>;
       case 'completed':
-        return <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">Completed</Badge>;
+        return <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">{t('form.statuses.completed')}</Badge>;
       default:
         return <Badge variant="outline" className="text-xs">{status}</Badge>;
     }
@@ -102,10 +105,10 @@ export function ReservationSelector({
   };
 
   const renderReservationItem = (reservation: Reservation) => {
-    const customerName = reservation.customer?.name || 'Unknown Customer';
-    const vehicleInfo = reservation.vehicle 
-      ? `${reservation.vehicle.brand} ${reservation.vehicle.model}` 
-      : 'No Vehicle';
+    const customerName = reservation.customer?.name || t('selector.unknownCustomer');
+    const vehicleInfo = reservation.vehicle
+      ? `${reservation.vehicle.brand} ${reservation.vehicle.model}`
+      : t('selector.noVehicle');
     const licensePlate = reservation.vehicle?.licensePlate || '';
     
     return (
@@ -161,7 +164,7 @@ export function ReservationSelector({
     if (displayedReservations.length === 0) {
       return (
         <div className="text-center py-4 text-sm text-gray-500">
-          No reservations found
+          {t('selector.noReservationsFound')}
         </div>
       );
     }
@@ -200,11 +203,11 @@ export function ReservationSelector({
                     )}
                   </span>
                   <span className="text-xs text-gray-600">
-                    {selectedReservation.customer?.name || 'Unknown'} - {selectedReservation.vehicle?.brand} {selectedReservation.vehicle?.model}
+                    {selectedReservation.customer?.name || t('selector.unknown')} - {selectedReservation.vehicle?.brand} {selectedReservation.vehicle?.model}
                   </span>
                 </div>
               ) : (
-                <span>{placeholder}</span>
+                <span>{finalPlaceholder}</span>
               )}
             </div>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -222,7 +225,7 @@ export function ReservationSelector({
             <div className="flex items-center px-1 mb-3">
               <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
               <Input
-                placeholder="Search by ID, customer, license plate..."
+                placeholder={t('selector.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-8"
@@ -232,10 +235,10 @@ export function ReservationSelector({
             
             <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="w-full mb-2 h-8">
-                <TabsTrigger value="all" className="flex-1 text-xs h-7">All</TabsTrigger>
-                <TabsTrigger value="booked" className="flex-1 text-xs h-7">Booked</TabsTrigger>
-                <TabsTrigger value="picked_up" className="flex-1 text-xs h-7">Active</TabsTrigger>
-                <TabsTrigger value="returned" className="flex-1 text-xs h-7">Returned</TabsTrigger>
+                <TabsTrigger value="all" className="flex-1 text-xs h-7">{t('selector.tabs.all')}</TabsTrigger>
+                <TabsTrigger value="booked" className="flex-1 text-xs h-7">{t('selector.tabs.booked')}</TabsTrigger>
+                <TabsTrigger value="picked_up" className="flex-1 text-xs h-7">{t('selector.tabs.active')}</TabsTrigger>
+                <TabsTrigger value="returned" className="flex-1 text-xs h-7">{t('selector.tabs.returned')}</TabsTrigger>
               </TabsList>
               
               {allowNone && (
@@ -250,7 +253,7 @@ export function ReservationSelector({
                   }}
                   data-testid="reservation-option-none"
                 >
-                  <span className="text-base text-gray-600">No Reservation</span>
+                  <span className="text-base text-gray-600">{t('selector.noReservationOption')}</span>
                   {value === null && (
                     <Check className="h-5 w-5 text-blue-600 shrink-0 ml-auto" />
                   )}

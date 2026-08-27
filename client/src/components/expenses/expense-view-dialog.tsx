@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +29,23 @@ import { Expense, Vehicle } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import { ExpenseAddDialog } from "./expense-add-dialog";
+
+// Category values are stored verbatim in the database (and aren't restricted to the
+// fixed dropdown list - older/seeded data can be lowercase or entirely custom), so
+// they stay as-is; only recognized categories get a translated display label, looked
+// up case-insensitively the same way getExpenseIcon() below matches on category.
+const EXPENSE_CATEGORY_KEYS: Record<string, string> = {
+  "maintenance": "maintenance",
+  "tires": "tires",
+  "brakes": "brakes",
+  "damage": "damage",
+  "fuel": "fuel",
+  "insurance": "insurance",
+  "registration": "registration",
+  "cleaning": "cleaning",
+  "accessories": "accessories",
+  "other": "other",
+};
 
 // Function to get expense icon based on category
 function getExpenseIcon(category: string) {
@@ -66,6 +84,11 @@ interface ExpenseViewDialogProps {
 const ITEMS_PER_PAGE = 5;
 
 export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseViewDialogProps) {
+  const { t } = useTranslation(["expenses", "common"]);
+  const categoryLabel = (category: string) => {
+    const key = EXPENSE_CATEGORY_KEYS[category.toLowerCase()];
+    return key ? t(`form.categories.${key}`, { defaultValue: category }) : category;
+  };
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -99,28 +122,28 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
       const response = await apiRequest("DELETE", `/api/expenses/${expenseId}`);
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete expense');
+        throw new Error(errorData.message || t('viewDialog.deleteExpenseErrorDescription'));
       }
       return await response.json();
     },
     onSuccess: async () => {
       toast({
-        title: "Expense deleted",
-        description: "The expense has been successfully deleted."
+        title: t('viewDialog.expenseDeletedTitle'),
+        description: t('viewDialog.expenseDeletedDescription')
       });
-      
+
       // Invalidate all relevant queries
       invalidateByPrefix("/api/expenses");
       invalidateByPrefix(`/api/expenses/vehicle/${vehicleId}`);
-      
+
       if (onSuccess) {
         onSuccess();
       }
     },
     onError: (error: Error) => {
       toast({
-        title: "Error deleting expense",
-        description: error.message || "Failed to delete expense. Please try again.",
+        title: t('viewDialog.deleteExpenseErrorTitle'),
+        description: error.message || t('viewDialog.deleteExpenseErrorDescription'),
         variant: "destructive"
       });
     }
@@ -170,7 +193,7 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
       data-testid={`button-view-expenses-${vehicleId}`}
     >
       <Eye className="mr-2 h-4 w-4" />
-      View All Expenses
+      {t('viewDialog.viewAllExpenses')}
     </Button>
   );
 
@@ -184,36 +207,36 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-blue-500" />
             {isLoadingVehicle ? (
-              "Vehicle Expenses"
+              t('viewDialog.vehicleExpenses')
             ) : vehicle ? (
-              `${vehicle.brand} ${vehicle.model} (${vehicle.licensePlate}) - Expenses`
+              t('viewDialog.titleWithVehicle', { brand: vehicle.brand, model: vehicle.model, plate: vehicle.licensePlate })
             ) : (
-              "Vehicle Expenses"
+              t('viewDialog.vehicleExpenses')
             )}
           </DialogTitle>
           <DialogDescription>
-            All expenses recorded for this vehicle
+            {t('viewDialog.description')}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="mt-4 space-y-6">
           {/* Action Bar */}
           <div className="flex justify-between items-center">
             <div className="flex gap-4 items-center">
               <Input
-                placeholder="Search expenses..."
+                placeholder={t('viewDialog.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-64"
               />
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filter by category" />
+                  <SelectValue placeholder={t('viewDialog.filterByCategory')} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>
-                      {category === "all" ? "All Categories" : category}
+                      {category === "all" ? t('viewDialog.allCategories') : categoryLabel(category)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -226,38 +249,38 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('viewDialog.totalExpenses')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{<Price value={totalExpenses} />}</div>
                 <p className="text-xs text-muted-foreground">
-                  {filteredExpenses.length} expense{filteredExpenses.length !== 1 ? 's' : ''}
+                  {t('viewDialog.expenseCount', { count: filteredExpenses.length })}
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Categories</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('viewDialog.categories')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{allCategories.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  Different expense types
+                  {t('viewDialog.differentExpenseTypes')}
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Average Expense</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('viewDialog.averageExpense')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
                   {filteredExpenses.length > 0 ? formatCurrency(totalExpenses / filteredExpenses.length) : formatCurrency(0)}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Per expense record
+                  {t('viewDialog.perExpenseRecord')}
                 </p>
               </CardContent>
             </Card>
@@ -270,7 +293,7 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
             </div>
           ) : expensesByCategory.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No expenses recorded for this vehicle
+              {t('viewDialog.noExpensesRecorded')}
             </div>
           ) : (
             <Accordion type="multiple" defaultValue={[]} className="w-full">
@@ -289,11 +312,11 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
                           <div className="flex items-center gap-2">
                             {getExpenseIcon(category)}
                             <Badge variant="outline" className="text-sm font-medium">
-                              {category}
+                              {categoryLabel(category)}
                             </Badge>
                           </div>
                           <span className="text-gray-500 text-sm">
-                            ({count} expense{count !== 1 ? 's' : ''})
+                            ({t('viewDialog.expenseCount', { count })})
                           </span>
                         </div>
                         <div className="font-semibold text-right">
@@ -307,10 +330,10 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead>Description</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead className="text-right">Amount</TableHead>
-                                <TableHead className="text-center">Actions</TableHead>
+                                <TableHead>{t('viewDialog.descriptionCol')}</TableHead>
+                                <TableHead>{t('viewDialog.dateCol')}</TableHead>
+                                <TableHead className="text-right">{t('viewDialog.amountCol')}</TableHead>
+                                <TableHead className="text-center">{t('viewDialog.actionsCol')}</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -318,9 +341,9 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
                                 <TableRow key={expense.id}>
                                   <TableCell>
                                     <div>
-                                      <p className="font-medium">{expense.description || 'No description'}</p>
+                                      <p className="font-medium">{expense.description || t('viewDialog.noDescription')}</p>
                                       {expense.receiptUrl && (
-                                        <p className="text-xs text-muted-foreground">Has receipt</p>
+                                        <p className="text-xs text-muted-foreground">{t('viewDialog.hasReceipt')}</p>
                                       )}
                                     </div>
                                   </TableCell>
@@ -336,7 +359,7 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
                                           size="sm"
                                           onClick={() => expense.receiptUrl && window.open(expense.receiptUrl, '_blank')}
                                           className="h-8 w-8 p-0"
-                                          title="View receipt"
+                                          title={t('viewDialog.viewReceiptTitle')}
                                         >
                                           <Eye className="h-4 w-4" />
                                         </Button>
@@ -347,26 +370,25 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
                                             variant="ghost"
                                             size="sm"
                                             className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
-                                            title="Delete expense"
+                                            title={t('viewDialog.deleteExpenseTitle')}
                                           >
                                             <Trash2 className="h-4 w-4" />
                                           </Button>
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                           <AlertDialogHeader>
-                                            <AlertDialogTitle>Delete Expense</AlertDialogTitle>
+                                            <AlertDialogTitle>{t('viewDialog.deleteExpenseTitle')}</AlertDialogTitle>
                                             <AlertDialogDescription>
-                                              Are you sure you want to delete this {expense.category.toLowerCase()} expense of {<Price value={Number(expense.amount)} />}?
-                                              This action cannot be undone.
+                                              {t('viewDialog.deleteExpenseConfirmPrefix', { category: categoryLabel(expense.category).toLowerCase() })}{<Price value={Number(expense.amount)} />}{t('viewDialog.deleteExpenseConfirmSuffix')}
                                             </AlertDialogDescription>
                                           </AlertDialogHeader>
                                           <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
                                             <AlertDialogAction
                                               onClick={() => deleteExpenseMutation.mutate(expense.id)}
                                               className="bg-red-600 hover:bg-red-700"
                                             >
-                                              Delete
+                                              {t('viewDialog.delete')}
                                             </AlertDialogAction>
                                           </AlertDialogFooter>
                                         </AlertDialogContent>
@@ -383,7 +405,7 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
                         {totalPages > 1 && (
                           <div className="flex items-center justify-between mt-4 px-2">
                             <p className="text-sm text-muted-foreground">
-                              Showing {startIndex + 1} to {Math.min(endIndex, count)} of {count} expenses
+                              {t('viewDialog.showingRange', { from: startIndex + 1, to: Math.min(endIndex, count), count })}
                             </p>
                             <div className="flex gap-2">
                               <Button
@@ -393,7 +415,7 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
                                 disabled={currentPage === 1}
                               >
                                 <ChevronLeft className="h-4 w-4" />
-                                Previous
+                                {t('viewDialog.previous')}
                               </Button>
                               <div className="flex items-center gap-1">
                                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
@@ -414,7 +436,7 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
                                 onClick={() => setCategoryPage(category, currentPage + 1)}
                                 disabled={currentPage === totalPages}
                               >
-                                Next
+                                {t('viewDialog.next')}
                                 <ChevronRight className="h-4 w-4" />
                               </Button>
                             </div>

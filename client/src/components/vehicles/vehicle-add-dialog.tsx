@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,6 +18,7 @@ interface VehicleAddDialogProps {
 }
 
 export function VehicleAddDialog({ children, onSuccess }: VehicleAddDialogProps) {
+  const { t } = useTranslation("vehicles");
   const [open, setOpen] = useState(false);
 
   const handleSuccess = (data: any) => {
@@ -34,7 +36,7 @@ export function VehicleAddDialog({ children, onSuccess }: VehicleAddDialogProps)
   const trigger = children || (
     <Button data-testid="button-add-vehicle">
       <Plus className="mr-2 h-4 w-4" />
-      Add Vehicle
+      {t('addDialog.addVehicleButton')}
     </Button>
   );
 
@@ -45,9 +47,9 @@ export function VehicleAddDialog({ children, onSuccess }: VehicleAddDialogProps)
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Vehicle</DialogTitle>
+          <DialogTitle>{t('addDialog.title')}</DialogTitle>
           <DialogDescription>
-            Add a new vehicle to your fleet by filling out the form below
+            {t('addDialog.description')}
           </DialogDescription>
         </DialogHeader>
         <div className="mt-4">

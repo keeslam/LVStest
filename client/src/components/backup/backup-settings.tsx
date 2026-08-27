@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ interface BackupSettingsProps {
 }
 
 export function BackupSettingsPanel({ onSettingsChange }: BackupSettingsProps) {
+  const { t } = useTranslation("settings");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -84,15 +86,15 @@ export function BackupSettingsPanel({ onSettingsChange }: BackupSettingsProps) {
     },
     onSuccess: () => {
       toast({
-        title: 'Settings Saved',
-        description: 'Backup settings have been updated successfully.',
+        title: t('backupSettingsPanel.toasts.settingsSavedTitle'),
+        description: t('backupSettingsPanel.toasts.settingsSavedDescription'),
       });
       invalidateByPrefix('/api/backup-settings');
       onSettingsChange?.();
     },
     onError: (error: Error) => {
       toast({
-        title: 'Save Failed',
+        title: t('backupSettingsPanel.toasts.saveFailedTitle'),
         description: error.message,
         variant: "destructive",
       });
@@ -109,22 +111,22 @@ export function BackupSettingsPanel({ onSettingsChange }: BackupSettingsProps) {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Settings className="w-5 h-5 mr-2" />
-            Backup Settings
+            {t('backupSettingsPanel.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-4">Loading settings...</div>
+          <div className="text-center py-4">{t('backupSettingsPanel.loadingSettings')}</div>
         </CardContent>
       </Card>
     );
   }
 
   const storageType = form.watch("storageType");
-  const scheduleDescriptions = {
-    '0 2 * * *': 'Daily at 2:00 AM',
-    '0 2 * * 0': 'Weekly on Sundays',
-    '0 2 1 * *': 'Monthly on the 1st',
-    '0 */6 * * *': 'Every 6 hours'
+  const scheduleDescriptions: Record<string, string> = {
+    '0 2 * * *': t('backupSettingsPanel.scheduleDaily'),
+    '0 2 * * 0': t('backupSettingsPanel.scheduleWeekly'),
+    '0 2 1 * *': t('backupSettingsPanel.scheduleMonthly'),
+    '0 */6 * * *': t('backupSettingsPanel.scheduleEvery6Hours')
   };
 
   return (
@@ -132,10 +134,10 @@ export function BackupSettingsPanel({ onSettingsChange }: BackupSettingsProps) {
       <CardHeader>
         <CardTitle className="flex items-center">
           <Settings className="w-5 h-5 mr-2" />
-          Backup Settings
+          {t('backupSettingsPanel.title')}
         </CardTitle>
         <CardDescription>
-          Configure automatic backups and storage options
+          {t('backupSettingsPanel.description')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -146,11 +148,11 @@ export function BackupSettingsPanel({ onSettingsChange }: BackupSettingsProps) {
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="object_storage" className="flex items-center">
                 <Cloud className="w-4 h-4 mr-2" />
-                Cloud Storage
+                {t('backupSettingsPanel.cloudStorageTab')}
               </TabsTrigger>
               <TabsTrigger value="local_filesystem" className="flex items-center">
                 <HardDrive className="w-4 h-4 mr-2" />
-                Local Filesystem
+                {t('backupSettingsPanel.localFilesystemTab')}
               </TabsTrigger>
             </TabsList>
 
@@ -158,15 +160,15 @@ export function BackupSettingsPanel({ onSettingsChange }: BackupSettingsProps) {
               <div className="p-4 border rounded-lg bg-blue-50">
                 <h4 className="font-medium flex items-center">
                   <Cloud className="w-4 h-4 mr-2" />
-                  Replit Object Storage
+                  {t('backupSettingsPanel.replitObjectStorageTitle')}
                 </h4>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Store backups securely in Replit's cloud storage
+                  {t('backupSettingsPanel.replitObjectStorageDescription')}
                 </p>
                 <div className="mt-2 text-sm">
-                  <div>✓ Automatic redundancy</div>
-                  <div>✓ No disk space usage</div>
-                  <div>✓ Access from anywhere</div>
+                  <div>{t('backupSettingsPanel.automaticRedundancy')}</div>
+                  <div>{t('backupSettingsPanel.noDiskSpaceUsage')}</div>
+                  <div>{t('backupSettingsPanel.accessFromAnywhere')}</div>
                 </div>
               </div>
             </TabsContent>
@@ -175,15 +177,15 @@ export function BackupSettingsPanel({ onSettingsChange }: BackupSettingsProps) {
               <div className="p-4 border rounded-lg bg-orange-50">
                 <h4 className="font-medium flex items-center">
                   <HardDrive className="w-4 h-4 mr-2" />
-                  Local File System
+                  {t('backupSettingsPanel.localFileSystemTitle')}
                 </h4>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Store backups on the local filesystem
+                  {t('backupSettingsPanel.localFileSystemDescription')}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="localPath">Backup Directory Path</Label>
+                <Label htmlFor="localPath">{t('backupSettingsPanel.backupDirectoryPathLabel')}</Label>
                 <Input
                   id="localPath"
                   {...form.register("localPath")}
@@ -191,7 +193,7 @@ export function BackupSettingsPanel({ onSettingsChange }: BackupSettingsProps) {
                   className="font-mono"
                 />
                 <p className="text-sm text-muted-foreground">
-                  The directory where backups will be stored
+                  {t('backupSettingsPanel.backupDirectoryPathHint')}
                 </p>
               </div>
             </TabsContent>
@@ -202,9 +204,9 @@ export function BackupSettingsPanel({ onSettingsChange }: BackupSettingsProps) {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label className="text-base">Automatic Backups</Label>
+                <Label className="text-base">{t('backupSettingsPanel.automaticBackupsLabel')}</Label>
                 <div className="text-sm text-muted-foreground">
-                  Enable scheduled automatic backups
+                  {t('backupSettingsPanel.automaticBackupsHint')}
                 </div>
               </div>
               <Switch
@@ -215,49 +217,49 @@ export function BackupSettingsPanel({ onSettingsChange }: BackupSettingsProps) {
 
             {form.watch("enableAutoBackup") && (
               <div className="space-y-2">
-                <Label htmlFor="backupSchedule">Backup Schedule</Label>
+                <Label htmlFor="backupSchedule">{t('backupSettingsPanel.backupScheduleLabel')}</Label>
                 <Select
                   value={form.watch("backupSchedule")}
                   onValueChange={(value) => form.setValue("backupSchedule", value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select backup frequency" />
+                    <SelectValue placeholder={t('backupSettingsPanel.selectBackupFrequencyPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="0 2 * * *">
                       <div className="flex items-center justify-between w-full">
-                        <span>Daily at 2:00 AM</span>
+                        <span>{t('backupSettingsPanel.scheduleDaily')}</span>
                         <Clock className="w-4 h-4 ml-2" />
                       </div>
                     </SelectItem>
                     <SelectItem value="0 2 * * 0">
                       <div className="flex items-center justify-between w-full">
-                        <span>Weekly on Sundays</span>
+                        <span>{t('backupSettingsPanel.scheduleWeekly')}</span>
                         <Clock className="w-4 h-4 ml-2" />
                       </div>
                     </SelectItem>
                     <SelectItem value="0 2 1 * *">
                       <div className="flex items-center justify-between w-full">
-                        <span>Monthly on the 1st</span>
+                        <span>{t('backupSettingsPanel.scheduleMonthly')}</span>
                         <Clock className="w-4 h-4 ml-2" />
                       </div>
                     </SelectItem>
                     <SelectItem value="0 */6 * * *">
                       <div className="flex items-center justify-between w-full">
-                        <span>Every 6 hours</span>
+                        <span>{t('backupSettingsPanel.scheduleEvery6Hours')}</span>
                         <Clock className="w-4 h-4 ml-2" />
                       </div>
                     </SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-sm text-muted-foreground">
-                  Current setting: {scheduleDescriptions[form.watch("backupSchedule") as keyof typeof scheduleDescriptions] || 'Custom schedule'}
+                  {t('backupSettingsPanel.currentSettingLabel', { schedule: scheduleDescriptions[form.watch("backupSchedule")] || t('backupSettingsPanel.customSchedule') })}
                 </p>
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="retentionDays">Retention Period (days)</Label>
+              <Label htmlFor="retentionDays">{t('backupSettingsPanel.retentionPeriodLabel')}</Label>
               <Input
                 id="retentionDays"
                 type="number"
@@ -266,7 +268,7 @@ export function BackupSettingsPanel({ onSettingsChange }: BackupSettingsProps) {
                 {...form.register("retentionDays", { valueAsNumber: true })}
               />
               <p className="text-sm text-muted-foreground">
-                Backups older than this will be automatically deleted
+                {t('backupSettingsPanel.retentionPeriodHint')}
               </p>
             </div>
           </div>
@@ -280,14 +282,14 @@ export function BackupSettingsPanel({ onSettingsChange }: BackupSettingsProps) {
               onClick={() => form.reset()}
               disabled={saveSettingsMutation.isPending}
             >
-              Reset
+              {t('backupSettingsPanel.resetButton')}
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={saveSettingsMutation.isPending}
               data-testid="save-backup-settings"
             >
-              {saveSettingsMutation.isPending ? 'Saving...' : 'Save Settings'}
+              {saveSettingsMutation.isPending ? t('backupSettingsPanel.savingButton') : t('backupSettingsPanel.saveSettingsButton')}
             </Button>
           </div>
         </form>

@@ -1517,6 +1517,35 @@ export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 
+// Recycle bin for destructive deletes. Deleting a vehicle cascades into its
+// reservations, documents and expenses, which used to be unrecoverable and
+// left no trace. Every such delete now snapshots the full row set here first,
+// so it can be restored and so there is a record of who removed what.
+export const deletedRecords = pgTable("deleted_records", {
+  id: serial("id").primaryKey(),
+  entityType: text("entity_type").notNull(), // 'vehicle'
+  entityId: integer("entity_id").notNull(), // original primary key
+  label: text("label").notNull(), // human-readable, e.g. "HND-55-N Kia Picanto"
+  payload: jsonb("payload").$type<Record<string, any>>().notNull(), // full row snapshot incl. related rows
+  relatedCounts: jsonb("related_counts").$type<Record<string, number>>(), // {reservations: 1, documents: 0, expenses: 0}
+  deletedAt: timestamp("deleted_at").defaultNow().notNull(),
+  deletedBy: text("deleted_by"),
+  deletedByUserId: integer("deleted_by_user_id"),
+  restoredAt: timestamp("restored_at"),
+  restoredBy: text("restored_by"),
+}, (table) => ({
+  entityIdx: index("deleted_records_entity_idx").on(table.entityType, table.entityId),
+  deletedAtIdx: index("deleted_records_deleted_at_idx").on(table.deletedAt),
+}));
+
+export const insertDeletedRecordSchema = createInsertSchema(deletedRecords).omit({
+  id: true,
+  deletedAt: true,
+});
+
+export type DeletedRecord = typeof deletedRecords.$inferSelect;
+export type InsertDeletedRecord = z.infer<typeof insertDeletedRecordSchema>;
+
 // Password History - Prevent password reuse (last 5 passwords)
 export const passwordHistory = pgTable("password_history", {
   id: serial("id").primaryKey(),

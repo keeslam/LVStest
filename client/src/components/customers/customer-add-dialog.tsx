@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,6 +18,7 @@ interface CustomerAddDialogProps {
 }
 
 export function CustomerAddDialog({ children, onSuccess }: CustomerAddDialogProps) {
+  const { t } = useTranslation("customers");
   const [open, setOpen] = useState(false);
 
   const handleSuccess = (data: any) => {
@@ -30,7 +32,7 @@ export function CustomerAddDialog({ children, onSuccess }: CustomerAddDialogProp
   const trigger = children || (
     <Button data-testid="button-add-customer">
       <Plus className="mr-2 h-4 w-4" />
-      Add Customer
+      {t('addDialog.trigger')}
     </Button>
   );
 
@@ -41,9 +43,9 @@ export function CustomerAddDialog({ children, onSuccess }: CustomerAddDialogProp
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Customer</DialogTitle>
+          <DialogTitle>{t('addDialog.title')}</DialogTitle>
           <DialogDescription>
-            Create a new customer by filling out the form below
+            {t('addDialog.description')}
           </DialogDescription>
         </DialogHeader>
         <div className="mt-4">

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import {
   Dialog,
@@ -55,6 +56,7 @@ export function MaintenanceViewDialog({
   reservationId,
   onEdit,
 }: MaintenanceViewDialogProps) {
+  const { t } = useTranslation(["maintenance", "common"]);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [editingSpare, setEditingSpare] = useState<number | null>(null);
@@ -230,8 +232,8 @@ export function MaintenanceViewDialog({
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Spare vehicle assignment updated",
+        title: t('viewDialog.successTitle'),
+        description: t('viewDialog.spareVehicleUpdatedDescription'),
       });
       invalidateByPrefix('/api/reservations');
       setEditingSpare(null);
@@ -239,8 +241,8 @@ export function MaintenanceViewDialog({
     onError: (error: any) => {
       console.error('Spare vehicle update error:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to update spare vehicle",
+        title: t('viewDialog.errorTitle'),
+        description: error.message || t('viewDialog.updateSpareFailedDescription'),
         variant: "destructive",
       });
     },
@@ -276,21 +278,22 @@ export function MaintenanceViewDialog({
 
   // Format maintenance type for display
   const formatMaintenanceType = (type: string) => {
-    return type
+    const fallback = type
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+    return t(`editDialog.types.${type}`, { defaultValue: fallback });
   };
 
   // Get status badge
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'scheduled':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200"><Clock className="h-3 w-3 mr-1" />Scheduled</Badge>;
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200"><Clock className="h-3 w-3 mr-1" />{t('viewDialog.statusScheduled')}</Badge>;
       case 'in':
-        return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200"><Wrench className="h-3 w-3 mr-1" />In Progress</Badge>;
+        return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200"><Wrench className="h-3 w-3 mr-1" />{t('viewDialog.statusInProgress')}</Badge>;
       case 'out':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200"><CheckCircle2 className="h-3 w-3 mr-1" />Completed</Badge>;
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200"><CheckCircle2 className="h-3 w-3 mr-1" />{t('viewDialog.statusCompleted')}</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -301,13 +304,13 @@ export function MaintenanceViewDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Loading...</DialogTitle>
+            <DialogTitle>{t('viewDialog.loading')}</DialogTitle>
             <DialogDescription>
-              Please wait while we load the maintenance details.
+              {t('viewDialog.loadingDetailsDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="py-8 text-center text-muted-foreground">
-            Loading maintenance details...
+            {t('viewDialog.loadingDetails')}
           </div>
         </DialogContent>
       </Dialog>
@@ -323,7 +326,7 @@ export function MaintenanceViewDialog({
             <div className="flex-1">
               <DialogTitle className="text-2xl flex items-center gap-2">
                 <Wrench className="h-6 w-6 text-orange-600" />
-                Maintenance Details
+                {t('viewDialog.maintenanceDetailsTitle')}
               </DialogTitle>
               <DialogDescription>
                 {vehicle && (
@@ -343,7 +346,7 @@ export function MaintenanceViewDialog({
                   data-testid="button-edit-maintenance"
                 >
                   <Edit className="h-4 w-4 mr-1" />
-                  Edit
+                  {t('viewDialog.edit')}
                 </Button>
               )}
             </div>
@@ -355,19 +358,19 @@ export function MaintenanceViewDialog({
           <div className="bg-orange-50 dark:bg-orange-950 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
             <h3 className="font-semibold text-orange-900 dark:text-orange-100 mb-3 flex items-center gap-2">
               <Wrench className="h-4 w-4" />
-              Maintenance Information
+              {t('viewDialog.maintenanceInformation')}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-medium text-orange-700 dark:text-orange-300">Type</label>
+                <label className="text-xs font-medium text-orange-700 dark:text-orange-300">{t('viewDialog.type')}</label>
                 <div className="text-sm font-medium text-orange-900 dark:text-orange-100 mt-1">
-                  {parsed?.maintenanceType ? formatMaintenanceType(parsed.maintenanceType) : 'Not specified'}
+                  {parsed?.maintenanceType ? formatMaintenanceType(parsed.maintenanceType) : t('viewDialog.notSpecified')}
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-orange-700 dark:text-orange-300">Description</label>
+                <label className="text-xs font-medium text-orange-700 dark:text-orange-300">{t('viewDialog.description')}</label>
                 <div className="text-sm text-orange-900 dark:text-orange-100 mt-1">
-                  {parsed?.description || 'No description provided'}
+                  {parsed?.description || t('viewDialog.noDescriptionProvided')}
                 </div>
               </div>
             </div>
@@ -377,25 +380,25 @@ export function MaintenanceViewDialog({
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              Schedule
+              {t('viewDialog.schedule')}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Start Date</label>
+                <label className="text-xs font-medium text-muted-foreground">{t('viewDialog.startDate')}</label>
                 <div className="text-sm font-medium mt-1">
                   {format(new Date(reservation.startDate), 'MMM dd, yyyy')}
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">End Date</label>
+                <label className="text-xs font-medium text-muted-foreground">{t('viewDialog.endDate')}</label>
                 <div className="text-sm font-medium mt-1">
-                  {reservation.endDate ? format(new Date(reservation.endDate), 'MMM dd, yyyy') : 'Not set'}
+                  {reservation.endDate ? format(new Date(reservation.endDate), 'MMM dd, yyyy') : t('viewDialog.notSet')}
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground">Duration</label>
+                <label className="text-xs font-medium text-muted-foreground">{t('viewDialog.duration')}</label>
                 <div className="text-sm font-medium mt-1">
-                  {reservation.maintenanceDuration || 1} day{reservation.maintenanceDuration !== 1 ? 's' : ''}
+                  {t('viewDialog.day', { count: reservation.maintenanceDuration || 1 })}
                 </div>
               </div>
             </div>
@@ -408,25 +411,25 @@ export function MaintenanceViewDialog({
             <div>
               <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
                 <Car className="h-4 w-4" />
-                Vehicle
+                {t('viewDialog.vehicle')}
               </h3>
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                   <div>
-                    <label className="text-xs text-muted-foreground">License Plate</label>
+                    <label className="text-xs text-muted-foreground">{t('viewDialog.licensePlate')}</label>
                     <div className="font-medium">{displayLicensePlate(vehicle.licensePlate)}</div>
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground">Brand</label>
+                    <label className="text-xs text-muted-foreground">{t('viewDialog.brand')}</label>
                     <div className="font-medium">{vehicle.brand}</div>
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground">Model</label>
+                    <label className="text-xs text-muted-foreground">{t('viewDialog.model')}</label>
                     <div className="font-medium">{vehicle.model}</div>
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground">Type</label>
-                    <div className="font-medium">{vehicle.vehicleType || 'N/A'}</div>
+                    <label className="text-xs text-muted-foreground">{t('viewDialog.type')}</label>
+                    <div className="font-medium">{vehicle.vehicleType || t('viewDialog.na')}</div>
                   </div>
                 </div>
               </div>
@@ -440,12 +443,12 @@ export function MaintenanceViewDialog({
               <div>
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  Contact Information
+                  {t('viewDialog.contactInformation')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {customer && (
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border">
-                      <label className="text-xs text-muted-foreground">Customer</label>
+                      <label className="text-xs text-muted-foreground">{t('viewDialog.customer')}</label>
                       <div className="font-medium text-sm mt-1">{customer.name}</div>
                       {customer.phone && (
                         <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
@@ -463,7 +466,7 @@ export function MaintenanceViewDialog({
                   )}
                   {driver && (
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border">
-                      <label className="text-xs text-muted-foreground">Driver</label>
+                      <label className="text-xs text-muted-foreground">{t('viewDialog.driver')}</label>
                       <div className="font-medium text-sm mt-1">{driver.displayName}</div>
                       {driver.phone && (
                         <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
@@ -475,7 +478,7 @@ export function MaintenanceViewDialog({
                   )}
                   {parsed?.contactPhone && (
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border">
-                      <label className="text-xs text-muted-foreground">Contact Phone</label>
+                      <label className="text-xs text-muted-foreground">{t('viewDialog.contactPhone')}</label>
                       <div className="font-medium text-sm mt-1 flex items-center gap-1">
                         <Phone className="h-3 w-3" />
                         {parsed.contactPhone}
@@ -492,7 +495,7 @@ export function MaintenanceViewDialog({
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
               <RefreshCw className="h-4 w-4" />
-              Spare Vehicle Assignments
+              {t('viewDialog.spareVehicleAssignments')}
             </h3>
             {overlappingRentals.length > 0 ? (
               <div className="space-y-3">
@@ -514,11 +517,14 @@ export function MaintenanceViewDialog({
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <div className="font-medium text-blue-900 dark:text-blue-100">
-                            {rentalCustomer?.name || 'Customer'}
+                            {rentalCustomer?.name || t('viewDialog.customer')}
                             {rentalDriver && <span className="text-sm ml-2">({rentalDriver.displayName})</span>}
                           </div>
                           <div className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                            Rental: {format(new Date(rental.startDate), 'MMM dd, yyyy')} - {rental.endDate ? format(new Date(rental.endDate), 'MMM dd, yyyy') : 'Open'}
+                            {t('viewDialog.rentalRange', {
+                              start: format(new Date(rental.startDate), 'MMM dd, yyyy'),
+                              end: rental.endDate ? format(new Date(rental.endDate), 'MMM dd, yyyy') : t('viewDialog.open')
+                            })}
                           </div>
                           {rentalCustomer?.phone && (
                             <div className="text-xs text-blue-700 dark:text-blue-300 mt-1 flex items-center gap-1">
@@ -530,7 +536,7 @@ export function MaintenanceViewDialog({
                       </div>
                       
                       <div className="space-y-2">
-                        <label className="text-xs font-medium text-blue-700 dark:text-blue-300">Assigned Spare Vehicle</label>
+                        <label className="text-xs font-medium text-blue-700 dark:text-blue-300">{t('viewDialog.assignedSpareVehicle')}</label>
                         {editingSpare === rental.id ? (
                           <div className="space-y-2">
                             <VehicleSelector
@@ -545,7 +551,7 @@ export function MaintenanceViewDialog({
                                   });
                                 }
                               }}
-                              placeholder="Select spare vehicle..."
+                              placeholder={t('viewDialog.selectSpareVehicle')}
                             />
                             <div className="flex gap-2">
                               <Button
@@ -560,7 +566,7 @@ export function MaintenanceViewDialog({
                                   });
                                 }}
                               >
-                                TBD (Placeholder)
+                                {t('viewDialog.tbdPlaceholder')}
                               </Button>
                               <Button
                                 size="sm"
@@ -574,14 +580,14 @@ export function MaintenanceViewDialog({
                                   });
                                 }}
                               >
-                                Own Transport
+                                {t('viewDialog.ownTransport')}
                               </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => setEditingSpare(null)}
                               >
-                                Cancel
+                                {t('common:actions.cancel')}
                               </Button>
                             </div>
                           </div>
@@ -591,8 +597,8 @@ export function MaintenanceViewDialog({
                               {rental.spareAssignmentDecision === 'customer_arranging' ? (
                                 <div className="flex items-center gap-2">
                                   <User className="h-4 w-4 text-blue-600" />
-                                  <span className="font-medium text-blue-700 dark:text-blue-400">Own Transport</span>
-                                  <span className="text-xs text-muted-foreground">(Customer arranging)</span>
+                                  <span className="font-medium text-blue-700 dark:text-blue-400">{t('viewDialog.ownTransport')}</span>
+                                  <span className="text-xs text-muted-foreground">{t('viewDialog.customerArranging')}</span>
                                 </div>
                               ) : assignedSpareVehicle ? (
                                 <div className="flex items-center gap-2">
@@ -607,11 +613,11 @@ export function MaintenanceViewDialog({
                               ) : replacementReservation?.placeholderSpare ? (
                                 <div className="flex items-center gap-2">
                                   <Clock className="h-4 w-4 text-orange-600" />
-                                  <span className="font-medium text-orange-700 dark:text-orange-400">TBD (Placeholder)</span>
-                                  <span className="text-xs text-muted-foreground">(To be assigned)</span>
+                                  <span className="font-medium text-orange-700 dark:text-orange-400">{t('viewDialog.tbdPlaceholder')}</span>
+                                  <span className="text-xs text-muted-foreground">{t('viewDialog.toBeAssigned')}</span>
                                 </div>
                               ) : (
-                                <span className="text-muted-foreground italic">No spare vehicle assigned</span>
+                                <span className="text-muted-foreground italic">{t('viewDialog.noSpareVehicleAssigned')}</span>
                               )}
                             </div>
                             <Button
@@ -632,7 +638,7 @@ export function MaintenanceViewDialog({
             ) : (
               <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-gray-800 rounded-lg border">
                 <RefreshCw className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                <p className="text-sm">No overlapping rentals during this maintenance period</p>
+                <p className="text-sm">{t('viewDialog.noOverlappingRentals')}</p>
               </div>
             )}
           </div>
@@ -644,7 +650,7 @@ export function MaintenanceViewDialog({
               <div>
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
                   <FileText className="h-4 w-4" />
-                  Notes
+                  {t('viewDialog.notesTitle')}
                 </h3>
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border text-sm whitespace-pre-wrap">
                   {parsed.notes}
@@ -656,11 +662,11 @@ export function MaintenanceViewDialog({
           {/* Maintenance Documents */}
           <Separator />
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Maintenance Documents</h3>
-            
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">{t('viewDialog.maintenanceDocuments')}</h3>
+
             {/* Quick Upload */}
             <div className="mb-4">
-              <label className="text-sm text-gray-600 dark:text-gray-400 mb-2 block">Quick Upload:</label>
+              <label className="text-sm text-gray-600 dark:text-gray-400 mb-2 block">{t('viewDialog.quickUpload')}</label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <InvoiceScanner
                   selectedVehicleId={vehicle?.id}
@@ -669,8 +675,8 @@ export function MaintenanceViewDialog({
                     invalidateByPrefix('/api/expenses');
                     invalidateByPrefix(`/api/documents/reservation/${reservation?.id}`);
                     toast({
-                      title: "Expenses created",
-                      description: `Created ${expenses.length} expense record(s) from invoice`,
+                      title: t('viewDialog.expensesCreatedTitle'),
+                      description: t('viewDialog.expensesCreatedDescription', { count: expenses.length }),
                     });
                   }}
                 />
@@ -684,7 +690,7 @@ export function MaintenanceViewDialog({
                   }}
                 >
                   <Button variant="outline" size="sm" className="w-full" data-testid="button-upload-photos">
-                    + Service Photo
+                    {t('viewDialog.servicePhoto')}
                   </Button>
                 </InlineDocumentUpload>
 
@@ -697,7 +703,7 @@ export function MaintenanceViewDialog({
                   }}
                 >
                   <Button variant="outline" size="sm" className="w-full" data-testid="button-upload-maintenance-pdf">
-                    + Service Report PDF
+                    {t('viewDialog.serviceReportPdf')}
                   </Button>
                 </InlineDocumentUpload>
 
@@ -710,7 +716,7 @@ export function MaintenanceViewDialog({
                   }}
                 >
                   <Button variant="outline" size="sm" className="w-full" data-testid="button-upload-other">
-                    + Other
+                    {t('viewDialog.other')}
                   </Button>
                 </InlineDocumentUpload>
               </div>
@@ -718,12 +724,12 @@ export function MaintenanceViewDialog({
 
             {/* Uploaded Documents */}
             <div>
-              <label className="text-sm text-gray-600 dark:text-gray-400 mb-2 block">Uploaded Documents:</label>
+              <label className="text-sm text-gray-600 dark:text-gray-400 mb-2 block">{t('viewDialog.uploadedDocuments')}</label>
               {documents.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {documents.map((doc: any) => (
-                    <div 
-                      key={doc.id} 
+                    <div
+                      key={doc.id}
                       className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                       onClick={() => window.open(`/api/documents/download/${doc.id}`, '_blank')}
                     >
@@ -731,7 +737,7 @@ export function MaintenanceViewDialog({
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm truncate">{doc.documentType}</div>
                         <div className="text-xs text-muted-foreground uppercase">
-                          {doc.fileName?.split('.').pop() || 'FILE'}
+                          {doc.fileName?.split('.').pop() || t('viewDialog.fileFallback')}
                         </div>
                       </div>
                     </div>
@@ -740,20 +746,20 @@ export function MaintenanceViewDialog({
               ) : (
                 <div className="text-center py-6 text-muted-foreground bg-gray-50 dark:bg-gray-800 rounded-lg border">
                   <FileText className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm">No maintenance documents uploaded yet</p>
+                  <p className="text-sm">{t('viewDialog.noMaintenanceDocuments')}</p>
                 </div>
               )}
             </div>
 
             {/* View All Documents Button */}
-            <Button 
-              variant="link" 
-              size="sm" 
-              className="mt-3 p-0 h-auto" 
+            <Button
+              variant="link"
+              size="sm"
+              className="mt-3 p-0 h-auto"
               data-testid="button-view-all-documents"
               onClick={() => setShowAllDocuments(true)}
             >
-              View All Documents →
+              {t('viewDialog.viewAllDocuments')}
             </Button>
           </div>
         </div>
@@ -764,9 +770,9 @@ export function MaintenanceViewDialog({
     <Dialog open={showAllDocuments} onOpenChange={setShowAllDocuments}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Maintenance Documents</DialogTitle>
+          <DialogTitle>{t('viewDialog.maintenanceDocuments')}</DialogTitle>
           <DialogDescription>
-            All documents for {vehicle?.brand} {vehicle?.model} ({displayLicensePlate(vehicle?.licensePlate || '')})
+            {t('viewDialog.allDocumentsForVehicle', { brand: vehicle?.brand, model: vehicle?.model, plate: displayLicensePlate(vehicle?.licensePlate || '') })}
           </DialogDescription>
         </DialogHeader>
 
@@ -797,7 +803,7 @@ export function MaintenanceViewDialog({
                   <div>
                     <div className="font-medium text-sm truncate">{doc.documentType}</div>
                     <div className="text-xs text-muted-foreground uppercase">
-                      {doc.fileName?.split('.').pop() || 'FILE'}
+                      {doc.fileName?.split('.').pop() || t('viewDialog.fileFallback')}
                     </div>
                     {doc.notes && (
                       <div className="text-xs text-muted-foreground mt-1 truncate">
@@ -814,7 +820,7 @@ export function MaintenanceViewDialog({
                       className="flex-1 px-2"
                       onClick={() => setPreviewDocument(doc)}
                       data-testid={`button-view-${doc.id}`}
-                      title="View document"
+                      title={t('viewDialog.viewDocumentTitle')}
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -831,7 +837,7 @@ export function MaintenanceViewDialog({
                         document.body.removeChild(link);
                       }}
                       data-testid={`button-download-${doc.id}`}
-                      title="Download document"
+                      title={t('viewDialog.downloadDocumentTitle')}
                     >
                       <Download className="h-4 w-4" />
                     </Button>
@@ -850,7 +856,7 @@ export function MaintenanceViewDialog({
                         }
                       }}
                       data-testid={`button-print-${doc.id}`}
-                      title="Print document"
+                      title={t('viewDialog.printDocumentTitle')}
                     >
                       <Printer className="h-4 w-4" />
                     </Button>
@@ -862,7 +868,7 @@ export function MaintenanceViewDialog({
         ) : (
           <div className="text-center py-12 text-muted-foreground">
             <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-            <p>No documents uploaded yet</p>
+            <p>{t('viewDialog.noDocumentsUploadedYet')}</p>
           </div>
         )}
       </DialogContent>
@@ -896,14 +902,14 @@ export function MaintenanceViewDialog({
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <FileText className="h-16 w-16 mb-4 text-gray-300" />
-              <p className="text-lg font-medium">Preview not available</p>
-              <p className="text-sm">This file type cannot be previewed</p>
+              <p className="text-lg font-medium">{t('viewDialog.previewNotAvailable')}</p>
+              <p className="text-sm">{t('viewDialog.fileTypeCannotBePreviewed')}</p>
               <Button
                 className="mt-4"
                 onClick={() => window.open(`/api/documents/download/${previewDocument.id}`, '_blank')}
               >
                 <Download className="h-4 w-4 mr-2" />
-                Download to view
+                {t('viewDialog.downloadToView')}
               </Button>
             </div>
           )}
@@ -922,7 +928,7 @@ export function MaintenanceViewDialog({
             }}
           >
             <Download className="h-4 w-4 mr-2" />
-            Download
+            {t('viewDialog.download')}
           </Button>
           <Button
             variant="outline"
@@ -938,10 +944,10 @@ export function MaintenanceViewDialog({
             }}
           >
             <Printer className="h-4 w-4 mr-2" />
-            Print
+            {t('viewDialog.print')}
           </Button>
           <Button variant="outline" onClick={() => setPreviewDocument(null)}>
-            Close
+            {t('viewDialog.close')}
           </Button>
         </div>
       </DialogContent>

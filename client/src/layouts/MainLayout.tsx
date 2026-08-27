@@ -1,5 +1,7 @@
 import { useState, ReactNode, useRef, useEffect } from "react";
 import { useLocation, Link } from "wouter";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { UserMenu } from "@/components/user-menu";
 import { useAuth } from "@/hooks/use-auth";
@@ -79,8 +81,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [viewReservationDialogOpen, setViewReservationDialogOpen] = useState(false);
   const [editReservationId, setEditReservationId] = useState<number | null>(null);
   const [editReservationDialogOpen, setEditReservationDialogOpen] = useState(false);
-  
-  const title = getPageTitle(location);
+  const { t } = useTranslation("nav");
+
+  const title = getPageTitle(location, t);
   
   // Query for vehicles based on search
   const { data: vehicleResults = [], isLoading: vehiclesLoading } = useQuery({
@@ -236,7 +239,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               }}>
                 <input 
                   type="text" 
-                  placeholder="Search..."
+                  placeholder={t('common:searchPage.searchPlaceholder')}
                   autoComplete="off"
                   className="w-full py-2 pl-10 pr-4 text-gray-700 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   value={searchQuery}
@@ -293,7 +296,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     {(vehiclesLoading || customersLoading || reservationsLoading) && (
                       <div className="flex items-center justify-center p-4">
                         <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
-                        <span>Searching...</span>
+                        <span>{t('common:searchPage.searchingLabel')}</span>
                       </div>
                     )}
                     
@@ -566,9 +569,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <Dialog open={viewCustomerDialogOpen} onOpenChange={setViewCustomerDialogOpen}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Customer Details</DialogTitle>
+            <DialogTitle>{t('customers:viewDialog.title')}</DialogTitle>
             <DialogDescription>
-              View customer information and reservation history
+              {t('customers:viewDialog.description')}
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4">
@@ -609,16 +612,16 @@ export default function MainLayout({ children }: MainLayoutProps) {
   );
 }
 
-function getPageTitle(location: string): string {
-  if (location === "/") return "Dashboard";
-  if (location.startsWith("/vehicles")) return "Vehicles";
-  if (location.startsWith("/customers")) return "Customers";
-  if (location.startsWith("/reservations")) return "Reservations";
-  if (location.startsWith("/maintenance")) return "Maintenance";
-  if (location.startsWith("/expenses")) return "Expenses";
-  if (location.startsWith("/documents")) return "Documents";
-  if (location.startsWith("/reports")) return "Reports";
-  if (location.startsWith("/search-results")) return "Search Results";
-  if (location.startsWith("/notifications")) return "Notifications";
+function getPageTitle(location: string, t: TFunction): string {
+  if (location === "/") return t("dashboard");
+  if (location.startsWith("/vehicles")) return t("vehicles");
+  if (location.startsWith("/customers")) return t("customers");
+  if (location.startsWith("/reservations")) return t("reservations");
+  if (location.startsWith("/maintenance")) return t("maintenance");
+  if (location.startsWith("/expenses")) return t("expenses");
+  if (location.startsWith("/documents")) return t("documents");
+  if (location.startsWith("/reports")) return t("reports");
+  if (location.startsWith("/search-results")) return t("searchResults");
+  if (location.startsWith("/notifications")) return t("notifications");
   return "Auto Lease LAM";
 }

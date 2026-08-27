@@ -20,3 +20,7 @@ yarn-error.log*
 
 # Local git worktrees (scratch, not part of the repo)
 .worktrees/
+
+# Runtime backup/dump data - not source
+backups/
+temp/

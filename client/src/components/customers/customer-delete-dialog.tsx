@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Trans, useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -36,6 +37,7 @@ export function CustomerDeleteDialog({
   open: controlledOpen,
   onOpenChange,
 }: CustomerDeleteDialogProps) {
+  const { t } = useTranslation(["customers", "common"]);
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
@@ -72,23 +74,23 @@ export function CustomerDeleteDialog({
     onSuccess: () => {
       // Refresh the customers list
       invalidateByPrefix("/api/customers");
-      
+
       toast({
-        title: "Customer deleted",
-        description: `${customerName} has been successfully deleted.`,
+        title: t('deleteDialog.deletedTitle'),
+        description: t('deleteDialog.deletedDescription', { name: customerName }),
         variant: "default"
       });
 
       setOpen(false);
-      
+
       if (onSuccess) {
         onSuccess();
       }
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete customer",
+        title: t('common:status.error'),
+        description: error.message || t('deleteDialog.deleteFailed'),
         variant: "destructive"
       });
     }
@@ -100,13 +102,13 @@ export function CustomerDeleteDialog({
 
   // Custom trigger or default delete button
   const trigger = children || (
-    <Button 
-      variant="destructive" 
-      size="sm" 
+    <Button
+      variant="destructive"
+      size="sm"
       data-testid={`button-delete-customer-${customerId}`}
     >
       <Trash2 className="mr-2 h-4 w-4" />
-      Delete
+      {t('common:actions.delete')}
     </Button>
   );
 
@@ -119,27 +121,31 @@ export function CustomerDeleteDialog({
       )}
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Delete Customer</DialogTitle>
+          <DialogTitle>{t('deleteDialog.title')}</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete <strong>{customerName}</strong>? 
-            This action cannot be undone and will remove all customer data and associated reservations.
+            <Trans
+              t={t}
+              i18nKey="deleteDialog.description"
+              values={{ name: customerName }}
+              components={{ 1: <strong /> }}
+            />
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => setOpen(false)}
             disabled={deleteCustomerMutation.isPending}
           >
-            Cancel
+            {t('common:actions.cancel')}
           </Button>
-          <Button 
-            variant="destructive" 
+          <Button
+            variant="destructive"
             onClick={handleDelete}
             disabled={deleteCustomerMutation.isPending}
             data-testid={`button-confirm-delete-${customerId}`}
           >
-            {deleteCustomerMutation.isPending ? "Deleting..." : "Delete Customer"}
+            {deleteCustomerMutation.isPending ? t('deleteDialog.deleting') : t('deleteDialog.deleteCustomer')}
           </Button>
         </DialogFooter>
       </DialogContent>

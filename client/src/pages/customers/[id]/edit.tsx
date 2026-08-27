@@ -1,4 +1,5 @@
 import { invalidateByPrefix } from "@/lib/queryClient";
+import { useTranslation } from "react-i18next";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CustomerForm } from "@/components/customers/customer-form";
@@ -6,6 +7,7 @@ import { Customer } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 
 export default function CustomerEdit() {
+  const { t } = useTranslation(["customers", "common"]);
   const params = useParams<{ id: string }>();
   const [_, navigate] = useLocation();
   const queryClient = useQueryClient();
@@ -17,7 +19,7 @@ export default function CustomerEdit() {
   });
 
   if (isNaN(customerId)) {
-    return <div>Invalid customer ID</div>;
+    return <div>{t('editPage.invalidCustomerId')}</div>;
   }
 
   if (isLoading) {
@@ -34,9 +36,9 @@ export default function CustomerEdit() {
   if (error || !customer) {
     return (
       <div className="text-center p-8">
-        <h2 className="text-xl font-semibold mb-2">Customer not found</h2>
-        <p className="mb-4 text-gray-600">The customer you're trying to edit doesn't exist or has been removed.</p>
-        <Button onClick={() => navigate("/customers")}>Back to Customers</Button>
+        <h2 className="text-xl font-semibold mb-2">{t('editPage.notFoundTitle')}</h2>
+        <p className="mb-4 text-gray-600">{t('editPage.notFoundDescription')}</p>
+        <Button onClick={() => navigate("/customers")}>{t('editPage.backToCustomers')}</Button>
       </div>
     );
   }
@@ -44,9 +46,9 @@ export default function CustomerEdit() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Edit Customer</h1>
+        <h1 className="text-2xl font-bold">{t('editDialog.title')}</h1>
         <Button variant="outline" onClick={() => navigate(`/customers/${customerId}`)}>
-          Cancel
+          {t('common:actions.cancel')}
         </Button>
       </div>
       

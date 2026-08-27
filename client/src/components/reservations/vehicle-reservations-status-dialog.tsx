@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { invalidateByPrefix } from "@/lib/queryClient";
 import { Vehicle, Reservation } from "@shared/schema";
@@ -35,6 +36,7 @@ export function VehicleReservationsStatusDialog({
   const [selectedReservationId, setSelectedReservationId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"upcoming" | "all" | "past">("upcoming");
   const [vehicleSearchQuery, setVehicleSearchQuery] = useState<string>("");
+  const { t } = useTranslation("reservations");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -98,8 +100,8 @@ export function VehicleReservationsStatusDialog({
     
     // Show success toast
     toast({
-      title: "Status Updated",
-      description: `Reservation status has been updated successfully.`,
+      title: t('vehicleReservationsStatusDialog.toasts.statusUpdatedTitle'),
+      description: t('vehicleReservationsStatusDialog.toasts.statusUpdatedDescription'),
     });
     
     // Call the callback if provided
@@ -141,27 +143,27 @@ export function VehicleReservationsStatusDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-3xl fixed top-[10vh] translate-y-0 max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Change Reservation Status by Vehicle</DialogTitle>
+            <DialogTitle>{t('vehicleReservationsStatusDialog.title')}</DialogTitle>
             <DialogDescription>
-              First select a vehicle, then choose a reservation to change its status.
+              {t('vehicleReservationsStatusDialog.description')}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="grid grid-cols-1 gap-4 py-4">
             {/* Vehicle Selector - placed at the top with more visible styling */}
             <div className="space-y-2">
-              <h3 className="text-sm font-medium">Select Vehicle</h3>
+              <h3 className="text-sm font-medium">{t('vehicleReservationsStatusDialog.selectVehicleLabel')}</h3>
               {isLoadingVehicles ? (
                 <div className="flex items-center justify-center p-4">
                   <RotateCw className="h-5 w-5 animate-spin text-primary-600 mr-2" />
-                  <span>Loading vehicles...</span>
+                  <span>{t('vehicleReservationsStatusDialog.loadingVehicles')}</span>
                 </div>
               ) : (
                 <div className="border rounded-md p-3 bg-slate-50 space-y-2">
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search by license plate, brand, or model"
+                      placeholder={t('vehicleReservationsStatusDialog.searchPlaceholder')}
                       value={vehicleSearchQuery}
                       onChange={(e) => setVehicleSearchQuery(e.target.value.toLowerCase())}
                       className="pl-8 bg-white"
@@ -190,41 +192,43 @@ export function VehicleReservationsStatusDialog({
                     }) || []}
                     value={selectedVehicleId}
                     onChange={setSelectedVehicleId}
-                    placeholder="Select a vehicle to view its reservations"
+                    placeholder={t('vehicleReservationsStatusDialog.selectVehiclePlaceholder')}
                   />
                 </div>
               )}
             </div>
-            
+
             {/* Reservations List */}
             {selectedVehicleId && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium">Reservations</h3>
+                  <h3 className="text-sm font-medium">{t('vehicleReservationsStatusDialog.reservationsLabel')}</h3>
                   <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "upcoming" | "all" | "past")}>
                     <TabsList className="grid w-auto grid-cols-3">
-                      <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-                      <TabsTrigger value="all">All</TabsTrigger>
-                      <TabsTrigger value="past">Past</TabsTrigger>
+                      <TabsTrigger value="upcoming">{t('vehicleReservationsStatusDialog.tabs.upcoming')}</TabsTrigger>
+                      <TabsTrigger value="all">{t('vehicleReservationsStatusDialog.tabs.all')}</TabsTrigger>
+                      <TabsTrigger value="past">{t('vehicleReservationsStatusDialog.tabs.past')}</TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </div>
-                
+
                 {isLoadingReservations ? (
                   <div className="flex items-center justify-center p-8">
                     <RotateCw className="h-5 w-5 animate-spin text-primary-600 mr-2" />
-                    <span>Loading reservations...</span>
+                    <span>{t('vehicleReservationsStatusDialog.loadingReservations')}</span>
                   </div>
                 ) : filteredReservations.length === 0 ? (
                   <div className="flex flex-col items-center justify-center p-8 text-center">
-                    <div className="text-muted-foreground mb-2">No {activeTab} reservations found for this vehicle.</div>
+                    <div className="text-muted-foreground mb-2">
+                      {t('vehicleReservationsStatusDialog.noReservationsFound', { tab: t(`vehicleReservationsStatusDialog.tabs.${activeTab}`).toLowerCase() })}
+                    </div>
                     {activeTab !== "all" && (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setActiveTab("all")}
                       >
-                        View all reservations
+                        {t('vehicleReservationsStatusDialog.viewAllReservationsButton')}
                       </Button>
                     )}
                   </div>
@@ -234,12 +238,12 @@ export function VehicleReservationsStatusDialog({
                       <table className="w-full text-sm">
                         <thead className="sticky top-0 z-10">
                           <tr className="bg-slate-100 border-b">
-                            <th className="px-4 py-3 text-left font-medium">Type</th>
-                            <th className="px-4 py-3 text-left font-medium">ID</th>
-                            <th className="px-4 py-3 text-left font-medium">Customer</th>
-                            <th className="px-4 py-3 text-left font-medium">Period</th>
-                            <th className="px-4 py-3 text-left font-medium">Status</th>
-                            <th className="px-4 py-3 text-center font-medium">Action</th>
+                            <th className="px-4 py-3 text-left font-medium">{t('vehicleReservationsStatusDialog.tableHeaders.type')}</th>
+                            <th className="px-4 py-3 text-left font-medium">{t('vehicleReservationsStatusDialog.tableHeaders.id')}</th>
+                            <th className="px-4 py-3 text-left font-medium">{t('vehicleReservationsStatusDialog.tableHeaders.customer')}</th>
+                            <th className="px-4 py-3 text-left font-medium">{t('vehicleReservationsStatusDialog.tableHeaders.period')}</th>
+                            <th className="px-4 py-3 text-left font-medium">{t('vehicleReservationsStatusDialog.tableHeaders.status')}</th>
+                            <th className="px-4 py-3 text-center font-medium">{t('vehicleReservationsStatusDialog.tableHeaders.action')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -251,26 +255,26 @@ export function VehicleReservationsStatusDialog({
                                   {isMaintenance ? (
                                     <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200">
                                       <Wrench className="h-3 w-3" />
-                                      Maintenance
+                                      {t('vehicleReservationsStatusDialog.maintenanceBadge')}
                                     </span>
                                   ) : (
                                     <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
                                       <User className="h-3 w-3" />
-                                      Rental
+                                      {t('vehicleReservationsStatusDialog.rentalBadge')}
                                     </span>
                                   )}
                                 </td>
                                 <td className="px-4 py-3">#{reservation.id}</td>
                                 <td className="px-4 py-3 font-medium">
-                                  {reservation.customer?.name || 'Unknown'}
+                                  {reservation.customer?.name || t('vehicleReservationsStatusDialog.unknownCustomer')}
                                 </td>
                                 <td className="px-4 py-3">
                                   {reservation.startDate ? (
                                     <>
-                                      {formatDate(reservation.startDate)} - {reservation.endDate ? formatDate(reservation.endDate) : 'Open-ended'}
+                                      {formatDate(reservation.startDate)} - {reservation.endDate ? formatDate(reservation.endDate) : t('vehicleReservationsStatusDialog.openEnded')}
                                     </>
                                   ) : (
-                                    <span className="text-muted-foreground">No dates specified</span>
+                                    <span className="text-muted-foreground">{t('vehicleReservationsStatusDialog.noDatesSpecified')}</span>
                                   )}
                                 </td>
                                 <td className="px-4 py-3">
@@ -294,10 +298,10 @@ export function VehicleReservationsStatusDialog({
                                       className="bg-primary-50 hover:bg-primary-100 text-primary-600"
                                     >
                                       <CalendarClock className="mr-1 h-3 w-3" />
-                                      Revert to Booked
+                                      {t('vehicleReservationsStatusDialog.revertToBookedButton')}
                                     </Button>
                                   ) : (
-                                    <span className="text-xs text-muted-foreground">—</span>
+                                    <span className="text-xs text-muted-foreground">{t('vehicleReservationsStatusDialog.noActionPlaceholder')}</span>
                                   )}
                                 </td>
                               </tr>

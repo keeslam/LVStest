@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -40,6 +41,7 @@ interface CustomerDetailsProps {
 }
 
 export function CustomerDetails({ customerId, inDialog = false, onClose }: CustomerDetailsProps) {
+  const { t } = useTranslation(["customers", "common"]);
   const [_, navigate] = useLocation();
   const { toast } = useToast();
   const [viewReservationId, setViewReservationId] = useState<number | null>(null);
@@ -146,8 +148,8 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
       await refetchDrivers();
       
       toast({
-        title: "Driver deleted",
-        description: "The driver has been successfully deleted.",
+        title: t('details.driverDeletedTitle'),
+        description: t('details.driverDeletedDescription'),
         variant: "default"
       });
     },
@@ -157,8 +159,8 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
         queryClient.setQueryData(customerDriversQueryKey, context.previousDrivers);
       }
       toast({
-        title: "Error",
-        description: "Failed to delete driver",
+        title: t('common:status.error'),
+        description: t('details.driverDeleteFailed'),
         variant: "destructive"
       });
     },
@@ -319,15 +321,15 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
       await invalidateRelatedQueries('reservations', { customerId });
       
       toast({
-        title: "Reservation deleted",
-        description: "The reservation has been successfully deleted.",
+        title: t('details.reservationDeletedTitle'),
+        description: t('details.reservationDeletedDescription'),
         variant: "default"
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete reservation",
+        title: t('common:status.error'),
+        description: error.message || t('details.reservationDeleteFailed'),
         variant: "destructive"
       });
     }
@@ -345,25 +347,25 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
           <thead className="bg-gray-50">
             <tr>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Vehicle
+                {t('details.colVehicle')}
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Period
+                {t('details.colPeriod')}
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+                {t('common:fields.status')}
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Kilometers
+                {t('details.colKilometers')}
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Price
+                {t('details.colPrice')}
               </th>
               <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Damage
+                {t('details.colDamage')}
               </th>
               <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
+                {t('details.colActions')}
               </th>
             </tr>
           </thead>
@@ -390,7 +392,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                     <div className="text-sm text-gray-900">
                       <div>{formatDate(reservation.startDate)}</div>
                       <div className="text-xs text-gray-500">
-                        to {reservation.endDate ? formatDate(reservation.endDate) : "TBD"}
+                        {reservation.endDate ? t('details.periodTo', { date: formatDate(reservation.endDate) }) : t('details.periodToTbd')}
                       </div>
                     </div>
                   </td>
@@ -422,7 +424,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                         }}
                         data-testid={`button-view-reservation-${reservation.id}`}
                       >
-                        View
+                        {t('common:actions.view')}
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -449,18 +451,18 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                               <line x1="10" y1="11" x2="10" y2="17"></line>
                               <line x1="14" y1="11" x2="14" y2="17"></line>
                             </svg>
-                            Delete
+                            {t('common:actions.delete')}
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Reservation</AlertDialogTitle>
+                            <AlertDialogTitle>{t('details.deleteReservationTitle')}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete this reservation? This action cannot be undone.
+                              {t('details.deleteReservationConfirm')}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
                             <AlertDialogAction 
                               onClick={() => {
                                 deleteReservationMutation.mutate(reservation.id);
@@ -507,9 +509,9 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
   if (!customer) {
     return (
       <div className="text-center p-8">
-        <h2 className="text-xl font-semibold mb-2">Customer not found</h2>
-        <p className="mb-4 text-gray-600">The customer you're looking for doesn't exist or has been removed.</p>
-        <Button onClick={() => navigate("/customers")}>Back to Customers</Button>
+        <h2 className="text-xl font-semibold mb-2">{t('details.customerNotFoundTitle')}</h2>
+        <p className="mb-4 text-gray-600">{t('details.customerNotFoundDescription')}</p>
+        <Button onClick={() => navigate("/customers")}>{t('details.backToCustomers')}</Button>
       </div>
     );
   }
@@ -531,7 +533,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
               <path d="m12 19-7-7 7-7"/>
               <path d="M19 12H5"/>
             </svg>
-            {inDialog ? "Back" : "Back to Customers"}
+            {inDialog ? t('common:actions.back') : t('details.backToCustomers')}
           </Button>
           <CustomerEditDialog 
             customerId={customerId}
@@ -550,7 +552,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                 <line x1="19" x2="19" y1="16" y2="22" />
                 <line x1="16" x2="22" y1="19" y2="19" />
               </svg>
-              New Reservation
+              {t('details.newReservation')}
             </Button>
           </ReservationAddDialog>
         </div>
@@ -560,198 +562,198 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Total Rentals</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">{t('details.totalRentals')}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-semibold">{rentalStats.totalRentals}</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Active Rentals</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">{t('details.activeRentals')}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-semibold">{rentalStats.activeRentals}</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Completed</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">{t('details.completed')}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-semibold">{rentalStats.completedRentals}</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Total KM Driven</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">{t('details.totalKmDriven')}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-semibold">{rentalStats.totalKilometersDriven.toLocaleString()}</p>
           </CardContent>
         </Card>
       </div>
-      
+
       {/* Tabs */}
       <Tabs defaultValue="personal" className="w-full">
         <TabsList className="grid w-full grid-cols-4 max-w-4xl">
-          <TabsTrigger value="personal">Personal Info</TabsTrigger>
-          <TabsTrigger value="drivers">Drivers</TabsTrigger>
-          <TabsTrigger value="active">Active Rentals</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="personal">{t('details.tabPersonalInfo')}</TabsTrigger>
+          <TabsTrigger value="drivers">{t('details.tabDrivers')}</TabsTrigger>
+          <TabsTrigger value="active">{t('details.tabActiveRentals')}</TabsTrigger>
+          <TabsTrigger value="history">{t('details.tabHistory')}</TabsTrigger>
         </TabsList>
         
         {/* Personal Info Tab */}
         <TabsContent value="personal" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Customer Details</CardTitle>
-              <CardDescription>Personal information and contact details</CardDescription>
+              <CardTitle>{t('details.customerDetailsTitle')}</CardTitle>
+              <CardDescription>{t('details.customerDetailsDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               {/* Personal Info Section */}
               <div className="border-b pb-4 mb-4">
-                <h3 className="text-lg font-medium mb-3">Personal Information</h3>
+                <h3 className="text-lg font-medium mb-3">{t('details.personalInformation')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Full Name</h4>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.fullName')}</h4>
                     <p className="text-base">{customer.name}</p>
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Debtor Number</h4>
-                    <p className="text-base">{customer.debtorNumber || "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.debtorNumber')}</h4>
+                    <p className="text-base">{customer.debtorNumber || t('details.notProvided')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">First Name</h4>
-                    <p className="text-base">{customer.firstName || "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.firstName')}</h4>
+                    <p className="text-base">{customer.firstName || t('details.notProvided')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Last Name</h4>
-                    <p className="text-base">{customer.lastName || "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.lastName')}</h4>
+                    <p className="text-base">{customer.lastName || t('details.notProvided')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Driver Name</h4>
-                    <p className="text-base">{customer.driverName || "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.driverName')}</h4>
+                    <p className="text-base">{customer.driverName || t('details.notProvided')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Driver License</h4>
-                    <p className="text-base">{customer.driverLicenseNumber || "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.driverLicense')}</h4>
+                    <p className="text-base">{customer.driverLicenseNumber || t('details.notProvided')}</p>
                   </div>
                 </div>
               </div>
-              
+
               {/* Contact Info Section */}
               <div className="border-b pb-4 mb-4">
-                <h3 className="text-lg font-medium mb-3">Contact Information</h3>
+                <h3 className="text-lg font-medium mb-3">{t('details.contactInformation')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Primary Email</h4>
-                    <p className="text-base">{customer.email || "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.primaryEmail')}</h4>
+                    <p className="text-base">{customer.email || t('details.notProvided')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Primary Phone</h4>
-                    <p className="text-base">{customer.phone ? formatPhoneNumber(customer.phone) : "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.primaryPhone')}</h4>
+                    <p className="text-base">{customer.phone ? formatPhoneNumber(customer.phone) : t('details.notProvided')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Email for MOT</h4>
-                    <p className="text-base">{customer.emailForMOT || "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.emailForMot')}</h4>
+                    <p className="text-base">{customer.emailForMOT || t('details.notProvided')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Email for Invoices</h4>
-                    <p className="text-base">{customer.emailForInvoices || "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.emailForInvoices')}</h4>
+                    <p className="text-base">{customer.emailForInvoices || t('details.notProvided')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">General Email</h4>
-                    <p className="text-base">{customer.emailGeneral || "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.generalEmail')}</h4>
+                    <p className="text-base">{customer.emailGeneral || t('details.notProvided')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Driver Phone</h4>
-                    <p className="text-base">{customer.driverPhone ? formatPhoneNumber(customer.driverPhone) : "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.driverPhone')}</h4>
+                    <p className="text-base">{customer.driverPhone ? formatPhoneNumber(customer.driverPhone) : t('details.notProvided')}</p>
                   </div>
                 </div>
               </div>
-              
+
               {/* Address Section */}
               <div className="border-b pb-4 mb-4">
-                <h3 className="text-lg font-medium mb-3">Address Information</h3>
+                <h3 className="text-lg font-medium mb-3">{t('details.addressInformation')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Street Name</h4>
-                    <p className="text-base">{customer.streetName || "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.streetName')}</h4>
+                    <p className="text-base">{customer.streetName || t('details.notProvided')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Address</h4>
-                    <p className="text-base">{customer.address || "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('common:fields.address')}</h4>
+                    <p className="text-base">{customer.address || t('details.notProvided')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Postal Code</h4>
-                    <p className="text-base">{customer.postalCode || "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('common:fields.postalCode')}</h4>
+                    <p className="text-base">{customer.postalCode || t('details.notProvided')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">City</h4>
-                    <p className="text-base">{customer.city || "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('common:fields.city')}</h4>
+                    <p className="text-base">{customer.city || t('details.notProvided')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Country</h4>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('common:fields.country')}</h4>
                     <p className="text-base">{customer.country || "Nederland"}</p>
                   </div>
                 </div>
               </div>
-              
+
               {/* Company Information */}
               <div className="border-b pb-4 mb-4">
-                <h3 className="text-lg font-medium mb-3">Company Information</h3>
+                <h3 className="text-lg font-medium mb-3">{t('details.companyInformation')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Company Name</h4>
-                    <p className="text-base">{customer.companyName || "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.companyName')}</h4>
+                    <p className="text-base">{customer.companyName || t('details.notProvided')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Contact Person</h4>
-                    <p className="text-base">{customer.contactPerson || "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.contactPerson')}</h4>
+                    <p className="text-base">{customer.contactPerson || t('details.notProvided')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Chamber of Commerce Number (KvK)</h4>
-                    <p className="text-base">{customer.chamberOfCommerceNumber || "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.kvkNumber')}</h4>
+                    <p className="text-base">{customer.chamberOfCommerceNumber || t('details.notProvided')}</p>
                   </div>
-                  
+
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">VAT Number</h4>
-                    <p className="text-base">{customer.vatNumber || "Not provided"}</p>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.vatNumber')}</h4>
+                    <p className="text-base">{customer.vatNumber || t('details.notProvided')}</p>
                   </div>
-                  
+
                   <div>
                     <h4 className="text-sm font-medium text-gray-500 mb-1">RSIN</h4>
-                    <p className="text-base">{customer.rsin || "Not provided"}</p>
+                    <p className="text-base">{customer.rsin || t('details.notProvided')}</p>
                   </div>
                 </div>
               </div>
-              
+
               {/* Additional Information */}
               <div className="border-b pb-4 mb-4">
-                <h3 className="text-lg font-medium mb-3">Additional Information</h3>
+                <h3 className="text-lg font-medium mb-3">{t('details.additionalInformation')}</h3>
                 {customer.notes && (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Notes</h4>
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">{t('common:fields.notes')}</h4>
                     <p className="text-base">{customer.notes}</p>
                   </div>
                 )}
@@ -759,51 +761,51 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
               
               {/* Tracking Information */}
               <div className="mt-6 border-t pt-6">
-                <h3 className="text-lg font-medium mb-3">Tracking Information</h3>
-                
+                <h3 className="text-lg font-medium mb-3">{t('details.trackingInformation')}</h3>
+
                 {/* Status tracking section */}
                 <div className="border-b pb-4 mb-4">
-                  <h4 className="text-md font-medium mb-2">Status Information</h4>
+                  <h4 className="text-md font-medium mb-2">{t('details.statusInformation')}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-1">Status</h4>
-                      <p className="text-base">{customer.status || "Not provided"}</p>
+                      <h4 className="text-sm font-medium text-gray-500 mb-1">{t('common:fields.status')}</h4>
+                      <p className="text-base">{customer.status || t('details.notProvided')}</p>
                     </div>
-                    
+
                     <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-1">Status Date</h4>
-                      <p className="text-base">{customer.statusDate ? formatDate(customer.statusDate) : "Not provided"}</p>
+                      <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.statusDate')}</h4>
+                      <p className="text-base">{customer.statusDate ? formatDate(customer.statusDate) : t('details.notProvided')}</p>
                     </div>
-                    
+
                     <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-1">Status Changed By</h4>
-                      <p className="text-base">{customer.statusBy || "Not recorded"}</p>
+                      <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.statusChangedBy')}</h4>
+                      <p className="text-base">{customer.statusBy || t('details.notRecorded')}</p>
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Record tracking section */}
                 <div>
-                  <h4 className="text-md font-medium mb-2">Record Information</h4>
+                  <h4 className="text-md font-medium mb-2">{t('details.recordInformation')}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-1">Created By</h4>
-                      <p className="text-base">{customer.createdBy || "Not recorded"}</p>
+                      <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.createdBy')}</h4>
+                      <p className="text-base">{customer.createdBy || t('details.notRecorded')}</p>
                     </div>
-                    
+
                     <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-1">Created At</h4>
-                      <p className="text-base">{customer.createdAt ? new Date(customer.createdAt).toLocaleString() : "Not recorded"}</p>
+                      <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.createdAt')}</h4>
+                      <p className="text-base">{customer.createdAt ? new Date(customer.createdAt).toLocaleString() : t('details.notRecorded')}</p>
                     </div>
-                    
+
                     <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-1">Last Updated By</h4>
-                      <p className="text-base">{customer.updatedBy || "Not recorded"}</p>
+                      <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.lastUpdatedBy')}</h4>
+                      <p className="text-base">{customer.updatedBy || t('details.notRecorded')}</p>
                     </div>
-                    
+
                     <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-1">Last Updated At</h4>
-                      <p className="text-base">{customer.updatedAt ? new Date(customer.updatedAt).toLocaleString() : "Not recorded"}</p>
+                      <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.lastUpdatedAt')}</h4>
+                      <p className="text-base">{customer.updatedAt ? new Date(customer.updatedAt).toLocaleString() : t('details.notRecorded')}</p>
                     </div>
                   </div>
                 </div>
@@ -820,9 +822,9 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                     <circle cx="12" cy="12" r="10"/>
                     <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
                   </svg>
-                  Blocked Vehicles
+                  {t('details.blockedVehiclesTitle')}
                 </CardTitle>
-                <CardDescription>Vehicles this customer is not allowed to rent</CardDescription>
+                <CardDescription>{t('details.blockedVehiclesDescription')}</CardDescription>
               </div>
             </CardHeader>
             <CardContent>
@@ -835,8 +837,8 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                 </div>
               ) : blockedVehicles.length === 0 ? (
                 <div className="text-center py-6 text-gray-500">
-                  <p>This customer is not blocked from any vehicles.</p>
-                  <p className="text-sm mt-1">They can rent all available vehicles.</p>
+                  <p>{t('details.noBlockedVehicles')}</p>
+                  <p className="text-sm mt-1">{t('details.noBlockedVehiclesHint')}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -846,7 +848,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                         <div className="flex items-center gap-2">
                           <Car className="h-4 w-4 text-gray-500" />
                           <span className="font-medium">
-                            {entry.vehicle ? `${entry.vehicle.brand} ${entry.vehicle.model}` : 'Unknown Vehicle'}
+                            {entry.vehicle ? `${entry.vehicle.brand} ${entry.vehicle.model}` : t('details.unknownVehicle')}
                           </span>
                           {entry.vehicle?.licensePlate && (
                             <Badge variant="outline" className="ml-2">
@@ -856,25 +858,31 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                         </div>
                         {entry.reason && (
                           <p className="text-sm text-gray-600 mt-1">
-                            <span className="font-medium">Reason:</span> {entry.reason}
+                            <span className="font-medium">{t('details.reason')}</span> {entry.reason}
                           </p>
                         )}
                         <p className="text-xs text-gray-400 mt-1">
-                          Added {entry.createdAt ? formatDate(entry.createdAt) : 'Unknown date'}
-                          {entry.createdByUsername && ` by ${entry.createdByUsername}`}
+                          {entry.createdByUsername
+                            ? t('details.addedOnBy', {
+                                date: entry.createdAt ? formatDate(entry.createdAt) : t('details.unknownDate'),
+                                username: entry.createdByUsername,
+                              })
+                            : t('details.addedOn', {
+                                date: entry.createdAt ? formatDate(entry.createdAt) : t('details.unknownDate'),
+                              })}
                         </p>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-primary-600" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-primary-600"
                         data-testid={`button-view-blocked-vehicle-${entry.id}`}
                         onClick={() => {
                           setSelectedVehicleId(entry.vehicleId);
                           setViewVehicleDialogOpen(true);
                         }}
                       >
-                        View Vehicle
+                        {t('details.viewVehicle')}
                       </Button>
                     </div>
                   ))}
@@ -890,8 +898,8 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
             <CardHeader>
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle>Authorized Drivers</CardTitle>
-                  <CardDescription>Manage drivers authorized to rent vehicles for this customer</CardDescription>
+                  <CardTitle>{t('details.authorizedDriversTitle')}</CardTitle>
+                  <CardDescription>{t('details.authorizedDriversDescription')}</CardDescription>
                 </div>
                 <DriverDialog customerId={customerId} onSuccess={() => refetchDrivers()}>
                   <Button size="sm" data-testid="button-add-driver">
@@ -901,7 +909,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                       <line x1="19" x2="19" y1="8" y2="14" />
                       <line x1="22" x2="16" y1="11" y2="11" />
                     </svg>
-                    Add Driver
+                    {t('driverForm.addDriver')}
                   </Button>
                 </DriverDialog>
               </div>
@@ -911,7 +919,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
               {drivers && drivers.length > 0 && (
                 <div className="mb-4">
                   <Input
-                    placeholder="Search drivers by name, email, phone, or license..."
+                    placeholder={t('details.searchDriversPlaceholder')}
                     value={driverSearch}
                     onChange={(e) => setDriverSearch(e.target.value)}
                     className="max-w-md"
@@ -919,7 +927,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                   />
                   {driverSearch && (
                     <p className="text-sm text-gray-500 mt-2">
-                      Showing {totalDrivers} of {drivers.length} driver{drivers.length !== 1 ? 's' : ''}
+                      {t('details.showingDriversOfTotal', { shown: totalDrivers, count: drivers.length })}
                     </p>
                   )}
                 </div>
@@ -940,19 +948,19 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                     <line x1="19" x2="19" y1="8" y2="14" />
                     <line x1="22" x2="16" y1="11" y2="11" />
                   </svg>
-                  <p className="text-gray-500 mb-4">No drivers added yet</p>
-                  <p className="text-sm text-gray-400">Add a driver to get started</p>
+                  <p className="text-gray-500 mb-4">{t('details.noDriversYet')}</p>
+                  <p className="text-sm text-gray-400">{t('details.addDriverToStart')}</p>
                 </div>
               ) : filteredDrivers.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500 mb-2">No drivers match your search</p>
+                  <p className="text-gray-500 mb-2">{t('details.noDriversMatchSearch')}</p>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setDriverSearch("")}
                     className="text-primary-600"
                   >
-                    Clear search
+                    {t('details.clearSearch')}
                   </Button>
                 </div>
               ) : (
@@ -961,22 +969,22 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                     <thead className="bg-gray-50">
                       <tr>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Driver
+                          {t('details.colDriver')}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Contact
+                          {t('details.colContact')}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          License
+                          {t('details.colLicense')}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Vehicle
+                          {t('details.colVehicle')}
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
+                          {t('common:fields.status')}
                         </th>
                         <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
+                          {t('details.colActions')}
                         </th>
                       </tr>
                     </thead>
@@ -989,7 +997,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                                 <div className="text-sm font-medium text-gray-900 flex items-center gap-2" data-testid={`text-driver-name-${driver.id}`}>
                                   {driver.displayName}
                                   {driver.isPrimaryDriver && (
-                                    <Badge className="bg-blue-100 text-blue-800 border-blue-200">Primary</Badge>
+                                    <Badge className="bg-blue-100 text-blue-800 border-blue-200">{t('details.primary')}</Badge>
                                   )}
                                 </div>
                                 {driver.firstName || driver.lastName ? (
@@ -1013,7 +1021,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                                 <div>
                                   <div data-testid={`text-driver-license-${driver.id}`}>{driver.driverLicenseNumber}</div>
                                   {driver.licenseExpiry && (
-                                    <div className="text-xs text-gray-500">Exp: {formatDate(driver.licenseExpiry)}</div>
+                                    <div className="text-xs text-gray-500">{t('details.expiresAbbrev', { date: formatDate(driver.licenseExpiry) })}</div>
                                   )}
                                 </div>
                               ) : (
@@ -1046,11 +1054,11 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <Badge 
+                            <Badge
                               className={driver.status === 'active' ? 'bg-green-100 text-green-800 border-green-200' : 'bg-gray-100 text-gray-800 border-gray-200'}
                               data-testid={`badge-driver-status-${driver.id}`}
                             >
-                              {driver.status}
+                              {t(`common:status.${driver.status}`, { defaultValue: driver.status })}
                             </Badge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -1065,11 +1073,11 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                                 }}
                                 data-testid={`button-view-driver-${driver.id}`}
                               >
-                                View
+                                {t('common:actions.view')}
                               </Button>
                               <DriverDialog customerId={customerId} driver={driver} onSuccess={() => refetchDrivers()}>
                                 <Button variant="ghost" size="sm" className="text-primary-600 hover:text-primary-800" data-testid={`button-edit-driver-${driver.id}`}>
-                                  Edit
+                                  {t('common:actions.edit')}
                                 </Button>
                               </DriverDialog>
                               <AlertDialog>
@@ -1080,18 +1088,18 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                                     className="text-red-600 hover:text-red-800"
                                     data-testid={`button-delete-driver-${driver.id}`}
                                   >
-                                    Delete
+                                    {t('common:actions.delete')}
                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete Driver</AlertDialogTitle>
+                                    <AlertDialogTitle>{t('details.deleteDriverTitle')}</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Are you sure you want to delete {driver.displayName}? This action cannot be undone.
+                                      {t('details.deleteDriverConfirm', { name: driver.displayName })}
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
                                     <AlertDialogAction 
                                       onClick={() => {
                                         deleteDriverMutation.mutate(driver.id);
@@ -1150,13 +1158,13 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
             {/* Filter Controls */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Filter Rentals</CardTitle>
-                <CardDescription>Filter rentals by date range or vehicle</CardDescription>
+                <CardTitle className="text-lg">{t('details.filterRentalsTitle')}</CardTitle>
+                <CardDescription>{t('details.filterRentalsDescription')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="date-from">Date From</Label>
+                    <Label htmlFor="date-from">{t('details.dateFrom')}</Label>
                     <Input
                       id="date-from"
                       type="date"
@@ -1166,7 +1174,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="date-to">Date To</Label>
+                    <Label htmlFor="date-to">{t('details.dateTo')}</Label>
                     <Input
                       id="date-to"
                       type="date"
@@ -1176,11 +1184,11 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="vehicle-search">Vehicle Search</Label>
+                    <Label htmlFor="vehicle-search">{t('details.vehicleSearch')}</Label>
                     <Input
                       id="vehicle-search"
                       type="text"
-                      placeholder="Search by license plate, brand, model..."
+                      placeholder={t('details.vehicleSearchPlaceholder')}
                       value={vehicleFilter}
                       onChange={(e) => setVehicleFilter(e.target.value)}
                       data-testid="input-filter-vehicle"
@@ -1199,7 +1207,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                       }}
                       data-testid="button-clear-filters"
                     >
-                      Clear Filters
+                      {t('details.clearFilters')}
                     </Button>
                   </div>
                 )}
@@ -1210,56 +1218,56 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                  <CardTitle className="text-sm font-medium">Total Rentals</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('details.totalRentals')}</CardTitle>
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{rentalStats.totalRentals}</div>
-                  <p className="text-xs text-muted-foreground mt-1">All-time reservations</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('details.allTimeReservations')}</p>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                  <CardTitle className="text-sm font-medium">Active Rentals</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('details.activeRentals')}</CardTitle>
                   <Car className="h-4 w-4 text-blue-600" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-blue-600">{rentalStats.activeRentals}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Currently active</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('details.currentlyActive')}</p>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                  <CardTitle className="text-sm font-medium">Completed</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('details.completed')}</CardTitle>
                   <Check className="h-4 w-4 text-green-600" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-600">{rentalStats.completedRentals}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Past rentals</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('details.pastRentals')}</p>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                  <CardTitle className="text-sm font-medium">Total KM Driven</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('details.totalKmDriven')}</CardTitle>
                   <Car className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{rentalStats.totalKilometersDriven.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Kilometers</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('details.kilometers')}</p>
                 </CardContent>
               </Card>
             </div>
-            
+
             {/* Active Rentals Table */}
             <Card>
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <div>
-                    <CardTitle>Active Rentals</CardTitle>
-                    <CardDescription>Current and upcoming reservations</CardDescription>
+                    <CardTitle>{t('details.activeRentalsTitle')}</CardTitle>
+                    <CardDescription>{t('details.activeRentalsDescription')}</CardDescription>
                   </div>
                   <ReservationAddDialog initialCustomerId={customerId.toString()}>
                     <Button size="sm">
@@ -1278,7 +1286,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                     </svg>
                   </div>
                 ) : (
-                  <RentalTable rentals={activeRentals} emptyMessage="No active rentals" />
+                  <RentalTable rentals={activeRentals} emptyMessage={t('details.noActiveRentals')} />
                 )}
               </CardContent>
             </Card>
@@ -1291,13 +1299,13 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
             {/* Filter Controls */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Filter History</CardTitle>
-                <CardDescription>Filter rental history by date range or vehicle</CardDescription>
+                <CardTitle className="text-lg">{t('details.filterHistoryTitle')}</CardTitle>
+                <CardDescription>{t('details.filterHistoryDescription')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="date-from-history">Date From</Label>
+                    <Label htmlFor="date-from-history">{t('details.dateFrom')}</Label>
                     <Input
                       id="date-from-history"
                       type="date"
@@ -1307,7 +1315,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="date-to-history">Date To</Label>
+                    <Label htmlFor="date-to-history">{t('details.dateTo')}</Label>
                     <Input
                       id="date-to-history"
                       type="date"
@@ -1317,11 +1325,11 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="vehicle-search-history">Vehicle Search</Label>
+                    <Label htmlFor="vehicle-search-history">{t('details.vehicleSearch')}</Label>
                     <Input
                       id="vehicle-search-history"
                       type="text"
-                      placeholder="Search by license plate, brand, model..."
+                      placeholder={t('details.vehicleSearchPlaceholder')}
                       value={vehicleFilter}
                       onChange={(e) => setVehicleFilter(e.target.value)}
                       data-testid="input-filter-vehicle"
@@ -1340,7 +1348,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                       }}
                       data-testid="button-clear-filters"
                     >
-                      Clear Filters
+                      {t('details.clearFilters')}
                     </Button>
                   </div>
                 )}
@@ -1351,54 +1359,54 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                  <CardTitle className="text-sm font-medium">Total Rentals</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('details.totalRentals')}</CardTitle>
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{rentalStats.totalRentals}</div>
-                  <p className="text-xs text-muted-foreground mt-1">All-time reservations</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('details.allTimeReservations')}</p>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                  <CardTitle className="text-sm font-medium">Active Rentals</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('details.activeRentals')}</CardTitle>
                   <Car className="h-4 w-4 text-blue-600" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-blue-600">{rentalStats.activeRentals}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Currently active</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('details.currentlyActive')}</p>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                  <CardTitle className="text-sm font-medium">Completed</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('details.completed')}</CardTitle>
                   <Check className="h-4 w-4 text-green-600" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-600">{rentalStats.completedRentals}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Past rentals</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('details.pastRentals')}</p>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                  <CardTitle className="text-sm font-medium">Total KM Driven</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('details.totalKmDriven')}</CardTitle>
                   <Car className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{rentalStats.totalKilometersDriven.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Kilometers</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('details.kilometers')}</p>
                 </CardContent>
               </Card>
             </div>
-            
+
             {/* Rental History Table */}
             <Card>
               <CardHeader>
-                <CardTitle>Rental History</CardTitle>
-                <CardDescription>Past and cancelled reservations (sorted by most recent)</CardDescription>
+                <CardTitle>{t('details.rentalHistoryTitle')}</CardTitle>
+                <CardDescription>{t('details.rentalHistoryDescription')}</CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoadingReservations ? (
@@ -1409,7 +1417,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                     </svg>
                   </div>
                 ) : (
-                  <RentalTable rentals={pastRentals} emptyMessage="No rental history" />
+                  <RentalTable rentals={pastRentals} emptyMessage={t('details.noRentalHistory')} />
                 )}
               </CardContent>
             </Card>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { StatusChangeDialog } from "@/components/reservations/status-change-dialog";
 import { Reservation } from "@shared/schema";
@@ -21,6 +22,7 @@ export function ReservationQuickStatusButton({
   className = "",
   onStatusChanged,
 }: ReservationQuickStatusButtonProps) {
+  const { t } = useTranslation("reservations");
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
 
   // Extract the necessary information
@@ -39,10 +41,10 @@ export function ReservationQuickStatusButton({
         size={size}
         onClick={() => setStatusDialogOpen(true)}
         className={`text-primary-600 hover:text-primary-800 ${className}`}
-        title="Revert to Booked"
+        title={t('quickStatusButton.revertToBooked')}
       >
         <RotateCcw className="h-4 w-4" />
-        {withText && <span className="ml-2">Revert to Booked</span>}
+        {withText && <span className="ml-2">{t('quickStatusButton.revertToBooked')}</span>}
       </Button>
       
       <StatusChangeDialog

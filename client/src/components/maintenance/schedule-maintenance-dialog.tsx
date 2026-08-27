@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -89,6 +90,7 @@ export function ScheduleMaintenanceDialog({
   initialVehicleId,
   initialMaintenanceType,
 }: ScheduleMaintenanceDialogProps) {
+  const { t } = useTranslation(["maintenance", "common"]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -343,7 +345,7 @@ export function ScheduleMaintenanceDialog({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to schedule maintenance");
+        throw new Error(errorData.message || t('scheduleDialog.scheduleFailedFallback'));
       }
 
       const result = await response.json();
@@ -390,10 +392,10 @@ export function ScheduleMaintenanceDialog({
       invalidateByPrefix('/api/placeholder-reservations');
       
       toast({
-        title: editingReservation ? "Maintenance updated" : "Maintenance scheduled",
-        description: editingReservation 
-          ? "The maintenance event has been updated successfully."
-          : "The maintenance event has been scheduled successfully.",
+        title: editingReservation ? t('scheduleDialog.maintenanceUpdatedTitle') : t('scheduleDialog.maintenanceScheduledTitle'),
+        description: editingReservation
+          ? t('scheduleDialog.maintenanceUpdatedDescription')
+          : t('scheduleDialog.maintenanceScheduledDescription'),
       });
       onSuccess?.();
       form.reset();
@@ -401,7 +403,7 @@ export function ScheduleMaintenanceDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t('scheduleDialog.errorTitle'),
         description: error.message,
         variant: "destructive",
       });
@@ -429,7 +431,7 @@ export function ScheduleMaintenanceDialog({
     if (!response.ok) {
       const errorData = await response.json();
       console.error('❌ Placeholder creation failed:', errorData);
-      throw new Error(errorData.message || "Failed to create placeholder reservation");
+      throw new Error(errorData.message || t('scheduleDialog.placeholderCreationFailed'));
     }
 
     const result = await response.json();
@@ -574,7 +576,7 @@ export function ScheduleMaintenanceDialog({
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.message || "Failed to assign specific spare vehicles");
+          throw new Error(errorData.message || t('scheduleDialog.assignSpecificSparesFailed'));
         }
       }
 
@@ -591,8 +593,8 @@ export function ScheduleMaintenanceDialog({
       
       // Show success message first
       toast({
-        title: "Maintenance scheduled",
-        description: "Maintenance scheduled and spare vehicles assigned to affected reservations.",
+        title: t('scheduleDialog.maintenanceScheduledTitle'),
+        description: t('scheduleDialog.spareAssignedScheduledDescription'),
       });
       
       // Close dialogs immediately for better UX
@@ -627,7 +629,7 @@ export function ScheduleMaintenanceDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t('scheduleDialog.errorTitle'),
         description: error.message,
         variant: "destructive",
       });
@@ -636,61 +638,61 @@ export function ScheduleMaintenanceDialog({
 
   const handleSubmit = (data: ScheduleMaintenanceFormData) => {
     console.log('Form data:', data);
-    
+
     // Validate required fields before submitting
     if (!data.vehicleId || data.vehicleId === "") {
       toast({
-        title: "Validation Error",
-        description: "Please select a vehicle",
+        title: t('scheduleDialog.validationErrorTitle'),
+        description: t('scheduleDialog.selectVehicleError'),
         variant: "destructive",
       });
       return;
     }
-    
+
     if (!data.scheduledDate) {
       toast({
-        title: "Validation Error", 
-        description: "Please select a date",
+        title: t('scheduleDialog.validationErrorTitle'),
+        description: t('scheduleDialog.selectDateError'),
         variant: "destructive",
       });
       return;
     }
-    
+
     scheduleMaintenanceMutation.mutate(data);
   };
 
   const getMaintenanceTypeInfo = (type: string) => {
     switch (type) {
       case "breakdown":
-        return { icon: <AlertTriangle className="w-4 h-4 text-red-500" />, label: "Vehicle Breakdown", urgent: true };
+        return { icon: <AlertTriangle className="w-4 h-4 text-red-500" />, label: t('scheduleDialog.typesFull.breakdown.label'), urgent: true };
       case "tire_replacement":
-        return { icon: <Car className="w-4 h-4 text-orange-500" />, label: "Tire Replacement", urgent: false };
+        return { icon: <Car className="w-4 h-4 text-orange-500" />, label: t('scheduleDialog.typesFull.tire_replacement.label'), urgent: false };
       case "brake_service":
-        return { icon: <AlertTriangle className="w-4 h-4 text-red-500" />, label: "Brake Service", urgent: true };
+        return { icon: <AlertTriangle className="w-4 h-4 text-red-500" />, label: t('scheduleDialog.typesFull.brake_service.label'), urgent: true };
       case "engine_repair":
-        return { icon: <AlertTriangle className="w-4 h-4 text-red-500" />, label: "Engine Repair", urgent: true };
+        return { icon: <AlertTriangle className="w-4 h-4 text-red-500" />, label: t('scheduleDialog.typesFull.engine_repair.label'), urgent: true };
       case "transmission_repair":
-        return { icon: <AlertTriangle className="w-4 h-4 text-red-500" />, label: "Transmission Repair", urgent: true };
+        return { icon: <AlertTriangle className="w-4 h-4 text-red-500" />, label: t('scheduleDialog.typesFull.transmission_repair.label'), urgent: true };
       case "electrical_issue":
-        return { icon: <Wrench className="w-4 h-4 text-yellow-500" />, label: "Electrical Issue", urgent: false };
+        return { icon: <Wrench className="w-4 h-4 text-yellow-500" />, label: t('scheduleDialog.typesFull.electrical_issue.label'), urgent: false };
       case "air_conditioning":
-        return { icon: <Wrench className="w-4 h-4 text-blue-500" />, label: "Air Conditioning", urgent: false };
+        return { icon: <Wrench className="w-4 h-4 text-blue-500" />, label: t('scheduleDialog.typesFull.air_conditioning.label'), urgent: false };
       case "battery_replacement":
-        return { icon: <Wrench className="w-4 h-4 text-yellow-500" />, label: "Battery Replacement", urgent: false };
+        return { icon: <Wrench className="w-4 h-4 text-yellow-500" />, label: t('scheduleDialog.typesFull.battery_replacement.label'), urgent: false };
       case "oil_change":
-        return { icon: <Wrench className="w-4 h-4 text-blue-500" />, label: "Oil Change", urgent: false };
+        return { icon: <Wrench className="w-4 h-4 text-blue-500" />, label: t('scheduleDialog.typesFull.oil_change.label'), urgent: false };
       case "regular_maintenance":
-        return { icon: <Wrench className="w-4 h-4 text-blue-500" />, label: "Regular Maintenance", urgent: false };
+        return { icon: <Wrench className="w-4 h-4 text-blue-500" />, label: t('scheduleDialog.typesFull.regular_maintenance.label'), urgent: false };
       case "apk_inspection":
-        return { icon: <Clock className="w-4 h-4 text-green-500" />, label: "APK Inspection", urgent: false };
+        return { icon: <Clock className="w-4 h-4 text-green-500" />, label: t('scheduleDialog.typesFull.apk_inspection.label'), urgent: false };
       case "warranty_service":
-        return { icon: <Clock className="w-4 h-4 text-green-500" />, label: "Warranty Service", urgent: false };
+        return { icon: <Clock className="w-4 h-4 text-green-500" />, label: t('scheduleDialog.typesFull.warranty_service.label'), urgent: false };
       case "accident_damage":
-        return { icon: <AlertTriangle className="w-4 h-4 text-red-500" />, label: "Accident Damage", urgent: true };
+        return { icon: <AlertTriangle className="w-4 h-4 text-red-500" />, label: t('scheduleDialog.typesFull.accident_damage.label'), urgent: true };
       case "other":
-        return { icon: <Wrench className="w-4 h-4 text-gray-500" />, label: "Other", urgent: false };
+        return { icon: <Wrench className="w-4 h-4 text-gray-500" />, label: t('scheduleDialog.typesFull.other.label'), urgent: false };
       default:
-        return { icon: <Wrench className="w-4 h-4" />, label: "Maintenance", urgent: false };
+        return { icon: <Wrench className="w-4 h-4" />, label: t('scheduleDialog.maintenanceType'), urgent: false };
     }
   };
 
@@ -722,8 +724,8 @@ export function ScheduleMaintenanceDialog({
     if (missingAssignments.length > 0) {
       console.log('❌ Missing assignments for reservations:', missingAssignments);
       toast({
-        title: "Missing Spare Vehicle Assignments",
-        description: "Please choose either a specific vehicle or 'TBD' for all affected reservations.",
+        title: t('scheduleDialog.missingAssignmentsTitle'),
+        description: t('scheduleDialog.missingAssignmentsDescription'),
         variant: "destructive",
       });
       return;
@@ -740,8 +742,8 @@ export function ScheduleMaintenanceDialog({
     if (invalidSpecificAssignments.length > 0) {
       console.log('❌ Invalid specific assignments:', invalidSpecificAssignments);
       toast({
-        title: "Invalid Spare Vehicle Assignments",
-        description: "Please select a specific vehicle for all reservations marked as 'specific vehicle'.",
+        title: t('scheduleDialog.invalidAssignmentsTitle'),
+        description: t('scheduleDialog.invalidAssignmentsDescription'),
         variant: "destructive",
       });
       return;
@@ -757,8 +759,8 @@ export function ScheduleMaintenanceDialog({
     if (missingDurations.length > 0) {
       console.log('❌ Missing durations for reservations:', missingDurations);
       toast({
-        title: "Missing Spare Duration",
-        description: "Please set the rental duration for all spare vehicle assignments.",
+        title: t('scheduleDialog.missingDurationTitle'),
+        description: t('scheduleDialog.missingDurationDescription'),
         variant: "destructive",
       });
       return;
@@ -863,10 +865,10 @@ export function ScheduleMaintenanceDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-blue-600" />
-            {editingReservation ? "Edit Maintenance" : "Schedule Maintenance"}
+            {editingReservation ? t('scheduleDialog.editMaintenanceTitle') : t('scheduleDialog.scheduleMaintenanceTitle')}
           </DialogTitle>
           <DialogDescription>
-            Report breakdowns, schedule repairs, or plan maintenance for your vehicles. Perfect for when a vehicle needs immediate attention or has worn parts.
+            {t('scheduleDialog.mainDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -877,12 +879,12 @@ export function ScheduleMaintenanceDialog({
               name="vehicleId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Vehicle</FormLabel>
+                  <FormLabel>{t('scheduleDialog.vehicle')}</FormLabel>
                   <FormControl>
                     {vehiclesLoading ? (
                       <div className="flex items-center justify-center p-2 border rounded-md">
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        <span className="ml-2">Loading vehicles...</span>
+                        <span className="ml-2">{t('scheduleDialog.loadingVehicles')}</span>
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -890,7 +892,7 @@ export function ScheduleMaintenanceDialog({
                         <div className="bg-gray-50 p-3 rounded-lg border">
                           <div className="flex items-center gap-2 mb-2">
                             <Filter className="h-4 w-4 text-gray-500" />
-                            <span className="text-sm font-medium text-gray-700">Vehicle Filters</span>
+                            <span className="text-sm font-medium text-gray-700">{t('scheduleDialog.vehicleFilters')}</span>
                           </div>
                           <div className="flex flex-col gap-2">
                             <div className="flex items-center space-x-2">
@@ -901,7 +903,7 @@ export function ScheduleMaintenanceDialog({
                                 data-testid="checkbox-available-only"
                               />
                               <label htmlFor="show-available-only" className="text-sm text-gray-600">
-                                Show available vehicles only
+                                {t('scheduleDialog.showAvailableOnly')}
                               </label>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -912,27 +914,27 @@ export function ScheduleMaintenanceDialog({
                                 data-testid="checkbox-exclude-maintenance"
                               />
                               <label htmlFor="exclude-maintenance" className="text-sm text-gray-600">
-                                Exclude vehicles with existing maintenance
+                                {t('scheduleDialog.excludeMaintenanceVehicles')}
                               </label>
                             </div>
                           </div>
                         </div>
-                        
+
                         {/* Vehicle Selector */}
                         <div data-testid="select-vehicle">
                           <VehicleSelector
                             vehicles={filteredVehicles}
                             value={field.value}
                             onChange={field.onChange}
-                            placeholder="Select a vehicle..."
+                            placeholder={t('scheduleDialog.selectVehiclePlaceholder')}
                           />
                         </div>
-                        
+
                         {/* Results summary */}
                         <div className="text-xs text-gray-500">
-                          Showing {filteredVehicles.length} of {vehicles.length} vehicles
-                          {showAvailableOnly && ` (available on ${scheduledDate})`}
-                          {excludeMaintenanceVehicles && ` (no maintenance conflicts)`}
+                          {t('scheduleDialog.showingVehiclesCount', { shown: filteredVehicles.length, total: vehicles.length })}
+                          {showAvailableOnly && t('scheduleDialog.availableOnDate', { date: scheduledDate })}
+                          {excludeMaintenanceVehicles && t('scheduleDialog.noMaintenanceConflicts')}
                         </div>
                       </div>
                     )}
@@ -948,7 +950,7 @@ export function ScheduleMaintenanceDialog({
               name="customerId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Customer</FormLabel>
+                  <FormLabel>{t('scheduleDialog.customer')}</FormLabel>
                   {activeCustomer ? (
                     <div>
                       <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
@@ -963,12 +965,12 @@ export function ScheduleMaintenanceDialog({
                             )}
                           </div>
                           <div className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
-                            Active rental
+                            {t('scheduleDialog.activeRentalBadge')}
                           </div>
                         </div>
                       </div>
                       <FormDescription className="mt-2">
-                        This vehicle has an active rental with this customer
+                        {t('scheduleDialog.activeRentalHint')}
                       </FormDescription>
                     </div>
                   ) : (
@@ -976,11 +978,11 @@ export function ScheduleMaintenanceDialog({
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-customer">
-                            <SelectValue placeholder="Select customer (optional)" />
+                            <SelectValue placeholder={t('scheduleDialog.selectCustomerOptional')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="max-h-60">
-                          <SelectItem value="none">None (no customer)</SelectItem>
+                          <SelectItem value="none">{t('scheduleDialog.noneNoCustomer')}</SelectItem>
                           {customers.map((customer: any) => (
                             <SelectItem key={customer.id} value={customer.id.toString()}>
                               {customer.name}
@@ -989,7 +991,7 @@ export function ScheduleMaintenanceDialog({
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Who is bringing the vehicle in for maintenance?
+                        {t('scheduleDialog.whoIsBringingVehicle')}
                       </FormDescription>
                     </>
                   )}
@@ -1003,7 +1005,7 @@ export function ScheduleMaintenanceDialog({
               name="maintenanceType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Maintenance Type</FormLabel>
+                  <FormLabel>{t('scheduleDialog.maintenanceType')}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-maintenance-type">
@@ -1015,8 +1017,8 @@ export function ScheduleMaintenanceDialog({
                         <div className="flex items-center gap-2">
                           <AlertTriangle className="w-4 h-4 text-red-500" />
                           <div>
-                            <div className="font-medium">Vehicle Breakdown</div>
-                            <div className="text-xs text-gray-500">Car won't start, engine issues</div>
+                            <div className="font-medium">{t('scheduleDialog.typesFull.breakdown.label')}</div>
+                            <div className="text-xs text-gray-500">{t('scheduleDialog.typesFull.breakdown.description')}</div>
                           </div>
                         </div>
                       </SelectItem>
@@ -1024,8 +1026,8 @@ export function ScheduleMaintenanceDialog({
                         <div className="flex items-center gap-2">
                           <Car className="w-4 h-4 text-orange-500" />
                           <div>
-                            <div className="font-medium">Tire Replacement</div>
-                            <div className="text-xs text-gray-500">Worn tires, punctures</div>
+                            <div className="font-medium">{t('scheduleDialog.typesFull.tire_replacement.label')}</div>
+                            <div className="text-xs text-gray-500">{t('scheduleDialog.typesFull.tire_replacement.description')}</div>
                           </div>
                         </div>
                       </SelectItem>
@@ -1033,8 +1035,8 @@ export function ScheduleMaintenanceDialog({
                         <div className="flex items-center gap-2">
                           <AlertTriangle className="w-4 h-4 text-red-500" />
                           <div>
-                            <div className="font-medium">Brake Service</div>
-                            <div className="text-xs text-gray-500">Worn brake pads, brake fluid</div>
+                            <div className="font-medium">{t('scheduleDialog.typesFull.brake_service.label')}</div>
+                            <div className="text-xs text-gray-500">{t('scheduleDialog.typesFull.brake_service.description')}</div>
                           </div>
                         </div>
                       </SelectItem>
@@ -1042,8 +1044,8 @@ export function ScheduleMaintenanceDialog({
                         <div className="flex items-center gap-2">
                           <AlertTriangle className="w-4 h-4 text-red-500" />
                           <div>
-                            <div className="font-medium">Engine Repair</div>
-                            <div className="text-xs text-gray-500">Engine problems, overheating</div>
+                            <div className="font-medium">{t('scheduleDialog.typesFull.engine_repair.label')}</div>
+                            <div className="text-xs text-gray-500">{t('scheduleDialog.typesFull.engine_repair.description')}</div>
                           </div>
                         </div>
                       </SelectItem>
@@ -1051,8 +1053,8 @@ export function ScheduleMaintenanceDialog({
                         <div className="flex items-center gap-2">
                           <AlertTriangle className="w-4 h-4 text-red-500" />
                           <div>
-                            <div className="font-medium">Transmission Repair</div>
-                            <div className="text-xs text-gray-500">Gear shifting issues</div>
+                            <div className="font-medium">{t('scheduleDialog.typesFull.transmission_repair.label')}</div>
+                            <div className="text-xs text-gray-500">{t('scheduleDialog.typesFull.transmission_repair.description')}</div>
                           </div>
                         </div>
                       </SelectItem>
@@ -1060,8 +1062,8 @@ export function ScheduleMaintenanceDialog({
                         <div className="flex items-center gap-2">
                           <Wrench className="w-4 h-4 text-yellow-500" />
                           <div>
-                            <div className="font-medium">Electrical Issue</div>
-                            <div className="text-xs text-gray-500">Lights, sensors, electronics</div>
+                            <div className="font-medium">{t('scheduleDialog.typesFull.electrical_issue.label')}</div>
+                            <div className="text-xs text-gray-500">{t('scheduleDialog.typesFull.electrical_issue.description')}</div>
                           </div>
                         </div>
                       </SelectItem>
@@ -1069,8 +1071,8 @@ export function ScheduleMaintenanceDialog({
                         <div className="flex items-center gap-2">
                           <Wrench className="w-4 h-4 text-blue-500" />
                           <div>
-                            <div className="font-medium">Air Conditioning</div>
-                            <div className="text-xs text-gray-500">A/C repair, gas refill</div>
+                            <div className="font-medium">{t('scheduleDialog.typesFull.air_conditioning.label')}</div>
+                            <div className="text-xs text-gray-500">{t('scheduleDialog.typesFull.air_conditioning.description')}</div>
                           </div>
                         </div>
                       </SelectItem>
@@ -1078,8 +1080,8 @@ export function ScheduleMaintenanceDialog({
                         <div className="flex items-center gap-2">
                           <Wrench className="w-4 h-4 text-yellow-500" />
                           <div>
-                            <div className="font-medium">Battery Replacement</div>
-                            <div className="text-xs text-gray-500">Dead battery, charging issues</div>
+                            <div className="font-medium">{t('scheduleDialog.typesFull.battery_replacement.label')}</div>
+                            <div className="text-xs text-gray-500">{t('scheduleDialog.typesFull.battery_replacement.description')}</div>
                           </div>
                         </div>
                       </SelectItem>
@@ -1087,8 +1089,8 @@ export function ScheduleMaintenanceDialog({
                         <div className="flex items-center gap-2">
                           <Wrench className="w-4 h-4 text-blue-500" />
                           <div>
-                            <div className="font-medium">Oil Change</div>
-                            <div className="text-xs text-gray-500">Regular oil service</div>
+                            <div className="font-medium">{t('scheduleDialog.typesFull.oil_change.label')}</div>
+                            <div className="text-xs text-gray-500">{t('scheduleDialog.typesFull.oil_change.description')}</div>
                           </div>
                         </div>
                       </SelectItem>
@@ -1096,8 +1098,8 @@ export function ScheduleMaintenanceDialog({
                         <div className="flex items-center gap-2">
                           <Wrench className="w-4 h-4 text-blue-500" />
                           <div>
-                            <div className="font-medium">Regular Maintenance</div>
-                            <div className="text-xs text-gray-500">Scheduled service</div>
+                            <div className="font-medium">{t('scheduleDialog.typesFull.regular_maintenance.label')}</div>
+                            <div className="text-xs text-gray-500">{t('scheduleDialog.typesFull.regular_maintenance.description')}</div>
                           </div>
                         </div>
                       </SelectItem>
@@ -1105,8 +1107,8 @@ export function ScheduleMaintenanceDialog({
                         <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4 text-green-500" />
                           <div>
-                            <div className="font-medium">APK Inspection</div>
-                            <div className="text-xs text-gray-500">Annual vehicle inspection</div>
+                            <div className="font-medium">{t('scheduleDialog.typesFull.apk_inspection.label')}</div>
+                            <div className="text-xs text-gray-500">{t('scheduleDialog.typesFull.apk_inspection.description')}</div>
                           </div>
                         </div>
                       </SelectItem>
@@ -1114,8 +1116,8 @@ export function ScheduleMaintenanceDialog({
                         <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4 text-green-500" />
                           <div>
-                            <div className="font-medium">Warranty Service</div>
-                            <div className="text-xs text-gray-500">Covered repairs</div>
+                            <div className="font-medium">{t('scheduleDialog.typesFull.warranty_service.label')}</div>
+                            <div className="text-xs text-gray-500">{t('scheduleDialog.typesFull.warranty_service.description')}</div>
                           </div>
                         </div>
                       </SelectItem>
@@ -1123,8 +1125,8 @@ export function ScheduleMaintenanceDialog({
                         <div className="flex items-center gap-2">
                           <AlertTriangle className="w-4 h-4 text-red-500" />
                           <div>
-                            <div className="font-medium">Accident Damage</div>
-                            <div className="text-xs text-gray-500">Collision repairs</div>
+                            <div className="font-medium">{t('scheduleDialog.typesFull.accident_damage.label')}</div>
+                            <div className="text-xs text-gray-500">{t('scheduleDialog.typesFull.accident_damage.description')}</div>
                           </div>
                         </div>
                       </SelectItem>
@@ -1132,8 +1134,8 @@ export function ScheduleMaintenanceDialog({
                         <div className="flex items-center gap-2">
                           <Wrench className="w-4 h-4 text-gray-500" />
                           <div>
-                            <div className="font-medium">Other</div>
-                            <div className="text-xs text-gray-500">Custom maintenance</div>
+                            <div className="font-medium">{t('scheduleDialog.typesFull.other.label')}</div>
+                            <div className="text-xs text-gray-500">{t('scheduleDialog.typesFull.other.description')}</div>
                           </div>
                         </div>
                       </SelectItem>
@@ -1150,7 +1152,7 @@ export function ScheduleMaintenanceDialog({
                 name="scheduledDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Scheduled Date</FormLabel>
+                    <FormLabel>{t('scheduleDialog.scheduledDate')}</FormLabel>
                     <FormControl>
                       <Input
                         type="date"
@@ -1159,7 +1161,7 @@ export function ScheduleMaintenanceDialog({
                       />
                     </FormControl>
                     <FormDescription>
-                      When should this maintenance be performed?
+                      {t('scheduleDialog.whenPerformedHint')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -1171,13 +1173,13 @@ export function ScheduleMaintenanceDialog({
                 name="maintenanceDuration"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Duration (days)</FormLabel>
+                    <FormLabel>{t('scheduleDialog.durationDays')}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         min="1"
                         max="90"
-                        placeholder="Number of days"
+                        placeholder={t('scheduleDialog.numberOfDaysPlaceholder')}
                         {...field}
                         onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
                         value={field.value}
@@ -1185,7 +1187,7 @@ export function ScheduleMaintenanceDialog({
                       />
                     </FormControl>
                     <FormDescription>
-                      How long will this take?
+                      {t('scheduleDialog.howLongHint')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -1198,7 +1200,7 @@ export function ScheduleMaintenanceDialog({
               name="maintenanceStatus"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Status</FormLabel>
+                  <FormLabel>{t('scheduleDialog.status')}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-maintenance-status">
@@ -1206,13 +1208,13 @@ export function ScheduleMaintenanceDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="scheduled">Scheduled (vehicle not yet arrived)</SelectItem>
-                      <SelectItem value="in">In (vehicle is in maintenance)</SelectItem>
-                      <SelectItem value="out">Out (maintenance completed)</SelectItem>
+                      <SelectItem value="scheduled">{t('scheduleDialog.statuses.scheduled')}</SelectItem>
+                      <SelectItem value="in">{t('scheduleDialog.statuses.in')}</SelectItem>
+                      <SelectItem value="out">{t('scheduleDialog.statuses.out')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    Current status of the maintenance
+                    {t('scheduleDialog.statusHint')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -1224,10 +1226,10 @@ export function ScheduleMaintenanceDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>{t('scheduleDialog.description')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Brief description of the maintenance"
+                      placeholder={t('scheduleDialog.descriptionPlaceholder')}
                       {...field}
                       data-testid="input-description"
                     />
@@ -1242,10 +1244,10 @@ export function ScheduleMaintenanceDialog({
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes</FormLabel>
+                  <FormLabel>{t('scheduleDialog.notes')}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Additional notes or special instructions..."
+                      placeholder={t('scheduleDialog.notesPlaceholder')}
                       {...field}
                       data-testid="textarea-notes"
                     />
@@ -1259,14 +1261,14 @@ export function ScheduleMaintenanceDialog({
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
                 <div className="flex items-center gap-2 text-blue-800 font-medium mb-1">
                   <Calendar className="w-4 h-4" />
-                  Selected Vehicle
+                  {t('scheduleDialog.selectedVehicle')}
                 </div>
                 <div className="text-blue-700">
                   {selectedVehicle.brand} {selectedVehicle.model} ({formatLicensePlate(selectedVehicle.licensePlate)})
                 </div>
                 {selectedVehicle.apkDate && (
                   <div className="text-sm text-blue-600 mt-1">
-                    Current APK Date: {selectedVehicle.apkDate}
+                    {t('scheduleDialog.currentApkDate', { date: selectedVehicle.apkDate })}
                   </div>
                 )}
               </div>
@@ -1279,7 +1281,7 @@ export function ScheduleMaintenanceDialog({
                 onClick={() => onOpenChange(false)}
                 disabled={scheduleMaintenanceMutation.isPending}
               >
-                Cancel
+                {t('common:actions.cancel')}
               </Button>
               <Button
                 type="submit"
@@ -1289,10 +1291,10 @@ export function ScheduleMaintenanceDialog({
                 {scheduleMaintenanceMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {editingReservation ? "Updating..." : "Scheduling..."}
+                    {editingReservation ? t('scheduleDialog.updating') : t('scheduleDialog.scheduling')}
                   </>
                 ) : (
-                  editingReservation ? "Update Maintenance" : "Schedule Maintenance"
+                  editingReservation ? t('scheduleDialog.updateMaintenance') : t('scheduleDialog.scheduleMaintenanceButton')
                 )}
               </Button>
             </DialogFooter>
@@ -1307,10 +1309,10 @@ export function ScheduleMaintenanceDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Car className="h-5 w-5 text-orange-600" />
-            Assign Spare Vehicles
+            {t('scheduleDialog.assignSpareVehiclesTitle')}
           </DialogTitle>
           <DialogDescription>
-            The selected vehicle has active reservations during the maintenance period. Please assign spare vehicles to affected customers.
+            {t('scheduleDialog.assignSpareDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -1324,25 +1326,25 @@ export function ScheduleMaintenanceDialog({
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="font-medium">
-                      {reservation.customer?.name || 'Unknown Customer'}
-                      {isOpenEnded && <span className="ml-2 text-blue-600 font-medium">(Open-ended Rental)</span>}
+                      {reservation.customer?.name || t('scheduleDialog.unknownCustomer')}
+                      {isOpenEnded && <span className="ml-2 text-blue-600 font-medium">{t('scheduleDialog.openEndedRental')}</span>}
                     </h4>
                     <p className="text-sm text-gray-600">
-                      Reservation: {reservation.startDate} - {isOpenEnded ? <span className="font-medium text-blue-600">No end date</span> : reservation.endDate}
+                      {t('scheduleDialog.reservationRange', { start: reservation.startDate })}{isOpenEnded ? <span className="font-medium text-blue-600">{t('scheduleDialog.noEndDate')}</span> : reservation.endDate}
                     </p>
                     <p className="text-sm text-gray-500">
-                      Original vehicle: {reservation.vehicle?.brand} {reservation.vehicle?.model} ({formatLicensePlate(reservation.vehicle?.licensePlate)})
+                      {t('scheduleDialog.originalVehicle', { brand: reservation.vehicle?.brand, model: reservation.vehicle?.model, plate: formatLicensePlate(reservation.vehicle?.licensePlate) })}
                     </p>
                     {isOpenEnded && (
                       <p className="text-sm text-blue-600 mt-1">
-                        💡 Spare vehicle will be assigned for the entire maintenance period
+                        {t('scheduleDialog.openEndedSpareHint')}
                       </p>
                     )}
                   </div>
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium">Transport Solution:</label>
+                  <label className="text-sm font-medium">{t('scheduleDialog.transportSolution')}</label>
                   <div className="mt-1 space-y-2">
                     {/* Assign Spare - Now */}
                     <div className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
@@ -1367,12 +1369,12 @@ export function ScheduleMaintenanceDialog({
                         <label htmlFor={`spare-now-${reservation.id}`} className="flex items-center gap-2 text-sm cursor-pointer">
                           <Car className="w-4 h-4 text-blue-500" />
                           <div>
-                            <div className="font-medium text-blue-700">Assign Spare Vehicle Now</div>
-                            <div className="text-xs text-blue-600">Choose from available vehicles</div>
+                            <div className="font-medium text-blue-700">{t('scheduleDialog.assignSpareNowTitle')}</div>
+                            <div className="text-xs text-blue-600">{t('scheduleDialog.assignSpareNowHint')}</div>
                           </div>
                         </label>
                         {availableVehicles.length === 0 && (
-                          <div className="text-xs text-gray-500 mt-1">No vehicles available for this date</div>
+                          <div className="text-xs text-gray-500 mt-1">{t('scheduleDialog.noVehiclesAvailable')}</div>
                         )}
                         {(spareVehicleAssignments[reservation.id] && spareVehicleAssignments[reservation.id] !== 'tbd' && spareVehicleAssignments[reservation.id] !== 'customer_arranging') && (
                           <div className="mt-1 space-y-2" data-testid={`select-spare-vehicle-${reservation.id}`}>
@@ -1399,7 +1401,7 @@ export function ScheduleMaintenanceDialog({
                                   setShowDurationDialog(true);
                                 }
                               }}
-                              placeholder="Choose a spare vehicle..."
+                              placeholder={t('scheduleDialog.chooseSpareVehiclePlaceholder')}
                               disabled={availableVehicles.length === 0}
                             />
                             {/* Show selected duration */}
@@ -1408,10 +1410,10 @@ export function ScheduleMaintenanceDialog({
                                 <Calendar className="w-4 h-4 text-blue-600" />
                                 <div className="flex-1">
                                   <span className="text-sm font-medium text-blue-800">
-                                    Spare rental: {formatDisplayDate(spareVehicleDurations[reservation.id].startDate)}
-                                    {spareVehicleDurations[reservation.id].endDate 
+                                    {t('scheduleDialog.spareRentalLabel', { start: formatDisplayDate(spareVehicleDurations[reservation.id].startDate) })}
+                                    {spareVehicleDurations[reservation.id].endDate
                                       ? ` - ${formatDisplayDate(spareVehicleDurations[reservation.id].endDate!)}`
-                                      : ' - Open-ended'}
+                                      : t('scheduleDialog.openEndedSuffix')}
                                   </span>
                                 </div>
                                 <Button
@@ -1426,7 +1428,7 @@ export function ScheduleMaintenanceDialog({
                                     setShowDurationDialog(true);
                                   }}
                                 >
-                                  Edit
+                                  {t('scheduleDialog.edit')}
                                 </Button>
                               </div>
                             )}
@@ -1449,12 +1451,12 @@ export function ScheduleMaintenanceDialog({
                       <label htmlFor={`tbd-${reservation.id}`} className="flex items-center gap-2 text-sm cursor-pointer flex-1">
                         <Clock className="w-4 h-4 text-orange-500" />
                         <div>
-                          <div className="font-medium text-orange-700">Assign Spare Later (TBD)</div>
-                          <div className="text-xs text-orange-600">Will choose spare vehicle later</div>
+                          <div className="font-medium text-orange-700">{t('scheduleDialog.assignSpareLaterTitle')}</div>
+                          <div className="text-xs text-orange-600">{t('scheduleDialog.assignSpareLaterHint')}</div>
                         </div>
                       </label>
                     </div>
-                    
+
                     {/* Customer Arranging Transport */}
                     <div className="flex items-center space-x-2 p-2 border rounded-md hover:bg-gray-50 cursor-pointer">
                       <input
@@ -1469,8 +1471,8 @@ export function ScheduleMaintenanceDialog({
                       <label htmlFor={`customer-arranging-${reservation.id}`} className="flex items-center gap-2 text-sm cursor-pointer flex-1">
                         <AlertTriangle className="w-4 h-4 text-green-500" />
                         <div>
-                          <div className="font-medium text-green-700">Customer Arranging Transport</div>
-                          <div className="text-xs text-green-600">Customer will arrange their own transportation</div>
+                          <div className="font-medium text-green-700">{t('scheduleDialog.customerArrangingTitle')}</div>
+                          <div className="text-xs text-green-600">{t('scheduleDialog.customerArrangingHint')}</div>
                         </div>
                       </label>
                     </div>
@@ -1493,7 +1495,7 @@ export function ScheduleMaintenanceDialog({
             }}
             disabled={createMaintenanceWithSpareMutation.isPending}
           >
-            Cancel
+            {t('common:actions.cancel')}
           </Button>
           <Button
             onClick={handleSpareVehicleAssignment}
@@ -1503,10 +1505,10 @@ export function ScheduleMaintenanceDialog({
             {createMaintenanceWithSpareMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Assigning...
+                {t('scheduleDialog.assigning')}
               </>
             ) : (
-              "Assign Spare Vehicles & Schedule Maintenance"
+              t('scheduleDialog.assignSpareAndScheduleButton')
             )}
           </Button>
         </DialogFooter>
@@ -1521,16 +1523,16 @@ export function ScheduleMaintenanceDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-blue-600" />
-            Set Spare Rental Duration
+            {t('scheduleDialog.setSpareRentalDurationTitle')}
           </DialogTitle>
           <DialogDescription>
-            Set the start and end dates for the spare vehicle rental. Leave end date empty for an open-ended rental.
+            {t('scheduleDialog.durationDialogDescription')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Start Date</label>
+            <label className="text-sm font-medium">{t('scheduleDialog.startDate')}</label>
             <Input
               type="date"
               value={tempDurationStartDate}
@@ -1540,14 +1542,14 @@ export function ScheduleMaintenanceDialog({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">End Date (optional)</label>
+            <label className="text-sm font-medium">{t('scheduleDialog.endDateOptional')}</label>
             <Input
               type="date"
               value={tempDurationEndDate}
               onChange={(e) => setTempDurationEndDate(e.target.value)}
               data-testid="input-spare-end-date"
             />
-            <p className="text-xs text-gray-500">Leave empty for open-ended rental</p>
+            <p className="text-xs text-gray-500">{t('scheduleDialog.leaveEmptyOpenEnded')}</p>
           </div>
 
           {/* Quick actions */}
@@ -1561,7 +1563,7 @@ export function ScheduleMaintenanceDialog({
                 setTempDurationEndDate(maintenanceData?.endDate || '');
               }}
             >
-              Use Maintenance Dates
+              {t('scheduleDialog.useMaintenanceDates')}
             </Button>
             <Button
               type="button"
@@ -1569,7 +1571,7 @@ export function ScheduleMaintenanceDialog({
               size="sm"
               onClick={() => setTempDurationEndDate('')}
             >
-              Make Open-ended
+              {t('scheduleDialog.makeOpenEnded')}
             </Button>
           </div>
         </div>
@@ -1580,7 +1582,7 @@ export function ScheduleMaintenanceDialog({
             variant="outline"
             onClick={handleCancelDuration}
           >
-            Cancel
+            {t('common:actions.cancel')}
           </Button>
           <Button
             type="button"
@@ -1588,7 +1590,7 @@ export function ScheduleMaintenanceDialog({
             disabled={!tempDurationStartDate}
             data-testid="button-save-duration"
           >
-            Save Duration
+            {t('scheduleDialog.saveDuration')}
           </Button>
         </DialogFooter>
       </DialogContent>

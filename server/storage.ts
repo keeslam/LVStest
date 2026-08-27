@@ -42,7 +42,11 @@ export interface IStorage {
   getVehicle(id: number): Promise<Vehicle | undefined>;
   createVehicle(vehicle: InsertVehicle): Promise<Vehicle>;
   updateVehicle(id: number, vehicleData: Partial<InsertVehicle>): Promise<Vehicle | undefined>;
-  deleteVehicle(id: number): Promise<boolean>;
+  deleteVehicle(id: number, actor?: { username?: string | null; userId?: number | null }): Promise<boolean>;
+  getVehicleDeleteImpact?(id: number): Promise<{ vehicle: Vehicle; counts: Record<string, number> } | undefined>;
+  getDeletedRecords?(limit?: number): Promise<any[]>;
+  getDeletedRecord?(id: number): Promise<any | undefined>;
+  restoreDeletedRecord?(id: number, actor?: { username?: string | null }): Promise<{ restored: boolean; reason?: string; record?: any }>;
   getAvailableVehicles(): Promise<Vehicle[]>;
   getVehiclesWithApkExpiringSoon(): Promise<Vehicle[]>;
   getVehiclesWithWarrantyExpiringSoon(): Promise<Vehicle[]>;

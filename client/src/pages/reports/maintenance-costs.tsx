@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -31,6 +32,7 @@ interface MaintenanceCostData {
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
 export default function MaintenanceCostsPage() {
+  const { t } = useTranslation("reports");
   const [timeRange, setTimeRange] = useState("all");
   const [selectedBrand, setSelectedBrand] = useState("all");
 
@@ -50,7 +52,7 @@ export default function MaintenanceCostsPage() {
   if (!costData) {
     return (
       <div className="text-center p-8">
-        <p className="text-gray-600">No maintenance cost data available</p>
+        <p className="text-gray-600">{t('maintenanceCostsPage.noDataAvailable')}</p>
       </div>
     );
   }
@@ -59,29 +61,29 @@ export default function MaintenanceCostsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Maintenance Cost Analysis</h1>
-          <p className="text-gray-600 mt-1">Compare maintenance costs across vehicles, brands, and categories</p>
+          <h1 className="text-3xl font-bold">{t('maintenanceCostsPage.pageTitle')}</h1>
+          <p className="text-gray-600 mt-1">{t('maintenanceCostsPage.pageDescription')}</p>
         </div>
         <div className="flex gap-4">
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger className="w-40" data-testid="select-time-range">
-              <SelectValue placeholder="Time Range" />
+              <SelectValue placeholder={t('maintenanceCostsPage.timeRangePlaceholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Time</SelectItem>
-              <SelectItem value="year">Last Year</SelectItem>
-              <SelectItem value="6months">Last 6 Months</SelectItem>
-              <SelectItem value="3months">Last 3 Months</SelectItem>
-              <SelectItem value="month">Last Month</SelectItem>
+              <SelectItem value="all">{t('maintenanceCostsPage.allTime')}</SelectItem>
+              <SelectItem value="year">{t('maintenanceCostsPage.lastYear')}</SelectItem>
+              <SelectItem value="6months">{t('maintenanceCostsPage.last6Months')}</SelectItem>
+              <SelectItem value="3months">{t('maintenanceCostsPage.last3Months')}</SelectItem>
+              <SelectItem value="month">{t('maintenanceCostsPage.lastMonth')}</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Select value={selectedBrand} onValueChange={setSelectedBrand}>
             <SelectTrigger className="w-40" data-testid="select-brand">
-              <SelectValue placeholder="Brand Filter" />
+              <SelectValue placeholder={t('maintenanceCostsPage.brandFilterPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Brands</SelectItem>
+              <SelectItem value="all">{t('maintenanceCostsPage.allBrands')}</SelectItem>
               {costData.brandComparison.map(brand => (
                 <SelectItem key={brand.brand} value={brand.brand}>{brand.brand}</SelectItem>
               ))}
@@ -94,7 +96,7 @@ export default function MaintenanceCostsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Costs</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('maintenanceCostsPage.totalCostsLabel')}</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -102,14 +104,14 @@ export default function MaintenanceCostsPage() {
               {<Price value={costData.totalCosts} />}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Across {costData.totalVehicles} vehicles
+              {t('maintenanceCostsPage.acrossVehicles', { count: costData.totalVehicles })}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Per Vehicle</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('maintenanceCostsPage.avgPerVehicleLabel')}</CardTitle>
             <Car className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -117,14 +119,14 @@ export default function MaintenanceCostsPage() {
               {<Price value={costData.averageCostPerVehicle} />}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Per vehicle average
+              {t('maintenanceCostsPage.perVehicleAverage')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cost Per Km</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('maintenanceCostsPage.costPerKmLabel')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -132,14 +134,14 @@ export default function MaintenanceCostsPage() {
               {<Price value={costData.averageCostPerKm} />}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Efficiency metric
+              {t('maintenanceCostsPage.efficiencyMetric')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('maintenanceCostsPage.totalExpensesLabel')}</CardTitle>
             <Wrench className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -147,7 +149,7 @@ export default function MaintenanceCostsPage() {
               {costData.vehicleDetails.reduce((sum, v) => sum + v.expenseCount, 0)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Maintenance records
+              {t('maintenanceCostsPage.maintenanceRecords')}
             </p>
           </CardContent>
         </Card>
@@ -156,10 +158,10 @@ export default function MaintenanceCostsPage() {
       {/* Main Content Tabs */}
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
-          <TabsTrigger value="brands" data-testid="tab-brands">Brand Comparison</TabsTrigger>
-          <TabsTrigger value="vehicles" data-testid="tab-vehicles">Vehicle Details</TabsTrigger>
-          <TabsTrigger value="trends" data-testid="tab-trends">Trends</TabsTrigger>
+          <TabsTrigger value="overview" data-testid="tab-overview">{t('maintenanceCostsPage.overviewTab')}</TabsTrigger>
+          <TabsTrigger value="brands" data-testid="tab-brands">{t('maintenanceCostsPage.brandComparisonTab')}</TabsTrigger>
+          <TabsTrigger value="vehicles" data-testid="tab-vehicles">{t('maintenanceCostsPage.vehicleDetailsTab')}</TabsTrigger>
+          <TabsTrigger value="trends" data-testid="tab-trends">{t('maintenanceCostsPage.trendsTab')}</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -168,8 +170,8 @@ export default function MaintenanceCostsPage() {
             {/* Category Breakdown */}
             <Card>
               <CardHeader>
-                <CardTitle>Cost by Category</CardTitle>
-                <CardDescription>Maintenance expense distribution</CardDescription>
+                <CardTitle>{t('maintenanceCostsPage.costByCategoryTitle')}</CardTitle>
+                <CardDescription>{t('maintenanceCostsPage.costByCategoryDescription')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -211,8 +213,8 @@ export default function MaintenanceCostsPage() {
             {/* Top Expensive Vehicles */}
             <Card>
               <CardHeader>
-                <CardTitle>Most Expensive Vehicles</CardTitle>
-                <CardDescription>Highest maintenance costs</CardDescription>
+                <CardTitle>{t('maintenanceCostsPage.mostExpensiveVehiclesTitle')}</CardTitle>
+                <CardDescription>{t('maintenanceCostsPage.mostExpensiveVehiclesDescription')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -232,7 +234,7 @@ export default function MaintenanceCostsPage() {
                         </div>
                         <div className="text-right">
                           <div className="font-bold">{<Price value={vehicle.totalCost} />}</div>
-                          <div className="text-xs text-gray-600">{vehicle.expenseCount} expenses</div>
+                          <div className="text-xs text-gray-600">{t('maintenanceCostsPage.expenseCount', { count: vehicle.expenseCount })}</div>
                         </div>
                       </div>
                     ))}
@@ -246,8 +248,8 @@ export default function MaintenanceCostsPage() {
         <TabsContent value="brands" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Brand Performance Comparison</CardTitle>
-              <CardDescription>Compare maintenance costs across different vehicle brands</CardDescription>
+              <CardTitle>{t('maintenanceCostsPage.brandPerformanceTitle')}</CardTitle>
+              <CardDescription>{t('maintenanceCostsPage.brandPerformanceDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
@@ -255,13 +257,13 @@ export default function MaintenanceCostsPage() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="brand" />
                   <YAxis />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value: number) => formatCurrency(value)}
-                    labelFormatter={(label) => `Brand: ${label}`}
+                    labelFormatter={(label) => t('maintenanceCostsPage.brandTooltipLabel', { label })}
                   />
                   <Legend />
-                  <Bar dataKey="totalCost" fill="#3b82f6" name="Total Cost" />
-                  <Bar dataKey="avgCost" fill="#10b981" name="Avg Cost Per Vehicle" />
+                  <Bar dataKey="totalCost" fill="#3b82f6" name={t('maintenanceCostsPage.totalCostLegend')} />
+                  <Bar dataKey="avgCost" fill="#10b981" name={t('maintenanceCostsPage.avgCostPerVehicleLegend')} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -270,18 +272,18 @@ export default function MaintenanceCostsPage() {
           {/* Brand Details Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Brand Statistics</CardTitle>
+              <CardTitle>{t('maintenanceCostsPage.brandStatisticsTitle')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-2">Brand</th>
-                      <th className="text-right p-2">Vehicles</th>
-                      <th className="text-right p-2">Total Cost</th>
-                      <th className="text-right p-2">Avg Cost/Vehicle</th>
-                      <th className="text-right p-2">Efficiency Rating</th>
+                      <th className="text-left p-2">{t('maintenanceCostsPage.brandColumn')}</th>
+                      <th className="text-right p-2">{t('maintenanceCostsPage.vehiclesColumn')}</th>
+                      <th className="text-right p-2">{t('maintenanceCostsPage.totalCostColumn')}</th>
+                      <th className="text-right p-2">{t('maintenanceCostsPage.avgCostPerVehicleColumn')}</th>
+                      <th className="text-right p-2">{t('maintenanceCostsPage.efficiencyRatingColumn')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -290,7 +292,7 @@ export default function MaintenanceCostsPage() {
                       .map((brand) => {
                         const avgCost = brand.avgCost;
                         const overallAvg = costData.averageCostPerVehicle;
-                        const efficiency = avgCost < overallAvg ? 'Excellent' : avgCost < overallAvg * 1.2 ? 'Good' : 'Average';
+                        const efficiency = avgCost < overallAvg ? t('maintenanceCostsPage.efficiencyExcellent') : avgCost < overallAvg * 1.2 ? t('maintenanceCostsPage.efficiencyGood') : t('maintenanceCostsPage.efficiencyAverage');
                         const efficiencyColor = avgCost < overallAvg ? 'text-green-600' : avgCost < overallAvg * 1.2 ? 'text-blue-600' : 'text-orange-600';
                         
                         return (
@@ -314,20 +316,20 @@ export default function MaintenanceCostsPage() {
         <TabsContent value="vehicles" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Individual Vehicle Analysis</CardTitle>
-              <CardDescription>Detailed cost breakdown per vehicle</CardDescription>
+              <CardTitle>{t('maintenanceCostsPage.individualVehicleAnalysisTitle')}</CardTitle>
+              <CardDescription>{t('maintenanceCostsPage.individualVehicleAnalysisDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-2">License Plate</th>
-                      <th className="text-left p-2">Brand/Model</th>
-                      <th className="text-right p-2">Total Cost</th>
-                      <th className="text-right p-2">Cost/Km</th>
-                      <th className="text-right p-2">Mileage</th>
-                      <th className="text-right p-2">Expenses</th>
+                      <th className="text-left p-2">{t('maintenanceCostsPage.licensePlateColumn')}</th>
+                      <th className="text-left p-2">{t('maintenanceCostsPage.brandModelColumn')}</th>
+                      <th className="text-right p-2">{t('maintenanceCostsPage.totalCostColumn')}</th>
+                      <th className="text-right p-2">{t('maintenanceCostsPage.costPerKmColumn')}</th>
+                      <th className="text-right p-2">{t('maintenanceCostsPage.mileageColumn')}</th>
+                      <th className="text-right p-2">{t('maintenanceCostsPage.expensesColumn')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -339,7 +341,7 @@ export default function MaintenanceCostsPage() {
                           <td className="p-2">{vehicle.brand} {vehicle.model}</td>
                           <td className="text-right p-2">{<Price value={vehicle.totalCost} />}</td>
                           <td className="text-right p-2">{<Price value={vehicle.costPerKm} />}</td>
-                          <td className="text-right p-2">{vehicle.currentMileage?.toLocaleString() || 'N/A'} km</td>
+                          <td className="text-right p-2">{vehicle.currentMileage?.toLocaleString() || t('maintenanceCostsPage.notAvailable')} km</td>
                           <td className="text-right p-2">{vehicle.expenseCount}</td>
                         </tr>
                       ))}
@@ -354,8 +356,8 @@ export default function MaintenanceCostsPage() {
         <TabsContent value="trends" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Monthly Cost Trends</CardTitle>
-              <CardDescription>Track maintenance spending over time</CardDescription>
+              <CardTitle>{t('maintenanceCostsPage.monthlyCostTrendsTitle')}</CardTitle>
+              <CardDescription>{t('maintenanceCostsPage.monthlyCostTrendsDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
@@ -365,12 +367,12 @@ export default function MaintenanceCostsPage() {
                   <YAxis />
                   <Tooltip formatter={(value: number) => formatCurrency(value)} />
                   <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="amount" 
-                    stroke="#3b82f6" 
+                  <Line
+                    type="monotone"
+                    dataKey="amount"
+                    stroke="#3b82f6"
                     strokeWidth={2}
-                    name="Monthly Cost"
+                    name={t('maintenanceCostsPage.monthlyCostLegend')}
                   />
                 </LineChart>
               </ResponsiveContainer>

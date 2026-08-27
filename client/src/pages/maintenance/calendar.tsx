@@ -54,6 +54,7 @@ import { CalendarLegend } from "@/components/calendar/calendar-legend";
 import { getCustomMaintenanceStyle, getCustomMaintenanceStyleObject } from "@/lib/calendar-styling";
 import { ChevronLeft, ChevronRight, Calendar, Car, Wrench, AlertTriangle, Clock, Plus, Eye, Edit, Trash2, Palette } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useTranslation } from "react-i18next";
 
 // Holiday names for display
 const DUTCH_HOLIDAY_NAMES: Record<string, string> = {
@@ -103,6 +104,7 @@ export default function MaintenanceCalendar() {
   // Query client for cache invalidation
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation("maintenance");
   
   const [view, setView] = useState<CalendarView>("month");
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -239,9 +241,9 @@ export default function MaintenanceCalendar() {
       }
 
       // Create descriptive vehicle info for toast
-      const vehicleInfo = reservation.vehicle 
+      const vehicleInfo = reservation.vehicle
         ? `${reservation.vehicle.brand} ${reservation.vehicle.model} (${displayLicensePlate(reservation.vehicle.licensePlate)})`
-        : `Vehicle ${reservation.vehicleId}`;
+        : t('maintenance:listDialog.vehiclePlaceholder', { id: reservation.vehicleId });
 
       // Clear localStorage dismissals for APK/warranty notifications when deleting that type
       // This ensures the notification will reappear after deletion
@@ -254,8 +256,8 @@ export default function MaintenanceCalendar() {
 
       // Show success toast
       toast({
-        title: "Maintenance deleted",
-        description: `Maintenance for ${vehicleInfo} has been deleted successfully.`,
+        title: t('calendarPage.toasts.maintenanceDeletedTitle'),
+        description: t('calendarPage.toasts.maintenanceDeletedWithVehicleDescription', { vehicleInfo }),
       });
 
       invalidateRelatedQueries('reservations');
@@ -272,8 +274,8 @@ export default function MaintenanceCalendar() {
     } catch (error) {
       console.error('Error deleting maintenance:', error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete maintenance reservation",
+        title: t('common:status.error'),
+        description: error instanceof Error ? error.message : t('maintenance:listDialog.deleteFailedDescription'),
         variant: "destructive",
       });
     }
@@ -575,12 +577,12 @@ export default function MaintenanceCalendar() {
         vehicle,
         type: 'apk_reminder_2m' as const,
         date: format(shifted2m, 'yyyy-MM-dd'),
-        title: isApkOverdue ? 'APK Reminder (2 months) - OVERDUE' : 'APK Reminder (2 months)' + (wasShifted2m ? ' (Moved from weekend)' : ''),
-        description: isApkOverdue 
-          ? `APK inspection is now overdue for ${vehicle.brand} ${vehicle.model}` + (wasShifted2m ? ' (Reminder originally scheduled for weekend)' : '')
+        title: isApkOverdue ? t('calendarPage.events.apkReminder2mTitleOverdue') : t('calendarPage.events.apkReminder2mTitle') + (wasShifted2m ? t('calendarPage.events.movedFromWeekend') : ''),
+        description: isApkOverdue
+          ? t('calendarPage.events.apkOverdueDescription', { vehicle: `${vehicle.brand} ${vehicle.model}` }) + (wasShifted2m ? t('calendarPage.events.reminderOriginallyWeekend') : '')
           : reminderPassed2m
-          ? `APK inspection due soon for ${vehicle.brand} ${vehicle.model}` + (wasShifted2m ? ' (Reminder was moved from weekend to Monday)' : '')
-          : `APK inspection due in 2 months for ${vehicle.brand} ${vehicle.model}` + (wasShifted2m ? ' (Moved from weekend to Monday)' : ''),
+          ? t('calendarPage.events.apkDueSoonDescription', { vehicle: `${vehicle.brand} ${vehicle.model}` }) + (wasShifted2m ? t('calendarPage.events.reminderMovedToMonday') : '')
+          : t('calendarPage.events.apkDueIn2MonthsDescription', { vehicle: `${vehicle.brand} ${vehicle.model}` }) + (wasShifted2m ? t('calendarPage.events.movedToMonday') : ''),
         needsSpareVehicle: false,
         priority: isApkOverdue ? 'urgent' : 'low',
         currentReservations: reservations?.filter((r: Reservation) => r.vehicleId === vehicle.id) || []
@@ -595,12 +597,12 @@ export default function MaintenanceCalendar() {
         vehicle,
         type: 'apk_reminder_1m' as const,
         date: format(shifted1m, 'yyyy-MM-dd'),
-        title: isApkOverdue ? 'APK Reminder (1 month) - OVERDUE' : 'APK Reminder (1 month)' + (wasShifted1m ? ' (Moved from weekend)' : ''),
+        title: isApkOverdue ? t('calendarPage.events.apkReminder1mTitleOverdue') : t('calendarPage.events.apkReminder1mTitle') + (wasShifted1m ? t('calendarPage.events.movedFromWeekend') : ''),
         description: isApkOverdue
-          ? `APK inspection is now overdue for ${vehicle.brand} ${vehicle.model}` + (wasShifted1m ? ' (Reminder originally scheduled for weekend)' : '')
+          ? t('calendarPage.events.apkOverdueDescription', { vehicle: `${vehicle.brand} ${vehicle.model}` }) + (wasShifted1m ? t('calendarPage.events.reminderOriginallyWeekend') : '')
           : reminderPassed1m
-          ? `APK inspection due soon for ${vehicle.brand} ${vehicle.model}` + (wasShifted1m ? ' (Reminder was moved from weekend to Monday)' : '')
-          : `APK inspection due in 1 month for ${vehicle.brand} ${vehicle.model}` + (wasShifted1m ? ' (Moved from weekend to Monday)' : ''),
+          ? t('calendarPage.events.apkDueSoonDescription', { vehicle: `${vehicle.brand} ${vehicle.model}` }) + (wasShifted1m ? t('calendarPage.events.reminderMovedToMonday') : '')
+          : t('calendarPage.events.apkDueIn1MonthDescription', { vehicle: `${vehicle.brand} ${vehicle.model}` }) + (wasShifted1m ? t('calendarPage.events.movedToMonday') : ''),
         needsSpareVehicle: false,
         priority: isApkOverdue ? 'urgent' : 'medium',
         currentReservations: reservations?.filter((r: Reservation) => r.vehicleId === vehicle.id) || []
@@ -641,8 +643,8 @@ export default function MaintenanceCalendar() {
         vehicle,
         type: 'apk_due' as const,
         date: format(shiftedDue, 'yyyy-MM-dd'),
-        title: 'APK Inspection Due' + (wasShiftedDue ? ' (Moved from weekend)' : ''),
-        description: `APK inspection required for ${vehicle.brand} ${vehicle.model}` + (wasShiftedDue ? ' (Moved from weekend to Monday)' : ''),
+        title: t('calendarPage.events.apkDueTitle') + (wasShiftedDue ? t('calendarPage.events.movedFromWeekend') : ''),
+        description: t('calendarPage.events.apkInspectionRequiredDescription', { vehicle: `${vehicle.brand} ${vehicle.model}` }) + (wasShiftedDue ? t('calendarPage.events.movedToMonday') : ''),
         needsSpareVehicle: hasOverlappingReservation,
         hasUpcomingRentals: hasUpcomingReservations,
         priority: 'urgent',
@@ -671,12 +673,12 @@ export default function MaintenanceCalendar() {
         vehicle,
         type: 'warranty_reminder_2m' as const,
         date: format(shifted2m, 'yyyy-MM-dd'),
-        title: isWarrantyOverdue ? 'Warranty Reminder (2 months) - OVERDUE' : 'Warranty Reminder (2 months)' + (wasShifted2m ? ' (Moved from weekend)' : ''),
+        title: isWarrantyOverdue ? t('calendarPage.events.warrantyReminder2mTitleOverdue') : t('calendarPage.events.warrantyReminder2mTitle') + (wasShifted2m ? t('calendarPage.events.movedFromWeekend') : ''),
         description: isWarrantyOverdue
-          ? `Warranty has expired for ${vehicle.brand} ${vehicle.model}` + (wasShifted2m ? ' (Reminder originally scheduled for weekend)' : '')
+          ? t('calendarPage.events.warrantyExpiredDescription', { vehicle: `${vehicle.brand} ${vehicle.model}` }) + (wasShifted2m ? t('calendarPage.events.reminderOriginallyWeekend') : '')
           : reminderPassed2m
-          ? `Warranty expiring soon for ${vehicle.brand} ${vehicle.model}` + (wasShifted2m ? ' (Reminder was moved from weekend to Monday)' : '')
-          : `Warranty expires in 2 months for ${vehicle.brand} ${vehicle.model}` + (wasShifted2m ? ' (Moved from weekend to Monday)' : ''),
+          ? t('calendarPage.events.warrantyExpiringSoonDescription', { vehicle: `${vehicle.brand} ${vehicle.model}` }) + (wasShifted2m ? t('calendarPage.events.reminderMovedToMonday') : '')
+          : t('calendarPage.events.warrantyExpiresIn2MonthsDescription', { vehicle: `${vehicle.brand} ${vehicle.model}` }) + (wasShifted2m ? t('calendarPage.events.movedToMonday') : ''),
         needsSpareVehicle: false,
         priority: isWarrantyOverdue ? 'urgent' : 'low',
         currentReservations: reservations?.filter((r: Reservation) => r.vehicleId === vehicle.id) || []
@@ -691,12 +693,12 @@ export default function MaintenanceCalendar() {
         vehicle,
         type: 'warranty_reminder_1m' as const,
         date: format(shifted1m, 'yyyy-MM-dd'),
-        title: isWarrantyOverdue ? 'Warranty Reminder (1 month) - OVERDUE' : 'Warranty Reminder (1 month)' + (wasShifted1m ? ' (Moved from weekend)' : ''),
+        title: isWarrantyOverdue ? t('calendarPage.events.warrantyReminder1mTitleOverdue') : t('calendarPage.events.warrantyReminder1mTitle') + (wasShifted1m ? t('calendarPage.events.movedFromWeekend') : ''),
         description: isWarrantyOverdue
-          ? `Warranty has expired for ${vehicle.brand} ${vehicle.model}` + (wasShifted1m ? ' (Reminder originally scheduled for weekend)' : '')
+          ? t('calendarPage.events.warrantyExpiredDescription', { vehicle: `${vehicle.brand} ${vehicle.model}` }) + (wasShifted1m ? t('calendarPage.events.reminderOriginallyWeekend') : '')
           : reminderPassed1m
-          ? `Warranty expiring soon for ${vehicle.brand} ${vehicle.model}` + (wasShifted1m ? ' (Reminder was moved from weekend to Monday)' : '')
-          : `Warranty expires in 1 month for ${vehicle.brand} ${vehicle.model}` + (wasShifted1m ? ' (Moved from weekend to Monday)' : ''),
+          ? t('calendarPage.events.warrantyExpiringSoonDescription', { vehicle: `${vehicle.brand} ${vehicle.model}` }) + (wasShifted1m ? t('calendarPage.events.reminderMovedToMonday') : '')
+          : t('calendarPage.events.warrantyExpiresIn1MonthDescription', { vehicle: `${vehicle.brand} ${vehicle.model}` }) + (wasShifted1m ? t('calendarPage.events.movedToMonday') : ''),
         needsSpareVehicle: false,
         priority: isWarrantyOverdue ? 'urgent' : 'medium',
         currentReservations: reservations?.filter((r: Reservation) => r.vehicleId === vehicle.id) || []
@@ -710,8 +712,8 @@ export default function MaintenanceCalendar() {
         vehicle,
         type: 'warranty_expiring' as const,
         date: format(shiftedExpiry, 'yyyy-MM-dd'),
-        title: 'Warranty Expiring' + (wasShiftedExpiry ? ' (Moved from weekend)' : ''),
-        description: `Warranty expires for ${vehicle.brand} ${vehicle.model}` + (wasShiftedExpiry ? ' (Moved from weekend to Monday)' : ''),
+        title: t('calendarPage.events.warrantyExpiringTitle') + (wasShiftedExpiry ? t('calendarPage.events.movedFromWeekend') : ''),
+        description: t('calendarPage.events.warrantyExpiresDescription', { vehicle: `${vehicle.brand} ${vehicle.model}` }) + (wasShiftedExpiry ? t('calendarPage.events.movedToMonday') : ''),
         needsSpareVehicle: false,
         priority: 'high',
         currentReservations: reservations?.filter((r: Reservation) => r.vehicleId === vehicle.id) || []
@@ -746,25 +748,25 @@ export default function MaintenanceCalendar() {
       
       // Map maintenance type to display label
       const maintenanceTypeMap: Record<string, string> = {
-        'breakdown': 'Vehicle Breakdown',
-        'tire_replacement': 'Tire Replacement',
-        'brake_service': 'Brake Service',
-        'engine_repair': 'Engine Repair',
-        'transmission_repair': 'Transmission Repair',
-        'electrical_issue': 'Electrical Issue',
-        'air_conditioning': 'Air Conditioning',
-        'battery_replacement': 'Battery Replacement',
-        'oil_change': 'Oil Change',
-        'regular_maintenance': 'Regular Maintenance',
-        'apk_inspection': 'APK Inspection',
-        'warranty_service': 'Warranty Service',
-        'accident_damage': 'Accident Damage',
-        'other': 'Other Maintenance'
+        'breakdown': t('maintenance:editDialog.types.breakdown'),
+        'tire_replacement': t('maintenance:editDialog.types.tire_replacement'),
+        'brake_service': t('maintenance:editDialog.types.brake_service'),
+        'engine_repair': t('maintenance:editDialog.types.engine_repair'),
+        'transmission_repair': t('maintenance:editDialog.types.transmission_repair'),
+        'electrical_issue': t('maintenance:editDialog.types.electrical_issue'),
+        'air_conditioning': t('maintenance:editDialog.types.air_conditioning'),
+        'battery_replacement': t('maintenance:editDialog.types.battery_replacement'),
+        'oil_change': t('maintenance:editDialog.types.oil_change'),
+        'regular_maintenance': t('maintenance:editDialog.types.regular_maintenance'),
+        'apk_inspection': t('maintenance:editDialog.types.apk_inspection'),
+        'warranty_service': t('maintenance:editDialog.types.warranty_service'),
+        'accident_damage': t('maintenance:editDialog.types.accident_damage'),
+        'other': t('maintenance:editDialog.types.other')
       };
-      
-      const displayTitle = maintenanceTypeMap[maintenanceTypeRaw] || 'Scheduled Maintenance';
+
+      const displayTitle = maintenanceTypeMap[maintenanceTypeRaw] || t('maintenance:listDialog.scheduledMaintenance');
       const descriptionPart = noteParts[1]?.split('\n')[0]?.trim() || '';
-      
+
       events.push({
         id: `scheduled_maintenance_${reservation.id}`, // Avoid ID conflicts
         vehicleId: reservation.vehicleId!, // Using ! since we already checked vehicle exists
@@ -774,7 +776,7 @@ export default function MaintenanceCalendar() {
         startDate: reservation.startDate,
         endDate: reservation.endDate || undefined,
         title: displayTitle,
-        description: descriptionPart || `${displayTitle} for ${vehicle.brand} ${vehicle.model}`,
+        description: descriptionPart || t('calendarPage.events.scheduledMaintenanceForVehicle', { title: displayTitle, vehicle: `${vehicle.brand} ${vehicle.model}` }),
         needsSpareVehicle: false,
         priority: 'high'
       });
@@ -960,7 +962,7 @@ export default function MaintenanceCalendar() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Maintenance Calendar</h1>
+        <h1 className="text-2xl font-bold">{t('calendarPage.pageTitle')}</h1>
         <div className="flex gap-2">
           <Button 
             variant="outline" 
@@ -975,10 +977,10 @@ export default function MaintenanceCalendar() {
               <line x1="3" x2="3" y1="12" y2="12" />
               <line x1="3" x2="3" y1="18" y2="18" />
             </svg>
-            List View
+            {t('calendarPage.listViewButton')}
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => setCompletedMaintenanceDialogOpen(true)}
             data-testid="button-view-completed"
           >
@@ -986,14 +988,14 @@ export default function MaintenanceCalendar() {
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
               <polyline points="22 4 12 14.01 9 11.01"/>
             </svg>
-            View Completed ({completedMaintenanceBlocks.length})
+            {t('calendarPage.viewCompletedButton', { count: completedMaintenanceBlocks.length })}
           </Button>
           <Button onClick={() => {
             setSelectedScheduleDate(null); // No pre-selected date from header button
             setIsScheduleDialogOpen(true);
           }}>
             <Plus className="mr-2 h-4 w-4" />
-            Schedule Maintenance
+            {t('maintenance:scheduleDialog.scheduleMaintenanceButton')}
           </Button>
         </div>
       </div>
@@ -1001,15 +1003,15 @@ export default function MaintenanceCalendar() {
       <Card>
         <CardHeader className="flex-row justify-between items-center space-y-0 pb-2">
           <div>
-            <CardTitle>Maintenance Schedule</CardTitle>
-            <CardDescription>View and manage vehicle maintenance events</CardDescription>
+            <CardTitle>{t('calendarPage.scheduleCardTitle')}</CardTitle>
+            <CardDescription>{t('calendarPage.scheduleCardDescription')}</CardDescription>
           </div>
           <div className="flex-shrink-0 flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setColorDialogOpen(true)}>
               <Palette className="h-4 w-4 mr-1" />
-              Colors
+              {t('calendarPage.colorsButton')}
             </Button>
-            <Button variant="outline" size="sm" onClick={goToToday}>Today</Button>
+            <Button variant="outline" size="sm" onClick={goToToday}>{t('calendarPage.todayButton')}</Button>
           </div>
         </CardHeader>
         <CardContent className="pt-6">
@@ -1024,45 +1026,45 @@ export default function MaintenanceCalendar() {
               <Button variant="ghost" size="icon" onClick={navigateNext}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={goToToday}>Today</Button>
+              <Button variant="outline" size="sm" onClick={goToToday}>{t('calendarPage.todayButton')}</Button>
             </div>
-            
+
             {/* Maintenance Filters */}
             <div className="flex flex-wrap gap-2">
               <Input
-                placeholder="Search vehicles or events..."
+                placeholder={t('calendarPage.searchPlaceholder')}
                 value={maintenanceFilters.search}
                 onChange={handleSearchChange}
                 className="w-50 h-9"
               />
-              
+
               {vehicleTypes.length > 0 && (
                 <Select value={maintenanceFilters.type} onValueChange={handleTypeChange}>
                   <SelectTrigger className="w-40 h-9">
-                    <SelectValue placeholder="Vehicle Type" />
+                    <SelectValue placeholder={t('calendarPage.vehicleTypePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="all">{t('calendarPage.allTypes')}</SelectItem>
                     {vehicleTypes.map(type => (
                       <SelectItem key={type} value={type}>{type}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
-              
+
               <Select value={maintenanceFilters.eventType} onValueChange={handleEventTypeChange}>
                 <SelectTrigger className="w-40 h-9">
-                  <SelectValue placeholder="Event Type" />
+                  <SelectValue placeholder={t('calendarPage.eventTypePlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Events</SelectItem>
-                  <SelectItem value="apk_due">APK Due</SelectItem>
-                  <SelectItem value="apk_reminder_2m">APK Reminder (2 months)</SelectItem>
-                  <SelectItem value="apk_reminder_1m">APK Reminder (1 month)</SelectItem>
-                  <SelectItem value="warranty_expiring">Warranty Expiring</SelectItem>
-                  <SelectItem value="warranty_reminder_2m">Warranty Reminder (2 months)</SelectItem>
-                  <SelectItem value="warranty_reminder_1m">Warranty Reminder (1 month)</SelectItem>
-                  <SelectItem value="scheduled_maintenance">Scheduled Maintenance</SelectItem>
+                  <SelectItem value="all">{t('calendarPage.allEvents')}</SelectItem>
+                  <SelectItem value="apk_due">{t('calendarPage.eventTypeLabels.apk_due')}</SelectItem>
+                  <SelectItem value="apk_reminder_2m">{t('calendarPage.eventTypeLabels.apk_reminder_2m')}</SelectItem>
+                  <SelectItem value="apk_reminder_1m">{t('calendarPage.eventTypeLabels.apk_reminder_1m')}</SelectItem>
+                  <SelectItem value="warranty_expiring">{t('calendarPage.eventTypeLabels.warranty_expiring')}</SelectItem>
+                  <SelectItem value="warranty_reminder_2m">{t('calendarPage.eventTypeLabels.warranty_reminder_2m')}</SelectItem>
+                  <SelectItem value="warranty_reminder_1m">{t('calendarPage.eventTypeLabels.warranty_reminder_1m')}</SelectItem>
+                  <SelectItem value="scheduled_maintenance">{t('calendarPage.eventTypeLabels.scheduled_maintenance')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1143,12 +1145,12 @@ export default function MaintenanceCalendar() {
                           <div className="flex items-center gap-1">
                             {dateStatus.isHoliday && (
                               <Badge variant="outline" className="text-[10px] px-1 py-0 bg-orange-100 text-orange-700 border-orange-300">
-                                🎉 {dateStatus.holidayName || 'Holiday'}
+                                🎉 {dateStatus.holidayName || t('calendarPage.holidayFallback')}
                               </Badge>
                             )}
                             {dateStatus.isBlocked && (
                               <Badge variant="outline" className="text-[10px] px-1 py-0 bg-red-100 text-red-700 border-red-300">
-                                🚫 {dateStatus.blockedReason || 'Blocked'}
+                                🚫 {dateStatus.blockedReason || t('calendarPage.blockedFallback')}
                               </Badge>
                             )}
                             {dayEvents.length > 0 && (
@@ -1226,12 +1228,12 @@ export default function MaintenanceCalendar() {
                                     <div className="truncate mt-1">{event.title}</div>
                                     {event.needsSpareVehicle && event.currentReservations && event.currentReservations.length > 0 && (
                                       <Badge className="bg-orange-500 text-white text-xs mt-1">
-                                        Spare needed
+                                        {t('calendarPage.spareNeededBadge')}
                                       </Badge>
                                     )}
                                     {event.hasUpcomingRentals && !event.needsSpareVehicle && (
                                       <Badge className="bg-blue-500 text-white text-xs mt-1">
-                                        Rental coming up
+                                        {t('calendarPage.rentalComingUpBadge')}
                                       </Badge>
                                     )}
                                   </div>
@@ -1277,7 +1279,7 @@ export default function MaintenanceCalendar() {
                                             data-testid={`hover-edit-${event.id}`}
                                           >
                                             <Edit className="h-3 w-3 mr-1" />
-                                            Edit
+                                            {t('common:actions.edit')}
                                           </Button>
                                         )}
                                         {event.type === 'scheduled_maintenance' ? (
@@ -1303,8 +1305,8 @@ export default function MaintenanceCalendar() {
                                                 setMaintenanceReservationDialogOpen(true);
                                               } else {
                                                 toast({
-                                                  title: "Error",
-                                                  description: "Cannot find maintenance reservation details",
+                                                  title: t('common:status.error'),
+                                                  description: t('calendarPage.toasts.cannotFindReservationDescription'),
                                                   variant: "destructive"
                                                 });
                                               }
@@ -1312,12 +1314,12 @@ export default function MaintenanceCalendar() {
                                             data-testid={`hover-view-maintenance-${event.vehicleId}`}
                                           >
                                             <Wrench className="h-3 w-3 mr-1" />
-                                            View Maintenance
+                                            {t('calendarPage.viewMaintenanceButton')}
                                           </Button>
                                         ) : (
-                                          <Button 
-                                            size="sm" 
-                                            variant="outline" 
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
                                             onClick={(e) => {
                                               e.preventDefault();
                                               e.stopPropagation();
@@ -1330,7 +1332,7 @@ export default function MaintenanceCalendar() {
                                             data-testid={`hover-schedule-${event.vehicleId}`}
                                           >
                                             <Wrench className="h-3 w-3 mr-1" />
-                                            Schedule Maintenance
+                                            {t('maintenance:scheduleDialog.scheduleMaintenanceButton')}
                                           </Button>
                                         )}
                                       </div>
@@ -1352,7 +1354,7 @@ export default function MaintenanceCalendar() {
           {/* Calendar Legend */}
           <CalendarLegend 
             categories={['maintenance-type', 'maintenance-priority']}
-            title="Maintenance Calendar Legend"
+            title={t('calendarPage.legendTitle')}
             compact
           />
         </CardContent>
@@ -1364,9 +1366,9 @@ export default function MaintenanceCalendar() {
       }}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Maintenance Events - {selectedDay ? safeFormat(selectedDay, 'MMMM d, yyyy', 'Selected Day') : 'Day'}</DialogTitle>
+            <DialogTitle>{t('calendarPage.dayDialog.title', { date: selectedDay ? safeFormat(selectedDay, 'MMMM d, yyyy', t('calendarPage.dayDialog.selectedDayFallback')) : t('calendarPage.dayDialog.dayFallback') })}</DialogTitle>
             <DialogDescription>
-              View and manage maintenance events for this day
+              {t('calendarPage.dayDialog.description')}
             </DialogDescription>
           </DialogHeader>
           
@@ -1387,7 +1389,7 @@ export default function MaintenanceCalendar() {
                               className={getEventTypeStyle(event.type)}
                               style={getMaintenanceStyleObject(event.type)}
                             >
-                              {event.type.replace('_', ' ')}
+                              {t(`calendarPage.eventTypeLabels.${event.type}`)}
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
@@ -1396,12 +1398,12 @@ export default function MaintenanceCalendar() {
                           <p className="text-sm">{event.description}</p>
                           {event.needsSpareVehicle && event.currentReservations && event.currentReservations.length > 0 && (
                             <Badge className="bg-orange-100 text-orange-800">
-                              Spare vehicle needed
+                              {t('calendarPage.spareVehicleNeededBadge')}
                             </Badge>
                           )}
                           {event.hasUpcomingRentals && !event.needsSpareVehicle && (
                             <Badge className="bg-blue-100 text-blue-800">
-                              Rental coming up (within 3 weeks)
+                              {t('calendarPage.rentalComingUp3WeeksBadge')}
                             </Badge>
                           )}
                         </div>
@@ -1452,8 +1454,8 @@ export default function MaintenanceCalendar() {
                                   } catch (error) {
                                     console.error('Failed to complete maintenance:', error);
                                     toast({
-                                      title: "Error",
-                                      description: "Failed to complete maintenance. Please try again.",
+                                      title: t('common:status.error'),
+                                      description: t('calendarPage.toasts.completeFailedDescription'),
                                       variant: "destructive",
                                     });
                                   }
@@ -1463,21 +1465,21 @@ export default function MaintenanceCalendar() {
                                 <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                                 </svg>
-                                Complete
+                                {t('calendarPage.completeButton')}
                               </Button>
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 variant="outline"
                                 onClick={async () => {
                                   try {
                                     const response = await fetch('/api/reservations');
                                     const allReservations = await response.json();
-                                    const actualReservation = allReservations.find((r: any) => 
-                                      r.vehicleId === event.vehicleId && 
+                                    const actualReservation = allReservations.find((r: any) =>
+                                      r.vehicleId === event.vehicleId &&
                                       r.type === 'maintenance_block' &&
                                       r.startDate === event.date
                                     );
-                                    
+
                                     if (actualReservation) {
                                       handleEditMaintenance(actualReservation);
                                       closeDayDialog();
@@ -1488,7 +1490,7 @@ export default function MaintenanceCalendar() {
                                 }}
                               >
                                 <Edit className="h-4 w-4 mr-1" />
-                                Edit
+                                {t('common:actions.edit')}
                               </Button>
                               <Button 
                                 size="sm" 
@@ -1521,16 +1523,16 @@ export default function MaintenanceCalendar() {
                                 data-testid={`button-delete-${event.id}`}
                               >
                                 <Trash2 className="h-4 w-4 mr-1" />
-                                Delete
+                                {t('common:actions.delete')}
                               </Button>
                             </>
                           )}
                           {event.type === 'scheduled_maintenance' ? (
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               variant="outline"
                               onClick={() => {
-                                // Extract the reservation ID from the event ID  
+                                // Extract the reservation ID from the event ID
                                 let reservationId: number;
                                 if (typeof event.id === 'string') {
                                   // Extract the number from strings like "scheduled_maintenance_60"
@@ -1539,7 +1541,7 @@ export default function MaintenanceCalendar() {
                                 } else {
                                   reservationId = event.id;
                                 }
-                                
+
                                 if (reservationId && reservationId > 0) {
                                   setSelectedMaintenanceReservationId(reservationId);
                                   setMaintenanceReservationDialogOpen(true);
@@ -1547,11 +1549,11 @@ export default function MaintenanceCalendar() {
                               }}
                             >
                               <Wrench className="h-4 w-4 mr-1" />
-                              View Maintenance
+                              {t('calendarPage.viewMaintenanceButton')}
                             </Button>
                           ) : (
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               variant="outline"
                               onClick={() => {
                                 openScheduleFromEvent({
@@ -1563,7 +1565,7 @@ export default function MaintenanceCalendar() {
                               }}
                             >
                               <Wrench className="h-4 w-4 mr-1" />
-                              Schedule Maintenance
+                              {t('maintenance:scheduleDialog.scheduleMaintenanceButton')}
                             </Button>
                           )}
                         </div>
@@ -1576,9 +1578,9 @@ export default function MaintenanceCalendar() {
               {getMaintenanceEventsForDate(selectedDay).length === 0 && (
                 <div className="text-center py-8 text-gray-500">
                   <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p>No maintenance events scheduled for this day</p>
-                  <Button 
-                    className="mt-4" 
+                  <p>{t('calendarPage.noEventsForDay')}</p>
+                  <Button
+                    className="mt-4"
                     onClick={() => {
                       const dateStr = selectedDay ? safeFormat(selectedDay, 'yyyy-MM-dd', '') : null;
                       setSelectedScheduleDate(dateStr);
@@ -1587,7 +1589,7 @@ export default function MaintenanceCalendar() {
                     }}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Schedule Maintenance
+                    {t('maintenance:scheduleDialog.scheduleMaintenanceButton')}
                   </Button>
                 </div>
               )}
@@ -1625,8 +1627,8 @@ export default function MaintenanceCalendar() {
           
           // Show success message
           toast({
-            title: "Maintenance Scheduled",
-            description: "The maintenance has been scheduled and reminders have been updated.",
+            title: t('calendarPage.toasts.maintenanceScheduledTitle'),
+            description: t('calendarPage.toasts.maintenanceScheduledDescription'),
           });
         }}
       />
@@ -1649,9 +1651,9 @@ export default function MaintenanceCalendar() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Maintenance</AlertDialogTitle>
+            <AlertDialogTitle>{t('maintenance:listDialog.deleteMaintenanceTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this maintenance reservation for{' '}
+              {t('maintenance:listDialog.deleteMaintenanceConfirmPrefix')}
               {reservationToDelete?.vehicle ? (
                 <>
                   <strong>
@@ -1660,13 +1662,13 @@ export default function MaintenanceCalendar() {
                   ({displayLicensePlate(reservationToDelete.vehicle.licensePlate)})
                 </>
               ) : (
-                <strong>Vehicle {reservationToDelete?.vehicleId}</strong>
+                <strong>{t('maintenance:listDialog.vehiclePlaceholder', { id: reservationToDelete?.vehicleId })}</strong>
               )}
-              ? This action cannot be undone.
+              {t('maintenance:listDialog.deleteMaintenanceConfirmSuffix')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (reservationToDelete) {
@@ -1675,7 +1677,7 @@ export default function MaintenanceCalendar() {
               }}
               className="bg-red-600 hover:bg-red-700"
             >
-              Delete
+              {t('common:actions.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1726,45 +1728,45 @@ export default function MaintenanceCalendar() {
       <Dialog open={warrantyDateDialogOpen} onOpenChange={setWarrantyDateDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Complete Maintenance</DialogTitle>
+            <DialogTitle>{t('calendarPage.completeMaintenanceDialog.title')}</DialogTitle>
             <DialogDescription>
-              Review and update vehicle information after completing maintenance
+              {t('calendarPage.completeMaintenanceDialog.description')}
             </DialogDescription>
           </DialogHeader>
-          
+
           {/* Vehicle Information Section */}
           {completingReservation && (() => {
             const vehicle = vehicles?.find(v => v.id === completingReservation.vehicleId);
             if (!vehicle) return null;
-            
-            const maintenanceType = completingReservation.notes?.split(':')[0] || 'Maintenance';
-            
+
+            const maintenanceType = completingReservation.notes?.split(':')[0] || t('calendarPage.maintenanceTypeFallback');
+
             return (
               <div className="bg-muted/50 rounded-md p-4 mb-4 space-y-3">
                 <div className="space-y-2">
-                  <h3 className="font-medium text-sm">Vehicle Information</h3>
+                  <h3 className="font-medium text-sm">{t('calendarPage.completeMaintenanceDialog.vehicleInfoHeading')}</h3>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                     <div className="flex items-center">
-                      <span className="text-muted-foreground mr-1">License:</span>
+                      <span className="text-muted-foreground mr-1">{t('calendarPage.completeMaintenanceDialog.licenseLabel')}</span>
                       <span className="font-medium">{displayLicensePlate(vehicle.licensePlate)}</span>
                     </div>
                     <div className="flex items-center">
-                      <span className="text-muted-foreground mr-1">Vehicle:</span>
+                      <span className="text-muted-foreground mr-1">{t('calendarPage.completeMaintenanceDialog.vehicleLabel')}</span>
                       <span className="font-medium">{vehicle.brand} {vehicle.model}</span>
                     </div>
                     <div className="flex items-center">
-                      <span className="text-muted-foreground mr-1">Maintenance Type:</span>
+                      <span className="text-muted-foreground mr-1">{t('calendarPage.completeMaintenanceDialog.maintenanceTypeLabel')}</span>
                       <span className="font-medium">{maintenanceType}</span>
                     </div>
                     {vehicle.currentMileage !== undefined && vehicle.currentMileage !== null && (
                       <div className="flex items-center">
-                        <span className="text-muted-foreground mr-1">Last Known Mileage:</span>
+                        <span className="text-muted-foreground mr-1">{t('calendarPage.completeMaintenanceDialog.lastKnownMileageLabel')}</span>
                         <span className="font-medium">{vehicle.currentMileage.toLocaleString()} km</span>
                       </div>
                     )}
                     {vehicle.apkDate && (
                       <div className="flex items-center">
-                        <span className="text-muted-foreground mr-1">Current APK:</span>
+                        <span className="text-muted-foreground mr-1">{t('calendarPage.completeMaintenanceDialog.currentApkLabel')}</span>
                         <span className="font-medium">{format(parseISO(vehicle.apkDate), 'MMM d, yyyy')}</span>
                       </div>
                     )}
@@ -1773,14 +1775,14 @@ export default function MaintenanceCalendar() {
               </div>
             );
           })()}
-          
+
           <div className="space-y-4">
             {/* Row 1: Dates side by side */}
             <div className="border rounded-lg p-4 bg-slate-50 space-y-4">
-              <h3 className="font-semibold text-base">Completion Details</h3>
+              <h3 className="font-semibold text-base">{t('calendarPage.completeMaintenanceDialog.completionDetailsHeading')}</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium">Completion Date</label>
+                  <label className="text-sm font-medium">{t('calendarPage.completeMaintenanceDialog.completionDateLabel')}</label>
                   <Input
                     type="date"
                     value={completingReservation?.startDate ? format(parseISO(completingReservation.startDate), 'yyyy-MM-dd') : ''}
@@ -1796,11 +1798,11 @@ export default function MaintenanceCalendar() {
                     data-testid="input-completion-date"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    When was maintenance completed?
+                    {t('calendarPage.completeMaintenanceDialog.completionDateHint')}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">APK Date</label>
+                  <label className="text-sm font-medium">{t('calendarPage.completeMaintenanceDialog.apkDateLabel')}</label>
                   <Input
                     type="date"
                     value={apkDateInput}
@@ -1809,14 +1811,14 @@ export default function MaintenanceCalendar() {
                     data-testid="input-apk-date"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    APK expiry date (if updated)
+                    {t('calendarPage.completeMaintenanceDialog.apkDateHint')}
                   </p>
                 </div>
               </div>
 
               {/* APK Form upload */}
               <div>
-                <label className="text-sm font-medium">APK Inspection Form (Optional)</label>
+                <label className="text-sm font-medium">{t('calendarPage.completeMaintenanceDialog.apkFormLabel')}</label>
                 <Input
                   type="file"
                   accept=".pdf,.jpg,.jpeg,.png"
@@ -1831,7 +1833,7 @@ export default function MaintenanceCalendar() {
                 />
                 {apkFormFile && (
                   <p className="text-xs text-green-600 mt-1">
-                    Selected: {apkFormFile.name}
+                    {t('calendarPage.completeMaintenanceDialog.selectedFileLabel', { name: apkFormFile.name })}
                   </p>
                 )}
               </div>
@@ -1839,61 +1841,61 @@ export default function MaintenanceCalendar() {
 
             {/* Service Details Section */}
             <div className="border rounded-lg p-4 bg-blue-50 space-y-4">
-              <h3 className="font-semibold text-base">Service Details</h3>
-              
+              <h3 className="font-semibold text-base">{t('calendarPage.completeMaintenanceDialog.serviceDetailsHeading')}</h3>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium">Service Category</label>
+                  <label className="text-sm font-medium">{t('calendarPage.completeMaintenanceDialog.serviceCategoryLabel')}</label>
                   <Select value={maintenanceCategory} onValueChange={setMaintenanceCategory}>
                     <SelectTrigger className="mt-2 bg-white" data-testid="select-maintenance-category">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="scheduled_maintenance">Scheduled Maintenance</SelectItem>
-                      <SelectItem value="repair">Repair</SelectItem>
+                      <SelectItem value="scheduled_maintenance">{t('maintenance:listDialog.scheduledMaintenance')}</SelectItem>
+                      <SelectItem value="repair">{t('calendarPage.completeMaintenanceDialog.repairOption')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Maintenance or repair?
+                    {t('calendarPage.completeMaintenanceDialog.serviceCategoryHint')}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Current Mileage (km)</label>
+                  <label className="text-sm font-medium">{t('calendarPage.completeMaintenanceDialog.currentMileageLabel')}</label>
                   <Input
                     type="number"
                     value={currentMileage}
                     onChange={(e) => setCurrentMileage(e.target.value)}
-                    placeholder="Odometer reading"
+                    placeholder={t('calendarPage.completeMaintenanceDialog.odometerPlaceholder')}
                     className="mt-2 bg-white"
                     data-testid="input-current-mileage"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Current vehicle mileage
+                    {t('calendarPage.completeMaintenanceDialog.currentMileageHint')}
                   </p>
                 </div>
               </div>
 
               {/* Maintenance Details full width */}
               <div>
-                <label className="text-sm font-medium">Maintenance Details</label>
+                <label className="text-sm font-medium">{t('calendarPage.completeMaintenanceDialog.maintenanceDetailsLabel')}</label>
                 <Textarea
                   value={maintenanceDetails}
                   onChange={(e) => setMaintenanceDetails(e.target.value)}
                   placeholder={
                     maintenanceCategory === 'scheduled_maintenance'
-                      ? "Describe the maintenance performed (e.g., oil change, air filter, spark plugs, cabin filter)"
-                      : "Describe the repair performed (e.g., tire replacement, brake repair, battery, window fix, damage repair)"
+                      ? t('calendarPage.completeMaintenanceDialog.maintenanceDetailsPlaceholderScheduled')
+                      : t('calendarPage.completeMaintenanceDialog.maintenanceDetailsPlaceholderRepair')
                   }
                   className="mt-2 bg-white"
                   rows={3}
                   data-testid="textarea-maintenance-details"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  What work was done on the vehicle?
+                  {t('calendarPage.completeMaintenanceDialog.maintenanceDetailsHint')}
                 </p>
               </div>
             </div>
-            
+
             <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
@@ -1907,7 +1909,7 @@ export default function MaintenanceCalendar() {
                   setCurrentMileage('');
                 }}
               >
-                Cancel
+                {t('common:actions.cancel')}
               </Button>
               <Button
                 className="bg-green-600 hover:bg-green-700"
@@ -1964,11 +1966,11 @@ export default function MaintenanceCalendar() {
                     await apiRequest('PATCH', `/api/vehicles/${completingReservation.vehicleId}`, vehicleUpdates);
 
                     // Update maintenance reservation to mark as complete with details
-                    const maintenanceType = completingReservation.notes?.split(':')[0] || 'Maintenance';
-                    const updatedNotes = maintenanceDetails 
+                    const maintenanceType = completingReservation.notes?.split(':')[0] || t('calendarPage.maintenanceTypeFallback');
+                    const updatedNotes = maintenanceDetails
                       ? `${maintenanceType}:\n${maintenanceDetails}`
-                      : completingReservation.notes || 'Maintenance completed';
-                    
+                      : completingReservation.notes || t('calendarPage.maintenanceCompletedNotesFallback');
+
                     await apiRequest('PATCH', `/api/reservations/${completingReservation.id}`, {
                       startDate: completionDate,
                       endDate: completionDate,
@@ -1990,23 +1992,23 @@ export default function MaintenanceCalendar() {
                     closeDayDialog();
 
                     toast({
-                      title: "Maintenance Completed",
+                      title: t('calendarPage.toasts.maintenanceCompletedTitle'),
                       description: maintenanceDetails
-                        ? `Maintenance completed: ${maintenanceDetails.substring(0, 50)}${maintenanceDetails.length > 50 ? '...' : ''}`
-                        : "Vehicle maintenance tracking has been updated.",
+                        ? t('calendarPage.toasts.maintenanceCompletedWithDetails', { details: `${maintenanceDetails.substring(0, 50)}${maintenanceDetails.length > 50 ? '...' : ''}` })
+                        : t('calendarPage.toasts.maintenanceCompletedNoDetails'),
                     });
                   } catch (error) {
                     console.error('Failed to complete maintenance:', error);
                     toast({
-                      title: "Error",
-                      description: "Failed to complete maintenance. Please try again.",
+                      title: t('common:status.error'),
+                      description: t('calendarPage.toasts.completeFailedDescription'),
                       variant: "destructive",
                     });
                   }
                 }}
                 data-testid="button-complete-maintenance"
               >
-                Complete
+                {t('calendarPage.completeButton')}
               </Button>
             </div>
           </div>
@@ -2017,15 +2019,15 @@ export default function MaintenanceCalendar() {
       <Dialog open={completedMaintenanceDialogOpen} onOpenChange={setCompletedMaintenanceDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle>Completed Maintenance History</DialogTitle>
+            <DialogTitle>{t('calendarPage.completedHistoryDialog.title')}</DialogTitle>
             <DialogDescription>
-              View, edit, revert, or delete completed maintenance records
+              {t('calendarPage.completedHistoryDialog.description')}
             </DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh]">
             {completedMaintenanceBlocks.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                <p>No completed maintenance records found</p>
+                <p>{t('calendarPage.completedHistoryDialog.noRecords')}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -2033,11 +2035,11 @@ export default function MaintenanceCalendar() {
                   .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
                   .map((maintenance) => {
                     const vehicle = vehicles?.find(v => v.id === maintenance.vehicleId);
-                    const maintenanceType = maintenance.notes?.split(':')[0] || 'Maintenance';
+                    const maintenanceType = maintenance.notes?.split(':')[0] || t('calendarPage.maintenanceTypeFallback');
                     const maintenanceDetails = maintenance.notes?.split('\n')?.[1] || '';
-                    const categoryBadge = maintenance.maintenanceCategory === 'scheduled_maintenance' ? 'Scheduled' : 'Repair';
+                    const categoryBadge = maintenance.maintenanceCategory === 'scheduled_maintenance' ? t('calendarPage.completedHistoryDialog.scheduledBadge') : t('calendarPage.completeMaintenanceDialog.repairOption');
                     const categoryColor = maintenance.maintenanceCategory === 'scheduled_maintenance' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800';
-                    
+
                     return (
                       <div key={maintenance.id} className="border rounded-lg p-4 bg-gray-50">
                         <div className="flex justify-between items-start">
@@ -2046,11 +2048,11 @@ export default function MaintenanceCalendar() {
                               <h4 className="font-medium">{maintenanceType}</h4>
                               <Badge className={categoryColor}>{categoryBadge}</Badge>
                               <Badge variant="outline">
-                                {vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.licensePlate})` : 'Unknown Vehicle'}
+                                {vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.licensePlate})` : t('calendarPage.completedHistoryDialog.unknownVehicle')}
                               </Badge>
                             </div>
                             <p className="text-sm text-gray-600">
-                              Completed: {format(parseISO(maintenance.startDate), 'MMM d, yyyy')}
+                              {t('calendarPage.completedHistoryDialog.completedLabel', { date: format(parseISO(maintenance.startDate), 'MMM d, yyyy') })}
                             </p>
                             {maintenanceDetails && (
                               <p className="text-sm mt-2 text-gray-700">{maintenanceDetails}</p>
@@ -2067,13 +2069,13 @@ export default function MaintenanceCalendar() {
                                   });
                                   invalidateRelatedQueries('reservations');
                                   toast({
-                                    title: "Maintenance Reverted",
-                                    description: "Maintenance has been marked as active again"
+                                    title: t('calendarPage.toasts.maintenanceRevertedTitle'),
+                                    description: t('calendarPage.toasts.maintenanceRevertedDescription')
                                   });
                                 } catch (error) {
                                   toast({
-                                    title: "Error",
-                                    description: "Failed to revert maintenance",
+                                    title: t('common:status.error'),
+                                    description: t('calendarPage.toasts.revertFailedDescription'),
                                     variant: "destructive"
                                   });
                                 }
@@ -2086,7 +2088,7 @@ export default function MaintenanceCalendar() {
                                 <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
                                 <path d="M8 16H3v5"/>
                               </svg>
-                              Revert
+                              {t('calendarPage.revertButton')}
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
@@ -2097,18 +2099,18 @@ export default function MaintenanceCalendar() {
                                   data-testid={`button-delete-${maintenance.id}`}
                                 >
                                   <Trash2 className="h-4 w-4 mr-1" />
-                                  Delete
+                                  {t('common:actions.delete')}
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Completed Maintenance?</AlertDialogTitle>
+                                  <AlertDialogTitle>{t('calendarPage.completedHistoryDialog.deleteConfirmTitle')}</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    This will permanently delete this maintenance record. This action cannot be undone.
+                                    {t('calendarPage.completedHistoryDialog.deleteConfirmDescription')}
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
                                   <AlertDialogAction
                                     className="bg-red-600 hover:bg-red-700"
                                     onClick={async () => {
@@ -2117,19 +2119,19 @@ export default function MaintenanceCalendar() {
                                         invalidateRelatedQueries('reservations');
                                         invalidateRelatedQueries('vehicles');
                                         toast({
-                                          title: "Maintenance Deleted",
-                                          description: "The maintenance record has been permanently deleted"
+                                          title: t('maintenance:listDialog.maintenanceDeletedTitle'),
+                                          description: t('calendarPage.toasts.maintenanceRecordDeletedDescription')
                                         });
                                       } catch (error) {
                                         toast({
-                                          title: "Error",
-                                          description: "Failed to delete maintenance",
+                                          title: t('common:status.error'),
+                                          description: t('calendarPage.toasts.deleteMaintenanceFailedDescription'),
                                           variant: "destructive"
                                         });
                                       }
                                     }}
                                   >
-                                    Delete
+                                    {t('common:actions.delete')}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -2144,7 +2146,7 @@ export default function MaintenanceCalendar() {
           </ScrollArea>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCompletedMaintenanceDialogOpen(false)}>
-              Close
+              {t('common:actions.close')}
             </Button>
           </DialogFooter>
         </DialogContent>

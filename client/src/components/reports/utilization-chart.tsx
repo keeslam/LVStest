@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export interface UtilizationChartData {
@@ -11,6 +12,7 @@ interface UtilizationChartProps {
 }
 
 export function UtilizationChart({ data }: UtilizationChartProps) {
+  const { t } = useTranslation('reports');
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart
@@ -19,14 +21,14 @@ export function UtilizationChart({ data }: UtilizationChartProps) {
       >
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="name" />
-        <YAxis 
+        <YAxis
           tickFormatter={(value) => `${value}%`}
         />
-        <Tooltip 
-          formatter={(value: number) => [`${value}%`, 'Utilization']}
+        <Tooltip
+          formatter={(value: number) => [`${value}%`, t('utilizationChart.utilization')]}
         />
         <Legend />
-        <Bar dataKey="utilization" name="Utilization %" fill="#0ea5e9" />
+        <Bar dataKey="utilization" name={t('utilizationChart.utilizationPercent')} fill="#0ea5e9" />
       </BarChart>
     </ResponsiveContainer>
   );

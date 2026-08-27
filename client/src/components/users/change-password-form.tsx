@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
@@ -32,6 +33,7 @@ const passwordChangeSchema = z.object({
 type PasswordChangeValues = z.infer<typeof passwordChangeSchema>;
 
 export function ChangePasswordForm() {
+  const { t } = useTranslation("auth");
   const { toast } = useToast();
 
   // Define form with default values
@@ -56,14 +58,14 @@ export function ChangePasswordForm() {
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Your password has been changed successfully!",
+        title: t('profileDialog.successTitle'),
+        description: t('profileDialog.passwordChangedDescription'),
       });
       form.reset();
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t('profileDialog.errorTitle'),
         description: error.message,
         variant: "destructive",
       });
@@ -80,7 +82,7 @@ export function ChangePasswordForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Change Your Password</CardTitle>
+        <CardTitle>{t('profileDialog.changePassword')}</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -90,64 +92,64 @@ export function ChangePasswordForm() {
               name="currentPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Current Password</FormLabel>
+                  <FormLabel>{t('profileDialog.currentPassword')}</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="password" 
-                      placeholder="Enter your current password" 
-                      {...field} 
+                    <Input
+                      type="password"
+                      placeholder={t('profileDialog.currentPasswordPlaceholder')}
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="newPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>New Password</FormLabel>
+                  <FormLabel>{t('profileDialog.newPassword')}</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="password" 
-                      placeholder="Enter your new password" 
-                      {...field} 
+                    <Input
+                      type="password"
+                      placeholder={t('profileDialog.newPasswordPlaceholder')}
+                      {...field}
                     />
                   </FormControl>
                   <FormDescription>
-                    Password must be at least 6 characters long
+                    {t('profileDialog.newPasswordHint')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirm New Password</FormLabel>
+                  <FormLabel>{t('profileDialog.confirmNewPassword')}</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="password" 
-                      placeholder="Confirm your new password" 
-                      {...field} 
+                    <Input
+                      type="password"
+                      placeholder={t('profileDialog.confirmNewPasswordPlaceholder')}
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <div className="flex justify-end">
-              <Button 
+              <Button
                 type="submit"
                 disabled={changePasswordMutation.isPending}
               >
-                {changePasswordMutation.isPending ? "Updating..." : "Change Password"}
+                {changePasswordMutation.isPending ? t('profileDialog.updating') : t('profileDialog.changePassword')}
               </Button>
             </div>
           </form>

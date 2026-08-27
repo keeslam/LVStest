@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -34,6 +35,7 @@ type LoginFormValues = {
 };
 
 export default function AuthPage() {
+  const { t } = useTranslation("auth");
   const [_, navigate] = useLocation();
   const { user, loginMutation } = useAuth();
   
@@ -64,14 +66,14 @@ export default function AuthPage() {
         {/* Form Side */}
         <div className="p-5 flex flex-col justify-center h-full">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Vehicle Fleet Manager</h1>
-            <p className="text-gray-600">Sign in to your account</p>
+            <h1 className="text-3xl font-bold mb-2">{t('loginPage.appName')}</h1>
+            <p className="text-gray-600">{t('loginPage.signInSubtitle')}</p>
           </div>
-          
+
           <Card>
             <CardHeader>
-              <CardTitle>Login</CardTitle>
-              <CardDescription>Welcome back! Please enter your credentials.</CardDescription>
+              <CardTitle>{t('loginPage.cardTitle')}</CardTitle>
+              <CardDescription>{t('loginPage.cardDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...loginForm}>
@@ -81,9 +83,9 @@ export default function AuthPage() {
                     name="username"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Username</FormLabel>
+                        <FormLabel>{t('loginPage.usernameLabel')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Username" {...field} />
+                          <Input placeholder={t('loginPage.usernamePlaceholder')} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -94,55 +96,55 @@ export default function AuthPage() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel>{t('loginPage.passwordLabel')}</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="Password" {...field} />
+                          <Input type="password" placeholder={t('loginPage.passwordPlaceholder')} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
+                  <Button
+                    type="submit"
+                    className="w-full"
                     disabled={loginMutation.isPending}
                   >
-                    {loginMutation.isPending ? 'Logging in...' : 'Login'}
+                    {loginMutation.isPending ? t('loginPage.loggingInButton') : t('loginPage.loginButton')}
                   </Button>
                 </form>
               </Form>
             </CardContent>
           </Card>
         </div>
-        
+
         {/* Info Side */}
         <div className="hidden md:flex bg-gradient-to-r from-primary-500 to-primary-700 text-white p-10 flex-col justify-center h-full">
-          <h2 className="text-4xl font-bold mb-4">Fleet Management System</h2>
-          <p className="text-lg mb-6">Streamline your vehicle rental operations with our comprehensive management system.</p>
+          <h2 className="text-4xl font-bold mb-4">{t('loginPage.infoTitle')}</h2>
+          <p className="text-lg mb-6">{t('loginPage.infoSubtitle')}</p>
           <ul className="space-y-3">
             <li className="flex items-center">
               <svg className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              Track vehicles, customers, and reservations
+              {t('loginPage.featureTrack')}
             </li>
             <li className="flex items-center">
               <svg className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              Generate contracts and manage documents
+              {t('loginPage.featureDocuments')}
             </li>
             <li className="flex items-center">
               <svg className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              Monitor expenses and maintenance alerts
+              {t('loginPage.featureExpenses')}
             </li>
             <li className="flex items-center">
               <svg className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              Get real-time data and analytics
+              {t('loginPage.featureAnalytics')}
             </li>
           </ul>
         </div>

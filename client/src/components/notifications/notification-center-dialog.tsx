@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { differenceInDays } from "date-fns";
 import { useForm } from "react-hook-form";
@@ -80,6 +81,7 @@ const notificationSchema = z.object({
 type NotificationFormData = z.infer<typeof notificationSchema>;
 
 export function NotificationCenterDialog({ open, onOpenChange }: NotificationCenterDialogProps) {
+  const { t } = useTranslation(["notifications", "common"]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { openReservationDialog, openVehicleDialog, openAPKDialog, openSpareAssignmentDialog } = useGlobalDialog();
@@ -140,12 +142,12 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
     onSuccess: () => {
       invalidateByPrefix("/api/custom-notifications");
       invalidateByPrefix("/api/custom-notifications/unread");
-      toast({ title: "Created", description: "Notification created successfully" });
+      toast({ title: t('centerDialog.createdTitle'), description: t('centerDialog.notificationCreatedDescription') });
       setShowCreateForm(false);
       form.reset();
     },
     onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: t('centerDialog.errorTitle'), description: error.message, variant: "destructive" });
     },
   });
 
@@ -157,12 +159,12 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
     onSuccess: () => {
       invalidateByPrefix("/api/custom-notifications");
       invalidateByPrefix("/api/custom-notifications/unread");
-      toast({ title: "Updated", description: "Notification updated successfully" });
+      toast({ title: t('centerDialog.updatedTitle'), description: t('centerDialog.notificationUpdatedDescription') });
       setEditingNotification(null);
       form.reset();
     },
     onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: t('centerDialog.errorTitle'), description: error.message, variant: "destructive" });
     },
   });
 
@@ -173,11 +175,11 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
     onSuccess: () => {
       invalidateByPrefix("/api/custom-notifications");
       invalidateByPrefix("/api/custom-notifications/unread");
-      toast({ title: "Deleted", description: "Notification deleted successfully" });
+      toast({ title: t('centerDialog.deletedTitle'), description: t('centerDialog.notificationDeletedDescription') });
       setDeleteNotification(null);
     },
     onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: t('centerDialog.errorTitle'), description: error.message, variant: "destructive" });
     },
   });
 
@@ -274,11 +276,11 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
   const renderPriorityBadge = (priority: string) => {
     switch (priority) {
       case "high":
-        return <Badge variant="destructive" className="text-xs">High</Badge>;
+        return <Badge variant="destructive" className="text-xs">{t('centerDialog.priorityHigh')}</Badge>;
       case "low":
-        return <Badge variant="outline" className="text-xs">Low</Badge>;
+        return <Badge variant="outline" className="text-xs">{t('centerDialog.priorityLow')}</Badge>;
       default:
-        return <Badge variant="secondary" className="text-xs">Normal</Badge>;
+        return <Badge variant="secondary" className="text-xs">{t('centerDialog.priorityNormal')}</Badge>;
     }
   };
 
@@ -307,7 +309,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
       <div className="flex gap-1">
         {onView && (
           <Button variant="ghost" size="sm" onClick={onView}>
-            View
+            {t('centerDialog.view')}
           </Button>
         )}
         {onDismiss && (
@@ -330,7 +332,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
             {notification.title}
           </p>
           {renderPriorityBadge(notification.priority || "normal")}
-          {!notification.isRead && <Badge className="text-xs">New</Badge>}
+          {!notification.isRead && <Badge className="text-xs">{t('centerDialog.new')}</Badge>}
         </div>
         <p className="text-xs text-muted-foreground mt-1">{notification.description}</p>
         <p className="text-xs text-muted-foreground mt-1">{formatDate(notification.date)}</p>
@@ -343,7 +345,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
             data-testid={`button-edit-notification-${notification.id}`}
           >
             <Edit2 className="h-3 w-3 mr-1" />
-            Edit
+            {t('centerDialog.edit')}
           </Button>
           <Button
             variant="outline"
@@ -353,7 +355,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
             data-testid={`button-delete-notification-${notification.id}`}
           >
             <Trash2 className="h-3 w-3 mr-1" />
-            Delete
+            {t('centerDialog.delete')}
           </Button>
           {notification.isRead ? (
             <Button
@@ -362,7 +364,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
               className="h-7 text-xs"
               onClick={() => markAsUnreadMutation.mutate(notification.id)}
             >
-              Mark unread
+              {t('centerDialog.markUnread')}
             </Button>
           ) : (
             <Button
@@ -372,7 +374,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
               onClick={() => markAsReadMutation.mutate(notification.id)}
             >
               <Check className="h-3 w-3 mr-1" />
-              Mark read
+              {t('centerDialog.markRead')}
             </Button>
           )}
         </div>
@@ -390,7 +392,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
 
   const NotificationForm = () => (
     <div className="p-4 border-b bg-muted/30">
-      <h4 className="font-medium mb-3">{editingNotification ? "Edit Notification" : "New Notification"}</h4>
+      <h4 className="font-medium mb-3">{editingNotification ? t('centerDialog.editNotification') : t('centerDialog.newNotification')}</h4>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3">
           <FormField
@@ -398,9 +400,9 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
             name="title"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Title</FormLabel>
+                <FormLabel>{t('centerDialog.title')}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Notification title" {...field} data-testid="input-notification-title" />
+                  <Input placeholder={t('centerDialog.titlePlaceholder')} {...field} data-testid="input-notification-title" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -411,9 +413,9 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description</FormLabel>
+                <FormLabel>{t('centerDialog.description')}</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Description" className="resize-none h-20" {...field} data-testid="input-notification-description" />
+                  <Textarea placeholder={t('centerDialog.descriptionPlaceholder')} className="resize-none h-20" {...field} data-testid="input-notification-description" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -425,7 +427,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
               name="date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date</FormLabel>
+                  <FormLabel>{t('centerDialog.date')}</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} data-testid="input-notification-date" />
                   </FormControl>
@@ -438,17 +440,17 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
               name="priority"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Priority</FormLabel>
+                  <FormLabel>{t('centerDialog.priority')}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-notification-priority">
-                        <SelectValue placeholder="Priority" />
+                        <SelectValue placeholder={t('centerDialog.priorityPlaceholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="low">{t('centerDialog.priorityLow')}</SelectItem>
+                      <SelectItem value="normal">{t('centerDialog.priorityNormal')}</SelectItem>
+                      <SelectItem value="high">{t('centerDialog.priorityHigh')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -458,7 +460,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
           </div>
           <div className="flex gap-2 justify-end pt-2">
             <Button type="button" variant="outline" onClick={handleCancelForm} data-testid="button-cancel-notification">
-              Cancel
+              {t('common:actions.cancel')}
             </Button>
             <Button
               type="submit"
@@ -468,7 +470,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
               {(createMutation.isPending || updateMutation.isPending) && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              {editingNotification ? "Update" : "Create"}
+              {editingNotification ? t('centerDialog.update') : t('centerDialog.create')}
             </Button>
           </div>
         </form>
@@ -485,12 +487,12 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
               <div>
                 <DialogTitle className="flex items-center gap-2">
                   <Bell className="h-5 w-5" />
-                  Notification Center
+                  {t('centerDialog.notificationCenter')}
                 </DialogTitle>
                 <p className="text-sm text-muted-foreground mt-1">
                   {totalNotifications === 0
-                    ? "No new notifications"
-                    : `${totalNotifications} notification${totalNotifications !== 1 ? "s" : ""} requiring attention`}
+                    ? t('centerDialog.noNewNotifications')
+                    : t('centerDialog.notificationsRequiringAttention', { count: totalNotifications })}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -503,7 +505,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                 >
                   <Link href="/notifications">
                     <Settings className="h-4 w-4 mr-1" />
-                    Settings & Overview
+                    {t('centerDialog.settingsOverview')}
                   </Link>
                 </Button>
               </div>
@@ -512,13 +514,13 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
             <TabsList className="grid grid-cols-6 m-2">
-              <TabsTrigger value="all" className="text-xs" data-testid="tab-all">All</TabsTrigger>
-              <TabsTrigger value="reservations" className="text-xs" data-testid="tab-reservations">Reservations</TabsTrigger>
-              <TabsTrigger value="maintenance" className="text-xs" data-testid="tab-maintenance">Maintenance</TabsTrigger>
-              <TabsTrigger value="apk" className="text-xs" data-testid="tab-apk">APK</TabsTrigger>
-              <TabsTrigger value="warranty" className="text-xs" data-testid="tab-warranty">Warranty</TabsTrigger>
+              <TabsTrigger value="all" className="text-xs" data-testid="tab-all">{t('centerDialog.all')}</TabsTrigger>
+              <TabsTrigger value="reservations" className="text-xs" data-testid="tab-reservations">{t('centerDialog.reservationsTab')}</TabsTrigger>
+              <TabsTrigger value="maintenance" className="text-xs" data-testid="tab-maintenance">{t('centerDialog.maintenanceTab')}</TabsTrigger>
+              <TabsTrigger value="apk" className="text-xs" data-testid="tab-apk">{t('centerDialog.apkTab')}</TabsTrigger>
+              <TabsTrigger value="warranty" className="text-xs" data-testid="tab-warranty">{t('centerDialog.warrantyTab')}</TabsTrigger>
               <TabsTrigger value="custom" className="text-xs" data-testid="tab-custom">
-                Custom
+                {t('centerDialog.customTab')}
                 {nonSpareCustomNotifications.filter((n) => !n.isRead).length > 0 && (
                   <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 text-xs">
                     {nonSpareCustomNotifications.filter((n) => !n.isRead).length}
@@ -532,21 +534,21 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                 {totalNotifications === 0 ? (
                   <EmptyState
                     icon={<Bell className="h-8 w-8" />}
-                    title="All caught up!"
-                    description="No notifications require your attention."
+                    title={t('centerDialog.allCaughtUpTitle')}
+                    description={t('centerDialog.allCaughtUpDescription')}
                   />
                 ) : (
                   <div>
                     {upcomingReservationItems.length > 0 && (
                       <>
-                        <div className="px-4 py-2 bg-muted/50 text-xs font-medium">Upcoming Reservations</div>
+                        <div className="px-4 py-2 bg-muted/50 text-xs font-medium">{t('centerDialog.upcomingReservations')}</div>
                         {upcomingReservationItems.map((r) => {
                           const vehicle = vehicles.find((v) => v.id === r.vehicleId);
                           return (
                             <NotificationCard
                               key={`res-${r.id}`}
                               icon={<Calendar className="h-5 w-5 text-blue-500" />}
-                              title={`Reservation #${r.id} starting soon`}
+                              title={t('centerDialog.reservationStartingSoon', { id: r.id })}
                               description={`${vehicle?.brand} ${vehicle?.model} - ${formatLicensePlate(vehicle?.licensePlate || "")}`}
                               date={r.startDate}
                               onView={() => {
@@ -560,14 +562,14 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                     )}
                     {upcomingMaintenanceItems.length > 0 && (
                       <>
-                        <div className="px-4 py-2 bg-muted/50 text-xs font-medium">Upcoming Maintenance</div>
+                        <div className="px-4 py-2 bg-muted/50 text-xs font-medium">{t('centerDialog.upcomingMaintenance')}</div>
                         {upcomingMaintenanceItems.map((m) => {
                           const vehicle = vehicles.find((v) => v.id === m.vehicleId);
                           return (
                             <NotificationCard
                               key={`maint-${m.id}`}
                               icon={<ClipboardCheck className="h-5 w-5 text-purple-500" />}
-                              title={`${m.maintenanceCategory || "Maintenance"} scheduled`}
+                              title={t('centerDialog.maintenanceScheduledTitle', { category: m.maintenanceCategory || t('centerDialog.maintenanceFallback') })}
                               description={`${vehicle?.brand} ${vehicle?.model} - ${formatLicensePlate(vehicle?.licensePlate || "")}`}
                               date={m.startDate}
                               onView={() => {
@@ -581,13 +583,13 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                     )}
                     {placeholderReservations.length > 0 && (
                       <>
-                        <div className="px-4 py-2 bg-muted/50 text-xs font-medium">Spare Vehicle Needed</div>
+                        <div className="px-4 py-2 bg-muted/50 text-xs font-medium">{t('centerDialog.spareVehicleNeeded')}</div>
                         {placeholderReservations.map((p) => (
                           <NotificationCard
                             key={`spare-${p.id}`}
                             icon={<Car className="h-5 w-5 text-orange-500" />}
-                            title={`Spare needed for ${p.customer?.name || "Customer"}`}
-                            description={`Reservation #${p.id} needs a spare vehicle`}
+                            title={t('centerDialog.spareNeededFor', { name: p.customer?.name || t('centerDialog.customerFallback') })}
+                            description={t('centerDialog.spareNeededDescription', { id: p.id })}
                             date={p.startDate}
                             onView={() => {
                               onOpenChange(false);
@@ -599,12 +601,12 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                     )}
                     {apkExpiringItems.length > 0 && (
                       <>
-                        <div className="px-4 py-2 bg-muted/50 text-xs font-medium">APK Expiring</div>
+                        <div className="px-4 py-2 bg-muted/50 text-xs font-medium">{t('centerDialog.apkExpiring')}</div>
                         {apkExpiringItems.map((v) => (
                           <NotificationCard
                             key={`apk-${v.id}`}
                             icon={<AlertTriangle className="h-5 w-5 text-amber-500" />}
-                            title={`APK expiring - ${formatLicensePlate(v.licensePlate)}`}
+                            title={t('centerDialog.apkExpiringTitle', { plate: formatLicensePlate(v.licensePlate) })}
                             description={`${v.brand} ${v.model}`}
                             date={v.apkDate || ""}
                             onView={() => {
@@ -621,12 +623,12 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                     )}
                     {warrantyExpiringItems.length > 0 && (
                       <>
-                        <div className="px-4 py-2 bg-muted/50 text-xs font-medium">Warranty Expiring</div>
+                        <div className="px-4 py-2 bg-muted/50 text-xs font-medium">{t('centerDialog.warrantyExpiring')}</div>
                         {warrantyExpiringItems.map((v) => (
                           <NotificationCard
                             key={`warranty-${v.id}`}
                             icon={<Car className="h-5 w-5 text-indigo-500" />}
-                            title={`Warranty expiring - ${formatLicensePlate(v.licensePlate)}`}
+                            title={t('centerDialog.warrantyExpiringTitle', { plate: formatLicensePlate(v.licensePlate) })}
                             description={`${v.brand} ${v.model}`}
                             date={v.warrantyEndDate || ""}
                             onView={() => {
@@ -643,7 +645,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                     )}
                     {nonSpareCustomNotifications.filter((n) => !n.isRead).length > 0 && (
                       <>
-                        <div className="px-4 py-2 bg-muted/50 text-xs font-medium">Custom Notifications</div>
+                        <div className="px-4 py-2 bg-muted/50 text-xs font-medium">{t('centerDialog.customNotifications')}</div>
                         {nonSpareCustomNotifications
                           .filter((n) => !n.isRead)
                           .map((n) => (
@@ -659,8 +661,8 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                 {upcomingReservationItems.length === 0 ? (
                   <EmptyState
                     icon={<Calendar className="h-8 w-8" />}
-                    title="No upcoming reservations"
-                    description="No reservations starting in the next 2 days."
+                    title={t('centerDialog.noUpcomingReservationsTitle')}
+                    description={t('centerDialog.noUpcomingReservationsDescription')}
                   />
                 ) : (
                   upcomingReservationItems.map((r) => {
@@ -669,7 +671,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                       <NotificationCard
                         key={`res-tab-${r.id}`}
                         icon={<Calendar className="h-5 w-5 text-blue-500" />}
-                        title={`Reservation #${r.id} starting soon`}
+                        title={t('centerDialog.reservationStartingSoon', { id: r.id })}
                         description={`${vehicle?.brand} ${vehicle?.model} - ${formatLicensePlate(vehicle?.licensePlate || "")}`}
                         date={r.startDate}
                         onView={() => {
@@ -686,8 +688,8 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                 {upcomingMaintenanceItems.length === 0 ? (
                   <EmptyState
                     icon={<ClipboardCheck className="h-8 w-8" />}
-                    title="No upcoming maintenance"
-                    description="No maintenance scheduled in the next 7 days."
+                    title={t('centerDialog.noUpcomingMaintenanceTitle')}
+                    description={t('centerDialog.noUpcomingMaintenanceDescription')}
                   />
                 ) : (
                   upcomingMaintenanceItems.map((m) => {
@@ -696,7 +698,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                       <NotificationCard
                         key={`maint-tab-${m.id}`}
                         icon={<ClipboardCheck className="h-5 w-5 text-purple-500" />}
-                        title={`${m.maintenanceCategory || "Maintenance"} scheduled`}
+                        title={t('centerDialog.maintenanceScheduledTitle', { category: m.maintenanceCategory || t('centerDialog.maintenanceFallback') })}
                         description={`${vehicle?.brand} ${vehicle?.model} - ${formatLicensePlate(vehicle?.licensePlate || "")}`}
                         date={m.startDate}
                         onView={() => {
@@ -713,15 +715,15 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                 {apkExpiringItems.length === 0 ? (
                   <EmptyState
                     icon={<AlertTriangle className="h-8 w-8" />}
-                    title="No APK expirations"
-                    description="No vehicles have APK expiring soon."
+                    title={t('centerDialog.noApkExpirationsTitle')}
+                    description={t('centerDialog.noApkExpirationsDescription')}
                   />
                 ) : (
                   apkExpiringItems.map((v) => (
                     <NotificationCard
                       key={`apk-tab-${v.id}`}
                       icon={<AlertTriangle className="h-5 w-5 text-amber-500" />}
-                      title={`APK expiring - ${formatLicensePlate(v.licensePlate)}`}
+                      title={t('centerDialog.apkExpiringTitle', { plate: formatLicensePlate(v.licensePlate) })}
                       description={`${v.brand} ${v.model}`}
                       date={v.apkDate || ""}
                       onView={() => {
@@ -741,15 +743,15 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                 {warrantyExpiringItems.length === 0 ? (
                   <EmptyState
                     icon={<Car className="h-8 w-8" />}
-                    title="No warranty expirations"
-                    description="No vehicles have warranties expiring soon."
+                    title={t('centerDialog.noWarrantyExpirationsTitle')}
+                    description={t('centerDialog.noWarrantyExpirationsDescription')}
                   />
                 ) : (
                   warrantyExpiringItems.map((v) => (
                     <NotificationCard
                       key={`warranty-tab-${v.id}`}
                       icon={<Car className="h-5 w-5 text-indigo-500" />}
-                      title={`Warranty expiring - ${formatLicensePlate(v.licensePlate)}`}
+                      title={t('centerDialog.warrantyExpiringTitle', { plate: formatLicensePlate(v.licensePlate) })}
                       description={`${v.brand} ${v.model}`}
                       date={v.warrantyEndDate || ""}
                       onView={() => {
@@ -769,13 +771,13 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                 <div className="p-3 border-b bg-blue-50 dark:bg-blue-950/30">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-medium text-sm">Manage Custom Notifications</h3>
-                      <p className="text-xs text-muted-foreground">Create, edit, and delete your own reminders</p>
+                      <h3 className="font-medium text-sm">{t('centerDialog.manageCustomNotifications')}</h3>
+                      <p className="text-xs text-muted-foreground">{t('centerDialog.createEditDeleteHint')}</p>
                     </div>
                     {!showCreateForm && !editingNotification && (
                       <Button onClick={() => setShowCreateForm(true)} size="sm" data-testid="button-add-notification">
                         <Plus className="h-4 w-4 mr-1" />
-                        Add New
+                        {t('centerDialog.addNew')}
                       </Button>
                     )}
                   </div>
@@ -786,14 +788,14 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                 {customNotifications.length === 0 && !showCreateForm ? (
                   <EmptyState
                     icon={<MessageSquare className="h-8 w-8" />}
-                    title="No custom notifications yet"
-                    description="Click 'Add New' above to create reminders and notes for your team."
+                    title={t('centerDialog.noCustomNotificationsTitle')}
+                    description={t('centerDialog.noCustomNotificationsDescription')}
                   />
                 ) : (
                   <>
                     {nonSpareCustomNotifications.filter((n) => !n.isRead).length > 0 && (
                       <>
-                        <div className="px-4 py-2 bg-muted/50 text-xs font-medium">Unread</div>
+                        <div className="px-4 py-2 bg-muted/50 text-xs font-medium">{t('centerDialog.unread')}</div>
                         {nonSpareCustomNotifications
                           .filter((n) => !n.isRead)
                           .map((n) => (
@@ -803,7 +805,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                     )}
                     {nonSpareCustomNotifications.filter((n) => n.isRead).length > 0 && (
                       <>
-                        <div className="px-4 py-2 bg-muted/50 text-xs font-medium">Read</div>
+                        <div className="px-4 py-2 bg-muted/50 text-xs font-medium">{t('centerDialog.read')}</div>
                         {nonSpareCustomNotifications
                           .filter((n) => n.isRead)
                           .map((n) => (
@@ -822,19 +824,19 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
       <AlertDialog open={!!deleteNotification} onOpenChange={() => setDeleteNotification(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Notification</AlertDialogTitle>
+            <AlertDialogTitle>{t('centerDialog.deleteNotificationTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deleteNotification?.title}"? This action cannot be undone.
+              {t('centerDialog.deleteConfirm', { title: deleteNotification?.title })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => deleteNotification && deleteMutation.mutate(deleteNotification.id)}
               data-testid="button-confirm-delete"
             >
-              {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+              {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t('centerDialog.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

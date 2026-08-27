@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -52,6 +53,7 @@ export function ReturnFromServiceDialog({
   originalReservation,
   onSuccess,
 }: ReturnFromServiceDialogProps) {
+  const { t } = useTranslation("reservations");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -102,8 +104,8 @@ export function ReturnFromServiceDialog({
       invalidateRelatedQueries('vehicles', { id: originalReservation?.vehicleId });
       
       toast({
-        title: "Vehicle returned from service",
-        description: "The vehicle has been successfully returned from service and the replacement ended.",
+        title: t('returnFromServiceDialog.toasts.successTitle'),
+        description: t('returnFromServiceDialog.toasts.successDescription'),
       });
       onSuccess?.();
       form.reset();
@@ -111,7 +113,7 @@ export function ReturnFromServiceDialog({
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
+        title: t('returnFromServiceDialog.toasts.errorTitle'),
         description: error.message,
         variant: "destructive",
       });
@@ -128,13 +130,17 @@ export function ReturnFromServiceDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5 text-green-600" />
-            Return Vehicle from Service
+            {t('returnFromServiceDialog.title')}
           </DialogTitle>
           <DialogDescription>
-            Mark the original vehicle as returned from service and close the replacement reservation.
+            {t('returnFromServiceDialog.description')}
             {originalReservation && (
               <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
-                Original vehicle: {originalReservation.vehicle?.brand} {originalReservation.vehicle?.model} ({originalReservation.vehicle?.licensePlate})
+                {t('returnFromServiceDialog.originalVehicleLabel', {
+                  brand: originalReservation.vehicle?.brand,
+                  model: originalReservation.vehicle?.model,
+                  plate: originalReservation.vehicle?.licensePlate,
+                })}
               </div>
             )}
           </DialogDescription>
@@ -147,7 +153,7 @@ export function ReturnFromServiceDialog({
               name="returnDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Return Date</FormLabel>
+                  <FormLabel>{t('returnFromServiceDialog.returnDateLabel')}</FormLabel>
                   <FormControl>
                     <Input
                       type="date"
@@ -156,7 +162,7 @@ export function ReturnFromServiceDialog({
                     />
                   </FormControl>
                   <FormDescription>
-                    The date the vehicle was returned from service.
+                    {t('returnFromServiceDialog.returnDateHint')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -168,17 +174,17 @@ export function ReturnFromServiceDialog({
               name="mileage"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Current Mileage</FormLabel>
+                  <FormLabel>{t('returnFromServiceDialog.currentMileageLabel')}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder="Enter current mileage"
+                      placeholder={t('returnFromServiceDialog.currentMileagePlaceholder')}
                       {...field}
                       data-testid="input-return-mileage"
                     />
                   </FormControl>
                   <FormDescription>
-                    Optional: Update the vehicle's current mileage.
+                    {t('returnFromServiceDialog.currentMileageHint')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -190,16 +196,16 @@ export function ReturnFromServiceDialog({
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Service Notes</FormLabel>
+                  <FormLabel>{t('returnFromServiceDialog.serviceNotesLabel')}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Any notes about the service performed..."
+                      placeholder={t('returnFromServiceDialog.serviceNotesPlaceholder')}
                       {...field}
                       data-testid="textarea-service-notes"
                     />
                   </FormControl>
                   <FormDescription>
-                    Optional notes about the service that was performed.
+                    {t('returnFromServiceDialog.serviceNotesHint')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -213,7 +219,7 @@ export function ReturnFromServiceDialog({
                 onClick={() => onOpenChange(false)}
                 disabled={returnFromServiceMutation.isPending}
               >
-                Cancel
+                {t('returnFromServiceDialog.cancelButton')}
               </Button>
               <Button
                 type="submit"
@@ -223,10 +229,10 @@ export function ReturnFromServiceDialog({
                 {returnFromServiceMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
+                    {t('returnFromServiceDialog.processingButton')}
                   </>
                 ) : (
-                  "Return from Service"
+                  t('returnFromServiceDialog.submitButton')
                 )}
               </Button>
             </DialogFooter>

@@ -1,11 +1,13 @@
 import { ExpenseForm } from "@/components/expenses/expense-form";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Expense } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ExpenseAdd() {
+  const { t } = useTranslation("expenses");
   const [vehicleId, setVehicleId] = useState<number | null>(null);
   const [location] = useLocation();
   const [isEditMode, setIsEditMode] = useState(false);
@@ -52,7 +54,7 @@ export default function ExpenseAdd() {
   if (isEditMode && isLoading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Edit Expense</h1>
+        <h1 className="text-2xl font-bold">{t('addPage.editExpenseTitle')}</h1>
         <div className="space-y-4">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
@@ -66,7 +68,7 @@ export default function ExpenseAdd() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">
-        {isEditMode ? "Edit Expense" : "Record New Expense"}
+        {isEditMode ? t('addPage.editExpenseTitle') : t('addPage.recordNewExpenseTitle')}
       </h1>
       <ExpenseForm 
         editMode={isEditMode}

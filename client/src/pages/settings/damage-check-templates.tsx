@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,7 @@ interface DamageCheckTemplate {
 // ---------------------------------------------------------------------------
 
 export default function DamageCheckTemplates({ embedded = false }: { embedded?: boolean } = {}) {
+  const { t } = useTranslation("settings");
   const { toast } = useToast();
   const [viewMode, setViewMode] = useState<"list" | "edit">("list");
   const [editingTemplateId, setEditingTemplateId] = useState<number | null>(null);
@@ -92,14 +94,14 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
     },
     onSuccess: () => {
       invalidateByPrefix("/api/damage-check-templates");
-      toast({ title: "Success", description: "Template deleted successfully" });
+      toast({ title: t('damageCheckTemplatesPage.toasts.successTitle'), description: t('damageCheckTemplatesPage.toasts.templateDeletedDescription') });
       setDeleteConfirmOpen(false);
       setTemplateToDelete(null);
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete template",
+        title: t('damageCheckTemplatesPage.toasts.errorTitle'),
+        description: error.message || t('damageCheckTemplatesPage.toasts.deleteFailedFallback'),
         variant: "destructive",
       });
     },
@@ -111,12 +113,12 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
     },
     onSuccess: () => {
       invalidateByPrefix("/api/damage-check-templates");
-      toast({ title: "Default updated", description: "Template marked as default" });
+      toast({ title: t('damageCheckTemplatesPage.toasts.defaultUpdatedTitle'), description: t('damageCheckTemplatesPage.toasts.defaultUpdatedDescription') });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to set default",
+        title: t('damageCheckTemplatesPage.toasts.errorTitle'),
+        description: error.message || t('damageCheckTemplatesPage.toasts.setDefaultFailedFallback'),
         variant: "destructive",
       });
     },
@@ -132,13 +134,13 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
     },
     onSuccess: () => {
       invalidateByPrefix("/api/damage-check-templates");
-      toast({ title: "Cloned", description: "Template cloned successfully" });
+      toast({ title: t('damageCheckTemplatesPage.toasts.clonedTitle'), description: t('damageCheckTemplatesPage.toasts.clonedDescription') });
       setClonePickerOpen(false);
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to clone template",
+        title: t('damageCheckTemplatesPage.toasts.errorTitle'),
+        description: error.message || t('damageCheckTemplatesPage.toasts.cloneFailedFallback'),
         variant: "destructive",
       });
     },
@@ -149,7 +151,7 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
       const response = await fetch(`/api/damage-check-templates/${template.id}/export`, {
         credentials: "include",
       });
-      if (!response.ok) throw new Error("Failed to export template");
+      if (!response.ok) throw new Error(t('damageCheckTemplatesPage.toasts.exportFailed'));
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -160,10 +162,10 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      toast({ title: "Success", description: "Template exported successfully" });
+      toast({ title: t('damageCheckTemplatesPage.toasts.successTitle'), description: t('damageCheckTemplatesPage.toasts.templateExportedDescription') });
     } catch (error) {
       console.error("Error exporting template:", error);
-      toast({ title: "Error", description: "Failed to export template", variant: "destructive" });
+      toast({ title: t('damageCheckTemplatesPage.toasts.errorTitle'), description: t('damageCheckTemplatesPage.toasts.exportFailedDescription'), variant: "destructive" });
     }
   };
 
@@ -175,13 +177,13 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
       const templateData = JSON.parse(text);
       await apiRequest("POST", "/api/damage-check-templates/import", templateData);
       invalidateByPrefix("/api/damage-check-templates");
-      toast({ title: "Success", description: "Template imported successfully" });
+      toast({ title: t('damageCheckTemplatesPage.toasts.successTitle'), description: t('damageCheckTemplatesPage.toasts.templateImportedDescription') });
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error: any) {
       console.error("Error importing template:", error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to import template",
+        title: t('damageCheckTemplatesPage.toasts.errorTitle'),
+        description: error.message || t('damageCheckTemplatesPage.toasts.importFailedFallback'),
         variant: "destructive",
       });
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -209,10 +211,10 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
             <>
               <h1 className="text-3xl font-bold flex items-center gap-2">
                 <Car className="h-8 w-8" />
-                Damage Check Templates
+                {t('damageCheckTemplatesPage.pageTitle')}
               </h1>
               <p className="text-muted-foreground mt-1">
-                Create custom vehicle inspection templates for different makes and models
+                {t('damageCheckTemplatesPage.pageDescription')}
               </p>
             </>
           )}
@@ -233,7 +235,7 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
             data-testid="button-open-clone-picker"
           >
             <Copy className="h-4 w-4" />
-            Clone from existing…
+            {t('damageCheckTemplatesPage.cloneFromExistingButton')}
           </Button>
           <Button
             onClick={() => fileInputRef.current?.click()}
@@ -242,11 +244,11 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
             data-testid="button-import-template"
           >
             <Upload className="h-4 w-4" />
-            Import Template
+            {t('damageCheckTemplatesPage.importTemplateButton')}
           </Button>
           <Button onClick={handleCreateNew} className="gap-2" data-testid="button-create-template">
             <Plus className="h-4 w-4" />
-            Create Template
+            {t('damageCheckTemplatesPage.createTemplateButton')}
           </Button>
         </div>
       </div>
@@ -254,20 +256,20 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
       {isLoading ? (
         <Card>
           <CardContent className="p-8 text-center text-muted-foreground">
-            Loading templates...
+            {t('damageCheckTemplatesPage.loadingTemplates')}
           </CardContent>
         </Card>
       ) : templates.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
             <Car className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Templates Created</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('damageCheckTemplatesPage.noTemplatesCreatedTitle')}</h3>
             <p className="text-muted-foreground mb-4">
-              Create your first damage check template to standardize vehicle inspections
+              {t('damageCheckTemplatesPage.noTemplatesCreatedDescription')}
             </p>
             <Button onClick={handleCreateNew}>
               <Plus className="h-4 w-4 mr-2" />
-              Create Your First Template
+              {t('damageCheckTemplatesPage.createFirstTemplateButton')}
             </Button>
           </CardContent>
         </Card>
@@ -283,7 +285,7 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
                         {template.name}
                         {template.isDefault && (
                           <Badge variant="default" className="text-xs">
-                            Default
+                            {t('damageCheckTemplatesPage.defaultBadge')}
                           </Badge>
                         )}
                       </CardTitle>
@@ -296,7 +298,7 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
                 <CardContent>
                   <div className="space-y-3">
                     <div className="text-sm">
-                      <div className="font-medium text-gray-700 mb-1">Vehicle Target</div>
+                      <div className="font-medium text-gray-700 mb-1">{t('damageCheckTemplatesPage.vehicleTargetLabel')}</div>
                       {template.vehicleMake || template.vehicleModel || template.vehicleType ? (
                         <div className="flex flex-wrap gap-1">
                           {template.vehicleMake && (
@@ -316,7 +318,7 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
                           )}
                         </div>
                       ) : (
-                        <span className="text-gray-500 italic">Generic (all vehicles)</span>
+                        <span className="text-gray-500 italic">{t('damageCheckTemplatesPage.genericAllVehicles')}</span>
                       )}
                     </div>
 
@@ -330,14 +332,14 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
                         data-testid={`button-edit-template-${template.id}`}
                       >
                         <Edit className="h-3.5 w-3.5 mr-1" />
-                        Edit
+                        {t('damageCheckTemplatesPage.editButton')}
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleEditMetadata(template)}
                         data-testid={`button-settings-template-${template.id}`}
-                        title="Template settings"
+                        title={t('damageCheckTemplatesPage.templateSettingsTitle')}
                       >
                         <Settings className="h-3.5 w-3.5" />
                       </Button>
@@ -348,10 +350,10 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
                           onClick={() => setDefaultMutation.mutate(template.id)}
                           disabled={setDefaultMutation.isPending}
                           data-testid={`button-set-default-${template.id}`}
-                          title="Set as default"
+                          title={t('damageCheckTemplatesPage.setAsDefaultTitle')}
                         >
                           <Star className="h-3.5 w-3.5 mr-1" />
-                          Set Default
+                          {t('damageCheckTemplatesPage.setDefaultButton')}
                         </Button>
                       )}
                       <Button
@@ -359,7 +361,7 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
                         size="sm"
                         onClick={() => handleExportTemplate(template)}
                         data-testid={`button-export-template-${template.id}`}
-                        title="Export to JSON"
+                        title={t('damageCheckTemplatesPage.exportToJsonTitle')}
                       >
                         <Download className="h-3.5 w-3.5" />
                       </Button>
@@ -404,22 +406,21 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Delete Template</DialogTitle>
+            <DialogTitle>{t('damageCheckTemplatesPage.deleteTemplateDialogTitle')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{templateToDelete?.name}"? This action cannot be
-              undone.
+              {t('damageCheckTemplatesPage.deleteTemplateDialogDescription', { name: templateToDelete?.name })}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
-              Cancel
+              {t('damageCheckTemplatesPage.cancelButton')}
             </Button>
             <Button
               variant="destructive"
               onClick={() => templateToDelete && deleteMutation.mutate(templateToDelete.id)}
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              {deleteMutation.isPending ? t('damageCheckTemplatesPage.deletingButton') : t('damageCheckTemplatesPage.deleteButton')}
             </Button>
           </div>
         </DialogContent>
@@ -445,6 +446,7 @@ function ClonePickerDialog({
   onConfirm: (id: number, name?: string) => void;
   isPending: boolean;
 }) {
+  const { t } = useTranslation("settings");
   const [selectedId, setSelectedId] = useState<string>("");
   const [newName, setNewName] = useState("");
 
@@ -455,11 +457,11 @@ function ClonePickerDialog({
     }
   }, [open]);
 
-  const selected = templates.find((t) => String(t.id) === selectedId);
+  const selected = templates.find((tmpl) => String(tmpl.id) === selectedId);
 
   useEffect(() => {
     if (selected && !newName.trim()) {
-      setNewName(`${selected.name} (Copy)`);
+      setNewName(t('damageCheckTemplatesPage.copyNameSuffix', { name: selected.name }));
     }
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -467,49 +469,48 @@ function ClonePickerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Clone from existing template</DialogTitle>
+          <DialogTitle>{t('damageCheckTemplatesPage.cloneDialogTitle')}</DialogTitle>
           <DialogDescription>
-            Pick a template to copy. The clone will be created as a new (non-default) template that
-            you can edit independently.
+            {t('damageCheckTemplatesPage.cloneDialogDescription')}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-2">
-            <Label>Source template</Label>
+            <Label>{t('damageCheckTemplatesPage.sourceTemplateLabel')}</Label>
             <Select value={selectedId} onValueChange={setSelectedId}>
               <SelectTrigger data-testid="select-clone-source">
-                <SelectValue placeholder="Select a template…" />
+                <SelectValue placeholder={t('damageCheckTemplatesPage.selectTemplatePlaceholder')} />
               </SelectTrigger>
               <SelectContent>
-                {templates.map((t) => (
-                  <SelectItem key={t.id} value={String(t.id)}>
-                    {t.name}
-                    {t.isDefault ? "  (default)" : ""}
+                {templates.map((tmpl) => (
+                  <SelectItem key={tmpl.id} value={String(tmpl.id)}>
+                    {tmpl.name}
+                    {tmpl.isDefault ? t('damageCheckTemplatesPage.defaultSuffix') : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>New template name</Label>
+            <Label>{t('damageCheckTemplatesPage.newTemplateNameLabel')}</Label>
             <Input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="e.g. Standard Sedan (Copy)"
+              placeholder={t('damageCheckTemplatesPage.newTemplateNamePlaceholder')}
               data-testid="input-clone-name"
             />
           </div>
         </div>
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('damageCheckTemplatesPage.cancelButton')}
           </Button>
           <Button
             onClick={() => selected && onConfirm(selected.id, newName.trim() || undefined)}
             disabled={!selected || isPending}
             data-testid="button-confirm-clone"
           >
-            {isPending ? "Cloning…" : "Clone"}
+            {isPending ? t('damageCheckTemplatesPage.cloningButton') : t('damageCheckTemplatesPage.cloneButton')}
           </Button>
         </div>
       </DialogContent>
@@ -535,6 +536,7 @@ function TemplateMetadataDialog({
   template: DamageCheckTemplate | null;
   onSaved: (saved: DamageCheckTemplate) => void;
 }) {
+  const { t } = useTranslation("settings");
   const { toast } = useToast();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -579,16 +581,16 @@ function TemplateMetadataDialog({
     onSuccess: (saved: DamageCheckTemplate) => {
       invalidateByPrefix("/api/damage-check-templates");
       toast({
-        title: "Success",
-        description: template ? "Template updated" : "Template created",
+        title: t('damageCheckTemplatesPage.toasts.successTitle'),
+        description: template ? t('damageCheckTemplatesPage.toasts.templateUpdatedDescription') : t('damageCheckTemplatesPage.toasts.templateCreatedDescription'),
       });
       onOpenChange(false);
       onSaved(saved);
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to save template",
+        title: t('damageCheckTemplatesPage.toasts.errorTitle'),
+        description: error.message || t('damageCheckTemplatesPage.toasts.saveFailedFallback'),
         variant: "destructive",
       });
     },
@@ -598,14 +600,14 @@ function TemplateMetadataDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{template ? "Template Settings" : "Create Template"}</DialogTitle>
+          <DialogTitle>{template ? t('damageCheckTemplatesPage.templateSettingsTitle') : t('damageCheckTemplatesPage.createTemplateDialogTitle')}</DialogTitle>
           <DialogDescription>
-            Name, description, and vehicle targeting. Field layout is edited separately.
+            {t('damageCheckTemplatesPage.metadataDialogDescription')}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1">
-            <Label htmlFor="tmd-name">Name</Label>
+            <Label htmlFor="tmd-name">{t('damageCheckTemplatesPage.nameLabel')}</Label>
             <Input
               id="tmd-name"
               value={name}
@@ -614,7 +616,7 @@ function TemplateMetadataDialog({
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="tmd-description">Description</Label>
+            <Label htmlFor="tmd-description">{t('damageCheckTemplatesPage.descriptionLabel')}</Label>
             <Textarea
               id="tmd-description"
               value={description}
@@ -624,29 +626,29 @@ function TemplateMetadataDialog({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label htmlFor="tmd-make">Vehicle Make</Label>
+              <Label htmlFor="tmd-make">{t('damageCheckTemplatesPage.vehicleMakeLabel')}</Label>
               <Input
                 id="tmd-make"
                 value={vehicleMake}
                 onChange={(e) => setVehicleMake(e.target.value)}
-                placeholder="e.g., Toyota"
+                placeholder={t('damageCheckTemplatesPage.vehicleMakePlaceholder')}
                 data-testid="input-metadata-make"
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="tmd-model">Vehicle Model</Label>
+              <Label htmlFor="tmd-model">{t('damageCheckTemplatesPage.vehicleModelLabel')}</Label>
               <Input
                 id="tmd-model"
                 value={vehicleModel}
                 onChange={(e) => setVehicleModel(e.target.value)}
-                placeholder="e.g., Camry"
+                placeholder={t('damageCheckTemplatesPage.vehicleModelPlaceholder')}
                 data-testid="input-metadata-model"
               />
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1">
-              <Label htmlFor="tmd-type">Vehicle Type</Label>
+              <Label htmlFor="tmd-type">{t('damageCheckTemplatesPage.vehicleTypeLabel')}</Label>
               <Select
                 value={vehicleType || "all"}
                 onValueChange={(v) => setVehicleType(v === "all" ? "" : v)}
@@ -655,16 +657,16 @@ function TemplateMetadataDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Any</SelectItem>
-                  <SelectItem value="sedan">Sedan</SelectItem>
-                  <SelectItem value="suv">SUV</SelectItem>
-                  <SelectItem value="van">Van</SelectItem>
-                  <SelectItem value="truck">Truck</SelectItem>
+                  <SelectItem value="all">{t('damageCheckTemplatesPage.anyOption')}</SelectItem>
+                  <SelectItem value="sedan">{t('damageCheckTemplatesPage.sedanOption')}</SelectItem>
+                  <SelectItem value="suv">{t('damageCheckTemplatesPage.suvOption')}</SelectItem>
+                  <SelectItem value="van">{t('damageCheckTemplatesPage.vanOption')}</SelectItem>
+                  <SelectItem value="truck">{t('damageCheckTemplatesPage.truckOption')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1">
-              <Label htmlFor="tmd-year-from">Build Year From</Label>
+              <Label htmlFor="tmd-year-from">{t('damageCheckTemplatesPage.buildYearFromLabel')}</Label>
               <Input
                 id="tmd-year-from"
                 value={buildYearFrom}
@@ -674,7 +676,7 @@ function TemplateMetadataDialog({
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="tmd-year-to">Build Year To</Label>
+              <Label htmlFor="tmd-year-to">{t('damageCheckTemplatesPage.buildYearToLabel')}</Label>
               <Input
                 id="tmd-year-to"
                 value={buildYearTo}
@@ -685,21 +687,21 @@ function TemplateMetadataDialog({
             </div>
           </div>
           <div className="space-y-1">
-            <Label htmlFor="tmd-language">Language</Label>
+            <Label htmlFor="tmd-language">{t('damageCheckTemplatesPage.languageLabel')}</Label>
             <Select value={language} onValueChange={(v) => setLanguage(v as "nl" | "en")}>
               <SelectTrigger id="tmd-language" data-testid="select-metadata-language">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="nl">Dutch (NL)</SelectItem>
-                <SelectItem value="en">English (EN)</SelectItem>
+                <SelectItem value="nl">{t('damageCheckTemplatesPage.dutchOption')}</SelectItem>
+                <SelectItem value="en">{t('damageCheckTemplatesPage.englishOption')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('damageCheckTemplatesPage.cancelButton')}
           </Button>
           <Button
             onClick={() => name.trim() && saveMutation.mutate()}
@@ -709,7 +711,7 @@ function TemplateMetadataDialog({
             {saveMutation.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
             ) : null}
-            {template ? "Save" : "Create"}
+            {template ? t('damageCheckTemplatesPage.saveButton') : t('damageCheckTemplatesPage.createButton')}
           </Button>
         </DialogFooter>
       </DialogContent>
