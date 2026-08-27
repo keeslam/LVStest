@@ -482,7 +482,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[85vh] p-0 overflow-hidden">
+        <DialogContent className="max-w-5xl max-h-[85vh] p-0 overflow-hidden">
           <DialogHeader className="p-4 border-b">
             <div className="flex items-center justify-between">
               <div>
