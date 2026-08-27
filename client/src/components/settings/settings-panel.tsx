@@ -90,6 +90,7 @@ export function SettingsPanel() {
   const [smtpUser, setSmtpUser] = useState("");
   const [smtpPassword, setSmtpPassword] = useState("");
   const [purpose, setPurpose] = useState<'apk' | 'maintenance' | 'gps' | 'documents' | 'custom' | 'default'>('default');
+  const [smtpTestResult, setSmtpTestResult] = useState<{ success: boolean; userMessage: string; suggestion?: string } | null>(null);
   
   // GPS settings state
   const [gpsRecipientEmail, setGpsRecipientEmail] = useState("");
@@ -561,6 +562,24 @@ export function SettingsPanel() {
     },
   });
 
+  const testSmtpConnectionMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/app-settings/email/test', {
+        smtpHost,
+        smtpPort,
+        smtpUser,
+        smtpPassword,
+      });
+      return response.json();
+    },
+    onSuccess: (result) => {
+      setSmtpTestResult(result);
+    },
+    onError: (error: any) => {
+      setSmtpTestResult({ success: false, userMessage: error.message || t('settingsPage.email.testConnectionErrorFallback') });
+    },
+  });
+
   const resetEmailForm = () => {
     setEditingEmail(null);
     setFromEmail("");
@@ -570,6 +589,7 @@ export function SettingsPanel() {
     setSmtpUser("");
     setSmtpPassword("");
     setPurpose('default');
+    setSmtpTestResult(null);
   };
 
   const handleOpenEmailDialog = (email?: EmailSetting) => {
@@ -1853,7 +1873,7 @@ export function SettingsPanel() {
                           <Input
                             id="smtpHost"
                             value={smtpHost}
-                            onChange={(e) => setSmtpHost(e.target.value)}
+                            onChange={(e) => { setSmtpHost(e.target.value); setSmtpTestResult(null); }}
                             placeholder="smtp.example.com"
                             data-testid="input-smtp-host"
                           />
@@ -1863,7 +1883,7 @@ export function SettingsPanel() {
                           <Input
                             id="smtpPort"
                             value={smtpPort}
-                            onChange={(e) => setSmtpPort(e.target.value)}
+                            onChange={(e) => { setSmtpPort(e.target.value); setSmtpTestResult(null); }}
                             placeholder="587"
                             data-testid="input-smtp-port"
                           />
@@ -1876,7 +1896,7 @@ export function SettingsPanel() {
                           <Input
                             id="smtpUser"
                             value={smtpUser}
-                            onChange={(e) => setSmtpUser(e.target.value)}
+                            onChange={(e) => { setSmtpUser(e.target.value); setSmtpTestResult(null); }}
                             placeholder={t('settingsPage.email.usernamePlaceholder')}
                             data-testid="input-smtp-user"
                           />
@@ -1887,11 +1907,32 @@ export function SettingsPanel() {
                             id="smtpPassword"
                             type="password"
                             value={smtpPassword}
-                            onChange={(e) => setSmtpPassword(e.target.value)}
+                            onChange={(e) => { setSmtpPassword(e.target.value); setSmtpTestResult(null); }}
                             placeholder={t('settingsPage.email.passwordPlaceholder')}
                             data-testid="input-smtp-password"
                           />
                         </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => { setSmtpTestResult(null); testSmtpConnectionMutation.mutate(); }}
+                          disabled={!smtpHost || !smtpUser || !smtpPassword || testSmtpConnectionMutation.isPending}
+                          data-testid="button-test-smtp-connection"
+                        >
+                          {testSmtpConnectionMutation.isPending ? t('settingsPage.email.testingConnection') : t('settingsPage.email.testConnectionButton')}
+                        </Button>
+                        {smtpTestResult && (
+                          <p className={`text-sm ${smtpTestResult.success ? 'text-green-700' : 'text-red-700'}`}>
+                            {smtpTestResult.userMessage}
+                            {smtpTestResult.suggestion && (
+                              <span className="block text-xs text-gray-500">{smtpTestResult.suggestion}</span>
+                            )}
+                          </p>
+                        )}
                       </div>
                     </div>
 

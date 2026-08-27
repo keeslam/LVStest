@@ -135,8 +135,11 @@ function getSmtpErrorMessage(error: any): { userMessage: string; suggestion?: st
     };
   }
 
-  // Connection refused
-  if (errorCode === 'ECONNREFUSED') {
+  // Connection refused/failed - nodemailer wraps the underlying socket error
+  // (ECONNREFUSED and friends) as its own 'ECONNECTION' code, verified against
+  // node_modules/nodemailer/lib/smtp-connection/index.js; the raw 'ECONNREFUSED'
+  // is kept here too in case a lower-level error ever surfaces unwrapped.
+  if (errorCode === 'ECONNECTION' || errorCode === 'ECONNREFUSED') {
     return {
       userMessage: 'Cannot connect to the email server. The server refused the connection.',
       suggestion: 'Check if the SMTP host and port are correct. Common ports: 587 (TLS), 465 (SSL), 25 (unencrypted).'
@@ -159,8 +162,10 @@ function getSmtpErrorMessage(error: any): { userMessage: string; suggestion?: st
     };
   }
 
-  // DNS errors
-  if (errorCode === 'ENOTFOUND') {
+  // DNS errors (nodemailer re-codes any DNS lookup failure as 'EDNS', regardless
+  // of the underlying Node error code - verified against node_modules/nodemailer/
+  // lib/smtp-connection/index.js, which never actually surfaces 'ENOTFOUND' itself)
+  if (errorCode === 'EDNS' || errorCode === 'ENOTFOUND') {
     return {
       userMessage: 'Email server not found. The hostname could not be resolved.',
       suggestion: 'Check if the SMTP host address is correct. Example: smtp.gmail.com'
@@ -182,22 +187,91 @@ function getSmtpErrorMessage(error: any): { userMessage: string; suggestion?: st
   };
 }
 
+export interface SmtpTestInput {
+  smtpHost: string;
+  smtpPort: number;
+  smtpUser: string;
+  smtpPassword: string;
+  smtpSecure: boolean;
+}
+
+export interface SmtpTestResult {
+  success: boolean;
+  userMessage: string;
+  suggestion?: string;
+}
+
+// Checks connectivity + authentication only (nodemailer's verify()) - never sends
+// an actual message, so this is safe to call as often as needed while an admin
+// is trying out credentials in the Settings UI.
+export async function testSmtpConnection(input: SmtpTestInput): Promise<SmtpTestResult> {
+  const transporter = nodemailer.createTransport({
+    host: input.smtpHost,
+    port: input.smtpPort,
+    secure: input.smtpSecure,
+    auth: {
+      user: input.smtpUser,
+      pass: input.smtpPassword,
+    },
+    tls: {
+      rejectUnauthorized: false
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+  });
+
+  try {
+    await transporter.verify();
+    return { success: true, userMessage: 'Connection successful. The SMTP server accepted the credentials.' };
+  } catch (error: any) {
+    const { userMessage, suggestion } = getSmtpErrorMessage(error);
+    console.error('❌ SMTP connection test failed:', error.code || error.message);
+    return { success: false, userMessage, suggestion };
+  } finally {
+    transporter.close();
+  }
+}
+
+// Reuse one pooled SMTP connection per distinct set of credentials instead of
+// opening/authenticating/closing a brand new connection for every single email.
+// A bulk send (e.g. 200 APK reminders) previously did 200 separate SMTP logins
+// in a row - a pattern several providers rate-limit or flag as abuse on its own,
+// independent of whether each individual message was legitimate.
+const cachedTransporters: Map<string, nodemailer.Transporter> = new Map();
+
+function transporterKey(config: EmailConfig): string {
+  return `${config.smtpHost}:${config.smtpPort}:${config.smtpUser}:${config.smtpSecure}`;
+}
+
+function getTransporter(config: EmailConfig): nodemailer.Transporter {
+  const key = transporterKey(config);
+  const cached = cachedTransporters.get(key);
+  if (cached) {
+    return cached;
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: config.smtpHost,
+    port: config.smtpPort,
+    secure: config.smtpSecure,
+    auth: {
+      user: config.smtpUser,
+      pass: config.smtpPassword,
+    },
+    tls: {
+      rejectUnauthorized: false // Allow certificate validation bypass for servers with certificate mismatches
+    },
+    pool: true,
+    maxConnections: 2,
+    maxMessages: 100,
+  });
+  cachedTransporters.set(key, transporter);
+  return transporter;
+}
+
 async function sendViaSmtp(config: EmailConfig, options: EmailOptions): Promise<boolean> {
   try {
-    const transportOptions: any = {
-      host: config.smtpHost,
-      port: config.smtpPort,
-      secure: config.smtpSecure,
-      auth: {
-        user: config.smtpUser,
-        pass: config.smtpPassword,
-      },
-      tls: {
-        rejectUnauthorized: false // Allow certificate validation bypass for servers with certificate mismatches
-      }
-    };
-
-    const transporter = nodemailer.createTransport(transportOptions);
+    const transporter = getTransporter(config);
 
     const mailOptions: any = {
       from: `"${config.fromName}" <${config.fromEmail}>`,
@@ -236,9 +310,15 @@ export async function sendEmail(options: EmailOptions, purpose?: 'apk' | 'mainte
   return sendViaSmtp(config, options);
 }
 
-// Clear the cache - useful when settings are updated
+// Clear the cache - useful when settings are updated. Also closes any pooled
+// SMTP connections so a credential change can't leave an old connection
+// authenticated under the previous password.
 export function clearEmailConfigCache(): void {
   cachedConfigs.clear();
+  for (const transporter of cachedTransporters.values()) {
+    transporter.close();
+  }
+  cachedTransporters.clear();
   console.log('🔄 Email config cache cleared');
 }
 

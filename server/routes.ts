@@ -43,7 +43,7 @@ import { ObjectStorageService } from "./objectStorage";
 import { realtimeEvents } from "./realtime-events";
 import { hasPermission, requireAdmin } from "./middleware/permissions.js";
 import { AuditLogger } from "./utils/security/auditLogger.js";
-import { clearEmailConfigCache, sendEmail } from "./utils/email-service";
+import { clearEmailConfigCache, sendEmail, testSmtpConnection } from "./utils/email-service";
 import { 
   getVehicleStatusContext, 
   validateManualStatusChange, 
@@ -10015,11 +10015,22 @@ export async function registerRoutes(app: Express): Promise<void> {
   // APP SETTINGS ROUTES
   // ============================================
 
+  // Strip SMTP credentials out of a setting before it goes to a general-purpose
+  // endpoint that any authenticated user (not just admins) can call. The admin-only
+  // /api/app-settings/:category route below is the one place the real password is
+  // still returned, since the Settings UI needs it to pre-fill the edit dialog.
+  function redactAppSetting<T extends { value?: any } | undefined>(setting: T): T {
+    if (!setting?.value || typeof setting.value !== 'object' || !('smtpPassword' in setting.value)) {
+      return setting;
+    }
+    return { ...setting, value: { ...setting.value, smtpPassword: '' } };
+  }
+
   // Get all app settings
   app.get("/api/app-settings", requireAuth, async (req: Request, res: Response) => {
     try {
       const settings = await storage.getAllAppSettings();
-      res.json(settings);
+      res.json(settings.map(redactAppSetting));
     } catch (error) {
       console.error("Error fetching app settings:", error);
       res.status(500).json({ message: "Error fetching app settings" });
@@ -10193,8 +10204,8 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.get("/api/app-settings/key/:key", requireAuth, async (req: Request, res: Response) => {
     try {
       const { key } = req.params;
-      const setting = await storage.getAppSettingByKey(key);
-      
+      const setting = redactAppSetting(await storage.getAppSettingByKey(key));
+
       // Special handling for calendar_settings: auto-calculate Dutch holidays for multiple years
       if (key === 'calendar_settings' && setting?.value) {
         const currentYear = new Date().getFullYear();
@@ -10275,7 +10286,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Get app settings by category
-  app.get("/api/app-settings/:category", requireAuth, async (req: Request, res: Response) => {
+  app.get("/api/app-settings/:category", hasPermission(UserPermission.MANAGE_SETTINGS), async (req: Request, res: Response) => {
     try {
       const { category } = req.params;
       const settings = await storage.getAppSettingsByCategory(category);
@@ -10286,8 +10297,34 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  // Test SMTP credentials/connectivity without sending an actual email.
+  // Accepts the fields straight from the (possibly unsaved) Settings form so an
+  // admin can verify a change before persisting it.
+  app.post("/api/app-settings/email/test", hasPermission(UserPermission.MANAGE_SETTINGS), async (req: Request, res: Response) => {
+    try {
+      const { smtpHost, smtpPort, smtpUser, smtpPassword, smtpSecure } = req.body;
+
+      if (!smtpHost || !smtpUser || !smtpPassword) {
+        return res.status(400).json({ success: false, userMessage: 'SMTP host, username and password are required to test the connection.' });
+      }
+
+      const result = await testSmtpConnection({
+        smtpHost,
+        smtpPort: smtpPort ? parseInt(smtpPort) : 587,
+        smtpUser,
+        smtpPassword,
+        smtpSecure: !!smtpSecure,
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error testing SMTP connection:", error);
+      res.status(500).json({ success: false, userMessage: "Unexpected error while testing the connection." });
+    }
+  });
+
   // Create or update app setting (upsert by key)
-  app.post("/api/app-settings", requireAuth, async (req: Request, res: Response) => {
+  app.post("/api/app-settings", hasPermission(UserPermission.MANAGE_SETTINGS), async (req: Request, res: Response) => {
     try {
       const user = req.user;
       const { key, value, category, description } = req.body;
@@ -10303,6 +10340,9 @@ export async function registerRoutes(app: Express): Promise<void> {
           description,
           updatedBy: user ? user.username : null,
         });
+        if (updated?.category === 'email') {
+          clearEmailConfigCache();
+        }
         res.json(updated);
       } else {
         // Create new setting
@@ -10314,6 +10354,9 @@ export async function registerRoutes(app: Express): Promise<void> {
           createdBy: user ? user.username : null,
           updatedBy: user ? user.username : null,
         });
+        if (created.category === 'email') {
+          clearEmailConfigCache();
+        }
         res.json(created);
       }
     } catch (error) {
@@ -10323,7 +10366,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Update app setting by ID
-  app.put("/api/app-settings/:id", requireAuth, async (req: Request, res: Response) => {
+  app.put("/api/app-settings/:id", hasPermission(UserPermission.MANAGE_SETTINGS), async (req: Request, res: Response) => {
     try {
       const user = req.user;
       const id = parseInt(req.params.id);
@@ -10341,6 +10384,10 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "App setting not found" });
       }
 
+      if (updated.category === 'email') {
+        clearEmailConfigCache();
+      }
+
       res.json(updated);
     } catch (error) {
       console.error("Error updating app setting:", error);
@@ -10349,13 +10396,18 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Delete app setting
-  app.delete("/api/app-settings/:id", requireAuth, async (req: Request, res: Response) => {
+  app.delete("/api/app-settings/:id", hasPermission(UserPermission.MANAGE_SETTINGS), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      const existing = await storage.getAppSetting(id);
       const success = await storage.deleteAppSetting(id);
 
       if (!success) {
         return res.status(404).json({ message: "App setting not found" });
+      }
+
+      if (existing?.category === 'email') {
+        clearEmailConfigCache();
       }
 
       res.json({ success: true });
