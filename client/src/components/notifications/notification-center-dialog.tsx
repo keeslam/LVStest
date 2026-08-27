@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
+import { useDismissedNotifications } from "@/hooks/use-dismissed-notifications";
 import { NotificationsDialog } from "@/components/notifications/notifications-dialog";
 import {
   Dialog,
@@ -90,6 +91,8 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
   const [editingNotification, setEditingNotification] = useState<CustomNotification | null>(null);
   const [deleteNotification, setDeleteNotification] = useState<CustomNotification | null>(null);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [pendingDismiss, setPendingDismiss] = useState<{ key: string; label: string } | null>(null);
+  const { isDismissed, dismiss } = useDismissedNotifications();
   const today = new Date();
 
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
@@ -203,18 +206,6 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
       invalidateByPrefix("/api/custom-notifications/unread");
     },
   });
-
-  const isDismissed = (key: string): boolean => {
-    const dismissedTimestamp = localStorage.getItem(key);
-    if (!dismissedTimestamp) return false;
-    const dismissedDate = new Date(parseInt(dismissedTimestamp));
-    const daysSinceDismissal = differenceInDays(today, dismissedDate);
-    if (daysSinceDismissal > 7) {
-      localStorage.removeItem(key);
-      return false;
-    }
-    return true;
-  };
 
   const apkExpiringItems = apkExpiringVehicles
     .filter((v) => !isDismissed(`dismissed_apk_${v.id}`))
@@ -518,12 +509,14 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
               <TabsTrigger value="apk" className="text-xs" data-testid="tab-apk">{t('centerDialog.apkTab')}</TabsTrigger>
               <TabsTrigger value="warranty" className="text-xs" data-testid="tab-warranty">{t('centerDialog.warrantyTab')}</TabsTrigger>
               <TabsTrigger value="custom" className="text-xs" data-testid="tab-custom">
-                {t('centerDialog.customTab')}
-                {nonSpareCustomNotifications.filter((n) => !n.isRead).length > 0 && (
-                  <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 text-xs">
-                    {nonSpareCustomNotifications.filter((n) => !n.isRead).length}
-                  </Badge>
-                )}
+                <span className="flex items-center gap-1.5">
+                  {t('centerDialog.customTab')}
+                  {nonSpareCustomNotifications.filter((n) => !n.isRead).length > 0 && (
+                    <Badge variant="destructive" className="h-4 min-w-4 px-1 rounded-full text-[10px] leading-none justify-center">
+                      {nonSpareCustomNotifications.filter((n) => !n.isRead).length}
+                    </Badge>
+                  )}
+                </span>
               </TabsTrigger>
             </TabsList>
 
@@ -599,10 +592,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                             description={`${v.brand} ${v.model}`}
                             date={v.apkDate || ""}
                             onView={() => openAPKDialog(v.id)}
-                            onDismiss={() => {
-                              localStorage.setItem(`dismissed_apk_${v.id}`, Date.now().toString());
-                              invalidateByPrefix("/api/vehicles/apk-expiring");
-                            }}
+                            onDismiss={() => setPendingDismiss({ key: `dismissed_apk_${v.id}`, label: formatLicensePlate(v.licensePlate) })}
                           />
                         ))}
                       </>
@@ -618,10 +608,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                             description={`${v.brand} ${v.model}`}
                             date={v.warrantyEndDate || ""}
                             onView={() => openVehicleDialog(v.id)}
-                            onDismiss={() => {
-                              localStorage.setItem(`dismissed_warranty_${v.id}`, Date.now().toString());
-                              invalidateByPrefix("/api/vehicles/warranty-expiring");
-                            }}
+                            onDismiss={() => setPendingDismiss({ key: `dismissed_warranty_${v.id}`, label: formatLicensePlate(v.licensePlate) })}
                           />
                         ))}
                       </>
@@ -704,10 +691,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                       description={`${v.brand} ${v.model}`}
                       date={v.apkDate || ""}
                       onView={() => openAPKDialog(v.id)}
-                      onDismiss={() => {
-                        localStorage.setItem(`dismissed_apk_${v.id}`, Date.now().toString());
-                        invalidateByPrefix("/api/vehicles/apk-expiring");
-                      }}
+                      onDismiss={() => setPendingDismiss({ key: `dismissed_apk_${v.id}`, label: formatLicensePlate(v.licensePlate) })}
                     />
                   ))
                 )}
@@ -729,10 +713,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                       description={`${v.brand} ${v.model}`}
                       date={v.warrantyEndDate || ""}
                       onView={() => openVehicleDialog(v.id)}
-                      onDismiss={() => {
-                        localStorage.setItem(`dismissed_warranty_${v.id}`, Date.now().toString());
-                        invalidateByPrefix("/api/vehicles/warranty-expiring");
-                      }}
+                      onDismiss={() => setPendingDismiss({ key: `dismissed_warranty_${v.id}`, label: formatLicensePlate(v.licensePlate) })}
                     />
                   ))
                 )}
@@ -808,6 +789,29 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
               data-testid="button-confirm-delete"
             >
               {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t('centerDialog.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!pendingDismiss} onOpenChange={(open) => { if (!open) setPendingDismiss(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('centerDialog.dismissNotificationTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('centerDialog.dismissConfirm', { label: pendingDismiss?.label })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingDismiss) dismiss(pendingDismiss.key);
+                setPendingDismiss(null);
+              }}
+              data-testid="button-confirm-dismiss"
+            >
+              {t('centerDialog.dismissButton')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

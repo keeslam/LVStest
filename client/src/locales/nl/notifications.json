@@ -70,7 +70,10 @@
     "unread": "Ongelezen",
     "read": "Gelezen",
     "deleteNotificationTitle": "Melding verwijderen",
-    "deleteConfirm": "Weet je zeker dat je \"{{title}}\" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."
+    "deleteConfirm": "Weet je zeker dat je \"{{title}}\" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+    "dismissNotificationTitle": "Melding negeren",
+    "dismissConfirm": "Melding voor {{label}} negeren voor 7 dagen? Deze verschijnt daarna weer als de keuring nog steeds verlopen is.",
+    "dismissButton": "Negeren"
   },
   "customerCommunications": {
     "pageTitle": "Klantcommunicatie",

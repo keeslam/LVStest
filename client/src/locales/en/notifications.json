@@ -70,7 +70,10 @@
     "unread": "Unread",
     "read": "Read",
     "deleteNotificationTitle": "Delete Notification",
-    "deleteConfirm": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone."
+    "deleteConfirm": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone.",
+    "dismissNotificationTitle": "Dismiss Notification",
+    "dismissConfirm": "Dismiss the notification for {{label}} for 7 days? It will reappear after that if it's still overdue.",
+    "dismissButton": "Dismiss"
   },
   "customerCommunications": {
     "pageTitle": "Customer Communications",
