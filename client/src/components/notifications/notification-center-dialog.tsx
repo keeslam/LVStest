@@ -551,10 +551,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                               title={t('centerDialog.reservationStartingSoon', { id: r.id })}
                               description={`${vehicle?.brand} ${vehicle?.model} - ${formatLicensePlate(vehicle?.licensePlate || "")}`}
                               date={r.startDate}
-                              onView={() => {
-                                onOpenChange(false);
-                                openReservationDialog(r.id);
-                              }}
+                              onView={() => openReservationDialog(r.id)}
                             />
                           );
                         })}
@@ -572,10 +569,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                               title={t('centerDialog.maintenanceScheduledTitle', { category: m.maintenanceCategory || t('centerDialog.maintenanceFallback') })}
                               description={`${vehicle?.brand} ${vehicle?.model} - ${formatLicensePlate(vehicle?.licensePlate || "")}`}
                               date={m.startDate}
-                              onView={() => {
-                                onOpenChange(false);
-                                if (m.vehicleId) openVehicleDialog(m.vehicleId);
-                              }}
+                              onView={() => { if (m.vehicleId) openVehicleDialog(m.vehicleId); }}
                             />
                           );
                         })}
@@ -591,10 +585,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                             title={t('centerDialog.spareNeededFor', { name: p.customer?.name || t('centerDialog.customerFallback') })}
                             description={t('centerDialog.spareNeededDescription', { id: p.id })}
                             date={p.startDate}
-                            onView={() => {
-                              onOpenChange(false);
-                              openSpareAssignmentDialog(p.id);
-                            }}
+                            onView={() => openSpareAssignmentDialog(p.id)}
                           />
                         ))}
                       </>
@@ -609,10 +600,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                             title={t('centerDialog.apkExpiringTitle', { plate: formatLicensePlate(v.licensePlate) })}
                             description={`${v.brand} ${v.model}`}
                             date={v.apkDate || ""}
-                            onView={() => {
-                              onOpenChange(false);
-                              openAPKDialog(v.id);
-                            }}
+                            onView={() => openAPKDialog(v.id)}
                             onDismiss={() => {
                               localStorage.setItem(`dismissed_apk_${v.id}`, Date.now().toString());
                               invalidateByPrefix("/api/vehicles/apk-expiring");
@@ -631,10 +619,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                             title={t('centerDialog.warrantyExpiringTitle', { plate: formatLicensePlate(v.licensePlate) })}
                             description={`${v.brand} ${v.model}`}
                             date={v.warrantyEndDate || ""}
-                            onView={() => {
-                              onOpenChange(false);
-                              openVehicleDialog(v.id);
-                            }}
+                            onView={() => openVehicleDialog(v.id)}
                             onDismiss={() => {
                               localStorage.setItem(`dismissed_warranty_${v.id}`, Date.now().toString());
                               invalidateByPrefix("/api/vehicles/warranty-expiring");
@@ -674,10 +659,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                         title={t('centerDialog.reservationStartingSoon', { id: r.id })}
                         description={`${vehicle?.brand} ${vehicle?.model} - ${formatLicensePlate(vehicle?.licensePlate || "")}`}
                         date={r.startDate}
-                        onView={() => {
-                          onOpenChange(false);
-                          openReservationDialog(r.id);
-                        }}
+                        onView={() => openReservationDialog(r.id)}
                       />
                     );
                   })
@@ -701,10 +683,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                         title={t('centerDialog.maintenanceScheduledTitle', { category: m.maintenanceCategory || t('centerDialog.maintenanceFallback') })}
                         description={`${vehicle?.brand} ${vehicle?.model} - ${formatLicensePlate(vehicle?.licensePlate || "")}`}
                         date={m.startDate}
-                        onView={() => {
-                          onOpenChange(false);
-                          if (m.vehicleId) openVehicleDialog(m.vehicleId);
-                        }}
+                        onView={() => { if (m.vehicleId) openVehicleDialog(m.vehicleId); }}
                       />
                     );
                   })
@@ -726,10 +705,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                       title={t('centerDialog.apkExpiringTitle', { plate: formatLicensePlate(v.licensePlate) })}
                       description={`${v.brand} ${v.model}`}
                       date={v.apkDate || ""}
-                      onView={() => {
-                        onOpenChange(false);
-                        openAPKDialog(v.id);
-                      }}
+                      onView={() => openAPKDialog(v.id)}
                       onDismiss={() => {
                         localStorage.setItem(`dismissed_apk_${v.id}`, Date.now().toString());
                         invalidateByPrefix("/api/vehicles/apk-expiring");
@@ -754,10 +730,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                       title={t('centerDialog.warrantyExpiringTitle', { plate: formatLicensePlate(v.licensePlate) })}
                       description={`${v.brand} ${v.model}`}
                       date={v.warrantyEndDate || ""}
-                      onView={() => {
-                        onOpenChange(false);
-                        openVehicleDialog(v.id);
-                      }}
+                      onView={() => openVehicleDialog(v.id)}
                       onDismiss={() => {
                         localStorage.setItem(`dismissed_warranty_${v.id}`, Date.now().toString());
                         invalidateByPrefix("/api/vehicles/warranty-expiring");
