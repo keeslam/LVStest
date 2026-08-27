@@ -46,7 +46,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Vehicle, Reservation, CustomNotification } from "@shared/schema";
+import { Vehicle, Reservation, Customer, CustomNotification } from "@shared/schema";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import {
@@ -65,6 +65,7 @@ import {
   Info,
   Settings,
   ExternalLink,
+  Search,
 } from "lucide-react";
 
 interface NotificationCenterDialogProps {
@@ -92,11 +93,16 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
   const [deleteNotification, setDeleteNotification] = useState<CustomNotification | null>(null);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [pendingDismiss, setPendingDismiss] = useState<{ key: string; label: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const { isDismissed, dismiss } = useDismissedNotifications();
   const today = new Date();
 
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
+  });
+
+  const { data: customers = [] } = useQuery<Customer[]>({
+    queryKey: ["/api/customers"],
   });
 
   const { data: apkExpiringVehicles = [] } = useQuery<Vehicle[]>({
@@ -207,12 +213,24 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
     },
   });
 
+  const search = searchQuery.trim().toLowerCase();
+  const matchesSearch = (text: string) => search === "" || text.toLowerCase().includes(search);
+  const vehicleSearchText = (vehicleId: number | null | undefined) => {
+    const v = vehicles.find((veh) => veh.id === vehicleId);
+    return v ? `${v.brand} ${v.model} ${v.licensePlate}` : "";
+  };
+  const customerSearchText = (customerId: number | null | undefined) => {
+    return customers.find((c) => c.id === customerId)?.name || "";
+  };
+
   const apkExpiringItems = apkExpiringVehicles
     .filter((v) => !isDismissed(`dismissed_apk_${v.id}`))
+    .filter((v) => matchesSearch(`${v.brand} ${v.model} ${v.licensePlate}`))
     .sort((a, b) => new Date(a.apkDate || "").getTime() - new Date(b.apkDate || "").getTime());
 
   const warrantyExpiringItems = warrantyExpiringVehicles
     .filter((v) => !isDismissed(`dismissed_warranty_${v.id}`))
+    .filter((v) => matchesSearch(`${v.brand} ${v.model} ${v.licensePlate}`))
     .sort((a, b) => new Date(a.warrantyEndDate || "").getTime() - new Date(b.warrantyEndDate || "").getTime());
 
   const upcomingReservationItems = upcomingReservations
@@ -220,6 +238,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
       const daysUntil = differenceInDays(new Date(r.startDate), today);
       return daysUntil >= 0 && daysUntil <= 2;
     })
+    .filter((r) => matchesSearch(`${vehicleSearchText(r.vehicleId)} ${customerSearchText(r.customerId)} ${r.id}`))
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
 
   const upcomingMaintenanceItems = upcomingMaintenanceReservations
@@ -227,11 +246,12 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
       const daysUntil = differenceInDays(new Date(r.startDate), today);
       return daysUntil >= 0 && daysUntil <= 7;
     })
+    .filter((r) => matchesSearch(`${vehicleSearchText(r.vehicleId)} ${r.maintenanceCategory || ""}`))
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
 
-  const nonSpareCustomNotifications = customNotifications.filter(
-    (n) => !n.title.includes("Spare Vehicle Assignment")
-  );
+  const nonSpareCustomNotifications = customNotifications
+    .filter((n) => !n.title.includes("Spare Vehicle Assignment"))
+    .filter((n) => matchesSearch(`${n.title} ${n.description}`));
 
   const totalNotifications =
     apkExpiringItems.length +
@@ -280,6 +300,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
     icon,
     title,
     description,
+    badge,
     date,
     onView,
     onDismiss,
@@ -287,6 +308,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
     icon: ReactNode;
     title: string;
     description: string;
+    badge?: string;
     date: string;
     onView?: () => void;
     onDismiss?: () => void;
@@ -294,7 +316,14 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
     <div className="flex items-start gap-3 p-3 border-b hover:bg-muted/50 transition-colors">
       <div className="mt-0.5">{icon}</div>
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm">{title}</p>
+        <div className="flex items-center gap-2">
+          <p className="font-medium text-sm">{title}</p>
+          {badge && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 leading-normal">
+              {badge}
+            </Badge>
+          )}
+        </div>
         <p className="text-xs text-muted-foreground truncate">{description}</p>
         <p className="text-xs text-muted-foreground mt-1">{formatDate(date)}</p>
       </div>
@@ -312,6 +341,26 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
       </div>
     </div>
   );
+
+  // Builds the description line for a reservation notification card: vehicle,
+  // customer (or "spare vehicle for <customer>" when it's a replacement
+  // reservation, since those aren't billed to a customer of their own).
+  const describeReservation = (r: Reservation): { description: string; badge?: string } => {
+    const vehicle = vehicles.find((v) => v.id === r.vehicleId);
+    const vehicleLabel = vehicle ? `${vehicle.brand} ${vehicle.model} - ${formatLicensePlate(vehicle.licensePlate)}` : t('centerDialog.unknownVehicle');
+    const customer = customers.find((c) => c.id === r.customerId);
+
+    if (r.type === 'replacement') {
+      return {
+        description: customer ? t('centerDialog.spareForCustomer', { vehicle: vehicleLabel, customer: customer.name }) : vehicleLabel,
+        badge: t('centerDialog.spareBadge'),
+      };
+    }
+
+    return {
+      description: customer ? `${vehicleLabel} - ${customer.name}` : vehicleLabel,
+    };
+  };
 
   const CustomNotificationCard = ({ notification }: { notification: CustomNotification }) => (
     <div className="flex items-start gap-3 p-3 border-b hover:bg-muted/50 transition-colors group">
@@ -501,6 +550,19 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
             </div>
           </DialogHeader>
 
+          <div className="px-4 pt-3">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('centerDialog.searchPlaceholder')}
+                className="pl-8 h-9"
+                data-testid="input-notification-search"
+              />
+            </div>
+          </div>
+
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
             <TabsList className="grid grid-cols-6 m-2">
               <TabsTrigger value="all" className="text-xs" data-testid="tab-all">{t('centerDialog.all')}</TabsTrigger>
@@ -534,13 +596,14 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                       <>
                         <div className="px-4 py-2 bg-muted/50 text-xs font-medium">{t('centerDialog.upcomingReservations')}</div>
                         {upcomingReservationItems.map((r) => {
-                          const vehicle = vehicles.find((v) => v.id === r.vehicleId);
+                          const { description, badge } = describeReservation(r);
                           return (
                             <NotificationCard
                               key={`res-${r.id}`}
                               icon={<Calendar className="h-5 w-5 text-blue-500" />}
                               title={t('centerDialog.reservationStartingSoon', { id: r.id })}
-                              description={`${vehicle?.brand} ${vehicle?.model} - ${formatLicensePlate(vehicle?.licensePlate || "")}`}
+                              description={description}
+                              badge={badge}
                               date={r.startDate}
                               onView={() => openReservationDialog(r.id)}
                             />
@@ -636,13 +699,14 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                   />
                 ) : (
                   upcomingReservationItems.map((r) => {
-                    const vehicle = vehicles.find((v) => v.id === r.vehicleId);
+                    const { description, badge } = describeReservation(r);
                     return (
                       <NotificationCard
                         key={`res-tab-${r.id}`}
                         icon={<Calendar className="h-5 w-5 text-blue-500" />}
                         title={t('centerDialog.reservationStartingSoon', { id: r.id })}
-                        description={`${vehicle?.brand} ${vehicle?.model} - ${formatLicensePlate(vehicle?.licensePlate || "")}`}
+                        description={description}
+                        badge={badge}
                         date={r.startDate}
                         onView={() => openReservationDialog(r.id)}
                       />
