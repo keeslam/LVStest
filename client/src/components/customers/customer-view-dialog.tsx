@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,12 +27,10 @@ export function CustomerViewDialog({
 }: CustomerViewDialogProps) {
   const { t } = useTranslation("customers");
   const [internalOpen, setInternalOpen] = useState(false);
-  const allowClose = useRef(false);
-  
+
   // Use controlled state if provided, otherwise use internal state
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
-  const setOpen = isControlled ? (controlledOnOpenChange || (() => {})) : setInternalOpen;
 
   // Custom trigger or default "View" button
   const trigger = children || (
@@ -42,41 +40,20 @@ export function CustomerViewDialog({
     </Button>
   );
 
-  // Explicit close function that can only be called from within this component
-  const handleClose = () => {
-    allowClose.current = true;
+  // Handle dialog open/close state changes. onPointerDownOutside/onInteractOutside
+  // below already stop a click on another nested dialog from closing this one, so
+  // this doesn't need its own extra gate on top - a prior version did, and it
+  // ended up blocking the dialog's own close (X) button too, since Radix routes
+  // that through the same onOpenChange(false).
+  const handleOpenChange = (newOpen: boolean) => {
     if (isControlled && controlledOnOpenChange) {
-      controlledOnOpenChange(false);
+      controlledOnOpenChange(newOpen);
     } else {
-      setInternalOpen(false);
+      setInternalOpen(newOpen);
     }
-    // Reset the flag after a short delay
-    setTimeout(() => {
-      allowClose.current = false;
-    }, 100);
   };
 
-  // Handle dialog open/close state changes
-  const handleOpenChange = (newOpen: boolean) => {
-    if (newOpen) {
-      // Always allow opening
-      if (isControlled && controlledOnOpenChange) {
-        controlledOnOpenChange(true);
-      } else {
-        setInternalOpen(true);
-      }
-    } else {
-      // Only allow closing if explicitly allowed or if controlled from outside
-      if (isControlled || allowClose.current) {
-        if (isControlled && controlledOnOpenChange) {
-          controlledOnOpenChange(false);
-        } else {
-          setInternalOpen(false);
-        }
-      }
-      // Otherwise, ignore the close request (from nested dialogs, etc.)
-    }
-  };
+  const handleClose = () => handleOpenChange(false);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
