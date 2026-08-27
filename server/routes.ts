@@ -6342,7 +6342,7 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
-  // Email document - MailerSend integration 
+  // Email a single document using the configured SMTP settings
   app.post("/api/documents/:id/email", hasPermission(UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -6386,38 +6386,35 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Document file not found on disk" });
       }
 
-      // Use MailerSend to send email with attachment
-      const { MailerSend, EmailParams, Sender, Recipient, Attachment } = require("mailersend");
-
-      const mailerSend = new MailerSend({
-        apiKey: process.env.MAILERSEND_API_KEY,
-      });
-
       // Read file data for attachment
       const fileData = fs.readFileSync(absolutePath);
-      const base64Data = fileData.toString('base64');
 
       // Parse recipients (comma-separated)
       const recipientList = recipients.split(',').map((email: string) => email.trim()).filter((email: string) => email);
-      
-      const sentFrom = new Sender("noreply@yourdomain.com", "Car Rental System");
 
-      const recipients_list = recipientList.map((email: string) => new Recipient(email));
+      if (recipientList.length === 0) {
+        return res.status(400).json({ message: "At least one valid recipient email is required" });
+      }
 
-      // Create attachment
-      const attachment = new Attachment(base64Data, document.fileName, "attachment");
+      // Use the configured email service (respects the admin's SMTP settings)
+      const emailSent = await sendEmail({
+        to: recipientList.join(', '),
+        subject: subject,
+        text: message || "Please find the attached document.",
+        html: `<p>${(message || "Please find the attached document.").replace(/\n/g, '<br>')}</p>`,
+        attachments: [{
+          filename: document.fileName,
+          content: fileData,
+        }],
+      }, 'documents');
 
-      const emailParams = new EmailParams()
-        .setFrom(sentFrom)
-        .setTo(recipients_list)
-        .setSubject(subject)
-        .setText(message || "Please find the attached document.")
-        .setHtml(`<p>${(message || "Please find the attached document.").replace(/\n/g, '<br>')}</p>`)
-        .setAttachments([attachment]);
+      if (!emailSent) {
+        return res.status(500).json({
+          message: "Failed to send email. Please check your email configuration in Settings."
+        });
+      }
 
-      await mailerSend.email.send(emailParams);
-
-      res.json({ 
+      res.json({
         message: "Email sent successfully",
         recipients: recipientList.length,
         document: document.fileName

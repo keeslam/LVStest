@@ -24,15 +24,13 @@ export interface EmailError {
 }
 
 interface EmailConfig {
-  provider: string;
   fromEmail: string;
   fromName: string;
-  apiKey?: string;
-  smtpHost?: string;
-  smtpPort?: number;
-  smtpUser?: string;
-  smtpPassword?: string;
-  smtpSecure?: boolean;
+  smtpHost: string;
+  smtpPort: number;
+  smtpUser: string;
+  smtpPassword: string;
+  smtpSecure: boolean;
 }
 
 // Cache for email configs by purpose
@@ -87,11 +85,18 @@ async function getEmailConfig(purpose?: 'apk' | 'maintenance' | 'gps' | 'documen
     
     const value = typeof setting.value === 'string' ? JSON.parse(setting.value) : setting.value;
 
+    if (!value.fromEmail) {
+      console.error('❌ Email configuration missing fromEmail');
+      return null;
+    }
+    if (!value.smtpHost || !value.smtpUser || !value.smtpPassword) {
+      console.error('❌ SMTP configuration incomplete');
+      return null;
+    }
+
     const config: EmailConfig = {
-      provider: value.provider || 'smtp',
-      fromEmail: value.fromEmail || '',
+      fromEmail: value.fromEmail,
       fromName: value.fromName || 'Autolease Lam',
-      apiKey: value.apiKey,
       smtpHost: value.smtpHost,
       smtpPort: value.smtpPort ? parseInt(value.smtpPort) : 587,
       smtpUser: value.smtpUser,
@@ -99,27 +104,9 @@ async function getEmailConfig(purpose?: 'apk' | 'maintenance' | 'gps' | 'documen
       smtpSecure: value.smtpPort === '465'
     };
 
-    // Validate config
-    if (!config.fromEmail) {
-      console.error('❌ Email configuration missing fromEmail');
-      return null;
-    }
-
-    if (config.provider === 'smtp') {
-      if (!config.smtpHost || !config.smtpUser || !config.smtpPassword) {
-        console.error('❌ SMTP configuration incomplete');
-        return null;
-      }
-    } else if (config.provider === 'mailersend' || config.provider === 'sendgrid') {
-      if (!config.apiKey) {
-        console.error(`❌ ${config.provider} configuration missing API key`);
-        return null;
-      }
-    }
-
     cachedConfigs.set(cacheKey, { config, timestamp: now });
-    console.log(`✅ Email config loaded for ${purpose || 'default'}: ${config.provider} (from: ${config.fromEmail})`);
-    
+    console.log(`✅ Email config loaded for ${purpose || 'default'} (from: ${config.fromEmail})`);
+
     return config;
   } catch (error) {
     console.error('Error loading email configuration:', error);
@@ -238,107 +225,15 @@ async function sendViaSmtp(config: EmailConfig, options: EmailOptions): Promise<
   }
 }
 
-async function sendViaMailerSend(config: EmailConfig, options: EmailOptions): Promise<boolean> {
-  try {
-    const { MailerSend, EmailParams, Sender, Recipient, Attachment } = await import("mailersend");
-    
-    const mailerSend = new MailerSend({ apiKey: config.apiKey! });
-    const sentFrom = new Sender(config.fromEmail, config.fromName);
-    const recipients = [new Recipient(options.to, options.toName || "Customer")];
-
-    const emailParams = new EmailParams()
-      .setFrom(sentFrom)
-      .setTo(recipients)
-      .setSubject(options.subject);
-
-    if (options.html) {
-      emailParams.setHtml(options.html);
-    }
-    if (options.text) {
-      emailParams.setText(options.text);
-    }
-
-    if (options.attachments && options.attachments.length > 0) {
-      const mailerSendAttachments = options.attachments.map(att => {
-        const content = att.encoding === 'base64' 
-          ? att.content.toString() 
-          : Buffer.from(att.content).toString('base64');
-        return new Attachment(content, att.filename, "attachment");
-      });
-      emailParams.setAttachments(mailerSendAttachments);
-    }
-
-    await mailerSend.email.send(emailParams);
-    console.log('✅ MailerSend email sent successfully');
-    return true;
-  } catch (error) {
-    console.error('❌ MailerSend email error:', error);
-    return false;
-  }
-}
-
-async function sendViaSendGrid(config: EmailConfig, options: EmailOptions): Promise<boolean> {
-  try {
-    const sgMail = await import('@sendgrid/mail');
-    const mailService = sgMail.default;
-    
-    mailService.setApiKey(config.apiKey!);
-
-    const emailData: any = {
-      to: options.to,
-      from: {
-        email: config.fromEmail,
-        name: config.fromName
-      },
-      subject: options.subject,
-    };
-
-    if (options.text) {
-      emailData.text = options.text;
-    }
-    if (options.html) {
-      emailData.html = options.html;
-    }
-
-    if (options.attachments && options.attachments.length > 0) {
-      emailData.attachments = options.attachments.map(att => ({
-        content: att.encoding === 'base64' 
-          ? att.content.toString() 
-          : Buffer.from(att.content).toString('base64'),
-        filename: att.filename,
-        type: 'application/pdf',
-        disposition: 'attachment'
-      }));
-    }
-
-    await mailService.send(emailData);
-    console.log('✅ SendGrid email sent successfully');
-    return true;
-  } catch (error) {
-    console.error('❌ SendGrid email error:', error);
-    return false;
-  }
-}
-
 export async function sendEmail(options: EmailOptions, purpose?: 'apk' | 'maintenance' | 'gps' | 'documents' | 'custom'): Promise<boolean> {
   const config = await getEmailConfig(purpose);
-  
+
   if (!config) {
     console.error(`❌ Cannot send email: No valid email configuration found for purpose: ${purpose || 'default'}`);
     return false;
   }
 
-  switch (config.provider) {
-    case 'smtp':
-      return sendViaSmtp(config, options);
-    case 'mailersend':
-      return sendViaMailerSend(config, options);
-    case 'sendgrid':
-      return sendViaSendGrid(config, options);
-    default:
-      console.error(`❌ Unknown email provider: ${config.provider}`);
-      return false;
-  }
+  return sendViaSmtp(config, options);
 }
 
 // Clear the cache - useful when settings are updated

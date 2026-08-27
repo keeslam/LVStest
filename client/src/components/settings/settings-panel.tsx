@@ -45,12 +45,10 @@ interface EmailSetting {
   value: {
     fromEmail?: string;
     fromName?: string;
-    apiKey?: string;
     smtpHost?: string;
     smtpPort?: string;
     smtpUser?: string;
     smtpPassword?: string;
-    provider?: string;
     purpose?: 'apk' | 'maintenance' | 'gps' | 'documents' | 'custom' | 'default';
   };
   category: string;
@@ -87,12 +85,10 @@ export function SettingsPanel() {
   // Email form state
   const [fromEmail, setFromEmail] = useState("");
   const [fromName, setFromName] = useState("");
-  const [apiKey, setApiKey] = useState("");
   const [smtpHost, setSmtpHost] = useState("");
   const [smtpPort, setSmtpPort] = useState("");
   const [smtpUser, setSmtpUser] = useState("");
   const [smtpPassword, setSmtpPassword] = useState("");
-  const [provider, setProvider] = useState("mailersend");
   const [purpose, setPurpose] = useState<'apk' | 'maintenance' | 'gps' | 'documents' | 'custom' | 'default'>('default');
   
   // GPS settings state
@@ -569,12 +565,10 @@ export function SettingsPanel() {
     setEditingEmail(null);
     setFromEmail("");
     setFromName("");
-    setApiKey("");
     setSmtpHost("");
     setSmtpPort("");
     setSmtpUser("");
     setSmtpPassword("");
-    setProvider("mailersend");
     setPurpose('default');
   };
 
@@ -583,12 +577,10 @@ export function SettingsPanel() {
       setEditingEmail(email);
       setFromEmail(email.value.fromEmail || "");
       setFromName(email.value.fromName || "");
-      setApiKey(email.value.apiKey || "");
       setSmtpHost(email.value.smtpHost || "");
       setSmtpPort(email.value.smtpPort || "");
       setSmtpUser(email.value.smtpUser || "");
       setSmtpPassword(email.value.smtpPassword || "");
-      setProvider(email.value.provider || "mailersend");
       setPurpose(email.value.purpose || 'default');
     } else {
       resetEmailForm();
@@ -598,24 +590,19 @@ export function SettingsPanel() {
 
   const handleSaveEmail = () => {
     const emailData = {
-      key: `email_${purpose}_${provider}`,
+      key: `email_${purpose}`,
       category: 'email',
       value: {
         fromEmail,
         fromName,
-        provider,
         purpose,
-        ...(provider === 'smtp' ? {
-          smtpHost,
-          smtpPort,
-          smtpUser,
-          smtpPassword,
-        } : {
-          apiKey,
-        }),
+        smtpHost,
+        smtpPort,
+        smtpUser,
+        smtpPassword,
       },
     };
-    
+
     saveEmailSetting.mutate(emailData);
   };
 
@@ -1818,38 +1805,22 @@ export function SettingsPanel() {
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="provider">{t('settingsPage.email.providerLabel')}</Label>
-                          <select
-                            id="provider"
-                            value={provider}
-                            onChange={(e) => setProvider(e.target.value)}
-                            className="w-full mt-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
-                            data-testid="select-email-provider"
-                          >
-                            <option value="mailersend">MailerSend</option>
-                            <option value="sendgrid">SendGrid</option>
-                            <option value="smtp">{t('settingsPage.email.providerSmtp')}</option>
-                          </select>
-                        </div>
-                        <div>
-                          <Label htmlFor="purpose">{t('settingsPage.email.purposeLabel')}</Label>
-                          <select
-                            id="purpose"
-                            value={purpose}
-                            onChange={(e) => setPurpose(e.target.value as any)}
-                            className="w-full mt-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
-                            data-testid="select-email-purpose"
-                          >
-                            {EMAIL_PURPOSES.map(p => (
-                              <option key={p.value} value={p.value}>{t(`settingsPage.email.purposes.${p.value}.label`)}</option>
-                            ))}
-                          </select>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {t(`settingsPage.email.purposes.${purpose}.description`)}
-                          </p>
-                        </div>
+                      <div>
+                        <Label htmlFor="purpose">{t('settingsPage.email.purposeLabel')}</Label>
+                        <select
+                          id="purpose"
+                          value={purpose}
+                          onChange={(e) => setPurpose(e.target.value as any)}
+                          className="w-full mt-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+                          data-testid="select-email-purpose"
+                        >
+                          {EMAIL_PURPOSES.map(p => (
+                            <option key={p.value} value={p.value}>{t(`settingsPage.email.purposes.${p.value}.label`)}</option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {t(`settingsPage.email.purposes.${purpose}.description`)}
+                        </p>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
@@ -1876,70 +1847,52 @@ export function SettingsPanel() {
                         </div>
                       </div>
 
-                      {(provider === 'mailersend' || provider === 'sendgrid') && (
+                      <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="apiKey">{t('settingsPage.email.apiKeyLabel')}</Label>
+                          <Label htmlFor="smtpHost">{t('settingsPage.email.smtpHostLabel')}</Label>
                           <Input
-                            id="apiKey"
-                            type="password"
-                            value={apiKey}
-                            onChange={(e) => setApiKey(e.target.value)}
-                            placeholder={t('settingsPage.email.apiKeyPlaceholder')}
-                            data-testid="input-api-key"
+                            id="smtpHost"
+                            value={smtpHost}
+                            onChange={(e) => setSmtpHost(e.target.value)}
+                            placeholder="smtp.example.com"
+                            data-testid="input-smtp-host"
                           />
                         </div>
-                      )}
+                        <div>
+                          <Label htmlFor="smtpPort">{t('settingsPage.email.smtpPortLabel')}</Label>
+                          <Input
+                            id="smtpPort"
+                            value={smtpPort}
+                            onChange={(e) => setSmtpPort(e.target.value)}
+                            placeholder="587"
+                            data-testid="input-smtp-port"
+                          />
+                        </div>
+                      </div>
 
-                      {provider === 'smtp' && (
-                        <>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="smtpHost">{t('settingsPage.email.smtpHostLabel')}</Label>
-                              <Input
-                                id="smtpHost"
-                                value={smtpHost}
-                                onChange={(e) => setSmtpHost(e.target.value)}
-                                placeholder="smtp.example.com"
-                                data-testid="input-smtp-host"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="smtpPort">{t('settingsPage.email.smtpPortLabel')}</Label>
-                              <Input
-                                id="smtpPort"
-                                value={smtpPort}
-                                onChange={(e) => setSmtpPort(e.target.value)}
-                                placeholder="587"
-                                data-testid="input-smtp-port"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="smtpUser">{t('settingsPage.email.smtpUsernameLabel')}</Label>
-                              <Input
-                                id="smtpUser"
-                                value={smtpUser}
-                                onChange={(e) => setSmtpUser(e.target.value)}
-                                placeholder={t('settingsPage.email.usernamePlaceholder')}
-                                data-testid="input-smtp-user"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="smtpPassword">{t('settingsPage.email.smtpPasswordLabel')}</Label>
-                              <Input
-                                id="smtpPassword"
-                                type="password"
-                                value={smtpPassword}
-                                onChange={(e) => setSmtpPassword(e.target.value)}
-                                placeholder={t('settingsPage.email.passwordPlaceholder')}
-                                data-testid="input-smtp-password"
-                              />
-                            </div>
-                          </div>
-                        </>
-                      )}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="smtpUser">{t('settingsPage.email.smtpUsernameLabel')}</Label>
+                          <Input
+                            id="smtpUser"
+                            value={smtpUser}
+                            onChange={(e) => setSmtpUser(e.target.value)}
+                            placeholder={t('settingsPage.email.usernamePlaceholder')}
+                            data-testid="input-smtp-user"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="smtpPassword">{t('settingsPage.email.smtpPasswordLabel')}</Label>
+                          <Input
+                            id="smtpPassword"
+                            type="password"
+                            value={smtpPassword}
+                            onChange={(e) => setSmtpPassword(e.target.value)}
+                            placeholder={t('settingsPage.email.passwordPlaceholder')}
+                            data-testid="input-smtp-password"
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     <DialogFooter>
@@ -1976,7 +1929,7 @@ export function SettingsPanel() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <h3 className="font-medium">{t(`settingsPage.email.purposes.${purposeInfo.value}.label`)}</h3>
-                            <Badge variant="outline">{setting.value.provider || 'mailersend'}</Badge>
+                            <Badge variant="outline">SMTP</Badge>
                             <Badge
                               variant="secondary"
                               className={
@@ -1994,9 +1947,6 @@ export function SettingsPanel() {
                           <div className="text-sm text-gray-600 space-y-1">
                             <p className="text-xs text-gray-500 mb-1">{t(`settingsPage.email.purposes.${purposeInfo.value}.description`)}</p>
                             <p><strong>{t('settingsPage.email.fromDisplayLabel')}</strong> {setting.value.fromName} &lt;{setting.value.fromEmail}&gt;</p>
-                            {setting.value.apiKey && (
-                              <p><strong>{t('settingsPage.email.apiKeyDisplayLabel')}</strong> {setting.value.apiKey.substring(0, 10)}...***</p>
-                            )}
                             {setting.value.smtpHost && (
                               <p><strong>{t('settingsPage.email.smtpDisplayLabel')}</strong> {setting.value.smtpHost}:{setting.value.smtpPort}</p>
                             )}
