@@ -54,7 +54,7 @@
       "title": "Kentekens invoeren",
       "description": "Voer één kenteken per regel in, of scheid ze met komma's. Voertuiggegevens worden automatisch opgehaald uit de RDW-database.",
       "licensePlatesLabel": "Kentekens",
-      "licensePlatesPlaceholder": "Voer hier kentekens in, één per regel of gescheiden door komma's. Bijv.&#10;AA-BB-12&#10;XY-12-ZZ&#10;12-ABC-3",
+      "licensePlatesPlaceholder": "Voer hier kentekens in, één per regel of gescheiden door komma's. Bijv.\nAA-BB-12\nXY-12-ZZ\n12-ABC-3",
       "formatHint": "Voorbeeldformaten: \"AA-BB-12\" of \"AABB12\" of \"12-ABC-3\"",
       "processingButton": "Import verwerken...",
       "startButton": "Import starten"

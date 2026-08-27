@@ -54,7 +54,7 @@
       "title": "Enter License Plates",
       "description": "Enter one license plate per line, or separate them with commas. Vehicle data will be automatically fetched from the RDW database.",
       "licensePlatesLabel": "License Plates",
-      "licensePlatesPlaceholder": "Enter license plates here, one per line or comma-separated. E.g.&#10;AA-BB-12&#10;XY-12-ZZ&#10;12-ABC-3",
+      "licensePlatesPlaceholder": "Enter license plates here, one per line or comma-separated. E.g.\nAA-BB-12\nXY-12-ZZ\n12-ABC-3",
       "formatHint": "Example formats: \"AA-BB-12\" or \"AABB12\" or \"12-ABC-3\"",
       "processingButton": "Processing Import...",
       "startButton": "Start Import"
