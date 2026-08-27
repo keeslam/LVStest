@@ -3,6 +3,7 @@ import { createReadStream, createWriteStream, existsSync, readFileSync, writeFil
 import { readdir, stat, mkdir, unlink } from 'fs/promises';
 import { pipeline } from 'stream/promises';
 import { join, dirname } from 'path';
+import { tmpdir } from 'os';
 import { createGzip } from 'zlib';
 import { createHash } from 'crypto';
 import archiver from 'archiver';
@@ -24,6 +25,7 @@ export interface BackupManifest {
     dbVersion?: string;
     fileCount?: number;
     compressedSize?: number;
+    uploaded?: boolean;
   };
 }
 
@@ -229,7 +231,7 @@ export class BackupService {
     const startedAtIso = new Date().toISOString();
     const filenameStamp = startedAtIso.replace(/[:.]/g, '-');
     const filename = `db-backup-${filenameStamp}.sql.gz`;
-    const tempFile = `/tmp/${filename}`;
+    const tempFile = join(tmpdir(), filename);
     
     console.log('Creating database backup...');
     
@@ -253,7 +255,13 @@ export class BackupService {
     });
 
     const pgDumpExited = new Promise<void>((resolve, reject) => {
-      pgDumpProcess.on('error', reject);
+      pgDumpProcess.on('error', (err: NodeJS.ErrnoException) => {
+        if (err.code === 'ENOENT') {
+          reject(new Error('pg_dump executable not found on PATH. Install the PostgreSQL client tools (postgresql-client) on this host to enable database backups.'));
+        } else {
+          reject(err);
+        }
+      });
       pgDumpProcess.on('close', (code) => {
         if (code === 0) {
           resolve();
@@ -321,7 +329,7 @@ export class BackupService {
     const startedAtIso = new Date().toISOString();
     const filenameStamp = startedAtIso.replace(/[:.]/g, '-');
     const filename = `files-backup-${filenameStamp}.tar.gz`;
-    const tempFile = `/tmp/${filename}`;
+    const tempFile = join(tmpdir(), filename);
     
     console.log('Creating files backup...');
 
