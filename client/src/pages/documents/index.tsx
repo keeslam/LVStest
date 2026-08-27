@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { VehicleSelector } from "@/components/ui/vehicle-selector";
+import { InlineDocumentUpload } from "@/components/documents/inline-document-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,7 +56,9 @@ export default function DocumentsIndex() {
   const [templateToDelete, setTemplateToDelete] = useState<any | null>(null);
   const [templateEditorDialogOpen, setTemplateEditorDialogOpen] = useState(false);
   const [transportTemplateEditorDialogOpen, setTransportTemplateEditorDialogOpen] = useState(false);
-  
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploadVehicleId, setUploadVehicleId] = useState<string>("");
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -451,17 +454,40 @@ export default function DocumentsIndex() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">{t('indexPage.title')}</h1>
-        <Link href="/documents/upload">
-          <Button>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-upload mr-2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="17 8 12 3 7 8" />
-              <line x1="12" x2="12" y1="3" y2="15" />
-            </svg>
-            {t('indexPage.uploadDocumentButton')}
-          </Button>
-        </Link>
+        <Button onClick={() => { setUploadVehicleId(""); setUploadDialogOpen(true); }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-upload mr-2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" x2="12" y1="3" y2="15" />
+          </svg>
+          {t('indexPage.uploadDocumentButton')}
+        </Button>
       </div>
+
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('indexPage.uploadVehicleDialogTitle')}</DialogTitle>
+            <DialogDescription>{t('indexPage.uploadVehicleDialogDescription')}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-2">
+              <Label>{t('indexPage.selectVehicleLabel')}</Label>
+              <VehicleSelector
+                vehicles={vehicles || []}
+                value={uploadVehicleId}
+                onChange={setUploadVehicleId}
+              />
+            </div>
+            {uploadVehicleId && (
+              <InlineDocumentUpload
+                vehicleId={parseInt(uploadVehicleId, 10)}
+                onSuccess={() => setUploadDialogOpen(false)}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
