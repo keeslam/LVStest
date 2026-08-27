@@ -5,6 +5,7 @@
 
 import { Reservation, PdfTemplate, VehicleTransport, TransportReportTemplate } from "../../shared/schema";
 import { format } from "date-fns";
+import { nl } from "date-fns/locale";
 import * as fs from 'fs';
 import * as path from 'path';
 import { PDFDocument, rgb, StandardFonts, TextAlignment } from 'pdf-lib';
@@ -800,7 +801,7 @@ export function prepareContractData(reservation: Reservation) {
   
   return {
     contractNumber: reservation.contractNumber || `C-${reservation.id}-${format(new Date(), 'yyyyMMdd')}`,
-    contractDate: format(new Date(), 'MMMM d, yyyy'),
+    contractDate: format(new Date(), 'd MMMM yyyy', { locale: nl }),
     licensePlate: formatLicensePlate(vehicle.licensePlate),
     brand: vehicle.brand,
     model: vehicle.model,
