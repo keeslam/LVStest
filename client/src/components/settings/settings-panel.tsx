@@ -74,7 +74,7 @@ const EMAIL_PURPOSES = [
   { value: 'default', label: 'Default/General', description: 'Default email for all other purposes' },
 ] as const;
 
-export default function Settings() {
+export function SettingsPanel() {
   const { t } = useTranslation("settings");
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -680,8 +680,8 @@ export default function Settings() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      <div className="mb-6">
+    <div className="space-y-6">
+      <div>
         <h1 className="text-3xl font-bold flex items-center gap-2">
           <SettingsIcon className="h-8 w-8" />
           {t('settingsPage.header.title')}

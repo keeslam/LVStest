@@ -17,7 +17,6 @@ import ReportsPage from "@/pages/reports/index";
 import DeliveryDashboard from "@/pages/delivery/dashboard";
 import CustomerCommunications from "@/pages/CustomerCommunications";
 import MaintenanceCalendar from "@/pages/maintenance/calendar";
-import SettingsPage from "@/pages/settings/index";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import MainLayout from "@/layouts/MainLayout";
@@ -70,7 +69,6 @@ function AppRoutes() {
               <ProtectedRoute path="/reports" component={ReportsPage} />
               <ProtectedRoute path="/delivery" component={DeliveryDashboard} />
               <ProtectedRoute path="/communications" component={CustomerCommunications} />
-              <ProtectedRoute path="/settings" component={SettingsPage} />
               <Route path="/auth" component={AuthPage} />
               <Route component={NotFound} />
             </Switch>
