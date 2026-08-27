@@ -86,6 +86,7 @@
     "customerNotFoundTitle": "Klant niet gevonden",
     "customerNotFoundDescription": "De klant die je zoekt bestaat niet meer of is verwijderd.",
     "backToCustomers": "Terug naar klanten",
+    "customerSince": "Klant sinds {{date}}",
     "totalRentals": "Totaal aantal verhuringen",
     "activeRentals": "Actieve verhuringen",
     "completed": "Voltooid",

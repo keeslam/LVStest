@@ -522,7 +522,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">{customer.name}</h1>
-          <p className="text-gray-600">Customer since {formatDate(customer.createdAt?.toString() || "")}</p>
+          <p className="text-gray-600">{t('details.customerSince', { date: formatDate(customer.createdAt?.toString() || "") })}</p>
         </div>
         <div className="flex gap-2">
           <Button 
