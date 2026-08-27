@@ -156,8 +156,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     },
   });
 
-  // Run a backup now - see the matching mutation/comment in
-  // pages/admin/backup.tsx for why this exists.
+  // Run a backup now
   const runBackupMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest('POST', '/api/backups/run');

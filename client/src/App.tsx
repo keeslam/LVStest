@@ -1,4 +1,4 @@
-import { Switch, Route, Redirect } from "wouter";
+import { Switch, Route } from "wouter";
 import Dashboard from "@/pages/dashboard";
 import VehiclesIndex from "@/pages/vehicles/index";
 import VehicleDetails from "@/pages/vehicles/[id]";
@@ -6,8 +6,6 @@ import VehicleEdit from "@/pages/vehicles/[id]/edit";
 import CustomersIndex from "@/pages/customers/index";
 import CustomerDetails from "@/pages/customers/[id]";
 import CustomerEdit from "@/pages/customers/[id]/edit";
-import ReservationsIndex from "@/pages/reservations/index";
-import ReservationDetails from "@/pages/reservations/[id]";
 import ReservationEdit from "@/pages/reservations/edit/[id]";
 import ReservationCalendar from "@/pages/reservations/calendar";
 import ExpensesIndex from "@/pages/expenses/index";
@@ -15,13 +13,11 @@ import ExpenseAdd from "@/pages/expenses/add";
 import ExpenseDetails from "@/pages/expenses/[id]";
 import VehicleExpensesPage from "@/pages/expenses/vehicle/[id]";
 import DocumentsIndex from "@/pages/documents/index";
-import ContractViewer from "@/pages/documents/contract/[id]";
 import ReportsPage from "@/pages/reports/index";
 import DeliveryDashboard from "@/pages/delivery/dashboard";
 import NotificationsPage from "@/pages/notifications/index";
 import CustomNotificationsPage from "@/pages/notifications/custom-notifications";
 import CustomerCommunications from "@/pages/CustomerCommunications";
-import SearchResults from "@/pages/search-results";
 import MaintenanceCalendar from "@/pages/maintenance/calendar";
 import SettingsPage from "@/pages/settings/index";
 import NotFound from "@/pages/not-found";
@@ -66,7 +62,6 @@ function AppRoutes() {
               <ProtectedRoute path="/customers/:id" component={CustomerDetails} />
               <ProtectedRoute path="/reservations" component={ReservationCalendar} />
               <ProtectedRoute path="/reservations/edit/:id" component={ReservationEdit} />
-              <ProtectedRoute path="/reservations/:id" component={ReservationDetails} />
               <ProtectedRoute path="/maintenance" component={MaintenanceCalendar} />
               <ProtectedRoute path="/expenses" component={ExpensesIndex} />
               <ProtectedRoute path="/expenses/add" component={ExpenseAdd} />
@@ -74,18 +69,11 @@ function AppRoutes() {
               <ProtectedRoute path="/expenses/edit/:id" component={ExpenseAdd} />
               <ProtectedRoute path="/expenses/:id" component={ExpenseDetails} />
               <ProtectedRoute path="/documents" component={DocumentsIndex} />
-              <ProtectedRoute path="/documents/contract/:id" component={ContractViewer} />
               <ProtectedRoute path="/reports" component={ReportsPage} />
               <ProtectedRoute path="/delivery" component={DeliveryDashboard} />
               <ProtectedRoute path="/notifications" component={NotificationsPage} />
               <ProtectedRoute path="/notifications/custom" component={CustomNotificationsPage} />
               <ProtectedRoute path="/communications" component={CustomerCommunications} />
-              <Route path="/search-results">
-                {() => {
-                  const { user } = useAuth();
-                  return user ? <SearchResults /> : <Redirect to="/auth" />;
-                }}
-              </Route>
               <ProtectedRoute path="/settings" component={SettingsPage} />
               <Route path="/auth" component={AuthPage} />
               <Route component={NotFound} />
