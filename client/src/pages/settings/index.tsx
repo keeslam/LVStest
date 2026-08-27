@@ -1870,7 +1870,7 @@ export default function Settings() {
                             id="fromName"
                             value={fromName}
                             onChange={(e) => setFromName(e.target.value)}
-                            placeholder="Car Rental Manager"
+                            placeholder="Auto Lease LAM"
                             data-testid="input-from-name"
                           />
                         </div>
