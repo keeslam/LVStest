@@ -2057,10 +2057,10 @@ function PDFLayoutPreview({ formValues }: { formValues: any }) {
         {formValues.showRemarks && (
           <div style={{ padding: 8 * scale, borderTop: '1px solid #e5e7eb' }}>
             <div className="font-semibold" style={{ fontSize: fontSize * 1.1, marginBottom: 4 * scale }}>
-              Remarks
+              Opmerkingen
             </div>
             <div className="border border-gray-300" style={{ height: 20 * scale, padding: 4 * scale }}>
-              <span className="text-gray-400" style={{ fontSize }}>Notes and remarks...</span>
+              <span className="text-gray-400" style={{ fontSize }}>Notities en opmerkingen...</span>
             </div>
           </div>
         )}
@@ -2070,11 +2070,11 @@ function PDFLayoutPreview({ formValues }: { formValues: any }) {
           <div style={{ padding: 8 * scale, borderTop: '1px solid #e5e7eb' }}>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <div className="font-semibold" style={{ fontSize }}>Customer Signature</div>
+                <div className="font-semibold" style={{ fontSize }}>Handtekening klant</div>
                 <div className="border-b-2 border-gray-400 mt-2" style={{ height: 20 * scale }} />
               </div>
               <div>
-                <div className="font-semibold" style={{ fontSize }}>Staff Signature</div>
+                <div className="font-semibold" style={{ fontSize }}>Handtekening medewerker</div>
                 <div className="border-b-2 border-gray-400 mt-2" style={{ height: 20 * scale }} />
               </div>
             </div>
