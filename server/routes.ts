@@ -9137,9 +9137,14 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.get("/api/backups/download/:type/:filename", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
     try {
       const { type, filename } = req.params;
-      
+
       if (!['database', 'files'].includes(type)) {
         return res.status(400).json({ error: "Invalid backup type" });
+      }
+
+      // Security: prevent directory traversal (see /api/backups/download/:filename above)
+      if (filename.includes('..') || filename.includes('/')) {
+        return res.status(400).json({ error: 'Invalid filename' });
       }
 
       // Use BackupService to download from either storage type
@@ -9180,9 +9185,14 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.delete("/api/backups/:type/:filename", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
     try {
       const { type, filename } = req.params;
-      
+
       if (!['database', 'files'].includes(type)) {
         return res.status(400).json({ error: "Invalid backup type" });
+      }
+
+      // Security: prevent directory traversal (see /api/backups/download/:filename above)
+      if (filename.includes('..') || filename.includes('/')) {
+        return res.status(400).json({ error: 'Invalid filename' });
       }
 
       await backupService.deleteBackup(filename, type as 'database' | 'files');
