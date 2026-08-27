@@ -49,6 +49,7 @@ import { Vehicle, Reservation, CustomNotification } from "@shared/schema";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { Link } from "wouter";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -67,6 +68,7 @@ type NotificationSettings = z.infer<typeof notificationSettingsSchema>;
 export default function NotificationsPage() {
   const { t } = useTranslation("notifications");
   const { toast } = useToast();
+  const { openReservationDialog } = useGlobalDialog();
   const [activeTab, setActiveTab] = useState<string>("all");
   const today = new Date();
 
@@ -458,8 +460,8 @@ export default function NotificationsPage() {
                                     </span>
                                   </TableCell>
                                   <TableCell className="text-right">
-                                    <Button size="sm" asChild>
-                                      <Link href={`/reservations/${reservation.id}`}>{t('notificationsPage.viewButton')}</Link>
+                                    <Button size="sm" onClick={() => openReservationDialog(reservation.id)}>
+                                      {t('notificationsPage.viewButton')}
                                     </Button>
                                   </TableCell>
                                 </TableRow>
@@ -704,8 +706,8 @@ export default function NotificationsPage() {
                               </span>
                             </TableCell>
                             <TableCell className="text-right">
-                              <Button size="sm" asChild>
-                                <Link href={`/reservations/${reservation.id}`}>{t('notificationsPage.viewButton')}</Link>
+                              <Button size="sm" onClick={() => openReservationDialog(reservation.id)}>
+                                {t('notificationsPage.viewButton')}
                               </Button>
                             </TableCell>
                           </TableRow>

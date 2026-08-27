@@ -64,7 +64,7 @@ interface SearchResultReservation {
 
 export default function MainLayout({ children }: MainLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [location, navigate] = useLocation();
+  const [location] = useLocation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
@@ -228,13 +228,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
               <form onSubmit={(e) => {
                 e.preventDefault();
                 if (searchQuery.trim().length >= 2) {
-                  setShowResults(false);
                   // If it looks like a license plate, try to standardize it for better search results
-                  const searchTerm = searchQuery.includes('-') || /^[A-Za-z0-9]{6,8}$/.test(searchQuery.trim()) 
-                    ? formatLicensePlate(searchQuery) 
+                  const searchTerm = searchQuery.includes('-') || /^[A-Za-z0-9]{6,8}$/.test(searchQuery.trim())
+                    ? formatLicensePlate(searchQuery)
                     : searchQuery.trim();
-                  // Use only navigate with replace to avoid adding to browser history
-                  navigate(`/search-results?q=${encodeURIComponent(searchTerm)}`, { replace: true });
+                  setSearchQuery(searchTerm);
+                  setShowResults(false);
+                  setShowAllResultsDialog(true);
                 }
               }}>
                 <input 
@@ -255,18 +255,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   onFocus={() => {
                     if (searchQuery.length >= 2) {
                       setShowResults(true);
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && searchQuery.trim().length >= 2) {
-                      e.preventDefault();
-                      setShowResults(false);
-                      // If it looks like a license plate, try to standardize it for better search results
-                      const searchTerm = searchQuery.includes('-') || /^[A-Za-z0-9]{6,8}$/.test(searchQuery.trim()) 
-                        ? formatLicensePlate(searchQuery) 
-                        : searchQuery.trim();
-                      // Use only navigate with replace to avoid adding to browser history
-                      navigate(`/search-results?q=${encodeURIComponent(searchTerm)}`, { replace: true });
                     }
                   }}
                 />
