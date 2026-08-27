@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
+import { NotificationsDialog } from "@/components/notifications/notifications-dialog";
 import {
   Dialog,
   DialogContent,
@@ -46,7 +47,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Vehicle, Reservation, CustomNotification } from "@shared/schema";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
-import { Link, useLocation } from "wouter";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import {
   Bell,
@@ -89,6 +89,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingNotification, setEditingNotification] = useState<CustomNotification | null>(null);
   const [deleteNotification, setDeleteNotification] = useState<CustomNotification | null>(null);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const today = new Date();
 
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
@@ -499,14 +500,11 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                 <Button
                   variant="outline"
                   size="sm"
-                  asChild
-                  onClick={() => onOpenChange(false)}
+                  onClick={() => setSettingsDialogOpen(true)}
                   data-testid="button-notification-settings"
                 >
-                  <Link href="/notifications">
-                    <Settings className="h-4 w-4 mr-1" />
-                    {t('centerDialog.settingsOverview')}
-                  </Link>
+                  <Settings className="h-4 w-4 mr-1" />
+                  {t('centerDialog.settingsOverview')}
                 </Button>
               </div>
             </div>
@@ -814,6 +812,12 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <NotificationsDialog
+        open={settingsDialogOpen}
+        onOpenChange={setSettingsDialogOpen}
+        onNavigateAway={() => onOpenChange(false)}
+      />
     </>
   );
 }

@@ -2,26 +2,26 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { differenceInDays } from "date-fns";
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription, 
-  CardContent 
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent
 } from "@/components/ui/card";
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
 } from "@/components/ui/tabs";
-import { 
-  Table, 
-  TableBody, 
-  TableHead, 
-  TableHeader, 
-  TableRow, 
-  TableCell 
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableCell
 } from "@/components/ui/table";
 import {
   Form,
@@ -65,7 +65,17 @@ const notificationSettingsSchema = z.object({
 
 type NotificationSettings = z.infer<typeof notificationSettingsSchema>;
 
-export default function NotificationsPage() {
+interface NotificationsPanelProps {
+  // Called right before navigating to /notifications/custom - lets a
+  // dialog-hosted panel close itself first, so the destination page
+  // doesn't render underneath a stale open dialog.
+  onNavigateAway?: () => void;
+}
+
+// Shared content for the notification center - used both by the full
+// /notifications page and by NotificationsDialog, so there is one
+// implementation instead of two copies drifting apart.
+export function NotificationsPanel({ onNavigateAway }: NotificationsPanelProps = {}) {
   const { t } = useTranslation("notifications");
   const { toast } = useToast();
   const { openReservationDialog } = useGlobalDialog();
@@ -86,10 +96,10 @@ export default function NotificationsPage() {
     resolver: zodResolver(notificationSettingsSchema),
     defaultValues: defaultSettings,
   });
-  
+
   // QueryClient for mutations
   const queryClient = useQueryClient();
-  
+
   // Mark notification as read mutation
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: number) => {
@@ -103,7 +113,7 @@ export default function NotificationsPage() {
       });
     },
   });
-  
+
   // Mark notification as unread mutation
   const markAsUnreadMutation = useMutation({
     mutationFn: async (notificationId: number) => {
@@ -117,12 +127,12 @@ export default function NotificationsPage() {
       });
     },
   });
-  
+
   // Handler functions
   const handleMarkAsRead = (notificationId: number) => {
     markAsReadMutation.mutate(notificationId);
   };
-  
+
   const handleMarkAsUnread = (notificationId: number) => {
     markAsUnreadMutation.mutate(notificationId);
   };
@@ -136,7 +146,7 @@ export default function NotificationsPage() {
   const { data: upcomingReservations = [] } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations/upcoming"],
   });
-  
+
   // Fetch custom notifications
   const { data: customNotifications = [] } = useQuery<CustomNotification[]>({
     queryKey: ["/api/custom-notifications"],
@@ -182,17 +192,17 @@ export default function NotificationsPage() {
       return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
     });
 
-  const totalNotifications = 
-    apkExpiringItems.length + 
-    warrantyExpiringItems.length + 
-    upcomingReservationItems.length + 
+  const totalNotifications =
+    apkExpiringItems.length +
+    warrantyExpiringItems.length +
+    upcomingReservationItems.length +
     customNotifications.length;
 
   // Handle form submission
   const onSubmit: SubmitHandler<NotificationSettings> = (data) => {
     // In a real application, save these settings to the user's preferences
     console.log("Notification settings updated:", data);
-    
+
     toast({
       title: t('notificationsPage.toasts.settingsUpdatedTitle'),
       description: t('notificationsPage.toasts.settingsUpdatedDescription'),
@@ -206,7 +216,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-8">
+    <div className="space-y-8">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{t('notificationsPage.pageTitle')}</h1>
@@ -215,7 +225,7 @@ export default function NotificationsPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/notifications/custom">
+          <Link href="/notifications/custom" onClick={() => onNavigateAway?.()}>
             <Bell className="mr-2 h-4 w-4" />
             {t('notificationsPage.manageCustomButton')}
           </Link>
@@ -645,7 +655,7 @@ export default function NotificationsPage() {
                                     </Button>
                                   )}
                                   <Button size="sm" asChild className="ml-2">
-                                    <Link href="/notifications/custom">{t('notificationsPage.manageButton')}</Link>
+                                    <Link href="/notifications/custom" onClick={() => onNavigateAway?.()}>{t('notificationsPage.manageButton')}</Link>
                                   </Button>
                                 </TableCell>
                               </TableRow>
@@ -908,7 +918,7 @@ export default function NotificationsPage() {
                                   </Button>
                                 )}
                                 <Button size="sm" asChild className="ml-2">
-                                  <Link href="/notifications/custom">{t('notificationsPage.manageButton')}</Link>
+                                  <Link href="/notifications/custom" onClick={() => onNavigateAway?.()}>{t('notificationsPage.manageButton')}</Link>
                                 </Button>
                               </TableCell>
                             </TableRow>

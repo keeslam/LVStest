@@ -487,7 +487,7 @@ const CustomNotificationsPage = () => {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link href="/notifications">
+            <Link href="/">
               <ArrowLeft className="mr-2 h-4 w-4" /> {t('customNotificationsPage.backButton')}
             </Link>
           </Button>
