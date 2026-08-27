@@ -320,7 +320,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                           }}
                           data-testid="button-view-all-results"
                         >
-                          View all results
+                          {t('search.viewAllResults')}
                         </button>
                       </div>
                     )}
@@ -329,7 +329,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     {vehicleResults?.length > 0 && (
                       <div className="border-b border-gray-100 p-2">
                         <div className="px-2 py-1 text-xs font-semibold bg-gray-50 text-gray-500 rounded-sm mb-1">
-                          Vehicles
+                          {t('vehicles')}
                         </div>
                         <ul className="divide-y divide-gray-100">
                           {vehicleResults.map((vehicle: SearchResultVehicle) => (
@@ -354,7 +354,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     {customerResults?.length > 0 && (
                       <div className="border-b border-gray-100 p-2">
                         <div className="px-2 py-1 text-xs font-semibold bg-gray-50 text-gray-500 rounded-sm mb-1">
-                          Customers
+                          {t('customers')}
                         </div>
                         <ul className="divide-y divide-gray-100">
                           {customerResults.map((customer: SearchResultCustomer) => (
@@ -367,7 +367,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                                 <div>
                                   <div className="font-medium">{customer.name}</div>
                                   <div className="text-xs text-gray-500">
-                                    {customer.email || customer.phone || "No contact info"}
+                                    {customer.email || customer.phone || t('search.noContactInfo')}
                                   </div>
                                 </div>
                               </button>
@@ -381,7 +381,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     {reservationResults?.length > 0 && (
                       <div className="p-2">
                         <div className="px-2 py-1 text-xs font-semibold bg-gray-50 text-gray-500 rounded-sm mb-1">
-                          Reservations
+                          {t('reservations')}
                         </div>
                         <ul className="divide-y divide-gray-100">
                           {reservationResults.map((reservation: SearchResultReservation) => {
@@ -443,7 +443,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <Dialog open={showAllResultsDialog} onOpenChange={setShowAllResultsDialog}>
         <DialogContent className="max-w-2xl max-h-[85vh]">
           <DialogHeader>
-            <DialogTitle>Search Results for "{searchQuery}"</DialogTitle>
+            <DialogTitle>{t('search.resultsFor', { query: searchQuery })}</DialogTitle>
           </DialogHeader>
           <ScrollArea className="h-[calc(85vh-8rem)] pr-4">
             {/* Vehicle Results */}
@@ -451,7 +451,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                   <Car className="h-4 w-4" />
-                  Vehicles ({vehicleResults.length})
+                  {t('vehicles')} ({vehicleResults.length})
                 </h3>
                 <div className="space-y-2">
                   {vehicleResults.map((vehicle: SearchResultVehicle) => (
@@ -477,7 +477,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  Customers ({customerResults.length})
+                  {t('customers')} ({customerResults.length})
                 </h3>
                 <div className="space-y-2">
                   {customerResults.map((customer: SearchResultCustomer) => (
@@ -491,7 +491,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                       <div>
                         <div className="font-medium">{customer.name}</div>
                         <div className="text-sm text-gray-500">
-                          {customer.email || customer.phone || "No contact info"}
+                          {customer.email || customer.phone || t('search.noContactInfo')}
                         </div>
                       </div>
                     </button>
@@ -505,7 +505,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  Reservations ({reservationResults.length})
+                  {t('reservations')} ({reservationResults.length})
                 </h3>
                 <div className="space-y-2">
                   {reservationResults.map((reservation: SearchResultReservation) => {

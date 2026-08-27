@@ -14,6 +14,11 @@
   "profile": "Profiel",
   "searchResults": "Zoekresultaten",
   "notifications": "Meldingen",
+  "search": {
+    "viewAllResults": "Bekijk alle resultaten",
+    "noContactInfo": "Geen contactgegevens",
+    "resultsFor": "Zoekresultaten voor \"{{query}}\""
+  },
   "userMenu": {
     "profile": "Profiel",
     "administration": "Beheer",
