@@ -57,8 +57,12 @@
       "damage-form": "Upload Damage Form",
       "interactive-damage-check": "Start Damage Check",
       "apk-report": "Upload APK Report",
-      "apk-notifications": "Send APK Notifications"
+      "apk-notifications": "Send APK Notifications",
+      "rdw-apk-scan": "Scan RDW APK Dates"
     },
+    "rdwScanInProgress": "Scanning...",
+    "rdwScanCompleteDescription": "{{scanned}} vehicles checked, {{changesFound}} changed APK date(s) found, {{errors}} errors.",
+    "rdwScanFailedDescription": "The RDW scan could not be run.",
     "title": "Quick Actions",
     "newReservationDescription": "Create a new reservation by selecting a vehicle and customer.",
     "reservationCreated": "Reservation created successfully",

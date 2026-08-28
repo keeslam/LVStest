@@ -1,6 +1,6 @@
-import { invalidateByPrefix } from "@/lib/queryClient";
+import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
@@ -331,6 +331,12 @@ const quickActions: QuickAction[] = [
     dialog: "apk-notifications",
     primary: false,
   },
+  {
+    label: "Scan RDW APK Dates",
+    icon: "refresh-cw",
+    dialog: "rdw-apk-scan",
+    primary: false,
+  },
 ];
 
 export function QuickActions() {
@@ -382,7 +388,29 @@ export function QuickActions() {
 
   // Get queryClient for cache invalidation
   const queryClient = useQueryClient();
-  
+
+  // Manual trigger for the nightly RDW APK-date scan
+  const scanRdwApkDatesMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/apk-date-changes/scan-now");
+      return response.json();
+    },
+    onSuccess: (result: { scanned: number; changesFound: number; errors: number }) => {
+      invalidateByPrefix("/api/apk-date-changes");
+      toast({
+        title: t("common:status.success"),
+        description: t("quickActions.rdwScanCompleteDescription", result),
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: t("common:status.error"),
+        description: error.message || t("quickActions.rdwScanFailedDescription"),
+        variant: "destructive",
+      });
+    },
+  });
+
   // References for dialog closing buttons
   const documentDialogCloseRef = React.useRef(null);
   const apkDialogCloseRef = React.useRef(null);
@@ -1845,7 +1873,32 @@ export function QuickActions() {
                 </Button>
               );
             }
-            
+
+            // Manual RDW APK-date scan trigger - fires the same scan the nightly
+            // job runs, no form input needed, just a fire-and-report action.
+            if (action.dialog === "rdw-apk-scan") {
+              return (
+                <Button
+                  key={action.label}
+                  variant="outline"
+                  className="bg-primary-50 text-primary-600 hover:bg-primary-100"
+                  size="sm"
+                  onClick={() => scanRdwApkDatesMutation.mutate()}
+                  disabled={scanRdwApkDatesMutation.isPending}
+                  data-testid="button-scan-rdw-apk-dates"
+                >
+                  {scanRdwApkDatesMutation.isPending ? (
+                    <RotateCw className="mr-1 h-4 w-4 animate-spin" />
+                  ) : (
+                    <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
+                  )}
+                  {scanRdwApkDatesMutation.isPending
+                    ? t("quickActions.rdwScanInProgress")
+                    : t(`quickActions.buttons.${action.dialog}`)}
+                </Button>
+              );
+            }
+
             // For actions with href, render a Link
             if (action.href) {
               return (

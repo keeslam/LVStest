@@ -57,8 +57,12 @@
       "damage-form": "Schadeformulier uploaden",
       "interactive-damage-check": "Schadecheck starten",
       "apk-report": "APK-rapport uploaden",
-      "apk-notifications": "APK-meldingen versturen"
+      "apk-notifications": "APK-meldingen versturen",
+      "rdw-apk-scan": "RDW APK-datums scannen"
     },
+    "rdwScanInProgress": "Scannen...",
+    "rdwScanCompleteDescription": "{{scanned}} voertuigen gecontroleerd, {{changesFound}} gewijzigde APK-datum(s) gevonden, {{errors}} fouten.",
+    "rdwScanFailedDescription": "De RDW-scan kon niet worden uitgevoerd.",
     "title": "Snelle acties",
     "newReservationDescription": "Maak een nieuwe reservering door een voertuig en klant te selecteren.",
     "reservationCreated": "Reservering succesvol aangemaakt",
