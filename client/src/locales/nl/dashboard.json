@@ -61,6 +61,8 @@
       "rdw-apk-scan": "RDW APK-datums scannen"
     },
     "rdwScanInProgress": "Scannen...",
+    "rdwScanStartedDescription": "De scan is gestart en loopt op de achtergrond. Je kunt gewoon doorwerken - je krijgt een melding zodra deze klaar is.",
+    "rdwScanAlreadyRunningDescription": "Er loopt al een scan op de achtergrond.",
     "rdwScanCompleteDescription": "{{scanned}} voertuigen gecontroleerd, {{changesFound}} gewijzigde APK-datum(s) gevonden, {{errors}} fouten.",
     "rdwScanFailedDescription": "De RDW-scan kon niet worden uitgevoerd.",
     "title": "Snelle acties",

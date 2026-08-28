@@ -5,7 +5,12 @@
     "confirmButton": "Bevestigen",
     "dismissButton": "Negeren",
     "confirmedDescription": "De APK-datum van het voertuig is bijgewerkt.",
-    "dismissedDescription": "De melding is genegeerd, de huidige APK-datum blijft ongewijzigd."
+    "dismissedDescription": "De melding is genegeerd, de huidige APK-datum blijft ongewijzigd.",
+    "selectAllLabel": "Alles selecteren",
+    "selectRowLabel": "Selecteren",
+    "selectedCount": "{{count}} geselecteerd",
+    "deleteSelectedButton": "Verwijder geselecteerde ({{count}})",
+    "bulkDismissedDescription": "{{count}} melding(en) genegeerd, de huidige APK-datums blijven ongewijzigd."
   },
   "mileageOverrideDialog": {
     "enterPasswordError": "Voer je kilometerstand-overschrijvingswachtwoord in",

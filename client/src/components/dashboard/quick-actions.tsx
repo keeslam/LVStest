@@ -26,7 +26,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Reservation, Vehicle } from "@shared/schema";
 import { Check, RotateCw, Search, CalendarClock } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
@@ -389,17 +389,59 @@ export function QuickActions() {
   // Get queryClient for cache invalidation
   const queryClient = useQueryClient();
 
-  // Manual trigger for the nightly RDW APK-date scan
-  const scanRdwApkDatesMutation = useMutation({
+  // Manual trigger for the nightly RDW APK-date scan. A full scan takes
+  // minutes (one request per vehicle), so the endpoint returns immediately
+  // and this polls for the outcome instead of holding one HTTP request open
+  // - a proxy/gateway in front of the app would otherwise kill a connection
+  // held open that long, leaving the button stuck forever waiting on a
+  // response that was never coming.
+  const [isRdwScanRunning, setIsRdwScanRunning] = useState(false);
+
+  const { data: rdwScanStatus } = useQuery<{
+    running: boolean;
+    lastResult: { scanned: number; changesFound: number; errors: number } | null;
+    lastError: string | null;
+    lastRunAt: string | null;
+  }>({
+    queryKey: ["/api/apk-date-changes/scan-status"],
+    enabled: isRdwScanRunning,
+    refetchInterval: isRdwScanRunning ? 3000 : false,
+  });
+
+  useEffect(() => {
+    if (!isRdwScanRunning || !rdwScanStatus || rdwScanStatus.running) {
+      return;
+    }
+
+    setIsRdwScanRunning(false);
+    invalidateByPrefix("/api/apk-date-changes");
+
+    if (rdwScanStatus.lastError) {
+      toast({
+        title: t("common:status.error"),
+        description: rdwScanStatus.lastError,
+        variant: "destructive",
+      });
+    } else if (rdwScanStatus.lastResult) {
+      toast({
+        title: t("common:status.success"),
+        description: t("quickActions.rdwScanCompleteDescription", rdwScanStatus.lastResult),
+      });
+    }
+  }, [rdwScanStatus, isRdwScanRunning]);
+
+  const startRdwScanMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/apk-date-changes/scan-now");
       return response.json();
     },
-    onSuccess: (result: { scanned: number; changesFound: number; errors: number }) => {
-      invalidateByPrefix("/api/apk-date-changes");
+    onSuccess: (result: { started: boolean; alreadyRunning: boolean }) => {
+      setIsRdwScanRunning(true);
       toast({
         title: t("common:status.success"),
-        description: t("quickActions.rdwScanCompleteDescription", result),
+        description: result.alreadyRunning
+          ? t("quickActions.rdwScanAlreadyRunningDescription")
+          : t("quickActions.rdwScanStartedDescription"),
       });
     },
     onError: (error: any) => {
@@ -1877,22 +1919,23 @@ export function QuickActions() {
             // Manual RDW APK-date scan trigger - fires the same scan the nightly
             // job runs, no form input needed, just a fire-and-report action.
             if (action.dialog === "rdw-apk-scan") {
+              const isBusy = startRdwScanMutation.isPending || isRdwScanRunning;
               return (
                 <Button
                   key={action.label}
                   variant="outline"
                   className="bg-primary-50 text-primary-600 hover:bg-primary-100"
                   size="sm"
-                  onClick={() => scanRdwApkDatesMutation.mutate()}
-                  disabled={scanRdwApkDatesMutation.isPending}
+                  onClick={() => startRdwScanMutation.mutate()}
+                  disabled={isBusy}
                   data-testid="button-scan-rdw-apk-dates"
                 >
-                  {scanRdwApkDatesMutation.isPending ? (
+                  {isBusy ? (
                     <RotateCw className="mr-1 h-4 w-4 animate-spin" />
                   ) : (
                     <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
                   )}
-                  {scanRdwApkDatesMutation.isPending
+                  {isBusy
                     ? t("quickActions.rdwScanInProgress")
                     : t(`quickActions.buttons.${action.dialog}`)}
                 </Button>

@@ -5,7 +5,12 @@
     "confirmButton": "Confirm",
     "dismissButton": "Dismiss",
     "confirmedDescription": "The vehicle's APK date has been updated.",
-    "dismissedDescription": "The notice was dismissed, the current APK date is unchanged."
+    "dismissedDescription": "The notice was dismissed, the current APK date is unchanged.",
+    "selectAllLabel": "Select all",
+    "selectRowLabel": "Select",
+    "selectedCount": "{{count}} selected",
+    "deleteSelectedButton": "Delete selected ({{count}})",
+    "bulkDismissedDescription": "{{count}} notice(s) dismissed, the current APK dates are unchanged."
   },
   "mileageOverrideDialog": {
     "enterPasswordError": "Please enter your mileage override password",

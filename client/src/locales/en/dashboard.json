@@ -61,6 +61,8 @@
       "rdw-apk-scan": "Scan RDW APK Dates"
     },
     "rdwScanInProgress": "Scanning...",
+    "rdwScanStartedDescription": "The scan has started and is running in the background. Feel free to keep working - you'll get a notification once it's done.",
+    "rdwScanAlreadyRunningDescription": "A scan is already running in the background.",
     "rdwScanCompleteDescription": "{{scanned}} vehicles checked, {{changesFound}} changed APK date(s) found, {{errors}} errors.",
     "rdwScanFailedDescription": "The RDW scan could not be run.",
     "title": "Quick Actions",
