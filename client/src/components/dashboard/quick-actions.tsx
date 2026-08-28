@@ -1,4 +1,5 @@
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -340,6 +341,8 @@ const quickActions: QuickAction[] = [
 ];
 
 export function QuickActions() {
+  const { openRdwApkChangesDialog } = useGlobalDialog();
+
   // State for the vehicle registration dialog
   const [selectedVehicles, setSelectedVehicles] = useState<string[]>([]);
   const [registrationStatus, setRegistrationStatus] = useState<"opnaam" | "bv">("opnaam");
@@ -427,6 +430,19 @@ export function QuickActions() {
         title: t("common:status.success"),
         description: t("quickActions.rdwScanCompleteDescription", rdwScanStatus.lastResult),
       });
+      // The confirmation dialog only pops up automatically once per login -
+      // pressing this button is the other way to see pending changes, so
+      // show it whenever anything is currently pending, not just what this
+      // particular run found (an earlier scan's items may still be waiting).
+      apiRequest("GET", "/api/apk-date-changes")
+        .then((response) => response.json())
+        .then((pending: unknown[]) => {
+          queryClient.setQueryData(["/api/apk-date-changes"], pending);
+          if (pending.length > 0) {
+            openRdwApkChangesDialog();
+          }
+        })
+        .catch(() => {});
     }
   }, [rdwScanStatus, isRdwScanRunning]);
 

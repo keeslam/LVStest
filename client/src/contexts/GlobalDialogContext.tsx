@@ -6,6 +6,7 @@ interface DialogState {
   apk: { open: boolean; vehicleId: number | null };
   maintenance: { open: boolean; vehicleId: number | null };
   vehicle: { open: boolean; vehicleId: number | null };
+  rdwApkChanges: { open: boolean };
 }
 
 interface GlobalDialogContextType {
@@ -20,6 +21,8 @@ interface GlobalDialogContextType {
   closeMaintenanceDialog: () => void;
   openVehicleDialog: (vehicleId: number) => void;
   closeVehicleDialog: () => void;
+  openRdwApkChangesDialog: () => void;
+  closeRdwApkChangesDialog: () => void;
 }
 
 const GlobalDialogContext = createContext<GlobalDialogContextType | undefined>(undefined);
@@ -31,6 +34,7 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     apk: { open: false, vehicleId: null },
     maintenance: { open: false, vehicleId: null },
     vehicle: { open: false, vehicleId: null },
+    rdwApkChanges: { open: false },
   });
 
   const openReservationDialog = (id: number) => {
@@ -103,6 +107,20 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const openRdwApkChangesDialog = () => {
+    setDialogState(prev => ({
+      ...prev,
+      rdwApkChanges: { open: true }
+    }));
+  };
+
+  const closeRdwApkChangesDialog = () => {
+    setDialogState(prev => ({
+      ...prev,
+      rdwApkChanges: { open: false }
+    }));
+  };
+
   return (
     <GlobalDialogContext.Provider
       value={{
@@ -117,6 +135,8 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
         closeMaintenanceDialog,
         openVehicleDialog,
         closeVehicleDialog,
+        openRdwApkChangesDialog,
+        closeRdwApkChangesDialog,
       }}
     >
       {children}

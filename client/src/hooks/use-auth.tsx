@@ -127,14 +127,19 @@ function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: () => {
       // Clear user data from cache
       queryClient.setQueryData(["/api/user"], null);
-      
+
       // Clear all queries in the cache to force a clean state
       queryClient.clear();
-      
+
+      // Let the next login re-trigger the once-per-login RDW APK-changes
+      // popup (see apk-date-changes-dialog.tsx) - sessionStorage otherwise
+      // survives the hard navigation below since it's the same tab/origin.
+      sessionStorage.removeItem("apkDateChangesAutoOpened");
+
       toast({
         title: t('authHook.loggedOutTitle'),
       });
-      
+
       // Force navigation to auth page and refresh
       window.location.href = "/auth";
     },

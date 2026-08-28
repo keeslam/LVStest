@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
@@ -20,8 +20,15 @@ import { Check, X, Trash2, Search } from "lucide-react";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { useToast } from "@/hooks/use-toast";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 
 type DirectionFilter = "all" | "later" | "earlier";
+
+// Survives a page refresh (sessionStorage) but not a real new session/login
+// (cleared on logout in use-auth.tsx) - a hard refresh used to remount this
+// component and reset an in-memory ref, popping the dialog open again on
+// every reload for as long as anything stayed unresolved.
+export const APK_DATE_CHANGES_AUTO_OPEN_SESSION_KEY = "apkDateChangesAutoOpened";
 
 interface PendingApkChange {
   id: number;
@@ -45,8 +52,8 @@ function formatDate(dateStr: string | null): string {
 export function ApkDateChangesDialog() {
   const { t } = useTranslation(["vehicles", "common"]);
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
-  const hasAutoOpenedRef = useRef(false);
+  const { dialogState, openRdwApkChangesDialog, closeRdwApkChangesDialog } = useGlobalDialog();
+  const open = dialogState.rdwApkChanges.open;
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [directionFilter, setDirectionFilter] = useState<DirectionFilter>("all");
@@ -56,13 +63,14 @@ export function ApkDateChangesDialog() {
     staleTime: 1000 * 60,
   });
 
-  // Open once per session as soon as the first batch of pending changes
-  // arrives - closing the dialog (or resolving every item) won't reopen it
-  // again until the next login.
+  // Open once per login as soon as the first batch of pending changes
+  // arrives. Persisted in sessionStorage (not a ref) specifically so a page
+  // refresh doesn't reset it - only a real new session (logout, or the tab/
+  // browser closing) does.
   useEffect(() => {
-    if (!hasAutoOpenedRef.current && pendingChanges.length > 0) {
-      setOpen(true);
-      hasAutoOpenedRef.current = true;
+    if (pendingChanges.length > 0 && sessionStorage.getItem(APK_DATE_CHANGES_AUTO_OPEN_SESSION_KEY) !== "true") {
+      openRdwApkChangesDialog();
+      sessionStorage.setItem(APK_DATE_CHANGES_AUTO_OPEN_SESSION_KEY, "true");
     }
   }, [pendingChanges.length]);
 
@@ -187,7 +195,7 @@ export function ApkDateChangesDialog() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(next) => (next ? openRdwApkChangesDialog() : closeRdwApkChangesDialog())}>
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t("apkDateChanges.title")}</DialogTitle>
@@ -330,7 +338,7 @@ export function ApkDateChangesDialog() {
           ) : (
             <span />
           )}
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={closeRdwApkChangesDialog}>
             {t("common:actions.close")}
           </Button>
         </DialogFooter>
