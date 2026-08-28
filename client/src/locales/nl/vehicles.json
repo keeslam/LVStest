@@ -10,7 +10,16 @@
     "selectRowLabel": "Selecteren",
     "selectedCount": "{{count}} geselecteerd",
     "deleteSelectedButton": "Verwijder geselecteerde ({{count}})",
-    "bulkDismissedDescription": "{{count}} melding(en) genegeerd, de huidige APK-datums blijven ongewijzigd."
+    "confirmSelectedButton": "Bevestig geselecteerde ({{count}})",
+    "bulkDismissedDescription": "{{count}} melding(en) genegeerd, de huidige APK-datums blijven ongewijzigd.",
+    "bulkConfirmedDescription": "{{count}} voertuig(en) bijgewerkt met de nieuwe APK-datum.",
+    "searchPlaceholder": "Zoeken op kenteken, merk of model...",
+    "noResultsForFilter": "Geen resultaten voor dit filter.",
+    "directionFilter": {
+      "all": "Alle",
+      "later": "Later",
+      "earlier": "Eerder"
+    }
   },
   "mileageOverrideDialog": {
     "enterPasswordError": "Voer je kilometerstand-overschrijvingswachtwoord in",

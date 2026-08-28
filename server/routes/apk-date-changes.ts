@@ -151,4 +151,35 @@ router.post('/bulk-dismiss', hasPermission(UserPermission.MANAGE_VEHICLES), asyn
   }
 });
 
+// Bulk-confirm: apply the RDW date to several vehicles at once
+router.post('/bulk-confirm', hasPermission(UserPermission.MANAGE_VEHICLES), async (req, res) => {
+  try {
+    const ids: unknown = req.body?.ids;
+    if (!Array.isArray(ids) || ids.length === 0 || !ids.every((id) => typeof id === 'number')) {
+      return res.status(400).json({ message: 'ids must be a non-empty array of numbers' });
+    }
+
+    const resolvedBy = req.user?.username || null;
+    let confirmed = 0;
+
+    for (const id of ids) {
+      const change = await storage.getApkDateChange(id);
+      if (change && change.status === 'pending') {
+        await storage.updateVehicle(change.vehicleId, { apkDate: change.newApkDate });
+        await storage.updateApkDateChange(id, {
+          status: 'confirmed',
+          resolvedAt: new Date(),
+          resolvedBy,
+        });
+        confirmed++;
+      }
+    }
+
+    res.json({ confirmed });
+  } catch (error) {
+    console.error('Error bulk-confirming APK date changes:', error);
+    res.status(500).json({ message: 'Failed to confirm the selected APK date changes' });
+  }
+});
+
 export default router;

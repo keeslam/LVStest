@@ -10,7 +10,16 @@
     "selectRowLabel": "Select",
     "selectedCount": "{{count}} selected",
     "deleteSelectedButton": "Delete selected ({{count}})",
-    "bulkDismissedDescription": "{{count}} notice(s) dismissed, the current APK dates are unchanged."
+    "confirmSelectedButton": "Confirm selected ({{count}})",
+    "bulkDismissedDescription": "{{count}} notice(s) dismissed, the current APK dates are unchanged.",
+    "bulkConfirmedDescription": "{{count}} vehicle(s) updated with the new APK date.",
+    "searchPlaceholder": "Search by license plate, brand or model...",
+    "noResultsForFilter": "No results for this filter.",
+    "directionFilter": {
+      "all": "All",
+      "later": "Later",
+      "earlier": "Earlier"
+    }
   },
   "mileageOverrideDialog": {
     "enterPasswordError": "Please enter your mileage override password",

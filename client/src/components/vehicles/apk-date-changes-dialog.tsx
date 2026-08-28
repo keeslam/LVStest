@@ -15,10 +15,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Check, X, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Check, X, Trash2, Search } from "lucide-react";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { useToast } from "@/hooks/use-toast";
+
+type DirectionFilter = "all" | "later" | "earlier";
 
 interface PendingApkChange {
   id: number;
@@ -45,6 +48,8 @@ export function ApkDateChangesDialog() {
   const [open, setOpen] = useState(false);
   const hasAutoOpenedRef = useRef(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [directionFilter, setDirectionFilter] = useState<DirectionFilter>("all");
 
   const { data: pendingChanges = [] } = useQuery<PendingApkChange[]>({
     queryKey: ["/api/apk-date-changes"],
@@ -112,10 +117,57 @@ export function ApkDateChangesDialog() {
     },
   });
 
-  const allSelected = pendingChanges.length > 0 && selectedIds.size === pendingChanges.length;
+  const bulkConfirmMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      const response = await apiRequest("POST", "/api/apk-date-changes/bulk-confirm", { ids });
+      return response.json();
+    },
+    onSuccess: (result: { confirmed: number }) => {
+      invalidateByPrefix("/api/apk-date-changes");
+      invalidateByPrefix("/api/vehicles");
+      setSelectedIds(new Set());
+      toast({
+        title: t("common:status.success"),
+        description: t("apkDateChanges.bulkConfirmedDescription", { count: result.confirmed }),
+      });
+    },
+    onError: (error: any) => {
+      toast({ title: t("common:status.error"), description: error.message, variant: "destructive" });
+    },
+  });
+
+  const search = searchQuery.trim().toLowerCase();
+  const filteredChanges = pendingChanges.filter((change) => {
+    if (search) {
+      const haystack = `${change.licensePlate} ${change.brand} ${change.model}`.toLowerCase();
+      if (!haystack.includes(search)) {
+        return false;
+      }
+    }
+    if (directionFilter !== "all") {
+      if (!change.previousApkDate) {
+        return false;
+      }
+      const isLater = change.newApkDate > change.previousApkDate;
+      if (directionFilter === "later" && !isLater) return false;
+      if (directionFilter === "earlier" && isLater) return false;
+    }
+    return true;
+  });
+
+  const allSelected = filteredChanges.length > 0 && filteredChanges.every((c) => selectedIds.has(c.id));
 
   const toggleSelectAll = () => {
-    setSelectedIds(allSelected ? new Set() : new Set(pendingChanges.map((c) => c.id)));
+    setSelectedIds((prev) => {
+      if (allSelected) {
+        const next = new Set(prev);
+        filteredChanges.forEach((c) => next.delete(c.id));
+        return next;
+      }
+      const next = new Set(prev);
+      filteredChanges.forEach((c) => next.add(c.id));
+      return next;
+    });
   };
 
   const toggleSelectOne = (id: number) => {
@@ -136,16 +188,44 @@ export function ApkDateChangesDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t("apkDateChanges.title")}</DialogTitle>
           <DialogDescription>{t("apkDateChanges.description")}</DialogDescription>
         </DialogHeader>
 
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t("apkDateChanges.searchPlaceholder")}
+              className="pl-8"
+              data-testid="input-search-apk-changes"
+            />
+          </div>
+          <div className="flex gap-1">
+            {(["all", "later", "earlier"] as const).map((option) => (
+              <Button
+                key={option}
+                type="button"
+                size="sm"
+                variant={directionFilter === option ? "default" : "outline"}
+                onClick={() => setDirectionFilter(option)}
+                data-testid={`button-direction-filter-${option}`}
+              >
+                {t(`apkDateChanges.directionFilter.${option}`)}
+              </Button>
+            ))}
+          </div>
+        </div>
+
         <div className="flex items-center gap-2 border-b pb-2">
           <Checkbox
             checked={allSelected}
             onCheckedChange={toggleSelectAll}
+            disabled={filteredChanges.length === 0}
             aria-label={t("apkDateChanges.selectAllLabel")}
             data-testid="checkbox-select-all-apk-changes"
           />
@@ -156,9 +236,19 @@ export function ApkDateChangesDialog() {
           </span>
         </div>
 
+        {filteredChanges.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-6">
+            {t("apkDateChanges.noResultsForFilter")}
+          </p>
+        )}
+
         <div className="space-y-3">
-          {pendingChanges.map((change) => {
-            const isPending = confirmMutation.isPending || dismissMutation.isPending || bulkDismissMutation.isPending;
+          {filteredChanges.map((change) => {
+            const isPending =
+              confirmMutation.isPending ||
+              dismissMutation.isPending ||
+              bulkDismissMutation.isPending ||
+              bulkConfirmMutation.isPending;
             return (
               <div
                 key={change.id}
@@ -218,15 +308,25 @@ export function ApkDateChangesDialog() {
 
         <DialogFooter className="sm:justify-between">
           {selectedIds.size > 0 ? (
-            <Button
-              variant="destructive"
-              onClick={() => bulkDismissMutation.mutate([...selectedIds])}
-              disabled={bulkDismissMutation.isPending}
-              data-testid="button-bulk-dismiss-apk-changes"
-            >
-              <Trash2 className="h-4 w-4 mr-1" />
-              {t("apkDateChanges.deleteSelectedButton", { count: selectedIds.size })}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="destructive"
+                onClick={() => bulkDismissMutation.mutate([...selectedIds])}
+                disabled={bulkDismissMutation.isPending || bulkConfirmMutation.isPending}
+                data-testid="button-bulk-dismiss-apk-changes"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                {t("apkDateChanges.deleteSelectedButton", { count: selectedIds.size })}
+              </Button>
+              <Button
+                onClick={() => bulkConfirmMutation.mutate([...selectedIds])}
+                disabled={bulkDismissMutation.isPending || bulkConfirmMutation.isPending}
+                data-testid="button-bulk-confirm-apk-changes"
+              >
+                <Check className="h-4 w-4 mr-1" />
+                {t("apkDateChanges.confirmSelectedButton", { count: selectedIds.size })}
+              </Button>
+            </div>
           ) : (
             <span />
           )}
