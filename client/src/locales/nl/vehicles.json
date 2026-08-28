@@ -118,7 +118,7 @@
       "brandAndModel": "Merk & model",
       "vehicleType": "Voertuigtype",
       "fuel": "Brandstof",
-      "company": "Bedrijf",
+      "company": "Bedrijfsvoorraad",
       "registeredTo": "BV/Opnaam",
       "companyDate": "BV/Opnaam datum",
       "chassisNumber": "Chassisnummer",
@@ -277,7 +277,7 @@
       },
       "statusInfo": {
         "title": "Statusinformatie",
-        "company": "Bedrijf",
+        "company": "Bedrijfsvoorraad",
         "registeredTo": "Op naam",
         "registeredToDate": "Op naam datum",
         "emissionsZoneAccess": "Toegang milieuzone",

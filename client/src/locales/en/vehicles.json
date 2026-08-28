@@ -118,7 +118,7 @@
       "brandAndModel": "Brand & Model",
       "vehicleType": "Vehicle Type",
       "fuel": "Fuel",
-      "company": "Company",
+      "company": "Business Stock",
       "registeredTo": "BV/Opnaam",
       "companyDate": "BV/Opnaam Date",
       "chassisNumber": "Chassis Number",
@@ -277,7 +277,7 @@
       },
       "statusInfo": {
         "title": "Status Information",
-        "company": "Company",
+        "company": "Business Stock",
         "registeredTo": "Registered To",
         "registeredToDate": "Registered To Date",
         "emissionsZoneAccess": "Emissions Zone Access",
