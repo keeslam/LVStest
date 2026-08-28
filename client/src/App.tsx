@@ -26,6 +26,7 @@ import { ProtectedRoute } from "@/components/protected-route";
 import { GlobalDialogProvider } from "@/contexts/GlobalDialogContext";
 import { GlobalDialogs } from "@/components/global-dialogs";
 import { InactivityPrompt } from "@/components/InactivityPrompt";
+import { ApkDateChangesDialog } from "@/components/vehicles/apk-date-changes-dialog";
 import { apiRequest } from "@/lib/queryClient";
 
 function AppRoutes() {
@@ -39,10 +40,13 @@ function AppRoutes() {
     <>
       {/* Inactivity prompt - only show for authenticated users */}
       {user && (
-        <InactivityPrompt 
+        <InactivityPrompt
           onLogout={handleLogout}
         />
       )}
+
+      {/* RDW APK date change confirmation - only for authenticated users */}
+      {user && <ApkDateChangesDialog />}
       
       <Switch>
       {/* Staff Routes - With MainLayout */}

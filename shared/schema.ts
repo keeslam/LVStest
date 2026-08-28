@@ -913,6 +913,30 @@ export const insertEmailLogSchema = createInsertSchema(emailLogs)
 export type EmailLog = typeof emailLogs.$inferSelect;
 export type InsertEmailLog = z.infer<typeof insertEmailLogSchema>;
 
+// RDW APK date changes - detected by the background scan that compares each
+// vehicle's stored APK expiry date against the RDW open data API. Stays
+// 'pending' until a user confirms (applies newApkDate to the vehicle) or
+// dismisses (keeps the vehicle's current date) it, so re-scans don't create
+// duplicate rows for a discrepancy that's already been surfaced.
+export const apkDateChanges = pgTable("apk_date_changes", {
+  id: serial("id").primaryKey(),
+  vehicleId: integer("vehicle_id").notNull().references(() => vehicles.id, { onDelete: "cascade" }),
+  previousApkDate: text("previous_apk_date"),
+  newApkDate: text("new_apk_date").notNull(),
+  status: text("status").notNull().default("pending"), // 'pending' | 'confirmed' | 'dismissed'
+  detectedAt: timestamp("detected_at").defaultNow().notNull(),
+  resolvedAt: timestamp("resolved_at"),
+  resolvedBy: text("resolved_by"),
+});
+
+export const insertApkDateChangeSchema = createInsertSchema(apkDateChanges).omit({
+  id: true,
+  detectedAt: true,
+});
+
+export type ApkDateChange = typeof apkDateChanges.$inferSelect;
+export type InsertApkDateChange = z.infer<typeof insertApkDateChangeSchema>;
+
 // Backup Settings table
 export const backupSettings = pgTable("backup_settings", {
   id: serial("id").primaryKey(),

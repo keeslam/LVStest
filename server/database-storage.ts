@@ -13,6 +13,7 @@ import {
   customNotifications, type CustomNotification, type InsertCustomNotification,
   backupSettings, type BackupSettings, type InsertBackupSettings,
   appSettings, type AppSettings, type InsertAppSettings,
+  apkDateChanges, type ApkDateChange, type InsertApkDateChange,
   settings, type Settings, type UpdateSettings,
   drivers, type Driver, type InsertDriver,
   savedReports, type SavedReport, type InsertSavedReport,
@@ -2990,6 +2991,52 @@ export class DatabaseStorage implements IStorage {
   async deleteAppSetting(id: number): Promise<boolean> {
     const result = await db.delete(appSettings).where(eq(appSettings.id, id));
     return result.rowCount > 0;
+  }
+
+  // RDW APK date change methods
+  async getPendingApkDateChanges(): Promise<Array<ApkDateChange & { licensePlate: string; brand: string; model: string }>> {
+    const rows = await db
+      .select({
+        id: apkDateChanges.id,
+        vehicleId: apkDateChanges.vehicleId,
+        previousApkDate: apkDateChanges.previousApkDate,
+        newApkDate: apkDateChanges.newApkDate,
+        status: apkDateChanges.status,
+        detectedAt: apkDateChanges.detectedAt,
+        resolvedAt: apkDateChanges.resolvedAt,
+        resolvedBy: apkDateChanges.resolvedBy,
+        licensePlate: vehicles.licensePlate,
+        brand: vehicles.brand,
+        model: vehicles.model,
+      })
+      .from(apkDateChanges)
+      .innerJoin(vehicles, eq(apkDateChanges.vehicleId, vehicles.id))
+      .where(eq(apkDateChanges.status, "pending"))
+      .orderBy(desc(apkDateChanges.detectedAt));
+    return rows;
+  }
+
+  async getPendingApkDateChangeForVehicle(vehicleId: number): Promise<ApkDateChange | undefined> {
+    const [row] = await db
+      .select()
+      .from(apkDateChanges)
+      .where(and(eq(apkDateChanges.vehicleId, vehicleId), eq(apkDateChanges.status, "pending")));
+    return row || undefined;
+  }
+
+  async getApkDateChange(id: number): Promise<ApkDateChange | undefined> {
+    const [row] = await db.select().from(apkDateChanges).where(eq(apkDateChanges.id, id));
+    return row || undefined;
+  }
+
+  async createApkDateChange(data: InsertApkDateChange): Promise<ApkDateChange> {
+    const [row] = await db.insert(apkDateChanges).values(data).returning();
+    return row;
+  }
+
+  async updateApkDateChange(id: number, data: Partial<InsertApkDateChange>): Promise<ApkDateChange | undefined> {
+    const [row] = await db.update(apkDateChanges).set(data).where(eq(apkDateChanges.id, id)).returning();
+    return row || undefined;
   }
 
   // Settings methods (contract numbers, etc.)
