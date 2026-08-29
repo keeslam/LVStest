@@ -25,6 +25,7 @@ import {
   vehicleCustomerBlacklist, type VehicleCustomerBlacklist, type InsertVehicleCustomerBlacklist,
   vehicleTransports, type VehicleTransport, type InsertVehicleTransport
 } from "../shared/schema";
+import { formatVehicleBarcode } from "../shared/barcode";
 import { addMonths, addDays, parseISO, isBefore, isAfter, isEqual } from "date-fns";
 
 export interface IStorage {
@@ -40,6 +41,9 @@ export interface IStorage {
   // Vehicle methods
   getAllVehicles(): Promise<Vehicle[]>;
   getVehicle(id: number): Promise<Vehicle | undefined>;
+  getVehicleByBarcode(barcode: string): Promise<Vehicle | undefined>;
+  // Bumps the -R<n> revision suffix so old printed labels stop resolving.
+  regenerateVehicleBarcode(id: number, updatedBy?: string): Promise<Vehicle | undefined>;
   createVehicle(vehicle: InsertVehicle): Promise<Vehicle>;
   updateVehicle(id: number, vehicleData: Partial<InsertVehicle>): Promise<Vehicle | undefined>;
   deleteVehicle(id: number, actor?: { username?: string | null; userId?: number | null }): Promise<boolean>;
@@ -723,10 +727,25 @@ export class MemStorage implements IStorage {
       radioCode: vehicleData.radioCode ?? null,
       warrantyEndDate: vehicleData.warrantyEndDate ?? null,
       seatcovers: vehicleData.seatcovers ?? null,
-      backupbeepers: vehicleData.backupbeepers ?? null
+      backupbeepers: vehicleData.backupbeepers ?? null,
+      barcode: formatVehicleBarcode(id)
     };
     this.vehicles.set(id, vehicle);
     return vehicle;
+  }
+
+  async getVehicleByBarcode(barcode: string): Promise<Vehicle | undefined> {
+    return Array.from(this.vehicles.values()).find(v => v.barcode === barcode);
+  }
+
+  async regenerateVehicleBarcode(id: number, updatedBy?: string): Promise<Vehicle | undefined> {
+    const vehicle = this.vehicles.get(id);
+    if (!vehicle) return undefined;
+    const match = /-R(\d+)$/.exec(vehicle.barcode ?? "");
+    const nextRevision = match ? parseInt(match[1], 10) + 1 : 2;
+    const updated = { ...vehicle, barcode: formatVehicleBarcode(id, nextRevision), updatedBy: updatedBy ?? vehicle.updatedBy };
+    this.vehicles.set(id, updated);
+    return updated;
   }
 
   async updateVehicle(id: number, vehicleData: Partial<InsertVehicle>): Promise<Vehicle | undefined> {

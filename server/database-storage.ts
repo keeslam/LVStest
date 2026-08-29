@@ -47,6 +47,7 @@ import { db } from "./db";
 import { eq, ne, and, gte, lte, desc, sql, inArray, not, or, ilike, isNull, isNotNull, getTableColumns } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { IStorage } from "./storage";
+import { formatVehicleBarcode } from "../shared/barcode";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -306,7 +307,38 @@ export class DatabaseStorage implements IStorage {
 
   async createVehicle(vehicleData: InsertVehicle): Promise<Vehicle> {
     const [vehicle] = await db.insert(vehicles).values(vehicleData).returning();
+    if (!vehicle.barcode) {
+      const [updated] = await db
+        .update(vehicles)
+        .set({ barcode: formatVehicleBarcode(vehicle.id) })
+        .where(eq(vehicles.id, vehicle.id))
+        .returning();
+      return updated;
+    }
     return vehicle;
+  }
+
+  async getVehicleByBarcode(barcode: string): Promise<Vehicle | undefined> {
+    const [vehicle] = await db
+      .select()
+      .from(vehicles)
+      .where(eq(vehicles.barcode, barcode));
+    return vehicle;
+  }
+
+  async regenerateVehicleBarcode(id: number, updatedBy?: string): Promise<Vehicle | undefined> {
+    const vehicle = await this.getVehicle(id);
+    if (!vehicle) return undefined;
+    // Parse current revision from an existing -R<n> suffix; bump it.
+    const match = /-R(\d+)$/.exec(vehicle.barcode ?? "");
+    const nextRevision = match ? parseInt(match[1], 10) + 1 : 2;
+    const newBarcode = formatVehicleBarcode(id, nextRevision);
+    const [updated] = await db
+      .update(vehicles)
+      .set({ barcode: newBarcode, updatedBy: updatedBy ?? vehicle.updatedBy, updatedAt: new Date() })
+      .where(eq(vehicles.id, id))
+      .returning();
+    return updated;
   }
 
   async updateVehicle(id: number, vehicleData: Partial<InsertVehicle>): Promise<Vehicle | undefined> {
