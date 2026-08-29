@@ -198,7 +198,7 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
       <CameraScannerDialog
         open={cameraOpen}
         onOpenChange={setCameraOpen}
-        onScan={(scanned) => lookup(scanned)}
+        onScan={lookup}
       />
     </>
   );

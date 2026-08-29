@@ -23,7 +23,15 @@ const REGION_ID = "barcode-camera-region";
 export function CameraScannerDialog({ open, onOpenChange, onScan }: CameraScannerDialogProps) {
   const { t } = useTranslation(["barcodes"]);
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const onScanRef = useRef(onScan);
+  const onOpenChangeRef = useRef(onOpenChange);
   const [errorKey, setErrorKey] = useState<string | null>(null);
+
+  // Keep latest callbacks in refs to prevent effect restarts on parent re-render.
+  useEffect(() => {
+    onScanRef.current = onScan;
+    onOpenChangeRef.current = onOpenChange;
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -53,7 +61,7 @@ export function CameraScannerDialog({ open, onOpenChange, onScan }: CameraScanne
       }
 
       if (cancelled) {
-        scanner.clear();
+        try { scanner.clear(); } catch {}
         return;
       }
 
@@ -66,8 +74,8 @@ export function CameraScannerDialog({ open, onOpenChange, onScan }: CameraScanne
           (decodedText) => {
             if (cancelled) return;
             cancelled = true;
-            onScan(decodedText);
-            onOpenChange(false);
+            onScanRef.current(decodedText);
+            onOpenChangeRef.current(false);
           },
           () => { /* per-frame decode misses are expected; ignore */ }
         )
@@ -102,7 +110,7 @@ export function CameraScannerDialog({ open, onOpenChange, onScan }: CameraScanne
         }
       }
     };
-  }, [open, onScan, onOpenChange]);
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
