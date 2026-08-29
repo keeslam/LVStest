@@ -30,40 +30,62 @@ export function CameraScannerDialog({ open, onOpenChange, onScan }: CameraScanne
     let cancelled = false;
     setErrorKey(null);
 
-    const scanner = new Html5Qrcode(REGION_ID, {
-      formatsToSupport: [
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.QR_CODE,
-      ],
-      verbose: false,
-    });
-    scannerRef.current = scanner;
+    // Defer scanner creation one frame to ensure DialogContent portal is mounted.
+    const frameId = requestAnimationFrame(() => {
+      if (cancelled) return;
+      if (!document.getElementById(REGION_ID)) {
+        setErrorKey("camera.startError");
+        return;
+      }
 
-    scanner
-      .start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 280, height: 140 } },
-        (decodedText) => {
-          if (cancelled) return;
-          cancelled = true;
-          onScan(decodedText);
-          onOpenChange(false);
-        },
-        () => { /* per-frame decode misses are expected; ignore */ }
-      )
-      .catch((error: unknown) => {
-        const message = String(error);
-        if (message.includes("NotAllowedError") || message.includes("Permission")) {
-          setErrorKey("camera.permissionDenied");
-        } else if (message.includes("NotFoundError") || message.includes("no camera")) {
-          setErrorKey("camera.noCamera");
-        } else {
-          setErrorKey("camera.startError");
-        }
-      });
+      let scanner: Html5Qrcode;
+      try {
+        scanner = new Html5Qrcode(REGION_ID, {
+          formatsToSupport: [
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.QR_CODE,
+          ],
+          verbose: false,
+        });
+      } catch (error: unknown) {
+        setErrorKey("camera.startError");
+        return;
+      }
+
+      if (cancelled) {
+        scanner.clear();
+        return;
+      }
+
+      scannerRef.current = scanner;
+
+      scanner
+        .start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 280, height: 140 } },
+          (decodedText) => {
+            if (cancelled) return;
+            cancelled = true;
+            onScan(decodedText);
+            onOpenChange(false);
+          },
+          () => { /* per-frame decode misses are expected; ignore */ }
+        )
+        .catch((error: unknown) => {
+          const message = String(error);
+          if (message.includes("NotAllowedError") || message.includes("Permission")) {
+            setErrorKey("camera.permissionDenied");
+          } else if (message.includes("NotFoundError") || message.includes("no camera")) {
+            setErrorKey("camera.noCamera");
+          } else {
+            setErrorKey("camera.startError");
+          }
+        });
+    });
 
     return () => {
       cancelled = true;
+      cancelAnimationFrame(frameId);
       const current = scannerRef.current;
       scannerRef.current = null;
       if (current) {
