@@ -108,6 +108,7 @@ export function VehicleBarcodeDialog({ vehicle, open, onOpenChange }: VehicleBar
           <Button
             onClick={() => printKeyLabels([vehicle], selectedTemplate)}
             className="flex-1"
+            disabled={!vehicle.barcode}
             data-testid="button-print-key-label"
           >
             <Printer className="h-4 w-4 mr-2" />
