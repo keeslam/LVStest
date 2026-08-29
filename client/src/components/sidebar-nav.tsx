@@ -1,6 +1,7 @@
 import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { UserRole, UserPermission } from "@shared/schema";
 
 type NavItem = {
@@ -8,18 +9,20 @@ type NavItem = {
   labelKey: string;
   icon: string;
   permissions?: string[];
+  onClick?: () => void;
 };
 
 export function SidebarNav() {
   const [location] = useLocation();
   const { user } = useAuth();
   const { t } = useTranslation("nav");
+  const { openScanDialog } = useGlobalDialog();
   const isAdmin = user?.role === UserRole.ADMIN;
 
   const navItems: NavItem[] = [
     { href: "/", labelKey: "dashboard", icon: "dashboard", permissions: [UserPermission.VIEW_DASHBOARD] },
     { href: "/vehicles", labelKey: "vehicles", icon: "directions_car", permissions: [UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES] },
-    { href: "/scan", labelKey: "scan", icon: "scan", permissions: [UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES] },
+    { href: "/scan", labelKey: "scan", icon: "scan", permissions: [UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES], onClick: openScanDialog },
     { href: "/customers", labelKey: "customers", icon: "people", permissions: [UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS] },
     { href: "/reservations", labelKey: "reservations", icon: "event", permissions: [UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS] },
     { href: "/maintenance", labelKey: "maintenance", icon: "maintenance", permissions: [UserPermission.MANAGE_MAINTENANCE] },
@@ -43,13 +46,29 @@ export function SidebarNav() {
     <nav className="mt-4 px-2">
       <div className="space-y-1">
         {filteredNavItems.map((item) => {
-          const isActive = item.href === "/" 
-            ? location === item.href 
+          if (item.onClick) {
+            return (
+              <button
+                key={item.href}
+                type="button"
+                onClick={item.onClick}
+                className="flex items-center w-full px-2 py-2 text-base font-medium rounded-md text-gray-700 hover:bg-gray-100"
+              >
+                <span className="mr-3 text-xl">
+                  {getNavIcon(item.icon, false)}
+                </span>
+                {t(item.labelKey)}
+              </button>
+            );
+          }
+
+          const isActive = item.href === "/"
+            ? location === item.href
             : location.startsWith(item.href);
-            
+
           return (
-            <Link 
-              key={item.href} 
+            <Link
+              key={item.href}
               href={item.href}
               className={`flex items-center px-2 py-2 text-base font-medium rounded-md ${
                 isActive

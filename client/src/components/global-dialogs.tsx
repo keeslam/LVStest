@@ -9,6 +9,7 @@ import { ApkInspectionDialog } from '@/components/vehicles/apk-inspection-dialog
 import { VehicleViewDialog } from '@/components/vehicles/vehicle-view-dialog';
 import { ExpenseViewDialog } from '@/components/expenses/expense-view-dialog';
 import { ExpenseDetailDialog } from '@/components/expenses/expense-detail-dialog';
+import { ScanDialog } from '@/components/barcodes/scan-dialog';
 import { Vehicle, Reservation } from '@shared/schema';
 
 export function GlobalDialogs() {
@@ -25,6 +26,7 @@ export function GlobalDialogs() {
     closeVehicleDialog,
     closeExpenseVehicleDialog,
     closeExpenseDialog,
+    closeScanDialog,
   } = useGlobalDialog();
   
   const handleEditReservation = (reservationId: number) => {
@@ -137,6 +139,12 @@ export function GlobalDialogs() {
         onOpenChange={closeExpenseDialog}
         expenseId={dialogState.expense.expenseId}
         hideVehicleExpensesLink={dialogState.expense.hideVehicleExpensesLink}
+      />
+
+      {/* Barcode Scan Dialog */}
+      <ScanDialog
+        open={dialogState.scan.open}
+        onOpenChange={(open) => !open && closeScanDialog()}
       />
     </>
   );

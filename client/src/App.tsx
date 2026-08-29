@@ -9,7 +9,6 @@ import ExpenseAdd from "@/pages/expenses/add";
 import DocumentsIndex from "@/pages/documents/index";
 import ReportsPage from "@/pages/reports/index";
 import DeliveryDashboard from "@/pages/delivery/dashboard";
-import ScanPage from "@/pages/scan/index";
 import CustomerCommunications from "@/pages/CustomerCommunications";
 import MaintenanceCalendar from "@/pages/maintenance/calendar";
 import NotFound from "@/pages/not-found";
@@ -51,7 +50,6 @@ function AppRoutes() {
             <Switch>
               <ProtectedRoute path="/" component={Dashboard} />
               <ProtectedRoute path="/vehicles" component={VehiclesIndex} />
-              <ProtectedRoute path="/scan" component={ScanPage} />
               <ProtectedRoute path="/customers" component={CustomersIndex} />
               <ProtectedRoute path="/reservations" component={ReservationCalendar} />
               <ProtectedRoute path="/reservations/edit/:id" component={ReservationEdit} />

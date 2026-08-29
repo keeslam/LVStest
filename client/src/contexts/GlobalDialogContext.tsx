@@ -9,6 +9,7 @@ interface DialogState {
   expenseVehicle: { open: boolean; vehicleId: number | null };
   expense: { open: boolean; expenseId: number | null; hideVehicleExpensesLink: boolean };
   rdwApkChanges: { open: boolean };
+  scan: { open: boolean };
 }
 
 interface GlobalDialogContextType {
@@ -29,6 +30,8 @@ interface GlobalDialogContextType {
   closeExpenseDialog: () => void;
   openRdwApkChangesDialog: () => void;
   closeRdwApkChangesDialog: () => void;
+  openScanDialog: () => void;
+  closeScanDialog: () => void;
 }
 
 const GlobalDialogContext = createContext<GlobalDialogContextType | undefined>(undefined);
@@ -43,6 +46,7 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     expenseVehicle: { open: false, vehicleId: null },
     expense: { open: false, expenseId: null, hideVehicleExpensesLink: false },
     rdwApkChanges: { open: false },
+    scan: { open: false },
   });
 
   const openReservationDialog = (id: number) => {
@@ -157,6 +161,20 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const openScanDialog = () => {
+    setDialogState(prev => ({
+      ...prev,
+      scan: { open: true }
+    }));
+  };
+
+  const closeScanDialog = () => {
+    setDialogState(prev => ({
+      ...prev,
+      scan: { open: false }
+    }));
+  };
+
   return (
     <GlobalDialogContext.Provider
       value={{
@@ -177,6 +195,8 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
         closeExpenseDialog,
         openRdwApkChangesDialog,
         closeRdwApkChangesDialog,
+        openScanDialog,
+        closeScanDialog,
       }}
     >
       {children}
