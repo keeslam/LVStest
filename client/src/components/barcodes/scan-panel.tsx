@@ -9,11 +9,22 @@ import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { BarcodeSvg } from "@/components/barcodes/barcode-svg";
 import { CameraScannerDialog } from "@/components/barcodes/camera-scanner-dialog";
-import { Vehicle, Reservation } from "@shared/schema";
+import { Vehicle } from "@shared/schema";
+
+// The lookup endpoint projects reservations down to only what this panel
+// renders (see server/routes.ts GET /api/barcodes/:code) to avoid leaking
+// full customer PII to a vehicle-permission-gated endpoint.
+type ScanReservation = {
+  id: number;
+  status: string;
+  startDate: string;
+  endDate: string | null;
+  customer: { name: string } | null;
+};
 
 type LookupResult =
-  | { type: "vehicle"; vehicle: Vehicle; activeReservation: Reservation | null; upcomingReservation: Reservation | null; lastReturnedReservation: Reservation | null }
-  | { type: "reservation"; reservation: Reservation; vehicle: Vehicle | null };
+  | { type: "vehicle"; vehicle: Vehicle; activeReservation: ScanReservation | null; upcomingReservation: ScanReservation | null }
+  | { type: "reservation"; reservation: ScanReservation; vehicle: Vehicle | null };
 
 interface ScanPanelProps {
   /** Whether this panel instance is the currently-visible one (mounted-but-hidden
@@ -90,12 +101,12 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
     return <Badge variant={variant}>{t(`scanPage.status.${status}`, { defaultValue: status })}</Badge>;
   };
 
-  const reservationCard = (reservation: Reservation, headingKey: string) => (
+  const reservationCard = (reservation: ScanReservation, headingKey: string) => (
     <div className="border rounded-md p-4 space-y-2">
       <h3 className="text-sm font-medium text-muted-foreground">{t(headingKey)}</h3>
       <div className="flex items-center gap-2">
         <User className="h-4 w-4 text-primary" />
-        <span>{(reservation as any).customer?.name || "-"}</span>
+        <span>{reservation.customer?.name || "-"}</span>
         <Badge variant="outline">{t(`scanPage.reservationStatus.${reservation.status}`, { defaultValue: reservation.status })}</Badge>
       </div>
       <div className="flex items-center gap-2 text-sm text-muted-foreground">

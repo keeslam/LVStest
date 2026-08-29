@@ -1429,6 +1429,19 @@ export async function registerRoutes(app: Express): Promise<void> {
   // code, or (fallback) a license plate typed/scanned manually.
   app.get("/api/barcodes/:code", requireAuth, hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
     try {
+      // The scan UI only ever renders id/status/startDate/endDate/customer name,
+      // but the underlying reservation rows carry the full customer PII
+      // (driver license number, address, phone, email, etc). Project down to
+      // just what's rendered before this vehicle-permission-gated endpoint
+      // sends anything back over the wire.
+      const projectReservationForScan = (r: any) => r ? ({
+        id: r.id,
+        status: r.status,
+        startDate: r.startDate,
+        endDate: r.endDate,
+        customer: r.customer ? { name: r.customer.name } : null,
+      }) : null;
+
       const parsed = parseBarcode(req.params.code);
 
       if (parsed.kind === "reservation") {
@@ -1437,7 +1450,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           return res.status(404).json({ message: "Reservation not found for this barcode" });
         }
         const vehicle = reservation.vehicleId ? await storage.getVehicle(reservation.vehicleId) : undefined;
-        return res.json({ type: "reservation", reservation, vehicle: vehicle ?? null });
+        return res.json({ type: "reservation", reservation: projectReservationForScan(reservation), vehicle: vehicle ?? null });
       }
 
       // Vehicle path: exact barcode match first (covers -R revisions since the
@@ -1468,17 +1481,11 @@ export async function registerRoutes(app: Express): Promise<void> {
         .filter(r => r.status === "booked" && r.startDate > today)
         .sort((a, b) => a.startDate.localeCompare(b.startDate))[0] ?? null;
 
-      // Most recent returned/completed one, for return-flow context.
-      const lastReturnedReservation = reservations
-        .filter(r => r.status === "returned" || r.status === "completed")
-        .sort((a, b) => b.startDate.localeCompare(a.startDate))[0] ?? null;
-
       return res.json({
         type: "vehicle",
         vehicle,
-        activeReservation,
-        upcomingReservation,
-        lastReturnedReservation,
+        activeReservation: projectReservationForScan(activeReservation),
+        upcomingReservation: projectReservationForScan(upcomingReservation),
       });
     } catch (error) {
       console.error("Barcode lookup failed:", error);
