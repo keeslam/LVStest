@@ -8,6 +8,7 @@ import { Camera, Truck, CalendarRange, User, RotateCcw } from "lucide-react";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { BarcodeSvg } from "@/components/barcodes/barcode-svg";
+import { CameraScannerDialog } from "@/components/barcodes/camera-scanner-dialog";
 import { Vehicle, Reservation } from "@shared/schema";
 
 type LookupResult =
@@ -194,8 +195,11 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
         </Card>
       )}
 
-      {/* Camera scanner dialog mounts here — added in the camera-scanning task. */}
-      {cameraOpen && null}
+      <CameraScannerDialog
+        open={cameraOpen}
+        onOpenChange={setCameraOpen}
+        onScan={(scanned) => lookup(scanned)}
+      />
     </>
   );
 }
