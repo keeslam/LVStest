@@ -54,6 +54,7 @@ import { calculateDutchHolidays, mergeHolidaysWithOverrides } from "../shared/ho
 import { geocodeAddress, haversineDistanceKm, nearestNeighborOrder, getRoadRouteDistances } from "./geocoding";
 import { isDamageCheckDocument } from "../shared/document-types";
 import { getUploadsDir } from "../shared/paths";
+import { parseBarcode, normalizeScannedCode } from "../shared/barcode";
 import { 
   createSecureMulterFilter, 
   validateAfterUpload,
@@ -1421,6 +1422,85 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
 
     res.json(vehicle);
+  });
+
+  // Resolve any scanned code: stored vehicle barcode, derived RES- reservation
+  // code, or (fallback) a license plate typed/scanned manually.
+  app.get("/api/barcodes/:code", requireAuth, hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
+    try {
+      const parsed = parseBarcode(req.params.code);
+
+      if (parsed.kind === "reservation") {
+        const reservation = await storage.getReservation(parsed.reservationId);
+        if (!reservation || reservation.deletedAt) {
+          return res.status(404).json({ message: "Reservation not found for this barcode" });
+        }
+        const vehicle = reservation.vehicleId ? await storage.getVehicle(reservation.vehicleId) : undefined;
+        return res.json({ type: "reservation", reservation, vehicle: vehicle ?? null });
+      }
+
+      // Vehicle path: exact barcode match first (covers -R revisions since the
+      // stored value is matched verbatim), then license-plate fallback.
+      const normalized = normalizeScannedCode(req.params.code);
+      let vehicle = await storage.getVehicleByBarcode(normalized);
+      if (!vehicle && parsed.kind === "unknown") {
+        const plate = normalized.replace(/[-\s]/g, "");
+        const all = await storage.getAllVehicles();
+        vehicle = all.find(v => v.licensePlate.replace(/[-\s]/g, "").toUpperCase() === plate);
+      }
+      if (!vehicle) {
+        return res.status(404).json({ message: "No vehicle found for this barcode" });
+      }
+
+      const today = new Date().toISOString().split("T")[0];
+      const reservations = (await storage.getReservationsByVehicle(vehicle.id))
+        .filter(r => !r.deletedAt && r.type !== "maintenance_block");
+
+      // Active: picked up and not returned, or booked window covering today.
+      const activeReservation = reservations.find(r =>
+        r.status === "picked_up" ||
+        (r.status === "booked" && r.startDate <= today && (!r.endDate || r.endDate >= today))
+      ) ?? null;
+
+      // Upcoming: earliest booked reservation starting after today.
+      const upcomingReservation = reservations
+        .filter(r => r.status === "booked" && r.startDate > today)
+        .sort((a, b) => a.startDate.localeCompare(b.startDate))[0] ?? null;
+
+      // Most recent returned/completed one, for return-flow context.
+      const lastReturnedReservation = reservations
+        .filter(r => r.status === "returned" || r.status === "completed")
+        .sort((a, b) => b.startDate.localeCompare(a.startDate))[0] ?? null;
+
+      return res.json({
+        type: "vehicle",
+        vehicle,
+        activeReservation,
+        upcomingReservation,
+        lastReturnedReservation,
+      });
+    } catch (error) {
+      console.error("Barcode lookup failed:", error);
+      return res.status(500).json({ message: "Barcode lookup failed" });
+    }
+  });
+
+  app.post("/api/vehicles/:id/barcode/regenerate", requireAuth, hasPermission(UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid vehicle id" });
+      }
+      const updatedBy = (req.user as any)?.fullName || (req.user as any)?.username;
+      const vehicle = await storage.regenerateVehicleBarcode(id, updatedBy);
+      if (!vehicle) {
+        return res.status(404).json({ message: "Vehicle not found" });
+      }
+      return res.json({ vehicle });
+    } catch (error) {
+      console.error("Barcode regeneration failed:", error);
+      return res.status(500).json({ message: "Barcode regeneration failed" });
+    }
   });
 
   // Get latest vehicle data (fuel level and mileage) for damage check
