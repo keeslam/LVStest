@@ -1302,11 +1302,21 @@ const BarcodeLabelTemplateEditor = ({ onClose }: BarcodeLabelTemplateEditorProps
                               style={{
                                 left: `${field.x * MM_TO_PX * zoomLevel}px`,
                                 top: `${field.y * MM_TO_PX * zoomLevel}px`,
+                                // Give non-barcode fields the rest of the label's width so
+                                // left/center/right alignment has room to be visible (an
+                                // auto-width box has no slack for text-align to use). Mirrors
+                                // the equivalent fix in key-label-print.ts.
+                                width: field.source === 'barcode' ? undefined : `${(labelWidthMm - field.x) * MM_TO_PX * zoomLevel}px`,
                                 fontSize: field.source === 'barcode' ? undefined : `${field.fontSize * PT_TO_MM * MM_TO_PX * zoomLevel}px`,
                                 fontWeight: field.isBold ? 'bold' : 'normal',
                                 backgroundColor: selectedFields.includes(field.id) ? 'rgba(219, 234, 254, 0.8)' : 'transparent',
                                 color: '#000000',
                                 textAlign: field.textAlign,
+                                // This container is a flex row (for the lock icon + text), and
+                                // flex item position along the main axis is controlled by
+                                // justify-content, not text-align. Map alignment there too so
+                                // it's actually visible, not just set as a no-op CSS property.
+                                justifyContent: field.source === 'barcode' ? undefined : field.textAlign === 'center' ? 'center' : field.textAlign === 'right' ? 'flex-end' : 'flex-start',
                                 whiteSpace: 'nowrap',
                                 lineHeight: 1,
                                 display: 'flex',

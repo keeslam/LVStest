@@ -94,9 +94,14 @@ export function printKeyLabels(vehicles: LabelVehicle[], template?: BarcodeLabel
 
       if (field.source === "barcode") {
         const barcodeHeightMm = field.barcodeHeightMm ?? DEFAULT_BARCODE_HEIGHT_MM;
+        // Constrain by both width and height (not height alone) so a long
+        // code like VEH-000123 can't scale wider than what's left of the
+        // label and clip the barcode's stop pattern at the right edge.
+        const maxWidthMm = widthMm - field.x - 2;
         const svg = doc.createElementNS("http://www.w3.org/2000/svg", "svg");
         holder.appendChild(svg);
         holder.style.height = `${barcodeHeightMm}mm`;
+        holder.style.maxWidth = `${maxWidthMm}mm`;
         JsBarcode(svg, vehicle.barcode, {
           format: "CODE128",
           displayValue: true,
@@ -105,13 +110,19 @@ export function printKeyLabels(vehicles: LabelVehicle[], template?: BarcodeLabel
           margin: 4,
           background: "transparent",
         });
-        svg.style.height = `${barcodeHeightMm}mm`;
         svg.style.width = "auto";
+        svg.style.maxWidth = `${maxWidthMm}mm`;
+        svg.style.maxHeight = `${barcodeHeightMm}mm`;
       } else {
         holder.textContent = resolveBarcodeLabelSource(field.source, formatted, field.name);
         holder.style.fontSize = `${field.fontSize}pt`;
         holder.style.fontWeight = field.isBold ? "bold" : "normal";
         holder.style.textAlign = field.textAlign;
+        // Non-barcode fields are absolutely positioned with an auto (shrink
+        // to content) width, which makes textAlign a no-op. Give the holder
+        // the remaining label width so left/center/right actually differ.
+        holder.style.width = `${widthMm - field.x - 1}mm`;
+        holder.style.whiteSpace = "normal";
       }
 
       label.appendChild(holder);
