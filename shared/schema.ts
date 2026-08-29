@@ -245,7 +245,12 @@ export const vehicles = pgTable("vehicles", {
   // 'not_for_rental' - owned but not being rented out
   // 'rented' - currently rented (auto-set by system)
   availabilityStatus: text("availability_status").default("available").notNull(),
-  
+
+  // Permanent scan identifier printed on the key label. Assigned automatically
+  // from the row id (VEH-000123, see shared/barcode.ts); only an explicit admin
+  // regenerate changes it. Unique index added in startup-migration.js.
+  barcode: text("barcode").unique(),
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -288,7 +288,24 @@ async function runMigrations() {
     await addColumnIfNotExists('vehicles', 'imei', 'text');
     await addColumnIfNotExists('vehicles', 'updated_by', 'text');
     await addColumnIfNotExists('vehicles', 'available_for_rental', 'boolean DEFAULT true NOT NULL');
-    
+
+    // Barcode tracking: permanent per-vehicle scan code printed on key labels
+    await addColumnIfNotExists('vehicles', 'barcode', 'TEXT');
+    try {
+      await db.execute(sql`
+        UPDATE vehicles
+        SET barcode = 'VEH-' || LPAD(id::text, 6, '0')
+        WHERE barcode IS NULL
+      `);
+      await db.execute(sql`
+        CREATE UNIQUE INDEX IF NOT EXISTS vehicles_barcode_unique_idx
+        ON vehicles (barcode)
+      `);
+      console.log('✅ Vehicle barcodes backfilled and unique index ensured');
+    } catch (error) {
+      console.error('⚠️ Vehicle barcode backfill failed:', error.message);
+    }
+
     // Add missing columns to reservations table
     await addColumnIfNotExists('reservations', 'type', 'text DEFAULT \'standard\' NOT NULL');
     await addColumnIfNotExists('reservations', 'replacement_for_reservation_id', 'integer');
