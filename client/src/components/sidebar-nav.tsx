@@ -19,6 +19,7 @@ export function SidebarNav() {
   const navItems: NavItem[] = [
     { href: "/", labelKey: "dashboard", icon: "dashboard", permissions: [UserPermission.VIEW_DASHBOARD] },
     { href: "/vehicles", labelKey: "vehicles", icon: "directions_car", permissions: [UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES] },
+    { href: "/scan", labelKey: "scan", icon: "scan", permissions: [UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES] },
     { href: "/customers", labelKey: "customers", icon: "people", permissions: [UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS] },
     { href: "/reservations", labelKey: "reservations", icon: "event", permissions: [UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS] },
     { href: "/maintenance", labelKey: "maintenance", icon: "maintenance", permissions: [UserPermission.MANAGE_MAINTENANCE] },
@@ -156,6 +157,16 @@ function getNavIcon(iconName: string, isActive: boolean) {
           <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14" />
           <circle cx="17" cy="18" r="2" />
           <circle cx="7" cy="18" r="2" />
+        </svg>
+      );
+    case "scan":
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`lucide lucide-scan-line ${className}`}>
+          <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+          <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+          <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+          <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+          <path d="M7 12h10" />
         </svg>
       );
     case "extension":

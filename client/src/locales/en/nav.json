@@ -1,6 +1,7 @@
 {
   "dashboard": "Dashboard",
   "vehicles": "Vehicles",
+  "scan": "Scan",
   "customers": "Customers",
   "reservations": "Reservations",
   "maintenance": "Maintenance",

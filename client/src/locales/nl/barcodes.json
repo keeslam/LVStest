@@ -1,0 +1,71 @@
+{
+  "scanPage": {
+    "title": "Barcode scannen",
+    "description": "Scan een sleutellabel met een barcodescanner of camera, of typ de code handmatig.",
+    "inputPlaceholder": "Scan of typ een barcode (VEH-... / RES-... / kenteken)",
+    "searchButton": "Zoeken",
+    "cameraButton": "Camera scannen",
+    "notFound": "Geen voertuig of reservering gevonden voor \"{{code}}\"",
+    "lookupError": "Opzoeken mislukt. Controleer de verbinding en probeer opnieuw.",
+    "scanning": "Bezig met zoeken...",
+    "vehicleFound": "Voertuig gevonden",
+    "reservationFound": "Reservering gevonden",
+    "statusLabel": "Status",
+    "barcodeLabel": "Barcode",
+    "licensePlateLabel": "Kenteken",
+    "customerLabel": "Klant",
+    "periodLabel": "Periode",
+    "openEnded": "open einde",
+    "activeReservation": "Actieve reservering",
+    "upcomingReservation": "Aankomende reservering",
+    "noReservation": "Geen actieve of aankomende reservering",
+    "openVehicleButton": "Voertuig openen",
+    "openReservationButton": "Reservering openen",
+    "scanAgain": "Opnieuw scannen",
+    "status": {
+      "available": "Beschikbaar",
+      "scheduled": "Gereserveerd",
+      "rented": "Verhuurd",
+      "needs_fixing": "In reparatie",
+      "not_for_rental": "Niet voor verhuur"
+    },
+    "reservationStatus": {
+      "booked": "Geboekt",
+      "picked_up": "Opgehaald",
+      "returned": "Geretourneerd",
+      "completed": "Afgerond"
+    }
+  },
+  "camera": {
+    "dialogTitle": "Camera scannen",
+    "dialogDescription": "Richt de camera op de barcode van het sleutellabel.",
+    "permissionDenied": "Cameratoegang geweigerd. Sta cameragebruik toe in de browserinstellingen of gebruik het invoerveld.",
+    "noCamera": "Geen camera gevonden op dit apparaat.",
+    "startError": "Camera starten mislukt.",
+    "closeButton": "Sluiten"
+  },
+  "label": {
+    "printKeyLabel": "Sleutellabel afdrukken",
+    "viewBarcode": "Barcode bekijken",
+    "regenerate": "Barcode opnieuw genereren",
+    "regenerateConfirmTitle": "Barcode opnieuw genereren?",
+    "regenerateConfirmDescription": "De oude barcode ({{barcode}}) werkt daarna niet meer. Reeds afgedrukte labels moeten opnieuw worden afgedrukt. Deze actie kan niet ongedaan worden gemaakt.",
+    "regenerateSuccess": "Nieuwe barcode: {{barcode}}",
+    "regenerateError": "Barcode opnieuw genereren mislukt.",
+    "barcodeDialogTitle": "Voertuigbarcode"
+  },
+  "book": {
+    "title": "Barcodeboek",
+    "description": "Druk alle voertuigbarcodes af voor in een map of klapper.",
+    "searchPlaceholder": "Zoeken op kenteken, merk of model...",
+    "statusFilterAll": "Alle statussen",
+    "selectAll": "Alles selecteren",
+    "deselectAll": "Selectie wissen",
+    "selectedCount": "{{count}} geselecteerd",
+    "printSelectedButton": "Selectie afdrukken",
+    "printAllButton": "Alles afdrukken ({{count}})",
+    "printFilteredButton": "Gefilterde afdrukken ({{count}})",
+    "noVehicles": "Geen voertuigen gevonden",
+    "pageHeader": "Barcodeboek — Auto Lease LAM"
+  }
+}

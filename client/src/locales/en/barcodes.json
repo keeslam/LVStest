@@ -1,0 +1,71 @@
+{
+  "scanPage": {
+    "title": "Scan barcode",
+    "description": "Scan a key label with a barcode scanner or camera, or type the code manually.",
+    "inputPlaceholder": "Scan or type a barcode (VEH-... / RES-... / license plate)",
+    "searchButton": "Search",
+    "cameraButton": "Camera scan",
+    "notFound": "No vehicle or reservation found for \"{{code}}\"",
+    "lookupError": "Lookup failed. Check the connection and try again.",
+    "scanning": "Looking up...",
+    "vehicleFound": "Vehicle found",
+    "reservationFound": "Reservation found",
+    "statusLabel": "Status",
+    "barcodeLabel": "Barcode",
+    "licensePlateLabel": "License plate",
+    "customerLabel": "Customer",
+    "periodLabel": "Period",
+    "openEnded": "open-ended",
+    "activeReservation": "Active reservation",
+    "upcomingReservation": "Upcoming reservation",
+    "noReservation": "No active or upcoming reservation",
+    "openVehicleButton": "Open vehicle",
+    "openReservationButton": "Open reservation",
+    "scanAgain": "Scan again",
+    "status": {
+      "available": "Available",
+      "scheduled": "Reserved",
+      "rented": "Rented",
+      "needs_fixing": "In repair",
+      "not_for_rental": "Not for rental"
+    },
+    "reservationStatus": {
+      "booked": "Booked",
+      "picked_up": "Picked up",
+      "returned": "Returned",
+      "completed": "Completed"
+    }
+  },
+  "camera": {
+    "dialogTitle": "Camera scan",
+    "dialogDescription": "Point the camera at the key label barcode.",
+    "permissionDenied": "Camera access denied. Allow camera use in your browser settings or use the input field.",
+    "noCamera": "No camera found on this device.",
+    "startError": "Failed to start the camera.",
+    "closeButton": "Close"
+  },
+  "label": {
+    "printKeyLabel": "Print key label",
+    "viewBarcode": "View barcode",
+    "regenerate": "Regenerate barcode",
+    "regenerateConfirmTitle": "Regenerate barcode?",
+    "regenerateConfirmDescription": "The old barcode ({{barcode}}) will stop working. Already printed labels must be reprinted. This cannot be undone.",
+    "regenerateSuccess": "New barcode: {{barcode}}",
+    "regenerateError": "Failed to regenerate barcode.",
+    "barcodeDialogTitle": "Vehicle barcode"
+  },
+  "book": {
+    "title": "Barcode book",
+    "description": "Print all vehicle barcodes for a physical binder.",
+    "searchPlaceholder": "Search by license plate, make or model...",
+    "statusFilterAll": "All statuses",
+    "selectAll": "Select all",
+    "deselectAll": "Clear selection",
+    "selectedCount": "{{count}} selected",
+    "printSelectedButton": "Print selection",
+    "printAllButton": "Print all ({{count}})",
+    "printFilteredButton": "Print filtered ({{count}})",
+    "noVehicles": "No vehicles found",
+    "pageHeader": "Barcode book — Auto Lease LAM"
+  }
+}
