@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
   DialogTitle,
-  DialogFooter 
+  DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,8 @@ import { Separator } from "@/components/ui/separator";
 import { formatDate, formatCurrency, formatLicensePlate, formatReservationStatus } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { Reservation, Vehicle, Customer, Driver, Document } from "@shared/schema";
+import { BarcodeSvg } from "@/components/barcodes/barcode-svg";
+import { formatReservationBarcode } from "@shared/barcode";
 import { differenceInDays, parseISO } from "date-fns";
 import { Wrench, Car, ArrowRightLeft, Trash2, Edit, FileText, Upload, FileCheck, X, Camera, AlertCircle } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -866,6 +868,11 @@ export function ReservationViewDialog({
                   </div>
                 </div>
               )}
+
+              {/* Barcode Section */}
+              <div className="flex justify-center py-2">
+                <BarcodeSvg value={formatReservationBarcode(reservation.id)} height={35} />
+              </div>
             </div>
           )}
 
