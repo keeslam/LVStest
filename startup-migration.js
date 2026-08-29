@@ -834,6 +834,24 @@ async function runMigrations() {
       console.log('✅ Transport report templates already exist, skipping seed');
     }
 
+    // Barcode label templates (Documents page "Barcodelabels" tab). Same
+    // drag-position-fields model as the transport report templates above, but
+    // the canvas is a small mm-sized sticker instead of A4, so x/y are in mm
+    // and there is no background library.
+    await createTableIfNotExists(
+      'barcode_label_templates',
+      `CREATE TABLE barcode_label_templates (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        is_default BOOLEAN DEFAULT false,
+        label_width_mm INTEGER NOT NULL DEFAULT 62,
+        label_height_mm INTEGER NOT NULL DEFAULT 29,
+        fields JSONB DEFAULT '[]',
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )`
+    );
+
     // Recycle bin for vehicle deletes. Without this table a delete cannot be
     // recorded or undone, so it must exist before the app serves traffic.
     await createTableIfNotExists('deleted_records', `

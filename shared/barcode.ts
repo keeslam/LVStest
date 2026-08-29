@@ -44,3 +44,71 @@ export function parseBarcode(raw: string): ParsedBarcode {
   }
   return { kind: "unknown", normalized };
 }
+
+// Positioned field on a barcode label template. Same shape as the existing
+// template editors' TemplateField, but x/y are in millimetres of label space
+// (labels are small; mm maps 1:1 onto print CSS). barcodeHeightMm only
+// applies when source === "barcode".
+export interface BarcodeLabelField {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  fontSize: number;
+  isBold: boolean;
+  source: string;
+  textAlign: "left" | "center" | "right";
+  locked?: boolean;
+  barcodeHeightMm?: number;
+}
+
+// Data sources the barcode label editor offers. "barcode" renders as a Code
+// 128 graphic; "staticText" prints the field's own name as literal text.
+export const BARCODE_LABEL_SOURCES = [
+  "barcode",
+  "licensePlate",
+  "brand",
+  "model",
+  "vehicleFull",
+  "vehicleType",
+  "chassisNumber",
+  "apkDate",
+  "company",
+  "fleetNumber",
+  "staticText",
+] as const;
+
+// Minimal vehicle shape a label needs. Callers that want a formatted plate
+// (formatLicensePlate lives client-side and can't be imported here) pass the
+// already-formatted string in licensePlate.
+export interface BarcodeLabelVehicle {
+  id: number;
+  barcode?: string | null;
+  licensePlate: string;
+  brand: string;
+  model: string;
+  vehicleType?: string | null;
+  chassisNumber?: string | null;
+  apkDate?: string | null;
+  company?: string | null;
+}
+
+export function resolveBarcodeLabelSource(
+  source: string,
+  vehicle: BarcodeLabelVehicle,
+  fieldName: string,
+): string {
+  switch (source) {
+    case "licensePlate": return vehicle.licensePlate;
+    case "brand": return vehicle.brand;
+    case "model": return vehicle.model;
+    case "vehicleFull": return `${vehicle.brand} ${vehicle.model}`;
+    case "vehicleType": return vehicle.vehicleType ?? "";
+    case "chassisNumber": return vehicle.chassisNumber ?? "";
+    case "apkDate": return vehicle.apkDate ?? "";
+    case "company": return vehicle.company ?? "";
+    case "fleetNumber": return String(vehicle.id);
+    case "staticText": return fieldName;
+    default: return "";
+  }
+}

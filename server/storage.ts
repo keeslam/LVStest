@@ -10,6 +10,7 @@ import {
   type DamageCheckTemplateBackground, type InsertDamageCheckTemplateBackground,
   type TransportReportTemplate, type InsertTransportReportTemplate,
   type TransportReportTemplateBackground, type InsertTransportReportTemplateBackground,
+  type BarcodeLabelTemplate, type InsertBarcodeLabelTemplate,
   customNotifications, type CustomNotification, type InsertCustomNotification,
   appSettings, type AppSettings, type InsertAppSettings,
   settings, type Settings, type InsertSettings, type UpdateSettings,
@@ -166,6 +167,15 @@ export interface IStorage {
   createTransportReportTemplateBackground(background: InsertTransportReportTemplateBackground): Promise<TransportReportTemplateBackground>;
   deleteTransportReportTemplateBackground(id: number): Promise<boolean>;
   selectTransportReportTemplateBackground(templateId: number, backgroundId: number): Promise<TransportReportTemplate | undefined>;
+
+  // Barcode Label Template methods (key-label stickers, mm canvas, no backgrounds)
+  getBarcodeLabelTemplates(): Promise<BarcodeLabelTemplate[]>;
+  getBarcodeLabelTemplate(id: number): Promise<BarcodeLabelTemplate | undefined>;
+  getDefaultBarcodeLabelTemplate(): Promise<BarcodeLabelTemplate | undefined>;
+  createBarcodeLabelTemplate(template: InsertBarcodeLabelTemplate): Promise<BarcodeLabelTemplate>;
+  updateBarcodeLabelTemplate(id: number, templateData: Partial<InsertBarcodeLabelTemplate>): Promise<BarcodeLabelTemplate | undefined>;
+  deleteBarcodeLabelTemplate(id: number): Promise<boolean>;
+
   getAllDamageCheckTemplateBackgrounds(): Promise<DamageCheckTemplateBackground[]>;
   getDamageCheckTemplateBackgrounds(templateId: number): Promise<DamageCheckTemplateBackground[]>;
   getDamageCheckTemplateBackground(id: number): Promise<DamageCheckTemplateBackground | undefined>;

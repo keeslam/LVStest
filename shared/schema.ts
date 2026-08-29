@@ -864,6 +864,27 @@ export const insertTransportReportTemplateBackgroundSchema = createInsertSchema(
 export type TransportReportTemplateBackground = typeof transportReportTemplateBackgrounds.$inferSelect;
 export type InsertTransportReportTemplateBackground = z.infer<typeof insertTransportReportTemplateBackgroundSchema>;
 
+// Barcode label templates — same clone-per-domain template-editor pattern as
+// transportReportTemplates above (see that comment), adapted for key-label
+// stickers: a small mm-sized canvas instead of A4, no background library, and
+// fields may include a positioned Code 128 barcode. x/y in fields are mm.
+export const barcodeLabelTemplates = pgTable("barcode_label_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  isDefault: boolean("is_default").default(false),
+  labelWidthMm: integer("label_width_mm").default(62).notNull(),
+  labelHeightMm: integer("label_height_mm").default(29).notNull(),
+  fields: jsonb("fields").default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertBarcodeLabelTemplateSchema = createInsertSchema(barcodeLabelTemplates)
+  .omit({ id: true });
+
+export type BarcodeLabelTemplate = typeof barcodeLabelTemplates.$inferSelect;
+export type InsertBarcodeLabelTemplate = z.infer<typeof insertBarcodeLabelTemplateSchema>;
+
 // Custom Notifications table
 export const customNotifications = pgTable("custom_notifications", {
   id: serial("id").primaryKey(),

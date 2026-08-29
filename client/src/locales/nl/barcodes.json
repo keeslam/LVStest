@@ -66,6 +66,11 @@
     "printAllButton": "Alles afdrukken ({{count}})",
     "printFilteredButton": "Gefilterde afdrukken ({{count}})",
     "noVehicles": "Geen voertuigen gevonden",
-    "pageHeader": "Barcodeboek — Auto Lease LAM"
+    "pageHeader": "Barcodeboek — Auto Lease LAM",
+    "printStickersButton": "Stickers afdrukken"
+  },
+  "templatePicker": {
+    "label": "Labelsjabloon",
+    "defaultOption": "Standaardindeling"
   }
 }

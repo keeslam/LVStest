@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -9,8 +10,10 @@ import {
   AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Printer, RefreshCw } from "lucide-react";
-import { Vehicle, UserRole, UserPermission } from "@shared/schema";
+import { Vehicle, UserRole, UserPermission, BarcodeLabelTemplate } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
@@ -28,6 +31,22 @@ export function VehicleBarcodeDialog({ vehicle, open, onOpenChange }: VehicleBar
   const { t } = useTranslation(["barcodes", "common"]);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Staff can read the template list (GET is requireAuth only) to pick a layout.
+  const { data: labelTemplates } = useQuery<BarcodeLabelTemplate[]>({
+    queryKey: ["/api/barcode-label-templates"],
+    enabled: open,
+  });
+  const [templateId, setTemplateId] = useState<string>("default");
+
+  // Preselect the template marked as default once the list arrives.
+  useEffect(() => {
+    if (templateId !== "default") return;
+    const preferred = labelTemplates?.find(tpl => tpl.isDefault);
+    if (preferred) setTemplateId(String(preferred.id));
+  }, [labelTemplates]);
+
+  const selectedTemplate = labelTemplates?.find(tpl => String(tpl.id) === templateId) ?? null;
 
   const canRegenerate =
     user?.role === UserRole.ADMIN ||
@@ -66,9 +85,28 @@ export function VehicleBarcodeDialog({ vehicle, open, onOpenChange }: VehicleBar
           {vehicle.barcode && <BarcodeSvg value={vehicle.barcode} height={70} />}
         </div>
 
+        {labelTemplates && labelTemplates.length > 0 && (
+          <div className="space-y-2">
+            <Label htmlFor="barcode-label-template">{t("templatePicker.label")}</Label>
+            <Select value={templateId} onValueChange={setTemplateId}>
+              <SelectTrigger id="barcode-label-template" data-testid="select-key-label-template">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">{t("templatePicker.defaultOption")}</SelectItem>
+                {labelTemplates.map(tpl => (
+                  <SelectItem key={tpl.id} value={String(tpl.id)}>
+                    {tpl.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         <div className="flex gap-2">
           <Button
-            onClick={() => printKeyLabels([vehicle])}
+            onClick={() => printKeyLabels([vehicle], selectedTemplate)}
             className="flex-1"
             data-testid="button-print-key-label"
           >

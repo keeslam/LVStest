@@ -260,7 +260,13 @@
       "updateButton": "Update",
       "deleteDialogTitle": "Delete Diagram Template",
       "deleteDialogDescription": "Are you sure you want to delete the diagram template for {{make}} {{model}}? This action cannot be undone."
-    }
+    },
+    "tabBarcodeLabels": "Barcode labels",
+    "barcodeLabelEditorTitle": "Barcode label templates",
+    "barcodeLabelEditorDescription": "Design key-label stickers with a barcode and vehicle details",
+    "openBarcodeLabelEditorIntro": "Open the editor to create and edit label templates.",
+    "openBarcodeLabelEditorButton": "Open editor",
+    "barcodeLabelEditorDialogDescription": "Drag fields on the sticker to lay out the barcode label."
   },
   "templateEditor": {
     "toasts": {
@@ -631,5 +637,29 @@
     "saveSignatureButton": "Save Signature",
     "customerSignatureTitle": "Customer Signature",
     "customerSignatureAlt": "Customer signature"
+  },
+  "barcodeLabelEditor": {
+    "backToDocuments": "Back to documents",
+    "createFirstTemplateDescription": "Create a first label template to print key labels with a barcode.",
+    "templateNamePlaceholder": "E.g. Key label 62x29",
+    "labelSizeLabel": "Label size",
+    "labelWidthLabel": "Width (mm)",
+    "labelHeightLabel": "Height (mm)",
+    "barcodeHeightLabel": "Barcode height (mm)",
+    "xPositionMmLabel": "X position (mm)",
+    "yPositionMmLabel": "Y position (mm)",
+    "sources": {
+      "barcode": "Barcode",
+      "licensePlate": "License plate",
+      "brand": "Brand",
+      "model": "Model",
+      "vehicleFull": "Brand and model",
+      "vehicleType": "Vehicle type",
+      "chassisNumber": "Chassis number",
+      "apkDate": "MOT date",
+      "company": "Company",
+      "fleetNumber": "Fleet number",
+      "staticText": "Static text"
+    }
   }
 }

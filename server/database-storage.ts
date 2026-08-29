@@ -10,6 +10,7 @@ import {
   type DamageCheckTemplateBackground, type InsertDamageCheckTemplateBackground,
   transportReportTemplates, type TransportReportTemplate, type InsertTransportReportTemplate,
   transportReportTemplateBackgrounds, type TransportReportTemplateBackground, type InsertTransportReportTemplateBackground,
+  barcodeLabelTemplates, type BarcodeLabelTemplate, type InsertBarcodeLabelTemplate,
   customNotifications, type CustomNotification, type InsertCustomNotification,
   backupSettings, type BackupSettings, type InsertBackupSettings,
   appSettings, type AppSettings, type InsertAppSettings,
@@ -2542,6 +2543,50 @@ export class DatabaseStorage implements IStorage {
       backgroundPath: background.backgroundPath,
       backgroundPreviewPath: background.previewPath,
     });
+  }
+
+  // Barcode Label Template methods — mirror of the transport report template
+  // methods above (same isDefault-is-exclusive behavior), for the key-label
+  // sticker templates. No backgrounds: labels print on blank sticker stock.
+  async getBarcodeLabelTemplates(): Promise<BarcodeLabelTemplate[]> {
+    return await db.select().from(barcodeLabelTemplates).orderBy(desc(barcodeLabelTemplates.createdAt));
+  }
+
+  async getBarcodeLabelTemplate(id: number): Promise<BarcodeLabelTemplate | undefined> {
+    const [template] = await db.select().from(barcodeLabelTemplates).where(eq(barcodeLabelTemplates.id, id));
+    return template || undefined;
+  }
+
+  async getDefaultBarcodeLabelTemplate(): Promise<BarcodeLabelTemplate | undefined> {
+    const [defaultTemplate] = await db.select().from(barcodeLabelTemplates).where(eq(barcodeLabelTemplates.isDefault, true)).limit(1);
+    if (defaultTemplate) return defaultTemplate;
+    const [first] = await db.select().from(barcodeLabelTemplates).orderBy(barcodeLabelTemplates.id).limit(1);
+    return first || undefined;
+  }
+
+  async createBarcodeLabelTemplate(templateData: InsertBarcodeLabelTemplate): Promise<BarcodeLabelTemplate> {
+    if (templateData.isDefault) {
+      await db.update(barcodeLabelTemplates).set({ isDefault: false });
+    }
+    const [template] = await db.insert(barcodeLabelTemplates).values(templateData).returning();
+    return template;
+  }
+
+  async updateBarcodeLabelTemplate(id: number, templateData: Partial<InsertBarcodeLabelTemplate>): Promise<BarcodeLabelTemplate | undefined> {
+    if (templateData.isDefault) {
+      await db.update(barcodeLabelTemplates).set({ isDefault: false });
+    }
+    const [template] = await db
+      .update(barcodeLabelTemplates)
+      .set({ ...templateData, updatedAt: new Date() })
+      .where(eq(barcodeLabelTemplates.id, id))
+      .returning();
+    return template || undefined;
+  }
+
+  async deleteBarcodeLabelTemplate(id: number): Promise<boolean> {
+    const [deleted] = await db.delete(barcodeLabelTemplates).where(eq(barcodeLabelTemplates.id, id)).returning();
+    return !!deleted;
   }
 
   async getAllDamageCheckTemplateBackgrounds(): Promise<DamageCheckTemplateBackground[]> {

@@ -260,7 +260,13 @@
       "updateButton": "Bijwerken",
       "deleteDialogTitle": "Diagramsjabloon verwijderen",
       "deleteDialogDescription": "Weet je zeker dat je het diagramsjabloon voor {{make}} {{model}} wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."
-    }
+    },
+    "tabBarcodeLabels": "Barcodelabels",
+    "barcodeLabelEditorTitle": "Barcodelabel-sjablonen",
+    "barcodeLabelEditorDescription": "Ontwerp sleutellabel-stickers met barcode en voertuiggegevens",
+    "openBarcodeLabelEditorIntro": "Open de editor om labelsjablonen te maken en te bewerken.",
+    "openBarcodeLabelEditorButton": "Editor openen",
+    "barcodeLabelEditorDialogDescription": "Sleep velden op de sticker om de indeling van het barcodelabel te bepalen."
   },
   "templateEditor": {
     "toasts": {
@@ -631,5 +637,29 @@
     "saveSignatureButton": "Handtekening opslaan",
     "customerSignatureTitle": "Handtekening klant",
     "customerSignatureAlt": "Handtekening klant"
+  },
+  "barcodeLabelEditor": {
+    "backToDocuments": "Terug naar documenten",
+    "createFirstTemplateDescription": "Maak een eerste labelsjabloon om sleutellabels met barcode af te drukken.",
+    "templateNamePlaceholder": "Bijv. Sleutellabel 62x29",
+    "labelSizeLabel": "Labelformaat",
+    "labelWidthLabel": "Breedte (mm)",
+    "labelHeightLabel": "Hoogte (mm)",
+    "barcodeHeightLabel": "Barcodehoogte (mm)",
+    "xPositionMmLabel": "X-positie (mm)",
+    "yPositionMmLabel": "Y-positie (mm)",
+    "sources": {
+      "barcode": "Barcode",
+      "licensePlate": "Kenteken",
+      "brand": "Merk",
+      "model": "Model",
+      "vehicleFull": "Merk en model",
+      "vehicleType": "Voertuigtype",
+      "chassisNumber": "Chassisnummer",
+      "apkDate": "APK-datum",
+      "company": "Bedrijf",
+      "fleetNumber": "Vlootnummer",
+      "staticText": "Vaste tekst"
+    }
   }
 }

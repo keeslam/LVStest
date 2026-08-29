@@ -66,6 +66,11 @@
     "printAllButton": "Print all ({{count}})",
     "printFilteredButton": "Print filtered ({{count}})",
     "noVehicles": "No vehicles found",
-    "pageHeader": "Barcode book — Auto Lease LAM"
+    "pageHeader": "Barcode book — Auto Lease LAM",
+    "printStickersButton": "Print stickers"
+  },
+  "templatePicker": {
+    "label": "Label template",
+    "defaultOption": "Default layout"
   }
 }

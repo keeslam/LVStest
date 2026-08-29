@@ -28,7 +28,8 @@ import { displayLicensePlate } from "@/lib/utils";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import PDFTemplateEditor from "./template-editor";
 import TransportReportTemplateEditor from "./transport-report-template-editor";
-import { FileEdit, Star, Trash2, Printer, Eye, ChevronDown, ChevronRight, Image, Plus, X, Edit, Settings as SettingsIcon, Truck } from "lucide-react";
+import BarcodeLabelTemplateEditor from "./barcode-label-template-editor";
+import { FileEdit, Star, Trash2, Printer, Eye, ChevronDown, ChevronRight, Image, Plus, X, Edit, Settings as SettingsIcon, Truck, Barcode } from "lucide-react";
 import DamageCheckTemplateStudio from "@/pages/settings/damage-check-template-studio";
 import { useAuth } from "@/hooks/use-auth";
 import { UserRole } from "@shared/schema";
@@ -56,6 +57,7 @@ export default function DocumentsIndex() {
   const [templateToDelete, setTemplateToDelete] = useState<any | null>(null);
   const [templateEditorDialogOpen, setTemplateEditorDialogOpen] = useState(false);
   const [transportTemplateEditorDialogOpen, setTransportTemplateEditorDialogOpen] = useState(false);
+  const [barcodeLabelEditorDialogOpen, setBarcodeLabelEditorDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploadVehicleId, setUploadVehicleId] = useState<string>("");
 
@@ -81,7 +83,12 @@ export default function DocumentsIndex() {
   const { data: transportTemplates, isLoading: isLoadingTransportTemplates } = useQuery<any[]>({
     queryKey: ['/api/transport-report-templates'],
   });
-  
+
+  // Fetch barcode label templates
+  const { data: barcodeLabelTemplates, isLoading: isLoadingBarcodeLabelTemplates } = useQuery<any[]>({
+    queryKey: ['/api/barcode-label-templates'],
+  });
+
   // Delete document mutation
   const deleteDocumentMutation = useMutation({
     mutationFn: async (documentId: number) => {
@@ -490,10 +497,11 @@ export default function DocumentsIndex() {
       </Dialog>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="library">{t('indexPage.tabLibrary')}</TabsTrigger>
           <TabsTrigger value="template-editor">{t('indexPage.tabContractTemplates')}</TabsTrigger>
           <TabsTrigger value="transport-templates" data-testid="tab-transport-templates">{t('indexPage.tabTransportTemplates')}</TabsTrigger>
+          <TabsTrigger value="barcode-labels" data-testid="tab-barcode-labels">{t('indexPage.tabBarcodeLabels')}</TabsTrigger>
           <TabsTrigger value="damage-check">{t('indexPage.tabDamageCheckTemplates')}</TabsTrigger>
         </TabsList>
 
@@ -1060,6 +1068,77 @@ export default function DocumentsIndex() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="barcode-labels">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('indexPage.barcodeLabelEditorTitle')}</CardTitle>
+              <CardDescription>
+                {t('indexPage.barcodeLabelEditorDescription')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-6">
+                <p className="mb-4">{t('indexPage.openBarcodeLabelEditorIntro')}</p>
+                <Button onClick={() => setBarcodeLabelEditorDialogOpen(true)} data-testid="button-open-barcode-label-editor">
+                  <FileEdit className="mr-2 h-4 w-4" />
+                  {t('indexPage.openBarcodeLabelEditorButton')}
+                </Button>
+              </div>
+
+              {isLoadingBarcodeLabelTemplates ? (
+                <div className="flex justify-center items-center h-32">
+                  <svg className="animate-spin h-8 w-8 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+              ) : barcodeLabelTemplates && barcodeLabelTemplates.length > 0 ? (
+                <div>
+                  <h3 className="text-lg font-medium mb-4 border-b pb-2">{t('indexPage.availableTemplatesTitle')}</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {barcodeLabelTemplates.map((template: any) => (
+                      <Card key={template.id} className="overflow-hidden">
+                        <div className="bg-gray-100 p-2 flex items-center justify-center h-24 relative">
+                          <Barcode className="h-10 w-10 text-gray-400" />
+                        </div>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium mb-1 truncate" title={template.name}>
+                              {template.name}
+                            </h4>
+                            {template.isDefault && (
+                              <Badge variant="secondary" className="ml-2">
+                                <Star className="h-3 w-3 mr-1" />
+                                {t('indexPage.defaultBadge')}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {template.labelWidthMm} × {template.labelHeightMm} mm
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-3 w-full"
+                            onClick={() => setBarcodeLabelEditorDialogOpen(true)}
+                          >
+                            <FileEdit className="h-3 w-3 mr-1" />
+                            {t('indexPage.editButton')}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  {t('indexPage.noTemplatesFound')}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="damage-check">
           <div className="space-y-6">
             <DamageCheckManager />
@@ -1262,6 +1341,21 @@ export default function DocumentsIndex() {
           </DialogHeader>
           <div className="flex-1 overflow-y-auto overflow-x-hidden">
             <TransportReportTemplateEditor onClose={() => setTransportTemplateEditorDialogOpen(false)} />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Barcode Label Template Editor Dialog */}
+      <Dialog open={barcodeLabelEditorDialogOpen} onOpenChange={setBarcodeLabelEditorDialogOpen}>
+        <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] max-h-[95vh] p-0 overflow-hidden flex flex-col">
+          <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
+            <DialogTitle>{t('indexPage.barcodeLabelEditorTitle')}</DialogTitle>
+            <DialogDescription>
+              {t('indexPage.barcodeLabelEditorDialogDescription')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            <BarcodeLabelTemplateEditor onClose={() => setBarcodeLabelEditorDialogOpen(false)} />
           </div>
         </DialogContent>
       </Dialog>

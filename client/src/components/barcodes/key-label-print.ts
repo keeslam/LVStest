@@ -1,5 +1,7 @@
 import JsBarcode from "jsbarcode";
 import { formatLicensePlate } from "@/lib/format-utils";
+import type { BarcodeLabelTemplate } from "@shared/schema";
+import { BarcodeLabelField, resolveBarcodeLabelSource } from "@shared/barcode";
 
 interface LabelVehicle {
   id: number;
@@ -7,14 +9,49 @@ interface LabelVehicle {
   licensePlate: string;
   brand: string;
   model: string;
+  vehicleType?: string | null;
+  chassisNumber?: string | null;
+  apkDate?: string | null;
+  company?: string | null;
+}
+
+const DEFAULT_LABEL_WIDTH_MM = 62;
+const DEFAULT_LABEL_HEIGHT_MM = 29;
+const DEFAULT_BARCODE_HEIGHT_MM = 10;
+
+// Layout used when no template is picked: the original hardcoded 62x29 label.
+const FALLBACK_FIELDS: BarcodeLabelField[] = [
+  { id: "b", name: "Barcode", x: 2, y: 3, fontSize: 10, isBold: false, source: "barcode", textAlign: "left", barcodeHeightMm: 12 },
+  { id: "p", name: "Kenteken", x: 2, y: 20, fontSize: 10, isBold: true, source: "licensePlate", textAlign: "left" },
+  { id: "m", name: "Merk/model", x: 2, y: 25, fontSize: 8, isBold: false, source: "vehicleFull", textAlign: "left" },
+];
+
+// A template's fields column is jsonb and older rows may hold a JSON string.
+function readTemplateFields(template: BarcodeLabelTemplate): BarcodeLabelField[] {
+  const raw = template.fields;
+  if (Array.isArray(raw)) return raw as BarcodeLabelField[];
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? (parsed as BarcodeLabelField[]) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
 }
 
 // Renders labels into a hidden same-origin iframe and prints it. SVG barcodes
 // stay vector-sharp at any print scale. Layout targets standard key-label
-// stock (~62x29mm) but prints fine on plain A4 as a grid.
-export function printKeyLabels(vehicles: LabelVehicle[]): void {
+// stock (~62x29mm) but prints fine on plain A4 as a grid. With a template, the
+// template's positioned fields (x/y in mm of label space) are drawn instead.
+export function printKeyLabels(vehicles: LabelVehicle[], template?: BarcodeLabelTemplate | null): void {
   const printable = vehicles.filter((v): v is LabelVehicle & { barcode: string } => !!v.barcode);
   if (printable.length === 0) return;
+
+  const widthMm = template?.labelWidthMm ?? DEFAULT_LABEL_WIDTH_MM;
+  const heightMm = template?.labelHeightMm ?? DEFAULT_LABEL_HEIGHT_MM;
+  const fields = template ? readTemplateFields(template) : FALLBACK_FIELDS;
 
   const frame = document.createElement("iframe");
   frame.style.position = "fixed";
@@ -31,42 +68,56 @@ export function printKeyLabels(vehicles: LabelVehicle[]): void {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: Arial, sans-serif; }
     .label {
-      width: 62mm; height: 29mm; padding: 2mm;
-      display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+      width: ${widthMm}mm; height: ${heightMm}mm; position: relative;
+      display: inline-block; overflow: hidden;
       page-break-inside: avoid; break-inside: avoid;
       border: 0.2mm dashed #bbb; margin: 1mm;
     }
-    .label svg { max-width: 58mm; height: auto; }
-    .meta { font-size: 8pt; text-align: center; line-height: 1.2; margin-top: 0.5mm; }
-    .plate { font-weight: bold; font-size: 10pt; letter-spacing: 0.5pt; }
+    .field { position: absolute; white-space: nowrap; line-height: 1; }
+    .field svg { height: 100%; width: auto; }
     @media print { .label { border: none; } }
   </style></head><body></body></html>`);
   doc.close();
 
   for (const vehicle of printable) {
+    // Dutch plates print grouped (12-XT-102); every other source is raw.
+    const formatted = { ...vehicle, licensePlate: formatLicensePlate(vehicle.licensePlate) };
+
     const label = doc.createElement("div");
     label.className = "label";
-    const svg = doc.createElementNS("http://www.w3.org/2000/svg", "svg");
-    label.appendChild(svg);
-    const meta = doc.createElement("div");
-    meta.className = "meta";
-    const plate = doc.createElement("div");
-    plate.className = "plate";
-    plate.textContent = formatLicensePlate(vehicle.licensePlate);
-    const name = doc.createElement("div");
-    name.textContent = `${vehicle.brand} ${vehicle.model}`;
-    meta.appendChild(plate);
-    meta.appendChild(name);
-    label.appendChild(meta);
+
+    for (const field of fields) {
+      const holder = doc.createElement("div");
+      holder.className = "field";
+      holder.style.left = `${field.x}mm`;
+      holder.style.top = `${field.y}mm`;
+
+      if (field.source === "barcode") {
+        const barcodeHeightMm = field.barcodeHeightMm ?? DEFAULT_BARCODE_HEIGHT_MM;
+        const svg = doc.createElementNS("http://www.w3.org/2000/svg", "svg");
+        holder.appendChild(svg);
+        holder.style.height = `${barcodeHeightMm}mm`;
+        JsBarcode(svg, vehicle.barcode, {
+          format: "CODE128",
+          displayValue: true,
+          fontSize: 10,
+          height: barcodeHeightMm * 3, // px; the svg is scaled to mm below
+          margin: 4,
+          background: "transparent",
+        });
+        svg.style.height = `${barcodeHeightMm}mm`;
+        svg.style.width = "auto";
+      } else {
+        holder.textContent = resolveBarcodeLabelSource(field.source, formatted, field.name);
+        holder.style.fontSize = `${field.fontSize}pt`;
+        holder.style.fontWeight = field.isBold ? "bold" : "normal";
+        holder.style.textAlign = field.textAlign;
+      }
+
+      label.appendChild(holder);
+    }
+
     doc.body.appendChild(label);
-    JsBarcode(svg, vehicle.barcode, {
-      format: "CODE128",
-      displayValue: true,
-      fontSize: 12,
-      height: 40,
-      margin: 6,
-      background: "transparent",
-    });
   }
 
   // Give layout a tick, print, then remove the frame.

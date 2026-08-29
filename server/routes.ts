@@ -19,6 +19,7 @@ import {
   insertPdfTemplateSchema,
   insertTemplateBackgroundSchema,
   insertTransportReportTemplateSchema,
+  insertBarcodeLabelTemplateSchema,
   insertTransportReportTemplateBackgroundSchema,
   insertDriverSchema,
   insertDamageCheckTemplateSchema,
@@ -12799,6 +12800,102 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.status(200).json({ message: "Template deleted successfully" });
     } catch (error) {
       console.error("Error deleting transport report template:", error);
+      res.status(500).json({ message: "Failed to delete template" });
+    }
+  });
+
+  // ==================== BARCODE LABEL TEMPLATE ROUTES ====================
+  // Clone of the transport report template routes above (same drag-position
+  // fields model), for key-label sticker templates. Two deliberate differences:
+  // no background/preview endpoints (labels print on blank sticker stock), and
+  // the GETs are requireAuth only — normal staff need to read the template list
+  // to pick a layout in the print dialogs. Writes still need MANAGE_PDF_TEMPLATES.
+
+  app.get("/api/barcode-label-templates", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const templates = await storage.getBarcodeLabelTemplates();
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching barcode label templates:", error);
+      res.status(500).json({ message: "Failed to fetch barcode label templates" });
+    }
+  });
+
+  app.get("/api/barcode-label-templates/default", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const defaultTemplate = await storage.getDefaultBarcodeLabelTemplate();
+      if (!defaultTemplate) {
+        return res.status(404).json({ message: "No default template found" });
+      }
+      res.json(defaultTemplate);
+    } catch (error) {
+      console.error("Error fetching default barcode label template:", error);
+      res.status(500).json({ message: "Failed to fetch default template" });
+    }
+  });
+
+  app.get("/api/barcode-label-templates/:id", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid template ID" });
+      const template = await storage.getBarcodeLabelTemplate(id);
+      if (!template) return res.status(404).json({ message: "Template not found" });
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching barcode label template:", error);
+      res.status(500).json({ message: "Failed to fetch barcode label template" });
+    }
+  });
+
+  app.post("/api/barcode-label-templates", requireAuth, hasPermission(UserPermission.MANAGE_PDF_TEMPLATES), async (req: Request, res: Response) => {
+    try {
+      const templateData = insertBarcodeLabelTemplateSchema.parse(req.body);
+      const template = await storage.createBarcodeLabelTemplate(templateData);
+      res.status(201).json(template);
+    } catch (error) {
+      console.error("Error creating barcode label template:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid template data", error: error.errors });
+      } else {
+        res.status(400).json({ message: "Failed to create barcode label template" });
+      }
+    }
+  });
+
+  app.patch("/api/barcode-label-templates/:id", requireAuth, hasPermission(UserPermission.MANAGE_PDF_TEMPLATES), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid template ID" });
+
+      const existing = await storage.getBarcodeLabelTemplate(id);
+      if (!existing) return res.status(404).json({ message: "Template not found" });
+
+      const templateData = insertBarcodeLabelTemplateSchema.partial().parse(req.body);
+      const updated = await storage.updateBarcodeLabelTemplate(id, templateData);
+      if (!updated) return res.status(404).json({ message: "Failed to update template" });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating barcode label template:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid template data", error: error.errors });
+      } else {
+        res.status(400).json({ message: "Failed to update barcode label template" });
+      }
+    }
+  });
+
+  app.delete("/api/barcode-label-templates/:id", requireAuth, hasPermission(UserPermission.MANAGE_PDF_TEMPLATES), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid template ID" });
+      const existing = await storage.getBarcodeLabelTemplate(id);
+      if (!existing) return res.status(404).json({ message: "Template not found" });
+      const deleted = await storage.deleteBarcodeLabelTemplate(id);
+      if (!deleted) return res.status(500).json({ message: "Failed to delete template" });
+      res.status(200).json({ message: "Template deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting barcode label template:", error);
       res.status(500).json({ message: "Failed to delete template" });
     }
   });
