@@ -1241,12 +1241,13 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 
 ---
 
-### Task 8: Barcode Book page (list, filter, select, print)
+### Task 8: Barcode Book dialog (list, filter, select, print)
+
+> **AMENDED by user ruling (see ledger):** dialog style, no pages. The book is a full-screen dialog opened from the vehicles page, mirroring how the Documents page hosts its template editors in dialogs. No new route.
 
 **Files:**
-- Create: `client/src/pages/vehicles/barcode-book.tsx`
-- Modify: `client/src/App.tsx` (route `/vehicles/barcodes` — MUST be registered; wouter matches in order, and `/vehicles` uses `startsWith` highlighting so nav still highlights correctly)
-- Modify: `client/src/pages/vehicles/index.tsx` (header button linking to the book, next to "Bulk importeren")
+- Create: `client/src/components/barcodes/barcode-book-dialog.tsx` (the page component below wrapped in `<Dialog><DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">` with `open`/`onOpenChange` props, a `DialogTitle`/`DialogDescription` from the same `book.*` locale keys instead of the `<h1>` header block, and everything else unchanged)
+- Modify: `client/src/pages/vehicles/index.tsx` (header button next to "Bulk importeren" opens the dialog via local `useState`; no wouter Link, no route)
 
 **Interfaces:**
 - Consumes: `GET /api/vehicles` (existing list endpoint; returns `Vehicle[]`), `BarcodeSvg`, `printKeyLabels` is NOT used here — the book prints its own full-page layout via a dedicated print stylesheet on the page itself.
@@ -1409,37 +1410,29 @@ export default function BarcodeBookPage() {
 
 Note the selection print behavior: unselected entries get `print:hidden` when a selection exists, so "print selection" needs no separate render path. Filtered-print falls out naturally since only `filtered` renders.
 
-- [ ] **Step 2: Register route + entry point**
+- [ ] **Step 2: Mount the dialog from the vehicles page (no route)**
 
-`client/src/App.tsx`: `import BarcodeBookPage from "@/pages/vehicles/barcode-book";` and add **above** the `/vehicles` route if wouter would otherwise shadow it (wouter `path="/vehicles"` is exact by default, so ordering is safe either way — still place `/vehicles/barcodes` first for clarity):
-
-```tsx
-              <ProtectedRoute path="/vehicles/barcodes" component={BarcodeBookPage} />
-```
-
-`client/src/pages/vehicles/index.tsx`: in the header next to "Bulk importeren", add:
+`client/src/pages/vehicles/index.tsx`: add `const [barcodeBookOpen, setBarcodeBookOpen] = useState(false);`, and in the header next to "Bulk importeren":
 
 ```tsx
-          <Link href="/vehicles/barcodes">
-            <Button variant="outline">
-              <BookOpen className="h-4 w-4 mr-2" />
-              {t("barcodes:book.title")}
-            </Button>
-          </Link>
+          <Button variant="outline" onClick={() => setBarcodeBookOpen(true)} data-testid="button-open-barcode-book">
+            <BookOpen className="h-4 w-4 mr-2" />
+            {t("barcodes:book.title")}
+          </Button>
 ```
 
-(Import `BookOpen` from lucide-react and `Link` from wouter if not already there; extend that page's `useTranslation` namespaces with `"barcodes"`.)
+and near the page's other dialogs: `<BarcodeBookDialog open={barcodeBookOpen} onOpenChange={setBarcodeBookOpen} />`. Import `BookOpen` from lucide-react and `BarcodeBookDialog` from `@/components/barcodes/barcode-book-dialog`; extend the page's useTranslation namespaces with `"barcodes"`. Do NOT touch App.tsx.
 
 - [ ] **Step 3: Typecheck + browser verification**
 
 Run: `npm run check` → no new errors.
-Preview: `/vehicles/barcodes` → all vehicles with barcodes render in a 2-col grid; search filters live; status filter works; select 3 → print button label switches to "Selectie afdrukken"; `window.print()` preview shows only selected entries, header line, no cut-off barcodes (entries keep `break-inside: avoid`).
+Preview: vehicles page → Barcodeboek button → dialog opens with all barcoded vehicles in a 2-col grid; search filters live; status filter works; select 3 → print button label switches to "Selectie afdrukken"; `window.print()` preview shows only selected entries, header line, no cut-off barcodes (entries keep `break-inside: avoid`).
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add client/src/pages/vehicles/barcode-book.tsx client/src/App.tsx client/src/pages/vehicles/index.tsx
-git commit -m "feat: printable barcode book with search, filters and selection
+git add client/src/components/barcodes/barcode-book-dialog.tsx client/src/pages/vehicles/index.tsx
+git commit -m "feat: printable barcode book dialog with search, filters and selection
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ```
