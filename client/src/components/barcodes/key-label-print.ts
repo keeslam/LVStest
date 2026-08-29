@@ -1,4 +1,5 @@
 import JsBarcode from "jsbarcode";
+import { formatLicensePlate } from "@/lib/format-utils";
 
 interface LabelVehicle {
   id: number;
@@ -51,7 +52,7 @@ export function printKeyLabels(vehicles: LabelVehicle[]): void {
     meta.className = "meta";
     const plate = doc.createElement("div");
     plate.className = "plate";
-    plate.textContent = vehicle.licensePlate;
+    plate.textContent = formatLicensePlate(vehicle.licensePlate);
     const name = doc.createElement("div");
     name.textContent = `${vehicle.brand} ${vehicle.model}`;
     meta.appendChild(plate);
@@ -131,7 +132,7 @@ export function printBarcodeBook(vehicles: LabelVehicle[], pageHeader: string): 
     entry.appendChild(svg);
     const plate = doc.createElement("div");
     plate.className = "plate";
-    plate.textContent = vehicle.licensePlate;
+    plate.textContent = formatLicensePlate(vehicle.licensePlate);
     entry.appendChild(plate);
     const model = doc.createElement("div");
     model.className = "model";
