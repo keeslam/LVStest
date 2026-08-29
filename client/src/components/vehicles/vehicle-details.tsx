@@ -21,6 +21,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { InlineDocumentUpload } from "@/components/documents/inline-document-upload";
 import { QuickStatusChangeButton } from "@/components/vehicles/quick-status-change-button";
 import { VehicleDeleteDialog } from "@/components/vehicles/vehicle-delete-dialog";
+import { VehicleBarcodeDialog } from "@/components/barcodes/vehicle-barcode-dialog";
 import { CustomerViewDialog } from "@/components/customers/customer-view-dialog";
 import { PdfPreviewDialog } from "@/components/documents/pdf-preview-dialog";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
@@ -57,7 +58,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Bell, Mail, User, Eye, Edit, Calendar, Plus, Upload, X, FileCheck, Printer, Trash2, Download, ChevronDown, ChevronRight, ChevronLeft, AlertTriangle, Car } from "lucide-react";
+import { Bell, Mail, User, Eye, Edit, Calendar, Plus, Upload, X, FileCheck, Printer, Trash2, Download, ChevronDown, ChevronRight, ChevronLeft, AlertTriangle, Car, ScanLine } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -93,7 +94,7 @@ interface VehicleDetailsProps {
 }
 
 export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: VehicleDetailsProps) {
-  const { t } = useTranslation("vehicles");
+  const { t } = useTranslation(["vehicles", "barcodes"]);
   const [_, navigate] = useLocation();
   const { openVehicleDialog, openExpenseDialog } = useGlobalDialog();
   const [activeTab, setActiveTab] = useState("general");
@@ -112,6 +113,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
   const [damageFile, setDamageFile] = useState<File | null>(null);
   const [isDragActive, setIsDragActive] = useState(false);
   const [isEditVehicleDialogOpen, setIsEditVehicleDialogOpen] = useState(false);
+  const [barcodeDialogOpen, setBarcodeDialogOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [showAllScheduledMaintenance, setShowAllScheduledMaintenance] = useState(false);
   const [showAllRepairs, setShowAllRepairs] = useState(false);
@@ -953,6 +955,11 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               <path d="M19 12H5"/>
             </svg>
             {inDialogContext ? t('details.header.backButton') : t('details.header.backToVehiclesButton')}
+          </Button>
+
+          <Button variant="outline" size="sm" onClick={() => setBarcodeDialogOpen(true)} data-testid="button-view-barcode">
+            <ScanLine className="mr-1 h-4 w-4" />
+            {t("barcodes:label.viewBarcode")}
           </Button>
 
           <Dialog open={isEditVehicleDialogOpen} onOpenChange={setIsEditVehicleDialogOpen}>
@@ -3469,6 +3476,10 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
         }}
         onCancel={() => setDocumentToDelete(null)}
       />
+
+      {vehicle && (
+        <VehicleBarcodeDialog vehicle={vehicle} open={barcodeDialogOpen} onOpenChange={setBarcodeDialogOpen} />
+      )}
     </div>
   );
 }
