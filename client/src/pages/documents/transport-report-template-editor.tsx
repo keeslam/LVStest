@@ -96,13 +96,17 @@ interface TransportReportTemplateEditorProps {
 const TransportReportTemplateEditor = ({ onClose }: TransportReportTemplateEditorProps = {}) => {
   const { t } = useTranslation(["documents", "common"]);
   const DATA_SOURCE_KEYS: string[] = [
-    'lblVoertuig', 'lblKenteken', 'lblType', 'lblStatus', 'lblDatum', 'lblVoltooid', 'lblVan', 'lblNaar',
+    'lblVoertuig', 'lblKenteken', 'lblVervangendVoertuig', 'lblVervangendKenteken', 'lblType', 'lblStatus',
+    'lblDatum', 'lblVoltooid', 'lblVan', 'lblNaar',
     'lblAfstand', 'lblTolkosten', 'lblChauffeur', 'lblReden', 'lblNotities', 'lblKlant', 'lblFactureerbaar',
-    'lblBedrag', 'lblGegenereerd',
-    'vehicleBrand', 'vehicleModel', 'vehicleFull', 'licensePlate', 'transportType', 'status',
+    'lblBedrag', 'lblGegenereerd', 'lblEigenaar',
+    'vehicleBrand', 'vehicleModel', 'vehicleFull', 'licensePlate',
+    'replacementVehicleBrand', 'replacementVehicleModel', 'replacementVehicleFull', 'replacementLicensePlate',
+    'transportType', 'status',
     'scheduledDate', 'completedDate', 'originAddress', 'originCity', 'originFull',
     'destinationAddress', 'destinationCity', 'destinationFull', 'distanceKm', 'tollCost',
     'driverName', 'reason', 'notes', 'customerName', 'billable', 'billableAmount', 'generatedDate',
+    'externalOwnerName', 'externalColor',
   ];
   const [templates, setTemplates] = useState<Template[]>([]);
   const [currentTemplate, setCurrentTemplate] = useState<Template | null>(null);

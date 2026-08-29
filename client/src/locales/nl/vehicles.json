@@ -339,7 +339,15 @@
       "summaryTitle": "Kostenoverzicht",
       "summaryDescription": "Totale kosten per categorie",
       "totalExpensesLabel": "Totale kosten",
-      "noExpenseData": "Geen kostengegevens beschikbaar"
+      "noExpenseData": "Geen kostengegevens beschikbaar",
+      "viewExpenseTitle": "Kosten bekijken",
+      "printReceiptTitle": "Bon afdrukken",
+      "deleteExpenseTitle": "Kosten verwijderen",
+      "confirmDeleteExpenseTitle": "Kosten verwijderen?",
+      "confirmDeleteExpenseDescription": "Deze kostenpost wordt permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.",
+      "expenseDeletedTitle": "Kosten verwijderd",
+      "expenseDeletedDescription": "De kostenpost is succesvol verwijderd.",
+      "expenseDeleteErrorTitle": "Verwijderen van kosten mislukt"
     },
     "documents": {
       "title": "Voertuigdocumenten",

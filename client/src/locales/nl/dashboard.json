@@ -257,6 +257,7 @@
     "noActiveSpares": "Geen actieve vervangende voertuigen",
     "inUseSince": "In gebruik sinds: {{date}}",
     "expectedReturn": " • Verwachte inlevering: {{date}}",
-    "inUse": "In gebruik"
+    "inUse": "In gebruik",
+    "viaTransport": "Transport #{{id}}"
   }
 }

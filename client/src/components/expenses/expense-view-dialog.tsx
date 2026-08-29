@@ -22,13 +22,15 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Eye, Trash2, Wrench, CircleDot, AlertTriangle, Hammer, Fuel, Shield, FileText, Sparkles, Package, MoreHorizontal, Disc, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, ExternalLink, Trash2, Wrench, CircleDot, AlertTriangle, Hammer, Fuel, Shield, FileText, Sparkles, Package, MoreHorizontal, Disc, ChevronLeft, ChevronRight, Printer } from "lucide-react";
 import { formatDate, formatCurrency, sumMoney } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { Expense, Vehicle } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { ExpenseAddDialog } from "./expense-add-dialog";
+import { PdfPreviewDialog } from "@/components/documents/pdf-preview-dialog";
 
 // Category values are stored verbatim in the database (and aren't restricted to the
 // fixed dropdown list - older/seeded data can be lowercase or entirely custom), so
@@ -79,20 +81,33 @@ interface ExpenseViewDialogProps {
   vehicleId: number;
   children?: React.ReactNode;
   onSuccess?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const ITEMS_PER_PAGE = 5;
 
-export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseViewDialogProps) {
+export function ExpenseViewDialog({
+  vehicleId,
+  children,
+  onSuccess,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+}: ExpenseViewDialogProps) {
   const { t } = useTranslation(["expenses", "common"]);
   const categoryLabel = (category: string) => {
     const key = EXPENSE_CATEGORY_KEYS[category.toLowerCase()];
     return key ? t(`form.categories.${key}`, { defaultValue: category }) : category;
   };
-  const [open, setOpen] = useState(false);
+  const { openExpenseDialog } = useGlobalDialog();
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? (controlledOnOpenChange as (open: boolean) => void) : setInternalOpen;
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [categoryPages, setCategoryPages] = useState<Record<string, number>>({});
+  const [receiptPreviewExpense, setReceiptPreviewExpense] = useState<Expense | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -199,9 +214,11 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger}
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          {trigger}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -353,6 +370,15 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
                                   </TableCell>
                                   <TableCell className="text-center">
                                     <div className="flex items-center justify-center gap-1">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => openExpenseDialog(expense.id, true)}
+                                        className="h-8 w-8 p-0"
+                                        title={t('common:actions.view')}
+                                      >
+                                        <ExternalLink className="h-4 w-4" />
+                                      </Button>
                                       {expense.receiptUrl && (
                                         <Button
                                           variant="ghost"
@@ -362,6 +388,17 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
                                           title={t('viewDialog.viewReceiptTitle')}
                                         >
                                           <Eye className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                      {expense.receiptFilePath && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => setReceiptPreviewExpense(expense)}
+                                          className="h-8 w-8 p-0"
+                                          title={t('viewDialog.printReceiptTitle')}
+                                        >
+                                          <Printer className="h-4 w-4" />
                                         </Button>
                                       )}
                                       <AlertDialog>
@@ -450,6 +487,13 @@ export function ExpenseViewDialog({ vehicleId, children, onSuccess }: ExpenseVie
             </Accordion>
           )}
         </div>
+
+        <PdfPreviewDialog
+          open={!!receiptPreviewExpense}
+          onOpenChange={(open) => !open && setReceiptPreviewExpense(null)}
+          url={receiptPreviewExpense ? `/api/expenses/${receiptPreviewExpense.id}/receipt` : null}
+          title={t('viewDialog.printReceiptTitle')}
+        />
       </DialogContent>
     </Dialog>
   );

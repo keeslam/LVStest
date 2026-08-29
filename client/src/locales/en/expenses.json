@@ -71,6 +71,7 @@
     "noDescription": "No description",
     "hasReceipt": "Has receipt",
     "viewReceiptTitle": "View receipt",
+    "printReceiptTitle": "Print receipt",
     "deleteExpenseTitle": "Delete expense",
     "deleteExpenseConfirmPrefix": "Are you sure you want to delete this {{category}} expense of ",
     "deleteExpenseConfirmSuffix": "? This action cannot be undone.",

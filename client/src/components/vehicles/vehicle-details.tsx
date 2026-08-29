@@ -22,6 +22,8 @@ import { InlineDocumentUpload } from "@/components/documents/inline-document-upl
 import { QuickStatusChangeButton } from "@/components/vehicles/quick-status-change-button";
 import { VehicleDeleteDialog } from "@/components/vehicles/vehicle-delete-dialog";
 import { CustomerViewDialog } from "@/components/customers/customer-view-dialog";
+import { PdfPreviewDialog } from "@/components/documents/pdf-preview-dialog";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient, invalidateRelatedQueries, invalidateByPrefix } from "@/lib/queryClient";
 import {
@@ -93,6 +95,7 @@ interface VehicleDetailsProps {
 export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: VehicleDetailsProps) {
   const { t } = useTranslation("vehicles");
   const [_, navigate] = useLocation();
+  const { openVehicleDialog, openExpenseDialog } = useGlobalDialog();
   const [activeTab, setActiveTab] = useState("general");
   const [isApkReminderOpen, setIsApkReminderOpen] = useState(false);
   const [isApkInspectionOpen, setIsApkInspectionOpen] = useState(false);
@@ -121,7 +124,9 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
   const [damageCheckToDelete, setDamageCheckToDelete] = useState<{ id: number; checkType: string; checkDate: string } | null>(null);
   const [deleteDocumentDialogOpen, setDeleteDocumentDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<{ id: number; fileName: string } | null>(null);
-  
+  const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
+  const [receiptPreviewExpense, setReceiptPreviewExpense] = useState<Expense | null>(null);
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
@@ -133,7 +138,33 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
   const setExpenseCategoryPage = (category: string, page: number) => {
     setExpenseCategoryPages(prev => ({ ...prev, [category]: page }));
   };
-  
+
+  const deleteExpenseMutation = useMutation({
+    mutationFn: async (expenseId: number) => {
+      const response = await apiRequest("DELETE", `/api/expenses/${expenseId}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to delete expense");
+      }
+      return await response.json();
+    },
+    onSuccess: async () => {
+      toast({
+        title: t('details.expenses.expenseDeletedTitle'),
+        description: t('details.expenses.expenseDeletedDescription'),
+      });
+      await invalidateRelatedQueries('expenses', { vehicleId });
+      setExpenseToDelete(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('details.expenses.expenseDeleteErrorTitle'),
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   // Deleting a vehicle is handled by VehicleDeleteDialog (typed license-plate
   // confirmation + cascade preview + recycle bin), see the header actions below.
 
@@ -1132,7 +1163,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                     <span className="text-sm font-medium text-orange-700">{t('details.infoCards.spareVehicleAssigned')}</span>
                   </div>
                   <button
-                    onClick={() => navigate(`/vehicles/${spareAssignment.spareVehicle.id}`)}
+                    onClick={() => openVehicleDialog(spareAssignment.spareVehicle.id)}
                     className="text-sm text-orange-800 hover:text-orange-600 font-medium cursor-pointer transition-colors"
                     data-testid="link-spare-vehicle"
                   >
@@ -1181,7 +1212,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               <div className="mt-3 pt-3 border-t border-orange-200">
                 <p className="text-xs text-orange-600 font-medium mb-1">{t('details.infoCards.replacementForLabel')}</p>
                 <button
-                  onClick={() => navigate(`/vehicles/${actingAsSpareInfo.originalVehicle.id}`)}
+                  onClick={() => openVehicleDialog(actingAsSpareInfo.originalVehicle.id)}
                   className="text-sm text-orange-800 hover:text-orange-600 font-medium cursor-pointer transition-colors"
                   data-testid="link-original-vehicle"
                 >
@@ -1620,7 +1651,38 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                         <span className="text-sm text-gray-500">{formatDate(expense.date)}</span>
                                       </div>
                                     </div>
-                                    <p className="text-lg font-semibold">{<Price value={Number(expense.amount)} />}</p>
+                                    <div className="flex items-center gap-1">
+                                      <p className="text-lg font-semibold mr-1">{<Price value={Number(expense.amount)} />}</p>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0"
+                                        title={t('details.expenses.viewExpenseTitle')}
+                                        onClick={() => openExpenseDialog(expense.id)}
+                                      >
+                                        <Eye className="h-4 w-4" />
+                                      </Button>
+                                      {expense.receiptFilePath && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-8 w-8 p-0"
+                                          title={t('details.expenses.printReceiptTitle')}
+                                          onClick={() => setReceiptPreviewExpense(expense)}
+                                        >
+                                          <Printer className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0 text-red-600 hover:text-red-800"
+                                        title={t('details.expenses.deleteExpenseTitle')}
+                                        onClick={() => setExpenseToDelete(expense)}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
                                   </div>
                                 </div>
                               ))}
@@ -1675,7 +1737,35 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                 )}
               </CardContent>
             </Card>
-            
+
+            <AlertDialog open={!!expenseToDelete} onOpenChange={(open) => !open && setExpenseToDelete(null)}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t('details.expenses.confirmDeleteExpenseTitle')}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t('details.expenses.confirmDeleteExpenseDescription')}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => expenseToDelete && deleteExpenseMutation.mutate(expenseToDelete.id)}
+                    disabled={deleteExpenseMutation.isPending}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    {t('details.expenses.deleteExpenseTitle')}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <PdfPreviewDialog
+              open={!!receiptPreviewExpense}
+              onOpenChange={(open) => !open && setReceiptPreviewExpense(null)}
+              url={receiptPreviewExpense ? `/api/expenses/${receiptPreviewExpense.id}/receipt` : null}
+              title={t('details.expenses.printReceiptTitle')}
+            />
+
             <Card>
               <CardHeader>
                 <CardTitle>{t('details.expenses.summaryTitle')}</CardTitle>

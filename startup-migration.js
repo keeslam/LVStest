@@ -617,6 +617,124 @@ async function runMigrations() {
     // Breakdown/maintenance swaps default to not billable — this is our cost, not the customer's
     await addColumnIfNotExists('vehicle_transports', 'is_breakdown_or_maintenance', 'boolean NOT NULL DEFAULT false');
 
+    // Spare/replacement-vehicle workflow for transports (any type, not just swap).
+    await addColumnIfNotExists('vehicle_transports', 'spare_required', 'boolean NOT NULL DEFAULT false');
+    await addColumnIfNotExists('vehicle_transports', 'spare_reservation_id', 'integer REFERENCES reservations(id) ON DELETE SET NULL');
+    // spare_picked_up_at was superseded by deriving status from the linked
+    // spare reservation's own status (shared/transport-spare-status.ts) —
+    // dropped rather than left as a dead, never-read column.
+    await db.execute(sql`ALTER TABLE vehicle_transports DROP COLUMN IF EXISTS spare_picked_up_at`);
+
+    // Outside/customer-owned vehicles (e.g. a garage pickup) that never enter the
+    // fleet — described by the external_* columns instead of a real vehicle_id.
+    await addColumnIfNotExists('vehicle_transports', 'is_external_vehicle', 'boolean NOT NULL DEFAULT false');
+    await addColumnIfNotExists('vehicle_transports', 'external_license_plate', 'text');
+    await addColumnIfNotExists('vehicle_transports', 'external_brand', 'text');
+    await addColumnIfNotExists('vehicle_transports', 'external_model', 'text');
+    await addColumnIfNotExists('vehicle_transports', 'external_color', 'text');
+    await addColumnIfNotExists('vehicle_transports', 'external_owner_name', 'text');
+    await addColumnIfNotExists('vehicle_transports', 'external_owner_phone', 'text');
+
+    const transportsVehicleIdInfo = await db.execute(sql`
+      SELECT is_nullable
+      FROM information_schema.columns
+      WHERE table_name = 'vehicle_transports'
+      AND column_name = 'vehicle_id'
+    `);
+    if (transportsVehicleIdInfo.rows.length > 0 && transportsVehicleIdInfo.rows[0].is_nullable === 'NO') {
+      console.log('📝 Removing NOT NULL constraint from vehicle_transports.vehicle_id...');
+      try {
+        await db.execute(sql`ALTER TABLE vehicle_transports ALTER COLUMN vehicle_id DROP NOT NULL`);
+        console.log('✅ Removed NOT NULL constraint from vehicle_transports.vehicle_id');
+      } catch (error) {
+        console.error('❌ Failed to remove NOT NULL constraint from vehicle_transports.vehicle_id:', error.message);
+        throw error;
+      }
+    } else {
+      console.log('✅ vehicle_transports.vehicle_id is already nullable');
+    }
+
+    // Links a spare reservation back to the standalone Transport it was created
+    // for (as opposed to replacement_for_reservation_id, which links back to a
+    // customer rental) — lets the Rental Calendar and "Beheer vervangende
+    // voertuigen" dashboard recognize transport-created spares the same way they
+    // already recognize reservation-created ones.
+    await addColumnIfNotExists('reservations', 'replacement_for_transport_id', 'integer REFERENCES vehicle_transports(id) ON DELETE SET NULL');
+
+    // One-time backfill: existing transport-linked spare reservations were created
+    // with type 'standard' before this column existed, making them invisible to
+    // both features above. Idempotent — once type flips to 'replacement' the WHERE
+    // clause no longer matches, so re-running this is a no-op.
+    const backfillResult = await db.execute(sql`
+      UPDATE reservations r
+      SET type = 'replacement', replacement_for_transport_id = vt.id
+      FROM vehicle_transports vt
+      WHERE vt.spare_reservation_id = r.id
+      AND r.type = 'standard'
+    `);
+    if (backfillResult.rowCount > 0) {
+      console.log(`✅ Backfilled ${backfillResult.rowCount} transport-linked spare reservation(s) to type 'replacement'`);
+    }
+
+    // One-time backfill: earlier transport-linked spares got an auto-generated
+    // note naming internal transport/reservation ids (e.g. "...covering
+    // reservation #223") or, for external vehicles, brand/model/plate with no
+    // indication it's an outside vehicle — staff-facing text now names the
+    // actual vehicle being replaced, and flags external ones as such. Only
+    // touches notes still in one of those older auto-generated shapes, so a
+    // manually-edited note is left alone; idempotent since a fixed note no
+    // longer matches either WHERE pattern below.
+    const notesBackfillResult = await db.execute(sql`
+      UPDATE reservations r
+      SET notes = CASE
+        WHEN v.id IS NOT NULL THEN 'Replacement vehicle for ' || v.brand || ' ' || v.model || ' (' || v.license_plate || ')'
+        WHEN vt.is_external_vehicle AND trim(concat_ws(' ', vt.external_brand, vt.external_model)) != ''
+          THEN 'Replacement vehicle for ' || trim(concat_ws(' ', vt.external_brand, vt.external_model)) ||
+               CASE WHEN vt.external_license_plate IS NOT NULL THEN ' (' || vt.external_license_plate || ')' ELSE '' END ||
+               ' — external vehicle'
+        ELSE 'Replacement vehicle for transport #' || vt.id
+      END
+      FROM vehicle_transports vt
+      LEFT JOIN vehicles v ON v.id = vt.vehicle_id
+      WHERE r.replacement_for_transport_id = vt.id
+      AND (
+        r.notes LIKE 'Replacement vehicle for transport #%(covering reservation #%'
+        OR (vt.is_external_vehicle AND r.notes LIKE 'Replacement vehicle for %' AND r.notes NOT LIKE '%external vehicle%')
+      )
+    `);
+    if (notesBackfillResult.rowCount > 0) {
+      console.log(`✅ Backfilled ${notesBackfillResult.rowCount} transport-linked spare reservation note(s) to name the replaced vehicle`);
+    }
+
+    // One-time backfill: reservations flagged deliveryRequired before the
+    // auto-created-transport sync existed (server/database-storage.ts
+    // syncDeliveryTransport, wired into createReservation/updateReservation) have
+    // no linked vehicle_transports row, so they show up in the dashboard's
+    // "Levering" tab as a bare reservation with no print/edit/complete actions.
+    // Promotes each one to a real transport, same shape syncDeliveryTransport
+    // creates going forward. Idempotent — only reservations still missing a
+    // linked transport (LEFT JOIN ... IS NULL) match.
+    const deliveryTransportBackfillResult = await db.execute(sql`
+      INSERT INTO vehicle_transports (
+        vehicle_id, customer_id, transport_type, destination_address, destination_city,
+        scheduled_date, billable, billable_amount, reservation_id, status,
+        is_external_vehicle, spare_required, is_breakdown_or_maintenance, invoiced
+      )
+      SELECT
+        r.vehicle_id, r.customer_id, 'delivery', r.delivery_address, r.delivery_city,
+        r.start_date, (r.delivery_fee IS NOT NULL), r.delivery_fee, r.id, 'scheduled',
+        false, false, false, false
+      FROM reservations r
+      LEFT JOIN vehicle_transports vt ON vt.reservation_id = r.id
+      WHERE r.delivery_required = true
+      AND r.vehicle_id IS NOT NULL
+      AND r.deleted_at IS NULL
+      AND vt.id IS NULL
+    `);
+    if (deliveryTransportBackfillResult.rowCount > 0) {
+      console.log(`✅ Backfilled ${deliveryTransportBackfillResult.rowCount} delivery reservation(s) to a linked transport`);
+    }
+
     // Documents can now be "general reports" that aren't tied to one vehicle
     // (e.g. a multi-vehicle transport summary), so vehicle_id must be nullable.
     const documentsVehicleIdInfo = await db.execute(sql`

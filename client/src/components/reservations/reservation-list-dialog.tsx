@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { StatusChangeDialog } from "@/components/reservations/status-change-dialog";
 import { ReservationViewDialog } from "@/components/reservations/reservation-view-dialog";
 import { ReservationEditDialog } from "@/components/reservations/reservation-edit-dialog";
+import { SpareVehicleAssignmentDialog } from "@/components/reservations/spare-vehicle-assignment-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Eye, Edit, Trash2, Car, History, User, Calendar, FileText, Fuel, MapPin, Phone, Building, Clock, AlertTriangle } from "lucide-react";
+import { Eye, Edit, Trash2, Car, History, User, Calendar, FileText, Fuel, MapPin, Phone, Building, Clock, AlertTriangle, CarFront } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -52,6 +53,8 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
   const [selectedEditReservationId, setSelectedEditReservationId] = useState<number | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [reservationToDelete, setReservationToDelete] = useState<Reservation | null>(null);
+  const [assignSpareDialogOpen, setAssignSpareDialogOpen] = useState(false);
+  const [reservationToAssignSpare, setReservationToAssignSpare] = useState<Reservation | null>(null);
   const { toast } = useToast();
   
   // Track if child was opened from this list - used to reopen list when child closes
@@ -249,6 +252,13 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
     setDeleteDialogOpen(true);
   };
 
+  const handleAssignSpare = (e: React.MouseEvent, reservation: Reservation) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setReservationToAssignSpare(reservation);
+    setAssignSpareDialogOpen(true);
+  };
+
   const confirmDelete = () => {
     if (reservationToDelete) {
       deleteReservationMutation.mutate(reservationToDelete.id);
@@ -277,9 +287,15 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
 
           {/* Vehicle */}
           <div className="min-w-0">
-            <div className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded text-xs font-mono font-bold inline-block">
-              {formatLicensePlate(reservation.vehicle?.licensePlate || '-')}
-            </div>
+            {reservation.placeholderSpare ? (
+              <div className="bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded text-xs font-mono font-bold inline-block">
+                {t('indexPage.tbdBadge')}
+              </div>
+            ) : (
+              <div className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded text-xs font-mono font-bold inline-block">
+                {formatLicensePlate(reservation.vehicle?.licensePlate || '-')}
+              </div>
+            )}
             <div className="text-xs text-gray-600 truncate">{reservation.vehicle?.brand} {reservation.vehicle?.model}</div>
           </div>
 
@@ -321,6 +337,18 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
 
           {/* Actions */}
           <div className="flex items-center gap-0.5">
+            {reservation.placeholderSpare && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs px-2 bg-orange-500 text-white hover:bg-orange-600 border-orange-500"
+                onClick={(e) => handleAssignSpare(e, reservation)}
+                data-testid={`assign-spare-btn-${reservation.id}`}
+              >
+                <CarFront className="h-3.5 w-3.5 mr-1" />
+                {t('listDialog.assignVehicleButton')}
+              </Button>
+            )}
             <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => handleView(e, reservation)} data-testid={`view-btn-${reservation.id}`}>
               <Eye className="h-3.5 w-3.5" />
             </Button>
@@ -608,6 +636,20 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
           });
         }}
       />
+
+      {/* Assign Spare Vehicle Dialog — turns a TBD placeholder into an assigned
+          spare, right from this list, same dialog the "Beheer vervangende
+          voertuigen" widget uses. */}
+      {reservationToAssignSpare && (
+        <SpareVehicleAssignmentDialog
+          open={assignSpareDialogOpen}
+          onOpenChange={(isOpen) => {
+            setAssignSpareDialogOpen(isOpen);
+            if (!isOpen) setReservationToAssignSpare(null);
+          }}
+          placeholderReservations={[reservationToAssignSpare]}
+        />
+      )}
 
       {/* Delete Reservation Confirmation Dialog */}
       <ConfirmDialog

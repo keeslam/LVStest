@@ -6,6 +6,8 @@ interface DialogState {
   apk: { open: boolean; vehicleId: number | null };
   maintenance: { open: boolean; vehicleId: number | null };
   vehicle: { open: boolean; vehicleId: number | null };
+  expenseVehicle: { open: boolean; vehicleId: number | null };
+  expense: { open: boolean; expenseId: number | null; hideVehicleExpensesLink: boolean };
   rdwApkChanges: { open: boolean };
 }
 
@@ -21,6 +23,10 @@ interface GlobalDialogContextType {
   closeMaintenanceDialog: () => void;
   openVehicleDialog: (vehicleId: number) => void;
   closeVehicleDialog: () => void;
+  openExpenseVehicleDialog: (vehicleId: number) => void;
+  closeExpenseVehicleDialog: () => void;
+  openExpenseDialog: (expenseId: number, hideVehicleExpensesLink?: boolean) => void;
+  closeExpenseDialog: () => void;
   openRdwApkChangesDialog: () => void;
   closeRdwApkChangesDialog: () => void;
 }
@@ -34,6 +40,8 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     apk: { open: false, vehicleId: null },
     maintenance: { open: false, vehicleId: null },
     vehicle: { open: false, vehicleId: null },
+    expenseVehicle: { open: false, vehicleId: null },
+    expense: { open: false, expenseId: null, hideVehicleExpensesLink: false },
     rdwApkChanges: { open: false },
   });
 
@@ -107,6 +115,34 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const openExpenseVehicleDialog = (vehicleId: number) => {
+    setDialogState(prev => ({
+      ...prev,
+      expenseVehicle: { open: true, vehicleId }
+    }));
+  };
+
+  const closeExpenseVehicleDialog = () => {
+    setDialogState(prev => ({
+      ...prev,
+      expenseVehicle: { open: false, vehicleId: null }
+    }));
+  };
+
+  const openExpenseDialog = (expenseId: number, hideVehicleExpensesLink: boolean = false) => {
+    setDialogState(prev => ({
+      ...prev,
+      expense: { open: true, expenseId, hideVehicleExpensesLink }
+    }));
+  };
+
+  const closeExpenseDialog = () => {
+    setDialogState(prev => ({
+      ...prev,
+      expense: { open: false, expenseId: null, hideVehicleExpensesLink: false }
+    }));
+  };
+
   const openRdwApkChangesDialog = () => {
     setDialogState(prev => ({
       ...prev,
@@ -135,6 +171,10 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
         closeMaintenanceDialog,
         openVehicleDialog,
         closeVehicleDialog,
+        openExpenseVehicleDialog,
+        closeExpenseVehicleDialog,
+        openExpenseDialog,
+        closeExpenseDialog,
         openRdwApkChangesDialog,
         closeRdwApkChangesDialog,
       }}

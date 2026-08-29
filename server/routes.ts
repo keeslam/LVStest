@@ -36,6 +36,7 @@ import {
   DEFAULT_DAMAGE_CHECK_FIELDS,
   DAMAGE_CHECK_FIELDS_KEY,
 } from "../shared/schema";
+import { getTransportSpareStatus } from "../shared/transport-spare-status";
 import multer from "multer";
 import { setupAuth, hashPassword, comparePasswords } from "./auth";
 import { backupService } from "./backupService";
@@ -12321,11 +12322,42 @@ export async function registerRoutes(app: Express): Promise<void> {
         createdBy: user ? user.username : null,
         updatedBy: user ? user.username : null,
       });
-      const transport = await storage.createTransport(transportData);
+      // "One or the other" isn't enforced in the shared zod schema (it also backs
+      // partial() for PATCH, where neither is normal) — enforce it here instead.
+      if (transportData.isExternalVehicle) {
+        if (!transportData.externalLicensePlate || transportData.externalLicensePlate.trim() === '') {
+          return res.status(400).json({ message: "License plate is required for an external vehicle" });
+        }
+      } else if (transportData.vehicleId == null) {
+        return res.status(400).json({ message: "Please select a vehicle" });
+      }
+      // Spare/replacement-vehicle fields (spareRequired/relatedVehicleId/
+      // isBreakdownOrMaintenance) are applied via the same atomic path PATCH uses
+      // (reservation creation + maintenance status), rather than duplicating that
+      // logic here — insert the row without them, then apply.
+      const { relatedVehicleId, spareRequired, isBreakdownOrMaintenance, ...barebones } = transportData;
+      const created = await storage.createTransport({
+        ...barebones,
+        relatedVehicleId: null,
+        spareRequired: false,
+        isBreakdownOrMaintenance: false,
+      });
+      const transport = await storage.applyTransportUpdate(created.id, {
+        relatedVehicleId: relatedVehicleId ?? null,
+        spareRequired: spareRequired ?? false,
+        isBreakdownOrMaintenance: isBreakdownOrMaintenance ?? false,
+      });
       res.status(201).json(transport);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid transport data", errors: error.errors });
+      }
+      const message = error instanceof Error ? error.message : "Failed to create transport";
+      if (message.includes("conflicting reservations")) {
+        return res.status(409).json({ message });
+      }
+      if (message.includes("cannot be the same as")) {
+        return res.status(400).json({ message });
       }
       console.error("Error creating transport:", error);
       res.status(500).json({ message: "Failed to create transport" });
@@ -12343,14 +12375,24 @@ export async function registerRoutes(app: Express): Promise<void> {
         ...req.body,
         updatedBy: user ? user.username : null,
       });
-      const transport = await storage.updateTransport(id, transportData);
-      if (!transport) {
-        return res.status(404).json({ message: "Transport not found" });
-      }
+      const transport = await storage.applyTransportUpdate(id, transportData);
       res.json(transport);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid transport data", errors: error.errors });
+      }
+      const message = error instanceof Error ? error.message : "Failed to update transport";
+      if (message === "Transport not found") {
+        return res.status(404).json({ message });
+      }
+      if (message.includes("conflicting reservations")) {
+        return res.status(409).json({ message });
+      }
+      if (message.includes("cannot be the same as")) {
+        return res.status(400).json({ message });
+      }
+      if (message.includes("already been")) {
+        return res.status(400).json({ message });
       }
       console.error("Error updating transport:", error);
       res.status(500).json({ message: "Failed to update transport" });
@@ -12362,6 +12404,38 @@ export async function registerRoutes(app: Express): Promise<void> {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid transport ID" });
+      }
+      // Release the spare reservation this transport was holding before deleting it
+      // — but only while it's still 'booked' (whether that's an assigned vehicle or
+      // still TBD/placeholder, and regardless of whether the original was a fleet or
+      // external vehicle — none of that changes what should happen to the spare).
+      // Once it's been picked up (or returned) it's a real handover on record; leave
+      // that reservation alone, just no longer transport-linked.
+      //
+      // This soft-deletes it (same as DELETE /api/reservations/:id) rather than just
+      // flipping status to 'cancelled' — a merely-cancelled row still has
+      // deletedAt IS NULL, so it kept showing up in the Rental Calendar and "Beheer
+      // vervangende voertuigen" TBD list forever after the transport itself was gone.
+      const existing = await storage.getTransport(id);
+      if (existing?.spareReservationId && existing.spareReservation?.status === 'booked') {
+        const user = req.user;
+        await storage.updateReservation(existing.spareReservationId, {
+          deletedAt: new Date(),
+          deletedBy: user ? user.username : null,
+          deletedByUser: user ? user.id : null,
+          updatedBy: user ? user.username : null,
+          contractNumber: null,
+        } as any);
+        if (existing.spareReservation.placeholderSpare) {
+          await storage.deleteNotificationsByTypeAndPattern("spare_assignment", `[placeholder:${existing.spareReservationId}]`);
+        }
+        realtimeEvents.reservations.deleted({ id: existing.spareReservationId });
+      }
+      // Same for the original vehicle's maintenance status — deleting the transport
+      // outright (not completing/cancelling it first) shouldn't leave it stuck.
+      // Skipped for external/outside vehicles, which never entered the fleet.
+      if (existing?.isBreakdownOrMaintenance && !existing.isExternalVehicle && existing.vehicleId != null) {
+        await storage.markVehicleForService(existing.vehicleId, 'ok');
       }
       const success = await storage.deleteTransport(id);
       if (!success) {
@@ -12550,9 +12624,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       const dummyTransport = {
         id: 0,
         vehicleId: 0,
-        relatedVehicleId: null,
+        relatedVehicleId: 0,
         reservationId: null,
         customerId: 0,
+        spareRequired: true,
+        spareReservationId: null,
         transportType: 'swap',
         status: 'scheduled',
         originAddress: 'Preview Street 1',
@@ -12578,6 +12654,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         createdByUser: null,
         updatedByUser: null,
         vehicle: { id: 0, brand: 'Preview Brand', model: 'Preview Model', licensePlate: 'XX-YY-99' } as any,
+        relatedVehicle: { id: 0, brand: 'Replacement Brand', model: 'Replacement Model', licensePlate: 'AA-BB-11' } as any,
         customer: { id: 0, name: 'Preview Customer' } as any,
       };
 
@@ -12845,6 +12922,17 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "None of the specified transports were found" });
       }
 
+      // A transport that needs a replacement vehicle but still has it as TBD must not
+      // be printed — the letter would be missing required information. Validated here
+      // too, not just client-side, since this endpoint can be called independently.
+      const tbdTransports = transports.filter(t => getTransportSpareStatus(t) === 'tbd');
+      if (tbdTransports.length > 0) {
+        return res.status(400).json({
+          message: "A replacement vehicle is required for this transport but has not yet been selected. Please assign a replacement vehicle before generating or printing the transport letter.",
+          transportIds: tbdTransports.map(t => t.id),
+        });
+      }
+
       const template = templateId
         ? await storage.getTransportReportTemplate(templateId)
         : await storage.getDefaultTransportReportTemplate();
@@ -12866,7 +12954,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (transports.length === 1) {
         const t = transports[0];
         const dateStr = t.scheduledDate ? format(new Date(t.scheduledDate), 'dd-MM-yyyy') : format(new Date(), 'dd-MM-yyyy');
-        const vehicleLabel = t.vehicle ? `${t.vehicle.brand}_${t.vehicle.model}` : `Vehicle_${t.vehicleId}`;
+        const vehicleLabel = t.vehicle
+          ? `${t.vehicle.brand}_${t.vehicle.model}`
+          : t.isExternalVehicle
+            ? `${t.externalBrand || 'External'}_${t.externalModel || t.externalLicensePlate || ''}`
+            : `Vehicle_${t.vehicleId}`;
         fileName = `Transport_Report_${sanitizeForFilename(vehicleLabel)}_${dateStr}_${uniqueSuffix}.pdf`;
         const route = [t.originCity, t.destinationCity].filter(Boolean).join(' -> ');
         notes = `${transportTypeLabels[t.transportType] || t.transportType} scheduled ${dateStr}${route ? ` — ${route}` : ''}`;

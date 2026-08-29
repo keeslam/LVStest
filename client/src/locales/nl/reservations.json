@@ -750,6 +750,7 @@
     "outLabel": "Uit:",
     "inLabel": "In:",
     "kmLabel": "KM:",
+    "assignVehicleButton": "Voertuig toewijzen",
     "deleteDialog": {
       "title": "Reservering verwijderen",
       "description": "Weet je zeker dat je reservering #{{id}} wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
@@ -932,6 +933,7 @@
       "comingInFor": "Komt binnen voor {{type}}",
       "serviceFallback": "onderhoud",
       "replacingVehicle": "Vervangt {{plate}}",
+      "replacingTransport": "Transport #{{id}}",
       "maintenanceTooltip": "Onderhoud: {{type}} - {{status}}",
       "statusUnknown": "status onbekend",
       "renderError": "Fout bij weergeven van reservering"
@@ -968,6 +970,7 @@
     "reservationHashCustomer": "Reservering #{{id}} - {{name}}",
     "viewDetailedInfo": "Bekijk gedetailleerde reserveringsinformatie",
     "spareForVehicle": "Vervanger voor {{plate}} ({{brand}} {{model}})",
+    "spareForTransport": "Vervanger voor Transport #{{id}}",
     "spareVehicleLabel": "Vervangend voertuig",
     "noVehicleAssigned": "Geen voertuig toegewezen",
     "assignedSpareBadge": "Toegewezen vervanger",

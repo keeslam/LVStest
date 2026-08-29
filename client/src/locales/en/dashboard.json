@@ -257,6 +257,7 @@
     "noActiveSpares": "No active spare vehicles",
     "inUseSince": "In use since: {{date}}",
     "expectedReturn": " • Expected return: {{date}}",
-    "inUse": "In Use"
+    "inUse": "In Use",
+    "viaTransport": "Transport #{{id}}"
   }
 }

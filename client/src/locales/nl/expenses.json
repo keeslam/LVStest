@@ -71,6 +71,7 @@
     "noDescription": "Geen omschrijving",
     "hasReceipt": "Heeft bon",
     "viewReceiptTitle": "Bon bekijken",
+    "printReceiptTitle": "Bon afdrukken",
     "deleteExpenseTitle": "Kosten verwijderen",
     "deleteExpenseConfirmPrefix": "Weet je zeker dat je deze {{category}} kosten van ",
     "deleteExpenseConfirmSuffix": " wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",

@@ -4,10 +4,8 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DataTable } from "@/components/ui/data-table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ColumnDef } from "@tanstack/react-table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Accordion,
@@ -26,13 +24,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -48,38 +39,30 @@ import { Price } from "@/components/ui/price";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ExpenseForm } from "@/components/expenses/expense-form";
-import { 
-  ChevronDown, 
-  ChevronUp, 
-  PlusCircle, 
-  Wrench, 
-  Disc, 
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
+import {
+  ChevronDown,
+  ChevronUp,
+  PlusCircle,
+  Wrench,
+  Disc,
   SquareAsterisk,
   ShieldAlert,
   Hammer,
   FileQuestion,
   Eye,
   Trash2,
-  Calendar,
-  FileText,
-  Tag,
-  Truck,
-  FileCheck,
-  Pencil
 } from "lucide-react";
 
 export default function ExpensesIndex() {
   const { t } = useTranslation(["expenses", "common"]);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { openExpenseDialog } = useGlobalDialog();
   
   // Define query key for easier reference and consistent usage
   const expensesQueryKey = ["/api/expenses"];
@@ -117,17 +100,6 @@ export default function ExpensesIndex() {
       });
     }
   });
-  
-  const handleViewExpense = (expense: Expense) => {
-    setSelectedExpense(expense);
-    setViewDialogOpen(true);
-  };
-  
-  const handleEditExpense = (expense: Expense) => {
-    setSelectedExpense(expense);
-    setViewDialogOpen(false);
-    setEditDialogOpen(true);
-  };
   
   const handleDeleteExpense = (expense: Expense) => {
     setExpenseToDelete(expense);
@@ -193,6 +165,28 @@ export default function ExpensesIndex() {
     }
   };
 
+  // Category values are stored verbatim in the database (and aren't restricted to the
+  // fixed dropdown list - older/seeded data can be lowercase or entirely custom), so
+  // they stay as-is; only recognized categories get a translated display label, looked
+  // up case-insensitively the same way getCategoryIcon() above matches on category.
+  const EXPENSE_CATEGORY_KEYS: Record<string, string> = {
+    "maintenance": "maintenance",
+    "tires": "tires",
+    "brakes": "brakes",
+    "damage": "damage",
+    "fuel": "fuel",
+    "insurance": "insurance",
+    "registration": "registration",
+    "cleaning": "cleaning",
+    "accessories": "accessories",
+    "other": "other",
+  };
+
+  const categoryLabel = (category: string) => {
+    const key = EXPENSE_CATEGORY_KEYS[category.toLowerCase()];
+    return key ? t(`form.categories.${key}`, { defaultValue: category }) : category;
+  };
+
   // Filter expenses based on search query and category filter
   const filteredExpenses = expenses?.filter(expense => {
     if (!expense) return false;
@@ -223,71 +217,6 @@ export default function ExpensesIndex() {
   const totalAmount = filteredExpenses?.reduce((sum, expense) => 
     sum + Number(expense.amount || 0), 0
   ) || 0;
-  
-  // Define table columns
-  const columns: ColumnDef<Expense>[] = [
-    {
-      accessorKey: "date",
-      header: t('indexPage.dateColumnHeader'),
-      cell: ({ row }) => {
-        const date = row.getValue("date") as string;
-        return formatDate(date);
-      },
-    },
-    {
-      accessorKey: "vehicle",
-      header: t('indexPage.vehicleColumnHeader'),
-      cell: ({ row }) => {
-        const vehicle = row.original.vehicle;
-        return vehicle ? (
-          <div>
-            <div className="font-medium">{formatLicensePlate(vehicle.licensePlate)}</div>
-            <div className="text-sm text-gray-500">{vehicle.brand} {vehicle.model}</div>
-          </div>
-        ) : "—";
-      },
-    },
-    {
-      accessorKey: "category",
-      header: t('detailsPage.categoryLabel'),
-      cell: ({ row }) => {
-        const category = row.getValue("category") as string;
-        return <Badge variant="outline">{category}</Badge>;
-      },
-    },
-    {
-      accessorKey: "description",
-      header: t('indexPage.descriptionColumnHeader'),
-      cell: ({ row }) => {
-        const description = row.getValue("description") as string;
-        return description || "—";
-      },
-    },
-    {
-      accessorKey: "amount",
-      header: t('indexPage.amountColumnHeader'),
-      cell: ({ row }) => {
-        const amount = row.getValue("amount") as number;
-        return <span className="font-medium">{<Price value={amount} />}</span>;
-      },
-    },
-    {
-      id: "actions",
-      cell: ({ row }) => {
-        const expense = row.original;
-
-        return (
-          <div className="flex justify-end">
-            <Link href={`/expenses/${expense.id}`}>
-              <Button variant="ghost" size="sm">
-                {t('common:actions.view')}
-              </Button>
-            </Link>
-          </div>
-        );
-      },
-    },
-  ];
   
   return (
     <div className="space-y-6">
@@ -337,7 +266,7 @@ export default function ExpensesIndex() {
                 <SelectContent>
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>
-                      {category === "all" ? t('indexPage.allCategoriesOption') : category}
+                      {category === "all" ? t('indexPage.allCategoriesOption') : categoryLabel(category)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -358,7 +287,7 @@ export default function ExpensesIndex() {
                     <p className="text-gray-500">{t('indexPage.noExpensesFound')}</p>
                   </div>
                 ) : (
-                  <Accordion type="multiple" defaultValue={allCategories} className="w-full">
+                  <Accordion type="multiple" defaultValue={[]} className="w-full">
                     {allCategories.map(category => {
                       // Filter expenses for this category
                       const categoryExpenses = filteredExpenses.filter(
@@ -381,7 +310,7 @@ export default function ExpensesIndex() {
                                 <div className="flex items-center gap-2">
                                   {getCategoryIcon(category)}
                                   <Badge variant="outline" className="text-sm font-medium">
-                                    {category}
+                                    {categoryLabel(category)}
                                   </Badge>
                                 </div>
                                 <span className="text-gray-500 text-sm">
@@ -473,7 +402,7 @@ export default function ExpensesIndex() {
                                                 <Button 
                                                   variant="ghost" 
                                                   size="sm"
-                                                  onClick={() => handleViewExpense(expense)}
+                                                  onClick={() => openExpenseDialog(expense.id)}
                                                   data-testid={`button-view-expense-${expense.id}`}
                                                 >
                                                   <Eye className="h-4 w-4 mr-1" />
@@ -501,7 +430,7 @@ export default function ExpensesIndex() {
                                 <Link href={`/expenses/add?category=${encodeURIComponent(category)}`}>
                                   <Button size="sm" variant="outline" className="gap-1">
                                     <PlusCircle size={16} />
-                                    {t('indexPage.addCategoryExpenseButton', { category })}
+                                    {t('indexPage.addCategoryExpenseButton', { category: categoryLabel(category) })}
                                   </Button>
                                 </Link>
                               </div>
@@ -544,7 +473,7 @@ export default function ExpensesIndex() {
                       <div key={category} className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                           {getCategoryIcon(category)}
-                          <span>{category}</span>
+                          <span>{categoryLabel(category)}</span>
                         </div>
                         <span className="font-medium">{<Price value={amount} />}</span>
                       </div>
@@ -555,167 +484,6 @@ export default function ExpensesIndex() {
           </CardContent>
         </Card>
       </div>
-      
-      {/* View Expense Dialog */}
-      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{t('indexPage.viewExpenseDetailsDialogTitle')}</DialogTitle>
-            <DialogDescription>
-              {t('indexPage.viewExpenseDetailsDialogDescription')}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedExpense && (
-            <div className="space-y-6 py-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('detailsPage.dateLabel')}</h3>
-                    <div className="flex items-center">
-                      <Calendar className="h-4 w-4 mr-2 text-primary" />
-                      <span>{formatDate(selectedExpense.date)}</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('detailsPage.categoryLabel')}</h3>
-                    <div className="flex items-center">
-                      <Tag className="h-4 w-4 mr-2 text-primary" />
-                      <Badge>{selectedExpense.category}</Badge>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('detailsPage.amountLabel')}</h3>
-                    <div className="text-2xl font-bold">
-                      {<Price value={Number(selectedExpense.amount || 0)} />}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('detailsPage.vehicleLabel')}</h3>
-                    <div className="flex items-center">
-                      <Truck className="h-4 w-4 mr-2 text-primary" />
-                      {selectedExpense.vehicle ? (
-                        <div>
-                          <div className="font-medium">{formatLicensePlate(selectedExpense.vehicle.licensePlate)}</div>
-                          <div className="text-sm text-gray-500">{selectedExpense.vehicle.brand} {selectedExpense.vehicle.model}</div>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">{t('detailsPage.vehicleNotFound')}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('detailsPage.descriptionLabel')}</h3>
-                    <div className="flex items-start">
-                      <FileText className="h-4 w-4 mr-2 mt-1 text-primary" />
-                      <p className="text-sm">
-                        {selectedExpense.description || t('detailsPage.noDescriptionProvided')}
-                      </p>
-                    </div>
-                  </div>
-
-                  {selectedExpense.receiptFilePath && (
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('detailsPage.receiptLabel')}</h3>
-                      <div className="flex items-center">
-                        <FileCheck className="h-4 w-4 mr-2 text-primary" />
-                        <a
-                          href={`/api/expenses/${selectedExpense.id}/receipt`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
-                        >
-                          {t('detailsPage.viewReceiptLink')}
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="border-t pt-4 mt-4">
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <div>{t('detailsPage.createdLabel', { date: selectedExpense.createdAt ? formatDate(selectedExpense.createdAt) : t('detailsPage.notAvailable') })}</div>
-                  {selectedExpense.createdBy && <div>{t('detailsPage.byLabel', { name: selectedExpense.createdBy })}</div>}
-                </div>
-                {selectedExpense.updatedAt && selectedExpense.createdAt && selectedExpense.updatedAt !== selectedExpense.createdAt && (
-                  <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                    <div>{t('detailsPage.updatedLabel', { date: formatDate(selectedExpense.updatedAt) })}</div>
-                    {selectedExpense.updatedBy && <div>{t('detailsPage.byLabel', { name: selectedExpense.updatedBy })}</div>}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-3 pt-4 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => handleEditExpense(selectedExpense)}
-                  className="flex-1"
-                  data-testid="button-edit-from-dialog"
-                >
-                  <Pencil className="h-4 w-4 mr-2" />
-                  {t('detailsPage.editExpenseButton')}
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    setViewDialogOpen(false);
-                    handleDeleteExpense(selectedExpense);
-                  }}
-                  data-testid="button-delete-from-dialog"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  {t('detailsPage.deleteButton')}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setViewDialogOpen(false)}
-                >
-                  {t('common:actions.close')}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-      
-      {/* Edit Expense Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{t('addPage.editExpenseTitle')}</DialogTitle>
-            <DialogDescription>
-              {t('indexPage.editExpenseDialogDescription')}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedExpense && (
-            <ExpenseForm
-              editMode={true}
-              initialData={{
-                id: selectedExpense.id,
-                vehicleId: selectedExpense.vehicleId,
-                category: selectedExpense.category,
-                amount: Number(selectedExpense.amount),
-                date: selectedExpense.date,
-                description: selectedExpense.description || "",
-                receiptUrl: selectedExpense.receiptUrl || "",
-              }}
-              onSuccess={() => {
-                setEditDialogOpen(false);
-                setSelectedExpense(null);
-                invalidateRelatedQueries('expenses');
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
       
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

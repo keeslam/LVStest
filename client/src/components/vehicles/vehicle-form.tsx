@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dialog";
 import { Mail } from "lucide-react";
 import { useLocation } from "wouter";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { formatLicensePlate, capitalizeWords } from "@/lib/format-utils";
 import { OIL_GRADES } from "@/constants/oil-grades";
 
@@ -230,6 +231,7 @@ export function VehicleForm({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [_, navigate] = useLocation();
+  const { openVehicleDialog } = useGlobalDialog();
   
   // Process initial data to ensure boolean fields are properly formatted
   const processedInitialData = initialData ? {
@@ -424,8 +426,8 @@ export function VehicleForm({
       if (redirectToList) {
         console.log("Navigating based on redirectToList flag");
         if (editMode && initialData?.id) {
-          // Navigate to vehicle details page when updating
-          navigate(`/vehicles/${initialData.id}`);
+          // Open vehicle details dialog when updating
+          openVehicleDialog(initialData.id);
         } else {
           // Navigate to vehicles list for new vehicles
           navigate("/vehicles");
@@ -830,8 +832,8 @@ export function VehicleForm({
       if (redirectToList) {
         console.log("Navigating from onSubmit based on redirectToList flag");
         if (editMode && initialData?.id) {
-          // Navigate to vehicle details page when updating
-          navigate(`/vehicles/${initialData.id}`);
+          // Open vehicle details dialog when updating
+          openVehicleDialog(initialData.id);
         } else {
           // Navigate to vehicles list for new vehicles
           navigate("/vehicles");

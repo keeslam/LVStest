@@ -7,6 +7,8 @@ import { ReservationEditDialog } from '@/components/reservations/reservation-edi
 import { SpareVehicleDialog } from '@/components/reservations/spare-vehicle-dialog';
 import { ApkInspectionDialog } from '@/components/vehicles/apk-inspection-dialog';
 import { VehicleViewDialog } from '@/components/vehicles/vehicle-view-dialog';
+import { ExpenseViewDialog } from '@/components/expenses/expense-view-dialog';
+import { ExpenseDetailDialog } from '@/components/expenses/expense-detail-dialog';
 import { Vehicle, Reservation } from '@shared/schema';
 
 export function GlobalDialogs() {
@@ -21,6 +23,8 @@ export function GlobalDialogs() {
     closeAPKDialog,
     closeMaintenanceDialog,
     closeVehicleDialog,
+    closeExpenseVehicleDialog,
+    closeExpenseDialog,
   } = useGlobalDialog();
   
   const handleEditReservation = (reservationId: number) => {
@@ -116,6 +120,23 @@ export function GlobalDialogs() {
         open={dialogState.vehicle.open}
         onOpenChange={closeVehicleDialog}
         vehicleId={dialogState.vehicle.vehicleId}
+      />
+
+      {/* Vehicle Expenses Dialog */}
+      {dialogState.expenseVehicle.vehicleId !== null && (
+        <ExpenseViewDialog
+          open={dialogState.expenseVehicle.open}
+          onOpenChange={closeExpenseVehicleDialog}
+          vehicleId={dialogState.expenseVehicle.vehicleId}
+        />
+      )}
+
+      {/* Expense Detail Dialog */}
+      <ExpenseDetailDialog
+        open={dialogState.expense.open}
+        onOpenChange={closeExpenseDialog}
+        expenseId={dialogState.expense.expenseId}
+        hideVehicleExpensesLink={dialogState.expense.hideVehicleExpensesLink}
       />
     </>
   );

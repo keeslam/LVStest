@@ -5,13 +5,58 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarDays, Car, Clock, CheckCircle, Truck, AlertCircle, User, ArrowRight } from "lucide-react";
-import { Reservation } from "@shared/schema";
+import { Reservation, VehicleTransport } from "@shared/schema";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { useState, useEffect } from "react";
 import { SpareVehicleAssignmentDialog } from "@/components/reservations/spare-vehicle-assignment-dialog";
 import { PickupDialog } from "@/components/reservations/pickup-return-dialogs";
 import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+
+type ParentReservationInfo = { parentRes: any; customer: any; vehicle: any } | null;
+type ParentTransportInfo = { transport: VehicleTransport; vehicle: any } | null;
+
+// A spare reservation's "origin" is either a customer's active rental
+// (replacementForReservationId — the normal case, including transport-created
+// spares once linked to the rental they're covering) or, only when no active
+// rental exists to link to (e.g. a garage pickup on an idle vehicle), the
+// Transport that created it (replacementForTransportId). Reservation-origin
+// always wins when both are somehow present. One shared renderer instead of
+// three near-identical copies keeps that priority consistent everywhere it's
+// shown (TBD / Aankomend / Actief tabs).
+function SpareOriginInfo({ parentInfo, transportInfo, showReplacingDetail, t }: {
+  parentInfo: ParentReservationInfo;
+  transportInfo: ParentTransportInfo;
+  showReplacingDetail?: boolean;
+  t: (key: string, opts?: any) => string;
+}) {
+  if (parentInfo) {
+    return (
+      <div className="text-xs text-gray-600 mt-0.5 flex items-center gap-1">
+        <User className="w-3 h-3" />
+        <span className="font-medium">{parentInfo.customer?.name || t('spareWidget.unknownCustomer')}</span>
+        {showReplacingDetail && parentInfo.vehicle && (
+          <>
+            <ArrowRight className="w-3 h-3 mx-1" />
+            <span className="text-gray-500">
+              {t('spareWidget.replacing', { brand: parentInfo.vehicle.brand, model: parentInfo.vehicle.model })}
+              {parentInfo.vehicle.licensePlate && ` (${formatLicensePlate(parentInfo.vehicle.licensePlate)})`}
+            </span>
+          </>
+        )}
+      </div>
+    );
+  }
+  if (transportInfo) {
+    return (
+      <div className="text-xs text-gray-600 mt-0.5 flex items-center gap-1">
+        <Truck className="w-3 h-3" />
+        {t('spareWidget.viaTransport', { id: transportInfo.transport.id })}
+      </div>
+    );
+  }
+  return null;
+}
 
 export function SpareVehicleAssignmentsWidget() {
   const { t } = useTranslation("dashboard");
@@ -43,6 +88,13 @@ export function SpareVehicleAssignmentsWidget() {
     queryKey: ["/api/customers"],
   });
 
+  // Get all transports — a spare reservation created from a standalone Transport
+  // (swap/tow/etc.) links back via replacementForTransportId instead of the
+  // customer-rental-oriented replacementForReservationId.
+  const { data: allTransports } = useQuery<VehicleTransport[]>({
+    queryKey: ["/api/transports"],
+  });
+
   // Create a map of vehicles by ID for easy lookup
   const vehicleMap = (allVehicles ?? []).reduce((map: any, vehicle: any) => {
     map[vehicle.id] = vehicle;
@@ -61,16 +113,31 @@ export function SpareVehicleAssignmentsWidget() {
     return map;
   }, {});
 
+  // Create a map of transports by ID for looking up transport-linked spares
+  const transportMap = (allTransports ?? []).reduce((map: Record<number, VehicleTransport>, transport) => {
+    map[transport.id] = transport;
+    return map;
+  }, {} as Record<number, VehicleTransport>);
+
   // Helper to get parent reservation info (the rental being replaced)
   const getParentReservationInfo = (spare: Reservation) => {
     if (!spare.replacementForReservationId) return null;
     const parentRes = reservationMap[spare.replacementForReservationId];
     if (!parentRes) return null;
-    
+
     const customer = parentRes.customerId ? customerMap[parentRes.customerId] : null;
     const vehicle = parentRes.vehicleId ? vehicleMap[parentRes.vehicleId] : null;
-    
+
     return { parentRes, customer, vehicle };
+  };
+
+  // Helper to get parent transport info — spares created from a standalone
+  // Transport (swap/tow/etc.) rather than a customer rental.
+  const getParentTransportInfo = (spare: Reservation) => {
+    if (!spare.replacementForTransportId) return null;
+    const transport = transportMap[spare.replacementForTransportId];
+    if (!transport) return null;
+    return { transport, vehicle: transport.vehicleId != null ? vehicleMap[transport.vehicleId] : null };
   };
 
   // Sort pending assignments by start date (closest first)
@@ -286,7 +353,10 @@ export function SpareVehicleAssignmentsWidget() {
                     {t('spareWidget.allAssigned')}
                   </div>
                 ) : (
-                  sortedPending.map(placeholder => (
+                  sortedPending.map(placeholder => {
+                    const parentInfo = getParentReservationInfo(placeholder);
+                    const transportInfo = getParentTransportInfo(placeholder);
+                    return (
                     <div key={placeholder.id} className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-md">
                       <div className="flex items-center space-x-3">
                         <AlertCircle className="w-4 h-4 text-red-500" />
@@ -294,6 +364,7 @@ export function SpareVehicleAssignmentsWidget() {
                           <div className="font-medium text-sm text-red-700 dark:text-red-400">
                             {t('spareWidget.tbdSpareVehicle')}
                           </div>
+                          <SpareOriginInfo parentInfo={parentInfo} transportInfo={transportInfo} t={t} />
                           <div className="text-xs text-gray-500">
                             {t('spareWidget.needed', { date: formatDate(placeholder.startDate) })}
                             {placeholder.endDate && ` - ${formatDate(placeholder.endDate)}`}
@@ -309,7 +380,7 @@ export function SpareVehicleAssignmentsWidget() {
                         {t('spareWidget.assignVehicle')}
                       </Button>
                     </div>
-                  ))
+                  );})
                 )}
               </div>
             </TabsContent>
@@ -335,6 +406,7 @@ export function SpareVehicleAssignmentsWidget() {
                 ) : (
                   upcomingAssigned.map(spare => {
                     const parentInfo = getParentReservationInfo(spare);
+                    const transportInfo = getParentTransportInfo(spare);
                     return (
                     <div key={spare.id} className="p-3 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-md">
                       <div className="flex items-start justify-between mb-2">
@@ -352,21 +424,7 @@ export function SpareVehicleAssignmentsWidget() {
                                 </span>
                               )}
                             </div>
-                            {parentInfo && (
-                              <div className="text-xs text-gray-600 mt-1 flex items-center gap-1">
-                                <User className="w-3 h-3" />
-                                <span className="font-medium">{parentInfo.customer?.name || t('spareWidget.unknownCustomer')}</span>
-                                {parentInfo.vehicle && (
-                                  <>
-                                    <ArrowRight className="w-3 h-3 mx-1" />
-                                    <span className="text-gray-500">
-                                      {t('spareWidget.replacing', { brand: parentInfo.vehicle.brand, model: parentInfo.vehicle.model })}
-                                      {parentInfo.vehicle.licensePlate && ` (${formatLicensePlate(parentInfo.vehicle.licensePlate)})`}
-                                    </span>
-                                  </>
-                                )}
-                              </div>
-                            )}
+                            <SpareOriginInfo parentInfo={parentInfo} transportInfo={transportInfo} showReplacingDetail t={t} />
                             <div className="text-xs text-gray-500">
                               {t('spareWidget.serviceDates', { date: formatDate(spare.startDate) })}
                               {spare.endDate && ` - ${formatDate(spare.endDate)}`}
@@ -377,7 +435,7 @@ export function SpareVehicleAssignmentsWidget() {
                           {getStatusLabel(spare.spareVehicleStatus ?? undefined)}
                         </Badge>
                       </div>
-                      
+
                       {spare.spareVehicleStatus !== 'returned' && (
                         <div className="flex gap-2 mt-2">
                           {spare.spareVehicleStatus === 'assigned' && (
@@ -441,7 +499,10 @@ export function SpareVehicleAssignmentsWidget() {
                     {t('spareWidget.noActiveSpares')}
                   </div>
                 ) : (
-                  activeSpares.map(spare => (
+                  activeSpares.map(spare => {
+                    const parentInfo = getParentReservationInfo(spare);
+                    const transportInfo = getParentTransportInfo(spare);
+                    return (
                     <div key={spare.id} className="p-3 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-md">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center space-x-3">
@@ -458,6 +519,7 @@ export function SpareVehicleAssignmentsWidget() {
                                 </span>
                               )}
                             </div>
+                            <SpareOriginInfo parentInfo={parentInfo} transportInfo={transportInfo} t={t} />
                             <div className="text-xs text-gray-500">
                               {t('spareWidget.inUseSince', { date: formatDate(spare.startDate) })}
                               {spare.endDate && t('spareWidget.expectedReturn', { date: formatDate(spare.endDate) })}
@@ -482,7 +544,7 @@ export function SpareVehicleAssignmentsWidget() {
                         </Button>
                       </div>
                     </div>
-                  ))
+                  );})
                 )}
               </div>
             </TabsContent>

@@ -425,6 +425,13 @@ export const reservations = pgTable("reservations", {
   // Spare vehicle management
   type: text("type").default("standard").notNull(), // 'standard' | 'replacement' | 'maintenance_block'
   replacementForReservationId: integer("replacement_for_reservation_id"), // FK to reservations.id for replacement reservations
+  // FK to vehicle_transports.id (enforced at the DB level via the migration, not
+  // through Drizzle's .references() here — that would create a circular type
+  // reference with vehicleTransports.spareReservationId's FK back to this table,
+  // which already points the other way) — set instead of replacementForReservationId
+  // when this spare reservation was created from a standalone Transport
+  // (swap/tow/etc.) rather than a customer rental.
+  replacementForTransportId: integer("replacement_for_transport_id"),
   placeholderSpare: boolean("placeholder_spare").default(false).notNull(), // True when vehicleId is null and spare vehicle assignment is pending
   spareVehicleStatus: text("spare_vehicle_status").default("assigned"), // 'assigned', 'ready', 'picked_up', 'returned'
   
@@ -515,6 +522,7 @@ export const insertReservationSchemaBase = createInsertSchema(reservations).omit
   endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use 24-hour HH:MM").optional().or(z.literal('')).or(z.null()),
   type: z.enum(["standard", "replacement", "maintenance_block"]).optional(),
   replacementForReservationId: z.number().optional().or(z.null()), // Allow null
+  replacementForTransportId: z.number().optional().or(z.null()), // Allow null
   customerId: z.number().optional().or(z.null()), // Make customerId optional for maintenance blocks
   vehicleId: z.number().optional().or(z.null()), // Allow null for placeholder spare vehicles
   placeholderSpare: z.boolean().optional().default(false), // Default to false for normal reservations
@@ -532,15 +540,15 @@ export const insertReservationSchema = insertReservationSchemaBase
   const type = data.type ?? 'standard'; // Handle default type
   const noVehicle = data.vehicleId == null; // Handles both null and undefined
   
-  // If placeholderSpare is true, then vehicleId must be null/undefined, type must be 'replacement', and replacementForReservationId must be present
+  // If placeholderSpare is true, then vehicleId must be null/undefined, type must be 'replacement', and either replacementForReservationId (customer rental) or replacementForTransportId (standalone transport) must be present
   if (data.placeholderSpare === true) {
-    return noVehicle && 
-           type === 'replacement' && 
-           data.replacementForReservationId != null;
+    return noVehicle &&
+           type === 'replacement' &&
+           (data.replacementForReservationId != null || data.replacementForTransportId != null);
   }
   return true;
 }, {
-  message: "Placeholder spare reservations must have no vehicleId, type 'replacement', and a replacementForReservationId",
+  message: "Placeholder spare reservations must have no vehicleId, type 'replacement', and a replacementForReservationId or replacementForTransportId",
   path: ["placeholderSpare"]
 })
 .refine((data) => {
@@ -571,13 +579,13 @@ export const insertReservationSchema = insertReservationSchemaBase
 .refine((data) => {
   const type = data.type ?? 'standard'; // Handle default type
   
-  // All replacement reservations (placeholder or not) must have replacementForReservationId
+  // All replacement reservations (placeholder or not) must have replacementForReservationId or replacementForTransportId
   if (type === 'replacement') {
-    return data.replacementForReservationId != null;
+    return data.replacementForReservationId != null || data.replacementForTransportId != null;
   }
   return true;
 }, {
-  message: "Replacement reservations must have a replacementForReservationId",
+  message: "Replacement reservations must have a replacementForReservationId or replacementForTransportId",
   path: ["type"]
 })
 .refine((data) => {
@@ -1213,10 +1221,36 @@ export type InsertDeliveryTask = z.infer<typeof insertDeliveryTaskSchema>;
 // whether/how much to bill the customer for the trip.
 export const vehicleTransports = pgTable("vehicle_transports", {
   id: serial("id").primaryKey(),
-  vehicleId: integer("vehicle_id").notNull().references(() => vehicles.id, { onDelete: "cascade" }),
-  relatedVehicleId: integer("related_vehicle_id").references(() => vehicles.id, { onDelete: "set null" }), // the other vehicle in a swap
+  // Null when isExternalVehicle is true — an outside/customer-owned vehicle (e.g. a
+  // garage pickup) that never enters the fleet, described instead by the
+  // externalLicensePlate/externalBrand/externalModel/externalColor fields below.
+  vehicleId: integer("vehicle_id").references(() => vehicles.id, { onDelete: "cascade" }),
+  // Outside/customer-owned vehicle, not part of the fleet. When true, vehicleId stays
+  // null and the fields below describe the vehicle instead. Everything else about the
+  // transport (spare workflow, billing, etc.) works the same — the one exception is
+  // that isBreakdownOrMaintenance never puts a vehicle into maintenance status here,
+  // since there's no fleet vehicle to update.
+  isExternalVehicle: boolean("is_external_vehicle").notNull().default(false),
+  externalLicensePlate: text("external_license_plate"),
+  externalBrand: text("external_brand"),
+  externalModel: text("external_model"),
+  externalColor: text("external_color"),
+  externalOwnerName: text("external_owner_name"),
+  externalOwnerPhone: text("external_owner_phone"),
+  // The assigned replacement/spare vehicle for this transport's original `vehicleId`,
+  // for any transport type (not just 'swap'). Null while spareRequired is true and no
+  // vehicle has been picked yet (TBD) — see getTransportSpareStatus in
+  // shared/transport-spare-status.ts, the single source of truth for the derived
+  // Not Required / TBD / Assigned / Picked Up state.
+  relatedVehicleId: integer("related_vehicle_id").references(() => vehicles.id, { onDelete: "set null" }),
   reservationId: integer("reservation_id").references(() => reservations.id, { onDelete: "set null" }), // optional link
   customerId: integer("customer_id").references(() => customers.id, { onDelete: "set null" }), // who to bill, if billable
+
+  // Spare/replacement-vehicle workflow (see shared/transport-spare-status.ts).
+  spareRequired: boolean("spare_required").notNull().default(false),
+  // The 'standard' reservation created for relatedVehicleId once it's assigned, so the
+  // spare vehicle is blocked from double-booking via the existing conflict-check path.
+  spareReservationId: integer("spare_reservation_id").references(() => reservations.id, { onDelete: "set null" }),
 
   transportType: text("transport_type").notNull(), // 'swap' | 'tow' | 'repossession' | 'delivery' | 'other'
   status: text("status").notNull().default("scheduled"), // 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
@@ -1230,8 +1264,10 @@ export const vehicleTransports = pgTable("vehicle_transports", {
   // Cost we pay (e.g. road toll) vs. what we charge the customer — kept separate
   // since they're often different amounts, or the trip may not be billable at all.
   tollCost: numeric("toll_cost"),
-  // A swap caused by a breakdown or scheduled maintenance is our own cost, not the
-  // customer's — checking this defaults billable off. Only meaningful for type 'swap'.
+  // A transport caused by a breakdown or scheduled maintenance is our own cost, not
+  // the customer's — checking this defaults billable off. When spareRequired is also
+  // set, assigning relatedVehicleId puts the original vehicle into maintenance status
+  // (markVehicleForService) and completing/cancelling the transport restores it.
   isBreakdownOrMaintenance: boolean("is_breakdown_or_maintenance").notNull().default(false),
   billable: boolean("billable").notNull().default(false),
   billableAmount: numeric("billable_amount"),
@@ -1261,6 +1297,9 @@ export const insertVehicleTransportSchema = createInsertSchema(vehicleTransports
   updatedAt: true,
   createdByUser: true,
   updatedByUser: true,
+  // Server-managed: set by the spare-assignment transaction, never supplied
+  // directly by the client.
+  spareReservationId: true,
 }).extend({
   distanceKm: z.union([z.number(), z.string().transform(v => v === '' ? null : parseFloat(v))]).nullish()
     .refine(v => v === null || v === undefined || v >= 0, { message: "Distance cannot be negative" }),
@@ -1268,6 +1307,10 @@ export const insertVehicleTransportSchema = createInsertSchema(vehicleTransports
     .refine(v => v === null || v === undefined || v >= 0, { message: "Toll cost cannot be negative" }),
   billableAmount: z.union([z.number(), z.string().transform(v => v === '' ? null : parseFloat(v))]).nullish()
     .refine(v => v === null || v === undefined || v >= 0, { message: "Billable amount cannot be negative" }),
+  // Nullable for external vehicles (isExternalVehicle: true) — enforced as "one or the
+  // other" in the POST /api/transports route instead of here, since this schema also
+  // backs partial() for PATCH, where neither field being present is normal.
+  vehicleId: z.number().nullish(),
 });
 
 export type VehicleTransport = typeof vehicleTransports.$inferSelect & {
@@ -1275,6 +1318,7 @@ export type VehicleTransport = typeof vehicleTransports.$inferSelect & {
   relatedVehicle?: Vehicle;
   customer?: Customer;
   reservation?: Reservation;
+  spareReservation?: Reservation;
 };
 export type InsertVehicleTransport = z.infer<typeof insertVehicleTransportSchema>;
 

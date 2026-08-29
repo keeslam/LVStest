@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/format-utils";
 import { formatLicensePlate } from "@/lib/format-utils";
-import { useLocation } from "wouter";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { Vehicle } from "@shared/schema";
 
 // Function to get days until a date
@@ -29,7 +29,7 @@ function getUrgencyClass(days: number): string {
 
 export function WarrantyExpirationWidget() {
   const { t } = useTranslation("dashboard");
-  const [_, navigate] = useLocation();
+  const { openVehicleDialog } = useGlobalDialog();
   const queryClient = useQueryClient();
   const { data: vehicles, isLoading } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles/warranty-expiring"],
@@ -45,8 +45,8 @@ export function WarrantyExpirationWidget() {
   const handleViewClick = (vehicle: Vehicle) => {
     // Use prefix-based invalidation to ensure fresh data
     invalidateByPrefix(`/api/vehicles/${vehicle.id}`);
-    // Navigate to the vehicle details page
-    navigate(`/vehicles/${vehicle.id}`);
+    // Open the vehicle details dialog
+    openVehicleDialog(vehicle.id);
   };
   
   return (

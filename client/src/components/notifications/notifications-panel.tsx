@@ -47,7 +47,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Calendar, Car, AlertTriangle, Bell, Check, X, Info, ClipboardCheck, MessageSquare } from "lucide-react";
 import { Vehicle, Reservation, CustomNotification } from "@shared/schema";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
-import { Link } from "wouter";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { CustomNotificationsDialog } from "@/components/notifications/custom-notifications-dialog";
@@ -71,7 +70,7 @@ type NotificationSettings = z.infer<typeof notificationSettingsSchema>;
 export function NotificationsPanel() {
   const { t } = useTranslation("notifications");
   const { toast } = useToast();
-  const { openReservationDialog } = useGlobalDialog();
+  const { openReservationDialog, openVehicleDialog } = useGlobalDialog();
   const [activeTab, setActiveTab] = useState<string>("all");
   const [customDialogOpen, setCustomDialogOpen] = useState(false);
   const today = new Date();
@@ -522,8 +521,8 @@ export function NotificationsPanel() {
                                     </span>
                                   </TableCell>
                                   <TableCell className="text-right">
-                                    <Button size="sm" asChild>
-                                      <Link href={`/vehicles/${vehicle.id}`}>{t('notificationsPage.viewButton')}</Link>
+                                    <Button size="sm" onClick={() => openVehicleDialog(vehicle.id)}>
+                                      {t('notificationsPage.viewButton')}
                                     </Button>
                                   </TableCell>
                                 </TableRow>
@@ -582,8 +581,8 @@ export function NotificationsPanel() {
                                     </span>
                                   </TableCell>
                                   <TableCell className="text-right">
-                                    <Button size="sm" asChild>
-                                      <Link href={`/vehicles/${vehicle.id}`}>{t('notificationsPage.viewButton')}</Link>
+                                    <Button size="sm" onClick={() => openVehicleDialog(vehicle.id)}>
+                                      {t('notificationsPage.viewButton')}
                                     </Button>
                                   </TableCell>
                                 </TableRow>
@@ -772,8 +771,8 @@ export function NotificationsPanel() {
                               </span>
                             </TableCell>
                             <TableCell className="text-right">
-                              <Button size="sm" asChild>
-                                <Link href={`/vehicles/${vehicle.id}`}>{t('notificationsPage.viewButton')}</Link>
+                              <Button size="sm" onClick={() => openVehicleDialog(vehicle.id)}>
+                                {t('notificationsPage.viewButton')}
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -836,8 +835,8 @@ export function NotificationsPanel() {
                               </span>
                             </TableCell>
                             <TableCell className="text-right">
-                              <Button size="sm" asChild>
-                                <Link href={`/vehicles/${vehicle.id}`}>{t('notificationsPage.viewButton')}</Link>
+                              <Button size="sm" onClick={() => openVehicleDialog(vehicle.id)}>
+                                {t('notificationsPage.viewButton')}
                               </Button>
                             </TableCell>
                           </TableRow>

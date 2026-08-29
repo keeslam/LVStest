@@ -117,6 +117,13 @@ export interface IStorage {
   createTransport(transport: InsertVehicleTransport): Promise<VehicleTransport>;
   updateTransport(id: number, transportData: Partial<InsertVehicleTransport>): Promise<VehicleTransport | undefined>;
   deleteTransport(id: number): Promise<boolean>;
+  // Spare/replacement-vehicle workflow — see shared/transport-spare-status.ts for the
+  // derived status this drives. applyTransportUpdate atomically handles reservation
+  // creation/cancellation and original-vehicle maintenance status alongside plain field
+  // changes. Pickup/return of the spare itself go through the real reservation
+  // pickup/return endpoints (PickupDialog/ReturnDialog) — status is read live off
+  // spareReservation.status, not recorded separately here.
+  applyTransportUpdate(id: number, changes: Partial<InsertVehicleTransport>): Promise<VehicleTransport>;
 
   // Document methods
   getAllDocuments(): Promise<Document[]>;
@@ -1281,13 +1288,23 @@ export class MemStorage implements IStorage {
     return this.expenses.delete(id);
   }
 
+  // Matches DatabaseStorage.attachTransportRelations's spareReservation hydration —
+  // getTransportSpareStatus reads spareReservation.status, not any transport-level flag.
+  private hydrateSpareReservation(t: VehicleTransport): Reservation | undefined {
+    if (t.spareReservationId == null) return undefined;
+    const res = this.reservations.get(t.spareReservationId);
+    if (!res) return undefined;
+    return { ...res, vehicle: res.vehicleId != null ? this.vehicles.get(res.vehicleId) : undefined };
+  }
+
   async getAllTransports(): Promise<VehicleTransport[]> {
     return Array.from(this.transports.values())
       .map(t => ({
         ...t,
-        vehicle: this.vehicles.get(t.vehicleId),
+        vehicle: t.vehicleId != null ? this.vehicles.get(t.vehicleId) : undefined,
         relatedVehicle: t.relatedVehicleId ? this.vehicles.get(t.relatedVehicleId) : undefined,
         customer: t.customerId ? this.customers.get(t.customerId) : undefined,
+        spareReservation: this.hydrateSpareReservation(t),
       }))
       .sort((a, b) => b.scheduledDate.localeCompare(a.scheduledDate));
   }
@@ -1297,9 +1314,10 @@ export class MemStorage implements IStorage {
     if (!transport) return undefined;
     return {
       ...transport,
-      vehicle: this.vehicles.get(transport.vehicleId),
+      vehicle: transport.vehicleId != null ? this.vehicles.get(transport.vehicleId) : undefined,
       relatedVehicle: transport.relatedVehicleId ? this.vehicles.get(transport.relatedVehicleId) : undefined,
       customer: transport.customerId ? this.customers.get(transport.customerId) : undefined,
+      spareReservation: this.hydrateSpareReservation(transport),
     };
   }
 
@@ -1308,12 +1326,21 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const transport: VehicleTransport = {
       id,
-      vehicleId: transportData.vehicleId,
+      vehicleId: transportData.vehicleId ?? null,
+      isExternalVehicle: transportData.isExternalVehicle ?? false,
+      externalLicensePlate: transportData.externalLicensePlate ?? null,
+      externalBrand: transportData.externalBrand ?? null,
+      externalModel: transportData.externalModel ?? null,
+      externalColor: transportData.externalColor ?? null,
+      externalOwnerName: transportData.externalOwnerName ?? null,
+      externalOwnerPhone: transportData.externalOwnerPhone ?? null,
       relatedVehicleId: transportData.relatedVehicleId ?? null,
       reservationId: transportData.reservationId ?? null,
       customerId: transportData.customerId ?? null,
       transportType: transportData.transportType,
       status: transportData.status ?? "scheduled",
+      spareRequired: transportData.spareRequired ?? false,
+      spareReservationId: null,
       originAddress: transportData.originAddress ?? null,
       originCity: transportData.originCity ?? null,
       destinationAddress: transportData.destinationAddress ?? null,
@@ -1358,6 +1385,146 @@ export class MemStorage implements IStorage {
 
   async deleteTransport(id: number): Promise<boolean> {
     return this.transports.delete(id);
+  }
+
+  async applyTransportUpdate(id: number, changes: Partial<InsertVehicleTransport>): Promise<VehicleTransport> {
+    const current = this.transports.get(id);
+    if (!current) {
+      throw new Error('Transport not found');
+    }
+
+    const nextSpareRequired = changes.spareRequired ?? current.spareRequired;
+    const nextRelatedVehicleId = changes.relatedVehicleId !== undefined ? changes.relatedVehicleId : current.relatedVehicleId;
+    const nextIsBreakdown = changes.isBreakdownOrMaintenance ?? current.isBreakdownOrMaintenance;
+
+    if (nextRelatedVehicleId != null && nextRelatedVehicleId === current.vehicleId) {
+      throw new Error('Replacement vehicle cannot be the same as the original vehicle');
+    }
+
+    let spareReservationId = current.spareReservationId;
+    const relatedVehicleChanged = nextRelatedVehicleId !== current.relatedVehicleId;
+    const spareTurnedOff = current.spareRequired && !nextSpareRequired;
+
+    // See the matching comment in DatabaseStorage.applyTransportUpdate — the
+    // reservation is created once (as a TBD placeholder if no vehicle is picked
+    // yet) and updated in place from then on, never cancelled and recreated, so
+    // it stays visible in the Rental Calendar / "Beheer vervangende voertuigen"
+    // for the transport's whole lifecycle.
+    if (spareReservationId && (spareTurnedOff || relatedVehicleChanged)) {
+      const old = this.reservations.get(spareReservationId);
+      if (old && old.status !== 'booked') {
+        const message = old.status === 'picked_up'
+          ? 'Cannot change the replacement vehicle — the current one has already been picked up. Return it first, or leave it as-is.'
+          : 'Cannot change the replacement vehicle — the current one has already been returned. This transport now reflects a completed handover; leave it as-is.';
+        throw new Error(message);
+      }
+
+      if (spareTurnedOff) {
+        if (old) this.reservations.set(spareReservationId, { ...old, status: 'cancelled', updatedAt: new Date() });
+        spareReservationId = null;
+      } else if (nextRelatedVehicleId == null) {
+        if (old) this.reservations.set(spareReservationId, { ...old, vehicleId: null, placeholderSpare: true, startTime: null, endTime: null, updatedAt: new Date() });
+      } else {
+        const conflicts = await this.checkReservationConflicts(
+          nextRelatedVehicleId, current.scheduledDate, current.scheduledDate, spareReservationId, false, '00:00', '23:59'
+        );
+        if (conflicts.length > 0) {
+          throw new Error('Replacement vehicle has conflicting reservations for this date');
+        }
+        if (old) this.reservations.set(spareReservationId, { ...old, vehicleId: nextRelatedVehicleId, placeholderSpare: false, startTime: '00:00', endTime: '23:59', updatedAt: new Date() });
+      }
+    }
+
+    if (nextSpareRequired && !spareReservationId) {
+      if (nextRelatedVehicleId != null) {
+        // See the matching comment in DatabaseStorage.applyTransportUpdate — the
+        // same-day-turnover exception in checkReservationConflicts would otherwise let
+        // two different transports both claim the same spare on the same day.
+        const conflicts = await this.checkReservationConflicts(
+          nextRelatedVehicleId, current.scheduledDate, current.scheduledDate, null, false, '00:00', '23:59'
+        );
+        if (conflicts.length > 0) {
+          throw new Error('Replacement vehicle has conflicting reservations for this date');
+        }
+      }
+      // See the matching comment in DatabaseStorage.applyTransportUpdate — if the
+      // transport's own vehicle is currently out on an active rental, this spare
+      // stands in for THAT reservation/customer, not the transport in the
+      // abstract.
+      const affectedRentalReservation = current.vehicleId != null
+        ? Array.from(this.reservations.values()).find(r => r.vehicleId === current.vehicleId && r.status === 'picked_up' && !r.deletedAt)
+        : undefined;
+      const originalVehicle = current.vehicleId != null ? this.vehicles.get(current.vehicleId) : undefined;
+      // Describes the vehicle being replaced, not internal ids — see the
+      // matching comment in DatabaseStorage.applyTransportUpdate.
+      const replacingLabel = originalVehicle
+        ? `${originalVehicle.brand} ${originalVehicle.model} (${originalVehicle.licensePlate})`
+        : current.isExternalVehicle
+          ? `${[current.externalBrand, current.externalModel].filter(Boolean).join(' ')}${current.externalLicensePlate ? ` (${current.externalLicensePlate})` : ''} — external vehicle`.trim()
+          : null;
+
+      const spareReservationData: InsertReservation = {
+        vehicleId: nextRelatedVehicleId,
+        customerId: affectedRentalReservation?.customerId ?? current.customerId,
+        startDate: current.scheduledDate,
+        endDate: current.scheduledDate,
+        startTime: nextRelatedVehicleId != null ? '00:00' : null,
+        endTime: nextRelatedVehicleId != null ? '23:59' : null,
+        // 'booked' — the real pickup flow (pickupReservation/PickupDialog) only
+        // accepts reservations in 'booked' status.
+        status: 'booked',
+        type: 'replacement',
+        replacementForReservationId: affectedRentalReservation?.id ?? null,
+        replacementForTransportId: id,
+        placeholderSpare: nextRelatedVehicleId == null,
+        totalPrice: null,
+        notes: replacingLabel
+          ? `Replacement vehicle for ${replacingLabel}`
+          : `Replacement vehicle for transport #${id}`,
+        damageCheckPath: null,
+      };
+      const spareReservation = await this.createReservation(spareReservationData);
+      spareReservationId = spareReservation.id;
+    }
+
+    // isBreakdownOrMaintenance means "the original vehicle needs service" — toggling
+    // it on/off drives the maintenance status independently of whether a replacement
+    // is assigned yet or still TBD.
+    const breakdownFlagTurnedOn = !current.isBreakdownOrMaintenance && nextIsBreakdown;
+    const breakdownFlagTurnedOff = current.isBreakdownOrMaintenance && !nextIsBreakdown;
+    const closingNow = changes.status !== undefined && changes.status !== current.status &&
+      (changes.status === 'completed' || changes.status === 'cancelled');
+
+    // An external/outside vehicle never enters the fleet, so there's no vehicle
+    // record here to put into maintenance status.
+    const canMarkOriginalForService = !current.isExternalVehicle && current.vehicleId != null;
+
+    if (breakdownFlagTurnedOn && canMarkOriginalForService) {
+      await this.markVehicleForService(current.vehicleId!, 'needs_service', `Replacement vehicle required for transport #${id}`);
+    } else if ((breakdownFlagTurnedOff || (closingNow && nextIsBreakdown)) && canMarkOriginalForService) {
+      await this.markVehicleForService(current.vehicleId!, 'ok');
+    }
+
+    const updated: VehicleTransport = {
+      ...current,
+      ...changes,
+      relatedVehicleId: nextRelatedVehicleId,
+      spareRequired: nextSpareRequired,
+      isBreakdownOrMaintenance: nextIsBreakdown,
+      spareReservationId,
+      distanceKm: changes.distanceKm !== undefined ? (changes.distanceKm != null ? String(changes.distanceKm) : null) : current.distanceKm,
+      tollCost: changes.tollCost !== undefined ? (changes.tollCost != null ? String(changes.tollCost) : null) : current.tollCost,
+      billableAmount: changes.billableAmount !== undefined ? (changes.billableAmount != null ? String(changes.billableAmount) : null) : current.billableAmount,
+      updatedAt: new Date(),
+    };
+    this.transports.set(id, updated);
+    return {
+      ...updated,
+      vehicle: updated.vehicleId != null ? this.vehicles.get(updated.vehicleId) : undefined,
+      relatedVehicle: updated.relatedVehicleId ? this.vehicles.get(updated.relatedVehicleId) : undefined,
+      customer: updated.customerId ? this.customers.get(updated.customerId) : undefined,
+      spareReservation: this.hydrateSpareReservation(updated),
+    };
   }
 
   // Document methods
@@ -2034,6 +2201,17 @@ export class MemStorage implements IStorage {
       return undefined;
     }
 
+    // See the matching comment in DatabaseStorage.assignVehicleToPlaceholder — a
+    // placeholder created from a Transport is a normal spare reservation from
+    // here on; its Transport gets its relatedVehicleId mirrored below instead
+    // of being blocked from assignment here.
+    if (reservation.replacementForTransportId != null) {
+      const linkedTransport = this.transports.get(reservation.replacementForTransportId);
+      if (linkedTransport && linkedTransport.vehicleId === vehicleId) {
+        throw new Error('Replacement vehicle cannot be the same as the original vehicle');
+      }
+    }
+
     // Verify the target vehicle exists
     const vehicle = this.vehicles.get(vehicleId);
     if (!vehicle) {
@@ -2073,7 +2251,16 @@ export class MemStorage implements IStorage {
     };
 
     this.reservations.set(reservationId, updatedReservation);
-    
+
+    // Keep the originating Transport's relatedVehicleId mirrored to whatever
+    // just got assigned here.
+    if (reservation.replacementForTransportId != null) {
+      const linkedTransport = this.transports.get(reservation.replacementForTransportId);
+      if (linkedTransport) {
+        this.transports.set(linkedTransport.id, { ...linkedTransport, relatedVehicleId: vehicleId, updatedAt: new Date() });
+      }
+    }
+
     // Return enriched reservation with vehicle and customer data for consistency
     const customer = reservation.customerId ? await this.getCustomer(reservation.customerId) : undefined;
     return {

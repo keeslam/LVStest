@@ -978,27 +978,76 @@ export class DatabaseStorage implements IStorage {
     const dataToInsert = {
       ...reservationData,
       // Convert totalPrice to string if present
-      totalPrice: reservationData.totalPrice !== undefined 
-        ? String(reservationData.totalPrice) 
+      totalPrice: reservationData.totalPrice !== undefined
+        ? String(reservationData.totalPrice)
         : undefined
     };
-    
+
     const [reservation] = await db.insert(reservations).values(dataToInsert).returning();
-    
+    await this.syncDeliveryTransport(reservation);
+
     // Handle null vehicleId for placeholder spare reservations
     let vehicle: Vehicle | undefined = undefined;
     if (reservation.vehicleId !== null) {
       const [v] = await db.select().from(vehicles).where(eq(vehicles.id, reservation.vehicleId));
       vehicle = v ?? undefined;
     }
-    
+
     const [c] = await db.select().from(customers).where(eq(customers.id, reservation.customerId));
-    
+
     return {
       ...reservation,
       vehicle,
       customer: c ?? undefined
     };
+  }
+
+  // Keeps a delivery-flagged reservation's transport leg (vehicle_transports,
+  // linked via reservationId) in sync — auto-creates one the first time
+  // deliveryRequired is set, mirrors address/date/fee changes into it on later
+  // edits, and cancels it if deliveryRequired is turned back off. A transport
+  // that's already completed or cancelled is left alone rather than resurrected
+  // or overwritten, since that's a real handled/finished job, not a stale draft.
+  private async syncDeliveryTransport(reservation: typeof reservations.$inferSelect): Promise<void> {
+    const [existing] = await db.select().from(vehicleTransports).where(eq(vehicleTransports.reservationId, reservation.id));
+
+    if (!reservation.deliveryRequired) {
+      if (existing && existing.status !== 'completed' && existing.status !== 'cancelled') {
+        await db.update(vehicleTransports)
+          .set({ status: 'cancelled', updatedAt: new Date() })
+          .where(eq(vehicleTransports.id, existing.id));
+      }
+      return;
+    }
+
+    // Nothing to deliver without a vehicle (e.g. a placeholder spare reservation).
+    if (reservation.vehicleId == null) return;
+
+    const fields = {
+      vehicleId: reservation.vehicleId,
+      customerId: reservation.customerId,
+      transportType: 'delivery' as const,
+      destinationAddress: reservation.deliveryAddress,
+      destinationCity: reservation.deliveryCity,
+      scheduledDate: reservation.startDate,
+      billable: !!reservation.deliveryFee,
+      billableAmount: reservation.deliveryFee,
+      reservationId: reservation.id,
+    };
+
+    if (existing) {
+      if (existing.status === 'completed' || existing.status === 'cancelled') return;
+      await db.update(vehicleTransports).set({ ...fields, updatedAt: new Date() }).where(eq(vehicleTransports.id, existing.id));
+    } else {
+      await db.insert(vehicleTransports).values({
+        ...fields,
+        status: 'scheduled',
+        isExternalVehicle: false,
+        spareRequired: false,
+        isBreakdownOrMaintenance: false,
+        invoiced: false,
+      });
+    }
   }
 
   async updateReservation(id: number, reservationData: Partial<InsertReservation>): Promise<Reservation | undefined> {
@@ -1042,16 +1091,17 @@ export class DatabaseStorage implements IStorage {
     if (!updatedReservation) {
       return undefined;
     }
-    
+    await this.syncDeliveryTransport(updatedReservation);
+
     // Handle null vehicleId for placeholder spare reservations
     let vehicle: Vehicle | undefined = undefined;
     if (updatedReservation.vehicleId !== null) {
       const [v] = await db.select().from(vehicles).where(eq(vehicles.id, updatedReservation.vehicleId));
       vehicle = v ?? undefined;
     }
-    
+
     const [c] = await db.select().from(customers).where(eq(customers.id, updatedReservation.customerId));
-    
+
     return {
       ...updatedReservation,
       vehicle,
@@ -1060,10 +1110,17 @@ export class DatabaseStorage implements IStorage {
   }
   
   async deleteReservation(id: number): Promise<boolean> {
+    // Cancel (not delete) any transport this reservation auto-created via
+    // syncDeliveryTransport, so it doesn't linger referencing a reservation that
+    // no longer exists — same as what happens when deliveryRequired is unchecked.
+    await db.update(vehicleTransports)
+      .set({ status: 'cancelled', updatedAt: new Date() })
+      .where(and(eq(vehicleTransports.reservationId, id), ne(vehicleTransports.status, 'completed'), ne(vehicleTransports.status, 'cancelled')));
+
     const result = await db
       .delete(reservations)
       .where(eq(reservations.id, id));
-    
+
     return result.rowCount ? result.rowCount > 0 : false;
   }
 
@@ -1448,7 +1505,12 @@ export class DatabaseStorage implements IStorage {
         fuelLevelPickup: pickupData.fuelLevelPickup,
         actualPickupDate: pickupDate,
         status: 'picked_up',
-        notes: pickupData.pickupNotes 
+        // Kept in lockstep with `status` here — the widget's "Beheer vervangende
+        // voertuigen" Actief tab reads spareVehicleStatus, not status, and this is
+        // its only write path for a real pickup (it was previously never set,
+        // which meant that tab could never actually populate from a real handover).
+        ...(reservation.type === 'replacement' ? { spareVehicleStatus: 'picked_up' } : {}),
+        notes: pickupData.pickupNotes
           ? `${reservation.notes || ''}\n[PICKUP ${pickupDate}] ${pickupData.pickupNotes}`.trim()
           : reservation.notes,
         updatedAt: new Date()
@@ -1521,9 +1583,10 @@ export class DatabaseStorage implements IStorage {
         fuelLevelReturn: returnData.fuelLevelReturn,
         actualReturnDate: returnDate,
         status: 'returned',
+        ...(reservation.type === 'replacement' ? { spareVehicleStatus: 'returned' } : {}),
         endDate: returnDate,
         completionDate: returnDate,
-        notes: returnData.returnNotes 
+        notes: returnData.returnNotes
           ? `${reservation.notes || ''}\n[RETURN ${returnDate}] ${returnData.returnNotes}`.trim()
           : reservation.notes,
         updatedAt: new Date()
@@ -1695,19 +1758,30 @@ export class DatabaseStorage implements IStorage {
     const customerIds = Array.from(new Set(
       rows.map(t => t.customerId).filter((id): id is number => id != null)
     ));
+    const spareReservationIds = Array.from(new Set(
+      rows.map(t => t.spareReservationId).filter((id): id is number => id != null)
+    ));
 
-    const [vehicleRows, customerRows] = await Promise.all([
+    const [vehicleRows, customerRows, spareReservationRows] = await Promise.all([
       vehicleIds.length ? db.select().from(vehicles).where(inArray(vehicles.id, vehicleIds)) : Promise.resolve([]),
       customerIds.length ? db.select().from(customers).where(inArray(customers.id, customerIds)) : Promise.resolve([]),
+      spareReservationIds.length ? db.select().from(reservations).where(inArray(reservations.id, spareReservationIds)) : Promise.resolve([]),
     ]);
     const vehicleById = new Map(vehicleRows.map(v => [v.id, v]));
     const customerById = new Map(customerRows.map(c => [c.id, c]));
+    // PickupDialog (the real pickup form — contract number, mileage, fuel, damage
+    // check) expects reservation.vehicle populated for sensible defaults, so hydrate
+    // that here rather than making the frontend fetch it separately.
+    const spareReservationById = new Map(
+      spareReservationRows.map(r => [r.id, { ...r, vehicle: r.vehicleId != null ? vehicleById.get(r.vehicleId) : undefined }])
+    );
 
     return rows.map(t => ({
       ...t,
-      vehicle: vehicleById.get(t.vehicleId),
+      vehicle: t.vehicleId != null ? vehicleById.get(t.vehicleId) : undefined,
       relatedVehicle: t.relatedVehicleId != null ? vehicleById.get(t.relatedVehicleId) : undefined,
       customer: t.customerId != null ? customerById.get(t.customerId) : undefined,
+      spareReservation: t.spareReservationId != null ? spareReservationById.get(t.spareReservationId) : undefined,
     }));
   }
 
@@ -1743,6 +1817,227 @@ export class DatabaseStorage implements IStorage {
   async deleteTransport(id: number): Promise<boolean> {
     const result = await db.delete(vehicleTransports).where(eq(vehicleTransports.id, id));
     return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  // Applies any partial transport update, handling the spare/replacement-vehicle
+  // workflow atomically alongside plain field changes:
+  //  - relatedVehicleId null -> X: conflict-checks X for scheduledDate, creates a
+  //    'standard' reservation for it (so it participates in normal double-booking
+  //    checks, unlike 'maintenance_block' rows), and — if isBreakdownOrMaintenance —
+  //    puts the original vehicle into service via markVehicleForService.
+  //  - relatedVehicleId X -> Y: cancels the old spare reservation, creates a new one.
+  //  - relatedVehicleId X -> null (back to TBD), or spareRequired -> false: cancels
+  //    the spare reservation and clears the spare columns. The original vehicle's
+  //    maintenance status is left as-is — only the specific spare choice changed,
+  //    not the underlying breakdown/maintenance reason.
+  //  - status -> completed/cancelled while isBreakdownOrMaintenance: restores the
+  //    original vehicle via markVehicleForService(..., 'ok').
+  // Everything happens inside one db.transaction so a conflict or failed write can
+  // never leave the spare reserved without the original vehicle updated, or vice versa.
+  async applyTransportUpdate(id: number, changes: Partial<InsertVehicleTransport>): Promise<VehicleTransport> {
+    let restoreMaintenanceAfterCommit = false;
+    let markServiceAfterCommit = false;
+
+    const updatedRow = await db.transaction(async (tx) => {
+      const [current] = await tx.select().from(vehicleTransports).where(eq(vehicleTransports.id, id));
+      if (!current) {
+        throw new Error('Transport not found');
+      }
+
+      const nextSpareRequired = changes.spareRequired ?? current.spareRequired;
+      const nextRelatedVehicleId = changes.relatedVehicleId !== undefined ? changes.relatedVehicleId : current.relatedVehicleId;
+      const nextIsBreakdown = changes.isBreakdownOrMaintenance ?? current.isBreakdownOrMaintenance;
+
+      if (nextRelatedVehicleId != null && nextRelatedVehicleId === current.vehicleId) {
+        throw new Error('Replacement vehicle cannot be the same as the original vehicle');
+      }
+
+      let spareReservationId = current.spareReservationId;
+      const relatedVehicleChanged = nextRelatedVehicleId !== current.relatedVehicleId;
+      const spareTurnedOff = current.spareRequired && !nextSpareRequired;
+
+      // The spare reservation is now created once (as a TBD placeholder if no
+      // vehicle is picked yet) and kept for the transport's whole lifecycle,
+      // updated in place as the assignment changes — never cancelled and
+      // recreated — so it stays visible in the Rental Calendar and "Beheer
+      // vervangende voertuigen" the entire time (both key off a reservation
+      // actually existing with type 'replacement').
+      if (spareReservationId && (spareTurnedOff || relatedVehicleChanged)) {
+        const [currentSpareReservation] = await tx.select().from(reservations).where(eq(reservations.id, spareReservationId));
+        // Only a still-'booked' reservation is safe to silently cancel/reassign —
+        // once the spare has actually been picked up (or already returned) it's a
+        // real handover on record, not a placeholder to swap out from under the
+        // driver.
+        if (currentSpareReservation && currentSpareReservation.status !== 'booked') {
+          const message = currentSpareReservation.status === 'picked_up'
+            ? 'Cannot change the replacement vehicle — the current one has already been picked up. Return it first, or leave it as-is.'
+            : 'Cannot change the replacement vehicle — the current one has already been returned. This transport now reflects a completed handover; leave it as-is.';
+          throw new Error(message);
+        }
+
+        if (spareTurnedOff) {
+          await tx.update(reservations)
+            .set({ status: 'cancelled', updatedAt: new Date() })
+            .where(eq(reservations.id, spareReservationId));
+          spareReservationId = null;
+        } else if (nextRelatedVehicleId == null) {
+          // Assigned -> back to TBD: revert to placeholder shape rather than
+          // cancelling, so it keeps showing as a TBD reminder.
+          await tx.update(reservations)
+            .set({ vehicleId: null, placeholderSpare: true, startTime: null, endTime: null, updatedAt: new Date() })
+            .where(eq(reservations.id, spareReservationId));
+        } else {
+          // TBD -> assigned, or reassigned to a different vehicle. Same
+          // same-day-turnover-exception workaround as below — explicit full-day
+          // window so two different transports can't both claim this vehicle on
+          // the same day — and exclude this reservation from its own conflict
+          // check since it's being updated, not inserted fresh.
+          const conflicts = await this.checkReservationConflicts(
+            nextRelatedVehicleId, current.scheduledDate, current.scheduledDate, spareReservationId, false, '00:00', '23:59'
+          );
+          if (conflicts.length > 0) {
+            throw new Error('Replacement vehicle has conflicting reservations for this date');
+          }
+          await tx.update(reservations)
+            .set({ vehicleId: nextRelatedVehicleId, placeholderSpare: false, startTime: '00:00', endTime: '23:59', updatedAt: new Date() })
+            .where(eq(reservations.id, spareReservationId));
+        }
+      }
+
+      if (nextSpareRequired && !spareReservationId) {
+        if (nextRelatedVehicleId != null) {
+          // A transport's spare reservation spans a single calendar day (startDate
+          // === endDate). checkReservationConflicts has a deliberate "same-day
+          // turnover" exception for exactly that shape (return this morning, new
+          // pickup this afternoon) — it does NOT count as a conflict when neither
+          // side has a time. That's correct for real rental handovers, but two
+          // DIFFERENT transports both wanting the same spare on the same day must
+          // actually conflict, so give the reservation an explicit full-day window
+          // rather than leaving times null.
+          const conflicts = await this.checkReservationConflicts(
+            nextRelatedVehicleId, current.scheduledDate, current.scheduledDate, null, false, '00:00', '23:59'
+          );
+          if (conflicts.length > 0) {
+            throw new Error('Replacement vehicle has conflicting reservations for this date');
+          }
+        }
+
+        // If the transport's own vehicle is currently out on an active rental, this
+        // spare is really standing in for THAT reservation/customer — not for the
+        // transport in the abstract — so link it the same way the reservation-side
+        // spare workflow always has (replacementForReservationId), which is also
+        // what makes the Rental Calendar / "Beheer vervangende voertuigen" show the
+        // customer/original-vehicle it's replacing instead of just "Transport #N".
+        // replacementForTransportId is still recorded either way, so the
+        // assign-vehicle guard (server/database-storage.ts assignVehicleToPlaceholder)
+        // keeps blocking cross-UI writes to vehicleId regardless of which label wins.
+        let affectedRentalReservation: Reservation | undefined;
+        let originalVehicle: typeof vehicles.$inferSelect | undefined;
+        if (current.vehicleId != null) {
+          [affectedRentalReservation] = await tx.select().from(reservations).where(
+            and(
+              eq(reservations.vehicleId, current.vehicleId),
+              eq(reservations.status, 'picked_up'),
+              isNull(reservations.deletedAt)
+            )
+          );
+          [originalVehicle] = await tx.select().from(vehicles).where(eq(vehicles.id, current.vehicleId));
+        }
+        // Describes the vehicle being replaced, not internal ids — this is what
+        // shows in the Rental Calendar's Notes section, where staff read it, not
+        // a debugging trail. The "replacing {plate}" badge elsewhere on that same
+        // dialog already covers this for reservation-linked spares; this note is
+        // what carries that context for the external/no-active-rental case too.
+        const replacingLabel = originalVehicle
+          ? `${originalVehicle.brand} ${originalVehicle.model} (${originalVehicle.licensePlate})`
+          : current.isExternalVehicle
+            ? `${[current.externalBrand, current.externalModel].filter(Boolean).join(' ')}${current.externalLicensePlate ? ` (${current.externalLicensePlate})` : ''} — external vehicle`.trim()
+            : null;
+
+        const spareReservationData: InsertReservation = {
+          vehicleId: nextRelatedVehicleId,
+          customerId: affectedRentalReservation?.customerId ?? current.customerId,
+          startDate: current.scheduledDate,
+          endDate: current.scheduledDate,
+          startTime: nextRelatedVehicleId != null ? '00:00' : null,
+          endTime: nextRelatedVehicleId != null ? '23:59' : null,
+          // 'booked' (not 'pending') — pickupReservation()/PickupDialog, the real
+          // pickup flow this spare goes through for its actual handover, only
+          // accepts reservations in 'booked' status.
+          status: 'booked',
+          // 'replacement' (not 'standard') is what makes the Rental Calendar and
+          // "Beheer vervangende voertuigen" recognize it as a spare at all;
+          // checkReservationConflicts treats 'replacement' the same as 'standard'
+          // (only 'maintenance_block' is excluded), so this doesn't change
+          // double-booking protection.
+          type: 'replacement',
+          replacementForReservationId: affectedRentalReservation?.id ?? null,
+          replacementForTransportId: id,
+          placeholderSpare: nextRelatedVehicleId == null,
+          totalPrice: null,
+          notes: replacingLabel
+            ? `Replacement vehicle for ${replacingLabel}`
+            : `Replacement vehicle for transport #${id}`,
+          damageCheckPath: null,
+        };
+        const [spareReservation] = await tx.insert(reservations).values(spareReservationData).returning();
+        spareReservationId = spareReservation.id;
+      }
+
+      // isBreakdownOrMaintenance is what actually means "the original vehicle needs
+      // service" — independent of whether a replacement has been assigned yet or is
+      // still TBD, and independent of relatedVehicleId changing in this same call.
+      // Toggling the flag on is what puts the original vehicle into service;
+      // toggling it off, or closing the transport while it was on, restores it.
+      const breakdownFlagTurnedOn = !current.isBreakdownOrMaintenance && nextIsBreakdown;
+      const breakdownFlagTurnedOff = current.isBreakdownOrMaintenance && !nextIsBreakdown;
+      const closingNow = changes.status !== undefined && changes.status !== current.status &&
+        (changes.status === 'completed' || changes.status === 'cancelled');
+
+      // An external/outside vehicle never enters the fleet, so there's no vehicle
+      // record here to put into maintenance status — everything else about the
+      // spare workflow above still applies to it unchanged.
+      const canMarkOriginalForService = !current.isExternalVehicle && current.vehicleId != null;
+
+      if (breakdownFlagTurnedOn && canMarkOriginalForService) {
+        markServiceAfterCommit = true;
+        await this.markVehicleForService(
+          current.vehicleId!,
+          'needs_service',
+          `Replacement vehicle required for transport #${id}`,
+          tx
+        );
+      } else if ((breakdownFlagTurnedOff || (closingNow && nextIsBreakdown)) && canMarkOriginalForService) {
+        restoreMaintenanceAfterCommit = true;
+        await this.markVehicleForService(current.vehicleId!, 'ok', undefined, tx);
+      }
+
+      // Same numeric-column-vs-zod-number typing gap that the pre-existing
+      // updateTransport() above already has (distanceKm/tollCost/billableAmount are
+      // `number` in the zod schema but `string` in the drizzle column type) — cast
+      // rather than fight a codebase-wide drizzle-zod mismatch outside this feature's
+      // scope.
+      const [row] = await tx.update(vehicleTransports)
+        .set({
+          ...changes,
+          relatedVehicleId: nextRelatedVehicleId,
+          spareRequired: nextSpareRequired,
+          isBreakdownOrMaintenance: nextIsBreakdown,
+          spareReservationId,
+          updatedAt: new Date(),
+        } as any)
+        .where(eq(vehicleTransports.id, id))
+        .returning();
+
+      return row;
+    });
+
+    if (markServiceAfterCommit || restoreMaintenanceAfterCommit) {
+      await this.syncVehicleAvailabilityWithReservations();
+    }
+
+    const [withRelations] = await this.attachTransportRelations([updatedRow]);
+    return withRelations;
   }
 
   // Document methods
@@ -2421,6 +2716,7 @@ export class DatabaseStorage implements IStorage {
         type: reservations.type,
         placeholderSpare: reservations.placeholderSpare,
         replacementForReservationId: reservations.replacementForReservationId,
+        replacementForTransportId: reservations.replacementForTransportId,
         customer: customers,
       })
       .from(reservations)
@@ -2516,6 +2812,19 @@ export class DatabaseStorage implements IStorage {
       return undefined;
     }
 
+    // A placeholder created from a Transport is still just a normal spare
+    // reservation from here on — assignable from this widget exactly like any
+    // other. The Transport that created it is kept in sync below (its own
+    // relatedVehicleId mirrors whatever gets assigned here), same direction as
+    // the sync that already runs the other way when assigning from the
+    // Transport dialog.
+    if (reservation.replacementForTransportId != null) {
+      const [linkedTransport] = await db.select().from(vehicleTransports).where(eq(vehicleTransports.id, reservation.replacementForTransportId));
+      if (linkedTransport && linkedTransport.vehicleId === vehicleId) {
+        throw new Error('Replacement vehicle cannot be the same as the original vehicle');
+      }
+    }
+
     // Verify the target vehicle exists
     const [vehicle] = await db
       .select()
@@ -2556,11 +2865,21 @@ export class DatabaseStorage implements IStorage {
         vehicleId,
         endDate: assignmentEndDate,
         placeholderSpare: false,
-        notes: `Spare vehicle ${vehicle.licensePlate} (${vehicle.brand} ${vehicle.model}) assigned for reservation #${reservation.replacementForReservationId}`,
+        notes: reservation.replacementForReservationId != null
+          ? `Spare vehicle ${vehicle.licensePlate} (${vehicle.brand} ${vehicle.model}) assigned for reservation #${reservation.replacementForReservationId}`
+          : `Spare vehicle ${vehicle.licensePlate} (${vehicle.brand} ${vehicle.model}) assigned`,
         updatedAt: new Date()
       })
       .where(eq(reservations.id, reservationId))
       .returning();
+
+    // Keep the originating Transport's relatedVehicleId mirrored to whatever
+    // just got assigned here, so the Transports page reflects it too.
+    if (reservation.replacementForTransportId != null) {
+      await db.update(vehicleTransports)
+        .set({ relatedVehicleId: vehicleId, updatedAt: new Date() })
+        .where(eq(vehicleTransports.id, reservation.replacementForTransportId));
+    }
 
     // Delete the spare assignment notification when vehicle is assigned
     await this.deleteNotificationsByTypeAndPattern("spare_assignment", `[placeholder:${reservationId}]`);
@@ -2729,23 +3048,30 @@ export class DatabaseStorage implements IStorage {
     return updatedReservation || undefined;
   }
 
-  async markVehicleForService(vehicleId: number, maintenanceStatus: string, maintenanceNote?: string): Promise<Vehicle | undefined> {
+  // dbExecutor lets a caller pass an open `tx` (from db.transaction(...)) so this
+  // write participates in that transaction instead of its own connection — needed
+  // for callers that must roll everything back together (e.g. transport spare
+  // assignment). The reconciliation pass is always skipped when tx-scoped, since
+  // running it on a separate connection mid-transaction could deadlock against our
+  // own not-yet-committed row lock; callers that pass a tx are responsible for
+  // calling syncVehicleAvailabilityWithReservations() themselves after it commits.
+  async markVehicleForService(vehicleId: number, maintenanceStatus: string, maintenanceNote?: string, dbExecutor: any = db): Promise<Vehicle | undefined> {
     // Get current vehicle to check its status
-    const currentVehicle = await this.getVehicle(vehicleId);
+    const [currentVehicle] = await dbExecutor.select().from(vehicles).where(eq(vehicles.id, vehicleId));
     if (!currentVehicle) {
       return undefined;
     }
-    
+
     const updateData: any = {
       maintenanceStatus,
       maintenanceNote: maintenanceNote || null,
       updatedAt: new Date()
     };
-    
+
     // Update availability status based on maintenance status
     // Only update if vehicle is not currently rented (preserve rental status)
     const currentAvailability = currentVehicle.availabilityStatus || 'available';
-    
+
     if (maintenanceStatus === 'in_service' || maintenanceStatus === 'scheduled') {
       // Set to needs_fixing only if not currently rented
       if (currentAvailability !== 'rented') {
@@ -2761,15 +3087,17 @@ export class DatabaseStorage implements IStorage {
         console.log(`[Vehicle Status] Vehicle ${vehicleId} service completed - setting to 'available'`);
       }
     }
-    
-    const [updatedVehicle] = await db
+
+    const [updatedVehicle] = await dbExecutor
       .update(vehicles)
       .set(updateData)
       .where(eq(vehicles.id, vehicleId))
       .returning();
-    
-    // Sync vehicle availability after maintenance status change
-    await this.syncVehicleAvailabilityWithReservations();
+
+    if (dbExecutor === db) {
+      // Sync vehicle availability after maintenance status change
+      await this.syncVehicleAvailabilityWithReservations();
+    }
 
     return updatedVehicle || undefined;
   }

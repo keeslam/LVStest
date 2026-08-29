@@ -7,6 +7,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest , invalidateByPrefix, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { insertExpenseSchema } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -129,6 +130,7 @@ export function ExpenseForm({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [_, navigate] = useLocation();
+  const { openExpenseVehicleDialog, openExpenseDialog } = useGlobalDialog();
   const [vehicleId, setVehicleId] = useState<number | null>(null);
   const [receiptTab, setReceiptTab] = useState<string>("url");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -311,12 +313,12 @@ export function ExpenseForm({
         navigate("/expenses");
       }
       
-      // Navigate to the vehicle expenses page when a vehicle ID is available
+      // Open the vehicle expenses dialog when a vehicle ID is available
       if (expenseVehicleId) {
-        navigate(`/expenses/vehicle/${expenseVehicleId}`);
+        openExpenseVehicleDialog(expenseVehicleId);
       } else if (result && result.id) {
-        // Fallback to the expense details page if no vehicle ID but we have expense ID
-        navigate(`/expenses/${result.id}`);
+        // Fallback to opening the expense detail dialog if no vehicle ID but we have expense ID
+        openExpenseDialog(result.id);
       } else {
         // Last fallback to expenses list
         navigate("/expenses");
@@ -572,7 +574,7 @@ export function ExpenseForm({
                   if (onSuccess) {
                     onSuccess();
                   } else {
-                    vehicleId ? navigate(`/expenses/vehicle/${vehicleId}`) : navigate("/expenses");
+                    vehicleId ? openExpenseVehicleDialog(vehicleId) : navigate("/expenses");
                   }
                 }}
               >

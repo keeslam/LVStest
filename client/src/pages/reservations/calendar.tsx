@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
-import { Vehicle, Reservation, Document, Driver } from "@shared/schema";
+import { Vehicle, Reservation, Document, Driver, VehicleTransport } from "@shared/schema";
 import { displayLicensePlate } from "@/lib/utils";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
@@ -515,23 +515,29 @@ export default function ReservationCalendarPage() {
       
       return isStartDay || isEndDay;
     }).filter((reservation: Reservation) => {
+      // TBD spare placeholders have no vehicle yet — always show them regardless
+      // of vehicle filters, same exception the day-cell blocks already make, so
+      // a transport or reservation that still needs a spare assigned doesn't
+      // silently disappear from this list.
+      if (reservation.placeholderSpare) return true;
+
       // Apply current vehicle filters
       const vehicle = vehicles?.find((v: Vehicle) => v.id === reservation.vehicleId);
       if (!vehicle) return false;
-      
+
       // Search filter
-      if (vehicleFilters.search && 
+      if (vehicleFilters.search &&
           !vehicle.licensePlate?.toLowerCase().includes(vehicleFilters.search.toLowerCase()) &&
           !vehicle.brand?.toLowerCase().includes(vehicleFilters.search.toLowerCase()) &&
           !vehicle.model?.toLowerCase().includes(vehicleFilters.search.toLowerCase())) {
         return false;
       }
-      
+
       // Type filter
       if (vehicleFilters.type !== "all" && vehicle.vehicleType !== vehicleFilters.type) {
         return false;
       }
-      
+
       return true;
     });
   };
@@ -565,6 +571,25 @@ export default function ReservationCalendarPage() {
   const { data: vehicles, isLoading: isLoadingVehicles } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
   });
+
+  // A transport-linked spare reservation for an external vehicle has no
+  // customerId of its own to show — the closest thing to "who to contact" is
+  // the owner name/phone captured on the Transport itself.
+  const { data: transportsForOwnerLookup } = useQuery<VehicleTransport[]>({
+    queryKey: ["/api/transports"],
+  });
+  const transportByIdForOwnerLookup = useMemo(() => {
+    const map = new Map<number, VehicleTransport>();
+    (transportsForOwnerLookup ?? []).forEach(t => map.set(t.id, t));
+    return map;
+  }, [transportsForOwnerLookup]);
+  const getExternalOwnerInfo = (reservation: Reservation): { name: string | null; phone: string | null } | null => {
+    if (reservation.replacementForTransportId == null) return null;
+    const transport = transportByIdForOwnerLookup.get(reservation.replacementForTransportId);
+    if (!transport?.isExternalVehicle) return null;
+    if (!transport.externalOwnerName && !transport.externalOwnerPhone) return null;
+    return { name: transport.externalOwnerName, phone: transport.externalOwnerPhone };
+  };
   
   // Fetch reservations for the full calendar view (including adjacent month dates)
   const { data: allReservations, isLoading: isLoadingReservations } = useQuery<Reservation[]>({
@@ -1408,6 +1433,10 @@ export default function ReservationCalendarPage() {
                                               }
                                               return res.customer?.name || t('calendarPage.reservationCard.noCustomer');
                                             })()
+                                          ) : res.type === 'replacement' && res.replacementForTransportId ? (
+                                            <span className="flex items-center gap-1 text-orange-700">
+                                              {t('calendarPage.reservationCard.replacingTransport', { id: res.replacementForTransportId })}
+                                            </span>
                                           ) : (
                                             res.customer?.name || t('calendarPage.reservationCard.noCustomer')
                                           )}
@@ -1729,13 +1758,18 @@ export default function ReservationCalendarPage() {
                       // Find the original vehicle using the lookup map (works even if original reservation is outside calendar range)
                       const originalVehicleId = reservationVehicleLookup.get(selectedReservation.replacementForReservationId);
                       const originalVehicle = originalVehicleId ? vehicles?.find(v => v.id === originalVehicleId) : null;
-                      
+
                       if (originalVehicle) {
                         return t('calendarPage.spareForVehicle', { plate: formatLicensePlate(originalVehicle.licensePlate), brand: originalVehicle.brand, model: originalVehicle.model });
                       }
 
                       return t('indexPage.spareForHash', { id: selectedReservation.replacementForReservationId });
                     })()}
+                  </Badge>
+                )}
+                {selectedReservation.type === 'replacement' && selectedReservation.replacementForTransportId && (
+                  <Badge className="bg-orange-50 text-orange-800 border-orange-200" variant="outline">
+                    {t('calendarPage.spareForTransport', { id: selectedReservation.replacementForTransportId })}
                   </Badge>
                 )}
               </div>
@@ -1862,13 +1896,32 @@ export default function ReservationCalendarPage() {
                     {t('viewDialog.customerLabel')}
                   </h3>
                   <div className="space-y-1">
-                    <div className="text-sm font-medium">{selectedReservation.customer?.name || t('calendarPage.noCustomerSpecified')}</div>
-                    {selectedReservation.customer?.email && (
-                      <div className="text-xs text-gray-600">{selectedReservation.customer.email}</div>
-                    )}
-                    {selectedReservation.customer?.phone && (
-                      <div className="text-xs text-gray-600">{selectedReservation.customer.phone}</div>
-                    )}
+                    {selectedReservation.customer ? (
+                      <>
+                        <div className="text-sm font-medium">{selectedReservation.customer.name}</div>
+                        {selectedReservation.customer.email && (
+                          <div className="text-xs text-gray-600">{selectedReservation.customer.email}</div>
+                        )}
+                        {selectedReservation.customer.phone && (
+                          <div className="text-xs text-gray-600">{selectedReservation.customer.phone}</div>
+                        )}
+                      </>
+                    ) : (() => {
+                      // No linked customer — for an external vehicle's spare
+                      // reservation, the owner name/phone captured on the
+                      // Transport is the closest equivalent contact info.
+                      const ownerInfo = getExternalOwnerInfo(selectedReservation);
+                      return ownerInfo ? (
+                        <>
+                          <div className="text-sm font-medium">{ownerInfo.name || t('calendarPage.noCustomerSpecified')}</div>
+                          {ownerInfo.phone && (
+                            <div className="text-xs text-gray-600">{ownerInfo.phone}</div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-sm font-medium">{t('calendarPage.noCustomerSpecified')}</div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -2755,10 +2808,12 @@ export default function ReservationCalendarPage() {
                             </span>
                           )}
                         </div>
-                        <div className="text-sm text-gray-600">
-                          {vehicle?.brand} {vehicle?.model}
-                        </div>
-                        <Badge 
+                        {vehicle && (
+                          <div className="text-sm text-gray-600">
+                            {vehicle.brand} {vehicle.model}
+                          </div>
+                        )}
+                        <Badge
                           className={`text-xs ${
                             reservation.type === 'replacement' 
                               ? (reservation.status?.toLowerCase() === 'booked' ? 'bg-orange-50 text-orange-700 border-orange-200' : 
@@ -2817,15 +2872,42 @@ export default function ReservationCalendarPage() {
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-4 text-sm text-gray-600">
-                      <div>
-                        <span className="font-medium">{t('calendarPage.dayDialog.customerColonLabel')}</span> {customer?.name || t('calendarPage.dayDialog.notSpecified')}
-                      </div>
+                      {/* A spare reservation is never priced, and often has no
+                          customer of its own (only when it's covering someone's
+                          active rental) — showing "Not set"/"Not specified" for
+                          fields that plainly don't apply to it is just noise.
+                          For an external vehicle's spare, fall back to the
+                          owner name/phone captured on the Transport instead. */}
+                      {(() => {
+                        if (reservation.type !== 'replacement') {
+                          return (
+                            <div>
+                              <span className="font-medium">{t('calendarPage.dayDialog.customerColonLabel')}</span> {customer?.name || t('calendarPage.dayDialog.notSpecified')}
+                            </div>
+                          );
+                        }
+                        if (customer) {
+                          return (
+                            <div>
+                              <span className="font-medium">{t('calendarPage.dayDialog.customerColonLabel')}</span> {customer.name}
+                            </div>
+                          );
+                        }
+                        const ownerInfo = getExternalOwnerInfo(reservation);
+                        return ownerInfo ? (
+                          <div>
+                            <span className="font-medium">{t('calendarPage.dayDialog.customerColonLabel')}</span> {[ownerInfo.name, ownerInfo.phone].filter(Boolean).join(' — ')}
+                          </div>
+                        ) : null;
+                      })()}
                       <div>
                         <span className="font-medium">{t('calendarPage.dayDialog.periodColonLabel')}</span> {startDate ? format(startDate, 'MMM d') : t('calendarPage.invalidDate')} → {endDate ? format(endDate, 'MMM d') : t('calendarPage.dayDialog.openShort')}
                       </div>
-                      <div>
-                        <span className="font-medium">{t('calendarPage.dayDialog.priceColonLabel')}</span> {reservation.totalPrice ? formatCurrency(Number(reservation.totalPrice)) : t('calendarPage.notSet')}
-                      </div>
+                      {reservation.type !== 'replacement' && (
+                        <div>
+                          <span className="font-medium">{t('calendarPage.dayDialog.priceColonLabel')}</span> {reservation.totalPrice ? formatCurrency(Number(reservation.totalPrice)) : t('calendarPage.notSet')}
+                        </div>
+                      )}
                     </div>
                     {reservation.notes && (
                       <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">

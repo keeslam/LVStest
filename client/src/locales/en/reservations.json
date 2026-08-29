@@ -750,6 +750,7 @@
     "outLabel": "Out:",
     "inLabel": "In:",
     "kmLabel": "KM:",
+    "assignVehicleButton": "Assign vehicle",
     "deleteDialog": {
       "title": "Delete Reservation",
       "description": "Are you sure you want to delete reservation #{{id}}? This action cannot be undone.",
@@ -932,6 +933,7 @@
       "comingInFor": "Coming in for {{type}}",
       "serviceFallback": "service",
       "replacingVehicle": "Replacing {{plate}}",
+      "replacingTransport": "Transport #{{id}}",
       "maintenanceTooltip": "Maintenance: {{type}} - {{status}}",
       "statusUnknown": "status unknown",
       "renderError": "Error displaying reservation"
@@ -968,6 +970,7 @@
     "reservationHashCustomer": "Reservation #{{id}} - {{name}}",
     "viewDetailedInfo": "View detailed reservation information",
     "spareForVehicle": "Spare for {{plate}} ({{brand}} {{model}})",
+    "spareForTransport": "Spare for Transport #{{id}}",
     "spareVehicleLabel": "Spare Vehicle",
     "noVehicleAssigned": "No vehicle assigned",
     "assignedSpareBadge": "Assigned Spare",

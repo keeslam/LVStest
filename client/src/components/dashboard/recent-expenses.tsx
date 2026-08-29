@@ -20,8 +20,8 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate, formatCurrency, formatLicensePlate, sumMoney } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { Expense } from "@shared/schema";
-import { MoreVertical, Eye, Pencil, Printer, Calendar, Tag, Truck, FileText, FileCheck } from "lucide-react";
-import { ExpenseForm } from "@/components/expenses/expense-form";
+import { MoreVertical, Eye, Pencil, Printer, Calendar, FileCheck } from "lucide-react";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 
 // Function to get expense icon based on category
 function getExpenseIcon(category: string) {
@@ -83,12 +83,10 @@ interface GroupedExpense {
 
 export function RecentExpenses() {
   const { t } = useTranslation("dashboard");
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [groupDialogOpen, setGroupDialogOpen] = useState(false);
-  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<GroupedExpense | null>(null);
   const queryClient = useQueryClient();
+  const { openExpenseDialog } = useGlobalDialog();
   
   const { data: expenses, isLoading } = useQuery<Expense[]>({
     queryKey: ["/api/expenses/recent", { limit: 10 }],
@@ -126,27 +124,11 @@ export function RecentExpenses() {
 
   const groupedExpenses = groupExpenses(expenses || []).slice(0, 10);
   
-  const handleViewExpense = (expense: Expense) => {
-    setSelectedExpense(expense);
-    setViewDialogOpen(true);
-  };
-  
-  const handleEditExpense = (expense: Expense) => {
-    setSelectedExpense(expense);
-    setEditDialogOpen(true);
-  };
-
   const handleViewGroup = (group: GroupedExpense) => {
     setSelectedGroup(group);
     setGroupDialogOpen(true);
   };
-  
-  const handleEditComplete = () => {
-    setEditDialogOpen(false);
-    setSelectedExpense(null);
-    // The new unified invalidation system in the expense form will handle cache updates automatically
-  };
-  
+
   return (
     <Card>
       <CardHeader className="px-4 py-3 border-b flex-row justify-between items-center space-y-0">
@@ -198,7 +180,7 @@ export function RecentExpenses() {
                     <DropdownMenuContent align="end">
                       {group.expenses.map((expense) => (
                         <div key={expense.id}>
-                          <DropdownMenuItem onClick={() => handleViewExpense(expense)}>
+                          <DropdownMenuItem onClick={() => openExpenseDialog(expense.id)}>
                             <Eye className="h-3 w-3 mr-2" />
                             {t('common:actions.view')} {expense.category} - {<Price value={Number(expense.amount || 0)} />}
                           </DropdownMenuItem>
@@ -213,104 +195,6 @@ export function RecentExpenses() {
         )}
       </CardContent>
       
-      {/* View Dialog */}
-      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{t('recentExpenses.expenseDetailsTitle')}</DialogTitle>
-          </DialogHeader>
-          {selectedExpense && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('common:fields.date')}</h3>
-                    <div className="flex items-center">
-                      <Calendar className="h-4 w-4 mr-2 text-primary" />
-                      <span>{formatDate(selectedExpense.date)}</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('recentExpenses.category')}</h3>
-                    <div className="flex items-center">
-                      <Tag className="h-4 w-4 mr-2 text-primary" />
-                      <Badge>{selectedExpense.category}</Badge>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('common:fields.amount')}</h3>
-                    <div className="text-xl font-bold">
-                      {<Price value={Number(selectedExpense.amount || 0)} />}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('recentExpenses.vehicle')}</h3>
-                    <div className="flex items-center">
-                      <Truck className="h-4 w-4 mr-2 text-primary" />
-                      <span>
-                        {selectedExpense.vehicle ? (
-                          `${selectedExpense.vehicle.brand} ${selectedExpense.vehicle.model} (${formatLicensePlate(selectedExpense.vehicle.licensePlate)})`
-                        ) : (
-                          t('recentExpenses.vehicleNotFound')
-                        )}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('common:fields.description')}</h3>
-                    <div className="flex items-start">
-                      <FileText className="h-4 w-4 mr-2 mt-1 text-primary" />
-                      <p className="text-sm">
-                        {selectedExpense.description || t('recentExpenses.noDescriptionProvided')}
-                      </p>
-                    </div>
-                  </div>
-
-                  {selectedExpense.receiptFilePath && (
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground mb-1">{t('recentExpenses.receipt')}</h3>
-                      <div className="flex items-center">
-                        <FileCheck className="h-4 w-4 mr-2 text-primary" />
-                        <a
-                          href={`/api/expenses/${selectedExpense.id}/receipt`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline text-sm"
-                        >
-                          {t('recentExpenses.viewReceipt')}
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-      
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{t('recentExpenses.editExpenseTitle')}</DialogTitle>
-          </DialogHeader>
-          {selectedExpense && (
-            <ExpenseForm
-              editMode={true}
-              initialData={selectedExpense}
-              onSuccess={handleEditComplete}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
       {/* Group Dialog */}
       <Dialog open={groupDialogOpen} onOpenChange={setGroupDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
@@ -385,7 +269,7 @@ export function RecentExpenses() {
                           size="sm"
                           onClick={() => {
                             setGroupDialogOpen(false);
-                            handleEditExpense(expense);
+                            openExpenseDialog(expense.id);
                           }}
                           className="text-sm"
                         >

@@ -238,6 +238,8 @@ function autoInvalidateCache(mutationKey: string, data?: any) {
     invalidateRelatedQueries('documents', data);
   } else if (apiPath.includes('notifications')) {
     invalidateRelatedQueries('notifications', data);
+  } else if (apiPath.includes('transports')) {
+    invalidateRelatedQueries('transports', data);
   }
   
   // Soft invalidate dashboard data - they will refetch when visible
@@ -401,7 +403,19 @@ export function invalidateRelatedQueries(entityType: string, entityData?: { id?:
       invalidateByPrefix('/api/custom-notifications');
       invalidateByPrefix('/api/notifications');
       break;
-      
+
+    case 'transports':
+      invalidateByPrefix('/api/transports');
+      // A spare assignment can create/cancel a reservation and change the original
+      // vehicle's maintenance/availability status.
+      invalidateByPrefix('/api/vehicles');
+      invalidateByPrefix('/api/reservations');
+      invalidateByPrefix('/api/vehicles/available');
+      if (vehicleId) {
+        invalidateByPrefix(`/api/reservations/vehicle/${vehicleId}`);
+      }
+      break;
+
     default:
       console.warn(`Unknown entity type for invalidation: ${entityType}`);
       break;

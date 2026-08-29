@@ -4,9 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
+import { apiRequest, invalidateByPrefix, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Customer, Settings, Vehicle, VehicleTransport } from "@shared/schema";
+import { Customer, Reservation, Settings, Vehicle, VehicleTransport } from "@shared/schema";
 import {
   Dialog,
   DialogContent,
@@ -35,12 +35,27 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { SearchableCombobox } from "@/components/ui/searchable-combobox";
-import { Loader2 } from "lucide-react";
+import { SparePickupPromptDialog } from "./spare-pickup-prompt-dialog";
+import { AlertTriangle, Loader2, Search, X } from "lucide-react";
+import { formatLicensePlate } from "@/lib/format-utils";
 
 const transportFormSchema = z.object({
-  vehicleId: z.string().min(1, "Please select a vehicle"),
+  // Required unless isExternalVehicle — enforced below via superRefine, since which
+  // one is required depends on that other field.
+  vehicleId: z.string().optional(),
+  isExternalVehicle: z.boolean().default(false),
+  externalLicensePlate: z.string().optional(),
+  externalBrand: z.string().optional(),
+  externalModel: z.string().optional(),
+  externalColor: z.string().optional(),
+  externalOwnerName: z.string().optional(),
+  externalOwnerPhone: z.string().optional(),
+  spareRequired: z.boolean().default(false),
+  // Empty string = TBD (spare required but not yet picked) — a valid, intentional
+  // state, not a validation error.
   relatedVehicleId: z.string().optional(),
   transportType: z.enum(["swap", "tow", "repossession", "delivery", "other"], {
     required_error: "Please select a transport type",
@@ -62,6 +77,14 @@ const transportFormSchema = z.object({
   driverName: z.string().optional(),
   reason: z.string().optional(),
   notes: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.isExternalVehicle) {
+    if (!data.externalLicensePlate || data.externalLicensePlate.trim() === '') {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["externalLicensePlate"], message: "License plate is required" });
+    }
+  } else if (!data.vehicleId || data.vehicleId.trim() === '') {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["vehicleId"], message: "Please select a vehicle" });
+  }
 });
 
 type TransportFormData = z.infer<typeof transportFormSchema>;
@@ -99,6 +122,14 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
     resolver: zodResolver(transportFormSchema),
     defaultValues: {
       vehicleId: "",
+      isExternalVehicle: false,
+      externalLicensePlate: "",
+      externalBrand: "",
+      externalModel: "",
+      externalColor: "",
+      externalOwnerName: "",
+      externalOwnerPhone: "",
+      spareRequired: false,
       relatedVehicleId: "",
       transportType: "swap",
       status: "scheduled",
@@ -126,6 +157,14 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
     if (editingTransport) {
       form.reset({
         vehicleId: editingTransport.vehicleId?.toString() ?? "",
+        isExternalVehicle: editingTransport.isExternalVehicle,
+        externalLicensePlate: editingTransport.externalLicensePlate ?? "",
+        externalBrand: editingTransport.externalBrand ?? "",
+        externalModel: editingTransport.externalModel ?? "",
+        externalColor: editingTransport.externalColor ?? "",
+        externalOwnerName: editingTransport.externalOwnerName ?? "",
+        externalOwnerPhone: editingTransport.externalOwnerPhone ?? "",
+        spareRequired: editingTransport.spareRequired,
         relatedVehicleId: editingTransport.relatedVehicleId?.toString() ?? "",
         transportType: editingTransport.transportType as TransportFormData["transportType"],
         status: editingTransport.status as TransportFormData["status"],
@@ -149,6 +188,14 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
     } else {
       form.reset({
         vehicleId: "",
+        isExternalVehicle: false,
+        externalLicensePlate: "",
+        externalBrand: "",
+        externalModel: "",
+        externalColor: "",
+        externalOwnerName: "",
+        externalOwnerPhone: "",
+        spareRequired: false,
         relatedVehicleId: "",
         transportType: "swap",
         status: "scheduled",
@@ -190,16 +237,78 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
   const originCityWatch = form.watch("originCity");
   const destinationAddressWatch = form.watch("destinationAddress");
   const destinationCityWatch = form.watch("destinationCity");
+  const spareRequiredWatch = form.watch("spareRequired");
+  const relatedVehicleIdWatch = form.watch("relatedVehicleId");
+  const vehicleIdWatch = form.watch("vehicleId");
+  const scheduledDateWatch = form.watch("scheduledDate");
+  const isExternalVehicleWatch = form.watch("isExternalVehicle");
+
+  // Availability-filtered replacement-vehicle options — same endpoint/pattern
+  // SpareVehicleDialog uses for reservations. A transport only has a single
+  // scheduledDate, not a range, so both ends of the window are that same date.
+  const { data: availableReplacementVehicles = [] } = useQuery<Vehicle[]>({
+    queryKey: ["/api/spare-vehicles/available", scheduledDateWatch, vehicleIdWatch],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        startDate: scheduledDateWatch,
+        endDate: scheduledDateWatch,
+        excludeVehicleId: vehicleIdWatch || "",
+      });
+      const response = await fetch(`/api/spare-vehicles/available?${params}`);
+      if (!response.ok) throw new Error("Failed to fetch available replacement vehicles");
+      return response.json();
+    },
+    enabled: open && spareRequiredWatch && !!scheduledDateWatch,
+  });
+
+  // Drives two things off the selected vehicle's current renter: auto-filling "who
+  // to bill" below, and the "this vehicle is out with a customer — does it need a
+  // spare?" notice further down. Fetched in both create and edit mode since the
+  // notice is just as relevant when reopening an existing transport.
+  const { data: vehicleReservations = [] } = useQuery<Reservation[]>({
+    queryKey: ["/api/reservations/vehicle", vehicleIdWatch],
+    queryFn: async () => {
+      const response = await fetch(`/api/reservations/vehicle/${vehicleIdWatch}`);
+      if (!response.ok) throw new Error("Failed to fetch vehicle reservations");
+      return response.json();
+    },
+    enabled: open && !!vehicleIdWatch,
+  });
+
+  useEffect(() => {
+    // Only for new transports, and only while the user hasn't picked a customer
+    // themselves — never overwrite an edit's saved value or a deliberate choice.
+    if (!open || isEditMode || form.formState.dirtyFields.customerId) return;
+    if (!vehicleIdWatch) return;
+    const activeReservation = vehicleReservations.find(r => r.status === "picked_up" && r.customerId != null);
+    form.setValue("customerId", activeReservation?.customerId ? activeReservation.customerId.toString() : "");
+  }, [open, isEditMode, vehicleIdWatch, vehicleReservations, form]);
 
   const customerOptions = useMemo(
     () => customers.map(c => ({ value: c.id.toString(), label: c.name })),
     [customers]
   );
 
+  // The same "vehicle is currently out with a customer" fact that drives the
+  // billing auto-fill above also drives a visible warning below — a transport
+  // against a vehicle mid-rental almost always needs a replacement lined up for
+  // that customer, and it's easy to forget to tick the checkbox for it.
+  const activeRentalReservation = useMemo(
+    () => vehicleReservations.find(r => r.status === "picked_up" && r.customerId != null),
+    [vehicleReservations]
+  );
+  const activeRentalCustomerName = useMemo(
+    () => customers.find(c => c.id === activeRentalReservation?.customerId)?.name,
+    [customers, activeRentalReservation]
+  );
+
   // The driver usually returns to base empty after the job — that return leg still
   // costs toll, so the suggestion defaults to round-trip distance. Toggle off for
   // one-way jobs (e.g. the vehicle itself is what's coming back).
   const [roundTrip, setRoundTrip] = useState(true);
+  // Set right after a save that just assigned a replacement vehicle (was TBD/null
+  // before) — drives the "mark picked up now or later" prompt.
+  const [pickupPromptTransport, setPickupPromptTransport] = useState<VehicleTransport | null>(null);
 
   // Suggest a toll cost from the configured €/km rate — the user can still edit it.
   const tollRatePerKm = settings?.tollRatePerKm ? Number(settings.tollRatePerKm) : 0.15;
@@ -240,11 +349,62 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
     },
   });
 
+  // Same RDW lookup the fleet vehicle form uses (GET /api/rdw/vehicle/:plate) —
+  // an external vehicle isn't in our fleet, but it's still a real Dutch-plated
+  // vehicle, so its brand/model can be looked up the same way.
+  const rdwLookupMutation = useMutation({
+    mutationFn: async (licensePlate: string) => {
+      const res = await fetch(`/api/rdw/vehicle/${encodeURIComponent(licensePlate)}`);
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: undefined }));
+        const error = new Error(errorData.message || "RDW lookup failed");
+        (error as any).status = res.status;
+        throw error;
+      }
+      return res.json() as Promise<{ licensePlate?: string; brand?: string; model?: string }>;
+    },
+    onSuccess: (data) => {
+      if (data.licensePlate) form.setValue("externalLicensePlate", formatLicensePlate(data.licensePlate), { shouldDirty: true });
+      if (data.brand) form.setValue("externalBrand", data.brand, { shouldDirty: true });
+      if (data.model) form.setValue("externalModel", data.model, { shouldDirty: true });
+      toast({
+        title: t('transportDialog.rdwLookupSuccessTitle'),
+        description: t('transportDialog.rdwLookupSuccessDescription'),
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: error?.status === 404 ? t('transportDialog.rdwLookupNotFoundTitle') : t('transportDialog.rdwLookupFailedTitle'),
+        description: error?.status === 404 ? t('transportDialog.rdwLookupNotFoundDescription') : t('transportDialog.rdwLookupFailedDescription'),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleRdwLookup = () => {
+    const plate = form.getValues("externalLicensePlate");
+    if (!plate || !plate.trim()) {
+      toast({
+        title: t('transportDialog.rdwLookupNoPlateTitle'),
+        description: t('transportDialog.rdwLookupNoPlateDescription'),
+        variant: "destructive",
+      });
+      return;
+    }
+    rdwLookupMutation.mutate(plate.trim());
+  };
+
   const mutation = useMutation({
     mutationFn: async (data: TransportFormData) => {
       const payload = {
         ...data,
-        vehicleId: parseInt(data.vehicleId),
+        vehicleId: data.isExternalVehicle ? null : parseInt(data.vehicleId!),
+        externalLicensePlate: data.isExternalVehicle ? (data.externalLicensePlate || null) : null,
+        externalBrand: data.isExternalVehicle ? (data.externalBrand || null) : null,
+        externalModel: data.isExternalVehicle ? (data.externalModel || null) : null,
+        externalColor: data.isExternalVehicle ? (data.externalColor || null) : null,
+        externalOwnerName: data.isExternalVehicle ? (data.externalOwnerName || null) : null,
+        externalOwnerPhone: data.isExternalVehicle ? (data.externalOwnerPhone || null) : null,
         relatedVehicleId: data.relatedVehicleId ? parseInt(data.relatedVehicleId) : null,
         customerId: data.customerId ? parseInt(data.customerId) : null,
         distanceKm: data.distanceKm === "" || data.distanceKm == null ? null : Number(data.distanceKm),
@@ -252,20 +412,27 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
         billableAmount: data.billableAmount === "" || data.billableAmount == null ? null : Number(data.billableAmount),
         completedDate: data.completedDate || null,
       };
+      // Captured before the request so onSuccess can tell "just got assigned" (was
+      // null/TBD) apart from "already assigned, unrelated field changed" — only the
+      // former should prompt for pickup.
+      const wasRelatedVehicleId = isEditMode ? (editingTransport!.relatedVehicleId ?? null) : null;
       if (isEditMode) {
         const res = await apiRequest("PATCH", `/api/transports/${editingTransport!.id}`, payload);
-        return res.json();
+        return { transport: await res.json() as VehicleTransport, wasRelatedVehicleId };
       }
       const res = await apiRequest("POST", "/api/transports", payload);
-      return res.json();
+      return { transport: await res.json() as VehicleTransport, wasRelatedVehicleId };
     },
-    onSuccess: () => {
-      invalidateByPrefix("/api/transports");
+    onSuccess: ({ transport, wasRelatedVehicleId }) => {
+      invalidateRelatedQueries('transports', { vehicleId: transport.vehicleId ?? undefined });
       toast({
         title: isEditMode ? t('transportDialog.transportUpdated') : t('transportDialog.transportLogged'),
         description: isEditMode ? t('transportDialog.transportUpdatedDescription') : t('transportDialog.transportLoggedDescription'),
       });
       onOpenChange(false);
+      if (wasRelatedVehicleId == null && transport.relatedVehicleId != null) {
+        setPickupPromptTransport(transport);
+      }
     },
     onError: (error: any) => {
       toast({
@@ -339,40 +506,249 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="vehicleId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('transportDialog.vehicle')}</FormLabel>
-                  <FormControl>
-                    <VehicleSelector
-                      vehicles={vehicles}
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder={t('transportDialog.searchSelectVehicle')}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {transportTypeWatch === "swap" && (
+            {isExternalVehicleWatch ? (
+              <div className="space-y-4 rounded-md border p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="externalLicensePlate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('transportDialog.externalLicensePlate')}</FormLabel>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input placeholder="AB-123-C" {...field} value={field.value ?? ""} data-testid="input-external-license-plate" />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleRdwLookup}
+                            disabled={rdwLookupMutation.isPending}
+                            title={t('transportDialog.rdwLookupButton')}
+                            data-testid="button-rdw-lookup"
+                          >
+                            {rdwLookupMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Search className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="externalColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('transportDialog.externalColor')} <span className="text-muted-foreground font-normal">{t('transportDialog.optional')}</span></FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ""} data-testid="input-external-color" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="externalBrand"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('transportDialog.externalBrand')} <span className="text-muted-foreground font-normal">{t('transportDialog.optional')}</span></FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ""} data-testid="input-external-brand" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="externalModel"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('transportDialog.externalModel')} <span className="text-muted-foreground font-normal">{t('transportDialog.optional')}</span></FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ""} data-testid="input-external-model" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="externalOwnerName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('transportDialog.externalOwnerName')} <span className="text-muted-foreground font-normal">{t('transportDialog.optional')}</span></FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ""} data-testid="input-external-owner-name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="externalOwnerPhone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('transportDialog.externalOwnerPhone')} <span className="text-muted-foreground font-normal">{t('transportDialog.optional')}</span></FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ""} data-testid="input-external-owner-phone" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            ) : (
               <FormField
                 control={form.control}
-                name="relatedVehicleId"
+                name="vehicleId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('transportDialog.replacementVehicle')} <span className="text-muted-foreground font-normal">{t('transportDialog.replacementVehicleHint')}</span></FormLabel>
+                    <FormLabel>{t('transportDialog.vehicle')}</FormLabel>
                     <FormControl>
                       <VehicleSelector
                         vehicles={vehicles}
                         value={field.value ?? ""}
                         onChange={field.onChange}
-                        placeholder={t('transportDialog.searchSelectReplacementVehicle')}
+                        placeholder={t('transportDialog.searchSelectVehicle')}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <FormField
+              control={form.control}
+              name="isExternalVehicle"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={(checked) => {
+                        field.onChange(checked);
+                        if (checked) {
+                          form.setValue("vehicleId", "");
+                        } else {
+                          form.setValue("externalLicensePlate", "");
+                          form.setValue("externalBrand", "");
+                          form.setValue("externalModel", "");
+                          form.setValue("externalColor", "");
+                          form.setValue("externalOwnerName", "");
+                          form.setValue("externalOwnerPhone", "");
+                        }
+                      }}
+                      data-testid="checkbox-external-vehicle"
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>{t('transportDialog.externalVehicleLabel')}</FormLabel>
+                    <FormDescription>{t('transportDialog.externalVehicleDescription')}</FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            {activeRentalReservation && !spareRequiredWatch && !isExternalVehicleWatch && (
+              <Alert className="bg-amber-50 border-amber-200" data-testid="alert-active-rental-spare-hint">
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-amber-800 flex items-center justify-between gap-3 flex-wrap">
+                  <span>
+                    {activeRentalCustomerName
+                      ? t('transportDialog.activeRentalSpareHint', { customer: activeRentalCustomerName })
+                      : t('transportDialog.activeRentalSpareHintNoName')}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="border-amber-300 hover:bg-amber-100"
+                    onClick={() => form.setValue("spareRequired", true, { shouldDirty: true })}
+                    data-testid="button-enable-spare-required"
+                  >
+                    {t('transportDialog.activeRentalSpareHintButton')}
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <FormField
+              control={form.control}
+              name="spareRequired"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={(checked) => {
+                        field.onChange(checked);
+                        if (!checked) {
+                          form.setValue("relatedVehicleId", "");
+                          form.setValue("isBreakdownOrMaintenance", false);
+                        }
+                      }}
+                      data-testid="checkbox-spare-required"
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>{t('transportDialog.spareRequiredLabel')}</FormLabel>
+                    <FormDescription>{t('transportDialog.spareRequiredDescription')}</FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            {spareRequiredWatch && (
+              <FormField
+                control={form.control}
+                name="relatedVehicleId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t('transportDialog.replacementVehicle')}{" "}
+                      {field.value ? (
+                        <span className="text-muted-foreground font-normal">{t('transportDialog.replacementVehicleHint')}</span>
+                      ) : (
+                        <span className="text-amber-600 font-normal">{t('transportDialog.replacementVehicleTbd')}</span>
+                      )}
+                    </FormLabel>
+                    <div className="flex items-center gap-2">
+                      <FormControl>
+                        <VehicleSelector
+                          vehicles={availableReplacementVehicles}
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          placeholder={t('transportDialog.searchSelectReplacementVehicle')}
+                          className="flex-1"
+                        />
+                      </FormControl>
+                      {field.value && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => field.onChange("")}
+                          title={t('transportDialog.clearToTbd')}
+                          data-testid="button-clear-replacement-vehicle"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <FormDescription>{t('transportDialog.replacementVehicleAvailabilityHint')}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -526,7 +902,7 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
               </label>
             </div>
 
-            {transportTypeWatch === "swap" && (
+            {spareRequiredWatch && (
               <FormField
                 control={form.control}
                 name="isBreakdownOrMaintenance"
@@ -679,6 +1055,11 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
           </form>
         </Form>
       </DialogContent>
+
+      <SparePickupPromptDialog
+        transport={pickupPromptTransport}
+        onClose={() => setPickupPromptTransport(null)}
+      />
     </Dialog>
   );
 }

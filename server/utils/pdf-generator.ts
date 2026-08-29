@@ -1259,12 +1259,23 @@ function formatDutchDate(date: Date, withTime = false): string {
 
 export function prepareTransportReportData(transport: VehicleTransport): Record<string, string> {
   const vehicle = transport.vehicle;
+  const relatedVehicle = transport.relatedVehicle;
   const customer = transport.customer;
 
   const typeLabel = TRANSPORT_TYPE_REPORT_LABELS[transport.transportType] || transport.transportType;
   const statusLabel = TRANSPORT_STATUS_REPORT_LABELS[transport.status] || transport.status;
-  const vehicleFull = vehicle ? `${vehicle.brand} ${vehicle.model}` : '';
-  const licensePlate = vehicle ? formatLicensePlate(vehicle.licensePlate) : '';
+  // An external/outside vehicle has no fleet `vehicle` record — fall back to the
+  // free-text external_* fields captured on the transport itself.
+  const vehicleBrandValue = vehicle?.brand || (transport.isExternalVehicle ? (transport.externalBrand || '') : '');
+  const vehicleModelValue = vehicle?.model || (transport.isExternalVehicle ? (transport.externalModel || '') : '');
+  const vehicleFull = vehicle
+    ? `${vehicle.brand} ${vehicle.model}`
+    : (transport.isExternalVehicle ? [transport.externalBrand, transport.externalModel].filter(Boolean).join(' ') : '');
+  const licensePlate = vehicle
+    ? formatLicensePlate(vehicle.licensePlate)
+    : (transport.isExternalVehicle && transport.externalLicensePlate ? formatLicensePlate(transport.externalLicensePlate) : '');
+  const replacementVehicleFull = relatedVehicle ? `${relatedVehicle.brand} ${relatedVehicle.model}` : (transport.spareRequired ? 'TBD' : '');
+  const replacementLicensePlate = relatedVehicle ? formatLicensePlate(relatedVehicle.licensePlate) : '';
   const scheduledDate = transport.scheduledDate ? formatDutchDate(new Date(transport.scheduledDate)) : '';
   const completedDate = transport.completedDate ? formatDutchDate(new Date(transport.completedDate)) : '';
   const originFull = [transport.originAddress, transport.originCity].filter(Boolean).join(', ');
@@ -1275,10 +1286,16 @@ export function prepareTransportReportData(transport: VehicleTransport): Record<
   const generatedDate = formatDutchDate(new Date(), true);
 
   return {
-    vehicleBrand: vehicle?.brand || '',
-    vehicleModel: vehicle?.model || '',
+    vehicleBrand: vehicleBrandValue,
+    vehicleModel: vehicleModelValue,
     vehicleFull,
     licensePlate,
+    externalOwnerName: transport.externalOwnerName || '',
+    externalColor: transport.externalColor || '',
+    replacementVehicleBrand: relatedVehicle?.brand || '',
+    replacementVehicleModel: relatedVehicle?.model || '',
+    replacementVehicleFull,
+    replacementLicensePlate,
     transportType: typeLabel,
     status: statusLabel,
     scheduledDate,
@@ -1302,6 +1319,8 @@ export function prepareTransportReportData(transport: VehicleTransport): Record<
     // Dutch "Label: Waarde" versions — handy when there is no pre-printed background image with labels
     lblVoertuig: `Voertuig: ${vehicleFull || '-'}`,
     lblKenteken: `Kenteken: ${licensePlate || '-'}`,
+    lblVervangendVoertuig: `Vervangend voertuig: ${replacementVehicleFull || '-'}`,
+    lblVervangendKenteken: `Kenteken vervangend voertuig: ${replacementLicensePlate || '-'}`,
     lblType: `Type transport: ${typeLabel}`,
     lblStatus: `Status: ${statusLabel}`,
     lblDatum: `Datum: ${scheduledDate || '-'}`,
@@ -1317,6 +1336,7 @@ export function prepareTransportReportData(transport: VehicleTransport): Record<
     lblFactureerbaar: `Factureerbaar: ${transport.billable ? 'Ja' : 'Nee'}`,
     lblBedrag: `Bedrag: ${billableAmount || '-'}`,
     lblGegenereerd: `Gegenereerd op: ${generatedDate}`,
+    lblEigenaar: `Eigenaar: ${transport.externalOwnerName || '-'}`,
   };
 }
 

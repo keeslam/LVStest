@@ -339,7 +339,15 @@
       "summaryTitle": "Expense Summary",
       "summaryDescription": "Total expenses by category",
       "totalExpensesLabel": "Total Expenses",
-      "noExpenseData": "No expense data available"
+      "noExpenseData": "No expense data available",
+      "viewExpenseTitle": "View expense",
+      "printReceiptTitle": "Print receipt",
+      "deleteExpenseTitle": "Delete expense",
+      "confirmDeleteExpenseTitle": "Delete expense?",
+      "confirmDeleteExpenseDescription": "This will permanently delete this expense. This action cannot be undone.",
+      "expenseDeletedTitle": "Expense deleted",
+      "expenseDeletedDescription": "The expense has been deleted successfully.",
+      "expenseDeleteErrorTitle": "Failed to delete expense"
     },
     "documents": {
       "title": "Vehicle Documents",
