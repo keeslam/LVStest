@@ -89,8 +89,17 @@ export function CameraScannerDialog({ open, onOpenChange, onScan }: CameraScanne
       const current = scannerRef.current;
       scannerRef.current = null;
       if (current) {
-        // stop() rejects if start() never succeeded; clear() is safe after.
-        current.stop().catch(() => {}).finally(() => current.clear());
+        // stop() can throw synchronously if never started; always clear even if stop fails.
+        try {
+          const maybe = current.stop();
+          if (maybe && typeof (maybe as Promise<void>).catch === "function") {
+            (maybe as Promise<void>).catch(() => {}).finally(() => { try { current.clear(); } catch {} });
+          } else {
+            try { current.clear(); } catch {}
+          }
+        } catch {
+          try { current.clear(); } catch {}
+        }
       }
     };
   }, [open, onScan, onOpenChange]);
