@@ -47,6 +47,11 @@ type LookupResult =
   | { type: "vehicle"; vehicle: Vehicle; activeReservation: ScanReservation | null; upcomingReservation: ScanReservation | null; activeTransport: ScanTransport | null; scannedSpareKey?: boolean }
   | { type: "reservation"; reservation: ScanReservation; vehicle: Vehicle | null };
 
+// Square, touch-friendly tiles for the scan card's action row: icon above
+// label, easy to hit on tablets at the key cabinet.
+const ACTION_TILE_CLASS =
+  "h-auto w-full flex-col gap-2 py-4 px-2 text-sm font-medium whitespace-normal text-center [&_svg]:size-8";
+
 interface ScanPanelProps {
   /** Whether this panel instance is the currently-visible one (mounted-but-hidden
    * dialogs/pages should pass false so focus/reset effects don't fight each other). */
@@ -306,62 +311,62 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
               </div>
             )}
 
-            <div className="flex flex-wrap gap-2 pt-2 border-t">
-              <Button onClick={() => openVehicleDialog(result.vehicle.id)} data-testid="button-open-vehicle">
-                <Car className="h-4 w-4 mr-2" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-3 border-t">
+              <Button className={ACTION_TILE_CLASS} onClick={() => openVehicleDialog(result.vehicle.id)} data-testid="button-open-vehicle">
+                <Car />
                 {t("scanPage.openVehicleButton")}
               </Button>
               {!result.activeReservation && !result.upcomingReservation && (
                 <ReservationAddDialog initialVehicleId={String(result.vehicle.id)}>
-                  <Button variant="outline" data-testid="button-make-reservation">
-                    <CalendarPlus className="h-4 w-4 mr-2" />
+                  <Button variant="outline" className={ACTION_TILE_CLASS} data-testid="button-make-reservation">
+                    <CalendarPlus />
                     {t("scanPage.makeReservationButton")}
                   </Button>
                 </ReservationAddDialog>
               )}
               {result.activeReservation?.status === "picked_up" && (
-                <Button variant="default" onClick={() => startHandover(result.activeReservation!.id, "return")} data-testid="button-scan-return">
-                  <LogIn className="h-4 w-4 mr-2" />
+                <Button variant="default" className={ACTION_TILE_CLASS} onClick={() => startHandover(result.activeReservation!.id, "return")} data-testid="button-scan-return">
+                  <LogIn />
                   {t("scanPage.actions.startReturn")}
                 </Button>
               )}
               {result.activeReservation && result.activeReservation.status !== "picked_up" && (
-                <Button variant="default" onClick={() => startHandover(result.activeReservation!.id, "pickup")} data-testid="button-scan-pickup">
-                  <LogOut className="h-4 w-4 mr-2" />
+                <Button variant="default" className={ACTION_TILE_CLASS} onClick={() => startHandover(result.activeReservation!.id, "pickup")} data-testid="button-scan-pickup">
+                  <LogOut />
                   {t("scanPage.actions.startPickup")}
                 </Button>
               )}
               {!result.activeReservation && result.upcomingReservation && (
-                <Button variant="default" onClick={() => startHandover(result.upcomingReservation!.id, "pickup")} data-testid="button-scan-pickup">
-                  <LogOut className="h-4 w-4 mr-2" />
+                <Button variant="default" className={ACTION_TILE_CLASS} onClick={() => startHandover(result.upcomingReservation!.id, "pickup")} data-testid="button-scan-pickup">
+                  <LogOut />
                   {t("scanPage.actions.startPickup")}
                 </Button>
               )}
               <ExpenseAddDialog vehicleId={result.vehicle.id}>
-                <Button variant="outline" data-testid="button-scan-expense">
-                  <Receipt className="h-4 w-4 mr-2" />
+                <Button variant="outline" className={ACTION_TILE_CLASS} data-testid="button-scan-expense">
+                  <Receipt />
                   {t("scanPage.actions.addExpense")}
                 </Button>
               </ExpenseAddDialog>
               <InlineDocumentUpload vehicleId={result.vehicle.id} reservationId={result.activeReservation?.id}>
-                <Button variant="outline" data-testid="button-scan-upload">
-                  <FileUp className="h-4 w-4 mr-2" />
+                <Button variant="outline" className={ACTION_TILE_CLASS} data-testid="button-scan-upload">
+                  <FileUp />
                   {t("scanPage.actions.uploadDocument")}
                 </Button>
               </InlineDocumentUpload>
               {(result.vehicle.maintenanceStatus === "ok" || !result.vehicle.maintenanceStatus) ? (
-                <Button variant="outline" onClick={() => setScheduleMaintenanceOpen(true)} data-testid="button-scan-maintenance-start">
-                  <Wrench className="h-4 w-4 mr-2" />
+                <Button variant="outline" className={ACTION_TILE_CLASS} onClick={() => setScheduleMaintenanceOpen(true)} data-testid="button-scan-maintenance-start">
+                  <Wrench />
                   {t("scanPage.actions.startMaintenance")}
                 </Button>
               ) : (
-                <Button variant="outline" onClick={() => maintenanceMutation.mutate({ vehicleId: result.vehicle.id, status: "ok" })} disabled={maintenanceMutation.isPending} data-testid="button-scan-maintenance-end">
-                  <Undo2 className="h-4 w-4 mr-2" />
+                <Button variant="outline" className={ACTION_TILE_CLASS} onClick={() => maintenanceMutation.mutate({ vehicleId: result.vehicle.id, status: "ok" })} disabled={maintenanceMutation.isPending} data-testid="button-scan-maintenance-end">
+                  <Undo2 />
                   {t("scanPage.actions.endMaintenance")}
                 </Button>
               )}
-              <Button variant="outline" onClick={() => { setResult(null); inputRef.current?.focus(); }}>
-                <RotateCcw className="h-4 w-4 mr-2" />
+              <Button variant="outline" className={ACTION_TILE_CLASS} onClick={() => { setResult(null); inputRef.current?.focus(); }}>
+                <RotateCcw />
                 {t("scanPage.scanAgain")}
               </Button>
             </div>
