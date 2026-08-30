@@ -1867,6 +1867,22 @@ export class DatabaseStorage implements IStorage {
     return withRelations;
   }
 
+  // For the barcode scan lookup — the transport a scanned vehicle is currently
+  // open on (not yet completed/cancelled), earliest-scheduled first. No
+  // deletedAt column on this table, so no soft-delete filter is needed.
+  async getActiveTransportByVehicle(vehicleId: number): Promise<VehicleTransport | undefined> {
+    const [row] = await db.select().from(vehicleTransports)
+      .where(and(
+        eq(vehicleTransports.vehicleId, vehicleId),
+        or(eq(vehicleTransports.status, 'scheduled'), eq(vehicleTransports.status, 'in_progress')),
+      ))
+      .orderBy(vehicleTransports.scheduledDate)
+      .limit(1);
+    if (!row) return undefined;
+    const [withRelations] = await this.attachTransportRelations([row]);
+    return withRelations;
+  }
+
   async createTransport(transportData: InsertVehicleTransport): Promise<VehicleTransport> {
     const [row] = await db.insert(vehicleTransports).values(transportData).returning();
     const [withRelations] = await this.attachTransportRelations([row]);

@@ -1489,11 +1489,22 @@ export async function registerRoutes(app: Express): Promise<void> {
         .filter(r => r.status !== "cancelled" && r.startDate > today)
         .sort((a, b) => a.startDate.localeCompare(b.startDate))[0] ?? null;
 
+      const transport = await storage.getActiveTransportByVehicle(vehicle.id);
+      const activeTransport = transport ? {
+        id: transport.id,
+        status: transport.status,
+        transportType: transport.transportType,
+        scheduledDate: transport.scheduledDate,
+        originCity: transport.originCity,
+        destinationCity: transport.destinationCity,
+      } : null;
+
       return res.json({
         type: "vehicle",
         vehicle,
         activeReservation: projectReservationForScan(activeReservation),
         upcomingReservation: projectReservationForScan(upcomingReservation),
+        activeTransport,
       });
     } catch (error) {
       console.error("Barcode lookup failed:", error);

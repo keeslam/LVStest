@@ -30,8 +30,19 @@ type ScanReservation = {
   customer: { name: string } | null;
 };
 
+// Same projection shape as ScanReservation above — no customer/driver PII, just
+// enough to show and advance the transport from the scan card.
+type ScanTransport = {
+  id: number;
+  status: string;
+  transportType: string;
+  scheduledDate: string;
+  originCity: string | null;
+  destinationCity: string | null;
+};
+
 type LookupResult =
-  | { type: "vehicle"; vehicle: Vehicle; activeReservation: ScanReservation | null; upcomingReservation: ScanReservation | null }
+  | { type: "vehicle"; vehicle: Vehicle; activeReservation: ScanReservation | null; upcomingReservation: ScanReservation | null; activeTransport: ScanTransport | null }
   | { type: "reservation"; reservation: ScanReservation; vehicle: Vehicle | null };
 
 interface ScanPanelProps {
@@ -133,6 +144,20 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
       if (result?.type === "vehicle" && result.vehicle.barcode) lookup(result.vehicle.barcode);
     },
     onError: (error: Error) => toast({ title: t("scanPage.actions.maintenanceError"), description: error.message, variant: "destructive" }),
+  });
+
+  const transportMutation = useMutation({
+    mutationFn: async (vars: { id: number; status: string }) => {
+      const response = await apiRequest("PATCH", `/api/transports/${vars.id}`, { status: vars.status });
+      return response.json();
+    },
+    onSuccess: (_data, vars) => {
+      invalidateByPrefix("/api/transports");
+      toast({ title: t(vars.status === "in_progress" ? "scanPage.transport.started" : "scanPage.transport.completed") });
+      // refresh the card
+      if (result?.type === "vehicle" && result.vehicle.barcode) lookup(result.vehicle.barcode);
+    },
+    onError: (error: Error) => toast({ title: t("scanPage.transport.error"), description: error.message, variant: "destructive" }),
   });
 
   const statusBadge = (vehicle: Vehicle) => {
@@ -244,6 +269,20 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
               : result.upcomingReservation
                 ? reservationCard(result.upcomingReservation, "scanPage.upcomingReservation")
                 : <p className="text-muted-foreground text-sm">{t("scanPage.noReservation")}</p>}
+
+            {result.activeTransport && (
+              <div className="border rounded-md p-4 space-y-2">
+                <h3 className="text-sm font-medium text-muted-foreground">{t("scanPage.transport.heading")}</h3>
+                <div className="flex items-center gap-2 text-sm">
+                  <Truck className="h-4 w-4 text-primary" />
+                  <span>{result.activeTransport.originCity || "?"} → {result.activeTransport.destinationCity || "?"}</span>
+                  <Badge variant="outline">{t(`scanPage.transport.status.${result.activeTransport.status}`, { defaultValue: result.activeTransport.status })}</Badge>
+                </div>
+                <Button size="sm" onClick={() => transportMutation.mutate({ id: result.activeTransport!.id, status: result.activeTransport!.status === "scheduled" ? "in_progress" : "completed" })} disabled={transportMutation.isPending} data-testid="button-scan-transport-advance">
+                  {result.activeTransport.status === "scheduled" ? t("scanPage.transport.start") : t("scanPage.transport.complete")}
+                </Button>
+              </div>
+            )}
 
             <div className="flex flex-wrap gap-2 pt-2 border-t">
               <Button onClick={() => openVehicleDialog(result.vehicle.id)} data-testid="button-open-vehicle">

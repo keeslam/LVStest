@@ -52,6 +52,18 @@
       "picked_up": "Opgehaald",
       "returned": "Geretourneerd",
       "completed": "Afgerond"
+    },
+    "transport": {
+      "heading": "Actief transport",
+      "start": "Transport starten",
+      "complete": "Transport afronden",
+      "started": "Transport gestart",
+      "completed": "Transport afgerond",
+      "error": "Transportstatus wijzigen mislukt",
+      "status": {
+        "scheduled": "Gepland",
+        "in_progress": "Onderweg"
+      }
     }
   },
   "camera": {

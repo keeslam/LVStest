@@ -129,6 +129,9 @@ export interface IStorage {
   // pickup/return endpoints (PickupDialog/ReturnDialog) — status is read live off
   // spareReservation.status, not recorded separately here.
   applyTransportUpdate(id: number, changes: Partial<InsertVehicleTransport>): Promise<VehicleTransport>;
+  // Active (scheduled/in_progress) transport for a vehicle, for the barcode scan
+  // lookup — earliest-scheduled first, or undefined if none is open.
+  getActiveTransportByVehicle(vehicleId: number): Promise<VehicleTransport | undefined>;
 
   // Document methods
   getAllDocuments(): Promise<Document[]>;
@@ -1340,6 +1343,23 @@ export class MemStorage implements IStorage {
 
   async getTransport(id: number): Promise<VehicleTransport | undefined> {
     const transport = this.transports.get(id);
+    if (!transport) return undefined;
+    return {
+      ...transport,
+      vehicle: transport.vehicleId != null ? this.vehicles.get(transport.vehicleId) : undefined,
+      relatedVehicle: transport.relatedVehicleId ? this.vehicles.get(transport.relatedVehicleId) : undefined,
+      customer: transport.customerId ? this.customers.get(transport.customerId) : undefined,
+      spareReservation: this.hydrateSpareReservation(transport),
+    };
+  }
+
+  // Mirrors DatabaseStorage.getActiveTransportByVehicle — for the barcode scan
+  // lookup, the vehicle's still-open (scheduled/in_progress) transport, earliest
+  // scheduledDate first.
+  async getActiveTransportByVehicle(vehicleId: number): Promise<VehicleTransport | undefined> {
+    const transport = Array.from(this.transports.values())
+      .filter(t => t.vehicleId === vehicleId && (t.status === 'scheduled' || t.status === 'in_progress'))
+      .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate))[0];
     if (!transport) return undefined;
     return {
       ...transport,

@@ -52,6 +52,18 @@
       "picked_up": "Picked up",
       "returned": "Returned",
       "completed": "Completed"
+    },
+    "transport": {
+      "heading": "Active transport",
+      "start": "Start transport",
+      "complete": "Complete transport",
+      "started": "Transport started",
+      "completed": "Transport completed",
+      "error": "Failed to change transport status",
+      "status": {
+        "scheduled": "Scheduled",
+        "in_progress": "En route"
+      }
     }
   },
   "camera": {
