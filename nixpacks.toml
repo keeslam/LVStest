@@ -24,16 +24,16 @@ cmds = [
 ]
 
 [start]
-# db:push and the migration are chained with || rather than && so a schema step
-# that fails cannot stop the app from booting. Previously any failure aborted
-# the chain, the container exited, Coolify restarted it, and it looped without
-# ever serving traffic. startup-migration.js applies the additive changes the
-# app actually needs; db:push is a convenience on top of it.
+# The migration is chained with || rather than && so a schema step that fails
+# cannot stop the app from booting. Previously any failure aborted the chain,
+# the container exited, Coolify restarted it, and it looped without ever
+# serving traffic.
 #
-# ORDER MATTERS: startup-migration.js runs BEFORE db:push. The migration
-# backfills data out of legacy columns (damage_check_templates' categories /
-# inspection_points / handover_checklist) into canvas_fields before dropping
-# them. db:push diffs against shared/schema.ts, which no longer declares those
-# columns, so running it first would drop them — destroying the data the
-# backfill exists to rescue — before the migration ever sees it.
-cmd = "echo '=== CAR RENTAL MANAGER STARTING ===' && echo '=== RUNNING STARTUP MIGRATION ===' && (node startup-migration.js || echo '⚠️ startup migration reported errors — continuing') && echo '=== RUNNING DATABASE PUSH ===' && (npm run db:push || echo '⚠️ db:push failed — continuing, see startup-migration output above') && echo '=== STARTING APPLICATION ===' && npm start"
+# db:push was REMOVED from this chain on 2026-08-30: drizzle-kit push rewrites
+# the live database to match shared/schema.ts and is DESTRUCTIVE — it dropped
+# columns the migration had just added and offered to TRUNCATE the vehicles
+# table (411 rows) while adding the barcode unique constraint. In a TTY-less
+# deploy it can apply such changes silently. startup-migration.js applies every
+# schema change the app needs, additively and idempotently — it is the only
+# schema step that belongs in production boot. Never add db:push back here.
+cmd = "echo '=== CAR RENTAL MANAGER STARTING ===' && echo '=== RUNNING STARTUP MIGRATION ===' && (node startup-migration.js || echo '⚠️ startup migration reported errors — continuing') && echo '=== STARTING APPLICATION ===' && npm start"
