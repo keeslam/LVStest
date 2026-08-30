@@ -508,12 +508,12 @@ export default function DeliveryDashboard() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-2">
         <div>
           <h1 className="text-3xl font-bold">{t('dashboardPage.title')}</h1>
           <p className="text-muted-foreground">{t('dashboardPage.subtitle')}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setRouteDialogOpen(true)} data-testid="button-route-optimization">
             <Navigation className="h-4 w-4 mr-2" />
             {t('dashboardPage.routeOptimizationButton')}
