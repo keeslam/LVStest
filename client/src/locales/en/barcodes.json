@@ -77,6 +77,13 @@
     "pageHeader": "Barcode book — Auto Lease LAM",
     "printStickersButton": "Print stickers"
   },
+  "damageScan": {
+    "dialogTitle": "Start damage check",
+    "description": "Scan the vehicle's barcode. A picked-up vehicle starts the return check, otherwise the pickup check.",
+    "skipButton": "Continue without scanning",
+    "startedPickup": "Pickup check started for {{plate}}",
+    "startedReturn": "Return check started for {{plate}}"
+  },
   "templatePicker": {
     "label": "Label template",
     "defaultOption": "Default layout"

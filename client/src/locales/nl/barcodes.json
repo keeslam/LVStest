@@ -77,6 +77,13 @@
     "pageHeader": "Barcodeboek — Auto Lease LAM",
     "printStickersButton": "Stickers afdrukken"
   },
+  "damageScan": {
+    "dialogTitle": "Schadecheck starten",
+    "description": "Scan de barcode van het voertuig. Bij een opgehaald voertuig start de retourcheck, anders de ophaalcheck.",
+    "skipButton": "Doorgaan zonder scan",
+    "startedPickup": "Ophaalcheck gestart voor {{plate}}",
+    "startedReturn": "Retourcheck gestart voor {{plate}}"
+  },
   "templatePicker": {
     "label": "Labelsjabloon",
     "defaultOption": "Standaardindeling"

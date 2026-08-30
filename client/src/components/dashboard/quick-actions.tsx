@@ -43,6 +43,7 @@ import { VehicleForm } from "@/components/vehicles/vehicle-form";
 import { CustomerForm } from "@/components/customers/customer-form";
 import { ExpenseForm } from "@/components/expenses/expense-form";
 import InteractiveDamageCheck from "@/pages/interactive-damage-check";
+import { DamageCheckScanDialog } from "@/components/barcodes/damage-check-scan-dialog";
 import { FuelStatusUpdateDialog } from "@/components/vehicles/fuel-status-update-dialog";
 
 interface ActionIconProps {
@@ -379,6 +380,10 @@ export function QuickActions() {
   
   // State for interactive damage check dialog
   const [interactiveDamageCheckDialogOpen, setInteractiveDamageCheckDialogOpen] = useState(false);
+  // Barcode pre-step for the damage check: scanning a vehicle picks the vehicle
+  // AND the check type (picked_up rental → return check, otherwise pickup).
+  const [damageCheckScanOpen, setDamageCheckScanOpen] = useState(false);
+  const [damageCheckInit, setDamageCheckInit] = useState<{ vehicleId?: number; checkType?: 'pickup' | 'return'; reservationId?: number; seed: number }>({ seed: 0 });
   const [apkSearchQuery, setApkSearchQuery] = useState<string>("");
   
   // State for fuel status update dialog
@@ -1924,7 +1929,7 @@ export function QuickActions() {
                   variant="outline"
                   className="bg-primary-50 text-primary-600 hover:bg-primary-100"
                   size="sm"
-                  onClick={() => setInteractiveDamageCheckDialogOpen(true)}
+                  onClick={() => setDamageCheckScanOpen(true)}
                 >
                   <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
                   {t(`quickActions.buttons.${action.dialog}`)}
@@ -1993,12 +1998,44 @@ export function QuickActions() {
         </CardContent>
       </Card>
       
-      {/* Interactive Damage Check Dialog - Kept mounted to preserve state */}
+      {/* Barcode pre-step: resolves the vehicle + whether this is a pickup or
+          return check before the damage check opens. */}
+      <DamageCheckScanDialog
+        open={damageCheckScanOpen}
+        onOpenChange={setDamageCheckScanOpen}
+        onResolved={(result, vehicle) => {
+          setDamageCheckInit(prev => ({ ...result, seed: prev.seed + 1 }));
+          setDamageCheckScanOpen(false);
+          setInteractiveDamageCheckDialogOpen(true);
+          toast({
+            title: t(
+              result.checkType === 'return'
+                ? 'barcodes:damageScan.startedReturn'
+                : 'barcodes:damageScan.startedPickup',
+              { plate: formatLicensePlate(vehicle.licensePlate) }
+            ),
+          });
+        }}
+        onSkip={() => {
+          setDamageCheckInit(prev => ({ seed: prev.seed + 1 }));
+          setDamageCheckScanOpen(false);
+          setInteractiveDamageCheckDialogOpen(true);
+        }}
+      />
+
+      {/* Interactive Damage Check Dialog - Kept mounted to preserve state;
+          the seed key remounts it when a new scan chooses a fresh context. */}
       <Dialog open={interactiveDamageCheckDialogOpen} onOpenChange={setInteractiveDamageCheckDialogOpen}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh] p-0 overflow-hidden">
           <DialogTitle className="sr-only">{t('quickActions.buttons.interactive-damage-check')}</DialogTitle>
           <div className="h-full overflow-auto">
-            <InteractiveDamageCheck onClose={() => setInteractiveDamageCheckDialogOpen(false)} />
+            <InteractiveDamageCheck
+              key={damageCheckInit.seed}
+              initialVehicleId={damageCheckInit.vehicleId}
+              initialCheckType={damageCheckInit.checkType}
+              initialReservationId={damageCheckInit.reservationId}
+              onClose={() => setInteractiveDamageCheckDialogOpen(false)}
+            />
           </div>
         </DialogContent>
       </Dialog>
