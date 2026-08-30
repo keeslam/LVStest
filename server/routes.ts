@@ -2136,6 +2136,46 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
   
+  // Maintenance status toggle from the barcode scan panel. Routes through
+  // storage.markVehicleForService (same path used by transport swaps and
+  // reservation mark-needs-service) instead of the generic PATCH above, which
+  // would force-false every equipment boolean not present in this request
+  // body and skip the needs_fixing/available availabilityStatus transition.
+  app.patch("/api/vehicles/:id/maintenance-status", requireAuth, hasPermission(UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid vehicle ID" });
+      }
+
+      const { status, note } = req.body;
+      if (!["ok", "needs_service", "in_service"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status. Must be 'ok', 'needs_service', or 'in_service'" });
+      }
+
+      const existingVehicle = await storage.getVehicle(id);
+      if (!existingVehicle) {
+        return res.status(404).json({ message: "Vehicle not found" });
+      }
+
+      await storage.markVehicleForService(id, status, note);
+      const vehicle = await storage.getVehicle(id);
+
+      // Broadcast real-time update to all connected clients
+      if (vehicle) {
+        realtimeEvents.vehicles.updated(vehicle);
+      }
+
+      res.json(vehicle);
+    } catch (error) {
+      console.error("Error updating vehicle maintenance status:", error);
+      res.status(500).json({
+        message: "Failed to update vehicle maintenance status",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // Update vehicle mileage only (special endpoint for partial updates)
   app.patch("/api/vehicles/:id/mileage", hasPermission(UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
     try {

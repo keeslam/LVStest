@@ -142,7 +142,7 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
 
   const maintenanceMutation = useMutation({
     mutationFn: async (vars: { vehicleId: number; status: "ok" | "in_service" }) => {
-      const response = await apiRequest("PATCH", `/api/vehicles/${vars.vehicleId}`, { maintenanceStatus: vars.status });
+      const response = await apiRequest("PATCH", `/api/vehicles/${vars.vehicleId}/maintenance-status`, { status: vars.status });
       return response.json();
     },
     onSuccess: (_data, vars) => {
