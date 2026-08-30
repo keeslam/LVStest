@@ -318,12 +318,6 @@ const quickActions: QuickAction[] = [
     primary: false,
   },
   {
-    label: "Change Status by Vehicle",
-    icon: "car",
-    dialog: "vehicle-reservation-status",
-    primary: false,
-  },
-  {
     label: "Change Registration",
     icon: "refresh-cw",
     dialog: "registration",
