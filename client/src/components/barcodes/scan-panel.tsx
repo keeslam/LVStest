@@ -124,7 +124,6 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
   const maintenanceMutation = useMutation({
     mutationFn: async (vars: { vehicleId: number; status: "ok" | "in_service" }) => {
       const response = await apiRequest("PATCH", `/api/vehicles/${vars.vehicleId}`, { maintenanceStatus: vars.status });
-      if (!response.ok) throw new Error();
       return response.json();
     },
     onSuccess: (_data, vars) => {
@@ -133,7 +132,7 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
       // refresh the card
       if (result?.type === "vehicle" && result.vehicle.barcode) lookup(result.vehicle.barcode);
     },
-    onError: () => toast({ title: t("scanPage.lookupError"), variant: "destructive" }),
+    onError: (error: Error) => toast({ title: t("scanPage.actions.maintenanceError"), description: error.message, variant: "destructive" }),
   });
 
   const statusBadge = (vehicle: Vehicle) => {

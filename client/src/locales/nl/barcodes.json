@@ -37,7 +37,8 @@
       "startMaintenance": "Naar onderhoud",
       "endMaintenance": "Terug uit onderhoud",
       "maintenanceStarted": "Voertuig staat nu in onderhoud",
-      "maintenanceEnded": "Voertuig is terug uit onderhoud"
+      "maintenanceEnded": "Voertuig is terug uit onderhoud",
+      "maintenanceError": "Onderhoudsstatus wijzigen mislukt"
     },
     "status": {
       "available": "Beschikbaar",

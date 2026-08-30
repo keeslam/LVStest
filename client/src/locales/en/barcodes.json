@@ -37,7 +37,8 @@
       "startMaintenance": "Send to maintenance",
       "endMaintenance": "Back from maintenance",
       "maintenanceStarted": "Vehicle is now in maintenance",
-      "maintenanceEnded": "Vehicle is back from maintenance"
+      "maintenanceEnded": "Vehicle is back from maintenance",
+      "maintenanceError": "Failed to change maintenance status"
     },
     "status": {
       "available": "Available",
