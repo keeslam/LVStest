@@ -124,7 +124,8 @@
     "unexpectedHeading": "Unexpectedly present (vehicle shows as rented)",
     "noneMissing": "No keys missing 🎉",
     "alreadyScanned": "Already scanned",
-    "unknownCode": "Unknown code: {{code}}"
+    "unknownCode": "Unknown code: {{code}}",
+    "notAVehicle": "This is a reservation code, not a vehicle key"
   },
   "templatePicker": {
     "label": "Label template",

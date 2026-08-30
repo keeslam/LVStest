@@ -124,7 +124,8 @@
     "unexpectedHeading": "Onverwacht aanwezig (voertuig staat als verhuurd)",
     "noneMissing": "Geen sleutels ontbreken 🎉",
     "alreadyScanned": "Al gescand",
-    "unknownCode": "Onbekende code: {{code}}"
+    "unknownCode": "Onbekende code: {{code}}",
+    "notAVehicle": "Dit is een reserveringscode, geen voertuigsleutel"
   },
   "templatePicker": {
     "label": "Labelsjabloon",

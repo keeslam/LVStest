@@ -38,6 +38,10 @@ export function KeyAuditDialog({ open, onOpenChange }: KeyAuditDialogProps) {
   const [scanned, setScanned] = useState<Map<number, ScannedEntry>>(new Map());
   const [view, setView] = useState<ViewState>("scanning");
   const inputRef = useRef<HTMLInputElement>(null);
+  // Synchronous mirror of `scanned` so the scan handler can check membership
+  // and commit updates outside of a setState updater — React Strict Mode
+  // double-invokes updaters, so they must stay pure (no setState calls inside).
+  const scannedRef = useRef<Map<number, ScannedEntry>>(new Map());
 
   const { data: vehicles = [] } = useQuery<Vehicle[]>({ queryKey: ["/api/vehicles"] });
 
@@ -51,6 +55,7 @@ export function KeyAuditDialog({ open, onOpenChange }: KeyAuditDialogProps) {
       setCode("");
       setError(null);
       setAlreadyScanned(false);
+      scannedRef.current = new Map();
       setScanned(new Map());
       setView("scanning");
       requestAnimationFrame(() => inputRef.current?.focus());
@@ -58,6 +63,7 @@ export function KeyAuditDialog({ open, onOpenChange }: KeyAuditDialogProps) {
   }, [open]);
 
   const lookup = async (raw: string) => {
+    if (isLoading) return; // a fast hardware scanner can fire faster than a fetch resolves
     const trimmed = raw.trim();
     if (!trimmed) return;
     setIsLoading(true);
@@ -74,24 +80,25 @@ export function KeyAuditDialog({ open, onOpenChange }: KeyAuditDialogProps) {
         return;
       }
       const data = await response.json();
+      if (data.type === "reservation") {
+        setError(t("keyAudit.notAVehicle"));
+        return;
+      }
       if (data.type !== "vehicle") {
         setError(t("keyAudit.unknownCode", { code: trimmed }));
         return;
       }
 
       const vehicle: Vehicle = data.vehicle;
-      setScanned(prev => {
-        if (prev.has(vehicle.id)) {
-          setAlreadyScanned(true);
-          return prev;
-        }
-        const next = new Map(prev);
-        next.set(vehicle.id, {
+      if (scannedRef.current.has(vehicle.id)) {
+        setAlreadyScanned(true);
+      } else {
+        scannedRef.current.set(vehicle.id, {
           plate: formatLicensePlate(vehicle.licensePlate),
           spare: !!data.scannedSpareKey,
         });
-        return next;
-      });
+        setScanned(new Map(scannedRef.current));
+      }
     } catch {
       setError(t("scanPage.lookupError"));
     } finally {
@@ -103,6 +110,7 @@ export function KeyAuditDialog({ open, onOpenChange }: KeyAuditDialogProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     lookup(code);
   };
 
@@ -112,6 +120,7 @@ export function KeyAuditDialog({ open, onOpenChange }: KeyAuditDialogProps) {
     .filter((v): v is Vehicle => !!v && v.availabilityStatus === "rented");
 
   const handleReset = () => {
+    scannedRef.current = new Map();
     setScanned(new Map());
     setView("scanning");
     setCode("");
