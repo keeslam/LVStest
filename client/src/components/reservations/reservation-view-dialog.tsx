@@ -260,8 +260,15 @@ export function ReservationViewDialog({
       <Dialog open={open && !!reservationId && !pickupDialogOpen && !returnDialogOpen} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-testid="dialog-reservation-view">
           <DialogHeader>
-            <DialogTitle>{t('viewDialog.title')}</DialogTitle>
-            <p className="text-gray-500">{t('viewDialog.reservationHash', { id: reservationId })}</p>
+            <div className="flex flex-wrap items-start justify-between gap-4 pr-8">
+              <div>
+                <DialogTitle>{t('viewDialog.title')}</DialogTitle>
+                <p className="text-gray-500">{t('viewDialog.reservationHash', { id: reservationId })}</p>
+              </div>
+              {reservationId && (
+                <BarcodeSvg value={formatReservationBarcode(reservationId)} height={30} className="shrink-0" />
+              )}
+            </div>
           </DialogHeader>
 
           {isLoading ? (
@@ -869,10 +876,6 @@ export function ReservationViewDialog({
                 </div>
               )}
 
-              {/* Barcode Section */}
-              <div className="flex justify-center py-2">
-                <BarcodeSvg value={formatReservationBarcode(reservation.id)} height={35} />
-              </div>
             </div>
           )}
 
