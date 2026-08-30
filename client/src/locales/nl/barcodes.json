@@ -114,6 +114,18 @@
     "startedPickup": "Ophaalcheck gestart voor {{plate}}",
     "startedReturn": "Retourcheck gestart voor {{plate}}"
   },
+  "keyAudit": {
+    "title": "Sleutelkast-audit",
+    "description": "Scan alle sleutels in de kast; daarna zie je welke ontbreken.",
+    "scannedCount": "{{scanned}} van {{expected}} verwachte sleutels gescand",
+    "finishButton": "Audit afronden",
+    "resetButton": "Opnieuw beginnen",
+    "missingHeading": "Ontbrekende sleutels",
+    "unexpectedHeading": "Onverwacht aanwezig (voertuig staat als verhuurd)",
+    "noneMissing": "Geen sleutels ontbreken 🎉",
+    "alreadyScanned": "Al gescand",
+    "unknownCode": "Onbekende code: {{code}}"
+  },
   "templatePicker": {
     "label": "Labelsjabloon",
     "defaultOption": "Standaardindeling"

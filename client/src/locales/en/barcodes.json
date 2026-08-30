@@ -114,6 +114,18 @@
     "startedPickup": "Pickup check started for {{plate}}",
     "startedReturn": "Return check started for {{plate}}"
   },
+  "keyAudit": {
+    "title": "Key cabinet audit",
+    "description": "Scan every key in the cabinet; afterwards you'll see which ones are missing.",
+    "scannedCount": "{{scanned}} of {{expected}} expected keys scanned",
+    "finishButton": "Finish audit",
+    "resetButton": "Start over",
+    "missingHeading": "Missing keys",
+    "unexpectedHeading": "Unexpectedly present (vehicle shows as rented)",
+    "noneMissing": "No keys missing 🎉",
+    "alreadyScanned": "Already scanned",
+    "unknownCode": "Unknown code: {{code}}"
+  },
   "templatePicker": {
     "label": "Label template",
     "defaultOption": "Default layout"

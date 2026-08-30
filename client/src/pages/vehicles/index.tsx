@@ -12,6 +12,7 @@ import { VehicleAddDialog } from "@/components/vehicles/vehicle-add-dialog";
 import { VehicleBulkImportDialog } from "@/components/vehicles/vehicle-bulk-import-dialog";
 import { VehicleRemarksWarningDialog } from "@/components/vehicles/vehicle-remarks-warning-dialog";
 import { BarcodeBookDialog } from "@/components/barcodes/barcode-book-dialog";
+import { KeyAuditDialog } from "@/components/barcodes/key-audit-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
@@ -28,7 +29,7 @@ import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { displayLicensePlate } from "@/lib/utils";
 import { isTrueValue } from "@/lib/utils";
 import { getDaysUntil } from "@/lib/date-utils";
-import { Search, SlidersHorizontal, Edit, Trash2, Archive, BookOpen } from "lucide-react";
+import { Search, SlidersHorizontal, Edit, Trash2, Archive, BookOpen, KeyRound } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { UserRole } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -72,6 +73,7 @@ export default function VehiclesIndex() {
   const [deleteVehicleTarget, setDeleteVehicleTarget] = useState<Vehicle | null>(null);
   const [deletedVehiclesOpen, setDeletedVehiclesOpen] = useState(false);
   const [barcodeBookOpen, setBarcodeBookOpen] = useState(false);
+  const [keyAuditOpen, setKeyAuditOpen] = useState(false);
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.role === UserRole.ADMIN;
   
@@ -608,6 +610,11 @@ export default function VehiclesIndex() {
         onOpenChange={setBarcodeBookOpen}
       />
 
+      <KeyAuditDialog
+        open={keyAuditOpen}
+        onOpenChange={setKeyAuditOpen}
+      />
+
       <div className="flex flex-wrap justify-between items-center gap-2">
         <h1 className="text-2xl font-bold">{t('indexPage.pageTitle')}</h1>
         <div className="flex flex-wrap gap-2">
@@ -624,6 +631,10 @@ export default function VehiclesIndex() {
           <Button variant="outline" onClick={() => setBarcodeBookOpen(true)} data-testid="button-open-barcode-book">
             <BookOpen className="h-4 w-4 mr-2" />
             {t("barcodes:book.title")}
+          </Button>
+          <Button variant="outline" onClick={() => setKeyAuditOpen(true)} data-testid="button-key-audit">
+            <KeyRound className="h-4 w-4 mr-2" />
+            {t("barcodes:keyAudit.title")}
           </Button>
           <VehicleBulkImportDialog onSuccess={handleDialogSuccess} />
           <VehicleAddDialog onSuccess={handleDialogSuccess} />
