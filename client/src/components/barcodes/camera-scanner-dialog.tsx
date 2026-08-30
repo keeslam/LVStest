@@ -38,6 +38,15 @@ export function CameraScannerDialog({ open, onOpenChange, onScan }: CameraScanne
     let cancelled = false;
     setErrorKey(null);
 
+    // Browsers only expose the camera in a secure context (https:// or
+    // localhost). Over plain http:// on any other host, getUserMedia is
+    // blocked WITHOUT ever showing a permission prompt — detect that up
+    // front and explain it, instead of a misleading "permission denied".
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      setErrorKey("camera.insecureContext");
+      return;
+    }
+
     // Defer scanner creation one frame to ensure DialogContent portal is mounted.
     const frameId = requestAnimationFrame(() => {
       if (cancelled) return;

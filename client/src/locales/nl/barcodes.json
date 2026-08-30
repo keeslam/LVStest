@@ -47,6 +47,7 @@
     "dialogTitle": "Camera scannen",
     "dialogDescription": "Richt de camera op de barcode van het sleutellabel.",
     "permissionDenied": "Cameratoegang geweigerd. Sta cameragebruik toe in de browserinstellingen of gebruik het invoerveld.",
+    "insecureContext": "De browser blokkeert de camera omdat de app via onbeveiligd HTTP wordt geopend. Camera scannen werkt alleen via HTTPS of op localhost. Open de app via https:// of gebruik het invoerveld met een USB-scanner.",
     "noCamera": "Geen camera gevonden op dit apparaat.",
     "startError": "Camera starten mislukt.",
     "closeButton": "Sluiten"

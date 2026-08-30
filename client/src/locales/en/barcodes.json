@@ -47,6 +47,7 @@
     "dialogTitle": "Camera scan",
     "dialogDescription": "Point the camera at the key label barcode.",
     "permissionDenied": "Camera access denied. Allow camera use in your browser settings or use the input field.",
+    "insecureContext": "The browser blocks the camera because the app is opened over insecure HTTP. Camera scanning only works over HTTPS or on localhost. Open the app via https:// or use the input field with a USB scanner.",
     "noCamera": "No camera found on this device.",
     "startError": "Failed to start the camera.",
     "closeButton": "Close"
