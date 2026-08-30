@@ -48,7 +48,7 @@ import { db } from "./db";
 import { eq, ne, and, gte, lte, desc, sql, inArray, not, or, ilike, isNull, isNotNull, getTableColumns } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { IStorage } from "./storage";
-import { formatVehicleBarcode } from "../shared/barcode";
+import { formatVehicleBarcode, parseBarcode, normalizeScannedCode } from "../shared/barcode";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -152,8 +152,9 @@ export class DatabaseStorage implements IStorage {
     
     // Sanitize the search query to handle license plates with or without dashes
     const sanitizedQuery = searchQuery.replace(/-/g, "").toUpperCase();
-    
-    // Search by license plate (without dashes), brand, or model
+
+    // Search by license plate (without dashes), brand, model, or barcode (so a
+    // barcode scanner "typing" VEH-000123 into any search box finds the vehicle)
     return await db.select()
       .from(vehicles)
       .where(
@@ -161,7 +162,8 @@ export class DatabaseStorage implements IStorage {
           // Handle license plate search with or without dashes - using upper for case insensitivity
           sql`UPPER(replace(${vehicles.licensePlate}, '-', '')) LIKE ${`%${sanitizedQuery}%`}`,
           sql`UPPER(${vehicles.brand}) LIKE ${`%${sanitizedQuery}%`}`,
-          sql`UPPER(${vehicles.model}) LIKE ${`%${sanitizedQuery}%`}`
+          sql`UPPER(${vehicles.model}) LIKE ${`%${sanitizedQuery}%`}`,
+          sql`UPPER(replace(${vehicles.barcode}, '-', '')) LIKE ${`%${sanitizedQuery}%`}`
         )
       )
       .limit(10);
@@ -831,7 +833,31 @@ export class DatabaseStorage implements IStorage {
     if (!searchQuery) {
       return await db.select().from(customers);
     }
-    
+
+    // Barcode-scanner input: a scanned vehicle or reservation barcode resolves
+    // to the customers linked to it through reservations, so scanning a key
+    // label into the customer search shows who is renting that vehicle.
+    const parsedCode = parseBarcode(searchQuery);
+    if (parsedCode.kind === "reservation") {
+      const [reservation] = await db.select()
+        .from(reservations)
+        .where(and(eq(reservations.id, parsedCode.reservationId), isNull(reservations.deletedAt)));
+      if (!reservation?.customerId) return [];
+      return await db.select().from(customers).where(eq(customers.id, reservation.customerId));
+    }
+    if (parsedCode.kind === "vehicle") {
+      const vehicle = await this.getVehicleByBarcode(normalizeScannedCode(searchQuery));
+      if (!vehicle) return [];
+      const linked = await db.select({ customerId: reservations.customerId })
+        .from(reservations)
+        .where(and(eq(reservations.vehicleId, vehicle.id), isNull(reservations.deletedAt)));
+      const customerIds = Array.from(new Set(
+        linked.map(r => r.customerId).filter((id): id is number => id !== null && id !== undefined)
+      ));
+      if (customerIds.length === 0) return [];
+      return await db.select().from(customers).where(inArray(customers.id, customerIds)).limit(10);
+    }
+
     // Convert to uppercase for case-insensitivity
     const upperQuery = searchQuery.toUpperCase();
     
@@ -881,11 +907,21 @@ export class DatabaseStorage implements IStorage {
   async getAllReservations(searchQuery?: string): Promise<Reservation[]> {
     let reservationsData;
     
-    if (searchQuery) {
+    // A scanned reservation barcode (RES-000123) resolves straight to that
+    // reservation by id, so scanner input works in reservation search boxes.
+    const parsedCode = searchQuery ? parseBarcode(searchQuery) : null;
+
+    if (searchQuery && parsedCode?.kind === "reservation") {
+      reservationsData = await db.select()
+        .from(reservations)
+        .where(and(eq(reservations.id, parsedCode.reservationId), isNull(reservations.deletedAt)))
+        .limit(1);
+    } else if (searchQuery) {
       // Sanitize the search query to handle license plates with or without dashes
       const sanitizedQuery = searchQuery.replace(/-/g, "").toUpperCase();
-      
-      // First, search for vehicles and customers matching the query
+
+      // First, search for vehicles and customers matching the query (barcode
+      // included so scanning a vehicle key label lists its reservations)
       const matchingVehicles = await db.select()
         .from(vehicles)
         .where(
@@ -893,7 +929,8 @@ export class DatabaseStorage implements IStorage {
             // Handle license plate search with or without dashes - using upper for case insensitivity
             sql`UPPER(replace(${vehicles.licensePlate}, '-', '')) LIKE ${`%${sanitizedQuery}%`}`,
             sql`UPPER(${vehicles.brand}) LIKE ${`%${sanitizedQuery}%`}`,
-            sql`UPPER(${vehicles.model}) LIKE ${`%${sanitizedQuery}%`}`
+            sql`UPPER(${vehicles.model}) LIKE ${`%${sanitizedQuery}%`}`,
+            sql`UPPER(replace(${vehicles.barcode}, '-', '')) LIKE ${`%${sanitizedQuery}%`}`
           )
         );
       

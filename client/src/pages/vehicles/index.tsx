@@ -139,12 +139,15 @@ export default function VehiclesIndex() {
       const formattedLicensePlate = vehicle.licensePlate?.replace(/-/g, '')?.toLowerCase() || '';
       const formattedSearchQuery = searchLower.replace(/-/g, '');
       
-      // Check if any of these fields contain the search string
+      // Check if any of these fields contain the search string (barcode included
+      // so a scanner "typing" VEH-000123 into this box finds the vehicle)
+      const formattedBarcode = vehicle.barcode?.replace(/-/g, '')?.toLowerCase() || '';
       const matchesSearch = (
         formattedLicensePlate.includes(formattedSearchQuery) ||
         (vehicle.brand?.toLowerCase().includes(searchLower) || false) ||
         (vehicle.model?.toLowerCase().includes(searchLower) || false) ||
-        (vehicle.vehicleType?.toLowerCase().includes(searchLower) || false)
+        (vehicle.vehicleType?.toLowerCase().includes(searchLower) || false) ||
+        (formattedBarcode !== '' && formattedBarcode.includes(formattedSearchQuery))
       );
       
       if (!matchesSearch) return false;
