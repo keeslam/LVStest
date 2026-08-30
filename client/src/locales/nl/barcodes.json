@@ -29,6 +29,16 @@
     "openVehicleButton": "Voertuig openen",
     "openReservationButton": "Reservering openen",
     "scanAgain": "Opnieuw scannen",
+    "actions": {
+      "startPickup": "Ophalen starten",
+      "startReturn": "Inleveren starten",
+      "addExpense": "Kosten registreren",
+      "uploadDocument": "Document uploaden",
+      "startMaintenance": "Naar onderhoud",
+      "endMaintenance": "Terug uit onderhoud",
+      "maintenanceStarted": "Voertuig staat nu in onderhoud",
+      "maintenanceEnded": "Voertuig is terug uit onderhoud"
+    },
     "status": {
       "available": "Beschikbaar",
       "scheduled": "Gereserveerd",

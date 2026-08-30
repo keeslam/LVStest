@@ -29,6 +29,16 @@
     "openVehicleButton": "Open vehicle",
     "openReservationButton": "Open reservation",
     "scanAgain": "Scan again",
+    "actions": {
+      "startPickup": "Start pickup",
+      "startReturn": "Start return",
+      "addExpense": "Log expense",
+      "uploadDocument": "Upload document",
+      "startMaintenance": "Send to maintenance",
+      "endMaintenance": "Back from maintenance",
+      "maintenanceStarted": "Vehicle is now in maintenance",
+      "maintenanceEnded": "Vehicle is back from maintenance"
+    },
     "status": {
       "available": "Available",
       "scheduled": "Reserved",

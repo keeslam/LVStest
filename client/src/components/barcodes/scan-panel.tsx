@@ -1,17 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Truck, CalendarRange, User, RotateCcw, CalendarPlus, ShieldCheck, FileCheck } from "lucide-react";
+import { Camera, Truck, CalendarRange, User, RotateCcw, CalendarPlus, ShieldCheck, FileCheck, LogOut, LogIn, Receipt, Upload, Wrench } from "lucide-react";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { isTrueValue } from "@/lib/utils";
 import { BarcodeSvg } from "@/components/barcodes/barcode-svg";
 import { CameraScannerDialog } from "@/components/barcodes/camera-scanner-dialog";
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
-import { Vehicle } from "@shared/schema";
+import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
+import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
+import { InlineDocumentUpload } from "@/components/documents/inline-document-upload";
+import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Vehicle, Reservation } from "@shared/schema";
 
 // The lookup endpoint projects reservations down to only what this panel
 // renders (see server/routes.ts GET /api/barcodes/:code) to avoid leaking
@@ -40,11 +46,15 @@ interface ScanPanelProps {
 export function ScanPanel({ active = true }: ScanPanelProps) {
   const { t } = useTranslation(["barcodes", "common"]);
   const { openVehicleDialog, openReservationDialog } = useGlobalDialog();
+  const { toast } = useToast();
   const [code, setCode] = useState("");
   const [result, setResult] = useState<LookupResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [handoverReservation, setHandoverReservation] = useState<Reservation | null>(null);
+  const [pickupOpen, setPickupOpen] = useState(false);
+  const [returnOpen, setReturnOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // USB/Bluetooth scanners emulate a keyboard: focus the field when this panel
@@ -96,6 +106,35 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
     e.preventDefault();
     lookup(code);
   };
+
+  // The scan card only holds the PII-projected reservation; the handover
+  // dialogs need the full row, so fetch it when the user asks for one.
+  const startHandover = async (reservationId: number, kind: "pickup" | "return") => {
+    try {
+      const response = await fetch(`/api/reservations/${reservationId}`, { credentials: "include" });
+      if (!response.ok) throw new Error();
+      const full = await response.json();
+      setHandoverReservation(full);
+      if (kind === "pickup") setPickupOpen(true); else setReturnOpen(true);
+    } catch {
+      setError(t("scanPage.lookupError"));
+    }
+  };
+
+  const maintenanceMutation = useMutation({
+    mutationFn: async (vars: { vehicleId: number; status: "ok" | "in_service" }) => {
+      const response = await apiRequest("PATCH", `/api/vehicles/${vars.vehicleId}`, { maintenanceStatus: vars.status });
+      if (!response.ok) throw new Error();
+      return response.json();
+    },
+    onSuccess: (_data, vars) => {
+      invalidateByPrefix("/api/vehicles");
+      toast({ title: t(vars.status === "in_service" ? "scanPage.actions.maintenanceStarted" : "scanPage.actions.maintenanceEnded") });
+      // refresh the card
+      if (result?.type === "vehicle" && result.vehicle.barcode) lookup(result.vehicle.barcode);
+    },
+    onError: () => toast({ title: t("scanPage.lookupError"), variant: "destructive" }),
+  });
 
   const statusBadge = (vehicle: Vehicle) => {
     const status = vehicle.availabilityStatus || "available";
@@ -219,6 +258,47 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
                   </Button>
                 </ReservationAddDialog>
               )}
+              {result.activeReservation?.status === "picked_up" && (
+                <Button variant="default" onClick={() => startHandover(result.activeReservation!.id, "return")} data-testid="button-scan-return">
+                  <LogIn className="h-4 w-4 mr-2" />
+                  {t("scanPage.actions.startReturn")}
+                </Button>
+              )}
+              {result.activeReservation && result.activeReservation.status !== "picked_up" && (
+                <Button variant="default" onClick={() => startHandover(result.activeReservation!.id, "pickup")} data-testid="button-scan-pickup">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  {t("scanPage.actions.startPickup")}
+                </Button>
+              )}
+              {!result.activeReservation && result.upcomingReservation && (
+                <Button variant="default" onClick={() => startHandover(result.upcomingReservation!.id, "pickup")} data-testid="button-scan-pickup">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  {t("scanPage.actions.startPickup")}
+                </Button>
+              )}
+              <ExpenseAddDialog vehicleId={result.vehicle.id}>
+                <Button variant="outline" data-testid="button-scan-expense">
+                  <Receipt className="h-4 w-4 mr-2" />
+                  {t("scanPage.actions.addExpense")}
+                </Button>
+              </ExpenseAddDialog>
+              <InlineDocumentUpload vehicleId={result.vehicle.id} reservationId={result.activeReservation?.id}>
+                <Button variant="outline" data-testid="button-scan-upload">
+                  <Upload className="h-4 w-4 mr-2" />
+                  {t("scanPage.actions.uploadDocument")}
+                </Button>
+              </InlineDocumentUpload>
+              {(result.vehicle.maintenanceStatus === "ok" || !result.vehicle.maintenanceStatus) ? (
+                <Button variant="outline" onClick={() => maintenanceMutation.mutate({ vehicleId: result.vehicle.id, status: "in_service" })} disabled={maintenanceMutation.isPending} data-testid="button-scan-maintenance-start">
+                  <Wrench className="h-4 w-4 mr-2" />
+                  {t("scanPage.actions.startMaintenance")}
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={() => maintenanceMutation.mutate({ vehicleId: result.vehicle.id, status: "ok" })} disabled={maintenanceMutation.isPending} data-testid="button-scan-maintenance-end">
+                  <Wrench className="h-4 w-4 mr-2" />
+                  {t("scanPage.actions.endMaintenance")}
+                </Button>
+              )}
               <Button variant="outline" onClick={() => { setResult(null); inputRef.current?.focus(); }}>
                 <RotateCcw className="h-4 w-4 mr-2" />
                 {t("scanPage.scanAgain")}
@@ -254,6 +334,15 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
         onOpenChange={setCameraOpen}
         onScan={lookup}
       />
+
+      {handoverReservation && (
+        <>
+          <PickupDialog open={pickupOpen} onOpenChange={setPickupOpen} reservation={handoverReservation}
+            onSuccess={() => { setPickupOpen(false); if (result?.type === "vehicle" && result.vehicle.barcode) lookup(result.vehicle.barcode); }} />
+          <ReturnDialog open={returnOpen} onOpenChange={setReturnOpen} reservation={handoverReservation}
+            onSuccess={() => { setReturnOpen(false); if (result?.type === "vehicle" && result.vehicle.barcode) lookup(result.vehicle.barcode); }} />
+        </>
+      )}
     </>
   );
 }
