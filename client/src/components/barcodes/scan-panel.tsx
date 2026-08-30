@@ -85,7 +85,21 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
   // "Naar onderhoud" opens the real maintenance scheduler so the workshop
   // visit lands on the maintenance calendar as a trackable maintenance_block.
+  // "Onderhoudsblok openen" reuses the same scheduler in edit mode with the
+  // full block row (the scan payload only carries a projection).
   const [scheduleMaintenanceOpen, setScheduleMaintenanceOpen] = useState(false);
+  const [editingMaintenance, setEditingMaintenance] = useState<Reservation | null>(null);
+
+  const openMaintenanceBlock = async (reservationId: number) => {
+    try {
+      const response = await fetch(`/api/reservations/${reservationId}`, { credentials: "include" });
+      if (!response.ok) throw new Error();
+      setEditingMaintenance(await response.json());
+      setScheduleMaintenanceOpen(true);
+    } catch {
+      setError(t("scanPage.lookupError"));
+    }
+  };
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: recentScans } = useQuery<ScanEvent[]>({
@@ -328,7 +342,7 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
                   )}
                 </div>
                 {result.activeMaintenance && (
-                  <Button size="sm" variant="outline" className="border-amber-300" onClick={() => openReservationDialog(result.activeMaintenance!.id)} data-testid="button-scan-open-maintenance">
+                  <Button size="sm" variant="outline" className="border-amber-300" onClick={() => openMaintenanceBlock(result.activeMaintenance!.id)} data-testid="button-scan-open-maintenance">
                     {t("scanPage.maintenance.openButton")}
                   </Button>
                 )}
@@ -398,7 +412,7 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
                 </Button>
               </InlineDocumentUpload>
               {(result.vehicle.maintenanceStatus === "ok" || !result.vehicle.maintenanceStatus) ? (
-                <Button variant="outline" className={ACTION_TILE_CLASS} onClick={() => setScheduleMaintenanceOpen(true)} data-testid="button-scan-maintenance-start">
+                <Button variant="outline" className={ACTION_TILE_CLASS} onClick={() => { setEditingMaintenance(null); setScheduleMaintenanceOpen(true); }} data-testid="button-scan-maintenance-start">
                   <Wrench />
                   {t("scanPage.actions.startMaintenance")}
                 </Button>
@@ -492,11 +506,16 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
       {result?.type === "vehicle" && (
         <ScheduleMaintenanceDialog
           open={scheduleMaintenanceOpen}
-          onOpenChange={setScheduleMaintenanceOpen}
+          onOpenChange={(open) => {
+            setScheduleMaintenanceOpen(open);
+            if (!open) setEditingMaintenance(null);
+          }}
+          editingReservation={editingMaintenance ?? undefined}
           initialVehicleId={result.vehicle.id}
           initialDate={format(new Date(), "yyyy-MM-dd")}
           onSuccess={() => {
             setScheduleMaintenanceOpen(false);
+            setEditingMaintenance(null);
             invalidateByPrefix("/api/vehicles");
             invalidateByPrefix("/api/reservations");
             if (result.vehicle.barcode) lookup(result.vehicle.barcode);
