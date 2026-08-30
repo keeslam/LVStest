@@ -14,6 +14,7 @@ import { BarcodeSvg } from "@/components/barcodes/barcode-svg";
 import { CameraScannerDialog } from "@/components/barcodes/camera-scanner-dialog";
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
 import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
+import { ScheduleMaintenanceDialog } from "@/components/maintenance/schedule-maintenance-dialog";
 import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
 import { InlineDocumentUpload } from "@/components/documents/inline-document-upload";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
@@ -68,6 +69,9 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
   const [pickupOpen, setPickupOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  // "Naar onderhoud" opens the real maintenance scheduler so the workshop
+  // visit lands on the maintenance calendar as a trackable maintenance_block.
+  const [scheduleMaintenanceOpen, setScheduleMaintenanceOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: recentScans } = useQuery<ScanEvent[]>({
@@ -340,7 +344,7 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
                 </Button>
               </InlineDocumentUpload>
               {(result.vehicle.maintenanceStatus === "ok" || !result.vehicle.maintenanceStatus) ? (
-                <Button variant="outline" onClick={() => maintenanceMutation.mutate({ vehicleId: result.vehicle.id, status: "in_service" })} disabled={maintenanceMutation.isPending} data-testid="button-scan-maintenance-start">
+                <Button variant="outline" onClick={() => setScheduleMaintenanceOpen(true)} data-testid="button-scan-maintenance-start">
                   <Wrench className="h-4 w-4 mr-2" />
                   {t("scanPage.actions.startMaintenance")}
                 </Button>
@@ -429,6 +433,21 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
           <ReturnDialog open={returnOpen} onOpenChange={setReturnOpen} reservation={handoverReservation}
             onSuccess={() => { setReturnOpen(false); if (result?.type === "vehicle" && result.vehicle.barcode) lookup(result.vehicle.barcode); }} />
         </>
+      )}
+
+      {result?.type === "vehicle" && (
+        <ScheduleMaintenanceDialog
+          open={scheduleMaintenanceOpen}
+          onOpenChange={setScheduleMaintenanceOpen}
+          initialVehicleId={result.vehicle.id}
+          initialDate={format(new Date(), "yyyy-MM-dd")}
+          onSuccess={() => {
+            setScheduleMaintenanceOpen(false);
+            invalidateByPrefix("/api/vehicles");
+            invalidateByPrefix("/api/reservations");
+            if (result.vehicle.barcode) lookup(result.vehicle.barcode);
+          }}
+        />
       )}
     </>
   );

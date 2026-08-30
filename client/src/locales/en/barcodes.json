@@ -35,7 +35,7 @@
       "startReturn": "Start return",
       "addExpense": "Log expense",
       "uploadDocument": "Upload document",
-      "startMaintenance": "Send to maintenance",
+      "startMaintenance": "Schedule maintenance",
       "endMaintenance": "Back from maintenance",
       "maintenanceStarted": "Vehicle is now in maintenance",
       "maintenanceEnded": "Vehicle is back from maintenance",
