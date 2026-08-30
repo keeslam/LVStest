@@ -4708,7 +4708,10 @@ export async function registerRoutes(app: Express): Promise<void> {
         await storage.createMaintenanceBlock(
           reservation.vehicleId,
           serviceStartDate,
-          serviceEndDate
+          serviceEndDate,
+          // Carry the renting customer onto the block so the maintenance
+          // calendar and edit dialog show who had the vehicle.
+          reservation.customerId
         );
       }
       

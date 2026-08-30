@@ -97,7 +97,7 @@ export interface IStorage {
   updateLegacyNotesWithVehicleDetails(): Promise<number>;
   closeReplacementReservation(replacementReservationId: number, endDate: string): Promise<Reservation | undefined>;
   markVehicleForService(vehicleId: number, maintenanceStatus: string, maintenanceNote?: string): Promise<Vehicle | undefined>;
-  createMaintenanceBlock(vehicleId: number, startDate: string, endDate?: string): Promise<Reservation>;
+  createMaintenanceBlock(vehicleId: number, startDate: string, endDate?: string, customerId?: number | null): Promise<Reservation>;
   closeMaintenanceBlock(blockReservationId: number, endDate: string): Promise<Reservation | undefined>;
   getSpareVehicleForVehicle(vehicleId: number): Promise<{ spareVehicle: Vehicle; replacementReservation: Reservation; customer: Customer | null; originalReservation: Reservation } | null>;
   getActingAsSpareInfo(vehicleId: number): Promise<{ originalVehicle: Vehicle; originalReservation: Reservation; replacementReservation: Reservation; customer: Customer | null } | null>;
@@ -2084,14 +2084,14 @@ export class MemStorage implements IStorage {
     return updatedVehicle;
   }
   
-  async createMaintenanceBlock(vehicleId: number, startDate: string, endDate?: string): Promise<Reservation> {
+  async createMaintenanceBlock(vehicleId: number, startDate: string, endDate?: string, customerId?: number | null): Promise<Reservation> {
     const id = this.reservationId++;
     const now = new Date();
-    
+
     const maintenanceBlock: Reservation = {
       id,
       vehicleId,
-      customerId: 0, // System reservation, no customer
+      customerId: customerId ?? 0, // Renting customer if known, else system reservation
       startDate,
       endDate: endDate || null,
       status: 'active',

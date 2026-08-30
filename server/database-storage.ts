@@ -3247,10 +3247,10 @@ export class DatabaseStorage implements IStorage {
     return updatedVehicle || undefined;
   }
 
-  async createMaintenanceBlock(vehicleId: number, startDate: string, endDate?: string): Promise<Reservation> {
+  async createMaintenanceBlock(vehicleId: number, startDate: string, endDate?: string, customerId?: number | null): Promise<Reservation> {
     const maintenanceData: InsertReservation = {
       vehicleId,
-      customerId: null,
+      customerId: customerId ?? null,
       startDate,
       endDate: endDate || null,
       status: 'active',

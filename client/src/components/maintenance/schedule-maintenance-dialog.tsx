@@ -219,7 +219,7 @@ export function ScheduleMaintenanceDialog({
   // Fetch all reservations to check for active rentals (for auto-filling customer)
   const { data: activeReservations = [] } = useQuery<any[]>({
     queryKey: ['/api/reservations'],
-    enabled: open && !editingReservation, // Only for new maintenance, not editing
+    enabled: open, // Also when editing: blocks saved without a customer get the renting customer filled in
   });
 
   // Watch vehicle and date for auto-filling customer
@@ -242,8 +242,10 @@ export function ScheduleMaintenanceDialog({
       return check >= start && check <= end;
     };
     
-    // Only auto-fill for new maintenance (not editing) and when both vehicle and date are selected
-    if (!editingReservation && watchedVehicleId && watchedScheduledDate && activeReservations.length > 0) {
+    // Auto-fill when vehicle and date are selected. Also runs while editing a
+    // block that has no customer yet — the guard below never overrides a
+    // customer that is already set on the block or picked by the user.
+    if (watchedVehicleId && watchedScheduledDate && activeReservations.length > 0) {
       const vehicleIdNum = parseInt(watchedVehicleId);
       
       // Find active rental for this vehicle on this date
@@ -268,9 +270,6 @@ export function ScheduleMaintenanceDialog({
         // No active rental, clear active customer
         setActiveCustomer(null);
       }
-    } else if (editingReservation) {
-      // Clear active customer when editing
-      setActiveCustomer(null);
     }
   }, [watchedVehicleId, watchedScheduledDate, activeReservations, editingReservation, customers, form]);
 
