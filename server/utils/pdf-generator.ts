@@ -9,6 +9,8 @@ import { nl } from "date-fns/locale";
 import * as fs from 'fs';
 import * as path from 'path';
 import { PDFDocument, rgb, StandardFonts, TextAlignment } from 'pdf-lib';
+import { formatReservationBarcode } from '../../shared/barcode';
+import { renderBarcodePng } from './barcode-png';
 
 /**
  * Format a license plate consistently throughout the application
@@ -500,10 +502,28 @@ export async function generateRentalContractFromTemplate(reservation: Reservatio
     } else {
       console.log('No template fields found');
     }
-    
+
+    // Draw the reservation barcode top-right of page 1 (never fail contract
+    // generation because of the barcode).
+    try {
+      const barcodePng = renderBarcodePng(formatReservationBarcode(reservation.id));
+      const barcodeImage = await pdfDoc.embedPng(barcodePng);
+      const scale = 0.5;
+      const scaledDims = barcodeImage.scale(scale);
+      const { width: pageWidth, height: pageHeight } = page.getSize();
+      page.drawImage(barcodeImage, {
+        x: pageWidth - scaledDims.width - 24,
+        y: pageHeight - scaledDims.height - 20,
+        width: scaledDims.width,
+        height: scaledDims.height,
+      });
+    } catch (e) {
+      console.warn('Contract barcode skipped:', e);
+    }
+
     // Save the PDF
     const pdfBytes = await pdfDoc.save();
-    
+
     // Return the PDF as a buffer
     return Buffer.from(pdfBytes);
   } catch (error) {
@@ -677,10 +697,28 @@ export async function generateRentalContract(reservation: Reservation): Promise<
       font: helveticaFont,
       color: textColor,
     });
-    
+
+    // Draw the reservation barcode top-right of page 1 (never fail contract
+    // generation because of the barcode).
+    try {
+      const barcodePng = renderBarcodePng(formatReservationBarcode(reservation.id));
+      const barcodeImage = await pdfDoc.embedPng(barcodePng);
+      const scale = 0.5;
+      const scaledDims = barcodeImage.scale(scale);
+      const { width: pageWidth, height: pageHeight } = page.getSize();
+      page.drawImage(barcodeImage, {
+        x: pageWidth - scaledDims.width - 24,
+        y: pageHeight - scaledDims.height - 20,
+        width: scaledDims.width,
+        height: scaledDims.height,
+      });
+    } catch (e) {
+      console.warn('Contract barcode skipped:', e);
+    }
+
     // Save the PDF
     const pdfBytes = await pdfDoc.save();
-    
+
     // Return the PDF as a buffer
     return Buffer.from(pdfBytes);
   } catch (error) {
