@@ -70,6 +70,19 @@
       "title": "Recente scans",
       "empty": "Nog geen scans",
       "noMatch": "geen match"
+    },
+    "maintenance": {
+      "heading": "Onderhoud",
+      "openButton": "Onderhoudsblok openen",
+      "vehicleStatus": {
+        "needs_service": "Onderhoud nodig",
+        "in_service": "In onderhoud"
+      },
+      "blockStatus": {
+        "scheduled": "Gepland",
+        "in": "In werkplaats",
+        "out": "Afgerond"
+      }
     }
   },
   "camera": {

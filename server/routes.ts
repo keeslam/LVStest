@@ -1501,8 +1501,23 @@ export async function registerRoutes(app: Express): Promise<void> {
       // so a scanned barcode shows the same active/upcoming rental as the vehicle
       // dialog: only standard rentals count, and "upcoming" is any future
       // non-cancelled reservation regardless of its workflow status.
-      const reservations = (await storage.getReservationsByVehicle(vehicle.id))
-        .filter(r => !r.deletedAt && r.type === "standard");
+      const allReservations = (await storage.getReservationsByVehicle(vehicle.id))
+        .filter(r => !r.deletedAt);
+      const reservations = allReservations.filter(r => r.type === "standard");
+
+      // Nearest open maintenance block (not completed/cancelled), so scanning
+      // a vehicle that's in — or headed to — the workshop shows it. Projection
+      // only; blocks carry no customer data anyway.
+      const maintenanceBlock = allReservations
+        .filter(r => r.type === "maintenance_block" && r.maintenanceStatus !== "out" && r.status !== "cancelled")
+        .sort((a, b) => a.startDate.localeCompare(b.startDate))[0] ?? null;
+      const activeMaintenance = maintenanceBlock ? {
+        id: maintenanceBlock.id,
+        startDate: maintenanceBlock.startDate,
+        endDate: maintenanceBlock.endDate,
+        maintenanceStatus: maintenanceBlock.maintenanceStatus,
+        maintenanceCategory: maintenanceBlock.maintenanceCategory,
+      } : null;
 
       const ACTIVE_STATUSES = ["picked_up", "booked", "rented", "confirmed", "pending"];
       const activeReservation = reservations.find(r =>
@@ -1536,6 +1551,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         activeReservation: projectReservationForScan(activeReservation),
         upcomingReservation: projectReservationForScan(upcomingReservation),
         activeTransport,
+        activeMaintenance,
         ...(scannedSpareKey ? { scannedSpareKey: true } : {}),
       });
     } catch (error) {

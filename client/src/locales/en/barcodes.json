@@ -70,6 +70,19 @@
       "title": "Recent scans",
       "empty": "No scans yet",
       "noMatch": "no match"
+    },
+    "maintenance": {
+      "heading": "Maintenance",
+      "openButton": "Open maintenance block",
+      "vehicleStatus": {
+        "needs_service": "Needs service",
+        "in_service": "In service"
+      },
+      "blockStatus": {
+        "scheduled": "Scheduled",
+        "in": "In workshop",
+        "out": "Completed"
+      }
     }
   },
   "camera": {

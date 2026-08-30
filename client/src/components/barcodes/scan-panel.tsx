@@ -43,8 +43,17 @@ type ScanTransport = {
   destinationCity: string | null;
 };
 
+// Open maintenance block for the scanned vehicle (projection, no PII).
+type ScanMaintenance = {
+  id: number;
+  startDate: string;
+  endDate: string | null;
+  maintenanceStatus: string | null;
+  maintenanceCategory: string | null;
+};
+
 type LookupResult =
-  | { type: "vehicle"; vehicle: Vehicle; activeReservation: ScanReservation | null; upcomingReservation: ScanReservation | null; activeTransport: ScanTransport | null; scannedSpareKey?: boolean }
+  | { type: "vehicle"; vehicle: Vehicle; activeReservation: ScanReservation | null; upcomingReservation: ScanReservation | null; activeTransport: ScanTransport | null; activeMaintenance: ScanMaintenance | null; scannedSpareKey?: boolean }
   | { type: "reservation"; reservation: ScanReservation; vehicle: Vehicle | null };
 
 // Square, touch-friendly tiles for the scan card's action row: icon above
@@ -291,6 +300,40 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
               : result.upcomingReservation
                 ? reservationCard(result.upcomingReservation, "scanPage.upcomingReservation")
                 : <p className="text-muted-foreground text-sm">{t("scanPage.noReservation")}</p>}
+
+            {(result.activeMaintenance || (result.vehicle.maintenanceStatus && result.vehicle.maintenanceStatus !== "ok")) && (
+              <div className="border border-amber-200 bg-amber-50 rounded-md p-4 space-y-2">
+                <h3 className="text-sm font-medium text-amber-800 flex items-center gap-2">
+                  <Wrench className="h-4 w-4" />
+                  {t("scanPage.maintenance.heading")}
+                </h3>
+                <div className="flex flex-wrap items-center gap-2 text-sm text-amber-900">
+                  {result.vehicle.maintenanceStatus && result.vehicle.maintenanceStatus !== "ok" && (
+                    <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
+                      {t(`scanPage.maintenance.vehicleStatus.${result.vehicle.maintenanceStatus}`, { defaultValue: result.vehicle.maintenanceStatus })}
+                    </Badge>
+                  )}
+                  {result.activeMaintenance && (
+                    <>
+                      {result.activeMaintenance.maintenanceStatus && (
+                        <Badge variant="outline" className="border-amber-300 text-amber-800">
+                          {t(`scanPage.maintenance.blockStatus.${result.activeMaintenance.maintenanceStatus}`, { defaultValue: result.activeMaintenance.maintenanceStatus })}
+                        </Badge>
+                      )}
+                      <span>
+                        {formatDate(result.activeMaintenance.startDate)}
+                        {result.activeMaintenance.endDate ? ` — ${formatDate(result.activeMaintenance.endDate)}` : ""}
+                      </span>
+                    </>
+                  )}
+                </div>
+                {result.activeMaintenance && (
+                  <Button size="sm" variant="outline" className="border-amber-300" onClick={() => openReservationDialog(result.activeMaintenance!.id)} data-testid="button-scan-open-maintenance">
+                    {t("scanPage.maintenance.openButton")}
+                  </Button>
+                )}
+              </div>
+            )}
 
             {result.activeTransport && (
               <div className="border rounded-md p-4 space-y-2">
