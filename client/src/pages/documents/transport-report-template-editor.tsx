@@ -1288,7 +1288,7 @@ const TransportReportTemplateEditor = ({ onClose }: TransportReportTemplateEdito
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex h-6 items-center justify-between">
                   <Label>{t('templateEditor.selectTemplateLabel')}</Label>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="sm" className="h-6 px-2" title={t('templateEditor.newTemplateButton')} onClick={() => { setNewTemplateName(''); setIsCreateDialogOpen(true); }} data-testid="button-new-template">
@@ -1363,7 +1363,9 @@ const TransportReportTemplateEditor = ({ onClose }: TransportReportTemplateEdito
                 </Select>
               </div>
               <div className="space-y-4">
-                <Label>{t('templateEditor.currentBackgroundLabel')}</Label>
+                <div className="flex h-6 items-center">
+                  <Label>{t('templateEditor.currentBackgroundLabel')}</Label>
+                </div>
                 <div className="flex items-center gap-2 p-2 border rounded-md bg-muted/50">
                   <FileText className="h-4 w-4 text-muted-foreground" />
                   <div className="flex-1 min-w-0">
@@ -1379,14 +1381,18 @@ const TransportReportTemplateEditor = ({ onClose }: TransportReportTemplateEdito
               </div>
               {currentTemplate && !currentTemplate.isDefault && (
                 <div className="space-y-4">
-                  <Label>{t('templateEditor.setAsDefaultLabel')}</Label>
+                  <div className="flex h-6 items-center">
+                    <Label>{t('templateEditor.setAsDefaultLabel')}</Label>
+                  </div>
                   <Button variant="outline" onClick={handleSetDefaultTemplate} className="w-full">
                     {t('templateEditor.makeDefaultButton')}
                   </Button>
                 </div>
               )}
               <div className="space-y-4">
-                <Label>{t('templateEditor.moveModeLabel')}</Label>
+                <div className="flex h-6 items-center">
+                  <Label>{t('templateEditor.moveModeLabel')}</Label>
+                </div>
                 <div className="flex items-center space-x-2">
                   <Switch checked={isMoving} onCheckedChange={setIsMoving} id="move-mode" />
                   <Label htmlFor="move-mode">

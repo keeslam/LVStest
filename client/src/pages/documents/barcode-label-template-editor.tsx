@@ -1001,7 +1001,7 @@ const BarcodeLabelTemplateEditor = ({ onClose }: BarcodeLabelTemplateEditorProps
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex h-6 items-center justify-between">
                   <Label>{t('templateEditor.selectTemplateLabel')}</Label>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="sm" className="h-6 px-2" title={t('templateEditor.newTemplateButton')} onClick={() => { setNewTemplateName(''); setIsCreateDialogOpen(true); }} data-testid="button-new-template">
@@ -1075,44 +1075,49 @@ const BarcodeLabelTemplateEditor = ({ onClose }: BarcodeLabelTemplateEditorProps
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-4">
-                <Label>{t('barcodeLabelEditor.labelSizeLabel')}</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-4">
+                  <div className="flex h-6 items-center">
                     <Label className="text-xs">{t('barcodeLabelEditor.labelWidthLabel')}</Label>
-                    <Input
-                      type="number"
-                      min={MIN_LABEL_WIDTH_MM}
-                      max={MAX_LABEL_WIDTH_MM}
-                      value={labelWidthMm}
-                      onChange={(e) => handleLabelSizeChange('labelWidthMm', Number(e.target.value))}
-                      data-testid="input-label-width-mm"
-                    />
                   </div>
-                  <div>
+                  <Input
+                    type="number"
+                    min={MIN_LABEL_WIDTH_MM}
+                    max={MAX_LABEL_WIDTH_MM}
+                    value={labelWidthMm}
+                    onChange={(e) => handleLabelSizeChange('labelWidthMm', Number(e.target.value))}
+                    data-testid="input-label-width-mm"
+                  />
+                </div>
+                <div className="space-y-4">
+                  <div className="flex h-6 items-center">
                     <Label className="text-xs">{t('barcodeLabelEditor.labelHeightLabel')}</Label>
-                    <Input
-                      type="number"
-                      min={MIN_LABEL_HEIGHT_MM}
-                      max={MAX_LABEL_HEIGHT_MM}
-                      value={labelHeightMm}
-                      onChange={(e) => handleLabelSizeChange('labelHeightMm', Number(e.target.value))}
-                      data-testid="input-label-height-mm"
-                    />
                   </div>
+                  <Input
+                    type="number"
+                    min={MIN_LABEL_HEIGHT_MM}
+                    max={MAX_LABEL_HEIGHT_MM}
+                    value={labelHeightMm}
+                    onChange={(e) => handleLabelSizeChange('labelHeightMm', Number(e.target.value))}
+                    data-testid="input-label-height-mm"
+                  />
                 </div>
               </div>
               {currentTemplate && !currentTemplate.isDefault && (
                 <div className="space-y-4">
-                  <Label>{t('templateEditor.setAsDefaultLabel')}</Label>
+                  <div className="flex h-6 items-center">
+                    <Label>{t('templateEditor.setAsDefaultLabel')}</Label>
+                  </div>
                   <Button variant="outline" onClick={handleSetDefaultTemplate} className="w-full">
                     {t('templateEditor.makeDefaultButton')}
                   </Button>
                 </div>
               )}
               <div className="space-y-4">
-                <Label>{t('templateEditor.moveModeLabel')}</Label>
-                <div className="flex items-center space-x-2">
+                <div className="flex h-6 items-center">
+                  <Label>{t('templateEditor.moveModeLabel')}</Label>
+                </div>
+                <div className="flex h-10 items-center space-x-2">
                   <Switch checked={isMoving} onCheckedChange={setIsMoving} id="move-mode" />
                   <Label htmlFor="move-mode">
                     {isMoving ? t('templateEditor.moveModeActive') : t('templateEditor.moveModeInactive')}
@@ -1120,8 +1125,10 @@ const BarcodeLabelTemplateEditor = ({ onClose }: BarcodeLabelTemplateEditorProps
                 </div>
               </div>
               <div className="space-y-4">
-                <Label>{t('templateEditor.snapToGridLabel', { size: gridSize })}</Label>
-                <div className="flex items-center space-x-2">
+                <div className="flex h-6 items-center">
+                  <Label>{t('templateEditor.snapToGridLabel', { size: gridSize })}</Label>
+                </div>
+                <div className="flex h-10 items-center space-x-2">
                   <Switch checked={snapToGrid} onCheckedChange={setSnapToGrid} id="snap-grid" />
                   <Input type="number" value={gridSize} onChange={(e) => {
                     const value = Number(e.target.value);
