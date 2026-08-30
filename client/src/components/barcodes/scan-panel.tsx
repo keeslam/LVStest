@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Truck, CalendarRange, User, RotateCcw, CalendarPlus, ShieldCheck, FileCheck, LogOut, LogIn, Receipt, Upload, Wrench, ChevronDown, ChevronUp, History } from "lucide-react";
+import { Camera, Truck, CalendarRange, User, RotateCcw, CalendarPlus, ShieldCheck, FileCheck, LogOut, LogIn, Receipt, Wrench, ChevronDown, ChevronUp, History, Car, FileUp, Undo2, Check, Play } from "lucide-react";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { isTrueValue } from "@/lib/utils";
@@ -296,6 +296,11 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
                   <Badge variant="outline">{t(`scanPage.transport.status.${result.activeTransport.status}`, { defaultValue: result.activeTransport.status })}</Badge>
                 </div>
                 <Button size="sm" onClick={() => transportMutation.mutate({ id: result.activeTransport!.id, status: result.activeTransport!.status === "scheduled" ? "in_progress" : "completed" })} disabled={transportMutation.isPending} data-testid="button-scan-transport-advance">
+                  {result.activeTransport.status === "scheduled" ? (
+                    <Play className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Check className="h-4 w-4 mr-2" />
+                  )}
                   {result.activeTransport.status === "scheduled" ? t("scanPage.transport.start") : t("scanPage.transport.complete")}
                 </Button>
               </div>
@@ -303,6 +308,7 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
 
             <div className="flex flex-wrap gap-2 pt-2 border-t">
               <Button onClick={() => openVehicleDialog(result.vehicle.id)} data-testid="button-open-vehicle">
+                <Car className="h-4 w-4 mr-2" />
                 {t("scanPage.openVehicleButton")}
               </Button>
               {!result.activeReservation && !result.upcomingReservation && (
@@ -339,7 +345,7 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
               </ExpenseAddDialog>
               <InlineDocumentUpload vehicleId={result.vehicle.id} reservationId={result.activeReservation?.id}>
                 <Button variant="outline" data-testid="button-scan-upload">
-                  <Upload className="h-4 w-4 mr-2" />
+                  <FileUp className="h-4 w-4 mr-2" />
                   {t("scanPage.actions.uploadDocument")}
                 </Button>
               </InlineDocumentUpload>
@@ -350,7 +356,7 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
                 </Button>
               ) : (
                 <Button variant="outline" onClick={() => maintenanceMutation.mutate({ vehicleId: result.vehicle.id, status: "ok" })} disabled={maintenanceMutation.isPending} data-testid="button-scan-maintenance-end">
-                  <Wrench className="h-4 w-4 mr-2" />
+                  <Undo2 className="h-4 w-4 mr-2" />
                   {t("scanPage.actions.endMaintenance")}
                 </Button>
               )}
