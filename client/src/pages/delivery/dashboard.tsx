@@ -581,7 +581,10 @@ export default function DeliveryDashboard() {
           rows and reservation-driven deliveries alike, since a delivery is a
           transport too. "All" shows everything; the rest filter by type. */}
       <Tabs value={activeTransportType} onValueChange={setActiveTransportType} className="space-y-4">
-        <TabsList>
+        {/* On phones the six type tabs overflow the viewport; let the bar
+            scroll sideways instead of clipping. Desktop is unaffected. */}
+        <div className="overflow-x-auto">
+        <TabsList className="w-max">
           <TabsTrigger value="all" data-testid="tab-all-transports">
             {t('dashboardPage.tabAllTransports', { count: typeCounts.all })}
           </TabsTrigger>
@@ -591,6 +594,7 @@ export default function DeliveryDashboard() {
             </TabsTrigger>
           ))}
         </TabsList>
+        </div>
 
         <Card>
           <CardHeader>
