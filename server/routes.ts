@@ -1545,7 +1545,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Recent scan history for the ScanPanel's "recent scans" list.
-  app.get("/api/scan-events", requireAuth, async (req: Request, res: Response) => {
+  app.get("/api/scan-events", requireAuth, hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
     try {
       const events = await storage.getRecentScanEvents(20);
       return res.json(events);
