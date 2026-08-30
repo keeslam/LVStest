@@ -266,24 +266,38 @@ interface QuickAction {
   primary?: boolean;
 }
 
+// The five most-used actions render as large tiles in the top row, in this
+// exact order; everything else lands in the compact second row.
 const quickActions: QuickAction[] = [
   {
     label: "New Reservation",
     dialog: "new-reservation",
     icon: "calendar-plus",
-    primary: false,
+    primary: true,
+  },
+  {
+    label: "Start Damage Check",
+    dialog: "interactive-damage-check",
+    icon: "hammer",
+    primary: true,
   },
   {
     label: "Add Vehicle",
     dialog: "add-vehicle",
     icon: "car",
-    primary: false,
+    primary: true,
   },
   {
     label: "Add Customer",
     dialog: "add-customer",
     icon: "user-plus",
-    primary: false,
+    primary: true,
+  },
+  {
+    label: "Scan RDW APK Dates",
+    icon: "refresh-cw",
+    dialog: "rdw-apk-scan",
+    primary: true,
   },
   {
     label: "Upload Document",
@@ -316,12 +330,6 @@ const quickActions: QuickAction[] = [
     primary: false,
   },
   {
-    label: "Start Damage Check",
-    dialog: "interactive-damage-check",
-    icon: "hammer",
-    primary: false,
-  },
-  {
     label: "Upload APK Report",
     icon: "upload",
     dialog: "apk-report",
@@ -333,13 +341,12 @@ const quickActions: QuickAction[] = [
     dialog: "apk-notifications",
     primary: false,
   },
-  {
-    label: "Scan RDW APK Dates",
-    icon: "refresh-cw",
-    dialog: "rdw-apk-scan",
-    primary: false,
-  },
 ];
+
+// Shared styling for the top-row tiles so the five primary branches stay in sync.
+const PRIMARY_TILE_CLASS =
+  "h-auto w-full flex-col gap-2 py-4 px-2 text-sm font-semibold whitespace-normal text-center bg-primary-50 text-primary-600 hover:bg-primary-100 border-primary-100 [&_svg]:size-8";
+const PRIMARY_TILE_ICON_CLASS = "h-8 w-8";
 
 export function QuickActions() {
   const { openRdwApkChangesDialog } = useGlobalDialog();
@@ -879,8 +886,11 @@ export function QuickActions() {
           <CardTitle className="text-lg font-medium text-gray-800">{t('quickActions.title')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-2">
-          {quickActions.map((action) => {
+          {/* Top row: the five most-used actions as large tiles; second row:
+              the remaining actions as compact buttons. One shared renderer so
+              every action keeps its own dialog wiring. */}
+          {(() => {
+          const renderAction = (action: QuickAction) => {
             // For vehicle-based reservation status dialog
             if (action.dialog === "vehicle-reservation-status") {
               return (
@@ -902,12 +912,8 @@ export function QuickActions() {
               return (
                 <Dialog key={action.label} open={reservationDialogOpen} onOpenChange={setReservationDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="bg-primary-50 text-primary-600 hover:bg-primary-100"
-                      size="sm"
-                    >
-                      <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
+                    <Button variant="outline" className={PRIMARY_TILE_CLASS}>
+                      <ActionIcon name={action.icon} className={PRIMARY_TILE_ICON_CLASS} />
                       {t(`quickActions.buttons.${action.dialog}`)}
                     </Button>
                   </DialogTrigger>
@@ -938,12 +944,8 @@ export function QuickActions() {
               return (
                 <Dialog key={action.label} open={vehicleDialogOpen} onOpenChange={setVehicleDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="bg-primary-50 text-primary-600 hover:bg-primary-100"
-                      size="sm"
-                    >
-                      <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
+                    <Button variant="outline" className={PRIMARY_TILE_CLASS}>
+                      <ActionIcon name={action.icon} className={PRIMARY_TILE_ICON_CLASS} />
                       {t(`quickActions.buttons.${action.dialog}`)}
                     </Button>
                   </DialogTrigger>
@@ -973,12 +975,8 @@ export function QuickActions() {
               return (
                 <Dialog key={action.label} open={customerDialogOpen} onOpenChange={setCustomerDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="bg-primary-50 text-primary-600 hover:bg-primary-100"
-                      size="sm"
-                    >
-                      <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
+                    <Button variant="outline" className={PRIMARY_TILE_CLASS}>
+                      <ActionIcon name={action.icon} className={PRIMARY_TILE_ICON_CLASS} />
                       {t(`quickActions.buttons.${action.dialog}`)}
                     </Button>
                   </DialogTrigger>
@@ -1927,11 +1925,10 @@ export function QuickActions() {
                 <Button
                   key={action.label}
                   variant="outline"
-                  className="bg-primary-50 text-primary-600 hover:bg-primary-100"
-                  size="sm"
+                  className={PRIMARY_TILE_CLASS}
                   onClick={() => setDamageCheckScanOpen(true)}
                 >
-                  <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
+                  <ActionIcon name={action.icon} className={PRIMARY_TILE_ICON_CLASS} />
                   {t(`quickActions.buttons.${action.dialog}`)}
                 </Button>
               );
@@ -1945,16 +1942,15 @@ export function QuickActions() {
                 <Button
                   key={action.label}
                   variant="outline"
-                  className="bg-primary-50 text-primary-600 hover:bg-primary-100"
-                  size="sm"
+                  className={PRIMARY_TILE_CLASS}
                   onClick={() => startRdwScanMutation.mutate()}
                   disabled={isBusy}
                   data-testid="button-scan-rdw-apk-dates"
                 >
                   {isBusy ? (
-                    <RotateCw className="mr-1 h-4 w-4 animate-spin" />
+                    <RotateCw className={`${PRIMARY_TILE_ICON_CLASS} animate-spin`} />
                   ) : (
-                    <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
+                    <ActionIcon name={action.icon} className={PRIMARY_TILE_ICON_CLASS} />
                   )}
                   {isBusy
                     ? t("quickActions.rdwScanInProgress")
@@ -1993,8 +1989,19 @@ export function QuickActions() {
                 {t(`quickActions.buttons.${action.dialog}`)}
               </Button>
             );
-          })}
-          </div>
+          };
+
+          return (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+                {quickActions.filter(a => a.primary).map(renderAction)}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {quickActions.filter(a => !a.primary).map(renderAction)}
+              </div>
+            </>
+          );
+          })()}
         </CardContent>
       </Card>
       
