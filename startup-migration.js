@@ -863,6 +863,22 @@ async function runMigrations() {
       )`
     );
 
+    // Scan event history (barcode "recent scans" list). One row per
+    // GET /api/barcodes/:code lookup, hit or miss.
+    await createTableIfNotExists(
+      'scan_events',
+      `CREATE TABLE scan_events (
+        id SERIAL PRIMARY KEY,
+        code TEXT NOT NULL,
+        match_type TEXT NOT NULL,
+        vehicle_id INTEGER,
+        reservation_id INTEGER,
+        license_plate TEXT,
+        scanned_by TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )`
+    );
+
     // Recycle bin for vehicle deletes. Without this table a delete cannot be
     // recorded or undone, so it must exist before the app serves traffic.
     await createTableIfNotExists('deleted_records', `

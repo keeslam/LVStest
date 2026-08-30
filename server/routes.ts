@@ -1428,6 +1428,18 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Resolve any scanned code: stored vehicle barcode, derived RES- reservation
   // code, or (fallback) a license plate typed/scanned manually.
   app.get("/api/barcodes/:code", requireAuth, hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
+    const rawCode = req.params.code.trim();
+    const scannedBy = (req.user as any)?.username ?? null;
+    const logScan = (matchType: "vehicle" | "reservation" | "spare_key" | "none", opts?: { vehicleId?: number | null; reservationId?: number | null; licensePlate?: string | null }) => {
+      storage.logScanEvent({
+        code: rawCode,
+        matchType,
+        vehicleId: opts?.vehicleId ?? null,
+        reservationId: opts?.reservationId ?? null,
+        licensePlate: opts?.licensePlate ?? null,
+        scannedBy,
+      }).catch(() => {});
+    };
     try {
       // The scan UI only ever renders id/status/startDate/endDate/customer name,
       // but the underlying reservation rows carry the full customer PII
@@ -1447,9 +1459,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (parsed.kind === "reservation") {
         const reservation = await storage.getReservation(parsed.reservationId);
         if (!reservation || reservation.deletedAt) {
+          logScan("none");
           return res.status(404).json({ message: "Reservation not found for this barcode" });
         }
         const vehicle = reservation.vehicleId ? await storage.getVehicle(reservation.vehicleId) : undefined;
+        logScan("reservation", { reservationId: reservation.id, vehicleId: vehicle?.id ?? null, licensePlate: vehicle?.licensePlate ?? null });
         return res.json({ type: "reservation", reservation: projectReservationForScan(reservation), vehicle: vehicle ?? null });
       }
 
@@ -1478,6 +1492,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         vehicle = all.find(v => v.licensePlate.replace(/[-\s]/g, "").toUpperCase() === plate);
       }
       if (!vehicle) {
+        logScan("none");
         return res.status(404).json({ message: "No vehicle found for this barcode" });
       }
 
@@ -1514,6 +1529,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         destinationCity: transport.destinationCity,
       } : null;
 
+      logScan(scannedSpareKey ? "spare_key" : "vehicle", { vehicleId: vehicle.id, licensePlate: vehicle.licensePlate });
       return res.json({
         type: "vehicle",
         vehicle,
@@ -1525,6 +1541,17 @@ export async function registerRoutes(app: Express): Promise<void> {
     } catch (error) {
       console.error("Barcode lookup failed:", error);
       return res.status(500).json({ message: "Barcode lookup failed" });
+    }
+  });
+
+  // Recent scan history for the ScanPanel's "recent scans" list.
+  app.get("/api/scan-events", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const events = await storage.getRecentScanEvents(20);
+      return res.json(events);
+    } catch (error) {
+      console.error("Failed to fetch scan events:", error);
+      return res.status(500).json({ message: "Failed to fetch scan events" });
     }
   });
 

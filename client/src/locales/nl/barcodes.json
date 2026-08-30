@@ -65,6 +65,11 @@
         "scheduled": "Gepland",
         "in_progress": "Onderweg"
       }
+    },
+    "history": {
+      "title": "Recente scans",
+      "empty": "Nog geen scans",
+      "noMatch": "geen match"
     }
   },
   "camera": {

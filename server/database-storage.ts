@@ -11,6 +11,7 @@ import {
   transportReportTemplates, type TransportReportTemplate, type InsertTransportReportTemplate,
   transportReportTemplateBackgrounds, type TransportReportTemplateBackground, type InsertTransportReportTemplateBackground,
   barcodeLabelTemplates, type BarcodeLabelTemplate, type InsertBarcodeLabelTemplate,
+  scanEvents, type ScanEvent, type InsertScanEvent,
   customNotifications, type CustomNotification, type InsertCustomNotification,
   backupSettings, type BackupSettings, type InsertBackupSettings,
   appSettings, type AppSettings, type InsertAppSettings,
@@ -2640,6 +2641,20 @@ export class DatabaseStorage implements IStorage {
   async deleteBarcodeLabelTemplate(id: number): Promise<boolean> {
     const [deleted] = await db.delete(barcodeLabelTemplates).where(eq(barcodeLabelTemplates.id, id)).returning();
     return !!deleted;
+  }
+
+  // Scan event history — best-effort logging from the barcode lookup route;
+  // a failure here must never break the scan itself, so errors are swallowed.
+  async logScanEvent(event: InsertScanEvent): Promise<void> {
+    try {
+      await db.insert(scanEvents).values(event);
+    } catch (error) {
+      console.warn("Failed to log scan event:", error);
+    }
+  }
+
+  async getRecentScanEvents(limit: number = 20): Promise<ScanEvent[]> {
+    return await db.select().from(scanEvents).orderBy(desc(scanEvents.createdAt)).limit(limit);
   }
 
   async getAllDamageCheckTemplateBackgrounds(): Promise<DamageCheckTemplateBackground[]> {

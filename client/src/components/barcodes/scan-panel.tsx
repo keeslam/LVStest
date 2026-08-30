@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Truck, CalendarRange, User, RotateCcw, CalendarPlus, ShieldCheck, FileCheck, LogOut, LogIn, Receipt, Upload, Wrench } from "lucide-react";
+import { Camera, Truck, CalendarRange, User, RotateCcw, CalendarPlus, ShieldCheck, FileCheck, LogOut, LogIn, Receipt, Upload, Wrench, ChevronDown, ChevronUp, History } from "lucide-react";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { isTrueValue } from "@/lib/utils";
@@ -17,7 +18,7 @@ import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
 import { InlineDocumentUpload } from "@/components/documents/inline-document-upload";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Vehicle, Reservation } from "@shared/schema";
+import { Vehicle, Reservation, ScanEvent } from "@shared/schema";
 
 // The lookup endpoint projects reservations down to only what this panel
 // renders (see server/routes.ts GET /api/barcodes/:code) to avoid leaking
@@ -66,7 +67,13 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
   const [handoverReservation, setHandoverReservation] = useState<Reservation | null>(null);
   const [pickupOpen, setPickupOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const { data: recentScans } = useQuery<ScanEvent[]>({
+    queryKey: ["/api/scan-events"],
+    enabled: active,
+  });
 
   // USB/Bluetooth scanners emulate a keyboard: focus the field when this panel
   // becomes active so a scan lands here without a click. Refocus after each
@@ -108,6 +115,7 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
     } finally {
       setIsLoading(false);
       setCode("");
+      invalidateByPrefix("/api/scan-events");
     }
   };
 
@@ -377,6 +385,42 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
         onOpenChange={setCameraOpen}
         onScan={lookup}
       />
+
+      <div className="border rounded-md">
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full justify-between px-4 py-2 h-auto"
+          onClick={() => setHistoryOpen((open) => !open)}
+          data-testid="button-toggle-scan-history"
+        >
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <History className="h-4 w-4" />
+            {t("scanPage.history.title")}
+          </span>
+          {historyOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
+        {historyOpen && (
+          <div className="px-4 pb-3 space-y-1" data-testid="scan-history-list">
+            {!recentScans || recentScans.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">{t("scanPage.history.empty")}</p>
+            ) : (
+              recentScans.map((scan) => (
+                <div key={scan.id} className="flex items-center gap-3 py-1 text-sm border-t first:border-t-0">
+                  <span className="text-muted-foreground tabular-nums">
+                    {scan.createdAt ? format(new Date(scan.createdAt), "HH:mm") : "—"}
+                  </span>
+                  <span className="font-mono">{scan.code}</span>
+                  <span className="text-muted-foreground">
+                    {scan.licensePlate ? formatLicensePlate(scan.licensePlate) : t("scanPage.history.noMatch")}
+                  </span>
+                  {scan.scannedBy && <span className="ml-auto text-xs text-muted-foreground">{scan.scannedBy}</span>}
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
 
       {handoverReservation && (
         <>

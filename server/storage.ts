@@ -11,6 +11,7 @@ import {
   type TransportReportTemplate, type InsertTransportReportTemplate,
   type TransportReportTemplateBackground, type InsertTransportReportTemplateBackground,
   type BarcodeLabelTemplate, type InsertBarcodeLabelTemplate,
+  type ScanEvent, type InsertScanEvent,
   customNotifications, type CustomNotification, type InsertCustomNotification,
   appSettings, type AppSettings, type InsertAppSettings,
   settings, type Settings, type InsertSettings, type UpdateSettings,
@@ -178,6 +179,10 @@ export interface IStorage {
   createBarcodeLabelTemplate(template: InsertBarcodeLabelTemplate): Promise<BarcodeLabelTemplate>;
   updateBarcodeLabelTemplate(id: number, templateData: Partial<InsertBarcodeLabelTemplate>): Promise<BarcodeLabelTemplate | undefined>;
   deleteBarcodeLabelTemplate(id: number): Promise<boolean>;
+
+  // Scan event history (barcode "recent scans" list)
+  logScanEvent(event: InsertScanEvent): Promise<void>;
+  getRecentScanEvents(limit?: number): Promise<ScanEvent[]>;
 
   getAllDamageCheckTemplateBackgrounds(): Promise<DamageCheckTemplateBackground[]>;
   getDamageCheckTemplateBackgrounds(templateId: number): Promise<DamageCheckTemplateBackground[]>;
@@ -2384,6 +2389,14 @@ export class MemStorage implements IStorage {
 
   async executeReport(configuration: any): Promise<any[]> {
     throw new Error('Not implemented in MemStorage');
+  }
+
+  async logScanEvent(event: InsertScanEvent): Promise<void> {
+    // Not persisted in MemStorage; swallow like the DB-backed implementation.
+  }
+
+  async getRecentScanEvents(limit: number = 20): Promise<ScanEvent[]> {
+    return [];
   }
 
 

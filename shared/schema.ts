@@ -885,6 +885,26 @@ export const insertBarcodeLabelTemplateSchema = createInsertSchema(barcodeLabelT
 export type BarcodeLabelTemplate = typeof barcodeLabelTemplates.$inferSelect;
 export type InsertBarcodeLabelTemplate = z.infer<typeof insertBarcodeLabelTemplateSchema>;
 
+// Scan event history — one row per barcode lookup (GET /api/barcodes/:code),
+// win or miss, so a "recent scans" list can show what got scanned and
+// whether it resolved to a vehicle, reservation, or spare key.
+export const scanEvents = pgTable("scan_events", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull(),
+  matchType: text("match_type").notNull(), // 'vehicle' | 'reservation' | 'spare_key' | 'none'
+  vehicleId: integer("vehicle_id"),
+  reservationId: integer("reservation_id"),
+  licensePlate: text("license_plate"),
+  scannedBy: text("scanned_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertScanEventSchema = createInsertSchema(scanEvents)
+  .omit({ id: true, createdAt: true });
+
+export type ScanEvent = typeof scanEvents.$inferSelect;
+export type InsertScanEvent = z.infer<typeof insertScanEventSchema>;
+
 // Custom Notifications table
 export const customNotifications = pgTable("custom_notifications", {
   id: serial("id").primaryKey(),

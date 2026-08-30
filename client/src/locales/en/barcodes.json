@@ -65,6 +65,11 @@
         "scheduled": "Scheduled",
         "in_progress": "En route"
       }
+    },
+    "history": {
+      "title": "Recent scans",
+      "empty": "No scans yet",
+      "noMatch": "no match"
     }
   },
   "camera": {
