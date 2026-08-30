@@ -20,6 +20,7 @@ import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { BarcodeSvg } from "./barcode-svg";
 import { printKeyLabels } from "./key-label-print";
 import { formatLicensePlate } from "@/lib/format-utils";
+import { formatSpareKeyBarcode } from "@shared/barcode";
 
 interface VehicleBarcodeDialogProps {
   vehicle: Vehicle;
@@ -112,6 +113,15 @@ export function VehicleBarcodeDialog({ vehicle, open, onOpenChange }: VehicleBar
           >
             <Printer className="h-4 w-4 mr-2" />
             {t("label.printKeyLabel")}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => printKeyLabels([{ ...vehicle, barcodeOverride: formatSpareKeyBarcode(vehicle.id) }], selectedTemplate)}
+            disabled={!vehicle.barcode}
+            data-testid="button-print-spare-key-label"
+          >
+            <Printer className="h-4 w-4 mr-2" />
+            {t("label.printSpareKeyLabel")}
           </Button>
           {canRegenerate && (
             <AlertDialog>

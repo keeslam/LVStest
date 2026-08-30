@@ -42,7 +42,7 @@ type ScanTransport = {
 };
 
 type LookupResult =
-  | { type: "vehicle"; vehicle: Vehicle; activeReservation: ScanReservation | null; upcomingReservation: ScanReservation | null; activeTransport: ScanTransport | null }
+  | { type: "vehicle"; vehicle: Vehicle; activeReservation: ScanReservation | null; upcomingReservation: ScanReservation | null; activeTransport: ScanTransport | null; scannedSpareKey?: boolean }
   | { type: "reservation"; reservation: ScanReservation; vehicle: Vehicle | null };
 
 interface ScanPanelProps {
@@ -222,7 +222,12 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
                 <Truck className="h-5 w-5 text-primary" />
                 {result.vehicle.brand} {result.vehicle.model}
               </span>
-              {statusBadge(result.vehicle)}
+              <span className="flex items-center gap-2">
+                {result.scannedSpareKey && (
+                  <Badge className="bg-amber-100 text-amber-800">{t("scanPage.spareKeyBadge")}</Badge>
+                )}
+                {statusBadge(result.vehicle)}
+              </span>
             </CardTitle>
             <CardDescription>
               {t("scanPage.licensePlateLabel")}: {formatLicensePlate(result.vehicle.licensePlate)}

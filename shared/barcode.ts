@@ -8,19 +8,28 @@
 export const VEHICLE_BARCODE_PREFIX = "VEH-";
 export const RESERVATION_BARCODE_PREFIX = "RES-";
 
-// VEH-000123 or VEH-000123-R2 (revision suffix added on regeneration so the
-// old physical label stops matching after an explicit admin regenerate)
-const VEHICLE_BARCODE_RE = /^VEH-(\d{6,})(?:-R(\d+))?$/;
+// VEH-000123, VEH-000123-R2 (revision suffix added on regeneration so the old
+// physical label stops matching after an explicit admin regenerate), or
+// VEH-000123-S / VEH-000123-R2-S (spare-key label; -S always comes after the
+// optional revision).
+const VEHICLE_BARCODE_RE = /^VEH-(\d{6,})(?:-R(\d+))?(?:-S)?$/;
 const RESERVATION_BARCODE_RE = /^RES-(\d{6,})$/;
 
 export type ParsedBarcode =
-  | { kind: "vehicle"; vehicleId: number }
+  | { kind: "vehicle"; vehicleId: number; spareKey?: true }
   | { kind: "reservation"; reservationId: number }
   | { kind: "unknown"; normalized: string };
 
 export function formatVehicleBarcode(vehicleId: number, revision?: number): string {
   const base = `${VEHICLE_BARCODE_PREFIX}${String(vehicleId).padStart(6, "0")}`;
   return revision && revision > 1 ? `${base}-R${revision}` : base;
+}
+
+// Spare-key label for a vehicle's second key. Not stored anywhere (unlike the
+// primary barcode) — derived on demand and validated at lookup time against
+// the vehicle's real stored barcode so a stale/reassigned id doesn't resolve.
+export function formatSpareKeyBarcode(vehicleId: number): string {
+  return `${VEHICLE_BARCODE_PREFIX}${String(vehicleId).padStart(6, "0")}-S`;
 }
 
 export function formatReservationBarcode(reservationId: number): string {
@@ -36,7 +45,12 @@ export function parseBarcode(raw: string): ParsedBarcode {
   const normalized = normalizeScannedCode(raw);
   const vehicleMatch = VEHICLE_BARCODE_RE.exec(normalized);
   if (vehicleMatch) {
-    return { kind: "vehicle", vehicleId: parseInt(vehicleMatch[1], 10) };
+    const spareKey = normalized.endsWith("-S");
+    return {
+      kind: "vehicle",
+      vehicleId: parseInt(vehicleMatch[1], 10),
+      ...(spareKey ? { spareKey: true as const } : {}),
+    };
   }
   const reservationMatch = RESERVATION_BARCODE_RE.exec(normalized);
   if (reservationMatch) {

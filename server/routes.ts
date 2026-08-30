@@ -1453,10 +1453,25 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.json({ type: "reservation", reservation: projectReservationForScan(reservation), vehicle: vehicle ?? null });
       }
 
+      // Spare-key codes (VEH-000123-S) aren't stored anywhere: resolve by id
+      // and only accept if that vehicle's real barcode still starts with the
+      // same padded id, so a stale/reassigned id can't resolve to it.
+      let scannedSpareKey = false;
+      let vehicle;
+      if (parsed.kind === "vehicle" && parsed.spareKey) {
+        const candidate = await storage.getVehicle(parsed.vehicleId);
+        if (candidate?.barcode?.startsWith("VEH-" + String(parsed.vehicleId).padStart(6, "0"))) {
+          vehicle = candidate;
+          scannedSpareKey = true;
+        }
+      }
+
       // Vehicle path: exact barcode match first (covers -R revisions since the
       // stored value is matched verbatim), then license-plate fallback.
       const normalized = normalizeScannedCode(req.params.code);
-      let vehicle = await storage.getVehicleByBarcode(normalized);
+      if (!vehicle) {
+        vehicle = await storage.getVehicleByBarcode(normalized);
+      }
       if (!vehicle && parsed.kind === "unknown") {
         const plate = normalized.replace(/[-\s]/g, "");
         const all = await storage.getAllVehicles();
@@ -1505,6 +1520,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         activeReservation: projectReservationForScan(activeReservation),
         upcomingReservation: projectReservationForScan(upcomingReservation),
         activeTransport,
+        ...(scannedSpareKey ? { scannedSpareKey: true } : {}),
       });
     } catch (error) {
       console.error("Barcode lookup failed:", error);

@@ -6,6 +6,10 @@ import { BarcodeLabelField, resolveBarcodeLabelSource } from "@shared/barcode";
 interface LabelVehicle {
   id: number;
   barcode: string | null;
+  // When set, printed in place of `barcode` (e.g. a spare-key code that isn't
+  // stored on the vehicle at all). `barcode` itself is left untouched so
+  // callers can still show/require the real stored barcode elsewhere.
+  barcodeOverride?: string;
   licensePlate: string;
   brand: string;
   model: string;
@@ -46,7 +50,7 @@ function readTemplateFields(template: BarcodeLabelTemplate): BarcodeLabelField[]
 // stock (~62x29mm) but prints fine on plain A4 as a grid. With a template, the
 // template's positioned fields (x/y in mm of label space) are drawn instead.
 export function printKeyLabels(vehicles: LabelVehicle[], template?: BarcodeLabelTemplate | null): void {
-  const printable = vehicles.filter((v): v is LabelVehicle & { barcode: string } => !!v.barcode);
+  const printable = vehicles.filter(v => !!(v.barcodeOverride ?? v.barcode));
   if (printable.length === 0) return;
 
   const widthMm = template?.labelWidthMm ?? DEFAULT_LABEL_WIDTH_MM;
@@ -82,6 +86,8 @@ export function printKeyLabels(vehicles: LabelVehicle[], template?: BarcodeLabel
   for (const vehicle of printable) {
     // Dutch plates print grouped (12-XT-102); every other source is raw.
     const formatted = { ...vehicle, licensePlate: formatLicensePlate(vehicle.licensePlate) };
+    const code = vehicle.barcodeOverride ?? vehicle.barcode;
+    if (!code) continue;
 
     const label = doc.createElement("div");
     label.className = "label";
@@ -102,7 +108,7 @@ export function printKeyLabels(vehicles: LabelVehicle[], template?: BarcodeLabel
         holder.appendChild(svg);
         holder.style.height = `${barcodeHeightMm}mm`;
         holder.style.maxWidth = `${maxWidthMm}mm`;
-        JsBarcode(svg, vehicle.barcode, {
+        JsBarcode(svg, code, {
           format: "CODE128",
           displayValue: true,
           fontSize: 10,

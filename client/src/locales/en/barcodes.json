@@ -24,6 +24,7 @@
     "registrationLabel": "Registration",
     "opnaamBadge": "Registered to person",
     "companyBadge": "Company stock",
+    "spareKeyBadge": "Spare key",
     "notAvailable": "N/A",
     "makeReservationButton": "Create reservation",
     "openVehicleButton": "Open vehicle",
@@ -77,6 +78,7 @@
   },
   "label": {
     "printKeyLabel": "Print key label",
+    "printSpareKeyLabel": "Print spare key label",
     "viewBarcode": "View barcode",
     "regenerate": "Regenerate barcode",
     "regenerateConfirmTitle": "Regenerate barcode?",

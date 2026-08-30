@@ -24,6 +24,7 @@
     "registrationLabel": "Registratie",
     "opnaamBadge": "Opnaam",
     "companyBadge": "Bedrijfsvoorraad",
+    "spareKeyBadge": "Reservesleutel",
     "notAvailable": "N.v.t.",
     "makeReservationButton": "Reservering maken",
     "openVehicleButton": "Voertuig openen",
@@ -77,6 +78,7 @@
   },
   "label": {
     "printKeyLabel": "Sleutellabel afdrukken",
+    "printSpareKeyLabel": "Reservesleutel-label afdrukken",
     "viewBarcode": "Barcode bekijken",
     "regenerate": "Barcode opnieuw genereren",
     "regenerateConfirmTitle": "Barcode opnieuw genereren?",
