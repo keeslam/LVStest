@@ -650,6 +650,8 @@
     "labelWidthLabel": "Width (mm)",
     "labelHeightLabel": "Height (mm)",
     "barcodeHeightLabel": "Barcode height (mm)",
+    "barcodeWidthLabel": "Barcode width (mm)",
+    "barcodeWidthAuto": "Auto",
     "xPositionMmLabel": "X position (mm)",
     "yPositionMmLabel": "Y position (mm)",
     "sources": {

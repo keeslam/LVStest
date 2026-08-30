@@ -839,7 +839,12 @@ const BarcodeLabelTemplateEditor = ({ onClose }: BarcodeLabelTemplateEditorProps
         source: field.source,
         textAlign: field.textAlign,
         locked: field.locked || false,
-        ...(field.source === 'barcode' ? { barcodeHeightMm: field.barcodeHeightMm ?? 10 } : {})
+        ...(field.source === 'barcode'
+          ? {
+              barcodeHeightMm: field.barcodeHeightMm ?? 10,
+              ...(field.barcodeWidthMm ? { barcodeWidthMm: field.barcodeWidthMm } : {})
+            }
+          : {})
       }))
     };
   };
@@ -1361,6 +1366,7 @@ const BarcodeLabelTemplateEditor = ({ onClose }: BarcodeLabelTemplateEditorProps
 
                         {currentTemplate.fields.map(field => {
                           const barcodeHeightPx = (field.barcodeHeightMm ?? 10) * MM_TO_PX * zoomLevel;
+                          const barcodeWidthPx = field.barcodeWidthMm ? field.barcodeWidthMm * MM_TO_PX * zoomLevel : undefined;
                           return (
                             <div
                               key={field.id}
@@ -1396,11 +1402,12 @@ const BarcodeLabelTemplateEditor = ({ onClose }: BarcodeLabelTemplateEditorProps
                             >
                               {field.locked && <Lock className="h-3 w-3" />}
                               {field.source === 'barcode' ? (
-                                <div style={{ height: barcodeHeightPx }} className="pointer-events-none">
+                                <div style={{ height: barcodeHeightPx, width: barcodeWidthPx }} className="pointer-events-none">
                                   <BarcodeSvg
                                     value={SAMPLE_VEHICLE.barcode}
                                     height={barcodeHeightPx}
-                                    className="h-full w-auto"
+                                    width={barcodeWidthPx}
+                                    className={barcodeWidthPx ? "h-full" : "h-full w-auto"}
                                   />
                                 </div>
                               ) : (
@@ -1520,23 +1527,45 @@ const BarcodeLabelTemplateEditor = ({ onClose }: BarcodeLabelTemplateEditorProps
                         </div>
                       </div>
                       {selectedField.source === 'barcode' ? (
-                        <div>
-                          <Label>{t('barcodeLabelEditor.barcodeHeightLabel')}</Label>
-                          <Input
-                            type="number"
-                            min={3}
-                            max={100}
-                            value={selectedField.barcodeHeightMm ?? 10}
-                            onChange={(e) => {
-                              if (!currentTemplate) return;
-                              const barcodeHeightMm = Number(e.target.value);
-                              const updatedFields = currentTemplate.fields.map(f =>
-                                f.id === selectedField.id ? { ...f, barcodeHeightMm } : f
-                              );
-                              setCurrentTemplate({ ...currentTemplate, fields: updatedFields });
-                            }}
-                            data-testid="input-barcode-height-mm"
-                          />
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-xs">{t('barcodeLabelEditor.barcodeHeightLabel')}</Label>
+                            <Input
+                              type="number"
+                              min={3}
+                              max={100}
+                              value={selectedField.barcodeHeightMm ?? 10}
+                              onChange={(e) => {
+                                if (!currentTemplate) return;
+                                const barcodeHeightMm = Number(e.target.value);
+                                const updatedFields = currentTemplate.fields.map(f =>
+                                  f.id === selectedField.id ? { ...f, barcodeHeightMm } : f
+                                );
+                                setCurrentTemplate({ ...currentTemplate, fields: updatedFields });
+                              }}
+                              data-testid="input-barcode-height-mm"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">{t('barcodeLabelEditor.barcodeWidthLabel')}</Label>
+                            <Input
+                              type="number"
+                              min={5}
+                              max={MAX_LABEL_WIDTH_MM}
+                              placeholder={t('barcodeLabelEditor.barcodeWidthAuto')}
+                              value={selectedField.barcodeWidthMm ?? ''}
+                              onChange={(e) => {
+                                if (!currentTemplate) return;
+                                const raw = e.target.value;
+                                const barcodeWidthMm = raw === '' ? undefined : Number(raw);
+                                const updatedFields = currentTemplate.fields.map(f =>
+                                  f.id === selectedField.id ? { ...f, barcodeWidthMm } : f
+                                );
+                                setCurrentTemplate({ ...currentTemplate, fields: updatedFields });
+                              }}
+                              data-testid="input-barcode-width-mm"
+                            />
+                          </div>
                         </div>
                       ) : (
                         <div>

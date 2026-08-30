@@ -61,8 +61,10 @@ export function parseBarcode(raw: string): ParsedBarcode {
 
 // Positioned field on a barcode label template. Same shape as the existing
 // template editors' TemplateField, but x/y are in millimetres of label space
-// (labels are small; mm maps 1:1 onto print CSS). barcodeHeightMm only
-// applies when source === "barcode".
+// (labels are small; mm maps 1:1 onto print CSS). barcodeHeightMm and
+// barcodeWidthMm only apply when source === "barcode"; width unset means
+// auto (scale to fit the label's remaining width), set means the barcode
+// is stretched to exactly that many mm.
 export interface BarcodeLabelField {
   id: string;
   name: string;
@@ -74,6 +76,7 @@ export interface BarcodeLabelField {
   textAlign: "left" | "center" | "right";
   locked?: boolean;
   barcodeHeightMm?: number;
+  barcodeWidthMm?: number;
 }
 
 // Data sources the barcode label editor offers. "barcode" renders as a Code

@@ -116,9 +116,25 @@ export function printKeyLabels(vehicles: LabelVehicle[], template?: BarcodeLabel
           margin: 4,
           background: "transparent",
         });
-        svg.style.width = "auto";
-        svg.style.maxWidth = `${maxWidthMm}mm`;
-        svg.style.maxHeight = `${barcodeHeightMm}mm`;
+        const explicitWidthMm = field.barcodeWidthMm
+          ? Math.min(field.barcodeWidthMm, maxWidthMm)
+          : null;
+        if (explicitWidthMm) {
+          // Stretch to the template's exact width: promote the rendered size
+          // to a viewBox so CSS sizing scales the drawing instead of cropping.
+          const w = parseFloat(svg.getAttribute("width") || "0");
+          const h = parseFloat(svg.getAttribute("height") || "0");
+          if (w && h) svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+          svg.setAttribute("preserveAspectRatio", "none");
+          svg.removeAttribute("width");
+          svg.removeAttribute("height");
+          svg.style.width = `${explicitWidthMm}mm`;
+          svg.style.height = `${barcodeHeightMm}mm`;
+        } else {
+          svg.style.width = "auto";
+          svg.style.maxWidth = `${maxWidthMm}mm`;
+          svg.style.maxHeight = `${barcodeHeightMm}mm`;
+        }
       } else {
         holder.textContent = resolveBarcodeLabelSource(field.source, formatted, field.name);
         holder.style.fontSize = `${field.fontSize}pt`;
