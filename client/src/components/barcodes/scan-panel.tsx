@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Truck, CalendarRange, User, RotateCcw } from "lucide-react";
+import { Camera, Truck, CalendarRange, User, RotateCcw, CalendarPlus, ShieldCheck, FileCheck } from "lucide-react";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
+import { isTrueValue } from "@/lib/utils";
 import { BarcodeSvg } from "@/components/barcodes/barcode-svg";
 import { CameraScannerDialog } from "@/components/barcodes/camera-scanner-dialog";
+import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
 import { Vehicle } from "@shared/schema";
 
 // The lookup endpoint projects reservations down to only what this panel
@@ -166,16 +168,57 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
           <CardContent className="space-y-4">
             {result.vehicle.barcode && <BarcodeSvg value={result.vehicle.barcode} height={40} />}
 
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm border rounded-md p-3">
+              <div>
+                <div className="text-muted-foreground flex items-center gap-1">
+                  <FileCheck className="h-3.5 w-3.5" />
+                  {t("scanPage.apkLabel")}
+                </div>
+                <div className="font-medium">
+                  {result.vehicle.apkDate ? formatDate(result.vehicle.apkDate) : t("scanPage.notAvailable")}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground flex items-center gap-1">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  {t("scanPage.warrantyLabel")}
+                </div>
+                <div className="font-medium">
+                  {result.vehicle.warrantyEndDate ? formatDate(result.vehicle.warrantyEndDate) : t("scanPage.notAvailable")}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground">{t("scanPage.registrationLabel")}</div>
+                <div>
+                  {isTrueValue(result.vehicle.registeredTo) ? (
+                    <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-50">{t("scanPage.opnaamBadge")}</Badge>
+                  ) : isTrueValue(result.vehicle.company) ? (
+                    <Badge className="bg-green-50 text-green-700 hover:bg-green-50">{t("scanPage.companyBadge")}</Badge>
+                  ) : (
+                    <span className="font-medium">{t("scanPage.notAvailable")}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {result.activeReservation
               ? reservationCard(result.activeReservation, "scanPage.activeReservation")
               : result.upcomingReservation
                 ? reservationCard(result.upcomingReservation, "scanPage.upcomingReservation")
                 : <p className="text-muted-foreground text-sm">{t("scanPage.noReservation")}</p>}
 
-            <div className="flex gap-2 pt-2 border-t">
+            <div className="flex flex-wrap gap-2 pt-2 border-t">
               <Button onClick={() => openVehicleDialog(result.vehicle.id)} data-testid="button-open-vehicle">
                 {t("scanPage.openVehicleButton")}
               </Button>
+              {!result.activeReservation && !result.upcomingReservation && (
+                <ReservationAddDialog initialVehicleId={String(result.vehicle.id)}>
+                  <Button variant="outline" data-testid="button-make-reservation">
+                    <CalendarPlus className="h-4 w-4 mr-2" />
+                    {t("scanPage.makeReservationButton")}
+                  </Button>
+                </ReservationAddDialog>
+              )}
               <Button variant="outline" onClick={() => { setResult(null); inputRef.current?.focus(); }}>
                 <RotateCcw className="h-4 w-4 mr-2" />
                 {t("scanPage.scanAgain")}
