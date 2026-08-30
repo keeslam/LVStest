@@ -73,7 +73,7 @@ export function VehicleBarcodeDialog({ vehicle, open, onOpenChange }: VehicleBar
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>{t("label.barcodeDialogTitle")}</DialogTitle>
           <DialogDescription>
@@ -81,8 +81,8 @@ export function VehicleBarcodeDialog({ vehicle, open, onOpenChange }: VehicleBar
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex justify-center py-4">
-          {vehicle.barcode && <BarcodeSvg value={vehicle.barcode} height={70} />}
+        <div className="flex justify-center items-center rounded-md border bg-white py-6 px-4">
+          {vehicle.barcode && <BarcodeSvg value={vehicle.barcode} height={80} className="max-w-full h-auto" />}
         </div>
 
         {labelTemplates && labelTemplates.length > 0 && (
@@ -104,10 +104,9 @@ export function VehicleBarcodeDialog({ vehicle, open, onOpenChange }: VehicleBar
           </div>
         )}
 
-        <div className="flex gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
           <Button
             onClick={() => printKeyLabels([vehicle], selectedTemplate)}
-            className="flex-1"
             disabled={!vehicle.barcode}
             data-testid="button-print-key-label"
           >
