@@ -1467,18 +1467,26 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       const today = new Date().toISOString().split("T")[0];
+      // Mirror the vehicle-details page's reservation logic (vehicle-details.tsx)
+      // so a scanned barcode shows the same active/upcoming rental as the vehicle
+      // dialog: only standard rentals count, and "upcoming" is any future
+      // non-cancelled reservation regardless of its workflow status.
       const reservations = (await storage.getReservationsByVehicle(vehicle.id))
-        .filter(r => !r.deletedAt && r.type !== "maintenance_block");
+        .filter(r => !r.deletedAt && r.type === "standard");
 
-      // Active: picked up and not returned, or booked window covering today.
+      const ACTIVE_STATUSES = ["picked_up", "booked", "rented", "confirmed", "pending"];
       const activeReservation = reservations.find(r =>
+        // A picked-up rental stays active until returned, even past its end
+        // date (overdue rentals are common and must show on scan).
         r.status === "picked_up" ||
-        (r.status === "booked" && r.startDate <= today && (!r.endDate || r.endDate >= today))
+        (ACTIVE_STATUSES.includes(r.status) &&
+          r.startDate <= today &&
+          (!r.endDate || r.endDate >= today))
       ) ?? null;
 
-      // Upcoming: earliest booked reservation starting after today.
+      // Upcoming: earliest future reservation that isn't cancelled.
       const upcomingReservation = reservations
-        .filter(r => r.status === "booked" && r.startDate > today)
+        .filter(r => r.status !== "cancelled" && r.startDate > today)
         .sort((a, b) => a.startDate.localeCompare(b.startDate))[0] ?? null;
 
       return res.json({
