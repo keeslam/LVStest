@@ -297,11 +297,22 @@ async function runMigrations() {
         SET barcode = 'VEH-' || LPAD(id::text, 6, '0')
         WHERE barcode IS NULL
       `);
+      // Use a named UNIQUE CONSTRAINT matching drizzle-kit's expected name
+      // (vehicles_barcode_unique) so `drizzle-kit push` sees the schema's
+      // .unique() as satisfied and never proposes truncating the table.
       await db.execute(sql`
-        CREATE UNIQUE INDEX IF NOT EXISTS vehicles_barcode_unique_idx
-        ON vehicles (barcode)
+        DO $$
+        BEGIN
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_constraint WHERE conname = 'vehicles_barcode_unique'
+          ) THEN
+            -- Replace the older index-only variant if a previous deploy created it
+            DROP INDEX IF EXISTS vehicles_barcode_unique_idx;
+            ALTER TABLE vehicles ADD CONSTRAINT vehicles_barcode_unique UNIQUE (barcode);
+          END IF;
+        END $$;
       `);
-      console.log('✅ Vehicle barcodes backfilled and unique index ensured');
+      console.log('✅ Vehicle barcodes backfilled and unique constraint ensured');
     } catch (error) {
       console.error('⚠️ Vehicle barcode backfill failed:', error.message);
     }
