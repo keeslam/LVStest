@@ -3255,6 +3255,11 @@ export class DatabaseStorage implements IStorage {
       endDate: endDate || null,
       status: 'active',
       type: 'maintenance_block',
+      // Match the fields the maintenance scheduler sets so these blocks show
+      // and behave the same on the maintenance calendar (its filters and
+      // status flow key off maintenanceStatus/maintenanceCategory).
+      maintenanceStatus: 'scheduled',
+      maintenanceCategory: 'repair',
       replacementForReservationId: null,
       placeholderSpare: false,
       totalPrice: null,

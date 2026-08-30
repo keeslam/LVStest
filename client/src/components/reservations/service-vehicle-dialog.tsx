@@ -72,7 +72,10 @@ export function ServiceVehicleDialog({
     defaultValues: {
       maintenanceStatus: "needs_service",
       maintenanceNote: "",
-      serviceStartDate: "",
+      // Default to today so a maintenance_block is always created on the
+      // maintenance calendar — leaving the date empty silently skipped the
+      // block and the service visit went untracked.
+      serviceStartDate: new Date().toISOString().split("T")[0],
       serviceEndDate: "",
     },
   });
