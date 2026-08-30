@@ -608,9 +608,9 @@ export default function VehiclesIndex() {
         onOpenChange={setBarcodeBookOpen}
       />
 
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-2">
         <h1 className="text-2xl font-bold">{t('indexPage.pageTitle')}</h1>
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2">
           {isAdmin && (
             <Button
               variant="outline"
@@ -638,7 +638,7 @@ export default function VehiclesIndex() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 flex gap-4 items-center">
+          <div className="mb-4 flex flex-wrap gap-2 md:gap-4 items-center">
             <div className="relative max-w-sm w-full">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -765,10 +765,68 @@ export default function VehiclesIndex() {
               </svg>
             </div>
           ) : (
-            <DataTable
-              columns={columns}
-              data={filteredVehicles || []}
-            />
+            <>
+              {/* Desktop: full data table (unchanged) */}
+              <div className="hidden md:block">
+                <DataTable
+                  columns={columns}
+                  data={filteredVehicles || []}
+                />
+              </div>
+
+              {/* Mobile: compact vehicle cards — the table's data columns don't
+                  fit a phone viewport, so each vehicle gets a card with the
+                  same actions as the table's actions column. */}
+              <div className="md:hidden space-y-3">
+                {(filteredVehicles || []).map((vehicle) => {
+                  const status = vehicle.availabilityStatus || 'available';
+                  const statusBadge =
+                    status === 'available' ? <Badge className="bg-green-100 text-green-800 font-semibold">{t('indexPage.availableStatus')}</Badge> :
+                    status === 'scheduled' ? <Badge className="bg-purple-100 text-purple-800 font-semibold">{t('indexPage.scheduledStatus')}</Badge> :
+                    status === 'needs_fixing' ? <Badge className="bg-yellow-100 text-yellow-800 font-semibold">{t('indexPage.needsFixingStatus')}</Badge> :
+                    status === 'not_for_rental' ? <Badge className="bg-gray-200 text-gray-700 font-semibold">{t('indexPage.notForRentalStatus')}</Badge> :
+                    <Badge className="bg-blue-100 text-blue-800 font-semibold">{t('indexPage.rentedStatus')}</Badge>;
+                  const activeReservation = status === 'rented'
+                    ? reservations?.find(r => r.vehicleId === vehicle.id && r.status === 'picked_up')
+                    : undefined;
+
+                  return (
+                    <div key={vehicle.id} className="border rounded-lg p-3 space-y-2 bg-white">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="font-bold tracking-wide">{formatLicensePlate(vehicle.licensePlate)}</div>
+                        {statusBadge}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {vehicle.brand} {vehicle.model}
+                        {vehicle.apkDate && (
+                          <span className="ml-2">· APK {formatDate(vehicle.apkDate)}</span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <Button variant="outline" size="sm" onClick={() => handleViewClick(vehicle)} data-testid={`card-view-vehicle-${vehicle.id}`}>
+                          {t('indexPage.viewButton')}
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setEditVehicleId(vehicle.id)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-red-500" onClick={() => setDeleteVehicleTarget(vehicle)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        {activeReservation ? (
+                          <Button variant="secondary" size="sm" onClick={() => { setSelectedReservationId(activeReservation.id); setReservationViewDialogOpen(true); }}>
+                            {t('indexPage.viewRentalButton')}
+                          </Button>
+                        ) : status !== 'not_for_rental' && status !== 'rented' ? (
+                          <Button variant="outline" size="sm" onClick={() => setReserveDialogVehicleId(vehicle.id.toString())}>
+                            {t('indexPage.reserveButton')}
+                          </Button>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

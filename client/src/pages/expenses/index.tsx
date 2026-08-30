@@ -220,9 +220,9 @@ export default function ExpensesIndex() {
   
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-2">
         <h1 className="text-2xl font-bold">{t('indexPage.pageTitle')}</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <InvoiceScanner
             onExpensesCreated={(expenses) => {
               console.log('Expenses created from invoice:', expenses);

@@ -1127,10 +1127,13 @@ export default function ReservationCalendarPage() {
             </div>
           </div>
 
-          {/* Month View */}
-          <div className="mb-6">
+          {/* Month View — on phones the 5-column grid squeezes into unreadable
+              slivers, so it scrolls horizontally at a readable minimum width;
+              desktop is unchanged. */}
+          <div className="mb-6 overflow-x-auto">
+            <div className="min-w-[640px]">
             {/* Calendar Header - Hidden in 5-column mode for better alignment */}
-            
+
             {/* Calendar Grid */}
             <div className="border rounded-lg overflow-hidden">
               {calendarGrid.map((week, weekIndex) => (
@@ -1685,8 +1688,9 @@ export default function ReservationCalendarPage() {
                 </div>
               ))}
             </div>
+            </div>
           </div>
-          
+
           {/* Loading State */}
           {(isLoadingVehicles || isLoadingReservations) && (
             <div className="flex justify-center items-center h-64">

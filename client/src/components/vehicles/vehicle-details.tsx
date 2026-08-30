@@ -940,12 +940,12 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
   
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-2">
         <div>
           <h1 className="text-2xl font-bold">{vehicle.brand} {vehicle.model}</h1>
           <p className="text-lg font-medium text-gray-600">{formatLicensePlate(vehicle.licensePlate)}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button 
             variant="outline" 
             onClick={() => inDialogContext && onClose ? onClose() : navigate("/vehicles")}

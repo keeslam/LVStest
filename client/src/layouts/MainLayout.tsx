@@ -183,11 +183,24 @@ export default function MainLayout({ children }: MainLayoutProps) {
       {/* ScrollToTop component to handle scrolling on route changes */}
       <ScrollToTop />
       
+      {/* Mobile backdrop: closes the drawer when tapping outside it */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-20 bg-black/40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Sidebar */}
-      <aside 
+      <aside
         className={`fixed inset-y-0 left-0 w-64 bg-white shadow-md z-30 transform transition-transform duration-300 ease-in-out md:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
+        onClick={(e) => {
+          // Tapping a nav link on mobile should close the drawer as it navigates
+          if ((e.target as HTMLElement).closest("a")) setSidebarOpen(false);
+        }}
       >
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">

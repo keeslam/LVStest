@@ -55,8 +55,8 @@ export function UpcomingReservations() {
         </Link>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="max-h-[265px] overflow-y-auto">
-          <table className="w-full divide-y divide-gray-200">
+        <div className="max-h-[265px] overflow-y-auto overflow-x-auto">
+          <table className="w-full min-w-[640px] divide-y divide-gray-200">
             <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">

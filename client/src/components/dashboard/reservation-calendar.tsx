@@ -343,6 +343,11 @@ export function ReservationCalendar() {
           <h4 className="text-base font-medium">{dateRanges.rangeText}</h4>
         </div>
         
+        {/* On phones the 7-column month squeezes into unreadable slivers, so
+            the whole grid scrolls horizontally at a readable minimum width.
+            Desktop (min-w fits) is unchanged. */}
+        <div className="overflow-x-auto">
+        <div className="min-w-[640px]">
         {/* Calendar Header */}
         <div className="grid grid-cols-7 mb-2">
           {daysOfWeek.map((day) => (
@@ -351,7 +356,7 @@ export function ReservationCalendar() {
             </div>
           ))}
         </div>
-        
+
         {/* Calendar Grid */}
         <div className="border rounded-md overflow-hidden">
           {isLoadingReservations ? (
@@ -678,8 +683,10 @@ export function ReservationCalendar() {
             ))
           )}
         </div>
+        </div>
+        </div>
       </CardContent>
-      
+
       {/* View Reservation Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={(open) => {
         setViewDialogOpen(open);

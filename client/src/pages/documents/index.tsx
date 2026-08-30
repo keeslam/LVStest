@@ -459,7 +459,7 @@ export default function DocumentsIndex() {
   
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-2">
         <h1 className="text-2xl font-bold">{t('indexPage.title')}</h1>
         <Button onClick={() => { setUploadVehicleId(""); setUploadDialogOpen(true); }}>
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-upload mr-2">
@@ -497,7 +497,7 @@ export default function DocumentsIndex() {
       </Dialog>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
           <TabsTrigger value="library">{t('indexPage.tabLibrary')}</TabsTrigger>
           <TabsTrigger value="template-editor">{t('indexPage.tabContractTemplates')}</TabsTrigger>
           <TabsTrigger value="transport-templates" data-testid="tab-transport-templates">{t('indexPage.tabTransportTemplates')}</TabsTrigger>
