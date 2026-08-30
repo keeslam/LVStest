@@ -13,7 +13,7 @@ import {
   Maximize2, Undo2, Redo2, LayoutGrid, Move, History, Settings,
   AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter,
   AlignStartHorizontal, AlignEndHorizontal, AlignCenterHorizontal,
-  AlignStartVertical, AlignEndVertical, AlignCenterVertical, ChevronDown
+  AlignStartVertical, AlignEndVertical, AlignCenterVertical, ChevronDown, Pencil
 } from "lucide-react";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
@@ -111,6 +111,8 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
   const [isMoving, setIsMoving] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
   const [newFieldName, setNewFieldName] = useState('');
   const [newFieldSource, setNewFieldSource] = useState('');
   const [isAddFieldDialogOpen, setIsAddFieldDialogOpen] = useState(false);
@@ -600,6 +602,23 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
     saveTemplateMutation.mutate(newTemplate);
     setNewTemplateName('');
     setIsCreateDialogOpen(false);
+  };
+
+  const handleRenameTemplate = () => {
+    if (!currentTemplate) return;
+    const name = renameValue.trim();
+    if (!name) {
+      toast({
+        title: t('common:status.error'),
+        description: t('templateEditor.toasts.templateNameRequired'),
+        variant: "destructive",
+      });
+      return;
+    }
+    const renamed = { ...currentTemplate, name };
+    setCurrentTemplate(renamed);
+    saveTemplateMutation.mutate(renamed);
+    setIsRenameDialogOpen(false);
   };
 
   const handleAddField = () => {
@@ -1283,7 +1302,53 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-4">
-                <Label>{t('templateEditor.selectTemplateLabel')}</Label>
+                <div className="flex items-center justify-between">
+                  <Label>{t('templateEditor.selectTemplateLabel')}</Label>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" className="h-6 px-2" title={t('templateEditor.newTemplateButton')} onClick={() => { setNewTemplateName(''); setIsCreateDialogOpen(true); }} data-testid="button-new-template">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-6 px-2" title={t('templateEditor.renameTemplateButton')} disabled={!currentTemplate} onClick={() => { setRenameValue(currentTemplate?.name || ''); setIsRenameDialogOpen(true); }} data-testid="button-rename-template">
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                  <DialogContent className="sm:max-w-[400px]">
+                    <DialogHeader>
+                      <DialogTitle>{t('templateEditor.newTemplateTitle')}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-template-name">{t('templateEditor.templateNameLabel')}</Label>
+                      <Input id="new-template-name" value={newTemplateName} onChange={(e) => setNewTemplateName(e.target.value)} placeholder={t('templateEditor.templateNamePlaceholder')} data-testid="input-new-template-name" />
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>{t('common:actions.cancel')}</Button>
+                      <Button onClick={handleCreateTemplate} disabled={saveTemplateMutation.isPending} data-testid="button-create-template-confirm">
+                        <Plus className="mr-2 h-4 w-4" />
+                        {t('templateEditor.createTemplateButton')}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+                <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+                  <DialogContent className="sm:max-w-[400px]">
+                    <DialogHeader>
+                      <DialogTitle>{t('templateEditor.renameTemplateTitle')}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-2">
+                      <Label htmlFor="rename-template-name">{t('templateEditor.templateNameLabel')}</Label>
+                      <Input id="rename-template-name" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} data-testid="input-rename-template-name" />
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>{t('common:actions.cancel')}</Button>
+                      <Button onClick={handleRenameTemplate} disabled={saveTemplateMutation.isPending} data-testid="button-rename-template-confirm">
+                        <Save className="mr-2 h-4 w-4" />
+                        {t('templateEditor.saveButton')}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
                 <Select
                   value={currentTemplate?.id.toString() || ''}
                   onValueChange={(value) => {
