@@ -2,7 +2,11 @@ import type { Request } from 'express';
 import { db } from '../../db';
 import { auditLogs } from '../../../shared/schema';
 
-export type AuditAction =
+export type AuditAction = KnownAuditAction | (string & {});
+
+// The mutation middleware derives names like 'transport.update' from the URL,
+// so the union documents the well-known ones without limiting the set.
+type KnownAuditAction =
   | 'user.login'
   | 'user.logout'
   | 'user.login.failed'

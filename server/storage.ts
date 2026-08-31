@@ -36,6 +36,17 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
+  getAuditLogs(options: {
+    limit: number;
+    offset: number;
+    username?: string;
+    action?: string;
+    resourceType?: string;
+    search?: string;
+    from?: string;
+    to?: string;
+  }): Promise<{ logs: AuditLog[]; total: number }>;
+  getAuditLogFilterOptions(): Promise<{ users: string[]; actions: string[]; resourceTypes: string[] }>;
   updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined>;
   updateUserPassword(id: number, hashedPassword: string): Promise<boolean>;
   deleteUser(id: number): Promise<boolean>;

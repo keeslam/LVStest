@@ -27,7 +27,8 @@ import {
   vehicleCustomerBlacklist, type VehicleCustomerBlacklist, type InsertVehicleCustomerBlacklist,
   vehicleTransports, type VehicleTransport, type InsertVehicleTransport,
   vehicleWaitlist,
-  deletedRecords, type DeletedRecord
+  deletedRecords, type DeletedRecord,
+  auditLogs, type AuditLog
 } from "../shared/schema";
 import {
   getVehicleStatusContext,
@@ -78,6 +79,73 @@ export class DatabaseStorage implements IStorage {
   
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users).orderBy(users.username);
+  }
+
+  async getAuditLogs(options: {
+    limit: number;
+    offset: number;
+    username?: string;
+    action?: string;
+    resourceType?: string;
+    search?: string;
+    from?: string;
+    to?: string;
+  }): Promise<{ logs: AuditLog[]; total: number }> {
+    const conditions = [];
+
+    if (options.username) conditions.push(eq(auditLogs.username, options.username));
+    if (options.action) conditions.push(eq(auditLogs.action, options.action));
+    if (options.resourceType) conditions.push(eq(auditLogs.resourceType, options.resourceType));
+    if (options.from) conditions.push(gte(auditLogs.createdAt, new Date(`${options.from}T00:00:00`)));
+    if (options.to) conditions.push(lte(auditLogs.createdAt, new Date(`${options.to}T23:59:59.999`)));
+
+    if (options.search) {
+      const term = `%${options.search}%`;
+      conditions.push(
+        or(
+          ilike(auditLogs.username, term),
+          ilike(auditLogs.action, term),
+          ilike(auditLogs.resourceType, term),
+          ilike(auditLogs.resourceId, term),
+          // The label ("12XT102") and the changed fields live in the JSON blob
+          sql`${auditLogs.details}::text ILIKE ${term}`,
+        )!,
+      );
+    }
+
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const logs = await db
+      .select()
+      .from(auditLogs)
+      .where(where)
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(options.limit)
+      .offset(options.offset);
+
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(auditLogs)
+      .where(where);
+
+    return { logs, total: Number(count) || 0 };
+  }
+
+  async getAuditLogFilterOptions(): Promise<{ users: string[]; actions: string[]; resourceTypes: string[] }> {
+    const [usersRows, actionRows, resourceRows] = await Promise.all([
+      db.selectDistinct({ value: auditLogs.username }).from(auditLogs).orderBy(auditLogs.username),
+      db.selectDistinct({ value: auditLogs.action }).from(auditLogs).orderBy(auditLogs.action),
+      db.selectDistinct({ value: auditLogs.resourceType }).from(auditLogs).orderBy(auditLogs.resourceType),
+    ]);
+
+    const values = (rows: Array<{ value: string | null }>) =>
+      rows.map((row) => row.value).filter((value): value is string => !!value);
+
+    return {
+      users: values(usersRows),
+      actions: values(actionRows),
+      resourceTypes: values(resourceRows),
+    };
   }
   
   async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {

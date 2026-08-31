@@ -259,7 +259,9 @@
       "calendar": "Calendar",
       "calendarShort": "Calendar",
       "email": "Email & GPS",
-      "emailShort": "Email"
+      "emailShort": "Email",
+      "activity": "Activity",
+      "activityShort": "Log"
     },
     "business": {
       "rentalDefaultsTitle": "Rental Defaults & Policies",
@@ -525,6 +527,36 @@
       "emailConfigDeleteFailedDescription": "Failed to delete email configuration",
       "holidayFieldsRequiredDescription": "Please enter both date and name",
       "blockedDateFieldsRequiredDescription": "Please fill all fields"
+    },
+    "activityLog": {
+      "title": "Activity log",
+      "description": "Who changed what, and when.",
+      "searchLabel": "Search",
+      "searchPlaceholder": "License plate, customer, field or action...",
+      "userLabel": "User",
+      "actionLabel": "Action",
+      "fromLabel": "From",
+      "toLabel": "Up to and including",
+      "allUsers": "All users",
+      "allActions": "All actions",
+      "resetFilters": "Clear filters",
+      "entryCount_one": "{{count}} entry",
+      "entryCount_other": "{{count}} entries",
+      "noEntries": "No activity found",
+      "systemUser": "system",
+      "emptyValue": "empty",
+      "moreChanges_one": "+{{count}} other field",
+      "moreChanges_other": "+{{count}} other fields",
+      "pageOf": "Page {{page}} of {{pages}}",
+      "previous": "Previous",
+      "next": "Next",
+      "columns": {
+        "when": "When",
+        "who": "Who",
+        "action": "Action",
+        "subject": "Subject",
+        "changes": "Changes"
+      }
     }
   },
   "damageCheckFieldsPage": {

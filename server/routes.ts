@@ -45,6 +45,7 @@ import { ObjectStorageService } from "./objectStorage";
 import { realtimeEvents } from "./realtime-events";
 import { hasPermission, requireAdmin } from "./middleware/permissions.js";
 import { AuditLogger } from "./utils/security/auditLogger.js";
+import { auditMutations } from "./middleware/audit";
 import { clearEmailConfigCache, sendEmail, testSmtpConnection } from "./utils/email-service";
 import { 
   getVehicleStatusContext, 
@@ -869,10 +870,50 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Set up authentication routes and middleware
   const { requireAuth } = setupAuth(app);
 
+  // Records every data-changing request for the activity log. Registered here,
+  // after auth so req.user is known, and before the routes below.
+  app.use(auditMutations);
+
   // Shared BackupService singleton (see server/backupService.ts) - must be
   // the same instance the scheduler uses so the runBackup re-entrancy guard
   // and isRunning status reflect scheduled/catch-up runs too.
   const objectStorage = new ObjectStorageService();
+
+  // ==================== ACTIVITY LOG ====================
+  // Who changed what, from the audit_logs table. Same permission as user
+  // management: it exposes every user's actions.
+  app.get("/api/audit-logs", requireAuth, hasPermission(UserPermission.MANAGE_USERS), async (req, res) => {
+    try {
+      const limit = Math.min(parseInt(String(req.query.limit ?? '50'), 10) || 50, 200);
+      const offset = Math.max(parseInt(String(req.query.offset ?? '0'), 10) || 0, 0);
+
+      const result = await storage.getAuditLogs({
+        limit,
+        offset,
+        username: typeof req.query.username === 'string' && req.query.username ? req.query.username : undefined,
+        action: typeof req.query.action === 'string' && req.query.action ? req.query.action : undefined,
+        resourceType: typeof req.query.resourceType === 'string' && req.query.resourceType ? req.query.resourceType : undefined,
+        search: typeof req.query.search === 'string' && req.query.search ? req.query.search : undefined,
+        from: typeof req.query.from === 'string' && req.query.from ? req.query.from : undefined,
+        to: typeof req.query.to === 'string' && req.query.to ? req.query.to : undefined,
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+      res.status(500).json({ message: "Failed to fetch activity log" });
+    }
+  });
+
+  // Distinct values for the activity log filters
+  app.get("/api/audit-logs/filters", requireAuth, hasPermission(UserPermission.MANAGE_USERS), async (_req, res) => {
+    try {
+      res.json(await storage.getAuditLogFilterOptions());
+    } catch (error) {
+      console.error("Error fetching audit log filters:", error);
+      res.status(500).json({ message: "Failed to fetch activity log filters" });
+    }
+  });
 
   // ==================== USER MANAGEMENT ROUTES ====================
   // Get all users (requires MANAGE_USERS permission)

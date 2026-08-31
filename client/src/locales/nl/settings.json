@@ -259,7 +259,9 @@
       "calendar": "Kalender",
       "calendarShort": "Kalender",
       "email": "E-mail & GPS",
-      "emailShort": "E-mail"
+      "emailShort": "E-mail",
+      "activity": "Activiteit",
+      "activityShort": "Log"
     },
     "business": {
       "rentalDefaultsTitle": "Standaardwaarden & beleid verhuur",
@@ -525,6 +527,36 @@
       "emailConfigDeleteFailedDescription": "E-mailconfiguratie verwijderen mislukt",
       "holidayFieldsRequiredDescription": "Voer zowel een datum als een naam in",
       "blockedDateFieldsRequiredDescription": "Vul alle velden in"
+    },
+    "activityLog": {
+      "title": "Activiteitenlog",
+      "description": "Wie heeft wat gewijzigd, en wanneer.",
+      "searchLabel": "Zoeken",
+      "searchPlaceholder": "Kenteken, klant, veld of actie...",
+      "userLabel": "Gebruiker",
+      "actionLabel": "Actie",
+      "fromLabel": "Vanaf",
+      "toLabel": "Tot en met",
+      "allUsers": "Alle gebruikers",
+      "allActions": "Alle acties",
+      "resetFilters": "Filters wissen",
+      "entryCount_one": "{{count}} regel",
+      "entryCount_other": "{{count}} regels",
+      "noEntries": "Geen activiteit gevonden",
+      "systemUser": "systeem",
+      "emptyValue": "leeg",
+      "moreChanges_one": "+{{count}} ander veld",
+      "moreChanges_other": "+{{count}} andere velden",
+      "pageOf": "Pagina {{page}} van {{pages}}",
+      "previous": "Vorige",
+      "next": "Volgende",
+      "columns": {
+        "when": "Wanneer",
+        "who": "Wie",
+        "action": "Actie",
+        "subject": "Object",
+        "changes": "Wijzigingen"
+      }
     }
   },
   "damageCheckFieldsPage": {
