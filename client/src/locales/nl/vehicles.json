@@ -22,7 +22,7 @@
     }
   },
   "mileageOverrideDialog": {
-    "enterPasswordError": "Voer je kilometerstand-overschrijvingswachtwoord in",
+    "enterPasswordError": "Voer je accountwachtwoord in",
     "incorrectPassword": "Onjuist wachtwoord. Probeer het opnieuw.",
     "genericError": "Er is een fout opgetreden",
     "title": "Kilometerstand-overschrijving vereist",
@@ -31,11 +31,12 @@
     "currentMileage": "Huidige kilometerstand:",
     "newMileage": "Nieuwe kilometerstand:",
     "decrease": "Verlaging:",
-    "passwordLabel": "Kilometerstand-overschrijvingswachtwoord",
-    "passwordPlaceholder": "Voer je kilometerstand-overschrijvingswachtwoord in",
-    "notAccountPasswordHint": "Dit is niet je accountwachtwoord. Als je nog geen kilometerstand-overschrijvingswachtwoord hebt ingesteld, kun je dat doen in je profielinstellingen.",
+    "passwordLabel": "Accountwachtwoord",
+    "passwordPlaceholder": "Voer je accountwachtwoord in",
+    "notAccountPasswordHint": "Vul het wachtwoord in van het account waarmee je bent ingelogd. Je hebt het recht 'authorize_mileage_decrease' nodig.",
     "verifying": "Verifiëren...",
-    "confirmOverride": "Overschrijving bevestigen"
+    "confirmOverride": "Overschrijving bevestigen",
+    "notAuthorized": "Je hebt geen recht om een verlaging van de kilometerstand te autoriseren. Vraag iemand met het recht 'authorize_mileage_decrease'."
   },
   "deleteDialog": {
     "title": "Voertuig verwijderen",
@@ -629,6 +630,18 @@
         "errorTitle": "Fout",
         "errorDescription": "Beschikbaarheid bijwerken mislukt"
       }
+    },
+    "quickEdit": {
+      "editMileage": "Kilometerstand aanpassen",
+      "editFuelLevel": "Brandstofniveau aanpassen",
+      "editApkDate": "APK-vervaldatum aanpassen",
+      "editWarrantyDate": "Garantievervaldatum aanpassen",
+      "savedTitle": "Opgeslagen",
+      "savedDescription": "De voertuiggegevens zijn bijgewerkt.",
+      "errorTitle": "Opslaan mislukt",
+      "saveFailed": "Kon het voertuig niet bijwerken",
+      "saving": "Opslaan...",
+      "mileageDecreaseWarning": "Lager dan de huidige stand ({{current}} km). De verlaging wordt vastgelegd."
     }
   },
   "apkInspectionDialog": {

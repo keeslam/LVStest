@@ -22,7 +22,7 @@
     }
   },
   "mileageOverrideDialog": {
-    "enterPasswordError": "Please enter your mileage override password",
+    "enterPasswordError": "Please enter your account password",
     "incorrectPassword": "Incorrect password. Please try again.",
     "genericError": "An error occurred",
     "title": "Mileage Override Required",
@@ -31,11 +31,12 @@
     "currentMileage": "Current mileage:",
     "newMileage": "New mileage:",
     "decrease": "Decrease:",
-    "passwordLabel": "Mileage Override Password",
-    "passwordPlaceholder": "Enter your mileage override password",
-    "notAccountPasswordHint": "This is not your account password. If you haven't set up a mileage override password, you can do so in your profile settings.",
+    "passwordLabel": "Account password",
+    "passwordPlaceholder": "Enter your account password",
+    "notAccountPasswordHint": "Enter the password of the account you are signed in with. You need the 'authorize_mileage_decrease' permission.",
     "verifying": "Verifying...",
-    "confirmOverride": "Confirm Override"
+    "confirmOverride": "Confirm Override",
+    "notAuthorized": "You are not allowed to authorize a mileage decrease. Ask someone with the 'authorize_mileage_decrease' permission."
   },
   "deleteDialog": {
     "title": "Delete Vehicle",
@@ -629,6 +630,18 @@
         "errorTitle": "Error",
         "errorDescription": "Failed to update availability"
       }
+    },
+    "quickEdit": {
+      "editMileage": "Edit mileage",
+      "editFuelLevel": "Edit fuel level",
+      "editApkDate": "Edit APK expiry date",
+      "editWarrantyDate": "Edit warranty expiry date",
+      "savedTitle": "Saved",
+      "savedDescription": "The vehicle details have been updated.",
+      "errorTitle": "Saving failed",
+      "saveFailed": "Could not update the vehicle",
+      "saving": "Saving...",
+      "mileageDecreaseWarning": "Lower than the current reading ({{current}} km). The decrease will be recorded."
     }
   },
   "apkInspectionDialog": {

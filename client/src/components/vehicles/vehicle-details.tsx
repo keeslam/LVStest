@@ -66,6 +66,7 @@ import { insertReservationSchema, insertReservationSchemaBase } from "@shared/sc
 import { VehicleForm } from "@/components/vehicles/vehicle-form";
 import { ApkInspectionDialog } from "@/components/vehicles/apk-inspection-dialog";
 import { FuelStatusUpdateDialog } from "@/components/vehicles/fuel-status-update-dialog";
+import { MileageOverridePasswordDialog } from "@/components/mileage-override-password-dialog";
 import InteractiveDamageCheck from "@/pages/interactive-damage-check";
 import { 
   Form, 
@@ -98,6 +99,11 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
   const [_, navigate] = useLocation();
   const { openVehicleDialog, openExpenseDialog } = useGlobalDialog();
   const [activeTab, setActiveTab] = useState("general");
+  // Quick edit straight from the info cards, so a single value doesn't require
+  // opening the full vehicle form. Fuel has its own dialog (cost + receipt).
+  const [quickEditField, setQuickEditField] = useState<'mileage' | 'apk' | 'warranty' | null>(null);
+  const [quickEditValue, setQuickEditValue] = useState("");
+  const [mileageOverrideOpen, setMileageOverrideOpen] = useState(false);
   const [isApkReminderOpen, setIsApkReminderOpen] = useState(false);
   const [isApkInspectionOpen, setIsApkInspectionOpen] = useState(false);
   const [customMessage, setCustomMessage] = useState("");
@@ -139,6 +145,82 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
   const getExpenseCategoryPage = (category: string) => expenseCategoryPages[category] || 1;
   const setExpenseCategoryPage = (category: string, page: number) => {
     setExpenseCategoryPages(prev => ({ ...prev, [category]: page }));
+  };
+
+  const quickEditMutation = useMutation({
+    mutationFn: async ({ field, value, overridePassword }: {
+      field: 'mileage' | 'apk' | 'warranty';
+      value: string;
+      overridePassword?: string;
+    }) => {
+      const payload: Record<string, any> =
+        field === 'mileage'
+          ? { currentMileage: value === '' ? null : Number(value) }
+          : field === 'apk'
+            ? { apkDate: value || null }
+            : { warrantyEndDate: value || null };
+
+      if (overridePassword) {
+        payload.mileageOverridePassword = overridePassword;
+      }
+
+      const response = await apiRequest("PATCH", `/api/vehicles/${vehicleId}`, payload);
+      if (!response.ok) {
+        const errorData = await response.json();
+        // Lowering the odometer needs the same authorization as at pickup;
+        // carry the server's flags so the caller can ask for the password.
+        const error: any = new Error(errorData.message || t('details.quickEdit.saveFailed'));
+        Object.assign(error, errorData);
+        throw error;
+      }
+      return await response.json();
+    },
+    onSuccess: async () => {
+      toast({
+        title: t('details.quickEdit.savedTitle'),
+        description: t('details.quickEdit.savedDescription'),
+      });
+      await invalidateByPrefix(`/api/vehicles/${vehicleId}`);
+      await invalidateByPrefix('/api/vehicles');
+      setQuickEditField(null);
+      setMileageOverrideOpen(false);
+    },
+    onError: (error: any) => {
+      if (error?.requiresOverride) {
+        setMileageOverrideOpen(true);
+        return;
+      }
+      // Both are reported inline by the override dialog.
+      if (error?.code === 'MILEAGE_OVERRIDE_INVALID_PASSWORD' || error?.code === 'MILEAGE_OVERRIDE_FORBIDDEN') {
+        return;
+      }
+      toast({
+        title: t('details.quickEdit.errorTitle'),
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const openQuickEdit = (field: 'mileage' | 'apk' | 'warranty', currentValue: string) => {
+    setQuickEditValue(currentValue);
+    setQuickEditField(field);
+  };
+
+  const handleMileageOverrideConfirm = async (password: string): Promise<boolean> => {
+    if (quickEditField !== 'mileage') return false;
+    try {
+      await quickEditMutation.mutateAsync({ field: 'mileage', value: quickEditValue, overridePassword: password });
+      return true;
+    } catch (error: any) {
+      if (error?.code === 'MILEAGE_OVERRIDE_FORBIDDEN') {
+        throw new Error(t('mileageOverrideDialog.notAuthorized'));
+      }
+      if (error?.code === 'MILEAGE_OVERRIDE_INVALID_PASSWORD') {
+        return false;
+      }
+      throw error instanceof Error ? error : new Error(String(error));
+    }
   };
 
   const deleteExpenseMutation = useMutation({
@@ -1060,7 +1142,18 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
           </CardContent>
         </Card>
 
-        <Card className={displayReservation ? 'md:col-span-1' : ''}>
+        <Card className={`relative ${displayReservation ? 'md:col-span-1' : ''}`}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-1 right-1 h-6 w-6 text-gray-400 hover:text-gray-700"
+            title={t('details.quickEdit.editMileage')}
+            aria-label={t('details.quickEdit.editMileage')}
+            onClick={() => openQuickEdit('mileage', vehicle.currentMileage != null ? String(vehicle.currentMileage) : '')}
+            data-testid="button-quick-edit-mileage"
+          >
+            <Edit className="h-3.5 w-3.5" />
+          </Button>
           <CardHeader className={displayReservation ? 'pb-1 pt-3' : 'pb-2'}>
             <CardTitle className="text-sm font-medium text-gray-500">{t('details.infoCards.currentMileage')}</CardTitle>
           </CardHeader>
@@ -1089,7 +1182,28 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
           </CardContent>
         </Card>
         
-        <Card className={displayReservation ? 'md:col-span-1' : ''}>
+        <Card className={`relative ${displayReservation ? 'md:col-span-1' : ''}`}>
+          {/* Reuses the same dialog as the header button - fuel changes can carry
+              a cost and a receipt, so a plain value edit would lose that. */}
+          <FuelStatusUpdateDialog
+            vehicleId={vehicleId}
+            currentFuelLevel={vehicle.currentFuelLevel || undefined}
+            onSuccess={() => {
+              invalidateByPrefix(`/api/vehicles/${vehicleId}`);
+              invalidateByPrefix('/api/vehicles');
+            }}
+          >
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-1 right-1 h-6 w-6 text-gray-400 hover:text-gray-700"
+              title={t('details.quickEdit.editFuelLevel')}
+              aria-label={t('details.quickEdit.editFuelLevel')}
+              data-testid="button-quick-edit-fuel"
+            >
+              <Edit className="h-3.5 w-3.5" />
+            </Button>
+          </FuelStatusUpdateDialog>
           <CardHeader className={displayReservation ? 'pb-1 pt-3' : 'pb-2'}>
             <CardTitle className="text-sm font-medium text-gray-500">{t('details.infoCards.currentFuelLevel')}</CardTitle>
           </CardHeader>
@@ -1100,7 +1214,18 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
           </CardContent>
         </Card>
 
-        <Card className={displayReservation ? 'md:col-span-1' : ''}>
+        <Card className={`relative ${displayReservation ? 'md:col-span-1' : ''}`}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-1 right-1 h-6 w-6 text-gray-400 hover:text-gray-700"
+            title={t('details.quickEdit.editApkDate')}
+            aria-label={t('details.quickEdit.editApkDate')}
+            onClick={() => openQuickEdit('apk', vehicle.apkDate || '')}
+            data-testid="button-quick-edit-apk"
+          >
+            <Edit className="h-3.5 w-3.5" />
+          </Button>
           <CardHeader className={displayReservation ? 'pb-1 pt-3' : 'pb-2'}>
             <CardTitle className="text-sm font-medium text-gray-500">{t('details.infoCards.apkExpiration')}</CardTitle>
           </CardHeader>
@@ -1116,7 +1241,18 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
           </CardContent>
         </Card>
 
-        <Card className={displayReservation ? 'md:col-span-1' : ''}>
+        <Card className={`relative ${displayReservation ? 'md:col-span-1' : ''}`}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-1 right-1 h-6 w-6 text-gray-400 hover:text-gray-700"
+            title={t('details.quickEdit.editWarrantyDate')}
+            aria-label={t('details.quickEdit.editWarrantyDate')}
+            onClick={() => openQuickEdit('warranty', vehicle.warrantyEndDate || '')}
+            data-testid="button-quick-edit-warranty"
+          >
+            <Edit className="h-3.5 w-3.5" />
+          </Button>
           <CardHeader className={displayReservation ? 'pb-1 pt-3' : 'pb-2'}>
             <CardTitle className="text-sm font-medium text-gray-500">{t('details.infoCards.warrantyExpiration')}</CardTitle>
           </CardHeader>
@@ -3337,6 +3473,74 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Quick edit from the info cards */}
+      <Dialog open={quickEditField !== null} onOpenChange={(open) => { if (!open) setQuickEditField(null); }}>
+        <DialogContent className="sm:max-w-[400px]" data-testid="dialog-quick-edit-vehicle">
+          <DialogHeader>
+            <DialogTitle>
+              {quickEditField === 'mileage' && t('details.quickEdit.editMileage')}
+              {quickEditField === 'apk' && t('details.quickEdit.editApkDate')}
+              {quickEditField === 'warranty' && t('details.quickEdit.editWarrantyDate')}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-2 py-2">
+            <Label htmlFor="quick-edit-value">
+              {quickEditField === 'mileage'
+                ? t('details.infoCards.currentMileage')
+                : quickEditField === 'apk'
+                  ? t('details.infoCards.apkExpiration')
+                  : t('details.infoCards.warrantyExpiration')}
+            </Label>
+            <Input
+              id="quick-edit-value"
+              type={quickEditField === 'mileage' ? 'number' : 'date'}
+              min={quickEditField === 'mileage' ? 0 : undefined}
+              value={quickEditValue}
+              onChange={(e) => setQuickEditValue(e.target.value)}
+              disabled={quickEditMutation.isPending}
+              autoFocus
+              data-testid="input-quick-edit-value"
+            />
+            {quickEditField === 'mileage'
+              && vehicle.currentMileage != null
+              && quickEditValue !== ''
+              && Number(quickEditValue) < vehicle.currentMileage && (
+              <p className="text-sm text-amber-600" data-testid="text-quick-edit-mileage-warning">
+                {t('details.quickEdit.mileageDecreaseWarning', { current: Number(vehicle.currentMileage).toLocaleString() })}
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setQuickEditField(null)}
+              disabled={quickEditMutation.isPending}
+              data-testid="button-quick-edit-cancel"
+            >
+              {t('common:actions.cancel')}
+            </Button>
+            <Button
+              onClick={() => quickEditField && quickEditMutation.mutate({ field: quickEditField, value: quickEditValue })}
+              disabled={quickEditMutation.isPending}
+              data-testid="button-quick-edit-save"
+            >
+              {quickEditMutation.isPending ? t('details.quickEdit.saving') : t('common:actions.save')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Same authorization as a mileage decrease at pickup */}
+      <MileageOverridePasswordDialog
+        open={mileageOverrideOpen}
+        onOpenChange={setMileageOverrideOpen}
+        onConfirm={handleMileageOverrideConfirm}
+        currentMileage={vehicle.currentMileage ?? 0}
+        newMileage={Number(quickEditValue) || 0}
+      />
 
       {/* Edit Reservation Dialog */}
       <ReservationEditDialog
