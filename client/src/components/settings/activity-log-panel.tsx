@@ -236,7 +236,9 @@ export function ActivityLogPanel() {
                         <TableCell className="align-top text-xs">
                           {changes.length > 0 ? (
                             <ul className="space-y-0.5">
-                              {changes.slice(0, 4).map((change) => (
+                              {/* Every field, not a truncated head: the one edit
+                                  you are looking for is easily the tenth item. */}
+                              {changes.map((change) => (
                                 <li key={change.field}>
                                   <span className="font-medium">{change.field}: </span>
                                   <span className="line-through text-muted-foreground">{formatValue(change.from)}</span>
@@ -244,11 +246,6 @@ export function ActivityLogPanel() {
                                   <span>{formatValue(change.to)}</span>
                                 </li>
                               ))}
-                              {changes.length > 4 && (
-                                <li className="text-muted-foreground">
-                                  {t('settingsPage.activityLog.moreChanges', { count: changes.length - 4 })}
-                                </li>
-                              )}
                             </ul>
                           ) : entry.details?.operation ? (
                             <span className="text-muted-foreground">{entry.details.operation}</span>

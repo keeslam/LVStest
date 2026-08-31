@@ -545,8 +545,6 @@
       "noEntries": "No activity found",
       "systemUser": "system",
       "emptyValue": "empty",
-      "moreChanges_one": "+{{count}} other field",
-      "moreChanges_other": "+{{count}} other fields",
       "pageOf": "Page {{page}} of {{pages}}",
       "previous": "Previous",
       "next": "Next",

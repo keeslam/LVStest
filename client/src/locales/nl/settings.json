@@ -545,8 +545,6 @@
       "noEntries": "Geen activiteit gevonden",
       "systemUser": "systeem",
       "emptyValue": "leeg",
-      "moreChanges_one": "+{{count}} ander veld",
-      "moreChanges_other": "+{{count}} andere velden",
       "pageOf": "Pagina {{page}} van {{pages}}",
       "previous": "Vorige",
       "next": "Volgende",
