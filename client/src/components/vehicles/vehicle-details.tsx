@@ -58,7 +58,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Bell, Mail, User, Eye, Edit, Calendar, Plus, Upload, X, FileCheck, Printer, Trash2, Download, ChevronDown, ChevronRight, ChevronLeft, AlertTriangle, Car, ScanLine } from "lucide-react";
+import { Bell, Mail, User, Eye, Edit, Calendar, Plus, Upload, X, FileCheck, Printer, Trash2, Download, ChevronDown, ChevronRight, ChevronLeft, AlertTriangle, Car, ScanLine, Info } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -67,6 +67,7 @@ import { VehicleForm } from "@/components/vehicles/vehicle-form";
 import { ApkInspectionDialog } from "@/components/vehicles/apk-inspection-dialog";
 import { FuelStatusUpdateDialog } from "@/components/vehicles/fuel-status-update-dialog";
 import { MileageOverridePasswordDialog } from "@/components/mileage-override-password-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import InteractiveDamageCheck from "@/pages/interactive-damage-check";
 import { 
   Form, 
@@ -1158,27 +1159,43 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
             <CardTitle className="text-sm font-medium text-gray-500">{t('details.infoCards.currentMileage')}</CardTitle>
           </CardHeader>
           <CardContent className={displayReservation ? 'pb-3' : ''}>
-            <p className={`font-semibold ${displayReservation ? 'text-lg' : 'text-2xl'}`} data-testid="text-current-mileage">
-              {vehicle.currentMileage != null
-                ? `${Number(vehicle.currentMileage).toLocaleString()} km`
-                : t('details.general.na')}
-            </p>
-            {isAdmin && vehicle.mileageDecreasedBy && (
-              <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs">
-                <div className="flex items-center gap-1 text-amber-700 font-medium">
-                  <AlertTriangle className="h-3 w-3" />
-                  {t('details.infoCards.mileageDecreased')}
-                </div>
-                <p className="text-amber-600 mt-1">
-                  {t('details.infoCards.fromKmBy', { previous: vehicle.previousMileage?.toLocaleString(), by: vehicle.mileageDecreasedBy })}
-                </p>
-                {vehicle.mileageDecreasedAt && (
-                  <p className="text-amber-500">
-                    {formatDate(new Date(vehicle.mileageDecreasedAt).toISOString().split('T')[0])}
-                  </p>
-                )}
-              </div>
-            )}
+            <div className="flex items-center gap-1.5">
+              <p className={`font-semibold whitespace-nowrap ${displayReservation ? 'text-lg' : 'text-2xl'}`} data-testid="text-current-mileage">
+                {vehicle.currentMileage != null
+                  ? `${Number(vehicle.currentMileage).toLocaleString()} km`
+                  : t('details.general.na')}
+              </p>
+              {/* The decrease history used to sit here as a block that pushed the
+                  card out of line with its neighbours - it hides in this marker. */}
+              {isAdmin && vehicle.mileageDecreasedBy && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="shrink-0 text-amber-600 hover:text-amber-700"
+                      aria-label={t('details.infoCards.mileageDecreased')}
+                      data-testid="button-mileage-decreased-info"
+                    >
+                      <Info className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[240px]" data-testid="tooltip-mileage-decreased">
+                    <div className="flex items-center gap-1 font-medium">
+                      <AlertTriangle className="h-3 w-3" />
+                      {t('details.infoCards.mileageDecreased')}
+                    </div>
+                    <p className="mt-1">
+                      {t('details.infoCards.fromKmBy', { previous: vehicle.previousMileage?.toLocaleString(), by: vehicle.mileageDecreasedBy })}
+                    </p>
+                    {vehicle.mileageDecreasedAt && (
+                      <p className="opacity-80">
+                        {formatDate(new Date(vehicle.mileageDecreasedAt).toISOString().split('T')[0])}
+                      </p>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           </CardContent>
         </Card>
         
