@@ -74,6 +74,7 @@ export default function VehiclesIndex() {
   const [deletedVehiclesOpen, setDeletedVehiclesOpen] = useState(false);
   const [barcodeBookOpen, setBarcodeBookOpen] = useState(false);
   const [keyAuditOpen, setKeyAuditOpen] = useState(false);
+  const [spareKeyAuditOpen, setSpareKeyAuditOpen] = useState(false);
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.role === UserRole.ADMIN;
   
@@ -615,6 +616,12 @@ export default function VehiclesIndex() {
         onOpenChange={setKeyAuditOpen}
       />
 
+      <KeyAuditDialog
+        open={spareKeyAuditOpen}
+        onOpenChange={setSpareKeyAuditOpen}
+        mode="spare"
+      />
+
       <div className="flex flex-wrap justify-between items-center gap-2">
         <h1 className="text-2xl font-bold">{t('indexPage.pageTitle')}</h1>
         <div className="flex flex-wrap gap-2">
@@ -635,6 +642,10 @@ export default function VehiclesIndex() {
           <Button variant="outline" onClick={() => setKeyAuditOpen(true)} data-testid="button-key-audit">
             <KeyRound className="h-4 w-4 mr-2" />
             {t("barcodes:keyAudit.title")}
+          </Button>
+          <Button variant="outline" onClick={() => setSpareKeyAuditOpen(true)} data-testid="button-spare-key-audit">
+            <KeyRound className="h-4 w-4 mr-2" />
+            {t("barcodes:keyAudit.spareTitle")}
           </Button>
           <VehicleBulkImportDialog onSuccess={handleDialogSuccess} />
           <VehicleAddDialog onSuccess={handleDialogSuccess} />

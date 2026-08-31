@@ -15,9 +15,14 @@ import { CameraScannerDialog } from "./camera-scanner-dialog";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { Vehicle } from "@shared/schema";
 
+export type KeyAuditMode = "main" | "spare";
+
 interface KeyAuditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // "spare" audits the second key cabinet: only spare-key labels count, and the
+  // set that should be hanging there is a different one.
+  mode?: KeyAuditMode;
 }
 
 type ScannedEntry = { plate: string; spare: boolean };
@@ -28,7 +33,8 @@ type ViewState = "scanning" | "result";
 // compare the scanned set against every vehicle that's expected to be there
 // (i.e. not currently out on rental) to surface what's missing or shouldn't
 // be there.
-export function KeyAuditDialog({ open, onOpenChange }: KeyAuditDialogProps) {
+export function KeyAuditDialog({ open, onOpenChange, mode = "main" }: KeyAuditDialogProps) {
+  const isSpare = mode === "spare";
   const { t } = useTranslation(["barcodes", "common"]);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -46,8 +52,14 @@ export function KeyAuditDialog({ open, onOpenChange }: KeyAuditDialogProps) {
   const { data: vehicles = [] } = useQuery<Vehicle[]>({ queryKey: ["/api/vehicles"] });
 
   const expected = useMemo(
-    () => vehicles.filter(v => v.availabilityStatus !== "rented"),
-    [vehicles],
+    () => vehicles.filter(v => (
+      isSpare
+        // A spare key stays in the cabinet while the car is out - unless it was
+        // handed to the customer, or the vehicle has no spare key at all.
+        ? !!v.spareKey && !v.spareKeyWithCustomer
+        : v.availabilityStatus !== "rented"
+    )),
+    [vehicles, isSpare],
   );
 
   useEffect(() => {
@@ -90,12 +102,23 @@ export function KeyAuditDialog({ open, onOpenChange }: KeyAuditDialogProps) {
       }
 
       const vehicle: Vehicle = data.vehicle;
+      const scannedSpare = !!data.scannedSpareKey;
+      // Scanning a main key during a spare audit (or the other way round) would
+      // silently tick off the wrong key, so it is refused instead.
+      if (isSpare && !scannedSpare) {
+        setError(t("keyAudit.notASpareKey"));
+        return;
+      }
+      if (!isSpare && scannedSpare) {
+        setError(t("keyAudit.notAMainKey"));
+        return;
+      }
       if (scannedRef.current.has(vehicle.id)) {
         setAlreadyScanned(true);
       } else {
         scannedRef.current.set(vehicle.id, {
           plate: formatLicensePlate(vehicle.licensePlate),
-          spare: !!data.scannedSpareKey,
+          spare: scannedSpare,
         });
         setScanned(new Map(scannedRef.current));
       }
@@ -117,7 +140,12 @@ export function KeyAuditDialog({ open, onOpenChange }: KeyAuditDialogProps) {
   const missing = expected.filter(v => !scanned.has(v.id));
   const unexpected = Array.from(scanned.keys())
     .map(id => vehicles.find(v => v.id === id))
-    .filter((v): v is Vehicle => !!v && v.availabilityStatus === "rented");
+    .filter((v): v is Vehicle => !!v && (
+      isSpare
+        // Hanging in the cabinet while the records say otherwise
+        ? (!v.spareKey || !!v.spareKeyWithCustomer)
+        : v.availabilityStatus === "rented"
+    ));
 
   const handleReset = () => {
     scannedRef.current = new Map();
@@ -135,9 +163,9 @@ export function KeyAuditDialog({ open, onOpenChange }: KeyAuditDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <KeyRound className="h-5 w-5" />
-            {t("keyAudit.title")}
+            {t(isSpare ? "keyAudit.spareTitle" : "keyAudit.title")}
           </DialogTitle>
-          <DialogDescription>{t("keyAudit.description")}</DialogDescription>
+          <DialogDescription>{t(isSpare ? "keyAudit.spareDescription" : "keyAudit.description")}</DialogDescription>
         </DialogHeader>
 
         {view === "scanning" ? (
@@ -178,7 +206,7 @@ export function KeyAuditDialog({ open, onOpenChange }: KeyAuditDialogProps) {
             )}
 
             <div className="text-sm text-muted-foreground" data-testid="text-key-audit-count">
-              {t("keyAudit.scannedCount", { scanned: scanned.size, expected: expected.length })}
+              {t(isSpare ? "keyAudit.spareScannedCount" : "keyAudit.scannedCount", { scanned: scanned.size, expected: expected.length })}
             </div>
 
             <Button
@@ -194,10 +222,10 @@ export function KeyAuditDialog({ open, onOpenChange }: KeyAuditDialogProps) {
         ) : (
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-semibold text-red-700 mb-2">{t("keyAudit.missingHeading")}</h3>
+              <h3 className="text-sm font-semibold text-red-700 mb-2">{t(isSpare ? "keyAudit.spareMissingHeading" : "keyAudit.missingHeading")}</h3>
               {missing.length === 0 ? (
                 <p className="text-sm text-muted-foreground" data-testid="text-key-audit-none-missing">
-                  {t("keyAudit.noneMissing")}
+                  {t(isSpare ? "keyAudit.spareNoneMissing" : "keyAudit.noneMissing")}
                 </p>
               ) : (
                 <ul className="space-y-1" data-testid="list-key-audit-missing">
@@ -215,7 +243,7 @@ export function KeyAuditDialog({ open, onOpenChange }: KeyAuditDialogProps) {
 
             {unexpected.length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-amber-700 mb-2">{t("keyAudit.unexpectedHeading")}</h3>
+                <h3 className="text-sm font-semibold text-amber-700 mb-2">{t(isSpare ? "keyAudit.spareUnexpectedHeading" : "keyAudit.unexpectedHeading")}</h3>
                 <ul className="space-y-1" data-testid="list-key-audit-unexpected">
                   {unexpected.map(v => (
                     <li
