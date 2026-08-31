@@ -103,7 +103,9 @@
     "regenerateConfirmDescription": "De oude barcode ({{barcode}}) werkt daarna niet meer. Reeds afgedrukte labels moeten opnieuw worden afgedrukt. Deze actie kan niet ongedaan worden gemaakt.",
     "regenerateSuccess": "Nieuwe barcode: {{barcode}}",
     "regenerateError": "Barcode opnieuw genereren mislukt.",
-    "barcodeDialogTitle": "Voertuigbarcode"
+    "barcodeDialogTitle": "Voertuigbarcode",
+    "printKeyLabelShort": "Sleutellabel",
+    "printSpareKeyLabelShort": "Reservesleutel-label"
   },
   "book": {
     "title": "Barcodeboek",
@@ -138,10 +140,20 @@
     "noneMissing": "Geen sleutels ontbreken 🎉",
     "alreadyScanned": "Al gescand",
     "unknownCode": "Onbekende code: {{code}}",
-    "notAVehicle": "Dit is een reserveringscode, geen voertuigsleutel"
+    "notAVehicle": "Dit is een reserveringscode, geen voertuigsleutel",
+    "spareTitle": "Reservesleutelkast-audit",
+    "spareDescription": "Scan alle reservesleutels in de kast; daarna zie je welke ontbreken.",
+    "spareScannedCount": "{{scanned}} van {{expected}} verwachte reservesleutels gescand",
+    "spareMissingHeading": "Ontbrekende reservesleutels",
+    "spareNoneMissing": "Geen reservesleutels ontbreken 🎉",
+    "spareUnexpectedHeading": "Onverwacht aanwezig (staat als bij klant of zonder reservesleutel)",
+    "notASpareKey": "Dit is een hoofdsleutel. Scan het reservesleutel-label (-S).",
+    "notAMainKey": "Dit is een reservesleutel. Gebruik hiervoor de reservesleutelkast-audit."
   },
   "templatePicker": {
     "label": "Labelsjabloon",
-    "defaultOption": "Standaardindeling"
+    "defaultOption": "Standaardindeling",
+    "pickDescription": "Kies het labelsjabloon voor deze afdruk.",
+    "printButton": "Afdrukken"
   }
 }

@@ -103,7 +103,9 @@
     "regenerateConfirmDescription": "The old barcode ({{barcode}}) will stop working. Already printed labels must be reprinted. This cannot be undone.",
     "regenerateSuccess": "New barcode: {{barcode}}",
     "regenerateError": "Failed to regenerate barcode.",
-    "barcodeDialogTitle": "Vehicle barcode"
+    "barcodeDialogTitle": "Vehicle barcode",
+    "printKeyLabelShort": "Key label",
+    "printSpareKeyLabelShort": "Spare key label"
   },
   "book": {
     "title": "Barcode book",
@@ -138,10 +140,20 @@
     "noneMissing": "No keys missing 🎉",
     "alreadyScanned": "Already scanned",
     "unknownCode": "Unknown code: {{code}}",
-    "notAVehicle": "This is a reservation code, not a vehicle key"
+    "notAVehicle": "This is a reservation code, not a vehicle key",
+    "spareTitle": "Spare key cabinet audit",
+    "spareDescription": "Scan every spare key in the cabinet; you then see which ones are missing.",
+    "spareScannedCount": "{{scanned}} of {{expected}} expected spare keys scanned",
+    "spareMissingHeading": "Missing spare keys",
+    "spareNoneMissing": "No spare keys missing 🎉",
+    "spareUnexpectedHeading": "Unexpectedly present (recorded as with the customer, or no spare key)",
+    "notASpareKey": "This is a main key. Scan the spare key label (-S).",
+    "notAMainKey": "This is a spare key. Use the spare key cabinet audit for it."
   },
   "templatePicker": {
     "label": "Label template",
-    "defaultOption": "Default layout"
+    "defaultOption": "Default layout",
+    "pickDescription": "Choose the label template for this print.",
+    "printButton": "Print"
   }
 }

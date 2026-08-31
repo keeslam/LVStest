@@ -12,6 +12,7 @@ import { Vehicle } from "@shared/schema";
 import { Loader2, Car } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { formatLicensePlate } from "@/lib/format-utils";
+import { KeyLabelPrintPanel } from "@/components/barcodes/key-label-print-panel";
 
 interface VehicleViewDialogProps {
   open: boolean;
@@ -36,7 +37,9 @@ export function VehicleViewDialog({
   return (
     <Dialog open={open && vehicleId !== null} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] max-h-[90vh] flex flex-col">
-        <DialogHeader>
+        <DialogHeader className="pr-10">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-1.5">
           <DialogTitle className="flex items-center gap-2">
             <Car className="h-5 w-5 text-blue-500" />
             {isLoading ? (
@@ -59,6 +62,11 @@ export function VehicleViewDialog({
           <DialogDescription>
             {t('viewDialog.description')}
           </DialogDescription>
+            </div>
+
+            {/* Barcode and key-label printing, straight from the header */}
+            {vehicle && <KeyLabelPrintPanel vehicle={vehicle} />}
+          </div>
         </DialogHeader>
 
         <div className="flex-1 overflow-auto">
