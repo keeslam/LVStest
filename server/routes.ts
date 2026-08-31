@@ -2084,12 +2084,14 @@ export async function registerRoutes(app: Express): Promise<void> {
         'wokNotification', 'seatcovers', 'backupbeepers', 'gps', 'adBlue'
       ];
       
+      // Only normalize the flags the request actually carries. This is a PATCH:
+      // defaulting an absent flag to false turned a mileage-only edit into a
+      // silent wipe of gps, spareKey, winterTires and the rest. The vehicle form
+      // always sends every flag explicitly, so nothing depends on that default.
       booleanFields.forEach(field => {
         if (field in sanitizedData) {
           const value = sanitizedData[field];
           sanitizedData[field] = value === true || value === 'true' || value === 1 || value === '1';
-        } else {
-          sanitizedData[field] = false;
         }
       });
       
