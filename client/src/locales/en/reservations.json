@@ -1091,6 +1091,23 @@
     "deleteReservationForCustomerDescription": "Are you sure you want to delete this reservation for {{name}}? This action cannot be undone.",
     "thisCustomerFallback": "this customer",
     "damageCheckPdfTitle": "Damage Check PDF",
-    "previewLabel": "Preview"
+    "previewLabel": "Preview",
+    "moveConfirm": {
+      "title": "Move reservation?",
+      "later": "later",
+      "earlier": "earlier",
+      "from": "From:",
+      "to": "To:",
+      "noVehicle": "No vehicle",
+      "confirm": "Move",
+      "moving": "Moving...",
+      "description_one": "You are about to move this reservation {{count}} day {{direction}}.",
+      "description_other": "You are about to move this reservation {{count}} days {{direction}}.",
+      "descriptionSameStart": "Check the dates for this reservation.",
+      "newStartDate": "New start date",
+      "newEndDate": "New end date",
+      "resetEndDate": "Reset end date",
+      "endBeforeStart": "The end date cannot be before the start date."
+    }
   }
 }

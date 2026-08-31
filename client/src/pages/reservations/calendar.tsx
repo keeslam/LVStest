@@ -242,7 +242,7 @@ export default function ReservationCalendarPage() {
   const [adminHistorySearch, setAdminHistorySearch] = useState('');
   const [adminHistoryDateFilter, setAdminHistoryDateFilter] = useState<'all' | '7days' | '30days' | '90days'>('all');
   const [adminCurrentSearch, setAdminCurrentSearch] = useState('');
-  const [adminCurrentSort, setAdminCurrentSort] = useState<'pickup' | 'plate' | 'company' | 'contract'>('pickup');
+  const [adminCurrentSort, setAdminCurrentSort] = useState<{ column: string; direction: 'asc' | 'desc' }>({ column: 'pickup', direction: 'desc' });
   const [adminHistorySort, setAdminHistorySort] = useState<{ column: string; direction: 'asc' | 'desc' }>({ column: 'return', direction: 'desc' });
   
   // Service dialogs state
@@ -254,6 +254,18 @@ export default function ReservationCalendarPage() {
   const [draggedReservation, setDraggedReservation] = useState<Reservation | null>(null);
   const [dragStartDay, setDragStartDay] = useState<Date | null>(null);
   const [dropTargetDate, setDropTargetDate] = useState<Date | null>(null);
+  // A drop only stages the move - it is applied once confirmed, so an accidental
+  // drag can't silently reschedule a reservation.
+  const [pendingMove, setPendingMove] = useState<{
+    reservation: Reservation;
+    newStartDate: string;
+    newEndDate: string | null;
+    // What the drag itself proposed for the end date, so an edited end date can
+    // be put back without cancelling the whole move.
+    shiftedEndDate: string | null;
+    daysDiff: number;
+  } | null>(null);
+  const [isMoving, setIsMoving] = useState(false);
   
   // Dialog handlers
   const handleViewReservation = (reservation: Reservation) => {
@@ -994,7 +1006,18 @@ export default function ReservationCalendarPage() {
     
     return rows;
   }, [dateRanges.days]);
-  
+
+  // Derived values for the drag-and-drop move confirmation
+  const shiftedEndDate = pendingMove?.shiftedEndDate ?? null;
+  const moveDatesInvalid = !!pendingMove?.newStartDate && !!pendingMove?.newEndDate
+    && pendingMove.newEndDate < pendingMove.newStartDate;
+  const moveStartShift = pendingMove
+    ? differenceInDays(
+        safeParseDateISO(pendingMove.newStartDate) ?? new Date(),
+        safeParseDateISO(pendingMove.reservation.startDate) ?? new Date()
+      )
+    : 0;
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -1217,10 +1240,18 @@ export default function ReservationCalendarPage() {
                           // Calculate new dates by applying the offset to both start and end dates
                           const newStartDate = format(addDays(oldStartDate, daysDiff), 'yyyy-MM-dd');
                           const newEndDate = oldEndDate ? format(addDays(oldEndDate, daysDiff), 'yyyy-MM-dd') : null;
-                          
-                          // Update the reservation
-                          handleMoveReservation(draggedReservation.id, newStartDate, newEndDate);
-                          
+
+                          // Dropped back on the same day - nothing to move, nothing to confirm
+                          if (daysDiff !== 0) {
+                            setPendingMove({
+                              reservation: draggedReservation,
+                              newStartDate,
+                              newEndDate,
+                              shiftedEndDate: newEndDate,
+                              daysDiff,
+                            });
+                          }
+
                           setDraggedReservation(null);
                           setDragStartDay(null);
                           setDropTargetDate(null);
@@ -3466,21 +3497,52 @@ export default function ReservationCalendarPage() {
                   );
                 });
                 
-                // Apply sort
+                // Apply sort - every column is sortable from its header, the
+                // dropdown just picks the column and leaves the direction alone.
                 const sortedCurrent = [...searchedCurrent].sort((a, b) => {
-                  switch (adminCurrentSort) {
+                  const dir = adminCurrentSort.direction === 'asc' ? 1 : -1;
+                  const vehicleA = a.vehicle || vehicles?.find(v => v.id === a.vehicleId);
+                  const vehicleB = b.vehicle || vehicles?.find(v => v.id === b.vehicleId);
+
+                  switch (adminCurrentSort.column) {
+                    case 'gps':
+                      return dir * ((vehicleA?.gps ? 1 : 0) - (vehicleB?.gps ? 1 : 0));
                     case 'plate':
-                      return (a.vehicle?.licensePlate || '').localeCompare(b.vehicle?.licensePlate || '');
+                      return dir * (vehicleA?.licensePlate || '').localeCompare(vehicleB?.licensePlate || '');
+                    case 'model':
+                      return dir * `${vehicleA?.brand || ''} ${vehicleA?.model || ''}`.trim()
+                        .localeCompare(`${vehicleB?.brand || ''} ${vehicleB?.model || ''}`.trim());
+                    case 'spare':
+                      return dir * (getSpareTargetVehicle(a)?.licensePlate || '')
+                        .localeCompare(getSpareTargetVehicle(b)?.licensePlate || '');
                     case 'company':
-                      return (a.customer?.companyName || a.customer?.name || '').localeCompare(b.customer?.companyName || b.customer?.name || '');
+                      return dir * (a.customer?.companyName || a.customer?.name || '').localeCompare(b.customer?.companyName || b.customer?.name || '');
                     case 'contract':
-                      return (a.contractNumber || '').localeCompare(b.contractNumber || '');
+                      return dir * (a.contractNumber || '').localeCompare(b.contractNumber || '');
                     case 'pickup':
+                      return dir * (new Date(a.startDate || 0).getTime() - new Date(b.startDate || 0).getTime());
                     default:
-                      return new Date(b.startDate || 0).getTime() - new Date(a.startDate || 0).getTime();
+                      return 0;
                   }
                 });
-                
+
+                const toggleCurrentSort = (column: string) => {
+                  setAdminCurrentSort(prev => ({
+                    column,
+                    direction: prev.column === column && prev.direction === 'asc' ? 'desc' : 'asc'
+                  }));
+                };
+
+                const CurrentSortIcon = ({ column }: { column: string }) => (
+                  <span className="ml-1 inline-flex">
+                    {adminCurrentSort.column === column ? (
+                      adminCurrentSort.direction === 'asc' ? '↑' : '↓'
+                    ) : (
+                      <span className="text-gray-300">↕</span>
+                    )}
+                  </span>
+                );
+
                 return (
                   <div className="space-y-4">
                     <div className="flex items-center gap-4">
@@ -3493,7 +3555,10 @@ export default function ReservationCalendarPage() {
                           data-testid="input-admin-current-search"
                         />
                       </div>
-                      <Select value={adminCurrentSort} onValueChange={(v: any) => setAdminCurrentSort(v)}>
+                      <Select
+                        value={adminCurrentSort.column}
+                        onValueChange={(v: string) => setAdminCurrentSort({ column: v, direction: v === 'pickup' ? 'desc' : 'asc' })}
+                      >
                         <SelectTrigger className="w-[160px] h-9">
                           <SelectValue placeholder={t('calendarPage.administration.sortByPlaceholder')} />
                         </SelectTrigger>
@@ -3515,13 +3580,55 @@ export default function ReservationCalendarPage() {
                         <Table>
                           <TableHeader className="bg-muted/50 sticky top-0 z-10">
                             <TableRow className="border-b-2">
-                              <TableHead className="px-2 py-1 border-r font-semibold text-center whitespace-nowrap">{t('calendarPage.administration.tableHeaders.gps')}</TableHead>
-                              <TableHead className="px-2 py-1 border-r font-semibold whitespace-nowrap">{t('calendarPage.administration.tableHeaders.licensePlate')}</TableHead>
-                              <TableHead className="px-2 py-1 border-r font-semibold whitespace-nowrap">{t('calendarPage.administration.tableHeaders.makeModel')}</TableHead>
-                              <TableHead className="px-2 py-1 border-r font-semibold whitespace-nowrap">{t('calendarPage.administration.tableHeaders.spareVehicle')}</TableHead>
-                              <TableHead className="px-2 py-1 border-r font-semibold whitespace-nowrap">{t('calendarPage.administration.tableHeaders.contractNumber')}</TableHead>
-                              <TableHead className="px-2 py-1 border-r font-semibold whitespace-nowrap">{t('calendarPage.administration.tableHeaders.companyCustomer')}</TableHead>
-                              <TableHead className="px-2 py-1 font-semibold whitespace-nowrap">{t('calendarPage.administration.tableHeaders.pickupDate')}</TableHead>
+                              <TableHead
+                                className="px-2 py-1 border-r font-semibold text-center whitespace-nowrap cursor-pointer hover:bg-muted/80 select-none"
+                                onClick={() => toggleCurrentSort('gps')}
+                                data-testid="header-admin-current-gps"
+                              >
+                                {t('calendarPage.administration.tableHeaders.gps')}<CurrentSortIcon column="gps" />
+                              </TableHead>
+                              <TableHead
+                                className="px-2 py-1 border-r font-semibold whitespace-nowrap cursor-pointer hover:bg-muted/80 select-none"
+                                onClick={() => toggleCurrentSort('plate')}
+                                data-testid="header-admin-current-plate"
+                              >
+                                {t('calendarPage.administration.tableHeaders.licensePlate')}<CurrentSortIcon column="plate" />
+                              </TableHead>
+                              <TableHead
+                                className="px-2 py-1 border-r font-semibold whitespace-nowrap cursor-pointer hover:bg-muted/80 select-none"
+                                onClick={() => toggleCurrentSort('model')}
+                                data-testid="header-admin-current-model"
+                              >
+                                {t('calendarPage.administration.tableHeaders.makeModel')}<CurrentSortIcon column="model" />
+                              </TableHead>
+                              <TableHead
+                                className="px-2 py-1 border-r font-semibold whitespace-nowrap cursor-pointer hover:bg-muted/80 select-none"
+                                onClick={() => toggleCurrentSort('spare')}
+                                data-testid="header-admin-current-spare"
+                              >
+                                {t('calendarPage.administration.tableHeaders.spareVehicle')}<CurrentSortIcon column="spare" />
+                              </TableHead>
+                              <TableHead
+                                className="px-2 py-1 border-r font-semibold whitespace-nowrap cursor-pointer hover:bg-muted/80 select-none"
+                                onClick={() => toggleCurrentSort('contract')}
+                                data-testid="header-admin-current-contract"
+                              >
+                                {t('calendarPage.administration.tableHeaders.contractNumber')}<CurrentSortIcon column="contract" />
+                              </TableHead>
+                              <TableHead
+                                className="px-2 py-1 border-r font-semibold whitespace-nowrap cursor-pointer hover:bg-muted/80 select-none"
+                                onClick={() => toggleCurrentSort('company')}
+                                data-testid="header-admin-current-company"
+                              >
+                                {t('calendarPage.administration.tableHeaders.companyCustomer')}<CurrentSortIcon column="company" />
+                              </TableHead>
+                              <TableHead
+                                className="px-2 py-1 font-semibold whitespace-nowrap cursor-pointer hover:bg-muted/80 select-none"
+                                onClick={() => toggleCurrentSort('pickup')}
+                                data-testid="header-admin-current-pickup"
+                              >
+                                {t('calendarPage.administration.tableHeaders.pickupDate')}<CurrentSortIcon column="pickup" />
+                              </TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -4017,6 +4124,117 @@ export default function ReservationCalendarPage() {
             <AlertDialogCancel onClick={() => setPdfPreviewOpen(false)}>{t('common:actions.close')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => pdfPreviewUrl && window.open(pdfPreviewUrl, '_blank')}>
               {t('form.documentPreview.openInNewTabButton')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirmation for a reservation moved by drag and drop */}
+      <AlertDialog open={!!pendingMove} onOpenChange={(open) => { if (!open) setPendingMove(null); }}>
+        <AlertDialogContent data-testid="dialog-confirm-move-reservation">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('calendarPage.moveConfirm.title')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {moveStartShift === 0
+                ? t('calendarPage.moveConfirm.descriptionSameStart')
+                : t('calendarPage.moveConfirm.description', {
+                    count: Math.abs(moveStartShift),
+                    direction: moveStartShift > 0
+                      ? t('calendarPage.moveConfirm.later')
+                      : t('calendarPage.moveConfirm.earlier'),
+                  })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {pendingMove && (
+            <div className="space-y-3 text-sm">
+              <div className="font-medium">
+                {formatLicensePlate(pendingMove.reservation.vehicle?.licensePlate || '') || t('calendarPage.moveConfirm.noVehicle')}
+                {pendingMove.reservation.customer?.name ? ` — ${pendingMove.reservation.customer.name}` : ''}
+              </div>
+              <div>
+                <span className="text-muted-foreground">{t('calendarPage.moveConfirm.from')} </span>
+                <span className="line-through">
+                  {safeFormat(safeParseDateISO(pendingMove.reservation.startDate), 'dd-MM-yyyy', '-')}
+                  {pendingMove.reservation.endDate ? ` → ${safeFormat(safeParseDateISO(pendingMove.reservation.endDate), 'dd-MM-yyyy', '-')}` : ''}
+                </span>
+              </div>
+
+              {/* Both dates stay editable here: the drag shifts them by the same
+                  offset, but a vehicle picked up earlier is often returned on the
+                  originally agreed day or later. */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label htmlFor="move-start-date" className="text-xs text-muted-foreground">
+                    {t('calendarPage.moveConfirm.newStartDate')}
+                  </label>
+                  <Input
+                    id="move-start-date"
+                    type="date"
+                    value={pendingMove.newStartDate}
+                    disabled={isMoving}
+                    onChange={(e) => setPendingMove({ ...pendingMove, newStartDate: e.target.value })}
+                    data-testid="input-move-start-date"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label htmlFor="move-end-date" className="text-xs text-muted-foreground">
+                    {t('calendarPage.moveConfirm.newEndDate')}
+                  </label>
+                  <Input
+                    id="move-end-date"
+                    type="date"
+                    value={pendingMove.newEndDate || ''}
+                    disabled={isMoving}
+                    onChange={(e) => setPendingMove({ ...pendingMove, newEndDate: e.target.value || null })}
+                    data-testid="input-move-end-date"
+                  />
+                </div>
+              </div>
+
+              {pendingMove.reservation.endDate && pendingMove.newEndDate !== shiftedEndDate && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isMoving}
+                  onClick={() => setPendingMove({ ...pendingMove, newEndDate: shiftedEndDate })}
+                  data-testid="button-reset-move-end-date"
+                >
+                  {t('calendarPage.moveConfirm.resetEndDate')}
+                </Button>
+              )}
+
+              {moveDatesInvalid && (
+                <p className="text-sm text-destructive" data-testid="text-move-date-error">
+                  {t('calendarPage.moveConfirm.endBeforeStart')}
+                </p>
+              )}
+            </div>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isMoving} data-testid="button-cancel-move">
+              {t('common:actions.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isMoving || moveDatesInvalid || !pendingMove?.newStartDate}
+              data-testid="button-confirm-move"
+              onClick={async (e) => {
+                // Keep the dialog up until the move actually lands, so a failure
+                // isn't hidden behind a closed dialog.
+                e.preventDefault();
+                if (!pendingMove) return;
+                setIsMoving(true);
+                try {
+                  await handleMoveReservation(pendingMove.reservation.id, pendingMove.newStartDate, pendingMove.newEndDate);
+                  setPendingMove(null);
+                } finally {
+                  setIsMoving(false);
+                }
+              }}
+            >
+              {isMoving ? t('calendarPage.moveConfirm.moving') : t('calendarPage.moveConfirm.confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

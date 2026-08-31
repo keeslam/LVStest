@@ -1091,6 +1091,23 @@
     "deleteReservationForCustomerDescription": "Weet je zeker dat je deze reservering voor {{name}} wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
     "thisCustomerFallback": "deze klant",
     "damageCheckPdfTitle": "Schadecheck-PDF",
-    "previewLabel": "Voorbeeld"
+    "previewLabel": "Voorbeeld",
+    "moveConfirm": {
+      "title": "Reservering verplaatsen?",
+      "later": "later",
+      "earlier": "eerder",
+      "from": "Van:",
+      "to": "Naar:",
+      "noVehicle": "Geen voertuig",
+      "confirm": "Verplaatsen",
+      "moving": "Bezig met verplaatsen...",
+      "description_one": "Je staat op het punt deze reservering {{count}} dag {{direction}} te zetten.",
+      "description_other": "Je staat op het punt deze reservering {{count}} dagen {{direction}} te zetten.",
+      "descriptionSameStart": "Controleer de datums van deze reservering.",
+      "newStartDate": "Nieuwe startdatum",
+      "newEndDate": "Nieuwe einddatum",
+      "resetEndDate": "Einddatum terugzetten",
+      "endBeforeStart": "De einddatum kan niet vóór de startdatum liggen."
+    }
   }
 }
