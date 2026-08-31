@@ -58,18 +58,8 @@ const passwordChangeSchema = z.object({
   path: ["confirmPassword"],
 });
 
-const mileageOverridePasswordSchema = z.object({
-  currentPassword: z.string().min(1, "Current password is required"),
-  newPassword: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
-
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 type PasswordChangeValues = z.infer<typeof passwordChangeSchema>;
-type MileageOverridePasswordValues = z.infer<typeof mileageOverridePasswordSchema>;
 
 export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
   const { t } = useTranslation(["auth", "common"]);
@@ -95,15 +85,6 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
     },
   });
 
-  const mileageForm = useForm<MileageOverridePasswordValues>({
-    resolver: zodResolver(mileageOverridePasswordSchema),
-    defaultValues: {
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    },
-  });
-
   useEffect(() => {
     if (user && open) {
       profileForm.reset({
@@ -118,9 +99,8 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
     if (!open) {
       setActiveTab("profile");
       passwordForm.reset();
-      mileageForm.reset();
     }
-  }, [open, passwordForm, mileageForm]);
+  }, [open, passwordForm]);
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileFormValues) => {
@@ -174,35 +154,6 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
     },
   });
 
-  const setMileagePasswordMutation = useMutation({
-    mutationFn: async (data: MileageOverridePasswordValues) => {
-      const res = await apiRequest("POST", `/api/users/${user?.id}/mileage-override-password`, {
-        currentPassword: data.currentPassword,
-        newPassword: data.newPassword,
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || t('profileDialog.setMileagePasswordFailed'));
-      }
-      return await res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: t('profileDialog.successTitle'),
-        description: t('profileDialog.mileagePasswordSetDescription'),
-      });
-      mileageForm.reset();
-      setActiveTab("profile");
-    },
-    onError: (error: Error) => {
-      toast({
-        title: t('profileDialog.errorTitle'),
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
   const createdAt = user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : t('profileDialog.unknown');
 
   // Always render the Dialog to prevent unmounting issues
@@ -214,7 +165,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
         </DialogHeader>
 
         {user && (<Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="profile" data-testid="tab-profile">
               <UserIcon className="h-4 w-4 mr-1" />
               {t('profileDialog.tabs.profile')}
@@ -226,10 +177,6 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
             <TabsTrigger value="password" data-testid="tab-change-password">
               <KeyRound className="h-4 w-4 mr-1" />
               {t('profileDialog.tabs.password')}
-            </TabsTrigger>
-            <TabsTrigger value="mileage" data-testid="tab-mileage-override">
-              <Shield className="h-4 w-4 mr-1" />
-              {t('profileDialog.tabs.mileage')}
             </TabsTrigger>
           </TabsList>
 
@@ -446,82 +393,6 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
             </Form>
           </TabsContent>
 
-          <TabsContent value="mileage" className="mt-4 space-y-4">
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>{t('profileDialog.mileageSecurityTitle')}</AlertTitle>
-              <AlertDescription>
-                {t('profileDialog.mileageSecurityDescription')}
-              </AlertDescription>
-            </Alert>
-
-            <Form {...mileageForm}>
-              <form onSubmit={mileageForm.handleSubmit((data) => setMileagePasswordMutation.mutate(data))} className="space-y-4">
-                <FormField
-                  control={mileageForm.control}
-                  name="currentPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('profileDialog.currentAccountPassword')}</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder={t('profileDialog.currentAccountPasswordPlaceholder')} {...field} data-testid="input-mileage-current-password" />
-                      </FormControl>
-                      <FormDescription>{t('profileDialog.currentAccountPasswordHint')}</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={mileageForm.control}
-                  name="newPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('profileDialog.newMileagePassword')}</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder={t('profileDialog.newMileagePasswordPlaceholder')} {...field} data-testid="input-mileage-new-password" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={mileageForm.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('profileDialog.confirmPassword')}</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder={t('profileDialog.confirmPasswordPlaceholder')} {...field} data-testid="input-mileage-confirm-password" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      mileageForm.reset();
-                      setActiveTab("profile");
-                    }}
-                  >
-                    {t('common:actions.cancel')}
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={setMileagePasswordMutation.isPending}
-                    data-testid="button-set-mileage-password"
-                  >
-                    {setMileagePasswordMutation.isPending ? t('profileDialog.saving') : t('profileDialog.setPassword')}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </TabsContent>
         </Tabs>)}
       </DialogContent>
     </Dialog>

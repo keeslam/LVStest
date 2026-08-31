@@ -85,6 +85,9 @@ export const UserPermission = {
   // Reservation Management
   MANAGE_RESERVATIONS: 'manage_reservations',
   VIEW_RESERVATIONS: 'view_reservations',
+  // Allows confirming a mileage decrease at pickup with your own account password.
+  // Checked strictly - admins need it too, so it can be revoked per user.
+  AUTHORIZE_MILEAGE_DECREASE: 'authorize_mileage_decrease',
   
   // Maintenance & Expenses
   MANAGE_MAINTENANCE: 'manage_maintenance',

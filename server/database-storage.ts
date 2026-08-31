@@ -114,26 +114,6 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount ?? 0) > 0;
   }
   
-  async setMileageOverridePassword(id: number, hashedPassword: string | null): Promise<boolean> {
-    const result = await db
-      .update(users)
-      .set({
-        mileageOverridePasswordHash: hashedPassword,
-        updatedAt: new Date()
-      })
-      .where(eq(users.id, id));
-      
-    return (result.rowCount ?? 0) > 0;
-  }
-  
-  async getMileageOverridePasswordHash(id: number): Promise<string | null> {
-    const [user] = await db
-      .select({ mileageOverridePasswordHash: users.mileageOverridePasswordHash })
-      .from(users)
-      .where(eq(users.id, id));
-      
-    return user?.mileageOverridePasswordHash || null;
-  }
   
   async deleteUser(id: number): Promise<boolean> {
     try {
@@ -1542,6 +1522,10 @@ export class DatabaseStorage implements IStorage {
       fuelLevelPickup: string;
       pickupDate?: string;
       pickupNotes?: string;
+      // Set by the pickup route only after a mileage decrease was authorized
+      // with an admin/manager account password - see POST /api/reservations/:id/pickup.
+      allowMileageDecrease?: boolean;
+      mileageDecreaseAuthorizedBy?: string;
     }
   ): Promise<Reservation | undefined> {
     const reservation = await this.getReservation(reservationId);
@@ -1562,7 +1546,9 @@ export class DatabaseStorage implements IStorage {
       throw new Error('Vehicle not found');
     }
 
-    if (vehicle.currentMileage && pickupData.pickupMileage < vehicle.currentMileage) {
+    const isMileageDecrease = !!vehicle.currentMileage && pickupData.pickupMileage < vehicle.currentMileage;
+
+    if (isMileageDecrease && !pickupData.allowMileageDecrease) {
       throw new Error(`Pickup mileage (${pickupData.pickupMileage}) cannot be less than vehicle's current mileage (${vehicle.currentMileage})`);
     }
 
@@ -1594,6 +1580,14 @@ export class DatabaseStorage implements IStorage {
       currentFuelLevel: pickupData.fuelLevelPickup,
       updatedAt: new Date()
     };
+
+    // Same audit trail the vehicle edit form writes - Vehicle Details shows this
+    // to admins as "verlaagd vanaf X km door Y".
+    if (isMileageDecrease) {
+      vehicleUpdate.mileageDecreasedBy = pickupData.mileageDecreaseAuthorizedBy || 'unknown';
+      vehicleUpdate.mileageDecreasedAt = new Date();
+      vehicleUpdate.previousMileage = vehicle.currentMileage;
+    }
 
     const currentStatus = (vehicle.availabilityStatus || 'available') as VehicleAvailabilityStatus;
     const pickupStatusResult = getStatusOnPickup(currentStatus);

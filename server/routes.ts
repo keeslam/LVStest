@@ -630,6 +630,71 @@ async function verifyAdminPassword(password: string): Promise<boolean> {
   return false;
 }
 
+type MileageDecreaseAuthorization =
+  | { ok: true; authorizedBy: string }
+  | { ok: false; status: number; body: Record<string, any> };
+
+/**
+ * Single gate for lowering a vehicle's odometer reading, used by every route
+ * that can write a lower mileage (pickup, vehicle update, mileage-only update).
+ *
+ * The caller confirms with their OWN account password and must hold the
+ * `authorize_mileage_decrease` permission. That permission is checked strictly
+ * against the stored permissions - unlike hasPermission(), an admin role is not
+ * a free pass, so it can be revoked per user. Permissions are read from the
+ * database so a revoked right applies without a new sign-in.
+ */
+async function authorizeMileageDecrease(
+  req: Request,
+  overridePassword: unknown,
+  context: { oldMileage: number; newMileage: number },
+): Promise<MileageDecreaseAuthorization> {
+  const sessionUser = (req as any).user;
+  if (!sessionUser) {
+    return { ok: false, status: 401, body: { message: "User not authenticated" } };
+  }
+
+  if (!overridePassword || typeof overridePassword !== "string") {
+    return {
+      ok: false,
+      status: 400,
+      body: {
+        message: `Mileage decrease detected (${context.newMileage} < ${context.oldMileage}). Override authorization required.`,
+        requiresOverride: true,
+      },
+    };
+  }
+
+  const user = await storage.getUser(sessionUser.id);
+  if (!user) {
+    return { ok: false, status: 401, body: { message: "User not authenticated" } };
+  }
+
+  if (!(user.permissions || []).includes(UserPermission.AUTHORIZE_MILEAGE_DECREASE)) {
+    return {
+      ok: false,
+      status: 403,
+      body: {
+        message: "Not authorized. The 'authorize_mileage_decrease' permission is required.",
+        code: "MILEAGE_OVERRIDE_FORBIDDEN",
+      },
+    };
+  }
+
+  if (!(await comparePasswords(overridePassword, user.password))) {
+    return {
+      ok: false,
+      status: 403,
+      body: { message: "Invalid override password", code: "MILEAGE_OVERRIDE_INVALID_PASSWORD" },
+    };
+  }
+
+  console.log(
+    `✅ Mileage decrease authorized by ${user.username}: ${context.newMileage} km (was ${context.oldMileage} km)`,
+  );
+  return { ok: true, authorizedBy: user.username };
+}
+
 // Helper function to format dates consistently
 function formatDate(dateString: string): string {
   if (!dateString) return '';
@@ -1078,74 +1143,6 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
   
-  // Set mileage override password (users can set their own)
-  app.post("/api/users/:id/mileage-override-password", requireAuth, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid user ID" });
-      }
-      
-      // Only allow users to set their own mileage override password
-      if (id !== req.user.id) {
-        return res.status(403).json({ message: "Can only set your own mileage override password" });
-      }
-      
-      const { password } = req.body;
-      
-      if (!password) {
-        return res.status(400).json({ message: "Password is required" });
-      }
-      
-      if (password.length < 4) {
-        return res.status(400).json({ message: "Password must be at least 4 characters" });
-      }
-      
-      // Hash the password
-      const hashedPassword = await hashPassword(password);
-      const success = await storage.setMileageOverridePassword(id, hashedPassword);
-      
-      if (!success) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      res.json({ success: true, message: "Mileage override password set successfully" });
-    } catch (error) {
-      console.error("Error setting mileage override password:", error);
-      res.status(500).json({ message: "Failed to set mileage override password" });
-    }
-  });
-  
-  // Verify mileage override password
-  app.post("/api/users/:id/verify-mileage-override", requireAuth, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid user ID" });
-      }
-      
-      const { password } = req.body;
-      
-      if (!password) {
-        return res.status(400).json({ message: "Password is required" });
-      }
-      
-      const storedHash = await storage.getMileageOverridePasswordHash(id);
-      
-      if (!storedHash) {
-        return res.status(404).json({ message: "No mileage override password set for this user" });
-      }
-      
-      const isValid = await verifyPassword(password, storedHash);
-      
-      res.json({ valid: isValid });
-    } catch (error) {
-      console.error("Error verifying mileage override password:", error);
-      res.status(500).json({ message: "Failed to verify password" });
-    }
-  });
   
   // Delete user (requires MANAGE_USERS permission)
   app.delete("/api/users/:id", requireAuth, hasPermission(UserPermission.MANAGE_USERS), async (req, res) => {
@@ -2023,9 +2020,14 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       
       console.log("Received vehicle update data:", JSON.stringify(req.body));
-      
+
       // Create a sanitized copy of the request body
       const sanitizedData = { ...req.body };
+
+      // Authorization for a mileage decrease travels alongside the vehicle data,
+      // but is not a vehicle field - keep it out of the update payload.
+      const mileageOverridePassword = sanitizedData.mileageOverridePassword;
+      delete sanitizedData.mileageOverridePassword;
       
       // Ensure all values are properly formatted
 
@@ -2123,14 +2125,23 @@ export async function registerRoutes(app: Express): Promise<void> {
         companyBy
       };
       
-      // Track mileage decrease (admin-only visibility)
+      // A decrease needs the same authorization as one entered at pickup
       const newMileage = sanitizedData.currentMileage !== undefined ? parseInt(sanitizedData.currentMileage) : null;
       const oldMileage = existingVehicle.currentMileage;
       if (newMileage !== null && !isNaN(newMileage) && oldMileage !== null && newMileage < oldMileage) {
-        dataWithTracking.mileageDecreasedBy = user ? user.username : 'unknown';
+        const authorization = await authorizeMileageDecrease(req, mileageOverridePassword, {
+          oldMileage,
+          newMileage,
+        });
+
+        if (!authorization.ok) {
+          return res.status(authorization.status).json(authorization.body);
+        }
+
+        dataWithTracking.mileageDecreasedBy = authorization.authorizedBy;
         dataWithTracking.mileageDecreasedAt = new Date();
         dataWithTracking.previousMileage = oldMileage;
-        console.log(`[Mileage Decrease] Vehicle ${id}: ${oldMileage} -> ${newMileage} by ${user?.username || 'unknown'}`);
+        console.log(`[Mileage Decrease] Vehicle ${id}: ${oldMileage} -> ${newMileage} by ${authorization.authorizedBy}`);
       }
       
       const vehicle = await storage.updateVehicle(id, dataWithTracking);
@@ -2250,14 +2261,23 @@ export async function registerRoutes(app: Express): Promise<void> {
           companyBy
         };
         
-        // Track mileage decrease (admin-only visibility)
+        // A decrease needs the same authorization as one entered at pickup
         const newMileage = updateData.currentMileage;
         const oldMileage = vehicle.currentMileage;
         if (newMileage !== undefined && oldMileage !== null && newMileage < oldMileage) {
-          dataWithTracking.mileageDecreasedBy = user ? user.username : 'unknown';
+          const authorization = await authorizeMileageDecrease(req, req.body.mileageOverridePassword, {
+            oldMileage,
+            newMileage,
+          });
+
+          if (!authorization.ok) {
+            return res.status(authorization.status).json(authorization.body);
+          }
+
+          dataWithTracking.mileageDecreasedBy = authorization.authorizedBy;
           dataWithTracking.mileageDecreasedAt = new Date();
           dataWithTracking.previousMileage = oldMileage;
-          console.log(`[Mileage Decrease] Vehicle ${id}: ${oldMileage} -> ${newMileage} by ${user?.username || 'unknown'}`);
+          console.log(`[Mileage Decrease] Vehicle ${id}: ${oldMileage} -> ${newMileage} by ${authorization.authorizedBy}`);
         }
         
         const updatedVehicle = await storage.updateVehicle(id, dataWithTracking);
@@ -4990,36 +5010,20 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Reservation or vehicle not found" });
       }
 
+      let mileageDecreaseAuthorizedBy: string | undefined;
+
       if (reservation.vehicle.currentMileage && mileage < reservation.vehicle.currentMileage) {
-        if (!allowMileageDecrease || !overridePassword) {
-          return res.status(400).json({ 
-            message: `Mileage decrease detected (${mileage} < ${reservation.vehicle.currentMileage}). Override authorization required.`,
-            requiresOverride: true
-          });
+        const authorization = await authorizeMileageDecrease(
+          req,
+          allowMileageDecrease ? overridePassword : undefined,
+          { oldMileage: reservation.vehicle.currentMileage, newMileage: mileage },
+        );
+
+        if (!authorization.ok) {
+          return res.status(authorization.status).json(authorization.body);
         }
 
-        const user = (req as any).user;
-        if (!user) {
-          return res.status(401).json({ message: "User not authenticated" });
-        }
-
-        const storedHash = await storage.getMileageOverridePasswordHash(user.id);
-        if (!storedHash) {
-          return res.status(403).json({ 
-            message: "No mileage override password set. Please set one in your profile first." 
-          });
-        }
-
-        const { verifyPassword } = await import('./utils/auth');
-        const isValidOverride = await verifyPassword(overridePassword, storedHash);
-        
-        if (!isValidOverride) {
-          return res.status(403).json({ 
-            message: "Invalid override password" 
-          });
-        }
-
-        console.log(`✅ Mileage override authorized for user ${user.username}: ${mileage} km (was ${reservation.vehicle.currentMileage} km)`);
+        mileageDecreaseAuthorizedBy = authorization.authorizedBy;
       }
 
       const updatedReservation = await storage.pickupReservation(reservationId, {
@@ -5027,7 +5031,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         pickupMileage: mileage,
         fuelLevelPickup,
         pickupDate,
-        pickupNotes
+        pickupNotes,
+        allowMileageDecrease: !!mileageDecreaseAuthorizedBy,
+        mileageDecreaseAuthorizedBy
       });
 
       if (!updatedReservation) {

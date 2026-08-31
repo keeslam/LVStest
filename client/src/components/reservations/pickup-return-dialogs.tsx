@@ -25,7 +25,7 @@ interface PickupDialogProps {
 }
 
 export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: PickupDialogProps) {
-  const { t } = useTranslation(["reservations", "common"]);
+  const { t } = useTranslation(["reservations", "common", "vehicles"]);
   const { toast } = useToast();
   const isTBDSpare = reservation.placeholderSpare && !reservation.vehicleId;
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
@@ -294,6 +294,10 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
         setOverrideDialogOpen(true);
         return;
       }
+      // The override dialog reports these inline - a toast would double up.
+      if (error.code === "MILEAGE_OVERRIDE_INVALID_PASSWORD" || error.code === "MILEAGE_OVERRIDE_FORBIDDEN") {
+        return;
+      }
       toast({
         variant: "destructive",
         title: t('pickupReturn.pickup.pickupFailedTitle'),
@@ -303,12 +307,14 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
   });
 
   const handleOverrideConfirm = async (password: string): Promise<boolean> => {
+    if (pendingMileage === null) return false;
+
+    setOverridePassword(password);
+
     try {
-      setOverridePassword(password);
-      
-      if (pendingMileage === null) return false;
-      
-      pickupMutation.mutate({
+      // Await the server's verdict - closing the dialog before it answers would
+      // hide a wrong password behind a toast instead of showing it inline.
+      await pickupMutation.mutateAsync({
         contractNumber: contractNumber.trim(),
         pickupMileage: pendingMileage,
         fuelLevelPickup,
@@ -317,11 +323,17 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
         allowMileageDecrease: true,
         overridePassword: password,
       });
-      
+
       setOverrideDialogOpen(false);
       return true;
-    } catch (error) {
-      return false;
+    } catch (error: any) {
+      if (error?.code === "MILEAGE_OVERRIDE_FORBIDDEN") {
+        throw new Error(t('vehicles:mileageOverrideDialog.notAuthorized'));
+      }
+      if (error?.code === "MILEAGE_OVERRIDE_INVALID_PASSWORD") {
+        return false;
+      }
+      throw error instanceof Error ? error : new Error(String(error));
     }
   };
 

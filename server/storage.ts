@@ -82,6 +82,8 @@ export interface IStorage {
     fuelLevelPickup: string;
     pickupDate?: string;
     pickupNotes?: string;
+    allowMileageDecrease?: boolean;
+    mileageDecreaseAuthorizedBy?: string;
   }): Promise<Reservation | undefined>;
   returnReservation(reservationId: number, returnData: {
     returnMileage: number;
