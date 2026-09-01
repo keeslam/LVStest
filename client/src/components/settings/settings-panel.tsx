@@ -1134,7 +1134,7 @@ export function SettingsPanel() {
             <CardContent className="space-y-6">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
-                  <strong>{t('settingsPage.docEmails.placeholdersLabel')}</strong> {'{customerName}'}, {'{vehiclePlate}'}, {'{startDate}'}, {'{endDate}'}
+                  <strong>{t('settingsPage.docEmails.placeholdersLabel')}</strong> {'{customerName}'}, {'{vehiclePlate}'}, {'{startDate}'}, {'{endDate}'}, {'{checkDate}'}, {'{mileage}'}, {'{fuelLevel}'}
                 </p>
                 <p className="text-xs text-blue-600 mt-1">
                   {t('settingsPage.docEmails.placeholdersHint')}

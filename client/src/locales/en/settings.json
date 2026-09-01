@@ -375,7 +375,7 @@
       "title": "Document Email Templates",
       "description": "Configure email templates for sending contracts and damage checks to customers in English and Dutch",
       "placeholdersLabel": "Available Placeholders:",
-      "placeholdersHint": "All placeholders are automatically filled with reservation and customer data when sending emails.",
+      "placeholdersHint": "All placeholders are automatically filled with reservation and customer data when sending emails. {checkDate}, {mileage} and {fuelLevel} come from the reservation's damage check and stay empty when there is none.",
       "englishTemplatesTab": "English Templates",
       "dutchTemplatesTab": "Dutch Templates",
       "subjectLineLabel": "Subject Line",

@@ -375,7 +375,7 @@
       "title": "E-mailsjablonen voor documenten",
       "description": "Configureer e-mailsjablonen voor het versturen van contracten en schadecontroles naar klanten in het Engels en Nederlands",
       "placeholdersLabel": "Beschikbare plaatshouders:",
-      "placeholdersHint": "Alle plaatshouders worden automatisch ingevuld met reserverings- en klantgegevens bij het versturen van e-mails.",
+      "placeholdersHint": "Alle plaatshouders worden automatisch ingevuld met reserverings- en klantgegevens bij het versturen van e-mails. {checkDate}, {mileage} en {fuelLevel} komen uit de schadecheck van de reservering en blijven leeg als die er niet is.",
       "englishTemplatesTab": "Engelse sjablonen",
       "dutchTemplatesTab": "Nederlandse sjablonen",
       "subjectLineLabel": "Onderwerp",

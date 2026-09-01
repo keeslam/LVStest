@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Mail, FileText, Loader2, AlertCircle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isContractDocument, isDamageCheckDocument } from "@shared/document-types";
-import type { Document, Customer, Vehicle, Reservation } from "@shared/schema";
+import type { Document, Customer, Vehicle, Reservation, InteractiveDamageCheck } from "@shared/schema";
 
 interface EmailDocumentDialogProps {
   open: boolean;
@@ -54,6 +54,27 @@ export function EmailDocumentDialog({
     queryKey: ['/api/app-settings'],
   });
 
+  // Interactive damage checks of this reservation, newest first. They feed the
+  // {checkDate}, {mileage} and {fuelLevel} placeholders of the damage-check
+  // templates; without a matching check those placeholders are left untouched
+  // rather than filled with guesses.
+  const { data: reservationDamageChecks = [] } = useQuery<InteractiveDamageCheck[]>({
+    queryKey: [`/api/interactive-damage-checks/reservation/${reservation?.id}`],
+    enabled: open && !!reservation?.id,
+  });
+
+  // The check that belongs to the selected damage-check document: a
+  // "(Pickup)"/"(Return)" document picks the check of that type, anything else
+  // (unsigned, combined) falls back to the newest check.
+  const relevantDamageCheck = (() => {
+    if (reservationDamageChecks.length === 0) return undefined;
+    const selectedDocs = documents.filter(doc => selectedDocIds.includes(doc.id));
+    const damageDoc = selectedDocs.find(doc => isDamageCheckDocument(doc.documentType));
+    const type = damageDoc?.documentType?.toLowerCase() || "";
+    const wanted = type.includes("pickup") ? "pickup" : type.includes("return") ? "return" : null;
+    return (wanted && reservationDamageChecks.find(c => c.checkType === wanted)) || reservationDamageChecks[0];
+  })();
+
   // Update selected documents when dialog opens or defaultDocumentIds changes
   useEffect(() => {
     if (open && defaultDocumentIds.length > 0) {
@@ -93,7 +114,7 @@ export function EmailDocumentDialog({
         setMessage(replacePlaceholders(template.message));
       }
     }
-  }, [language, templateType, appSettings, customer, vehicle, reservation]);
+  }, [language, templateType, appSettings, customer, vehicle, reservation, relevantDamageCheck]);
 
   // Set default recipient email when customer changes
   useEffect(() => {
@@ -141,11 +162,21 @@ export function EmailDocumentDialog({
       result = result.replace(/{endDate}/g, endDate);
     }
     
-    // Damage check specific placeholders (only replace if we have actual damage check data)
-    // TODO: Pass damage check data as props to properly fill these placeholders
-    // For now, we leave them as placeholders if we don't have the data
-    // This prevents sending incorrect information to customers
-    
+    // Damage check placeholders - only filled from a real check for this
+    // reservation, so a template never goes out with invented figures.
+    if (relevantDamageCheck) {
+      const locale = language === "nl" ? "nl-NL" : "en-US";
+      if (relevantDamageCheck.checkDate) {
+        result = result.replace(/{checkDate}/g, new Date(relevantDamageCheck.checkDate).toLocaleDateString(locale));
+      }
+      if (relevantDamageCheck.mileage != null) {
+        result = result.replace(/{mileage}/g, `${relevantDamageCheck.mileage.toLocaleString(locale)} km`);
+      }
+      if (relevantDamageCheck.fuelLevel) {
+        result = result.replace(/{fuelLevel}/g, relevantDamageCheck.fuelLevel);
+      }
+    }
+
     return result;
   };
 
