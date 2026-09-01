@@ -7,6 +7,7 @@ import { ReservationEditDialog } from '@/components/reservations/reservation-edi
 import { SpareVehicleDialog } from '@/components/reservations/spare-vehicle-dialog';
 import { ApkInspectionDialog } from '@/components/vehicles/apk-inspection-dialog';
 import { VehicleViewDialog } from '@/components/vehicles/vehicle-view-dialog';
+import { CustomerViewDialog } from '@/components/customers/customer-view-dialog';
 import { ExpenseViewDialog } from '@/components/expenses/expense-view-dialog';
 import { ExpenseDetailDialog } from '@/components/expenses/expense-detail-dialog';
 import { ScanDialog } from '@/components/barcodes/scan-dialog';
@@ -24,6 +25,7 @@ export function GlobalDialogs() {
     closeAPKDialog,
     closeMaintenanceDialog,
     closeVehicleDialog,
+    closeCustomerDialog,
     closeExpenseVehicleDialog,
     closeExpenseDialog,
     closeScanDialog,
@@ -123,6 +125,15 @@ export function GlobalDialogs() {
         onOpenChange={closeVehicleDialog}
         vehicleId={dialogState.vehicle.vehicleId}
       />
+
+      {/* Customer Details Dialog */}
+      {dialogState.customer.customerId !== null && (
+        <CustomerViewDialog
+          open={dialogState.customer.open}
+          onOpenChange={(open) => !open && closeCustomerDialog()}
+          customerId={dialogState.customer.customerId}
+        />
+      )}
 
       {/* Vehicle Expenses Dialog */}
       {dialogState.expenseVehicle.vehicleId !== null && (

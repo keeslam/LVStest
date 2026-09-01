@@ -9,9 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useLocation } from "wouter";
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
-import { ReservationViewDialog } from "@/components/reservations/reservation-view-dialog";
-import { ReservationEditDialog } from "@/components/reservations/reservation-edit-dialog";
-import { VehicleViewDialog } from "@/components/vehicles/vehicle-view-dialog";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { CustomerEditDialog } from "./customer-edit-dialog";
 import { DriverDialog } from "./driver-dialog";
 import { DriverViewDialog } from "./driver-view-dialog";
@@ -44,18 +42,14 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
   const { t } = useTranslation(["customers", "common"]);
   const [_, navigate] = useLocation();
   const { toast } = useToast();
-  const [viewReservationId, setViewReservationId] = useState<number | null>(null);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [editReservationId, setEditReservationId] = useState<number | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  // Reservation and vehicle detail dialogs are the global ones (GlobalDialogs),
+  // which keeps this file out of the customer -> reservation -> customer import cycle.
+  const { openReservationDialog, openVehicleDialog } = useGlobalDialog();
   
   // Driver view dialog state
   const [viewDriverDialogOpen, setViewDriverDialogOpen] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
   
-  // Vehicle view dialog state (for viewing blocked vehicles)
-  const [viewVehicleDialogOpen, setViewVehicleDialogOpen] = useState(false);
-  const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
   
   // Filter state
   const [dateFrom, setDateFrom] = useState<string>("");
@@ -298,14 +292,6 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
     };
   }, [reservations, dateFrom, dateTo, vehicleFilter]);
   
-  // Handle edit reservation
-  const handleEditReservation = (reservationId: number) => {
-    console.log('CustomerDetails handleEditReservation called with:', reservationId);
-    setEditReservationId(reservationId);
-    setIsEditDialogOpen(true);
-    setIsViewDialogOpen(false);
-  };
-  
   // Delete reservation mutation
   const deleteReservationMutation = useMutation({
     mutationFn: async (reservationId: number) => {
@@ -418,10 +404,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                         variant="ghost" 
                         size="sm" 
                         className="text-primary-600 hover:text-primary-800"
-                        onClick={() => {
-                          setViewReservationId(reservation.id);
-                          setIsViewDialogOpen(true);
-                        }}
+                        onClick={() => openReservationDialog(reservation.id)}
                         data-testid={`button-view-reservation-${reservation.id}`}
                       >
                         {t('common:actions.view')}
@@ -877,10 +860,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
                         size="sm"
                         className="text-primary-600"
                         data-testid={`button-view-blocked-vehicle-${entry.id}`}
-                        onClick={() => {
-                          setSelectedVehicleId(entry.vehicleId);
-                          setViewVehicleDialogOpen(true);
-                        }}
+                        onClick={() => openVehicleDialog(entry.vehicleId)}
                       >
                         {t('details.viewVehicle')}
                       </Button>
@@ -1425,25 +1405,6 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
         </TabsContent>
       </Tabs>
 
-      {/* Reservation View Dialog */}
-      <ReservationViewDialog
-        open={isViewDialogOpen}
-        onOpenChange={setIsViewDialogOpen}
-        reservationId={viewReservationId}
-        onEdit={handleEditReservation}
-      />
-      
-      {/* Reservation Edit Dialog */}
-      <ReservationEditDialog
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        reservationId={editReservationId}
-        onSuccess={() => {
-          setIsEditDialogOpen(false);
-          invalidateByPrefix('/api/reservations');
-        }}
-      />
-      
       {/* Driver View Dialog */}
       <DriverViewDialog
         driver={selectedDriver}
@@ -1451,14 +1412,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
         open={viewDriverDialogOpen}
         onOpenChange={setViewDriverDialogOpen}
       />
-      
-      {/* Vehicle View Dialog (for blocked vehicles) */}
-      <VehicleViewDialog
-        open={viewVehicleDialogOpen}
-        onOpenChange={setViewVehicleDialogOpen}
-        vehicleId={selectedVehicleId}
-      />
-    </div>
+          </div>
   );
 }
 

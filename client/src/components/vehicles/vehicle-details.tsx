@@ -22,7 +22,6 @@ import { InlineDocumentUpload } from "@/components/documents/inline-document-upl
 import { QuickStatusChangeButton } from "@/components/vehicles/quick-status-change-button";
 import { VehicleDeleteDialog } from "@/components/vehicles/vehicle-delete-dialog";
 import { VehicleBarcodeDialog } from "@/components/barcodes/vehicle-barcode-dialog";
-import { CustomerViewDialog } from "@/components/customers/customer-view-dialog";
 import { PdfPreviewDialog } from "@/components/documents/pdf-preview-dialog";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { useToast } from "@/hooks/use-toast";
@@ -98,7 +97,7 @@ interface VehicleDetailsProps {
 export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: VehicleDetailsProps) {
   const { t } = useTranslation(["vehicles", "barcodes"]);
   const [_, navigate] = useLocation();
-  const { openVehicleDialog, openExpenseDialog } = useGlobalDialog();
+  const { openVehicleDialog, openExpenseDialog, openCustomerDialog } = useGlobalDialog();
   const [activeTab, setActiveTab] = useState("general");
   // Quick edit straight from the info cards, so a single value doesn't require
   // opening the full vehicle form. Fuel has its own dialog (cost + receipt).
@@ -1291,11 +1290,12 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               <CardTitle className="text-sm font-medium text-blue-700">{t('details.infoCards.currentRenter')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <CustomerViewDialog customerId={activeReservation.customerId!}>
-                <p className="text-2xl font-semibold text-blue-900 hover:text-blue-600 cursor-pointer transition-colors">
-                  {activeReservation.customer?.name || t('details.general.na')}
-                </p>
-              </CustomerViewDialog>
+              <p
+                className="text-2xl font-semibold text-blue-900 hover:text-blue-600 cursor-pointer transition-colors"
+                onClick={() => activeReservation.customerId != null && openCustomerDialog(activeReservation.customerId)}
+              >
+                {activeReservation.customer?.name || t('details.general.na')}
+              </p>
               {(activeReservation.customer?.phone || activeReservation.customer?.driverPhone) && (
                 <div className="text-sm text-blue-700 mt-1 space-y-0.5">
                   {activeReservation.customer?.phone && (
@@ -1349,11 +1349,12 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
             </CardHeader>
             <CardContent>
               {actingAsSpareInfo.customer && (
-                <CustomerViewDialog customerId={actingAsSpareInfo.customer.id}>
-                  <p className="text-2xl font-semibold text-orange-900 hover:text-orange-600 cursor-pointer transition-colors">
-                    {actingAsSpareInfo.customer.name}
-                  </p>
-                </CustomerViewDialog>
+                <p
+                  className="text-2xl font-semibold text-orange-900 hover:text-orange-600 cursor-pointer transition-colors"
+                  onClick={() => openCustomerDialog(actingAsSpareInfo.customer!.id)}
+                >
+                  {actingAsSpareInfo.customer.name}
+                </p>
               )}
               {actingAsSpareInfo.customer?.phone && (
                 <div className="text-sm text-orange-700 mt-1 space-y-0.5">
@@ -1389,11 +1390,12 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               <CardTitle className="text-sm font-medium text-green-700">{t('details.infoCards.upcomingReservation')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <CustomerViewDialog customerId={upcomingReservation.customerId!}>
-                <p className="text-2xl font-semibold text-green-900 hover:text-green-600 cursor-pointer transition-colors">
-                  {upcomingReservation.customer?.name || t('details.general.na')}
-                </p>
-              </CustomerViewDialog>
+              <p
+                className="text-2xl font-semibold text-green-900 hover:text-green-600 cursor-pointer transition-colors"
+                onClick={() => upcomingReservation.customerId != null && openCustomerDialog(upcomingReservation.customerId)}
+              >
+                {upcomingReservation.customer?.name || t('details.general.na')}
+              </p>
               {(upcomingReservation.customer?.phone || upcomingReservation.customer?.driverPhone) && (
                 <div className="text-sm text-green-700 mt-1 space-y-0.5">
                   {upcomingReservation.customer?.phone && (

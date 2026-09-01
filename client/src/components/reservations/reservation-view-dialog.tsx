@@ -38,8 +38,7 @@ import { SpareVehicleDialog } from "@/components/reservations/spare-vehicle-dial
 import { ServiceVehicleDialog } from "@/components/reservations/service-vehicle-dialog";
 import { ReturnFromServiceDialog } from "@/components/reservations/return-from-service-dialog";
 import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
-import { CustomerViewDialog } from "@/components/customers/customer-view-dialog";
-import { VehicleViewDialog } from "@/components/vehicles/vehicle-view-dialog";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { ReservationDocumentsDialog } from "@/components/reservations/reservation-documents-dialog";
 import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
 
@@ -65,11 +64,12 @@ export function ReservationViewDialog({
 }: ReservationViewDialogProps) {
   const { t } = useTranslation("reservations");
   const { toast } = useToast();
+  const { openVehicleDialog, openCustomerDialog } = useGlobalDialog();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [isSpareDialogOpen, setIsSpareDialogOpen] = useState(false);
   const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
-  const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
+  // Vehicle id handed to the documents dialog (the vehicle *view* dialog itself is global)
   const [viewVehicleId, setViewVehicleId] = useState<number | null>(null);
   const [isDocumentsDialogOpen, setIsDocumentsDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
@@ -371,10 +371,7 @@ export function ReservationViewDialog({
                         variant="ghost"
                         size="sm"
                         className="mt-2 sm:mt-0"
-                        onClick={() => {
-                          setViewVehicleId(vehicle.id);
-                          setIsVehicleDialogOpen(true);
-                        }}
+                        onClick={() => openVehicleDialog(vehicle.id)}
                         data-testid="button-view-vehicle"
                       >
                         {t('viewDialog.viewVehicleButton')}
@@ -455,11 +452,9 @@ export function ReservationViewDialog({
                           )}
                         </div>
                       </div>
-                      <CustomerViewDialog customerId={displayCustomer.id}>
-                        <Button variant="ghost" size="sm" className="mt-2 sm:mt-0" data-testid="button-view-customer">
-                          {t('viewDialog.viewCustomerButton')}
-                        </Button>
-                      </CustomerViewDialog>
+                      <Button variant="ghost" size="sm" className="mt-2 sm:mt-0" onClick={() => openCustomerDialog(displayCustomer.id)} data-testid="button-view-customer">
+                        {t('viewDialog.viewCustomerButton')}
+                      </Button>
                     </div>
                   ) : (
                     <p className="text-gray-500">{t('viewDialog.noCustomerAssigned')}</p>
@@ -991,13 +986,6 @@ export function ReservationViewDialog({
           invalidateByPrefix(`/api/reservations/${reservationId}/active-replacement`);
           invalidateByPrefix(`/api/reservations`);
         }}
-      />
-
-      {/* Vehicle View Dialog */}
-      <VehicleViewDialog
-        open={isVehicleDialogOpen}
-        onOpenChange={setIsVehicleDialogOpen}
-        vehicleId={viewVehicleId}
       />
 
       {/* Reservation Documents Dialog */}

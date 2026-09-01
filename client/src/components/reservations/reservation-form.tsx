@@ -62,7 +62,7 @@ import { Customer, Vehicle, Reservation, Document, Driver, type InteractiveDamag
 import { PlusCircle, FileCheck, Upload, Check, X, Edit, FileText, Eye, ClipboardCheck, AlertTriangle } from "lucide-react";
 import { ReadonlyVehicleDisplay } from "@/components/ui/readonly-vehicle-display";
 import { DriverDialog } from "@/components/customers/driver-dialog";
-import { ReservationViewDialog } from "@/components/reservations/reservation-view-dialog";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
 import { VehicleRemarksWarningDialog } from "@/components/vehicles/vehicle-remarks-warning-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -218,6 +218,7 @@ export function ReservationForm({
 }: ReservationFormProps) {
   const { t } = useTranslation("reservations");
   const { toast } = useToast();
+  const { openReservationDialog } = useGlobalDialog();
   const queryClient = useQueryClient();
   const [_, navigate] = useLocation();
   
@@ -279,8 +280,6 @@ export function ReservationForm({
   const [overdueDialogOpen, setOverdueDialogOpen] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<z.infer<typeof formSchema> | null>(null);
   const [processingOverdue, setProcessingOverdue] = useState<number | null>(null);
-  const [viewingReservationId, setViewingReservationId] = useState<number | null>(null);
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   
   // Pickup/Return dialog workflow states - when user sets status to picked_up/returned, 
   // we save the reservation first and then open the appropriate dialog
@@ -2821,10 +2820,7 @@ export function ReservationForm({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => {
-                        setViewingReservationId(reservation.id);
-                        setViewDialogOpen(true);
-                      }}
+                      onClick={() => openReservationDialog(reservation.id)}
                     >
                       <Eye className="h-4 w-4 mr-1" />
                       {t('form.overdueDialog.viewDetailsButton')}
@@ -2943,13 +2939,6 @@ export function ReservationForm({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-    
-    {/* Reservation View Dialog for overdue reservations */}
-    <ReservationViewDialog
-      open={viewDialogOpen}
-      onOpenChange={setViewDialogOpen}
-      reservationId={viewingReservationId}
-    />
     
     {/* Pickup Dialog - triggered when status is set to picked_up */}
     {pendingDialogReservation && (

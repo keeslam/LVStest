@@ -6,6 +6,7 @@ interface DialogState {
   apk: { open: boolean; vehicleId: number | null };
   maintenance: { open: boolean; vehicleId: number | null };
   vehicle: { open: boolean; vehicleId: number | null };
+  customer: { open: boolean; customerId: number | null };
   expenseVehicle: { open: boolean; vehicleId: number | null };
   expense: { open: boolean; expenseId: number | null; hideVehicleExpensesLink: boolean };
   rdwApkChanges: { open: boolean };
@@ -24,6 +25,8 @@ interface GlobalDialogContextType {
   closeMaintenanceDialog: () => void;
   openVehicleDialog: (vehicleId: number) => void;
   closeVehicleDialog: () => void;
+  openCustomerDialog: (customerId: number) => void;
+  closeCustomerDialog: () => void;
   openExpenseVehicleDialog: (vehicleId: number) => void;
   closeExpenseVehicleDialog: () => void;
   openExpenseDialog: (expenseId: number, hideVehicleExpensesLink?: boolean) => void;
@@ -43,6 +46,7 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     apk: { open: false, vehicleId: null },
     maintenance: { open: false, vehicleId: null },
     vehicle: { open: false, vehicleId: null },
+    customer: { open: false, customerId: null },
     expenseVehicle: { open: false, vehicleId: null },
     expense: { open: false, expenseId: null, hideVehicleExpensesLink: false },
     rdwApkChanges: { open: false },
@@ -119,6 +123,20 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const openCustomerDialog = (customerId: number) => {
+    setDialogState(prev => ({
+      ...prev,
+      customer: { open: true, customerId }
+    }));
+  };
+
+  const closeCustomerDialog = () => {
+    setDialogState(prev => ({
+      ...prev,
+      customer: { open: false, customerId: null }
+    }));
+  };
+
   const openExpenseVehicleDialog = (vehicleId: number) => {
     setDialogState(prev => ({
       ...prev,
@@ -189,6 +207,8 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
         closeMaintenanceDialog,
         openVehicleDialog,
         closeVehicleDialog,
+        openCustomerDialog,
+        closeCustomerDialog,
         openExpenseVehicleDialog,
         closeExpenseVehicleDialog,
         openExpenseDialog,
