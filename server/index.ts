@@ -179,7 +179,7 @@ function setupSocketIO(server: any) {
         process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : undefined,
         'https://*.replit.app',
         'https://*.replit.dev'
-      ].filter(Boolean)
+      ].filter((origin): origin is string => Boolean(origin))
     : "*"; // Allow all origins in development
   
   io = new SocketIOServer(server, {

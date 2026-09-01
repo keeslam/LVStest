@@ -1083,7 +1083,9 @@ export class DatabaseStorage implements IStorage {
       vehicle = v ?? undefined;
     }
     
-    const [c] = await db.select().from(customers).where(eq(customers.id, reservation.customerId));
+    const c = reservation.customerId !== null
+      ? (await db.select().from(customers).where(eq(customers.id, reservation.customerId)))[0]
+      : undefined;
     
     return {
       ...reservation,
@@ -1112,7 +1114,9 @@ export class DatabaseStorage implements IStorage {
       vehicle = v ?? undefined;
     }
 
-    const [c] = await db.select().from(customers).where(eq(customers.id, reservation.customerId));
+    const c = reservation.customerId !== null
+      ? (await db.select().from(customers).where(eq(customers.id, reservation.customerId)))[0]
+      : undefined;
 
     return {
       ...reservation,
@@ -1219,7 +1223,9 @@ export class DatabaseStorage implements IStorage {
       vehicle = v ?? undefined;
     }
 
-    const [c] = await db.select().from(customers).where(eq(customers.id, updatedReservation.customerId));
+    const c = updatedReservation.customerId !== null
+      ? (await db.select().from(customers).where(eq(customers.id, updatedReservation.customerId)))[0]
+      : undefined;
 
     return {
       ...updatedReservation,
@@ -1810,7 +1816,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateExpense(id: number, expenseData: Partial<InsertExpense>): Promise<Expense | undefined> {
     // Ensure amount is a string if it's a number
-    const finalData = {
+    const finalData: any = {
       ...expenseData
     };
     
@@ -1864,7 +1870,7 @@ export class DatabaseStorage implements IStorage {
     
     return result.map(row => ({
       ...row.expense,
-      vehicle: row.vehicle,
+      vehicle: row.vehicle ?? undefined,
     }));
   }
   
@@ -1947,7 +1953,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTransport(transportData: InsertVehicleTransport): Promise<VehicleTransport> {
-    const [row] = await db.insert(vehicleTransports).values(transportData).returning();
+    const [row] = await db.insert(vehicleTransports).values(transportData as unknown as typeof vehicleTransports.$inferInsert).returning();
     const [withRelations] = await this.attachTransportRelations([row]);
     return withRelations;
   }
@@ -1955,7 +1961,7 @@ export class DatabaseStorage implements IStorage {
   async updateTransport(id: number, transportData: Partial<InsertVehicleTransport>): Promise<VehicleTransport | undefined> {
     const [row] = await db
       .update(vehicleTransports)
-      .set({ ...transportData, updatedAt: new Date() })
+      .set({ ...(transportData as unknown as Partial<typeof vehicleTransports.$inferInsert>), updatedAt: new Date() })
       .where(eq(vehicleTransports.id, id))
       .returning();
     if (!row) return undefined;
@@ -2123,13 +2129,13 @@ export class DatabaseStorage implements IStorage {
           replacementForReservationId: affectedRentalReservation?.id ?? null,
           replacementForTransportId: id,
           placeholderSpare: nextRelatedVehicleId == null,
-          totalPrice: null,
+          totalPrice: undefined,
           notes: replacingLabel
             ? `Replacement vehicle for ${replacingLabel}`
             : `Replacement vehicle for transport #${id}`,
           damageCheckPath: null,
         };
-        const [spareReservation] = await tx.insert(reservations).values(spareReservationData).returning();
+        const [spareReservation] = await tx.insert(reservations).values(spareReservationData as unknown as typeof reservations.$inferInsert).returning();
         spareReservationId = spareReservation.id;
       }
 
@@ -2259,6 +2265,7 @@ export class DatabaseStorage implements IStorage {
       isDefault: row.is_default,
       backgroundPath: row.background_path,
       backgroundPreviewPath: row.background_preview_path,
+      templatePreviewPath: row.template_preview_path,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       fields: typeof row.fields === 'string' ? JSON.parse(row.fields) : row.fields
@@ -2272,65 +2279,35 @@ export class DatabaseStorage implements IStorage {
   
   async getDefaultPdfTemplate(): Promise<PdfTemplate | undefined> {
     try {
-      // Use SQL query directly to handle potential column name mismatch
-      console.log('Searching for default template...');
-      const result = await db.execute(
-        sql`SELECT * FROM pdf_templates WHERE is_default = true LIMIT 1`
-      );
-      
-      if (result.length > 0) {
-        const template = result[0];
-        console.log('Found default template:', template.id, template.name);
-        
-        // Fix the isDefault property by adding it if missing
-        if (template.isDefault === undefined && template.is_default !== undefined) {
-          console.log('Fixing template isDefault property');
-          template.isDefault = template.is_default;
-        }
-        
-        // Process fields if it's a string
-        if (template.fields && typeof template.fields === 'string') {
+      // NOTE: an earlier raw `SELECT ... WHERE is_default = true` branch here
+      // never ran (it read `.length` on a pg QueryResult), so callers have
+      // always received the camelCase drizzle row selected below. Keep that.
+      const allTemplates = await db.select().from(pdfTemplates);
+
+      if (allTemplates.length > 0) {
+        // Prefer the template flagged as default, otherwise fall back to the first one
+        const defaultTemplate = allTemplates.find(t => t.isDefault === true) || allTemplates[0];
+
+        console.log(`Using default template: ${defaultTemplate.name} with ID: ${defaultTemplate.id}`);
+
+        // Process fields if it is a string
+        if (defaultTemplate.fields && typeof defaultTemplate.fields === "string") {
           try {
-            // Try to parse JSON string
-            const parsedFields = JSON.parse(template.fields);
+            const parsedFields = JSON.parse(defaultTemplate.fields);
             console.log(`Successfully parsed ${parsedFields.length} fields`);
-            template.fields = parsedFields;
+            defaultTemplate.fields = parsedFields;
           } catch (error) {
-            console.error('Error parsing template fields:', error);
+            console.error("Error parsing template fields:", error);
           }
         }
-        
-        return template;
-      } else {
-        // If no default template found via 'is_default', try a fallback
-        console.log('No templates with is_default=true found, checking all templates...');
-        const allTemplates = await db.select().from(pdfTemplates);
-        
-        if (allTemplates.length > 0) {
-          // Try first to find one with isDefault = true, then fallback to first template
-          const defaultTemplate = allTemplates.find(t => t.isDefault === true) || allTemplates[0];
-          
-          console.log(`Using fallback template: ${defaultTemplate.name} with ID: ${defaultTemplate.id}`);
-          
-          // Process fields if it's a string
-          if (defaultTemplate.fields && typeof defaultTemplate.fields === 'string') {
-            try {
-              const parsedFields = JSON.parse(defaultTemplate.fields);
-              console.log(`Successfully parsed ${parsedFields.length} fields`);
-              defaultTemplate.fields = parsedFields;
-            } catch (error) {
-              console.error('Error parsing template fields:', error);
-            }
-          }
-          
-          return defaultTemplate;
-        }
+
+        return defaultTemplate;
       }
-      
-      console.log('No templates found at all');
+
+      console.log("No templates found at all");
       return undefined;
     } catch (error) {
-      console.error('Error getting default template:', error);
+      console.error("Error getting default template:", error);
       return undefined;
     }
   }
@@ -2443,7 +2420,7 @@ export class DatabaseStorage implements IStorage {
         name: templateData.name,
         isDefault: templateData.isDefault,
         fields: typeof processedFields === 'string' ? 'JSON string' : processedFields,
-        updatedBy: templateData.updatedBy
+        updatedBy: (templateData as any).updatedBy
       });
       
       // Build dynamic SQL using Drizzle's sql template
@@ -2499,6 +2476,7 @@ export class DatabaseStorage implements IStorage {
           isDefault: row.is_default,
           backgroundPath: row.background_path,
           backgroundPreviewPath: row.background_preview_path,
+          templatePreviewPath: row.template_preview_path,
           createdAt: row.created_at,
           updatedAt: row.updated_at,
           fields: typeof row.fields === 'string' ? JSON.parse(row.fields) : row.fields
@@ -2978,13 +2956,13 @@ export class DatabaseStorage implements IStorage {
       replacementForReservationId: originalReservationId,
       placeholderSpare: true,
       notes: `TBD spare vehicle for reservation #${originalReservationId}`,
-      totalPrice: null,
+      totalPrice: undefined,
       damageCheckPath: null
     };
 
     const [placeholder] = await db
       .insert(reservations)
-      .values(placeholderData)
+      .values(placeholderData as unknown as typeof reservations.$inferInsert)
       .returning();
 
     // Create notification for pending spare assignment with reservation ID reference
@@ -3097,7 +3075,7 @@ export class DatabaseStorage implements IStorage {
   // Other missing spare vehicle methods
   async getAvailableVehiclesInRange(startDate: string, endDate: string, excludeVehicleId?: number): Promise<Vehicle[]> {
     // Get all vehicles
-    let vehicleQuery = db.select().from(vehicles);
+    let vehicleQuery = db.select().from(vehicles).$dynamic();
 
     if (excludeVehicleId) {
       vehicleQuery = vehicleQuery.where(not(eq(vehicles.id, excludeVehicleId)));
@@ -3214,14 +3192,14 @@ export class DatabaseStorage implements IStorage {
       type: 'replacement',
       replacementForReservationId: originalReservationId,
       placeholderSpare: false,
-      totalPrice: null,
+      totalPrice: undefined,
       notes: `Spare vehicle ${spareVehicleInfo} for reservation #${originalReservationId}`,
       damageCheckPath: null
     };
 
     const [replacement] = await db
       .insert(reservations)
-      .values(replacementData)
+      .values(replacementData as unknown as typeof reservations.$inferInsert)
       .returning();
 
     return replacement;
@@ -3324,14 +3302,14 @@ export class DatabaseStorage implements IStorage {
       maintenanceCategory: 'repair',
       replacementForReservationId: null,
       placeholderSpare: false,
-      totalPrice: null,
+      totalPrice: undefined,
       notes: 'Vehicle maintenance block',
       damageCheckPath: null
     };
 
     const [maintenanceBlock] = await db
       .insert(reservations)
-      .values(maintenanceData)
+      .values(maintenanceData as unknown as typeof reservations.$inferInsert)
       .returning();
 
     return maintenanceBlock;
@@ -3530,7 +3508,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAppSetting(id: number): Promise<boolean> {
     const result = await db.delete(appSettings).where(eq(appSettings.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // RDW APK date change methods
@@ -3774,7 +3752,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDriver(id: number): Promise<boolean> {
     const result = await db.delete(drivers).where(eq(drivers.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getDriverCountryUsageStats(): Promise<{ country: string; count: number }[]> {
@@ -3811,7 +3789,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSavedReport(id: number): Promise<boolean> {
     const result = await db.delete(savedReports).where(eq(savedReports.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async executeReport(configuration: any): Promise<any[]> {
@@ -4367,8 +4345,11 @@ export class DatabaseStorage implements IStorage {
         fuelLevel: interactiveDamageChecks.fuelLevel,
         renterSignature: interactiveDamageChecks.renterSignature,
         customerSignature: interactiveDamageChecks.customerSignature,
+        completedBy: interactiveDamageChecks.completedBy,
         createdAt: interactiveDamageChecks.createdAt,
         updatedAt: interactiveDamageChecks.updatedAt,
+        createdBy: interactiveDamageChecks.createdBy,
+        updatedBy: interactiveDamageChecks.updatedBy,
       })
       .from(interactiveDamageChecks)
       .leftJoin(reservations, eq(interactiveDamageChecks.reservationId, reservations.id))
@@ -4415,45 +4396,6 @@ export class DatabaseStorage implements IStorage {
     
     if (!damageCheck) {
       return false;
-    }
-    
-    // Delete the PDF file if it exists
-    if (damageCheck.pdfPath) {
-      try {
-        const pdfFullPath = path.join(process.cwd(), damageCheck.pdfPath);
-        if (fs.existsSync(pdfFullPath)) {
-          await fs.promises.unlink(pdfFullPath);
-          console.log(`🗑️ Deleted damage check PDF: ${damageCheck.pdfPath}`);
-        }
-      } catch (error) {
-        console.error("Error deleting damage check PDF file:", error);
-      }
-      
-      // Delete the associated document record from the documents table
-      // Match by reservationId and checkType to avoid path normalization issues
-      try {
-        const documentType = `Damage Check (${damageCheck.checkType === 'pickup' ? 'Pickup' : 'Return'})`;
-        const docs = await db.select().from(documents)
-          .where(
-            and(
-              eq(documents.reservationId, damageCheck.reservationId),
-              eq(documents.documentType, documentType)
-            )
-          );
-        
-        // Find the document that matches the filename pattern
-        const filename = `damage_check_${damageCheck.vehicleId}_${damageCheck.checkType}_`;
-        const matchingDoc = docs.find(doc => doc.fileName.startsWith(filename) && doc.fileName.includes(`_v${damageCheck.id}.pdf`));
-        
-        if (matchingDoc) {
-          await db.delete(documents).where(eq(documents.id, matchingDoc.id));
-          console.log(`🗑️ Deleted damage check document record: ID ${matchingDoc.id}`);
-        } else {
-          console.warn(`⚠️ No matching document found for damage check ${id}`);
-        }
-      } catch (error) {
-        console.error("Error deleting damage check document record:", error);
-      }
     }
     
     // Delete the damage check record

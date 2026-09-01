@@ -49,7 +49,6 @@ export class BackupScheduler {
         console.error('Scheduled backup failed:', error);
       }
     }, {
-      scheduled: false, // Don't start immediately
       timezone: "Europe/Amsterdam" // Adjust to your timezone
     });
 

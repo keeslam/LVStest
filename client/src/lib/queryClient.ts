@@ -350,7 +350,7 @@ export const createMutationWithoutAutoCache = (options: any) => ({
  * Marks matching queries stale and refetches the ones currently on screen
  * (via invalidateByPrefix), so views update immediately after a save.
  */
-export function invalidateRelatedQueries(entityType: string, entityData?: { id?: number; vehicleId?: number; customerId?: number }) {
+export function invalidateRelatedQueries(entityType: string, entityData?: { id?: number | null; vehicleId?: number | null; customerId?: number | null }) {
   const id = entityData?.id;
   const vehicleId = entityData?.vehicleId;
   const customerId = entityData?.customerId;

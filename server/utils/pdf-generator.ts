@@ -1038,7 +1038,7 @@ export async function generateInteractiveDamageCheckPDF(damageCheck: any, vehicl
     const checklistHeight = 280; // More compact height
     
     // Parse checklist data with error handling
-    let checklistData = { interior: {}, exterior: {}, delivery: {} };
+    let checklistData: { interior: Record<string, any>; exterior: Record<string, any>; delivery: Record<string, any> } = { interior: {}, exterior: {}, delivery: {} };
     if (damageCheck.checklistData) {
       try {
         checklistData = typeof damageCheck.checklistData === 'string' 

@@ -57,6 +57,7 @@ interface Template {
   backgroundPath?: string | null;
   backgroundPreviewPath?: string | null; // PNG preview for PDF backgrounds
   fields: TemplateField[];
+  updatedAt?: string | null;
 }
 
 interface TemplateBackground {

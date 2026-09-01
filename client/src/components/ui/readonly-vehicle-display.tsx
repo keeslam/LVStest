@@ -57,11 +57,6 @@ export function ReadonlyVehicleDisplay({ vehicleId }: ReadonlyVehicleDisplayProp
           </Badge>
         )}
       </div>
-      {vehicle.color && (
-        <div className="text-xs text-muted-foreground mt-1">
-          {t('readonlyVehicleDisplay.colorLabel', { color: vehicle.color })}
-        </div>
-      )}
     </div>
   );
 }

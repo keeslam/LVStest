@@ -185,7 +185,7 @@ export default function ReportsPage() {
       (startDate <= dateRange.from && endDate >= dateRange.to) // Reservation spans entire range
     );
     
-    const matchesVehicle = selectedVehicle === "all" || reservation.vehicleId.toString() === selectedVehicle;
+    const matchesVehicle = selectedVehicle === "all" || String(reservation.vehicleId) === selectedVehicle;
     
     return overlapsDateRange && matchesVehicle;
   });
@@ -447,7 +447,7 @@ export default function ReportsPage() {
     let totalReservationDays = 0;
     customerReservations.forEach(reservation => {
       const startDate = new Date(reservation.startDate);
-      const endDate = new Date(reservation.endDate);
+      const endDate = reservation.endDate ? new Date(reservation.endDate) : new Date();
       const days = differenceInDays(endDate, startDate) + 1;
       totalReservationDays += days;
     });
@@ -459,7 +459,7 @@ export default function ReportsPage() {
     // (using a 7-day window after reservation ends)
     const relatedExpenses: Expense[] = [];
     customerReservations.forEach(reservation => {
-      const reservationEndDate = new Date(reservation.endDate);
+      const reservationEndDate = reservation.endDate ? new Date(reservation.endDate) : new Date();
       const postReservationWindow = addDays(reservationEndDate, 7); // 7 days after reservation ended
       
       filteredExpenses.forEach(expense => {

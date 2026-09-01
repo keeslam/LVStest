@@ -28,19 +28,19 @@ interface StatusChangeDialogProps {
     id: number;
     brand: string;
     model: string;
-    licensePlate?: string;
-    currentMileage?: number;
-    departureMileage?: number;
-    returnMileage?: number;
+    licensePlate?: string | null;
+    currentMileage?: number | null;
+    departureMileage?: number | null;
+    returnMileage?: number | null;
   };
   customer?: {
     id: number;
-    name?: string;
-    firstName?: string;
-    lastName?: string;
-    companyName?: string;
-    phone?: string;
-    email?: string;
+    name?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    companyName?: string | null;
+    phone?: string | null;
+    email?: string | null;
   };
   initialFuelData?: {
     fuelLevelPickup?: string | null;
@@ -54,7 +54,7 @@ interface StatusChangeDialogProps {
   onStatusChanged?: () => void | Promise<void>;
 }
 
-const formatDisplayLicensePlate = (licensePlate?: string) => {
+const formatDisplayLicensePlate = (licensePlate?: string | null) => {
   if (!licensePlate) return "";
   return licensePlate.replace(/-/g, "");
 };

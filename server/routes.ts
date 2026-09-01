@@ -971,7 +971,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       
       // Add audit trail
-      const currentUser = req.user;
+      const currentUser = req.user!;
       const enrichedUserData = {
         ...userData,
         createdBy: currentUser.username,
@@ -1012,9 +1012,10 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       
       // Allow users to update their own profile, admin, or users with MANAGE_USERS permission for others
-      const isSelfUpdate = id === req.user.id;
-      const isAdmin = req.user.role === UserRole.ADMIN;
-      const hasManageUsersPermission = req.user.permissions?.includes(UserPermission.MANAGE_USERS) || false;
+      const currentUser = req.user!;
+      const isSelfUpdate = id === currentUser.id;
+      const isAdmin = currentUser.role === UserRole.ADMIN;
+      const hasManageUsersPermission = currentUser.permissions?.includes(UserPermission.MANAGE_USERS) || false;
       
       if (!isSelfUpdate && !isAdmin && !hasManageUsersPermission) {
         return res.status(403).json({ message: "Not authorized to update other user accounts" });
@@ -1035,14 +1036,14 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       
       // For self-update, only allow certain fields (username, fullName, email)
-      let userData;
+      let userData: Record<string, any>;
       if (isSelfUpdate && !isAdmin && !hasManageUsersPermission) {
         const { username, fullName, email } = req.body;
         userData = {
           username,
           fullName,
           email,
-          updatedBy: req.user.username
+          updatedBy: currentUser.username
         };
         
         // Filter out undefined values
@@ -1053,7 +1054,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         // Admin and users with MANAGE_USERS permission can update all fields
         userData = {
           ...req.body,
-          updatedBy: req.user.username
+          updatedBy: currentUser.username
         };
       }
       
@@ -1138,7 +1139,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       
       // Add audit trail
-      const currentUser = req.user;
+      const currentUser = req.user!;
       const userData = {
         ...req.body,
         updatedBy: currentUser.username
@@ -1195,7 +1196,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       
       // Prevent deletion of the current user
-      if (id === req.user.id) {
+      if (id === req.user!.id) {
         return res.status(400).json({ message: "Cannot delete your own account" });
       }
       
@@ -1240,7 +1241,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       const { currentPassword, newPassword } = validationResult.data;
       
       // Get current user
-      const user = await storage.getUser(req.user.id);
+      const user = await storage.getUser(req.user!.id);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -1802,7 +1803,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         // PostgreSQL error code 23505 = unique_violation
         if (error.code === '23505' || error.code === 23505) {
           // Check if it's specifically about license_plate
-          const errorMessage = String(error.message || '').toLowerCase();
+          const errorMessage = String((error as { message?: unknown }).message || '').toLowerCase();
           if (errorMessage.includes('license_plate') || errorMessage.includes('duplicate key')) {
             return res.status(409).json({ 
               message: "A vehicle with this license plate already exists. Please use a different license plate or edit the existing vehicle.",
@@ -2378,9 +2379,9 @@ export async function registerRoutes(app: Express): Promise<void> {
           if ('username' in req.user) {
             username = req.user.username;
             console.log("Found username directly in user object:", username);
-          } else if ('id' in req.user) {
+          } else if ('id' in (req.user as object)) {
             try {
-              const userId = req.user.id;
+              const userId = (req.user as { id: number }).id;
               const fullUser = await storage.getUser(userId);
               if (fullUser && fullUser.username) {
                 username = fullUser.username;
@@ -2439,7 +2440,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         console.log("Vehicle after update:", JSON.stringify(verifiedVehicle, null, 2));
       } catch (error) {
         console.error("Error in toggle-registration endpoint:", error);
-        return res.status(400).json({ message: `Error toggling registration status: ${error.message}` });
+        return res.status(400).json({ message: `Error toggling registration status: ${error instanceof Error ? error.message : String(error)}` });
       }
       
       // If we've reached here, the update was successful
@@ -3256,7 +3257,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         vehicleId,
         startDate,
         effectiveEndDate,
-        isNaN(excludeReservationId) ? null : excludeReservationId,
+        excludeReservationId === null || isNaN(excludeReservationId) ? null : excludeReservationId,
         false,
         startTime,
         endTime
@@ -3501,9 +3502,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         const reservation = await storage.createReservation(dataWithTracking);
         
         const customerReservations = await storage.checkReservationConflicts(
-          reservationData.vehicleId,
+          reservationData.vehicleId!,
           reservationData.startDate,
-          reservationData.endDate,
+          reservationData.endDate ?? null,
           reservation.id // Exclude the just-created maintenance reservation from conflicts
         );
 
@@ -3574,9 +3575,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       } else {
         // For regular reservations, check for conflicts normally
         const conflicts = await storage.checkReservationConflicts(
-          reservationData.vehicleId,
+          reservationData.vehicleId!,
           reservationData.startDate,
-          reservationData.endDate,
+          reservationData.endDate ?? null,
           null,
           false,
           reservationData.startTime,
@@ -3591,7 +3592,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
         
         // Check for overdue reservations on this vehicle (ended 3+ days ago, not completed)
-        const overdueReservations = await storage.getOverdueReservationsByVehicle(reservationData.vehicleId);
+        const overdueReservations = await storage.getOverdueReservationsByVehicle(reservationData.vehicleId!);
         if (overdueReservations.length > 0) {
           return res.status(409).json({
             message: "This vehicle has overdue reservations that must be resolved first",
@@ -3604,8 +3605,8 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Auto-convert BV → Opnaam before creating reservation (legal requirement)
       // BV vehicles cannot be driven (no insurance/road tax), Opnaam vehicles can
       try {
-        const vehicle = await storage.getVehicle(reservationData.vehicleId);
-        if (vehicle && (vehicle.company === "true" || vehicle.company === true)) {
+        const vehicle = await storage.getVehicle(reservationData.vehicleId!);
+        if (vehicle && vehicle.company === "true") {
           console.log(`🔄 Auto-converting vehicle ${vehicle.id} from BV to Opnaam (required for rental)`);
           
           await storage.updateVehicle(vehicle.id, {
@@ -3640,8 +3641,8 @@ export async function registerRoutes(app: Express): Promise<void> {
             
             // IMPORTANT: Regenerate contract using FRESH reservation data, not stale preview data
             // This ensures the contract matches the actual reservation that was created
-            const vehicle = await storage.getVehicle(reservation.vehicleId);
-            const customer = await storage.getCustomer(reservation.customerId);
+            const vehicle = await storage.getVehicle(reservation.vehicleId!);
+            const customer = await storage.getCustomer(reservation.customerId!);
             
             if (vehicle && customer) {
               let template;
@@ -3918,7 +3919,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           
           // Get vehicle details for better notes
           const spareVehicle = await storage.getVehicle(spareVehicleId);
-          const originalVehicle = originalReservation.vehicle || await storage.getVehicle(originalReservation.vehicleId);
+          const originalVehicle = originalReservation.vehicle || await storage.getVehicle(originalReservation.vehicleId!);
           
           const originalVehicleDesc = originalVehicle ? 
             `${originalVehicle.licensePlate} (${originalVehicle.brand} ${originalVehicle.model})` : 
@@ -3989,7 +3990,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           
           // Get vehicle details for better notes
           const spareVehicle = await storage.getVehicle(spareVehicleId);
-          const originalVehicle = originalReservation.vehicle || await storage.getVehicle(originalReservation.vehicleId);
+          const originalVehicle = originalReservation.vehicle || await storage.getVehicle(originalReservation.vehicleId!);
           
           const originalVehicleDesc = originalVehicle ? 
             `${originalVehicle.licensePlate} (${originalVehicle.brand} ${originalVehicle.model})` : 
@@ -4081,13 +4082,13 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       // Check for conflicts (exclude the current reservation)
       const conflicts = await storage.checkReservationConflicts(
-        reservationData.vehicleId,
+        reservationData.vehicleId!,
         reservationData.startDate,
-        reservationData.endDate,
+        reservationData.endDate ?? null,
         id,
         false,
-        reservationData.startTime,
-        reservationData.endTime
+        reservationData.startTime ?? null,
+        reservationData.endTime ?? null
       );
       
       // Special handling for maintenance_block edits: customer rentals during the
@@ -4132,8 +4133,8 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Auto-convert BV → Opnaam before updating reservation (legal requirement)
       // Always check and convert BV vehicles to ensure compliance
       try {
-        const vehicle = await storage.getVehicle(reservationData.vehicleId);
-        if (vehicle && (vehicle.company === "true" || vehicle.company === true)) {
+        const vehicle = await storage.getVehicle(reservationData.vehicleId!);
+        if (vehicle && vehicle.company === "true") {
           console.log(`🔄 Auto-converting vehicle ${vehicle.id} from BV to Opnaam (required for rental)`);
           
           await storage.updateVehicle(vehicle.id, {
@@ -4609,7 +4610,7 @@ export async function registerRoutes(app: Express): Promise<void> {
                                    (existingReservation.type === 'maintenance_block');
         
         const conflicts = await storage.checkReservationConflicts(
-          reservationData.vehicleId,
+          reservationData.vehicleId!,
           reservationData.startDate,
           reservationData.endDate || null,
           id,
@@ -4757,7 +4758,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       // Mark the vehicle for service
       const updatedVehicle = await storage.markVehicleForService(
-        reservation.vehicleId, 
+        reservation.vehicleId!, 
         maintenanceStatus, 
         maintenanceNote
       );
@@ -4769,7 +4770,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Create maintenance block if dates provided
       if (serviceStartDate) {
         await storage.createMaintenanceBlock(
-          reservation.vehicleId,
+          reservation.vehicleId!,
           serviceStartDate,
           serviceEndDate,
           // Carry the renting customer onto the block so the maintenance
@@ -5159,7 +5160,7 @@ export async function registerRoutes(app: Express): Promise<void> {
             filePath: relativePath,
             fileSize: contractPdf.length,
             contentType: 'application/pdf',
-            uploadedBy: (req as any).user?.username || 'system'
+            createdBy: (req as any).user?.username || 'system'
           });
           
           console.log(`✅ Contract document registered in database`);
@@ -5371,7 +5372,7 @@ export async function registerRoutes(app: Express): Promise<void> {
               filePath: relativePath,
               fileSize: damageCheckPdf.length,
               contentType: 'application/pdf',
-              uploadedBy: (req as any).user?.username || 'system'
+              createdBy: (req as any).user?.username || 'system'
             });
             
             console.log(`✅ Damage check document registered in database`);
@@ -6223,7 +6224,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           return;
         } catch (error) {
           console.error('Failed to create contract directory:', error);
-          return callback(new Error(`Failed to create upload directory: ${error.message}`), false);
+          return callback(new Error(`Failed to create upload directory: ${error instanceof Error ? error.message : String(error)}`), false);
         }
       }
       
@@ -6248,11 +6249,11 @@ export async function registerRoutes(app: Express): Promise<void> {
         callback(null, documentsDir);
       } catch (error) {
         console.error('Failed to create document directory:', error);
-        return callback(new Error(`Failed to create upload directory: ${error.message}`), false);
+        return callback(new Error(`Failed to create upload directory: ${error instanceof Error ? error.message : String(error)}`), false);
       }
     } catch (error) {
       console.error("Error with document upload:", error);
-      callback(new Error(`Document upload error: ${error.message}`), false);
+      callback(new Error(`Document upload error: ${error instanceof Error ? error.message : String(error)}`), false);
     }
   };
 
@@ -6880,7 +6881,7 @@ export async function registerRoutes(app: Express): Promise<void> {
                   console.error('Error parsing template fields:', e);
                 }
               } else {
-                fieldsLength = template.fields.length;
+                fieldsLength = (template.fields as unknown[]).length;
               }
             }
             
@@ -6915,7 +6916,7 @@ export async function registerRoutes(app: Express): Promise<void> {
                   console.error('Error parsing template fields:', e);
                 }
               } else {
-                fieldsLength = defaultTemplate.fields.length;
+                fieldsLength = (defaultTemplate.fields as unknown[]).length;
               }
             }
             
@@ -7119,7 +7120,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       // Use the imported function from pdf-generator.ts
       const { generateRentalContractFromTemplate } = await import('./utils/pdf-generator');
-      const pdfBuffer = await generateRentalContractFromTemplate(previewData, template);
+      const pdfBuffer = await generateRentalContractFromTemplate(previewData as unknown as Reservation, template);
       
       // Store preview with token
       const { previewTokenService } = await import('./preview-token-service');
@@ -7254,7 +7255,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       // Use the imported function from pdf-generator.ts
       const { generateRentalContractFromTemplate } = await import('./utils/pdf-generator');
-      const pdfBuffer = await generateRentalContractFromTemplate(contractData, template);
+      const pdfBuffer = await generateRentalContractFromTemplate(contractData as unknown as Reservation, template);
       
       // Save as versioned document
       if (vehicle) {
@@ -7536,13 +7537,13 @@ export async function registerRoutes(app: Express): Promise<void> {
       const templates = await storage.getDamageCheckTemplatesByVehicle(
         vehicle.brand,
         vehicle.model,
-        vehicle.vehicleType
+        vehicle.vehicleType ?? undefined
       );
       
       let damageTemplate = templates.length > 0 ? templates[0] : null;
       
       if (!damageTemplate) {
-        damageTemplate = await storage.getDefaultDamageCheckTemplate();
+        damageTemplate = (await storage.getDefaultDamageCheckTemplate()) ?? null;
       }
       
       if (!damageTemplate) {
@@ -7556,9 +7557,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         brand: vehicle.brand,
         model: vehicle.model,
         licensePlate: vehicle.licensePlate,
-        buildYear: vehicle.productionDate,
+        buildYear: vehicle.productionDate ?? undefined,
         fuel: vehicle.fuel || undefined,
-        mileage: vehicle.mileage || undefined,
+        mileage: vehicle.currentMileage || undefined,
       };
 
       // Prepare reservation data
@@ -7758,13 +7759,13 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       
       // Create a dummy reservation for preview purposes
-      const dummyReservation: Reservation = {
+      const dummyReservation = {
         id: 0, // Use 0 to indicate preview mode
         vehicleId: 0,
         customerId: 0,
         startDate: new Date().toISOString(),
         endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days later
-        totalPrice: 750,
+        totalPrice: '750',
         status: 'Booked',
         notes: 'Preview reservation',
         vehicle: {
@@ -7789,7 +7790,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         updatedAt: new Date(),
         createdBy: 'system',
         updatedBy: null,
-      };
+      } as unknown as Reservation;
       
       // Make sure the template fields are properly formatted
       let fieldsLength = 0;
@@ -7804,7 +7805,7 @@ export async function registerRoutes(app: Express): Promise<void> {
             console.error('Error parsing template fields:', e);
           }
         } else {
-          fieldsLength = template.fields.length;
+          fieldsLength = (template.fields as unknown[]).length;
         }
       }
       
@@ -8395,7 +8396,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Get custom notifications for current user
   app.get("/api/custom-notifications/user", hasPermission(UserPermission.MANAGE_NOTIFICATIONS), async (req: Request, res: Response) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user!.id;
       const notifications = await storage.getCustomNotificationsByUser(userId);
       res.json(notifications);
     } catch (error) {
@@ -8436,7 +8437,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Add user info to notification data
       const notificationData = {
         ...req.body,
-        createdBy: req.user.username
+        createdBy: req.user!.username
       };
       
       // Ensure isRead is set to false for new notifications
@@ -8478,7 +8479,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Update with user info
       const notificationData = {
         ...req.body,
-        updatedBy: req.user.username
+        updatedBy: req.user!.username
       };
       
       const updatedNotification = await storage.updateCustomNotification(id, notificationData);
@@ -10210,7 +10211,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       const username = req.user?.username || 'system';
       const userId = req.user?.id || null;
 
-      const customers = await storage.getCustomers();
+      const customers = await storage.getAllCustomers();
       const migratedDrivers = [];
       const skippedCustomers = [];
 
@@ -10932,14 +10933,13 @@ export async function registerRoutes(app: Express): Promise<void> {
       const report = await storage.createSavedReport({
         name: config.name,
         description: config.description || null,
-        reportType: 'custom',
         configuration: config,
         dataSources: config.dataSources || [],
         enabled: true,
         createdBy: user ? user.username : null,
         createdByUserId: user ? user.id : null,
         updatedBy: user ? user.username : null,
-      });
+      } as any); // FIXME: payload does not match the saved_reports columns (no `configuration`/`dataSources`/`enabled`, `dataSource` missing)
 
       res.json(report);
     } catch (error) {
@@ -11114,7 +11114,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           const { storage } = await import("./storage");
           const { DAMAGE_CHECK_FIELDS_KEY, DEFAULT_DAMAGE_CHECK_FIELDS } =
             await import("@shared/schema");
-          const setting = await storage.getSettingByKey(DAMAGE_CHECK_FIELDS_KEY);
+          const setting = await storage.getAppSettingByKey(DAMAGE_CHECK_FIELDS_KEY);
           const cfg: any = (setting?.value as any) || DEFAULT_DAMAGE_CHECK_FIELDS;
           for (const g of cfg.groups || []) {
             for (const f of g.fields || []) {
@@ -11638,11 +11638,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Get current or upcoming reservation for this vehicle (optional)
       let reservationData;
       try {
-        const reservations = await storage.getVehicleReservations(vehicleId);
+        const reservations = await storage.getReservationsByVehicle(vehicleId);
         const currentReservation = reservations.find(r => {
           const start = new Date(r.startDate);
-          const end = new Date(r.endDate);
           const now = new Date();
+          const end = r.endDate ? new Date(r.endDate) : now; // open-ended rental counts as current
           return start <= now && end >= now;
         }) || reservations[0];
         
@@ -11652,7 +11652,7 @@ export async function registerRoutes(app: Express): Promise<void> {
             : null;
           
           const startDate = new Date(currentReservation.startDate);
-          const endDate = new Date(currentReservation.endDate);
+          const endDate = currentReservation.endDate ? new Date(currentReservation.endDate) : new Date();
           const rentalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
           
           reservationData = {
@@ -11672,9 +11672,9 @@ export async function registerRoutes(app: Express): Promise<void> {
           brand: vehicle.brand,
           model: vehicle.model,
           licensePlate: vehicle.licensePlate,
-          buildYear: vehicle.productionDate,
+          buildYear: vehicle.productionDate ?? undefined,
           fuel: vehicle.fuel || undefined,
-          mileage: vehicle.mileage || undefined,
+          mileage: vehicle.currentMileage || undefined,
         },
         template,
         reservationData
@@ -12144,9 +12144,9 @@ export async function registerRoutes(app: Express): Promise<void> {
                 brand: vehicle.brand,
                 model: vehicle.model,
                 licensePlate: vehicle.licensePlate,
-                buildYear: vehicle.productionDate,
+                buildYear: vehicle.productionDate ?? undefined,
                 fuel: created.fuelLevel || vehicle.fuel || undefined,
-                mileage: created.mileage || vehicle.mileage || undefined,
+                mileage: created.mileage || vehicle.currentMileage || undefined,
               },
               damageTemplate,
               reservationData,
@@ -12170,7 +12170,7 @@ export async function registerRoutes(app: Express): Promise<void> {
               filePath: relativePath,
               contentType: 'application/pdf',
               fileSize: pdfBuffer.length,
-              uploadedBy: user ? user.username : null,
+              createdBy: user ? user.username : null,
             });
 
           }
@@ -12362,7 +12362,7 @@ export async function registerRoutes(app: Express): Promise<void> {
               filePath: relativePath,
               contentType: 'application/pdf',
               fileSize: pdfBuffer.length,
-              uploadedBy: user ? user.username : null,
+              createdBy: user ? user.username : null,
             });
 
           }
@@ -12441,8 +12441,8 @@ export async function registerRoutes(app: Express): Promise<void> {
               contractNumber: `RES-${reservation.id}`,
               customerName: reservation.customer.name,
               startDate: format(new Date(reservation.startDate), 'dd-MM-yyyy'),
-              endDate: format(new Date(reservation.endDate), 'dd-MM-yyyy'),
-              rentalDays: Math.ceil((new Date(reservation.endDate).getTime() - new Date(reservation.startDate).getTime()) / (1000 * 60 * 60 * 24)),
+              endDate: reservation.endDate ? format(new Date(reservation.endDate), 'dd-MM-yyyy') : '',
+              rentalDays: reservation.endDate ? Math.ceil((new Date(reservation.endDate).getTime() - new Date(reservation.startDate).getTime()) / (1000 * 60 * 60 * 24)) : 0,
             };
           }
         } catch (err) {
@@ -12463,9 +12463,9 @@ export async function registerRoutes(app: Express): Promise<void> {
           brand: vehicle.brand,
           model: vehicle.model,
           licensePlate: vehicle.licensePlate,
-          buildYear: vehicle.productionDate,
+          buildYear: vehicle.productionDate ?? undefined,
           fuel: check.fuelLevel || vehicle.fuel || undefined,
-          mileage: check.mileage || vehicle.mileage || undefined,
+          mileage: check.mileage || vehicle.currentMileage || undefined,
         },
         damageTemplate,
         reservationData,

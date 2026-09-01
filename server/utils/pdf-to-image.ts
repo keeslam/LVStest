@@ -55,11 +55,10 @@ export async function convertPdfToPng(
     
     // Render PDF page to canvas with all rendering options enabled
     const renderContext = {
+      canvas: null, // pdfjs 5: must be null when rendering through canvasContext
       canvasContext: context as any,
       viewport: viewport,
       intent: 'print', // Use print intent for better quality
-      renderInteractiveForms: false,
-      enableWebGL: false,
     };
     
     const renderTask = page.render(renderContext);

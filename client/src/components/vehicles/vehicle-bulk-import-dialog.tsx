@@ -896,7 +896,7 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
                                 <div className="flex items-center gap-2">
                                   {index + 1}
                                   {vehicle._isValid === false && (
-                                    <AlertCircle className="h-4 w-4 text-red-500" title={vehicle._errors?.join(', ')} />
+                                    <span title={vehicle._errors?.join(', ')}><AlertCircle className="h-4 w-4 text-red-500" /></span>
                                   )}
                                 </div>
                               </TableCell>

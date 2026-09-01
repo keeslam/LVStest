@@ -12,7 +12,7 @@ export class ApkScanScheduler {
 
     // Runs shortly after the nightly backup (02:00) so the two don't compete
     // for startup resources.
-    this.scheduledTask = cron.schedule('30 2 * * *', async () => {
+    this.scheduledTask = cron.createTask('30 2 * * *', async () => {
       console.log('Starting scheduled RDW APK scan...');
       try {
         const result = await scanVehiclesForApkChanges();
@@ -21,7 +21,6 @@ export class ApkScanScheduler {
         console.error('Scheduled RDW APK scan failed:', error);
       }
     }, {
-      scheduled: false,
       timezone: "Europe/Amsterdam"
     });
 

@@ -56,8 +56,8 @@ interface DamageCheckTemplate {
   vehicleMake?: string | null;
   vehicleModel?: string | null;
   vehicleType?: string | null;
-  buildYearFrom?: number | null;
-  buildYearTo?: number | null;
+  buildYearFrom?: number | string | null;
+  buildYearTo?: number | string | null;
   isDefault?: boolean;
   headerText?: string | null;
   footerText?: string | null;

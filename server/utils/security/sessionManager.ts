@@ -1,6 +1,6 @@
 import { db } from '../../db';
 import { activeSessions } from '../../../shared/schema';
-import { eq, and, lt } from 'drizzle-orm';
+import { eq, and, lt, gt } from 'drizzle-orm';
 import type { Request } from 'express';
 
 /**
@@ -75,7 +75,7 @@ export async function getUserActiveSessions(userId: number) {
       .where(
         and(
           eq(activeSessions.userId, userId),
-          lt(now, activeSessions.expiresAt)
+          gt(activeSessions.expiresAt, now)
         )
       );
   } catch (error) {

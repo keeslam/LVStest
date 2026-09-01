@@ -130,7 +130,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
   
   // Delete confirmation dialog states
   const [deleteDamageCheckDialogOpen, setDeleteDamageCheckDialogOpen] = useState(false);
-  const [damageCheckToDelete, setDamageCheckToDelete] = useState<{ id: number; checkType: string; checkDate: string } | null>(null);
+  const [damageCheckToDelete, setDamageCheckToDelete] = useState<{ id: number; checkType: string; checkDate: string; reservationId?: number | null } | null>(null);
   const [deleteDocumentDialogOpen, setDeleteDocumentDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<{ id: number; fileName: string } | null>(null);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
@@ -259,7 +259,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     data: vehicle, 
     isLoading: isLoadingVehicle,
     error: vehicleError 
-  } = useQuery({
+  } = useQuery<Vehicle>({
     queryKey: vehicleQueryKey,
     enabled: !!vehicleId
   });
@@ -500,7 +500,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
   });
 
   // Fetch customers for the form
-  const { data: customers } = useQuery({
+  const { data: customers } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
     enabled: isNewReservationOpen,
   });
@@ -549,7 +549,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     resolver: zodResolver(newReservationSchema),
     defaultValues: {
       vehicleId: vehicleId,
-      customerId: "",
+      customerId: "" as unknown as number,
       startDate: today,
       endDate: defaultEndDate,
       isOpenEnded: false,
@@ -678,7 +678,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
   });
   
   // Fetch interactive damage checks for this vehicle
-  const { data: interactiveDamageChecks = [], isLoading: isLoadingDamageChecks } = useQuery({
+  const { data: interactiveDamageChecks = [], isLoading: isLoadingDamageChecks } = useQuery<any[]>({
     queryKey: [`/api/interactive-damage-checks/vehicle/${vehicleId}`],
   });
   
@@ -769,7 +769,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     onSuccess: async () => {
       // Use invalidateRelatedQueries to refresh all related data
       invalidateRelatedQueries('reservations');
-      invalidateRelatedQueries('vehicles', vehicleId);
+      invalidateRelatedQueries('vehicles', { id: vehicleId });
       invalidateRelatedQueries('dashboard');
       
       // Explicitly force a refetch to ensure the UI updates immediately
@@ -1291,7 +1291,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               <CardTitle className="text-sm font-medium text-blue-700">{t('details.infoCards.currentRenter')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <CustomerViewDialog customerId={activeReservation.customerId}>
+              <CustomerViewDialog customerId={activeReservation.customerId!}>
                 <p className="text-2xl font-semibold text-blue-900 hover:text-blue-600 cursor-pointer transition-colors">
                   {activeReservation.customer?.name || t('details.general.na')}
                 </p>
@@ -1389,7 +1389,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               <CardTitle className="text-sm font-medium text-green-700">{t('details.infoCards.upcomingReservation')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <CustomerViewDialog customerId={upcomingReservation.customerId}>
+              <CustomerViewDialog customerId={upcomingReservation.customerId!}>
                 <p className="text-2xl font-semibold text-green-900 hover:text-green-600 cursor-pointer transition-colors">
                   {upcomingReservation.customer?.name || t('details.general.na')}
                 </p>
@@ -2090,7 +2090,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                               variant="outline"
                               size="sm"
                               onClick={() => {
-                                setDamageCheckToDelete({ id: check.id, checkType: check.checkType, checkDate: check.checkDate });
+                                setDamageCheckToDelete({ id: check.id, checkType: check.checkType, checkDate: check.checkDate, reservationId: check.reservationId });
                                 setDeleteDamageCheckDialogOpen(true);
                               }}
                               data-testid={`button-delete-${check.id}`}
@@ -2367,7 +2367,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                   <CardTitle>{t('details.reservations.historyTitle')}</CardTitle>
                   <CardDescription>{t('details.reservations.historyDescription')}</CardDescription>
                 </div>
-                <ReservationAddDialog initialVehicleId={vehicleId}>
+                <ReservationAddDialog initialVehicleId={String(vehicleId)}>
                   <Button size="sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-calendar-plus mr-2">
                       <path d="M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8" />

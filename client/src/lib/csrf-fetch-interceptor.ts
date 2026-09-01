@@ -19,8 +19,8 @@ function getCsrfTokenFromCookie(): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-function isSameOriginApiRequest(input: RequestInfo): boolean {
-  const url = typeof input === "string" ? input : input.url;
+function isSameOriginApiRequest(input: RequestInfo | URL): boolean {
+  const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
   try {
     const resolved = new URL(url, window.location.origin);
     return resolved.origin === window.location.origin && resolved.pathname.startsWith("/api/");
@@ -31,14 +31,14 @@ function isSameOriginApiRequest(input: RequestInfo): boolean {
 
 const originalFetch = window.fetch.bind(window);
 
-window.fetch = (input: RequestInfo, init: RequestInit = {}) => {
-  const method = (init.method || (typeof input !== "string" ? input.method : "GET") || "GET").toUpperCase();
+window.fetch = ((input: RequestInfo | URL, init: RequestInit = {}) => {
+  const method = (init.method || (input instanceof Request ? input.method : "GET") || "GET").toUpperCase();
 
   if (!MUTATING_METHODS.has(method) || !isSameOriginApiRequest(input)) {
     return originalFetch(input, init);
   }
 
-  const headers = new Headers(init.headers ?? (typeof input !== "string" ? input.headers : undefined));
+  const headers = new Headers(init.headers ?? (input instanceof Request ? input.headers : undefined));
   if (!headers.has("X-CSRF-Token")) {
     const token = getCsrfTokenFromCookie();
     if (token) {
@@ -51,4 +51,4 @@ window.fetch = (input: RequestInfo, init: RequestInit = {}) => {
     headers,
     credentials: init.credentials ?? "include",
   });
-};
+}) as typeof window.fetch;
