@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Truck, CalendarRange, User, RotateCcw, CalendarPlus, ShieldCheck, FileCheck, LogOut, LogIn, Receipt, Wrench, ChevronDown, ChevronUp, History, Car, FileUp, Undo2, Check, Play } from "lucide-react";
+import { Camera, Truck, CalendarRange, User, RotateCcw, CalendarPlus, ShieldCheck, FileCheck, LogOut, LogIn, Receipt, Wrench, ChevronDown, ChevronUp, History, Car, FileUp, Undo2, Check, Play, Fuel, Gauge } from "lucide-react";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { isTrueValue } from "@/lib/utils";
@@ -17,6 +17,8 @@ import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-ret
 import { ScheduleMaintenanceDialog } from "@/components/maintenance/schedule-maintenance-dialog";
 import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
 import { InlineDocumentUpload } from "@/components/documents/inline-document-upload";
+import { FuelStatusUpdateDialog } from "@/components/vehicles/fuel-status-update-dialog";
+import { MileageUpdateDialog } from "@/components/vehicles/mileage-update-dialog";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Vehicle, Reservation, ScanEvent } from "@shared/schema";
@@ -78,6 +80,7 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
   const [result, setResult] = useState<LookupResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [mileageOpen, setMileageOpen] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [handoverReservation, setHandoverReservation] = useState<Reservation | null>(null);
   const [pickupOpen, setPickupOpen] = useState(false);
@@ -296,6 +299,24 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
                 </div>
               </div>
               <div>
+                <div className="text-muted-foreground flex items-center gap-1">
+                  <Gauge className="h-3.5 w-3.5" />
+                  {t("scanPage.mileageLabel")}
+                </div>
+                <div className="font-medium" data-testid="text-scan-mileage">
+                  {result.vehicle.currentMileage != null ? `${result.vehicle.currentMileage.toLocaleString()} km` : t("scanPage.notAvailable")}
+                </div>
+              </div>
+              <div>
+                <div className="text-muted-foreground flex items-center gap-1">
+                  <Fuel className="h-3.5 w-3.5" />
+                  {t("scanPage.fuelLabel")}
+                </div>
+                <div className="font-medium" data-testid="text-scan-fuel">
+                  {result.vehicle.currentFuelLevel || t("scanPage.notAvailable")}
+                </div>
+              </div>
+              <div>
                 <div className="text-muted-foreground">{t("scanPage.registrationLabel")}</div>
                 <div>
                   {isTrueValue(result.vehicle.registeredTo) ? (
@@ -411,6 +432,21 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
                   {t("scanPage.actions.uploadDocument")}
                 </Button>
               </InlineDocumentUpload>
+              <FuelStatusUpdateDialog
+                key={`fuel-${result.vehicle.id}-${result.vehicle.currentFuelLevel ?? ""}`}
+                vehicleId={result.vehicle.id}
+                currentFuelLevel={result.vehicle.currentFuelLevel || undefined}
+                onSuccess={() => { if (result.vehicle.barcode) lookup(result.vehicle.barcode); }}
+              >
+                <Button variant="outline" className={ACTION_TILE_CLASS} data-testid="button-scan-fuel">
+                  <Fuel />
+                  {t("scanPage.actions.updateFuel")}
+                </Button>
+              </FuelStatusUpdateDialog>
+              <Button variant="outline" className={ACTION_TILE_CLASS} onClick={() => setMileageOpen(true)} data-testid="button-scan-mileage">
+                <Gauge />
+                {t("scanPage.actions.updateMileage")}
+              </Button>
               {(result.vehicle.maintenanceStatus === "ok" || !result.vehicle.maintenanceStatus) ? (
                 <Button variant="outline" className={ACTION_TILE_CLASS} onClick={() => { setEditingMaintenance(null); setScheduleMaintenanceOpen(true); }} data-testid="button-scan-maintenance-start">
                   <Wrench />
@@ -501,6 +537,16 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
           <ReturnDialog open={returnOpen} onOpenChange={setReturnOpen} reservation={handoverReservation}
             onSuccess={() => { setReturnOpen(false); if (result?.type === "vehicle" && result.vehicle.barcode) lookup(result.vehicle.barcode); }} />
         </>
+      )}
+
+      {result?.type === "vehicle" && (
+        <MileageUpdateDialog
+          vehicleId={result.vehicle.id}
+          currentMileage={result.vehicle.currentMileage}
+          open={mileageOpen}
+          onOpenChange={setMileageOpen}
+          onSuccess={() => { if (result.vehicle.barcode) lookup(result.vehicle.barcode); }}
+        />
       )}
 
       {result?.type === "vehicle" && (

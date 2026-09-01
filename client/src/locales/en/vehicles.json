@@ -158,6 +158,19 @@
     "title": "Add New Vehicle",
     "description": "Add a new vehicle to your fleet by filling out the form below"
   },
+  "mileageUpdateDialog": {
+    "title": "Update mileage",
+    "currentReading": "Current reading: {{mileage}} km",
+    "noReading": "No mileage recorded yet.",
+    "newMileageLabel": "New mileage",
+    "decreaseWarning": "Lower than the current reading ({{current}} km). An authorisation password is required.",
+    "save": "Save",
+    "saving": "Saving...",
+    "savedTitle": "Mileage saved",
+    "savedDescription": "New reading: {{mileage}} km",
+    "errorTitle": "Save failed",
+    "saveFailed": "Could not update the mileage"
+  },
   "fuelStatusUpdateDialog": {
     "updateFuelStatusButton": "Update Fuel Status",
     "description": "Update the current fuel level after refilling the vehicle",

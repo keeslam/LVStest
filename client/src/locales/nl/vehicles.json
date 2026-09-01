@@ -158,6 +158,19 @@
     "title": "Nieuw voertuig toevoegen",
     "description": "Voeg een nieuw voertuig toe aan je wagenpark door onderstaand formulier in te vullen"
   },
+  "mileageUpdateDialog": {
+    "title": "Kilometerstand bijwerken",
+    "currentReading": "Huidige stand: {{mileage}} km",
+    "noReading": "Nog geen kilometerstand bekend.",
+    "newMileageLabel": "Nieuwe kilometerstand",
+    "decreaseWarning": "Lager dan de huidige stand ({{current}} km). Hiervoor is een autorisatiewachtwoord nodig.",
+    "save": "Opslaan",
+    "saving": "Opslaan...",
+    "savedTitle": "Kilometerstand opgeslagen",
+    "savedDescription": "Nieuwe stand: {{mileage}} km",
+    "errorTitle": "Opslaan mislukt",
+    "saveFailed": "Kon de kilometerstand niet bijwerken"
+  },
   "fuelStatusUpdateDialog": {
     "updateFuelStatusButton": "Brandstofstatus bijwerken",
     "description": "Werk het huidige brandstofniveau bij na het tanken van het voertuig",
