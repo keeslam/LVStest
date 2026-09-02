@@ -57,65 +57,63 @@ function verifyCsrfToken(token: string, secret: string): boolean {
   }
 }
 
-/**
- * Middleware to verify CSRF token on state-changing requests
- */
-export function csrfProtection(req: Request & { session: any }, res: Response, next: NextFunction): void {
-  // Skip CSRF for safe methods
-  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
-    return next();
-  }
 
-  // Login has no pre-existing session to forge a request against — the standard
-  // exemption. Every other mutating route runs on an authenticated session and
-  // is in scope, including /api/register (which itself requires an admin session).
-  if (req.path === '/api/login') {
-    return next();
-  }
-
-  // Get token from header or body
-  const token = req.get('X-CSRF-Token') || req.body._csrf;
-
-  if (!token) {
-    res.status(403).json({
-      message: 'CSRF token missing',
-    });
-    return;
-  }
-
-  // Verify token
-  const secret = req.session.csrfSecret;
-  if (!secret || !verifyCsrfToken(token, secret)) {
-    res.status(403).json({
-      message: 'Invalid CSRF token',
-    });
-    return;
-  }
-
-  next();
+export interface CsrfOptions {
+  cookieName: string;
+  sameSite: 'strict' | 'lax';
+  /** Paths (exact match on req.path) that carry no session yet and are exempt. */
+  exemptPaths: string[];
 }
 
 /**
- * Middleware to attach CSRF token to response
+ * Builds a CSRF pair (attach + protect) for one cookie name. The staff app and
+ * the customer portal each get their own instance, because they run on
+ * different session cookies with different SameSite rules.
  */
-export function attachCsrfToken(req: Request & { session: any }, res: Response, next: NextFunction): void {
-  // Generate token
-  const token = generateCsrfToken(req);
-  
-  // Attach to response locals for templates
-  res.locals.csrfToken = token;
-  
-  // res.cookie only takes a boolean, so resolve 'auto' against this request.
-  // req.secure accounts for X-Forwarded-Proto because the app sets trust proxy.
-  const secureSetting = useSecureCookies();
-  const secure = secureSetting === 'auto' ? req.secure : secureSetting;
+export function createCsrfMiddleware(options: CsrfOptions) {
+  const exempt = new Set(options.exemptPaths);
 
-  // Set cookie for client-side access
-  res.cookie('XSRF-TOKEN', token, {
-    httpOnly: false, // Allow JavaScript to read it
-    secure,
-    sameSite: 'strict',
-  });
+  function csrfProtection(req: Request & { session: any }, res: Response, next: NextFunction): void {
+    // Skip CSRF for safe methods
+    if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
 
-  next();
+    // Login has no pre-existing session to forge a request against - the standard
+    // exemption. Every other mutating route runs on an authenticated session and
+    // is in scope, including /api/register (which itself requires an admin session).
+    if (exempt.has(req.path)) return next();
+
+    const token = req.get('X-CSRF-Token') || req.body?._csrf;
+    if (!token) {
+      res.status(403).json({ message: 'CSRF token missing', code: 'CSRF_MISSING' });
+      return;
+    }
+    const secret = req.session?.csrfSecret;
+    if (!secret || !verifyCsrfToken(token, secret)) {
+      res.status(403).json({ message: 'Invalid CSRF token', code: 'CSRF_INVALID' });
+      return;
+    }
+    next();
+  }
+
+  function attachCsrfToken(req: Request & { session: any }, res: Response, next: NextFunction): void {
+    const token = generateCsrfToken(req);
+    res.locals.csrfToken = token;
+    // res.cookie only takes a boolean, so resolve 'auto' against this request.
+    // req.secure accounts for X-Forwarded-Proto because the app sets trust proxy.
+    const secureSetting = useSecureCookies();
+    const secure = secureSetting === 'auto' ? req.secure : secureSetting;
+    res.cookie(options.cookieName, token, {
+      httpOnly: false, // Allow JavaScript to read it
+      secure,
+      sameSite: options.sameSite,
+    });
+    next();
+  }
+
+  return { csrfProtection, attachCsrfToken };
 }
+
+// Staff defaults: unchanged behaviour for every existing caller.
+const staffCsrf = createCsrfMiddleware({ cookieName: 'XSRF-TOKEN', sameSite: 'strict', exemptPaths: ['/api/login'] });
+export const csrfProtection = staffCsrf.csrfProtection;
+export const attachCsrfToken = staffCsrf.attachCsrfToken;

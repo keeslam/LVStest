@@ -1,5 +1,7 @@
 import helmet from 'helmet';
 import { Request, Response, NextFunction } from 'express';
+import { isPortalPath } from '../../portal-paths';
+import { getPortalConfig } from '../../services/portal-config';
 
 /**
  * Configure Helmet security headers
@@ -95,5 +97,30 @@ export function customSecurityHeaders(req: Request, res: Response, next: NextFun
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
 
+  next();
+}
+
+/**
+ * The customer portal is embedded in an <iframe> on the public website, so on
+ * portal paths the frame-ancestors directive names the allowed parents and
+ * X-Frame-Options (which cannot express "these origins") is dropped. Helmet's
+ * CSP has already been written by the time this runs; only the
+ * frame-ancestors part of it is replaced.
+ */
+export async function portalFrameHeaders(req: Request, res: Response, next: NextFunction): Promise<void> {
+  if (!isPortalPath(req.path)) return next();
+  try {
+    const config = await getPortalConfig();
+    const origins = config.allowedFrameOrigins.join(' ');
+    const existing = String(res.getHeader('Content-Security-Policy') ?? '');
+    const withoutFrame = existing
+      .split(';')
+      .map((d) => d.trim())
+      .filter((d) => d && !d.startsWith('frame-ancestors'));
+    res.setHeader('Content-Security-Policy', [...withoutFrame, `frame-ancestors 'self' ${origins}`].join('; '));
+    res.removeHeader('X-Frame-Options');
+  } catch (error) {
+    console.warn('⚠️ portalFrameHeaders: falling back to same-origin framing:', error);
+  }
   next();
 }

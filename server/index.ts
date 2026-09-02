@@ -23,7 +23,7 @@ import { hasPermission } from "./middleware/permissions.js";
 import { UserPermission } from "../shared/schema.js";
 
 // Security middleware imports
-import { securityHeaders, customSecurityHeaders } from "./middleware/security/headers.js";
+import { securityHeaders, customSecurityHeaders, portalFrameHeaders } from "./middleware/security/headers.js";
 import { sanitizeInput } from "./middleware/security/sanitization.js";
 import { apiLimiter } from "./middleware/security/rateLimiter.js";
 import { startSessionCleanupScheduler } from "./utils/security/sessionManager.js";
@@ -160,6 +160,7 @@ const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
 // Security: Apply security headers first
 app.use(securityHeaders);
 app.use(customSecurityHeaders);
+app.use(portalFrameHeaders);
 
 // Security: Apply rate limiting to all API routes
 app.use('/api', apiLimiter);
