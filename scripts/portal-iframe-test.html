@@ -1,0 +1,14 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Portal iframe test</title>
+<h1>lamgroep.local (test parent)</h1>
+<iframe id="lamgroep-portal" src="http://localhost:5000/portaal" style="width:100%;border:1px solid #999;min-height:300px" title="Klantenportaal"></iframe>
+<pre id="log"></pre>
+<script>
+window.addEventListener('message', function (e) {
+  document.getElementById('log').textContent += e.origin + ' ' + JSON.stringify(e.data) + '\n';
+  if (e.data && e.data.type === 'lamgroep-portal:height') {
+    document.getElementById('lamgroep-portal').style.height = e.data.height + 'px';
+  }
+});
+</script>

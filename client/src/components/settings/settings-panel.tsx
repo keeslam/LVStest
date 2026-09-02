@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PortalConfigForm } from "@/components/portal-admin/portal-config-form";
 import { ActivityLogPanel } from "@/components/settings/activity-log-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ import {
   Clock,
   Trash2,
   History,
+  Globe,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { calculateDutchHolidays } from "@shared/holidays";
@@ -730,7 +732,7 @@ export function SettingsPanel() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-8 lg:w-auto lg:inline-grid">
           <TabsTrigger value="business" className="gap-2">
             <Building2 className="h-4 w-4" />
             <span className="hidden sm:inline">{t('settingsPage.tabs.business')}</span>
@@ -766,7 +768,16 @@ export function SettingsPanel() {
             <span className="hidden sm:inline">{t('settingsPage.tabs.activity')}</span>
             <span className="sm:hidden">{t('settingsPage.tabs.activityShort')}</span>
           </TabsTrigger>
+          <TabsTrigger value="portal" className="gap-2" data-testid="tab-portal">
+            <Globe className="h-4 w-4" />
+            <span>{t('admin.config.title', { ns: 'portal' })}</span>
+          </TabsTrigger>
         </TabsList>
+
+        {/* Customer portal Tab */}
+        <TabsContent value="portal" className="space-y-6">
+          <PortalConfigForm />
+        </TabsContent>
 
         {/* Business Rules Tab */}
         <TabsContent value="business" className="space-y-6">
