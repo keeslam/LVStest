@@ -74,6 +74,7 @@ import {
   pickBestDamageCheckTemplate,
 } from "./services/reservation-pdf-regeneration";
 import { reservationIsOld, verifyAdminPassword, authorizeMileageDecrease } from "./services/authorization";
+import { assignDriverToReservation } from "./services/driver-assignments";
 import { getServiceDueVehicles, scanVehiclesForServiceDue } from "./utils/service-due-scanner";
 import { registerUserRoutes } from "./routes/users";
 import { registerExpenseRoutes } from "./routes/expenses";
@@ -2640,7 +2641,12 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       
       const reservation = await storage.createReservation(dataWithTracking);
-      
+
+      // First row of the driver assignment history (see services/driver-assignments.ts)
+      if (reservation.driverId) {
+        await assignDriverToReservation({ reservationId: reservation.id, driverId: reservation.driverId, byUserId: req.user?.id, note: 'created' });
+      }
+
       // Sync vehicle availability status after creating reservation
       await storage.syncVehicleAvailabilityWithReservations();
       
@@ -3652,9 +3658,20 @@ export async function registerRoutes(app: Express): Promise<void> {
       };
       
       const reservation = await storage.updateReservation(id, dataWithTracking);
-      
+
       if (!reservation) {
         return res.status(404).json({ message: "Reservation not found" });
+      }
+
+      // Keep the driver assignment history in sync with staff edits so the
+      // customer portal (and later the fines attribution) sees every change.
+      if ('driverId' in dataWithTracking && (dataWithTracking.driverId ?? null) !== (existingReservationForDiff.driverId ?? null)) {
+        await assignDriverToReservation({
+          reservationId: id,
+          driverId: dataWithTracking.driverId ?? null,
+          byUserId: req.user?.id,
+          note: 'staff',
+        });
       }
 
       // Detect contract-relevant changes and regenerate unsigned contract PDFs
