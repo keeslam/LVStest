@@ -15,7 +15,7 @@ export function ReservationCard({ reservation, showPrice }: { reservation: Porta
   const { t } = useTranslation("portal");
   const r = reservation;
   return (
-    <Link href={`/portaal/reserveringen/${r.id}`} className="block">
+    <Link href={`/reserveringen/${r.id}`} className="block">
       <Card className="hover:bg-muted/40 transition-colors">
         <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
           <div>

@@ -28,7 +28,7 @@ export default function PortalLoginPage() {
       } else {
         await portalFetch("POST", "/api/portal/login", { email, password });
         await refresh();
-        navigate("/portaal");
+        navigate("/");
       }
     } catch (err) {
       const code = err instanceof PortalApiError ? err.code : "PORTAL_SERVER_ERROR";

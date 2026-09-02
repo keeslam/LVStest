@@ -25,11 +25,12 @@ export function PortalLayout({ children }: { children: ReactNode }) {
   const [location, navigate] = useLocation();
   usePortalHeightReporter();
 
-  const isPublicPage = location.startsWith("/portaal/login") || location.startsWith("/portaal/activeren");
+  // Inside the nested /portaal router, location and navigate are relative to it.
+  const isPublicPage = location.startsWith("/login") || location.startsWith("/activeren");
 
   useEffect(() => {
     if (!isLoading && !me && !isPublicPage) {
-      navigate("/portaal/login", { replace: true });
+      navigate("/login", { replace: true });
     }
   }, [isLoading, me, isPublicPage, navigate]);
 
@@ -39,11 +40,11 @@ export function PortalLayout({ children }: { children: ReactNode }) {
   if (!me || isPublicPage) return <div className="mx-auto max-w-md p-4">{children}</div>;
 
   const tabs: TabDef[] = [
-    { href: "/portaal", key: "tabs.overview", show: true },
-    { href: "/portaal/reserveringen", key: "tabs.reservations", show: true },
-    { href: "/portaal/documenten", key: "tabs.documents", show: me.settings.canViewContracts },
-    { href: "/portaal/bestuurders", key: "tabs.drivers", show: me.settings.canManageDrivers && me.role === "admin" },
-    { href: "/portaal/account", key: "tabs.account", show: true },
+    { href: "/", key: "tabs.overview", show: true },
+    { href: "/reserveringen", key: "tabs.reservations", show: true },
+    { href: "/documenten", key: "tabs.documents", show: me.settings.canViewContracts },
+    { href: "/bestuurders", key: "tabs.drivers", show: me.settings.canManageDrivers && me.role === "admin" },
+    { href: "/account", key: "tabs.account", show: true },
   ];
 
   return (
@@ -53,13 +54,13 @@ export function PortalLayout({ children }: { children: ReactNode }) {
           <div className="text-lg font-semibold">{me.customerName}</div>
           <div className="text-sm text-muted-foreground">{me.fullName}</div>
         </div>
-        <Button variant="outline" size="sm" onClick={() => logout().then(() => navigate("/portaal/login"))}>
+        <Button variant="outline" size="sm" onClick={() => logout().then(() => navigate("/login"))}>
           <LogOut className="mr-2 h-4 w-4" />{t("actions.logout")}
         </Button>
       </header>
       <nav className="flex flex-wrap gap-1 border-b">
         {tabs.filter((tab) => tab.show).map((tab) => {
-          const active = tab.href === "/portaal" ? location === "/portaal" || location === "/portaal/" : location.startsWith(tab.href);
+          const active = tab.href === "/" ? location === "/" || location === "" : location.startsWith(tab.href);
           return (
             <Link key={tab.href} href={tab.href}
               className={`px-3 py-2 text-sm border-b-2 -mb-px ${active ? "border-primary font-medium" : "border-transparent text-muted-foreground hover:text-foreground"}`}>

@@ -30,7 +30,7 @@ export default function PortalReservationDetailPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold">{t("reservations.detailTitle")} #{r.id}</h1>
-        <Link href="/portaal/reserveringen"><Button variant="ghost" size="sm">←</Button></Link>
+        <Link href="/reserveringen"><Button variant="ghost" size="sm">←</Button></Link>
       </div>
       <Card>
         <CardContent className="p-4 space-y-2">

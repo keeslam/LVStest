@@ -25,7 +25,7 @@ export default function PortalActivatePage() {
     try {
       await portalFetch("POST", "/api/portal/activate", { token, password });
       await refresh();
-      navigate("/portaal");
+      navigate("/");
     } catch (err) {
       const code = err instanceof PortalApiError ? err.code : "PORTAL_SERVER_ERROR";
       if (code === "PORTAL_TOKEN_EXPIRED" || code === "PORTAL_TOKEN_INVALID") setExpired(true);
@@ -49,7 +49,7 @@ export default function PortalActivatePage() {
       </div>
       {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
       {expired
-        ? <Button type="button" variant="outline" className="w-full" onClick={() => navigate("/portaal/login")}>{t("activate.requestNewLink")}</Button>
+        ? <Button type="button" variant="outline" className="w-full" onClick={() => navigate("/login")}>{t("activate.requestNewLink")}</Button>
         : <Button type="submit" disabled={busy || !token} className="w-full">{t("activate.submit")}</Button>}
     </form>
   );
