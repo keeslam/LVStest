@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import { UserPermission, UserRole } from "@shared/schema";
+import { CustomerPortalTab } from "@/components/customers/customer-portal-tab";
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { CustomerEditDialog } from "./customer-edit-dialog";
@@ -39,6 +42,9 @@ interface CustomerDetailsProps {
 }
 
 export function CustomerDetails({ customerId, inDialog = false, onClose }: CustomerDetailsProps) {
+  const { user: staffUser } = useAuth();
+  const canSeePortal = staffUser?.role === UserRole.ADMIN
+    || ((staffUser?.permissions as string[] | undefined) ?? []).some((p) => p === UserPermission.VIEW_PORTAL || p === UserPermission.MANAGE_PORTAL);
   const { t } = useTranslation(["customers", "common"]);
   const [_, navigate] = useLocation();
   const { toast } = useToast();
@@ -582,12 +588,19 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
 
       {/* Tabs */}
       <Tabs defaultValue="personal" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 max-w-4xl">
+        <TabsList className={`grid w-full ${canSeePortal ? 'grid-cols-5' : 'grid-cols-4'} max-w-4xl`}>
           <TabsTrigger value="personal">{t('details.tabPersonalInfo')}</TabsTrigger>
           <TabsTrigger value="drivers">{t('details.tabDrivers')}</TabsTrigger>
           <TabsTrigger value="active">{t('details.tabActiveRentals')}</TabsTrigger>
           <TabsTrigger value="history">{t('details.tabHistory')}</TabsTrigger>
+          {canSeePortal && <TabsTrigger value="portal" data-testid="tab-customer-portal">{t('admin.customerTab', { ns: 'portal' })}</TabsTrigger>}
         </TabsList>
+
+        {canSeePortal && (
+          <TabsContent value="portal" className="mt-6">
+            <CustomerPortalTab customerId={customerId} />
+          </TabsContent>
+        )}
         
         {/* Personal Info Tab */}
         <TabsContent value="personal" className="mt-6">

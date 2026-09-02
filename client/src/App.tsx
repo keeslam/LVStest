@@ -15,6 +15,7 @@ import MaintenanceCalendar from "@/pages/maintenance/calendar";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import PortalApp from "@/pages/portal/index";
+import PortalAdminPage from "@/pages/portal-admin/index";
 import MainLayout from "@/layouts/MainLayout";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { SocketProvider } from "@/hooks/use-socket";
@@ -67,6 +68,7 @@ function AppRoutes() {
               <ProtectedRoute path="/reports" component={ReportsPage} />
               <ProtectedRoute path="/delivery" component={DeliveryDashboard} />
               <ProtectedRoute path="/communications" component={CustomerCommunications} />
+              <ProtectedRoute path="/portal-admin" component={PortalAdminPage} />
               <Route path="/auth" component={AuthPage} />
               <Route component={NotFound} />
             </Switch>

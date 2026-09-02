@@ -21,6 +21,7 @@ export function SidebarNav() {
     { href: "/vehicles", labelKey: "vehicles", icon: "directions_car", permissions: [UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES] },
     { href: "/scan", labelKey: "scan", icon: "scan", permissions: [UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES] },
     { href: "/customers", labelKey: "customers", icon: "people", permissions: [UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS] },
+    { href: "/portal-admin", labelKey: "portalAdmin", icon: "people", permissions: [UserPermission.VIEW_PORTAL, UserPermission.MANAGE_PORTAL] },
     { href: "/reservations", labelKey: "reservations", icon: "event", permissions: [UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS] },
     { href: "/maintenance", labelKey: "maintenance", icon: "maintenance", permissions: [UserPermission.MANAGE_MAINTENANCE] },
     { href: "/expenses", labelKey: "expenses", icon: "euro", permissions: [UserPermission.MANAGE_EXPENSES] },
