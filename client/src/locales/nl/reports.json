@@ -130,6 +130,46 @@
     "noResultsFound": "Geen resultaten gevonden",
     "closeButton": "Sluiten"
   },
+  "financialTab": {
+    "loading": "Laden...",
+    "noData": "Geen gegevens in deze periode",
+    "summary": {
+      "revenue": "Omzet",
+      "rentals": "{{count}} verhuringen, {{days}} huurdagen",
+      "expenses": "Kosten",
+      "margin": "Marge",
+      "km": "Gereden km",
+      "kmHint": "Afgeleid uit bekende tellerstanden"
+    },
+    "chart": {
+      "title": "Omzet versus kosten per voertuig",
+      "description": "Top 15 voertuigen op omzet in de gekozen periode",
+      "revenue": "Omzet",
+      "expenses": "Kosten",
+      "margin": "Marge"
+    },
+    "table": {
+      "title": "Kosten en opbrengst per voertuig",
+      "description": "Omzet uit standaardverhuringen gestart in de periode, kosten op datum in de periode",
+      "vehicle": "Voertuig",
+      "rentals": "Verhuringen",
+      "rentalDays": "Huurdagen",
+      "revenue": "Omzet",
+      "perDay": "Per huurdag",
+      "dailyPrice": "Dagprijs",
+      "expenses": "Kosten",
+      "margin": "Marge",
+      "total": "Totaal"
+    },
+    "mileage": {
+      "title": "Kilometers per maand",
+      "description": "Verschil tussen opeenvolgende tellerstanden (ophalen/inleveren, schadechecks, onderhoud, huidige stand), verdeeld over de maanden",
+      "km": "Km",
+      "readings": "Meetpunten",
+      "period": "Eerste – laatste stand",
+      "sparse": "weinig data"
+    }
+  },
   "reportsPage": {
     "header": {
       "title": "Rapporten",
@@ -172,7 +212,8 @@
       "expenses": "Kosten",
       "vehicles": "Voertuigen",
       "customers": "Klanten",
-      "transports": "Transporten"
+      "transports": "Transporten",
+      "financial": "Financieel"
     },
     "common": {
       "vehicle": "Voertuig",

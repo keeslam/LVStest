@@ -5,6 +5,24 @@ import { ReportValidationError } from "../database-storage";
 import { UserPermission } from "../../shared/schema";
 import { hasPermission } from "../middleware/permissions.js";
 import type { Express } from "express";
+import { buildVehicleFinancials, buildMileagePerMonth, type DateRangeYmd } from "../utils/financial-reports";
+
+const YMD = /^\d{4}-\d{2}-\d{2}$/;
+
+/** from/to query params (yyyy-MM-dd); defaults to the last 30 days */
+function parseReportRange(query: Record<string, unknown>): DateRangeYmd {
+  const today = new Date();
+  const fallbackFrom = new Date(today.getTime() - 30 * 86_400_000).toISOString().slice(0, 10);
+  const from = typeof query.from === "string" && YMD.test(query.from) ? query.from : fallbackFrom;
+  const to = typeof query.to === "string" && YMD.test(query.to) ? query.to : today.toISOString().slice(0, 10);
+  return from <= to ? { from, to } : { from: to, to: from };
+}
+
+function parseVehicleIdFilter(query: Record<string, unknown>): number | null {
+  if (typeof query.vehicleId !== "string" || query.vehicleId === "all") return null;
+  const id = parseInt(query.vehicleId, 10);
+  return Number.isNaN(id) ? null : id;
+}
 
 // Moved verbatim out of server/routes.ts (registerRoutes) - see git history for context.
 export function registerReportRoutes(app: Express): void {
@@ -238,6 +256,42 @@ export function registerReportRoutes(app: Express): void {
       }
       console.error("Error executing report:", error);
       res.status(500).json({ message: "Error executing report" });
+    }
+  });
+
+  // Revenue vs expenses per vehicle for a date range (yyyy-MM-dd, inclusive)
+  app.get("/api/reports/vehicle-financials", hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS), async (req: Request, res: Response) => {
+    try {
+      const range = parseReportRange(req.query);
+      const vehicleId = parseVehicleIdFilter(req.query);
+      const [vehicles, reservations, expenses] = await Promise.all([
+        storage.getAllVehicles(),
+        storage.getAllReservations(),
+        storage.getAllExpenses(),
+      ]);
+      const selected = vehicleId ? vehicles.filter(v => v.id === vehicleId) : vehicles;
+      res.json(buildVehicleFinancials(selected, reservations, expenses, range));
+    } catch (error) {
+      console.error("Error building vehicle financials report:", error);
+      res.status(500).json({ message: "Error building vehicle financials report" });
+    }
+  });
+
+  // Kilometres driven per month, derived from every dated odometer reading we have
+  app.get("/api/reports/mileage-per-month", hasPermission(UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS), async (req: Request, res: Response) => {
+    try {
+      const range = parseReportRange(req.query);
+      const vehicleId = parseVehicleIdFilter(req.query);
+      const [vehicles, reservations, damageChecks] = await Promise.all([
+        storage.getAllVehicles(),
+        storage.getAllReservations(),
+        storage.getAllInteractiveDamageChecks(),
+      ]);
+      const selected = vehicleId ? vehicles.filter(v => v.id === vehicleId) : vehicles;
+      res.json(buildMileagePerMonth(selected, reservations, damageChecks, range));
+    } catch (error) {
+      console.error("Error building mileage-per-month report:", error);
+      res.status(500).json({ message: "Error building mileage-per-month report" });
     }
   });
 }

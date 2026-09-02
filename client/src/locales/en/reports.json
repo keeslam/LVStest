@@ -130,6 +130,46 @@
     "noResultsFound": "No results found",
     "closeButton": "Close"
   },
+  "financialTab": {
+    "loading": "Loading...",
+    "noData": "No data in this period",
+    "summary": {
+      "revenue": "Revenue",
+      "rentals": "{{count}} rentals, {{days}} rental days",
+      "expenses": "Expenses",
+      "margin": "Margin",
+      "km": "Kilometres driven",
+      "kmHint": "Derived from known odometer readings"
+    },
+    "chart": {
+      "title": "Revenue versus expenses per vehicle",
+      "description": "Top 15 vehicles by revenue in the selected period",
+      "revenue": "Revenue",
+      "expenses": "Expenses",
+      "margin": "Margin"
+    },
+    "table": {
+      "title": "Costs and revenue per vehicle",
+      "description": "Revenue from standard rentals started in the period, expenses dated in the period",
+      "vehicle": "Vehicle",
+      "rentals": "Rentals",
+      "rentalDays": "Rental days",
+      "revenue": "Revenue",
+      "perDay": "Per rental day",
+      "dailyPrice": "Daily price",
+      "expenses": "Expenses",
+      "margin": "Margin",
+      "total": "Total"
+    },
+    "mileage": {
+      "title": "Kilometres per month",
+      "description": "Difference between consecutive odometer readings (pickup/return, damage checks, service, current reading), spread over the months",
+      "km": "Km",
+      "readings": "Readings",
+      "period": "First – last reading",
+      "sparse": "sparse data"
+    }
+  },
   "reportsPage": {
     "header": {
       "title": "Reports",
@@ -172,7 +212,8 @@
       "expenses": "Expenses",
       "vehicles": "Vehicles",
       "customers": "Customers",
-      "transports": "Transports"
+      "transports": "Transports",
+      "financial": "Financial"
     },
     "common": {
       "vehicle": "Vehicle",

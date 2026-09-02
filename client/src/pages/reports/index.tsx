@@ -30,6 +30,7 @@ import { DateRange } from "react-day-picker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ReportBuilderPage from "@/pages/reports/report-builder";
 import MaintenanceCostsPage from "@/pages/reports/maintenance-costs";
+import { FinancialTab } from "@/pages/reports/financial-tab";
 
 /**
  * Reports Page - Generate and display reports for the car rental business
@@ -1441,7 +1442,7 @@ export default function ReportsPage() {
       
       {/* Report Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="operations">
             <Settings className="h-4 w-4 mr-2" />
             {t('reportsPage.tabs.operations')}
@@ -1462,7 +1463,16 @@ export default function ReportsPage() {
             <FileText className="h-4 w-4 mr-2" />
             {t('reportsPage.tabs.transports')}
           </TabsTrigger>
+          <TabsTrigger value="financial" data-testid="tab-report-financial">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            {t('reportsPage.tabs.financial')}
+          </TabsTrigger>
         </TabsList>
+
+        {/* Financial Tab: revenue vs expenses per vehicle, km per month */}
+        <TabsContent value="financial" className="space-y-6">
+          <FinancialTab dateRange={dateRange} selectedVehicle={selectedVehicle} />
+        </TabsContent>
         
         {/* Operations Overview Tab */}
         <TabsContent value="operations" className="space-y-6">
