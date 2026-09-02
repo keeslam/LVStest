@@ -16,7 +16,7 @@ export class PortalApiError extends Error {
 }
 
 function csrfToken(): string | null {
-  const m = document.cookie.match(/PORTAL-XSRF-TOKEN=([^;]+)/);
+  const m = document.cookie.match(/(?:^|;\s*)PORTAL-XSRF-TOKEN=([^;]+)/);
   return m ? decodeURIComponent(m[1]) : null;
 }
 

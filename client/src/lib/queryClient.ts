@@ -45,7 +45,9 @@ async function throwIfResNotOk(res: Response) {
  * Get CSRF token from cookie
  */
 export function getCsrfToken(): string | null {
-  const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+  // Anchored: the customer portal sets PORTAL-XSRF-TOKEN alongside, which an
+  // unanchored match would pick up first.
+  const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
   return match ? match[1] : null;
 }
 

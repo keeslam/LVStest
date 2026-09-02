@@ -17,7 +17,8 @@ const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 function getCsrfTokenFromCookie(pathname: string): string | null {
   // The customer portal runs on its own session and its own CSRF cookie.
   const name = pathname === "/api/portal" || pathname.startsWith("/api/portal/") ? "PORTAL-XSRF-TOKEN" : "XSRF-TOKEN";
-  const match = document.cookie.match(new RegExp(`${name}=([^;]+)`));
+  // Anchored so XSRF-TOKEN never matches inside PORTAL-XSRF-TOKEN.
+  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
   return match ? decodeURIComponent(match[1]) : null;
 }
 
