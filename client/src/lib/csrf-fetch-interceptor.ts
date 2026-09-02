@@ -14,9 +14,20 @@
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
-function getCsrfTokenFromCookie(): string | null {
-  const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+function getCsrfTokenFromCookie(pathname: string): string | null {
+  // The customer portal runs on its own session and its own CSRF cookie.
+  const name = pathname === "/api/portal" || pathname.startsWith("/api/portal/") ? "PORTAL-XSRF-TOKEN" : "XSRF-TOKEN";
+  const match = document.cookie.match(new RegExp(`${name}=([^;]+)`));
   return match ? decodeURIComponent(match[1]) : null;
+}
+
+function pathnameOf(input: RequestInfo | URL): string {
+  const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+  try {
+    return new URL(url, window.location.origin).pathname;
+  } catch {
+    return "";
+  }
 }
 
 function isSameOriginApiRequest(input: RequestInfo | URL): boolean {
@@ -40,7 +51,7 @@ window.fetch = ((input: RequestInfo | URL, init: RequestInit = {}) => {
 
   const headers = new Headers(init.headers ?? (input instanceof Request ? input.headers : undefined));
   if (!headers.has("X-CSRF-Token")) {
-    const token = getCsrfTokenFromCookie();
+    const token = getCsrfTokenFromCookie(pathnameOf(input));
     if (token) {
       headers.set("X-CSRF-Token", token);
     }

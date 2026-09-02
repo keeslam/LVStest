@@ -17,6 +17,7 @@ import authNl from "./locales/nl/auth.json";
 import maintenanceNl from "./locales/nl/maintenance.json";
 import deliveryNl from "./locales/nl/delivery.json";
 import barcodesNl from "./locales/nl/barcodes.json";
+import portalNl from "./locales/nl/portal.json";
 
 import commonEn from "./locales/en/common.json";
 import navEn from "./locales/en/nav.json";
@@ -33,6 +34,7 @@ import authEn from "./locales/en/auth.json";
 import maintenanceEn from "./locales/en/maintenance.json";
 import deliveryEn from "./locales/en/delivery.json";
 import barcodesEn from "./locales/en/barcodes.json";
+import portalEn from "./locales/en/portal.json";
 
 // Namespaces mirror the domains in the app so each locale file stays small
 // enough to review and edit without merge conflicts across pages.
@@ -59,6 +61,7 @@ i18n
         maintenance: maintenanceNl,
         delivery: deliveryNl,
         barcodes: barcodesNl,
+        portal: portalNl,
       },
       en: {
         common: commonEn,
@@ -76,6 +79,7 @@ i18n
         maintenance: maintenanceEn,
         delivery: deliveryEn,
         barcodes: barcodesEn,
+        portal: portalEn,
       },
     },
     // Dutch is the primary audience for this app; English stays available
@@ -86,7 +90,7 @@ i18n
     ns: [
       "common", "nav", "dashboard", "vehicles", "customers", "reservations",
       "expenses", "documents", "reports", "notifications", "settings",
-      "auth", "maintenance", "delivery", "barcodes",
+      "auth", "maintenance", "delivery", "barcodes", "portal",
     ],
     interpolation: {
       escapeValue: false, // React already escapes output

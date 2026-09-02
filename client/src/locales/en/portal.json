@@ -1,0 +1,38 @@
+{
+  "tabs": { "overview": "Overview", "reservations": "Reservations", "documents": "Contracts", "drivers": "Drivers", "account": "My account" },
+  "actions": { "logout": "Log out", "save": "Save", "cancel": "Cancel", "download": "Download", "changeDriver": "Change driver", "addDriver": "Add driver", "edit": "Edit", "deactivate": "Deactivate", "activate": "Activate", "uploadLicense": "Upload licence", "viewLicense": "View licence" },
+  "fields": { "email": "E-mail address", "password": "Password", "newPassword": "New password (at least 10 characters)", "confirmPassword": "Repeat password", "currentPassword": "Current password", "fullName": "Name", "displayName": "Driver name", "firstName": "First name", "lastName": "Last name", "phone": "Phone", "licenseNumber": "Licence number", "licenseExpiry": "Licence valid until", "note": "Note", "driver": "Driver", "vehicle": "Vehicle", "period": "Period", "status": "Status", "pickupMileage": "Km at pickup", "returnMileage": "Km at return", "contractNumber": "Contract number", "price": "Price" },
+  "login": { "title": "Customer portal login", "submit": "Log in", "forgotLink": "Forgot your password?", "forgotSubmit": "Send reset link", "forgotSent": "If this e-mail address is known, a message with a reset link has been sent.", "backToLogin": "Back to login" },
+  "activate": { "title": "Set your password", "hint": "Choose a password of at least 10 characters.", "submit": "Save password", "mismatch": "The passwords do not match.", "requestNewLink": "Request a new link via 'Forgot your password?'" },
+  "overview": { "currentRentals": "Current rentals", "upcoming": "Upcoming reservations", "none": "No reservations", "since": "Since {{date}}", "until": "Until {{date}}", "openEnded": "Open-ended" },
+  "reservations": { "title": "Reservations", "empty": "There are no reservations yet.", "detailTitle": "Reservation", "driverHistory": "Driver history", "current": "current", "spareFor": "Replacement vehicle for reservation #{{id}}", "status": { "booked": "Booked", "picked_up": "In use", "returned": "Returned", "completed": "Completed", "cancelled": "Cancelled" } },
+  "documents": { "title": "Contracts and documents", "empty": "There are no documents yet.", "contract": "Contract", "damage_check": "Damage report", "reservation": "Reservation #{{id}}" },
+  "drivers": { "title": "Drivers", "empty": "No drivers yet. Add a driver.", "inactive": "Inactive", "active": "Active", "dialogTitle": "Driver", "selectDriver": "Choose driver", "changeDriverTitle": "Change driver for {{plate}}", "changed": "Driver changed. Lam Groep has been notified." },
+  "account": { "title": "My account", "changePassword": "Change password", "passwordChanged": "Password changed.", "nameSaved": "Name saved." },
+  "errors": {
+    "PORTAL_NOT_AUTHENTICATED": "You are not logged in.",
+    "PORTAL_INVALID_CREDENTIALS": "E-mail address or password is incorrect.",
+    "PORTAL_ACCOUNT_BLOCKED": "This account is blocked. Please contact Lam Groep.",
+    "PORTAL_DISABLED": "The customer portal is not active for your company. Please contact Lam Groep.",
+    "PORTAL_LOCKED": "Too many attempts. Try again in 15 minutes.",
+    "PORTAL_FEATURE_DISABLED": "This feature is not available for your account.",
+    "PORTAL_ROLE_FORBIDDEN": "You do not have permission for this.",
+    "PORTAL_TOKEN_INVALID": "This link is not (or no longer) valid.",
+    "PORTAL_TOKEN_EXPIRED": "This link has expired.",
+    "PORTAL_VALIDATION": "Please check the entered data.",
+    "PORTAL_NOT_FOUND": "Not found.",
+    "PORTAL_SERVER_ERROR": "Something went wrong. Please try again later."
+  },
+  "admin": {
+    "navLabel": "Customer portal",
+    "pageTitle": "Manage customer portal",
+    "tabs": { "accounts": "Accounts", "vehicles": "Vehicles online", "activity": "Activity" },
+    "customerTab": "Portal",
+    "accounts": { "title": "Portal accounts", "empty": "No accounts yet. Invite a contact person.", "invite": "Invite", "resend": "Resend invitation", "sendReset": "Send password reset", "block": "Block", "unblock": "Unblock", "delete": "Delete", "deleteConfirm": "This account has not been activated and will be deleted permanently. Continue?", "columns": { "name": "Name", "email": "E-mail", "customer": "Customer", "role": "Role", "driver": "Driver", "status": "Status", "lastLogin": "Last login" }, "status": { "active": "Active", "blocked": "Blocked", "pending": "Invitation open", "notActivated": "Not activated" }, "role": { "admin": "Administrator", "driver": "Driver" }, "invited": "Invitation sent to {{email}}.", "inviteFailed": "Account created, but the e-mail could not be sent. Check the e-mail settings and resend the invitation.", "sent": "E-mail sent.", "filterAll": "All customers", "onlyPending": "Only not activated" },
+    "dialog": { "title": "Portal account", "email": "E-mail address", "fullName": "Name", "role": "Role", "driver": "Linked driver", "driverRequired": "Choose a driver for a driver account", "save": "Save", "cancel": "Cancel" },
+    "settings": { "title": "Settings for this customer", "portalEnabled": "Portal active", "canBook": "May rent online (request)", "canManageDrivers": "May manage drivers", "canSubmitRequests": "May submit requests", "canViewFines": "Sees fines", "canViewContracts": "Sees contracts and damage reports", "showPrices": "Sees prices", "internalNotes": "Internal notes (what does this customer need?)", "saved": "Settings saved." },
+    "activity": { "title": "Activity in the portal", "empty": "No activity yet.", "columns": { "when": "When", "customer": "Customer", "user": "User", "action": "Action", "details": "Details" } },
+    "vehicles": { "title": "Vehicles offered online", "hint": "Only ticked vehicles can be rented through the portal.", "offered": "Online", "description": "Description for customers", "bulkOn": "Selection online", "bulkOff": "Selection offline", "onlyOffered": "Only online", "search": "Search plate or model", "columns": { "plate": "Plate", "vehicle": "Vehicle", "status": "Status" } },
+    "config": { "title": "Customer portal", "description": "Website embedding and notifications", "allowedFrameOrigins": "Allowed website addresses for the iframe (one per line)", "notificationEmail": "E-mail address for notifications from the portal", "portalBaseUrl": "Base URL of the portal (for invitation e-mails), e.g. https://portaal.lamgroep.nl", "templatesHint": "The e-mail templates portal_invite, portal_password_reset and portal_staff_notification are under Communication.", "saved": "Portal settings saved." }
+  }
+}

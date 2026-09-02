@@ -1,0 +1,38 @@
+{
+  "tabs": { "overview": "Overzicht", "reservations": "Reserveringen", "documents": "Contracten", "drivers": "Bestuurders", "account": "Mijn account" },
+  "actions": { "logout": "Uitloggen", "save": "Opslaan", "cancel": "Annuleren", "download": "Downloaden", "changeDriver": "Bestuurder wijzigen", "addDriver": "Bestuurder toevoegen", "edit": "Bewerken", "deactivate": "Deactiveren", "activate": "Activeren", "uploadLicense": "Rijbewijs uploaden", "viewLicense": "Rijbewijs bekijken" },
+  "fields": { "email": "E-mailadres", "password": "Wachtwoord", "newPassword": "Nieuw wachtwoord (minimaal 10 tekens)", "confirmPassword": "Herhaal wachtwoord", "currentPassword": "Huidig wachtwoord", "fullName": "Naam", "displayName": "Naam bestuurder", "firstName": "Voornaam", "lastName": "Achternaam", "phone": "Telefoon", "licenseNumber": "Rijbewijsnummer", "licenseExpiry": "Rijbewijs geldig tot", "note": "Opmerking", "driver": "Bestuurder", "vehicle": "Voertuig", "period": "Periode", "status": "Status", "pickupMileage": "Km bij ophalen", "returnMileage": "Km bij inleveren", "contractNumber": "Contractnummer", "price": "Prijs" },
+  "login": { "title": "Inloggen klantenportaal", "submit": "Inloggen", "forgotLink": "Wachtwoord vergeten?", "forgotSubmit": "Herstel-link sturen", "forgotSent": "Als dit e-mailadres bekend is, is er een e-mail met een herstel-link verstuurd.", "backToLogin": "Terug naar inloggen" },
+  "activate": { "title": "Wachtwoord instellen", "hint": "Kies een wachtwoord van minimaal 10 tekens.", "submit": "Wachtwoord opslaan", "mismatch": "De wachtwoorden zijn niet gelijk.", "requestNewLink": "Nieuwe link aanvragen via 'Wachtwoord vergeten'" },
+  "overview": { "currentRentals": "Lopende huur", "upcoming": "Komende reserveringen", "none": "Geen reserveringen", "since": "Sinds {{date}}", "until": "Tot {{date}}", "openEnded": "Doorlopend" },
+  "reservations": { "title": "Reserveringen", "empty": "Er zijn nog geen reserveringen.", "detailTitle": "Reservering", "driverHistory": "Bestuurdershistorie", "current": "huidig", "spareFor": "Vervangend voertuig voor reservering #{{id}}", "status": { "booked": "Gereserveerd", "picked_up": "In gebruik", "returned": "Ingeleverd", "completed": "Afgerond", "cancelled": "Geannuleerd" } },
+  "documents": { "title": "Contracten en documenten", "empty": "Er zijn nog geen documenten.", "contract": "Contract", "damage_check": "Schadeformulier", "reservation": "Reservering #{{id}}" },
+  "drivers": { "title": "Bestuurders", "empty": "Nog geen bestuurders. Voeg een bestuurder toe.", "inactive": "Inactief", "active": "Actief", "dialogTitle": "Bestuurder", "selectDriver": "Kies bestuurder", "changeDriverTitle": "Bestuurder wijzigen voor {{plate}}", "changed": "Bestuurder gewijzigd. Lam Groep is op de hoogte gebracht." },
+  "account": { "title": "Mijn account", "changePassword": "Wachtwoord wijzigen", "passwordChanged": "Wachtwoord gewijzigd.", "nameSaved": "Naam opgeslagen." },
+  "errors": {
+    "PORTAL_NOT_AUTHENTICATED": "U bent niet ingelogd.",
+    "PORTAL_INVALID_CREDENTIALS": "E-mailadres of wachtwoord is onjuist.",
+    "PORTAL_ACCOUNT_BLOCKED": "Dit account is geblokkeerd. Neem contact op met Lam Groep.",
+    "PORTAL_DISABLED": "Het klantenportaal is voor uw bedrijf niet actief. Neem contact op met Lam Groep.",
+    "PORTAL_LOCKED": "Te veel pogingen. Probeer het over 15 minuten opnieuw.",
+    "PORTAL_FEATURE_DISABLED": "Dit onderdeel is voor uw account niet beschikbaar.",
+    "PORTAL_ROLE_FORBIDDEN": "U heeft hiervoor geen rechten.",
+    "PORTAL_TOKEN_INVALID": "Deze link is niet (meer) geldig.",
+    "PORTAL_TOKEN_EXPIRED": "Deze link is verlopen.",
+    "PORTAL_VALIDATION": "Controleer de ingevulde gegevens.",
+    "PORTAL_NOT_FOUND": "Niet gevonden.",
+    "PORTAL_SERVER_ERROR": "Er ging iets mis. Probeer het later opnieuw."
+  },
+  "admin": {
+    "navLabel": "Klantenportaal",
+    "pageTitle": "Klantenportaal beheren",
+    "tabs": { "accounts": "Accounts", "vehicles": "Voertuigen online", "activity": "Activiteit" },
+    "customerTab": "Portaal",
+    "accounts": { "title": "Portaalaccounts", "empty": "Nog geen accounts. Nodig een contactpersoon uit.", "invite": "Uitnodigen", "resend": "Uitnodiging opnieuw sturen", "sendReset": "Wachtwoord-reset sturen", "block": "Blokkeren", "unblock": "Deblokkeren", "delete": "Verwijderen", "deleteConfirm": "Dit account is nog niet geactiveerd en wordt definitief verwijderd. Doorgaan?", "columns": { "name": "Naam", "email": "E-mail", "customer": "Klant", "role": "Rol", "driver": "Bestuurder", "status": "Status", "lastLogin": "Laatste login" }, "status": { "active": "Actief", "blocked": "Geblokkeerd", "pending": "Uitnodiging open", "notActivated": "Niet geactiveerd" }, "role": { "admin": "Beheerder", "driver": "Bestuurder" }, "invited": "Uitnodiging verstuurd naar {{email}}.", "inviteFailed": "Account aangemaakt, maar de e-mail kon niet worden verstuurd. Controleer de e-mailinstellingen en stuur de uitnodiging opnieuw.", "sent": "E-mail verstuurd.", "filterAll": "Alle klanten", "onlyPending": "Alleen niet-geactiveerd" },
+    "dialog": { "title": "Portaalaccount", "email": "E-mailadres", "fullName": "Naam", "role": "Rol", "driver": "Gekoppelde bestuurder", "driverRequired": "Kies een bestuurder voor een bestuurdersaccount", "save": "Opslaan", "cancel": "Annuleren" },
+    "settings": { "title": "Instellingen voor deze klant", "portalEnabled": "Portaal actief", "canBook": "Mag online huren (aanvraag)", "canManageDrivers": "Mag bestuurders beheren", "canSubmitRequests": "Mag aanvragen indienen", "canViewFines": "Ziet bekeuringen", "canViewContracts": "Ziet contracten en schadeformulieren", "showPrices": "Ziet prijzen", "internalNotes": "Interne notities (wat heeft deze klant nodig?)", "saved": "Instellingen opgeslagen." },
+    "activity": { "title": "Activiteit in het portaal", "empty": "Nog geen activiteit.", "columns": { "when": "Wanneer", "customer": "Klant", "user": "Gebruiker", "action": "Actie", "details": "Details" } },
+    "vehicles": { "title": "Voertuigen die online worden aangeboden", "hint": "Alleen aangevinkte voertuigen zijn straks in het portaal te huren.", "offered": "Online", "description": "Omschrijving voor klanten", "bulkOn": "Selectie online", "bulkOff": "Selectie offline", "onlyOffered": "Alleen online", "search": "Zoek kenteken of model", "columns": { "plate": "Kenteken", "vehicle": "Voertuig", "status": "Status" } },
+    "config": { "title": "Klantenportaal", "description": "Website-koppeling en meldingen", "allowedFrameOrigins": "Toegestane website-adressen voor de iframe (één per regel)", "notificationEmail": "E-mailadres voor meldingen uit het portaal", "portalBaseUrl": "Basis-URL van het portaal (voor uitnodigingsmails), bv. https://portaal.lamgroep.nl", "templatesHint": "De e-mailsjablonen portal_invite, portal_password_reset en portal_staff_notification staan onder Communicatie.", "saved": "Portaalinstellingen opgeslagen." }
+  }
+}

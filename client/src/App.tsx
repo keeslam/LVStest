@@ -14,6 +14,7 @@ import CustomerCommunications from "@/pages/CustomerCommunications";
 import MaintenanceCalendar from "@/pages/maintenance/calendar";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
+import PortalApp from "@/pages/portal/index";
 import MainLayout from "@/layouts/MainLayout";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { SocketProvider } from "@/hooks/use-socket";
@@ -44,6 +45,10 @@ function AppRoutes() {
       {user && <ApkDateChangesDialog />}
       
       <Switch>
+      {/* Customer portal - own layout, own auth realm, embeddable in the website iframe */}
+      <Route path="/portaal" nest>
+        <PortalApp />
+      </Route>
       {/* Staff Routes - With MainLayout */}
       <Route>
         {() => (
