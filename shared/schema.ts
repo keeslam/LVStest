@@ -110,6 +110,10 @@ export const UserPermission = {
   MANAGE_SETTINGS: 'manage_settings',
   MANAGE_EMAIL_TEMPLATES: 'manage_email_templates',
   MANAGE_NOTIFICATIONS: 'manage_notifications',
+
+  // Customer portal (accounts, per-customer switches, online vehicles)
+  MANAGE_PORTAL: 'manage_portal',
+  VIEW_PORTAL: 'view_portal',
   
   // General
   VIEW_DASHBOARD: 'view_dashboard',
@@ -256,6 +260,11 @@ export const vehicles = pgTable("vehicles", {
   // from the row id (VEH-000123, see shared/barcode.ts); only an explicit admin
   // regenerate changes it. Unique index added in startup-migration.js.
   barcode: text("barcode").unique(),
+
+  // Customer portal: staff flag a vehicle as offered online; the portal's
+  // booking flow (part 2) only ever lists vehicles with this on.
+  offeredOnline: boolean("offered_online").default(false).notNull(),
+  onlineDescription: text("online_description"),
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -411,6 +420,122 @@ export const insertDriverSchema = createInsertSchema(drivers).omit({
 
 export type Driver = typeof drivers.$inferSelect;
 export type InsertDriver = z.infer<typeof insertDriverSchema>;
+
+// ---------------------------------------------------------------------------
+// Customer portal
+// ---------------------------------------------------------------------------
+
+export const PortalUserRole = {
+  ADMIN: 'admin',   // may do everything the customer's switches allow
+  DRIVER: 'driver', // tied to one drivers row; sees only their own rentals
+} as const;
+export type PortalUserRoleValue = typeof PortalUserRole[keyof typeof PortalUserRole];
+
+// Logins for customers. Deliberately NOT in `users`: every staff permission
+// check assumes req.user is staff, and one missed check would leak staff data.
+export const portalUsers = pgTable("portal_users", {
+  id: serial("id").primaryKey(),
+  customerId: integer("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  passwordHash: text("password_hash"), // null until the invitation is accepted
+  fullName: text("full_name").notNull(),
+  role: text("role").notNull().default(PortalUserRole.ADMIN),
+  driverId: integer("driver_id").references(() => drivers.id, { onDelete: "set null" }),
+  active: boolean("active").notNull().default(true),
+  inviteTokenHash: text("invite_token_hash"),
+  inviteExpiresAt: timestamp("invite_expires_at"),
+  lastLoginAt: timestamp("last_login_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: text("created_by"),
+  updatedBy: text("updated_by"),
+}, (table) => ({
+  emailLowerIdx: uniqueIndex("portal_users_email_lower_idx").on(sql`lower(${table.email})`),
+  customerIdx: index("portal_users_customer_id_idx").on(table.customerId),
+}));
+
+export const insertPortalUserSchema = createInsertSchema(portalUsers)
+  .omit({ id: true, createdAt: true, updatedAt: true, passwordHash: true, inviteTokenHash: true, inviteExpiresAt: true, lastLoginAt: true })
+  .extend({
+    email: z.string().email().transform((v) => v.trim().toLowerCase()),
+    fullName: z.string().trim().min(1),
+    role: z.enum([PortalUserRole.ADMIN, PortalUserRole.DRIVER]),
+    driverId: z.number().int().positive().nullable().optional(),
+  })
+  .refine((d) => d.role !== PortalUserRole.DRIVER || (d.driverId != null), {
+    message: "A driver account must be linked to a driver",
+    path: ["driverId"],
+  });
+
+export type PortalUser = typeof portalUsers.$inferSelect;
+export type InsertPortalUser = z.infer<typeof insertPortalUserSchema>;
+
+// One row per customer. Staff can switch off any portal feature per customer.
+export const portalCustomerSettings = pgTable("portal_customer_settings", {
+  id: serial("id").primaryKey(),
+  customerId: integer("customer_id").notNull().unique().references(() => customers.id, { onDelete: "cascade" }),
+  portalEnabled: boolean("portal_enabled").notNull().default(true),
+  canBook: boolean("can_book").notNull().default(true),
+  canManageDrivers: boolean("can_manage_drivers").notNull().default(true),
+  canSubmitRequests: boolean("can_submit_requests").notNull().default(true),
+  canViewFines: boolean("can_view_fines").notNull().default(true),
+  canViewContracts: boolean("can_view_contracts").notNull().default(true),
+  showPrices: boolean("show_prices").notNull().default(false),
+  internalNotes: text("internal_notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedBy: text("updated_by"),
+});
+
+export const insertPortalCustomerSettingsSchema = createInsertSchema(portalCustomerSettings)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export const updatePortalCustomerSettingsSchema = insertPortalCustomerSettingsSchema
+  .omit({ customerId: true }).partial();
+
+export type PortalCustomerSettings = typeof portalCustomerSettings.$inferSelect;
+export type InsertPortalCustomerSettings = z.infer<typeof insertPortalCustomerSettingsSchema>;
+
+// Who was the driver of a reservation, and when. Exactly one open row
+// (assigned_until IS NULL) per reservation. Part 3 (fines) answers
+// "who drove plate X at time T" from this table.
+export const reservationDriverAssignments = pgTable("reservation_driver_assignments", {
+  id: serial("id").primaryKey(),
+  reservationId: integer("reservation_id").notNull().references(() => reservations.id, { onDelete: "cascade" }),
+  driverId: integer("driver_id").references(() => drivers.id, { onDelete: "set null" }),
+  assignedFrom: timestamp("assigned_from").notNull(),
+  assignedUntil: timestamp("assigned_until"),
+  assignedByPortalUserId: integer("assigned_by_portal_user_id").references(() => portalUsers.id, { onDelete: "set null" }),
+  assignedByUserId: integer("assigned_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  note: text("note"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  reservationFromIdx: index("rda_reservation_from_idx").on(table.reservationId, table.assignedFrom),
+}));
+
+export const insertReservationDriverAssignmentSchema = createInsertSchema(reservationDriverAssignments)
+  .omit({ id: true, createdAt: true });
+export type ReservationDriverAssignment = typeof reservationDriverAssignments.$inferSelect;
+export type InsertReservationDriverAssignment = z.infer<typeof insertReservationDriverAssignmentSchema>;
+
+// What customers do in the portal. Separate from audit_logs (staff actions).
+export const portalActivityLog = pgTable("portal_activity_log", {
+  id: serial("id").primaryKey(),
+  portalUserId: integer("portal_user_id").references(() => portalUsers.id, { onDelete: "set null" }),
+  customerId: integer("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }),
+  action: text("action").notNull(),
+  entity: text("entity"),
+  entityId: integer("entity_id"),
+  details: jsonb("details").$type<Record<string, unknown>>(),
+  ip: text("ip"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  customerCreatedIdx: index("portal_activity_customer_created_idx").on(table.customerId, table.createdAt),
+}));
+
+export const insertPortalActivityLogSchema = createInsertSchema(portalActivityLog)
+  .omit({ id: true, createdAt: true });
+export type PortalActivityLogEntry = typeof portalActivityLog.$inferSelect;
+export type InsertPortalActivityLogEntry = z.infer<typeof insertPortalActivityLogSchema>;
 
 // Reservations table
 export const reservations = pgTable("reservations", {

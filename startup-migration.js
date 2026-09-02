@@ -902,7 +902,94 @@ async function runMigrations() {
     // Update any NULL maintenance_status values
     console.log('🔄 Updating maintenance status defaults...');
     await db.execute(sql`UPDATE vehicles SET maintenance_status = 'ok' WHERE maintenance_status IS NULL`);
-    
+
+    // ==================== CUSTOMER PORTAL (part 1) ====================
+    await addColumnIfNotExists('vehicles', 'offered_online', 'BOOLEAN NOT NULL DEFAULT false');
+    await addColumnIfNotExists('vehicles', 'online_description', 'TEXT');
+
+    await createTableIfNotExists('portal_users', `
+      CREATE TABLE portal_users (
+        id SERIAL PRIMARY KEY,
+        customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+        email TEXT NOT NULL,
+        password_hash TEXT,
+        full_name TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'admin',
+        driver_id INTEGER REFERENCES drivers(id) ON DELETE SET NULL,
+        active BOOLEAN NOT NULL DEFAULT true,
+        invite_token_hash TEXT,
+        invite_expires_at TIMESTAMP,
+        last_login_at TIMESTAMP,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        created_by TEXT,
+        updated_by TEXT
+      )`);
+    await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS portal_users_email_lower_idx ON portal_users (lower(email))`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS portal_users_customer_id_idx ON portal_users (customer_id)`);
+
+    await createTableIfNotExists('portal_customer_settings', `
+      CREATE TABLE portal_customer_settings (
+        id SERIAL PRIMARY KEY,
+        customer_id INTEGER NOT NULL UNIQUE REFERENCES customers(id) ON DELETE CASCADE,
+        portal_enabled BOOLEAN NOT NULL DEFAULT true,
+        can_book BOOLEAN NOT NULL DEFAULT true,
+        can_manage_drivers BOOLEAN NOT NULL DEFAULT true,
+        can_submit_requests BOOLEAN NOT NULL DEFAULT true,
+        can_view_fines BOOLEAN NOT NULL DEFAULT true,
+        can_view_contracts BOOLEAN NOT NULL DEFAULT true,
+        show_prices BOOLEAN NOT NULL DEFAULT false,
+        internal_notes TEXT,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        updated_by TEXT
+      )`);
+
+    await createTableIfNotExists('reservation_driver_assignments', `
+      CREATE TABLE reservation_driver_assignments (
+        id SERIAL PRIMARY KEY,
+        reservation_id INTEGER NOT NULL REFERENCES reservations(id) ON DELETE CASCADE,
+        driver_id INTEGER REFERENCES drivers(id) ON DELETE SET NULL,
+        assigned_from TIMESTAMP NOT NULL,
+        assigned_until TIMESTAMP,
+        assigned_by_portal_user_id INTEGER REFERENCES portal_users(id) ON DELETE SET NULL,
+        assigned_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        note TEXT,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS rda_reservation_from_idx ON reservation_driver_assignments (reservation_id, assigned_from)`);
+
+    await createTableIfNotExists('portal_activity_log', `
+      CREATE TABLE portal_activity_log (
+        id SERIAL PRIMARY KEY,
+        portal_user_id INTEGER REFERENCES portal_users(id) ON DELETE SET NULL,
+        customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+        action TEXT NOT NULL,
+        entity TEXT,
+        entity_id INTEGER,
+        details JSONB,
+        ip TEXT,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS portal_activity_customer_created_idx ON portal_activity_log (customer_id, created_at)`);
+
+    // One-off back-fill: every reservation that already has a driver gets one
+    // open assignment row starting at its start date. Idempotent: skips
+    // reservations that already have any assignment row.
+    try {
+      await db.execute(sql`
+        INSERT INTO reservation_driver_assignments (reservation_id, driver_id, assigned_from, note)
+        SELECT r.id, r.driver_id, COALESCE(r.start_date::timestamp, r.created_at, NOW()), 'backfill'
+        FROM reservations r
+        WHERE r.driver_id IS NOT NULL
+          AND r.deleted_at IS NULL
+          AND NOT EXISTS (SELECT 1 FROM reservation_driver_assignments a WHERE a.reservation_id = r.id)
+      `);
+    } catch (backfillError) {
+      console.warn('⚠️ portal back-fill skipped:', backfillError.message);
+    }
+    console.log('✅ Customer portal tables ready');
+
     console.log('✅ Database migration completed successfully!');
     
   } catch (error) {
