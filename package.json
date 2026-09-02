@@ -11,7 +11,9 @@
     "check": "tsc",
     "db:push": "drizzle-kit push",
     "docker:build": "npm run build",
-    "docker:start": "npm start"
+    "docker:start": "npm start",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -131,16 +133,19 @@
     "@types/passport-local": "^1.0.38",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
+    "@types/supertest": "^6.0.3",
     "@vitejs/plugin-react": "^4.3.2",
     "autoprefixer": "^10.4.20",
     "cross-env": "^10.1.0",
     "drizzle-kit": "^0.31.10",
     "esbuild": "^0.25.0",
     "postcss": "^8.4.47",
+    "supertest": "^7.2.2",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.1",
     "typescript": "5.6.3",
-    "vite": "^5.4.14"
+    "vite": "^5.4.14",
+    "vitest": "^2.1.9"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
