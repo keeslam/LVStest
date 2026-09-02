@@ -209,16 +209,22 @@ export function registerReportRoutes(app: Express): void {
         return res.status(400).json({ message: "Report name is required" });
       }
 
+      const dataSources: string[] = Array.isArray(config.dataSources) ? config.dataSources : [];
+      const columns: Array<{ source?: string; field?: string }> = Array.isArray(config.columns) ? config.columns : [];
+
+      // The builder works with a multi-source configuration; the table keeps the
+      // whole thing in `configuration` and fills the simple columns from it.
       const report = await storage.createSavedReport({
         name: config.name,
         description: config.description || null,
+        dataSource: dataSources[0] || "vehicles",
+        fields: columns.map((c) => (c.source ? `${c.source}.${c.field}` : String(c.field ?? ""))).filter(Boolean),
+        filters: {},
         configuration: config,
-        dataSources: config.dataSources || [],
-        enabled: true,
         createdBy: user ? user.username : null,
         createdByUserId: user ? user.id : null,
         updatedBy: user ? user.username : null,
-      } as any); // FIXME: payload does not match the saved_reports columns (no `configuration`/`dataSources`/`enabled`, `dataSource` missing)
+      });
 
       res.json(report);
     } catch (error) {

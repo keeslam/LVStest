@@ -1384,6 +1384,9 @@ export const savedReports = pgTable("saved_reports", {
   
   // Report configuration
   dataSource: text("data_source").notNull(), // 'vehicles' | 'customers' | 'reservations' | 'expenses' | 'maintenance'
+  // Full report-builder configuration (dataSources, columns, filters, groupBy) as the
+  // builder produced it; the columns below hold the derived/simple values.
+  configuration: jsonb("configuration").$type<Record<string, any>>(),
   fields: jsonb("fields").$type<string[]>().default([]).notNull(), // Selected columns
   filters: jsonb("filters").$type<Record<string, any>>().default({}).notNull(), // Filter conditions
   groupBy: jsonb("group_by").$type<string[]>().default([]), // Group by fields
