@@ -84,8 +84,9 @@ text columns, drizzle-zod insert schemas).
 | last_login_at | timestamp, nullable | |
 | created_at, updated_at, created_by, updated_by | as elsewhere | `created_by` is the staff username |
 
-A user with `active = false`, or whose customer has `status` marking them
-inactive, cannot log in and existing sessions are rejected.
+A user with `active = false`, or whose customer has `portal_enabled = false` in
+`portal_customer_settings`, cannot log in and existing sessions are rejected.
+(`customers.status` is free text and is not used for this.)
 
 ### `portal_customer_settings`
 
@@ -95,6 +96,7 @@ One row per customer, created on first account creation with all switches on.
 |---|---|
 | id | serial PK |
 | customer_id | integer FK customers, cascade, unique |
+| portal_enabled | boolean default true — master switch for the whole customer |
 | can_book | boolean default true (used by part 2) |
 | can_manage_drivers | boolean default true |
 | can_submit_requests | boolean default true (used by part 4) |
@@ -180,8 +182,8 @@ drizzle push also gets them, and performs the one-off back-fill of
   into the iframe to carry the cookie; because portal and site are same-site,
   every request after that carries it too.
 - `req.portalUser` is set by `requirePortalUser` middleware: loads the user,
-  verifies `active`, verifies the customer is not inactive, loads
-  `portal_customer_settings`, attaches `{ user, customerId, settings }`. Every
+  verifies `active`, loads `portal_customer_settings` and verifies
+  `portal_enabled`, attaches `{ user, customerId, settings }`. Every
   portal route uses it; there is no portal route without it except login,
   activate, forgot and reset.
 - Serialisation into the session stores `{ kind: 'portal', id }`; the staff
@@ -296,7 +298,7 @@ writes a `portal_activity_log` row for mutating actions and downloads.
   - accounts of this customer: name, e-mail, role, linked driver, active, last
     login; actions invite, re-send invitation, send password reset, block /
     unblock, change role or linked driver, delete (only when never activated).
-  - the six switches and the internal notes field.
+  - the master switch, the six feature switches and the internal notes field.
   - last 50 activity log rows for this customer.
 - **New page `/portal-admin`** (permission `MANAGE_PORTAL`, menu item
   "Klantenportaal"): tab *Accounts* — all portal users across customers with
@@ -323,7 +325,7 @@ writes a `portal_activity_log` row for mutating actions and downloads.
   translates (`PORTAL_FEATURE_DISABLED`, `PORTAL_ACCOUNT_BLOCKED`,
   `PORTAL_TOKEN_EXPIRED`, …). Nothing in an error reveals whether an e-mail
   address exists.
-- A blocked account or inactive customer gets a login-page message telling them
+- A blocked account or a customer with the portal disabled gets a login-page message telling them
   to contact Lam Groep; the session is destroyed server-side.
 - Mail failures on invitation are surfaced to staff in the dialog (the account
   is still created and the invitation can be re-sent); the existing
