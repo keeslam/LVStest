@@ -7,6 +7,8 @@ import {
 import { like, inArray } from "drizzle-orm";
 import express, { type Express } from "express";
 import { setupPortalAuth } from "../portal-auth";
+import { registerPortalRoutes } from "../routes/portal";
+import { getUploadsDir } from "../../shared/paths";
 
 export const TEST_PREFIX = "__portal_test__";
 export const TEST_EMAIL_DOMAIN = "portal-test.invalid";
@@ -94,7 +96,6 @@ export function buildPortalTestApp(): Express {
   app.set("trust proxy", 1);
   app.use(express.json());
   const { requirePortalUser } = setupPortalAuth(app);
-  // Task 7 adds: registerPortalRoutes(app, { requirePortalUser, uploadsDir })
-  void requirePortalUser;
+  registerPortalRoutes(app, { requirePortalUser, uploadsDir: getUploadsDir() });
   return app;
 }

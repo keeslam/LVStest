@@ -11,6 +11,8 @@ import { registerRoutes } from "./routes";
 import { setupAuth } from "./auth";
 import { setupPortalAuth } from "./portal-auth";
 import { ensurePortalEmailTemplates } from "./services/portal-mail";
+import { registerPortalRoutes } from "./routes/portal";
+import { getUploadsDir as getPortalUploadsDir } from "../shared/paths";
 import { BackupScheduler } from "./backupScheduler";
 import { ApkScanScheduler } from "./apkScanScheduler";
 import { ServiceDueScheduler } from "./serviceDueScheduler";
@@ -184,7 +186,7 @@ const { requireAuth } = setupAuth(app);
 // on /api/portal. Mounted before registerRoutes() so the staff audit
 // middleware never sees portal traffic (the portal keeps its own activity log).
 const { requirePortalUser } = setupPortalAuth(app);
-void requirePortalUser; // handed to registerPortalRoutes below
+registerPortalRoutes(app, { requirePortalUser, uploadsDir: getPortalUploadsDir() });
 
 // Real-time WebSocket event system
 function setupSocketIO(server: any) {

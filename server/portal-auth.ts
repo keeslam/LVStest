@@ -142,7 +142,7 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
       const user = await portalStorage.getPortalUserByEmail(email);
       if (!user || !user.passwordHash) return done(null, false);
       const ok = await comparePasswords(password, user.passwordHash);
-      return ok ? done(null, user) : done(null, false);
+      return ok ? done(null, user as unknown as Express.User) : done(null, false);
     } catch (error) {
       return done(error);
     }
