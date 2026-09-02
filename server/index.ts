@@ -11,6 +11,7 @@ import { registerRoutes } from "./routes";
 import { setupAuth } from "./auth";
 import { BackupScheduler } from "./backupScheduler";
 import { ApkScanScheduler } from "./apkScanScheduler";
+import { ServiceDueScheduler } from "./serviceDueScheduler";
 import { initializeDefaultAdmin, displayDeploymentInfo } from "./initAdmin";
 import notificationRoutes from "./routes/notifications.js";
 import vehiclesWithReservationsRoutes from "./routes/vehicles-with-reservations.js";
@@ -32,6 +33,7 @@ let server: any = null;
 let io: SocketIOServer | null = null;
 let backupScheduler: any = null;
 let apkScanScheduler: any = null;
+let serviceDueScheduler: any = null;
 let isShuttingDown = false;
 
 async function gracefulShutdown(signal: string) {
@@ -83,6 +85,12 @@ async function gracefulShutdown(signal: string) {
       console.log('🔄 Stopping APK scan scheduler...');
       apkScanScheduler.stop();
       console.log('✅ APK scan scheduler stopped');
+    }
+
+    // Stop service-due scan scheduler
+    if (serviceDueScheduler) {
+      serviceDueScheduler.stop();
+      console.log('✅ Service-due scheduler stopped');
     }
     
     // Close database connections
@@ -418,6 +426,10 @@ backupScheduler.start();
 // Initialize RDW APK-date scan scheduler
 apkScanScheduler = new ApkScanScheduler();
 apkScanScheduler.start();
+
+// Initialize regular-service due scan scheduler (notifications)
+serviceDueScheduler = new ServiceDueScheduler();
+serviceDueScheduler.start();
 
 // Initialize session cleanup scheduler (runs every hour)
 const sessionCleanupScheduler = startSessionCleanupScheduler(60);

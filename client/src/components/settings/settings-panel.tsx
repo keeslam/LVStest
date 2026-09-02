@@ -181,6 +181,12 @@ export function SettingsPanel() {
   const [showMaintenanceBlocks, setShowMaintenanceBlocks] = useState(true);
   const [apkReminderThresholdDays, setApkReminderThresholdDays] = useState("30");
   const [warrantyReminderThresholdDays, setWarrantyReminderThresholdDays] = useState("30");
+  // Regular-service reminders (interval defaults + reminder window)
+  const [showServiceReminders, setShowServiceReminders] = useState(true);
+  const [defaultServiceIntervalKm, setDefaultServiceIntervalKm] = useState("30000");
+  const [defaultServiceIntervalMonths, setDefaultServiceIntervalMonths] = useState("12");
+  const [serviceReminderKm, setServiceReminderKm] = useState("1000");
+  const [serviceReminderDays, setServiceReminderDays] = useState("30");
 
   // Document Email Templates state
   const [docEmailTemplates, setDocEmailTemplates] = useState({
@@ -234,6 +240,11 @@ export function SettingsPanel() {
     showMaintenanceBlocks?: boolean;
     apkReminderDays?: number;
     warrantyReminderDays?: number;
+    showServiceReminders?: boolean;
+    defaultServiceIntervalKm?: number;
+    defaultServiceIntervalMonths?: number;
+    serviceReminderKm?: number;
+    serviceReminderDays?: number;
     tollRatePerKm?: string;
     depotAddress?: string | null;
     depotCity?: string | null;
@@ -259,6 +270,21 @@ export function SettingsPanel() {
     }
     if (systemSettings.apkReminderDays) {
       setApkReminderThresholdDays(String(systemSettings.apkReminderDays));
+    }
+    if (typeof systemSettings.showServiceReminders === 'boolean') {
+      setShowServiceReminders(systemSettings.showServiceReminders);
+    }
+    if (systemSettings.defaultServiceIntervalKm) {
+      setDefaultServiceIntervalKm(String(systemSettings.defaultServiceIntervalKm));
+    }
+    if (systemSettings.defaultServiceIntervalMonths) {
+      setDefaultServiceIntervalMonths(String(systemSettings.defaultServiceIntervalMonths));
+    }
+    if (systemSettings.serviceReminderKm) {
+      setServiceReminderKm(String(systemSettings.serviceReminderKm));
+    }
+    if (systemSettings.serviceReminderDays) {
+      setServiceReminderDays(String(systemSettings.serviceReminderDays));
     }
     if (systemSettings.warrantyReminderDays) {
       setWarrantyReminderThresholdDays(String(systemSettings.warrantyReminderDays));
@@ -461,6 +487,11 @@ export function SettingsPanel() {
         showMaintenanceBlocks,
         apkReminderDays: parseInt(apkReminderThresholdDays) || 30,
         warrantyReminderDays: parseInt(warrantyReminderThresholdDays) || 30,
+        showServiceReminders,
+        defaultServiceIntervalKm: parseInt(defaultServiceIntervalKm) || 30000,
+        defaultServiceIntervalMonths: parseInt(defaultServiceIntervalMonths) || 12,
+        serviceReminderKm: parseInt(serviceReminderKm) || 1000,
+        serviceReminderDays: parseInt(serviceReminderDays) || 30,
       };
       await apiRequest('PUT', '/api/system-settings', data);
     },
@@ -1783,6 +1814,54 @@ export function SettingsPanel() {
                       onCheckedChange={setShowMaintenanceBlocks}
                       data-testid="switch-show-maintenance-blocks"
                     />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-6">
+                <h4 className="font-medium text-sm mb-3">{t('settingsPage.calendar.serviceIntervalTitle')}</h4>
+                <p className="text-xs text-gray-500 mb-4">{t('settingsPage.calendar.serviceIntervalHint')}</p>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>{t('settingsPage.calendar.serviceRemindersLabel')}</Label>
+                      <p className="text-sm text-gray-500">{t('settingsPage.calendar.serviceRemindersHint')}</p>
+                    </div>
+                    <Switch
+                      checked={showServiceReminders}
+                      onCheckedChange={setShowServiceReminders}
+                      data-testid="switch-show-service-reminders"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="default-service-interval-km">{t('settingsPage.calendar.defaultServiceIntervalKmLabel')}</Label>
+                      <div className="flex items-center gap-2">
+                        <Input id="default-service-interval-km" type="number" min="1000" step="1000" value={defaultServiceIntervalKm} onChange={(e) => setDefaultServiceIntervalKm(e.target.value)} className="w-32" data-testid="input-default-service-interval-km" />
+                        <span className="text-sm text-gray-500">{t('common:units.km')}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="default-service-interval-months">{t('settingsPage.calendar.defaultServiceIntervalMonthsLabel')}</Label>
+                      <div className="flex items-center gap-2">
+                        <Input id="default-service-interval-months" type="number" min="1" max="60" value={defaultServiceIntervalMonths} onChange={(e) => setDefaultServiceIntervalMonths(e.target.value)} className="w-32" data-testid="input-default-service-interval-months" />
+                        <span className="text-sm text-gray-500">{t('common:units.months')}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="service-reminder-km">{t('settingsPage.calendar.serviceReminderKmLabel')}</Label>
+                      <div className="flex items-center gap-2">
+                        <Input id="service-reminder-km" type="number" min="100" step="100" value={serviceReminderKm} onChange={(e) => setServiceReminderKm(e.target.value)} className="w-32" disabled={!showServiceReminders} data-testid="input-service-reminder-km" />
+                        <span className="text-sm text-gray-500">{t('common:units.km')}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="service-reminder-days">{t('settingsPage.calendar.serviceReminderDaysLabel')}</Label>
+                      <div className="flex items-center gap-2">
+                        <Input id="service-reminder-days" type="number" min="1" max="365" value={serviceReminderDays} onChange={(e) => setServiceReminderDays(e.target.value)} className="w-32" disabled={!showServiceReminders} data-testid="input-service-reminder-days" />
+                        <span className="text-sm text-gray-500">{t('common:units.days')}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

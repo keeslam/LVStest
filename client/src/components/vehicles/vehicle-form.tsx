@@ -69,6 +69,13 @@ export const formSchema = insertVehicleSchema.extend({
     z.null()
   ]).optional().transform(val => val === '' ? null : val === null ? null : Number(val))
     .refine(val => val === null || val === undefined || val >= 0, { message: "Mileage cannot be negative" }),
+  // Service interval: blank = use the defaults from system settings
+  serviceIntervalKm: z.union([z.string(), z.number(), z.null()]).optional()
+    .transform(val => val === '' || val === undefined || val === null ? null : Number(val))
+    .refine(val => val === null || (Number.isInteger(val) && val > 0), { message: "Interval must be a positive whole number" }),
+  serviceIntervalMonths: z.union([z.string(), z.number(), z.null()]).optional()
+    .transform(val => val === '' || val === undefined || val === null ? null : Number(val))
+    .refine(val => val === null || (Number.isInteger(val) && val > 0), { message: "Interval must be a positive whole number" }),
 });
 
 // Vehicle types
@@ -307,6 +314,8 @@ export function VehicleForm({
       availabilityStatus: "available",
       internalAppointments: "",
       departureMileage: "",
+      serviceIntervalKm: "",
+      serviceIntervalMonths: "",
       returnMileage: "",
       createdBy: "",
     },
@@ -1137,6 +1146,36 @@ export function VehicleForm({
                             data-testid="input-recommended-oil-custom"
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="serviceIntervalKm"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('vehicleForm.serviceIntervalKmLabel')}</FormLabel>
+                        <FormControl>
+                          <Input type="number" min="1" step="1000" placeholder={t('vehicleForm.serviceIntervalDefaultPlaceholder')} {...field} value={handleFieldValue(field.value)} data-testid="input-service-interval-km" />
+                        </FormControl>
+                        <FormDescription className="text-xs">{t('vehicleForm.serviceIntervalKmDescription')}</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="serviceIntervalMonths"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('vehicleForm.serviceIntervalMonthsLabel')}</FormLabel>
+                        <FormControl>
+                          <Input type="number" min="1" step="1" placeholder={t('vehicleForm.serviceIntervalDefaultPlaceholder')} {...field} value={handleFieldValue(field.value)} data-testid="input-service-interval-months" />
+                        </FormControl>
+                        <FormDescription className="text-xs">{t('vehicleForm.serviceIntervalMonthsDescription')}</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

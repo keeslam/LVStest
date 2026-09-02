@@ -344,7 +344,8 @@
       "warranty_reminder_2m": "Garantie Herinnering (2 maanden)",
       "warranty_reminder_1m": "Garantie Herinnering (1 maand)",
       "scheduled_maintenance": "Gepland onderhoud",
-      "in_service": "In onderhoud"
+      "in_service": "In onderhoud",
+      "service_due": "Onderhoudsbeurt nodig"
     },
     "events": {
       "apkReminder2mTitle": "APK Herinnering (2 maanden)",
@@ -367,6 +368,13 @@
       "warrantyExpiresIn2MonthsDescription": "Garantie verloopt over 2 maanden voor {{vehicle}}",
       "warrantyExpiresIn1MonthDescription": "Garantie verloopt over 1 maand voor {{vehicle}}",
       "warrantyExpiresDescription": "Garantie verloopt voor {{vehicle}}",
+      "serviceDueTitle": "Onderhoudsbeurt nodig",
+      "serviceDueSoonTitle": "Onderhoudsbeurt binnenkort",
+      "serviceDueDescription": "{{vehicle}}: {{details}}",
+      "serviceDueByDateOverdue": "datum {{count}} dagen verstreken",
+      "serviceDueInDays": "over {{count}} dagen",
+      "serviceDueKmOver": "{{km}} km over de beurt",
+      "serviceDueKmLeft": "nog {{km}} km",
       "movedFromWeekend": " (Verplaatst van het weekend)",
       "reminderOriginallyWeekend": " (Herinnering was oorspronkelijk gepland in het weekend)",
       "reminderMovedToMonday": " (Herinnering is verplaatst van het weekend naar maandag)",

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { Vehicle, Reservation } from "@shared/schema";
+import type { ServiceDueInfo } from "@shared/service-due";
 import { displayLicensePlate } from "@/lib/utils";
 import { 
   Select, 
@@ -84,11 +85,13 @@ type MaintenanceFilters = {
   eventType: string;
 };
 
+type ServiceDueVehicle = Vehicle & { serviceDue: ServiceDueInfo };
+
 interface MaintenanceEvent {
   id: string | number;
   vehicleId: number;
   vehicle: Vehicle;
-  type: 'apk_due' | 'apk_reminder_2m' | 'apk_reminder_1m' | 'warranty_expiring' | 'warranty_reminder_2m' | 'warranty_reminder_1m' | 'scheduled_maintenance' | 'in_service';
+  type: 'apk_due' | 'apk_reminder_2m' | 'apk_reminder_1m' | 'warranty_expiring' | 'warranty_reminder_2m' | 'warranty_reminder_1m' | 'scheduled_maintenance' | 'in_service' | 'service_due';
   date: string;
   startDate?: string;
   endDate?: string;
@@ -303,7 +306,8 @@ export default function MaintenanceCalendar() {
   
   // Function to open schedule dialog from a maintenance event
   const openScheduleFromEvent = (event: { date?: string; startDate?: string; vehicleId: number; type: string }) => {
-    const maintenanceTypeMap: Record<string, "apk_inspection" | "warranty_service"> = {
+    const maintenanceTypeMap: Record<string, "apk_inspection" | "warranty_service" | "regular_maintenance"> = {
+      'service_due': 'regular_maintenance',
       'apk_due': 'apk_inspection',
       'apk_reminder_2m': 'apk_inspection',
       'apk_reminder_1m': 'apk_inspection',
@@ -365,6 +369,11 @@ export default function MaintenanceCalendar() {
     queryKey: ['/api/vehicles/warranty-expiring'],
   });
 
+  // Regular service due / due soon (server applies interval + settings defaults)
+  const { data: serviceDueVehicles = [] } = useQuery<ServiceDueVehicle[]>({
+    queryKey: ['/api/vehicles/service-due'],
+  });
+
   // Fetch reservations for the full calendar view (including adjacent month dates)
   const { data: reservations, isLoading: isLoadingReservations } = useQuery<Reservation[]>({
     queryKey: [
@@ -400,6 +409,7 @@ export default function MaintenanceCalendar() {
     showApkReminders?: boolean;
     showWarrantyReminders?: boolean;
     showMaintenanceBlocks?: boolean;
+    showServiceReminders?: boolean;
     maintenanceExcludedStatuses?: string[];
   }>({
     queryKey: ["/api/system-settings"],
@@ -409,6 +419,7 @@ export default function MaintenanceCalendar() {
   const showApkReminders = systemSettings?.showApkReminders ?? true;
   const showWarrantyReminders = systemSettings?.showWarrantyReminders ?? true;
   const showMaintenanceBlocks = systemSettings?.showMaintenanceBlocks ?? true;
+  const showServiceReminders = systemSettings?.showServiceReminders ?? true;
   const maintenanceExcludedStatuses = systemSettings?.maintenanceExcludedStatuses || ["not_for_rental"];
 
   // Filter APK and warranty vehicles based on settings
@@ -515,7 +526,7 @@ export default function MaintenanceCalendar() {
   // Helper function to check if maintenance is already scheduled for a vehicle
   // Note: We use the FULL maintenanceBlocks list (not filtered) to ensure reminder suppression
   // works correctly even when maintenance block visibility is toggled off in settings
-  const isMaintenanceScheduled = (vehicleId: number, maintenanceType: 'apk_inspection' | 'warranty_service'): boolean => {
+  const isMaintenanceScheduled = (vehicleId: number, maintenanceType: 'apk_inspection' | 'warranty_service' | 'regular_maintenance'): boolean => {
     if (!maintenanceBlocks) {
       return false;
     }
@@ -544,6 +555,15 @@ export default function MaintenanceCalendar() {
                  searchText.includes('garantie') || 
                  searchText.includes('garanti') ||
                  searchText.includes('recall');
+      } else if (maintenanceType === 'regular_maintenance') {
+        // Regular service keywords (deliberately not the bare word "service", which
+        // would also match warranty_service blocks)
+        matches = searchText.includes('regular_maintenance') ||
+                 searchText.includes('oil_change') ||
+                 searchText.includes('onderhoudsbeurt') ||
+                 searchText.includes('servicebeurt') ||
+                 searchText.includes('kleine beurt') ||
+                 searchText.includes('grote beurt');
       }
       
       return matches;
@@ -736,6 +756,40 @@ export default function MaintenanceCalendar() {
       });
     }
     
+    // Regular service due / due soon, unless a service block is already planned
+    if (showServiceReminders) {
+      const today = startOfDay(new Date());
+      serviceDueVehicles.forEach(vehicle => {
+        if (isMaintenanceScheduled(vehicle.id, 'regular_maintenance')) return;
+        const { serviceDue } = vehicle;
+        const dueDate = serviceDue.nextServiceDate ? parseISO(serviceDue.nextServiceDate) : today;
+        const { shiftedDate, wasShifted } = shiftWeekendToMonday(dueDate);
+        const details: string[] = [];
+        if (serviceDue.daysUntilService !== null) {
+          details.push(serviceDue.daysUntilService <= 0
+            ? t('calendarPage.events.serviceDueByDateOverdue', { count: Math.abs(serviceDue.daysUntilService) })
+            : t('calendarPage.events.serviceDueInDays', { count: serviceDue.daysUntilService }));
+        }
+        if (serviceDue.kmUntilService !== null) {
+          details.push(serviceDue.kmUntilService <= 0
+            ? t('calendarPage.events.serviceDueKmOver', { km: Math.abs(serviceDue.kmUntilService).toLocaleString() })
+            : t('calendarPage.events.serviceDueKmLeft', { km: serviceDue.kmUntilService.toLocaleString() }));
+        }
+        events.push({
+          id: `service_due_${vehicle.id}`,
+          vehicleId: vehicle.id,
+          vehicle,
+          type: 'service_due' as const,
+          date: format(shiftedDate, 'yyyy-MM-dd'),
+          title: (serviceDue.isServiceDue ? t('calendarPage.events.serviceDueTitle') : t('calendarPage.events.serviceDueSoonTitle')) + (wasShifted ? t('calendarPage.events.movedFromWeekend') : ''),
+          description: t('calendarPage.events.serviceDueDescription', { vehicle: `${vehicle.brand} ${vehicle.model}`, details: details.join(', ') }),
+          needsSpareVehicle: false,
+          priority: serviceDue.isServiceDue ? 'urgent' : 'medium',
+          currentReservations: reservations?.filter((r: Reservation) => r.vehicleId === vehicle.id) || []
+        });
+      });
+    }
+
     // Scheduled maintenance events (potentially multi-day)
     filteredMaintenanceBlocks.forEach(reservation => {
       // Find vehicle from vehicles list instead of relying on embedded object
@@ -783,7 +837,7 @@ export default function MaintenanceCalendar() {
     });
     
     return events;
-  }, [filteredApkExpiringVehicles, filteredWarrantyExpiringVehicles, filteredMaintenanceBlocks, reservations, vehicles, vehiclesForMaintenance, showApkReminders, showWarrantyReminders]);
+  }, [filteredApkExpiringVehicles, filteredWarrantyExpiringVehicles, filteredMaintenanceBlocks, reservations, vehicles, vehiclesForMaintenance, showApkReminders, showWarrantyReminders, serviceDueVehicles, showServiceReminders]);
 
   // Helper function to get maintenance events that start, end, or occur on a specific day
   const getMaintenanceEventsForDate = (day: Date): MaintenanceEvent[] => {
@@ -860,6 +914,7 @@ export default function MaintenanceCalendar() {
       case 'warranty_reminder_2m':
       case 'warranty_reminder_1m':
         return <Clock className="w-3 h-3" />;
+      case 'service_due':
       case 'scheduled_maintenance':
         return <Wrench className="w-3 h-3" />;
       case 'in_service':
@@ -877,7 +932,7 @@ export default function MaintenanceCalendar() {
   }, [vehicles]);
   
   // Extract unique event types for filtering
-  const eventTypes = ['apk_due', 'apk_reminder_2m', 'apk_reminder_1m', 'warranty_expiring', 'warranty_reminder_2m', 'warranty_reminder_1m', 'scheduled_maintenance', 'in_service'];
+  const eventTypes = ['apk_due', 'apk_reminder_2m', 'apk_reminder_1m', 'warranty_expiring', 'warranty_reminder_2m', 'warranty_reminder_1m', 'service_due', 'scheduled_maintenance', 'in_service'];
   
   // Functions to navigate between months
   const navigatePrevious = () => {
@@ -1064,6 +1119,7 @@ export default function MaintenanceCalendar() {
                   <SelectItem value="warranty_expiring">{t('calendarPage.eventTypeLabels.warranty_expiring')}</SelectItem>
                   <SelectItem value="warranty_reminder_2m">{t('calendarPage.eventTypeLabels.warranty_reminder_2m')}</SelectItem>
                   <SelectItem value="warranty_reminder_1m">{t('calendarPage.eventTypeLabels.warranty_reminder_1m')}</SelectItem>
+                  <SelectItem value="service_due">{t('calendarPage.eventTypeLabels.service_due')}</SelectItem>
                   <SelectItem value="scheduled_maintenance">{t('calendarPage.eventTypeLabels.scheduled_maintenance')}</SelectItem>
                 </SelectContent>
               </Select>

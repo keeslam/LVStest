@@ -16,6 +16,7 @@ import { formatDate, formatCurrency, formatLicensePlate, sumMoney } from "@/lib/
 import { Price } from "@/components/ui/price";
 import { isTrueValue } from "@/lib/utils";
 import { getDaysUntil, getUrgencyColorClass } from "@/lib/date-utils";
+import { computeServiceDue, serviceDueDefaultsFromSettings, type ServiceDueSettingsFields } from "@shared/service-due";
 import { Vehicle, Expense, Document, Reservation, UserRole, Customer } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { InlineDocumentUpload } from "@/components/documents/inline-document-upload";
@@ -370,45 +371,22 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     }
   });
 
-  // Calculate next service due based on 30,000km or 1 year
+  // The system settings hold the default interval and reminder window
+  const { data: serviceSettings } = useQuery<ServiceDueSettingsFields>({
+    queryKey: ["/api/system-settings"],
+  });
+
+  // Next service due: this vehicle's interval, else the defaults from settings
+  // (shared calculation with the maintenance calendar and the nightly scan)
   const serviceDueInfo = useMemo(() => {
     if (!vehicle) return null;
-    
-    const serviceInterval = 30000; // 30,000 km
-    const serviceIntervalDays = 365; // 1 year
-
-    let nextServiceByDate = null;
-    let nextServiceByMileage = null;
-    let daysUntilService = null;
-    let kmUntilService = null;
-
-    // Calculate by date (1 year from last service)
-    if (vehicle.lastServiceDate) {
-      const lastService = parseISO(vehicle.lastServiceDate);
-      nextServiceByDate = addDays(lastService, serviceIntervalDays);
-      daysUntilService = getDaysUntil(format(nextServiceByDate, 'yyyy-MM-dd'));
-    }
-
-    // Calculate by mileage (30,000 km from last service)
-    if (vehicle.lastServiceMileage && vehicle.currentMileage) {
-      const kmSinceService = vehicle.currentMileage - vehicle.lastServiceMileage;
-      kmUntilService = serviceInterval - kmSinceService;
-      nextServiceByMileage = vehicle.lastServiceMileage + serviceInterval;
-    }
-
-    const isDueByDate = daysUntilService !== null && daysUntilService <= 0;
-    const isDueByMileage = kmUntilService !== null && kmUntilService <= 0;
-
+    const info = computeServiceDue(vehicle, serviceDueDefaultsFromSettings(serviceSettings));
     return {
-      nextServiceByDate,
-      nextServiceByMileage,
-      daysUntilService,
-      kmUntilService,
-      isDueByDate,
-      isDueByMileage,
-      isServiceDue: isDueByDate || isDueByMileage,
+      ...info,
+      nextServiceByDate: info.nextServiceDate ? parseISO(info.nextServiceDate) : null,
+      nextServiceByMileage: info.nextServiceMileage,
     };
-  }, [vehicle]);
+  }, [vehicle, serviceSettings]);
 
   // Replace placeholders in template text
   const replacePlaceholders = (text: string, customer: any) => {
@@ -3025,7 +3003,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
 
                 {/* Service Due Alert Section */}
                 {serviceDueInfo && (vehicle.lastServiceDate || vehicle.lastServiceMileage) && (
-                  <div className={`border p-4 rounded-lg ${serviceDueInfo.isServiceDue ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+                  <div className={`border p-4 rounded-lg ${serviceDueInfo.isServiceDue ? 'bg-red-50 border-red-200' : serviceDueInfo.isServiceDueSoon ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-200'}`}>
                     <h3 className="text-lg font-medium mb-2 flex items-center gap-2">
                       <Calendar className="h-5 w-5" />
                       {t('details.maintenance.nextServiceDueTitle')}
@@ -3051,6 +3029,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                       )}
                     </div>
                     <div className="mt-3 text-sm text-gray-600">
+                      <p>{t('details.maintenance.serviceIntervalLabel', { km: serviceDueInfo.intervalKm.toLocaleString(), months: serviceDueInfo.intervalMonths })}</p>
                       <p>{t('details.maintenance.lastServiceLabel', { date: vehicle.lastServiceDate ? formatDate(vehicle.lastServiceDate) : t('details.maintenance.notRecorded') })}</p>
                       {vehicle.lastServiceMileage && (
                         <p>{t('details.maintenance.lastServiceMileageLabel', { mileage: vehicle.lastServiceMileage.toLocaleString() })}</p>

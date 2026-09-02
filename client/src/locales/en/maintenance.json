@@ -344,7 +344,8 @@
       "warranty_reminder_2m": "Warranty Reminder (2 months)",
       "warranty_reminder_1m": "Warranty Reminder (1 month)",
       "scheduled_maintenance": "Scheduled Maintenance",
-      "in_service": "In Service"
+      "in_service": "In Service",
+      "service_due": "Service due"
     },
     "events": {
       "apkReminder2mTitle": "APK Reminder (2 months)",
@@ -367,6 +368,13 @@
       "warrantyExpiresIn2MonthsDescription": "Warranty expires in 2 months for {{vehicle}}",
       "warrantyExpiresIn1MonthDescription": "Warranty expires in 1 month for {{vehicle}}",
       "warrantyExpiresDescription": "Warranty expires for {{vehicle}}",
+      "serviceDueTitle": "Service due",
+      "serviceDueSoonTitle": "Service due soon",
+      "serviceDueDescription": "{{vehicle}}: {{details}}",
+      "serviceDueByDateOverdue": "date passed {{count}} days ago",
+      "serviceDueInDays": "in {{count}} days",
+      "serviceDueKmOver": "{{km}} km past the service point",
+      "serviceDueKmLeft": "{{km}} km to go",
       "movedFromWeekend": " (Moved from weekend)",
       "reminderOriginallyWeekend": " (Reminder originally scheduled for weekend)",
       "reminderMovedToMonday": " (Reminder was moved from weekend to Monday)",

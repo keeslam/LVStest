@@ -225,6 +225,9 @@ export const vehicles = pgTable("vehicles", {
   currentMileage: integer("current_mileage"),
   lastServiceDate: text("last_service_date"),
   lastServiceMileage: integer("last_service_mileage"),
+  // Regular-service interval for this vehicle; null = use the defaults from settings
+  serviceIntervalKm: integer("service_interval_km"),
+  serviceIntervalMonths: integer("service_interval_months"),
   
   // Mileage decrease tracking (admin-only visibility)
   mileageDecreasedBy: text("mileage_decreased_by"), // Username who decreased the mileage
@@ -1731,6 +1734,13 @@ export const settings = pgTable("settings", {
   showWarrantyReminders: boolean("show_warranty_reminders").notNull().default(true),
   warrantyReminderDays: integer("warranty_reminder_days").notNull().default(30),
   showMaintenanceBlocks: boolean("show_maintenance_blocks").notNull().default(true),
+  // Regular-service reminders: default interval (per vehicle overridable) and the
+  // window before the due point in which "due soon" reminders start.
+  showServiceReminders: boolean("show_service_reminders").notNull().default(true),
+  defaultServiceIntervalKm: integer("default_service_interval_km").notNull().default(30000),
+  defaultServiceIntervalMonths: integer("default_service_interval_months").notNull().default(12),
+  serviceReminderKm: integer("service_reminder_km").notNull().default(1000),
+  serviceReminderDays: integer("service_reminder_days").notNull().default(30),
   // Dutch road toll ("vrachtwagenheffing"), charged per km — used to suggest a toll
   // cost when logging a vehicle transport, editable per transport if the actual
   // cost differs.
@@ -1759,6 +1769,11 @@ export const updateSettingsSchema = createInsertSchema(settings).pick({
   showWarrantyReminders: true,
   warrantyReminderDays: true,
   showMaintenanceBlocks: true,
+  showServiceReminders: true,
+  defaultServiceIntervalKm: true,
+  defaultServiceIntervalMonths: true,
+  serviceReminderKm: true,
+  serviceReminderDays: true,
   tollRatePerKm: true,
   depotAddress: true,
   depotCity: true,

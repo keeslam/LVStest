@@ -432,6 +432,14 @@
       "warrantyRemindersHint": "Toon garantievervalherinneringen",
       "maintenanceBlocksLabel": "Onderhoudsblokken",
       "maintenanceBlocksHint": "Toon geplande onderhoudsblokken in de kalender",
+      "serviceIntervalTitle": "Onderhoudsbeurten",
+      "serviceIntervalHint": "Standaardinterval voor de reguliere onderhoudsbeurt (per voertuig te overschrijven) en hoe ver vooraf een herinnering verschijnt.",
+      "serviceRemindersLabel": "Onderhoudsbeurt-herinneringen",
+      "serviceRemindersHint": "Toon herinneringen en meldingen als een beurt nodig is of binnenkort nodig wordt",
+      "defaultServiceIntervalKmLabel": "Standaardinterval (km)",
+      "defaultServiceIntervalMonthsLabel": "Standaardinterval (maanden)",
+      "serviceReminderKmLabel": "Herinnering vanaf (km vooraf)",
+      "serviceReminderDaysLabel": "Herinnering vanaf (dagen vooraf)",
       "saveMaintenanceSettingsButton": "Onderhoudsinstellingen opslaan"
     },
     "email": {

@@ -432,6 +432,14 @@
       "warrantyRemindersHint": "Show warranty expiration reminders",
       "maintenanceBlocksLabel": "Maintenance Blocks",
       "maintenanceBlocksHint": "Show scheduled maintenance blocks on calendar",
+      "serviceIntervalTitle": "Regular services",
+      "serviceIntervalHint": "Default interval for the regular service (overridable per vehicle) and how far ahead a reminder appears.",
+      "serviceRemindersLabel": "Service reminders",
+      "serviceRemindersHint": "Show reminders and notifications when a service is due or due soon",
+      "defaultServiceIntervalKmLabel": "Default interval (km)",
+      "defaultServiceIntervalMonthsLabel": "Default interval (months)",
+      "serviceReminderKmLabel": "Remind from (km ahead)",
+      "serviceReminderDaysLabel": "Remind from (days ahead)",
       "saveMaintenanceSettingsButton": "Save Maintenance Settings"
     },
     "email": {

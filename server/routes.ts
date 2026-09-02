@@ -74,6 +74,7 @@ import {
   pickBestDamageCheckTemplate,
 } from "./services/reservation-pdf-regeneration";
 import { reservationIsOld, verifyAdminPassword, authorizeMileageDecrease } from "./services/authorization";
+import { getServiceDueVehicles, scanVehiclesForServiceDue } from "./utils/service-due-scanner";
 import { registerUserRoutes } from "./routes/users";
 import { registerExpenseRoutes } from "./routes/expenses";
 import { registerPdfTemplateRoutes } from "./routes/pdf-templates";
@@ -322,6 +323,27 @@ export async function registerRoutes(app: Express): Promise<void> {
     } catch (error) {
       console.error("Error fetching warranty expiring vehicles:", error);
       res.status(500).json({ message: "Failed to fetch warranty expiring vehicles" });
+    }
+  });
+
+  // Vehicles whose regular service is due or due soon (per-vehicle interval,
+  // defaults from system settings). Feeds the maintenance calendar.
+  app.get("/api/vehicles/service-due", hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), async (_req, res) => {
+    try {
+      res.json(await getServiceDueVehicles());
+    } catch (error) {
+      console.error("Error fetching service-due vehicles:", error);
+      res.status(500).json({ message: "Failed to fetch service-due vehicles" });
+    }
+  });
+
+  // Manual trigger of the nightly service-due scan (refreshes the notifications)
+  app.post("/api/vehicles/service-due/scan", hasPermission(UserPermission.MANAGE_VEHICLES), async (_req, res) => {
+    try {
+      res.json(await scanVehiclesForServiceDue());
+    } catch (error) {
+      console.error("Error running service-due scan:", error);
+      res.status(500).json({ message: "Failed to run service-due scan" });
     }
   });
 
