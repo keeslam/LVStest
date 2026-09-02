@@ -762,8 +762,11 @@ export default function MaintenanceCalendar() {
       serviceDueVehicles.forEach(vehicle => {
         if (isMaintenanceScheduled(vehicle.id, 'regular_maintenance')) return;
         const { serviceDue } = vehicle;
+        // An overdue service stays visible on today's date (a past due date would
+        // hide it in an earlier month); an upcoming one sits on its due date.
         const dueDate = serviceDue.nextServiceDate ? parseISO(serviceDue.nextServiceDate) : today;
-        const { shiftedDate, wasShifted } = shiftWeekendToMonday(dueDate);
+        const eventDate = serviceDue.isServiceDue && isBefore(dueDate, today) ? today : dueDate;
+        const { shiftedDate, wasShifted } = shiftWeekendToMonday(eventDate);
         const details: string[] = [];
         if (serviceDue.daysUntilService !== null) {
           details.push(serviceDue.daysUntilService <= 0

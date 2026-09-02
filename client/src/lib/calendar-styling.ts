@@ -154,6 +154,7 @@ export function getCustomMaintenanceStyle(type: string): string {
     'warranty_reminder_2m': 'maint-warranty-2m',
     'warranty_reminder_1m': 'maint-warranty-1m',
     'scheduled_maintenance': 'maint-routine',
+    'service_due': 'maint-routine',
     'in_service': 'maint-inspection',
     'breakdown': 'maint-breakdown',
     'routine': 'maint-routine',
@@ -184,6 +185,8 @@ export function getCustomMaintenanceStyle(type: string): string {
       return 'bg-yellow-100 text-yellow-700 border-yellow-200 border';
     case 'scheduled_maintenance':
       return 'bg-blue-100 text-blue-800 border-blue-200 border';
+    case 'service_due':
+      return 'bg-amber-100 text-amber-800 border-amber-200 border';
     case 'in_service':
       return 'bg-orange-100 text-orange-800 border-orange-200 border';
     default:
@@ -206,6 +209,7 @@ export function getCustomMaintenanceStyleObject(type: string): React.CSSProperti
     'warranty_reminder_2m': 'maint-warranty-2m',
     'warranty_reminder_1m': 'maint-warranty-1m', 
     'scheduled_maintenance': 'maint-routine',
+    'service_due': 'maint-routine',
     'in_service': 'maint-inspection',
     'breakdown': 'maint-breakdown',
     'routine': 'maint-routine',
