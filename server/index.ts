@@ -9,6 +9,8 @@ import { Server as SocketIOServer } from 'socket.io';
 import { setSocketInstance } from "./realtime-events";
 import { registerRoutes } from "./routes";
 import { setupAuth } from "./auth";
+import { setupPortalAuth } from "./portal-auth";
+import { ensurePortalEmailTemplates } from "./services/portal-mail";
 import { BackupScheduler } from "./backupScheduler";
 import { ApkScanScheduler } from "./apkScanScheduler";
 import { ServiceDueScheduler } from "./serviceDueScheduler";
@@ -177,6 +179,12 @@ app.use(sanitizeInput);
 // /api/register, and /api/logout — see setupAuth() in auth.ts for why the
 // CSRF middleware has to live inside that same call rather than after it.
 const { requireAuth } = setupAuth(app);
+
+// Customer portal: its own session cookie, Passport instance and CSRF cookie
+// on /api/portal. Mounted before registerRoutes() so the staff audit
+// middleware never sees portal traffic (the portal keeps its own activity log).
+const { requirePortalUser } = setupPortalAuth(app);
+void requirePortalUser; // handed to registerPortalRoutes below
 
 // Real-time WebSocket event system
 function setupSocketIO(server: any) {
@@ -431,6 +439,9 @@ apkScanScheduler.start();
 // Initialize regular-service due scan scheduler (notifications)
 serviceDueScheduler = new ServiceDueScheduler();
 serviceDueScheduler.start();
+
+// Seed the portal e-mail templates once (staff edit them afterwards).
+ensurePortalEmailTemplates().catch((e) => console.error("portal e-mail templates:", e));
 
 // Initialize session cleanup scheduler (runs every hour)
 const sessionCleanupScheduler = startSessionCleanupScheduler(60);

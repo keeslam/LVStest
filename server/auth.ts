@@ -1,6 +1,7 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express, Request, Response, NextFunction } from "express";
+import { Express, Request, Response, NextFunction, RequestHandler } from "express";
+import { isPortalPath } from "./portal-paths";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
@@ -132,9 +133,16 @@ export function setupAuth(app: Express) {
   }
 
   app.set("trust proxy", 1);
-  app.use(session(sessionSettings));
-  app.use(passport.initialize());
-  app.use(passport.session());
+  // express-session refuses to run when req.session already exists, so the
+  // customer portal (its own cookie, its own Passport instance, see
+  // portal-auth.ts) can only mount its stack if the staff stack skips portal
+  // paths entirely.
+  const unlessPortal = (mw: RequestHandler): RequestHandler => (req, res, next) =>
+    isPortalPath(req.path) ? next() : mw(req, res, next);
+
+  app.use(unlessPortal(session(sessionSettings)));
+  app.use(unlessPortal(passport.initialize()));
+  app.use(unlessPortal(passport.session()));
 
   // CSRF protection must be wired here, before any route (including the ones
   // registered below in this same function — /api/login, /api/register,
@@ -142,8 +150,8 @@ export function setupAuth(app: Express) {
   // mutating request is checked. Registering it later in index.ts, after
   // setupAuth() returns, would skip all of these routes entirely, since
   // Express only runs middleware registered before the route that matches.
-  app.use(attachCsrfToken);
-  app.use(csrfProtection);
+  app.use(unlessPortal(attachCsrfToken));
+  app.use(unlessPortal(csrfProtection));
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {

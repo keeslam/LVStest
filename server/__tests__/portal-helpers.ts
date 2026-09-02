@@ -5,6 +5,8 @@ import {
   type Customer, type Vehicle, type Driver, type Reservation, type Document,
 } from "../../shared/schema";
 import { like, inArray } from "drizzle-orm";
+import express, { type Express } from "express";
+import { setupPortalAuth } from "../portal-auth";
 
 export const TEST_PREFIX = "__portal_test__";
 export const TEST_EMAIL_DOMAIN = "portal-test.invalid";
@@ -84,4 +86,15 @@ export async function cleanupPortalTestData(): Promise<void> {
     await db.delete(customers).where(inArray(customers.id, ids));
   }
   await db.delete(vehicles).where(like(vehicles.licensePlate, "PT-%"));
+}
+
+/** Express app with only the portal realm mounted; no staff auth, no vite. */
+export function buildPortalTestApp(): Express {
+  const app = express();
+  app.set("trust proxy", 1);
+  app.use(express.json());
+  const { requirePortalUser } = setupPortalAuth(app);
+  // Task 7 adds: registerPortalRoutes(app, { requirePortalUser, uploadsDir })
+  void requirePortalUser;
+  return app;
 }

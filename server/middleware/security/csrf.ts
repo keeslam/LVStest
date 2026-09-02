@@ -80,7 +80,9 @@ export function createCsrfMiddleware(options: CsrfOptions) {
     // Login has no pre-existing session to forge a request against - the standard
     // exemption. Every other mutating route runs on an authenticated session and
     // is in scope, including /api/register (which itself requires an admin session).
-    if (exempt.has(req.path)) return next();
+    // baseUrl + path: when mounted under app.use('/api/portal', …) req.path is
+    // relative, and the exemptions are written as full paths.
+    if (exempt.has((req.baseUrl || '') + req.path)) return next();
 
     const token = req.get('X-CSRF-Token') || req.body?._csrf;
     if (!token) {
