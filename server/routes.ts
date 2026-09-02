@@ -77,6 +77,7 @@ import { reservationIsOld, verifyAdminPassword, authorizeMileageDecrease } from 
 import { assignDriverToReservation } from "./services/driver-assignments";
 import { getServiceDueVehicles, scanVehiclesForServiceDue } from "./utils/service-due-scanner";
 import { registerUserRoutes } from "./routes/users";
+import { registerPortalAdminRoutes } from "./routes/portal-admin";
 import { registerExpenseRoutes } from "./routes/expenses";
 import { registerPdfTemplateRoutes } from "./routes/pdf-templates";
 import { registerCustomNotificationRoutes } from "./routes/custom-notifications";
@@ -264,6 +265,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Who changed what, from the audit_logs table. Same permission as user
   // management: it exposes every user's actions.
   registerUserRoutes(app, routeDeps);
+  registerPortalAdminRoutes(app, routeDeps);
   
   // ==================== VEHICLE ROUTES ====================
   // Get available vehicles (optionally for a specific date range)
