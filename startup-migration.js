@@ -991,6 +991,60 @@ async function runMigrations() {
     }
     console.log('✅ Customer portal tables ready');
 
+    // ==================== CUSTOMER PORTAL (parts 3+4: fines, requests) ====================
+    await createTableIfNotExists('fines', `
+      CREATE TABLE fines (
+        id SERIAL PRIMARY KEY,
+        license_plate TEXT NOT NULL,
+        vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE SET NULL,
+        offence_at TIMESTAMP NOT NULL,
+        received_at TEXT,
+        reference TEXT,
+        description TEXT NOT NULL,
+        amount NUMERIC(10,2) NOT NULL,
+        admin_fee NUMERIC(10,2) NOT NULL DEFAULT 0,
+        total_amount NUMERIC(10,2) NOT NULL,
+        letter_file_path TEXT,
+        status TEXT NOT NULL DEFAULT 'new',
+        customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+        reservation_id INTEGER REFERENCES reservations(id) ON DELETE SET NULL,
+        driver_id INTEGER REFERENCES drivers(id) ON DELETE SET NULL,
+        linked_at TIMESTAMP, linked_by TEXT,
+        charged_at TIMESTAMP, invoice_reference TEXT,
+        paid_at TIMESTAMP,
+        internal_notes TEXT, customer_note TEXT,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(), updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        created_by TEXT, updated_by TEXT
+      )`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS fines_plate_offence_idx ON fines (license_plate, offence_at)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS fines_customer_status_idx ON fines (customer_id, status)`);
+
+    await createTableIfNotExists('portal_requests', `
+      CREATE TABLE portal_requests (
+        id SERIAL PRIMARY KEY,
+        customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+        portal_user_id INTEGER REFERENCES portal_users(id) ON DELETE SET NULL,
+        type TEXT NOT NULL,
+        reservation_id INTEGER REFERENCES reservations(id) ON DELETE SET NULL,
+        fine_id INTEGER REFERENCES fines(id) ON DELETE SET NULL,
+        payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+        message TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'new',
+        staff_reply TEXT, replied_at TIMESTAMP, replied_by TEXT, handled_by TEXT,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(), updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS portal_requests_customer_created_idx ON portal_requests (customer_id, created_at)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS portal_requests_status_idx ON portal_requests (status)`);
+
+    await createTableIfNotExists('portal_request_attachments', `
+      CREATE TABLE portal_request_attachments (
+        id SERIAL PRIMARY KEY,
+        request_id INTEGER NOT NULL REFERENCES portal_requests(id) ON DELETE CASCADE,
+        file_name TEXT NOT NULL, file_path TEXT NOT NULL, content_type TEXT NOT NULL, file_size INTEGER NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )`);
+    console.log('✅ Fines and portal request tables ready');
+
     console.log('✅ Database migration completed successfully!');
     
   } catch (error) {

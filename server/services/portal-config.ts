@@ -6,6 +6,7 @@ export const portalConfigSchema = z.object({
   allowedFrameOrigins: z.array(z.string().url()).default(DEFAULT_PORTAL_CONFIG.allowedFrameOrigins),
   notificationEmail: z.union([z.string().email(), z.literal("")]).default(""),
   portalBaseUrl: z.union([z.string().url(), z.literal("")]).default(""),
+  fineAdminFee: z.coerce.number().min(0).default(0),
 });
 
 const CACHE_TTL_MS = 60_000;

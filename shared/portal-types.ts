@@ -13,6 +13,8 @@ export const PORTAL_ERROR = {
   TOKEN_EXPIRED: 'PORTAL_TOKEN_EXPIRED',
   VALIDATION: 'PORTAL_VALIDATION',
   NOT_FOUND: 'PORTAL_NOT_FOUND',
+  REQUEST_INVALID_PERIOD: 'PORTAL_REQUEST_INVALID_PERIOD',
+  ATTACHMENT_LIMIT: 'PORTAL_ATTACHMENT_LIMIT',
   CSRF: 'PORTAL_CSRF',
   SERVER: 'PORTAL_SERVER_ERROR',
 } as const;
@@ -86,12 +88,15 @@ export interface PortalConfig {
   allowedFrameOrigins: string[];
   notificationEmail: string;
   portalBaseUrl: string;
+  /** Default administration fee (EUR) pre-filled on a new fine. */
+  fineAdminFee: number;
 }
 
 export const DEFAULT_PORTAL_CONFIG: PortalConfig = {
   allowedFrameOrigins: ['https://lamgroep.nl', 'https://www.lamgroep.nl'],
   notificationEmail: '',
   portalBaseUrl: '',
+  fineAdminFee: 0,
 };
 
 export const PORTAL_CONFIG_KEY = 'portal_config';

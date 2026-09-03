@@ -114,6 +114,10 @@ export const UserPermission = {
   // Customer portal (accounts, per-customer switches, online vehicles)
   MANAGE_PORTAL: 'manage_portal',
   VIEW_PORTAL: 'view_portal',
+
+  // Traffic fines (entry, attribution, charging)
+  MANAGE_FINES: 'manage_fines',
+  VIEW_FINES: 'view_fines',
   
   // General
   VIEW_DASHBOARD: 'view_dashboard',
@@ -539,6 +543,91 @@ export const insertPortalActivityLogSchema = createInsertSchema(portalActivityLo
   .omit({ id: true, createdAt: true });
 export type PortalActivityLogEntry = typeof portalActivityLog.$inferSelect;
 export type InsertPortalActivityLogEntry = z.infer<typeof insertPortalActivityLogSchema>;
+
+// Traffic fines. Lam Groep pays the authority and recharges the customer plus
+// an administration fee; attribution to reservation + driver happens through
+// reservation_driver_assignments (see server/services/fine-attribution.ts).
+export const fines = pgTable("fines", {
+  id: serial("id").primaryKey(),
+  licensePlate: text("license_plate").notNull(),
+  vehicleId: integer("vehicle_id").references(() => vehicles.id, { onDelete: "set null" }),
+  offenceAt: timestamp("offence_at").notNull(),
+  receivedAt: text("received_at"),
+  reference: text("reference"),
+  description: text("description").notNull(),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  adminFee: numeric("admin_fee", { precision: 10, scale: 2 }).notNull().default("0"),
+  totalAmount: numeric("total_amount", { precision: 10, scale: 2 }).notNull(),
+  letterFilePath: text("letter_file_path"),
+  status: text("status").notNull().default("new"),
+  customerId: integer("customer_id").references(() => customers.id, { onDelete: "set null" }),
+  reservationId: integer("reservation_id").references(() => reservations.id, { onDelete: "set null" }),
+  driverId: integer("driver_id").references(() => drivers.id, { onDelete: "set null" }),
+  linkedAt: timestamp("linked_at"),
+  linkedBy: text("linked_by"),
+  chargedAt: timestamp("charged_at"),
+  invoiceReference: text("invoice_reference"),
+  paidAt: timestamp("paid_at"),
+  internalNotes: text("internal_notes"),
+  customerNote: text("customer_note"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: text("created_by"),
+  updatedBy: text("updated_by"),
+}, (table) => ({
+  plateOffenceIdx: index("fines_plate_offence_idx").on(table.licensePlate, table.offenceAt),
+  customerStatusIdx: index("fines_customer_status_idx").on(table.customerId, table.status),
+}));
+
+// Staff input; the server computes totalAmount, normalises the plate and sets the letter path.
+export const insertFineSchema = z.object({
+  licensePlate: z.string().trim().min(4).max(12),
+  offenceAt: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/)),
+  receivedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  reference: z.string().trim().max(100).nullable().optional(),
+  description: z.string().trim().min(1).max(500),
+  amount: z.coerce.number().min(0),
+  adminFee: z.coerce.number().min(0).default(0),
+  internalNotes: z.string().max(2000).nullable().optional(),
+  customerNote: z.string().max(1000).nullable().optional(),
+});
+export type Fine = typeof fines.$inferSelect;
+export type InsertFine = z.infer<typeof insertFineSchema>;
+
+// Typed requests from the portal (extension, early return, damage, fine question, other).
+export const portalRequests = pgTable("portal_requests", {
+  id: serial("id").primaryKey(),
+  customerId: integer("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }),
+  portalUserId: integer("portal_user_id").references(() => portalUsers.id, { onDelete: "set null" }),
+  type: text("type").notNull(),
+  reservationId: integer("reservation_id").references(() => reservations.id, { onDelete: "set null" }),
+  fineId: integer("fine_id").references(() => fines.id, { onDelete: "set null" }),
+  payload: jsonb("payload").$type<Record<string, unknown>>().notNull().default({}),
+  message: text("message").notNull(),
+  status: text("status").notNull().default("new"),
+  staffReply: text("staff_reply"),
+  repliedAt: timestamp("replied_at"),
+  repliedBy: text("replied_by"),
+  handledBy: text("handled_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  customerCreatedIdx: index("portal_requests_customer_created_idx").on(table.customerId, table.createdAt),
+  statusIdx: index("portal_requests_status_idx").on(table.status),
+}));
+export type PortalRequest = typeof portalRequests.$inferSelect;
+export type InsertPortalRequest = typeof portalRequests.$inferInsert;
+
+export const portalRequestAttachments = pgTable("portal_request_attachments", {
+  id: serial("id").primaryKey(),
+  requestId: integer("request_id").notNull().references(() => portalRequests.id, { onDelete: "cascade" }),
+  fileName: text("file_name").notNull(),
+  filePath: text("file_path").notNull(),
+  contentType: text("content_type").notNull(),
+  fileSize: integer("file_size").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type PortalRequestAttachment = typeof portalRequestAttachments.$inferSelect;
 
 // Reservations table
 export const reservations = pgTable("reservations", {
