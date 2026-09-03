@@ -1,0 +1,185 @@
+import type { Express, Request, Response } from "express";
+import path from "path";
+import fs from "fs";
+import multer from "multer";
+import { z } from "zod";
+import { hasPermission } from "../middleware/permissions.js";
+import { UserPermission, insertFineSchema } from "../../shared/schema";
+import { isValidFineTransition, FINE_TRANSITIONS, normalizeLicensePlate, type FineStatusValue } from "../../shared/fines";
+import { finesStorage } from "../services/fines-storage";
+import { attributeFine, findCandidates, linkFineManually, unlinkFine } from "../services/fine-attribution";
+import { sendFineLinkedMail } from "../services/portal-mail";
+import { getPortalConfig } from "../services/portal-config";
+import { storage } from "../storage";
+import { AuditLogger } from "../utils/security/auditLogger";
+import { createSecureMulterFilter, sanitizeFilename, validateAfterUpload } from "../utils/security/fileUploadSecurity";
+import { resolveDocumentFilePath } from "../services/document-paths";
+import type { RouteDeps } from "./deps";
+
+const canView = hasPermission(UserPermission.VIEW_FINES, UserPermission.MANAGE_FINES);
+const canManage = hasPermission(UserPermission.MANAGE_FINES);
+const money = (n: number) => n.toFixed(2);
+
+function idParam(req: Request, res: Response): number | null {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) { res.status(400).json({ message: "Invalid id" }); return null; }
+  return id;
+}
+
+/** Staff side of traffic fines: entry, attribution, linking, charging, letters. */
+export function registerFineRoutes(app: Express, deps: RouteDeps): void {
+  const actor = (req: Request) => req.user?.username ?? "system";
+  const letterUpload = multer({
+    storage: multer.diskStorage({
+      destination: (_req, _file, cb) => { const dir = path.join(deps.uploadsDir, "fines"); fs.mkdirSync(dir, { recursive: true }); cb(null, dir); },
+      filename: (_req, file, cb) => cb(null, `fine_${Date.now()}${path.extname(sanitizeFilename(file.originalname))}`),
+    }),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: createSecureMulterFilter("document"),
+  });
+
+  async function storeLetter(req: Request): Promise<string | null> {
+    if (!req.file) return null;
+    const check = await validateAfterUpload(req.file.path, req.file.originalname, req.file.mimetype, "document");
+    if (!check.valid) { fs.rmSync(req.file.path, { force: true }); throw new Error(check.error ?? "Invalid file"); }
+    return path.relative(process.cwd(), req.file.path);
+  }
+
+  async function notifyLinked(fineId: number) {
+    try { await sendFineLinkedMail(fineId); } catch (e) { console.error("fine linked mail failed:", e); }
+  }
+
+  app.get("/api/fines", canView, async (req, res) => {
+    const q = req.query;
+    res.json(await finesStorage.listFines({
+      status: q.status ? String(q.status) : undefined,
+      customerId: q.customerId ? parseInt(String(q.customerId), 10) : undefined,
+      licensePlate: q.licensePlate ? normalizeLicensePlate(String(q.licensePlate)) : undefined,
+      from: q.from ? String(q.from) : undefined,
+      to: q.to ? String(q.to) : undefined,
+    }));
+  });
+
+  app.get("/api/fines/count", canView, async (req, res) => {
+    if (req.query.customerId) return res.json({ count: await finesStorage.countFinesForCustomer(parseInt(String(req.query.customerId), 10)) });
+    if (req.query.licensePlate) return res.json({ count: await finesStorage.countFinesForPlate(normalizeLicensePlate(String(req.query.licensePlate))) });
+    res.json({ count: 0 });
+  });
+
+  app.get("/api/fines/:id", canView, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const fine = await finesStorage.getFineRow(id);
+    if (!fine) return res.status(404).json({ message: "Fine not found" });
+    const candidates = fine.status === "new" ? await findCandidates(fine.licensePlate, fine.offenceAt) : undefined;
+    res.json({ ...fine, candidates });
+  });
+
+  app.post("/api/fines", canManage, letterUpload.single("letterFile"), async (req, res) => {
+    const parsed = insertFineSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: parsed.error.errors[0]?.message ?? "Invalid input" });
+    const config = await getPortalConfig();
+    const adminFee = req.body.adminFee === undefined || req.body.adminFee === "" ? config.fineAdminFee : parsed.data.adminFee;
+    let letterFilePath: string | null = null;
+    try { letterFilePath = await storeLetter(req); } catch (e) { return res.status(400).json({ message: (e as Error).message }); }
+    const plate = normalizeLicensePlate(parsed.data.licensePlate);
+    const vehicle = (await storage.getAllVehicles()).find((v) => v.licensePlate === plate);
+    const fine = await finesStorage.createFine({
+      licensePlate: plate, vehicleId: vehicle?.id ?? null, offenceAt: new Date(parsed.data.offenceAt),
+      receivedAt: parsed.data.receivedAt ?? null, reference: parsed.data.reference ?? null, description: parsed.data.description,
+      amount: money(parsed.data.amount), adminFee: money(adminFee), totalAmount: money(parsed.data.amount + adminFee),
+      letterFilePath, internalNotes: parsed.data.internalNotes ?? null, customerNote: parsed.data.customerNote ?? null,
+      createdBy: actor(req), updatedBy: actor(req),
+    });
+    const result = await attributeFine(fine.id);
+    await AuditLogger.logFromRequest(req, "fine.create", "fine", fine.id, { plate, status: result.fine.status });
+    if (result.fine.status === "linked") await notifyLinked(fine.id);
+    res.status(201).json(result);
+  });
+
+  app.patch("/api/fines/:id", canManage, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const existing = await finesStorage.getFine(id);
+    if (!existing) return res.status(404).json({ message: "Fine not found" });
+    if (existing.status === "paid" || existing.status === "cancelled") return res.status(400).json({ message: "Fine is closed" });
+    const parsed = insertFineSchema.partial().safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: parsed.error.errors[0]?.message ?? "Invalid input" });
+    const amount = parsed.data.amount ?? Number(existing.amount);
+    const adminFee = parsed.data.adminFee ?? Number(existing.adminFee);
+    const updated = await finesStorage.updateFine(id, {
+      ...(parsed.data.licensePlate ? { licensePlate: normalizeLicensePlate(parsed.data.licensePlate) } : {}),
+      ...(parsed.data.offenceAt ? { offenceAt: new Date(parsed.data.offenceAt) } : {}),
+      ...(parsed.data.receivedAt !== undefined ? { receivedAt: parsed.data.receivedAt } : {}),
+      ...(parsed.data.reference !== undefined ? { reference: parsed.data.reference } : {}),
+      ...(parsed.data.description ? { description: parsed.data.description } : {}),
+      ...(parsed.data.internalNotes !== undefined ? { internalNotes: parsed.data.internalNotes } : {}),
+      ...(parsed.data.customerNote !== undefined ? { customerNote: parsed.data.customerNote } : {}),
+      amount: money(amount), adminFee: money(adminFee), totalAmount: money(amount + adminFee), updatedBy: actor(req),
+    });
+    await AuditLogger.logFromRequest(req, "fine.update", "fine", id, parsed.data);
+    res.json(updated);
+  });
+
+  app.post("/api/fines/:id/letter", canManage, letterUpload.single("letterFile"), async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    if (!(await finesStorage.getFine(id))) return res.status(404).json({ message: "Fine not found" });
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    try {
+      const letterFilePath = await storeLetter(req);
+      res.json(await finesStorage.updateFine(id, { letterFilePath, updatedBy: actor(req) }));
+    } catch (e) { res.status(400).json({ message: (e as Error).message }); }
+  });
+
+  app.get("/api/fines/:id/letter", canView, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const fine = await finesStorage.getFine(id);
+    const file = fine?.letterFilePath ? resolveDocumentFilePath(fine.letterFilePath) : null;
+    if (!fine || !file) return res.status(404).json({ message: "No letter" });
+    res.setHeader("Content-Type", file.toLowerCase().endsWith(".pdf") ? "application/pdf" : "application/octet-stream");
+    res.setHeader("Content-Disposition", `inline; filename="${sanitizeFilename(path.basename(file))}"`);
+    fs.createReadStream(file).pipe(res);
+  });
+
+  app.post("/api/fines/:id/link", canManage, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const parsed = z.object({
+      customerId: z.number().int().positive(),
+      reservationId: z.number().int().positive().nullable().optional(),
+      driverId: z.number().int().positive().nullable().optional(),
+    }).safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: "customerId is required" });
+    try {
+      const fine = await linkFineManually(id, parsed.data, actor(req));
+      await AuditLogger.logFromRequest(req, "fine.link", "fine", id, parsed.data);
+      await notifyLinked(id);
+      res.json(fine);
+    } catch (e) { res.status(400).json({ message: (e as Error).message }); }
+  });
+
+  app.post("/api/fines/:id/unlink", canManage, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    try {
+      const fine = await unlinkFine(id, actor(req));
+      await AuditLogger.logFromRequest(req, "fine.unlink", "fine", id);
+      res.json(fine);
+    } catch (e) { res.status(404).json({ message: (e as Error).message }); }
+  });
+
+  app.post("/api/fines/:id/status", canManage, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const fine = await finesStorage.getFine(id);
+    if (!fine) return res.status(404).json({ message: "Fine not found" });
+    const parsed = z.object({ status: z.string(), invoiceReference: z.string().trim().max(100).optional() }).safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: "status is required" });
+    const next = parsed.data.status as FineStatusValue;
+    if (!isValidFineTransition(fine.status, next)) {
+      return res.status(400).json({ message: `Cannot go from ${fine.status} to ${next}`, allowed: FINE_TRANSITIONS[fine.status as FineStatusValue] ?? [] });
+    }
+    if (next === "new") { res.json(await unlinkFine(id, actor(req))); return; }
+    const patch: Record<string, unknown> = { status: next, updatedBy: actor(req) };
+    if (next === "charged") { patch.chargedAt = new Date(); if (parsed.data.invoiceReference) patch.invoiceReference = parsed.data.invoiceReference; }
+    if (next === "paid") patch.paidAt = new Date();
+    const updated = await finesStorage.updateFine(id, patch);
+    await AuditLogger.logFromRequest(req, "fine.status", "fine", id, { from: fine.status, to: next });
+    res.json(updated);
+  });
+}

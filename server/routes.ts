@@ -78,6 +78,7 @@ import { assignDriverToReservation } from "./services/driver-assignments";
 import { getServiceDueVehicles, scanVehiclesForServiceDue } from "./utils/service-due-scanner";
 import { registerUserRoutes } from "./routes/users";
 import { registerPortalAdminRoutes } from "./routes/portal-admin";
+import { registerFineRoutes } from "./routes/fines";
 import { registerExpenseRoutes } from "./routes/expenses";
 import { registerPdfTemplateRoutes } from "./routes/pdf-templates";
 import { registerCustomNotificationRoutes } from "./routes/custom-notifications";
@@ -266,6 +267,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // management: it exposes every user's actions.
   registerUserRoutes(app, routeDeps);
   registerPortalAdminRoutes(app, routeDeps);
+  registerFineRoutes(app, routeDeps);
   
   // ==================== VEHICLE ROUTES ====================
   // Get available vehicles (optionally for a specific date range)

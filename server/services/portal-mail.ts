@@ -6,11 +6,15 @@ import { storage } from "../storage";
 import { portalStorage } from "./portal-storage";
 import { getPortalConfig } from "./portal-config";
 import { generateInviteToken, INVITE_TTL_MS } from "./portal-tokens";
+import { finesStorage } from "./fines-storage";
+import { requestsStorage } from "./portal-requests-storage";
 
 export const PORTAL_TEMPLATE = {
   INVITE: "portal_invite",
   RESET: "portal_password_reset",
   STAFF: "portal_staff_notification",
+  FINE_LINKED: "portal_fine_linked",
+  REQUEST_REPLIED: "portal_request_replied",
 } as const;
 
 // Seeded once; staff edit them afterwards in Communicatie > E-mailsjablonen.
@@ -40,6 +44,24 @@ const DEFAULT_TEMPLATES: Array<{ name: string; subject: string; content: string 
 <p>{{description}}</p>
 <p>Klant: {{company}}</p>
 <p><a href="{{link}}">Openen in de app</a></p>`,
+  },
+  {
+    name: PORTAL_TEMPLATE.FINE_LINKED,
+    subject: "Bekeuring {{plate}} van {{date}}",
+    content: `<p>Beste {{name}},</p>
+<p>Er is een bekeuring op naam van {{company}} verwerkt:</p>
+<p>Kenteken {{plate}}, {{date}}<br>{{description}}<br>Bedrag € {{amount}} + € {{adminFee}} administratiekosten = <strong>€ {{total}}</strong></p>
+<p>Bekijk de bekeuring in het klantenportaal: <a href="{{link}}">{{link}}</a></p>
+<p>Met vriendelijke groet,<br>Lam Groep</p>`,
+  },
+  {
+    name: PORTAL_TEMPLATE.REQUEST_REPLIED,
+    subject: "Reactie op uw aanvraag ({{type}})",
+    content: `<p>Beste {{name}},</p>
+<p>Wij hebben uw aanvraag ({{type}}) beantwoord:</p>
+<blockquote>{{reply}}</blockquote>
+<p>Status: {{status}}. Bekijk de aanvraag in het klantenportaal: <a href="{{link}}">{{link}}</a></p>
+<p>Met vriendelijke groet,<br>Lam Groep</p>`,
   },
 ];
 
@@ -90,4 +112,43 @@ export async function sendPortalInvite(user: PortalUser, kind: "invite" | "reset
     text: stripHtml(html),
   }, "custom");
   return { sent, token };
+}
+
+/** Tells the customer a fine was attributed to them. Skips silently without an address or with the portal off. */
+export async function sendFineLinkedMail(fineId: number): Promise<boolean> {
+  const fine = await finesStorage.getFineRow(fineId);
+  if (!fine || !fine.customerId) return false;
+  const [customer, settings, config] = await Promise.all([
+    storage.getCustomer(fine.customerId), portalStorage.getOrCreateCustomerSettings(fine.customerId), getPortalConfig(),
+  ]);
+  const to = customer?.email || customer?.emailForInvoices;
+  if (!customer || !settings.portalEnabled || !to) return false;
+  const template = await getPortalTemplate(PORTAL_TEMPLATE.FINE_LINKED);
+  const vars = {
+    name: customer.contactPerson || customer.companyName || customer.name,
+    company: customer.companyName || customer.name,
+    plate: fine.licensePlate, date: fine.offenceAt.toISOString().slice(0, 10), description: fine.description,
+    amount: fine.amount, adminFee: fine.adminFee, total: fine.totalAmount,
+    link: `${config.portalBaseUrl.replace(/\/$/, "")}/portaal/bekeuringen/${fine.id}`,
+  };
+  const html = renderTemplate(template.content, vars);
+  return sendEmail({ to, subject: renderTemplate(template.subject, vars), html, text: stripHtml(html) }, "custom");
+}
+
+const REQUEST_TYPE_LABEL: Record<string, string> = { extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", fine_question: "vraag over bekeuring", other: "overig" };
+const REQUEST_STATUS_LABEL: Record<string, string> = { new: "nieuw", in_progress: "in behandeling", done: "afgehandeld", rejected: "afgewezen" };
+
+/** Sends the staff reply on a request to the portal user who submitted it. */
+export async function sendRequestReplyMail(requestId: number): Promise<boolean> {
+  const row = await requestsStorage.getRequest(requestId);
+  if (!row || !row.submitterEmail || !row.staffReply) return false;
+  const config = await getPortalConfig();
+  const template = await getPortalTemplate(PORTAL_TEMPLATE.REQUEST_REPLIED);
+  const vars = {
+    name: row.submittedBy ?? "", type: REQUEST_TYPE_LABEL[row.type] ?? row.type, reply: row.staffReply,
+    status: REQUEST_STATUS_LABEL[row.status] ?? row.status,
+    link: `${config.portalBaseUrl.replace(/\/$/, "")}/portaal/aanvragen/${row.id}`,
+  };
+  const html = renderTemplate(template.content, vars);
+  return sendEmail({ to: row.submitterEmail, toName: row.submittedBy ?? undefined, subject: renderTemplate(template.subject, vars), html, text: stripHtml(html) }, "custom");
 }
