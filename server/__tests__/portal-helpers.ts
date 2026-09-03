@@ -1,8 +1,8 @@
 import { db } from "../db";
 import {
   customers, vehicles, drivers, reservations, documents,
-  portalUsers, portalCustomerSettings, portalActivityLog, reservationDriverAssignments,
-  type Customer, type Vehicle, type Driver, type Reservation, type Document,
+  portalUsers, portalCustomerSettings, portalActivityLog, reservationDriverAssignments, fines, portalRequests,
+  type Customer, type Vehicle, type Driver, type Reservation, type Document, type Fine,
 } from "../../shared/schema";
 import { like, inArray } from "drizzle-orm";
 import express, { type Express } from "express";
@@ -75,6 +75,7 @@ export async function cleanupPortalTestData(): Promise<void> {
   const ids = testCustomers.map((c) => c.id);
   if (ids.length) {
     await db.delete(portalActivityLog).where(inArray(portalActivityLog.customerId, ids));
+    await db.delete(portalRequests).where(inArray(portalRequests.customerId, ids));
     await db.delete(portalUsers).where(inArray(portalUsers.customerId, ids));
     await db.delete(portalCustomerSettings).where(inArray(portalCustomerSettings.customerId, ids));
     const res = await db.select({ id: reservations.id }).from(reservations).where(inArray(reservations.customerId, ids));
@@ -87,7 +88,8 @@ export async function cleanupPortalTestData(): Promise<void> {
     await db.delete(drivers).where(inArray(drivers.customerId, ids));
     await db.delete(customers).where(inArray(customers.id, ids));
   }
-  await db.delete(vehicles).where(like(vehicles.licensePlate, "PT-%"));
+  await db.delete(fines).where(like(fines.licensePlate, "PT%"));
+  await db.delete(vehicles).where(like(vehicles.licensePlate, "PT%"));
 }
 
 /** Express app with only the portal realm mounted; no staff auth, no vite. */
@@ -97,5 +99,28 @@ export function buildPortalTestApp(): Express {
   app.use(express.json());
   const { requirePortalUser } = setupPortalAuth(app);
   registerPortalRoutes(app, { requirePortalUser, uploadsDir: getUploadsDir() });
+  return app;
+}
+
+export async function createTestFine(input: { licensePlate: string; offenceAt: Date; amount?: number; description?: string }): Promise<Fine> {
+  const [row] = await db.insert(fines).values({
+    licensePlate: input.licensePlate, offenceAt: input.offenceAt,
+    description: input.description ?? "Test overtreding",
+    amount: String(input.amount ?? 100), adminFee: "10", totalAmount: String((input.amount ?? 100) + 10),
+    status: "new", createdBy: "test",
+  }).returning();
+  return row;
+}
+
+/** Express app with a fake staff user; register() mounts the routes under test. */
+export function buildStaffTestApp(permissions: string[], register: (app: Express) => void): Express {
+  const app = express();
+  app.use(express.json());
+  app.use((req, _res, next) => {
+    (req as any).user = { id: 1, username: "staff-test", role: "manager", permissions };
+    (req as any).isAuthenticated = () => true;
+    next();
+  });
+  register(app);
   return app;
 }
