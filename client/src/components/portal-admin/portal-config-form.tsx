@@ -21,11 +21,13 @@ export function PortalConfigForm() {
   const [origins, setOrigins] = useState("");
   const [email, setEmail] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
+  const [fineAdminFee, setFineAdminFee] = useState("0");
   useEffect(() => {
     if (!data) return;
     setOrigins(data.allowedFrameOrigins.join("\n"));
     setEmail(data.notificationEmail);
     setBaseUrl(data.portalBaseUrl);
+    setFineAdminFee(String(data.fineAdminFee ?? 0));
   }, [data]);
 
   const save = useMutation({
@@ -33,6 +35,7 @@ export function PortalConfigForm() {
       allowedFrameOrigins: origins.split(/\r?\n/).map((s) => s.trim()).filter(Boolean),
       notificationEmail: email.trim(),
       portalBaseUrl: baseUrl.trim().replace(/\/$/, ""),
+      fineAdminFee: Number(fineAdminFee) || 0,
     })).json(),
     onSuccess: (saved) => { queryClient.setQueryData(KEY, saved); toast({ title: t("admin.config.saved") }); },
     onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
@@ -56,6 +59,10 @@ export function PortalConfigForm() {
         <div>
           <Label htmlFor="pc-base">{t("admin.config.portalBaseUrl")}</Label>
           <Input id="pc-base" type="url" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} />
+        </div>
+        <div>
+          <Label htmlFor="pc-fee">{t("admin.config.fineAdminFee")}</Label>
+          <Input id="pc-fee" type="number" step="0.01" min="0" value={fineAdminFee} onChange={(e) => setFineAdminFee(e.target.value)} />
         </div>
         <p className="text-xs text-muted-foreground">{t("admin.config.templatesHint")}</p>
         <Button onClick={() => save.mutate()} disabled={save.isPending} data-testid="button-save-portal-config">{t("admin.dialog.save")}</Button>
