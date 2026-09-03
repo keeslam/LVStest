@@ -96,22 +96,30 @@ Permissions: `UserPermission.MANAGE_FINES = 'manage_fines'`,
   validates the reservation belongs to the customer and the driver belongs to
   the customer, then sets `linked`.
 
-### Staff UI
+### Staff UI (dialogs, like the rest of the app)
 
-- New page `/fines` (menu item "Bekeuringen", permissions `view_fines`/`manage_fines`):
-  - table with filters: status, customer, licence plate, period; columns plate,
-    offence date, description, customer, driver, amount (+ fee), status; row
-    click opens the fine dialog.
-  - "Nieuwe bekeuring" dialog: plate (with vehicle lookup), offence date/time,
-    received date, reference, description, amount, admin fee (pre-filled),
-    letter upload. On save the attribution runs; the dialog then shows the
-    result: linked automatically, or the candidate list to pick from
-    (customer + reservation + driver, or customer only).
-  - Fine dialog: all fields editable while not `paid`/`cancelled`; status
-    actions "Koppelen"/"Ontkoppelen", "Doorbelasten" (asks invoice reference),
-    "Betaald", "Betwist", "Annuleren"; letter preview/download; internal notes.
-- Customer dialog gets a "Bekeuringen" list inside the existing Portaal tab
-  (count + link to `/fines?customer=`).
+No new pages. The existing Klantenportaal page (`/portal-admin`) gets a tab
+"Bekeuringen"; everything else is a dialog, registered in
+`GlobalDialogContext` (`openFineDialog(id)`, `openNewFineDialog()`) so it can
+open from the tab, from the customer dialog, from the vehicle dialog and from
+notification links (`/portal-admin?fine=<id>` opens the dialog on load).
+
+- Tab "Bekeuringen" (permissions `view_fines`/`manage_fines`): table with
+  filters status, customer, licence plate, period; columns plate, offence date,
+  description, customer, driver, amount (+ fee), status; button
+  "Nieuwe bekeuring"; row click → `FineDialog`.
+- `NewFineDialog`: plate (with vehicle lookup), offence date/time, received
+  date, reference, description, amount, admin fee (pre-filled), letter upload.
+  On save the attribution runs and the same dialog shows the result: linked
+  automatically, or the candidate list to pick from (customer + reservation +
+  driver, or customer only). Closing after save opens `FineDialog`.
+- `FineDialog` (view/edit): all fields editable while not `paid`/`cancelled`;
+  status actions "Koppelen"/"Ontkoppelen", "Doorbelasten" (asks invoice
+  reference), "Betaald", "Betwist", "Annuleren"; letter preview/download;
+  internal notes; links to the customer, reservation and driver dialogs.
+- Customer dialog, Portaal tab: list of that customer's fines (row → `FineDialog`).
+- Vehicle dialog: a "Bekeuringen" count with a link that opens the tab filtered
+  on that plate.
 - Staff actions go through `AuditLogger` (`fine.create`, `fine.link`,
   `fine.status`).
 - Linking a fine e-mails the customer (template `portal_fine_linked`, editable
@@ -180,13 +188,19 @@ Transitions: `new → in_progress | done | rejected`; `in_progress → done | re
 - Submitting calls `notifyStaffOfPortalEvent({ kind: 'portal_request', … })`
   (existing: toast, badge, e-mail) and logs `request_submitted`.
 
-### Staff UI
+### Staff UI (dialogs)
 
-- New page `/portal-requests` (menu item "Aanvragen" with a badge of `new`
-  requests, permission `manage_portal`; `view_portal` read-only): inbox with
-  filters (status, type, customer), row → detail panel: customer, submitter,
-  linked reservation/fine (links open the existing dialogs), payload rendered
-  per type, message, attachments, status, reply textarea.
+No new page. The Klantenportaal page gets a tab "Aanvragen" (permission
+`manage_portal`; `view_portal` read-only) and the menu badge on Klantenportaal
+counts unread portal notifications plus `new` requests. Row click and
+notification links (`/portal-admin?request=<id>`) open `PortalRequestDialog`,
+registered in `GlobalDialogContext` (`openPortalRequestDialog(id)`).
+
+- Tab "Aanvragen": inbox table with filters (status, type, customer); columns
+  date, type, customer, submitter, short message, status.
+- `PortalRequestDialog`: customer, submitter, linked reservation/fine (links
+  open the existing reservation/fine dialogs), payload rendered per type,
+  message, attachments (open in a new tab), status, reply textarea, actions.
 - Actions: "In behandeling nemen", "Beantwoorden" (reply + status `done`),
   "Afwijzen" (reply required), and for `extension`/`early_return`
   "Goedkeuren": runs the existing reservation conflict check
@@ -198,7 +212,8 @@ Transitions: `new → in_progress | done | rejected`; `in_progress → done | re
 - Every reply e-mails the submitting portal user (template
   `portal_request_replied`) and logs `request_replied` in the portal activity
   log; the customer sees the reply in the portal.
-- Customer dialog Portaal tab shows the customer's last 10 requests with status.
+- Customer dialog Portaal tab shows the customer's last 10 requests with status
+  (row → `PortalRequestDialog`).
 
 ## Error handling
 
