@@ -44,7 +44,13 @@ export default function PortalReservationDetailPage() {
             {row(t("fields.returnMileage"), r.returnMileage)}
             {me?.settings.showPrices && row(t("fields.price"), r.totalPrice ? `€ ${r.totalPrice}` : null)}
           </dl>
-          {canChangeDriver && <ChangeDriverDialog reservation={r} />}
+          <div className="flex flex-wrap gap-2">
+            {canChangeDriver && <ChangeDriverDialog reservation={r} />}
+            {me?.settings.canSubmitRequests && ["booked", "picked_up"].includes(r.status) && (<>
+              <Link href={`/aanvragen/nieuw?type=extension&reservationId=${r.id}`}><Button size="sm" variant="outline" data-testid="button-request-extension">{t("requests.form.extend")}</Button></Link>
+              <Link href={`/aanvragen/nieuw?type=early_return&reservationId=${r.id}`}><Button size="sm" variant="outline">{t("requests.form.earlyReturn")}</Button></Link>
+            </>)}
+          </div>
         </CardContent>
       </Card>
       <Card>

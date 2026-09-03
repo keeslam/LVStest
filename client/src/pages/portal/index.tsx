@@ -9,6 +9,11 @@ import PortalReservationDetailPage from "./reservation-detail";
 import PortalDocumentsPage from "./documents";
 import PortalDriversPage from "./drivers";
 import PortalAccountPage from "./account";
+import PortalFinesPage from "./fines";
+import PortalFineDetailPage from "./fine-detail";
+import PortalRequestsPage from "./requests";
+import PortalRequestDetailPage from "./request-detail";
+import PortalNewRequestPage from "./new-request";
 
 /** Everything under /portaal. Mounted from App.tsx with `nest`, so paths here are relative. */
 export default function PortalApp() {
@@ -23,6 +28,11 @@ export default function PortalApp() {
           <Route path="/documenten" component={PortalDocumentsPage} />
           <Route path="/bestuurders" component={PortalDriversPage} />
           <Route path="/account" component={PortalAccountPage} />
+          <Route path="/bekeuringen/:id" component={PortalFineDetailPage} />
+          <Route path="/bekeuringen" component={PortalFinesPage} />
+          <Route path="/aanvragen/nieuw" component={PortalNewRequestPage} />
+          <Route path="/aanvragen/:id" component={PortalRequestDetailPage} />
+          <Route path="/aanvragen" component={PortalRequestsPage} />
           <Route path="/" component={PortalOverviewPage} />
           <Route>{() => <PortalOverviewPage />}</Route>
         </Switch>

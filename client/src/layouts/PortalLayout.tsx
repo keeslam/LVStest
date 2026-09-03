@@ -44,6 +44,8 @@ export function PortalLayout({ children }: { children: ReactNode }) {
     { href: "/reserveringen", key: "tabs.reservations", show: true },
     { href: "/documenten", key: "tabs.documents", show: me.settings.canViewContracts },
     { href: "/bestuurders", key: "tabs.drivers", show: me.settings.canManageDrivers && me.role === "admin" },
+    { href: "/bekeuringen", key: "tabs.fines", show: me.settings.canViewFines },
+    { href: "/aanvragen", key: "tabs.requests", show: me.settings.canSubmitRequests },
     { href: "/account", key: "tabs.account", show: true },
   ];
 
