@@ -7,6 +7,9 @@ interface DialogState {
   maintenance: { open: boolean; vehicleId: number | null };
   vehicle: { open: boolean; vehicleId: number | null };
   customer: { open: boolean; customerId: number | null; initialTab?: string };
+  fine: { open: boolean; id: number | null };
+  newFine: { open: boolean; licensePlate?: string };
+  portalRequest: { open: boolean; id: number | null };
   expenseVehicle: { open: boolean; vehicleId: number | null };
   expense: { open: boolean; expenseId: number | null; hideVehicleExpensesLink: boolean };
   rdwApkChanges: { open: boolean };
@@ -27,6 +30,12 @@ interface GlobalDialogContextType {
   closeVehicleDialog: () => void;
   openCustomerDialog: (customerId: number, initialTab?: string) => void;
   closeCustomerDialog: () => void;
+  openFineDialog: (id: number) => void;
+  closeFineDialog: () => void;
+  openNewFineDialog: (prefill?: { licensePlate?: string }) => void;
+  closeNewFineDialog: () => void;
+  openPortalRequestDialog: (id: number) => void;
+  closePortalRequestDialog: () => void;
   openExpenseVehicleDialog: (vehicleId: number) => void;
   closeExpenseVehicleDialog: () => void;
   openExpenseDialog: (expenseId: number, hideVehicleExpensesLink?: boolean) => void;
@@ -47,6 +56,9 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     maintenance: { open: false, vehicleId: null },
     vehicle: { open: false, vehicleId: null },
     customer: { open: false, customerId: null },
+    fine: { open: false, id: null },
+    newFine: { open: false },
+    portalRequest: { open: false, id: null },
     expenseVehicle: { open: false, vehicleId: null },
     expense: { open: false, expenseId: null, hideVehicleExpensesLink: false },
     rdwApkChanges: { open: false },
@@ -130,6 +142,13 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const openFineDialog = (id: number) => setDialogState((prev) => ({ ...prev, fine: { open: true, id } }));
+  const closeFineDialog = () => setDialogState((prev) => ({ ...prev, fine: { open: false, id: null } }));
+  const openNewFineDialog = (prefill?: { licensePlate?: string }) => setDialogState((prev) => ({ ...prev, newFine: { open: true, licensePlate: prefill?.licensePlate } }));
+  const closeNewFineDialog = () => setDialogState((prev) => ({ ...prev, newFine: { open: false } }));
+  const openPortalRequestDialog = (id: number) => setDialogState((prev) => ({ ...prev, portalRequest: { open: true, id } }));
+  const closePortalRequestDialog = () => setDialogState((prev) => ({ ...prev, portalRequest: { open: false, id: null } }));
+
   const closeCustomerDialog = () => {
     setDialogState(prev => ({
       ...prev,
@@ -209,6 +228,12 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
         closeVehicleDialog,
         openCustomerDialog,
         closeCustomerDialog,
+        openFineDialog,
+        closeFineDialog,
+        openNewFineDialog,
+        closeNewFineDialog,
+        openPortalRequestDialog,
+        closePortalRequestDialog,
         openExpenseVehicleDialog,
         closeExpenseVehicleDialog,
         openExpenseDialog,

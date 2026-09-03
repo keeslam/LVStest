@@ -10,6 +10,9 @@ import { VehicleViewDialog } from '@/components/vehicles/vehicle-view-dialog';
 import { CustomerViewDialog } from '@/components/customers/customer-view-dialog';
 import { ExpenseViewDialog } from '@/components/expenses/expense-view-dialog';
 import { ExpenseDetailDialog } from '@/components/expenses/expense-detail-dialog';
+import { FineDialog } from '@/components/fines/fine-dialog';
+import { NewFineDialog } from '@/components/fines/new-fine-dialog';
+import { PortalRequestDialog } from '@/components/portal-admin/portal-request-dialog';
 import { ScanDialog } from '@/components/barcodes/scan-dialog';
 import { Vehicle, Reservation } from '@shared/schema';
 
@@ -135,6 +138,11 @@ export function GlobalDialogs() {
           initialTab={dialogState.customer.initialTab}
         />
       )}
+
+      {/* Customer portal: fines and requests (driven by the context) */}
+      <FineDialog />
+      <NewFineDialog />
+      <PortalRequestDialog />
 
       {/* Vehicle Expenses Dialog */}
       {dialogState.expenseVehicle.vehicleId !== null && (
