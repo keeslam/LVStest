@@ -4,6 +4,7 @@ import { storage } from "../storage";
 import { hasPermission } from "../middleware/permissions.js";
 import { UserPermission, insertPortalUserSchema, updatePortalCustomerSettingsSchema, PortalUserRole, type PortalUser } from "../../shared/schema";
 import { portalStorage } from "../services/portal-storage";
+import { requestsStorage } from "../services/portal-requests-storage";
 import { sendPortalInvite } from "../services/portal-mail";
 import { getPortalConfig, savePortalConfig } from "../services/portal-config";
 import { AuditLogger } from "../utils/security/auditLogger";
@@ -122,7 +123,8 @@ export function registerPortalAdminRoutes(app: Express, _deps: RouteDeps): void 
   // ---- staff badge: unread portal notifications --------------------------------
   app.get("/api/portal-admin/unread-count", canView, async (_req, res) => {
     const unread = await storage.getUnreadCustomNotifications();
-    res.json({ count: unread.filter((n) => n.type.startsWith("portal_")).length });
+    const newRequests = await requestsStorage.countNewRequests();
+    res.json({ count: unread.filter((n) => n.type.startsWith("portal_")).length + newRequests, newRequests });
   });
 
   app.post("/api/portal-admin/notifications/mark-read", canView, async (_req, res) => {

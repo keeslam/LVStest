@@ -100,7 +100,8 @@ describe("portal admin routes", () => {
     expect(typeof before).toBe("number");
     const cleared = await request(app).post("/api/portal-admin/notifications/mark-read");
     expect(cleared.status).toBe(200);
-    expect((await request(viewer).get("/api/portal-admin/unread-count")).body.count).toBe(0);
+    const after = (await request(viewer).get("/api/portal-admin/unread-count")).body;
+    expect(after.count).toBe(after.newRequests); // only open requests remain in the badge
   });
 
   it("saves and reads config", async () => {
