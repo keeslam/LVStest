@@ -1,3 +1,4 @@
+import { VehicleFinesLink } from "@/components/fines/vehicle-fines-link";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
@@ -65,7 +66,10 @@ export function VehicleViewDialog({
             </div>
 
             {/* Barcode and key-label printing, straight from the header */}
-            {vehicle && <KeyLabelPrintPanel vehicle={vehicle} />}
+            <div className="flex flex-col items-end gap-1">
+              {vehicle && <KeyLabelPrintPanel vehicle={vehicle} />}
+              {vehicle && <VehicleFinesLink licensePlate={vehicle.licensePlate} />}
+            </div>
           </div>
         </DialogHeader>
 
