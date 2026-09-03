@@ -431,6 +431,7 @@
       "send": "Versturen",
       "extend": "Verlengen",
       "earlyReturn": "Eerder inleveren"
-    }
+    },
+    "date": "Ingediend op"
   }
 }

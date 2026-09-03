@@ -41,3 +41,16 @@ buiten het iframe.
 iframe laadt. Serveer hem op een andere poort (bijvoorbeeld
 `npx serve scripts -l 8099`) en voeg `http://localhost:8099` toe aan de
 toegestane website-adressen.
+
+## E-mails vanuit het portaal
+
+Naast de uitnodigings- en wachtwoordmails gebruikt het portaal twee sjablonen
+(te bewerken onder Communicatie > E-mailsjablonen):
+
+- `portal_fine_linked`: naar de klant zodra een bekeuring aan hem is gekoppeld
+  (bedrag, administratiekosten, link naar de bekeuring in het portaal).
+- `portal_request_replied`: naar de indiener van een aanvraag zodra Lam Groep
+  antwoordt of een verlenging/eerder inleveren goedkeurt.
+
+Beide vereisen werkende SMTP-instellingen onder Instellingen > E-mail; zonder
+SMTP wordt de actie wel uitgevoerd maar blijft de mail achterwege (zie serverlog).

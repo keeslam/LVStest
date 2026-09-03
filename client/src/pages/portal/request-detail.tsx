@@ -29,7 +29,7 @@ export default function PortalRequestDetailPage() {
         <CardContent className="p-4 space-y-3">
           <dl className="space-y-1">
             {row(t("requests.chooseType"), t(`requests.type.${r.type}`))}
-            {row(t("fields.period"), new Date(r.createdAt).toLocaleString())}
+            {row(t("requests.date"), new Date(r.createdAt).toLocaleString())}
             {r.reservationId ? row(t("requests.form.reservation"), `#${r.reservationId}`) : null}
             {r.fineId ? row(t("requests.form.fine"), `#${r.fineId}`) : null}
             {r.type === "extension" ? row(t("requests.form.newEndDate"), p.newEndDate) : null}
