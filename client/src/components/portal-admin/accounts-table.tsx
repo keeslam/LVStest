@@ -45,7 +45,7 @@ export function AccountsTable({ customerId }: { customerId?: number }) {
         <h3 className="font-medium">{t("admin.accounts.title")}</h3>
         <div className="flex gap-2">
           <Button size="sm" variant={onlyPending ? "default" : "outline"} onClick={() => setOnlyPending(!onlyPending)}>{t("admin.accounts.onlyPending")}</Button>
-          {customerId && canManage && <AccountDialog customerId={customerId}><Button size="sm" data-testid="button-invite-portal-account">{t("admin.accounts.invite")}</Button></AccountDialog>}
+          {canManage && <AccountDialog customerId={customerId}><Button size="sm" data-testid="button-invite-portal-account">{t("admin.accounts.invite")}</Button></AccountDialog>}
         </div>
       </div>
       {rows.length === 0 ? <p className="text-sm text-muted-foreground">{t("admin.accounts.empty")}</p> : (

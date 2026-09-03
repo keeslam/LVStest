@@ -39,9 +39,11 @@ interface CustomerDetailsProps {
   customerId: number;
   inDialog?: boolean;
   onClose?: () => void;
+  /** Tab to open first, e.g. "portal" from the portal overview. */
+  initialTab?: string;
 }
 
-export function CustomerDetails({ customerId, inDialog = false, onClose }: CustomerDetailsProps) {
+export function CustomerDetails({ customerId, inDialog = false, onClose, initialTab }: CustomerDetailsProps) {
   const { user: staffUser } = useAuth();
   const canSeePortal = staffUser?.role === UserRole.ADMIN
     || ((staffUser?.permissions as string[] | undefined) ?? []).some((p) => p === UserPermission.VIEW_PORTAL || p === UserPermission.MANAGE_PORTAL);
@@ -587,7 +589,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose }: Custo
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="personal" className="w-full">
+      <Tabs defaultValue={initialTab === "portal" && !canSeePortal ? "personal" : (initialTab ?? "personal")} className="w-full">
         <TabsList className={`grid w-full ${canSeePortal ? 'grid-cols-5' : 'grid-cols-4'} max-w-4xl`}>
           <TabsTrigger value="personal">{t('details.tabPersonalInfo')}</TabsTrigger>
           <TabsTrigger value="drivers">{t('details.tabDrivers')}</TabsTrigger>

@@ -6,7 +6,7 @@ interface DialogState {
   apk: { open: boolean; vehicleId: number | null };
   maintenance: { open: boolean; vehicleId: number | null };
   vehicle: { open: boolean; vehicleId: number | null };
-  customer: { open: boolean; customerId: number | null };
+  customer: { open: boolean; customerId: number | null; initialTab?: string };
   expenseVehicle: { open: boolean; vehicleId: number | null };
   expense: { open: boolean; expenseId: number | null; hideVehicleExpensesLink: boolean };
   rdwApkChanges: { open: boolean };
@@ -25,7 +25,7 @@ interface GlobalDialogContextType {
   closeMaintenanceDialog: () => void;
   openVehicleDialog: (vehicleId: number) => void;
   closeVehicleDialog: () => void;
-  openCustomerDialog: (customerId: number) => void;
+  openCustomerDialog: (customerId: number, initialTab?: string) => void;
   closeCustomerDialog: () => void;
   openExpenseVehicleDialog: (vehicleId: number) => void;
   closeExpenseVehicleDialog: () => void;
@@ -123,10 +123,10 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  const openCustomerDialog = (customerId: number) => {
+  const openCustomerDialog = (customerId: number, initialTab?: string) => {
     setDialogState(prev => ({
       ...prev,
-      customer: { open: true, customerId }
+      customer: { open: true, customerId, initialTab }
     }));
   };
 

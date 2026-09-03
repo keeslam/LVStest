@@ -160,6 +160,17 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
 
   app.use("/api/portal", portalSession, portalPassport.initialize(), portalPassport.session(), csrf.attachCsrfToken, csrf.csrfProtection);
 
+  // last_seen_at is written at most once a minute per user, so the staff
+  // "online" overview costs no extra write on ordinary requests.
+  const lastSeenWrites = new Map<number, number>();
+  const LAST_SEEN_THROTTLE_MS = 60_000;
+  const touchLastSeen = (userId: number) => {
+    const now = Date.now();
+    if ((lastSeenWrites.get(userId) ?? 0) > now - LAST_SEEN_THROTTLE_MS) return;
+    lastSeenWrites.set(userId, now);
+    portalStorage.updatePortalUser(userId, { lastSeenAt: new Date(now) }).catch((e) => console.error("portal last_seen update failed:", e));
+  };
+
   const requirePortalUser: RequestHandler = async (req, res, next) => {
     const raw = req.user as unknown as PortalUser | undefined;
     if (!raw || !(req as any).isAuthenticated?.()) return portalError(res, 401, PORTAL_ERROR.NOT_AUTHENTICATED, "Not authenticated");
@@ -169,6 +180,7 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
       return portalError(res, 403, code!, "Account is not available");
     }
     req.portalUser = ctx;
+    touchLastSeen(ctx.user.id);
     next();
   };
 

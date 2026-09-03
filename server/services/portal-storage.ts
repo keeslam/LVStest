@@ -18,7 +18,26 @@ export type PortalReservation = Reservation & { vehicle?: Vehicle; driver?: Driv
 export type PortalDocument = Document & { kind: "contract" | "damage_check" };
 
 type PortalUserUpdate = Partial<Pick<PortalUser,
-  "fullName" | "role" | "driverId" | "active" | "passwordHash" | "inviteTokenHash" | "inviteExpiresAt" | "lastLoginAt" | "updatedBy">>;
+  "fullName" | "role" | "driverId" | "active" | "passwordHash" | "inviteTokenHash" | "inviteExpiresAt" | "lastLoginAt" | "lastSeenAt" | "updatedBy">>;
+
+/** One row per customer that has a portal (settings row or at least one account). */
+export interface PortalCustomerOverviewRow {
+  customerId: number;
+  customerName: string;
+  portalEnabled: boolean;
+  accountsTotal: number;
+  accountsActive: number;
+  accountsBlocked: number;
+  onlineNow: number;
+  pendingInvites: number;
+  expiredInvites: number;
+  lastLoginAt: string | null;
+  lastActivityAt: string | null;
+  lastActivityAction: string | null;
+  lastActivityUser: string | null;
+}
+
+export const ONLINE_WINDOW_MINUTES = 10;
 
 const CUSTOMER_VISIBLE_TYPES = ["standard", "replacement"];
 
@@ -122,6 +141,50 @@ export const portalStorage = {
     const [row] = await db.update(portalCustomerSettings).set({ ...data, updatedBy, updatedAt: new Date() })
       .where(eq(portalCustomerSettings.customerId, customerId)).returning();
     return row;
+  },
+
+  // ---- staff overview per customer ------------------------------------------
+  // Timestamps are stored as UTC wall-clock (drizzle timestamp without tz), so
+  // compare against now() expressed in UTC as well.
+  async listCustomersOverview(): Promise<PortalCustomerOverviewRow[]> {
+    const result = await db.execute(sql`
+      WITH acc AS (
+        SELECT customer_id,
+               count(*)::int                                                         AS accounts_total,
+               count(*) FILTER (WHERE active AND password_hash IS NOT NULL)::int      AS accounts_active,
+               count(*) FILTER (WHERE NOT active)::int                                AS accounts_blocked,
+               count(*) FILTER (WHERE active AND last_seen_at > timezone('utc', now()) - make_interval(mins => ${ONLINE_WINDOW_MINUTES}))::int AS online_now,
+               count(*) FILTER (WHERE invite_token_hash IS NOT NULL AND invite_expires_at > timezone('utc', now()))::int  AS pending_invites,
+               count(*) FILTER (WHERE invite_token_hash IS NOT NULL AND invite_expires_at <= timezone('utc', now()))::int AS expired_invites,
+               max(last_login_at)                                                     AS last_login_at
+        FROM portal_users GROUP BY customer_id
+      ),
+      act AS (
+        SELECT DISTINCT ON (l.customer_id) l.customer_id, l.action, l.created_at, u.full_name
+        FROM portal_activity_log l LEFT JOIN portal_users u ON u.id = l.portal_user_id
+        ORDER BY l.customer_id, l.created_at DESC, l.id DESC
+      )
+      SELECT c.id AS customer_id, COALESCE(c.company_name, c.name) AS customer_name,
+             COALESCE(s.portal_enabled, true) AS portal_enabled,
+             COALESCE(acc.accounts_total, 0) AS accounts_total, COALESCE(acc.accounts_active, 0) AS accounts_active,
+             COALESCE(acc.accounts_blocked, 0) AS accounts_blocked, COALESCE(acc.online_now, 0) AS online_now,
+             COALESCE(acc.pending_invites, 0) AS pending_invites, COALESCE(acc.expired_invites, 0) AS expired_invites,
+             acc.last_login_at, act.created_at AS last_activity_at, act.action AS last_activity_action, act.full_name AS last_activity_user
+      FROM customers c
+      LEFT JOIN portal_customer_settings s ON s.customer_id = c.id
+      LEFT JOIN acc ON acc.customer_id = c.id
+      LEFT JOIN act ON act.customer_id = c.id
+      WHERE s.id IS NOT NULL OR acc.customer_id IS NOT NULL
+      ORDER BY acc.online_now DESC NULLS LAST, act.created_at DESC NULLS LAST, customer_name
+    `);
+    return (result.rows as any[]).map((r) => ({
+      customerId: r.customer_id, customerName: r.customer_name, portalEnabled: r.portal_enabled,
+      accountsTotal: r.accounts_total, accountsActive: r.accounts_active, accountsBlocked: r.accounts_blocked,
+      onlineNow: r.online_now, pendingInvites: r.pending_invites, expiredInvites: r.expired_invites,
+      lastLoginAt: r.last_login_at ? new Date(r.last_login_at).toISOString() : null,
+      lastActivityAt: r.last_activity_at ? new Date(r.last_activity_at).toISOString() : null,
+      lastActivityAction: r.last_activity_action ?? null, lastActivityUser: r.last_activity_user ?? null,
+    }));
   },
 
   // ---- activity -------------------------------------------------------------

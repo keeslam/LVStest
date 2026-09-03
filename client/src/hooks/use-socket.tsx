@@ -71,6 +71,16 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       
       const { entityType, action, data } = event;
 
+      // A customer did something in the portal: show it right away, and let
+      // the Klantenportaal badge and lists refresh.
+      if (entityType === 'portal') {
+        toast({ title: data?.title ?? 'Klantenportaal', description: data?.description });
+        queryClient.invalidateQueries({ queryKey: ['/api/portal-admin/unread-count'] });
+        queryClient.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('/api/portal-admin') });
+        queryClient.invalidateQueries({ queryKey: ['/api/custom-notifications/unread'] });
+        return;
+      }
+
       // Invalidate React Query cache for real-time updates
       // This will automatically refetch active queries and update the UI
       invalidateQueries(entityType, action, data);

@@ -78,6 +78,31 @@ describe("portal admin routes", () => {
     expect(list.body.find((v: any) => v.id === vehicleId).offeredOnline).toBe(false);
   });
 
+  it("lists a per-customer overview with online users and open invitations", async () => {
+    const c = await createTestCustomer("Ovw");
+    const u1 = await portalStorage.createPortalUser({ customerId: c.id, email: `ovw1@${TEST_EMAIL_DOMAIN}`, fullName: "Online", role: "admin" }, "t");
+    await portalStorage.updatePortalUser(u1.id, { passwordHash: "x", lastSeenAt: new Date(), lastLoginAt: new Date() });
+    const u2 = await portalStorage.createPortalUser({ customerId: c.id, email: `ovw2@${TEST_EMAIL_DOMAIN}`, fullName: "Pending", role: "admin" }, "t");
+    await portalStorage.updatePortalUser(u2.id, { inviteTokenHash: "h1", inviteExpiresAt: new Date(Date.now() + 3600_000) });
+    const u3 = await portalStorage.createPortalUser({ customerId: c.id, email: `ovw3@${TEST_EMAIL_DOMAIN}`, fullName: "Expired", role: "admin" }, "t");
+    await portalStorage.updatePortalUser(u3.id, { inviteTokenHash: "h2", inviteExpiresAt: new Date(Date.now() - 3600_000), lastSeenAt: new Date(Date.now() - 3600_000) });
+    await portalStorage.logActivity({ customerId: c.id, portalUserId: u1.id, action: "login", ip: "::1" });
+
+    const res = await request(viewer).get("/api/portal-admin/customers-overview");
+    expect(res.status).toBe(200);
+    const row = res.body.find((r: any) => r.customerId === c.id);
+    expect(row).toMatchObject({ accountsTotal: 3, accountsActive: 1, onlineNow: 1, pendingInvites: 1, expiredInvites: 1, lastActivityAction: "login", lastActivityUser: "Online" });
+    expect(row.lastLoginAt).toBeTruthy();
+  });
+
+  it("counts and clears unread portal notifications", async () => {
+    const before = (await request(viewer).get("/api/portal-admin/unread-count")).body.count;
+    expect(typeof before).toBe("number");
+    const cleared = await request(app).post("/api/portal-admin/notifications/mark-read");
+    expect(cleared.status).toBe(200);
+    expect((await request(viewer).get("/api/portal-admin/unread-count")).body.count).toBe(0);
+  });
+
   it("saves and reads config", async () => {
     const put = await request(app).put(`/api/portal-admin/config`).send({ allowedFrameOrigins: ["https://lamgroep.nl", "http://lamgroep.local"], notificationEmail: `staff@${TEST_EMAIL_DOMAIN}`, portalBaseUrl: "https://portaal.lamgroep.nl" });
     expect(put.status).toBe(200);

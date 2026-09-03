@@ -114,6 +114,26 @@ export function registerPortalAdminRoutes(app: Express, _deps: RouteDeps): void 
     res.json(row);
   });
 
+  // ---- per-customer overview (online, invitations, last activity) --------------
+  app.get("/api/portal-admin/customers-overview", canView, async (_req, res) => {
+    res.json(await portalStorage.listCustomersOverview());
+  });
+
+  // ---- staff badge: unread portal notifications --------------------------------
+  app.get("/api/portal-admin/unread-count", canView, async (_req, res) => {
+    const unread = await storage.getUnreadCustomNotifications();
+    res.json({ count: unread.filter((n) => n.type.startsWith("portal_")).length });
+  });
+
+  app.post("/api/portal-admin/notifications/mark-read", canView, async (_req, res) => {
+    const unread = await storage.getUnreadCustomNotifications();
+    let marked = 0;
+    for (const n of unread) {
+      if (n.type.startsWith("portal_") && (await storage.markCustomNotificationAsRead(n.id))) marked += 1;
+    }
+    res.json({ marked });
+  });
+
   // ---- activity ------------------------------------------------------------------
   app.get("/api/portal-admin/activity", canView, async (req, res) => {
     const rawCustomer = req.query.customerId ? parseInt(String(req.query.customerId), 10) : undefined;

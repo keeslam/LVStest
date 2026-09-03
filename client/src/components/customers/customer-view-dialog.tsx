@@ -17,13 +17,16 @@ interface CustomerViewDialogProps {
   children?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Tab to open first (e.g. "portal"). */
+  initialTab?: string;
 }
 
-export function CustomerViewDialog({ 
-  customerId, 
-  children, 
+export function CustomerViewDialog({
+  customerId,
+  children,
   open: controlledOpen,
-  onOpenChange: controlledOnOpenChange 
+  onOpenChange: controlledOnOpenChange,
+  initialTab,
 }: CustomerViewDialogProps) {
   const { t } = useTranslation("customers");
   const [internalOpen, setInternalOpen] = useState(false);
@@ -84,10 +87,11 @@ export function CustomerViewDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="mt-4">
-          <CustomerDetails 
-            customerId={customerId} 
+          <CustomerDetails
+            customerId={customerId}
             inDialog={true}
             onClose={handleClose}
+            initialTab={initialTab}
           />
         </div>
       </DialogContent>

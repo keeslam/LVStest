@@ -1,4 +1,5 @@
 import { storage } from "../storage";
+import { broadcastDataUpdate } from "../realtime-events";
 import { sendEmail } from "../utils/email-service";
 import { getPortalConfig } from "./portal-config";
 import { getPortalTemplate, renderTemplate, PORTAL_TEMPLATE } from "./portal-mail";
@@ -21,7 +22,7 @@ export interface PortalStaffEvent {
  */
 export async function notifyStaffOfPortalEvent(event: PortalStaffEvent): Promise<void> {
   try {
-    await storage.createCustomNotification({
+    const notification = await storage.createCustomNotification({
       title: event.title,
       description: event.description,
       date: new Date().toISOString().slice(0, 10),
@@ -30,6 +31,11 @@ export async function notifyStaffOfPortalEvent(event: PortalStaffEvent): Promise
       icon: "Users",
       priority: "normal",
       isRead: false,
+    });
+    // Live toast + badge in every open staff session (see use-socket.tsx).
+    broadcastDataUpdate("portal", event.kind, {
+      notificationId: notification.id, title: event.title, description: event.description,
+      link: event.link ?? "", customerId: event.customerId,
     });
   } catch (error) {
     console.error("portal notification (in-app) failed:", error);

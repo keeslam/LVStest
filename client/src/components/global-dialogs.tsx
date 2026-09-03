@@ -132,6 +132,7 @@ export function GlobalDialogs() {
           open={dialogState.customer.open}
           onOpenChange={(open) => !open && closeCustomerDialog()}
           customerId={dialogState.customer.customerId}
+          initialTab={dialogState.customer.initialTab}
         />
       )}
 

@@ -2,6 +2,8 @@ import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import { UserRole, UserPermission } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 type NavItem = {
   href: string;
@@ -40,6 +42,17 @@ export function SidebarNav() {
 
   const filteredNavItems = navItems.filter(hasPermission);
 
+  // Unread "a customer did something in the portal" notifications, shown as a
+  // badge on the Klantenportaal item. Refreshed live via the socket.
+  const canSeePortal = filteredNavItems.some((item) => item.href === "/portal-admin");
+  const { data: portalUnread } = useQuery<{ count: number }>({
+    queryKey: ["/api/portal-admin/unread-count"],
+    queryFn: async () => (await apiRequest("GET", "/api/portal-admin/unread-count")).json(),
+    enabled: canSeePortal,
+    refetchInterval: 5 * 60 * 1000,
+  });
+  const badgeFor = (href: string) => (href === "/portal-admin" && portalUnread && portalUnread.count > 0 ? portalUnread.count : 0);
+
   return (
     <nav className="mt-4 px-2">
       <div className="space-y-1">
@@ -62,6 +75,11 @@ export function SidebarNav() {
                 {getNavIcon(item.icon, isActive)}
               </span>
               {t(item.labelKey)}
+              {badgeFor(item.href) > 0 && (
+                <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold text-white" data-testid="badge-portal-unread">
+                  {badgeFor(item.href)}
+                </span>
+              )}
             </Link>
           );
         })}

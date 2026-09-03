@@ -445,6 +445,9 @@ export const portalUsers = pgTable("portal_users", {
   inviteTokenHash: text("invite_token_hash"),
   inviteExpiresAt: timestamp("invite_expires_at"),
   lastLoginAt: timestamp("last_login_at"),
+  // Touched at most once a minute while the user is active; "online" in the
+  // staff overview means seen within the last 10 minutes.
+  lastSeenAt: timestamp("last_seen_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: text("created_by"),
@@ -455,7 +458,7 @@ export const portalUsers = pgTable("portal_users", {
 }));
 
 export const insertPortalUserSchema = createInsertSchema(portalUsers)
-  .omit({ id: true, createdAt: true, updatedAt: true, passwordHash: true, inviteTokenHash: true, inviteExpiresAt: true, lastLoginAt: true })
+  .omit({ id: true, createdAt: true, updatedAt: true, passwordHash: true, inviteTokenHash: true, inviteExpiresAt: true, lastLoginAt: true, lastSeenAt: true })
   .extend({
     email: z.string().email().transform((v) => v.trim().toLowerCase()),
     fullName: z.string().trim().min(1),
