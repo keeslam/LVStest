@@ -181,7 +181,8 @@
     "periodTo": "tot {{date}}",
     "periodToTbd": "tot nader te bepalen",
     "notProvided": "Niet opgegeven",
-    "notRecorded": "Niet geregistreerd"
+    "notRecorded": "Niet geregistreerd",
+    "portalAccount": "Portaalaccount"
   },
   "editDialog": {
     "title": "Klant bewerken",
@@ -262,6 +263,7 @@
     "columnEmail": "E-mail",
     "columnPhone": "Telefoon",
     "columnCity": "Plaats",
-    "newReservationButton": "Nieuwe reservering"
+    "newReservationButton": "Nieuwe reservering",
+    "portalBadge": "Portaal ({{count}})"
   }
 }

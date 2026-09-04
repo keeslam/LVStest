@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { usePortalAccounts } from "@/hooks/use-portal-accounts";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useLocation } from "wouter";
@@ -73,6 +74,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
   const customerQueryKey = [`/api/customers/${customerId}`];
   const customerReservationsQueryKey = [`/api/reservations/customer/${customerId}`];
   const customerDriversQueryKey = [`/api/customers/${customerId}/drivers`];
+  const portalAccounts = usePortalAccounts();
   
   // Fetch customer details with proper caching
   const { 
@@ -993,6 +995,9 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
                                   {driver.displayName}
                                   {driver.isPrimaryDriver && (
                                     <Badge className="bg-blue-100 text-blue-800 border-blue-200">{t('details.primary')}</Badge>
+                                  )}
+                                  {portalAccounts.forDriver(driver.id, driver.email) && (
+                                    <Badge variant="outline" title={portalAccounts.forDriver(driver.id, driver.email)?.email} data-testid={`badge-driver-portal-${driver.id}`}>{t('details.portalAccount')}</Badge>
                                   )}
                                 </div>
                                 {driver.firstName || driver.lastName ? (

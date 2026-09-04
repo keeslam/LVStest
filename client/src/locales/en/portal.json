@@ -267,7 +267,11 @@
       "close": "Close",
       "permissions": "Permissions for this account",
       "permissionsHint": "Unticking takes a feature away for this account. The customer settings remain the ceiling.",
-      "permissionsReset": "Allow everything again"
+      "permissionsReset": "Allow everything again",
+      "prefilledFrom": {
+        "customer": "Prefilled from the customer record; feel free to change it.",
+        "driver": "Prefilled from the driver; feel free to change it."
+      }
     },
     "settings": {
       "title": "Settings for this customer",

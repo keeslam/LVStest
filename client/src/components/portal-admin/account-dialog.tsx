@@ -37,6 +37,9 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
   const [role, setRole] = useState<"admin" | "driver">(account?.role ?? "admin");
   const [driverId, setDriverId] = useState<string>(account?.driverId ? String(account.driverId) : "");
   const [permissions, setPermissions] = useState<PortalAccountPermissions>(account?.permissions ?? {});
+  // Which fields still hold a suggested value (from the customer or driver) rather than something staff typed.
+  const [autoFilled, setAutoFilled] = useState<{ email: boolean; fullName: boolean }>({ email: false, fullName: false });
+  const [prefillSource, setPrefillSource] = useState<{ email: "customer" | "driver" | null; name: "customer" | "driver" | null }>({ email: null, name: null });
   // The row component stays mounted while the list is open: start every opening from the stored account.
   useEffect(() => {
     if (!open) return;
@@ -47,6 +50,21 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
   const needsPicker = fixedCustomerId === undefined && !account;
   const { data: customers = [] } = useQuery<Customer[]>({ queryKey: ["/api/customers"], enabled: open && needsPicker });
   const { data: drivers = [] } = useQuery<Driver[]>({ queryKey: [`/api/customers/${customerId}/drivers`], enabled: open && customerId !== null });
+  const { data: customer } = useQuery<Customer>({ queryKey: [`/api/customers/${customerId}`], enabled: open && !account && customerId !== null });
+
+  // Suggest the address and name: from the driver for a driver account, else from the customer.
+  // Typed values are never overwritten; a suggestion is replaced when the source changes.
+  useEffect(() => {
+    if (!open || account) return;
+    const driver = role === "driver" && driverId ? drivers.find((d) => String(d.id) === driverId) : undefined;
+    // A driver without an e-mail address falls back to the customer address.
+    const suggestedEmail = driver?.email || customer?.email || "";
+    const suggestedName = driver ? driver.displayName : customer?.contactPerson || customer?.driverName || "";
+    setPrefillSource({ email: driver?.email ? "driver" : customer?.email ? "customer" : null, name: driver ? "driver" : customer ? "customer" : null });
+    if (suggestedEmail && (email === "" || autoFilled.email)) { setEmail(suggestedEmail); setAutoFilled((a) => ({ ...a, email: true })); }
+    if (suggestedName && (fullName === "" || autoFilled.fullName)) { setFullName(suggestedName); setAutoFilled((a) => ({ ...a, fullName: true })); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, account, customer, role, driverId, drivers]);
 
   const customerOptions = useMemo(() => {
     const q = customerSearch.trim().toLowerCase();
@@ -97,8 +115,12 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
               </select>
             </div>
           )}
-          <div><Label htmlFor="pa-email">{t("admin.dialog.email")}</Label><Input id="pa-email" type="email" value={email} disabled={Boolean(account)} onChange={(e) => setEmail(e.target.value)} required /></div>
-          <div><Label htmlFor="pa-name">{t("admin.dialog.fullName")}</Label><Input id="pa-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required /></div>
+          <div>
+            <Label htmlFor="pa-email">{t("admin.dialog.email")}</Label>
+            <Input id="pa-email" type="email" value={email} disabled={Boolean(account)} onChange={(e) => { setEmail(e.target.value); setAutoFilled((a) => ({ ...a, email: false })); }} required data-testid="input-account-email" />
+            {!account && autoFilled.email && prefillSource.email && <p className="mt-1 text-xs text-muted-foreground">{t(`admin.dialog.prefilledFrom.${prefillSource.email}`)}</p>}
+          </div>
+          <div><Label htmlFor="pa-name">{t("admin.dialog.fullName")}</Label><Input id="pa-name" value={fullName} onChange={(e) => { setFullName(e.target.value); setAutoFilled((a) => ({ ...a, fullName: false })); }} required data-testid="input-account-name" /></div>
           <div>
             <Label htmlFor="pa-role">{t("admin.dialog.role")}</Label>
             <select id="pa-role" className="w-full rounded-md border px-3 py-2 text-sm" value={role} onChange={(e) => setRole(e.target.value as "admin" | "driver")}>

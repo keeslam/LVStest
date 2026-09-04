@@ -181,7 +181,8 @@
     "periodTo": "to {{date}}",
     "periodToTbd": "to TBD",
     "notProvided": "Not provided",
-    "notRecorded": "Not recorded"
+    "notRecorded": "Not recorded",
+    "portalAccount": "Portal account"
   },
   "editDialog": {
     "title": "Edit Customer",
@@ -262,6 +263,7 @@
     "columnEmail": "Email",
     "columnPhone": "Phone",
     "columnCity": "City",
-    "newReservationButton": "New Reservation"
+    "newReservationButton": "New Reservation",
+    "portalBadge": "Portal ({{count}})"
   }
 }

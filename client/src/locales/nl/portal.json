@@ -267,7 +267,11 @@
       "close": "Sluiten",
       "permissions": "Rechten voor dit account",
       "permissionsHint": "Uitvinken haalt een onderdeel weg voor dit account. De instellingen van de klant blijven de bovengrens.",
-      "permissionsReset": "Alles weer toestaan"
+      "permissionsReset": "Alles weer toestaan",
+      "prefilledFrom": {
+        "customer": "Vooraf ingevuld vanuit de klantgegevens; aanpassen mag.",
+        "driver": "Vooraf ingevuld vanuit de bestuurder; aanpassen mag."
+      }
     },
     "settings": {
       "title": "Instellingen voor deze klant",

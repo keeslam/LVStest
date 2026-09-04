@@ -17,6 +17,7 @@ import { formatPhoneNumber } from "@/lib/format-utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { usePortalAccounts } from "@/hooks/use-portal-accounts";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { X, Filter, ArrowUpDown } from "lucide-react";
 import { subDays } from "date-fns";
@@ -222,6 +223,7 @@ export default function CustomersIndex() {
   ];
   
   // Define table columns with sortable headers
+  const portalAccounts = usePortalAccounts();
   const columns: ColumnDef<Customer>[] = [
     {
       accessorKey: "name",
@@ -246,7 +248,17 @@ export default function CustomersIndex() {
       header: t('indexPage.columnEmail'),
       cell: ({ row }) => {
         const email = row.getValue("email") as string;
-        return email || "—";
+        const accounts = portalAccounts.forCustomer(row.original.id);
+        return (
+          <span className="flex flex-wrap items-center gap-1.5">
+            {email || "—"}
+            {accounts.length > 0 && (
+              <Badge variant="outline" className="text-xs" title={accounts.map((a) => a.email).join(", ")} data-testid={`badge-portal-${row.original.id}`}>
+                {t('indexPage.portalBadge', { count: accounts.length })}
+              </Badge>
+            )}
+          </span>
+        );
       },
     },
     {
