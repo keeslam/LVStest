@@ -143,7 +143,8 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     if (!doc || !file) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Document not found");
     await logPortalActivity(req, "document_downloaded", { entity: "document", entityId: id });
     res.setHeader("Content-Type", doc.contentType || "application/octet-stream");
-    res.setHeader("Content-Disposition", `attachment; filename="${sanitizeFilename(doc.fileName)}"`);
+    const disposition = req.query.inline === "1" ? "inline" : "attachment";
+    res.setHeader("Content-Disposition", `${disposition}; filename="${sanitizeFilename(doc.fileName)}"`);
     fs.createReadStream(file).pipe(res);
   });
 

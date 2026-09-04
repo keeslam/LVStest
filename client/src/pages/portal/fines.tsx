@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { useTranslation } from "react-i18next";
 import type { PortalFineDto } from "@shared/fines";
 import { portalQueryFn } from "@/lib/portal-api";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function PortalFinesPage() {
   const { t } = useTranslation("portal");
+  const { openFine } = usePortalDialogs();
   const { data = [], isLoading } = useQuery<PortalFineDto[]>({ queryKey: ["portal", "/api/portal/fines"], queryFn: portalQueryFn });
   if (isLoading) return null;
   return (
@@ -15,7 +16,7 @@ export default function PortalFinesPage() {
       <h1 className="text-lg font-semibold">{t("fines.title")}</h1>
       {data.length === 0 && <p className="text-sm text-muted-foreground">{t("fines.empty")}</p>}
       {data.map((f) => (
-        <Link key={f.id} href={`/bekeuringen/${f.id}`} className="block">
+        <button key={f.id} type="button" onClick={() => openFine(f.id)} className="block w-full text-left" data-testid={`portal-fine-${f.id}`}>
           <Card className="hover:bg-muted/40 transition-colors">
             <CardContent className="p-4 flex flex-wrap items-center justify-between gap-2">
               <div>
@@ -28,7 +29,7 @@ export default function PortalFinesPage() {
               </div>
             </CardContent>
           </Card>
-        </Link>
+        </button>
       ))}
     </div>
   );

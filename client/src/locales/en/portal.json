@@ -90,7 +90,9 @@
     "empty": "There are no documents yet.",
     "contract": "Contract",
     "damage_check": "Damage report",
-    "reservation": "Reservation #{{id}}"
+    "reservation": "Reservation #{{id}}",
+    "open": "Open",
+    "noPreview": "This file type cannot be shown here. Use Download."
   },
   "drivers": {
     "title": "Drivers",

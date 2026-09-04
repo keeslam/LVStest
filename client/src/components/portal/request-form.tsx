@@ -1,6 +1,5 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import type { PortalReservationDto } from "@shared/portal-types";
 import type { PortalFineDto } from "@shared/fines";
@@ -12,11 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
-export function RequestForm({ initialType, reservationId: initialReservation, fineId: initialFine }: { initialType?: PortalRequestTypeValue; reservationId?: number; fineId?: number }) {
+export function RequestForm({ initialType, reservationId: initialReservation, fineId: initialFine, onSubmitted }: { initialType?: PortalRequestTypeValue; reservationId?: number; fineId?: number; onSubmitted: (id: number) => void }) {
   const { t } = useTranslation("portal");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [, navigate] = useLocation();
   const [type, setType] = useState<PortalRequestTypeValue>(initialType ?? PortalRequestType.OTHER);
   const [reservationId, setReservationId] = useState(initialReservation ? String(initialReservation) : "");
   const [fineId, setFineId] = useState(initialFine ? String(initialFine) : "");
@@ -42,7 +40,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
     onSuccess: async (r) => {
       await queryClient.invalidateQueries({ queryKey: ["portal", "/api/portal/requests"] });
       toast({ title: t("requests.submitted") });
-      navigate(`/aanvragen/${r.id}`);
+      onSubmitted(r.id);
     },
     onError: (e) => toast({ title: t(`errors.${e instanceof PortalApiError ? e.code : "PORTAL_SERVER_ERROR"}`, { defaultValue: (e as Error).message }), variant: "destructive" }),
   });

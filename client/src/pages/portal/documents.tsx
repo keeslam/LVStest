@@ -4,10 +4,12 @@ import type { PortalDocumentDto } from "@shared/portal-types";
 import { portalQueryFn } from "@/lib/portal-api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Eye } from "lucide-react";
+import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 
 export default function PortalDocumentsPage() {
   const { t } = useTranslation("portal");
+  const { openDocument } = usePortalDialogs();
   const { data = [], isLoading } = useQuery<PortalDocumentDto[]>({ queryKey: ["portal", "/api/portal/documents"], queryFn: portalQueryFn });
   if (isLoading) return null;
   const groups = new Map<number | null, PortalDocumentDto[]>();
@@ -29,10 +31,13 @@ export default function PortalDocumentsPage() {
                     {d.fileName}
                     <span className="ml-2 text-muted-foreground">{new Date(d.uploadDate).toLocaleDateString()}</span>
                   </span>
-                  {/* target=_blank: never navigate the iframe itself away */}
-                  <Button asChild size="sm" variant="outline">
-                    <a href={`/api/portal/documents/${d.id}/download`} target="_blank" rel="noopener"><Download className="mr-1 h-4 w-4" />{t("actions.download")}</a>
-                  </Button>
+                  <span className="flex gap-1">
+                    <Button size="sm" onClick={() => openDocument(d)} data-testid={`button-open-document-${d.id}`}><Eye className="mr-1 h-4 w-4" />{t("documents.open")}</Button>
+                    {/* target=_blank: never navigate the iframe itself away */}
+                    <Button asChild size="sm" variant="outline">
+                      <a href={`/api/portal/documents/${d.id}/download`} target="_blank" rel="noopener"><Download className="mr-1 h-4 w-4" />{t("actions.download")}</a>
+                    </Button>
+                  </span>
                 </li>
               ))}
             </ul>

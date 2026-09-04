@@ -90,7 +90,9 @@
     "empty": "Er zijn nog geen documenten.",
     "contract": "Contract",
     "damage_check": "Schadeformulier",
-    "reservation": "Reservering #{{id}}"
+    "reservation": "Reservering #{{id}}",
+    "open": "Openen",
+    "noPreview": "Dit bestandstype kan hier niet getoond worden. Gebruik Downloaden."
   },
   "drivers": {
     "title": "Bestuurders",

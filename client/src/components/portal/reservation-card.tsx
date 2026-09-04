@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { useTranslation } from "react-i18next";
 import type { PortalReservationDto } from "@shared/portal-types";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,8 +14,9 @@ export function formatPortalDate(value: string | null | undefined): string {
 export function ReservationCard({ reservation, showPrice }: { reservation: PortalReservationDto; showPrice: boolean }) {
   const { t } = useTranslation("portal");
   const r = reservation;
+  const { openReservation } = usePortalDialogs();
   return (
-    <Link href={`/reserveringen/${r.id}`} className="block">
+    <button type="button" onClick={() => openReservation(r.id)} className="block w-full text-left" data-testid={`portal-reservation-${r.id}`}>
       <Card className="hover:bg-muted/40 transition-colors">
         <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -34,6 +35,6 @@ export function ReservationCard({ reservation, showPrice }: { reservation: Porta
           </div>
         </CardContent>
       </Card>
-    </Link>
+    </button>
   );
 }
