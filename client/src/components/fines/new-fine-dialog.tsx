@@ -50,6 +50,7 @@ export function NewFineDialog() {
       const body = new FormData();
       Object.entries(form).forEach(([k, v]) => { if (v !== "") body.append(k, k === "offenceAt" ? new Date(v).toISOString() : v); });
       if (file) body.append("letterFile", file);
+      if (scan) body.append("scanned", "1");
       const res = await fetch("/api/fines", { method: "POST", body, credentials: "include" });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message ?? res.statusText);
       return res.json() as Promise<{ fine: { id: number; status: string } }>;

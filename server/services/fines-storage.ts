@@ -7,7 +7,7 @@ import type { PortalScope } from "./portal-storage";
 export type FineListRow = Fine & { customerName: string | null; driverName: string | null };
 export type InsertFineRow = typeof fines.$inferInsert;
 
-export interface FineFilters { status?: string; customerId?: number; licensePlate?: string; from?: string; to?: string }
+export interface FineFilters { status?: string; customerId?: number; licensePlate?: string; from?: string; to?: string; importFileId?: number }
 
 async function select(where: SQL | undefined): Promise<FineListRow[]> {
   const rows = await db.select({
@@ -48,6 +48,7 @@ export const finesStorage = {
       f.licensePlate ? eq(fines.licensePlate, f.licensePlate) : undefined,
       f.from ? gte(fines.offenceAt, new Date(f.from)) : undefined,
       f.to ? lte(fines.offenceAt, new Date(`${f.to}T23:59:59`)) : undefined,
+      f.importFileId ? eq(fines.importFileId, f.importFileId) : undefined,
     ));
   },
   async listFinesForCustomer(customerId: number, scope: PortalScope): Promise<FineListRow[]> {

@@ -13,6 +13,7 @@ import { ExpenseDetailDialog } from '@/components/expenses/expense-detail-dialog
 import { FineDialog } from '@/components/fines/fine-dialog';
 import { NewFineDialog } from '@/components/fines/new-fine-dialog';
 import { FineImportDialog } from '@/components/fines/fine-import-dialog';
+import { FineImportsDialog } from '@/components/fines/fine-imports-dialog';
 import { PortalRequestDialog } from '@/components/portal-admin/portal-request-dialog';
 import { PortalListDialog } from '@/components/portal-admin/portal-list-dialog';
 import { ScanDialog } from '@/components/barcodes/scan-dialog';
@@ -145,6 +146,7 @@ export function GlobalDialogs() {
       <FineDialog />
       <NewFineDialog />
       <FineImportDialog />
+      <FineImportsDialog />
       <PortalRequestDialog />
       <PortalListDialog />
 

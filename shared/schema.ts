@@ -570,6 +570,9 @@ export const fines = pgTable("fines", {
   paidAt: timestamp("paid_at"),
   internalNotes: text("internal_notes"),
   customerNote: text("customer_note"),
+  /** manual | scan | cjib; null = manual (rows from before the import feature) */
+  source: text("source"),
+  importFileId: integer("import_file_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: text("created_by"),
@@ -580,6 +583,28 @@ export const fines = pgTable("fines", {
 }));
 
 // Staff input; the server computes totalAmount, normalises the plate and sets the letter path.
+// One received/uploaded CJIB file and what the import made of it.
+export const fineImportFiles = pgTable("fine_import_files", {
+  id: serial("id").primaryKey(),
+  source: text("source").notNull(),
+  fileName: text("file_name").notNull(),
+  fileHash: text("file_hash").notNull().unique(),
+  rawPath: text("raw_path"),
+  status: text("status").notNull().default("processed"),
+  recordsTotal: integer("records_total").notNull().default(0),
+  recordsCreated: integer("records_created").notNull().default(0),
+  recordsLinked: integer("records_linked").notNull().default(0),
+  recordsDuplicate: integer("records_duplicate").notNull().default(0),
+  recordsFailed: integer("records_failed").notNull().default(0),
+  errorMessage: text("error_message"),
+  details: jsonb("details").$type<FineImportDetail[]>().notNull().default([]),
+  receivedAt: timestamp("received_at").defaultNow().notNull(),
+  processedAt: timestamp("processed_at"),
+  createdBy: text("created_by"),
+});
+export interface FineImportDetail { reference: string | null; licensePlate: string | null; fineId?: number; outcome: 'created' | 'linked' | 'duplicate' | 'failed'; error?: string }
+export type FineImportFile = typeof fineImportFiles.$inferSelect;
+
 export const insertFineSchema = z.object({
   licensePlate: z.string().trim().min(4).max(12),
   offenceAt: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/)),

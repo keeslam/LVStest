@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Beschikkingen aanlevering="2026-09-04" verhuurder="Lam Groep">
+  <Beschikking>
+    <Beschikkingsnummer>1234567890</Beschikkingsnummer>
+    <Kenteken>PT-CJ-01</Kenteken>
+    <Pleegdatum>26-07-2026</Pleegdatum>
+    <Pleegtijd>21:17</Pleegtijd>
+    <Feitcode>VM012</Feitcode>
+    <Feitomschrijving>Overschrijding maximumsnelheid met 12 km/u</Feitomschrijving>
+    <Pleeglocatie>A2 Utrecht</Pleeglocatie>
+    <Sanctiebedrag>95,00</Sanctiebedrag>
+    <Dagtekening>30-07-2026</Dagtekening>
+    <Vervaldatum>27-09-2026</Vervaldatum>
+  </Beschikking>
+  <Beschikking>
+    <Beschikkingsnummer>1234567891</Beschikkingsnummer>
+    <Kenteken>PTCJ02</Kenteken>
+    <Pleegdatum>2026-08-02</Pleegdatum>
+    <Feitcode>R397</Feitcode>
+    <Feitomschrijving>Parkeren op een gehandicaptenparkeerplaats</Feitomschrijving>
+    <Sanctiebedrag>410</Sanctiebedrag>
+    <Dagtekening>2026-08-10</Dagtekening>
+  </Beschikking>
+</Beschikkingen>

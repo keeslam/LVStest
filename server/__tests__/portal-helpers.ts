@@ -1,7 +1,7 @@
 import { db } from "../db";
 import {
   customers, vehicles, drivers, reservations, documents,
-  portalUsers, portalCustomerSettings, portalActivityLog, reservationDriverAssignments, fines, portalRequests,
+  portalUsers, portalCustomerSettings, portalActivityLog, reservationDriverAssignments, fines, fineImportFiles, portalRequests,
   type Customer, type Vehicle, type Driver, type Reservation, type Document, type Fine,
 } from "../../shared/schema";
 import { like, inArray } from "drizzle-orm";
@@ -89,6 +89,7 @@ export async function cleanupPortalTestData(): Promise<void> {
     await db.delete(customers).where(inArray(customers.id, ids));
   }
   await db.delete(fines).where(like(fines.licensePlate, "PT%"));
+  await db.delete(fineImportFiles).where(like(fineImportFiles.fileName, `${TEST_PREFIX}%`));
   await db.delete(vehicles).where(like(vehicles.licensePlate, "PT%"));
 }
 

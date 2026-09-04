@@ -11,6 +11,7 @@ import { registerRoutes } from "./routes";
 import { setupAuth } from "./auth";
 import { setupPortalAuth } from "./portal-auth";
 import { ensurePortalEmailTemplates } from "./services/portal-mail";
+import { startCjibScheduler } from "./services/cjib/poller";
 import { registerPortalRoutes } from "./routes/portal";
 import { getUploadsDir as getPortalUploadsDir } from "../shared/paths";
 import { BackupScheduler } from "./backupScheduler";
@@ -443,7 +444,8 @@ serviceDueScheduler = new ServiceDueScheduler();
 serviceDueScheduler.start();
 
 // Seed the portal e-mail templates once (staff edit them afterwards).
-ensurePortalEmailTemplates().catch((e) => console.error("portal e-mail templates:", e));
+startCjibScheduler().catch((e) => console.error("CJIB scheduler failed to start:", e));
+  ensurePortalEmailTemplates().catch((e) => console.error("portal e-mail templates:", e));
 
 // Initialize session cleanup scheduler (runs every hour)
 const sessionCleanupScheduler = startSessionCleanupScheduler(60);

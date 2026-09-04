@@ -11,7 +11,8 @@ export interface PortalStaffEvent {
   description: string;
   /** In-app link, e.g. `/reservations/edit/12` */
   link?: string;
-  customerId: number;
+  /** Absent for events that are not about one customer (e.g. a CJIB import). */
+  customerId?: number;
 }
 
 /**
@@ -47,12 +48,12 @@ export async function notifyStaffOfPortalEvent(event: PortalStaffEvent): Promise
       console.warn("portal notification e-mail skipped: no notificationEmail in portal_config");
       return;
     }
-    const customer = await storage.getCustomer(event.customerId);
+    const customer = event.customerId ? await storage.getCustomer(event.customerId) : undefined;
     const template = await getPortalTemplate(PORTAL_TEMPLATE.STAFF);
     const vars = {
       title: event.title,
       description: event.description,
-      company: customer?.companyName || customer?.name || String(event.customerId),
+      company: customer?.companyName || customer?.name || (event.customerId ? String(event.customerId) : "CJIB"),
       link: event.link ?? "",
     };
     await sendEmail({

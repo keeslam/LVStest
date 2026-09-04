@@ -17,6 +17,7 @@ import { useCanManageFines, type FineRow } from "./fines-table";
 interface Candidate { id: number; customerId: number | null; customerName: string | null; startDate: string; endDate: string | null; driverId: number | null; driverName: string | null }
 type FineDetail = FineRow & {
   reference: string | null; receivedAt: string | null; letterFilePath: string | null; internalNotes: string | null; customerNote: string | null;
+  source?: string | null; importFileId?: number | null;
   invoiceReference: string | null; linkedBy: string | null; linkedAt: string | null; driverId: number | null;
   candidates?: { covering: Candidate[]; near: Candidate[] };
 };
@@ -62,6 +63,7 @@ export function FineDialog() {
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">{t("admin.fines.dialog.title", { id })} {fine && <FineStatusBadge status={fine.status} />}</DialogTitle>
+          {fine?.source === "cjib" && <p className="text-xs text-muted-foreground" data-testid="fine-source">{t("admin.fines.cjib.sourceLine", { file: fine.importFileId ?? "?" })}</p>}
         </DialogHeader>
         {fine && (
           <div className="space-y-4">

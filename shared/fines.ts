@@ -73,3 +73,56 @@ export interface FineScanResult {
   /** Existing fine with the same reference (a letter scanned twice). */
   duplicateOf: { id: number; status: string } | null;
 }
+
+// ---- CJIB import (FTPS, receive only) ----------------------------------------
+export type FineSource = 'manual' | 'scan' | 'cjib';
+
+export const CJIB_CONFIG_KEY = 'cjib_config';
+
+export interface CjibConfig {
+  enabled: boolean;
+  host: string;
+  port: number;
+  secure: 'implicit' | 'explicit';
+  username: string;
+  password: string;
+  inboxDir: string;
+  processedDir: string;
+  pollMinutes: number;
+  filePattern: string;
+}
+
+export const DEFAULT_CJIB_CONFIG: CjibConfig = {
+  enabled: false, host: '', port: 990, secure: 'implicit', username: '', password: '',
+  inboxDir: '/', processedDir: '', pollMinutes: 60, filePattern: '\\.(xml|csv)$',
+};
+
+/** Shown instead of the stored password. */
+export const CJIB_PASSWORD_MASK = '********';
+
+/** One record read from a CJIB file, before it becomes a fine. */
+export interface CjibRecord {
+  reference: string;
+  licensePlate: string;
+  offenceAt: Date;
+  description: string;
+  amount: number;
+  letterDate: string | null;
+  dueDate: string | null;
+  offenceCode: string | null;
+  location: string | null;
+  raw: Record<string, string>;
+}
+
+export interface CjibRunSummary {
+  startedAt: string;
+  finishedAt: string;
+  trigger: 'scheduler' | 'manual';
+  files: number;
+  skipped: number;
+  created: number;
+  linked: number;
+  duplicate: number;
+  failed: number;
+  errors: string[];
+}

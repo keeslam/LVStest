@@ -66,3 +66,28 @@ flow, waarna de bekeuring automatisch aan voertuig, reservering en bestuurder
 wordt gekoppeld. "Brieven scannen" (dashboard Klantenportaal en de
 bekeuringenlijst) verwerkt een hele stapel brieven in een keer; dubbele
 kenmerken worden gemarkeerd en standaard overgeslagen.
+
+## CJIB-koppeling (FTPS, alleen ontvangen)
+
+Het CJIB levert beschikkingen als XML- of CSV-bestand op een beveiligde
+FTPS-server. Instellen: Instellingen, tab Klantenportaal, kaart
+"CJIB-koppeling": host, poort (990 impliciet of 21 expliciet), gebruiker,
+wachtwoord, map met nieuwe bestanden, map voor verwerkte bestanden en het
+interval. "Verbinding testen" toont de bestanden op de server; "Nu ophalen"
+draait een import direct. Zet daarna "Automatisch ophalen" aan.
+
+Elk bestand wordt een keer verwerkt (hash), bewaard onder `uploads/cjib/` en
+op de server naar de verwerkt-map verplaatst. Per beschikking ontstaat een
+bekeuring (bron CJIB) die automatisch aan voertuig, reservering en bestuurder
+wordt gekoppeld; een beschikkingsnummer dat al bestaat wordt als dubbel
+geteld. Na elke run krijgt staff een melding op het dashboard Klantenportaal
+en per e-mail. De dialoog "CJIB-importen" (bekeuringenlijst) toont het
+importlog en laat een bestand handmatig uploaden.
+
+De exacte CJIB-bestandsindeling is nog niet bekend. De parser zoekt velden op
+naam-aliassen (`server/services/cjib/parser.ts`, `CJIB_FIELDS`); de
+voorbeeldbestanden staan in `server/__tests__/fixtures/cjib/`. Zodra de
+specificatie er is, hoeven alleen die aliassen en voorbeelden aangepast te
+worden. Vereist na deploy: `npm install`,
+`node -r dotenv/config startup-migration.js`, en het CJIB moet het uitgaande
+IP-adres van de server toestaan.

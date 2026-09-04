@@ -7,7 +7,8 @@ import { hasPermission } from "../middleware/permissions.js";
 import { UserPermission, insertFineSchema } from "../../shared/schema";
 import { isValidFineTransition, FINE_TRANSITIONS, normalizeLicensePlate, type FineStatusValue } from "../../shared/fines";
 import { finesStorage } from "../services/fines-storage";
-import { attributeFine, findCandidates, linkFineManually, unlinkFine } from "../services/fine-attribution";
+import { findCandidates, linkFineManually, unlinkFine } from "../services/fine-attribution";
+import { createFineWithAttribution } from "../services/fine-create";
 import { sendFineLinkedMail } from "../services/portal-mail";
 import { getPortalConfig } from "../services/portal-config";
 import { storage } from "../storage";
@@ -16,6 +17,12 @@ import { createSecureMulterFilter, sanitizeFilename, validateAfterUpload } from 
 import { resolveDocumentFilePath } from "../services/document-paths";
 import { processFineLetterWithAI } from "../utils/fine-scanner";
 import type { FineScanResult } from "../../shared/fines";
+import { cjibConfigSchema, getCjibConfig, maskCjibConfig, saveCjibConfig } from "../services/cjib/config";
+import { importCjibFile } from "../services/cjib/importer";
+import { importStorage } from "../services/cjib/import-storage";
+import { getCjibRunState, runCjibImport, startCjibScheduler } from "../services/cjib/poller";
+import { ftpsClient } from "../services/cjib/ftps-client";
+import { CJIB_PASSWORD_MASK } from "../../shared/fines";
 import type { RouteDeps } from "./deps";
 
 const canView = hasPermission(UserPermission.VIEW_FINES, UserPermission.MANAGE_FINES);
@@ -50,6 +57,70 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
   async function notifyLinked(fineId: number) {
     try { await sendFineLinkedMail(fineId); } catch (e) { console.error("fine linked mail failed:", e); }
   }
+
+  // ---- CJIB import (FTPS) --------------------------------------------------------
+  const importUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+
+  app.get("/api/fines/imports", canView, async (_req, res) => {
+    res.json(await importStorage.list(100));
+  });
+
+  app.get("/api/fines/imports/status", canView, async (_req, res) => {
+    const config = await getCjibConfig();
+    res.json({ enabled: config.enabled && Boolean(config.host), host: config.host, ...getCjibRunState() });
+  });
+
+  app.post("/api/fines/imports/run", canManage, async (req, res) => {
+    const summary = await runCjibImport("manual", actor(req));
+    await AuditLogger.logFromRequest(req, "fine.import.run", "fine_import", 0, summary as unknown as Record<string, unknown>);
+    res.json(summary);
+  });
+
+  app.post("/api/fines/imports/upload", canManage, importUpload.single("file"), async (req, res) => {
+    if (!req.file) return res.status(400).json({ message: "file is required" });
+    if (!/\.(xml|csv|txt)$/i.test(req.file.originalname)) return res.status(400).json({ message: "Only XML or CSV files" });
+    const result = await importCjibFile({ buffer: req.file.buffer, fileName: req.file.originalname, source: "cjib_upload", createdBy: actor(req) });
+    await AuditLogger.logFromRequest(req, "fine.import.upload", "fine_import", result.file.id, { fileName: req.file.originalname, skipped: result.skipped, status: result.file.status });
+    res.status(result.skipped ? 200 : 201).json(result);
+  });
+
+  app.get("/api/fines/imports/:id/file", canView, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const file = await importStorage.get(id);
+    const abs = file?.rawPath ? path.resolve(process.cwd(), file.rawPath) : null;
+    if (!file || !abs || !fs.existsSync(abs)) return res.status(404).json({ message: "No file" });
+    res.download(abs, file.fileName);
+  });
+
+  app.get("/api/fines/cjib-config", canManage, async (_req, res) => {
+    res.json(maskCjibConfig(await getCjibConfig()));
+  });
+
+  app.put("/api/fines/cjib-config", canManage, async (req, res) => {
+    try {
+      const saved = await saveCjibConfig(req.body, actor(req));
+      await startCjibScheduler();
+      await AuditLogger.logFromRequest(req, "fine.import.config", "settings", 0, { enabled: saved.enabled, host: saved.host, pollMinutes: saved.pollMinutes });
+      res.json(maskCjibConfig(saved));
+    } catch (e) {
+      res.status(400).json({ message: e instanceof z.ZodError ? e.errors[0]?.message ?? "Invalid input" : (e as Error).message });
+    }
+  });
+
+  // Connects with the posted settings (masked password = stored one) and lists the inbox.
+  app.post("/api/fines/cjib-config/test", canManage, async (req, res) => {
+    const parsed = cjibConfigSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return res.status(400).json({ message: parsed.error.errors[0]?.message ?? "Invalid input" });
+    const stored = await getCjibConfig();
+    const config = { ...parsed.data, password: parsed.data.password === CJIB_PASSWORD_MASK || !parsed.data.password ? stored.password : parsed.data.password };
+    try {
+      const pattern = new RegExp(config.filePattern || ".", "i");
+      const files = await ftpsClient.listInbox(config);
+      res.json({ ok: true, files: files.map((f) => ({ ...f, matches: pattern.test(f.name) })) });
+    } catch (e) {
+      res.status(502).json({ ok: false, message: (e as Error).message });
+    }
+  });
 
   // Read a letter with AI and report what attribution would do; nothing is created.
   app.post("/api/fines/scan", canManage, letterUpload.single("letterFile"), async (req, res) => {
@@ -90,6 +161,7 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
       licensePlate: q.licensePlate ? normalizeLicensePlate(String(q.licensePlate)) : undefined,
       from: q.from ? String(q.from) : undefined,
       to: q.to ? String(q.to) : undefined,
+      importFileId: q.importFileId ? parseInt(String(q.importFileId), 10) : undefined,
     }));
   });
 
@@ -110,22 +182,16 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
   app.post("/api/fines", canManage, letterUpload.single("letterFile"), async (req, res) => {
     const parsed = insertFineSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ message: parsed.error.errors[0]?.message ?? "Invalid input" });
-    const config = await getPortalConfig();
-    const adminFee = req.body.adminFee === undefined || req.body.adminFee === "" ? config.fineAdminFee : parsed.data.adminFee;
+    const adminFee = req.body.adminFee === undefined || req.body.adminFee === "" ? undefined : parsed.data.adminFee;
     let letterFilePath: string | null = null;
     try { letterFilePath = await storeLetter(req); } catch (e) { return res.status(400).json({ message: (e as Error).message }); }
-    const plate = normalizeLicensePlate(parsed.data.licensePlate);
-    const vehicle = (await storage.getAllVehicles()).find((v) => v.licensePlate === plate);
-    const fine = await finesStorage.createFine({
-      licensePlate: plate, vehicleId: vehicle?.id ?? null, offenceAt: new Date(parsed.data.offenceAt),
+    const result = await createFineWithAttribution({
+      licensePlate: parsed.data.licensePlate, offenceAt: new Date(parsed.data.offenceAt),
       receivedAt: parsed.data.receivedAt ?? null, reference: parsed.data.reference ?? null, description: parsed.data.description,
-      amount: money(parsed.data.amount), adminFee: money(adminFee), totalAmount: money(parsed.data.amount + adminFee),
-      letterFilePath, internalNotes: parsed.data.internalNotes ?? null, customerNote: parsed.data.customerNote ?? null,
-      createdBy: actor(req), updatedBy: actor(req),
-    });
-    const result = await attributeFine(fine.id);
-    await AuditLogger.logFromRequest(req, "fine.create", "fine", fine.id, { plate, status: result.fine.status });
-    if (result.fine.status === "linked") await notifyLinked(fine.id);
+      amount: parsed.data.amount, adminFee, letterFilePath, internalNotes: parsed.data.internalNotes ?? null, customerNote: parsed.data.customerNote ?? null,
+      source: letterFilePath && req.body.scanned === "1" ? "scan" : "manual",
+    }, actor(req));
+    await AuditLogger.logFromRequest(req, "fine.create", "fine", result.fine.id, { plate: result.fine.licensePlate, status: result.fine.status });
     res.status(201).json(result);
   });
 

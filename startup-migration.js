@@ -1019,6 +1019,29 @@ async function runMigrations() {
     await db.execute(sql`CREATE INDEX IF NOT EXISTS fines_plate_offence_idx ON fines (license_plate, offence_at)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS fines_customer_status_idx ON fines (customer_id, status)`);
 
+    // ==================== CJIB FINE IMPORT (FTPS) ====================
+    await createTableIfNotExists('fine_import_files', `
+      CREATE TABLE fine_import_files (
+        id SERIAL PRIMARY KEY,
+        source TEXT NOT NULL,
+        file_name TEXT NOT NULL,
+        file_hash TEXT NOT NULL UNIQUE,
+        raw_path TEXT,
+        status TEXT NOT NULL DEFAULT 'processed',
+        records_total INTEGER NOT NULL DEFAULT 0,
+        records_created INTEGER NOT NULL DEFAULT 0,
+        records_linked INTEGER NOT NULL DEFAULT 0,
+        records_duplicate INTEGER NOT NULL DEFAULT 0,
+        records_failed INTEGER NOT NULL DEFAULT 0,
+        error_message TEXT,
+        details JSONB NOT NULL DEFAULT '[]'::jsonb,
+        received_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        processed_at TIMESTAMP,
+        created_by TEXT
+      )`);
+    await addColumnIfNotExists('fines', 'source', 'TEXT');
+    await addColumnIfNotExists('fines', 'import_file_id', 'INTEGER REFERENCES fine_import_files(id) ON DELETE SET NULL');
+
     await createTableIfNotExists('portal_requests', `
       CREATE TABLE portal_requests (
         id SERIAL PRIMARY KEY,

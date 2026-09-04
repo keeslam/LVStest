@@ -8,6 +8,7 @@ import { UserPermission, UserRole } from "@shared/schema";
 import { FineStatus } from "@shared/fines";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { FineStatusBadge } from "./fine-status-badge";
 
@@ -33,15 +34,15 @@ export function useCanViewFines(): boolean {
   return hasStaffPermission(user, UserPermission.VIEW_FINES, UserPermission.MANAGE_FINES);
 }
 
-export function FinesTable({ customerId, initialPlate }: { customerId?: number; initialPlate?: string }) {
+export function FinesTable({ customerId, initialPlate, importFileId }: { customerId?: number; initialPlate?: string; importFileId?: number }) {
   const { t } = useTranslation("portal");
-  const { openFineDialog, openNewFineDialog, openFineImportDialog } = useGlobalDialog();
+  const { openFineDialog, openNewFineDialog, openFineImportDialog, openFineImportsDialog } = useGlobalDialog();
   const canManage = useCanManageFines();
   const [status, setStatus] = useState("");
   const [plate, setPlate] = useState(initialPlate ?? "");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const filters = { status: status || undefined, customerId, licensePlate: plate.trim() || undefined, from: from || undefined, to: to || undefined };
+  const filters = { status: status || undefined, customerId, licensePlate: plate.trim() || undefined, from: from || undefined, to: to || undefined, importFileId };
   const { data = [] } = useQuery<FineRow[]>({
     queryKey: ["/api/fines", filters],
     queryFn: async () => {
@@ -60,7 +61,9 @@ export function FinesTable({ customerId, initialPlate }: { customerId?: number; 
         {!customerId && <Input placeholder={t("admin.fines.filters.plate")} value={plate} onChange={(e) => setPlate(e.target.value)} className="w-40" />}
         <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" aria-label={t("admin.fines.filters.from")} />
         <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" aria-label={t("admin.fines.filters.to")} />
+        {importFileId && <Badge variant="secondary" data-testid="badge-import-filter">{t("admin.fines.cjib.filteredByFile", { id: importFileId })}</Badge>}
         {canManage && (<div className="ml-auto flex gap-2">
+          <Button size="sm" variant="outline" onClick={openFineImportsDialog} data-testid="button-cjib-imports">{t("admin.fines.cjib.button")}</Button>
           <Button size="sm" variant="outline" onClick={openFineImportDialog} data-testid="button-import-fines">{t("admin.fines.import.button")}</Button>
           <Button size="sm" onClick={() => openNewFineDialog({ licensePlate: plate || undefined })} data-testid="button-new-fine">
             {t("admin.fines.new")}
