@@ -570,5 +570,14 @@
       "earlyReturn": "Return early"
     },
     "date": "Submitted on"
+  },
+  "site": {
+    "backToSite": "Back to lamgroep.nl",
+    "eyebrow": "Customer portal",
+    "navLabel": "Portal menu",
+    "contact": "Contact",
+    "links": "Links",
+    "privacy": "Privacy statement",
+    "footerText": "Leasing, rental and fleet management from Zuidland, with our own workshop for maintenance, repair and damage repair."
   }
 }

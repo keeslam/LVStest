@@ -570,5 +570,14 @@
       "earlyReturn": "Eerder inleveren"
     },
     "date": "Ingediend op"
+  },
+  "site": {
+    "backToSite": "Naar lamgroep.nl",
+    "eyebrow": "Klantenportaal",
+    "navLabel": "Portaalmenu",
+    "contact": "Contact",
+    "links": "Links",
+    "privacy": "Privacyverklaring",
+    "footerText": "Lease, verhuur en wagenparkbeheer vanuit Zuidland, met eigen werkplaats voor onderhoud, reparatie en schadeherstel."
   }
 }

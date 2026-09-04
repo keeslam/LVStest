@@ -1,6 +1,16 @@
-# Klantenportaal insluiten op lamgroep.nl
+# Klantenportaal en lamgroep.nl
 
-Het portaal draait in de beheerapp en wordt op de website in een iframe getoond.
+Het portaal draait in de beheerapp op `https://portaal.lamgroep.nl/portaal` als
+eigen pagina in de huisstijl van de site (kop met woordmerk, tabs, voettekst;
+zie `client/src/layouts/PortalLayout.tsx` en `client/src/lib/portal-site.ts`
+voor de bedrijfsgegevens, die gelijk moeten blijven aan `lamgroep_info()` in
+het thema). De website linkt ernaartoe: de knop "Klantenportaal" in de kop en
+de pagina /klantenportaal (thema-sectie `portal`). De portaal-URL staat in het
+thema als `lamgroep_info('portal_url')`, lokaal te overschrijven met
+`define( 'LAMGROEP_PORTAL_URL', 'http://localhost:5000' )` in wp-config.php.
+
+Insluiten in een iframe blijft mogelijk (het portaal laat dan kop en
+voettekst weg en meldt zijn hoogte); de rest van dit document beschrijft dat.
 
 ## Vereisten
 
