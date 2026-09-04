@@ -212,7 +212,9 @@
       "restoredDescription": "The vehicle and its records are back.",
       "restoreFailedTitle": "Restore failed",
       "restoreFailedDescription": "Could not restore this record."
-    }
+    },
+    "search": "Search by plate, description or name…",
+    "noMatches": "Nothing matches this search."
   },
   "editDialog": {
     "title": "Edit Vehicle",

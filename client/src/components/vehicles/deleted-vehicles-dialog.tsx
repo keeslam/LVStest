@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, RotateCcw, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -56,7 +57,11 @@ export function DeletedVehiclesDialog({ open, onOpenChange, onRestored, entityTy
     queryKey: ["/api/deleted-records"],
     enabled: open,
   });
-  const records = entityType ? allRecords?.filter((r) => r.entityType === entityType) : allRecords;
+  const [search, setSearch] = useState("");
+  const q = search.trim().toLowerCase();
+  const records = allRecords
+    ?.filter((r) => !entityType || r.entityType === entityType)
+    .filter((r) => !q || r.label.toLowerCase().includes(q) || (r.deletedBy ?? "").toLowerCase().includes(q) || (r.restoredBy ?? "").toLowerCase().includes(q));
 
   const restoreMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -97,6 +102,8 @@ export function DeletedVehiclesDialog({ open, onOpenChange, onRestored, entityTy
           </DialogDescription>
         </DialogHeader>
 
+        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("deletedVehiclesDialog.search")} data-testid="input-deleted-search" />
+
         {isLoading ? (
           <div className="flex items-center justify-center py-10 gap-2">
             <Loader2 className="h-5 w-5 animate-spin" />
@@ -104,7 +111,7 @@ export function DeletedVehiclesDialog({ open, onOpenChange, onRestored, entityTy
           </div>
         ) : !records || records.length === 0 ? (
           <div className="py-10 text-center text-muted-foreground">
-            {emptyText ?? t('deletedVehiclesDialog.noDeletedVehicles')}
+            {q ? t("deletedVehiclesDialog.noMatches") : emptyText ?? t('deletedVehiclesDialog.noDeletedVehicles')}
           </div>
         ) : (
           <div className="space-y-2">

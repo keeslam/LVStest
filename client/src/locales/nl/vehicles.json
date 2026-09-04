@@ -212,7 +212,9 @@
       "restoredDescription": "Het voertuig en zijn gegevens zijn terug.",
       "restoreFailedTitle": "Terugzetten mislukt",
       "restoreFailedDescription": "Kon dit record niet terugzetten."
-    }
+    },
+    "search": "Zoeken op kenteken, omschrijving of naam…",
+    "noMatches": "Niets gevonden voor deze zoekterm."
   },
   "editDialog": {
     "title": "Voertuig bewerken",
