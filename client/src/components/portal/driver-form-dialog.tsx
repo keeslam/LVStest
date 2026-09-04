@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { SearchableCombobox } from "@/components/ui/searchable-combobox";
 import { COUNTRIES } from "@shared/countries";
 import { useToast } from "@/hooks/use-toast";
+import { capitalizeName } from "@/lib/format-utils";
 
 const FIELDS = ["displayName", "firstName", "lastName", "email", "phone", "driverLicenseNumber", "licenseExpiry", "licenseOrigin", "preferredLanguage", "notes"] as const;
 type Field = typeof FIELDS[number];
@@ -20,6 +21,8 @@ const LABEL_KEY: Record<Field, string> = {
   licenseOrigin: "fields.licenseOrigin", preferredLanguage: "fields.preferredLanguage", notes: "fields.notes",
 };
 const COUNTRY_OPTIONS = COUNTRIES.map((c) => ({ value: c, label: c }));
+/** Name fields get the same automatic capitalisation as the staff forms ("jan van der berg" -> "Jan van der Berg"). */
+const NAME_FIELDS: Field[] = ["displayName", "firstName", "lastName"];
 
 /** Same fields as the staff driver form, minus status and primary-driver flag (staff only). */
 export function DriverFormDialog({ driver, children }: { driver?: PortalDriverDto; children: ReactNode }) {
@@ -31,7 +34,7 @@ export function DriverFormDialog({ driver, children }: { driver?: PortalDriverDt
     () => Object.fromEntries(FIELDS.map((f) => [f, (driver?.[f] as string | null) ?? (f === "preferredLanguage" ? "nl" : "")])) as Record<Field, string>,
   );
   const [file, setFile] = useState<File | null>(null);
-  const set = (f: Field, v: string) => setValues({ ...values, [f]: v });
+  const set = (f: Field, v: string) => setValues({ ...values, [f]: NAME_FIELDS.includes(f) ? capitalizeName(v) : v });
 
   const mutation = useMutation({
     mutationFn: async () => {
