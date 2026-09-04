@@ -249,7 +249,8 @@
       "driver": "Gekoppelde bestuurder",
       "driverRequired": "Kies een bestuurder voor een bestuurdersaccount",
       "save": "Opslaan",
-      "cancel": "Annuleren"
+      "cancel": "Annuleren",
+      "close": "Sluiten"
     },
     "settings": {
       "title": "Instellingen voor deze klant",
@@ -303,6 +304,43 @@
       "title": "Bekeuringen",
       "new": "Nieuwe bekeuring",
       "empty": "Geen bekeuringen gevonden.",
+      "scan": {
+        "button": "Brief scannen",
+        "scanning": "Brief lezen…",
+        "done": "Brief gelezen. Controleer de velden en sla op.",
+        "failed": "Brief kon niet gelezen worden",
+        "vehicle": "Voertuig: {{vehicle}}",
+        "noPlate": "Geen kenteken gevonden in de brief.",
+        "unknownVehicle": "Kenteken {{plate}} is geen voertuig van ons.",
+        "willLink": "Wordt gekoppeld aan {{customer}}{{driver}}",
+        "multiple": "{{n}} reserveringen op dat moment; kies er een na het opslaan.",
+        "noCandidate": "Geen reservering op dat moment; koppel handmatig na het opslaan.",
+        "duplicate": "Kenmerk bestaat al: bekeuring #{{id}}.",
+        "openDuplicate": "Openen",
+        "lowConfidence": "Onzeker gelezen: {{fields}}"
+      },
+      "import": {
+        "button": "Brieven scannen",
+        "title": "Bekeuringsbrieven importeren",
+        "drop": "Sleep brieven hierheen of klik om bestanden te kiezen (PDF, JPG, PNG). Elke brief wordt direct gelezen.",
+        "files": "{{n}} bestand(en)",
+        "create": "Aanmaken ({{n}})",
+        "summary": "{{created}} aangemaakt, waarvan {{linked}} automatisch gekoppeld",
+        "columns": {
+          "file": "Bestand",
+          "link": "Koppeling",
+          "status": "Status"
+        },
+        "status": {
+          "pending": "Wachten",
+          "scanning": "Lezen…",
+          "ready": "Klaar",
+          "error": "Mislukt",
+          "duplicate": "Dubbel",
+          "creating": "Aanmaken…",
+          "created": "Aangemaakt"
+        }
+      },
       "columns": {
         "plate": "Kenteken",
         "offenceAt": "Datum/tijd",

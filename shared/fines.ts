@@ -41,3 +41,35 @@ export interface PortalFineDto {
   hasLetter: boolean;
   createdAt: string;
 }
+
+// ---- letter scanning (POST /api/fines/scan) -----------------------------------
+export type ScanConfidence = 'high' | 'medium' | 'low';
+
+/** What the AI read from one fine letter; every field may be missing. */
+export interface ParsedFineLetter {
+  licensePlate: string | null;
+  /** Local wall-clock ISO without zone, e.g. 2026-07-26T21:17:00 */
+  offenceAt: string | null;
+  letterDate: string | null;
+  reference: string | null;
+  description: string;
+  amount: number | null;
+  dueDate: string | null;
+  issuer: string | null;
+  confidence: { licensePlate: ScanConfidence; offenceAt: ScanConfidence; amount: ScanConfidence; reference: ScanConfidence };
+}
+
+export interface FineScanCandidate {
+  id: number; customerId: number | null; customerName: string | null;
+  startDate: string; endDate: string | null; driverId: number | null; driverName: string | null;
+}
+
+/** Scan result: the parsed letter plus what attribution would do with it. */
+export interface FineScanResult {
+  parsed: ParsedFineLetter;
+  /** Known vehicle for the plate, if any. */
+  vehicle: { id: number; brand: string; model: string } | null;
+  candidates: { covering: FineScanCandidate[]; near: FineScanCandidate[] };
+  /** Existing fine with the same reference (a letter scanned twice). */
+  duplicateOf: { id: number; status: string } | null;
+}

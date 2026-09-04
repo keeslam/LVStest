@@ -14,6 +14,8 @@ import { storage } from "../storage";
 import { AuditLogger } from "../utils/security/auditLogger";
 import { createSecureMulterFilter, sanitizeFilename, validateAfterUpload } from "../utils/security/fileUploadSecurity";
 import { resolveDocumentFilePath } from "../services/document-paths";
+import { processFineLetterWithAI } from "../utils/fine-scanner";
+import type { FineScanResult } from "../../shared/fines";
 import type { RouteDeps } from "./deps";
 
 const canView = hasPermission(UserPermission.VIEW_FINES, UserPermission.MANAGE_FINES);
@@ -48,6 +50,37 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
   async function notifyLinked(fineId: number) {
     try { await sendFineLinkedMail(fineId); } catch (e) { console.error("fine linked mail failed:", e); }
   }
+
+  // Read a letter with AI and report what attribution would do; nothing is created.
+  app.post("/api/fines/scan", canManage, letterUpload.single("letterFile"), async (req, res) => {
+    if (!req.file) return res.status(400).json({ message: "letterFile is required" });
+    const tempPath = req.file.path;
+    try {
+      const check = await validateAfterUpload(tempPath, req.file.originalname, req.file.mimetype, "document");
+      if (!check.valid) return res.status(400).json({ message: check.error ?? "Invalid file" });
+      const parsed = await processFineLetterWithAI(tempPath, req.file.mimetype);
+      const plate = parsed.licensePlate ? normalizeLicensePlate(parsed.licensePlate) : null;
+      const vehicle = plate ? await finesStorage.getVehicleByPlate(plate) : undefined;
+      const candidates = plate && parsed.offenceAt
+        ? await findCandidates(plate, new Date(parsed.offenceAt))
+        : { covering: [], near: [] };
+      const existing = parsed.reference ? await finesStorage.findByReference(parsed.reference) : undefined;
+      const result: FineScanResult = {
+        parsed: { ...parsed, licensePlate: plate },
+        vehicle: vehicle ? { id: vehicle.id, brand: vehicle.brand, model: vehicle.model } : null,
+        candidates: {
+          covering: candidates.covering.map(({ actualPickupDate: _a, actualReturnDate: _b, ...c }) => c),
+          near: candidates.near.map(({ actualPickupDate: _a, actualReturnDate: _b, ...c }) => c),
+        },
+        duplicateOf: existing ? { id: existing.id, status: existing.status } : null,
+      };
+      res.json(result);
+    } catch (e) {
+      res.status(502).json({ message: (e as Error).message });
+    } finally {
+      fs.rmSync(tempPath, { force: true });
+    }
+  });
 
   app.get("/api/fines", canView, async (req, res) => {
     const q = req.query;

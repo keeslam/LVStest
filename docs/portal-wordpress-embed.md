@@ -54,3 +54,15 @@ Naast de uitnodigings- en wachtwoordmails gebruikt het portaal twee sjablonen
 
 Beide vereisen werkende SMTP-instellingen onder Instellingen > E-mail; zonder
 SMTP wordt de actie wel uitgevoerd maar blijft de mail achterwege (zie serverlog).
+
+## Bekeuringsbrieven scannen (AI)
+
+Staff kan een bekeuringsbrief (PDF, JPG of PNG) laten lezen door dezelfde
+Gemini-koppeling als de factuurscanner. Vereist `GEMINI_API_KEY` in `.env`;
+zonder sleutel geeft `POST /api/fines/scan` een 502 en blijft handmatige invoer
+werken. De scan maakt niets aan: het formulier wordt gevuld, staff controleert
+(onzeker gelezen velden krijgen een oranje rand) en slaat op via de gewone
+flow, waarna de bekeuring automatisch aan voertuig, reservering en bestuurder
+wordt gekoppeld. "Brieven scannen" (dashboard Klantenportaal en de
+bekeuringenlijst) verwerkt een hele stapel brieven in een keer; dubbele
+kenmerken worden gemarkeerd en standaard overgeslagen.

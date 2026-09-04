@@ -2,14 +2,14 @@ import { useEffect } from "react";
 import { useSearch } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { UserPlus, Users, Inbox, Receipt, Car, History, Loader2 } from "lucide-react";
+import { UserPlus, Users, Inbox, Receipt, Car, History, Loader2, ScanSearch } from "lucide-react";
 import type { PortalDashboard } from "@shared/portal-types";
 import { apiRequest } from "@/lib/queryClient";
 import { useGlobalDialog, type PortalListKind } from "@/contexts/GlobalDialogContext";
 import { Button } from "@/components/ui/button";
 import { AccountDialog } from "@/components/portal-admin/account-dialog";
 import { useCanManagePortal } from "@/components/portal-admin/accounts-table";
-import { useCanViewFines } from "@/components/fines/fines-table";
+import { useCanViewFines, useCanManageFines } from "@/components/fines/fines-table";
 import { DASHBOARD_KEY, DashboardTiles, AttentionPanel, NotificationsPanel, UpcomingPanel, CustomersPanel } from "@/components/portal-admin/dashboard-panels";
 
 const LIST_KINDS: PortalListKind[] = ["customers", "accounts", "requests", "fines", "vehicles", "activity"];
@@ -21,9 +21,10 @@ const LIST_KINDS: PortalListKind[] = ["customers", "accounts", "requests", "fine
  */
 export default function PortalAdminPage() {
   const { t } = useTranslation("portal");
-  const { openFineDialog, openPortalRequestDialog, openPortalListDialog } = useGlobalDialog();
+  const { openFineDialog, openPortalRequestDialog, openPortalListDialog, openFineImportDialog } = useGlobalDialog();
   const canViewFines = useCanViewFines();
   const canManage = useCanManagePortal();
+  const canManageFines = useCanManageFines();
   const params = new URLSearchParams(useSearch());
   const { data, isLoading } = useQuery<PortalDashboard>({
     queryKey: DASHBOARD_KEY,
@@ -60,6 +61,9 @@ export default function PortalAdminPage() {
           {listButton("accounts", <Users className="mr-1.5 h-4 w-4" />)}
           {listButton("requests", <Inbox className="mr-1.5 h-4 w-4" />)}
           {canViewFines && listButton("fines", <Receipt className="mr-1.5 h-4 w-4" />)}
+          {canManageFines && (
+            <Button size="sm" variant="outline" onClick={openFineImportDialog} data-testid="button-import-fines"><ScanSearch className="mr-1.5 h-4 w-4" />{t("admin.fines.import.button")}</Button>
+          )}
           {listButton("vehicles", <Car className="mr-1.5 h-4 w-4" />)}
           {listButton("activity", <History className="mr-1.5 h-4 w-4" />)}
         </div>

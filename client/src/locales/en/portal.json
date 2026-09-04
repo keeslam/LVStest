@@ -249,7 +249,8 @@
       "driver": "Linked driver",
       "driverRequired": "Choose a driver for a driver account",
       "save": "Save",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "close": "Close"
     },
     "settings": {
       "title": "Settings for this customer",
@@ -303,6 +304,43 @@
       "title": "Fines",
       "new": "New fine",
       "empty": "No fines found.",
+      "scan": {
+        "button": "Scan letter",
+        "scanning": "Reading letter…",
+        "done": "Letter read. Check the fields and save.",
+        "failed": "The letter could not be read",
+        "vehicle": "Vehicle: {{vehicle}}",
+        "noPlate": "No licence plate found in the letter.",
+        "unknownVehicle": "Plate {{plate}} is not one of our vehicles.",
+        "willLink": "Will be linked to {{customer}}{{driver}}",
+        "multiple": "{{n}} reservations at that moment; pick one after saving.",
+        "noCandidate": "No reservation at that moment; link manually after saving.",
+        "duplicate": "Reference already exists: fine #{{id}}.",
+        "openDuplicate": "Open",
+        "lowConfidence": "Read with low confidence: {{fields}}"
+      },
+      "import": {
+        "button": "Scan letters",
+        "title": "Import fine letters",
+        "drop": "Drop letters here or click to choose files (PDF, JPG, PNG). Each letter is read right away.",
+        "files": "{{n}} file(s)",
+        "create": "Create ({{n}})",
+        "summary": "{{created}} created, {{linked}} of them linked automatically",
+        "columns": {
+          "file": "File",
+          "link": "Link",
+          "status": "Status"
+        },
+        "status": {
+          "pending": "Waiting",
+          "scanning": "Reading…",
+          "ready": "Ready",
+          "error": "Failed",
+          "duplicate": "Duplicate",
+          "creating": "Creating…",
+          "created": "Created"
+        }
+      },
       "columns": {
         "plate": "Plate",
         "offenceAt": "Date/time",

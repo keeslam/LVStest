@@ -35,7 +35,7 @@ export function useCanViewFines(): boolean {
 
 export function FinesTable({ customerId, initialPlate }: { customerId?: number; initialPlate?: string }) {
   const { t } = useTranslation("portal");
-  const { openFineDialog, openNewFineDialog } = useGlobalDialog();
+  const { openFineDialog, openNewFineDialog, openFineImportDialog } = useGlobalDialog();
   const canManage = useCanManageFines();
   const [status, setStatus] = useState("");
   const [plate, setPlate] = useState(initialPlate ?? "");
@@ -60,11 +60,12 @@ export function FinesTable({ customerId, initialPlate }: { customerId?: number; 
         {!customerId && <Input placeholder={t("admin.fines.filters.plate")} value={plate} onChange={(e) => setPlate(e.target.value)} className="w-40" />}
         <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" aria-label={t("admin.fines.filters.from")} />
         <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" aria-label={t("admin.fines.filters.to")} />
-        {canManage && (
-          <Button size="sm" className="ml-auto" onClick={() => openNewFineDialog({ licensePlate: plate || undefined })} data-testid="button-new-fine">
+        {canManage && (<div className="ml-auto flex gap-2">
+          <Button size="sm" variant="outline" onClick={openFineImportDialog} data-testid="button-import-fines">{t("admin.fines.import.button")}</Button>
+          <Button size="sm" onClick={() => openNewFineDialog({ licensePlate: plate || undefined })} data-testid="button-new-fine">
             {t("admin.fines.new")}
           </Button>
-        )}
+        </div>)}
       </div>
       {data.length === 0 ? <p className="text-sm text-muted-foreground">{t("admin.fines.empty")}</p> : (
         <Table>

@@ -14,6 +14,7 @@ interface DialogState {
   newFine: { open: boolean; licensePlate?: string };
   portalRequest: { open: boolean; id: number | null };
   portalList: { open: boolean; kind: PortalListKind | null; plate?: string };
+  fineImport: { open: boolean };
   expenseVehicle: { open: boolean; vehicleId: number | null };
   expense: { open: boolean; expenseId: number | null; hideVehicleExpensesLink: boolean };
   rdwApkChanges: { open: boolean };
@@ -42,6 +43,8 @@ interface GlobalDialogContextType {
   closePortalRequestDialog: () => void;
   openPortalListDialog: (kind: PortalListKind, opts?: { plate?: string }) => void;
   closePortalListDialog: () => void;
+  openFineImportDialog: () => void;
+  closeFineImportDialog: () => void;
   openExpenseVehicleDialog: (vehicleId: number) => void;
   closeExpenseVehicleDialog: () => void;
   openExpenseDialog: (expenseId: number, hideVehicleExpensesLink?: boolean) => void;
@@ -66,6 +69,7 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     newFine: { open: false },
     portalRequest: { open: false, id: null },
     portalList: { open: false, kind: null },
+    fineImport: { open: false },
     expenseVehicle: { open: false, vehicleId: null },
     expense: { open: false, expenseId: null, hideVehicleExpensesLink: false },
     rdwApkChanges: { open: false },
@@ -157,6 +161,8 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
   const closePortalRequestDialog = () => setDialogState((prev) => ({ ...prev, portalRequest: { open: false, id: null } }));
   const openPortalListDialog = (kind: PortalListKind, opts?: { plate?: string }) => setDialogState((prev) => ({ ...prev, portalList: { open: true, kind, plate: opts?.plate } }));
   const closePortalListDialog = () => setDialogState((prev) => ({ ...prev, portalList: { open: false, kind: null } }));
+  const openFineImportDialog = () => setDialogState((prev) => ({ ...prev, fineImport: { open: true } }));
+  const closeFineImportDialog = () => setDialogState((prev) => ({ ...prev, fineImport: { open: false } }));
 
   const closeCustomerDialog = () => {
     setDialogState(prev => ({
@@ -245,6 +251,8 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
         closePortalRequestDialog,
         openPortalListDialog,
         closePortalListDialog,
+        openFineImportDialog,
+        closeFineImportDialog,
         openExpenseVehicleDialog,
         closeExpenseVehicleDialog,
         openExpenseDialog,

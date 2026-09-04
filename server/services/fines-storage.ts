@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { fines, customers, drivers, type Fine } from "../../shared/schema";
+import { fines, customers, drivers, vehicles, type Fine } from "../../shared/schema";
 import { and, desc, eq, gte, inArray, lte, sql, type SQL } from "drizzle-orm";
 import { CUSTOMER_VISIBLE_FINE_STATUSES } from "../../shared/fines";
 import type { PortalScope } from "./portal-storage";
@@ -68,6 +68,14 @@ export const finesStorage = {
   async countFinesForCustomer(customerId: number): Promise<number> {
     const [r] = await db.select({ n: sql<number>`count(*)::int` }).from(fines).where(eq(fines.customerId, customerId));
     return r?.n ?? 0;
+  },
+  async getVehicleByPlate(licensePlate: string): Promise<{ id: number; brand: string; model: string } | undefined> {
+    const [row] = await db.select({ id: vehicles.id, brand: vehicles.brand, model: vehicles.model }).from(vehicles).where(eq(vehicles.licensePlate, licensePlate)).limit(1);
+    return row;
+  },
+  async findByReference(reference: string): Promise<Fine | undefined> {
+    const [row] = await db.select().from(fines).where(eq(fines.reference, reference)).limit(1);
+    return row;
   },
   async countFinesForPlate(licensePlate: string): Promise<number> {
     const [r] = await db.select({ n: sql<number>`count(*)::int` }).from(fines).where(eq(fines.licensePlate, licensePlate));
