@@ -545,6 +545,13 @@
         "replyRequired": "Enter a reply.",
         "previousReply": "Previous reply"
       }
+    },
+    "alert": {
+      "requests_one": "{{count}} new request",
+      "requests_other": "{{count}} new requests",
+      "notifications_one": "{{count}} notification",
+      "notifications_other": "{{count}} notifications",
+      "open": "Customer portal"
     }
   },
   "fines": {

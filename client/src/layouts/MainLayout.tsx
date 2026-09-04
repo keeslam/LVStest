@@ -7,6 +7,7 @@ import { UserMenu } from "@/components/user-menu";
 import { useAuth } from "@/hooks/use-auth";
 import { ScrollToTop } from "@/components/scroll-to-top";
 import { NotificationCenter } from "@/components/ui/notification-center";
+import { PortalAlertChip } from "@/components/portal-admin/portal-alert-chip";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Car, User, Calendar, X, ClipboardCheck } from "lucide-react";
 import { formatLicensePlate } from "@/lib/format-utils";
@@ -235,6 +236,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               </svg>
             </button>
             <h2 className="text-xl font-semibold text-gray-800">{title}</h2>
+            <PortalAlertChip />
           </div>
           <div className="flex items-center space-x-4">
             <div className="relative" ref={searchRef}>

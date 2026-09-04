@@ -545,6 +545,13 @@
         "replyRequired": "Vul een antwoord in.",
         "previousReply": "Eerder antwoord"
       }
+    },
+    "alert": {
+      "requests_one": "{{count}} nieuwe aanvraag",
+      "requests_other": "{{count}} nieuwe aanvragen",
+      "notifications_one": "{{count}} melding",
+      "notifications_other": "{{count}} meldingen",
+      "open": "Klantenportaal"
     }
   },
   "fines": {
