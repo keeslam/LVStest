@@ -22,6 +22,7 @@ export function AccountsTable({ customerId }: { customerId?: number }) {
   const { toast } = useToast();
   const canManage = useCanManagePortal();
   const [onlyPending, setOnlyPending] = useState(false);
+  const [editing, setEditing] = useState<PortalAccountRow | null>(null);
   const url = customerId ? `/api/portal-admin/customers/${customerId}/accounts` : "/api/portal-admin/accounts";
   const key = customerId ? ["/api/portal-admin/customers", customerId, "accounts"] : ["/api/portal-admin/accounts"];
   const { data = [] } = useQuery<PortalAccountRow[]>({ queryKey: key, queryFn: async () => (await apiRequest("GET", url)).json() });
@@ -74,7 +75,7 @@ export function AccountsTable({ customerId }: { customerId?: number }) {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild><Button size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <AccountDialog customerId={a.customerId} account={a}><DropdownMenuItem onSelect={(e) => e.preventDefault()}>{t("admin.accounts.edit")}</DropdownMenuItem></AccountDialog>
+                        <DropdownMenuItem onSelect={() => setEditing(a)} data-testid={`menu-edit-account-${a.id}`}>{t("admin.accounts.edit")}</DropdownMenuItem>
                         {!a.activated && <DropdownMenuItem onSelect={() => act.mutate({ id: a.id, action: "invite", body: { kind: "invite" } })}>{t("admin.accounts.resend")}</DropdownMenuItem>}
                         {a.activated && <DropdownMenuItem onSelect={() => act.mutate({ id: a.id, action: "invite", body: { kind: "reset" } })}>{t("admin.accounts.sendReset")}</DropdownMenuItem>}
                         <DropdownMenuItem onSelect={() => act.mutate({ id: a.id, action: "patch", body: { active: !a.active } })}>{a.active ? t("admin.accounts.block") : t("admin.accounts.unblock")}</DropdownMenuItem>
@@ -88,6 +89,7 @@ export function AccountsTable({ customerId }: { customerId?: number }) {
           </TableBody>
         </Table>
       )}
+      {editing && <AccountDialog key={editing.id} customerId={editing.customerId} account={editing} open onOpenChange={(o) => { if (!o) setEditing(null); }} />}
     </div>
   );
 }

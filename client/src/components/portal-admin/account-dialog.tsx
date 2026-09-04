@@ -23,11 +23,13 @@ export interface PortalAccountRow {
  * starts with a searchable customer picker, so staff can invite from the
  * global Klantenportaal page as well as from the customer dialog.
  */
-export function AccountDialog({ customerId: fixedCustomerId, account, children }: { customerId?: number; account?: PortalAccountRow; children: ReactNode }) {
+export function AccountDialog({ customerId: fixedCustomerId, account, children, open: controlledOpen, onOpenChange }: { customerId?: number; account?: PortalAccountRow; children?: ReactNode; open?: boolean; onOpenChange?: (open: boolean) => void }) {
   const { t } = useTranslation("portal");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = (o: boolean) => { if (onOpenChange) onOpenChange(o); else setUncontrolledOpen(o); };
   const [customerId, setCustomerId] = useState<number | null>(fixedCustomerId ?? account?.customerId ?? null);
   const [customerSearch, setCustomerSearch] = useState("");
   const [email, setEmail] = useState(account?.email ?? "");
@@ -81,7 +83,7 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent>
         <DialogHeader><DialogTitle>{t("admin.dialog.title")}</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-3">
