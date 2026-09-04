@@ -32,6 +32,11 @@ interface DeletedVehiclesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onRestored?: () => void;
+  /** Show only this entity type (e.g. "fine"); default: everything. */
+  entityType?: string;
+  title?: string;
+  description?: string;
+  emptyText?: string;
 }
 
 const describeCounts = (counts: Record<string, number> | null, t: TFunction) => {
@@ -42,15 +47,16 @@ const describeCounts = (counts: Record<string, number> | null, t: TFunction) => 
   return parts.length > 0 ? parts.join(", ") : t('deletedVehiclesDialog.noLinkedRecords');
 };
 
-export function DeletedVehiclesDialog({ open, onOpenChange, onRestored }: DeletedVehiclesDialogProps) {
+export function DeletedVehiclesDialog({ open, onOpenChange, onRestored, entityType, title, description, emptyText }: DeletedVehiclesDialogProps) {
   const { t } = useTranslation("vehicles");
   const { toast } = useToast();
   const [restoringId, setRestoringId] = useState<number | null>(null);
 
-  const { data: records, isLoading, refetch } = useQuery<DeletedRecord[]>({
+  const { data: allRecords, isLoading, refetch } = useQuery<DeletedRecord[]>({
     queryKey: ["/api/deleted-records"],
     enabled: open,
   });
+  const records = entityType ? allRecords?.filter((r) => r.entityType === entityType) : allRecords;
 
   const restoreMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -64,6 +70,7 @@ export function DeletedVehiclesDialog({ open, onOpenChange, onRestored }: Delete
       });
       await invalidateByPrefix("/api/vehicles");
       await invalidateByPrefix("/api/reservations");
+      await invalidateByPrefix("/api/fines");
       await refetch();
       onRestored?.();
     },
@@ -83,10 +90,10 @@ export function DeletedVehiclesDialog({ open, onOpenChange, onRestored }: Delete
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Trash2 className="h-5 w-5" />
-            {t('deletedVehiclesDialog.title')}
+            {title ?? t('deletedVehiclesDialog.title')}
           </DialogTitle>
           <DialogDescription>
-            {t('deletedVehiclesDialog.description')}
+            {description ?? t('deletedVehiclesDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -97,7 +104,7 @@ export function DeletedVehiclesDialog({ open, onOpenChange, onRestored }: Delete
           </div>
         ) : !records || records.length === 0 ? (
           <div className="py-10 text-center text-muted-foreground">
-            {t('deletedVehiclesDialog.noDeletedVehicles')}
+            {emptyText ?? t('deletedVehiclesDialog.noDeletedVehicles')}
           </div>
         ) : (
           <div className="space-y-2">

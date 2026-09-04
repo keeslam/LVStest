@@ -414,7 +414,11 @@
         "noCustomer": "No customer found",
         "pickDriver": "No driver",
         "searchDriver": "Search driver…",
-        "noDriver": "No driver found"
+        "noDriver": "No driver found",
+        "reactivate": "Reactivate",
+        "delete": "Delete",
+        "deleteConfirm": "Move this fine to the recycle bin? An administrator can restore it from there.",
+        "deleted": "Fine moved to the recycle bin"
       },
       "cjib": {
         "button": "CJIB imports",
@@ -468,6 +472,12 @@
         "download": "Download file",
         "filteredByFile": "From import file #{{id}}",
         "sourceLine": "Source: CJIB file #{{file}}"
+      },
+      "bin": {
+        "button": "Recycle bin",
+        "title": "Deleted fines",
+        "description": "Deleted fines are kept here with who deleted them and when, and can be restored.",
+        "empty": "No deleted fines."
       }
     },
     "requests": {

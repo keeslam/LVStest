@@ -50,6 +50,11 @@ export function FineDialog() {
     onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
   });
   const closed = fine?.status === "paid" || fine?.status === "cancelled";
+  const remove = useMutation({
+    mutationFn: async () => apiRequest("DELETE", `/api/fines/${id}`),
+    onSuccess: () => { invalidateByPrefix("/api/fines"); invalidateByPrefix("/api/portal-admin"); invalidateByPrefix("/api/deleted-records"); toast({ title: t("admin.fines.dialog.deleted") }); closeFineDialog(); },
+    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+  });
   const allowed = fine ? (FINE_TRANSITIONS[fine.status as FineStatusValue] ?? []) : [];
   const setStatus = (status: string) => {
     const invoiceReference = status === "charged" ? window.prompt(t("admin.fines.fields.invoiceReference")) ?? undefined : undefined;
@@ -126,13 +131,18 @@ export function FineDialog() {
             {canManage && (
               <div className="flex flex-wrap gap-2 border-t pt-3">
                 {!closed && <Button size="sm" onClick={() => call.mutate({ method: "PATCH", url: `/api/fines/${id}`, body: { ...edit, amount: Number(edit.amount), adminFee: Number(edit.adminFee) } })}>{t("admin.fines.dialog.save")}</Button>}
-                {allowed.includes("new") && <Button size="sm" variant="outline" onClick={() => call.mutate({ method: "POST", url: `/api/fines/${id}/unlink` })}>{t("admin.fines.dialog.unlink")}</Button>}
+                {allowed.includes("new") && fine.status !== "cancelled" && <Button size="sm" variant="outline" onClick={() => call.mutate({ method: "POST", url: `/api/fines/${id}/unlink` })}>{t("admin.fines.dialog.unlink")}</Button>}
                 {allowed.includes("charged") && <Button size="sm" variant="outline" onClick={() => setStatus("charged")} data-testid="button-charge-fine">{t("admin.fines.dialog.charge")}</Button>}
                 {allowed.includes("paid") && <Button size="sm" variant="outline" onClick={() => setStatus("paid")}>{t("admin.fines.dialog.paid")}</Button>}
                 {allowed.includes("disputed") && <Button size="sm" variant="outline" onClick={() => setStatus("disputed")}>{t("admin.fines.dialog.dispute")}</Button>}
                 {allowed.includes("linked") && fine.status === "disputed" && <Button size="sm" variant="outline" onClick={() => setStatus("linked")}>{t("admin.fines.dialog.link")}</Button>}
                 {allowed.includes("cancelled") && <Button size="sm" variant="destructive" onClick={() => setStatus("cancelled")}>{t("admin.fines.dialog.cancel")}</Button>}
-                {closed && <span className="text-sm text-muted-foreground">{t("admin.fines.dialog.closed")}</span>}
+                {fine.status === "cancelled" && <Button size="sm" onClick={() => call.mutate({ method: "POST", url: `/api/fines/${id}/reactivate` })} data-testid="button-reactivate-fine">{t("admin.fines.dialog.reactivate")}</Button>}
+                {fine.status === "paid" && <span className="text-sm text-muted-foreground">{t("admin.fines.dialog.closed")}</span>}
+                <Button size="sm" variant="ghost" className="ml-auto text-destructive hover:text-destructive" disabled={remove.isPending}
+                  onClick={() => { if (window.confirm(t("admin.fines.dialog.deleteConfirm"))) remove.mutate(); }} data-testid="button-delete-fine">
+                  {t("admin.fines.dialog.delete")}
+                </Button>
               </div>
             )}
           </div>

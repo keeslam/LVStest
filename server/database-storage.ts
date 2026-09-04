@@ -27,7 +27,7 @@ import {
   vehicleCustomerBlacklist, type VehicleCustomerBlacklist, type InsertVehicleCustomerBlacklist,
   vehicleTransports, type VehicleTransport, type InsertVehicleTransport,
   vehicleWaitlist,
-  deletedRecords, type DeletedRecord,
+  deletedRecords, type DeletedRecord, fines,
   auditLogs, type AuditLog
 } from "../shared/schema";
 import {
@@ -641,6 +641,7 @@ export class DatabaseStorage implements IStorage {
     const record = await this.getDeletedRecord(id);
     if (!record) return { restored: false, reason: 'not_found' };
     if (record.restoredAt) return { restored: false, reason: 'already_restored', record };
+    if (record.entityType === 'fine') return this.restoreDeletedFine(record, actor);
     if (record.entityType !== 'vehicle') return { restored: false, reason: 'unsupported_type', record };
 
     const payload = record.payload as any;
@@ -720,6 +721,38 @@ export class DatabaseStorage implements IStorage {
         .where(eq(deletedRecords.id, id));
     });
 
+    return { restored: true, record };
+  }
+
+  /** Puts a deleted fine back with its original id; the snapshot holds the full row. */
+  private async restoreDeletedFine(
+    record: DeletedRecord,
+    actor?: { username?: string | null }
+  ): Promise<{ restored: boolean; reason?: string; record?: DeletedRecord }> {
+    const fine = (record.payload as any)?.fine;
+    if (!fine) return { restored: false, reason: 'empty_snapshot', record };
+    const [idTaken] = await db.select({ id: fines.id }).from(fines).where(eq(fines.id, fine.id));
+    if (idTaken) return { restored: false, reason: 'id_taken', record };
+
+    const dateKeys = Object.entries(getTableColumns(fines))
+      .filter(([, column]: [string, any]) => column?.dataType === 'date')
+      .map(([key]) => key);
+    const revived: any = { ...fine };
+    for (const key of dateKeys) {
+      if (typeof revived[key] === 'string' || typeof revived[key] === 'number') revived[key] = new Date(revived[key]);
+    }
+    // Links may point at rows that vanished in the meantime; drop those instead of failing.
+    if (revived.customerId && !(await db.select({ id: customers.id }).from(customers).where(eq(customers.id, revived.customerId)))[0]) revived.customerId = null;
+    if (revived.reservationId && !(await db.select({ id: reservations.id }).from(reservations).where(eq(reservations.id, revived.reservationId)))[0]) revived.reservationId = null;
+    if (revived.driverId && !(await db.select({ id: drivers.id }).from(drivers).where(eq(drivers.id, revived.driverId)))[0]) revived.driverId = null;
+    if (revived.vehicleId && !(await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.id, revived.vehicleId)))[0]) revived.vehicleId = null;
+    if (revived.importFileId) revived.importFileId = null;
+
+    await db.transaction(async (tx) => {
+      await tx.insert(fines).values(revived);
+      await tx.execute(sql`SELECT setval(pg_get_serial_sequence('fines', 'id'), GREATEST((SELECT COALESCE(MAX(id), 1) FROM "fines"), 1))`);
+      await tx.update(deletedRecords).set({ restoredAt: new Date(), restoredBy: actor?.username || null }).where(eq(deletedRecords.id, record.id));
+    });
     return { restored: true, record };
   }
 

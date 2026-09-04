@@ -3,12 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { apiRequest } from "@/lib/queryClient";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
-import { useAuth } from "@/hooks/use-auth";
 import { UserPermission, UserRole } from "@shared/schema";
 import { FineStatus } from "@shared/fines";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { DeletedVehiclesDialog } from "@/components/vehicles/deleted-vehicles-dialog";
+import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { FineStatusBadge } from "./fine-status-badge";
 
@@ -38,6 +39,9 @@ export function FinesTable({ customerId, initialPlate, importFileId }: { custome
   const { t } = useTranslation("portal");
   const { openFineDialog, openNewFineDialog, openFineImportDialog, openFineImportsDialog } = useGlobalDialog();
   const canManage = useCanManageFines();
+  const { user } = useAuth();
+  const isAdmin = user?.role === UserRole.ADMIN;
+  const [binOpen, setBinOpen] = useState(false);
   const [status, setStatus] = useState("");
   const [plate, setPlate] = useState(initialPlate ?? "");
   const [from, setFrom] = useState("");
@@ -63,6 +67,7 @@ export function FinesTable({ customerId, initialPlate, importFileId }: { custome
         <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" aria-label={t("admin.fines.filters.to")} />
         {importFileId && <Badge variant="secondary" data-testid="badge-import-filter">{t("admin.fines.cjib.filteredByFile", { id: importFileId })}</Badge>}
         {canManage && (<div className="ml-auto flex gap-2">
+          {isAdmin && <Button size="sm" variant="ghost" onClick={() => setBinOpen(true)} data-testid="button-fines-bin">{t("admin.fines.bin.button")}</Button>}
           <Button size="sm" variant="outline" onClick={openFineImportsDialog} data-testid="button-cjib-imports">{t("admin.fines.cjib.button")}</Button>
           <Button size="sm" variant="outline" onClick={openFineImportDialog} data-testid="button-import-fines">{t("admin.fines.import.button")}</Button>
           <Button size="sm" onClick={() => openNewFineDialog({ licensePlate: plate || undefined })} data-testid="button-new-fine">
@@ -96,6 +101,7 @@ export function FinesTable({ customerId, initialPlate, importFileId }: { custome
           </TableBody>
         </Table>
       )}
+      {isAdmin && <DeletedVehiclesDialog open={binOpen} onOpenChange={setBinOpen} entityType="fine" title={t("admin.fines.bin.title")} description={t("admin.fines.bin.description")} emptyText={t("admin.fines.bin.empty")} />}
     </div>
   );
 }

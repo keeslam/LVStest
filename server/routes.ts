@@ -1738,15 +1738,16 @@ export async function registerRoutes(app: Express): Promise<void> {
         });
       }
 
+      const entityType = result.record?.entityType ?? 'vehicle';
       await AuditLogger.logFromRequest(
         req,
-        'vehicle.update',
-        'vehicle',
+        entityType === 'vehicle' ? 'vehicle.update' : `${entityType}.restore`,
+        entityType,
         result.record?.entityId,
         { restoredFromDeletedRecord: id, label: result.record?.label },
       );
 
-      realtimeEvents.vehicles.created({ id: result.record?.entityId });
+      if (entityType === 'vehicle') realtimeEvents.vehicles.created({ id: result.record?.entityId });
 
       res.json({ success: true, message: `Restored ${result.record?.label ?? 'record'}.` });
     } catch (error) {

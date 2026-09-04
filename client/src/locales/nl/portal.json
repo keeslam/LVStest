@@ -414,7 +414,11 @@
         "noCustomer": "Geen klant gevonden",
         "pickDriver": "Geen bestuurder",
         "searchDriver": "Bestuurder zoeken…",
-        "noDriver": "Geen bestuurder gevonden"
+        "noDriver": "Geen bestuurder gevonden",
+        "reactivate": "Heractiveren",
+        "delete": "Verwijderen",
+        "deleteConfirm": "Deze bekeuring naar de prullenbak verplaatsen? Een beheerder kan hem daar terugzetten.",
+        "deleted": "Bekeuring naar de prullenbak verplaatst"
       },
       "cjib": {
         "button": "CJIB-importen",
@@ -468,6 +472,12 @@
         "download": "Bestand downloaden",
         "filteredByFile": "Uit importbestand #{{id}}",
         "sourceLine": "Bron: CJIB-bestand #{{file}}"
+      },
+      "bin": {
+        "button": "Prullenbak",
+        "title": "Verwijderde bekeuringen",
+        "description": "Verwijderde bekeuringen blijven hier bewaard met wie ze wanneer verwijderde, en kunnen worden teruggezet.",
+        "empty": "Geen verwijderde bekeuringen."
       }
     },
     "requests": {

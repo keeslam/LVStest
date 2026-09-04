@@ -263,6 +263,36 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
     } catch (e) { res.status(404).json({ message: (e as Error).message }); }
   });
 
+  // Cancelled by mistake: back to linked (when it has a customer) or new.
+  app.post("/api/fines/:id/reactivate", canManage, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const fine = await finesStorage.getFine(id);
+    if (!fine) return res.status(404).json({ message: "Fine not found" });
+    if (fine.status !== "cancelled") return res.status(400).json({ message: "Only a cancelled fine can be reactivated" });
+    const next: FineStatusValue = fine.customerId ? "linked" : "new";
+    const updated = await finesStorage.updateFine(id, { status: next, updatedBy: actor(req) });
+    await AuditLogger.logFromRequest(req, "fine.status", "fine", id, { from: "cancelled", to: next, reactivated: true });
+    res.json(updated);
+  });
+
+  // Delete = move to the recycle bin (deleted_records); admins can restore it from there.
+  app.delete("/api/fines/:id", canManage, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const fine = await finesStorage.getFineRow(id);
+    if (!fine) return res.status(404).json({ message: "Fine not found" });
+    const { customerName, driverName, ...row } = fine;
+    await finesStorage.recordDeletion({
+      entityType: "fine", entityId: id,
+      label: `${fine.licensePlate} · ${fine.description}${fine.reference ? ` (${fine.reference})` : ""}`,
+      payload: { fine: row, customerName, driverName },
+      relatedCounts: { requests: 0 },
+      deletedBy: actor(req), deletedByUserId: req.user?.id ?? null,
+    });
+    await finesStorage.deleteFine(id);
+    await AuditLogger.logFromRequest(req, "fine.delete", "fine", id, { plate: fine.licensePlate, status: fine.status, customerId: fine.customerId });
+    res.json({ ok: true });
+  });
+
   app.post("/api/fines/:id/status", canManage, async (req, res) => {
     const id = idParam(req, res); if (id === null) return;
     const fine = await finesStorage.getFine(id);
@@ -273,7 +303,8 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
     if (!isValidFineTransition(fine.status, next)) {
       return res.status(400).json({ message: `Cannot go from ${fine.status} to ${next}`, allowed: FINE_TRANSITIONS[fine.status as FineStatusValue] ?? [] });
     }
-    if (next === "new") { res.json(await unlinkFine(id, actor(req))); return; }
+    if (next === "new" && fine.status !== "cancelled") { res.json(await unlinkFine(id, actor(req))); return; }
+    if (next === "linked" && fine.status === "cancelled" && !fine.customerId) return res.status(400).json({ message: "Link the fine to a customer first" });
     const patch: Record<string, unknown> = { status: next, updatedBy: actor(req) };
     if (next === "charged") { patch.chargedAt = new Date(); if (parsed.data.invoiceReference) patch.invoiceReference = parsed.data.invoiceReference; }
     if (next === "paid") patch.paidAt = new Date();

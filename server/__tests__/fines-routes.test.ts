@@ -11,6 +11,7 @@ import { buildStaffTestApp, createTestCustomer, createTestVehicle, createTestDri
 import { getUploadsDir } from "../../shared/paths";
 import { UserPermission, customers } from "../../shared/schema";
 import { db } from "../db";
+import { storage } from "../storage";
 import { eq } from "drizzle-orm";
 
 const deps = { uploadsDir: getUploadsDir(), requireAuth: (_r: any, _s: any, n: any) => n() } as any;
@@ -86,6 +87,32 @@ describe("fines routes", () => {
     expect(ok.body.status).toBe("linked");
     const back = await request(manager).post(`/api/fines/${id}/unlink`);
     expect(back.body.status).toBe("new");
+  });
+
+  it("cancels, reactivates, deletes to the recycle bin and restores", async () => {
+    const created = await request(manager).post("/api/fines").send({ licensePlate: plate, offenceAt: "2026-09-04T10:00:00.000Z", description: "Annuleertest", amount: 40 });
+    const id = created.body.fine.id;
+    expect(created.body.fine.status).toBe("linked");
+    expect((await request(manager).post(`/api/fines/${id}/status`).send({ status: "cancelled" })).body.status).toBe("cancelled");
+    const back = await request(manager).post(`/api/fines/${id}/reactivate`);
+    expect(back.status).toBe(200);
+    expect(back.body.status).toBe("linked"); // it still had its customer
+    expect(back.body.customerId).toBe(customerId);
+    expect((await request(manager).post(`/api/fines/${id}/reactivate`)).status).toBe(400);
+
+    expect((await request(viewer).delete(`/api/fines/${id}`)).status).toBe(403);
+    expect((await request(manager).delete(`/api/fines/${id}`)).status).toBe(200);
+    expect((await request(manager).get(`/api/fines/${id}`)).status).toBe(404);
+    const bin = (await storage.getDeletedRecords!(50)).find((r: any) => r.entityType === "fine" && r.entityId === id);
+    expect(bin).toBeTruthy();
+    expect(bin!.label).toContain("Annuleertest");
+
+    const restored = await storage.restoreDeletedRecord!(bin!.id, { username: "test" });
+    expect(restored.restored).toBe(true);
+    const again = await request(manager).get(`/api/fines/${id}`);
+    expect(again.status).toBe(200);
+    expect(again.body).toMatchObject({ status: "linked", customerId, description: "Annuleertest" });
+    expect((await storage.restoreDeletedRecord!(bin!.id)).reason).toBe("already_restored");
   });
 
   it("recomputes the total on patch", async () => {

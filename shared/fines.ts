@@ -11,7 +11,7 @@ export const FINE_TRANSITIONS: Record<FineStatusValue, FineStatusValue[]> = {
   charged: ['paid', 'disputed'],
   disputed: ['linked', 'charged', 'cancelled'],
   paid: [],
-  cancelled: [],
+  cancelled: ['new', 'linked'],
 };
 
 export function isValidFineTransition(from: string, to: string): boolean {
