@@ -10,6 +10,15 @@
       ],
       "port": 5000,
       "autoPort": true
+    },
+    {
+      "name": "iframe-test",
+      "runtimeExecutable": "C:\\Windows\\System32\\cmd.exe",
+      "runtimeArgs": [
+        "/c",
+        "set PATH=C:\\Program Files\\nodejs;%PATH% && npx -y serve scripts -l 8099"
+      ],
+      "port": 8099
     }
   ]
 }

@@ -6,15 +6,24 @@ import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { LogOut, Loader2 } from "lucide-react";
 
 /** Tells the embedding website how tall the document is, so the iframe can grow. */
-export function usePortalHeightReporter() {
+export function usePortalHeightReporter(routeKey?: string) {
   useEffect(() => {
     if (window.parent === window) return;
-    const send = () => window.parent.postMessage({ type: "lamgroep-portal:height", height: document.documentElement.scrollHeight }, "*");
+    // The app root is the element that actually grows with the content; body/html
+    // may be sized to the viewport by the global stylesheet.
+    const root = document.getElementById("root");
+    const measure = () => Math.max(root?.scrollHeight ?? 0, document.documentElement.scrollHeight);
+    let last = 0;
+    const send = () => { const h = measure(); if (h !== last) { last = h; window.parent.postMessage({ type: "lamgroep-portal:height", height: h }, "*"); } };
     send();
+    const timer = window.setTimeout(send, 300);
     const observer = new ResizeObserver(send);
     observer.observe(document.body);
-    return () => observer.disconnect();
-  }, []);
+    if (root) observer.observe(root);
+    const mutations = new MutationObserver(send);
+    if (root) mutations.observe(root, { childList: true, subtree: true });
+    return () => { window.clearTimeout(timer); observer.disconnect(); mutations.disconnect(); };
+  }, [routeKey]);
 }
 
 interface TabDef { href: string; key: string; show: boolean }
@@ -23,7 +32,7 @@ export function PortalLayout({ children }: { children: ReactNode }) {
   const { t } = useTranslation("portal");
   const { me, isLoading, logout } = usePortalAuth();
   const [location, navigate] = useLocation();
-  usePortalHeightReporter();
+  usePortalHeightReporter(location);
 
   // Inside the nested /portaal router, location and navigate are relative to it.
   const isPublicPage = location.startsWith("/login") || location.startsWith("/activeren");
