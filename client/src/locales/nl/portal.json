@@ -100,7 +100,10 @@
     "dialogTitle": "Bestuurder",
     "selectDriver": "Kies bestuurder",
     "changeDriverTitle": "Bestuurder wijzigen voor {{plate}}",
-    "changed": "Bestuurder gewijzigd. Lam Groep is op de hoogte gebracht."
+    "changed": "Bestuurder gewijzigd. Lam Groep is op de hoogte gebracht.",
+    "selectCountry": "Kies land…",
+    "searchCountries": "Land zoeken…",
+    "noCountries": "Geen land gevonden"
   },
   "account": {
     "title": "Mijn account",

@@ -100,7 +100,10 @@
     "dialogTitle": "Driver",
     "selectDriver": "Choose driver",
     "changeDriverTitle": "Change driver for {{plate}}",
-    "changed": "Driver changed. Lam Groep has been notified."
+    "changed": "Driver changed. Lam Groep has been notified.",
+    "selectCountry": "Choose country…",
+    "searchCountries": "Search country…",
+    "noCountries": "No country found"
   },
   "account": {
     "title": "My account",

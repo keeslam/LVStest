@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { SearchableCombobox } from "@/components/ui/searchable-combobox";
+import { COUNTRIES } from "@shared/countries";
 import { useToast } from "@/hooks/use-toast";
 
 const FIELDS = ["displayName", "firstName", "lastName", "email", "phone", "driverLicenseNumber", "licenseExpiry", "licenseOrigin", "preferredLanguage", "notes"] as const;
@@ -17,8 +19,7 @@ const LABEL_KEY: Record<Field, string> = {
   phone: "fields.phone", driverLicenseNumber: "fields.licenseNumber", licenseExpiry: "fields.licenseExpiry",
   licenseOrigin: "fields.licenseOrigin", preferredLanguage: "fields.preferredLanguage", notes: "fields.notes",
 };
-/** Suggestions for the licence country; any other value is accepted. */
-const COUNTRIES = ["Nederland", "België", "Duitsland", "Frankrijk", "Polen", "Roemenië", "Verenigd Koninkrijk", "Spanje", "Italië", "Portugal", "Turkije", "Marokko"];
+const COUNTRY_OPTIONS = COUNTRIES.map((c) => ({ value: c, label: c }));
 
 /** Same fields as the staff driver form, minus status and primary-driver flag (staff only). */
 export function DriverFormDialog({ driver, children }: { driver?: PortalDriverDto; children: ReactNode }) {
@@ -74,8 +75,11 @@ export function DriverFormDialog({ driver, children }: { driver?: PortalDriverDt
             {text("phone", "tel")}
             {text("driverLicenseNumber")}
             {text("licenseExpiry", "date")}
-            {text("licenseOrigin", "text", { list: "drv-countries", placeholder: COUNTRIES[0] })}
-            <datalist id="drv-countries">{COUNTRIES.map((c) => <option key={c} value={c} />)}</datalist>
+            <div>
+              <Label htmlFor="drv-licenseOrigin">{t(LABEL_KEY.licenseOrigin)}</Label>
+              <SearchableCombobox options={COUNTRY_OPTIONS} value={values.licenseOrigin} onChange={(v) => set("licenseOrigin", v)}
+                placeholder={t("drivers.selectCountry")} searchPlaceholder={t("drivers.searchCountries")} emptyMessage={t("drivers.noCountries")} recentValues={["Netherlands", "Belgium", "Germany", "Poland"]} />
+            </div>
             <div>
               <Label htmlFor="drv-preferredLanguage">{t(LABEL_KEY.preferredLanguage)}</Label>
               <select id="drv-preferredLanguage" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={values.preferredLanguage} onChange={(e) => set("preferredLanguage", e.target.value)} data-testid="select-driver-language">
