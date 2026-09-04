@@ -418,7 +418,9 @@
         "reactivate": "Reactivate",
         "delete": "Delete",
         "deleteConfirm": "Move this fine to the recycle bin? An administrator can restore it from there.",
-        "deleted": "Fine moved to the recycle bin"
+        "deleted": "Fine moved to the recycle bin",
+        "changeCustomer": "Change",
+        "moreCustomers": "{{shown}} of {{total}} shown, type to narrow down."
       },
       "cjib": {
         "button": "CJIB imports",

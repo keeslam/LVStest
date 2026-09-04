@@ -418,7 +418,9 @@
         "reactivate": "Heractiveren",
         "delete": "Verwijderen",
         "deleteConfirm": "Deze bekeuring naar de prullenbak verplaatsen? Een beheerder kan hem daar terugzetten.",
-        "deleted": "Bekeuring naar de prullenbak verplaatst"
+        "deleted": "Bekeuring naar de prullenbak verplaatst",
+        "changeCustomer": "Wijzigen",
+        "moreCustomers": "{{shown}} van {{total}} getoond, typ om te verfijnen."
       },
       "cjib": {
         "button": "CJIB-importen",
