@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { SearchListPicker } from "@/components/ui/search-list-picker";
 
 export interface PortalAccountRow {
   id: number; customerId: number; email: string; fullName: string; role: "admin" | "driver"; driverId: number | null;
@@ -96,10 +97,10 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children }
           {role === "driver" && (
             <div>
               <Label htmlFor="pa-driver">{t("admin.dialog.driver")}</Label>
-              <select id="pa-driver" className="w-full rounded-md border px-3 py-2 text-sm" value={driverId} onChange={(e) => setDriverId(e.target.value)}>
-                <option value="">—</option>
-                {drivers.map((d) => <option key={d.id} value={d.id}>{d.displayName}</option>)}
-              </select>
+              <SearchListPicker items={drivers.map((d) => ({ id: d.id, label: d.displayName, sub: d.email ?? null, search: `${d.firstName ?? ""} ${d.lastName ?? ""}` }))}
+                value={driverId ? Number(driverId) : null} onChange={(did) => setDriverId(did ? String(did) : "")}
+                searchPlaceholder={t("admin.fines.dialog.searchDriver")} emptyText={t("admin.fines.dialog.noDriver")} changeLabel={t("admin.fines.dialog.changeCustomer")}
+                hintText={(shown, total) => t("admin.fines.dialog.moreCustomers", { shown, total })} searchFrom={6} testId="account-driver-picker" />
             </div>
           )}
           <div className="flex justify-end gap-2">

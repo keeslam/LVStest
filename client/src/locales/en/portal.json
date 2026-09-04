@@ -19,7 +19,8 @@
     "deactivate": "Deactivate",
     "activate": "Activate",
     "uploadLicense": "Upload licence",
-    "viewLicense": "View licence"
+    "viewLicense": "View licence",
+    "change": "Change"
   },
   "fields": {
     "email": "E-mail address",
@@ -105,7 +106,10 @@
     "changed": "Driver changed. Lam Groep has been notified.",
     "selectCountry": "Choose country…",
     "searchCountries": "Search country…",
-    "noCountries": "No country found"
+    "noCountries": "No country found",
+    "search": "Search driver…",
+    "noneFound": "No driver found",
+    "moreShown": "{{shown}} of {{total}} shown, type to narrow down."
   },
   "account": {
     "title": "My account",

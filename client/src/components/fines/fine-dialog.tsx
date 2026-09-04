@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { FineStatusBadge } from "./fine-status-badge";
 import { CustomerSearchPicker } from "@/components/customers/customer-search-picker";
+import { SearchListPicker } from "@/components/ui/search-list-picker";
 import { useCanManageFines, type FineRow } from "./fines-table";
 
 interface Candidate { id: number; customerId: number | null; customerName: string | null; startDate: string; endDate: string | null; driverId: number | null; driverName: string | null }
@@ -118,10 +119,10 @@ export function FineDialog() {
                   {pick.customerId && (
                     <div>
                       <Label htmlFor="fd-drv">{t("admin.fines.dialog.chooseDriver")}</Label>
-                      <select id="fd-drv" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={pick.driverId} onChange={(e) => setPick({ ...pick, driverId: e.target.value })} data-testid="select-fine-driver">
-                        <option value="">{t("admin.fines.dialog.pickDriver")}</option>
-                        {drivers.map((d) => <option key={d.id} value={d.id}>{d.displayName}</option>)}
-                      </select>
+                      <SearchListPicker items={drivers.map((d) => ({ id: d.id, label: d.displayName, sub: d.status === "inactive" ? t("admin.accounts.status.blocked") : null, search: `${d.firstName ?? ""} ${d.lastName ?? ""} ${d.email ?? ""}` }))}
+                        value={pick.driverId ? Number(pick.driverId) : null} onChange={(did) => setPick({ ...pick, driverId: did ? String(did) : "" })}
+                        searchPlaceholder={t("admin.fines.dialog.searchDriver")} emptyText={t("admin.fines.dialog.noDriver")} changeLabel={t("admin.fines.dialog.changeCustomer")}
+                        hintText={(shown, total) => t("admin.fines.dialog.moreCustomers", { shown, total })} searchFrom={6} testId="fine-driver-picker" />
                     </div>
                   )}
                 </div>

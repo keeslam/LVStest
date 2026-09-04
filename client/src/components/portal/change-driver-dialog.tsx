@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { SearchListPicker } from "@/components/ui/search-list-picker";
 
 export function ChangeDriverDialog({ reservation }: { reservation: PortalReservationDto }) {
   const { t } = useTranslation("portal");
@@ -36,10 +37,10 @@ export function ChangeDriverDialog({ reservation }: { reservation: PortalReserva
         <div className="space-y-3">
           <div>
             <Label htmlFor="driver-select">{t("drivers.selectDriver")}</Label>
-            <select id="driver-select" className="w-full rounded-md border px-3 py-2 text-sm" value={driverId} onChange={(e) => setDriverId(e.target.value)}>
-              <option value="">—</option>
-              {drivers.filter((d) => d.status === "active").map((d) => <option key={d.id} value={d.id}>{d.displayName}</option>)}
-            </select>
+            <SearchListPicker items={drivers.filter((d) => d.status === "active").map((d) => ({ id: d.id, label: d.displayName, sub: d.email ?? null, search: `${d.firstName ?? ""} ${d.lastName ?? ""} ${d.phone ?? ""}` }))}
+              value={driverId ? Number(driverId) : null} onChange={(did) => setDriverId(did ? String(did) : "")}
+              searchPlaceholder={t("drivers.search")} emptyText={t("drivers.noneFound")} changeLabel={t("actions.change")}
+              hintText={(shown, total) => t("drivers.moreShown", { shown, total })} searchFrom={6} testId="portal-driver-picker" />
           </div>
           <div>
             <Label htmlFor="driver-note">{t("fields.note")}</Label>

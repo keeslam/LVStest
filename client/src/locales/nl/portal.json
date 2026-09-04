@@ -19,7 +19,8 @@
     "deactivate": "Deactiveren",
     "activate": "Activeren",
     "uploadLicense": "Rijbewijs uploaden",
-    "viewLicense": "Rijbewijs bekijken"
+    "viewLicense": "Rijbewijs bekijken",
+    "change": "Wijzigen"
   },
   "fields": {
     "email": "E-mailadres",
@@ -105,7 +106,10 @@
     "changed": "Bestuurder gewijzigd. Lam Groep is op de hoogte gebracht.",
     "selectCountry": "Kies land…",
     "searchCountries": "Land zoeken…",
-    "noCountries": "Geen land gevonden"
+    "noCountries": "Geen land gevonden",
+    "search": "Bestuurder zoeken…",
+    "noneFound": "Geen bestuurder gevonden",
+    "moreShown": "{{shown}} van {{total}} getoond, typ om te verfijnen."
   },
   "account": {
     "title": "Mijn account",
