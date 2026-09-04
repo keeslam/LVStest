@@ -408,7 +408,13 @@
         "openCustomer": "Open customer",
         "openReservation": "Open reservation",
         "linkedBy": "Linked by {{by}} on {{at}}",
-        "closed": "This fine is closed."
+        "closed": "This fine is closed.",
+        "pickCustomer": "Choose customer…",
+        "searchCustomer": "Search customer…",
+        "noCustomer": "No customer found",
+        "pickDriver": "No driver",
+        "searchDriver": "Search driver…",
+        "noDriver": "No driver found"
       },
       "cjib": {
         "button": "CJIB imports",

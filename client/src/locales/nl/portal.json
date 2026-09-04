@@ -408,7 +408,13 @@
         "openCustomer": "Klant openen",
         "openReservation": "Reservering openen",
         "linkedBy": "Gekoppeld door {{by}} op {{at}}",
-        "closed": "Deze bekeuring is afgesloten."
+        "closed": "Deze bekeuring is afgesloten.",
+        "pickCustomer": "Kies klant…",
+        "searchCustomer": "Klant zoeken…",
+        "noCustomer": "Geen klant gevonden",
+        "pickDriver": "Geen bestuurder",
+        "searchDriver": "Bestuurder zoeken…",
+        "noDriver": "Geen bestuurder gevonden"
       },
       "cjib": {
         "button": "CJIB-importen",

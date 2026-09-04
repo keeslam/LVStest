@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { FineStatusBadge } from "./fine-status-badge";
+import { SearchableCombobox } from "@/components/ui/searchable-combobox";
 import { useCanManageFines, type FineRow } from "./fines-table";
 
 interface Candidate { id: number; customerId: number | null; customerName: string | null; startDate: string; endDate: string | null; driverId: number | null; driverName: string | null }
@@ -104,17 +105,15 @@ export function FineDialog() {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <Label htmlFor="fd-cust">{t("admin.fines.dialog.chooseCustomer")}</Label>
-                    <select id="fd-cust" className="w-full rounded-md border px-2 py-2 text-sm" value={pick.customerId} onChange={(e) => setPick({ customerId: e.target.value, reservationId: "", driverId: "" })}>
-                      <option value="">—</option>
-                      {customers.map((c) => <option key={c.id} value={c.id}>{c.companyName || c.name}</option>)}
-                    </select>
+                    <SearchableCombobox options={customers.map((c) => ({ value: String(c.id), label: c.companyName || c.name }))} value={pick.customerId}
+                      onChange={(v) => setPick({ customerId: v, reservationId: "", driverId: "" })}
+                      placeholder={t("admin.fines.dialog.pickCustomer")} searchPlaceholder={t("admin.fines.dialog.searchCustomer")} emptyMessage={t("admin.fines.dialog.noCustomer")} />
                   </div>
                   <div>
                     <Label htmlFor="fd-drv">{t("admin.fines.dialog.chooseDriver")}</Label>
-                    <select id="fd-drv" className="w-full rounded-md border px-2 py-2 text-sm" value={pick.driverId} onChange={(e) => setPick({ ...pick, driverId: e.target.value })}>
-                      <option value="">—</option>
-                      {drivers.map((d) => <option key={d.id} value={d.id}>{d.displayName}</option>)}
-                    </select>
+                    <SearchableCombobox options={drivers.map((d) => ({ value: String(d.id), label: d.displayName }))} value={pick.driverId}
+                      onChange={(v) => setPick({ ...pick, driverId: v })} disabled={!pick.customerId}
+                      placeholder={t("admin.fines.dialog.pickDriver")} searchPlaceholder={t("admin.fines.dialog.searchDriver")} emptyMessage={t("admin.fines.dialog.noDriver")} />
                   </div>
                 </div>
                 <Button size="sm" disabled={!pick.customerId || call.isPending} data-testid="button-link-fine"
