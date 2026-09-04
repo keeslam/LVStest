@@ -9,7 +9,10 @@ describe("fines shared", () => {
     expect(isValidFineTransition("charged", "paid")).toBe(true);
     expect(isValidFineTransition("paid", "charged")).toBe(false);
     expect(isValidFineTransition("disputed", "cancelled")).toBe(true);
-    expect(isValidFineTransition(FineStatus.CANCELLED, FineStatus.NEW)).toBe(false);
+    // Cancelled by mistake can be reactivated; paid stays final.
+    expect(isValidFineTransition(FineStatus.CANCELLED, FineStatus.NEW)).toBe(true);
+    expect(isValidFineTransition(FineStatus.CANCELLED, FineStatus.LINKED)).toBe(true);
+    expect(isValidFineTransition(FineStatus.PAID, FineStatus.NEW)).toBe(false);
   });
   it("normalises plates and hides new/cancelled from customers", () => {
     expect(normalizeLicensePlate(" 94-xt-184 ")).toBe("94XT184");
