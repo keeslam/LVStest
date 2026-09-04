@@ -132,6 +132,52 @@
       "fines": "Bekeuringen",
       "requests": "Aanvragen"
     },
+    "dashboard": {
+      "inviteAccount": "Account uitnodigen",
+      "tiles": {
+        "newRequests": "Nieuwe aanvragen",
+        "inProgress": "{{n}} in behandeling",
+        "unlinkedFines": "Bekeuringen niet gekoppeld",
+        "onlineNow": "Klanten nu online",
+        "invites": "Uitnodigingen open",
+        "expired": "{{n}} verlopen",
+        "vehiclesOnline": "{{n}} voertuigen online"
+      },
+      "attention": {
+        "title": "Aandacht nodig",
+        "empty": "Niets openstaand. Alles is afgehandeld.",
+        "allRequests": "Alle aanvragen",
+        "allFines": "Alle bekeuringen",
+        "fine": "Bekeuring {{plate}}",
+        "unlinked": "Niet gekoppeld"
+      },
+      "notifications": {
+        "title": "Meldingen",
+        "empty": "Nog geen meldingen vanuit het portaal.",
+        "markAll": "Alles gelezen",
+        "unread": "{{n}} ongelezen"
+      },
+      "upcoming": {
+        "title": "Aankomende reserveringen",
+        "subtitle": "Ophalen en inleveren in de komende {{days}} dagen",
+        "empty": "Geen ophaal- of inlevermomenten in de komende {{days}} dagen.",
+        "pickup": "Ophalen",
+        "return": "Inleveren",
+        "viaPortal": "via portaal",
+        "today": "Vandaag",
+        "tomorrow": "Morgen"
+      },
+      "customers": {
+        "title": "Klanten",
+        "all": "Alle klanten",
+        "accounts": "{{active}}/{{total}} accounts",
+        "invites": "{{n}} uitnodiging(en)",
+        "expired": "uitnodiging verlopen",
+        "last": "laatst {{when}}",
+        "portalOff": "portaal uit",
+        "more": "Nog {{n}} klanten"
+      }
+    },
     "customers": {
       "search": "Zoek klant",
       "onlyOnline": "Alleen nu online",

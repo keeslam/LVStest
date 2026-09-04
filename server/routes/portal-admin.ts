@@ -7,6 +7,7 @@ import { portalStorage } from "../services/portal-storage";
 import { requestsStorage } from "../services/portal-requests-storage";
 import { sendPortalInvite } from "../services/portal-mail";
 import { getPortalConfig, savePortalConfig } from "../services/portal-config";
+import { getPortalDashboard } from "../services/portal-dashboard";
 import { AuditLogger } from "../utils/security/auditLogger";
 import type { RouteDeps } from "./deps";
 
@@ -118,6 +119,18 @@ export function registerPortalAdminRoutes(app: Express, _deps: RouteDeps): void 
   // ---- per-customer overview (online, invitations, last activity) --------------
   app.get("/api/portal-admin/customers-overview", canView, async (_req, res) => {
     res.json(await portalStorage.listCustomersOverview());
+  });
+
+  // ---- dashboard: counters, attention items, notifications, upcoming ----------
+  app.get("/api/portal-admin/dashboard", canView, async (_req, res) => {
+    res.json(await getPortalDashboard());
+  });
+
+  app.post("/api/portal-admin/notifications/:id/read", canView, async (req, res) => {
+    const id = intParam(req, res, "id"); if (id === null) return;
+    const ok = await storage.markCustomNotificationAsRead(id);
+    if (!ok) return res.status(404).json({ message: "Notification not found" });
+    res.json({ ok: true });
   });
 
   // ---- staff badge: unread portal notifications --------------------------------

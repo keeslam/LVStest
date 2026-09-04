@@ -132,6 +132,52 @@
       "fines": "Fines",
       "requests": "Requests"
     },
+    "dashboard": {
+      "inviteAccount": "Invite account",
+      "tiles": {
+        "newRequests": "New requests",
+        "inProgress": "{{n}} in progress",
+        "unlinkedFines": "Fines not linked",
+        "onlineNow": "Customers online now",
+        "invites": "Open invitations",
+        "expired": "{{n}} expired",
+        "vehiclesOnline": "{{n}} vehicles online"
+      },
+      "attention": {
+        "title": "Needs attention",
+        "empty": "Nothing open. Everything is handled.",
+        "allRequests": "All requests",
+        "allFines": "All fines",
+        "fine": "Fine {{plate}}",
+        "unlinked": "Not linked"
+      },
+      "notifications": {
+        "title": "Notifications",
+        "empty": "No portal notifications yet.",
+        "markAll": "Mark all read",
+        "unread": "{{n}} unread"
+      },
+      "upcoming": {
+        "title": "Upcoming reservations",
+        "subtitle": "Pickups and returns in the next {{days}} days",
+        "empty": "No pickups or returns in the next {{days}} days.",
+        "pickup": "Pickup",
+        "return": "Return",
+        "viaPortal": "via portal",
+        "today": "Today",
+        "tomorrow": "Tomorrow"
+      },
+      "customers": {
+        "title": "Customers",
+        "all": "All customers",
+        "accounts": "{{active}}/{{total}} accounts",
+        "invites": "{{n}} invitation(s)",
+        "expired": "invitation expired",
+        "last": "last {{when}}",
+        "portalOff": "portal off",
+        "more": "{{n}} more customers"
+      }
+    },
     "customers": {
       "search": "Search customer",
       "onlyOnline": "Only online now",

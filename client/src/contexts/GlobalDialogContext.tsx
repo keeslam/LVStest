@@ -1,5 +1,8 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 
+/** Which portal-admin list opens in the shared list dialog (see portal-list-dialog.tsx). */
+export type PortalListKind = 'customers' | 'accounts' | 'requests' | 'fines' | 'vehicles' | 'activity';
+
 interface DialogState {
   reservation: { open: boolean; id: number | null };
   spareAssignment: { open: boolean; id: number | null };
@@ -10,6 +13,7 @@ interface DialogState {
   fine: { open: boolean; id: number | null };
   newFine: { open: boolean; licensePlate?: string };
   portalRequest: { open: boolean; id: number | null };
+  portalList: { open: boolean; kind: PortalListKind | null; plate?: string };
   expenseVehicle: { open: boolean; vehicleId: number | null };
   expense: { open: boolean; expenseId: number | null; hideVehicleExpensesLink: boolean };
   rdwApkChanges: { open: boolean };
@@ -36,6 +40,8 @@ interface GlobalDialogContextType {
   closeNewFineDialog: () => void;
   openPortalRequestDialog: (id: number) => void;
   closePortalRequestDialog: () => void;
+  openPortalListDialog: (kind: PortalListKind, opts?: { plate?: string }) => void;
+  closePortalListDialog: () => void;
   openExpenseVehicleDialog: (vehicleId: number) => void;
   closeExpenseVehicleDialog: () => void;
   openExpenseDialog: (expenseId: number, hideVehicleExpensesLink?: boolean) => void;
@@ -59,6 +65,7 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     fine: { open: false, id: null },
     newFine: { open: false },
     portalRequest: { open: false, id: null },
+    portalList: { open: false, kind: null },
     expenseVehicle: { open: false, vehicleId: null },
     expense: { open: false, expenseId: null, hideVehicleExpensesLink: false },
     rdwApkChanges: { open: false },
@@ -148,6 +155,8 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
   const closeNewFineDialog = () => setDialogState((prev) => ({ ...prev, newFine: { open: false } }));
   const openPortalRequestDialog = (id: number) => setDialogState((prev) => ({ ...prev, portalRequest: { open: true, id } }));
   const closePortalRequestDialog = () => setDialogState((prev) => ({ ...prev, portalRequest: { open: false, id: null } }));
+  const openPortalListDialog = (kind: PortalListKind, opts?: { plate?: string }) => setDialogState((prev) => ({ ...prev, portalList: { open: true, kind, plate: opts?.plate } }));
+  const closePortalListDialog = () => setDialogState((prev) => ({ ...prev, portalList: { open: false, kind: null } }));
 
   const closeCustomerDialog = () => {
     setDialogState(prev => ({
@@ -234,6 +243,8 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
         closeNewFineDialog,
         openPortalRequestDialog,
         closePortalRequestDialog,
+        openPortalListDialog,
+        closePortalListDialog,
         openExpenseVehicleDialog,
         closeExpenseVehicleDialog,
         openExpenseDialog,

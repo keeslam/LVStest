@@ -100,3 +100,28 @@ export const DEFAULT_PORTAL_CONFIG: PortalConfig = {
 };
 
 export const PORTAL_CONFIG_KEY = 'portal_config';
+
+// ---- staff dashboard (GET /api/portal-admin/dashboard) ----------------------
+export interface PortalDashboard {
+  counts: {
+    newRequests: number;
+    inProgressRequests: number;
+    unlinkedFines: number;
+    onlineNow: number;
+    pendingInvites: number;
+    expiredInvites: number;
+    vehiclesOnline: number;
+    unreadNotifications: number;
+  };
+  attention: {
+    requests: Array<{ id: number; type: string; status: string; customerId: number; customerName: string; reservationLabel: string | null; createdAt: string }>;
+    fines: Array<{ id: number; licensePlate: string; description: string; totalAmount: string; offenceAt: string }>;
+  };
+  notifications: Array<{ id: number; type: string; title: string; description: string; link: string; isRead: boolean; createdAt: string }>;
+  upcoming: Array<{
+    reservationId: number; kind: "pickup" | "return"; date: string; status: string;
+    customerId: number; customerName: string; driverName: string | null;
+    vehicle: { id: number; brand: string; model: string; licensePlate: string } | null;
+    viaPortal: boolean;
+  }>;
+}

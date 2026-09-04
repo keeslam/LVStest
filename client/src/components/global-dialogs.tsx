@@ -13,6 +13,7 @@ import { ExpenseDetailDialog } from '@/components/expenses/expense-detail-dialog
 import { FineDialog } from '@/components/fines/fine-dialog';
 import { NewFineDialog } from '@/components/fines/new-fine-dialog';
 import { PortalRequestDialog } from '@/components/portal-admin/portal-request-dialog';
+import { PortalListDialog } from '@/components/portal-admin/portal-list-dialog';
 import { ScanDialog } from '@/components/barcodes/scan-dialog';
 import { Vehicle, Reservation } from '@shared/schema';
 
@@ -143,6 +144,7 @@ export function GlobalDialogs() {
       <FineDialog />
       <NewFineDialog />
       <PortalRequestDialog />
+      <PortalListDialog />
 
       {/* Vehicle Expenses Dialog */}
       {dialogState.expenseVehicle.vehicleId !== null && (

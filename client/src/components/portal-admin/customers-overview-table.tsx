@@ -17,7 +17,7 @@ interface OverviewRow {
 
 const KEY = ["/api/portal-admin/customers-overview"];
 
-function ago(iso: string | null, t: (k: string, o?: Record<string, unknown>) => string): string {
+export function ago(iso: string | null, t: (k: string, o?: Record<string, unknown>) => string): string {
   if (!iso) return "—";
   const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
   if (minutes < 1) return t("admin.customers.justNow");

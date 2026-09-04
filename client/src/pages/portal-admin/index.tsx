@@ -1,61 +1,81 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useSearch } from "wouter";
 import { useTranslation } from "react-i18next";
-import { useQueryClient } from "@tanstack/react-query";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery } from "@tanstack/react-query";
+import { UserPlus, Users, Inbox, Receipt, Car, History, Loader2 } from "lucide-react";
+import type { PortalDashboard } from "@shared/portal-types";
 import { apiRequest } from "@/lib/queryClient";
-import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
-import { AccountsTable } from "@/components/portal-admin/accounts-table";
-import { CustomersOverviewTable } from "@/components/portal-admin/customers-overview-table";
-import { OnlineVehiclesTable } from "@/components/portal-admin/online-vehicles-table";
-import { ActivityTable } from "@/components/portal-admin/activity-table";
-import { RequestsTable } from "@/components/portal-admin/requests-table";
-import { FinesTable, useCanViewFines } from "@/components/fines/fines-table";
+import { useGlobalDialog, type PortalListKind } from "@/contexts/GlobalDialogContext";
+import { Button } from "@/components/ui/button";
+import { AccountDialog } from "@/components/portal-admin/account-dialog";
+import { useCanManagePortal } from "@/components/portal-admin/accounts-table";
+import { useCanViewFines } from "@/components/fines/fines-table";
+import { DASHBOARD_KEY, DashboardTiles, AttentionPanel, NotificationsPanel, UpcomingPanel, CustomersPanel } from "@/components/portal-admin/dashboard-panels";
+
+const LIST_KINDS: PortalListKind[] = ["customers", "accounts", "requests", "fines", "vehicles", "activity"];
 
 /**
- * Klantenportaal: the one staff page for the portal. Every detail is a dialog
- * from GlobalDialogContext, so ?fine=<id> and ?request=<id> (used in
- * notification links) open the dialog here; ?tab= and ?plate= preselect.
+ * Klantenportaal: one dashboard page. Every list and detail is a dialog from
+ * GlobalDialogContext, so ?fine=<id> / ?request=<id> (notification links) open
+ * the detail dialog here and ?tab=<kind>[&plate=] opens the list dialog.
  */
 export default function PortalAdminPage() {
   const { t } = useTranslation("portal");
-  const queryClient = useQueryClient();
-  const { openFineDialog, openPortalRequestDialog } = useGlobalDialog();
+  const { openFineDialog, openPortalRequestDialog, openPortalListDialog } = useGlobalDialog();
   const canViewFines = useCanViewFines();
+  const canManage = useCanManagePortal();
   const params = new URLSearchParams(useSearch());
-  const [tab, setTab] = useState(params.get("tab") ?? "customers");
+  const { data, isLoading } = useQuery<PortalDashboard>({
+    queryKey: DASHBOARD_KEY,
+    queryFn: async () => (await apiRequest("GET", DASHBOARD_KEY[0])).json(),
+    refetchInterval: 60_000,
+  });
 
   useEffect(() => {
-    // Opening this page means staff have seen what customers did: clear the badge.
-    apiRequest("POST", "/api/portal-admin/notifications/mark-read")
-      .then(() => queryClient.invalidateQueries({ queryKey: ["/api/portal-admin/unread-count"] }))
-      .catch(() => undefined);
     const fine = params.get("fine");
     if (fine) openFineDialog(Number(fine));
     const request = params.get("request");
     if (request) openPortalRequestDialog(Number(request));
+    const tab = params.get("tab") as PortalListKind | null;
+    if (tab && LIST_KINDS.includes(tab)) openPortalListDialog(tab, { plate: params.get("plate") ?? undefined });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const listButton = (kind: PortalListKind, icon: React.ReactNode) => (
+    <Button size="sm" variant="outline" onClick={() => openPortalListDialog(kind)} data-testid={`button-open-${kind}`}>
+      {icon}{t(`admin.tabs.${kind}`)}
+    </Button>
+  );
+
   return (
     <div className="space-y-4 p-4">
-      <h1 className="text-2xl font-semibold">{t("admin.pageTitle")}</h1>
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="customers">{t("admin.tabs.customers")}</TabsTrigger>
-          <TabsTrigger value="accounts">{t("admin.tabs.accounts")}</TabsTrigger>
-          <TabsTrigger value="requests" data-testid="tab-requests">{t("admin.tabs.requests")}</TabsTrigger>
-          {canViewFines && <TabsTrigger value="fines" data-testid="tab-fines">{t("admin.tabs.fines")}</TabsTrigger>}
-          <TabsTrigger value="vehicles">{t("admin.tabs.vehicles")}</TabsTrigger>
-          <TabsTrigger value="activity">{t("admin.tabs.activity")}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="customers" className="mt-4"><CustomersOverviewTable /></TabsContent>
-        <TabsContent value="accounts" className="mt-4"><AccountsTable /></TabsContent>
-        <TabsContent value="requests" className="mt-4"><RequestsTable /></TabsContent>
-        {canViewFines && <TabsContent value="fines" className="mt-4"><FinesTable initialPlate={params.get("plate") ?? undefined} /></TabsContent>}
-        <TabsContent value="vehicles" className="mt-4"><OnlineVehiclesTable /></TabsContent>
-        <TabsContent value="activity" className="mt-4"><ActivityTable limit={200} /></TabsContent>
-      </Tabs>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold">{t("admin.pageTitle")}</h1>
+        <div className="flex flex-wrap gap-2">
+          {canManage && (
+            <AccountDialog>
+              <Button size="sm" data-testid="button-invite-portal-account"><UserPlus className="mr-1.5 h-4 w-4" />{t("admin.dashboard.inviteAccount")}</Button>
+            </AccountDialog>
+          )}
+          {listButton("accounts", <Users className="mr-1.5 h-4 w-4" />)}
+          {listButton("requests", <Inbox className="mr-1.5 h-4 w-4" />)}
+          {canViewFines && listButton("fines", <Receipt className="mr-1.5 h-4 w-4" />)}
+          {listButton("vehicles", <Car className="mr-1.5 h-4 w-4" />)}
+          {listButton("activity", <History className="mr-1.5 h-4 w-4" />)}
+        </div>
+      </div>
+
+      {isLoading || !data ? (
+        <div className="flex items-center gap-2 py-12 justify-center text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /></div>
+      ) : (<>
+        <DashboardTiles counts={data.counts} canViewFines={canViewFines} />
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <AttentionPanel attention={data.attention} canViewFines={canViewFines} />
+          <NotificationsPanel notifications={data.notifications} unread={data.counts.unreadNotifications} />
+          <UpcomingPanel upcoming={data.upcoming} />
+          <CustomersPanel />
+        </div>
+      </>)}
     </div>
   );
 }
