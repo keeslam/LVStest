@@ -55,7 +55,8 @@ export function toDriverDto(d: Driver): PortalDriverDto {
   return {
     id: d.id, displayName: d.displayName, firstName: d.firstName, lastName: d.lastName,
     email: d.email, phone: d.phone, driverLicenseNumber: d.driverLicenseNumber,
-    licenseExpiry: d.licenseExpiry, status: d.status, hasLicenseFile: Boolean(d.licenseFilePath),
+    licenseExpiry: d.licenseExpiry, licenseOrigin: d.licenseOrigin, preferredLanguage: d.preferredLanguage, notes: d.notes,
+    status: d.status, hasLicenseFile: Boolean(d.licenseFilePath),
   };
 }
 
@@ -67,6 +68,9 @@ const driverInputSchema = z.object({
   phone: z.string().trim().max(50).nullable().optional(),
   driverLicenseNumber: z.string().trim().max(50).nullable().optional(),
   licenseExpiry: z.string().trim().max(20).nullable().optional(),
+  licenseOrigin: z.string().trim().max(100).nullable().optional(),
+  preferredLanguage: z.enum(["nl", "en"]).nullable().optional(),
+  notes: z.string().trim().max(2000).nullable().optional(),
   status: z.enum(["active", "inactive"]).optional(),
 });
 

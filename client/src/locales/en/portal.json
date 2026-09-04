@@ -42,7 +42,10 @@
     "pickupMileage": "Km at pickup",
     "returnMileage": "Km at return",
     "contractNumber": "Contract number",
-    "price": "Price"
+    "price": "Price",
+    "licenseOrigin": "Country of licence issue",
+    "preferredLanguage": "Preferred language",
+    "notes": "Notes"
   },
   "login": {
     "title": "Customer portal login",
@@ -579,5 +582,9 @@
     "links": "Links",
     "privacy": "Privacy statement",
     "footerText": "Leasing, rental and fleet management from Zuidland, with our own workshop for maintenance, repair and damage repair."
+  },
+  "languages": {
+    "nl": "Dutch",
+    "en": "English"
   }
 }

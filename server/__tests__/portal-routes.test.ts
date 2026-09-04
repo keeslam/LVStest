@@ -80,8 +80,10 @@ describe("portal routes", () => {
 
   it("manages drivers and changes the driver of a running rental", async () => {
     const { agent, csrf } = await loginAs(app, emailA);
-    const created = await agent.post("/api/portal/drivers").set("X-CSRF-Token", csrf).send({ displayName: "Nieuwe", email: "n@x.nl" });
+    const created = await agent.post("/api/portal/drivers").set("X-CSRF-Token", csrf).send({ displayName: "Nieuwe", email: "n@x.nl", licenseOrigin: "België", preferredLanguage: "en", notes: "Rijdt alleen op weekdagen" });
     expect(created.status).toBe(201);
+    expect(created.body).toMatchObject({ licenseOrigin: "België", preferredLanguage: "en", notes: "Rijdt alleen op weekdagen" });
+    expect((await agent.post("/api/portal/drivers").set("X-CSRF-Token", csrf).send({ displayName: "Fout", preferredLanguage: "de" })).status).toBe(400);
     const list = await agent.get("/api/portal/drivers");
     expect(list.body.map((d: any) => d.displayName)).toEqual(["Driver A", "Nieuwe"]);
 

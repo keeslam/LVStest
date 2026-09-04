@@ -80,6 +80,9 @@ export interface PortalDriverDto {
   phone: string | null;
   driverLicenseNumber: string | null;
   licenseExpiry: string | null;
+  licenseOrigin: string | null;
+  preferredLanguage: string | null;
+  notes: string | null;
   status: string;
   hasLicenseFile: boolean;
 }
