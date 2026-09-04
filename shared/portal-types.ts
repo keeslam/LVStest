@@ -28,7 +28,15 @@ export interface PortalSettingsFlags {
   canViewFines: boolean;
   canViewContracts: boolean;
   showPrices: boolean;
+  /** May ask to return a vehicle early ("terugbrengen"). */
+  canReturn: boolean;
 }
+
+/** Features that can be switched per customer and, on top of that, restricted per account. */
+export const PORTAL_FEATURE_KEYS = ['canBook', 'canManageDrivers', 'canSubmitRequests', 'canViewFines', 'canViewContracts', 'showPrices', 'canReturn'] as const;
+export type PortalFeatureKey = typeof PORTAL_FEATURE_KEYS[number];
+/** Per-account overrides: a key set to false takes the feature away; absent or true = follow the customer. */
+export type PortalAccountPermissions = Partial<Record<PortalFeatureKey, boolean>>;
 
 export interface PortalMe {
   id: number;

@@ -248,7 +248,9 @@
       "inviteFailed": "Account created, but the e-mail could not be sent. Check the e-mail settings and resend the invitation.",
       "sent": "E-mail sent.",
       "filterAll": "All customers",
-      "onlyPending": "Only not activated"
+      "onlyPending": "Only not activated",
+      "restricted": "Restricted",
+      "edit": "Edit and permissions"
     },
     "dialog": {
       "title": "Portal account",
@@ -262,7 +264,10 @@
       "driverRequired": "Choose a driver for a driver account",
       "save": "Save",
       "cancel": "Cancel",
-      "close": "Close"
+      "close": "Close",
+      "permissions": "Permissions for this account",
+      "permissionsHint": "Unticking takes a feature away for this account. The customer settings remain the ceiling.",
+      "permissionsReset": "Allow everything again"
     },
     "settings": {
       "title": "Settings for this customer",
@@ -274,7 +279,8 @@
       "canViewContracts": "Sees contracts and damage reports",
       "showPrices": "Sees prices",
       "internalNotes": "Internal notes (what does this customer need?)",
-      "saved": "Settings saved."
+      "saved": "Settings saved.",
+      "canReturn": "May request an early return"
     },
     "activity": {
       "title": "Activity in the portal",

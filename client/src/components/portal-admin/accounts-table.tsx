@@ -37,6 +37,7 @@ export function AccountsTable({ customerId }: { customerId?: number }) {
   });
 
   const status = (a: PortalAccountRow) => !a.active ? "blocked" : a.activated ? "active" : a.invitePending ? "pending" : "notActivated";
+  const restricted = (a: PortalAccountRow) => Object.values(a.permissions ?? {}).some((v) => v === false);
   const rows = onlyPending ? data.filter((a) => !a.activated) : data;
 
   return (
@@ -65,7 +66,7 @@ export function AccountsTable({ customerId }: { customerId?: number }) {
                 <TableCell>{a.fullName}</TableCell>
                 <TableCell>{a.email}</TableCell>
                 {!customerId && <TableCell>{a.customerName}</TableCell>}
-                <TableCell>{t(`admin.accounts.role.${a.role}`)}</TableCell>
+                <TableCell>{t(`admin.accounts.role.${a.role}`)}{restricted(a) && <Badge variant="outline" className="ml-2">{t("admin.accounts.restricted")}</Badge>}</TableCell>
                 <TableCell><Badge variant={status(a) === "active" ? "default" : status(a) === "blocked" ? "destructive" : "secondary"}>{t(`admin.accounts.status.${status(a)}`)}</Badge></TableCell>
                 <TableCell>{a.lastLoginAt ? new Date(a.lastLoginAt).toLocaleString() : "—"}</TableCell>
                 <TableCell className="text-right">
@@ -73,7 +74,7 @@ export function AccountsTable({ customerId }: { customerId?: number }) {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild><Button size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <AccountDialog customerId={a.customerId} account={a}><DropdownMenuItem onSelect={(e) => e.preventDefault()}>{t("admin.dialog.save")}</DropdownMenuItem></AccountDialog>
+                        <AccountDialog customerId={a.customerId} account={a}><DropdownMenuItem onSelect={(e) => e.preventDefault()}>{t("admin.accounts.edit")}</DropdownMenuItem></AccountDialog>
                         {!a.activated && <DropdownMenuItem onSelect={() => act.mutate({ id: a.id, action: "invite", body: { kind: "invite" } })}>{t("admin.accounts.resend")}</DropdownMenuItem>}
                         {a.activated && <DropdownMenuItem onSelect={() => act.mutate({ id: a.id, action: "invite", body: { kind: "reset" } })}>{t("admin.accounts.sendReset")}</DropdownMenuItem>}
                         <DropdownMenuItem onSelect={() => act.mutate({ id: a.id, action: "patch", body: { active: !a.active } })}>{a.active ? t("admin.accounts.block") : t("admin.accounts.unblock")}</DropdownMenuItem>

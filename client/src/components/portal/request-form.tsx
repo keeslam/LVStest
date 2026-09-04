@@ -10,10 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { usePortalAuth } from "@/hooks/use-portal-auth";
 
 export function RequestForm({ initialType, reservationId: initialReservation, fineId: initialFine, onSubmitted }: { initialType?: PortalRequestTypeValue; reservationId?: number; fineId?: number; onSubmitted: (id: number) => void }) {
   const { t } = useTranslation("portal");
   const { toast } = useToast();
+  const { me } = usePortalAuth();
   const queryClient = useQueryClient();
   const [type, setType] = useState<PortalRequestTypeValue>(initialType ?? PortalRequestType.OTHER);
   const [reservationId, setReservationId] = useState(initialReservation ? String(initialReservation) : "");
@@ -56,7 +58,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
       <div>
         <Label htmlFor="rq-type">{t("requests.chooseType")}</Label>
         <select id="rq-type" className="w-full rounded-md border px-3 py-2 text-sm" value={type} onChange={(e) => { setType(e.target.value as PortalRequestTypeValue); setPayload({}); }}>
-          {Object.values(PortalRequestType).map((v) => <option key={v} value={v}>{t(`requests.type.${v}`)}</option>)}
+          {Object.values(PortalRequestType).filter((v) => v !== "early_return" || me?.settings.canReturn).map((v) => <option key={v} value={v}>{t(`requests.type.${v}`)}</option>)}
         </select>
       </div>
       {needs === "reservation" && (

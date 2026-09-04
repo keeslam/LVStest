@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type ReactNode, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { Customer, Driver } from "@shared/schema";
@@ -8,11 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
+import { PORTAL_FEATURE_KEYS, type PortalAccountPermissions } from "@shared/portal-types";
 import { SearchListPicker } from "@/components/ui/search-list-picker";
 
 export interface PortalAccountRow {
   id: number; customerId: number; email: string; fullName: string; role: "admin" | "driver"; driverId: number | null;
   active: boolean; activated: boolean; invitePending: boolean; lastLoginAt: string | null; lastSeenAt: string | null; customerName?: string;
+  permissions?: PortalAccountPermissions;
 }
 
 /**
@@ -31,6 +34,13 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children }
   const [fullName, setFullName] = useState(account?.fullName ?? "");
   const [role, setRole] = useState<"admin" | "driver">(account?.role ?? "admin");
   const [driverId, setDriverId] = useState<string>(account?.driverId ? String(account.driverId) : "");
+  const [permissions, setPermissions] = useState<PortalAccountPermissions>(account?.permissions ?? {});
+  // The row component stays mounted while the list is open: start every opening from the stored account.
+  useEffect(() => {
+    if (!open) return;
+    setFullName(account?.fullName ?? ""); setRole(account?.role ?? "admin");
+    setDriverId(account?.driverId ? String(account.driverId) : ""); setPermissions(account?.permissions ?? {});
+  }, [open, account]);
 
   const needsPicker = fixedCustomerId === undefined && !account;
   const { data: customers = [] } = useQuery<Customer[]>({ queryKey: ["/api/customers"], enabled: open && needsPicker });
@@ -44,7 +54,7 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children }
 
   const save = useMutation({
     mutationFn: async () => {
-      const body = { fullName, role, driverId: role === "driver" ? Number(driverId) : null };
+      const body = { fullName, role, driverId: role === "driver" ? Number(driverId) : null, permissions };
       if (account) return (await apiRequest("PATCH", `/api/portal-admin/accounts/${account.id}`, body)).json();
       return (await apiRequest("POST", `/api/portal-admin/customers/${customerId}/accounts`, { ...body, email })).json();
     },
@@ -103,6 +113,23 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children }
                 hintText={(shown, total) => t("admin.fines.dialog.moreCustomers", { shown, total })} searchFrom={6} testId="account-driver-picker" />
             </div>
           )}
+          <div className="rounded-md border p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-sm font-medium">{t("admin.dialog.permissions")}</span>
+              {Object.values(permissions).some((v) => v === false) && (
+                <button type="button" className="text-xs underline text-muted-foreground" onClick={() => setPermissions({})} data-testid="button-permissions-reset">{t("admin.dialog.permissionsReset")}</button>
+              )}
+            </div>
+            <p className="mb-2 text-xs text-muted-foreground">{t("admin.dialog.permissionsHint")}</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {PORTAL_FEATURE_KEYS.map((key) => (
+                <label key={key} className="flex items-center gap-2 text-sm">
+                  <Checkbox checked={permissions[key] !== false} onCheckedChange={(v) => setPermissions((p) => ({ ...p, [key]: v === true }))} data-testid={`checkbox-permission-${key}`} />
+                  {t(`admin.settings.${key}`)}
+                </label>
+              ))}
+            </div>
+          </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>{t("admin.dialog.cancel")}</Button>
             <Button type="submit" disabled={save.isPending}>{account ? t("admin.dialog.save") : t("admin.accounts.invite")}</Button>

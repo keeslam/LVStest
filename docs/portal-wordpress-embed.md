@@ -101,3 +101,14 @@ specificatie er is, hoeven alleen die aliassen en voorbeelden aangepast te
 worden. Vereist na deploy: `npm install`,
 `node -r dotenv/config startup-migration.js`, en het CJIB moet het uitgaande
 IP-adres van de server toestaan.
+
+## Rechten per klant en per account
+
+Instellingen > Klantenportaal per klant (klantdialoog, tab Portaal) bepalen
+wat een klant in het portaal kan: online huren, bestuurders beheren,
+aanvragen indienen, eerder inleveren (terugbrengen) aanvragen, bekeuringen,
+contracten en prijzen zien. Per account kan staff daar bovenop onderdelen
+uitvinken (Accounts > actiemenu > Bewerken en rechten); de klantinstelling
+blijft de bovengrens, een account kan nooit meer dan de klant. "Alles weer
+toestaan" wist de uitzonderingen. Beperkte accounts staan met "Beperkt" in
+de accountslijst. De server controleert dezelfde rechten op elke aanvraag.

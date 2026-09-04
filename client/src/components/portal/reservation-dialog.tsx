@@ -54,7 +54,7 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
               {canChangeDriver && <ChangeDriverDialog reservation={r} />}
               {canRequest && (<>
                 <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "extension", reservationId: r.id })} data-testid="button-request-extension">{t("requests.form.extend")}</Button>
-                <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "early_return", reservationId: r.id })}>{t("requests.form.earlyReturn")}</Button>
+                {me?.settings.canReturn && <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "early_return", reservationId: r.id })} data-testid="button-request-early-return">{t("requests.form.earlyReturn")}</Button>}
               </>)}
             </div>
             <div>

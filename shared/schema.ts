@@ -446,6 +446,8 @@ export const portalUsers = pgTable("portal_users", {
   role: text("role").notNull().default(PortalUserRole.ADMIN),
   driverId: integer("driver_id").references(() => drivers.id, { onDelete: "set null" }),
   active: boolean("active").notNull().default(true),
+  /** Per-account restrictions on top of the customer settings; see PortalAccountPermissions. */
+  permissions: jsonb("permissions").$type<Record<string, boolean>>().notNull().default({}),
   inviteTokenHash: text("invite_token_hash"),
   inviteExpiresAt: timestamp("invite_expires_at"),
   lastLoginAt: timestamp("last_login_at"),
@@ -488,6 +490,7 @@ export const portalCustomerSettings = pgTable("portal_customer_settings", {
   canViewFines: boolean("can_view_fines").notNull().default(true),
   canViewContracts: boolean("can_view_contracts").notNull().default(true),
   showPrices: boolean("show_prices").notNull().default(false),
+  canReturn: boolean("can_return").notNull().default(true),
   internalNotes: text("internal_notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
-const FLAGS = ["portalEnabled", "canBook", "canManageDrivers", "canSubmitRequests", "canViewFines", "canViewContracts", "showPrices"] as const;
+const FLAGS = ["portalEnabled", "canBook", "canManageDrivers", "canSubmitRequests", "canReturn", "canViewFines", "canViewContracts", "showPrices"] as const;
 
 export function CustomerPortalSettingsForm({ customerId, readOnly }: { customerId: number; readOnly?: boolean }) {
   const { t } = useTranslation("portal");

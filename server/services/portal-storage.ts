@@ -18,7 +18,7 @@ export type PortalReservation = Reservation & { vehicle?: Vehicle; driver?: Driv
 export type PortalDocument = Document & { kind: "contract" | "damage_check" };
 
 type PortalUserUpdate = Partial<Pick<PortalUser,
-  "fullName" | "role" | "driverId" | "active" | "passwordHash" | "inviteTokenHash" | "inviteExpiresAt" | "lastLoginAt" | "lastSeenAt" | "updatedBy">>;
+  "fullName" | "role" | "driverId" | "active" | "permissions" | "passwordHash" | "inviteTokenHash" | "inviteExpiresAt" | "lastLoginAt" | "lastSeenAt" | "updatedBy">>;
 
 /** One row per customer that has a portal (settings row or at least one account). */
 export interface PortalCustomerOverviewRow {

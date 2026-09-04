@@ -928,6 +928,8 @@ async function runMigrations() {
     await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS portal_users_email_lower_idx ON portal_users (lower(email))`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS portal_users_customer_id_idx ON portal_users (customer_id)`);
     await addColumnIfNotExists('portal_users', 'last_seen_at', 'TIMESTAMP');
+    await addColumnIfNotExists('portal_users', 'permissions', "JSONB NOT NULL DEFAULT '{}'::jsonb");
+    await addColumnIfNotExists('portal_customer_settings', 'can_return', 'BOOLEAN NOT NULL DEFAULT true');
 
     await createTableIfNotExists('portal_customer_settings', `
       CREATE TABLE portal_customer_settings (

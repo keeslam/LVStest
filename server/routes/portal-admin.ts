@@ -4,6 +4,7 @@ import { storage } from "../storage";
 import { hasPermission } from "../middleware/permissions.js";
 import { UserPermission, insertPortalUserSchema, updatePortalCustomerSettingsSchema, PortalUserRole, type PortalUser } from "../../shared/schema";
 import { portalStorage } from "../services/portal-storage";
+import { PORTAL_FEATURE_KEYS } from "../../shared/portal-types";
 import { requestsStorage } from "../services/portal-requests-storage";
 import { sendPortalInvite } from "../services/portal-mail";
 import { getPortalConfig, savePortalConfig } from "../services/portal-config";
@@ -50,11 +51,13 @@ export function registerPortalAdminRoutes(app: Express, _deps: RouteDeps): void 
     const customerId = intParam(req, res, "customerId"); if (customerId === null) return;
     if (!(await storage.getCustomer(customerId))) return res.status(404).json({ message: "Customer not found" });
     const parsed = insertPortalUserSchema.safeParse({ ...req.body, customerId });
+    const permissionsParsed = z.record(z.enum(PORTAL_FEATURE_KEYS), z.boolean()).optional().safeParse(req.body?.permissions);
+    if (!permissionsParsed.success) return res.status(400).json({ message: "Invalid permissions" });
     if (!parsed.success) return res.status(400).json({ message: parsed.error.errors[0]?.message ?? "Invalid input" });
     if (!(await driverBelongsToCustomer(parsed.data.driverId, customerId))) return res.status(400).json({ message: "Driver does not belong to this customer" });
     if (await portalStorage.getPortalUserByEmail(parsed.data.email)) return res.status(400).json({ message: "An account with this e-mail already exists" });
 
-    const account = await portalStorage.createPortalUser(parsed.data, actor(req));
+    const account = await portalStorage.createPortalUser({ ...parsed.data, permissions: permissionsParsed.data ?? {} }, actor(req));
     let inviteSent = false;
     try { inviteSent = (await sendPortalInvite(account, "invite")).sent; } catch (error) { console.error("portal invite failed:", error); }
     await AuditLogger.logFromRequest(req, "portal_account.create", "portal_user", account.id, { email: account.email, customerId, inviteSent });
@@ -70,6 +73,7 @@ export function registerPortalAdminRoutes(app: Express, _deps: RouteDeps): void 
       role: z.enum([PortalUserRole.ADMIN, PortalUserRole.DRIVER]).optional(),
       driverId: z.number().int().positive().nullable().optional(),
       active: z.boolean().optional(),
+      permissions: z.record(z.enum(PORTAL_FEATURE_KEYS), z.boolean()).optional(),
     }).safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ message: parsed.error.errors[0]?.message ?? "Invalid input" });
     const role = parsed.data.role ?? existing.role;

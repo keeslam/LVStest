@@ -4,7 +4,7 @@ import fs from "fs";
 import multer from "multer";
 import { z } from "zod";
 import { portalStorage, type PortalReservation } from "../services/portal-storage";
-import { requireFeature, requirePortalRole, portalError, logPortalActivity } from "../portal-auth";
+import { settingsFlags, requireFeature, requirePortalRole, portalError, logPortalActivity } from "../portal-auth";
 import { assignDriverToReservation, getDriverAssignments } from "../services/driver-assignments";
 import { notifyStaffOfPortalEvent } from "../services/portal-notifications";
 import { resolveDocumentFilePath } from "../services/document-paths";
@@ -246,6 +246,9 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const p = payload.data as Record<string, string>;
     if (type === "extension" && reservation?.endDate && p.newEndDate <= reservation.endDate) {
       discard(); return portalError(res, 400, PORTAL_ERROR.REQUEST_INVALID_PERIOD, "New end date must be after the current end date");
+    }
+    if (type === "early_return" && !settingsFlags(ctx.settings, ctx.user).canReturn) {
+      discard(); return portalError(res, 403, PORTAL_ERROR.FEATURE_DISABLED, "Returning a vehicle early is disabled for your account");
     }
     if (type === "early_return" && reservation && (p.returnDate < today || (reservation.endDate && p.returnDate >= reservation.endDate))) {
       discard(); return portalError(res, 400, PORTAL_ERROR.REQUEST_INVALID_PERIOD, "Return date must be before the current end date");

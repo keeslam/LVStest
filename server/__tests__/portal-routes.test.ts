@@ -108,6 +108,21 @@ describe("portal routes", () => {
     expect((await agent.delete(`/api/portal/drivers/${driverA}`).set("X-CSRF-Token", csrf)).status).toBe(404);
   });
 
+  it("per-account permissions take features away below the customer setting", async () => {
+    const users = await portalStorage.listPortalUsersByCustomer(a);
+    const me0 = await loginAs(app, emailA);
+    expect((await me0.agent.get("/api/portal/me")).body.settings).toMatchObject({ canViewFines: true, canReturn: true });
+    await portalStorage.updatePortalUser(users[0].id, { permissions: { canViewFines: false, canReturn: false } });
+    const { agent, csrf } = await loginAs(app, emailA);
+    const me = await agent.get("/api/portal/me");
+    expect(me.body.settings).toMatchObject({ canViewFines: false, canReturn: false, canSubmitRequests: true });
+    expect((await agent.get("/api/portal/fines")).status).toBe(403);
+    const early = await agent.post("/api/portal/requests").set("X-CSRF-Token", csrf)
+      .field("type", "early_return").field("message", "eerder").field("reservationId", String(resA)).field("payload", JSON.stringify({ returnDate: "2099-01-01" }));
+    expect(early.status).toBe(403);
+    await portalStorage.updatePortalUser(users[0].id, { permissions: {} });
+  });
+
   it("driver-role users cannot manage drivers", async () => {
     const du = await portalStorage.createPortalUser({ customerId: a, email: `d@${TEST_EMAIL_DOMAIN}`, fullName: "D", role: "driver", driverId: driverA }, "t");
     await portalStorage.updatePortalUser(du.id, { passwordHash: await hashPassword(password) });

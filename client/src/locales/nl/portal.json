@@ -248,7 +248,9 @@
       "inviteFailed": "Account aangemaakt, maar de e-mail kon niet worden verstuurd. Controleer de e-mailinstellingen en stuur de uitnodiging opnieuw.",
       "sent": "E-mail verstuurd.",
       "filterAll": "Alle klanten",
-      "onlyPending": "Alleen niet-geactiveerd"
+      "onlyPending": "Alleen niet-geactiveerd",
+      "restricted": "Beperkt",
+      "edit": "Bewerken en rechten"
     },
     "dialog": {
       "title": "Portaalaccount",
@@ -262,7 +264,10 @@
       "driverRequired": "Kies een bestuurder voor een bestuurdersaccount",
       "save": "Opslaan",
       "cancel": "Annuleren",
-      "close": "Sluiten"
+      "close": "Sluiten",
+      "permissions": "Rechten voor dit account",
+      "permissionsHint": "Uitvinken haalt een onderdeel weg voor dit account. De instellingen van de klant blijven de bovengrens.",
+      "permissionsReset": "Alles weer toestaan"
     },
     "settings": {
       "title": "Instellingen voor deze klant",
@@ -274,7 +279,8 @@
       "canViewContracts": "Ziet contracten en schadeformulieren",
       "showPrices": "Ziet prijzen",
       "internalNotes": "Interne notities (wat heeft deze klant nodig?)",
-      "saved": "Instellingen opgeslagen."
+      "saved": "Instellingen opgeslagen.",
+      "canReturn": "Mag eerder inleveren (terugbrengen) aanvragen"
     },
     "activity": {
       "title": "Activiteit in het portaal",

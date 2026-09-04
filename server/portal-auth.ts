@@ -39,11 +39,16 @@ export function portalError(res: Response, status: number, code: PortalErrorCode
   return res.status(status).json({ error, code });
 }
 
-function settingsFlags(s: PortalCustomerSettings): PortalSettingsFlags {
+/** Effective features: the customer setting is the ceiling, the account can only take a feature away. */
+export function settingsFlags(s: PortalCustomerSettings, user?: Pick<PortalUser, "permissions">): PortalSettingsFlags {
+  const p = (user?.permissions ?? {}) as Record<string, boolean | undefined>;
+  const allow = (key: string, customerValue: boolean) => customerValue && p[key] !== false;
   return {
-    portalEnabled: s.portalEnabled, canBook: s.canBook, canManageDrivers: s.canManageDrivers,
-    canSubmitRequests: s.canSubmitRequests, canViewFines: s.canViewFines,
-    canViewContracts: s.canViewContracts, showPrices: s.showPrices,
+    portalEnabled: s.portalEnabled,
+    canBook: allow("canBook", s.canBook), canManageDrivers: allow("canManageDrivers", s.canManageDrivers),
+    canSubmitRequests: allow("canSubmitRequests", s.canSubmitRequests), canViewFines: allow("canViewFines", s.canViewFines),
+    canViewContracts: allow("canViewContracts", s.canViewContracts), showPrices: allow("showPrices", s.showPrices),
+    canReturn: allow("canReturn", s.canReturn),
   };
 }
 
@@ -55,7 +60,7 @@ async function buildMe(ctx: PortalRequestContext): Promise<PortalMe> {
     customerId: ctx.customerId,
     customerName: customer?.companyName || customer?.name || "",
     language: customer?.preferredLanguage === "en" ? "en" : "nl",
-    settings: settingsFlags(ctx.settings),
+    settings: settingsFlags(ctx.settings, ctx.user),
   };
 }
 
@@ -95,7 +100,7 @@ export async function logPortalActivity(
 export function requireFeature(flag: keyof PortalSettingsFlags): RequestHandler {
   return (req, res, next) => {
     if (!req.portalUser) return portalError(res, 401, PORTAL_ERROR.NOT_AUTHENTICATED, "Not authenticated");
-    if (!req.portalUser.settings[flag]) return portalError(res, 403, PORTAL_ERROR.FEATURE_DISABLED, "This feature is disabled for your account");
+    if (!settingsFlags(req.portalUser.settings, req.portalUser.user)[flag]) return portalError(res, 403, PORTAL_ERROR.FEATURE_DISABLED, "This feature is disabled for your account");
     next();
   };
 }
