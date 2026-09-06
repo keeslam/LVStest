@@ -150,7 +150,6 @@
     "searchCar": "Search by plate, brand or driver…",
     "noCarFound": "No car found",
     "assignHint": "Pick a car and the new driver is on it immediately.",
-    "moreDetails": "More details (licence, language, notes)",
     "addAndAssign": "Add and assign",
     "editTitle": "Edit {{name}}",
     "addTitle": "New driver",
@@ -164,7 +163,12 @@
     "busyIn": "Already drives {{plate}}",
     "notePlaceholder": "E.g. holiday, illness, swap from Monday",
     "commonCountries": "Common",
-    "otherCountries": "Other countries"
+    "otherCountries": "Other countries",
+    "sectionContact": "Name and contact",
+    "sectionLicense": "Driving licence",
+    "sectionOther": "Language and notes",
+    "assignTypeHint": "Type a plate or brand; the car then shows up below. Leave empty to assign later.",
+    "licenseOnFile": "A licence is already on file. Choose a file to replace it."
   },
   "account": {
     "title": "My account",

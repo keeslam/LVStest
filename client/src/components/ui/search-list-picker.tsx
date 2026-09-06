@@ -26,6 +26,8 @@ interface Props {
   /** Show the list without a search box when there are at most this many items. */
   searchFrom?: number;
   maxShown?: number;
+  /** Show matches only once something is typed (for long lists that should stay out of the way). */
+  listOnlyWhenTyping?: boolean;
   autoFocus?: boolean;
   testId?: string;
 }
@@ -35,7 +37,7 @@ interface Props {
  * the same on a phone as on a desktop and inside any dialog. The chosen item
  * collapses to one row with a "change" button.
  */
-export function SearchListPicker({ items, value, onChange, searchPlaceholder, emptyText, changeLabel, hintText, searchFrom = 0, maxShown = 8, autoFocus, testId = "picker" }: Props) {
+export function SearchListPicker({ items, value, onChange, searchPlaceholder, emptyText, changeLabel, hintText, searchFrom = 0, maxShown = 8, listOnlyWhenTyping = false, autoFocus, testId = "picker" }: Props) {
   const [query, setQuery] = useState("");
   const selected = value !== null ? items.find((i) => i.id === value) : undefined;
   const matches = useMemo(() => {
@@ -43,6 +45,7 @@ export function SearchListPicker({ items, value, onChange, searchPlaceholder, em
     return q ? items.filter((i) => `${i.label} ${i.sub ?? ""} ${i.search ?? ""}`.toLowerCase().includes(q)) : items;
   }, [items, query]);
   const shown = matches.slice(0, maxShown);
+  const listHidden = listOnlyWhenTyping && query.trim() === "";
 
   if (selected) {
     return (
@@ -61,7 +64,7 @@ export function SearchListPicker({ items, value, onChange, searchPlaceholder, em
           <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={searchPlaceholder} className="pl-9" autoFocus={autoFocus} data-testid={`${testId}-search`} />
         </div>
       )}
-      <ul className="max-h-56 divide-y overflow-y-auto rounded-md border" role="listbox">
+      {!listHidden && <ul className="max-h-56 divide-y overflow-y-auto rounded-md border" role="listbox">
         {shown.length === 0 && <li className="px-3 py-3 text-sm text-muted-foreground">{emptyText}</li>}
         {shown.map((i) => (
           <li key={i.id}>
@@ -73,8 +76,8 @@ export function SearchListPicker({ items, value, onChange, searchPlaceholder, em
             </button>
           </li>
         ))}
-      </ul>
-      {hintText && matches.length > shown.length && <p className="text-xs text-muted-foreground">{hintText(shown.length, matches.length)}</p>}
+      </ul>}
+      {!listHidden && hintText && matches.length > shown.length && <p className="text-xs text-muted-foreground">{hintText(shown.length, matches.length)}</p>}
     </div>
   );
 }

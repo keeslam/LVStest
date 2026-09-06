@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, ChevronUp, Car } from "lucide-react";
+import { Car, IdCard, MessageSquare, User } from "lucide-react";
 import type { PortalDriverDto, PortalReservationDto } from "@shared/portal-types";
 import { portalFetch, portalQueryFn, PortalApiError } from "@/lib/portal-api";
 import { Button } from "@/components/ui/button";
@@ -49,11 +49,10 @@ export function DriverFormDialog({ driver, children, open: controlledOpen, onOpe
   const setOpen = (o: boolean) => { if (onOpenChange) onOpenChange(o); else setUncontrolledOpen(o); };
   const isEdit = Boolean(driver);
   const [values, setValues] = useState<Values>(() => emptyValues(driver));
-  const [more, setMore] = useState(isEdit);
   const [file, setFile] = useState<File | null>(null);
   const [assignTo, setAssignTo] = useState<number | null>(assignReservationId ?? null);
   const [error, setError] = useState<string | null>(null);
-  useEffect(() => { if (open) { setValues(emptyValues(driver)); setMore(isEdit); setFile(null); setAssignTo(assignReservationId ?? null); setError(null); } }, [open, driver, isEdit, assignReservationId]);
+  useEffect(() => { if (open) { setValues(emptyValues(driver)); setFile(null); setAssignTo(assignReservationId ?? null); setError(null); } }, [open, driver, isEdit, assignReservationId]);
   const set = (f: Field, v: string) => { setError(null); setValues((cur) => ({ ...cur, [f]: NAME_FIELDS.includes(f) ? capitalizeName(v) : v })); };
 
   const { data: reservations = [] } = useQuery<PortalReservationDto[]>({ queryKey: ["portal", "/api/portal/reservations"], queryFn: portalQueryFn, enabled: open && !isEdit });
@@ -100,74 +99,80 @@ export function DriverFormDialog({ driver, children, open: controlledOpen, onOpe
     </div>
   );
 
-  // Desktop: every open block gets its own column so nothing has to scroll.
   const showCars = !isEdit && cars.length > 0;
-  const columns = 1 + (more ? 1 : 0) + (showCars ? 1 : 0);
-  const width = columns === 3 ? "sm:max-w-3xl lg:max-w-5xl" : columns === 2 ? "sm:max-w-3xl" : "sm:max-w-lg";
-  const grid = columns === 3 ? "md:grid-cols-2 lg:grid-cols-3" : columns === 2 ? "md:grid-cols-2" : "";
+  const section = (icon: ReactNode, title: string, body: ReactNode, extra = "") => (
+    <section className={`rounded-xl border border-[#e6e8f0] bg-white p-4 ${extra}`}>
+      <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#1a1d62]">{icon}{title}</h3>
+      {body}
+    </section>
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
-      <DialogContent className={width} data-testid="portal-driver-form">
+      <DialogContent className="sm:max-w-3xl" data-testid="portal-driver-form">
         <DialogHeader><DialogTitle>{isEdit ? t("drivers.editTitle", { name: driver?.displayName }) : t("drivers.addTitle")}</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-3">
-          <div className={`grid items-start gap-3 ${grid}`}>
-            <div className="space-y-4">
-              <div className="space-y-3 rounded-xl border border-[#e6e8f0] p-4">
+          <div className="grid items-start gap-3 md:grid-cols-2">
+            {section(<User className="h-4 w-4" />, t("drivers.sectionContact"), (
+              <div className="space-y-3">
                 {text("displayName", "text", { autoFocus: !isEdit, placeholder: t("drivers.namePlaceholder") })}
-                {text("email", "email", { autoComplete: "off" })}
-                {text("phone", "tel", { autoComplete: "off" })}
-                <p className={`text-xs ${error ? "text-[#a32d2d]" : "text-[#64748b]"}`} data-testid="driver-contact-hint">{error ?? t("drivers.contactHint")}</p>
-              </div>
-              <button type="button" onClick={() => setMore((m) => !m)} className="flex w-full items-center justify-between rounded-xl border border-dashed border-[#cbd5e1] px-4 py-2.5 text-sm font-medium text-[#1a1d62] hover:bg-[#eef0fb]" aria-expanded={more} data-testid="button-driver-more">
-                {t("drivers.moreDetails")}{more ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </button>
-            </div>
-
-            {more && (
-              <div className="space-y-3 rounded-xl border border-[#e6e8f0] p-4">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {text("firstName")}
                   {text("lastName")}
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {text("email", "email", { autoComplete: "off" })}
+                  {text("phone", "tel", { autoComplete: "off" })}
+                </div>
+                <p className={`text-xs ${error ? "text-[#a32d2d]" : "text-[#64748b]"}`} data-testid="driver-contact-hint">{error ?? t("drivers.contactHint")}</p>
+              </div>
+            ))}
+
+            {section(<IdCard className="h-4 w-4" />, t("drivers.sectionLicense"), (
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {text("driverLicenseNumber")}
                   {text("licenseExpiry", "date")}
                 </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div>
-                    <Label htmlFor="drv-licenseOrigin">{t("fields.licenseOrigin")}</Label>
-                    <select id="drv-licenseOrigin" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={values.licenseOrigin} onChange={(e) => set("licenseOrigin", e.target.value)} data-testid="select-driver-country">
-                      <optgroup label={t("drivers.commonCountries")}>{COMMON_COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}</optgroup>
-                      <optgroup label={t("drivers.otherCountries")}>{OTHER_COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}</optgroup>
-                    </select>
-                  </div>
-                  <div>
-                    <Label htmlFor="drv-preferredLanguage">{t("fields.preferredLanguage")}</Label>
-                    <select id="drv-preferredLanguage" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={values.preferredLanguage} onChange={(e) => set("preferredLanguage", e.target.value)} data-testid="select-driver-language">
-                      <option value="nl">{t("languages.nl")}</option>
-                      <option value="en">{t("languages.en")}</option>
-                    </select>
-                  </div>
-                  <div>
-                    <Label htmlFor="drv-file">{t("actions.uploadLicense")}</Label>
-                    <Input id="drv-file" type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-                  </div>
+                <div>
+                  <Label htmlFor="drv-licenseOrigin">{t("fields.licenseOrigin")}</Label>
+                  <select id="drv-licenseOrigin" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={values.licenseOrigin} onChange={(e) => set("licenseOrigin", e.target.value)} data-testid="select-driver-country">
+                    <optgroup label={t("drivers.commonCountries")}>{COMMON_COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}</optgroup>
+                    <optgroup label={t("drivers.otherCountries")}>{OTHER_COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}</optgroup>
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="drv-file">{t("actions.uploadLicense")}</Label>
+                  <Input id="drv-file" type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+                  {isEdit && driver?.hasLicenseFile && !file && <p className="mt-1 text-xs text-[#64748b]">{t("drivers.licenseOnFile")}</p>}
+                </div>
+              </div>
+            ))}
+
+            {section(<MessageSquare className="h-4 w-4" />, t("drivers.sectionOther"), (
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="drv-preferredLanguage">{t("fields.preferredLanguage")}</Label>
+                  <select id="drv-preferredLanguage" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={values.preferredLanguage} onChange={(e) => set("preferredLanguage", e.target.value)} data-testid="select-driver-language">
+                    <option value="nl">{t("languages.nl")}</option>
+                    <option value="en">{t("languages.en")}</option>
+                  </select>
                 </div>
                 <div>
                   <Label htmlFor="drv-notes">{t("fields.notes")}</Label>
                   <Textarea id="drv-notes" rows={2} value={values.notes} onChange={(e) => set("notes", e.target.value)} data-testid="input-driver-notes" />
                 </div>
               </div>
-            )}
+            ))}
 
-            {showCars && (
-              <div className="space-y-2 rounded-xl border border-[#e6e8f0] p-4">
-                <Label className="flex items-center gap-2"><Car className="h-4 w-4 text-[#1a1d62]" />{t("drivers.assignNow")}</Label>
+            {showCars && section(<Car className="h-4 w-4" />, t("drivers.assignNow"), (
+              <div className="space-y-2">
                 <SearchListPicker items={cars} value={assignTo} onChange={setAssignTo} searchPlaceholder={t("drivers.searchCar")} emptyText={t("drivers.noCarFound")} changeLabel={t("actions.change")}
-                  hintText={(shown, total) => t("drivers.moreShown", { shown, total })} searchFrom={6} maxShown={5} testId="driver-assign-picker" />
-                <p className="text-xs text-[#64748b]">{t("drivers.assignHint")}</p>
+                  hintText={(shown, total) => t("drivers.moreShown", { shown, total })} searchFrom={0} maxShown={5} listOnlyWhenTyping testId="driver-assign-picker" />
+                <p className="text-xs text-[#64748b]">{t("drivers.assignTypeHint")}</p>
               </div>
-            )}
+            ))}
           </div>
 
           <div className="grid grid-cols-1 gap-2 sm:flex sm:justify-end">

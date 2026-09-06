@@ -118,8 +118,9 @@ de accountslijst. De server controleert dezelfde rechten op elke aanvraag.
 Een klant voegt een bestuurder toe met alleen een naam plus een e-mailadres of
 telefoonnummer; de server weigert een bestuurder zonder contactgegeven. In
 hetzelfde scherm kan de bestuurder direct op een auto (geboekte of lopende
-reservering) gezet worden; rijbewijs, taal en notities zitten onder "Meer
-gegevens" en kunnen later. De bestuurderslijst toont per bestuurder de auto's
+reservering) gezet worden: typ een kenteken of merk, dan verschijnt de auto.
+Rijbewijs, taal en notities staan altijd zichtbaar in eigen blokken en kunnen
+leeg blijven. De bestuurderslijst toont per bestuurder de auto's
 waar die nu op staat (klik op het kenteken opent de reservering), heeft een
 zoekveld (naam, e-mail, telefoon, rijbewijs, kenteken) en een knop "Koppel aan
 auto". Vanuit een reservering werkt het andersom: "Bestuurder wijzigen" toont

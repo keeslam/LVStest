@@ -150,7 +150,6 @@
     "searchCar": "Zoek op kenteken, merk of bestuurder…",
     "noCarFound": "Geen auto gevonden",
     "assignHint": "Kies een auto en de nieuwe bestuurder staat er meteen op.",
-    "moreDetails": "Meer gegevens (rijbewijs, taal, notities)",
     "addAndAssign": "Toevoegen en koppelen",
     "editTitle": "{{name}} bewerken",
     "addTitle": "Nieuwe bestuurder",
@@ -164,7 +163,12 @@
     "busyIn": "Rijdt al in {{plate}}",
     "notePlaceholder": "Bijv. vakantie, ziekte, wissel per maandag",
     "commonCountries": "Veelgebruikt",
-    "otherCountries": "Overige landen"
+    "otherCountries": "Overige landen",
+    "sectionContact": "Naam en contact",
+    "sectionLicense": "Rijbewijs",
+    "sectionOther": "Taal en opmerkingen",
+    "assignTypeHint": "Typ een kenteken of merk; de auto verschijnt dan hieronder. Laat leeg om later te koppelen.",
+    "licenseOnFile": "Er staat al een rijbewijs in het dossier. Kies een bestand om het te vervangen."
   },
   "account": {
     "title": "Mijn account",
