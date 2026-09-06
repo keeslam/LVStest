@@ -14,6 +14,9 @@ import { getUploadsDir } from "../../shared/paths";
 import { storage } from "../storage";
 import { requestsStorage } from "../services/portal-requests-storage";
 import { customerNotifications } from "../services/portal-customer-notifications";
+import { db } from "../db";
+import { reservations } from "../../shared/schema";
+import { eq } from "drizzle-orm";
 
 const password = "wachtwoord-1234";
 
@@ -278,5 +281,36 @@ describe("portal routes", () => {
     const res = await agent.post("/api/portal/drivers").set("X-CSRF-Token", csrf).send({ displayName: "X" });
     expect(res.status).toBe(403);
     expect(res.body.code).toBe("PORTAL_ROLE_FORBIDDEN");
+  });
+});
+
+describe("my vehicles", () => {
+  const app = buildPortalTestApp();
+  let customerId: number, agent: ReturnType<typeof request.agent>, csrf: string, vehicleId: number, rentalId: number, otherCustomerId: number;
+  const email = `mv@${TEST_EMAIL_DOMAIN}`;
+
+  beforeAll(async () => {
+    customerId = (await createTestCustomer("MV")).id;
+    otherCustomerId = (await createTestCustomer("MVO")).id;
+    vehicleId = (await createTestVehicle()).id;
+    rentalId = (await createTestReservation({ customerId, vehicleId, startDate: "2026-09-01", endDate: null, status: "picked_up" })).id;
+    await createTestReservation({ customerId, vehicleId: (await createTestVehicle()).id, startDate: "2026-12-01", endDate: "2026-12-05", status: "booked" });
+    await createTestReservation({ customerId: otherCustomerId, vehicleId: (await createTestVehicle()).id, startDate: "2026-09-01", endDate: null, status: "picked_up" });
+    // A placeholder spare for our rental must never show up.
+    await db.insert(reservations).values({ customerId, vehicleId: null, startDate: "2026-10-10", endDate: "2026-10-11", status: "booked", type: "replacement", placeholderSpare: true, replacementForReservationId: rentalId });
+    const u = await portalStorage.createPortalUser({ customerId, email, fullName: "MV", role: "admin" }, "t");
+    await portalStorage.updatePortalUser(u.id, { passwordHash: await hashPassword(password) });
+    ({ agent, csrf } = await loginAs(app, email));
+  });
+  afterAll(async () => { await cleanupPortalTestData(); });
+
+  it("lists only vehicles in use, with maintenance info and the 48-hour flag", async () => {
+    const block = await storage.createMaintenanceBlock(vehicleId, "2099-10-10", "2099-10-11");
+    const res = await agent.get("/api/portal/vehicles/mine");
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0]).toMatchObject({ reservationId: rentalId, vehicle: { id: vehicleId }, maintenance: { blockId: block.id, status: "scheduled", canRequestChange: true, replacement: null } });
+    await db.update(reservations).set({ startDate: new Date(Date.now() + 24 * 3600e3).toISOString().slice(0, 10), endDate: null }).where(eq(reservations.id, block.id));
+    expect((await agent.get("/api/portal/vehicles/mine")).body[0].maintenance.canRequestChange).toBe(false);
   });
 });

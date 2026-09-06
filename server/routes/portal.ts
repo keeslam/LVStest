@@ -19,6 +19,7 @@ import { finesStorage, type FineListRow } from "../services/fines-storage";
 import type { PortalFineDto } from "../../shared/fines";
 import { requestsStorage, toRequestDto } from "../services/portal-requests-storage";
 import { requestPayloadSchemas, REQUEST_NEEDS, PortalRequestType } from "../../shared/portal-requests";
+import { listMyVehicles } from "../services/portal-vehicles";
 
 export function toFineDto(f: FineListRow): PortalFineDto {
   return {
@@ -393,6 +394,12 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     });
     const row = await requestsStorage.getRequest(created.id);
     res.status(201).json(toRequestDto(row!, false));
+  });
+
+  // The vehicles the customer has on the road, with maintenance and replacement state.
+  app.get("/api/portal/vehicles/mine", requirePortalUser, async (req, res) => {
+    const ctx = ctxOf(req);
+    res.json(await listMyVehicles(ctx.customerId, ctx.scope));
   });
 
   // ---- vehicles offered online -------------------------------------------------
