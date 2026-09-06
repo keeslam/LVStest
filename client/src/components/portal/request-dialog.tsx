@@ -78,7 +78,18 @@ export function RequestDialog({ id, onClose }: { id: number | null; onClose: () 
               {r.type === "early_return" && <DetailRow label={t("requests.form.returnDate")} value={p.returnDate} />}
               {r.type === "damage" && <><DetailRow label={t("requests.form.location")} value={p.location} /><DetailRow label={t("requests.form.occurredAt")} value={p.occurredAt} /></>}
               {r.type === "other" && <DetailRow label={t("requests.form.subject")} value={p.subject} />}
-              {r.type === "maintenance" && <><DetailRow label={t("requests.form.issue")} value={p.issue} /><DetailRow label={t("requests.form.mileage")} value={p.mileage} />{p.urgent === "true" || (p.urgent as unknown) === true ? <DetailRow label={t("requests.form.urgent")} value={t("requests.form.yes")} /> : null}</>}
+              {r.type === "maintenance" && <>
+                <DetailRow label={t("requests.form.issue")} value={p.issue} />
+                <DetailRow label={t("requests.form.mileage")} value={p.mileage} />
+                {(p.urgent === "true" || (p.urgent as unknown) === true) && <DetailRow label={t("requests.form.urgent")} value={t("requests.form.yes")} />}
+                {(p.needsReplacement === "true" || (p.needsReplacement as unknown) === true) && <DetailRow label={t("requests.form.needsReplacement")} value={t("requests.form.yes")} />}
+                {p.preferredDate && <DetailRow label={t("requests.form.preferredDate")} value={p.preferredDate} />}
+              </>}
+              {r.type === "maintenance_change" && <>
+                <DetailRow label={t("requests.form.newDate")} value={p.newDate} />
+                <DetailRow label={t("requests.form.reason")} value={p.reason} />
+                {(p.needsReplacement === "true" || (p.needsReplacement as unknown) === true) && <DetailRow label={t("requests.form.stillNeedsReplacement")} value={t("requests.form.yes")} />}
+              </>}
               {r.type === "mileage" && <DetailRow label={t("requests.form.mileage")} value={p.mileage} />}
             </dl>
             <p className="whitespace-pre-wrap rounded-md bg-muted p-2 text-sm">{r.message}</p>

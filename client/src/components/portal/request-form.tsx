@@ -14,14 +14,17 @@ import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { btnPrimary } from "./ui";
 import { PeriodPicker, TimeSelect } from "./period-picker";
 import { ReservationPicker } from "./reservation-picker";
+import { formatPortalDate } from "./reservation-card";
 
-export function RequestForm({ initialType, reservationId: initialReservation, fineId: initialFine, vehicleId: initialVehicle, startDate: initialStart, endDate: initialEnd, onSubmitted }: { initialType?: PortalRequestTypeValue; reservationId?: number; fineId?: number; vehicleId?: number; startDate?: string; endDate?: string; onSubmitted: (id: number) => void }) {
+const tomorrowIso = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); };
+
+export function RequestForm({ initialType, reservationId: initialReservation, fineId: initialFine, vehicleId: initialVehicle, startDate: initialStart, endDate: initialEnd, blockId, blockDate, onSubmitted }: { initialType?: PortalRequestTypeValue; reservationId?: number; fineId?: number; vehicleId?: number; startDate?: string; endDate?: string; blockId?: number; blockDate?: string; onSubmitted: (id: number) => void }) {
   const { t } = useTranslation("portal");
   const { toast } = useToast();
   const { me } = usePortalAuth();
   const queryClient = useQueryClient();
   const [type, setType] = useState<PortalRequestTypeValue>(initialType ?? PortalRequestType.OTHER);
-  const [reservationId, setReservationId] = useState(initialReservation ? String(initialReservation) : "");
+  const [reservationId, setReservationId] = useState(initialReservation ? String(initialReservation) : blockId ? String(blockId) : "");
   const [fineId, setFineId] = useState(initialFine ? String(initialFine) : "");
   const [payload, setPayload] = useState<Record<string, string>>({
     ...(initialVehicle ? { vehicleId: String(initialVehicle) } : {}),
@@ -72,6 +75,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
     e.preventDefault();
     if (files.length > 5) { toast({ title: t("errors.PORTAL_ATTACHMENT_LIMIT"), variant: "destructive" }); return; }
     if (needs === "reservation" && !reservationId) { toast({ title: t("requests.form.pickReservationFirst"), variant: "destructive" }); return; }
+    if (type === "maintenance_change" && !payload.newDate) { toast({ title: t("requests.form.newDate"), variant: "destructive" }); return; }
     submit.mutate();
   }
 
@@ -80,10 +84,15 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
       <div>
         <Label htmlFor="rq-type">{t("requests.chooseType")}</Label>
         <select id="rq-type" className="w-full rounded-md border px-3 py-2 text-sm" value={type} onChange={(e) => { setType(e.target.value as PortalRequestTypeValue); setPayload({}); }}>
-          {Object.values(PortalRequestType).filter((v) => (v !== "early_return" || me?.settings.canReturn) && (v !== "booking" || canBook)).map((v) => <option key={v} value={v}>{t(`requests.type.${v}`)}</option>)}
+          {Object.values(PortalRequestType).filter((v) => (v !== "early_return" || me?.settings.canReturn) && (v !== "booking" || canBook) && (v !== "maintenance_change" || type === "maintenance_change")).map((v) => <option key={v} value={v}>{t(`requests.type.${v}`)}</option>)}
         </select>
       </div>
-      {needs === "reservation" && (
+      {type === "maintenance_change" && (
+        <div className="rounded-md border bg-[#f8fafc] px-3 py-2 text-sm" data-testid="change-current-date">
+          <span className="text-[#64748b]">{t("requests.form.currentMaintenanceDate")}: </span>{blockDate ? formatPortalDate(blockDate) : `#${blockId}`}
+        </div>
+      )}
+      {needs === "reservation" && type !== "maintenance_change" && (
         <div>
           <Label>{t("requests.form.reservation")}</Label>
           <ReservationPicker reservations={openReservations} value={reservationId ? Number(reservationId) : null} onChange={(id) => setReservationId(id ? String(id) : "")} />
@@ -143,7 +152,23 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
             <div><Label htmlFor="rq-km">{t("requests.form.mileage")}</Label><Input id="rq-km" type="number" min={0} inputMode="numeric" value={payload.mileage ?? ""} onChange={setP("mileage")} /></div>
             <label className="flex items-center gap-2 self-end pb-2 text-sm"><input type="checkbox" checked={payload.urgent === "true"} onChange={(e) => setPayload({ ...payload, urgent: e.target.checked ? "true" : "" })} />{t("requests.form.urgent")}</label>
           </div>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={payload.needsReplacement === "true"} onChange={(e) => setPayload({ ...payload, needsReplacement: e.target.checked ? "true" : "" })} data-testid="checkbox-needs-replacement" />{t("requests.form.needsReplacement")}</label>
+          <div>
+            <Label htmlFor="rq-pref">{t("requests.form.preferredDate")}</Label>
+            <PeriodPicker id="rq-pref" start={payload.preferredDate ?? ""} end="" single minDate={tomorrowIso()} onChange={(s) => setPayload({ ...payload, preferredDate: s })} testId="request-preferred-date" />
+          </div>
           <p className="text-xs text-[#64748b]">{t("requests.form.maintenanceHint")}</p>
+        </div>
+      )}
+      {type === "maintenance_change" && (
+        <div className="space-y-2">
+          <div>
+            <Label htmlFor="rq-newdate">{t("requests.form.newDate")}</Label>
+            <PeriodPicker id="rq-newdate" start={payload.newDate ?? ""} end="" single minDate={tomorrowIso()} onChange={(s) => setPayload({ ...payload, newDate: s })} testId="request-new-date" />
+          </div>
+          <div><Label htmlFor="rq-reason">{t("requests.form.reason")}</Label><Input id="rq-reason" value={payload.reason ?? ""} onChange={setP("reason")} required data-testid="input-change-reason" /></div>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={payload.needsReplacement === "true"} onChange={(e) => setPayload({ ...payload, needsReplacement: e.target.checked ? "true" : "" })} />{t("requests.form.stillNeedsReplacement")}</label>
+          <p className="text-xs text-[#64748b]">{t("requests.form.changeHint")}</p>
         </div>
       )}
       {type === "mileage" && (
