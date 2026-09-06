@@ -20,6 +20,7 @@ import type { PortalFineDto } from "../../shared/fines";
 import { requestsStorage, toRequestDto } from "../services/portal-requests-storage";
 import { requestPayloadSchemas, REQUEST_NEEDS, PortalRequestType } from "../../shared/portal-requests";
 import { listMyVehicles } from "../services/portal-vehicles";
+import { findPortalCustomerForBlock, canCustomerChangeMaintenance } from "../services/portal-maintenance-events";
 
 export function toFineDto(f: FineListRow): PortalFineDto {
   return {
@@ -30,7 +31,7 @@ export function toFineDto(f: FineListRow): PortalFineDto {
   };
 }
 
-const REQUEST_LABEL: Record<string, string> = { booking: "huuraanvraag", extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", maintenance: "onderhoudsmelding", mileage: "kilometerstand", fine_question: "vraag over bekeuring", other: "overig" };
+const REQUEST_LABEL: Record<string, string> = { booking: "huuraanvraag", extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", maintenance: "onderhoudsmelding", maintenance_change: "wijziging onderhoud", mileage: "kilometerstand", fine_question: "vraag over bekeuring", other: "overig" };
 
 export interface PortalRouteDeps {
   requirePortalUser: RequestHandler;
@@ -308,7 +309,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const files = (req.files as Express.Multer.File[] | undefined) ?? [];
     const discard = () => files.forEach((f) => fs.rmSync(f.path, { force: true }));
     const base = z.object({
-      type: z.enum([PortalRequestType.BOOKING, PortalRequestType.EXTENSION, PortalRequestType.EARLY_RETURN, PortalRequestType.DAMAGE, PortalRequestType.MAINTENANCE, PortalRequestType.MILEAGE, PortalRequestType.FINE_QUESTION, PortalRequestType.OTHER]),
+      type: z.enum([PortalRequestType.BOOKING, PortalRequestType.EXTENSION, PortalRequestType.EARLY_RETURN, PortalRequestType.DAMAGE, PortalRequestType.MAINTENANCE, PortalRequestType.MAINTENANCE_CHANGE, PortalRequestType.MILEAGE, PortalRequestType.FINE_QUESTION, PortalRequestType.OTHER]),
       message: z.string().trim().min(1).max(4000),
       reservationId: z.coerce.number().int().positive().optional(),
       fineId: z.coerce.number().int().positive().optional(),
@@ -321,10 +322,19 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
 
     const needs = REQUEST_NEEDS[type];
     let reservation: PortalReservation | undefined;
+    let block: Awaited<ReturnType<typeof storage.getReservation>> | undefined;
     if (needs === "reservation") {
       if (!reservationId) { discard(); return portalError(res, 400, PORTAL_ERROR.VALIDATION, "reservationId is required"); }
-      reservation = await portalStorage.getReservationForCustomer(reservationId, ctx.customerId, ctx.scope);
-      if (!reservation) { discard(); return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Reservation not found"); }
+      if (type === "maintenance_change") {
+        // The linked reservation is the maintenance block; it is "ours" when we have the car on the road during it.
+        block = await storage.getReservation(reservationId);
+        const owner = block && block.type === "maintenance_block" && !block.deletedAt ? await findPortalCustomerForBlock(block) : null;
+        if (!block || !owner || owner.customerId !== ctx.customerId) { discard(); return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Maintenance not found"); }
+        if (ctx.scope.driverId && owner.rental.driverId !== ctx.scope.driverId) { discard(); return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Maintenance not found"); }
+      } else {
+        reservation = await portalStorage.getReservationForCustomer(reservationId, ctx.customerId, ctx.scope);
+        if (!reservation) { discard(); return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Reservation not found"); }
+      }
     }
     if (needs === "fine") {
       if (!fineId || !(await finesStorage.getFineForCustomer(fineId, ctx.customerId, ctx.scope))) { discard(); return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Fine not found"); }
@@ -371,6 +381,15 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     if (type === "early_return" && reservation && (p.returnDate < today || (reservation.endDate && p.returnDate >= reservation.endDate))) {
       discard(); return portalError(res, 400, PORTAL_ERROR.REQUEST_INVALID_PERIOD, "Return date must be before the current end date");
     }
+    if (type === "maintenance" || type === "maintenance_change") {
+      const openSame = (await requestsStorage.listRequestsForCustomer(ctx.customerId, {})).find((r) => r.type === type && r.reservationId === reservationId && (r.status === "new" || r.status === "in_progress"));
+      if (openSame) { discard(); return portalError(res, 409, PORTAL_ERROR.DUPLICATE_REQUEST, `Er staat al een aanvraag (#${openSame.id}) open hiervoor`); }
+    }
+    if (type === "maintenance" && p.preferredDate && p.preferredDate < today) { discard(); return portalError(res, 400, PORTAL_ERROR.REQUEST_INVALID_PERIOD, "Preferred date must be today or later"); }
+    if (type === "maintenance_change" && block) {
+      if (!canCustomerChangeMaintenance(block)) { discard(); return portalError(res, 400, PORTAL_ERROR.MAINTENANCE_TOO_LATE, "Maintenance starts within 48 hours"); }
+      if (p.newDate <= today) { discard(); return portalError(res, 400, PORTAL_ERROR.REQUEST_INVALID_PERIOD, "New date must be tomorrow or later"); }
+    }
 
     for (const f of files) {
       const check = await validateAfterUpload(f.path, f.originalname, f.mimetype, "document");
@@ -387,9 +406,13 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     }
     await logPortalActivity(req, "request_submitted", { entity: "request", entityId: created.id, details: { type } });
     const customer = await storage.getCustomer(ctx.customerId);
+    const isMaint = type === "maintenance" || type === "maintenance_change";
+    const plate = reservation?.vehicle?.licensePlate ?? (block?.vehicleId ? (await storage.getVehicle(block.vehicleId))?.licensePlate : undefined);
     await notifyStaffOfPortalEvent({
-      kind: "portal_request",
-      title: `Nieuwe aanvraag (${REQUEST_LABEL[type]}${type === "booking" ? ` ${p.vehicleLabel}` : ""}): ${customer?.companyName || customer?.name || ctx.customerId}`,
+      kind: isMaint ? "portal_maintenance" : "portal_request",
+      title: isMaint
+        ? `${type === "maintenance" ? "Onderhoudsmelding" : "Wijziging onderhoud"} ${plate ?? ""}${(p.urgent as unknown) === true || p.urgent === "true" ? " (dringend)" : ""}: ${customer?.companyName || customer?.name || ctx.customerId}`
+        : `Nieuwe aanvraag (${REQUEST_LABEL[type]}${type === "booking" ? ` ${p.vehicleLabel}` : ""}): ${customer?.companyName || customer?.name || ctx.customerId}`,
       description: message.slice(0, 200), link: `/portal-admin?request=${created.id}`, customerId: ctx.customerId,
     });
     const row = await requestsStorage.getRequest(created.id);

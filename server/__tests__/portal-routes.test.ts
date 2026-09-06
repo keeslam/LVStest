@@ -363,4 +363,44 @@ describe("my vehicles", () => {
     expect(res.body[0].reservationId).toBe(driverRentalId);
     expect(res.body[0].vehicle.id).toBe(driverVehicleId);
   });
+
+  // Amsterdam-local date/time for a maintenance block, robust to the test machine's own timezone.
+  const amsDate = (d: Date) => {
+    const parts = new Intl.DateTimeFormat("nl-NL", { timeZone: "Europe/Amsterdam", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(d);
+    const get = (t: string) => parts.find((x) => x.type === t)!.value;
+    return `${get("year")}-${get("month")}-${get("day")}`;
+  };
+  const amsTime = (d: Date) => {
+    const hm = new Intl.DateTimeFormat("nl-NL", { timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit", hour12: false }).format(d);
+    return hm.startsWith("24") ? `00${hm.slice(2)}` : hm;
+  };
+
+  it("one open maintenance report per rental", async () => {
+    const body = { type: "maintenance", message: "Piept", reservationId: rentalId, payload: JSON.stringify({ issue: "Piept bij remmen", needsReplacement: "true" }) };
+    expect((await agent.post("/api/portal/requests").set("X-CSRF-Token", csrf).send(body)).status).toBe(201);
+    const dup = await agent.post("/api/portal/requests").set("X-CSRF-Token", csrf).send(body);
+    expect(dup.status).toBe(409);
+    expect(dup.body.code).toBe("PORTAL_DUPLICATE_REQUEST");
+  });
+
+  it("maintenance change: allowed 49 hours before, refused 47 hours before, once the car is in, and twice", async () => {
+    const far = new Date(Date.now() + 49 * 3600e3), near = new Date(Date.now() + 47 * 3600e3);
+    const okBlock = await storage.createMaintenanceBlock(vehicleId, amsDate(far), undefined);
+    await db.update(reservations).set({ startTime: amsTime(far) }).where(eq(reservations.id, okBlock.id));
+    const change = (blockId: number) => agent.post("/api/portal/requests").set("X-CSRF-Token", csrf).send({ type: "maintenance_change", message: "Past niet", reservationId: blockId, payload: JSON.stringify({ newDate: "2099-01-05", reason: "Vakantie" }) });
+    expect((await change(okBlock.id)).status).toBe(201);
+    const twice = await change(okBlock.id);
+    expect(twice.status).toBe(409);
+    expect(twice.body.code).toBe("PORTAL_DUPLICATE_REQUEST");
+    const lateBlock = await storage.createMaintenanceBlock(vehicleId, amsDate(near), undefined);
+    await db.update(reservations).set({ startTime: amsTime(near) }).where(eq(reservations.id, lateBlock.id));
+    const late = await change(lateBlock.id);
+    expect(late.status).toBe(400);
+    expect(late.body.code).toBe("PORTAL_MAINTENANCE_TOO_LATE");
+    const inBlock = await storage.createMaintenanceBlock(vehicleId, "2099-03-01", "2099-03-02");
+    await db.update(reservations).set({ maintenanceStatus: "in" }).where(eq(reservations.id, inBlock.id));
+    expect((await change(inBlock.id)).body.code).toBe("PORTAL_MAINTENANCE_TOO_LATE");
+    const foreign = await storage.createMaintenanceBlock((await createTestVehicle()).id, "2099-04-01", "2099-04-02");
+    expect((await change(foreign.id)).status).toBe(404);
+  });
 });
