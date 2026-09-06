@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { plateMatches } from "@/lib/format-utils";
 import {
   ColumnDef,
   flexRender,
@@ -58,7 +59,7 @@ export function DataTable<TData, TValue>({
       const licenseNoFormat = vehicle.licensePlate.toLowerCase().replace(/-/g, '');
       
       return licenseNoFormat.includes(searchNoFormat) || 
-             vehicle.licensePlate.toLowerCase().includes(filterValue.toLowerCase());
+             plateMatches(vehicle.licensePlate, filterValue.toLowerCase());
     }
     
     // For other columns use standard case-insensitive search

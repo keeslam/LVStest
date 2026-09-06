@@ -28,7 +28,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient, invalidateRelatedQueries , invalidateByPrefix } from "@/lib/queryClient";
 import { Reservation, Vehicle } from "@shared/schema";
-import { formatLicensePlate, formatCurrency } from "@/lib/format-utils";
+import { formatLicensePlate, formatCurrency, plateMatches } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { format, parseISO, differenceInDays } from "date-fns";
 
@@ -140,7 +140,7 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
       if (!currentSearch) return true;
       const search = currentSearch.toLowerCase();
       return (
-        res.vehicle?.licensePlate?.toLowerCase().includes(search) ||
+        plateMatches(res.vehicle?.licensePlate, search) ||
         res.vehicle?.brand?.toLowerCase().includes(search) ||
         res.vehicle?.model?.toLowerCase().includes(search) ||
         res.customer?.companyName?.toLowerCase().includes(search) ||
@@ -173,7 +173,7 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
       if (!historySearch) return true;
       const search = historySearch.toLowerCase();
       return (
-        res.vehicle?.licensePlate?.toLowerCase().includes(search) ||
+        plateMatches(res.vehicle?.licensePlate, search) ||
         res.vehicle?.brand?.toLowerCase().includes(search) ||
         res.vehicle?.model?.toLowerCase().includes(search) ||
         res.customer?.companyName?.toLowerCase().includes(search) ||

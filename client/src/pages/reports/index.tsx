@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { ExpenseChart, type ExpenseChartData } from "@/components/reports/expense-chart";
 import { UtilizationChart, type UtilizationChartData } from "@/components/reports/utilization-chart";
 import { Vehicle, Expense, Reservation, Customer, VehicleTransport } from "@shared/schema";
-import { formatDate, formatCurrency, formatLicensePlate, sumMoney } from "@/lib/format-utils";
+import { formatDate, formatCurrency, formatLicensePlate, sumMoney, plateMatches } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { isTrueValue } from "@/lib/utils";
 import { addDays, format, subMonths, subDays, startOfMonth, endOfMonth, isWithinInterval, differenceInDays, parseISO, startOfDay } from "date-fns";
@@ -389,7 +389,7 @@ export default function ReportsPage() {
   // Filter APK list based on search query and filter status
   const filteredApkStatusList = apkStatusList.filter(vehicle => {
     const matchesSearch = !apkSearchQuery || 
-      vehicle.licensePlate.toLowerCase().includes(apkSearchQuery.toLowerCase()) ||
+      plateMatches(vehicle.licensePlate, apkSearchQuery.toLowerCase()) ||
       vehicle.brand.toLowerCase().includes(apkSearchQuery.toLowerCase()) ||
       vehicle.model.toLowerCase().includes(apkSearchQuery.toLowerCase());
       
@@ -431,7 +431,7 @@ export default function ReportsPage() {
   // Filter warranty list based on search query and filter status
   const filteredWarrantyList = warrantyStatusList.filter(vehicle => {
     const matchesSearch = !warrantySearchQuery || 
-      vehicle.licensePlate.toLowerCase().includes(warrantySearchQuery.toLowerCase()) ||
+      plateMatches(vehicle.licensePlate, warrantySearchQuery.toLowerCase()) ||
       vehicle.brand.toLowerCase().includes(warrantySearchQuery.toLowerCase()) ||
       vehicle.model.toLowerCase().includes(warrantySearchQuery.toLowerCase());
       

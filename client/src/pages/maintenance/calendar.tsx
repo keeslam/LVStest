@@ -47,7 +47,7 @@ import { MaintenanceEditDialog } from "@/components/maintenance/maintenance-edit
 import { MaintenanceListDialog } from "@/components/maintenance/maintenance-list-dialog";
 import { VehicleViewDialog } from "@/components/vehicles/vehicle-view-dialog";
 import { MaintenanceViewDialog } from "@/components/maintenance/maintenance-view-dialog";
-import { formatLicensePlate } from "@/lib/format-utils";
+import { formatLicensePlate, plateMatches } from "@/lib/format-utils";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
 import { ColorCodingDialog } from "@/components/calendar/color-coding-dialog";
@@ -873,7 +873,7 @@ export default function MaintenanceCalendar() {
       
       // Search filter
       if (maintenanceFilters.search && 
-          !vehicle.licensePlate?.toLowerCase().includes(maintenanceFilters.search.toLowerCase()) &&
+          !plateMatches(vehicle.licensePlate, maintenanceFilters.search.toLowerCase()) &&
           !vehicle.brand?.toLowerCase().includes(maintenanceFilters.search.toLowerCase()) &&
           !vehicle.model?.toLowerCase().includes(maintenanceFilters.search.toLowerCase()) &&
           !event.title?.toLowerCase().includes(maintenanceFilters.search.toLowerCase())) {

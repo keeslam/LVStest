@@ -32,7 +32,7 @@ import { Reservation, Vehicle } from "@shared/schema";
 import { Check, RotateCw, Search, CalendarClock } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { isTrueValue } from "@/lib/utils";
-import { formatLicensePlate } from "@/lib/format-utils";
+import { formatLicensePlate, plateMatches } from "@/lib/format-utils";
 import { formatDate } from "@/lib/format-utils";
 import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox";
 import { VehicleReservationsStatusDialog } from "@/components/reservations/vehicle-reservations-status-dialog";
@@ -1264,7 +1264,7 @@ export function QuickActions() {
                                 
                                 const query = apkSearchQuery.toLowerCase();
                                 return !query ||
-                                  vehicle.licensePlate?.toLowerCase().includes(query) ||
+                                  plateMatches(vehicle.licensePlate, query) ||
                                   vehicle.brand?.toLowerCase().includes(query) ||
                                   vehicle.model?.toLowerCase().includes(query);
                               })

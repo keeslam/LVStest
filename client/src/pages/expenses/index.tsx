@@ -34,7 +34,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Expense } from "@shared/schema";
-import { formatDate, formatCurrency } from "@/lib/format-utils";
+import { formatDate, formatCurrency, plateMatches } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
@@ -202,7 +202,7 @@ export default function ExpensesIndex() {
     
     const matchesSearch = 
       // Search with original format
-      licensePlate.toLowerCase().includes(searchLower) ||
+      plateMatches(licensePlate, searchLower) ||
       // Search with normalized format (no dashes)
       normalizedLicensePlate.includes(searchWithoutDashes) ||
       description.toLowerCase().includes(searchLower) ||

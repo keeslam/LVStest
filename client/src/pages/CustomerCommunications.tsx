@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Shield, Wrench, Users, Send, Calendar, Clock, CheckCircle, AlertTriangle, Edit, Trash2, Eye, Copy } from "lucide-react";
 import type { Vehicle, Customer } from "@shared/schema";
-import { formatLicensePlate } from "@/lib/format-utils";
+import { formatLicensePlate, plateMatches } from "@/lib/format-utils";
 
 interface NotificationHistory {
   id: string;
@@ -193,7 +193,7 @@ export default function CustomerCommunications() {
     const vehicle = item.vehicle;
     const query = searchQuery.toLowerCase();
     return !query ||
-      vehicle.licensePlate?.toLowerCase().includes(query) ||
+      plateMatches(vehicle.licensePlate, query) ||
       vehicle.brand?.toLowerCase().includes(query) ||
       vehicle.model?.toLowerCase().includes(query);
   });
