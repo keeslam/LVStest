@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
+import { btnPrimary } from "./ui";
 
 export function RequestForm({ initialType, reservationId: initialReservation, fineId: initialFine, onSubmitted }: { initialType?: PortalRequestTypeValue; reservationId?: number; fineId?: number; onSubmitted: (id: number) => void }) {
   const { t } = useTranslation("portal");
@@ -92,7 +93,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
       {type === "other" && <div><Label htmlFor="rq-subj">{t("requests.form.subject")}</Label><Input id="rq-subj" value={payload.subject ?? ""} onChange={setP("subject")} required /></div>}
       <div><Label htmlFor="rq-msg">{t("requests.form.message")}</Label><Textarea id="rq-msg" rows={4} value={message} onChange={(e) => setMessage(e.target.value)} required /></div>
       <div><Label htmlFor="rq-files">{t("requests.form.photos")}</Label><Input id="rq-files" type="file" multiple accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setFiles(Array.from(e.target.files ?? []))} /></div>
-      <Button type="submit" disabled={submit.isPending} data-testid="button-submit-request">{t("requests.form.send")}</Button>
+      <Button type="submit" className={btnPrimary} disabled={submit.isPending} data-testid="button-submit-request">{t("requests.form.send")}</Button>
     </form>
   );
 }

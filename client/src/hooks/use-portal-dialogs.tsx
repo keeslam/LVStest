@@ -7,6 +7,7 @@ import { FineDialog } from "@/components/portal/fine-dialog";
 import { RequestDialog } from "@/components/portal/request-dialog";
 import { NewRequestDialog } from "@/components/portal/new-request-dialog";
 import { DocumentDialog } from "@/components/portal/document-dialog";
+import { PortalAccountDialog } from "@/components/portal/account-dialog";
 
 export interface NewRequestPrefill { type?: PortalRequestTypeValue; reservationId?: number; fineId?: number }
 
@@ -17,6 +18,7 @@ type Open =
   | { kind: "request"; id: number }
   | { kind: "newRequest"; prefill: NewRequestPrefill }
   | { kind: "document"; document: PortalDocumentDto }
+  | { kind: "account" }
   | null;
 
 interface PortalDialogsApi {
@@ -26,6 +28,7 @@ interface PortalDialogsApi {
   openRequest: (id: number) => void;
   openNewRequest: (prefill?: NewRequestPrefill) => void;
   openDocument: (document: PortalDocumentDto) => void;
+  openAccount: () => void;
   close: () => void;
 }
 
@@ -44,6 +47,7 @@ const ROUTE_DIALOGS: Array<{ pattern: RegExp; base: string; make: (m: RegExpMatc
     } };
   } },
   { pattern: /^\/aanvragen\/(\d+)$/, base: "/aanvragen", make: (m) => ({ kind: "request", id: Number(m[1]) }) },
+  { pattern: /^\/account$/, base: "/", make: () => ({ kind: "account" }) },
 ];
 
 export function PortalDialogsProvider({ children }: { children: ReactNode }) {
@@ -78,6 +82,7 @@ export function PortalDialogsProvider({ children }: { children: ReactNode }) {
     openRequest: (id) => { fromRoute.current = false; setOpen({ kind: "request", id }); },
     openNewRequest: (prefill = {}) => { fromRoute.current = false; setOpen({ kind: "newRequest", prefill }); },
     openDocument: (document) => { fromRoute.current = false; setOpen({ kind: "document", document }); },
+    openAccount: () => { fromRoute.current = false; setOpen({ kind: "account" }); },
     close,
   }), [open, close]);
 
@@ -89,6 +94,7 @@ export function PortalDialogsProvider({ children }: { children: ReactNode }) {
       <RequestDialog id={open?.kind === "request" ? open.id : null} onClose={close} />
       <NewRequestDialog prefill={open?.kind === "newRequest" ? open.prefill : null} onClose={close} />
       <DocumentDialog document={open?.kind === "document" ? open.document : null} onClose={close} />
+      <PortalAccountDialog open={open?.kind === "account"} onClose={close} />
     </Ctx.Provider>
   );
 }

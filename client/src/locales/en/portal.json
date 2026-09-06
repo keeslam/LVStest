@@ -69,7 +69,22 @@
     "none": "No reservations",
     "since": "Since {{date}}",
     "until": "Until {{date}}",
-    "openEnded": "Open-ended"
+    "openEnded": "Open-ended",
+    "tiles": {
+      "current": "on the road",
+      "upcoming": "upcoming",
+      "requests": "open requests",
+      "fines": "open fines"
+    },
+    "noneCurrent": "None of your vehicles is on the road right now.",
+    "noneUpcoming": "No upcoming reservations.",
+    "pickupToday": "Pick up today",
+    "pickupIn_one": "Pick up in {{count}} day",
+    "pickupIn_other": "Pick up in {{count}} days",
+    "returnToday": "Return today",
+    "returnIn_one": "Return in {{count}} day",
+    "returnIn_other": "Return in {{count}} days",
+    "overdue": "End date passed"
   },
   "reservations": {
     "title": "Reservations",
@@ -84,6 +99,15 @@
       "returned": "Returned",
       "completed": "Completed",
       "cancelled": "Cancelled"
+    },
+    "count_one": "{{count}} reservation",
+    "count_other": "{{count}} reservations",
+    "emptyFilter": "No reservations in this selection.",
+    "filters": {
+      "active": "On the road",
+      "upcoming": "Upcoming",
+      "past": "Finished",
+      "all": "All"
     }
   },
   "documents": {
@@ -93,7 +117,10 @@
     "damage_check": "Damage report",
     "reservation": "Reservation #{{id}}",
     "open": "Open",
-    "noPreview": "This file type cannot be shown here. Use Download."
+    "noPreview": "This file type cannot be shown here. Use Download.",
+    "subtitle": "Contracts and damage forms per reservation.",
+    "other": "Other documents",
+    "openReservation": "View reservation"
   },
   "drivers": {
     "title": "Drivers",
@@ -109,7 +136,8 @@
     "noCountries": "No country found",
     "search": "Search driver…",
     "noneFound": "No driver found",
-    "moreShown": "{{shown}} of {{total}} shown, type to narrow down."
+    "moreShown": "{{shown}} of {{total}} shown, type to narrow down.",
+    "count": "{{active}} active of {{total}}"
   },
   "account": {
     "title": "My account",
@@ -577,7 +605,9 @@
       "charged": "Charged",
       "paid": "Paid",
       "disputed": "Disputed"
-    }
+    },
+    "openSummary_one": "{{count}} open fine, € {{amount}}",
+    "openSummary_other": "{{count}} open fines, € {{amount}} in total"
   },
   "requests": {
     "title": "Requests",
@@ -616,7 +646,10 @@
       "extend": "Extend",
       "earlyReturn": "Return early"
     },
-    "date": "Submitted on"
+    "date": "Submitted on",
+    "subtitle": "Extend, return early, report damage or ask a question.",
+    "replied": "Lam Groep has replied",
+    "progress": "Progress"
   },
   "site": {
     "backToSite": "Back to lamgroep.nl",
@@ -630,5 +663,10 @@
   "languages": {
     "nl": "Dutch",
     "en": "English"
+  },
+  "greeting": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening"
   }
 }

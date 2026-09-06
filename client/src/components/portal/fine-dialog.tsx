@@ -6,9 +6,9 @@ import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { DetailRow } from "./reservation-dialog";
+import { StatusBadge, btnPrimary } from "./ui";
 
 /** One fine as the customer sees it: what, when, how much, and a way to ask about it. */
 export function FineDialog({ id, onClose }: { id: number | null; onClose: () => void }) {
@@ -23,7 +23,7 @@ export function FineDialog({ id, onClose }: { id: number | null; onClose: () => 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {t("fines.detailTitle")} #{id}
-            {f && <Badge variant="outline">{t(`fines.status.${f.status}`, { defaultValue: f.status })}</Badge>}
+            {f && <StatusBadge kind="fine" status={f.status} label={t(`fines.status.${f.status}`, { defaultValue: f.status })} />}
           </DialogTitle>
         </DialogHeader>
         {isError ? <p className="p-6 text-center text-sm text-muted-foreground">{t("errors.PORTAL_NOT_FOUND")}</p> : isLoading || !f ? <div className="flex justify-center p-6"><Loader2 className="h-5 w-5 animate-spin" /></div> : (
@@ -41,7 +41,7 @@ export function FineDialog({ id, onClose }: { id: number | null; onClose: () => 
             </dl>
             <div className="flex flex-wrap gap-2">
               {f.hasLetter && <Button asChild size="sm" variant="outline"><a href={`/api/portal/fines/${f.id}/letter`} target="_blank" rel="noopener">{t("fines.letter")}</a></Button>}
-              {me?.settings.canSubmitRequests && <Button size="sm" onClick={() => openNewRequest({ type: "fine_question", fineId: f.id })} data-testid="button-fine-ask">{t("fines.ask")}</Button>}
+              {me?.settings.canSubmitRequests && <Button size="sm" className={btnPrimary} onClick={() => openNewRequest({ type: "fine_question", fineId: f.id })} data-testid="button-fine-ask">{t("fines.ask")}</Button>}
             </div>
           </div>
         )}

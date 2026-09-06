@@ -69,7 +69,22 @@
     "none": "Geen reserveringen",
     "since": "Sinds {{date}}",
     "until": "Tot {{date}}",
-    "openEnded": "Doorlopend"
+    "openEnded": "Doorlopend",
+    "tiles": {
+      "current": "in gebruik",
+      "upcoming": "komend",
+      "requests": "aanvragen open",
+      "fines": "bekeuringen open"
+    },
+    "noneCurrent": "Er rijdt op dit moment geen auto van u.",
+    "noneUpcoming": "Geen komende reserveringen.",
+    "pickupToday": "Vandaag ophalen",
+    "pickupIn_one": "Ophalen over {{count}} dag",
+    "pickupIn_other": "Ophalen over {{count}} dagen",
+    "returnToday": "Vandaag inleveren",
+    "returnIn_one": "Inleveren over {{count}} dag",
+    "returnIn_other": "Inleveren over {{count}} dagen",
+    "overdue": "Einddatum verstreken"
   },
   "reservations": {
     "title": "Reserveringen",
@@ -84,6 +99,15 @@
       "returned": "Ingeleverd",
       "completed": "Afgerond",
       "cancelled": "Geannuleerd"
+    },
+    "count_one": "{{count}} reservering",
+    "count_other": "{{count}} reserveringen",
+    "emptyFilter": "Geen reserveringen in deze selectie.",
+    "filters": {
+      "active": "In gebruik",
+      "upcoming": "Komend",
+      "past": "Afgerond",
+      "all": "Alles"
     }
   },
   "documents": {
@@ -93,7 +117,10 @@
     "damage_check": "Schadeformulier",
     "reservation": "Reservering #{{id}}",
     "open": "Openen",
-    "noPreview": "Dit bestandstype kan hier niet getoond worden. Gebruik Downloaden."
+    "noPreview": "Dit bestandstype kan hier niet getoond worden. Gebruik Downloaden.",
+    "subtitle": "Contracten en schadeformulieren per reservering.",
+    "other": "Overige documenten",
+    "openReservation": "Reservering bekijken"
   },
   "drivers": {
     "title": "Bestuurders",
@@ -109,7 +136,8 @@
     "noCountries": "Geen land gevonden",
     "search": "Bestuurder zoeken…",
     "noneFound": "Geen bestuurder gevonden",
-    "moreShown": "{{shown}} van {{total}} getoond, typ om te verfijnen."
+    "moreShown": "{{shown}} van {{total}} getoond, typ om te verfijnen.",
+    "count": "{{active}} actief van {{total}}"
   },
   "account": {
     "title": "Mijn account",
@@ -577,7 +605,9 @@
       "charged": "Doorbelast",
       "paid": "Betaald",
       "disputed": "Betwist"
-    }
+    },
+    "openSummary_one": "{{count}} openstaande bekeuring, € {{amount}}",
+    "openSummary_other": "{{count}} openstaande bekeuringen, samen € {{amount}}"
   },
   "requests": {
     "title": "Aanvragen",
@@ -616,7 +646,10 @@
       "extend": "Verlengen",
       "earlyReturn": "Eerder inleveren"
     },
-    "date": "Ingediend op"
+    "date": "Ingediend op",
+    "subtitle": "Verlengen, eerder inleveren, schade melden of een vraag stellen.",
+    "replied": "Lam Groep heeft geantwoord",
+    "progress": "Voortgang"
   },
   "site": {
     "backToSite": "Naar lamgroep.nl",
@@ -630,5 +663,10 @@
   "languages": {
     "nl": "Nederlands",
     "en": "Engels"
+  },
+  "greeting": {
+    "morning": "Goedemorgen",
+    "afternoon": "Goedemiddag",
+    "evening": "Goedenavond"
   }
 }

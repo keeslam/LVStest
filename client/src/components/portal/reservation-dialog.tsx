@@ -6,10 +6,10 @@ import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { formatPortalDate } from "@/components/portal/reservation-card";
 import { ChangeDriverDialog } from "@/components/portal/change-driver-dialog";
+import { Plate, StatusBadge } from "./ui";
 
 type Detail = PortalReservationDto & {
   driverHistory: Array<{ id: number; driverId: number | null; driverName: string | null; assignedFrom: string; assignedUntil: string | null; note: string | null }>;
@@ -36,13 +36,13 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {t("reservations.detailTitle")} #{id}
-            {r && <Badge variant="outline">{t(`reservations.status.${r.status}`, { defaultValue: r.status })}</Badge>}
+            {r && <StatusBadge kind="reservation" status={r.status} label={t(`reservations.status.${r.status}`, { defaultValue: r.status })} />}
           </DialogTitle>
         </DialogHeader>
         {isError ? <p className="p-6 text-center text-sm text-muted-foreground">{t("errors.PORTAL_NOT_FOUND")}</p> : isLoading || !r ? <div className="flex justify-center p-6"><Loader2 className="h-5 w-5 animate-spin" /></div> : (
           <div className="space-y-4">
             <dl className="space-y-1">
-              <DetailRow label={t("fields.vehicle")} value={r.vehicle ? `${r.vehicle.brand} ${r.vehicle.model} (${r.vehicle.licensePlate})` : null} />
+              {r.vehicle && <div className="grid grid-cols-3 gap-2 text-sm"><dt className="text-muted-foreground">{t("fields.vehicle")}</dt><dd className="col-span-2 flex flex-wrap items-center gap-2">{r.vehicle.brand} {r.vehicle.model} <Plate value={r.vehicle.licensePlate} /></dd></div>}
               <DetailRow label={t("fields.period")} value={`${formatPortalDate(r.startDate)} – ${r.endDate ? formatPortalDate(r.endDate) : t("overview.openEnded")}`} />
               <DetailRow label={t("fields.driver")} value={r.driver?.displayName} />
               <DetailRow label={t("fields.contractNumber")} value={r.contractNumber} />

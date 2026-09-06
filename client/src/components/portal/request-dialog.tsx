@@ -4,9 +4,27 @@ import type { PortalRequestDto } from "@shared/portal-requests";
 import { portalQueryFn } from "@/lib/portal-api";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { DetailRow } from "./reservation-dialog";
+import { StatusBadge } from "./ui";
+
+/** Three steps: submitted, in progress, handled (or rejected). */
+function RequestProgress({ status }: { status: string }) {
+  const { t } = useTranslation("portal");
+  const steps = ["new", "in_progress", status === "rejected" ? "rejected" : "done"];
+  const reached = status === "new" ? 0 : status === "in_progress" ? 1 : 2;
+  const colour = status === "rejected" ? "bg-[#e24b4a]" : "bg-[#1d9e75]";
+  return (
+    <ol className="flex items-center gap-2" aria-label={t("requests.progress")}>
+      {steps.map((s, i) => (
+        <li key={s} className="flex flex-1 items-center gap-2">
+          <span className={`h-2.5 flex-1 rounded-full ${i <= reached ? colour : "bg-[#e6e8f0]"}`} />
+          <span className={`hidden whitespace-nowrap text-xs sm:inline ${i <= reached ? "font-medium text-[#0f172a]" : "text-[#94a3b8]"}`}>{t(`requests.status.${s}`)}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
 
 /** One request the customer submitted, with Lam Groep's reply. */
 export function RequestDialog({ id, onClose }: { id: number | null; onClose: () => void }) {
@@ -21,11 +39,12 @@ export function RequestDialog({ id, onClose }: { id: number | null; onClose: () 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {t("requests.detailTitle")} #{id}
-            {r && <Badge variant={r.status === "done" ? "default" : r.status === "rejected" ? "destructive" : "outline"}>{t(`requests.status.${r.status}`)}</Badge>}
+            {r && <StatusBadge kind="request" status={r.status} label={t(`requests.status.${r.status}`)} />}
           </DialogTitle>
         </DialogHeader>
         {isError ? <p className="p-6 text-center text-sm text-muted-foreground">{t("errors.PORTAL_NOT_FOUND")}</p> : isLoading || !r ? <div className="flex justify-center p-6"><Loader2 className="h-5 w-5 animate-spin" /></div> : (
           <div className="space-y-3">
+            <RequestProgress status={r.status} />
             <dl className="space-y-1">
               <DetailRow label={t("requests.chooseType")} value={t(`requests.type.${r.type}`)} />
               <DetailRow label={t("requests.date")} value={new Date(r.createdAt).toLocaleString()} />

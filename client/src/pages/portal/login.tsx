@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { portalFetch, PortalApiError } from "@/lib/portal-api";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
+import { btnPrimary } from "@/components/portal/ui";
 
 export default function PortalLoginPage() {
   const { t } = useTranslation("portal");
@@ -53,7 +54,7 @@ export default function PortalLoginPage() {
       )}
       {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
       {info && <p className="text-sm text-green-700">{info}</p>}
-      <Button type="submit" disabled={busy} className="w-full">{mode === "login" ? t("login.submit") : t("login.forgotSubmit")}</Button>
+      <Button type="submit" disabled={busy} className={`w-full ${btnPrimary}`}>{mode === "login" ? t("login.submit") : t("login.forgotSubmit")}</Button>
       <button type="button" className="text-sm text-muted-foreground underline" onClick={() => { setMode(mode === "login" ? "forgot" : "login"); setError(null); setInfo(null); }}>
         {mode === "login" ? t("login.forgotLink") : t("login.backToLogin")}
       </button>
