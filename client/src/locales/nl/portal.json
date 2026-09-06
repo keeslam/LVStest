@@ -162,7 +162,9 @@
     "drives": "Rijdt in",
     "noCar": "Geen auto",
     "busyIn": "Rijdt al in {{plate}}",
-    "notePlaceholder": "Bijv. vakantie, ziekte, wissel per maandag"
+    "notePlaceholder": "Bijv. vakantie, ziekte, wissel per maandag",
+    "commonCountries": "Veelgebruikt",
+    "otherCountries": "Overige landen"
   },
   "account": {
     "title": "Mijn account",

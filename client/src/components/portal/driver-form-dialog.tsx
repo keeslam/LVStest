@@ -18,11 +18,13 @@ import { btnPrimary } from "./ui";
 const FIELDS = ["displayName", "email", "phone", "firstName", "lastName", "driverLicenseNumber", "licenseExpiry", "licenseOrigin", "preferredLanguage", "notes"] as const;
 type Field = typeof FIELDS[number];
 type Values = Record<Field, string>;
-const COUNTRY_OPTIONS = COUNTRIES.map((c) => ({ value: c, label: c }));
+/** Countries customers pick most; the full list follows in its own group. */
+const COMMON_COUNTRIES = ["Netherlands", "Belgium", "Germany", "France", "Poland", "United Kingdom"] as const;
+const OTHER_COUNTRIES = COUNTRIES.filter((c) => !(COMMON_COUNTRIES as readonly string[]).includes(c));
 const NAME_FIELDS: Field[] = ["displayName", "firstName", "lastName"];
 
 const emptyValues = (driver?: PortalDriverDto): Values =>
-  Object.fromEntries(FIELDS.map((f) => [f, (driver?.[f] as string | null) ?? (f === "preferredLanguage" ? "nl" : "")])) as Values;
+  Object.fromEntries(FIELDS.map((f) => [f, (driver?.[f] as string | null) ?? (f === "preferredLanguage" ? "nl" : f === "licenseOrigin" ? "Netherlands" : "")])) as Values;
 
 /** Which reservations a new driver can be put on right away. */
 const assignable = (r: PortalReservationDto) => r.status === "booked" || r.status === "picked_up";
@@ -131,13 +133,14 @@ export function DriverFormDialog({ driver, children, open: controlledOpen, onOpe
                   {text("driverLicenseNumber")}
                   {text("licenseExpiry", "date")}
                 </div>
-                <div>
-                  <Label htmlFor="drv-licenseOrigin">{t("fields.licenseOrigin")}</Label>
-                  <SearchListPicker items={COUNTRY_OPTIONS.map((c, i) => ({ id: i + 1, label: c.label }))} value={values.licenseOrigin ? COUNTRY_OPTIONS.findIndex((c) => c.value === values.licenseOrigin) + 1 || null : null}
-                    onChange={(id) => set("licenseOrigin", id ? COUNTRY_OPTIONS[id - 1].value : "")}
-                    searchPlaceholder={t("drivers.searchCountries")} emptyText={t("drivers.noCountries")} changeLabel={t("actions.change")} searchFrom={0} maxShown={2} testId="driver-country" />
-                </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="drv-licenseOrigin">{t("fields.licenseOrigin")}</Label>
+                    <select id="drv-licenseOrigin" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={values.licenseOrigin} onChange={(e) => set("licenseOrigin", e.target.value)} data-testid="select-driver-country">
+                      <optgroup label={t("drivers.commonCountries")}>{COMMON_COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}</optgroup>
+                      <optgroup label={t("drivers.otherCountries")}>{OTHER_COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}</optgroup>
+                    </select>
+                  </div>
                   <div>
                     <Label htmlFor="drv-preferredLanguage">{t("fields.preferredLanguage")}</Label>
                     <select id="drv-preferredLanguage" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={values.preferredLanguage} onChange={(e) => set("preferredLanguage", e.target.value)} data-testid="select-driver-language">

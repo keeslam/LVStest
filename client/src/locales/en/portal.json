@@ -162,7 +162,9 @@
     "drives": "Drives",
     "noCar": "No car",
     "busyIn": "Already drives {{plate}}",
-    "notePlaceholder": "E.g. holiday, illness, swap from Monday"
+    "notePlaceholder": "E.g. holiday, illness, swap from Monday",
+    "commonCountries": "Common",
+    "otherCountries": "Other countries"
   },
   "account": {
     "title": "My account",
