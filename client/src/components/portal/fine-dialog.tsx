@@ -24,7 +24,7 @@ export function FineDialog({ id, onClose }: { id: number | null; onClose: () => 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {t("fines.detailTitle")} #{id}
-            {f && <StatusBadge kind="fine" status={f.status} label={t(`fines.status.${f.status}`, { defaultValue: f.status })} />}
+            {f?.status === "disputed" && <StatusBadge kind="fine" status={f.status} label={t("fines.status.disputed")} />}
           </DialogTitle>
         </DialogHeader>
         {isError ? <p className="p-6 text-center text-sm text-muted-foreground">{t("errors.PORTAL_NOT_FOUND")}</p> : isLoading || !f ? <div className="flex justify-center p-6"><Loader2 className="h-5 w-5 animate-spin" /></div> : (

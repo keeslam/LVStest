@@ -74,7 +74,7 @@
       "current": "in gebruik",
       "upcoming": "komend",
       "requests": "aanvragen open",
-      "fines": "bekeuringen open"
+      "fines": "bekeuringen"
     },
     "noneCurrent": "Er rijdt op dit moment geen auto van u.",
     "noneUpcoming": "Geen komende reserveringen.",
@@ -88,7 +88,7 @@
     "shown": "{{shown}} van {{total}} getoond",
     "viewAll": "Alles bekijken en zoeken",
     "openRequests": "Open aanvragen",
-    "openFines": "Open bekeuringen"
+    "openFines": "Bekeuringen"
   },
   "reservations": {
     "title": "Reserveringen",
@@ -177,8 +177,8 @@
     "sectionOther": "Taal en opmerkingen",
     "assignTypeHint": "Typ een kenteken of merk; de auto verschijnt dan hieronder. Laat leeg om later te koppelen.",
     "licenseOnFile": "Er staat al een rijbewijs in het dossier. Kies een bestand om het te vervangen.",
-    "openFines_one": "{{count}} open bekeuring",
-    "openFines_other": "{{count}} open bekeuringen",
+    "openFines_one": "{{count}} bekeuring",
+    "openFines_other": "{{count}} bekeuringen",
     "history": "Historie ({{count}})",
     "historyTitle": "Historie van {{name}}",
     "upcomingSection": "Aankomend",
@@ -762,9 +762,10 @@
       "paid": "Betaald",
       "disputed": "Betwist"
     },
-    "openSummary_one": "{{count}} openstaande bekeuring, € {{amount}}",
-    "openSummary_other": "{{count}} openstaande bekeuringen, samen € {{amount}}",
-    "noneOpen": "Geen openstaande bekeuringen."
+    "openSummary_one": "{{count}} bekeuring, € {{amount}}. Doorbelasten aan de bestuurder regelt u zelf.",
+    "openSummary_other": "{{count}} bekeuringen, samen € {{amount}}. Doorbelasten aan de bestuurder regelt u zelf.",
+    "noneOpen": "Geen bekeuringen.",
+    "subtitle": "Bekeuringen die op naam van uw bedrijf zijn verwerkt. Doorbelasten aan de bestuurder regelt u zelf."
   },
   "requests": {
     "title": "Aanvragen",
@@ -849,7 +850,7 @@
     "current": "Auto's in gebruik",
     "upcoming": "Komende reserveringen",
     "requests": "Openstaande aanvragen",
-    "fines": "Openstaande bekeuringen",
+    "fines": "Bekeuringen",
     "documents": "Contracten en documenten",
     "search": "Zoeken op kenteken, auto, bestuurder…",
     "noMatch": "Niets gevonden voor deze zoekterm.",

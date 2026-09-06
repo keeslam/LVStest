@@ -74,7 +74,7 @@
       "current": "on the road",
       "upcoming": "upcoming",
       "requests": "open requests",
-      "fines": "open fines"
+      "fines": "fines"
     },
     "noneCurrent": "None of your vehicles is on the road right now.",
     "noneUpcoming": "No upcoming reservations.",
@@ -88,7 +88,7 @@
     "shown": "{{shown}} of {{total}} shown",
     "viewAll": "View all and search",
     "openRequests": "Open requests",
-    "openFines": "Open fines"
+    "openFines": "Fines"
   },
   "reservations": {
     "title": "Reservations",
@@ -177,8 +177,8 @@
     "sectionOther": "Language and notes",
     "assignTypeHint": "Type a plate or brand; the car then shows up below. Leave empty to assign later.",
     "licenseOnFile": "A licence is already on file. Choose a file to replace it.",
-    "openFines_one": "{{count}} open fine",
-    "openFines_other": "{{count}} open fines",
+    "openFines_one": "{{count}} fine",
+    "openFines_other": "{{count}} fines",
     "history": "History ({{count}})",
     "historyTitle": "History of {{name}}",
     "upcomingSection": "Upcoming",
@@ -762,9 +762,10 @@
       "paid": "Paid",
       "disputed": "Disputed"
     },
-    "openSummary_one": "{{count}} open fine, € {{amount}}",
-    "openSummary_other": "{{count}} open fines, € {{amount}} in total",
-    "noneOpen": "No open fines."
+    "openSummary_one": "{{count}} fine, € {{amount}}. Passing it on to the driver is up to you.",
+    "openSummary_other": "{{count}} fines, € {{amount}} in total. Passing them on to the driver is up to you.",
+    "noneOpen": "No fines.",
+    "subtitle": "Fines processed in your company's name. Passing them on to the driver is up to you."
   },
   "requests": {
     "title": "Requests",
@@ -849,7 +850,7 @@
     "current": "Vehicles on the road",
     "upcoming": "Upcoming reservations",
     "requests": "Open requests",
-    "fines": "Open fines",
+    "fines": "Fines",
     "documents": "Contracts and documents",
     "search": "Search by plate, vehicle, driver…",
     "noMatch": "Nothing matches this search.",
