@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
-import { LogOut, Loader2, ArrowLeft, Phone, Mail, MapPin, Home, CalendarDays, FileText, Users, Receipt, Inbox, UserCircle, MoreHorizontal, ExternalLink } from "lucide-react";
+import { LogOut, Loader2, ArrowLeft, Phone, Mail, MapPin, Home, CalendarDays, FileText, Users, Receipt, Inbox, UserCircle, MoreHorizontal, ExternalLink, Car } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
 import { PORTAL_SITE, isEmbedded } from "@/lib/portal-site";
@@ -206,6 +206,7 @@ export function PortalLayout({ children }: { children: ReactNode }) {
   const tabs: TabDef[] = [
     { href: "/", key: "tabs.overview", show: true, icon: <Home className="h-4 w-4" /> },
     { href: "/reserveringen", key: "tabs.reservations", show: true, icon: <CalendarDays className="h-4 w-4" /> },
+    { href: "/voertuigen", key: "tabs.vehicles", show: true, icon: <Car className="h-4 w-4" /> },
     { href: "/documenten", key: "tabs.documents", show: me.settings.canViewContracts, icon: <FileText className="h-4 w-4" /> },
     { href: "/bestuurders", key: "tabs.drivers", show: me.settings.canManageDrivers && me.role === "admin", icon: <Users className="h-4 w-4" /> },
     { href: "/bekeuringen", key: "tabs.fines", show: me.settings.canViewFines, icon: <Receipt className="h-4 w-4" /> },

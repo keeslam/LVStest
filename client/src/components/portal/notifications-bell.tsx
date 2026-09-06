@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
-import { Bell, CheckCheck, Receipt, Wrench, ShieldAlert, Inbox, MessageSquare } from "lucide-react";
+import { Bell, CheckCheck, Receipt, Wrench, ShieldAlert, Inbox, MessageSquare, Car } from "lucide-react";
 import type { PortalNotificationDto } from "@shared/portal-types";
 import { portalFetch, portalQueryFn } from "@/lib/portal-api";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
@@ -14,12 +15,16 @@ const LIST_KEY = ["portal", "/api/portal/notifications"];
 
 function iconFor(type: string) {
   if (type.startsWith("apk")) return <ShieldAlert className="h-4 w-4" />;
+  if (type.startsWith("maintenance")) return <Wrench className="h-4 w-4" />;
+  if (type === "replacement_ready") return <Car className="h-4 w-4" />;
   if (type.startsWith("service")) return <Wrench className="h-4 w-4" />;
   if (type.startsWith("fine")) return <Receipt className="h-4 w-4" />;
   if (type === "request_message") return <MessageSquare className="h-4 w-4" />;
   return <Inbox className="h-4 w-4" />;
 }
-const toneFor = (type: string) => type.startsWith("apk_expired") || type === "service_due" || type === "request_rejected" ? "bg-[#fcebeb] text-[#791f1f]"
+const toneFor = (type: string) => type === "maintenance_cancelled" || type.startsWith("apk_expired") || type === "service_due" || type === "request_rejected" ? "bg-[#fcebeb] text-[#791f1f]"
+  : type === "maintenance_out" || type === "replacement_ready" ? "bg-[#e1f5ee] text-[#085041]"
+  : type.startsWith("maintenance") ? "bg-[#faeeda] text-[#633806]"
   : type.startsWith("apk") || type.startsWith("service") ? "bg-[#faeeda] text-[#633806]"
   : type.startsWith("fine") ? "bg-[#fcebeb] text-[#791f1f]" : "bg-[#e6f1fb] text-[#0c447c]";
 
@@ -32,6 +37,7 @@ export function NotificationsBell({ dark = false }: { dark?: boolean }) {
   const { t } = useTranslation("portal");
   const queryClient = useQueryClient();
   const { openRequest, openReservation, openFine } = usePortalDialogs();
+  const [, navigate] = useLocation();
   const [open, setOpen] = useState(false);
   const { query, setQuery, q, hit } = usePortalSearch();
   const { data: unread } = useQuery<{ count: number }>({ queryKey: UNREAD_KEY, queryFn: portalQueryFn, refetchInterval: 60_000 });
@@ -42,7 +48,9 @@ export function NotificationsBell({ dark = false }: { dark?: boolean }) {
   const follow = (n: PortalNotificationDto) => {
     if (!n.isRead) markRead.mutate([n.id]);
     setOpen(false);
-    const m = (n.link ?? "").match(/^\/(aanvragen|reserveringen|bekeuringen)\/(\d+)/);
+    const link = n.link ?? "";
+    if (link.startsWith("/voertuigen")) { navigate(link); return; }
+    const m = link.match(/^\/(aanvragen|reserveringen|bekeuringen)\/(\d+)/);
     if (!m) return;
     const id = Number(m[2]);
     if (m[1] === "aanvragen") openRequest(id); else if (m[1] === "reserveringen") openReservation(id); else openFine(id);

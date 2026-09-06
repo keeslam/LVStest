@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { PortalFineDto } from "@shared/fines";
 import { FineRow } from "./rows";
 import { useTranslation } from "react-i18next";
-import type { PortalReservationDto } from "@shared/portal-types";
+import type { PortalReservationDto, PortalMyVehicleDto } from "@shared/portal-types";
 import { portalQueryFn } from "@/lib/portal-api";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
@@ -12,6 +12,7 @@ import { Loader2, MapPin, Clock, Info, ShieldAlert, Wrench, Gauge } from "lucide
 import { daysUntil } from "./ui";
 import { formatPortalDate } from "@/components/portal/reservation-card";
 import { ChangeDriverDialog } from "@/components/portal/change-driver-dialog";
+import { MaintenanceLine } from "@/components/portal/vehicle-card";
 import { Plate, StatusBadge } from "./ui";
 
 type Detail = PortalReservationDto & {
@@ -36,6 +37,8 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
   const canRequest = Boolean(r && me?.settings.canSubmitRequests && ["booked", "picked_up"].includes(r.status));
   const apkIn = r?.vehicle?.apkDate ? daysUntil(r.vehicle.apkDate) : null;
   const apkWarning = r?.status === "picked_up" && apkIn !== null && apkIn <= 30;
+  const { data: mine = [] } = useQuery<PortalMyVehicleDto[]>({ queryKey: ["portal", "/api/portal/vehicles/mine"], queryFn: portalQueryFn, enabled: r?.status === "picked_up" });
+  const myVehicle = mine.find((v) => v.reservationId === id);
 
   return (
     <Dialog open={id !== null} onOpenChange={(o) => !o && onClose()}>
@@ -66,10 +69,10 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
                 {me.info.pickupInstructions && <p className="mt-1 text-xs text-[#2a2f9c]">{me.info.pickupInstructions}</p>}
               </div>
             )}
-            {(apkWarning || r.serviceDue) && (
+            {(apkWarning || r.serviceDue || myVehicle?.maintenance) && (
               <div className="space-y-1" data-testid="vehicle-alerts">
                 {apkWarning && <div className={`flex items-start gap-2 rounded-xl border p-3 text-sm ${apkIn! < 0 ? "border-[#f3c1c1] bg-[#fcebeb] text-[#791f1f]" : "border-[#f4d7a8] bg-[#faeeda] text-[#633806]"}`}><ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" /><span>{apkIn! < 0 ? t("reservations.apkExpired", { date: formatPortalDate(r.vehicle!.apkDate) }) : t("reservations.apkDue", { date: formatPortalDate(r.vehicle!.apkDate), days: apkIn })}</span></div>}
-                {r.serviceDue && <div className={`flex items-start gap-2 rounded-xl border p-3 text-sm ${r.serviceDue === "due" ? "border-[#f3c1c1] bg-[#fcebeb] text-[#791f1f]" : "border-[#f4d7a8] bg-[#faeeda] text-[#633806]"}`}><Wrench className="mt-0.5 h-4 w-4 shrink-0" /><span>{t(r.serviceDue === "due" ? "reservations.serviceDue" : "reservations.serviceSoon")}</span></div>}
+                <MaintenanceLine maintenance={myVehicle?.maintenance ?? null} serviceDue={r.serviceDue ?? null} canRequest={canRequest} />
               </div>
             )}
             <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">

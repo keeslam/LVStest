@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Car, CalendarDays, Inbox, Receipt, FileText, Plus, Loader2, Search } from "lucide-react";
-import type { PortalReservationDto, PortalDocumentDto } from "@shared/portal-types";
+import type { PortalReservationDto, PortalDocumentDto, PortalMyVehicleDto } from "@shared/portal-types";
 import type { PortalFineDto } from "@shared/fines";
 import type { PortalRequestDto } from "@shared/portal-requests";
 import { portalQueryFn } from "@/lib/portal-api";
@@ -12,17 +12,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ReservationCard } from "./reservation-card";
+import { VehicleCard } from "./vehicle-card";
 import { FineRow, RequestRow, DocumentRow } from "./rows";
 import { EmptyState, btnPrimary } from "./ui";
 
-export type PortalListKind = "current" | "upcoming" | "requests" | "fines" | "documents";
+export type PortalListKind = "current" | "upcoming" | "requests" | "fines" | "documents" | "vehicles";
 
 const ICONS: Record<PortalListKind, React.ReactNode> = {
   current: <Car className="h-5 w-5" />, upcoming: <CalendarDays className="h-5 w-5" />,
   requests: <Inbox className="h-5 w-5" />, fines: <Receipt className="h-5 w-5" />, documents: <FileText className="h-5 w-5" />,
+  vehicles: <Car className="h-5 w-5" />,
 };
 const ICON_TONE: Record<PortalListKind, string> = {
   current: "bg-[#1d9e75]", upcoming: "bg-[#378add]", requests: "bg-[#ef9f27]", fines: "bg-[#e24b4a]", documents: "bg-[#1a1d62]",
+  vehicles: "bg-[#1d9e75]",
 };
 
 /** One dashboard tile, opened: only that slice of data, in a dialog. Rows open their own detail dialog on top. */
@@ -36,7 +39,8 @@ export function PortalListDialog({ kind, initialQuery, onClose }: { kind: Portal
   const { data: fines = [], isLoading: l2 } = useQuery<PortalFineDto[]>({ queryKey: ["portal", "/api/portal/fines"], queryFn: portalQueryFn, enabled: open && kind === "fines" });
   const { data: requests = [], isLoading: l3 } = useQuery<PortalRequestDto[]>({ queryKey: ["portal", "/api/portal/requests"], queryFn: portalQueryFn, enabled: open && kind === "requests" });
   const { data: documents = [], isLoading: l4 } = useQuery<PortalDocumentDto[]>({ queryKey: ["portal", "/api/portal/documents"], queryFn: portalQueryFn, enabled: open && kind === "documents" });
-  const loading = l1 || l2 || l3 || l4;
+  const { data: vehicles = [], isLoading: l5 } = useQuery<PortalMyVehicleDto[]>({ queryKey: ["portal", "/api/portal/vehicles/mine"], queryFn: portalQueryFn, enabled: open && kind === "vehicles" });
+  const loading = l1 || l2 || l3 || l4 || l5;
   const [query, setQuery] = useState("");
   useEffect(() => { setQuery(initialQuery ?? ""); }, [kind, initialQuery]);
   const q = query.trim().toLowerCase();
@@ -67,6 +71,10 @@ export function PortalListDialog({ kind, initialQuery, onClose }: { kind: Portal
   } else if (kind === "documents") {
     items = documents.filter((d) => hit(d.fileName, d.reservationId, t("documents." + d.kind))).map((d) => <DocumentRow key={d.id} document={d} />);
     empty = t("documents.empty");
+  } else if (kind === "vehicles") {
+    const list = vehicles.filter((v) => hit(v.vehicle.licensePlate, v.vehicle.brand, v.vehicle.model, v.driver?.displayName));
+    items = list.map((v) => <VehicleCard key={v.reservationId} item={v} />);
+    empty = t("vehicles.none");
   }
 
   return (
@@ -75,7 +83,7 @@ export function PortalListDialog({ kind, initialQuery, onClose }: { kind: Portal
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             {kind && <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-white ${ICON_TONE[kind]}`}>{ICONS[kind]}</span>}
-            <span>{kind ? t(`lists.${kind}`) : ""}{!loading && items.length > 0 && <span className="ml-2 rounded-full bg-[#eef0fb] px-2 py-0.5 text-xs font-medium text-[#1a1d62]">{items.length}</span>}</span>
+            <span>{kind === "vehicles" ? t("vehicles.mine") : kind ? t(`lists.${kind}`) : ""}{!loading && items.length > 0 && <span className="ml-2 rounded-full bg-[#eef0fb] px-2 py-0.5 text-xs font-medium text-[#1a1d62]">{items.length}</span>}</span>
           </DialogTitle>
         </DialogHeader>
         <div className="relative">
