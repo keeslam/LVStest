@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { RequestStatusBadge } from "./requests-table";
 import { BookingApproval } from "./booking-approval";
+import { MaintenanceApproval, MaintenanceSummary } from "./maintenance-approval";
 import { RequestThread } from "@/components/portal/request-thread";
 
 type ConflictError = Error & { conflicts?: Array<{ id: number; startDate: string; endDate: string | null }> };
@@ -87,12 +88,7 @@ export function PortalRequestDialog() {
               </div>
             )}
             {r.type === "other" && <div><Label>{t("admin.requests.dialog.subject")}</Label><div>{p.subject}</div></div>}
-            {r.type === "maintenance" && (
-              <div className="grid grid-cols-3 gap-2">
-                <div className="col-span-2"><Label>{t("admin.requests.dialog.issue")}</Label><div>{p.issue}</div></div>
-                <div><Label>{t("admin.requests.dialog.mileage")}</Label><div>{p.mileage || "—"}{String(p.urgent) === "true" ? ` · ${t("admin.requests.dialog.urgent")}` : ""}</div></div>
-              </div>
-            )}
+            {(r.type === "maintenance" || r.type === "maintenance_change") && <MaintenanceSummary request={r} blockDate={r.reservationLabel} />}
             {r.type === "mileage" && <div><Label>{t("admin.requests.dialog.mileage")}</Label><div>{p.mileage}</div></div>}
             <div><Label>{t("admin.requests.dialog.message")}</Label><p className="whitespace-pre-wrap rounded-md bg-muted p-2">{r.message}</p></div>
             {r.attachments.length > 0 && (
@@ -117,6 +113,12 @@ export function PortalRequestDialog() {
             {canManage && isOpen && r.type === "booking" && approving && (
               <BookingApproval request={r} onApproved={(reservationId) => { done(); setApproving(false); openReservationDialog(reservationId); }} />
             )}
+            {canManage && isOpen && (r.type === "maintenance" || r.type === "maintenance_change") && !approving && (
+              <p className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">{t("admin.maintenance.closeHint")}</p>
+            )}
+            {canManage && isOpen && (r.type === "maintenance" || r.type === "maintenance_change") && approving && (
+              <MaintenanceApproval request={r} onApproved={() => { done(); setApproving(false); }} />
+            )}
             {canManage && isOpen && (
               <div className="space-y-2 border-t pt-3">
                 <Label htmlFor="rq-reply">{t("admin.requests.dialog.reply")}</Label>
@@ -126,10 +128,12 @@ export function PortalRequestDialog() {
                   {(r.type === "extension" || r.type === "early_return") && (
                     <Button size="sm" onClick={() => act.mutate({ url: `/api/portal-requests/${id}/approve` })} data-testid="button-approve-request">{t("admin.requests.dialog.approve")}</Button>
                   )}
-                  {r.type === "booking" && !approving && (
-                    <Button size="sm" onClick={() => setApproving(true)} data-testid="button-approve-request">{t("admin.booking.open")}</Button>
+                  {(r.type === "booking" || r.type === "maintenance" || r.type === "maintenance_change") && !approving && (
+                    <Button size="sm" onClick={() => setApproving(true)} data-testid="button-approve-request">
+                      {t(r.type === "booking" ? "admin.booking.open" : r.type === "maintenance" ? "admin.maintenance.title" : "admin.maintenance.moveTitle")}
+                    </Button>
                   )}
-                  {r.type === "booking"
+                  {r.type === "booking" || r.type === "maintenance" || r.type === "maintenance_change"
                     ? <Button size="sm" variant="outline" onClick={() => needReply() && act.mutate({ url: `/api/portal-requests/${id}/reply`, body: { reply, status: "in_progress" } })} data-testid="button-answer-request">{t("admin.requests.dialog.replyOnly")}</Button>
                     : <Button size="sm" onClick={() => needReply() && act.mutate({ url: `/api/portal-requests/${id}/reply`, body: { reply, status: "done" } })} data-testid="button-answer-request">{t("admin.requests.dialog.answer")}</Button>}
                   <Button size="sm" variant="destructive" onClick={() => needReply() && act.mutate({ url: `/api/portal-requests/${id}/reply`, body: { reply, status: "rejected" } })}>{t("admin.requests.dialog.reject")}</Button>

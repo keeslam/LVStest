@@ -18,9 +18,9 @@ const todayIso = () => format(new Date(), "yyyy-MM-dd");
  * click the first day, then the last day. A single day, or "open einde"
  * (no end date), are both fine. Past days cannot be chosen.
  */
-export function PeriodPicker({ start, end, onChange, allowOpenEnd = true, minDate, id, testId = "period" }: {
+export function PeriodPicker({ start, end, onChange, allowOpenEnd = true, minDate, single, id, testId = "period" }: {
   start: string; end: string; onChange: (start: string, end: string) => void;
-  allowOpenEnd?: boolean; minDate?: string; id?: string; testId?: string;
+  allowOpenEnd?: boolean; minDate?: string; single?: boolean; id?: string; testId?: string;
 }) {
   const { t, i18n } = useTranslation("portal");
   const locale = i18n.language?.startsWith("en") ? enGB : nl;
@@ -38,9 +38,11 @@ export function PeriodPicker({ start, end, onChange, allowOpenEnd = true, minDat
     onChange(from, iso === from ? "" : iso);
   };
   const label = range.from
-    ? range.to && toIso(range.to) !== toIso(range.from)
-      ? `${day(range.from, range.from.getFullYear() !== range.to.getFullYear())} – ${day(range.to)}`
-      : range.to ? day(range.from) : `${day(range.from)} · ${t("period.openEnd")}`
+    ? single
+      ? day(range.from)
+      : range.to && toIso(range.to) !== toIso(range.from)
+        ? `${day(range.from, range.from.getFullYear() !== range.to.getFullYear())} – ${day(range.to)}`
+        : range.to ? day(range.from) : `${day(range.from)} · ${t("period.openEnd")}`
     : t("period.pick");
   const months = typeof window !== "undefined" && window.innerWidth >= 768 ? 2 : 1;
 
@@ -53,16 +55,22 @@ export function PeriodPicker({ start, end, onChange, allowOpenEnd = true, minDat
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <Calendar mode="range" locale={locale} numberOfMonths={months} defaultMonth={range.from ?? min} selected={range}
-          disabled={{ before: min }} weekStartsOn={1} initialFocus
-          onSelect={() => undefined} onDayClick={(d, mods) => { if (!mods.disabled) pickDay(d); }} />
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t px-3 py-2 text-xs text-[#64748b]">
-          <span>{range.from && !range.to ? (allowOpenEnd ? t("period.hintEnd") : t("period.hintEndRequired")) : t("period.hintStart")}</span>
-          <div className="flex gap-1">
-            {allowOpenEnd && range.from && range.to && <Button type="button" size="sm" variant="ghost" onClick={() => onChange(start, "")}><X className="mr-1 h-3.5 w-3.5" />{t("period.openEnd")}</Button>}
-            <Button type="button" size="sm" onClick={() => setOpen(false)} data-testid={`${testId}-done`}>{t("period.done")}</Button>
+        {single ? (
+          <Calendar mode="single" locale={locale} numberOfMonths={months} defaultMonth={range.from ?? min} selected={range.from}
+            disabled={{ before: min }} weekStartsOn={1} initialFocus
+            onSelect={() => undefined} onDayClick={(d, mods) => { if (!mods.disabled) { onChange(toIso(d), ""); setOpen(false); } }} />
+        ) : (<>
+          <Calendar mode="range" locale={locale} numberOfMonths={months} defaultMonth={range.from ?? min} selected={range}
+            disabled={{ before: min }} weekStartsOn={1} initialFocus
+            onSelect={() => undefined} onDayClick={(d, mods) => { if (!mods.disabled) pickDay(d); }} />
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t px-3 py-2 text-xs text-[#64748b]">
+            <span>{range.from && !range.to ? (allowOpenEnd ? t("period.hintEnd") : t("period.hintEndRequired")) : t("period.hintStart")}</span>
+            <div className="flex gap-1">
+              {allowOpenEnd && range.from && range.to && <Button type="button" size="sm" variant="ghost" onClick={() => onChange(start, "")}><X className="mr-1 h-3.5 w-3.5" />{t("period.openEnd")}</Button>}
+              <Button type="button" size="sm" onClick={() => setOpen(false)} data-testid={`${testId}-done`}>{t("period.done")}</Button>
+            </div>
           </div>
-        </div>
+        </>)}
       </PopoverContent>
     </Popover>
   );
