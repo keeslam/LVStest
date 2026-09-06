@@ -205,7 +205,7 @@ openstaande onderhoudsmeldingen en -wijzigingen; erop klikken opent de
 aanvragenlijst gefilterd op die twee types. Staff behandelt zo'n aanvraag in
 dezelfde aanvraagdialoog als elke andere portaalaanvraag:
 
-- Bij een **nieuwe onderhoudsmelding** toont het paneel "Inplannen" een datum
+- Bij een **nieuwe onderhoudsmelding** toont het paneel "Inplannen in de onderhoudskalender" een datum
   (voorgesteld: de gewenste datum van de klant, anders morgen), een duur in
   dagen en een categorie (onderhoudsbeurt of reparatie). "Inplannen en
   bevestigen" zet een blok in de onderhoudskalender, koppelt de aanvraag
@@ -213,7 +213,7 @@ dezelfde aanvraagdialoog als elke andere portaalaanvraag:
   een placeholder-plek voor een vervangende auto (nog geen echt kenteken;
   dat wijst staff later toe zoals bij elke placeholder). Een kilometerstand
   die hoger is dan wat er bekend staat, wordt meteen op de auto bijgewerkt.
-- Bij een **wijzigingsverzoek** toont het paneel "Verplaatsen" de nieuw
+- Bij een **wijzigingsverzoek** toont het paneel "Onderhoud verplaatsen" de nieuw
   gevraagde datum en de huidige duur van het blok. Goedkeuren verzet het
   blok naar de nieuwe periode en verplaatst een eventuele placeholder-plek
   mee; een placeholder wordt door deze stap nooit automatisch verwijderd,
@@ -227,8 +227,8 @@ dezelfde aanvraagdialoog als elke andere portaalaanvraag:
   die de bijbehorende aanvraag opent.
 
 Bij elke stap krijgt de klant een belletje in het portaal (onderwerp met het
-kenteken: gepland, verplaatst, in onderhoud, klaar, geannuleerd, of
-"vervangende auto klaar" zodra een placeholder een echt kenteken krijgt) en,
+kenteken: gepland, verplaatst, in onderhoud, klaar, Onderhoud vervalt, of
+"Vervangend vervoer: <kenteken>" zodra een placeholder een echt kenteken krijgt) en,
 als SMTP werkt, een e-mail via het sjabloon `portal_maintenance` (te bewerken
 onder Communicatie > E-mailsjablonen, net als de andere portaalsjablonen)
 naar het APK/onderhouds-adres van de klant of anders het accountadres.
