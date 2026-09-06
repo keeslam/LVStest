@@ -72,15 +72,15 @@ function SectionTile({ kind, value, sub, alert, onClick }: { kind: SectionKind; 
   const { t } = useTranslation("portal");
   return (
     <button type="button" onClick={onClick} data-testid={`tile-${kind}`}
-      className={`group flex items-center gap-3 rounded-xl border bg-card p-3 text-left transition-shadow hover:shadow-md sm:p-4 ${alert ? "border-amber-400 ring-1 ring-amber-200" : ""}`}>
-      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${SECTION_TONE[kind]}`}>{SECTION_ICON[kind]}</span>
+      className={`group flex flex-col items-start gap-2 rounded-xl border bg-card p-3 text-left transition-shadow hover:shadow-md sm:flex-row sm:items-center sm:gap-3 sm:p-4 ${alert ? "border-amber-400 ring-1 ring-amber-200" : ""}`}>
+      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10 ${SECTION_TONE[kind]}`}>{SECTION_ICON[kind]}</span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium">{t(`admin.tabs.${kind}`)}</span>
-        <span className="block truncate text-xs text-muted-foreground">
+        <span className="block text-sm font-medium sm:truncate">{t(`admin.tabs.${kind}`)}</span>
+        <span className="block text-xs text-muted-foreground sm:truncate">
           {value !== undefined && <span className={`mr-1 text-base font-semibold ${alert ? "text-amber-700" : "text-foreground"}`}>{value}</span>}{sub}
         </span>
       </span>
-      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+      <ChevronRight className="hidden h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 sm:block" />
     </button>
   );
 }

@@ -49,7 +49,7 @@ export default function PortalAdminPage() {
           <h1 className="text-2xl font-semibold">{t("admin.pageTitle")}</h1>
           <p className="text-sm text-muted-foreground">{t("admin.pageSubtitle")}</p>
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:flex">
+        <div className="grid grid-cols-1 gap-2 sm:flex">
           {canManageFines && (
             <Button size="sm" variant="outline" onClick={openFineImportDialog} data-testid="button-import-fines"><ScanSearch className="mr-1.5 h-4 w-4" />{t("admin.fines.import.button")}</Button>
           )}
