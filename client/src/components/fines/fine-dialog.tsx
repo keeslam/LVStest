@@ -136,7 +136,6 @@ export function FineDialog() {
               <div className="flex flex-wrap gap-2 border-t pt-3">
                 {!closed && <Button size="sm" onClick={() => call.mutate({ method: "PATCH", url: `/api/fines/${id}`, body: { ...edit, amount: Number(edit.amount), adminFee: 0 } })}>{t("admin.fines.dialog.save")}</Button>}
                 {allowed.includes("new") && fine.status !== "cancelled" && <Button size="sm" variant="outline" onClick={() => call.mutate({ method: "POST", url: `/api/fines/${id}/unlink` })}>{t("admin.fines.dialog.unlink")}</Button>}
-                {allowed.includes("disputed") && <Button size="sm" variant="outline" onClick={() => setStatus("disputed")}>{t("admin.fines.dialog.dispute")}</Button>}
                 {allowed.includes("linked") && ["disputed", "charged", "paid"].includes(fine.status) && <Button size="sm" variant="outline" onClick={() => setStatus("linked")}>{t("admin.fines.dialog.link")}</Button>}
                 {allowed.includes("cancelled") && <Button size="sm" variant="destructive" onClick={() => setStatus("cancelled")}>{t("admin.fines.dialog.cancel")}</Button>}
                 {fine.status === "cancelled" && <Button size="sm" onClick={() => call.mutate({ method: "POST", url: `/api/fines/${id}/reactivate` })} data-testid="button-reactivate-fine">{t("admin.fines.dialog.reactivate")}</Button>}

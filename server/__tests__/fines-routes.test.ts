@@ -66,10 +66,11 @@ describe("fines routes", () => {
   it("enforces transitions; charged and paid are no longer reachable", async () => {
     const bad = await request(manager).post(`/api/fines/${fineId}/status`).send({ status: "paid" });
     expect(bad.status).toBe(400);
-    expect(bad.body.allowed).toEqual(["disputed", "cancelled", "new"]);
+    expect(bad.body.allowed).toEqual(["cancelled", "new"]);
     expect((await request(manager).post(`/api/fines/${fineId}/status`).send({ status: "charged" })).status).toBe(400);
-    const disputed = await request(manager).post(`/api/fines/${fineId}/status`).send({ status: "disputed" });
-    expect(disputed.body.status).toBe("disputed");
+    expect((await request(manager).post(`/api/fines/${fineId}/status`).send({ status: "disputed" })).status).toBe(400);
+    const cancelled = await request(manager).post(`/api/fines/${fineId}/status`).send({ status: "cancelled" });
+    expect(cancelled.body.status).toBe("cancelled");
     const back = await request(manager).post(`/api/fines/${fineId}/status`).send({ status: "linked" });
     expect(back.body.status).toBe("linked");
   });

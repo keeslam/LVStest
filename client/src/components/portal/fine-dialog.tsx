@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { DetailRow } from "./reservation-dialog";
-import { StatusBadge, btnPrimary } from "./ui";
+import { btnPrimary } from "./ui";
 
 /** One fine as the customer sees it: what, when, how much, and a way to ask about it. */
 export function FineDialog({ id, onClose }: { id: number | null; onClose: () => void }) {
@@ -26,7 +26,6 @@ export function FineDialog({ id, onClose }: { id: number | null; onClose: () => 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {t("fines.detailTitle")} #{id}
-            {f?.status === "disputed" && <StatusBadge kind="fine" status={f.status} label={t("fines.status.disputed")} />}
           </DialogTitle>
         </DialogHeader>
         {isError ? <p className="p-6 text-center text-sm text-muted-foreground">{t("errors.PORTAL_NOT_FOUND")}</p> : isLoading || !f ? <div className="flex justify-center p-6"><Loader2 className="h-5 w-5 animate-spin" /></div> : (

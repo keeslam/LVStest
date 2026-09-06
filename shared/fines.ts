@@ -4,13 +4,14 @@ export const FineStatus = {
 export type FineStatusValue = typeof FineStatus[keyof typeof FineStatus];
 
 // The app only records and shows fines; recharging and payment are handled in the
-// accounting package. So: new -> linked, with disputed/cancelled on the side.
-// 'charged' and 'paid' remain as values for rows created before that decision,
-// but nothing moves into them any more.
+// accounting package, and a fine is a fact, not something to dispute in the
+// app. So: new -> linked, with cancelled on the side. 'charged', 'paid' and
+// 'disputed' remain as values for rows created before that decision, but
+// nothing moves into them any more.
 export const FINE_TRANSITIONS: Record<FineStatusValue, FineStatusValue[]> = {
   new: ['linked', 'cancelled'],
-  linked: ['disputed', 'cancelled', 'new'],
-  charged: ['linked', 'disputed', 'cancelled'],
+  linked: ['cancelled', 'new'],
+  charged: ['linked', 'cancelled'],
   disputed: ['linked', 'cancelled'],
   paid: ['linked'],
   cancelled: ['new', 'linked'],
