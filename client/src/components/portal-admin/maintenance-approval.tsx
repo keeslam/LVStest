@@ -41,17 +41,18 @@ export function MaintenanceSummary({ request: r, blockDate }: { request: PortalR
 export function MaintenanceApproval({ request: r, onApproved }: { request: PortalRequestDto; onApproved: (blockId: number) => void }) {
   const { t } = useTranslation("portal");
   const { toast } = useToast();
-  const p = r.payload as Record<string, string | undefined>;
+  const p = r.payload as { issue?: string; mileage?: number; urgent?: boolean; needsReplacement?: boolean; preferredDate?: string; newDate?: string; reason?: string };
   const isChange = r.type === "maintenance_change";
   const [startDate, setStartDate] = useState((isChange ? p.newDate : p.preferredDate) || tomorrow());
   const [days, setDays] = useState(1);
-  const [category, setCategory] = useState<"scheduled_maintenance" | "repair">(p.urgent ? "repair" : "scheduled_maintenance");
+  const [durationStr, setDurationStr] = useState("");
+  const [category, setCategory] = useState<"scheduled_maintenance" | "repair">(p.urgent === true ? "repair" : "scheduled_maintenance");
   const [note, setNote] = useState("");
-  useEffect(() => { setStartDate((isChange ? p.newDate : p.preferredDate) || tomorrow()); setDays(1); setNote(""); }, [r.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setStartDate((isChange ? p.newDate : p.preferredDate) || tomorrow()); setDays(1); setDurationStr(""); setNote(""); }, [r.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const approve = useMutation({
     mutationFn: async () => (await apiRequest("POST", `/api/portal-requests/${r.id}/approve`, isChange
-      ? { startDate, durationDays: days, note: note.trim() || undefined }
+      ? { startDate, ...(durationStr !== "" ? { durationDays: Math.min(60, Math.max(1, Number(durationStr) || 1)) } : {}), note: note.trim() || undefined }
       : { startDate, durationDays: days, category, note: note.trim() || undefined })).json(),
     onSuccess: (data: { block: { id: number } }) => { toast({ title: t(isChange ? "admin.maintenance.moved" : "admin.maintenance.created", { id: data.block.id }) }); onApproved(data.block.id); },
     onError: (e: Error) => toast({ title: e.message.replace(/^\d+:\s*/, ""), variant: "destructive" }),
@@ -62,7 +63,11 @@ export function MaintenanceApproval({ request: r, onApproved }: { request: Porta
       <div className="flex items-center gap-2 font-medium">{isChange ? <CalendarClock className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}{t(isChange ? "admin.maintenance.moveTitle" : "admin.maintenance.title")}</div>
       <div className="grid gap-2 md:grid-cols-3">
         <div><Label htmlFor="ma-date">{t("admin.maintenance.date")}</Label><PeriodPicker id="ma-date" start={startDate} end="" single onChange={(s) => setStartDate(s)} testId="maintenance-date" /></div>
-        <div><Label htmlFor="ma-days">{t("admin.maintenance.duration")}</Label><Input id="ma-days" type="number" min={1} max={60} value={days} onChange={(e) => setDays(Math.max(1, Number(e.target.value) || 1))} data-testid="input-maintenance-days" /></div>
+        {isChange ? (
+          <div><Label htmlFor="ma-days">{t("admin.maintenance.duration")}</Label><Input id="ma-days" type="number" min={1} max={60} placeholder={t("admin.maintenance.keepDuration")} value={durationStr} onChange={(e) => { const v = e.target.value; setDurationStr(v === "" ? "" : String(Math.min(60, Math.max(1, Number(v) || 1)))); }} data-testid="input-maintenance-days" /></div>
+        ) : (
+          <div><Label htmlFor="ma-days">{t("admin.maintenance.duration")}</Label><Input id="ma-days" type="number" min={1} max={60} value={days} onChange={(e) => setDays(Math.min(60, Math.max(1, Number(e.target.value) || 1)))} data-testid="input-maintenance-days" /></div>
+        )}
         {!isChange && (
           <div><Label htmlFor="ma-cat">{t("admin.maintenance.category")}</Label>
             <select id="ma-cat" className="w-full rounded-md border px-3 py-2 text-sm" value={category} onChange={(e) => setCategory(e.target.value as "scheduled_maintenance" | "repair")} data-testid="select-maintenance-category">

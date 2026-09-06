@@ -767,6 +767,7 @@
       "moveTitle": "Move maintenance",
       "date": "Date",
       "duration": "Duration (days)",
+      "keepDuration": "Keep current duration",
       "category": "Type",
       "categoryService": "Service",
       "categoryRepair": "Repair",

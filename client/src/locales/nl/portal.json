@@ -767,6 +767,7 @@
       "moveTitle": "Onderhoud verplaatsen",
       "date": "Datum",
       "duration": "Duur (dagen)",
+      "keepDuration": "Huidige duur behouden",
       "category": "Soort",
       "categoryService": "Onderhoudsbeurt",
       "categoryRepair": "Reparatie",
