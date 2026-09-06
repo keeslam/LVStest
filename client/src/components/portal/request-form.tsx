@@ -37,6 +37,15 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
   const canPickDriver = me?.role === "admin" && Boolean(me.settings.canManageDrivers);
   const { data: drivers = [] } = useQuery<PortalDriverDto[]>({ queryKey: ["portal", "/api/portal/drivers"], queryFn: portalQueryFn, enabled: type === "booking" && canPickDriver });
   const openReservations = reservations.filter((r) => r.status === "booked" || r.status === "picked_up");
+  const chosen = reservations.find((r) => String(r.id) === reservationId);
+  /** Extension: days × the vehicle's day price, only when prices are shown and the new date is later. */
+  const extensionEstimate = (() => {
+    if (type !== "extension" || !me?.settings.showPrices || !chosen?.endDate || !chosen.vehicle?.dailyPrice || !payload.newEndDate) return null;
+    const days = Math.round((new Date(payload.newEndDate).getTime() - new Date(chosen.endDate).getTime()) / 86_400_000);
+    if (days <= 0) return null;
+    const total = days * Number(chosen.vehicle.dailyPrice);
+    return { days, perDay: Number(chosen.vehicle.dailyPrice), total };
+  })();
   const canBook = Boolean(me?.settings.canBook);
 
   const submit = useMutation({
@@ -123,7 +132,30 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
           <p className="text-xs text-[#64748b]">{t("requests.form.bookingHint")}</p>
         </div>
       )}
-      {type === "extension" && <div><Label htmlFor="rq-end">{t("requests.form.newEndDate")}</Label><Input id="rq-end" type="date" value={payload.newEndDate ?? ""} onChange={setP("newEndDate")} required /></div>}
+      {type === "extension" && (
+        <div>
+          <Label htmlFor="rq-end">{t("requests.form.newEndDate")}</Label>
+          <Input id="rq-end" type="date" value={payload.newEndDate ?? ""} min={chosen?.endDate ?? undefined} onChange={setP("newEndDate")} required />
+          {extensionEstimate && <p className="mt-1 text-xs text-[#64748b]" data-testid="extension-estimate">{t("requests.form.extensionEstimate", { days: extensionEstimate.days, perDay: extensionEstimate.perDay.toFixed(2), total: extensionEstimate.total.toFixed(2) })}</p>}
+        </div>
+      )}
+      {type === "maintenance" && (
+        <div className="space-y-2">
+          <div><Label htmlFor="rq-issue">{t("requests.form.issue")}</Label><Input id="rq-issue" value={payload.issue ?? ""} onChange={setP("issue")} placeholder={t("requests.form.issuePlaceholder")} required data-testid="input-maintenance-issue" /></div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div><Label htmlFor="rq-km">{t("requests.form.mileage")}</Label><Input id="rq-km" type="number" min={0} inputMode="numeric" value={payload.mileage ?? ""} onChange={setP("mileage")} /></div>
+            <label className="flex items-center gap-2 self-end pb-2 text-sm"><input type="checkbox" checked={payload.urgent === "true"} onChange={(e) => setPayload({ ...payload, urgent: e.target.checked ? "true" : "" })} />{t("requests.form.urgent")}</label>
+          </div>
+          <p className="text-xs text-[#64748b]">{t("requests.form.maintenanceHint")}</p>
+        </div>
+      )}
+      {type === "mileage" && (
+        <div>
+          <Label htmlFor="rq-km2">{t("requests.form.mileage")}</Label>
+          <Input id="rq-km2" type="number" min={0} inputMode="numeric" value={payload.mileage ?? ""} onChange={setP("mileage")} required data-testid="input-mileage" />
+          <p className="mt-1 text-xs text-[#64748b]">{t("requests.form.mileageHint")}</p>
+        </div>
+      )}
       {type === "early_return" && <div><Label htmlFor="rq-ret">{t("requests.form.returnDate")}</Label><Input id="rq-ret" type="date" value={payload.returnDate ?? ""} onChange={setP("returnDate")} required /></div>}
       {type === "damage" && (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">

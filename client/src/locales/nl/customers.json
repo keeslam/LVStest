@@ -182,7 +182,8 @@
     "periodToTbd": "tot nader te bepalen",
     "notProvided": "Niet opgegeven",
     "notRecorded": "Niet geregistreerd",
-    "portalAccount": "Portaalaccount"
+    "portalAccount": "Portaalaccount",
+    "exportCsv": "Exporteren (CSV)"
   },
   "editDialog": {
     "title": "Klant bewerken",

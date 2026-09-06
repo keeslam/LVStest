@@ -54,7 +54,8 @@
     "forgotLink": "Wachtwoord vergeten?",
     "forgotSubmit": "Herstel-link sturen",
     "forgotSent": "Als dit e-mailadres bekend is, is er een e-mail met een herstel-link verstuurd.",
-    "backToLogin": "Terug naar inloggen"
+    "backToLogin": "Terug naar inloggen",
+    "privacyNote": "Door in te loggen gaat u akkoord met het gebruik van uw gegevens zoals beschreven in onze"
   },
   "activate": {
     "title": "Wachtwoord instellen",
@@ -116,7 +117,13 @@
     "openFines_one": "{{count}} bekeuring",
     "openFines_other": "{{count}} bekeuringen",
     "fines_one": "Bekeuring bij deze reservering",
-    "fines_other": "Bekeuringen bij deze reservering ({{count}})"
+    "fines_other": "Bekeuringen bij deze reservering ({{count}})",
+    "pickupInfo": "Ophalen",
+    "pickupAt": "ophalen om {{time}}",
+    "apkDue": "De APK van deze auto verloopt op {{date}} (over {{days}} dagen). Lam Groep plant de keuring in.",
+    "apkExpired": "De APK van deze auto is verlopen op {{date}}. Neem contact op met Lam Groep.",
+    "serviceDue": "Deze auto is toe aan een onderhoudsbeurt. Lam Groep neemt contact op om dit in te plannen.",
+    "serviceSoon": "Deze auto is bijna toe aan onderhoud. U hoort van Lam Groep wanneer."
   },
   "documents": {
     "title": "Contracten en documenten",
@@ -128,7 +135,11 @@
     "noPreview": "Dit bestandstype kan hier niet getoond worden. Gebruik Downloaden.",
     "subtitle": "Contracten en schadeformulieren per reservering.",
     "other": "Overige documenten",
-    "openReservation": "Reservering bekijken"
+    "openReservation": "Reservering bekijken",
+    "ack": "Gezien en akkoord",
+    "ackConfirm": "Bevestig dat u dit contract heeft gelezen en akkoord gaat. Uw naam en het tijdstip worden vastgelegd.",
+    "ackDone": "Vastgelegd: gezien en akkoord.",
+    "ackedBy": "Akkoord door {{name}} op {{date}}"
   },
   "drivers": {
     "title": "Bestuurders",
@@ -187,7 +198,8 @@
     "viewFines": "Bekeuringen van deze bestuurder bekijken",
     "notGiven": "Niet opgegeven",
     "noLicense": "Rijbewijs niet opgegeven",
-    "noExpiry": "geldigheid onbekend"
+    "noExpiry": "geldigheid onbekend",
+    "maskedHint": "Om privacyredenen tonen we alleen de laatste cijfers. Het volledige nummer staat bij Bewerken."
   },
   "account": {
     "title": "Mijn account",
@@ -445,7 +457,11 @@
       "notificationEmail": "E-mailadres voor meldingen uit het portaal",
       "portalBaseUrl": "Basis-URL van het portaal (voor uitnodigingsmails), bv. https://portaal.lamgroep.nl",
       "templatesHint": "De e-mailsjablonen portal_invite, portal_password_reset en portal_staff_notification staan onder Communicatie.",
-      "saved": "Portaalinstellingen opgeslagen."
+      "saved": "Portaalinstellingen opgeslagen.",
+      "pickupAddress": "Ophaaladres (voor klanten met een geboekte reservering)",
+      "openingHours": "Openingstijden",
+      "pickupInstructions": "Wat de klant moet meenemen of weten bij ophalen",
+      "privacyUrl": "Link naar de privacyverklaring"
     },
     "fines": {
       "title": "Bekeuringen",
@@ -614,7 +630,8 @@
         "title": "Verwijderde bekeuringen",
         "description": "Verwijderde bekeuringen blijven hier bewaard met wie ze wanneer verwijderde, en kunnen worden teruggezet.",
         "empty": "Geen verwijderde bekeuringen."
-      }
+      },
+      "exportCsv": "Exporteren (CSV)"
     },
     "requests": {
       "title": "Aanvragen",
@@ -637,7 +654,9 @@
         "damage": "Schademelding",
         "fine_question": "Vraag over bekeuring",
         "other": "Overig",
-        "booking": "Huuraanvraag"
+        "booking": "Huuraanvraag",
+        "maintenance": "Onderhoud/storing",
+        "mileage": "Kilometerstand"
       },
       "status": {
         "new": "Nieuw",
@@ -669,7 +688,12 @@
         "startDate": "Vanaf",
         "endDate": "Tot en met",
         "openEnd": "Open einde",
-        "replyOnly": "Antwoord sturen (blijft open)"
+        "replyOnly": "Antwoord sturen (blijft open)",
+        "issue": "Melding",
+        "mileage": "Kilometerstand",
+        "urgent": "dringend",
+        "thread": "Berichten met de klant",
+        "threadPlaceholder": "Bericht aan de klant (de aanvraag blijft open)…"
       }
     },
     "alert": {
@@ -738,7 +762,8 @@
       "showAll": "Alles bekijken en zoeken",
       "search": "Zoeken…",
       "noMatch": "Niets gevonden."
-    }
+    },
+    "customerTabNote": "Via het klantenportaal bijgewerkt door {{name}} op {{date}}: {{fields}}"
   },
   "fines": {
     "title": "Bekeuringen",
@@ -783,7 +808,9 @@
       "damage": "Schade melden",
       "fine_question": "Vraag over bekeuring",
       "other": "Overig",
-      "booking": "Auto huren"
+      "booking": "Auto huren",
+      "maintenance": "Onderhoud of storing melden",
+      "mileage": "Kilometerstand doorgeven"
     },
     "status": {
       "new": "Ingediend",
@@ -817,7 +844,17 @@
       "vehicleNotFree": "Deze auto is in de gekozen periode niet meer vrij. Kies een andere auto of periode.",
       "driver": "Bestuurder",
       "driverLater": "Later bepalen",
-      "period": "Periode"
+      "period": "Periode",
+      "extensionEstimate": "Indicatie: {{days}} dag(en) × € {{perDay}} = € {{total}} (exclusief btw en eventuele extra's).",
+      "issue": "Wat is er aan de hand?",
+      "issuePlaceholder": "Bijv. waarschuwingslampje, geluid bij remmen, onderhoudsbeurt volgens boekje",
+      "mileage": "Kilometerstand",
+      "urgent": "Dringend (auto kan niet veilig rijden)",
+      "maintenanceHint": "Lam Groep plant het onderhoud in en neemt contact op. Bij dringende zaken belt u ook.",
+      "mileageHint": "Zoals op het dashboard. Lam Groep gebruikt dit voor het onderhoudsschema.",
+      "reportMaintenance": "Onderhoud melden",
+      "reportMileage": "Kilometerstand doorgeven",
+      "yes": "Ja"
     },
     "date": "Ingediend op",
     "subtitle": "Verlengen, eerder inleveren, schade melden of een vraag stellen.",
@@ -893,5 +930,19 @@
     "failedTitle": "Bevestigen niet gelukt",
     "failedHint": "Vraag de wijziging opnieuw aan via Mijn account.",
     "toAccount": "Naar Mijn account"
+  },
+  "notifications": {
+    "title": "Meldingen",
+    "markAll": "Alles gelezen",
+    "search": "Zoek in meldingen…",
+    "empty": "Geen meldingen. Hier ziet u antwoorden op aanvragen, nieuwe bekeuringen en waarschuwingen over APK en onderhoud."
+  },
+  "thread": {
+    "title": "Berichten",
+    "empty": "Nog geen berichten.",
+    "placeholder": "Schrijf een bericht aan Lam Groep…",
+    "send": "Versturen",
+    "staffName": "Lam Groep ({{name}})",
+    "closed": "Deze aanvraag is afgehandeld. Voor iets nieuws stuurt u een nieuwe aanvraag."
   }
 }

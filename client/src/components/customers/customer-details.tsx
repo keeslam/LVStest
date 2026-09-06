@@ -18,6 +18,8 @@ import { CustomerEditDialog } from "./customer-edit-dialog";
 import { DriverDialog } from "./driver-dialog";
 import { DriverViewDialog } from "./driver-view-dialog";
 import { formatDate, formatCurrency, formatPhoneNumber, formatReservationStatus, formatLicensePlate } from "@/lib/format-utils";
+import { downloadCsv } from "@/lib/csv";
+import { PortalEditNote } from "@/components/portal-admin/portal-edit-note";
 import { Price } from "@/components/ui/price";
 import { displayLicensePlate } from "@/lib/utils";
 import { Customer, Reservation, Driver } from "@shared/schema";
@@ -653,6 +655,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
               {/* Contact Info Section */}
               <div className="border-b pb-4 mb-4">
                 <h3 className="text-lg font-medium mb-3">{t('details.contactInformation')}</h3>
+                <PortalEditNote customerId={customerId} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.primaryEmail')}</h4>
@@ -1404,9 +1407,15 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
 
             {/* Rental History Table */}
             <Card>
-              <CardHeader>
-                <CardTitle>{t('details.rentalHistoryTitle')}</CardTitle>
-                <CardDescription>{t('details.rentalHistoryDescription')}</CardDescription>
+              <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
+                <div>
+                  <CardTitle>{t('details.rentalHistoryTitle')}</CardTitle>
+                  <CardDescription>{t('details.rentalHistoryDescription')}</CardDescription>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => downloadCsv(`reserveringen-klant-${customerId}`, ["Nummer", "Kenteken", "Voertuig", "Van", "Tot", "Status", "Contract", "Prijs"],
+                  (pastRentals as any[]).map((r) => [r.id, r.vehicle?.licensePlate ? formatLicensePlate(r.vehicle.licensePlate) : "", r.vehicle ? `${r.vehicle.brand} ${r.vehicle.model}` : "", r.startDate, r.endDate ?? "", formatReservationStatus(r.status), r.contractNumber ?? "", r.totalPrice ?? ""]))} data-testid="button-export-reservations">
+                  {t('details.exportCsv')}
+                </Button>
               </CardHeader>
               <CardContent>
                 {isLoadingReservations ? (

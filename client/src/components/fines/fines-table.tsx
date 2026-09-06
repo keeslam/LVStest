@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { formatLicensePlate } from "@/lib/format-utils";
 import { type Preview, PreviewFooter, TableSearch, textMatches } from "@/components/portal-admin/preview";
+import { downloadCsv } from "@/lib/csv";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { apiRequest } from "@/lib/queryClient";
@@ -71,6 +73,10 @@ export function FinesTable({ customerId, initialPlate, importFileId, preview }: 
         <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" aria-label={t("admin.fines.filters.from")} />
         <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" aria-label={t("admin.fines.filters.to")} />
         {importFileId && <Badge variant="secondary" data-testid="badge-import-filter">{t("admin.fines.cjib.filteredByFile", { id: importFileId })}</Badge>}
+        <Button size="sm" variant="ghost" onClick={() => downloadCsv(`bekeuringen${customerId ? `-klant-${customerId}` : ""}`, ["Kenteken", "Datum", "Omschrijving", "Klant", "Bestuurder", "Bedrag", "Status"],
+          filtered.map((f) => [formatLicensePlate(f.licensePlate), new Date(f.offenceAt).toLocaleString(), f.description, f.customerName ?? "", f.driverName ?? "", f.totalAmount, t(`admin.fines.status.${f.status}`)]))} data-testid="button-export-fines">
+          {t("admin.fines.exportCsv")}
+        </Button>
         {canManage && (<div className="ml-auto flex gap-2">
           {isAdmin && <Button size="sm" variant="ghost" onClick={() => setBinOpen(true)} data-testid="button-fines-bin">{t("admin.fines.bin.button")}</Button>}
           <Button size="sm" variant="outline" onClick={openFineImportsDialog} data-testid="button-cjib-imports">{t("admin.fines.cjib.button")}</Button>

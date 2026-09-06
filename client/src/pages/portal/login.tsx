@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { PORTAL_SITE } from "@/lib/portal-site";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -58,6 +59,7 @@ export default function PortalLoginPage() {
       <button type="button" className="text-sm text-muted-foreground underline" onClick={() => { setMode(mode === "login" ? "forgot" : "login"); setError(null); setInfo(null); }}>
         {mode === "login" ? t("login.forgotLink") : t("login.backToLogin")}
       </button>
+      <p className="text-xs text-muted-foreground">{t("login.privacyNote")} <a href={PORTAL_SITE.privacyUrl} className="underline" target="_blank" rel="noopener">{t("site.privacy")}</a>.</p>
     </form>
   );
 }

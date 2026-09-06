@@ -14,6 +14,9 @@ import { AssignVehicleDialog } from "@/components/portal/change-driver-dialog";
 import { DriverHistoryDialog, driverHistory } from "@/components/portal/driver-history-dialog";
 import { Avatar, EmptyState, PageHeader, Plate, SearchBox, btnPrimary, btnSecondary, usePortalSearch } from "@/components/portal/ui";
 
+/** Only the last four characters of a licence number are shown on the card (data minimisation); the full number stays in the edit form. */
+const maskLicence = (n: string) => (n.length <= 4 ? n : `•••• ${n.slice(-4)}`);
+
 /** Cars a driver is on right now (booked or running). */
 const carsOf = (reservations: PortalReservationDto[], driverId: number) =>
   reservations.filter((r) => r.driver?.id === driverId && (r.status === "booked" || r.status === "picked_up"));
@@ -67,7 +70,7 @@ export default function PortalDriversPage() {
                       <div className="flex items-center gap-1.5" title={t("fields.phone")}><Phone className="h-3.5 w-3.5 shrink-0" />{d.phone || <span className="italic text-[#94a3b8]">{t("drivers.notGiven")}</span>}</div>
                       <div className="flex items-center gap-1.5" title={t("fields.licenseNumber")}><IdCard className="h-3.5 w-3.5 shrink-0" />
                         {d.driverLicenseNumber
-                          ? <span>{d.driverLicenseNumber}{d.licenseExpiry ? ` · ${t("fields.licenseExpiry")} ${d.licenseExpiry}` : ` · ${t("drivers.noExpiry")}`}</span>
+                          ? <span title={t("drivers.maskedHint")}>{maskLicence(d.driverLicenseNumber)}{d.licenseExpiry ? ` · ${t("fields.licenseExpiry")} ${d.licenseExpiry}` : ` · ${t("drivers.noExpiry")}`}</span>
                           : <span className="italic text-[#94a3b8]">{t("drivers.noLicense")}</span>}
                       </div>
                     </dl>

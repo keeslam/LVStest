@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { RequestStatusBadge } from "./requests-table";
 import { BookingApproval } from "./booking-approval";
+import { RequestThread } from "@/components/portal/request-thread";
 
 type ConflictError = Error & { conflicts?: Array<{ id: number; startDate: string; endDate: string | null }> };
 
@@ -86,6 +87,13 @@ export function PortalRequestDialog() {
               </div>
             )}
             {r.type === "other" && <div><Label>{t("admin.requests.dialog.subject")}</Label><div>{p.subject}</div></div>}
+            {r.type === "maintenance" && (
+              <div className="grid grid-cols-3 gap-2">
+                <div className="col-span-2"><Label>{t("admin.requests.dialog.issue")}</Label><div>{p.issue}</div></div>
+                <div><Label>{t("admin.requests.dialog.mileage")}</Label><div>{p.mileage || "—"}{String(p.urgent) === "true" ? ` · ${t("admin.requests.dialog.urgent")}` : ""}</div></div>
+              </div>
+            )}
+            {r.type === "mileage" && <div><Label>{t("admin.requests.dialog.mileage")}</Label><div>{p.mileage}</div></div>}
             <div><Label>{t("admin.requests.dialog.message")}</Label><p className="whitespace-pre-wrap rounded-md bg-muted p-2">{r.message}</p></div>
             {r.attachments.length > 0 && (
               <div>
@@ -95,7 +103,14 @@ export function PortalRequestDialog() {
                 </ul>
               </div>
             )}
-            {r.staffReply && <div><Label>{t("admin.requests.dialog.previousReply")}</Label><p className="whitespace-pre-wrap rounded-md border p-2">{r.staffReply}</p></div>}
+            <div>
+              <Label>{t("admin.requests.dialog.thread")}</Label>
+              <div className="mt-1 rounded-md border p-2">
+                <RequestThread messages={r.messages} mine="staff" canPost={canManage && isOpen}
+                  send={async (body) => (await apiRequest("POST", `/api/portal-requests/${id}/messages`, { body })).json()}
+                  onSent={done} placeholder={t("admin.requests.dialog.threadPlaceholder")} testId="staff-thread" />
+              </div>
+            </div>
             {canManage && isOpen && r.type === "booking" && !approving && (
               <p className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">{t("admin.booking.closeHint")}</p>
             )}

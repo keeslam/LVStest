@@ -54,7 +54,8 @@
     "forgotLink": "Forgot your password?",
     "forgotSubmit": "Send reset link",
     "forgotSent": "If this e-mail address is known, a message with a reset link has been sent.",
-    "backToLogin": "Back to login"
+    "backToLogin": "Back to login",
+    "privacyNote": "By signing in you agree to the use of your data as described in our"
   },
   "activate": {
     "title": "Set your password",
@@ -116,7 +117,13 @@
     "openFines_one": "{{count}} fine",
     "openFines_other": "{{count}} fines",
     "fines_one": "Fine on this reservation",
-    "fines_other": "Fines on this reservation ({{count}})"
+    "fines_other": "Fines on this reservation ({{count}})",
+    "pickupInfo": "Pickup",
+    "pickupAt": "pickup at {{time}}",
+    "apkDue": "This car's MOT expires on {{date}} (in {{days}} days). Lam Groep schedules the inspection.",
+    "apkExpired": "This car's MOT expired on {{date}}. Please contact Lam Groep.",
+    "serviceDue": "This car is due for a service. Lam Groep will contact you to schedule it.",
+    "serviceSoon": "This car is almost due for a service. Lam Groep will let you know when."
   },
   "documents": {
     "title": "Contracts and documents",
@@ -128,7 +135,11 @@
     "noPreview": "This file type cannot be shown here. Use Download.",
     "subtitle": "Contracts and damage forms per reservation.",
     "other": "Other documents",
-    "openReservation": "View reservation"
+    "openReservation": "View reservation",
+    "ack": "Seen and agreed",
+    "ackConfirm": "Confirm that you have read this contract and agree. Your name and the time are recorded.",
+    "ackDone": "Recorded: seen and agreed.",
+    "ackedBy": "Agreed by {{name}} on {{date}}"
   },
   "drivers": {
     "title": "Drivers",
@@ -187,7 +198,8 @@
     "viewFines": "View this driver's fines",
     "notGiven": "Not given",
     "noLicense": "Licence not given",
-    "noExpiry": "expiry unknown"
+    "noExpiry": "expiry unknown",
+    "maskedHint": "For privacy only the last digits are shown. The full number is under Edit."
   },
   "account": {
     "title": "My account",
@@ -445,7 +457,11 @@
       "notificationEmail": "E-mail address for notifications from the portal",
       "portalBaseUrl": "Base URL of the portal (for invitation e-mails), e.g. https://portaal.lamgroep.nl",
       "templatesHint": "The e-mail templates portal_invite, portal_password_reset and portal_staff_notification are under Communication.",
-      "saved": "Portal settings saved."
+      "saved": "Portal settings saved.",
+      "pickupAddress": "Pickup address (for customers with a booked reservation)",
+      "openingHours": "Opening hours",
+      "pickupInstructions": "What the customer should bring or know at pickup",
+      "privacyUrl": "Link to the privacy statement"
     },
     "fines": {
       "title": "Fines",
@@ -614,7 +630,8 @@
         "title": "Deleted fines",
         "description": "Deleted fines are kept here with who deleted them and when, and can be restored.",
         "empty": "No deleted fines."
-      }
+      },
+      "exportCsv": "Export (CSV)"
     },
     "requests": {
       "title": "Requests",
@@ -637,7 +654,9 @@
         "damage": "Damage report",
         "fine_question": "Question about a fine",
         "other": "Other",
-        "booking": "Rental request"
+        "booking": "Rental request",
+        "maintenance": "Maintenance/fault",
+        "mileage": "Mileage"
       },
       "status": {
         "new": "New",
@@ -669,7 +688,12 @@
         "startDate": "From",
         "endDate": "Until",
         "openEnd": "Open end",
-        "replyOnly": "Send reply (stays open)"
+        "replyOnly": "Send reply (stays open)",
+        "issue": "Report",
+        "mileage": "Mileage",
+        "urgent": "urgent",
+        "thread": "Messages with the customer",
+        "threadPlaceholder": "Message to the customer (the request stays open)…"
       }
     },
     "alert": {
@@ -738,7 +762,8 @@
       "showAll": "View all and search",
       "search": "Search…",
       "noMatch": "Nothing found."
-    }
+    },
+    "customerTabNote": "Updated through the customer portal by {{name}} on {{date}}: {{fields}}"
   },
   "fines": {
     "title": "Fines",
@@ -783,7 +808,9 @@
       "damage": "Report damage",
       "fine_question": "Question about a fine",
       "other": "Other",
-      "booking": "Rent a car"
+      "booking": "Rent a car",
+      "maintenance": "Report maintenance or a fault",
+      "mileage": "Report mileage"
     },
     "status": {
       "new": "Submitted",
@@ -817,7 +844,17 @@
       "vehicleNotFree": "This car is no longer free in the chosen period. Pick another car or period.",
       "driver": "Driver",
       "driverLater": "Decide later",
-      "period": "Period"
+      "period": "Period",
+      "extensionEstimate": "Estimate: {{days}} day(s) × € {{perDay}} = € {{total}} (excluding VAT and extras).",
+      "issue": "What is wrong?",
+      "issuePlaceholder": "E.g. warning light, noise when braking, service due per the booklet",
+      "mileage": "Mileage",
+      "urgent": "Urgent (car cannot be driven safely)",
+      "maintenanceHint": "Lam Groep schedules the service and gets in touch. For urgent matters, also call.",
+      "mileageHint": "As shown on the dashboard. Lam Groep uses this for the service schedule.",
+      "reportMaintenance": "Report maintenance",
+      "reportMileage": "Report mileage",
+      "yes": "Yes"
     },
     "date": "Submitted on",
     "subtitle": "Extend, return early, report damage or ask a question.",
@@ -893,5 +930,19 @@
     "failedTitle": "Confirmation failed",
     "failedHint": "Request the change again via My account.",
     "toAccount": "To My account"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAll": "Mark all read",
+    "search": "Search notifications…",
+    "empty": "No notifications. Replies to requests, new fines and APK/service warnings show up here."
+  },
+  "thread": {
+    "title": "Messages",
+    "empty": "No messages yet.",
+    "placeholder": "Write a message to Lam Groep…",
+    "send": "Send",
+    "staffName": "Lam Groep ({{name}})",
+    "closed": "This request is closed. For anything new, send a new request."
   }
 }

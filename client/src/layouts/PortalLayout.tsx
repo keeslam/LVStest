@@ -10,6 +10,7 @@ import { PORTAL_SITE, isEmbedded } from "@/lib/portal-site";
 import { Avatar, useGreeting } from "@/components/portal/ui";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { LanguageToggle } from "@/components/portal/language-toggle";
+import { NotificationsBell } from "@/components/portal/notifications-bell";
 
 /** Tells the embedding website how tall the document is, so the iframe can grow. */
 export function usePortalHeightReporter(routeKey?: string) {
@@ -43,6 +44,8 @@ function Wordmark({ light }: { light?: boolean }) {
 
 function SiteFooter() {
   const { t } = useTranslation("portal");
+  const { me } = usePortalAuth();
+  const privacyUrl = me?.info.privacyUrl || PORTAL_SITE.privacyUrl;
   return (
     <footer className="mt-8 bg-[#0b0d28] text-white/80">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-3 sm:px-6">
@@ -60,7 +63,7 @@ function SiteFooter() {
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-white">{t("site.links")}</p>
           <p><a href={PORTAL_SITE.siteUrl} className="hover:text-white">lamgroep.nl</a></p>
           <p><a href={PORTAL_SITE.contactUrl} className="hover:text-white">{t("site.contact")}</a></p>
-          <p><a href={PORTAL_SITE.privacyUrl} className="hover:text-white">{t("site.privacy")}</a></p>
+          <p><a href={privacyUrl} className="hover:text-white" data-testid="link-privacy">{t("site.privacy")}</a></p>
         </div>
       </div>
       <div className="border-t border-white/10 py-4 text-center text-xs text-white/50">© {new Date().getFullYear()} {PORTAL_SITE.organization}</div>
@@ -226,7 +229,7 @@ export function PortalLayout({ children }: { children: ReactNode }) {
               <div className="text-sm text-[#64748b]">{me.fullName}</div>
             </div>
           </div>
-          <div className="flex items-center gap-2"><LanguageToggle />{logoutButton}</div>
+          <div className="flex items-center gap-2"><NotificationsBell /><LanguageToggle />{logoutButton}</div>
         </header>
         <div className="hidden sm:block"><PillNav tabs={tabs} location={location} dark={false} /></div>
         <main className="pb-20 sm:pb-0">{children}</main>
@@ -242,6 +245,7 @@ export function PortalLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center justify-between gap-3">
             <Wordmark light />
             <div className="flex items-center gap-1 sm:gap-2">
+              <NotificationsBell dark />
               <LanguageToggle dark className="mr-1" />
               <a href={PORTAL_SITE.siteUrl} className="hidden items-center gap-1.5 rounded-full px-3 py-2 text-sm text-[#dfe2ff] hover:bg-white/10 hover:text-white sm:inline-flex" data-testid="link-back-to-site">
                 <ArrowLeft className="h-4 w-4" />{t("site.backToSite")}

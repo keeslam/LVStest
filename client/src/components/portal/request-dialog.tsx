@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useFilePreview } from "@/components/documents/use-file-preview";
+import { RequestThread } from "./request-thread";
 import type { PortalRequestDto } from "@shared/portal-requests";
 import { portalQueryFn, portalFetch, PortalApiError } from "@/lib/portal-api";
 import { Button } from "@/components/ui/button";
@@ -77,6 +78,8 @@ export function RequestDialog({ id, onClose }: { id: number | null; onClose: () 
               {r.type === "early_return" && <DetailRow label={t("requests.form.returnDate")} value={p.returnDate} />}
               {r.type === "damage" && <><DetailRow label={t("requests.form.location")} value={p.location} /><DetailRow label={t("requests.form.occurredAt")} value={p.occurredAt} /></>}
               {r.type === "other" && <DetailRow label={t("requests.form.subject")} value={p.subject} />}
+              {r.type === "maintenance" && <><DetailRow label={t("requests.form.issue")} value={p.issue} /><DetailRow label={t("requests.form.mileage")} value={p.mileage} />{p.urgent === "true" || (p.urgent as unknown) === true ? <DetailRow label={t("requests.form.urgent")} value={t("requests.form.yes")} /> : null}</>}
+              {r.type === "mileage" && <DetailRow label={t("requests.form.mileage")} value={p.mileage} />}
             </dl>
             <p className="whitespace-pre-wrap rounded-md bg-muted p-2 text-sm">{r.message}</p>
             {r.status === "new" && (
@@ -93,10 +96,11 @@ export function RequestDialog({ id, onClose }: { id: number | null; onClose: () 
               </div>
             )}
             <div>
-              <h3 className="mb-1 text-sm font-semibold">{t("requests.reply")}</h3>
-              {r.staffReply
-                ? <><p className="whitespace-pre-wrap rounded-md border p-2 text-sm" data-testid="portal-request-reply">{r.staffReply}</p>{r.repliedAt && <p className="mt-1 text-xs text-muted-foreground">{new Date(r.repliedAt).toLocaleString()}</p>}</>
-                : <p className="text-sm text-muted-foreground">{t("requests.noReply")}</p>}
+              <h3 className="mb-1 text-sm font-semibold">{t("thread.title")}</h3>
+              <RequestThread messages={r.messages} mine="customer" canPost={r.status === "new" || r.status === "in_progress"}
+                send={(body) => portalFetch("POST", `/api/portal/requests/${r.id}/messages`, { body })}
+                onSent={() => queryClient.invalidateQueries({ queryKey: ["portal"] })} testId="portal-thread" />
+              {(r.status === "done" || r.status === "rejected") && <p className="mt-1 text-xs text-muted-foreground">{t("thread.closed")}</p>}
             </div>
           </div>
         )}

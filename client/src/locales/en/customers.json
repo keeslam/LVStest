@@ -182,7 +182,8 @@
     "periodToTbd": "to TBD",
     "notProvided": "Not provided",
     "notRecorded": "Not recorded",
-    "portalAccount": "Portal account"
+    "portalAccount": "Portal account",
+    "exportCsv": "Export (CSV)"
   },
   "editDialog": {
     "title": "Edit Customer",

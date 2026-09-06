@@ -8,7 +8,8 @@ import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, MapPin, Clock, Info, ShieldAlert, Wrench, Gauge } from "lucide-react";
+import { daysUntil } from "./ui";
 import { formatPortalDate } from "@/components/portal/reservation-card";
 import { ChangeDriverDialog } from "@/components/portal/change-driver-dialog";
 import { Plate, StatusBadge } from "./ui";
@@ -33,6 +34,8 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
   const { data: fines = [] } = useQuery<PortalFineDto[]>({ queryKey: ["portal", "/api/portal/fines"], queryFn: portalQueryFn, enabled: id !== null && Boolean(me?.settings.canViewFines) });
   const linkedFines = fines.filter((f) => f.reservationId === id);
   const canRequest = Boolean(r && me?.settings.canSubmitRequests && ["booked", "picked_up"].includes(r.status));
+  const apkIn = r?.vehicle?.apkDate ? daysUntil(r.vehicle.apkDate) : null;
+  const apkWarning = r?.status === "picked_up" && apkIn !== null && apkIn <= 30;
 
   return (
     <Dialog open={id !== null} onOpenChange={(o) => !o && onClose()}>
@@ -54,8 +57,28 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
               <DetailRow label={t("fields.returnMileage")} value={r.returnMileage} />
               {me?.settings.showPrices && <DetailRow label={t("fields.price")} value={r.totalPrice ? `€ ${r.totalPrice}` : null} />}
             </dl>
+            {/* What the customer should know: pickup details before, APK/service warnings while on the road. */}
+            {r.status === "booked" && me?.info && (
+              <div className="rounded-xl border border-[#dfe2ff] bg-[#eef0fb] p-3 text-sm text-[#1a1d62]" data-testid="pickup-info">
+                <div className="mb-1 flex items-center gap-2 font-semibold"><Info className="h-4 w-4" />{t("reservations.pickupInfo")}</div>
+                <div className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 shrink-0" /><span>{me.info.pickupAddress}</span></div>
+                <div className="flex items-start gap-2"><Clock className="mt-0.5 h-4 w-4 shrink-0" /><span>{me.info.openingHours}{r.startTime ? ` · ${t("reservations.pickupAt", { time: r.startTime })}` : ""}</span></div>
+                {me.info.pickupInstructions && <p className="mt-1 text-xs text-[#2a2f9c]">{me.info.pickupInstructions}</p>}
+              </div>
+            )}
+            {(apkWarning || r.serviceDue) && (
+              <div className="space-y-1" data-testid="vehicle-alerts">
+                {apkWarning && <div className={`flex items-start gap-2 rounded-xl border p-3 text-sm ${apkIn! < 0 ? "border-[#f3c1c1] bg-[#fcebeb] text-[#791f1f]" : "border-[#f4d7a8] bg-[#faeeda] text-[#633806]"}`}><ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" /><span>{apkIn! < 0 ? t("reservations.apkExpired", { date: formatPortalDate(r.vehicle!.apkDate) }) : t("reservations.apkDue", { date: formatPortalDate(r.vehicle!.apkDate), days: apkIn })}</span></div>}
+                {r.serviceDue && <div className={`flex items-start gap-2 rounded-xl border p-3 text-sm ${r.serviceDue === "due" ? "border-[#f3c1c1] bg-[#fcebeb] text-[#791f1f]" : "border-[#f4d7a8] bg-[#faeeda] text-[#633806]"}`}><Wrench className="mt-0.5 h-4 w-4 shrink-0" /><span>{t(r.serviceDue === "due" ? "reservations.serviceDue" : "reservations.serviceSoon")}</span></div>}
+              </div>
+            )}
             <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
               {canChangeDriver && <ChangeDriverDialog reservation={r} />}
+              {canRequest && r.status === "picked_up" && (<>
+                <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "maintenance", reservationId: r.id })} data-testid="button-request-maintenance"><Wrench className="mr-1 h-4 w-4" />{t("requests.form.reportMaintenance")}</Button>
+                <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "mileage", reservationId: r.id })} data-testid="button-request-mileage"><Gauge className="mr-1 h-4 w-4" />{t("requests.form.reportMileage")}</Button>
+                <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "damage", reservationId: r.id })} data-testid="button-request-damage">{t("requests.type.damage")}</Button>
+              </>)}
               {canRequest && (<>
                 <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "extension", reservationId: r.id })} data-testid="button-request-extension">{t("requests.form.extend")}</Button>
                 {me?.settings.canReturn && <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "early_return", reservationId: r.id })} data-testid="button-request-early-return">{t("requests.form.earlyReturn")}</Button>}
