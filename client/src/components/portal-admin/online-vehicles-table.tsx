@@ -30,7 +30,15 @@ export function OnlineVehiclesTable() {
 
   const patch = useMutation({
     mutationFn: ({ id, body }: { id: number; body: Partial<OnlineVehicleRow> }) => apiRequest("PATCH", `/api/portal-admin/vehicles-online/${id}`, body),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: KEY }),
+    // Flip the row in place; the list keeps its order and only the changed cell moves.
+    onMutate: async ({ id, body }) => {
+      await queryClient.cancelQueries({ queryKey: KEY });
+      const previous = queryClient.getQueryData<OnlineVehicleRow[]>(KEY);
+      queryClient.setQueryData<OnlineVehicleRow[]>(KEY, (rows) => rows?.map((r) => (r.id === id ? { ...r, ...body } : r)));
+      return { previous };
+    },
+    onError: (_e, _v, ctx) => { if (ctx?.previous) queryClient.setQueryData(KEY, ctx.previous); },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: KEY }),
   });
   const bulk = useMutation({
     mutationFn: (offeredOnline: boolean) => apiRequest("POST", "/api/portal-admin/vehicles-online/bulk", { ids: [...selected], offeredOnline }),
@@ -38,7 +46,9 @@ export function OnlineVehiclesTable() {
   });
 
   const q = search.trim().toLowerCase();
-  const rows = data.filter((v) => (!onlyOffered || v.offeredOnline) && (!q || `${v.licensePlate} ${v.brand} ${v.model}`.toLowerCase().includes(q)));
+  const rows = data
+    .filter((v) => (!onlyOffered || v.offeredOnline) && (!q || `${v.licensePlate} ${v.brand} ${v.model}`.toLowerCase().includes(q)))
+    .sort((x, y) => x.brand.localeCompare(y.brand) || x.model.localeCompare(y.model) || x.licensePlate.localeCompare(y.licensePlate));
   const toggleSel = (id: number) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   return (

@@ -166,6 +166,7 @@ export function registerPortalAdminRoutes(app: Express, _deps: RouteDeps): void 
     const [all, blocks] = await Promise.all([storage.getAllVehicles(), portalStorage.listBlacklist()]);
     const blockedFor = new Map<number, number>();
     for (const b of blocks) blockedFor.set(b.vehicleId, (blockedFor.get(b.vehicleId) ?? 0) + 1);
+    all.sort((x, y) => x.brand.localeCompare(y.brand) || x.model.localeCompare(y.model) || x.licensePlate.localeCompare(y.licensePlate));
     res.json(all.map((v) => ({
       id: v.id, licensePlate: v.licensePlate, brand: v.brand, model: v.model, vehicleType: v.vehicleType,
       availabilityStatus: v.availabilityStatus, offeredOnline: v.offeredOnline, onlineDescription: v.onlineDescription,
