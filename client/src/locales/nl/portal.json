@@ -944,7 +944,8 @@
   "vehicles": {
     "title": "Beschikbaar om te huren",
     "subtitle": "{{count}} voertuig(en) nu beschikbaar. Vraag een auto aan en Lam Groep bevestigt de reservering.",
-    "search": "Zoek op kenteken, auto of bestuurder",
+    "search": "Zoek op merk, model, kenteken of type…",
+    "mineSearch": "Zoek op kenteken, auto of bestuurder",
     "empty": "Er is op dit moment geen voertuig beschikbaar. Kijk later nog eens of stel een vraag via een aanvraag.",
     "available": "Beschikbaar",
     "perDay": "per dag",

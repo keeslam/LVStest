@@ -944,7 +944,8 @@
   "vehicles": {
     "title": "Available to rent",
     "subtitle": "{{count}} vehicle(s) available right now. Request a car and Lam Groep confirms the reservation.",
-    "search": "Search by plate, car or driver",
+    "search": "Search by brand, model, plate or type…",
+    "mineSearch": "Search by plate, car or driver",
     "empty": "No vehicle is available at the moment. Check back later or ask via a request.",
     "available": "Available",
     "perDay": "per day",
