@@ -673,7 +673,8 @@
       "noDriver": "No driver (assign later)",
       "requestedDriver": "Customer asked for: {{name}}",
       "reply": "Message to customer (optional)",
-      "replyPlaceholder": "Empty = standard confirmation with reservation number, car and period."
+      "replyPlaceholder": "Empty = standard confirmation with reservation number, car and period.",
+      "period": "Period"
     }
   },
   "fines": {
@@ -753,7 +754,8 @@
       "noneFree": "No car free in this period",
       "vehicleNotFree": "This car is no longer free in the chosen period. Pick another car or period.",
       "driver": "Driver",
-      "driverLater": "Decide later"
+      "driverLater": "Decide later",
+      "period": "Period"
     },
     "date": "Submitted on",
     "subtitle": "Extend, return early, report damage or ask a question.",
@@ -809,6 +811,16 @@
     "until": "Until",
     "periodHint": "Only cars that are free in this period.",
     "openEndHint": "No end date: only cars without a next reservation.",
-    "invalidPeriod": "The end date must be after the start date."
+    "invalidPeriod": "The end date must be after the start date.",
+    "period": "Period"
+  },
+  "period": {
+    "pick": "Choose a period",
+    "openEnd": "Open end",
+    "hintStart": "Click the first day, then the last day.",
+    "hintEnd": "Click the last day, or leave the end open.",
+    "hintEndRequired": "Now click the last day.",
+    "done": "Done",
+    "noTime": "No preference"
   }
 }

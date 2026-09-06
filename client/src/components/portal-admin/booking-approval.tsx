@@ -8,12 +8,12 @@ import type { Driver } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { SearchListPicker } from "@/components/ui/search-list-picker";
 import { useToast } from "@/hooks/use-toast";
+import { PeriodPicker, TimeSelect } from "@/components/portal/period-picker";
 
 type ApproveError = Error & { field?: string; conflicts?: Array<{ id: number; startDate: string; endDate: string | null }> };
 interface Alternatives { startDate: string; endDate: string | null; requestedBlocked: boolean; vehicles: PortalBookingAlternativeDto[] }
@@ -67,11 +67,12 @@ export function BookingApproval({ request: r, onApproved }: { request: PortalReq
   return (
     <div className="space-y-3 rounded-lg border bg-muted/30 p-3" data-testid="booking-approval">
       <div className="flex items-center gap-2 font-medium"><CalendarCheck className="h-4 w-4" />{t("admin.booking.title")}</div>
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-        <div><Label htmlFor="ba-start">{t("admin.requests.dialog.startDate")}</Label><Input id="ba-start" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} data-testid="booking-start" /></div>
-        <div><Label htmlFor="ba-end">{t("admin.requests.dialog.endDate")}</Label><Input id="ba-end" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} data-testid="booking-end" /></div>
-        <div><Label htmlFor="ba-st">{t("admin.booking.pickupTime")}</Label><Input id="ba-st" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} /></div>
-        <div><Label htmlFor="ba-et">{t("admin.booking.returnTime")}</Label><Input id="ba-et" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} /></div>
+      <div className="grid gap-2 md:grid-cols-2">
+        <div><Label htmlFor="ba-period">{t("admin.booking.period")}</Label><PeriodPicker id="ba-period" start={startDate} end={endDate} onChange={(s, e) => { setStartDate(s); setEndDate(e); }} testId="booking-period" /></div>
+        <div className="grid grid-cols-2 gap-2">
+          <TimeSelect id="ba-st" label={t("admin.booking.pickupTime")} value={startTime} onChange={setStartTime} />
+          <TimeSelect id="ba-et" label={t("admin.booking.returnTime")} value={endTime} onChange={setEndTime} />
+        </div>
       </div>
       {!validPeriod && <p className="text-xs text-destructive">{t("admin.booking.invalidPeriod")}</p>}
 

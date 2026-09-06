@@ -673,7 +673,8 @@
       "noDriver": "Geen bestuurder (later toewijzen)",
       "requestedDriver": "Klant vroeg: {{name}}",
       "reply": "Bericht aan klant (optioneel)",
-      "replyPlaceholder": "Leeg = standaardbevestiging met reserveringsnummer, auto en periode."
+      "replyPlaceholder": "Leeg = standaardbevestiging met reserveringsnummer, auto en periode.",
+      "period": "Periode"
     }
   },
   "fines": {
@@ -753,7 +754,8 @@
       "noneFree": "Geen auto vrij in deze periode",
       "vehicleNotFree": "Deze auto is in de gekozen periode niet meer vrij. Kies een andere auto of periode.",
       "driver": "Bestuurder",
-      "driverLater": "Later bepalen"
+      "driverLater": "Later bepalen",
+      "period": "Periode"
     },
     "date": "Ingediend op",
     "subtitle": "Verlengen, eerder inleveren, schade melden of een vraag stellen.",
@@ -809,6 +811,16 @@
     "until": "Tot en met",
     "periodHint": "Alleen auto's die in deze periode vrij zijn.",
     "openEndHint": "Geen einddatum: alleen auto's zonder volgende reservering.",
-    "invalidPeriod": "De einddatum moet na de begindatum liggen."
+    "invalidPeriod": "De einddatum moet na de begindatum liggen.",
+    "period": "Periode"
+  },
+  "period": {
+    "pick": "Kies een periode",
+    "openEnd": "Open einde",
+    "hintStart": "Klik op de eerste dag, daarna op de laatste dag.",
+    "hintEnd": "Klik op de laatste dag, of laat het einde open.",
+    "hintEndRequired": "Klik nu op de laatste dag.",
+    "done": "Klaar",
+    "noTime": "Geen voorkeur"
   }
 }

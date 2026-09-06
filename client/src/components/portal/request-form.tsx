@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { btnPrimary } from "./ui";
+import { PeriodPicker, TimeSelect } from "./period-picker";
 
 export function RequestForm({ initialType, reservationId: initialReservation, fineId: initialFine, vehicleId: initialVehicle, startDate: initialStart, endDate: initialEnd, onSubmitted }: { initialType?: PortalRequestTypeValue; reservationId?: number; fineId?: number; vehicleId?: number; startDate?: string; endDate?: string; onSubmitted: (id: number) => void }) {
   const { t } = useTranslation("portal");
@@ -94,11 +95,13 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
       {type === "booking" && (
         <div className="space-y-3">
           {/* Period first: the vehicle list below only shows what is free in it. */}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <div><Label htmlFor="rq-start">{t("requests.form.startDate")}</Label><Input id="rq-start" type="date" value={payload.startDate ?? ""} onChange={setP("startDate")} required data-testid="request-start" /></div>
-            <div><Label htmlFor="rq-end">{t("requests.form.endDate")}</Label><Input id="rq-end" type="date" value={payload.endDate ?? ""} onChange={setP("endDate")} data-testid="request-end" /></div>
-            <div><Label htmlFor="rq-stime">{t("requests.form.pickupTime")}</Label><Input id="rq-stime" type="time" value={payload.startTime ?? ""} onChange={setP("startTime")} /></div>
-            <div><Label htmlFor="rq-etime">{t("requests.form.returnTime")}</Label><Input id="rq-etime" type="time" value={payload.endTime ?? ""} onChange={setP("endTime")} /></div>
+          <div>
+            <Label htmlFor="rq-period">{t("requests.form.period")}</Label>
+            <PeriodPicker id="rq-period" start={payload.startDate ?? ""} end={payload.endDate ?? ""} onChange={(startDate, endDate) => setPayload({ ...payload, startDate, endDate })} testId="request-period" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <TimeSelect id="rq-stime" label={t("requests.form.pickupTime")} value={payload.startTime ?? ""} onChange={(v) => setPayload({ ...payload, startTime: v })} testId="request-start-time" />
+            <TimeSelect id="rq-etime" label={t("requests.form.returnTime")} value={payload.endTime ?? ""} onChange={(v) => setPayload({ ...payload, endTime: v })} testId="request-end-time" />
           </div>
           <div>
             <Label htmlFor="rq-vehicle">{t("requests.form.vehicle")}</Label>

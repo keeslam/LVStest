@@ -7,8 +7,8 @@ import { portalQueryFn } from "@/lib/portal-api";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PeriodPicker } from "./period-picker";
 import { EmptyState, Plate, SearchBox, Section, btnPrimary, usePortalSearch } from "./ui";
 
 const money = (v: string | null | undefined) => (v ? `€ ${Number(v).toLocaleString("nl-NL", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : null);
@@ -35,10 +35,9 @@ export function AvailableVehicles() {
     <Section title={t("vehicles.title")} count={data.length}>
       <p className="text-sm text-[#64748b]" data-testid="portal-available-vehicles">{t("vehicles.subtitle", { count: data.length })}</p>
       {/* Period first; the cards show only vehicles free between these dates. */}
-      <div className="grid grid-cols-2 gap-2 rounded-xl border border-[#e6e8f0] bg-white p-3 sm:flex sm:items-end sm:gap-3">
-        <div><Label htmlFor="veh-start" className="text-xs">{t("vehicles.from")}</Label><Input id="veh-start" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} data-testid="vehicles-start" /></div>
-        <div><Label htmlFor="veh-end" className="text-xs">{t("vehicles.until")}</Label><Input id="veh-end" type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} data-testid="vehicles-end" /></div>
-        <p className="col-span-2 text-xs text-[#64748b] sm:flex-1 sm:pb-2">{periodOk ? (endDate ? t("vehicles.periodHint") : t("vehicles.openEndHint")) : t("vehicles.invalidPeriod")}</p>
+      <div className="rounded-xl border border-[#e6e8f0] bg-white p-3 sm:flex sm:items-end sm:gap-3">
+        <div className="sm:w-80"><Label htmlFor="veh-period" className="text-xs">{t("vehicles.period")}</Label><PeriodPicker id="veh-period" start={startDate} end={endDate} onChange={(s, e) => { setStartDate(s); setEndDate(e); }} testId="vehicles-period" /></div>
+        <p className="mt-2 text-xs text-[#64748b] sm:mt-0 sm:flex-1 sm:pb-2">{periodOk ? (endDate ? t("vehicles.periodHint") : t("vehicles.openEndHint")) : t("vehicles.invalidPeriod")}</p>
       </div>
       {data.length > 0 && <SearchBox value={query} onChange={setQuery} placeholder={t("vehicles.search")} />}
       {isLoading ? null : shown.length === 0
