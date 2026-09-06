@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { type Preview, PreviewFooter, TableSearch, textMatches } from "@/components/portal-admin/preview";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { apiRequest } from "@/lib/queryClient";
@@ -35,7 +36,7 @@ export function useCanViewFines(): boolean {
   return hasStaffPermission(user, UserPermission.VIEW_FINES, UserPermission.MANAGE_FINES);
 }
 
-export function FinesTable({ customerId, initialPlate, importFileId }: { customerId?: number; initialPlate?: string; importFileId?: number }) {
+export function FinesTable({ customerId, initialPlate, importFileId, preview }: { customerId?: number; initialPlate?: string; importFileId?: number; preview?: Preview }) {
   const { t } = useTranslation("portal");
   const { openFineDialog, openNewFineDialog, openFineImportDialog, openFineImportsDialog } = useGlobalDialog();
   const canManage = useCanManageFines();
@@ -46,6 +47,7 @@ export function FinesTable({ customerId, initialPlate, importFileId }: { custome
   const [plate, setPlate] = useState(initialPlate ?? "");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [search, setSearch] = useState("");
   const filters = { status: status || undefined, customerId, licensePlate: plate.trim() || undefined, from: from || undefined, to: to || undefined, importFileId };
   const { data = [] } = useQuery<FineRow[]>({
     queryKey: ["/api/fines", filters],
@@ -55,9 +57,12 @@ export function FinesTable({ customerId, initialPlate, importFileId }: { custome
     },
   });
 
+  const filtered = data.filter((f) => textMatches(search, f.licensePlate, f.description, f.driverName, f.customerName, f.totalAmount, t(`admin.fines.status.${f.status}`)));
+  const rows = preview ? filtered.slice(0, preview.limit) : filtered;
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
+      {!preview && <div className="flex flex-wrap items-center gap-2">
+        <TableSearch value={search} onChange={setSearch} testId="fines-search" />
         <select className="rounded-md border px-3 py-2 text-sm" value={status} onChange={(e) => setStatus(e.target.value)} data-testid="select-fine-status">
           <option value="">{t("admin.fines.filters.allStatuses")}</option>
           {Object.values(FineStatus).map((s) => <option key={s} value={s}>{t(`admin.fines.status.${s}`)}</option>)}
@@ -74,8 +79,8 @@ export function FinesTable({ customerId, initialPlate, importFileId }: { custome
             {t("admin.fines.new")}
           </Button>
         </div>)}
-      </div>
-      {data.length === 0 ? <p className="text-sm text-muted-foreground">{t("admin.fines.empty")}</p> : (
+      </div>}
+      {rows.length === 0 ? <p className="text-sm text-muted-foreground">{t("admin.fines.empty")}</p> : (
         <Table>
           <TableHeader><TableRow>
             <TableHead>{t("admin.fines.columns.plate")}</TableHead>
@@ -87,7 +92,7 @@ export function FinesTable({ customerId, initialPlate, importFileId }: { custome
             <TableHead>{t("admin.fines.columns.status")}</TableHead>
           </TableRow></TableHeader>
           <TableBody>
-            {data.map((f) => (
+            {rows.map((f) => (
               <TableRow key={f.id} className="cursor-pointer hover:bg-muted/40" onClick={() => openFineDialog(f.id)} data-testid={`row-fine-${f.id}`}>
                 <TableCell className="font-mono">{f.licensePlate}</TableCell>
                 <TableCell className="whitespace-nowrap">{new Date(f.offenceAt).toLocaleString()}</TableCell>
@@ -101,6 +106,7 @@ export function FinesTable({ customerId, initialPlate, importFileId }: { custome
           </TableBody>
         </Table>
       )}
+      {preview && filtered.length > 0 && <PreviewFooter shown={rows.length} total={filtered.length} onShowAll={preview.onShowAll} />}
       {isAdmin && <DeletedVehiclesDialog open={binOpen} onOpenChange={setBinOpen} entityType="fine" title={t("admin.fines.bin.title")} description={t("admin.fines.bin.description")} emptyText={t("admin.fines.bin.empty")} />}
     </div>
   );

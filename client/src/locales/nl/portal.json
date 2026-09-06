@@ -693,7 +693,12 @@
       "period": "Periode",
       "closeHint": "Een huuraanvraag wordt pas afgehandeld via \"Goedkeuren: reservering aanmaken\" (zet hem in de kalender) of \"Afwijzen\". Een antwoord sturen kan altijd; de aanvraag blijft dan open."
     },
-    "pageSubtitle": "Aanvragen, accounts, bekeuringen en het aanbod voor klanten op één plek. Klik op een tegel om die lijst te openen."
+    "pageSubtitle": "Aanvragen, accounts, bekeuringen en het aanbod voor klanten op één plek. Klik op een tegel om die lijst te openen.",
+    "preview": {
+      "shown": "{{shown}} van {{total}} getoond",
+      "showAll": "Alles bekijken en zoeken",
+      "search": "Zoeken…"
+    }
   },
   "fines": {
     "title": "Bekeuringen",

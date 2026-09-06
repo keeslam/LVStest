@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { type Preview, PreviewFooter, TableSearch, textMatches } from "./preview";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { PortalRequestDto } from "@shared/portal-requests";
@@ -15,11 +16,12 @@ export function RequestStatusBadge({ status }: { status: string }) {
   return <Badge variant={STATUS_VARIANT[status] ?? "outline"}>{t(`admin.requests.status.${status}`, { defaultValue: status })}</Badge>;
 }
 
-export function RequestsTable({ customerId }: { customerId?: number }) {
+export function RequestsTable({ customerId, preview }: { customerId?: number; preview?: Preview }) {
   const { t } = useTranslation("portal");
   const { openPortalRequestDialog } = useGlobalDialog();
   const [status, setStatus] = useState("");
   const [type, setType] = useState("");
+  const [search, setSearch] = useState("");
   const filters = { status: status || undefined, type: type || undefined, customerId };
   const { data = [] } = useQuery<PortalRequestDto[]>({
     queryKey: ["/api/portal-requests", filters],
@@ -28,9 +30,12 @@ export function RequestsTable({ customerId }: { customerId?: number }) {
       return (await apiRequest("GET", `/api/portal-requests?${q}`)).json();
     },
   });
+  const filtered = data.filter((r) => textMatches(search, r.id, t(`admin.requests.type.${r.type}`), r.message, r.submittedBy, r.customerName, r.reservationLabel, t(`admin.requests.status.${r.status}`)));
+  const rows = preview ? filtered.slice(0, preview.limit) : filtered;
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-2">
+      {!preview && <div className="flex flex-wrap gap-2">
+        <TableSearch value={search} onChange={setSearch} testId="requests-search" />
         <select className="rounded-md border px-3 py-2 text-sm" value={status} onChange={(e) => setStatus(e.target.value)} data-testid="select-request-status">
           <option value="">{t("admin.requests.filters.allStatuses")}</option>
           {Object.values(PortalRequestStatus).map((s) => <option key={s} value={s}>{t(`admin.requests.status.${s}`)}</option>)}
@@ -39,8 +44,8 @@ export function RequestsTable({ customerId }: { customerId?: number }) {
           <option value="">{t("admin.requests.filters.allTypes")}</option>
           {Object.values(PortalRequestType).map((s) => <option key={s} value={s}>{t(`admin.requests.type.${s}`)}</option>)}
         </select>
-      </div>
-      {data.length === 0 ? <p className="text-sm text-muted-foreground">{t("admin.requests.empty")}</p> : (
+      </div>}
+      {rows.length === 0 ? <p className="text-sm text-muted-foreground">{t("admin.requests.empty")}</p> : (
         <Table>
           <TableHeader><TableRow>
             <TableHead>{t("admin.requests.columns.date")}</TableHead>
@@ -51,7 +56,7 @@ export function RequestsTable({ customerId }: { customerId?: number }) {
             <TableHead>{t("admin.requests.columns.status")}</TableHead>
           </TableRow></TableHeader>
           <TableBody>
-            {data.map((r) => (
+            {rows.map((r) => (
               <TableRow key={r.id} className="cursor-pointer hover:bg-muted/40" onClick={() => openPortalRequestDialog(r.id)} data-testid={`row-request-${r.id}`}>
                 <TableCell className="whitespace-nowrap">{new Date(r.createdAt).toLocaleString()}</TableCell>
                 <TableCell>{t(`admin.requests.type.${r.type}`)}</TableCell>
@@ -64,6 +69,7 @@ export function RequestsTable({ customerId }: { customerId?: number }) {
           </TableBody>
         </Table>
       )}
+      {preview && filtered.length > 0 && <PreviewFooter shown={rows.length} total={filtered.length} onShowAll={preview.onShowAll} />}
     </div>
   );
 }

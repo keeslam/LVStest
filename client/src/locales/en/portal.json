@@ -693,7 +693,12 @@
       "period": "Period",
       "closeHint": "A rental request is only closed via \"Approve: create reservation\" (puts it in the calendar) or \"Reject\". You can always send a reply; the request then stays open."
     },
-    "pageSubtitle": "Requests, accounts, fines and what customers can rent, in one place. Click a tile to open that list."
+    "pageSubtitle": "Requests, accounts, fines and what customers can rent, in one place. Click a tile to open that list.",
+    "preview": {
+      "shown": "{{shown}} of {{total}} shown",
+      "showAll": "View all and search",
+      "search": "Search…"
+    }
   },
   "fines": {
     "title": "Fines",

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { type Preview, PreviewFooter, TableSearch, textMatches } from "./preview";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
@@ -17,11 +18,12 @@ export function useCanManagePortal(): boolean {
   return user?.role === UserRole.ADMIN || ((user?.permissions as string[] | undefined) ?? []).includes(UserPermission.MANAGE_PORTAL);
 }
 
-export function AccountsTable({ customerId }: { customerId?: number }) {
+export function AccountsTable({ customerId, preview }: { customerId?: number; preview?: Preview }) {
   const { t } = useTranslation("portal");
   const { toast } = useToast();
   const canManage = useCanManagePortal();
   const [onlyPending, setOnlyPending] = useState(false);
+  const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<PortalAccountRow | null>(null);
   const url = customerId ? `/api/portal-admin/customers/${customerId}/accounts` : "/api/portal-admin/accounts";
   const key = customerId ? ["/api/portal-admin/customers", customerId, "accounts"] : ["/api/portal-admin/accounts"];
@@ -39,14 +41,16 @@ export function AccountsTable({ customerId }: { customerId?: number }) {
 
   const status = (a: PortalAccountRow) => !a.active ? "blocked" : a.activated ? "active" : a.invitePending ? "pending" : "notActivated";
   const restricted = (a: PortalAccountRow) => Object.values(a.permissions ?? {}).some((v) => v === false);
-  const rows = onlyPending ? data.filter((a) => !a.activated) : data;
+  const filtered = (onlyPending ? data.filter((a) => !a.activated) : data).filter((a) => textMatches(search, a.fullName, a.email, a.customerName, a.role));
+  const rows = preview ? filtered.slice(0, preview.limit) : filtered;
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-medium">{t("admin.accounts.title")}</h3>
-        <div className="flex gap-2">
-          <Button size="sm" variant={onlyPending ? "default" : "outline"} onClick={() => setOnlyPending(!onlyPending)}>{t("admin.accounts.onlyPending")}</Button>
+        {preview ? <span /> : <h3 className="font-medium">{t("admin.accounts.title")}</h3>}
+        <div className="flex flex-wrap gap-2">
+          {!preview && <TableSearch value={search} onChange={setSearch} testId="accounts-search" />}
+          {!preview && <Button size="sm" variant={onlyPending ? "default" : "outline"} onClick={() => setOnlyPending(!onlyPending)}>{t("admin.accounts.onlyPending")}</Button>}
           {canManage && <AccountDialog customerId={customerId}><Button size="sm" data-testid="button-invite-portal-account">{t("admin.accounts.invite")}</Button></AccountDialog>}
         </div>
       </div>
@@ -89,6 +93,7 @@ export function AccountsTable({ customerId }: { customerId?: number }) {
           </TableBody>
         </Table>
       )}
+      {preview && filtered.length > 0 && <PreviewFooter shown={rows.length} total={filtered.length} onShowAll={preview.onShowAll} />}
       {editing && <AccountDialog key={editing.id} customerId={editing.customerId} account={editing} open onOpenChange={(o) => { if (!o) setEditing(null); }} />}
     </div>
   );
