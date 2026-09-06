@@ -35,7 +35,6 @@ export async function findPortalCustomerForBlock(block: Pick<Reservation, "vehic
   if (!block.vehicleId) return null;
   const rows = await db.select().from(reservations).where(and(
     eq(reservations.vehicleId, block.vehicleId), eq(reservations.status, "picked_up"), eq(reservations.type, "standard"), isNull(reservations.deletedAt),
-    sql`${reservations.startDate} <= ${block.endDate ?? block.startDate}`,
     or(isNull(reservations.endDate), sql`${reservations.endDate} >= ${block.startDate}`),
   )).limit(1);
   const rental = rows[0];

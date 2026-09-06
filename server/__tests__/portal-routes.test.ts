@@ -349,6 +349,15 @@ describe("my vehicles", () => {
     expect(item.maintenance).toMatchObject({ blockId: block.id, status: "in", endDate: null, canRequestChange: false });
   });
 
+  it("counts a block for a picked-up rental whose startDate is later than the block", async () => {
+    const v = (await createTestVehicle()).id;
+    await createTestReservation({ customerId, vehicleId: v, startDate: "2099-01-10", endDate: null, status: "picked_up" });
+    const block = await storage.createMaintenanceBlock(v, "2098-12-20", "2098-12-21");
+    const res = await agent.get("/api/portal/vehicles/mine");
+    const item = res.body.find((x: any) => x.vehicle.id === v);
+    expect(item.maintenance.blockId).toBe(block.id);
+  });
+
   it("scopes a driver login to only their own rental", async () => {
     const driver = await createTestDriver(customerId, "Rijder");
     const driverVehicleId = (await createTestVehicle()).id;

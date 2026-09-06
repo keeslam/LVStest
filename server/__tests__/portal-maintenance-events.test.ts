@@ -50,6 +50,13 @@ describe("portal maintenance events", () => {
     expect(await onMaintenanceBlockChanged(null, b)).toBeNull();
   });
 
+  it("counts a block for a picked-up rental even when the rental's startDate is later than the block", async () => {
+    const vehicle = await createTestVehicle();
+    await createTestReservation({ customerId, vehicleId: vehicle.id, startDate: "2099-01-10", endDate: null, status: "picked_up" });
+    const b = await storage.createMaintenanceBlock(vehicle.id, "2098-12-20", "2098-12-21");
+    expect(await onMaintenanceBlockChanged(null, b)).toBe("maintenance_planned");
+  });
+
   it("tells the customer when a replacement gets a real vehicle, once", async () => {
     const spare = await createTestVehicle();
     const rep = await createTestReservation({ customerId, vehicleId: spare.id, startDate: "2026-10-10", endDate: "2026-10-11", type: "replacement" });

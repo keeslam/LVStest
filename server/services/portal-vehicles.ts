@@ -32,7 +32,9 @@ export async function listMyVehicles(customerId: number, scope: PortalScope): Pr
   const mileageReports = requests.filter((q) => q.type === "mileage" && q.reservationId).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   return rentals.map((r) => {
-    const overlapping = blocks.filter((b) => b.vehicleId === r.vehicleId && b.startDate <= (r.endDate ?? "9999-12-31") && (b.endDate ?? "9999-12-31") >= r.startDate);
+    // Blocks that start before the rental ends count; the rental start is not a bound
+    // because the car is already with the customer.
+    const overlapping = blocks.filter((b) => b.vehicleId === r.vehicleId && b.startDate <= (r.endDate ?? "9999-12-31"));
     const upcoming = overlapping.filter((b) => b.maintenanceStatus !== "out");
     const recentlyOut = overlapping.filter((b) => b.maintenanceStatus === "out");
     // Blocks are ordered by startDate ascending: the first non-"out" block is the earliest
