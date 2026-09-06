@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Search } from "lucide-react";
+import { Search, UserRound } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { formatLicensePlate } from "@/lib/format-utils";
 
@@ -67,6 +67,22 @@ export function Avatar({ name, size = "sm", accent }: { name: string | null | un
   const dims = size === "lg" ? "h-11 w-11 text-sm" : "h-6 w-6 text-[10px]";
   const colours = accent ? "bg-[#f5a623] text-[#1a1d62]" : "bg-[#dfe2ff] text-[#1a1d62]";
   return <span className={`inline-flex shrink-0 items-center justify-center rounded-full font-semibold ${dims} ${colours}`} aria-hidden="true">{initials(name)}</span>;
+}
+
+/**
+ * Who drives: a pill with a person icon, the word "Bestuurder" and the name,
+ * so a customer never mistakes it for the contact person or the account.
+ */
+export function DriverChip({ name, className = "" }: { name: string | null | undefined; className?: string }) {
+  const { t } = useTranslation("portal");
+  if (!name) return null;
+  return (
+    <span className={`inline-flex min-w-0 items-center gap-1.5 rounded-full border border-[#dfe2ff] bg-[#eef0fb] py-0.5 pl-1.5 pr-2.5 text-xs text-[#1a1d62] ${className}`} title={`${t("fields.driver")}: ${name}`} data-testid="driver-chip">
+      <UserRound className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+      <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-[#5f6fd3]">{t("fields.driver")}</span>
+      <span className="truncate font-medium">{name}</span>
+    </span>
+  );
 }
 
 /** Page title row: h1 left, actions right; wraps on narrow screens. */

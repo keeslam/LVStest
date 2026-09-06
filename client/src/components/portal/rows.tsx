@@ -5,7 +5,7 @@ import type { PortalRequestDto } from "@shared/portal-requests";
 import type { PortalDocumentDto } from "@shared/portal-types";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Button } from "@/components/ui/button";
-import { Avatar, ListCard, Plate, StatusBadge, btnSecondary, toneFor } from "./ui";
+import { ListCard, Plate, StatusBadge, btnSecondary, toneFor, DriverChip } from "./ui";
 
 /** Rows shared by the list pages and the list dialogs, so both look the same. */
 
@@ -21,7 +21,7 @@ export function FineRow({ fine: f }: { fine: PortalFineDto }) {
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#64748b] sm:text-sm">
           <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{new Date(f.offenceAt).toLocaleString()}</span>
-          {f.driver && <span className="inline-flex items-center gap-1.5"><Avatar name={f.driver.displayName} />{f.driver.displayName}</span>}
+          {f.driver && <DriverChip name={f.driver.displayName} />}
         </div>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
