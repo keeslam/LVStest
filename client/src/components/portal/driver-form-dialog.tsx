@@ -112,8 +112,9 @@ export function DriverFormDialog({ driver, children, open: controlledOpen, onOpe
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="sm:max-w-3xl" data-testid="portal-driver-form">
         <DialogHeader><DialogTitle>{isEdit ? t("drivers.editTitle", { name: driver?.displayName }) : t("drivers.addTitle")}</DialogTitle></DialogHeader>
-        <form onSubmit={submit} className="space-y-3">
-          <div className="grid items-start gap-3 md:grid-cols-2">
+        <form onSubmit={submit}>
+          <div className="grid items-stretch gap-3 md:grid-cols-2">
+            <div className="space-y-3">
             {section(<User className="h-4 w-4" />, t("drivers.sectionContact"), (
               <div className="space-y-3">
                 {text("displayName", "text", { autoFocus: !isEdit, placeholder: t("drivers.namePlaceholder") })}
@@ -129,6 +130,24 @@ export function DriverFormDialog({ driver, children, open: controlledOpen, onOpe
               </div>
             ))}
 
+            {section(<MessageSquare className="h-4 w-4" />, t("drivers.sectionOther"), (
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="drv-preferredLanguage">{t("fields.preferredLanguage")}</Label>
+                  <select id="drv-preferredLanguage" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={values.preferredLanguage} onChange={(e) => set("preferredLanguage", e.target.value)} data-testid="select-driver-language">
+                    <option value="nl">{t("languages.nl")}</option>
+                    <option value="en">{t("languages.en")}</option>
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="drv-notes">{t("fields.notes")}</Label>
+                  <Textarea id="drv-notes" rows={2} value={values.notes} onChange={(e) => set("notes", e.target.value)} data-testid="input-driver-notes" />
+                </div>
+              </div>
+            ))}
+            </div>
+
+            <div className="flex flex-col gap-3">
             {section(<IdCard className="h-4 w-4" />, t("drivers.sectionLicense"), (
               <div className="space-y-3">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -150,22 +169,6 @@ export function DriverFormDialog({ driver, children, open: controlledOpen, onOpe
               </div>
             ))}
 
-            {section(<MessageSquare className="h-4 w-4" />, t("drivers.sectionOther"), (
-              <div className="space-y-3">
-                <div>
-                  <Label htmlFor="drv-preferredLanguage">{t("fields.preferredLanguage")}</Label>
-                  <select id="drv-preferredLanguage" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={values.preferredLanguage} onChange={(e) => set("preferredLanguage", e.target.value)} data-testid="select-driver-language">
-                    <option value="nl">{t("languages.nl")}</option>
-                    <option value="en">{t("languages.en")}</option>
-                  </select>
-                </div>
-                <div>
-                  <Label htmlFor="drv-notes">{t("fields.notes")}</Label>
-                  <Textarea id="drv-notes" rows={2} value={values.notes} onChange={(e) => set("notes", e.target.value)} data-testid="input-driver-notes" />
-                </div>
-              </div>
-            ))}
-
             {showCars && section(<Car className="h-4 w-4" />, t("drivers.assignNow"), (
               <div className="space-y-2">
                 <SearchListPicker items={cars} value={assignTo} onChange={setAssignTo} searchPlaceholder={t("drivers.searchCar")} emptyText={t("drivers.noCarFound")} changeLabel={t("actions.change")}
@@ -173,13 +176,14 @@ export function DriverFormDialog({ driver, children, open: controlledOpen, onOpe
                 <p className="text-xs text-[#64748b]">{t("drivers.assignTypeHint")}</p>
               </div>
             ))}
-          </div>
-
-          <div className="grid grid-cols-1 gap-2 sm:flex sm:justify-end">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>{t("actions.cancel")}</Button>
-            <Button type="submit" className={btnPrimary} disabled={mutation.isPending} data-testid="button-save-driver">
-              {isEdit ? t("actions.save") : assignTo ? t("drivers.addAndAssign") : t("actions.addDriver")}
-            </Button>
+            {/* Buttons sit at the foot of the right column, level with the left column's bottom edge. */}
+            <div className="mt-auto grid grid-cols-1 gap-2 pt-1 sm:flex sm:justify-end">
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>{t("actions.cancel")}</Button>
+              <Button type="submit" className={btnPrimary} disabled={mutation.isPending} data-testid="button-save-driver">
+                {isEdit ? t("actions.save") : assignTo ? t("drivers.addAndAssign") : t("actions.addDriver")}
+              </Button>
+            </div>
+            </div>
           </div>
         </form>
       </DialogContent>
