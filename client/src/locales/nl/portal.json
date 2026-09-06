@@ -84,7 +84,11 @@
     "returnToday": "Vandaag inleveren",
     "returnIn_one": "Inleveren over {{count}} dag",
     "returnIn_other": "Inleveren over {{count}} dagen",
-    "overdue": "Einddatum verstreken"
+    "overdue": "Einddatum verstreken",
+    "shown": "{{shown}} van {{total}} getoond",
+    "viewAll": "Alles bekijken en zoeken",
+    "openRequests": "Open aanvragen",
+    "openFines": "Open bekeuringen"
   },
   "reservations": {
     "title": "Reserveringen",

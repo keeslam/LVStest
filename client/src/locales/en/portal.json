@@ -84,7 +84,11 @@
     "returnToday": "Return today",
     "returnIn_one": "Return in {{count}} day",
     "returnIn_other": "Return in {{count}} days",
-    "overdue": "End date passed"
+    "overdue": "End date passed",
+    "shown": "{{shown}} of {{total}} shown",
+    "viewAll": "View all and search",
+    "openRequests": "Open requests",
+    "openFines": "Open fines"
   },
   "reservations": {
     "title": "Reservations",

@@ -94,6 +94,19 @@ export function Section({ title, count, children }: { title: string; count?: num
   );
 }
 
+/** Under a list that shows only its first rows: the count and a way to the full, searchable list. */
+export function MoreFooter({ shown, total, onMore, testId }: { shown: number; total: number; onMore: () => void; testId?: string }) {
+  const { t } = useTranslation("portal");
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs text-[#64748b]">
+      <span>{t("overview.shown", { shown, total })}</span>
+      <button type="button" onClick={onMore} className="inline-flex items-center gap-1 rounded-full border border-[#e6e8f0] bg-white px-3 py-1 text-xs font-medium text-[#1a1d62] hover:bg-[#eef0fb]" data-testid={testId}>
+        <Search className="h-3.5 w-3.5" />{t("overview.viewAll")}
+      </button>
+    </div>
+  );
+}
+
 /** Empty state that invites an action instead of apologising. */
 export function EmptyState({ icon, text, action }: { icon: ReactNode; text: string; action?: ReactNode }) {
   return (

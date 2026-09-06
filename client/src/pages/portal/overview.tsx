@@ -11,7 +11,11 @@ import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Button } from "@/components/ui/button";
 import { ReservationCard } from "@/components/portal/reservation-card";
 import { DriverFormDialog } from "@/components/portal/driver-form-dialog";
-import { EmptyState, Section, Tile, btnPrimary, btnSecondary } from "@/components/portal/ui";
+import { EmptyState, MoreFooter, Section, Tile, btnPrimary, btnSecondary } from "@/components/portal/ui";
+import { FineRow, RequestRow } from "@/components/portal/rows";
+
+/** Rows shown per section on the overview; the list dialog has the rest with search. */
+const OVERVIEW_ROWS = 5;
 
 /** The customer's dashboard: what is on the road, what is coming, what needs their attention. */
 export default function PortalOverviewPage() {
@@ -44,16 +48,37 @@ export default function PortalOverviewPage() {
         {me?.settings.canViewContracts && <Button variant="outline" className={btnSecondary} onClick={() => openList("documents")}><FileText className="mr-1.5 h-4 w-4" />{t("tabs.documents")}</Button>}
       </div>
 
-      <Section title={t("overview.currentRentals")} count={current.length}>
-        {current.length === 0
-          ? <EmptyState icon={<Car className="h-6 w-6" />} text={t("overview.noneCurrent")} />
-          : <div className="space-y-2">{current.map((r) => <ReservationCard key={r.id} reservation={r} showPrice={showPrice} />)}</div>}
-      </Section>
-      <Section title={t("overview.upcoming")} count={upcoming.length}>
-        {upcoming.length === 0
-          ? <EmptyState icon={<CalendarDays className="h-6 w-6" />} text={t("overview.noneUpcoming")} />
-          : <div className="space-y-2">{upcoming.map((r) => <ReservationCard key={r.id} reservation={r} showPrice={showPrice} />)}</div>}
-      </Section>
+      {/* Two columns on desktop so the lists sit side by side; one column on phones. */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Section title={t("overview.currentRentals")} count={current.length}>
+          {current.length === 0
+            ? <EmptyState icon={<Car className="h-6 w-6" />} text={t("overview.noneCurrent")} />
+            : <div className="space-y-2">{current.slice(0, OVERVIEW_ROWS).map((r) => <ReservationCard key={r.id} reservation={r} showPrice={showPrice} />)}</div>}
+          {current.length > 0 && <MoreFooter shown={Math.min(current.length, OVERVIEW_ROWS)} total={current.length} onMore={() => openList("current")} testId="more-current" />}
+        </Section>
+        <Section title={t("overview.upcoming")} count={upcoming.length}>
+          {upcoming.length === 0
+            ? <EmptyState icon={<CalendarDays className="h-6 w-6" />} text={t("overview.noneUpcoming")} />
+            : <div className="space-y-2">{upcoming.slice(0, OVERVIEW_ROWS).map((r) => <ReservationCard key={r.id} reservation={r} showPrice={showPrice} />)}</div>}
+          {upcoming.length > 0 && <MoreFooter shown={Math.min(upcoming.length, OVERVIEW_ROWS)} total={upcoming.length} onMore={() => openList("upcoming")} testId="more-upcoming" />}
+        </Section>
+        {me?.settings.canSubmitRequests && (
+          <Section title={t("overview.openRequests")} count={openRequests.length}>
+            {openRequests.length === 0
+              ? <EmptyState icon={<Inbox className="h-6 w-6" />} text={t("requests.noneOpen")} />
+              : <div className="space-y-2">{openRequests.slice(0, OVERVIEW_ROWS).map((r) => <RequestRow key={r.id} request={r} />)}</div>}
+            {openRequests.length > 0 && <MoreFooter shown={Math.min(openRequests.length, OVERVIEW_ROWS)} total={openRequests.length} onMore={() => openList("requests")} testId="more-requests" />}
+          </Section>
+        )}
+        {me?.settings.canViewFines && (
+          <Section title={t("overview.openFines")} count={openFines.length}>
+            {openFines.length === 0
+              ? <EmptyState icon={<Receipt className="h-6 w-6" />} text={t("fines.noneOpen")} />
+              : <div className="space-y-2">{openFines.slice(0, OVERVIEW_ROWS).map((f) => <FineRow key={f.id} fine={f} />)}</div>}
+            {openFines.length > 0 && <MoreFooter shown={Math.min(openFines.length, OVERVIEW_ROWS)} total={openFines.length} onMore={() => openList("fines")} testId="more-fines" />}
+          </Section>
+        )}
+      </div>
     </div>
   );
 }
