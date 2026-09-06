@@ -47,6 +47,13 @@ export function sumMoney<T>(items: T[], getAmount: (item: T) => number | string 
  * Removes dashes and spaces, then formats as XX-LL-00 or similar
  * If the license plate is in a non-standard format, returns it as-is
  */
+/** True when a typed search matches a plate, whether either side has dashes or spaces (38-XT-128 = 38XT128). */
+export function plateMatches(licensePlate: string | null | undefined, query: string): boolean {
+  const q = query.replace(/[-\s]/g, '').toLowerCase();
+  if (!q) return true;
+  return (licensePlate ?? '').replace(/[-\s]/g, '').toLowerCase().includes(q);
+}
+
 export function formatLicensePlate(licensePlate: string): string {
   // Remove any existing dashes or spaces
   const sanitized = licensePlate.replace(/[-\s]/g, '').toUpperCase();

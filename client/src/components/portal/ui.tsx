@@ -134,7 +134,14 @@ export function Tile({ tone, icon, value, label, onClick, testId }: { tone: Tone
 export function usePortalSearch() {
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
-  const hit = (...parts: Array<string | number | null | undefined>) => !q || parts.filter((p) => p !== null && p !== undefined && p !== "").join(" ").toLowerCase().includes(q);
+  // Plates are typed with or without dashes (38-XT-128 / 38XT128); match both ways.
+  const flat = (v: string) => v.replace(/[-s]/g, "");
+  const qFlat = flat(q);
+  const hit = (...parts: Array<string | number | null | undefined>) => {
+    if (!q) return true;
+    const text = parts.filter((p) => p !== null && p !== undefined && p !== "").join(" ").toLowerCase();
+    return text.includes(q) || (qFlat.length > 0 && flat(text).includes(qFlat));
+  };
   return { query, setQuery, q, hit };
 }
 

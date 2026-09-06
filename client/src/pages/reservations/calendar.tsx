@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
 import { Vehicle, Reservation, Document, Driver, VehicleTransport } from "@shared/schema";
 import { displayLicensePlate } from "@/lib/utils";
-import { formatLicensePlate } from "@/lib/format-utils";
+import { formatLicensePlate, plateMatches } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { 
   Select, 
@@ -539,7 +539,7 @@ export default function ReservationCalendarPage() {
 
       // Search filter
       if (vehicleFilters.search &&
-          !vehicle.licensePlate?.toLowerCase().includes(vehicleFilters.search.toLowerCase()) &&
+          !plateMatches(vehicle.licensePlate, vehicleFilters.search) &&
           !vehicle.brand?.toLowerCase().includes(vehicleFilters.search.toLowerCase()) &&
           !vehicle.model?.toLowerCase().includes(vehicleFilters.search.toLowerCase())) {
         return false;
@@ -850,7 +850,7 @@ export default function ReservationCalendarPage() {
       // Search filter
       const searchLower = vehicleFilters.search.toLowerCase();
       const matchesSearch = !vehicleFilters.search || 
-        vehicle.licensePlate.toLowerCase().includes(searchLower) || 
+        plateMatches(vehicle.licensePlate, vehicleFilters.search) || 
         vehicle.brand.toLowerCase().includes(searchLower) || 
         vehicle.model.toLowerCase().includes(searchLower);
       
@@ -3153,7 +3153,7 @@ export default function ReservationCalendarPage() {
                 // Search filter
                 const searchLower = completedRentalsSearch.toLowerCase();
                 const matchesSearch = !completedRentalsSearch || 
-                  vehicleInfo.toLowerCase().includes(searchLower) ||
+                  vehicleInfo.toLowerCase().includes(searchLower) || plateMatches(vehicle?.licensePlate, completedRentalsSearch) ||
                   customerName.toLowerCase().includes(searchLower);
                 
                 // Date filter
@@ -3487,7 +3487,7 @@ export default function ReservationCalendarPage() {
                   if (!adminCurrentSearch) return true;
                   const search = adminCurrentSearch.toLowerCase();
                   return (
-                    rental.vehicle?.licensePlate?.toLowerCase().includes(search) ||
+                    plateMatches(rental.vehicle?.licensePlate, search) ||
                     rental.vehicle?.brand?.toLowerCase().includes(search) ||
                     rental.vehicle?.model?.toLowerCase().includes(search) ||
                     rental.customer?.companyName?.toLowerCase().includes(search) ||
@@ -3721,7 +3721,7 @@ export default function ReservationCalendarPage() {
                   if (!adminHistorySearch) return true;
                   const search = adminHistorySearch.toLowerCase();
                   return (
-                    rental.vehicle?.licensePlate?.toLowerCase().includes(search) ||
+                    plateMatches(rental.vehicle?.licensePlate, search) ||
                     rental.vehicle?.brand?.toLowerCase().includes(search) ||
                     rental.vehicle?.model?.toLowerCase().includes(search) ||
                     rental.customer?.companyName?.toLowerCase().includes(search) ||
