@@ -1,5 +1,7 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { formatLicensePlate } from "@/lib/format-utils";
 
 /**
@@ -126,6 +128,23 @@ export function Tile({ tone, icon, value, label, onClick, testId }: { tone: Tone
   const cls = `flex items-center gap-3 rounded-2xl px-4 py-3 ${c.bg}`;
   if (!onClick) return <div className={cls} data-testid={testId}>{inner}</div>;
   return <button type="button" onClick={onClick} className={`${cls} text-left transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f5a623]`} data-testid={testId}>{inner}</button>;
+}
+
+/** Search state for a list page: `hit(...fields)` tells whether a row matches the typed text. */
+export function usePortalSearch() {
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const hit = (...parts: Array<string | number | null | undefined>) => !q || parts.filter((p) => p !== null && p !== undefined && p !== "").join(" ").toLowerCase().includes(q);
+  return { query, setQuery, q, hit };
+}
+
+export function SearchBox({ value, onChange, placeholder, testId = "portal-search" }: { value: string; onChange: (v: string) => void; placeholder: string; testId?: string }) {
+  return (
+    <div className="relative">
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
+      <Input type="search" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="bg-white pl-9" data-testid={testId} />
+    </div>
+  );
 }
 
 /** "Goedemorgen" / "Goedemiddag" / "Goedenavond" by the visitor's clock. */

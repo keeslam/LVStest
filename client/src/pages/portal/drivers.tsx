@@ -5,7 +5,7 @@ import type { PortalDriverDto } from "@shared/portal-types";
 import { portalFetch, portalQueryFn } from "@/lib/portal-api";
 import { Button } from "@/components/ui/button";
 import { DriverFormDialog } from "@/components/portal/driver-form-dialog";
-import { Avatar, EmptyState, PageHeader, btnPrimary, btnSecondary } from "@/components/portal/ui";
+import { Avatar, EmptyState, PageHeader, SearchBox, btnPrimary, btnSecondary, usePortalSearch } from "@/components/portal/ui";
 
 export default function PortalDriversPage() {
   const { t } = useTranslation("portal");
@@ -15,18 +15,21 @@ export default function PortalDriversPage() {
     mutationFn: (d: PortalDriverDto) => portalFetch("PATCH", `/api/portal/drivers/${d.id}`, { status: d.status === "active" ? "inactive" : "active" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["portal", "/api/portal/drivers"] }),
   });
+  const { query, setQuery, q, hit } = usePortalSearch();
   if (isLoading) return null;
   const addButton = <DriverFormDialog><Button className={btnPrimary} data-testid="button-add-driver"><UserPlus className="mr-1.5 h-4 w-4" />{t("actions.addDriver")}</Button></DriverFormDialog>;
   const active = data.filter((d) => d.status === "active").length;
+  const shown = data.filter((d) => hit(d.displayName, d.firstName, d.lastName, d.email, d.phone, d.driverLicenseNumber));
 
   return (
     <div className="space-y-4">
       <PageHeader title={t("drivers.title")} subtitle={t("drivers.count", { active, total: data.length })} action={addButton} />
-      {data.length === 0
-        ? <EmptyState icon={<Users className="h-6 w-6" />} text={t("drivers.empty")} action={addButton} />
+      {data.length > 0 && <SearchBox value={query} onChange={setQuery} placeholder={t("lists.searchDrivers")} />}
+      {shown.length === 0
+        ? <EmptyState icon={<Users className="h-6 w-6" />} text={q ? t("lists.noMatch") : t("drivers.empty")} action={q ? undefined : addButton} />
         : (
           <div className="grid gap-2 sm:grid-cols-2">
-            {data.map((d) => (
+            {shown.map((d) => (
               <div key={d.id} className={`rounded-xl border border-[#e6e8f0] bg-white p-4 shadow-sm ${d.status !== "active" ? "opacity-70" : ""}`} data-testid={`portal-driver-${d.id}`}>
                 <div className="flex items-start gap-3">
                   <Avatar name={d.displayName} size="lg" />

@@ -678,6 +678,10 @@
     "fines": "Open fines",
     "documents": "Contracts and documents",
     "search": "Search by plate, vehicle, driver…",
-    "noMatch": "Nothing matches this search."
+    "noMatch": "Nothing matches this search.",
+    "searchFines": "Search by description, plate, driver, reference…",
+    "searchRequests": "Search by type, message or number…",
+    "searchDocuments": "Search by file name or reservation…",
+    "searchDrivers": "Search by name, e-mail, phone or licence…"
   }
 }

@@ -678,6 +678,10 @@
     "fines": "Openstaande bekeuringen",
     "documents": "Contracten en documenten",
     "search": "Zoeken op kenteken, auto, bestuurder…",
-    "noMatch": "Niets gevonden voor deze zoekterm."
+    "noMatch": "Niets gevonden voor deze zoekterm.",
+    "searchFines": "Zoeken op omschrijving, kenteken, bestuurder, kenmerk…",
+    "searchRequests": "Zoeken op type, bericht of nummer…",
+    "searchDocuments": "Zoeken op bestandsnaam of reservering…",
+    "searchDrivers": "Zoeken op naam, e-mail, telefoon of rijbewijs…"
   }
 }
