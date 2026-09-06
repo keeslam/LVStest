@@ -175,6 +175,64 @@ werkbalk, kolom "Geblokkeerd" bij Voertuigen online): zoeken, blokkade
 toevoegen (voertuig + klant + reden) en opheffen. Routes:
 `GET/POST /api/portal-admin/blacklist`, `DELETE /api/portal-admin/blacklist/:id`.
 
+## Onderhoud via het klantenportaal
+
+Op de pagina Voertuigen (tab tussen Reserveringen en Contracten) ziet een klant
+per auto die hij nu in gebruik heeft (afgehaalde reservering) de APK-datum, de
+laatst doorgegeven kilometerstand en, zodra van toepassing, een
+onderhoudsregel: "Bijna toe aan onderhoud", "Onderhoud nodig", "Onderhoud
+gepland op {datum}", "Auto in onderhoud sinds …" of "Onderhoud klaar op …",
+met het kenteken van de vervangende auto zodra daar een echt voertuig aan
+gekoppeld is (een placeholder-plek zonder kenteken wordt nooit getoond). De
+klant kan vanaf die kaart een onderhoud melden ("Onderhoud melden":
+omschrijving, kilometerstand, dringend, en een vinkje of hij vervangend
+vervoer wil, plus optioneel een gewenste datum), schade melden of een
+kilometerstand doorgeven. Staat er al een open onderhoudsmelding voor die
+auto, dan toont de kaart in plaats van de knop een link naar die aanvraag.
+
+Is er al een blok ingepland, dan kan de klant dat via "Onderhoud wijzigen"
+laten verzetten (nieuwe datum, reden, en of vervangend vervoer nog nodig is)
+— maar alleen zolang het onderhoud nog gepland staat (niet meer zodra de auto
+er al in of uit is) en alleen tot 48 uur voor de starttijd. Binnen die 48 uur
+toont de kaart in plaats van de knop een gedimde tekst dat wijzigen niet meer
+kan en dat de klant moet bellen naar Lam Groep, met het telefoonnummer uit
+Instellingen > Klantenportaal (veld "Telefoonnummer voor klanten", naast de
+privacylink). Dat is ook het nummer dat elders in het portaal getoond wordt
+zodra iets niet meer online kan.
+
+Op het dashboard Klantenportaal staat een tegel "Onderhoud" met het aantal
+openstaande onderhoudsmeldingen en -wijzigingen; erop klikken opent de
+aanvragenlijst gefilterd op die twee types. Staff behandelt zo'n aanvraag in
+dezelfde aanvraagdialoog als elke andere portaalaanvraag:
+
+- Bij een **nieuwe onderhoudsmelding** toont het paneel "Inplannen" een datum
+  (voorgesteld: de gewenste datum van de klant, anders morgen), een duur in
+  dagen en een categorie (onderhoudsbeurt of reparatie). "Inplannen en
+  bevestigen" zet een blok in de onderhoudskalender, koppelt de aanvraag
+  eraan, en maakt — alleen als de klant om vervangend vervoer had gevraagd —
+  een placeholder-plek voor een vervangende auto (nog geen echt kenteken;
+  dat wijst staff later toe zoals bij elke placeholder). Een kilometerstand
+  die hoger is dan wat er bekend staat, wordt meteen op de auto bijgewerkt.
+- Bij een **wijzigingsverzoek** toont het paneel "Verplaatsen" de nieuw
+  gevraagde datum en de huidige duur van het blok. Goedkeuren verzet het
+  blok naar de nieuwe periode en verplaatst een eventuele placeholder-plek
+  mee; een placeholder wordt door deze stap nooit automatisch verwijderd,
+  ook niet als de klant het vinkje voor vervangend vervoer had uitgezet —
+  dat laat staff zelf beoordelen.
+- Een onderhoudsmelding kan niet als "afgehandeld" worden afgesloten via
+  "Beantwoorden" zolang er geen blok aan hangt (wel "afgewezen"); inplannen
+  via het paneel hierboven sluit de aanvraag automatisch af.
+- De onderhoudskalender en de bewerkdialogen van een blok tonen bij een blok
+  dat uit het portaal komt "Uit klantenportaal, aanvraag #12" met een link
+  die de bijbehorende aanvraag opent.
+
+Bij elke stap krijgt de klant een belletje in het portaal (onderwerp met het
+kenteken: gepland, verplaatst, in onderhoud, klaar, geannuleerd, of
+"vervangende auto klaar" zodra een placeholder een echt kenteken krijgt) en,
+als SMTP werkt, een e-mail via het sjabloon `portal_maintenance` (te bewerken
+onder Communicatie > E-mailsjablonen, net als de andere portaalsjablonen)
+naar het APK/onderhouds-adres van de klant of anders het accountadres.
+
 ## Mijn account in het portaal
 
 - **Taal**: het portaal volgt de voorkeurstaal van de klant (customers.preferred_language). Een account kan bij Mijn account een eigen taal kiezen (`portal_users.language`, leeg = klantinstelling).

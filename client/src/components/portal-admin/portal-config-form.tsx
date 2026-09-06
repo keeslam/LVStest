@@ -25,12 +25,14 @@ export function PortalConfigForm() {
   const [openingHours, setOpeningHours] = useState("");
   const [pickupInstructions, setPickupInstructions] = useState("");
   const [privacyUrl, setPrivacyUrl] = useState("");
+  const [phone, setPhone] = useState("");
   useEffect(() => {
     if (!data) return;
     setOrigins(data.allowedFrameOrigins.join("\n"));
     setEmail(data.notificationEmail);
     setBaseUrl(data.portalBaseUrl);
     setPickupAddress(data.pickupAddress ?? ""); setOpeningHours(data.openingHours ?? ""); setPickupInstructions(data.pickupInstructions ?? ""); setPrivacyUrl(data.privacyUrl ?? "");
+    setPhone(data.phone ?? "");
   }, [data]);
 
   const save = useMutation({
@@ -39,6 +41,7 @@ export function PortalConfigForm() {
       notificationEmail: email.trim(),
       portalBaseUrl: baseUrl.trim().replace(/\/$/, ""),
       pickupAddress: pickupAddress.trim(), openingHours: openingHours.trim(), pickupInstructions: pickupInstructions.trim(), privacyUrl: privacyUrl.trim(),
+      phone: phone.trim(),
     })).json(),
     onSuccess: (saved) => { queryClient.setQueryData(KEY, saved); toast({ title: t("admin.config.saved") }); },
     onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
@@ -67,7 +70,8 @@ export function PortalConfigForm() {
           <div><Label htmlFor="pc-addr">{t("admin.config.pickupAddress")}</Label><Input id="pc-addr" value={pickupAddress} onChange={(e) => setPickupAddress(e.target.value)} /></div>
           <div><Label htmlFor="pc-hours">{t("admin.config.openingHours")}</Label><Input id="pc-hours" value={openingHours} onChange={(e) => setOpeningHours(e.target.value)} /></div>
           <div className="md:col-span-2"><Label htmlFor="pc-instr">{t("admin.config.pickupInstructions")}</Label><Textarea id="pc-instr" rows={2} value={pickupInstructions} onChange={(e) => setPickupInstructions(e.target.value)} /></div>
-          <div className="md:col-span-2"><Label htmlFor="pc-privacy">{t("admin.config.privacyUrl")}</Label><Input id="pc-privacy" type="url" value={privacyUrl} onChange={(e) => setPrivacyUrl(e.target.value)} /></div>
+          <div><Label htmlFor="pc-privacy">{t("admin.config.privacyUrl")}</Label><Input id="pc-privacy" type="url" value={privacyUrl} onChange={(e) => setPrivacyUrl(e.target.value)} /></div>
+          <div><Label htmlFor="pc-phone">{t("admin.config.phone")}</Label><Input id="pc-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
         </div>
         <p className="text-xs text-muted-foreground">{t("admin.config.templatesHint")}</p>
         <Button onClick={() => save.mutate()} disabled={save.isPending} data-testid="button-save-portal-config">{t("admin.dialog.save")}</Button>
