@@ -17,7 +17,7 @@ import { FinesTable } from "@/components/fines/fines-table";
 export function PortalListDialog() {
   const { t } = useTranslation("portal");
   const { dialogState, closePortalListDialog } = useGlobalDialog();
-  const { open, kind, plate, importFileId } = dialogState.portalList;
+  const { open, kind, plate, importFileId, types } = dialogState.portalList;
   if (!kind) return null;
 
   return (
@@ -27,7 +27,7 @@ export function PortalListDialog() {
         <div className="flex-1 overflow-auto">
           {kind === "customers" && <CustomersOverviewTable />}
           {kind === "accounts" && <AccountsTable />}
-          {kind === "requests" && <RequestsTable />}
+          {kind === "requests" && <RequestsTable key={types?.join(",") ?? ""} types={types} />}
           {kind === "fines" && <FinesTable key={`${plate ?? ""}-${importFileId ?? ""}`} initialPlate={plate} importFileId={importFileId} />}
           {kind === "vehicles" && <OnlineVehiclesTable />}
           {kind === "activity" && <ActivityTable limit={200} />}

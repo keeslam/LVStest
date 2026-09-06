@@ -13,7 +13,7 @@ interface DialogState {
   fine: { open: boolean; id: number | null };
   newFine: { open: boolean; licensePlate?: string };
   portalRequest: { open: boolean; id: number | null };
-  portalList: { open: boolean; kind: PortalListKind | null; plate?: string; importFileId?: number };
+  portalList: { open: boolean; kind: PortalListKind | null; plate?: string; importFileId?: number; types?: string[] };
   fineImport: { open: boolean };
   fineImports: { open: boolean };
   expenseVehicle: { open: boolean; vehicleId: number | null };
@@ -42,7 +42,7 @@ interface GlobalDialogContextType {
   closeNewFineDialog: () => void;
   openPortalRequestDialog: (id: number) => void;
   closePortalRequestDialog: () => void;
-  openPortalListDialog: (kind: PortalListKind, opts?: { plate?: string; importFileId?: number }) => void;
+  openPortalListDialog: (kind: PortalListKind, opts?: { plate?: string; importFileId?: number; types?: string[] }) => void;
   closePortalListDialog: () => void;
   openFineImportDialog: () => void;
   closeFineImportDialog: () => void;
@@ -163,7 +163,7 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
   const closeNewFineDialog = () => setDialogState((prev) => ({ ...prev, newFine: { open: false } }));
   const openPortalRequestDialog = (id: number) => setDialogState((prev) => ({ ...prev, portalRequest: { open: true, id } }));
   const closePortalRequestDialog = () => setDialogState((prev) => ({ ...prev, portalRequest: { open: false, id: null } }));
-  const openPortalListDialog = (kind: PortalListKind, opts?: { plate?: string; importFileId?: number }) => setDialogState((prev) => ({ ...prev, portalList: { open: true, kind, plate: opts?.plate, importFileId: opts?.importFileId } }));
+  const openPortalListDialog = (kind: PortalListKind, opts?: { plate?: string; importFileId?: number; types?: string[] }) => setDialogState((prev) => ({ ...prev, portalList: { open: true, kind, plate: opts?.plate, importFileId: opts?.importFileId, types: opts?.types } }));
   const closePortalListDialog = () => setDialogState((prev) => ({ ...prev, portalList: { open: false, kind: null } }));
   const openFineImportDialog = () => setDialogState((prev) => ({ ...prev, fineImport: { open: true } }));
   const closeFineImportDialog = () => setDialogState((prev) => ({ ...prev, fineImport: { open: false } }));

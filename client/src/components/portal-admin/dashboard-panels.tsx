@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
-import { AlertCircle, Bell, CalendarClock, Users, ArrowDownToLine, ArrowUpFromLine, Inbox, Receipt, UserCircle, Car, Ban, History, ChevronRight } from "lucide-react";
+import { AlertCircle, Bell, CalendarClock, Users, ArrowDownToLine, ArrowUpFromLine, Inbox, Receipt, UserCircle, Car, Ban, History, ChevronRight, Wrench } from "lucide-react";
 import type { PortalDashboard } from "@shared/portal-types";
 import { apiRequest } from "@/lib/queryClient";
 import { formatLicensePlate } from "@/lib/format-utils";
@@ -91,14 +91,16 @@ function dayLabel(iso: string, t: (k: string) => string): string {
 // the number says whether it needs a look. They replace a row of buttons, and the
 // grid folds from four columns on desktop to two on a phone.
 
-type SectionKind = "requests" | "fines" | "customers" | "accounts" | "vehicles" | "blacklist" | "activity";
+type SectionKind = "requests" | "fines" | "customers" | "accounts" | "vehicles" | "blacklist" | "activity" | "maintenance";
 const SECTION_ICON: Record<SectionKind, ReactNode> = {
   requests: <Inbox className="h-5 w-5" />, fines: <Receipt className="h-5 w-5" />, customers: <Users className="h-5 w-5" />,
   accounts: <UserCircle className="h-5 w-5" />, vehicles: <Car className="h-5 w-5" />, blacklist: <Ban className="h-5 w-5" />, activity: <History className="h-5 w-5" />,
+  maintenance: <Wrench className="h-5 w-5" />,
 };
 const SECTION_TONE: Record<SectionKind, string> = {
   requests: "bg-amber-100 text-amber-800", fines: "bg-red-100 text-red-800", customers: "bg-emerald-100 text-emerald-800",
   accounts: "bg-sky-100 text-sky-800", vehicles: "bg-indigo-100 text-indigo-800", blacklist: "bg-slate-200 text-slate-800", activity: "bg-violet-100 text-violet-800",
+  maintenance: "bg-orange-100 text-orange-800",
 };
 
 function SectionTile({ kind, value, sub, alert, onClick }: { kind: SectionKind; value?: number; sub: string; alert?: boolean; onClick: () => void }) {
@@ -127,6 +129,8 @@ export function DashboardTiles({ counts, canViewFines }: { counts: PortalDashboa
       <SectionTile kind="requests" value={counts.newRequests} alert={counts.newRequests > 0}
         sub={counts.inProgressRequests > 0 ? t("admin.dashboard.tiles.newPlusInProgress", { n: counts.inProgressRequests }) : t("admin.dashboard.tiles.new")}
         onClick={() => openPortalListDialog("requests")} />
+      <SectionTile kind="maintenance" value={counts.maintenance} alert={counts.maintenance > 0} sub={t("admin.dashboard.tiles.maintenanceSub")}
+        onClick={() => openPortalListDialog("requests", { types: ["maintenance", "maintenance_change"] })} />
       {canViewFines && (
         <SectionTile kind="fines" value={counts.unlinkedFines} alert={counts.unlinkedFines > 0} sub={t("admin.dashboard.tiles.notLinked")} onClick={() => openPortalListDialog("fines")} />
       )}

@@ -16,11 +16,11 @@ export function RequestStatusBadge({ status }: { status: string }) {
   return <Badge variant={STATUS_VARIANT[status] ?? "outline"}>{t(`admin.requests.status.${status}`, { defaultValue: status })}</Badge>;
 }
 
-export function RequestsTable({ customerId, preview }: { customerId?: number; preview?: Preview }) {
+export function RequestsTable({ customerId, preview, types }: { customerId?: number; preview?: Preview; types?: string[] }) {
   const { t } = useTranslation("portal");
   const { openPortalRequestDialog } = useGlobalDialog();
   const [status, setStatus] = useState("");
-  const [type, setType] = useState("");
+  const [type, setType] = useState(types?.length === 1 ? types[0] : "");
   const [search, setSearch] = useState("");
   const filters = { status: status || undefined, type: type || undefined, customerId };
   const { data = [] } = useQuery<PortalRequestDto[]>({
@@ -30,7 +30,8 @@ export function RequestsTable({ customerId, preview }: { customerId?: number; pr
       return (await apiRequest("GET", `/api/portal-requests?${q}`)).json();
     },
   });
-  const filtered = data.filter((r) => textMatches(search, r.id, t(`admin.requests.type.${r.type}`), r.message, r.submittedBy, r.customerName, r.reservationLabel, t(`admin.requests.status.${r.status}`)));
+  const typeScoped = types && types.length > 0 ? data.filter((r) => types.includes(r.type)) : data;
+  const filtered = typeScoped.filter((r) => textMatches(search, r.id, t(`admin.requests.type.${r.type}`), r.message, r.submittedBy, r.customerName, r.reservationLabel, t(`admin.requests.status.${r.status}`)));
   const rows = preview ? filtered.slice(0, preview.limit) : filtered;
   return (
     <div className="space-y-3">

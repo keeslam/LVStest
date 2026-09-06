@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, like, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, like, sql } from "drizzle-orm";
 import { db } from "../db";
 import { customNotifications, customers, drivers, fines, portalCustomerSettings, portalRequests, portalUsers, reservations, vehicles, vehicleCustomerBlacklist } from "../../shared/schema";
 import { portalStorage } from "./portal-storage";
@@ -32,7 +32,7 @@ export async function getPortalDashboard(): Promise<PortalDashboard> {
   const today = isoDay(0);
   const horizon = isoDay(DASHBOARD_WINDOW_DAYS);
 
-  const [overview, requests, unlinked, notes, upcomingRows, [vehiclesOnline], [inProgress], [blacklistEntries]] = await Promise.all([
+  const [overview, requests, unlinked, notes, upcomingRows, [vehiclesOnline], [inProgress], [blacklistEntries], [placeholdersFromPortal]] = await Promise.all([
     portalStorage.listCustomersOverview(),
     requestsStorage.listRequests({}),
     db.select().from(fines).where(eq(fines.status, "new")).orderBy(desc(fines.offenceAt)).limit(ATTENTION_LIMIT),
@@ -57,6 +57,9 @@ export async function getPortalDashboard(): Promise<PortalDashboard> {
     db.select({ n: sql<number>`count(*)::int` }).from(vehicles).where(eq(vehicles.offeredOnline, true)),
     db.select({ n: sql<number>`count(*)::int` }).from(portalRequests).where(eq(portalRequests.status, "in_progress")),
     db.select({ n: sql<number>`count(*)::int` }).from(vehicleCustomerBlacklist),
+    db.select({ n: sql<number>`count(*)::int` }).from(reservations)
+      .where(and(eq(reservations.type, "replacement"), eq(reservations.placeholderSpare, true), isNull(reservations.deletedAt),
+        sql`exists (select 1 from reservations b where b.affected_rental_id = ${reservations.replacementForReservationId} and b.portal_request_id is not null and b.deleted_at is null and b.maintenance_status is distinct from 'out')`)),
   ]);
 
   const staleBefore = new Date(Date.now() - STALE_REQUEST_DAYS * 86_400_000);
@@ -93,7 +96,7 @@ export async function getPortalDashboard(): Promise<PortalDashboard> {
       vehiclesOnline: vehiclesOnline?.n ?? 0,
       blacklistEntries: blacklistEntries?.n ?? 0,
       unreadNotifications: notes.filter((n) => !n.isRead).length,
-      maintenance: 0,
+      maintenance: openRequests.filter((r) => r.type === "maintenance" || r.type === "maintenance_change").length + (placeholdersFromPortal?.n ?? 0),
     },
     attention: {
       requests: openRequests.slice(0, ATTENTION_LIMIT).map((r) => ({

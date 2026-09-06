@@ -42,6 +42,7 @@ import { useToast } from "@/hooks/use-toast";
 import { InlineDocumentUpload } from "@/components/documents/inline-document-upload";
 import { InvoiceScanner } from "@/components/invoice-scanner";
 import { Link } from "wouter";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 
 interface MaintenanceViewDialogProps {
   open: boolean;
@@ -57,6 +58,8 @@ export function MaintenanceViewDialog({
   onEdit,
 }: MaintenanceViewDialogProps) {
   const { t } = useTranslation(["maintenance", "common"]);
+  const { t: tp } = useTranslation("portal");
+  const { openPortalRequestDialog } = useGlobalDialog();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [editingSpare, setEditingSpare] = useState<number | null>(null);
@@ -374,6 +377,16 @@ export function MaintenanceViewDialog({
                 </div>
               </div>
             </div>
+            {reservation.portalRequestId && (
+              <button
+                type="button"
+                className="text-sm text-primary underline mt-3"
+                onClick={() => { onOpenChange(false); openPortalRequestDialog(reservation.portalRequestId!); }}
+                data-testid="link-portal-request"
+              >
+                {tp("admin.maintenance.fromPortal", { id: reservation.portalRequestId })}
+              </button>
+            )}
           </div>
 
           {/* Schedule Information */}
