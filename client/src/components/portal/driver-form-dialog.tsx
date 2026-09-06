@@ -98,64 +98,74 @@ export function DriverFormDialog({ driver, children, open: controlledOpen, onOpe
     </div>
   );
 
+  // Desktop: every open block gets its own column so nothing has to scroll.
+  const showCars = !isEdit && cars.length > 0;
+  const columns = 1 + (more ? 1 : 0) + (showCars ? 1 : 0);
+  const width = columns === 3 ? "sm:max-w-3xl lg:max-w-5xl" : columns === 2 ? "sm:max-w-3xl" : "sm:max-w-lg";
+  const grid = columns === 3 ? "md:grid-cols-2 lg:grid-cols-3" : columns === 2 ? "md:grid-cols-2" : "";
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
-      <DialogContent className="max-w-lg" data-testid="portal-driver-form">
+      <DialogContent className={width} data-testid="portal-driver-form">
         <DialogHeader><DialogTitle>{isEdit ? t("drivers.editTitle", { name: driver?.displayName }) : t("drivers.addTitle")}</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-4">
-          <div className="space-y-3 rounded-xl border border-[#e6e8f0] p-4">
-            {text("displayName", "text", { autoFocus: !isEdit, placeholder: t("drivers.namePlaceholder") })}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {text("email", "email", { autoComplete: "off" })}
-              {text("phone", "tel", { autoComplete: "off" })}
+          <div className={`grid items-start gap-4 ${grid}`}>
+            <div className="space-y-4">
+              <div className="space-y-3 rounded-xl border border-[#e6e8f0] p-4">
+                {text("displayName", "text", { autoFocus: !isEdit, placeholder: t("drivers.namePlaceholder") })}
+                {text("email", "email", { autoComplete: "off" })}
+                {text("phone", "tel", { autoComplete: "off" })}
+                <p className={`text-xs ${error ? "text-[#a32d2d]" : "text-[#64748b]"}`} data-testid="driver-contact-hint">{error ?? t("drivers.contactHint")}</p>
+              </div>
+              <button type="button" onClick={() => setMore((m) => !m)} className="flex w-full items-center justify-between rounded-xl border border-dashed border-[#cbd5e1] px-4 py-2.5 text-sm font-medium text-[#1a1d62] hover:bg-[#eef0fb]" aria-expanded={more} data-testid="button-driver-more">
+                {t("drivers.moreDetails")}{more ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </button>
             </div>
-            <p className={`text-xs ${error ? "text-[#a32d2d]" : "text-[#64748b]"}`} data-testid="driver-contact-hint">{error ?? t("drivers.contactHint")}</p>
-          </div>
 
-          {!isEdit && cars.length > 0 && (
-            <div className="space-y-2 rounded-xl border border-[#e6e8f0] p-4">
-              <Label className="flex items-center gap-2"><Car className="h-4 w-4 text-[#1a1d62]" />{t("drivers.assignNow")}</Label>
-              <SearchListPicker items={cars} value={assignTo} onChange={setAssignTo} searchPlaceholder={t("drivers.searchCar")} emptyText={t("drivers.noCarFound")} changeLabel={t("actions.change")}
-                hintText={(shown, total) => t("drivers.moreShown", { shown, total })} searchFrom={6} maxShown={5} testId="driver-assign-picker" />
-              <p className="text-xs text-[#64748b]">{t("drivers.assignHint")}</p>
-            </div>
-          )}
-
-          <button type="button" onClick={() => setMore((m) => !m)} className="flex w-full items-center justify-between rounded-xl border border-dashed border-[#cbd5e1] px-4 py-2.5 text-sm font-medium text-[#1a1d62] hover:bg-[#eef0fb]" aria-expanded={more} data-testid="button-driver-more">
-            {t("drivers.moreDetails")}{more ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </button>
-          {more && (
-            <div className="space-y-3 rounded-xl border border-[#e6e8f0] p-4">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {text("firstName")}
-                {text("lastName")}
-                {text("driverLicenseNumber")}
-                {text("licenseExpiry", "date")}
+            {more && (
+              <div className="space-y-3 rounded-xl border border-[#e6e8f0] p-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {text("firstName")}
+                  {text("lastName")}
+                  {text("driverLicenseNumber")}
+                  {text("licenseExpiry", "date")}
+                </div>
                 <div>
                   <Label htmlFor="drv-licenseOrigin">{t("fields.licenseOrigin")}</Label>
                   <SearchListPicker items={COUNTRY_OPTIONS.map((c, i) => ({ id: i + 1, label: c.label }))} value={values.licenseOrigin ? COUNTRY_OPTIONS.findIndex((c) => c.value === values.licenseOrigin) + 1 || null : null}
                     onChange={(id) => set("licenseOrigin", id ? COUNTRY_OPTIONS[id - 1].value : "")}
-                    searchPlaceholder={t("drivers.searchCountries")} emptyText={t("drivers.noCountries")} changeLabel={t("actions.change")} searchFrom={0} maxShown={6} testId="driver-country" />
+                    searchPlaceholder={t("drivers.searchCountries")} emptyText={t("drivers.noCountries")} changeLabel={t("actions.change")} searchFrom={0} maxShown={3} testId="driver-country" />
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="drv-preferredLanguage">{t("fields.preferredLanguage")}</Label>
+                    <select id="drv-preferredLanguage" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={values.preferredLanguage} onChange={(e) => set("preferredLanguage", e.target.value)} data-testid="select-driver-language">
+                      <option value="nl">{t("languages.nl")}</option>
+                      <option value="en">{t("languages.en")}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="drv-file">{t("actions.uploadLicense")}</Label>
+                    <Input id="drv-file" type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+                  </div>
                 </div>
                 <div>
-                  <Label htmlFor="drv-preferredLanguage">{t("fields.preferredLanguage")}</Label>
-                  <select id="drv-preferredLanguage" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={values.preferredLanguage} onChange={(e) => set("preferredLanguage", e.target.value)} data-testid="select-driver-language">
-                    <option value="nl">{t("languages.nl")}</option>
-                    <option value="en">{t("languages.en")}</option>
-                  </select>
+                  <Label htmlFor="drv-notes">{t("fields.notes")}</Label>
+                  <Textarea id="drv-notes" rows={2} value={values.notes} onChange={(e) => set("notes", e.target.value)} data-testid="input-driver-notes" />
                 </div>
               </div>
-              <div>
-                <Label htmlFor="drv-notes">{t("fields.notes")}</Label>
-                <Textarea id="drv-notes" rows={2} value={values.notes} onChange={(e) => set("notes", e.target.value)} data-testid="input-driver-notes" />
+            )}
+
+            {showCars && (
+              <div className="space-y-2 rounded-xl border border-[#e6e8f0] p-4">
+                <Label className="flex items-center gap-2"><Car className="h-4 w-4 text-[#1a1d62]" />{t("drivers.assignNow")}</Label>
+                <SearchListPicker items={cars} value={assignTo} onChange={setAssignTo} searchPlaceholder={t("drivers.searchCar")} emptyText={t("drivers.noCarFound")} changeLabel={t("actions.change")}
+                  hintText={(shown, total) => t("drivers.moreShown", { shown, total })} searchFrom={6} maxShown={5} testId="driver-assign-picker" />
+                <p className="text-xs text-[#64748b]">{t("drivers.assignHint")}</p>
               </div>
-              <div>
-                <Label htmlFor="drv-file">{t("actions.uploadLicense")}</Label>
-                <Input id="drv-file" type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-              </div>
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="grid grid-cols-1 gap-2 sm:flex sm:justify-end">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>{t("actions.cancel")}</Button>
