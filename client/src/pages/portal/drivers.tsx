@@ -61,9 +61,13 @@ export default function PortalDriversPage() {
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${d.status === "active" ? "bg-[#e1f5ee] text-[#085041]" : "bg-[#f1efe8] text-[#444441]"}`}>{t(`drivers.${d.status === "active" ? "active" : "inactive"}`)}</span>
                     </div>
                     <dl className="mt-1.5 space-y-0.5 text-xs text-[#64748b] sm:text-sm">
-                      {d.email && <div className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{d.email}</span></div>}
-                      {d.phone && <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 shrink-0" />{d.phone}</div>}
-                      {d.driverLicenseNumber && <div className="flex items-center gap-1.5"><IdCard className="h-3.5 w-3.5 shrink-0" />{d.driverLicenseNumber}{d.licenseExpiry ? ` · ${t("fields.licenseExpiry")} ${d.licenseExpiry}` : ""}</div>}
+                      <div className="flex items-center gap-1.5" title={t("fields.email")}><Mail className="h-3.5 w-3.5 shrink-0" />{d.email ? <span className="truncate">{d.email}</span> : <span className="italic text-[#94a3b8]">{t("drivers.notGiven")}</span>}</div>
+                      <div className="flex items-center gap-1.5" title={t("fields.phone")}><Phone className="h-3.5 w-3.5 shrink-0" />{d.phone || <span className="italic text-[#94a3b8]">{t("drivers.notGiven")}</span>}</div>
+                      <div className="flex items-center gap-1.5" title={t("fields.licenseNumber")}><IdCard className="h-3.5 w-3.5 shrink-0" />
+                        {d.driverLicenseNumber
+                          ? <span>{d.driverLicenseNumber}{d.licenseExpiry ? ` · ${t("fields.licenseExpiry")} ${d.licenseExpiry}` : ` · ${t("drivers.noExpiry")}`}</span>
+                          : <span className="italic text-[#94a3b8]">{t("drivers.noLicense")}</span>}
+                      </div>
                     </dl>
                     {/* The car this driver is in right now; click the plate to open that reservation. */}
                     <div className="mt-2 flex flex-wrap items-center gap-1.5" data-testid={`driver-cars-${d.id}`}>

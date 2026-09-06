@@ -184,7 +184,10 @@
     "upcomingSection": "Upcoming",
     "pastSection": "Finished",
     "noHistory": "No past or upcoming reservations yet.",
-    "viewFines": "View this driver's fines"
+    "viewFines": "View this driver's fines",
+    "notGiven": "Not given",
+    "noLicense": "Licence not given",
+    "noExpiry": "expiry unknown"
   },
   "account": {
     "title": "My account",

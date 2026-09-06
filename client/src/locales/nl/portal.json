@@ -184,7 +184,10 @@
     "upcomingSection": "Aankomend",
     "pastSection": "Afgerond",
     "noHistory": "Nog geen eerdere of komende reserveringen.",
-    "viewFines": "Bekeuringen van deze bestuurder bekijken"
+    "viewFines": "Bekeuringen van deze bestuurder bekijken",
+    "notGiven": "Niet opgegeven",
+    "noLicense": "Rijbewijs niet opgegeven",
+    "noExpiry": "geldigheid onbekend"
   },
   "account": {
     "title": "Mijn account",
