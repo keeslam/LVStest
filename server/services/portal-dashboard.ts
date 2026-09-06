@@ -7,8 +7,8 @@ import type { PortalDashboard } from "../../shared/portal-types";
 
 /** Days ahead the "upcoming pickups/returns" panel looks. */
 export const DASHBOARD_WINDOW_DAYS = 14;
-const ATTENTION_LIMIT = 8;
-const NOTIFICATION_LIMIT = 15;
+const ATTENTION_LIMIT = 50;
+const NOTIFICATION_LIMIT = 100;
 
 export type { PortalDashboard };
 

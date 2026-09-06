@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { RequestStatusBadge } from "./requests-table";
 import { ago } from "./customers-overview-table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PreviewFooter, TableSearch, textMatches, PREVIEW_ROWS } from "./preview";
 
 export const DASHBOARD_KEY = ["/api/portal-admin/dashboard"];
 export const DASHBOARD_WINDOW_DAYS = 14;
@@ -37,6 +39,37 @@ function Row({ onClick, children, testId, unread }: { onClick: () => void; child
       className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm border-b last:border-b-0 hover:bg-muted/50 ${unread ? "bg-blue-50/60 dark:bg-blue-950/20" : ""}`}>
       {children}
     </button>
+  );
+}
+
+/**
+ * A panel list shows its first rows; "Alles bekijken en zoeken" opens the
+ * same rows in a dialog with a search box. `searchOf` says what a row
+ * matches on; `render` draws one row (used in both places).
+ */
+function PreviewList<T>({ items, keyOf, render, searchOf, title, empty, testId }: {
+  items: T[]; keyOf: (item: T) => string; render: (item: T) => ReactNode; searchOf: (item: T) => Array<string | number | null | undefined>;
+  title: ReactNode; empty: ReactNode; testId: string;
+}) {
+  const { t } = useTranslation("portal");
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const shown = items.slice(0, PREVIEW_ROWS);
+  const matches = items.filter((i) => textMatches(q, ...searchOf(i)));
+  return (
+    <>
+      {shown.length === 0 ? <Empty>{empty}</Empty> : shown.map((i) => <div key={keyOf(i)}>{render(i)}</div>)}
+      {items.length > 0 && <div className="px-4 pb-3"><PreviewFooter shown={shown.length} total={items.length} onShowAll={() => setOpen(true)} /></div>}
+      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setQ(""); }}>
+        <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col" data-testid={`${testId}-dialog`}>
+          <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
+          <TableSearch value={q} onChange={setQ} testId={`${testId}-search`} />
+          <div className="min-h-0 flex-1 overflow-auto rounded-md border">
+            {matches.length === 0 ? <Empty>{t("admin.preview.noMatch")}</Empty> : matches.map((i) => <div key={keyOf(i)}>{render(i)}</div>)}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -112,36 +145,39 @@ export function AttentionPanel({ attention, canViewFines }: { attention: PortalD
   const { t } = useTranslation("portal");
   const { openPortalRequestDialog, openFineDialog, openPortalListDialog } = useGlobalDialog();
   const fines = canViewFines ? attention.fines : [];
-  const empty = attention.requests.length === 0 && fines.length === 0;
+  type Item = { kind: "request"; r: PortalDashboard["attention"]["requests"][number] } | { kind: "fine"; f: PortalDashboard["attention"]["fines"][number] };
+  const items: Item[] = [...attention.requests.map((r) => ({ kind: "request" as const, r })), ...fines.map((f) => ({ kind: "fine" as const, f }))];
+  const renderItem = (i: Item) => i.kind === "request" ? (
+    <Row onClick={() => openPortalRequestDialog(i.r.id)} testId={`attention-request-${i.r.id}`}>
+      <div className="min-w-0">
+        <div className="truncate">{t(`admin.requests.type.${i.r.type}`, { defaultValue: i.r.type })} · {i.r.customerName}</div>
+        <div className="truncate text-xs text-muted-foreground">#{i.r.id}{i.r.reservationLabel ? ` · ${i.r.reservationLabel}` : ""}{i.r.startDate ? ` · ${t("admin.dashboard.attention.from", { date: i.r.startDate })}` : ""} · {ago(i.r.createdAt, t)}</div>
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
+        {i.r.urgency && <Badge variant={i.r.urgency === "soon" ? "destructive" : "secondary"}>{t(`admin.dashboard.attention.${i.r.urgency}`)}</Badge>}
+        <RequestStatusBadge status={i.r.status} />
+      </div>
+    </Row>
+  ) : (
+    <Row onClick={() => openFineDialog(i.f.id)} testId={`attention-fine-${i.f.id}`}>
+      <div className="min-w-0">
+        <div className="truncate">{t("admin.dashboard.attention.fine", { plate: formatLicensePlate(i.f.licensePlate) })}</div>
+        <div className="truncate text-xs text-muted-foreground">{i.f.description} · {new Date(i.f.offenceAt).toLocaleDateString()} · € {i.f.totalAmount}</div>
+      </div>
+      <Badge variant="destructive">{t("admin.dashboard.attention.unlinked")}</Badge>
+    </Row>
+  );
   return (
     <Panel title={t("admin.dashboard.attention.title")} icon={<AlertCircle className="h-4 w-4 text-amber-600" />} testId="panel-attention"
       action={<div className="flex gap-1">
         <Button size="sm" variant="ghost" onClick={() => openPortalListDialog("requests")}>{t("admin.dashboard.attention.allRequests")}</Button>
         {canViewFines && <Button size="sm" variant="ghost" onClick={() => openPortalListDialog("fines")}>{t("admin.dashboard.attention.allFines")}</Button>}
       </div>}>
-      {empty ? <Empty>{t("admin.dashboard.attention.empty")}</Empty> : (<>
-        {attention.requests.map((r) => (
-          <Row key={`r${r.id}`} onClick={() => openPortalRequestDialog(r.id)} testId={`attention-request-${r.id}`}>
-            <div className="min-w-0">
-              <div className="truncate">{t(`admin.requests.type.${r.type}`, { defaultValue: r.type })} · {r.customerName}</div>
-              <div className="truncate text-xs text-muted-foreground">#{r.id}{r.reservationLabel ? ` · ${r.reservationLabel}` : ""}{r.startDate ? ` · ${t("admin.dashboard.attention.from", { date: r.startDate })}` : ""} · {ago(r.createdAt, t)}</div>
-            </div>
-            <div className="flex shrink-0 items-center gap-1">
-              {r.urgency && <Badge variant={r.urgency === "soon" ? "destructive" : "secondary"}>{t(`admin.dashboard.attention.${r.urgency}`)}</Badge>}
-              <RequestStatusBadge status={r.status} />
-            </div>
-          </Row>
-        ))}
-        {fines.map((f) => (
-          <Row key={`f${f.id}`} onClick={() => openFineDialog(f.id)} testId={`attention-fine-${f.id}`}>
-            <div className="min-w-0">
-              <div className="truncate">{t("admin.dashboard.attention.fine", { plate: formatLicensePlate(f.licensePlate) })}</div>
-              <div className="truncate text-xs text-muted-foreground">{f.description} · {new Date(f.offenceAt).toLocaleDateString()} · € {f.totalAmount}</div>
-            </div>
-            <Badge variant="destructive">{t("admin.dashboard.attention.unlinked")}</Badge>
-          </Row>
-        ))}
-      </>)}
+      <PreviewList items={items} keyOf={(i) => i.kind === "request" ? `r${i.r.id}` : `f${i.f.id}`} render={renderItem} testId="attention"
+        title={t("admin.dashboard.attention.title")} empty={t("admin.dashboard.attention.empty")}
+        searchOf={(i) => i.kind === "request"
+          ? [i.r.id, i.r.customerName, t(`admin.requests.type.${i.r.type}`), i.r.reservationLabel, i.r.status, i.r.startDate]
+          : [i.f.id, i.f.licensePlate, i.f.description, i.f.totalAmount]} />
     </Panel>
   );
 }
@@ -173,15 +209,18 @@ export function NotificationsPanel({ notifications, unread }: { notifications: P
     <Panel title={<>{t("admin.dashboard.notifications.title")}{unread > 0 && <Badge className="ml-1">{t("admin.dashboard.notifications.unread", { n: unread })}</Badge>}</>}
       icon={<Bell className="h-4 w-4 text-blue-600" />} testId="panel-notifications"
       action={unread > 0 && <Button size="sm" variant="ghost" onClick={() => markAll.mutate()} data-testid="button-mark-all-read">{t("admin.dashboard.notifications.markAll")}</Button>}>
-      {notifications.length === 0 ? <Empty>{t("admin.dashboard.notifications.empty")}</Empty> : notifications.map((n) => (
-        <Row key={n.id} onClick={() => follow(n)} unread={!n.isRead} testId={`notification-${n.id}`}>
-          <div className="min-w-0">
-            <div className={`truncate ${n.isRead ? "" : "font-medium"}`}>{n.title}</div>
-            <div className="truncate text-xs text-muted-foreground">{n.description}</div>
-          </div>
-          <span className="shrink-0 text-xs text-muted-foreground">{ago(n.createdAt, t)}</span>
-        </Row>
-      ))}
+      <PreviewList items={notifications} keyOf={(n) => String(n.id)} testId="notifications"
+        title={t("admin.dashboard.notifications.title")} empty={t("admin.dashboard.notifications.empty")}
+        searchOf={(n) => [n.title, n.description, n.type]}
+        render={(n) => (
+          <Row onClick={() => follow(n)} unread={!n.isRead} testId={`notification-${n.id}`}>
+            <div className="min-w-0">
+              <div className={`truncate ${n.isRead ? "" : "font-medium"}`}>{n.title}</div>
+              <div className="truncate text-xs text-muted-foreground">{n.description}</div>
+            </div>
+            <span className="shrink-0 text-xs text-muted-foreground">{ago(n.createdAt, t)}</span>
+          </Row>
+        )} />
     </Panel>
   );
 }
@@ -199,8 +238,11 @@ export function UpcomingPanel({ upcoming }: { upcoming: PortalDashboard["upcomin
   return (
     <Panel title={<div><div>{t("admin.dashboard.upcoming.title")}</div><div className="text-xs font-normal text-muted-foreground">{t("admin.dashboard.upcoming.subtitle", { days: DASHBOARD_WINDOW_DAYS })}</div></div>}
       icon={<CalendarClock className="h-4 w-4 text-purple-600" />} testId="panel-upcoming">
-      {upcoming.length === 0 ? <Empty>{t("admin.dashboard.upcoming.empty", { days: DASHBOARD_WINDOW_DAYS })}</Empty> : upcoming.map((u) => (
-        <Row key={`${u.reservationId}-${u.kind}`} onClick={() => openReservationDialog(u.reservationId)} testId={`upcoming-${u.kind}-${u.reservationId}`}>
+      <PreviewList items={upcoming} keyOf={(u) => `${u.reservationId}-${u.kind}`} testId="upcoming"
+        title={t("admin.dashboard.upcoming.title")} empty={t("admin.dashboard.upcoming.empty", { days: DASHBOARD_WINDOW_DAYS })}
+        searchOf={(u) => [u.reservationId, u.customerName, u.driverName, u.vehicle?.licensePlate, u.vehicle?.brand, u.vehicle?.model, u.date, t(`admin.dashboard.upcoming.${u.kind}`)]}
+        render={(u) => (
+        <Row onClick={() => openReservationDialog(u.reservationId)} testId={`upcoming-${u.kind}-${u.reservationId}`}>
           <div className="flex min-w-0 items-center gap-3">
             <div className="w-16 shrink-0 text-xs text-muted-foreground">{dayLabel(u.date, t)}</div>
             <div className="min-w-0">
@@ -217,7 +259,7 @@ export function UpcomingPanel({ upcoming }: { upcoming: PortalDashboard["upcomin
           </div>
           {reservationStatusBadge(u.status, t(`reservations.status.${u.status}`, { defaultValue: u.status }))}
         </Row>
-      ))}
+        )} />
     </Panel>
   );
 }
@@ -229,27 +271,21 @@ interface OverviewRow {
   accountsTotal: number; accountsActive: number; accountsBlocked: number; onlineNow: number;
   pendingInvites: number; expiredInvites: number; lastLoginAt: string | null; lastActivityAt: string | null;
 }
-const CUSTOMERS_LIMIT = 8;
+const CUSTOMERS_LIMIT = PREVIEW_ROWS;
 
 export function CustomersPanel() {
   const { t } = useTranslation("portal");
   const { openCustomerDialog, openPortalListDialog } = useGlobalDialog();
-  const [search, setSearch] = useState("");
   const { data = [] } = useQuery<OverviewRow[]>({
     queryKey: ["/api/portal-admin/customers-overview"],
     queryFn: async () => (await apiRequest("GET", "/api/portal-admin/customers-overview")).json(),
     refetchInterval: 60_000,
   });
-  const q = search.trim().toLowerCase();
-  const rows = data.filter((r) => !q || r.customerName.toLowerCase().includes(q));
+  const rows = data;
   const shown = rows.slice(0, CUSTOMERS_LIMIT);
 
   return (
-    <Panel title={t("admin.dashboard.customers.title")} icon={<Users className="h-4 w-4 text-teal-600" />} testId="panel-customers"
-      action={<div className="flex items-center gap-1">
-        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("admin.customers.search")} className="h-8 w-36" data-testid="input-dashboard-customer-search" />
-        <Button size="sm" variant="ghost" onClick={() => openPortalListDialog("customers")}>{t("admin.dashboard.customers.all")}</Button>
-      </div>}>
+    <Panel title={t("admin.dashboard.customers.title")} icon={<Users className="h-4 w-4 text-teal-600" />} testId="panel-customers">
       {shown.length === 0 ? <Empty>{t("admin.customers.empty")}</Empty> : (<>
         {shown.map((r) => {
           const last = r.lastActivityAt ?? r.lastLoginAt;
@@ -269,11 +305,7 @@ export function CustomersPanel() {
             </Row>
           );
         })}
-        {rows.length > shown.length && (
-          <button type="button" className="w-full px-4 py-2 text-xs text-muted-foreground hover:underline" onClick={() => openPortalListDialog("customers")}>
-            {t("admin.dashboard.customers.more", { n: rows.length - shown.length })}
-          </button>
-        )}
+        <div className="px-4 pb-3"><PreviewFooter shown={shown.length} total={rows.length} onShowAll={() => openPortalListDialog("customers")} /></div>
       </>)}
     </Panel>
   );

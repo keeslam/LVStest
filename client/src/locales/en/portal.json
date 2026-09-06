@@ -697,7 +697,8 @@
     "preview": {
       "shown": "{{shown}} of {{total}} shown",
       "showAll": "View all and search",
-      "search": "Search…"
+      "search": "Search…",
+      "noMatch": "Nothing found."
     }
   },
   "fines": {

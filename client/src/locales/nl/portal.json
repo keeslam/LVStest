@@ -697,7 +697,8 @@
     "preview": {
       "shown": "{{shown}} van {{total}} getoond",
       "showAll": "Alles bekijken en zoeken",
-      "search": "Zoeken…"
+      "search": "Zoeken…",
+      "noMatch": "Niets gevonden."
     }
   },
   "fines": {
