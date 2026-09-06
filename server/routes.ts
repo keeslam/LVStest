@@ -90,6 +90,7 @@ import { registerReportRoutes } from "./routes/reports";
 import { registerDamageCheckTemplateRoutes } from "./routes/damage-check-templates";
 import { registerVehicleDiagramTemplateRoutes } from "./routes/vehicle-diagram-templates";
 import { registerReportAndLabelTemplateRoutes } from "./routes/report-and-label-templates";
+import { onMaintenanceBlockChanged, onReplacementAssigned } from "./services/portal-maintenance-events";
 import type { RouteDeps } from "./routes/deps";
 
 export async function registerRoutes(app: Express): Promise<void> {
@@ -2525,7 +2526,8 @@ export async function registerRoutes(app: Express): Promise<void> {
       // For maintenance blocks, always create the reservation first, then handle conflicts
       if (reservationData.type === 'maintenance_block') {
         const reservation = await storage.createReservation(dataWithTracking);
-        
+        void onMaintenanceBlockChanged(null, reservation);
+
         const customerReservations = await storage.checkReservationConflicts(
           reservationData.vehicleId!,
           reservationData.startDate,
@@ -2963,8 +2965,8 @@ export async function registerRoutes(app: Express): Promise<void> {
           const endDateStr = isOpenEnded || !overlapEnd ? null : overlapEnd.toISOString().split('T')[0];
           const originalEndNote = originalReservation.endDate || 'open-ended';
           
-          // Create replacement reservation for overlap period ONLY  
-          return await storage.createReservation({
+          // Create replacement reservation for overlap period ONLY
+          const created = await storage.createReservation({
             vehicleId: spareVehicleId,
             customerId: originalReservation.customerId,
             startDate: startDateStr,
@@ -2978,17 +2980,21 @@ export async function registerRoutes(app: Express): Promise<void> {
             updatedBy: user ? user.username : null,
             notes: `Spare vehicle ${spareVehicleDesc} for reservation #${originalReservation.id} during maintenance of ${originalVehicleDesc}. Original rental: ${originalReservation.startDate} to ${originalEndNote}.`
           });
+          void onReplacementAssigned(created);
+          return created;
         });
-        
+
         const newReplacements = await Promise.all(replacementPromises);
-        
+
         // ONLY AFTER successful replacement creation, update maintenance
         const maintenanceWithTracking = {
           ...maintenanceData,
           updatedBy: user ? user.username : null
         };
+        const maintBefore = await storage.getReservation(maintenanceId);
         maintenanceReservation = await storage.updateReservation(maintenanceId, maintenanceWithTracking);
-        
+        void onMaintenanceBlockChanged(maintBefore ?? null, maintenanceReservation ?? null);
+
         updatedReservations = newReplacements;
       } else {
         // Create new maintenance block
@@ -3034,7 +3040,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           const endDateStr = isOpenEnded || !overlapEnd ? null : overlapEnd.toISOString().split('T')[0];
           const originalEndNote = originalReservation.endDate || 'open-ended';
           
-          return await storage.createReservation({
+          const created = await storage.createReservation({
             vehicleId: spareVehicleId,
             customerId: originalReservation.customerId,
             startDate: startDateStr,
@@ -3048,8 +3054,10 @@ export async function registerRoutes(app: Express): Promise<void> {
             updatedBy: user ? user.username : null,
             notes: `Spare vehicle ${spareVehicleDesc} for reservation #${originalReservation.id} during maintenance of ${originalVehicleDesc}. Original rental: ${originalReservation.startDate} to ${originalEndNote}.`
           });
+          void onReplacementAssigned(created);
+          return created;
         });
-        
+
         updatedReservations = await Promise.all(updatePromises);
       }
       
@@ -3133,10 +3141,12 @@ export async function registerRoutes(app: Express): Promise<void> {
           ...reservationData,
           updatedBy: userForMaint ? userForMaint.username : null,
         };
+        const maintBefore = await storage.getReservation(id);
         const updatedMaintenance = await storage.updateReservation(id, maintDataWithTracking);
         if (!updatedMaintenance) {
           return res.status(404).json({ message: "Reservation not found" });
         }
+        void onMaintenanceBlockChanged(maintBefore ?? null, updatedMaintenance);
 
         if (customerConflicts.length > 0) {
           return res.status(200).json({
@@ -3669,6 +3679,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (!reservation) {
         return res.status(404).json({ message: "Reservation not found" });
       }
+      void onMaintenanceBlockChanged(existingReservationForDiff, reservation);
 
       // Keep the driver assignment history in sync with staff edits so the
       // customer portal (and later the fines attribution) sees every change.
@@ -3810,7 +3821,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       // Create maintenance block if dates provided
       if (serviceStartDate) {
-        await storage.createMaintenanceBlock(
+        const block = await storage.createMaintenanceBlock(
           reservation.vehicleId!,
           serviceStartDate,
           serviceEndDate,
@@ -3818,6 +3829,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           // calendar and edit dialog show who had the vehicle.
           reservation.customerId
         );
+        void onMaintenanceBlockChanged(null, block);
       }
       
       res.json({
@@ -3860,7 +3872,8 @@ export async function registerRoutes(app: Express): Promise<void> {
         startDate,
         endDate
       );
-      
+      void onReplacementAssigned(replacementReservation);
+
       res.json({
         message: "Spare vehicle assigned successfully",
         replacementReservation
@@ -4569,11 +4582,12 @@ export async function registerRoutes(app: Express): Promise<void> {
       );
       
       if (!updatedReservation) {
-        return res.status(404).json({ 
-          message: "Placeholder reservation not found or invalid" 
+        return res.status(404).json({
+          message: "Placeholder reservation not found or invalid"
         });
       }
-      
+      void onReplacementAssigned(updatedReservation);
+
       res.json(updatedReservation);
       
     } catch (error) {
@@ -4683,6 +4697,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       // Delete the main reservation
       const updatedReservation = await storage.updateReservation(id, softDeleteData);
+      if (reservation.type === 'maintenance_block') void onMaintenanceBlockChanged(reservation, null);
       if (updatedReservation) {
         // If this was a placeholder spare reservation, delete its notification
         if (reservation.placeholderSpare && reservation.type === 'replacement') {
