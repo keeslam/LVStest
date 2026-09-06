@@ -43,6 +43,7 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
   const { t } = useTranslation("reservations");
   const [currentSearch, setCurrentSearch] = useState("");
   const [historySearch, setHistorySearch] = useState("");
+  const [overdueSearch, setOverdueSearch] = useState("");
   const [currentSort, setCurrentSort] = useState<{ column: string; direction: 'asc' | 'desc' }>({ column: 'pickup', direction: 'asc' });
   const [historySort, setHistorySort] = useState<{ column: string; direction: 'asc' | 'desc' }>({ column: 'return', direction: 'desc' });
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -166,6 +167,19 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
       }
     });
   }, [currentReservations, currentSearch, currentSort]);
+
+  const filteredOverdueReservations = useMemo(() => {
+    const search = overdueSearch.trim().toLowerCase();
+    if (!search) return overdueReservations;
+    return overdueReservations.filter((res) =>
+      plateMatches(res.vehicle?.licensePlate, search) ||
+      res.vehicle?.brand?.toLowerCase().includes(search) ||
+      res.vehicle?.model?.toLowerCase().includes(search) ||
+      res.customer?.companyName?.toLowerCase().includes(search) ||
+      res.customer?.name?.toLowerCase().includes(search) ||
+      res.contractNumber?.toLowerCase().includes(search) ||
+      res.id.toString().includes(search));
+  }, [overdueReservations, overdueSearch]);
 
   // Filter and sort history reservations
   const filteredHistoryReservations = useMemo(() => {
@@ -449,7 +463,17 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
             {/* Overdue Tab */}
             <TabsContent value="overdue" className="mt-2">
               <div className="space-y-2">
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-3">
+                  <Input
+                    placeholder={t('listDialog.searchPlaceholder')}
+                    value={overdueSearch}
+                    onChange={(e) => setOverdueSearch(e.target.value)}
+                    className="flex-1 h-8 text-sm"
+                    data-testid="input-overdue-search"
+                  />
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{filteredOverdueReservations.length} / {overdueReservations.length}</span>
+                </div>
+                <div className="flex items-center gap-3">
                   <span className="text-sm text-red-600 font-medium flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4" />
                     {t('listDialog.overdueHint')}
@@ -459,18 +483,21 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
                 <div className="border rounded-md overflow-hidden">
                   <ScrollArea className="h-[calc(70vh-180px)]">
                     <div className="divide-y">
-                      {overdueReservations.length === 0 ? (
+                      {filteredOverdueReservations.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">{t('listDialog.noOverdueReservations')}</div>
                       ) : (
-                        overdueReservations.map((reservation) => {
+                        filteredOverdueReservations.map((reservation) => {
                           const daysOverdue = reservation.endDate 
                             ? differenceInDays(new Date(), parseISO(reservation.endDate))
                             : 0;
                           
                           return (
-                            <div 
+                            <div
                               key={reservation.id}
-                              className="p-3 bg-red-50 hover:bg-red-100 transition-colors"
+                              className="p-3 bg-red-50 hover:bg-red-100 transition-colors cursor-pointer"
+                              role="button" tabIndex={0}
+                              onClick={(e) => handleView(e, reservation)}
+                              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleView(e as unknown as React.MouseEvent, reservation); }}
                               data-testid={`overdue-item-${reservation.id}`}
                             >
                               <div className="flex items-start justify-between">
