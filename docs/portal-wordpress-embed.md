@@ -222,9 +222,9 @@ dezelfde aanvraagdialoog als elke andere portaalaanvraag:
 - Een onderhoudsmelding kan niet als "afgehandeld" worden afgesloten via
   "Beantwoorden" zolang er geen blok aan hangt (wel "afgewezen"); inplannen
   via het paneel hierboven sluit de aanvraag automatisch af.
-- De onderhoudskalender en de bewerkdialogen van een blok tonen bij een blok
-  dat uit het portaal komt "Uit klantenportaal, aanvraag #12" met een link
-  die de bijbehorende aanvraag opent.
+- De onderhoud-bekijkdialoog van een blok toont bij een blok dat uit het
+  portaal komt "Uit klantenportaal, aanvraag #12" met een link die de
+  bijbehorende aanvraag opent.
 
 Bij elke stap krijgt de klant een belletje in het portaal (onderwerp met het
 kenteken: gepland, verplaatst, in onderhoud, klaar, Onderhoud vervalt, of

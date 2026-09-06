@@ -43,7 +43,7 @@ export function PeriodPicker({ start, end, onChange, allowOpenEnd = true, minDat
       : range.to && toIso(range.to) !== toIso(range.from)
         ? `${day(range.from, range.from.getFullYear() !== range.to.getFullYear())} – ${day(range.to)}`
         : range.to ? day(range.from) : `${day(range.from)} · ${t("period.openEnd")}`
-    : t("period.pick");
+    : t(single ? "period.pickDay" : "period.pick");
   const months = typeof window !== "undefined" && window.innerWidth >= 768 ? 2 : 1;
 
   return (

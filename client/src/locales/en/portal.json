@@ -122,9 +122,7 @@
     "pickupInfo": "Pickup",
     "pickupAt": "pickup at {{time}}",
     "apkDue": "This car's MOT expires on {{date}} (in {{days}} days). Lam Groep schedules the inspection.",
-    "apkExpired": "This car's MOT expired on {{date}}. Please contact Lam Groep.",
-    "serviceDue": "This car is due for a service. Lam Groep will contact you to schedule it.",
-    "serviceSoon": "This car is almost due for a service. Lam Groep will let you know when."
+    "apkExpired": "This car's MOT expired on {{date}}. Please contact Lam Groep."
   },
   "documents": {
     "title": "Contracts and documents",
@@ -981,6 +979,7 @@
   },
   "period": {
     "pick": "Choose a period",
+    "pickDay": "Pick a date",
     "openEnd": "Open end",
     "hintStart": "Click the first day, then the last day.",
     "hintEnd": "Click the last day, or leave the end open.",

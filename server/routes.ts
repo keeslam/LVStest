@@ -3004,7 +3004,8 @@ export async function registerRoutes(app: Express): Promise<void> {
           updatedBy: user ? user.username : null
         };
         maintenanceReservation = await storage.createReservation(maintenanceWithTracking);
-        
+        void onMaintenanceBlockChanged(null, maintenanceReservation);
+
         // Clean up existing placeholder reservations for the same original reservations
         if (spareVehicleAssignments.length > 0) {
           const conflictingReservationIds = spareVehicleAssignments.map((a: any) => a.reservationId);
@@ -4697,8 +4698,8 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       // Delete the main reservation
       const updatedReservation = await storage.updateReservation(id, softDeleteData);
-      if (reservation.type === 'maintenance_block') void onMaintenanceBlockChanged(reservation, null);
       if (updatedReservation) {
+        if (reservation.type === 'maintenance_block') void onMaintenanceBlockChanged(reservation, null);
         // If this was a placeholder spare reservation, delete its notification
         if (reservation.placeholderSpare && reservation.type === 'replacement') {
           await storage.deleteNotificationsByTypeAndPattern("spare_assignment", `[placeholder:${id}]`);

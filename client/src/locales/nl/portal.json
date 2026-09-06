@@ -122,9 +122,7 @@
     "pickupInfo": "Ophalen",
     "pickupAt": "ophalen om {{time}}",
     "apkDue": "De APK van deze auto verloopt op {{date}} (over {{days}} dagen). Lam Groep plant de keuring in.",
-    "apkExpired": "De APK van deze auto is verlopen op {{date}}. Neem contact op met Lam Groep.",
-    "serviceDue": "Deze auto is toe aan een onderhoudsbeurt. Lam Groep neemt contact op om dit in te plannen.",
-    "serviceSoon": "Deze auto is bijna toe aan onderhoud. U hoort van Lam Groep wanneer."
+    "apkExpired": "De APK van deze auto is verlopen op {{date}}. Neem contact op met Lam Groep."
   },
   "documents": {
     "title": "Contracten en documenten",
@@ -981,6 +979,7 @@
   },
   "period": {
     "pick": "Kies een periode",
+    "pickDay": "Kies een datum",
     "openEnd": "Open einde",
     "hintStart": "Klik op de eerste dag, daarna op de laatste dag.",
     "hintEnd": "Klik op de laatste dag, of laat het einde open.",
