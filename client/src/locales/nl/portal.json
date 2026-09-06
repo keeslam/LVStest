@@ -178,7 +178,13 @@
     "assignTypeHint": "Typ een kenteken of merk; de auto verschijnt dan hieronder. Laat leeg om later te koppelen.",
     "licenseOnFile": "Er staat al een rijbewijs in het dossier. Kies een bestand om het te vervangen.",
     "openFines_one": "{{count}} open bekeuring",
-    "openFines_other": "{{count}} open bekeuringen"
+    "openFines_other": "{{count}} open bekeuringen",
+    "history": "Historie ({{count}})",
+    "historyTitle": "Historie van {{name}}",
+    "upcomingSection": "Aankomend",
+    "pastSection": "Afgerond",
+    "noHistory": "Nog geen eerdere of komende reserveringen.",
+    "viewFines": "Bekeuringen van deze bestuurder bekijken"
   },
   "account": {
     "title": "Mijn account",

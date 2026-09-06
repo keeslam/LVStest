@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Users, UserPlus, Mail, Phone, IdCard, FileText, Car, Receipt } from "lucide-react";
+import { Users, UserPlus, Mail, Phone, IdCard, FileText, Car, Receipt, History } from "lucide-react";
 import type { PortalDriverDto, PortalReservationDto } from "@shared/portal-types";
 import type { PortalFineDto } from "@shared/fines";
 import { portalFetch, portalQueryFn } from "@/lib/portal-api";
@@ -10,6 +10,7 @@ import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Button } from "@/components/ui/button";
 import { DriverFormDialog } from "@/components/portal/driver-form-dialog";
 import { AssignVehicleDialog } from "@/components/portal/change-driver-dialog";
+import { DriverHistoryDialog, driverHistory } from "@/components/portal/driver-history-dialog";
 import { Avatar, EmptyState, PageHeader, Plate, SearchBox, btnPrimary, btnSecondary, usePortalSearch } from "@/components/portal/ui";
 
 /** Cars a driver is on right now (booked or running). */
@@ -23,6 +24,10 @@ export default function PortalDriversPage() {
   const { openReservation, openList } = usePortalDialogs();
   const canAssign = Boolean(me?.settings.canManageDrivers) && me?.role === "admin";
   const [assigning, setAssigning] = useState<PortalDriverDto | null>(null);
+  const [historyOf, setHistoryOf] = useState<PortalDriverDto | null>(null);
+  /** Only the car the driver is in right now goes on the card; booked and finished ones live under "Historie". */
+  const drivingNow = (driverId: number) => carsOf(reservations, driverId).filter((r) => r.status === "picked_up");
+  const historyCount = (driverId: number) => { const h = driverHistory(reservations, driverId); return h.upcoming.length + h.past.length; };
   const { data = [], isLoading } = useQuery<PortalDriverDto[]>({ queryKey: ["portal", "/api/portal/drivers"], queryFn: portalQueryFn });
   const { data: reservations = [] } = useQuery<PortalReservationDto[]>({ queryKey: ["portal", "/api/portal/reservations"], queryFn: portalQueryFn });
   const { data: fines = [] } = useQuery<PortalFineDto[]>({ queryKey: ["portal", "/api/portal/fines"], queryFn: portalQueryFn, enabled: Boolean(me?.settings.canViewFines) });
@@ -60,18 +65,19 @@ export default function PortalDriversPage() {
                       {d.phone && <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 shrink-0" />{d.phone}</div>}
                       {d.driverLicenseNumber && <div className="flex items-center gap-1.5"><IdCard className="h-3.5 w-3.5 shrink-0" />{d.driverLicenseNumber}{d.licenseExpiry ? ` · ${t("fields.licenseExpiry")} ${d.licenseExpiry}` : ""}</div>}
                     </dl>
-                    {/* Which cars this driver is on; click a plate to open that reservation. */}
+                    {/* The car this driver is in right now; click the plate to open that reservation. */}
                     <div className="mt-2 flex flex-wrap items-center gap-1.5" data-testid={`driver-cars-${d.id}`}>
-                      {carsOf(reservations, d.id).length === 0
+                      {drivingNow(d.id).length === 0
                         ? <span className="inline-flex items-center gap-1 text-xs text-[#94a3b8]"><Car className="h-3.5 w-3.5" />{t("drivers.noCar")}</span>
-                        : carsOf(reservations, d.id).map((r) => (
+                        : drivingNow(d.id).map((r) => (
                           <button key={r.id} type="button" onClick={() => openReservation(r.id)} className="inline-flex items-center gap-1.5 rounded-full bg-[#eef0fb] py-0.5 pl-1 pr-2.5 text-xs text-[#1a1d62] hover:bg-[#dfe3f7]" title={`${r.vehicle?.brand ?? ""} ${r.vehicle?.model ?? ""}`.trim()}>
                             {r.vehicle?.licensePlate ? <Plate value={r.vehicle.licensePlate} /> : `#${r.id}`}
                             <span className="truncate max-w-[9rem]">{r.vehicle ? `${r.vehicle.brand} ${r.vehicle.model}` : ""}</span>
                           </button>
                         ))}
+                      {/* View only: opens the fines list filtered on this driver. */}
                       {openFinesOf(d.id).length > 0 && (
-                        <button type="button" onClick={() => openList("fines", { query: d.displayName })} className="inline-flex items-center gap-1 rounded-full bg-[#fde8e8] px-2.5 py-0.5 text-xs font-medium text-[#a32d2d] hover:bg-[#f9d5d5]" data-testid={`driver-fines-${d.id}`}>
+                        <button type="button" onClick={() => openList("fines", { query: d.displayName })} title={t("drivers.viewFines")} className="inline-flex items-center gap-1 rounded-full bg-[#fde8e8] px-2.5 py-0.5 text-xs font-medium text-[#a32d2d] hover:bg-[#f9d5d5]" data-testid={`driver-fines-${d.id}`}>
                           <Receipt className="h-3.5 w-3.5" />{t("drivers.openFines", { count: openFinesOf(d.id).length })}
                         </button>
                       )}
@@ -80,6 +86,7 @@ export default function PortalDriversPage() {
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {canAssign && d.status === "active" && carsOf(reservations, d.id).length === 0 && <Button size="sm" variant="outline" className={btnSecondary} onClick={() => setAssigning(d)} data-testid={`button-assign-car-${d.id}`}><Car className="mr-1 h-4 w-4" />{t("drivers.assignToCar")}</Button>}
+                  {historyCount(d.id) > 0 && <Button size="sm" variant="outline" className={btnSecondary} onClick={() => setHistoryOf(d)} data-testid={`button-driver-history-${d.id}`}><History className="mr-1 h-4 w-4" />{t("drivers.history", { count: historyCount(d.id) })}</Button>}
                   {d.hasLicenseFile && <Button asChild size="sm" variant="ghost"><a href={`/api/portal/drivers/${d.id}/license`} target="_blank" rel="noopener"><FileText className="mr-1 h-4 w-4" />{t("actions.viewLicense")}</a></Button>}
                   <DriverFormDialog driver={d}><Button size="sm" variant="outline" className={btnSecondary}>{t("actions.edit")}</Button></DriverFormDialog>
                   <Button size="sm" variant="outline" className={btnSecondary} onClick={() => toggle.mutate(d)}>{d.status === "active" ? t("actions.deactivate") : t("actions.activate")}</Button>
@@ -89,6 +96,7 @@ export default function PortalDriversPage() {
           </div>
         )}
       {assigning && <AssignVehicleDialog driver={assigning} open onOpenChange={(o) => { if (!o) setAssigning(null); }} />}
+      {historyOf && <DriverHistoryDialog driver={historyOf} reservations={reservations} open onOpenChange={(o) => { if (!o) setHistoryOf(null); }} />}
     </div>
   );
 }

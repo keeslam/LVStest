@@ -178,7 +178,13 @@
     "assignTypeHint": "Type a plate or brand; the car then shows up below. Leave empty to assign later.",
     "licenseOnFile": "A licence is already on file. Choose a file to replace it.",
     "openFines_one": "{{count}} open fine",
-    "openFines_other": "{{count}} open fines"
+    "openFines_other": "{{count}} open fines",
+    "history": "History ({{count}})",
+    "historyTitle": "History of {{name}}",
+    "upcomingSection": "Upcoming",
+    "pastSection": "Finished",
+    "noHistory": "No past or upcoming reservations yet.",
+    "viewFines": "View this driver's fines"
   },
   "account": {
     "title": "My account",
