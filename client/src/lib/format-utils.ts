@@ -49,7 +49,7 @@ export function sumMoney<T>(items: T[], getAmount: (item: T) => number | string 
  */
 export function formatLicensePlate(licensePlate: string): string {
   // Remove any existing dashes or spaces
-  const sanitized = licensePlate.replace(/[-\s]/g, '');
+  const sanitized = licensePlate.replace(/[-\s]/g, '').toUpperCase();
   
   // Standard Dutch license plate formats
   const formats = [
@@ -65,7 +65,8 @@ export function formatLicensePlate(licensePlate: string): string {
     { pattern: /^([A-Z]{3})(\d{2})([A-Z])$/, format: '$1-$2-$3' }, // XXX-00-X
     { pattern: /^(\d{1})([A-Z]{3})(\d{2})$/, format: '$1-$2-$3' }, // 0-XXX-00
     { pattern: /^(\d{2})([A-Z]{3})(\d{1})$/, format: '$1-$2-$3' }, // 00-XXX-0
-    // Add more formats as needed
+    { pattern: /^(\d{1})([A-Z]{2})(\d{3})$/, format: '$1-$2-$3' }, // 0-XX-000 (sidecode 13)
+    { pattern: /^(\d{3})([A-Z]{2})(\d{1})$/, format: '$1-$2-$3' }, // 000-XX-0 (sidecode 14)
   ];
   
   // Try to match and format the license plate
@@ -75,8 +76,11 @@ export function formatLicensePlate(licensePlate: string): string {
     }
   }
   
-  // If no standard format matches, return as-is but uppercase
-  return sanitized.toUpperCase();
+  // Anything else made of three alternating letter/digit groups (e.g. 14XT284)
+  // still reads better with dashes; other plates stay as they are.
+  const groups = sanitized.match(/[A-Z]+|\d+/g);
+  if (groups && groups.length === 3 && groups.join('') === sanitized) return groups.join('-');
+  return sanitized;
 }
 
 /**
