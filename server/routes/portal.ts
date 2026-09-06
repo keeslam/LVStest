@@ -291,6 +291,8 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const ctx = ctxOf(req);
     const parsed = driverInputSchema.safeParse(req.body);
     if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, parsed.error.errors[0]?.message ?? "Invalid input");
+    // Quick add on the customer side: a name plus one way to reach the driver.
+    if (!parsed.data.email && !parsed.data.phone?.trim()) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Vul een e-mailadres of telefoonnummer in");
     const driver = await storage.createDriver({ ...parsed.data, customerId: ctx.customerId, status: "active", createdBy: ctx.user.email, updatedBy: ctx.user.email });
     await logPortalActivity(req, "driver_created", { entity: "driver", entityId: driver.id });
     res.status(201).json(toDriverDto(driver));

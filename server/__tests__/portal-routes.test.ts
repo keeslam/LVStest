@@ -84,8 +84,12 @@ describe("portal routes", () => {
     expect(created.status).toBe(201);
     expect(created.body).toMatchObject({ licenseOrigin: "België", preferredLanguage: "en", notes: "Rijdt alleen op weekdagen" });
     expect((await agent.post("/api/portal/drivers").set("X-CSRF-Token", csrf).send({ displayName: "Fout", preferredLanguage: "de" })).status).toBe(400);
+    const noContact = await agent.post("/api/portal/drivers").set("X-CSRF-Token", csrf).send({ displayName: "Zonder contact" });
+    expect(noContact.status).toBe(400);
+    expect(noContact.body.error).toMatch(/e-mailadres of telefoonnummer/);
+    expect((await agent.post("/api/portal/drivers").set("X-CSRF-Token", csrf).send({ displayName: "Alleen telefoon", phone: "0612345678" })).status).toBe(201);
     const list = await agent.get("/api/portal/drivers");
-    expect(list.body.map((d: any) => d.displayName)).toEqual(["Driver A", "Nieuwe"]);
+    expect(list.body.map((d: any) => d.displayName)).toEqual(["Alleen telefoon", "Driver A", "Nieuwe"]);
 
     const change = await agent.post(`/api/portal/reservations/${resA}/driver`).set("X-CSRF-Token", csrf).send({ driverId: created.body.id, note: "vakantie" });
     expect(change.status).toBe(200);
