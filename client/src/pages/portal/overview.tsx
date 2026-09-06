@@ -1,3 +1,4 @@
+import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Car, CalendarClock, Inbox, Receipt, Plus, UserPlus, FileText, CalendarDays } from "lucide-react";
@@ -38,6 +39,7 @@ export default function PortalOverviewPage() {
 
       <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
         {me?.settings.canSubmitRequests && <Button className={btnPrimary} onClick={() => openNewRequest()} data-testid="quick-new-request"><Plus className="mr-1.5 h-4 w-4" />{t("requests.new")}</Button>}
+        {me?.settings.canBook && me.settings.canSubmitRequests && <Button asChild className={btnSecondary} variant="outline" data-testid="quick-vehicles"><Link href="/aanvragen"><Car className="mr-1.5 h-4 w-4" />{t("vehicles.quick")}</Link></Button>}
         {canManageDrivers && <DriverFormDialog><Button variant="outline" className={btnSecondary}><UserPlus className="mr-1.5 h-4 w-4" />{t("actions.addDriver")}</Button></DriverFormDialog>}
         {me?.settings.canViewContracts && <Button variant="outline" className={btnSecondary} onClick={() => openList("documents")}><FileText className="mr-1.5 h-4 w-4" />{t("tabs.documents")}</Button>}
       </div>

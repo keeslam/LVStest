@@ -104,6 +104,29 @@ describe("portal admin routes", () => {
     expect(after.count).toBe(after.newRequests); // only open requests remain in the badge
   });
 
+  it("manages the blacklist and counts blocks per online vehicle", async () => {
+    const add = await request(app).post("/api/portal-admin/blacklist").send({ vehicleId, customerId, reason: "Betalingsachterstand" });
+    expect(add.status).toBe(201);
+    expect((await request(app).post("/api/portal-admin/blacklist").send({ vehicleId, customerId })).status).toBe(409);
+    expect((await request(app).post("/api/portal-admin/blacklist").send({ vehicleId: 999999, customerId })).status).toBe(404);
+
+    const list = await request(viewer).get("/api/portal-admin/blacklist");
+    expect(list.status).toBe(200);
+    const row = list.body.find((r: any) => r.id === add.body.id);
+    expect(row).toMatchObject({ vehicleId, customerId, reason: "Betalingsachterstand" });
+    expect(row.customerName).toBeTruthy();
+
+    const vehiclesOnline = await request(viewer).get("/api/portal-admin/vehicles-online");
+    expect(vehiclesOnline.body.find((v: any) => v.id === vehicleId).blockedCustomers).toBe(1);
+    const dashboard = await request(viewer).get("/api/portal-admin/dashboard");
+    expect(dashboard.body.counts.blacklistEntries).toBeGreaterThanOrEqual(1);
+
+    expect((await request(viewer).delete(`/api/portal-admin/blacklist/${add.body.id}`)).status).toBe(403);
+    expect((await request(app).delete(`/api/portal-admin/blacklist/${add.body.id}`)).status).toBe(200);
+    expect((await request(app).delete(`/api/portal-admin/blacklist/${add.body.id}`)).status).toBe(404);
+    expect((await request(viewer).get("/api/portal-admin/vehicles-online")).body.find((v: any) => v.id === vehicleId).blockedCustomers).toBe(0);
+  });
+
   it("saves and reads config", async () => {
     const put = await request(app).put(`/api/portal-admin/config`).send({ allowedFrameOrigins: ["https://lamgroep.nl", "http://lamgroep.local"], notificationEmail: `staff@${TEST_EMAIL_DOMAIN}`, portalBaseUrl: "https://portaal.lamgroep.nl" });
     expect(put.status).toBe(200);

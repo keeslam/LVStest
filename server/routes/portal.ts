@@ -26,7 +26,7 @@ export function toFineDto(f: FineListRow): PortalFineDto {
   };
 }
 
-const REQUEST_LABEL: Record<string, string> = { extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", fine_question: "vraag over bekeuring", other: "overig" };
+const REQUEST_LABEL: Record<string, string> = { booking: "huuraanvraag", extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", fine_question: "vraag over bekeuring", other: "overig" };
 
 export interface PortalRouteDeps {
   requirePortalUser: RequestHandler;
@@ -225,7 +225,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const files = (req.files as Express.Multer.File[] | undefined) ?? [];
     const discard = () => files.forEach((f) => fs.rmSync(f.path, { force: true }));
     const base = z.object({
-      type: z.enum([PortalRequestType.EXTENSION, PortalRequestType.EARLY_RETURN, PortalRequestType.DAMAGE, PortalRequestType.FINE_QUESTION, PortalRequestType.OTHER]),
+      type: z.enum([PortalRequestType.BOOKING, PortalRequestType.EXTENSION, PortalRequestType.EARLY_RETURN, PortalRequestType.DAMAGE, PortalRequestType.FINE_QUESTION, PortalRequestType.OTHER]),
       message: z.string().trim().min(1).max(4000),
       reservationId: z.coerce.number().int().positive().optional(),
       fineId: z.coerce.number().int().positive().optional(),
@@ -248,6 +248,19 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     }
     const today = new Date().toISOString().slice(0, 10);
     const p = payload.data as Record<string, string>;
+    if (type === "booking") {
+      // The blacklist is enforced here, whatever the client showed.
+      if (!settingsFlags(ctx.settings, ctx.user).canBook) { discard(); return portalError(res, 403, PORTAL_ERROR.FEATURE_DISABLED, "Online booking is disabled for your account"); }
+      const check = await portalStorage.canCustomerBookVehicle(Number(p.vehicleId), ctx.customerId);
+      if (!check.ok) {
+        discard();
+        if (check.reason === "blocked") return portalError(res, 403, PORTAL_ERROR.VEHICLE_BLOCKED, "Dit voertuig is voor uw bedrijf niet beschikbaar");
+        return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Vehicle not offered online");
+      }
+      if (p.startDate < today) { discard(); return portalError(res, 400, PORTAL_ERROR.REQUEST_INVALID_PERIOD, "Start date must be today or later"); }
+      if (p.endDate && p.endDate < p.startDate) { discard(); return portalError(res, 400, PORTAL_ERROR.REQUEST_INVALID_PERIOD, "End date must be after the start date"); }
+      p.vehicleLabel = `${check.vehicle.brand} ${check.vehicle.model} · ${check.vehicle.licensePlate}`;
+    }
     if (type === "extension" && reservation?.endDate && p.newEndDate <= reservation.endDate) {
       discard(); return portalError(res, 400, PORTAL_ERROR.REQUEST_INVALID_PERIOD, "New end date must be after the current end date");
     }
@@ -275,11 +288,23 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const customer = await storage.getCustomer(ctx.customerId);
     await notifyStaffOfPortalEvent({
       kind: "portal_request",
-      title: `Nieuwe aanvraag (${REQUEST_LABEL[type]}): ${customer?.companyName || customer?.name || ctx.customerId}`,
+      title: `Nieuwe aanvraag (${REQUEST_LABEL[type]}${type === "booking" ? ` ${p.vehicleLabel}` : ""}): ${customer?.companyName || customer?.name || ctx.customerId}`,
       description: message.slice(0, 200), link: `/portal-admin?request=${created.id}`, customerId: ctx.customerId,
     });
     const row = await requestsStorage.getRequest(created.id);
     res.status(201).json(toRequestDto(row!, false));
+  });
+
+  // ---- vehicles offered online -------------------------------------------------
+  app.get("/api/portal/vehicles", requirePortalUser, requireFeature("canBook"), async (req, res) => {
+    const ctx = ctxOf(req);
+    const rows = await portalStorage.listOnlineVehiclesForCustomer(ctx.customerId);
+    const showPrices = settingsFlags(ctx.settings, ctx.user).showPrices;
+    res.json(rows.map((v) => ({
+      id: v.id, licensePlate: v.licensePlate, brand: v.brand, model: v.model, vehicleType: v.vehicleType, fuel: v.fuel,
+      availabilityStatus: v.availabilityStatus, description: v.onlineDescription,
+      ...(showPrices ? { dailyPrice: v.dailyPrice, monthlyPrice: v.monthlyPrice } : {}),
+    })));
   });
 
   // ---- drivers ----------------------------------------------------------------

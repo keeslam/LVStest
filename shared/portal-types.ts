@@ -14,6 +14,7 @@ export const PORTAL_ERROR = {
   VALIDATION: 'PORTAL_VALIDATION',
   NOT_FOUND: 'PORTAL_NOT_FOUND',
   DRIVER_BUSY: 'PORTAL_DRIVER_BUSY',
+  VEHICLE_BLOCKED: 'PORTAL_VEHICLE_BLOCKED',
   REQUEST_INVALID_PERIOD: 'PORTAL_REQUEST_INVALID_PERIOD',
   ATTACHMENT_LIMIT: 'PORTAL_ATTACHMENT_LIMIT',
   CSRF: 'PORTAL_CSRF',
@@ -71,6 +72,36 @@ export interface PortalReservationDto {
   replacementForReservationId: number | null;
 }
 
+/** A vehicle Lam Groep offers online, as a customer sees it (blacklisted ones are never sent). */
+export interface PortalVehicleDto {
+  id: number;
+  licensePlate: string;
+  brand: string;
+  model: string;
+  vehicleType: string | null;
+  fuel: string | null;
+  /** 'available' | 'rented' | 'maintenance' | … */
+  availabilityStatus: string;
+  description: string | null;
+  /** Only present when the customer's showPrices switch is on. */
+  dailyPrice?: string | null;
+  monthlyPrice?: string | null;
+}
+
+/** Staff view of one vehicle/customer block. */
+export interface PortalBlacklistEntryDto {
+  id: number;
+  vehicleId: number;
+  licensePlate: string;
+  brand: string;
+  model: string;
+  offeredOnline: boolean;
+  customerId: number;
+  customerName: string;
+  reason: string | null;
+  createdAt: string;
+}
+
 export interface PortalDocumentDto {
   id: number;
   reservationId: number | null;
@@ -123,6 +154,8 @@ export interface PortalDashboard {
     pendingInvites: number;
     expiredInvites: number;
     vehiclesOnline: number;
+    /** Vehicle/customer combinations that are blocked. */
+    blacklistEntries: number;
     unreadNotifications: number;
   };
   attention: {

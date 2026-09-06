@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useSearch } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { UserPlus, Users, Inbox, Receipt, Car, History, Loader2, ScanSearch } from "lucide-react";
+import { UserPlus, Users, Inbox, Receipt, Car, History, Loader2, ScanSearch, Ban } from "lucide-react";
 import type { PortalDashboard } from "@shared/portal-types";
 import { apiRequest } from "@/lib/queryClient";
 import { useGlobalDialog, type PortalListKind } from "@/contexts/GlobalDialogContext";
@@ -12,7 +12,7 @@ import { useCanManagePortal } from "@/components/portal-admin/accounts-table";
 import { useCanViewFines, useCanManageFines } from "@/components/fines/fines-table";
 import { DASHBOARD_KEY, DashboardTiles, AttentionPanel, NotificationsPanel, UpcomingPanel, CustomersPanel } from "@/components/portal-admin/dashboard-panels";
 
-const LIST_KINDS: PortalListKind[] = ["customers", "accounts", "requests", "fines", "vehicles", "activity"];
+const LIST_KINDS: PortalListKind[] = ["customers", "accounts", "requests", "fines", "vehicles", "activity", "blacklist"];
 
 /**
  * Klantenportaal: one dashboard page. Every list and detail is a dialog from
@@ -65,6 +65,7 @@ export default function PortalAdminPage() {
             <Button size="sm" variant="outline" onClick={openFineImportDialog} data-testid="button-import-fines"><ScanSearch className="mr-1.5 h-4 w-4" />{t("admin.fines.import.button")}</Button>
           )}
           {listButton("vehicles", <Car className="mr-1.5 h-4 w-4" />)}
+          {listButton("blacklist", <Ban className="mr-1.5 h-4 w-4" />)}
           {listButton("activity", <History className="mr-1.5 h-4 w-4" />)}
         </div>
       </div>

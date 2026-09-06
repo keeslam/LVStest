@@ -6,6 +6,7 @@ import { CustomersOverviewTable } from "./customers-overview-table";
 import { OnlineVehiclesTable } from "./online-vehicles-table";
 import { ActivityTable } from "./activity-table";
 import { RequestsTable } from "./requests-table";
+import { BlacklistTable } from "./blacklist-table";
 import { FinesTable } from "@/components/fines/fines-table";
 
 /**
@@ -30,6 +31,7 @@ export function PortalListDialog() {
           {kind === "fines" && <FinesTable key={`${plate ?? ""}-${importFileId ?? ""}`} initialPlate={plate} importFileId={importFileId} />}
           {kind === "vehicles" && <OnlineVehiclesTable />}
           {kind === "activity" && <ActivityTable limit={200} />}
+          {kind === "blacklist" && <BlacklistTable key={plate ?? ""} initialPlate={plate} />}
         </div>
       </DialogContent>
     </Dialog>

@@ -64,6 +64,13 @@ export function PortalRequestDialog() {
             </div>
             {r.reservationId && <div><Label>{t("admin.requests.dialog.reservation")}</Label> <Button size="sm" variant="link" onClick={() => openReservationDialog(r.reservationId!)}>#{r.reservationId} {r.reservationLabel}</Button></div>}
             {r.fineId && <div><Label>{t("admin.requests.dialog.fine")}</Label> <Button size="sm" variant="link" onClick={() => openFineDialog(r.fineId!)}>#{r.fineId}</Button></div>}
+            {r.type === "booking" && (
+              <div className="grid grid-cols-3 gap-2">
+                <div><Label>{t("admin.requests.dialog.vehicle")}</Label><div>{p.vehicleLabel || "—"}</div></div>
+                <div><Label>{t("admin.requests.dialog.startDate")}</Label><div>{p.startDate}</div></div>
+                <div><Label>{t("admin.requests.dialog.endDate")}</Label><div>{p.endDate || t("admin.requests.dialog.openEnd")}</div></div>
+              </div>
+            )}
             {r.type === "extension" && <div><Label>{t("admin.requests.dialog.newEndDate")}</Label><div>{p.newEndDate}</div></div>}
             {r.type === "early_return" && <div><Label>{t("admin.requests.dialog.returnDate")}</Label><div>{p.returnDate}</div></div>}
             {r.type === "damage" && (

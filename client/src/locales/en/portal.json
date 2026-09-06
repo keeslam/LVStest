@@ -191,7 +191,8 @@
     "PORTAL_SERVER_ERROR": "Something went wrong. Please try again later.",
     "PORTAL_REQUEST_INVALID_PERIOD": "The chosen date is outside the allowed period.",
     "PORTAL_ATTACHMENT_LIMIT": "At most 5 attachments.",
-    "PORTAL_DRIVER_BUSY": "This driver already has another car. One car per driver."
+    "PORTAL_DRIVER_BUSY": "This driver already has another car. One car per driver.",
+    "PORTAL_VEHICLE_BLOCKED": "This vehicle is not available for your company. Please contact Lam Groep."
   },
   "admin": {
     "navLabel": "Customer portal",
@@ -202,7 +203,8 @@
       "vehicles": "Vehicles online",
       "activity": "Activity",
       "fines": "Fines",
-      "requests": "Requests"
+      "requests": "Requests",
+      "blacklist": "Blacklist"
     },
     "dashboard": {
       "inviteAccount": "Invite account",
@@ -213,7 +215,9 @@
         "onlineNow": "Customers online now",
         "invites": "Open invitations",
         "expired": "{{n}} expired",
-        "vehiclesOnline": "{{n}} vehicles online"
+        "vehiclesOnline": "{{n}} vehicles online",
+        "blacklist": "Blacklist",
+        "blacklistSub": "vehicle/customer blocks"
       },
       "attention": {
         "title": "Needs attention",
@@ -370,7 +374,10 @@
         "plate": "Plate",
         "vehicle": "Vehicle",
         "status": "Status"
-      }
+      },
+      "blocked": "Blocked",
+      "blockedFor": "{{n}} customer(s)",
+      "blockNone": "None"
     },
     "config": {
       "title": "Customer portal",
@@ -576,7 +583,8 @@
         "early_return": "Early return",
         "damage": "Damage report",
         "fine_question": "Question about a fine",
-        "other": "Other"
+        "other": "Other",
+        "booking": "Rental request"
       },
       "status": {
         "new": "New",
@@ -603,7 +611,11 @@
         "conflict": "Conflicts with reservation #{{id}} ({{from}} – {{to}})",
         "replied": "Reply sent.",
         "replyRequired": "Enter a reply.",
-        "previousReply": "Previous reply"
+        "previousReply": "Previous reply",
+        "vehicle": "Vehicle",
+        "startDate": "From",
+        "endDate": "Until",
+        "openEnd": "Open end"
       }
     },
     "alert": {
@@ -612,6 +624,29 @@
       "notifications_one": "{{count}} notification",
       "notifications_other": "{{count}} notifications",
       "open": "Customer portal"
+    },
+    "blacklist": {
+      "hint": "A blocked customer does not see this vehicle in the portal and cannot request it. Blocks made in the customer or vehicle dialog show here too.",
+      "search": "Search plate, vehicle, customer or reason…",
+      "count": "{{n}} block(s)",
+      "add": "Add block",
+      "vehicle": "Vehicle",
+      "customer": "Customer",
+      "searchCustomer": "Search customer…",
+      "noVehicle": "No vehicle found",
+      "noCustomer": "No customer found",
+      "change": "Change",
+      "moreShown": "{{shown}} of {{total}} shown, type to narrow down.",
+      "reason": "Reason",
+      "reasonPlaceholder": "E.g. damage not paid, overdue invoices",
+      "cancel": "Cancel",
+      "block": "Block",
+      "since": "Since",
+      "unblock": "Remove block",
+      "added": "Block added.",
+      "removed": "Block removed.",
+      "empty": "No blocks. Every customer may request every online vehicle.",
+      "noMatch": "No block found."
     }
   },
   "fines": {
@@ -657,7 +692,8 @@
       "early_return": "Return early",
       "damage": "Report damage",
       "fine_question": "Question about a fine",
-      "other": "Other"
+      "other": "Other",
+      "booking": "Rent a car"
     },
     "status": {
       "new": "Submitted",
@@ -677,7 +713,13 @@
       "photos": "Photos or PDF (max 5)",
       "send": "Send",
       "extend": "Extend",
-      "earlyReturn": "Return early"
+      "earlyReturn": "Return early",
+      "vehicle": "Vehicle",
+      "startDate": "From",
+      "endDate": "Until (optional)",
+      "openEnd": "Open end",
+      "bookingHint": "This is a request. Lam Groep confirms the reservation and gets in touch.",
+      "endDateDetail": "Until"
     },
     "date": "Submitted on",
     "subtitle": "Extend, return early, report damage or ask a question.",
@@ -716,5 +758,18 @@
     "searchRequests": "Search by type, message or number…",
     "searchDocuments": "Search by file name or reservation…",
     "searchDrivers": "Search by name, e-mail, phone or licence…"
+  },
+  "vehicles": {
+    "title": "Available to rent",
+    "subtitle": "{{free}} of {{total}} free right now. Request a car and Lam Groep confirms the reservation.",
+    "search": "Search by brand, model, plate or type…",
+    "empty": "No vehicles are offered online at the moment.",
+    "available": "Available",
+    "unavailable": "Rented out",
+    "perDay": "per day",
+    "perMonth": "per month",
+    "request": "Request",
+    "requestLater": "Request for later",
+    "quick": "Rent a car"
   }
 }

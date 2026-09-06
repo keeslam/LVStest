@@ -11,6 +11,7 @@ import { buildPortalTestApp, createTestCustomer, createTestVehicle, createTestDr
 import { portalStorage } from "../services/portal-storage";
 import { hashPassword } from "../auth";
 import { getUploadsDir } from "../../shared/paths";
+import { storage } from "../storage";
 
 const password = "wachtwoord-1234";
 
@@ -135,6 +136,50 @@ describe("portal routes", () => {
       .field("type", "early_return").field("message", "eerder").field("reservationId", String(resA)).field("payload", JSON.stringify({ returnDate: "2099-01-01" }));
     expect(early.status).toBe(403);
     await portalStorage.updatePortalUser(users[0].id, { permissions: {} });
+  });
+
+  it("shows online vehicles minus the customer's blacklist and refuses booking a blocked vehicle", async () => {
+    const online = await createTestVehicle();
+    const blockedForA = await createTestVehicle();
+    const offline = await createTestVehicle();
+    await storage.updateVehicle(online.id, { offeredOnline: true, onlineDescription: "Ruime bus" });
+    await storage.updateVehicle(blockedForA.id, { offeredOnline: true });
+    const block = await storage.addToBlacklist({ vehicleId: blockedForA.id, customerId: a, reason: "test", createdBy: null });
+
+    const { agent, csrf } = await loginAs(app, emailA);
+    const list = await agent.get("/api/portal/vehicles");
+    expect(list.status).toBe(200);
+    const ids = list.body.map((v: any) => v.id);
+    expect(ids).toContain(online.id);
+    expect(ids).not.toContain(blockedForA.id);
+    expect(ids).not.toContain(offline.id);
+    expect(list.body.find((v: any) => v.id === online.id).description).toBe("Ruime bus");
+    // Customer B is not blocked, so B sees both online vehicles.
+    const asB = await loginAs(app, emailB);
+    expect(((await asB.agent.get("/api/portal/vehicles")).body as any[]).map((v) => v.id)).toEqual(expect.arrayContaining([online.id, blockedForA.id]));
+
+    const today = new Date().toISOString().slice(0, 10);
+    const send = (vehicleId: number) => agent.post("/api/portal/requests").set("X-CSRF-Token", csrf)
+      .field("type", "booking").field("message", "Graag deze auto").field("payload", JSON.stringify({ vehicleId, startDate: today, endDate: "" }));
+    const blocked = await send(blockedForA.id);
+    expect(blocked.status).toBe(403);
+    expect(blocked.body.code).toBe("PORTAL_VEHICLE_BLOCKED");
+    expect((await send(offline.id)).status).toBe(404);
+    const ok = await send(online.id);
+    expect(ok.status).toBe(201);
+    expect(ok.body.type).toBe("booking");
+    expect(ok.body.payload.vehicleLabel).toContain(online.licensePlate);
+
+    // Lifting the block makes the vehicle visible and bookable again.
+    await storage.removeFromBlacklist(block.id);
+    expect(((await agent.get("/api/portal/vehicles")).body as any[]).map((v) => v.id)).toContain(blockedForA.id);
+    expect((await send(blockedForA.id)).status).toBe(201);
+
+    // Booking is off for this customer: list and request both refused.
+    await portalStorage.updateCustomerSettings(a, { canBook: false }, "t");
+    expect((await agent.get("/api/portal/vehicles")).status).toBe(403);
+    expect((await send(online.id)).status).toBe(403);
+    await portalStorage.updateCustomerSettings(a, { canBook: true }, "t");
   });
 
   it("driver-role users cannot manage drivers", async () => {

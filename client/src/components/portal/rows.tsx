@@ -43,7 +43,7 @@ export function RequestRow({ request: r }: { request: PortalRequestDto }) {
           <span className="font-semibold text-[#0f172a]">{t(`requests.type.${r.type}`)}</span>
           <span className="text-xs text-[#64748b]">#{r.id} · {new Date(r.createdAt).toLocaleDateString()}</span>
         </div>
-        <div className="mt-1 truncate text-xs text-[#64748b] sm:text-sm">{r.message.split("\n")[0].slice(0, 100)}</div>
+        <div className="mt-1 truncate text-xs text-[#64748b] sm:text-sm">{r.type === "booking" && (r.payload as { vehicleLabel?: string }).vehicleLabel ? `${(r.payload as { vehicleLabel?: string }).vehicleLabel} · ` : ""}{r.message.split("\n")[0].slice(0, 100)}</div>
         {r.staffReply && <div className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-[#0f6e56]"><MessageSquare className="h-3.5 w-3.5" />{t("requests.replied")}</div>}
       </div>
       <div className="flex shrink-0 items-center gap-2">

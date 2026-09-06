@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, like, sql } from "drizzle-orm";
 import { db } from "../db";
-import { customNotifications, customers, drivers, fines, portalCustomerSettings, portalRequests, portalUsers, reservations, vehicles } from "../../shared/schema";
+import { customNotifications, customers, drivers, fines, portalCustomerSettings, portalRequests, portalUsers, reservations, vehicles, vehicleCustomerBlacklist } from "../../shared/schema";
 import { portalStorage } from "./portal-storage";
 import { requestsStorage } from "./portal-requests-storage";
 import type { PortalDashboard } from "../../shared/portal-types";
@@ -27,7 +27,7 @@ export async function getPortalDashboard(): Promise<PortalDashboard> {
   const today = isoDay(0);
   const horizon = isoDay(DASHBOARD_WINDOW_DAYS);
 
-  const [overview, requests, unlinked, notes, upcomingRows, [vehiclesOnline], [inProgress]] = await Promise.all([
+  const [overview, requests, unlinked, notes, upcomingRows, [vehiclesOnline], [inProgress], [blacklistEntries]] = await Promise.all([
     portalStorage.listCustomersOverview(),
     requestsStorage.listRequests({}),
     db.select().from(fines).where(eq(fines.status, "new")).orderBy(desc(fines.offenceAt)).limit(ATTENTION_LIMIT),
@@ -51,6 +51,7 @@ export async function getPortalDashboard(): Promise<PortalDashboard> {
       )),
     db.select({ n: sql<number>`count(*)::int` }).from(vehicles).where(eq(vehicles.offeredOnline, true)),
     db.select({ n: sql<number>`count(*)::int` }).from(portalRequests).where(eq(portalRequests.status, "in_progress")),
+    db.select({ n: sql<number>`count(*)::int` }).from(vehicleCustomerBlacklist),
   ]);
 
   const openRequests = requests.filter((r) => r.status === "new" || r.status === "in_progress");
@@ -74,6 +75,7 @@ export async function getPortalDashboard(): Promise<PortalDashboard> {
       pendingInvites: overview.reduce((n, c) => n + c.pendingInvites, 0),
       expiredInvites: overview.reduce((n, c) => n + c.expiredInvites, 0),
       vehiclesOnline: vehiclesOnline?.n ?? 0,
+      blacklistEntries: blacklistEntries?.n ?? 0,
       unreadNotifications: notes.filter((n) => !n.isRead).length,
     },
     attention: {

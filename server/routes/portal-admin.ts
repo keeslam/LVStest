@@ -163,12 +163,41 @@ export function registerPortalAdminRoutes(app: Express, _deps: RouteDeps): void 
 
   // ---- vehicles offered online -------------------------------------------------
   app.get("/api/portal-admin/vehicles-online", canView, async (_req, res) => {
-    const all = await storage.getAllVehicles();
+    const [all, blocks] = await Promise.all([storage.getAllVehicles(), portalStorage.listBlacklist()]);
+    const blockedFor = new Map<number, number>();
+    for (const b of blocks) blockedFor.set(b.vehicleId, (blockedFor.get(b.vehicleId) ?? 0) + 1);
     res.json(all.map((v) => ({
       id: v.id, licensePlate: v.licensePlate, brand: v.brand, model: v.model, vehicleType: v.vehicleType,
       availabilityStatus: v.availabilityStatus, offeredOnline: v.offeredOnline, onlineDescription: v.onlineDescription,
-      dailyPrice: v.dailyPrice, monthlyPrice: v.monthlyPrice,
+      dailyPrice: v.dailyPrice, monthlyPrice: v.monthlyPrice, blockedCustomers: blockedFor.get(v.id) ?? 0,
     })));
+  });
+
+  // ---- blacklist: which customers may not rent which vehicle -----------------------------
+  // Same table the customer and vehicle dialogs use, so a block made anywhere shows everywhere.
+  app.get("/api/portal-admin/blacklist", canView, async (_req, res) => {
+    const rows = await portalStorage.listBlacklist();
+    res.json(rows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })));
+  });
+
+  app.post("/api/portal-admin/blacklist", canManage, async (req, res) => {
+    const parsed = z.object({ vehicleId: z.number().int().positive(), customerId: z.number().int().positive(), reason: z.string().trim().max(500).optional() }).safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: "Invalid input" });
+    const { vehicleId, customerId, reason } = parsed.data;
+    if (!(await storage.getVehicle(vehicleId))) return res.status(404).json({ message: "Vehicle not found" });
+    if (!(await storage.getCustomer(customerId))) return res.status(404).json({ message: "Customer not found" });
+    if (await storage.isCustomerBlacklistedForVehicle(vehicleId, customerId)) return res.status(409).json({ message: "Deze klant is al geblokkeerd voor dit voertuig" });
+    const entry = await storage.addToBlacklist({ vehicleId, customerId, reason: reason || null, createdBy: req.user?.id ?? null });
+    await AuditLogger.logFromRequest(req, "vehicle.blacklist_add", "vehicle", vehicleId, { customerId, reason: reason || null });
+    res.status(201).json(entry);
+  });
+
+  app.delete("/api/portal-admin/blacklist/:id", canManage, async (req, res) => {
+    const id = intParam(req, res, "id"); if (id === null) return;
+    const deleted = await storage.removeFromBlacklist(id);
+    if (!deleted) return res.status(404).json({ message: "Blacklist entry not found" });
+    await AuditLogger.logFromRequest(req, "vehicle.blacklist_remove", "vehicle", undefined, { entryId: id });
+    res.json({ success: true });
   });
 
   app.patch("/api/portal-admin/vehicles-online/:id", canManage, async (req, res) => {

@@ -10,7 +10,7 @@ import { DocumentDialog } from "@/components/portal/document-dialog";
 import { PortalAccountDialog } from "@/components/portal/account-dialog";
 import { PortalListDialog, type PortalListKind } from "@/components/portal/list-dialog";
 
-export interface NewRequestPrefill { type?: PortalRequestTypeValue; reservationId?: number; fineId?: number }
+export interface NewRequestPrefill { type?: PortalRequestTypeValue; reservationId?: number; fineId?: number; vehicleId?: number }
 
 /** Which detail dialog is open in the portal. One at a time; the list page stays underneath. */
 type Open =
@@ -47,6 +47,7 @@ const ROUTE_DIALOGS: Array<{ pattern: RegExp; base: string; make: (m: RegExpMatc
       type: (p.get("type") as PortalRequestTypeValue | null) ?? undefined,
       reservationId: p.get("reservationId") ? Number(p.get("reservationId")) : undefined,
       fineId: p.get("fineId") ? Number(p.get("fineId")) : undefined,
+      vehicleId: p.get("vehicleId") ? Number(p.get("vehicleId")) : undefined,
     } };
   } },
   { pattern: /^\/aanvragen\/(\d+)$/, base: "/aanvragen", make: (m) => ({ kind: "request", id: Number(m[1]) }) },

@@ -191,7 +191,8 @@
     "PORTAL_SERVER_ERROR": "Er ging iets mis. Probeer het later opnieuw.",
     "PORTAL_REQUEST_INVALID_PERIOD": "De gekozen datum valt niet binnen de toegestane periode.",
     "PORTAL_ATTACHMENT_LIMIT": "Maximaal 5 bijlagen.",
-    "PORTAL_DRIVER_BUSY": "Deze bestuurder rijdt al in een andere auto. Eén auto per bestuurder."
+    "PORTAL_DRIVER_BUSY": "Deze bestuurder rijdt al in een andere auto. Eén auto per bestuurder.",
+    "PORTAL_VEHICLE_BLOCKED": "Dit voertuig is voor uw bedrijf niet beschikbaar. Neem contact op met Lam Groep."
   },
   "admin": {
     "navLabel": "Klantenportaal",
@@ -202,7 +203,8 @@
       "vehicles": "Voertuigen online",
       "activity": "Activiteit",
       "fines": "Bekeuringen",
-      "requests": "Aanvragen"
+      "requests": "Aanvragen",
+      "blacklist": "Blacklist"
     },
     "dashboard": {
       "inviteAccount": "Account uitnodigen",
@@ -213,7 +215,9 @@
         "onlineNow": "Klanten nu online",
         "invites": "Uitnodigingen open",
         "expired": "{{n}} verlopen",
-        "vehiclesOnline": "{{n}} voertuigen online"
+        "vehiclesOnline": "{{n}} voertuigen online",
+        "blacklist": "Blacklist",
+        "blacklistSub": "voertuig/klant-blokkades"
       },
       "attention": {
         "title": "Aandacht nodig",
@@ -370,7 +374,10 @@
         "plate": "Kenteken",
         "vehicle": "Voertuig",
         "status": "Status"
-      }
+      },
+      "blocked": "Geblokkeerd",
+      "blockedFor": "{{n}} klant(en)",
+      "blockNone": "Geen"
     },
     "config": {
       "title": "Klantenportaal",
@@ -576,7 +583,8 @@
         "early_return": "Eerder inleveren",
         "damage": "Schademelding",
         "fine_question": "Vraag over bekeuring",
-        "other": "Overig"
+        "other": "Overig",
+        "booking": "Huuraanvraag"
       },
       "status": {
         "new": "Nieuw",
@@ -603,7 +611,11 @@
         "conflict": "Conflict met reservering #{{id}} ({{from}} – {{to}})",
         "replied": "Antwoord verstuurd.",
         "replyRequired": "Vul een antwoord in.",
-        "previousReply": "Eerder antwoord"
+        "previousReply": "Eerder antwoord",
+        "vehicle": "Voertuig",
+        "startDate": "Vanaf",
+        "endDate": "Tot en met",
+        "openEnd": "Open einde"
       }
     },
     "alert": {
@@ -612,6 +624,29 @@
       "notifications_one": "{{count}} melding",
       "notifications_other": "{{count}} meldingen",
       "open": "Klantenportaal"
+    },
+    "blacklist": {
+      "hint": "Een geblokkeerde klant ziet dit voertuig niet in het portaal en kan het niet aanvragen. Blokkades uit de klant- en voertuigdialoog staan hier ook.",
+      "search": "Zoek kenteken, voertuig, klant of reden…",
+      "count": "{{n}} blokkade(s)",
+      "add": "Blokkade toevoegen",
+      "vehicle": "Voertuig",
+      "customer": "Klant",
+      "searchCustomer": "Zoek klant…",
+      "noVehicle": "Geen voertuig gevonden",
+      "noCustomer": "Geen klant gevonden",
+      "change": "Wijzig",
+      "moreShown": "{{shown}} van {{total}} getoond, typ om te verfijnen.",
+      "reason": "Reden",
+      "reasonPlaceholder": "Bijv. schade niet vergoed, betalingsachterstand",
+      "cancel": "Annuleren",
+      "block": "Blokkeren",
+      "since": "Sinds",
+      "unblock": "Blokkade opheffen",
+      "added": "Blokkade toegevoegd.",
+      "removed": "Blokkade opgeheven.",
+      "empty": "Geen blokkades. Elke klant mag elk online voertuig aanvragen.",
+      "noMatch": "Geen blokkade gevonden."
     }
   },
   "fines": {
@@ -657,7 +692,8 @@
       "early_return": "Eerder inleveren",
       "damage": "Schade melden",
       "fine_question": "Vraag over bekeuring",
-      "other": "Overig"
+      "other": "Overig",
+      "booking": "Auto huren"
     },
     "status": {
       "new": "Ingediend",
@@ -677,7 +713,13 @@
       "photos": "Foto's of PDF (max 5)",
       "send": "Versturen",
       "extend": "Verlengen",
-      "earlyReturn": "Eerder inleveren"
+      "earlyReturn": "Eerder inleveren",
+      "vehicle": "Voertuig",
+      "startDate": "Vanaf",
+      "endDate": "Tot en met (optioneel)",
+      "openEnd": "Open einde",
+      "bookingHint": "Dit is een aanvraag. Lam Groep bevestigt de reservering en neemt contact op.",
+      "endDateDetail": "Tot en met"
     },
     "date": "Ingediend op",
     "subtitle": "Verlengen, eerder inleveren, schade melden of een vraag stellen.",
@@ -716,5 +758,18 @@
     "searchRequests": "Zoeken op type, bericht of nummer…",
     "searchDocuments": "Zoeken op bestandsnaam of reservering…",
     "searchDrivers": "Zoeken op naam, e-mail, telefoon of rijbewijs…"
+  },
+  "vehicles": {
+    "title": "Beschikbaar om te huren",
+    "subtitle": "{{free}} van {{total}} nu vrij. Vraag een auto aan en Lam Groep bevestigt de reservering.",
+    "search": "Zoek op merk, model, kenteken of type…",
+    "empty": "Er worden op dit moment geen voertuigen online aangeboden.",
+    "available": "Beschikbaar",
+    "unavailable": "Nu verhuurd",
+    "perDay": "per dag",
+    "perMonth": "per maand",
+    "request": "Aanvragen",
+    "requestLater": "Aanvragen voor later",
+    "quick": "Auto huren"
   }
 }

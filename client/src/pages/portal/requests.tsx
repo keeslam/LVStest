@@ -6,6 +6,7 @@ import { portalQueryFn } from "@/lib/portal-api";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Button } from "@/components/ui/button";
 import { RequestRow } from "@/components/portal/rows";
+import { AvailableVehicles } from "@/components/portal/vehicle-cards";
 import { EmptyState, PageHeader, SearchBox, btnPrimary, usePortalSearch } from "@/components/portal/ui";
 
 export default function PortalRequestsPage() {
@@ -20,6 +21,7 @@ export default function PortalRequestsPage() {
   return (
     <div className="space-y-4">
       <PageHeader title={t("requests.title")} subtitle={t("requests.subtitle")} action={newButton} />
+      <AvailableVehicles />
       {data.length > 0 && <SearchBox value={query} onChange={setQuery} placeholder={t("lists.searchRequests")} />}
       {shown.length === 0
         ? <EmptyState icon={<Inbox className="h-6 w-6" />} text={q ? t("lists.noMatch") : t("requests.empty")} action={q ? undefined : newButton} />

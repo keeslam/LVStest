@@ -8,10 +8,13 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useCanManagePortal } from "./accounts-table";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 
 interface OnlineVehicleRow {
   id: number; licensePlate: string; brand: string; model: string; vehicleType: string | null; availabilityStatus: string;
   offeredOnline: boolean; onlineDescription: string | null; dailyPrice: string | null; monthlyPrice: string | null;
+  /** How many customers are blocked for this vehicle. */
+  blockedCustomers: number;
 }
 const KEY = ["/api/portal-admin/vehicles-online"];
 
@@ -19,6 +22,7 @@ export function OnlineVehiclesTable() {
   const { t } = useTranslation("portal");
   const queryClient = useQueryClient();
   const canManage = useCanManagePortal();
+  const { openPortalListDialog } = useGlobalDialog();
   const [search, setSearch] = useState("");
   const [onlyOffered, setOnlyOffered] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -56,6 +60,7 @@ export function OnlineVehiclesTable() {
           <TableHead>{t("admin.vehicles.columns.status")}</TableHead>
           <TableHead>{t("admin.vehicles.offered")}</TableHead>
           <TableHead>{t("admin.vehicles.description")}</TableHead>
+          <TableHead>{t("admin.vehicles.blocked")}</TableHead>
         </TableRow></TableHeader>
         <TableBody>
           {rows.map((v) => (
@@ -68,6 +73,11 @@ export function OnlineVehiclesTable() {
               <TableCell>
                 <Input defaultValue={v.onlineDescription ?? ""} disabled={!canManage}
                   onBlur={(e) => { if (e.target.value !== (v.onlineDescription ?? "")) patch.mutate({ id: v.id, body: { onlineDescription: e.target.value || null } }); }} />
+              </TableCell>
+              <TableCell>
+                <Button size="sm" variant={v.blockedCustomers > 0 ? "secondary" : "ghost"} onClick={() => openPortalListDialog("blacklist", { plate: v.licensePlate })} data-testid={`button-blocked-${v.id}`}>
+                  {v.blockedCustomers > 0 ? t("admin.vehicles.blockedFor", { n: v.blockedCustomers }) : t("admin.vehicles.blockNone")}
+                </Button>
               </TableCell>
             </TableRow>
           ))}

@@ -56,6 +56,7 @@ export function RequestDialog({ id, onClose }: { id: number | null; onClose: () 
                 <div className="grid gap-0.5 text-sm sm:grid-cols-3 sm:gap-2"><dt className="text-muted-foreground">{t("requests.form.fine")}</dt>
                   <dd className="sm:col-span-2"><button type="button" className="underline" onClick={() => openFine(r.fineId!)}>#{r.fineId}</button></dd></div>
               )}
+              {r.type === "booking" && <><DetailRow label={t("requests.form.vehicle")} value={p.vehicleLabel} /><DetailRow label={t("requests.form.startDate")} value={p.startDate} /><DetailRow label={t("requests.form.endDateDetail")} value={p.endDate || t("requests.form.openEnd")} /></>}
               {r.type === "extension" && <DetailRow label={t("requests.form.newEndDate")} value={p.newEndDate} />}
               {r.type === "early_return" && <DetailRow label={t("requests.form.returnDate")} value={p.returnDate} />}
               {r.type === "damage" && <><DetailRow label={t("requests.form.location")} value={p.location} /><DetailRow label={t("requests.form.occurredAt")} value={p.occurredAt} /></>}

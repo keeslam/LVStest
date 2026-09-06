@@ -72,7 +72,7 @@ export function DashboardTiles({ counts, canViewFines }: { counts: PortalDashboa
   const { t } = useTranslation("portal");
   const { openPortalListDialog } = useGlobalDialog();
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
       <Tile label={t("admin.dashboard.tiles.newRequests")} value={counts.newRequests} accent={counts.newRequests > 0 ? "border-l-amber-500" : "border-l-transparent"}
         sub={counts.inProgressRequests > 0 ? t("admin.dashboard.tiles.inProgress", { n: counts.inProgressRequests }) : undefined}
         onClick={() => openPortalListDialog("requests")} testId="tile-new-requests" />
@@ -86,6 +86,8 @@ export function DashboardTiles({ counts, canViewFines }: { counts: PortalDashboa
       <Tile label={t("admin.dashboard.tiles.invites")} value={counts.pendingInvites + counts.expiredInvites} accent="border-l-transparent"
         sub={counts.expiredInvites > 0 ? t("admin.dashboard.tiles.expired", { n: counts.expiredInvites }) : undefined}
         onClick={() => openPortalListDialog("accounts")} testId="tile-invites" />
+      <Tile label={t("admin.dashboard.tiles.blacklist")} value={counts.blacklistEntries} accent={counts.blacklistEntries > 0 ? "border-l-slate-700" : "border-l-transparent"}
+        sub={t("admin.dashboard.tiles.blacklistSub")} onClick={() => openPortalListDialog("blacklist")} testId="tile-blacklist" />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { db } from "../db";
 import {
   portalUsers, portalCustomerSettings, portalActivityLog, reservationDriverAssignments,
-  reservations, vehicles, drivers, documents, customers,
+  reservations, vehicles, drivers, documents, customers, vehicleCustomerBlacklist,
   type PortalUser, type InsertPortalUser, type PortalCustomerSettings,
   type InsertPortalActivityLogEntry, type PortalActivityLogEntry,
   type Driver, type Reservation, type Document, type Vehicle,
@@ -229,6 +229,34 @@ export const portalStorage = {
   },
 
   // ---- drivers (always scoped) ----------------------------------------------
+  /** Vehicles offered online that this customer is allowed to rent (blacklist applied here, never in the client). */
+  async listOnlineVehiclesForCustomer(customerId: number): Promise<Vehicle[]> {
+    const blocked = db.select({ id: vehicleCustomerBlacklist.vehicleId }).from(vehicleCustomerBlacklist).where(eq(vehicleCustomerBlacklist.customerId, customerId));
+    return db.select().from(vehicles)
+      .where(and(eq(vehicles.offeredOnline, true), sql`${vehicles.id} not in (${blocked})`))
+      .orderBy(vehicles.brand, vehicles.model, vehicles.licensePlate);
+  },
+  /** True when the vehicle is offered online and the customer is not blocked for it. */
+  async canCustomerBookVehicle(vehicleId: number, customerId: number): Promise<{ ok: true; vehicle: Vehicle } | { ok: false; reason: "not_found" | "not_online" | "blocked" }> {
+    const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, vehicleId));
+    if (!vehicle) return { ok: false, reason: "not_found" };
+    if (!vehicle.offeredOnline) return { ok: false, reason: "not_online" };
+    const [block] = await db.select({ id: vehicleCustomerBlacklist.id }).from(vehicleCustomerBlacklist)
+      .where(and(eq(vehicleCustomerBlacklist.vehicleId, vehicleId), eq(vehicleCustomerBlacklist.customerId, customerId)));
+    if (block) return { ok: false, reason: "blocked" };
+    return { ok: true, vehicle };
+  },
+  /** Every block, joined for the staff list. */
+  async listBlacklist(): Promise<Array<{ id: number; vehicleId: number; licensePlate: string; brand: string; model: string; offeredOnline: boolean; customerId: number; customerName: string; reason: string | null; createdAt: Date }>> {
+    return db.select({
+      id: vehicleCustomerBlacklist.id, vehicleId: vehicles.id, licensePlate: vehicles.licensePlate, brand: vehicles.brand, model: vehicles.model, offeredOnline: vehicles.offeredOnline,
+      customerId: customers.id, customerName: sql<string>`coalesce(nullif(${customers.companyName}, ''), ${customers.name})`,
+      reason: vehicleCustomerBlacklist.reason, createdAt: vehicleCustomerBlacklist.createdAt,
+    }).from(vehicleCustomerBlacklist)
+      .innerJoin(vehicles, eq(vehicleCustomerBlacklist.vehicleId, vehicles.id))
+      .innerJoin(customers, eq(vehicleCustomerBlacklist.customerId, customers.id))
+      .orderBy(desc(vehicleCustomerBlacklist.createdAt), desc(vehicleCustomerBlacklist.id));
+  },
   async listDriversForCustomer(customerId: number): Promise<Driver[]> {
     return db.select().from(drivers).where(eq(drivers.customerId, customerId)).orderBy(drivers.displayName);
   },

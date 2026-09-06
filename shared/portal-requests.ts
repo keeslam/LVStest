@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const PortalRequestType = {
-  EXTENSION: 'extension', EARLY_RETURN: 'early_return', DAMAGE: 'damage', FINE_QUESTION: 'fine_question', OTHER: 'other',
+  BOOKING: 'booking', EXTENSION: 'extension', EARLY_RETURN: 'early_return', DAMAGE: 'damage', FINE_QUESTION: 'fine_question', OTHER: 'other',
 } as const;
 export type PortalRequestTypeValue = typeof PortalRequestType[keyof typeof PortalRequestType];
 
@@ -21,6 +21,8 @@ export function isValidRequestTransition(from: string, to: string): boolean {
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
 
 export const requestPayloadSchemas = {
+  /** Rental request for a vehicle offered online; the server adds vehicleLabel. */
+  booking: z.object({ vehicleId: z.coerce.number().int().positive(), startDate: isoDate, endDate: z.union([isoDate, z.literal("")]).default(""), vehicleLabel: z.string().max(200).optional() }),
   extension: z.object({ newEndDate: isoDate }),
   early_return: z.object({ returnDate: isoDate }),
   damage: z.object({ location: z.string().trim().max(200).default(""), occurredAt: z.string().trim().max(40).default("") }),
@@ -30,7 +32,7 @@ export const requestPayloadSchemas = {
 
 /** Which link a type requires. */
 export const REQUEST_NEEDS: Record<PortalRequestTypeValue, 'reservation' | 'fine' | null> = {
-  extension: 'reservation', early_return: 'reservation', damage: 'reservation', fine_question: 'fine', other: null,
+  booking: null, extension: 'reservation', early_return: 'reservation', damage: 'reservation', fine_question: 'fine', other: null,
 };
 
 export interface PortalRequestAttachmentDto { id: number; fileName: string; contentType: string; fileSize: number }

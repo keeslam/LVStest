@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import type { PortalReservationDto } from "@shared/portal-types";
+import type { PortalReservationDto, PortalVehicleDto } from "@shared/portal-types";
 import type { PortalFineDto } from "@shared/fines";
 import { PortalRequestType, REQUEST_NEEDS, type PortalRequestTypeValue } from "@shared/portal-requests";
 import { portalFetch, portalQueryFn, PortalApiError } from "@/lib/portal-api";
@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { btnPrimary } from "./ui";
 
-export function RequestForm({ initialType, reservationId: initialReservation, fineId: initialFine, onSubmitted }: { initialType?: PortalRequestTypeValue; reservationId?: number; fineId?: number; onSubmitted: (id: number) => void }) {
+export function RequestForm({ initialType, reservationId: initialReservation, fineId: initialFine, vehicleId: initialVehicle, onSubmitted }: { initialType?: PortalRequestTypeValue; reservationId?: number; fineId?: number; vehicleId?: number; onSubmitted: (id: number) => void }) {
   const { t } = useTranslation("portal");
   const { toast } = useToast();
   const { me } = usePortalAuth();
@@ -21,13 +21,15 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
   const [type, setType] = useState<PortalRequestTypeValue>(initialType ?? PortalRequestType.OTHER);
   const [reservationId, setReservationId] = useState(initialReservation ? String(initialReservation) : "");
   const [fineId, setFineId] = useState(initialFine ? String(initialFine) : "");
-  const [payload, setPayload] = useState<Record<string, string>>({});
+  const [payload, setPayload] = useState<Record<string, string>>(initialVehicle ? { vehicleId: String(initialVehicle) } : {});
   const [message, setMessage] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const needs = REQUEST_NEEDS[type];
   const { data: reservations = [] } = useQuery<PortalReservationDto[]>({ queryKey: ["portal", "/api/portal/reservations"], queryFn: portalQueryFn, enabled: needs === "reservation" });
   const { data: fines = [] } = useQuery<PortalFineDto[]>({ queryKey: ["portal", "/api/portal/fines"], queryFn: portalQueryFn, enabled: needs === "fine" });
+  const { data: vehicles = [] } = useQuery<PortalVehicleDto[]>({ queryKey: ["portal", "/api/portal/vehicles"], queryFn: portalQueryFn, enabled: type === "booking" && Boolean(me?.settings.canBook) });
   const openReservations = reservations.filter((r) => r.status === "booked" || r.status === "picked_up");
+  const canBook = Boolean(me?.settings.canBook);
 
   const submit = useMutation({
     mutationFn: async () => {
@@ -59,7 +61,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
       <div>
         <Label htmlFor="rq-type">{t("requests.chooseType")}</Label>
         <select id="rq-type" className="w-full rounded-md border px-3 py-2 text-sm" value={type} onChange={(e) => { setType(e.target.value as PortalRequestTypeValue); setPayload({}); }}>
-          {Object.values(PortalRequestType).filter((v) => v !== "early_return" || me?.settings.canReturn).map((v) => <option key={v} value={v}>{t(`requests.type.${v}`)}</option>)}
+          {Object.values(PortalRequestType).filter((v) => (v !== "early_return" || me?.settings.canReturn) && (v !== "booking" || canBook)).map((v) => <option key={v} value={v}>{t(`requests.type.${v}`)}</option>)}
         </select>
       </div>
       {needs === "reservation" && (
@@ -80,6 +82,22 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
             <option value="">—</option>
             {fines.map((f) => <option key={f.id} value={f.id}>#{f.id} {f.licensePlate} {new Date(f.offenceAt).toLocaleDateString()} € {f.totalAmount}</option>)}
           </select>
+        </div>
+      )}
+      {type === "booking" && (
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="rq-vehicle">{t("requests.form.vehicle")}</Label>
+            <select id="rq-vehicle" className="w-full rounded-md border px-3 py-2 text-sm" value={payload.vehicleId ?? ""} onChange={(e) => setPayload({ ...payload, vehicleId: e.target.value })} required data-testid="select-request-vehicle">
+              <option value="">—</option>
+              {vehicles.map((v) => <option key={v.id} value={v.id}>{v.brand} {v.model} · {v.licensePlate}{v.availabilityStatus !== "available" ? ` (${t("vehicles.unavailable")})` : ""}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div><Label htmlFor="rq-start">{t("requests.form.startDate")}</Label><Input id="rq-start" type="date" value={payload.startDate ?? ""} onChange={setP("startDate")} required /></div>
+            <div><Label htmlFor="rq-end">{t("requests.form.endDate")}</Label><Input id="rq-end" type="date" value={payload.endDate ?? ""} onChange={setP("endDate")} /></div>
+          </div>
+          <p className="text-xs text-[#64748b]">{t("requests.form.bookingHint")}</p>
         </div>
       )}
       {type === "extension" && <div><Label htmlFor="rq-end">{t("requests.form.newEndDate")}</Label><Input id="rq-end" type="date" value={payload.newEndDate ?? ""} onChange={setP("newEndDate")} required /></div>}

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 
 /** Which portal-admin list opens in the shared list dialog (see portal-list-dialog.tsx). */
-export type PortalListKind = 'customers' | 'accounts' | 'requests' | 'fines' | 'vehicles' | 'activity';
+export type PortalListKind = 'customers' | 'accounts' | 'requests' | 'fines' | 'vehicles' | 'activity' | 'blacklist';
 
 interface DialogState {
   reservation: { open: boolean; id: number | null };
