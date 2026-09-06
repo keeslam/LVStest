@@ -17,7 +17,7 @@ type Detail = PortalReservationDto & {
 
 export function DetailRow({ label, value }: { label: string; value: string | number | null | undefined }) {
   if (value === null || value === undefined || value === "") return null;
-  return <div className="grid grid-cols-3 gap-2 text-sm"><dt className="text-muted-foreground">{label}</dt><dd className="col-span-2">{value}</dd></div>;
+  return <div className="grid gap-0.5 text-sm sm:grid-cols-3 sm:gap-2"><dt className="text-muted-foreground">{label}</dt><dd className="sm:col-span-2">{value}</dd></div>;
 }
 
 /** One reservation: details, driver history, and the actions the customer may take. */
@@ -42,7 +42,7 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
         {isError ? <p className="p-6 text-center text-sm text-muted-foreground">{t("errors.PORTAL_NOT_FOUND")}</p> : isLoading || !r ? <div className="flex justify-center p-6"><Loader2 className="h-5 w-5 animate-spin" /></div> : (
           <div className="space-y-4">
             <dl className="space-y-1">
-              {r.vehicle && <div className="grid grid-cols-3 gap-2 text-sm"><dt className="text-muted-foreground">{t("fields.vehicle")}</dt><dd className="col-span-2 flex flex-wrap items-center gap-2">{r.vehicle.brand} {r.vehicle.model} <Plate value={r.vehicle.licensePlate} /></dd></div>}
+              {r.vehicle && <div className="grid gap-0.5 text-sm sm:grid-cols-3 sm:gap-2"><dt className="text-muted-foreground">{t("fields.vehicle")}</dt><dd className="flex flex-wrap items-center gap-2 sm:col-span-2">{r.vehicle.brand} {r.vehicle.model} <Plate value={r.vehicle.licensePlate} /></dd></div>}
               <DetailRow label={t("fields.period")} value={`${formatPortalDate(r.startDate)} – ${r.endDate ? formatPortalDate(r.endDate) : t("overview.openEnded")}`} />
               <DetailRow label={t("fields.driver")} value={r.driver?.displayName} />
               <DetailRow label={t("fields.contractNumber")} value={r.contractNumber} />
@@ -50,7 +50,7 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
               <DetailRow label={t("fields.returnMileage")} value={r.returnMileage} />
               {me?.settings.showPrices && <DetailRow label={t("fields.price")} value={r.totalPrice ? `€ ${r.totalPrice}` : null} />}
             </dl>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
               {canChangeDriver && <ChangeDriverDialog reservation={r} />}
               {canRequest && (<>
                 <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "extension", reservationId: r.id })} data-testid="button-request-extension">{t("requests.form.extend")}</Button>

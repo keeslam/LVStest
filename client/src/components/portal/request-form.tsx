@@ -85,7 +85,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
       {type === "extension" && <div><Label htmlFor="rq-end">{t("requests.form.newEndDate")}</Label><Input id="rq-end" type="date" value={payload.newEndDate ?? ""} onChange={setP("newEndDate")} required /></div>}
       {type === "early_return" && <div><Label htmlFor="rq-ret">{t("requests.form.returnDate")}</Label><Input id="rq-ret" type="date" value={payload.returnDate ?? ""} onChange={setP("returnDate")} required /></div>}
       {type === "damage" && (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <div><Label htmlFor="rq-loc">{t("requests.form.location")}</Label><Input id="rq-loc" value={payload.location ?? ""} onChange={setP("location")} /></div>
           <div><Label htmlFor="rq-when">{t("requests.form.occurredAt")}</Label><Input id="rq-when" value={payload.occurredAt ?? ""} onChange={setP("occurredAt")} /></div>
         </div>

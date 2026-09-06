@@ -71,7 +71,7 @@ export function DriverFormDialog({ driver, children }: { driver?: PortalDriverDt
         <DialogHeader><DialogTitle>{t("drivers.dialogTitle")}</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           {text("displayName")}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {text("firstName")}
             {text("lastName")}
             {text("email", "email")}

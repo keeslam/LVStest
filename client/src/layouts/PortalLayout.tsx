@@ -3,7 +3,9 @@ import { Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
-import { LogOut, Loader2, ArrowLeft, Phone, Mail, MapPin, Home, CalendarDays, FileText, Users, Receipt, Inbox, UserCircle } from "lucide-react";
+import { LogOut, Loader2, ArrowLeft, Phone, Mail, MapPin, Home, CalendarDays, FileText, Users, Receipt, Inbox, UserCircle, MoreHorizontal, ExternalLink } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState } from "react";
 import { PORTAL_SITE, isEmbedded } from "@/lib/portal-site";
 import { Avatar, useGreeting } from "@/components/portal/ui";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
@@ -90,6 +92,60 @@ function PillNav({ tabs, location, dark }: { tabs: TabDef[]; location: string; d
   );
 }
 
+/**
+ * Phone navigation: four fixed tabs at the bottom plus "Meer" for the rest.
+ * Sits above the home indicator (safe-area inset) and is hidden from sm up.
+ */
+function BottomNav({ tabs, location, onLogout }: { tabs: TabDef[]; location: string; onLogout: () => void }) {
+  const { t } = useTranslation("portal");
+  const { openAccount } = usePortalDialogs();
+  const [more, setMore] = useState(false);
+  const visible = tabs.filter((tab) => tab.show && tab.href !== "/account");
+  const primary = visible.slice(0, 4);
+  const rest = visible.slice(4);
+  const isActive = (href: string) => (href === "/" ? location === "/" || location === "" : location.startsWith(href));
+  const moreActive = rest.some((tab) => isActive(tab.href)) || location.startsWith("/account");
+  const item = (active: boolean) => `flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium leading-tight ${active ? "text-[#1a1d62]" : "text-[#64748b]"}`;
+  const iconWrap = (active: boolean) => `flex h-7 w-12 items-center justify-center rounded-full ${active ? "bg-[#f5a623] text-[#1a1d62]" : ""}`;
+  return (
+    <>
+      <nav aria-label={t("site.navLabel")} className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e6e8f0] bg-white pb-[env(safe-area-inset-bottom)] sm:hidden" data-testid="portal-bottom-nav">
+        <ul className="flex items-stretch">
+          {primary.map((tab) => (
+            <li key={tab.href} className="flex flex-1">
+              <Link href={tab.href} className={item(isActive(tab.href))} aria-current={isActive(tab.href) ? "page" : undefined} data-testid={`portal-bottom-${tab.key.split(".").pop()}`}>
+                <span className={iconWrap(isActive(tab.href))}>{tab.icon}</span>
+                <span className="truncate">{t(tab.key)}</span>
+              </Link>
+            </li>
+          ))}
+          <li className="flex flex-1">
+            <button type="button" onClick={() => setMore(true)} className={item(moreActive)} data-testid="portal-bottom-more">
+              <span className={iconWrap(moreActive)}><MoreHorizontal className="h-4 w-4" /></span>
+              <span>{t("site.more")}</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+      <Dialog open={more} onOpenChange={setMore}>
+        <DialogContent className="max-w-sm" data-testid="portal-more-dialog">
+          <DialogHeader><DialogTitle>{t("site.more")}</DialogTitle></DialogHeader>
+          <ul className="divide-y divide-[#e6e8f0] rounded-xl border border-[#e6e8f0]">
+            {rest.map((tab) => (
+              <li key={tab.href}>
+                <Link href={tab.href} onClick={() => setMore(false)} className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#0f172a] hover:bg-[#eef0fb]">{tab.icon}{t(tab.key)}</Link>
+              </li>
+            ))}
+            <li><button type="button" onClick={() => { setMore(false); openAccount(); }} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-[#0f172a] hover:bg-[#eef0fb]"><UserCircle className="h-4 w-4" />{t("tabs.account")}</button></li>
+            <li><a href={PORTAL_SITE.siteUrl} className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#0f172a] hover:bg-[#eef0fb]"><ExternalLink className="h-4 w-4" />{t("site.backToSite")}</a></li>
+            <li><button type="button" onClick={onLogout} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-[#a32d2d] hover:bg-[#fcebeb]"><LogOut className="h-4 w-4" />{t("actions.logout")}</button></li>
+          </ul>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 function AccountAvatar({ name }: { name: string }) {
   const { openAccount } = usePortalDialogs();
   const { t } = useTranslation("portal");
@@ -150,8 +206,8 @@ export function PortalLayout({ children }: { children: ReactNode }) {
     { href: "/account", key: "tabs.account", show: true, icon: <UserCircle className="h-4 w-4" /> },
   ];
   const logoutButton = (
-    <Button variant="ghost" size="sm" className={embedded ? "" : "text-white hover:bg-white/10 hover:text-white"} onClick={() => logout().then(() => navigate("/login"))} data-testid="button-portal-logout">
-      <LogOut className="mr-2 h-4 w-4" /><span className="hidden sm:inline">{t("actions.logout")}</span>
+    <Button variant="ghost" size="sm" className={embedded ? "" : "hidden text-white hover:bg-white/10 hover:text-white sm:inline-flex"} onClick={() => logout().then(() => navigate("/login"))} data-testid="button-portal-logout">
+      <LogOut className="mr-2 h-4 w-4" />{t("actions.logout")}
     </Button>
   );
 
@@ -168,8 +224,9 @@ export function PortalLayout({ children }: { children: ReactNode }) {
           </div>
           {logoutButton}
         </header>
-        <PillNav tabs={tabs} location={location} dark={false} />
-        <main>{children}</main>
+        <div className="hidden sm:block"><PillNav tabs={tabs} location={location} dark={false} /></div>
+        <main className="pb-20 sm:pb-0">{children}</main>
+        <BottomNav tabs={tabs} location={location} onLogout={() => logout().then(() => navigate("/login"))} />
       </div>
     );
   }
@@ -187,19 +244,20 @@ export function PortalLayout({ children }: { children: ReactNode }) {
               {logoutButton}
             </div>
           </div>
-          <div className="mt-5 flex items-center gap-3 sm:mt-6">
+          <div className="mt-4 flex items-center gap-3 sm:mt-6">
             <AccountAvatar name={me.fullName} />
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#f5a623]">{t("site.eyebrow")}</p>
-              <h1 className="truncate text-xl font-bold leading-tight sm:text-2xl">{greeting}, {me.fullName.split(" ")[0]}</h1>
+              <p className="hidden text-[11px] font-semibold uppercase tracking-[0.18em] text-[#f5a623] sm:block">{t("site.eyebrow")}</p>
+              <h1 className="truncate text-lg font-bold leading-tight sm:text-2xl">{greeting}, {me.fullName.split(" ")[0]}</h1>
               <p className="truncate text-sm text-[#c7cbf5]">{me.customerName}</p>
             </div>
           </div>
-          <div className="mt-4 sm:mt-5"><PillNav tabs={tabs} location={location} dark /></div>
+          <div className="mt-5 hidden sm:block"><PillNav tabs={tabs} location={location} dark /></div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 sm:px-6 sm:py-7">{children}</main>
-      <SiteFooter />
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-4 pb-24 sm:px-6 sm:py-7 sm:pb-7">{children}</main>
+      <div className="hidden sm:block"><SiteFooter /></div>
+      <BottomNav tabs={tabs} location={location} onLogout={() => logout().then(() => navigate("/login"))} />
     </div>
   );
 }

@@ -108,7 +108,7 @@ export function EmptyState({ icon, text, action }: { icon: ReactNode; text: stri
 /** Clickable list row with a coloured left edge; the whole card is the button. */
 export function ListCard({ tone, onClick, children, testId }: { tone: Tone; onClick?: () => void; children: ReactNode; testId?: string }) {
   const c = TONES[tone];
-  const cls = `flex w-full items-center justify-between gap-3 rounded-xl border border-[#e6e8f0] border-l-[5px] ${c.border} bg-white px-4 py-3 text-left shadow-sm transition-colors`;
+  const cls = `flex w-full items-center justify-between gap-2 rounded-xl border border-[#e6e8f0] border-l-[5px] ${c.border} bg-white px-3 py-3 text-left shadow-sm transition-colors sm:gap-3 sm:px-4`;
   if (!onClick) return <div className={cls} data-testid={testId}>{children}</div>;
   return <button type="button" onClick={onClick} className={`${cls} hover:bg-[#f8f9ff] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f5a623]`} data-testid={testId}>{children}</button>;
 }
@@ -121,11 +121,11 @@ export function Tile({ tone, icon, value, label, onClick, testId }: { tone: Tone
       <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white ${c.dot}`}>{icon}</span>
       <span className="min-w-0">
         <span className={`block text-2xl font-bold leading-none ${c.text}`}>{value}</span>
-        <span className={`mt-1 block truncate text-xs ${c.text} opacity-80`}>{label}</span>
+        <span className={`mt-1 block text-[11px] leading-tight ${c.text} opacity-80 sm:truncate sm:text-xs`}>{label}</span>
       </span>
     </>
   );
-  const cls = `flex items-center gap-3 rounded-2xl px-4 py-3 ${c.bg}`;
+  const cls = `flex min-h-[64px] items-center gap-3 rounded-2xl px-3 py-3 sm:px-4 ${c.bg}`;
   if (!onClick) return <div className={cls} data-testid={testId}>{inner}</div>;
   return <button type="button" onClick={onClick} className={`${cls} text-left transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f5a623]`} data-testid={testId}>{inner}</button>;
 }

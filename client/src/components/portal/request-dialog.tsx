@@ -49,12 +49,12 @@ export function RequestDialog({ id, onClose }: { id: number | null; onClose: () 
               <DetailRow label={t("requests.chooseType")} value={t(`requests.type.${r.type}`)} />
               <DetailRow label={t("requests.date")} value={new Date(r.createdAt).toLocaleString()} />
               {r.reservationId && (
-                <div className="grid grid-cols-3 gap-2 text-sm"><dt className="text-muted-foreground">{t("requests.form.reservation")}</dt>
-                  <dd className="col-span-2"><button type="button" className="underline" onClick={() => openReservation(r.reservationId!)}>#{r.reservationId}</button></dd></div>
+                <div className="grid gap-0.5 text-sm sm:grid-cols-3 sm:gap-2"><dt className="text-muted-foreground">{t("requests.form.reservation")}</dt>
+                  <dd className="sm:col-span-2"><button type="button" className="underline" onClick={() => openReservation(r.reservationId!)}>#{r.reservationId}</button></dd></div>
               )}
               {r.fineId && (
-                <div className="grid grid-cols-3 gap-2 text-sm"><dt className="text-muted-foreground">{t("requests.form.fine")}</dt>
-                  <dd className="col-span-2"><button type="button" className="underline" onClick={() => openFine(r.fineId!)}>#{r.fineId}</button></dd></div>
+                <div className="grid gap-0.5 text-sm sm:grid-cols-3 sm:gap-2"><dt className="text-muted-foreground">{t("requests.form.fine")}</dt>
+                  <dd className="sm:col-span-2"><button type="button" className="underline" onClick={() => openFine(r.fineId!)}>#{r.fineId}</button></dd></div>
               )}
               {r.type === "extension" && <DetailRow label={t("requests.form.newEndDate")} value={p.newEndDate} />}
               {r.type === "early_return" && <DetailRow label={t("requests.form.returnDate")} value={p.returnDate} />}
