@@ -288,6 +288,10 @@ describe("my vehicles", () => {
   const app = buildPortalTestApp();
   let customerId: number, agent: ReturnType<typeof request.agent>, csrf: string, vehicleId: number, rentalId: number, otherCustomerId: number;
   const email = `mv@${TEST_EMAIL_DOMAIN}`;
+  const isoDayOffset = (days: number) => new Date(Date.now() + days * 24 * 3600e3).toISOString().slice(0, 10);
+  const threeDaysAgo = isoDayOffset(-3);
+  const nextMonthStart = isoDayOffset(30);
+  const nextMonthEnd = isoDayOffset(35);
 
   beforeAll(async () => {
     customerId = (await createTestCustomer("MV")).id;
@@ -312,5 +316,41 @@ describe("my vehicles", () => {
     expect(res.body[0]).toMatchObject({ reservationId: rentalId, vehicle: { id: vehicleId }, maintenance: { blockId: block.id, status: "scheduled", canRequestChange: true, replacement: null } });
     await db.update(reservations).set({ startDate: new Date(Date.now() + 24 * 3600e3).toISOString().slice(0, 10), endDate: null }).where(eq(reservations.id, block.id));
     expect((await agent.get("/api/portal/vehicles/mine")).body[0].maintenance.canRequestChange).toBe(false);
+  });
+
+  it("prefers the upcoming scheduled block over a recently finished out block", async () => {
+    const v = (await createTestVehicle()).id;
+    await createTestReservation({ customerId, vehicleId: v, startDate: "2026-09-01", endDate: null, status: "picked_up" });
+    const outBlock = await storage.createMaintenanceBlock(v, "2026-08-20", threeDaysAgo);
+    await db.update(reservations).set({ maintenanceStatus: "out" }).where(eq(reservations.id, outBlock.id));
+    const scheduledBlock = await storage.createMaintenanceBlock(v, nextMonthStart, nextMonthEnd);
+    const res = await agent.get("/api/portal/vehicles/mine");
+    const item = res.body.find((x: any) => x.vehicle.id === v);
+    expect(item.maintenance.blockId).toBe(scheduledBlock.id);
+  });
+
+  it("falls back to the recent out block when there is no upcoming block", async () => {
+    const v = (await createTestVehicle()).id;
+    await createTestReservation({ customerId, vehicleId: v, startDate: "2026-09-01", endDate: null, status: "picked_up" });
+    const outBlock = await storage.createMaintenanceBlock(v, "2026-08-20", threeDaysAgo);
+    await db.update(reservations).set({ maintenanceStatus: "out" }).where(eq(reservations.id, outBlock.id));
+    const res = await agent.get("/api/portal/vehicles/mine");
+    const item = res.body.find((x: any) => x.vehicle.id === v);
+    expect(item.maintenance.status).toBe("out");
+  });
+
+  it("scopes a driver login to only their own rental", async () => {
+    const driver = await createTestDriver(customerId, "Rijder");
+    const driverVehicleId = (await createTestVehicle()).id;
+    const driverRentalId = (await createTestReservation({ customerId, vehicleId: driverVehicleId, driverId: driver.id, startDate: "2026-09-01", endDate: null, status: "picked_up" })).id;
+    const driverEmail = `mvd@${TEST_EMAIL_DOMAIN}`;
+    const du = await portalStorage.createPortalUser({ customerId, email: driverEmail, fullName: "MV Driver", role: "driver", driverId: driver.id }, "t");
+    await portalStorage.updatePortalUser(du.id, { passwordHash: await hashPassword(password) });
+    const { agent: driverAgent } = await loginAs(app, driverEmail);
+    const res = await driverAgent.get("/api/portal/vehicles/mine");
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].reservationId).toBe(driverRentalId);
+    expect(res.body[0].vehicle.id).toBe(driverVehicleId);
   });
 });

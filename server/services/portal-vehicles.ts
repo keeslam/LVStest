@@ -32,7 +32,12 @@ export async function listMyVehicles(customerId: number, scope: PortalScope): Pr
   const mileageReports = requests.filter((q) => q.type === "mileage" && q.reservationId).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   return rentals.map((r) => {
-    const block = blocks.find((b) => b.vehicleId === r.vehicleId && b.startDate <= (r.endDate ?? "9999-12-31") && (b.endDate ?? b.startDate) >= r.startDate) ?? null;
+    const overlapping = blocks.filter((b) => b.vehicleId === r.vehicleId && b.startDate <= (r.endDate ?? "9999-12-31") && (b.endDate ?? "9999-12-31") >= r.startDate);
+    const upcoming = overlapping.filter((b) => b.maintenanceStatus !== "out");
+    const recentlyOut = overlapping.filter((b) => b.maintenanceStatus === "out");
+    // Blocks are ordered by startDate ascending: the first non-"out" block is the earliest
+    // upcoming one; when there is none, fall back to the most recent (last) "out" block.
+    const block = upcoming[0] ?? recentlyOut[recentlyOut.length - 1] ?? null;
     let maintenance: PortalVehicleMaintenanceDto | null = null;
     if (block) {
       const rep = replacements.find((x) => x.r.replacementForReservationId === r.id && x.v);
