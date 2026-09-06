@@ -135,8 +135,9 @@ bestuurder wisselen op een auto maakt de vorige bestuurder weer vrij.
 ## Voertuigen online en de blacklist
 
 Op de pagina Aanvragen ziet een klant met het recht "online huren" (canBook)
-de voertuigen die staff online heeft gezet (Klantenportaal > Voertuigen online),
-met status, omschrijving en, als "prijzen tonen" aanstaat, dag- en maandprijs.
+alleen voertuigen die staff online heeft gezet (Klantenportaal > Voertuigen
+online) én die nu de status "beschikbaar" hebben; verhuurde of geblokkeerde
+auto's komen niet mee. Per auto: omschrijving en, als "prijzen tonen" aanstaat, dag- en maandprijs.
 "Aanvragen" opent een huuraanvraag (type `booking`: voertuig, vanaf, tot en
 met) die als gewone aanvraag bij staff binnenkomt; staff maakt daarna zelf de
 reservering.
@@ -144,8 +145,8 @@ reservering.
 De blacklist (tabel `vehicle_customer_blacklist`, dezelfde als in de klant-
 en voertuigdialoog) wordt op de server toegepast: `GET /api/portal/vehicles`
 laat geblokkeerde voertuigen weg en `POST /api/portal/requests` weigert een
-huuraanvraag voor een geblokkeerd of niet-online voertuig
-(`PORTAL_VEHICLE_BLOCKED` / 404), wat de client ook stuurt. Beheer voor het
+huuraanvraag voor een geblokkeerd, niet-online of niet-beschikbaar voertuig
+(`PORTAL_VEHICLE_BLOCKED` / 404 / `PORTAL_VEHICLE_UNAVAILABLE`), wat de client ook stuurt. Beheer voor het
 portaal: Klantenportaal > Blacklist (tegel op het dashboard, knop in de
 werkbalk, kolom "Geblokkeerd" bij Voertuigen online): zoeken, blokkade
 toevoegen (voertuig + klant + reden) en opheffen. Routes:

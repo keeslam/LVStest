@@ -15,6 +15,7 @@ export const PORTAL_ERROR = {
   NOT_FOUND: 'PORTAL_NOT_FOUND',
   DRIVER_BUSY: 'PORTAL_DRIVER_BUSY',
   VEHICLE_BLOCKED: 'PORTAL_VEHICLE_BLOCKED',
+  VEHICLE_UNAVAILABLE: 'PORTAL_VEHICLE_UNAVAILABLE',
   REQUEST_INVALID_PERIOD: 'PORTAL_REQUEST_INVALID_PERIOD',
   ATTACHMENT_LIMIT: 'PORTAL_ATTACHMENT_LIMIT',
   CSRF: 'PORTAL_CSRF',
@@ -80,7 +81,7 @@ export interface PortalVehicleDto {
   model: string;
   vehicleType: string | null;
   fuel: string | null;
-  /** 'available' | 'rented' | 'maintenance' | … */
+  /** Always 'available': the server only sends vehicles that can be rented right now. */
   availabilityStatus: string;
   description: string | null;
   /** Only present when the customer's showPrices switch is on. */

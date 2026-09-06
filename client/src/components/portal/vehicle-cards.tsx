@@ -23,19 +23,16 @@ export function AvailableVehicles() {
   const { data = [], isLoading } = useQuery<PortalVehicleDto[]>({ queryKey: ["portal", "/api/portal/vehicles"], queryFn: portalQueryFn, enabled: Boolean(me?.settings.canBook) });
   if (!me?.settings.canBook || isLoading) return null;
   const shown = data.filter((v) => hit(v.brand, v.model, v.licensePlate, v.vehicleType, v.fuel, v.description));
-  const free = data.filter((v) => v.availabilityStatus === "available").length;
 
   return (
     <Section title={t("vehicles.title")} count={data.length}>
-      <p className="text-sm text-[#64748b]" data-testid="portal-available-vehicles">{t("vehicles.subtitle", { free, total: data.length })}</p>
+      <p className="text-sm text-[#64748b]" data-testid="portal-available-vehicles">{t("vehicles.subtitle", { count: data.length })}</p>
       {data.length > 0 && <SearchBox value={query} onChange={setQuery} placeholder={t("vehicles.search")} />}
       {shown.length === 0
         ? <EmptyState icon={<Car className="h-6 w-6" />} text={q ? t("lists.noMatch") : t("vehicles.empty")} />
         : (
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {shown.map((v) => {
-              const available = v.availabilityStatus === "available";
-              return (
+            {shown.map((v) => (
                 <div key={v.id} className="flex flex-col rounded-xl border border-[#e6e8f0] bg-white p-4 shadow-sm" data-testid={`portal-vehicle-${v.id}`}>
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -46,9 +43,7 @@ export function AvailableVehicles() {
                         {v.fuel && <span className="inline-flex items-center gap-1"><Fuel className="h-3 w-3" />{v.fuel}</span>}
                       </div>
                     </div>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${available ? "bg-[#e1f5ee] text-[#085041]" : "bg-[#fdf1e0] text-[#7a4b00]"}`}>
-                      {available ? t("vehicles.available") : t("vehicles.unavailable")}
-                    </span>
+                    <span className="shrink-0 rounded-full bg-[#e1f5ee] px-2 py-0.5 text-xs font-medium text-[#085041]">{t("vehicles.available")}</span>
                   </div>
                   {v.description && <p className="mt-2 text-sm text-[#334155]">{v.description}</p>}
                   {(v.dailyPrice || v.monthlyPrice) && (
@@ -59,11 +54,10 @@ export function AvailableVehicles() {
                   )}
                   <div className="mt-3 flex-1" />
                   <Button size="sm" className={`${btnPrimary} w-full`} onClick={() => openNewRequest({ type: "booking", vehicleId: v.id })} data-testid={`button-book-${v.id}`}>
-                    {available ? t("vehicles.request") : t("vehicles.requestLater")}
+                    {t("vehicles.request")}
                   </Button>
                 </div>
-              );
-            })}
+            ))}
           </div>
         )}
     </Section>

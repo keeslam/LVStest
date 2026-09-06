@@ -229,18 +229,19 @@ export const portalStorage = {
   },
 
   // ---- drivers (always scoped) ----------------------------------------------
-  /** Vehicles offered online that this customer is allowed to rent (blacklist applied here, never in the client). */
+  /** Vehicles offered online, available right now, that this customer may rent (blacklist applied here, never in the client). */
   async listOnlineVehiclesForCustomer(customerId: number): Promise<Vehicle[]> {
     const blocked = db.select({ id: vehicleCustomerBlacklist.vehicleId }).from(vehicleCustomerBlacklist).where(eq(vehicleCustomerBlacklist.customerId, customerId));
     return db.select().from(vehicles)
-      .where(and(eq(vehicles.offeredOnline, true), sql`${vehicles.id} not in (${blocked})`))
+      .where(and(eq(vehicles.offeredOnline, true), eq(vehicles.availabilityStatus, "available"), sql`${vehicles.id} not in (${blocked})`))
       .orderBy(vehicles.brand, vehicles.model, vehicles.licensePlate);
   },
-  /** True when the vehicle is offered online and the customer is not blocked for it. */
-  async canCustomerBookVehicle(vehicleId: number, customerId: number): Promise<{ ok: true; vehicle: Vehicle } | { ok: false; reason: "not_found" | "not_online" | "blocked" }> {
+  /** True when the vehicle is offered online, available, and the customer is not blocked for it. */
+  async canCustomerBookVehicle(vehicleId: number, customerId: number): Promise<{ ok: true; vehicle: Vehicle } | { ok: false; reason: "not_found" | "not_online" | "not_available" | "blocked" }> {
     const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, vehicleId));
     if (!vehicle) return { ok: false, reason: "not_found" };
     if (!vehicle.offeredOnline) return { ok: false, reason: "not_online" };
+    if (vehicle.availabilityStatus !== "available") return { ok: false, reason: "not_available" };
     const [block] = await db.select({ id: vehicleCustomerBlacklist.id }).from(vehicleCustomerBlacklist)
       .where(and(eq(vehicleCustomerBlacklist.vehicleId, vehicleId), eq(vehicleCustomerBlacklist.customerId, customerId)));
     if (block) return { ok: false, reason: "blocked" };

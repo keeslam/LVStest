@@ -192,7 +192,8 @@
     "PORTAL_REQUEST_INVALID_PERIOD": "De gekozen datum valt niet binnen de toegestane periode.",
     "PORTAL_ATTACHMENT_LIMIT": "Maximaal 5 bijlagen.",
     "PORTAL_DRIVER_BUSY": "Deze bestuurder rijdt al in een andere auto. Eén auto per bestuurder.",
-    "PORTAL_VEHICLE_BLOCKED": "Dit voertuig is voor uw bedrijf niet beschikbaar. Neem contact op met Lam Groep."
+    "PORTAL_VEHICLE_BLOCKED": "Dit voertuig is voor uw bedrijf niet beschikbaar. Neem contact op met Lam Groep.",
+    "PORTAL_VEHICLE_UNAVAILABLE": "Dit voertuig is op dit moment niet beschikbaar."
   },
   "admin": {
     "navLabel": "Klantenportaal",
@@ -761,15 +762,13 @@
   },
   "vehicles": {
     "title": "Beschikbaar om te huren",
-    "subtitle": "{{free}} van {{total}} nu vrij. Vraag een auto aan en Lam Groep bevestigt de reservering.",
+    "subtitle": "{{count}} voertuig(en) nu beschikbaar. Vraag een auto aan en Lam Groep bevestigt de reservering.",
     "search": "Zoek op merk, model, kenteken of type…",
-    "empty": "Er worden op dit moment geen voertuigen online aangeboden.",
+    "empty": "Er is op dit moment geen voertuig beschikbaar. Kijk later nog eens of stel een vraag via een aanvraag.",
     "available": "Beschikbaar",
-    "unavailable": "Nu verhuurd",
     "perDay": "per dag",
     "perMonth": "per maand",
     "request": "Aanvragen",
-    "requestLater": "Aanvragen voor later",
     "quick": "Auto huren"
   }
 }

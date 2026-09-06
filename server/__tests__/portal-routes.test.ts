@@ -142,7 +142,9 @@ describe("portal routes", () => {
     const online = await createTestVehicle();
     const blockedForA = await createTestVehicle();
     const offline = await createTestVehicle();
+    const rented = await createTestVehicle();
     await storage.updateVehicle(online.id, { offeredOnline: true, onlineDescription: "Ruime bus" });
+    await storage.updateVehicle(rented.id, { offeredOnline: true, availabilityStatus: "rented" });
     await storage.updateVehicle(blockedForA.id, { offeredOnline: true });
     const block = await storage.addToBlacklist({ vehicleId: blockedForA.id, customerId: a, reason: "test", createdBy: null });
 
@@ -153,6 +155,7 @@ describe("portal routes", () => {
     expect(ids).toContain(online.id);
     expect(ids).not.toContain(blockedForA.id);
     expect(ids).not.toContain(offline.id);
+    expect(ids).not.toContain(rented.id);
     expect(list.body.find((v: any) => v.id === online.id).description).toBe("Ruime bus");
     // Customer B is not blocked, so B sees both online vehicles.
     const asB = await loginAs(app, emailB);
@@ -165,6 +168,9 @@ describe("portal routes", () => {
     expect(blocked.status).toBe(403);
     expect(blocked.body.code).toBe("PORTAL_VEHICLE_BLOCKED");
     expect((await send(offline.id)).status).toBe(404);
+    const busy = await send(rented.id);
+    expect(busy.status).toBe(409);
+    expect(busy.body.code).toBe("PORTAL_VEHICLE_UNAVAILABLE");
     const ok = await send(online.id);
     expect(ok.status).toBe(201);
     expect(ok.body.type).toBe("booking");

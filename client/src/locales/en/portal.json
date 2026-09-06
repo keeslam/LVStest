@@ -192,7 +192,8 @@
     "PORTAL_REQUEST_INVALID_PERIOD": "The chosen date is outside the allowed period.",
     "PORTAL_ATTACHMENT_LIMIT": "At most 5 attachments.",
     "PORTAL_DRIVER_BUSY": "This driver already has another car. One car per driver.",
-    "PORTAL_VEHICLE_BLOCKED": "This vehicle is not available for your company. Please contact Lam Groep."
+    "PORTAL_VEHICLE_BLOCKED": "This vehicle is not available for your company. Please contact Lam Groep.",
+    "PORTAL_VEHICLE_UNAVAILABLE": "This vehicle is not available at the moment."
   },
   "admin": {
     "navLabel": "Customer portal",
@@ -761,15 +762,13 @@
   },
   "vehicles": {
     "title": "Available to rent",
-    "subtitle": "{{free}} of {{total}} free right now. Request a car and Lam Groep confirms the reservation.",
+    "subtitle": "{{count}} vehicle(s) available right now. Request a car and Lam Groep confirms the reservation.",
     "search": "Search by brand, model, plate or type…",
-    "empty": "No vehicles are offered online at the moment.",
+    "empty": "No vehicle is available at the moment. Check back later or ask via a request.",
     "available": "Available",
-    "unavailable": "Rented out",
     "perDay": "per day",
     "perMonth": "per month",
     "request": "Request",
-    "requestLater": "Request for later",
     "quick": "Rent a car"
   }
 }

@@ -90,7 +90,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
             <Label htmlFor="rq-vehicle">{t("requests.form.vehicle")}</Label>
             <select id="rq-vehicle" className="w-full rounded-md border px-3 py-2 text-sm" value={payload.vehicleId ?? ""} onChange={(e) => setPayload({ ...payload, vehicleId: e.target.value })} required data-testid="select-request-vehicle">
               <option value="">—</option>
-              {vehicles.map((v) => <option key={v.id} value={v.id}>{v.brand} {v.model} · {v.licensePlate}{v.availabilityStatus !== "available" ? ` (${t("vehicles.unavailable")})` : ""}</option>)}
+              {vehicles.map((v) => <option key={v.id} value={v.id}>{v.brand} {v.model} · {v.licensePlate}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">

@@ -255,6 +255,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
       if (!check.ok) {
         discard();
         if (check.reason === "blocked") return portalError(res, 403, PORTAL_ERROR.VEHICLE_BLOCKED, "Dit voertuig is voor uw bedrijf niet beschikbaar");
+        if (check.reason === "not_available") return portalError(res, 409, PORTAL_ERROR.VEHICLE_UNAVAILABLE, "Dit voertuig is op dit moment niet beschikbaar");
         return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Vehicle not offered online");
       }
       if (p.startDate < today) { discard(); return portalError(res, 400, PORTAL_ERROR.REQUEST_INVALID_PERIOD, "Start date must be today or later"); }
