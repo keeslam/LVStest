@@ -43,7 +43,7 @@ export function RequestsTable({ customerId, preview, types }: { customerId?: num
         </select>
         <select className="rounded-md border px-3 py-2 text-sm" value={type} onChange={(e) => setType(e.target.value)}>
           <option value="">{t("admin.requests.filters.allTypes")}</option>
-          {Object.values(PortalRequestType).map((s) => <option key={s} value={s}>{t(`admin.requests.type.${s}`)}</option>)}
+          {(types && types.length > 0 ? types : Object.values(PortalRequestType)).map((s) => <option key={s} value={s}>{t(`admin.requests.type.${s}`)}</option>)}
         </select>
       </div>}
       {rows.length === 0 ? <p className="text-sm text-muted-foreground">{t("admin.requests.empty")}</p> : (
