@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { btnPrimary } from "./ui";
 import { PeriodPicker, TimeSelect } from "./period-picker";
+import { ReservationPicker } from "./reservation-picker";
 
 export function RequestForm({ initialType, reservationId: initialReservation, fineId: initialFine, vehicleId: initialVehicle, startDate: initialStart, endDate: initialEnd, onSubmitted }: { initialType?: PortalRequestTypeValue; reservationId?: number; fineId?: number; vehicleId?: number; startDate?: string; endDate?: string; onSubmitted: (id: number) => void }) {
   const { t } = useTranslation("portal");
@@ -70,6 +71,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (files.length > 5) { toast({ title: t("errors.PORTAL_ATTACHMENT_LIMIT"), variant: "destructive" }); return; }
+    if (needs === "reservation" && !reservationId) { toast({ title: t("requests.form.pickReservationFirst"), variant: "destructive" }); return; }
     submit.mutate();
   }
 
@@ -83,13 +85,8 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
       </div>
       {needs === "reservation" && (
         <div>
-          <Label htmlFor="rq-res">{t("requests.form.reservation")}</Label>
-          <select id="rq-res" className="w-full rounded-md border px-3 py-2 text-sm" value={reservationId} onChange={(e) => setReservationId(e.target.value)} required>
-            <option value="">—</option>
-            {openReservations.map((r) => (
-              <option key={r.id} value={r.id}>#{r.id} {r.vehicle ? `${r.vehicle.brand} ${r.vehicle.model} ${r.vehicle.licensePlate}` : ""} {r.startDate} – {r.endDate ?? "…"}</option>
-            ))}
-          </select>
+          <Label>{t("requests.form.reservation")}</Label>
+          <ReservationPicker reservations={openReservations} value={reservationId ? Number(reservationId) : null} onChange={(id) => setReservationId(id ? String(id) : "")} />
         </div>
       )}
       {needs === "fine" && (

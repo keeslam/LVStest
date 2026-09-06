@@ -854,6 +854,11 @@
       "mileageHint": "As shown on the dashboard. Lam Groep uses this for the service schedule.",
       "reportMaintenance": "Report maintenance",
       "reportMileage": "Report mileage",
+      "searchReservation": "Search by plate, car or driver",
+      "noReservations": "You have no current or planned reservation right now.",
+      "noReservationMatch": "No reservation found. Try another plate.",
+      "moreReservations": "{{shown}} of {{total}} shown, type to narrow down.",
+      "pickReservationFirst": "First choose the reservation this is about.",
       "yes": "Yes"
     },
     "date": "Submitted on",

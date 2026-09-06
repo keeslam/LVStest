@@ -10,7 +10,7 @@ export function NewRequestDialog({ prefill, onClose }: { prefill: NewRequestPref
   return (
     <Dialog open={prefill !== null} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg" data-testid="portal-new-request-dialog">
-        <DialogHeader><DialogTitle>{t("requests.new")}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{prefill?.type && prefill.type !== "other" ? t(`requests.type.${prefill.type}`) : t("requests.new")}</DialogTitle></DialogHeader>
         {prefill && (
           <RequestForm key={`${prefill.type ?? ""}-${prefill.reservationId ?? ""}-${prefill.fineId ?? ""}-${prefill.vehicleId ?? ""}`}
             initialType={prefill.type} reservationId={prefill.reservationId} fineId={prefill.fineId} vehicleId={prefill.vehicleId} startDate={prefill.startDate} endDate={prefill.endDate}

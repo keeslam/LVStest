@@ -854,6 +854,11 @@
       "mileageHint": "Zoals op het dashboard. Lam Groep gebruikt dit voor het onderhoudsschema.",
       "reportMaintenance": "Onderhoud melden",
       "reportMileage": "Kilometerstand doorgeven",
+      "searchReservation": "Zoek op kenteken, auto of bestuurder",
+      "noReservations": "U heeft op dit moment geen lopende of geplande reservering.",
+      "noReservationMatch": "Geen reservering gevonden. Probeer een ander kenteken.",
+      "moreReservations": "{{shown}} van {{total}} getoond, typ om te verfijnen.",
+      "pickReservationFirst": "Kies eerst de reservering waar het om gaat.",
       "yes": "Ja"
     },
     "date": "Ingediend op",
