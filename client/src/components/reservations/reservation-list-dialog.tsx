@@ -277,7 +277,10 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
     const duration = getDuration(reservation.startDate, reservation.endDate);
     
     return (
-      <div className="bg-white border rounded-md hover:bg-gray-50 transition-colors" data-testid={`reservation-card-${reservation.id}`}>
+      <div className="bg-white border rounded-md hover:bg-gray-50 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" role="button" tabIndex={0}
+        onClick={(e) => handleView(e, reservation)}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleView(e as unknown as React.MouseEvent, reservation); }}
+        data-testid={`reservation-card-${reservation.id}`}>
         <div className="p-2 grid grid-cols-[auto_1fr_1fr_1fr_1fr_auto] gap-3 items-center">
           {/* ID & Status */}
           <div className="flex items-center gap-2">
@@ -355,7 +358,7 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
             <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => handleEdit(e, reservation)} data-testid={`edit-btn-${reservation.id}`}>
               <Edit className="h-3.5 w-3.5" />
             </Button>
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(reservation)} data-testid={`delete-btn-${reservation.id}`}>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); handleDelete(reservation); }} data-testid={`delete-btn-${reservation.id}`}>
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
