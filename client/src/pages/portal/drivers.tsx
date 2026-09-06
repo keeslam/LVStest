@@ -70,7 +70,7 @@ export default function PortalDriversPage() {
                   </div>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {canAssign && d.status === "active" && <Button size="sm" variant="outline" className={btnSecondary} onClick={() => setAssigning(d)} data-testid={`button-assign-car-${d.id}`}><Car className="mr-1 h-4 w-4" />{t("drivers.assignToCar")}</Button>}
+                  {canAssign && d.status === "active" && carsOf(reservations, d.id).length === 0 && <Button size="sm" variant="outline" className={btnSecondary} onClick={() => setAssigning(d)} data-testid={`button-assign-car-${d.id}`}><Car className="mr-1 h-4 w-4" />{t("drivers.assignToCar")}</Button>}
                   {d.hasLicenseFile && <Button asChild size="sm" variant="ghost"><a href={`/api/portal/drivers/${d.id}/license`} target="_blank" rel="noopener"><FileText className="mr-1 h-4 w-4" />{t("actions.viewLicense")}</a></Button>}
                   <DriverFormDialog driver={d}><Button size="sm" variant="outline" className={btnSecondary}>{t("actions.edit")}</Button></DriverFormDialog>
                   <Button size="sm" variant="outline" className={btnSecondary} onClick={() => toggle.mutate(d)}>{d.status === "active" ? t("actions.deactivate") : t("actions.activate")}</Button>

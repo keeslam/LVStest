@@ -14,8 +14,14 @@ import { formatLicensePlate } from "@/lib/format-utils";
 import { DriverFormDialog } from "./driver-form-dialog";
 import { btnPrimary } from "./ui";
 
-const driverItems = (drivers: PortalDriverDto[]) =>
-  drivers.filter((d) => d.status === "active").map((d) => ({ id: d.id, label: d.displayName, sub: d.email ?? d.phone ?? null, search: `${d.firstName ?? ""} ${d.lastName ?? ""} ${d.phone ?? ""} ${d.email ?? ""}` }));
+/** Active drivers; those already on another booked or running car are listed but cannot be chosen (one car per driver). */
+const driverItems = (drivers: PortalDriverDto[], reservations: PortalReservationDto[], reservationId: number, busyLabel: (plate: string) => string) =>
+  drivers.filter((d) => d.status === "active").map((d) => {
+    const busy = reservations.find((r) => r.id !== reservationId && r.driver?.id === d.id && (r.status === "booked" || r.status === "picked_up"));
+    return { id: d.id, label: d.displayName, disabled: Boolean(busy), sub: busy ? busyLabel(busy.vehicle?.licensePlate ? formatLicensePlate(busy.vehicle.licensePlate) : `#${busy.id}`) : d.email ?? d.phone ?? null, search: `${d.firstName ?? ""} ${d.lastName ?? ""} ${d.phone ?? ""} ${d.email ?? ""}` };
+  });
+
+const errorTitle = (e: unknown, t: (k: string) => string) => e instanceof PortalApiError ? (e.code === "PORTAL_DRIVER_BUSY" ? e.message : t(`errors.${e.code}`)) : t("errors.PORTAL_SERVER_ERROR");
 
 /** Put another driver on this car: searchable list, or add a new driver without leaving the dialog. */
 export function ChangeDriverDialog({ reservation }: { reservation: PortalReservationDto }) {
@@ -27,6 +33,7 @@ export function ChangeDriverDialog({ reservation }: { reservation: PortalReserva
   const [driverId, setDriverId] = useState<string>(reservation.driver ? String(reservation.driver.id) : "");
   const [note, setNote] = useState("");
   const { data: drivers = [] } = useQuery<PortalDriverDto[]>({ queryKey: ["portal", "/api/portal/drivers"], queryFn: portalQueryFn, enabled: open });
+  const { data: reservations = [] } = useQuery<PortalReservationDto[]>({ queryKey: ["portal", "/api/portal/reservations"], queryFn: portalQueryFn, enabled: open });
 
   const mutation = useMutation({
     mutationFn: () => portalFetch("POST", `/api/portal/reservations/${reservation.id}/driver`, { driverId: Number(driverId), note: note || undefined }),
@@ -35,7 +42,7 @@ export function ChangeDriverDialog({ reservation }: { reservation: PortalReserva
       toast({ title: t("drivers.changed") });
       setOpen(false);
     },
-    onError: (e) => toast({ title: t(`errors.${e instanceof PortalApiError ? e.code : "PORTAL_SERVER_ERROR"}`), variant: "destructive" }),
+    onError: (e) => toast({ title: errorTitle(e, t), variant: "destructive" }),
   });
 
   return (
@@ -50,7 +57,7 @@ export function ChangeDriverDialog({ reservation }: { reservation: PortalReserva
                 <Label htmlFor="driver-select">{t("drivers.selectDriver")}</Label>
                 <button type="button" onClick={() => setAdding(true)} className="inline-flex items-center gap-1 text-xs font-medium text-[#2a2f9c] hover:underline" data-testid="button-add-driver-inline"><UserPlus className="h-3.5 w-3.5" />{t("drivers.newInline")}</button>
               </div>
-              <SearchListPicker items={driverItems(drivers)} value={driverId ? Number(driverId) : null} onChange={(did) => setDriverId(did ? String(did) : "")}
+              <SearchListPicker items={driverItems(drivers, reservations, reservation.id, (plate) => t("drivers.busyIn", { plate }))} value={driverId ? Number(driverId) : null} onChange={(did) => setDriverId(did ? String(did) : "")}
                 searchPlaceholder={t("drivers.search")} emptyText={t("drivers.noneFound")} changeLabel={t("actions.change")}
                 hintText={(shown, total) => t("drivers.moreShown", { shown, total })} searchFrom={6} testId="portal-driver-picker" />
             </div>
@@ -87,7 +94,7 @@ export function AssignVehicleDialog({ driver, open, onOpenChange }: { driver: Po
   const mutation = useMutation({
     mutationFn: () => portalFetch("POST", `/api/portal/reservations/${reservationId}/driver`, { driverId: driver.id }),
     onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ["portal"] }); toast({ title: t("drivers.changed") }); onOpenChange(false); setReservationId(null); },
-    onError: (e) => toast({ title: t(`errors.${e instanceof PortalApiError ? e.code : "PORTAL_SERVER_ERROR"}`), variant: "destructive" }),
+    onError: (e) => toast({ title: errorTitle(e, t), variant: "destructive" }),
   });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

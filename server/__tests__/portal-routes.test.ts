@@ -24,7 +24,7 @@ async function loginAs(app: any, email: string) {
 
 describe("portal routes", () => {
   const app = buildPortalTestApp();
-  let a: number, b: number, vehicleId: number, driverA: number, resA: number, resB: number, docA: number;
+  let a: number, b: number, vehicleId: number, driverA: number, resA: number, resA2: number, resB: number, docA: number;
   const emailA = `a@${TEST_EMAIL_DOMAIN}`, emailB = `b@${TEST_EMAIL_DOMAIN}`;
   const docFile = path.join(getUploadsDir(), "__portal_test__", "test.pdf");
 
@@ -35,6 +35,7 @@ describe("portal routes", () => {
     vehicleId = (await createTestVehicle()).id;
     driverA = (await createTestDriver(a, "Driver A")).id;
     resA = (await createTestReservation({ customerId: a, vehicleId, driverId: driverA, status: "picked_up" })).id;
+    resA2 = (await createTestReservation({ customerId: a, vehicleId, status: "booked" })).id;
     resB = (await createTestReservation({ customerId: b, vehicleId })).id;
     docA = (await createTestDocument({ reservationId: resA, vehicleId, documentType: "Contract (Signed)" })).id;
     fs.mkdirSync(path.dirname(docFile), { recursive: true });
@@ -49,7 +50,7 @@ describe("portal routes", () => {
   it("lists own reservations only, without prices by default", async () => {
     const { agent } = await loginAs(app, emailA);
     const res = await agent.get("/api/portal/reservations");
-    expect(res.body.map((r: any) => r.id)).toEqual([resA]);
+    expect(res.body.map((r: any) => r.id)).toEqual(expect.arrayContaining([resA, resA2])); expect(res.body).toHaveLength(2);
     expect(res.body[0]).not.toHaveProperty("totalPrice");
     expect(res.body[0].vehicle.id).toBe(vehicleId);
   });
@@ -94,6 +95,15 @@ describe("portal routes", () => {
     const change = await agent.post(`/api/portal/reservations/${resA}/driver`).set("X-CSRF-Token", csrf).send({ driverId: created.body.id, note: "vakantie" });
     expect(change.status).toBe(200);
     expect(change.body.driver.id).toBe(created.body.id);
+    // Same driver again on the same car is fine (no other car involved).
+    expect((await agent.post(`/api/portal/reservations/${resA}/driver`).set("X-CSRF-Token", csrf).send({ driverId: created.body.id })).status).toBe(200);
+    // One car per driver: the driver now on resA cannot also be put on the booked resA2.
+    const busy = await agent.post(`/api/portal/reservations/${resA2}/driver`).set("X-CSRF-Token", csrf).send({ driverId: created.body.id });
+    expect(busy.status).toBe(400);
+    expect(busy.body.code).toBe("PORTAL_DRIVER_BUSY");
+    expect(busy.body.error).toMatch(/rijdt al in/);
+    // Driver A was replaced on resA, so Driver A is free for resA2.
+    expect((await agent.post(`/api/portal/reservations/${resA2}/driver`).set("X-CSRF-Token", csrf).send({ driverId: driverA })).status).toBe(200);
     // The fixture inserted the reservation directly (no history row), so the
     // change opens the first row; through the app the create hook adds one.
     expect(change.body.driverHistory.at(-1).driverId).toBe(created.body.id);

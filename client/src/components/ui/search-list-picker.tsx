@@ -10,6 +10,8 @@ export interface PickerItem {
   sub?: string | null;
   /** Extra text that should match a search but is not shown. */
   search?: string;
+  /** Shown greyed out and not selectable (e.g. a driver who already has a car). */
+  disabled?: boolean;
 }
 
 interface Props {
@@ -63,8 +65,8 @@ export function SearchListPicker({ items, value, onChange, searchPlaceholder, em
         {shown.length === 0 && <li className="px-3 py-3 text-sm text-muted-foreground">{emptyText}</li>}
         {shown.map((i) => (
           <li key={i.id}>
-            <button type="button" role="option" aria-selected={false} onClick={() => onChange(i.id)}
-              className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted/60 focus:bg-muted/60 focus:outline-none"
+            <button type="button" role="option" aria-selected={false} aria-disabled={i.disabled || undefined} disabled={i.disabled} onClick={() => onChange(i.id)}
+              className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm focus:outline-none ${i.disabled ? "cursor-not-allowed text-muted-foreground/70" : "hover:bg-muted/60 focus:bg-muted/60"}`}
               data-testid={`${testId}-option-${i.id}`}>
               <span className="truncate">{i.label}</span>
               {i.sub && <span className="shrink-0 text-xs text-muted-foreground">{i.sub}</span>}

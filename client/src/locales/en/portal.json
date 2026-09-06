@@ -160,7 +160,9 @@
     "assign": "Assign",
     "assignToCar": "Assign to car",
     "drives": "Drives",
-    "noCar": "No car"
+    "noCar": "No car",
+    "busyIn": "Already drives {{plate}}",
+    "notePlaceholder": "E.g. holiday, illness, swap from Monday"
   },
   "account": {
     "title": "My account",
@@ -182,7 +184,8 @@
     "PORTAL_NOT_FOUND": "Not found.",
     "PORTAL_SERVER_ERROR": "Something went wrong. Please try again later.",
     "PORTAL_REQUEST_INVALID_PERIOD": "The chosen date is outside the allowed period.",
-    "PORTAL_ATTACHMENT_LIMIT": "At most 5 attachments."
+    "PORTAL_ATTACHMENT_LIMIT": "At most 5 attachments.",
+    "PORTAL_DRIVER_BUSY": "This driver already has another car. One car per driver."
   },
   "admin": {
     "navLabel": "Customer portal",

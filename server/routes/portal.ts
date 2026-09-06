@@ -110,6 +110,10 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     if (!ACTIVE_STATUSES.includes(r.status)) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Only booked or running rentals can change driver");
     const driver = await portalStorage.getDriverForCustomer(parsed.data.driverId, ctx.customerId);
     if (!driver || driver.status !== "active") return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Driver not found");
+    // One car per driver: a driver who is already on another booked or running car cannot be put on this one.
+    const busy = (await portalStorage.listReservationsForCustomer(ctx.customerId, ctx.scope))
+      .find((other) => other.id !== id && other.driverId === driver.id && ACTIVE_STATUSES.includes(other.status));
+    if (busy) return portalError(res, 400, PORTAL_ERROR.DRIVER_BUSY, `${driver.displayName} rijdt al in ${busy.vehicle?.licensePlate ?? `#${busy.id}`}`);
 
     await assignDriverToReservation({ reservationId: id, driverId: driver.id, byPortalUserId: ctx.user.id, note: parsed.data.note });
     await logPortalActivity(req, "driver_assigned", { entity: "reservation", entityId: id, details: { driverId: driver.id, previousDriverId: r.driverId } });

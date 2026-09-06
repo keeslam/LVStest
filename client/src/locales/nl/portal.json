@@ -160,7 +160,9 @@
     "assign": "Koppelen",
     "assignToCar": "Koppel aan auto",
     "drives": "Rijdt in",
-    "noCar": "Geen auto"
+    "noCar": "Geen auto",
+    "busyIn": "Rijdt al in {{plate}}",
+    "notePlaceholder": "Bijv. vakantie, ziekte, wissel per maandag"
   },
   "account": {
     "title": "Mijn account",
@@ -182,7 +184,8 @@
     "PORTAL_NOT_FOUND": "Niet gevonden.",
     "PORTAL_SERVER_ERROR": "Er ging iets mis. Probeer het later opnieuw.",
     "PORTAL_REQUEST_INVALID_PERIOD": "De gekozen datum valt niet binnen de toegestane periode.",
-    "PORTAL_ATTACHMENT_LIMIT": "Maximaal 5 bijlagen."
+    "PORTAL_ATTACHMENT_LIMIT": "Maximaal 5 bijlagen.",
+    "PORTAL_DRIVER_BUSY": "Deze bestuurder rijdt al in een andere auto. Eén auto per bestuurder."
   },
   "admin": {
     "navLabel": "Klantenportaal",

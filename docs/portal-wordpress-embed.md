@@ -125,3 +125,8 @@ zoekveld (naam, e-mail, telefoon, rijbewijs, kenteken) en een knop "Koppel aan
 auto". Vanuit een reservering werkt het andersom: "Bestuurder wijzigen" toont
 een zoekbare lijst en een knop "Nieuwe bestuurder" die de nieuwe bestuurder
 meteen op die auto zet.
+Regel: één bestuurder per auto en één auto per bestuurder. Een bestuurder die
+al op een geboekte of lopende auto staat wordt in de keuzelijst grijs getoond
+("Rijdt al in …") en de server weigert de koppeling (`PORTAL_DRIVER_BUSY`);
+"Koppel aan auto" verschijnt alleen bij bestuurders zonder auto. Een
+bestuurder wisselen op een auto maakt de vorige bestuurder weer vrij.
