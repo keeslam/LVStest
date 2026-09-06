@@ -1,3 +1,4 @@
+import { formatLicensePlate } from "@/lib/format-utils";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { PortalFineDto } from "@shared/fines";
@@ -29,7 +30,7 @@ export function FineDialog({ id, onClose }: { id: number | null; onClose: () => 
         {isError ? <p className="p-6 text-center text-sm text-muted-foreground">{t("errors.PORTAL_NOT_FOUND")}</p> : isLoading || !f ? <div className="flex justify-center p-6"><Loader2 className="h-5 w-5 animate-spin" /></div> : (
           <div className="space-y-3">
             <dl className="space-y-1">
-              <DetailRow label={t("fines.fields.plate")} value={f.licensePlate} />
+              <DetailRow label={t("fines.fields.plate")} value={formatLicensePlate(f.licensePlate)} />
               <DetailRow label={t("fines.fields.offenceAt")} value={new Date(f.offenceAt).toLocaleString()} />
               <DetailRow label={t("fines.fields.description")} value={f.description} />
               <DetailRow label={t("fines.fields.reference")} value={f.reference} />
