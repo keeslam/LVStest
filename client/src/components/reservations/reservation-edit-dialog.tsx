@@ -96,10 +96,12 @@ export function ReservationEditDialog({
           </div>
         ) : (
           initialData && (
-            <ReservationForm 
-              editMode={true} 
+            <ReservationForm
+              editMode={true}
               initialData={initialData}
               onSuccess={handleSuccess}
+              // Inside a dialog "Sluiten" closes the dialog; without this the form navigates to the calendar page.
+              onCancel={() => onOpenChange(false)}
             />
           )
         )}
