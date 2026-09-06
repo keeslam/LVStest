@@ -17,7 +17,7 @@ import { scheduleContractRegeneration } from "../services/reservation-pdf-regene
 import { resolveDocumentFilePath } from "../services/document-paths";
 import { sanitizeFilename } from "../utils/security/fileUploadSecurity";
 import { AuditLogger } from "../utils/security/auditLogger";
-import { onMaintenanceBlockChanged } from "../services/portal-maintenance-events";
+import { onMaintenanceBlockChanged, findPortalCustomerForBlock } from "../services/portal-maintenance-events";
 import { db } from "../db";
 import { reservations } from "../../shared/schema";
 import { and, eq, isNull } from "drizzle-orm";
@@ -311,9 +311,19 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     if (before.maintenanceStatus !== "scheduled") return res.status(409).json({ message: "Het onderhoud is al gestart" });
     const days = b.durationDays ?? before.maintenanceDuration ?? 1;
     const endDate = addDays(b.startDate, days - 1);
-    const after = (await storage.updateReservation(before.id, { startDate: b.startDate, endDate, maintenanceDuration: days, updatedBy: actor(req) } as any))!;
+    const conflicts = (await storage.checkReservationConflicts(before.vehicleId!, b.startDate, endDate, before.id, true)).filter((c) => c.id !== before.id);
+    if (conflicts.length > 0) {
+      return res.status(409).json({
+        message: "Conflicts with another maintenance block",
+        conflicts: conflicts.map((c) => ({ id: c.id, startDate: c.startDate, endDate: c.endDate, customerId: c.customerId })),
+      });
+    }
     const p = row.payload as Record<string, unknown>;
-    const rentalId = before.affectedRentalId;
+    // A block staff planned directly in the calendar has no affectedRentalId: fall back to
+    // whichever rental has this vehicle on the road, and persist it so it sticks from here on.
+    const rentalId = before.affectedRentalId ?? (await findPortalCustomerForBlock(before))?.rental.id ?? null;
+    const after = (await storage.updateReservation(before.id, { startDate: b.startDate, endDate, maintenanceDuration: days, affectedRentalId: rentalId, updatedBy: actor(req) } as any))!;
+    await storage.syncVehicleAvailabilityWithReservations();
     if (rentalId) {
       const [placeholder] = await db.select().from(reservations).where(and(eq(reservations.replacementForReservationId, rentalId), eq(reservations.placeholderSpare, true), isNull(reservations.deletedAt))).limit(1);
       if (placeholder) {

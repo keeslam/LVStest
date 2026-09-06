@@ -414,6 +414,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
         ? `${type === "maintenance" ? "Onderhoudsmelding" : "Wijziging onderhoud"} ${plate ?? ""}${(p.urgent as unknown) === true || p.urgent === "true" ? " (dringend)" : ""}: ${customer?.companyName || customer?.name || ctx.customerId}`
         : `Nieuwe aanvraag (${REQUEST_LABEL[type]}${type === "booking" ? ` ${p.vehicleLabel}` : ""}): ${customer?.companyName || customer?.name || ctx.customerId}`,
       description: message.slice(0, 200), link: `/portal-admin?request=${created.id}`, customerId: ctx.customerId,
+      priority: isMaint && ((p.urgent as unknown) === true || p.urgent === "true") ? "high" : "normal",
     });
     const row = await requestsStorage.getRequest(created.id);
     res.status(201).json(toRequestDto(row!, false));

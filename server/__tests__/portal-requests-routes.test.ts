@@ -13,7 +13,7 @@ import { customerNotifications } from "../services/portal-customer-notifications
 import { UserPermission, reservations } from "../../shared/schema";
 import { getUploadsDir } from "../../shared/paths";
 import { db } from "../db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 const deps = { uploadsDir: getUploadsDir(), requireAuth: (_r: any, _s: any, n: any) => n() } as any;
 const manager = buildStaffTestApp([UserPermission.MANAGE_PORTAL], (app) => registerPortalRequestRoutes(app, deps));
@@ -169,5 +169,36 @@ describe("staff portal requests", () => {
     expect(placeholder).toMatchObject({ startDate: "2099-05-20", endDate: "2099-05-21" });
     expect((await customerNotifications.listForUser(customerId, userId)).some((n) => n.type === "maintenance_moved")).toBe(true);
     await db.delete(reservations).where(eq(reservations.id, block.id));
+  });
+
+  it("approving a change request on a staff-planned block finds the rental via vehicle occupancy and persists it", async () => {
+    const car = await createTestVehicle();
+    const rental = await createTestReservation({ customerId, vehicleId: car.id, startDate: "2026-09-01", endDate: null, status: "picked_up" });
+    // Planned directly in the calendar (not via the portal), so there is no affectedRentalId yet.
+    const block = await storage.createMaintenanceBlock(car.id, "2098-06-10", "2098-06-11");
+    expect(block.affectedRentalId).toBeNull();
+    const reqId = (await requestsStorage.createRequest({ customerId, portalUserId: userId, type: "maintenance_change", reservationId: block.id, payload: { newDate: "2098-06-20", reason: "Vakantie", needsReplacement: true }, message: "Graag later" })).id;
+    const res = await request(manager).post(`/api/portal-requests/${reqId}/approve`).send({ startDate: "2098-06-20", durationDays: 2 });
+    expect(res.status).toBe(200);
+    expect(res.body.block).toMatchObject({ id: block.id, affectedRentalId: rental.id, startDate: "2098-06-20", endDate: "2098-06-21" });
+    const [placeholder] = await db.select().from(reservations).where(and(eq(reservations.replacementForReservationId, rental.id), eq(reservations.placeholderSpare, true)));
+    expect(placeholder).toMatchObject({ startDate: "2098-06-20", endDate: "2098-06-21" });
+    await db.delete(reservations).where(eq(reservations.id, block.id));
+    await db.delete(reservations).where(eq(reservations.id, placeholder.id));
+  });
+
+  it("approving a change request refuses to move a block onto another maintenance block", async () => {
+    const car = await createTestVehicle();
+    const blockA = await storage.createMaintenanceBlock(car.id, "2097-04-01", "2097-04-02");
+    const blockB = await storage.createMaintenanceBlock(car.id, "2097-04-10", "2097-04-11");
+    const reqId = (await requestsStorage.createRequest({ customerId, portalUserId: userId, type: "maintenance_change", reservationId: blockA.id, payload: { newDate: "2097-04-10", reason: "Verplaatsen" }, message: "Graag verplaatsen" })).id;
+    const res = await request(manager).post(`/api/portal-requests/${reqId}/approve`).send({ startDate: "2097-04-10", durationDays: 2 });
+    expect(res.status).toBe(409);
+    expect(res.body.message).toBe("Conflicts with another maintenance block");
+    expect(res.body.conflicts[0].id).toBe(blockB.id);
+    // The refused move must not have gone through.
+    expect((await storage.getReservation(blockA.id))!.startDate).toBe("2097-04-01");
+    await db.delete(reservations).where(eq(reservations.id, blockA.id));
+    await db.delete(reservations).where(eq(reservations.id, blockB.id));
   });
 });

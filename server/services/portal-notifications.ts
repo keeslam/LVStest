@@ -13,6 +13,8 @@ export interface PortalStaffEvent {
   link?: string;
   /** Absent for events that are not about one customer (e.g. a CJIB import). */
   customerId?: number;
+  /** Defaults to 'normal'; use 'high' for urgent maintenance reports (spec §4). */
+  priority?: "normal" | "high";
 }
 
 /**
@@ -30,7 +32,7 @@ export async function notifyStaffOfPortalEvent(event: PortalStaffEvent): Promise
       type: event.kind,
       link: event.link ?? "",
       icon: "Users",
-      priority: "normal",
+      priority: event.priority ?? "normal",
       isRead: false,
     });
     // Live toast + badge in every open staff session (see use-socket.tsx).
