@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Ban, Plus, Trash2 } from "lucide-react";
+import { Ban, Plus, Trash2, Pencil } from "lucide-react";
 import type { Customer } from "@shared/schema";
 import type { PortalBlacklistEntryDto } from "@shared/portal-types";
 import { apiRequest } from "@/lib/queryClient";
@@ -15,6 +15,7 @@ import { SearchListPicker } from "@/components/ui/search-list-picker";
 import { CustomerSearchPicker } from "@/components/customers/customer-search-picker";
 import { useToast } from "@/hooks/use-toast";
 import { useCanManagePortal } from "./accounts-table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface VehicleRow { id: number; licensePlate: string; brand: string; model: string; offeredOnline: boolean }
 const KEY = ["/api/portal-admin/blacklist"];
@@ -33,26 +34,35 @@ export function BlacklistTable({ initialPlate, initialCustomerId }: { initialPla
   const canManage = useCanManagePortal();
   const [search, setSearch] = useState(initialPlate ?? "");
   const [adding, setAdding] = useState(false);
+  /** Entry being edited in the same form; null while adding. */
+  const [editing, setEditing] = useState<PortalBlacklistEntryDto | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<PortalBlacklistEntryDto | null>(null);
   const [vehicleId, setVehicleId] = useState<number | null>(null);
   const [customerId, setCustomerId] = useState<number | null>(initialCustomerId ?? null);
   const [reason, setReason] = useState("");
+  const formOpen = adding || editing !== null;
+  const startEdit = (r: PortalBlacklistEntryDto) => { setEditing(r); setAdding(false); setVehicleId(r.vehicleId); setCustomerId(r.customerId); setReason(r.reason ?? ""); };
+  const closeForm = () => { setAdding(false); setEditing(null); setVehicleId(null); setReason(""); };
 
   const { data = [], isLoading } = useQuery<PortalBlacklistEntryDto[]>({ queryKey: KEY, queryFn: async () => (await apiRequest("GET", KEY[0])).json() });
-  const { data: vehicles = [] } = useQuery<VehicleRow[]>({ queryKey: ["/api/portal-admin/vehicles-online"], queryFn: async () => (await apiRequest("GET", "/api/portal-admin/vehicles-online")).json(), enabled: adding });
-  const { data: customers = [] } = useQuery<Customer[]>({ queryKey: ["/api/customers"], enabled: adding });
+  const { data: vehicles = [] } = useQuery<VehicleRow[]>({ queryKey: ["/api/portal-admin/vehicles-online"], queryFn: async () => (await apiRequest("GET", "/api/portal-admin/vehicles-online")).json(), enabled: formOpen });
+  const { data: customers = [] } = useQuery<Customer[]>({ queryKey: ["/api/customers"], enabled: formOpen });
 
   const invalidate = () => queryClient.invalidateQueries({ predicate: (q) => touchesBlacklist(q.queryKey) });
   const add = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", KEY[0], { vehicleId, customerId, reason: reason || undefined });
+      const res = editing
+        ? await apiRequest("PATCH", `${KEY[0]}/${editing.id}`, { vehicleId, customerId, reason: reason || null })
+        : await apiRequest("POST", KEY[0], { vehicleId, customerId, reason: reason || undefined });
       return res.json();
     },
-    onSuccess: () => { invalidate(); toast({ title: t("admin.blacklist.added") }); setVehicleId(null); setReason(""); setAdding(false); },
+    onSuccess: () => { invalidate(); toast({ title: t(editing ? "admin.blacklist.updated" : "admin.blacklist.added") }); closeForm(); },
     onError: (e: Error) => toast({ title: e.message.replace(/^\d+:\s*/, ""), variant: "destructive" }),
   });
   const remove = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `${KEY[0]}/${id}`),
-    onSuccess: () => { invalidate(); toast({ title: t("admin.blacklist.removed") }); },
+    onSuccess: () => { invalidate(); toast({ title: t("admin.blacklist.removed") }); setConfirmRemove(null); },
+    onError: (e: Error) => toast({ title: e.message.replace(/^\d+:\s*/, ""), variant: "destructive" }),
   });
 
   const q = search.trim().toLowerCase();
@@ -65,11 +75,12 @@ export function BlacklistTable({ initialPlate, initialCustomerId }: { initialPla
       <div className="flex flex-wrap items-center gap-2">
         <Input placeholder={t("admin.blacklist.search")} value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" data-testid="blacklist-search" />
         <span className="text-sm text-muted-foreground">{t("admin.blacklist.count", { n: rows.length })}</span>
-        {canManage && !adding && <Button size="sm" onClick={() => setAdding(true)} data-testid="button-blacklist-add"><Plus className="mr-1.5 h-4 w-4" />{t("admin.blacklist.add")}</Button>}
+        {canManage && !formOpen && <Button size="sm" onClick={() => { setEditing(null); setAdding(true); }} data-testid="button-blacklist-add"><Plus className="mr-1.5 h-4 w-4" />{t("admin.blacklist.add")}</Button>}
       </div>
 
-      {adding && (
+      {formOpen && (
         <div className="grid gap-3 rounded-lg border bg-muted/30 p-3 md:grid-cols-2" data-testid="blacklist-add-form">
+          {editing && <p className="text-sm font-medium md:col-span-2">{t("admin.blacklist.editTitle", { plate: formatLicensePlate(editing.licensePlate), customer: editing.customerName })}</p>}
           <div>
             <Label>{t("admin.blacklist.vehicle")}</Label>
             <SearchListPicker items={vehicleItems} value={vehicleId} onChange={setVehicleId} searchPlaceholder={t("admin.vehicles.search")} emptyText={t("admin.blacklist.noVehicle")} changeLabel={t("admin.blacklist.change")}
@@ -85,8 +96,10 @@ export function BlacklistTable({ initialPlate, initialCustomerId }: { initialPla
             <Input id="bl-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t("admin.blacklist.reasonPlaceholder")} data-testid="blacklist-reason" />
           </div>
           <div className="flex justify-end gap-2 md:col-span-2">
-            <Button size="sm" variant="outline" onClick={() => setAdding(false)}>{t("admin.blacklist.cancel")}</Button>
-            <Button size="sm" disabled={!vehicleId || !customerId || add.isPending} onClick={() => add.mutate()} data-testid="button-blacklist-save"><Ban className="mr-1.5 h-4 w-4" />{t("admin.blacklist.block")}</Button>
+            <Button size="sm" variant="outline" onClick={closeForm}>{t("admin.blacklist.cancel")}</Button>
+            <Button size="sm" disabled={!vehicleId || !customerId || add.isPending} onClick={() => add.mutate()} data-testid="button-blacklist-save">
+              {editing ? <><Pencil className="mr-1.5 h-4 w-4" />{t("admin.blacklist.saveChanges")}</> : <><Ban className="mr-1.5 h-4 w-4" />{t("admin.blacklist.block")}</>}
+            </Button>
           </div>
         </div>
       )}
@@ -101,7 +114,7 @@ export function BlacklistTable({ initialPlate, initialCustomerId }: { initialPla
             <TableHead>{t("admin.blacklist.customer")}</TableHead>
             <TableHead>{t("admin.blacklist.reason")}</TableHead>
             <TableHead>{t("admin.blacklist.since")}</TableHead>
-            {canManage && <TableHead className="w-10" />}
+            {canManage && <TableHead className="w-24" />}
           </TableRow></TableHeader>
           <TableBody>
             {rows.map((r) => (
@@ -112,8 +125,9 @@ export function BlacklistTable({ initialPlate, initialCustomerId }: { initialPla
                 <TableCell className="max-w-xs truncate text-muted-foreground" title={r.reason ?? undefined}>{r.reason || "—"}</TableCell>
                 <TableCell className="whitespace-nowrap text-muted-foreground">{new Date(r.createdAt).toLocaleDateString()}</TableCell>
                 {canManage && (
-                  <TableCell>
-                    <Button size="icon" variant="ghost" title={t("admin.blacklist.unblock")} onClick={() => remove.mutate(r.id)} disabled={remove.isPending} data-testid={`button-blacklist-remove-${r.id}`}><Trash2 className="h-4 w-4" /></Button>
+                  <TableCell className="whitespace-nowrap">
+                    <Button size="icon" variant="ghost" title={t("admin.blacklist.edit")} onClick={() => startEdit(r)} data-testid={`button-blacklist-edit-${r.id}`}><Pencil className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" title={t("admin.blacklist.unblock")} onClick={() => setConfirmRemove(r)} data-testid={`button-blacklist-remove-${r.id}`}><Trash2 className="h-4 w-4" /></Button>
                   </TableCell>
                 )}
               </TableRow>
@@ -121,6 +135,22 @@ export function BlacklistTable({ initialPlate, initialCustomerId }: { initialPla
           </TableBody>
         </Table>
       )}
+
+      {/* Lifting a block lets the customer rent the vehicle again, so ask first. */}
+      <AlertDialog open={confirmRemove !== null} onOpenChange={(o) => !o && setConfirmRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("admin.blacklist.confirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmRemove && t("admin.blacklist.confirmText", { plate: formatLicensePlate(confirmRemove.licensePlate), vehicle: `${confirmRemove.brand} ${confirmRemove.model}`, customer: confirmRemove.customerName })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("admin.blacklist.cancel")}</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => confirmRemove && remove.mutate(confirmRemove.id)} data-testid="button-blacklist-confirm-remove">{t("admin.blacklist.unblock")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

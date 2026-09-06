@@ -661,7 +661,13 @@
       "added": "Blokkade toegevoegd.",
       "removed": "Blokkade opgeheven.",
       "empty": "Geen blokkades. Elke klant mag elk online voertuig aanvragen.",
-      "noMatch": "Geen blokkade gevonden."
+      "noMatch": "Geen blokkade gevonden.",
+      "updated": "Blokkade bijgewerkt.",
+      "edit": "Bewerken",
+      "editTitle": "Blokkade bewerken: {{plate}} · {{customer}}",
+      "saveChanges": "Wijzigingen opslaan",
+      "confirmTitle": "Blokkade opheffen?",
+      "confirmText": "{{customer}} kan {{vehicle}} ({{plate}}) daarna weer zien en aanvragen in het portaal."
     },
     "booking": {
       "title": "Reservering aanmaken uit deze aanvraag",

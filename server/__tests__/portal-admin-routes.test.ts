@@ -121,6 +121,11 @@ describe("portal admin routes", () => {
     const dashboard = await request(viewer).get("/api/portal-admin/dashboard");
     expect(dashboard.body.counts.blacklistEntries).toBeGreaterThanOrEqual(1);
 
+    // Edit the reason in place; moving it onto an existing block is refused.
+    expect((await request(app).patch(`/api/portal-admin/blacklist/${add.body.id}`).send({ reason: "Schade niet vergoed" })).status).toBe(200);
+    expect((await request(viewer).get("/api/portal-admin/blacklist")).body.find((r: any) => r.id === add.body.id).reason).toBe("Schade niet vergoed");
+    expect((await request(viewer).patch(`/api/portal-admin/blacklist/${add.body.id}`).send({ reason: "x" })).status).toBe(403);
+    expect((await request(app).patch(`/api/portal-admin/blacklist/999999`).send({ reason: "x" })).status).toBe(404);
     expect((await request(viewer).delete(`/api/portal-admin/blacklist/${add.body.id}`)).status).toBe(403);
     expect((await request(app).delete(`/api/portal-admin/blacklist/${add.body.id}`)).status).toBe(200);
     expect((await request(app).delete(`/api/portal-admin/blacklist/${add.body.id}`)).status).toBe(404);

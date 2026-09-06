@@ -661,7 +661,13 @@
       "added": "Block added.",
       "removed": "Block removed.",
       "empty": "No blocks. Every customer may request every online vehicle.",
-      "noMatch": "No block found."
+      "noMatch": "No block found.",
+      "updated": "Block updated.",
+      "edit": "Edit",
+      "editTitle": "Edit block: {{plate}} · {{customer}}",
+      "saveChanges": "Save changes",
+      "confirmTitle": "Remove block?",
+      "confirmText": "{{customer}} will then see and be able to request {{vehicle}} ({{plate}}) in the portal again."
     },
     "booking": {
       "title": "Create a reservation from this request",

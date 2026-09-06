@@ -272,6 +272,10 @@ export const portalStorage = {
       .where(and(eq(vehicleCustomerBlacklist.vehicleId, vehicleId), eq(vehicleCustomerBlacklist.customerId, customerId)));
     return Boolean(block);
   },
+  async updateBlacklistEntry(id: number, data: { vehicleId?: number; customerId?: number; reason?: string | null }): Promise<boolean> {
+    const [row] = await db.update(vehicleCustomerBlacklist).set(data).where(eq(vehicleCustomerBlacklist.id, id)).returning({ id: vehicleCustomerBlacklist.id });
+    return Boolean(row);
+  },
   /** Every block, joined for the staff list. */
   async listBlacklist(): Promise<Array<{ id: number; vehicleId: number; licensePlate: string; brand: string; model: string; offeredOnline: boolean; customerId: number; customerName: string; reason: string | null; createdAt: Date }>> {
     return db.select({

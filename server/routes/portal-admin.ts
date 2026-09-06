@@ -193,6 +193,24 @@ export function registerPortalAdminRoutes(app: Express, _deps: RouteDeps): void 
     res.status(201).json(entry);
   });
 
+  app.patch("/api/portal-admin/blacklist/:id", canManage, async (req, res) => {
+    const id = intParam(req, res, "id"); if (id === null) return;
+    const parsed = z.object({ vehicleId: z.number().int().positive().optional(), customerId: z.number().int().positive().optional(), reason: z.string().trim().max(500).nullable().optional() }).safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: "Invalid input" });
+    const current = (await portalStorage.listBlacklist()).find((b) => b.id === id);
+    if (!current) return res.status(404).json({ message: "Blacklist entry not found" });
+    const vehicleId = parsed.data.vehicleId ?? current.vehicleId;
+    const customerId = parsed.data.customerId ?? current.customerId;
+    if (vehicleId !== current.vehicleId && !(await storage.getVehicle(vehicleId))) return res.status(404).json({ message: "Vehicle not found" });
+    if (customerId !== current.customerId && !(await storage.getCustomer(customerId))) return res.status(404).json({ message: "Customer not found" });
+    if ((vehicleId !== current.vehicleId || customerId !== current.customerId) && await storage.isCustomerBlacklistedForVehicle(vehicleId, customerId)) {
+      return res.status(409).json({ message: "Deze klant is al geblokkeerd voor dit voertuig" });
+    }
+    await portalStorage.updateBlacklistEntry(id, { vehicleId, customerId, reason: parsed.data.reason === undefined ? current.reason : parsed.data.reason || null });
+    await AuditLogger.logFromRequest(req, "vehicle.blacklist_update", "vehicle", vehicleId, { entryId: id, customerId, reason: parsed.data.reason ?? current.reason });
+    res.json({ ok: true });
+  });
+
   app.delete("/api/portal-admin/blacklist/:id", canManage, async (req, res) => {
     const id = intParam(req, res, "id"); if (id === null) return;
     const deleted = await storage.removeFromBlacklist(id);
