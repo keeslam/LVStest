@@ -35,7 +35,7 @@ export function PortalAuthProvider({ children }: { children: ReactNode }) {
   // The portal follows the customer's preferred language, not the browser's.
   useEffect(() => {
     if (data?.language && i18n.language !== data.language) i18n.changeLanguage(data.language);
-  }, [data?.language, i18n]);
+  }, [data?.language, i18n, i18n.language]);
 
   const refresh = async () => { await queryClient.invalidateQueries({ queryKey: PORTAL_ME_KEY }); };
   const logout = async () => {

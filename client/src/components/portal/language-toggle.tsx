@@ -15,10 +15,10 @@ export function LanguageToggle({ dark = false, className = "" }: { dark?: boolea
   const current = i18n.language?.startsWith("en") ? "en" : "nl";
   const choose = async (lang: "nl" | "en") => {
     if (lang === current) return;
-    await i18n.changeLanguage(lang);
     if (me) {
-      try { await portalFetch("PATCH", "/api/portal/me", { language: lang }); await refresh(); } catch { /* the screen switched anyway */ }
+      try { await portalFetch("PATCH", "/api/portal/me", { language: lang }); await refresh(); return; } catch { /* fall through: switch the screen only */ }
     }
+    await i18n.changeLanguage(lang);
   };
   const base = dark ? "border-white/25 text-[#dfe2ff]" : "border-[#e6e8f0] text-[#334155]";
   const on = dark ? "bg-white text-[#1a1d62]" : "bg-[#1a1d62] text-white";

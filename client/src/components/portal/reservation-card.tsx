@@ -44,12 +44,12 @@ export function ReservationCard({ reservation, showPrice }: { reservation: Porta
           </div>
           <div className="mt-1 flex h-6 items-center gap-x-3 overflow-hidden whitespace-nowrap text-xs text-[#64748b] sm:text-sm">
             <span className="inline-flex shrink-0 items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{formatPortalDate(r.startDate)} – {r.endDate ? formatPortalDate(r.endDate) : t("overview.openEnded")}</span>
-            {r.driver && <DriverChip name={r.driver.displayName} />}
-            {showPrice && r.totalPrice && <span>€ {r.totalPrice}</span>}
-            {openFines > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-[#fde8e8] px-2 py-0.5 text-xs font-medium text-[#a32d2d]"><Receipt className="h-3 w-3" />{t("reservations.openFines", { count: openFines })}</span>}
+            {r.driver && <DriverChip name={r.driver.displayName} className="max-w-[14rem]" />}
+            {showPrice && r.totalPrice && <span className="shrink-0">€ {r.totalPrice}</span>}
           </div>
-          <div className={`mt-1 flex h-4 items-center gap-1 text-xs font-medium ${overdue ? "text-[#a32d2d]" : "text-[#185fa5]"}`}>
-            {overdue ? <><AlertCircle className="h-3.5 w-3.5" />{t("overview.overdue")}</> : hint}
+          <div className={`mt-1 flex h-4 items-center gap-3 text-xs font-medium ${overdue ? "text-[#a32d2d]" : "text-[#185fa5]"}`}>
+            <span className="inline-flex items-center gap-1">{overdue ? <><AlertCircle className="h-3.5 w-3.5" />{t("overview.overdue")}</> : hint}</span>
+            {openFines > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-[#fde8e8] px-2 py-0.5 text-[11px] font-medium leading-none text-[#a32d2d]"><Receipt className="h-3 w-3" />{t("reservations.openFines", { count: openFines })}</span>}
           </div>
         </div>
       </div>
