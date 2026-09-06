@@ -8,6 +8,7 @@ import { RequestDialog } from "@/components/portal/request-dialog";
 import { NewRequestDialog } from "@/components/portal/new-request-dialog";
 import { DocumentDialog } from "@/components/portal/document-dialog";
 import { PortalAccountDialog } from "@/components/portal/account-dialog";
+import { PortalListDialog, type PortalListKind } from "@/components/portal/list-dialog";
 
 export interface NewRequestPrefill { type?: PortalRequestTypeValue; reservationId?: number; fineId?: number }
 
@@ -19,6 +20,7 @@ type Open =
   | { kind: "newRequest"; prefill: NewRequestPrefill }
   | { kind: "document"; document: PortalDocumentDto }
   | { kind: "account" }
+  | { kind: "list"; list: PortalListKind }
   | null;
 
 interface PortalDialogsApi {
@@ -29,6 +31,7 @@ interface PortalDialogsApi {
   openNewRequest: (prefill?: NewRequestPrefill) => void;
   openDocument: (document: PortalDocumentDto) => void;
   openAccount: () => void;
+  openList: (list: PortalListKind) => void;
   close: () => void;
 }
 
@@ -51,8 +54,17 @@ const ROUTE_DIALOGS: Array<{ pattern: RegExp; base: string; make: (m: RegExpMatc
 ];
 
 export function PortalDialogsProvider({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState<Open>(null);
+  const [open, setOpenState] = useState<Open>(null);
+  // A list dialog stays underneath a detail dialog opened from one of its rows.
+  const [under, setUnder] = useState<Open>(null);
   const [location, navigate] = useLocation();
+  const setOpen = (next: Open) => {
+    setOpenState((current) => {
+      if (next && next.kind !== "list" && current?.kind === "list") setUnder(current);
+      else if (next === null || next.kind === "list") setUnder(null);
+      return next;
+    });
+  };
   // The dialog was opened by the URL (deep link); closing it then also cleans the URL.
   const fromRoute = useRef(false);
 
@@ -67,13 +79,14 @@ export function PortalDialogsProvider({ children }: { children: ReactNode }) {
   }, [location]);
 
   const close = useCallback(() => {
-    setOpen(null);
+    if (under) { setOpenState(under); setUnder(null); return; }
+    setOpenState(null);
     if (fromRoute.current) {
       fromRoute.current = false;
       const r = ROUTE_DIALOGS.find((x) => x.pattern.test(location));
       if (r) navigate(r.base, { replace: true });
     }
-  }, [location, navigate]);
+  }, [location, navigate, under]);
 
   const api = useMemo<PortalDialogsApi>(() => ({
     open,
@@ -83,6 +96,7 @@ export function PortalDialogsProvider({ children }: { children: ReactNode }) {
     openNewRequest: (prefill = {}) => { fromRoute.current = false; setOpen({ kind: "newRequest", prefill }); },
     openDocument: (document) => { fromRoute.current = false; setOpen({ kind: "document", document }); },
     openAccount: () => { fromRoute.current = false; setOpen({ kind: "account" }); },
+    openList: (list) => { fromRoute.current = false; setOpen({ kind: "list", list }); },
     close,
   }), [open, close]);
 
@@ -95,6 +109,7 @@ export function PortalDialogsProvider({ children }: { children: ReactNode }) {
       <NewRequestDialog prefill={open?.kind === "newRequest" ? open.prefill : null} onClose={close} />
       <DocumentDialog document={open?.kind === "document" ? open.document : null} onClose={close} />
       <PortalAccountDialog open={open?.kind === "account"} onClose={close} />
+      <PortalListDialog kind={open?.kind === "list" ? open.list : null} onClose={close} />
     </Ctx.Provider>
   );
 }

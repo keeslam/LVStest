@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Car, CalendarClock, Inbox, Receipt, Plus, UserPlus, FileText, CalendarDays } from "lucide-react";
 import type { PortalReservationDto } from "@shared/portal-types";
@@ -17,8 +16,7 @@ import { EmptyState, Section, Tile, btnPrimary, btnSecondary } from "@/component
 export default function PortalOverviewPage() {
   const { t } = useTranslation("portal");
   const { me } = usePortalAuth();
-  const { openNewRequest } = usePortalDialogs();
-  const [, navigate] = useLocation();
+  const { openNewRequest, openList } = usePortalDialogs();
   const { data: reservations = [] } = useQuery<PortalReservationDto[]>({ queryKey: ["portal", "/api/portal/reservations"], queryFn: portalQueryFn });
   const { data: fines = [] } = useQuery<PortalFineDto[]>({ queryKey: ["portal", "/api/portal/fines"], queryFn: portalQueryFn, enabled: Boolean(me?.settings.canViewFines) });
   const { data: requests = [] } = useQuery<PortalRequestDto[]>({ queryKey: ["portal", "/api/portal/requests"], queryFn: portalQueryFn, enabled: Boolean(me?.settings.canSubmitRequests) });
@@ -32,16 +30,16 @@ export default function PortalOverviewPage() {
   return (
     <div className="space-y-6" data-testid="portal-overview">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Tile tone="green" icon={<Car className="h-5 w-5" />} value={current.length} label={t("overview.tiles.current")} onClick={() => navigate("/reserveringen")} testId="tile-current" />
-        <Tile tone="blue" icon={<CalendarClock className="h-5 w-5" />} value={upcoming.length} label={t("overview.tiles.upcoming")} onClick={() => navigate("/reserveringen")} testId="tile-upcoming" />
-        {me?.settings.canSubmitRequests && <Tile tone="amber" icon={<Inbox className="h-5 w-5" />} value={openRequests.length} label={t("overview.tiles.requests")} onClick={() => navigate("/aanvragen")} testId="tile-requests" />}
-        {me?.settings.canViewFines && <Tile tone="red" icon={<Receipt className="h-5 w-5" />} value={openFines.length} label={t("overview.tiles.fines")} onClick={() => navigate("/bekeuringen")} testId="tile-fines" />}
+        <Tile tone="green" icon={<Car className="h-5 w-5" />} value={current.length} label={t("overview.tiles.current")} onClick={() => openList("current")} testId="tile-current" />
+        <Tile tone="blue" icon={<CalendarClock className="h-5 w-5" />} value={upcoming.length} label={t("overview.tiles.upcoming")} onClick={() => openList("upcoming")} testId="tile-upcoming" />
+        {me?.settings.canSubmitRequests && <Tile tone="amber" icon={<Inbox className="h-5 w-5" />} value={openRequests.length} label={t("overview.tiles.requests")} onClick={() => openList("requests")} testId="tile-requests" />}
+        {me?.settings.canViewFines && <Tile tone="red" icon={<Receipt className="h-5 w-5" />} value={openFines.length} label={t("overview.tiles.fines")} onClick={() => openList("fines")} testId="tile-fines" />}
       </div>
 
       <div className="flex flex-wrap gap-2">
         {me?.settings.canSubmitRequests && <Button className={btnPrimary} onClick={() => openNewRequest()} data-testid="quick-new-request"><Plus className="mr-1.5 h-4 w-4" />{t("requests.new")}</Button>}
         {canManageDrivers && <DriverFormDialog><Button variant="outline" className={btnSecondary}><UserPlus className="mr-1.5 h-4 w-4" />{t("actions.addDriver")}</Button></DriverFormDialog>}
-        {me?.settings.canViewContracts && <Button variant="outline" className={btnSecondary} onClick={() => navigate("/documenten")}><FileText className="mr-1.5 h-4 w-4" />{t("tabs.documents")}</Button>}
+        {me?.settings.canViewContracts && <Button variant="outline" className={btnSecondary} onClick={() => openList("documents")}><FileText className="mr-1.5 h-4 w-4" />{t("tabs.documents")}</Button>}
       </div>
 
       <Section title={t("overview.currentRentals")} count={current.length}>

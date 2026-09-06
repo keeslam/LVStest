@@ -607,7 +607,8 @@
       "disputed": "Disputed"
     },
     "openSummary_one": "{{count}} open fine, € {{amount}}",
-    "openSummary_other": "{{count}} open fines, € {{amount}} in total"
+    "openSummary_other": "{{count}} open fines, € {{amount}} in total",
+    "noneOpen": "No open fines."
   },
   "requests": {
     "title": "Requests",
@@ -649,7 +650,8 @@
     "date": "Submitted on",
     "subtitle": "Extend, return early, report damage or ask a question.",
     "replied": "Lam Groep has replied",
-    "progress": "Progress"
+    "progress": "Progress",
+    "noneOpen": "No open requests."
   },
   "site": {
     "backToSite": "Back to lamgroep.nl",
@@ -668,5 +670,14 @@
     "morning": "Good morning",
     "afternoon": "Good afternoon",
     "evening": "Good evening"
+  },
+  "lists": {
+    "current": "Vehicles on the road",
+    "upcoming": "Upcoming reservations",
+    "requests": "Open requests",
+    "fines": "Open fines",
+    "documents": "Contracts and documents",
+    "search": "Search by plate, vehicle, driver…",
+    "noMatch": "Nothing matches this search."
   }
 }

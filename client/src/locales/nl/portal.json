@@ -607,7 +607,8 @@
       "disputed": "Betwist"
     },
     "openSummary_one": "{{count}} openstaande bekeuring, € {{amount}}",
-    "openSummary_other": "{{count}} openstaande bekeuringen, samen € {{amount}}"
+    "openSummary_other": "{{count}} openstaande bekeuringen, samen € {{amount}}",
+    "noneOpen": "Geen openstaande bekeuringen."
   },
   "requests": {
     "title": "Aanvragen",
@@ -649,7 +650,8 @@
     "date": "Ingediend op",
     "subtitle": "Verlengen, eerder inleveren, schade melden of een vraag stellen.",
     "replied": "Lam Groep heeft geantwoord",
-    "progress": "Voortgang"
+    "progress": "Voortgang",
+    "noneOpen": "Geen openstaande aanvragen."
   },
   "site": {
     "backToSite": "Naar lamgroep.nl",
@@ -668,5 +670,14 @@
     "morning": "Goedemorgen",
     "afternoon": "Goedemiddag",
     "evening": "Goedenavond"
+  },
+  "lists": {
+    "current": "Auto's in gebruik",
+    "upcoming": "Komende reserveringen",
+    "requests": "Openstaande aanvragen",
+    "fines": "Openstaande bekeuringen",
+    "documents": "Contracten en documenten",
+    "search": "Zoeken op kenteken, auto, bestuurder…",
+    "noMatch": "Niets gevonden voor deze zoekterm."
   }
 }
