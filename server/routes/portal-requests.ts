@@ -17,6 +17,10 @@ import { scheduleContractRegeneration } from "../services/reservation-pdf-regene
 import { resolveDocumentFilePath } from "../services/document-paths";
 import { sanitizeFilename } from "../utils/security/fileUploadSecurity";
 import { AuditLogger } from "../utils/security/auditLogger";
+import { onMaintenanceBlockChanged } from "../services/portal-maintenance-events";
+import { db } from "../db";
+import { reservations } from "../../shared/schema";
+import { and, eq, isNull } from "drizzle-orm";
 import type { RouteDeps } from "./deps";
 
 const canView = hasPermission(UserPermission.VIEW_PORTAL, UserPermission.MANAGE_PORTAL);
@@ -31,6 +35,12 @@ function idParam(req: Request, res: Response, name = "id"): number | null {
 /** Staff inbox for customer requests: take, reply, reject, approve extensions/early returns. */
 export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): void {
   const actor = (req: Request) => req.user?.username ?? "system";
+
+  async function hasBlockFor(requestId: number): Promise<boolean> {
+    const [b] = await db.select({ id: reservations.id }).from(reservations).where(and(eq(reservations.portalRequestId, requestId), isNull(reservations.deletedAt))).limit(1);
+    return Boolean(b);
+  }
+  const addDays = (iso: string, n: number) => { const d = new Date(`${iso}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 
   const STATUS_LABEL: Record<string, string> = { done: "afgehandeld", rejected: "afgewezen", in_progress: "in behandeling" };
   async function finish(req: Request, id: number, reply: string, status: PortalRequestStatusValue, customerId: number) {
@@ -117,6 +127,9 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     if (row.type === "booking" && parsed.data.status === "done" && !row.reservationId) {
       return res.status(400).json({ message: "Een huuraanvraag kan alleen worden afgehandeld via Goedkeuren (maakt de reservering) of Afwijzen", code: "BOOKING_NEEDS_RESERVATION" });
     }
+    if (row.type === "maintenance" && parsed.data.status === "done" && !(await hasBlockFor(id))) {
+      return res.status(400).json({ message: "Een onderhoudsmelding kan alleen worden afgehandeld via Inplannen (zet het in de kalender) of Afwijzen", code: "MAINTENANCE_NEEDS_BLOCK" });
+    }
     res.json(await finish(req, id, reply, parsed.data.status, row.customerId));
   });
 
@@ -160,6 +173,8 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     const row = await requestsStorage.getRequest(id);
     if (!row) return res.status(404).json({ message: "Request not found" });
     if (row.type === "booking") return approveBooking(req, res, id, row);
+    if (row.type === "maintenance") return approveMaintenance(req, res, id, row);
+    if (row.type === "maintenance_change") return approveMaintenanceChange(req, res, id, row);
     if (row.type !== "extension" && row.type !== "early_return") return res.status(400).json({ message: "Only extensions, early returns and rental requests can be approved" });
     if (!isValidRequestTransition(row.status, "done")) return res.status(400).json({ message: "Request is already closed" });
     const reservation = row.reservationId ? await storage.getReservation(row.reservationId) : undefined;
@@ -240,5 +255,85 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     const reply = b.reply || `Goedgekeurd: reservering #${reservation.id}, ${vehicle.brand} ${vehicle.model} (${vehicle.licensePlate}) vanaf ${startDate}${endDate ? ` tot en met ${endDate}` : ""}.`;
     const updated = await finish(req, id, reply, "done", row.customerId);
     res.json({ ...updated, reservation });
+  }
+
+  type Row = NonNullable<Awaited<ReturnType<typeof requestsStorage.getRequest>>>;
+
+  /** Puts the reported maintenance in the calendar; a placeholder spare when the customer asked for one. */
+  async function approveMaintenance(req: Request, res: Response, id: number, row: Row) {
+    if (!isValidRequestTransition(row.status, "done")) return res.status(400).json({ message: "Request is already closed" });
+    const parsed = z.object({
+      startDate: isoDate, durationDays: z.number().int().min(1).max(60).default(1),
+      category: z.enum(["scheduled_maintenance", "repair"]).default("repair"), note: z.string().trim().max(2000).optional(),
+    }).safeParse(req.body ?? {});
+    if (!parsed.success) return res.status(400).json({ message: parsed.error.errors[0]?.message ?? "startDate is required", field: "startDate" });
+    const b = parsed.data;
+    const rental = row.reservationId ? await storage.getReservation(row.reservationId) : undefined;
+    if (!rental?.vehicleId) return res.status(400).json({ message: "Reservation not found" });
+    const p = row.payload as Record<string, unknown>;
+    const endDate = addDays(b.startDate, b.durationDays - 1);
+    const created = await storage.createMaintenanceBlock(rental.vehicleId, b.startDate, endDate);
+    const block = (await storage.updateReservation(created.id, {
+      maintenanceCategory: b.category, maintenanceDuration: b.durationDays, portalRequestId: id, affectedRentalId: rental.id,
+      spareAssignmentDecision: p.needsReplacement ? "spare_assigned" : "customer_arranging",
+      notes: `Portaal aanvraag #${id}: ${String(p.issue ?? "")}${p.urgent ? " (dringend)" : ""}${b.note ? `\n${b.note}` : ""}`,
+      createdBy: actor(req), updatedBy: actor(req),
+    } as any))!;
+    if (p.needsReplacement && rental.customerId) {
+      try {
+        await storage.createPlaceholderReservation(rental.id, rental.customerId, b.startDate, endDate);
+      } catch (e) {
+        console.error(`createPlaceholderReservation failed for rental #${rental.id} (portal request #${id}):`, e);
+      }
+    }
+    const km = Number(p.mileage);
+    if (Number.isFinite(km) && km > 0) {
+      const vehicle = await storage.getVehicle(rental.vehicleId);
+      if (vehicle && km > (vehicle.currentMileage ?? 0)) await storage.updateVehicle(vehicle.id, { currentMileage: km });
+    }
+    await storage.syncVehicleAvailabilityWithReservations();
+    realtimeEvents.reservations.created(block);
+    await onMaintenanceBlockChanged(null, block);
+    await AuditLogger.logFromRequest(req, "reservation.create", "reservation", block.id, { viaPortalRequest: id, maintenance: true });
+    const reply = `Ingepland op ${b.startDate}${b.durationDays > 1 ? ` tot en met ${endDate}` : ""}.${b.note ? ` ${b.note}` : ""}`;
+    const updated = await finish(req, id, reply, "done", row.customerId);
+    res.json({ ...updated, block });
+  }
+
+  /** Moves the block (and its placeholder spare) to the date staff confirm. */
+  async function approveMaintenanceChange(req: Request, res: Response, id: number, row: Row) {
+    if (!isValidRequestTransition(row.status, "done")) return res.status(400).json({ message: "Request is already closed" });
+    const parsed = z.object({ startDate: isoDate, durationDays: z.number().int().min(1).max(60).optional(), note: z.string().trim().max(2000).optional() }).safeParse(req.body ?? {});
+    if (!parsed.success) return res.status(400).json({ message: "startDate is required", field: "startDate" });
+    const b = parsed.data;
+    const before = row.reservationId ? await storage.getReservation(row.reservationId) : undefined;
+    if (!before || before.type !== "maintenance_block" || before.deletedAt) return res.status(400).json({ message: "Maintenance block not found" });
+    if (before.maintenanceStatus !== "scheduled") return res.status(409).json({ message: "Het onderhoud is al gestart" });
+    const days = b.durationDays ?? before.maintenanceDuration ?? 1;
+    const endDate = addDays(b.startDate, days - 1);
+    const after = (await storage.updateReservation(before.id, { startDate: b.startDate, endDate, maintenanceDuration: days, updatedBy: actor(req) } as any))!;
+    const p = row.payload as Record<string, unknown>;
+    const rentalId = before.affectedRentalId;
+    if (rentalId) {
+      const [placeholder] = await db.select().from(reservations).where(and(eq(reservations.replacementForReservationId, rentalId), eq(reservations.placeholderSpare, true), isNull(reservations.deletedAt))).limit(1);
+      if (placeholder) {
+        await storage.updateReservation(placeholder.id, { startDate: b.startDate, endDate, updatedBy: actor(req) } as any);
+      } else if (p.needsReplacement) {
+        const rental = await storage.getReservation(rentalId);
+        if (rental?.customerId) {
+          try {
+            await storage.createPlaceholderReservation(rental.id, rental.customerId, b.startDate, endDate);
+          } catch (e) {
+            console.error(`createPlaceholderReservation failed for rental #${rentalId} (portal request #${id}):`, e);
+          }
+        }
+      }
+    }
+    realtimeEvents.reservations.updated(after);
+    await onMaintenanceBlockChanged(before, after);
+    await AuditLogger.logFromRequest(req, "reservation.update", "reservation", after.id, { viaPortalRequest: id, startDate: b.startDate, endDate });
+    const reply = `Verplaatst naar ${b.startDate}${days > 1 ? ` tot en met ${endDate}` : ""}.${b.note ? ` ${b.note}` : ""}`;
+    const updated = await finish(req, id, reply, "done", row.customerId);
+    res.json({ ...updated, block: after });
   }
 }
