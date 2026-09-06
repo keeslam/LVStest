@@ -16,6 +16,7 @@ import { CustomerSearchPicker } from "@/components/customers/customer-search-pic
 import { useToast } from "@/hooks/use-toast";
 import { useCanManagePortal } from "./accounts-table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface VehicleRow { id: number; licensePlate: string; brand: string; model: string; offeredOnline: boolean }
 const KEY = ["/api/portal-admin/blacklist"];
@@ -78,9 +79,12 @@ export function BlacklistTable({ initialPlate, initialCustomerId }: { initialPla
         {canManage && !formOpen && <Button size="sm" onClick={() => { setEditing(null); setAdding(true); }} data-testid="button-blacklist-add"><Plus className="mr-1.5 h-4 w-4" />{t("admin.blacklist.add")}</Button>}
       </div>
 
-      {formOpen && (
-        <div className="grid gap-3 rounded-lg border bg-muted/30 p-3 md:grid-cols-2" data-testid="blacklist-add-form">
-          {editing && <p className="text-sm font-medium md:col-span-2">{t("admin.blacklist.editTitle", { plate: formatLicensePlate(editing.licensePlate), customer: editing.customerName })}</p>}
+      <Dialog open={formOpen} onOpenChange={(o) => !o && closeForm()}>
+        <DialogContent className="max-w-2xl" data-testid="blacklist-add-form">
+          <DialogHeader>
+            <DialogTitle>{editing ? t("admin.blacklist.editTitle", { plate: formatLicensePlate(editing.licensePlate), customer: editing.customerName }) : t("admin.blacklist.add")}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 md:grid-cols-2">
           <div>
             <Label>{t("admin.blacklist.vehicle")}</Label>
             <SearchListPicker items={vehicleItems} value={vehicleId} onChange={setVehicleId} searchPlaceholder={t("admin.vehicles.search")} emptyText={t("admin.blacklist.noVehicle")} changeLabel={t("admin.blacklist.change")}
@@ -101,8 +105,9 @@ export function BlacklistTable({ initialPlate, initialCustomerId }: { initialPla
               {editing ? <><Pencil className="mr-1.5 h-4 w-4" />{t("admin.blacklist.saveChanges")}</> : <><Ban className="mr-1.5 h-4 w-4" />{t("admin.blacklist.block")}</>}
             </Button>
           </div>
-        </div>
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {!isLoading && rows.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted-foreground">{q ? t("admin.blacklist.noMatch") : t("admin.blacklist.empty")}</p>
