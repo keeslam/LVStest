@@ -1,6 +1,10 @@
 import { useTranslation } from "react-i18next";
-import { CalendarDays, ChevronRight, AlertCircle, Car } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { CalendarDays, ChevronRight, AlertCircle, Car, Receipt } from "lucide-react";
 import type { PortalReservationDto } from "@shared/portal-types";
+import type { PortalFineDto } from "@shared/fines";
+import { portalQueryFn } from "@/lib/portal-api";
+import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Avatar, ListCard, Plate, StatusBadge, daysUntil, toneFor } from "@/components/portal/ui";
 
@@ -14,7 +18,10 @@ export function formatPortalDate(value: string | null | undefined): string {
 export function ReservationCard({ reservation, showPrice }: { reservation: PortalReservationDto; showPrice: boolean }) {
   const { t } = useTranslation("portal");
   const { openReservation } = usePortalDialogs();
+  const { me } = usePortalAuth();
+  const { data: fines = [] } = useQuery<PortalFineDto[]>({ queryKey: ["portal", "/api/portal/fines"], queryFn: portalQueryFn, enabled: Boolean(me?.settings.canViewFines) });
   const r = reservation;
+  const openFines = fines.filter((f) => f.reservationId === r.id && f.status !== "paid" && f.status !== "cancelled").length;
   const endIn = daysUntil(r.endDate);
   const startIn = daysUntil(r.startDate);
   const overdue = r.status === "picked_up" && endIn !== null && endIn < 0;
@@ -39,6 +46,7 @@ export function ReservationCard({ reservation, showPrice }: { reservation: Porta
             <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{formatPortalDate(r.startDate)} – {r.endDate ? formatPortalDate(r.endDate) : t("overview.openEnded")}</span>
             {r.driver && <span className="inline-flex items-center gap-1.5"><Avatar name={r.driver.displayName} />{r.driver.displayName}</span>}
             {showPrice && r.totalPrice && <span>€ {r.totalPrice}</span>}
+            {openFines > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-[#fde8e8] px-2 py-0.5 text-xs font-medium text-[#a32d2d]"><Receipt className="h-3 w-3" />{t("reservations.openFines", { count: openFines })}</span>}
           </div>
           {(overdue || hint) && (
             <div className={`mt-1 inline-flex items-center gap-1 text-xs font-medium ${overdue ? "text-[#a32d2d]" : "text-[#185fa5]"}`}>

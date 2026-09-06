@@ -108,7 +108,11 @@
       "upcoming": "Upcoming",
       "past": "Finished",
       "all": "All"
-    }
+    },
+    "openFines_one": "{{count}} fine",
+    "openFines_other": "{{count}} fines",
+    "fines_one": "Fine on this reservation",
+    "fines_other": "Fines on this reservation ({{count}})"
   },
   "documents": {
     "title": "Contracts and documents",
@@ -168,7 +172,9 @@
     "sectionLicense": "Driving licence",
     "sectionOther": "Language and notes",
     "assignTypeHint": "Type a plate or brand; the car then shows up below. Leave empty to assign later.",
-    "licenseOnFile": "A licence is already on file. Choose a file to replace it."
+    "licenseOnFile": "A licence is already on file. Choose a file to replace it.",
+    "openFines_one": "{{count}} open fine",
+    "openFines_other": "{{count}} open fines"
   },
   "account": {
     "title": "My account",

@@ -26,7 +26,7 @@ const ICON_TONE: Record<PortalListKind, string> = {
 };
 
 /** One dashboard tile, opened: only that slice of data, in a dialog. Rows open their own detail dialog on top. */
-export function PortalListDialog({ kind, onClose }: { kind: PortalListKind | null; onClose: () => void }) {
+export function PortalListDialog({ kind, initialQuery, onClose }: { kind: PortalListKind | null; initialQuery?: string; onClose: () => void }) {
   const { t } = useTranslation("portal");
   const { me } = usePortalAuth();
   const { openNewRequest } = usePortalDialogs();
@@ -38,9 +38,14 @@ export function PortalListDialog({ kind, onClose }: { kind: PortalListKind | nul
   const { data: documents = [], isLoading: l4 } = useQuery<PortalDocumentDto[]>({ queryKey: ["portal", "/api/portal/documents"], queryFn: portalQueryFn, enabled: open && kind === "documents" });
   const loading = l1 || l2 || l3 || l4;
   const [query, setQuery] = useState("");
-  useEffect(() => { setQuery(""); }, [kind]);
+  useEffect(() => { setQuery(initialQuery ?? ""); }, [kind, initialQuery]);
   const q = query.trim().toLowerCase();
-  const hit = (...parts: Array<string | number | null | undefined>) => !q || parts.filter(Boolean).join(" ").toLowerCase().includes(q);
+  const flat = (v: string) => v.replace(/[-\s]/g, "");
+  const hit = (...parts: Array<string | number | null | undefined>) => {
+    if (!q) return true;
+    const text = parts.filter(Boolean).join(" ").toLowerCase();
+    return text.includes(q) || flat(text).includes(flat(q));
+  };
 
   let items: React.ReactNode[] = [];
   let empty = "";

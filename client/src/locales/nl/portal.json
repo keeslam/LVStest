@@ -108,7 +108,11 @@
       "upcoming": "Komend",
       "past": "Afgerond",
       "all": "Alles"
-    }
+    },
+    "openFines_one": "{{count}} bekeuring",
+    "openFines_other": "{{count}} bekeuringen",
+    "fines_one": "Bekeuring bij deze reservering",
+    "fines_other": "Bekeuringen bij deze reservering ({{count}})"
   },
   "documents": {
     "title": "Contracten en documenten",
@@ -168,7 +172,9 @@
     "sectionLicense": "Rijbewijs",
     "sectionOther": "Taal en opmerkingen",
     "assignTypeHint": "Typ een kenteken of merk; de auto verschijnt dan hieronder. Laat leeg om later te koppelen.",
-    "licenseOnFile": "Er staat al een rijbewijs in het dossier. Kies een bestand om het te vervangen."
+    "licenseOnFile": "Er staat al een rijbewijs in het dossier. Kies een bestand om het te vervangen.",
+    "openFines_one": "{{count}} open bekeuring",
+    "openFines_other": "{{count}} open bekeuringen"
   },
   "account": {
     "title": "Mijn account",

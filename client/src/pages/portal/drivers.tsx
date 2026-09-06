@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Users, UserPlus, Mail, Phone, IdCard, FileText, Car } from "lucide-react";
+import { Users, UserPlus, Mail, Phone, IdCard, FileText, Car, Receipt } from "lucide-react";
 import type { PortalDriverDto, PortalReservationDto } from "@shared/portal-types";
+import type { PortalFineDto } from "@shared/fines";
 import { portalFetch, portalQueryFn } from "@/lib/portal-api";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
@@ -19,11 +20,14 @@ export default function PortalDriversPage() {
   const { t } = useTranslation("portal");
   const queryClient = useQueryClient();
   const { me } = usePortalAuth();
-  const { openReservation } = usePortalDialogs();
+  const { openReservation, openList } = usePortalDialogs();
   const canAssign = Boolean(me?.settings.canManageDrivers) && me?.role === "admin";
   const [assigning, setAssigning] = useState<PortalDriverDto | null>(null);
   const { data = [], isLoading } = useQuery<PortalDriverDto[]>({ queryKey: ["portal", "/api/portal/drivers"], queryFn: portalQueryFn });
   const { data: reservations = [] } = useQuery<PortalReservationDto[]>({ queryKey: ["portal", "/api/portal/reservations"], queryFn: portalQueryFn });
+  const { data: fines = [] } = useQuery<PortalFineDto[]>({ queryKey: ["portal", "/api/portal/fines"], queryFn: portalQueryFn, enabled: Boolean(me?.settings.canViewFines) });
+  /** Fines still open for this driver. */
+  const openFinesOf = (driverId: number) => fines.filter((f) => f.driver?.id === driverId && f.status !== "paid" && f.status !== "cancelled");
   const toggle = useMutation({
     mutationFn: (d: PortalDriverDto) => portalFetch("PATCH", `/api/portal/drivers/${d.id}`, { status: d.status === "active" ? "inactive" : "active" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["portal", "/api/portal/drivers"] }),
@@ -66,6 +70,11 @@ export default function PortalDriversPage() {
                             <span className="truncate max-w-[9rem]">{r.vehicle ? `${r.vehicle.brand} ${r.vehicle.model}` : ""}</span>
                           </button>
                         ))}
+                      {openFinesOf(d.id).length > 0 && (
+                        <button type="button" onClick={() => openList("fines", { query: d.displayName })} className="inline-flex items-center gap-1 rounded-full bg-[#fde8e8] px-2.5 py-0.5 text-xs font-medium text-[#a32d2d] hover:bg-[#f9d5d5]" data-testid={`driver-fines-${d.id}`}>
+                          <Receipt className="h-3.5 w-3.5" />{t("drivers.openFines", { count: openFinesOf(d.id).length })}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

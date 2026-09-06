@@ -20,7 +20,7 @@ type Open =
   | { kind: "newRequest"; prefill: NewRequestPrefill }
   | { kind: "document"; document: PortalDocumentDto }
   | { kind: "account" }
-  | { kind: "list"; list: PortalListKind }
+  | { kind: "list"; list: PortalListKind; query?: string }
   | null;
 
 interface PortalDialogsApi {
@@ -31,7 +31,7 @@ interface PortalDialogsApi {
   openNewRequest: (prefill?: NewRequestPrefill) => void;
   openDocument: (document: PortalDocumentDto) => void;
   openAccount: () => void;
-  openList: (list: PortalListKind) => void;
+  openList: (list: PortalListKind, opts?: { query?: string }) => void;
   close: () => void;
 }
 
@@ -99,7 +99,7 @@ export function PortalDialogsProvider({ children }: { children: ReactNode }) {
     openNewRequest: (prefill = {}) => { fromRoute.current = false; setOpen({ kind: "newRequest", prefill }); },
     openDocument: (document) => { fromRoute.current = false; setOpen({ kind: "document", document }); },
     openAccount: () => { fromRoute.current = false; setOpen({ kind: "account" }); },
-    openList: (list) => { fromRoute.current = false; setOpen({ kind: "list", list }); },
+    openList: (list, opts) => { fromRoute.current = false; setOpen({ kind: "list", list, query: opts?.query }); },
     close,
   }), [open, close]);
 
@@ -112,7 +112,7 @@ export function PortalDialogsProvider({ children }: { children: ReactNode }) {
       <NewRequestDialog prefill={open?.kind === "newRequest" ? open.prefill : null} onClose={close} />
       <DocumentDialog document={open?.kind === "document" ? open.document : null} onClose={close} />
       <PortalAccountDialog open={open?.kind === "account"} onClose={close} />
-      <PortalListDialog kind={open?.kind === "list" ? open.list : null} onClose={close} />
+      <PortalListDialog kind={open?.kind === "list" ? open.list : null} initialQuery={open?.kind === "list" ? open.query : undefined} onClose={close} />
     </Ctx.Provider>
   );
 }

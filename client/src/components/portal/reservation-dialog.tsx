@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import type { PortalFineDto } from "@shared/fines";
+import { FineRow } from "./rows";
 import { useTranslation } from "react-i18next";
 import type { PortalReservationDto } from "@shared/portal-types";
 import { portalQueryFn } from "@/lib/portal-api";
@@ -28,6 +30,8 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
   const url = `/api/portal/reservations/${id}`;
   const { data: r, isLoading, isError } = useQuery<Detail>({ queryKey: ["portal", url], queryFn: portalQueryFn, enabled: id !== null });
   const canChangeDriver = Boolean(r && me?.role === "admin" && me.settings.canManageDrivers && ["booked", "picked_up"].includes(r.status));
+  const { data: fines = [] } = useQuery<PortalFineDto[]>({ queryKey: ["portal", "/api/portal/fines"], queryFn: portalQueryFn, enabled: id !== null && Boolean(me?.settings.canViewFines) });
+  const linkedFines = fines.filter((f) => f.reservationId === id);
   const canRequest = Boolean(r && me?.settings.canSubmitRequests && ["booked", "picked_up"].includes(r.status));
 
   return (
@@ -57,6 +61,12 @@ export function ReservationDialog({ id, onClose }: { id: number | null; onClose:
                 {me?.settings.canReturn && <Button size="sm" variant="outline" onClick={() => openNewRequest({ type: "early_return", reservationId: r.id })} data-testid="button-request-early-return">{t("requests.form.earlyReturn")}</Button>}
               </>)}
             </div>
+            {me?.settings.canViewFines && linkedFines.length > 0 && (
+              <div>
+                <h3 className="mb-1 text-sm font-semibold">{t("reservations.fines", { count: linkedFines.length })}</h3>
+                <div className="space-y-2" data-testid="reservation-fines">{linkedFines.map((f) => <FineRow key={f.id} fine={f} />)}</div>
+              </div>
+            )}
             <div>
               <h3 className="mb-1 text-sm font-semibold">{t("reservations.driverHistory")}</h3>
               <ul className="space-y-1 rounded-md border p-3 text-sm">
