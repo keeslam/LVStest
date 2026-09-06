@@ -1,6 +1,6 @@
 import { db } from "../db";
 import {
-  portalRequests, portalRequestAttachments, customers, portalUsers, reservations, vehicles,
+  portalRequests, portalRequestAttachments, portalRequestMessages, type PortalRequestMessage, customers, portalUsers, reservations, vehicles,
   type PortalRequest, type InsertPortalRequest, type PortalRequestAttachment,
 } from "../../shared/schema";
 import { and, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
@@ -8,7 +8,7 @@ import type { PortalRequestDto } from "../../shared/portal-requests";
 
 export type RequestRow = PortalRequest & {
   customerName: string; submittedBy: string | null; submitterEmail: string | null;
-  attachments: PortalRequestAttachment[]; reservationLabel: string | null;
+  attachments: PortalRequestAttachment[]; reservationLabel: string | null; messages: PortalRequestMessage[];
 };
 
 async function select(where: SQL | undefined, limit = 500): Promise<RequestRow[]> {
@@ -27,10 +27,14 @@ async function select(where: SQL | undefined, limit = 500): Promise<RequestRow[]
     .orderBy(desc(portalRequests.createdAt), desc(portalRequests.id))
     .limit(limit);
   if (rows.length === 0) return [];
-  const atts = await db.select().from(portalRequestAttachments).where(inArray(portalRequestAttachments.requestId, rows.map((x) => x.r.id)));
+  const ids = rows.map((x) => x.r.id);
+  const [atts, msgs] = await Promise.all([
+    db.select().from(portalRequestAttachments).where(inArray(portalRequestAttachments.requestId, ids)),
+    db.select().from(portalRequestMessages).where(inArray(portalRequestMessages.requestId, ids)).orderBy(portalRequestMessages.createdAt, portalRequestMessages.id),
+  ]);
   return rows.map((x) => ({
     ...x.r, customerName: x.customerName, submittedBy: x.submittedBy, submitterEmail: x.submitterEmail,
-    reservationLabel: x.reservationLabel, attachments: atts.filter((a) => a.requestId === x.r.id),
+    reservationLabel: x.reservationLabel, attachments: atts.filter((a) => a.requestId === x.r.id), messages: msgs.filter((m) => m.requestId === x.r.id),
   }));
 }
 
@@ -41,6 +45,7 @@ export function toRequestDto(row: RequestRow, staff: boolean): PortalRequestDto 
     staffReply: row.staffReply, repliedAt: row.repliedAt?.toISOString() ?? null, createdAt: row.createdAt.toISOString(),
     submittedBy: row.submittedBy, reservationLabel: row.reservationLabel,
     attachments: row.attachments.map((a) => ({ id: a.id, fileName: a.fileName, contentType: a.contentType, fileSize: a.fileSize })),
+    messages: row.messages.map((m) => ({ id: m.id, author: m.author as "customer" | "staff", authorName: m.authorName, body: m.body, createdAt: m.createdAt.toISOString() })),
   };
   if (staff) { dto.customerId = row.customerId; dto.customerName = row.customerName; }
   return dto;
@@ -50,6 +55,11 @@ export function toRequestDto(row: RequestRow, staff: boolean): PortalRequestDto 
 export const requestsStorage = {
   async createRequest(data: InsertPortalRequest): Promise<PortalRequest> {
     const [row] = await db.insert(portalRequests).values(data).returning();
+    return row;
+  },
+  async addMessage(data: { requestId: number; author: "customer" | "staff"; authorName: string; body: string }): Promise<PortalRequestMessage> {
+    const [row] = await db.insert(portalRequestMessages).values(data).returning();
+    await db.update(portalRequests).set({ updatedAt: new Date() }).where(eq(portalRequests.id, data.requestId));
     return row;
   },
   async addAttachment(data: typeof portalRequestAttachments.$inferInsert): Promise<PortalRequestAttachment> {

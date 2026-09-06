@@ -7,6 +7,10 @@ export const portalConfigSchema = z.object({
   notificationEmail: z.union([z.string().email(), z.literal("")]).default(""),
   portalBaseUrl: z.union([z.string().url(), z.literal("")]).default(""),
   fineAdminFee: z.coerce.number().min(0).default(0),
+  pickupAddress: z.string().max(300).default(DEFAULT_PORTAL_CONFIG.pickupAddress),
+  openingHours: z.string().max(300).default(DEFAULT_PORTAL_CONFIG.openingHours),
+  pickupInstructions: z.string().max(1000).default(DEFAULT_PORTAL_CONFIG.pickupInstructions),
+  privacyUrl: z.union([z.string().url(), z.literal("")]).default(DEFAULT_PORTAL_CONFIG.privacyUrl),
 });
 
 const CACHE_TTL_MS = 60_000;

@@ -5,6 +5,8 @@ import multer from "multer";
 import { z } from "zod";
 import { portalStorage, type PortalReservation } from "../services/portal-storage";
 import { overlaps } from "../services/booking-period";
+import { customerNotifications } from "../services/portal-customer-notifications";
+import { getServiceDueVehicles } from "../utils/service-due-scanner";
 import { settingsFlags, requireFeature, requirePortalRole, portalError, logPortalActivity } from "../portal-auth";
 import { assignDriverToReservation, getDriverAssignments } from "../services/driver-assignments";
 import { notifyStaffOfPortalEvent } from "../services/portal-notifications";
@@ -27,7 +29,7 @@ export function toFineDto(f: FineListRow): PortalFineDto {
   };
 }
 
-const REQUEST_LABEL: Record<string, string> = { booking: "huuraanvraag", extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", fine_question: "vraag over bekeuring", other: "overig" };
+const REQUEST_LABEL: Record<string, string> = { booking: "huuraanvraag", extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", maintenance: "onderhoudsmelding", mileage: "kilometerstand", fine_question: "vraag over bekeuring", other: "overig" };
 
 export interface PortalRouteDeps {
   requirePortalUser: RequestHandler;
@@ -43,7 +45,7 @@ export function toReservationDto(r: PortalReservation, showPrices: boolean): Por
     actualPickupDate: r.actualPickupDate, actualReturnDate: r.actualReturnDate,
     pickupMileage: r.pickupMileage, returnMileage: r.returnMileage,
     contractNumber: r.contractNumber,
-    vehicle: r.vehicle ? { id: r.vehicle.id, licensePlate: r.vehicle.licensePlate, brand: r.vehicle.brand, model: r.vehicle.model } : null,
+    vehicle: r.vehicle ? { id: r.vehicle.id, licensePlate: r.vehicle.licensePlate, brand: r.vehicle.brand, model: r.vehicle.model, apkDate: r.vehicle.apkDate ?? null, ...(showPrices ? { dailyPrice: r.vehicle.dailyPrice ?? null } : {}) } : null,
     driver: r.driver ? { id: r.driver.id, displayName: r.driver.displayName } : null,
     replacementForReservationId: r.replacementForReservationId,
   };
@@ -98,7 +100,12 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const r = await portalStorage.getReservationForCustomer(id, ctx.customerId, ctx.scope);
     if (!r) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Reservation not found");
     const history = await getDriverAssignments(id);
-    res.json({ ...toReservationDto(r, ctx.settings.showPrices), driverHistory: history });
+    let serviceDue: "due" | "soon" | null = null;
+    if (r.vehicleId && r.status === "picked_up") {
+      const due = (await getServiceDueVehicles()).find((v) => v.id === r.vehicleId);
+      serviceDue = due?.serviceDue.isServiceDue ? "due" : due?.serviceDue.isServiceDueSoon ? "soon" : null;
+    }
+    res.json({ ...toReservationDto(r, settingsFlags(ctx.settings, ctx.user).showPrices), driverHistory: history, serviceDue });
   });
 
   app.post("/api/portal/reservations/:id/driver", requirePortalUser, requireFeature("canManageDrivers"), requirePortalRole("admin"), async (req, res) => {
@@ -133,11 +140,52 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
   app.get("/api/portal/documents", requirePortalUser, requireFeature("canViewContracts"), async (req, res) => {
     const ctx = ctxOf(req);
     const docs = await portalStorage.listDocumentsForCustomer(ctx.customerId, ctx.scope);
-    const dto: PortalDocumentDto[] = docs.map((d) => ({
-      id: d.id, reservationId: d.reservationId, documentType: d.documentType, kind: d.kind,
-      fileName: d.fileName, uploadDate: d.uploadDate.toISOString(),
-    }));
+    const acks = await portalStorage.getDocumentAcks(docs.map((d) => d.id));
+    const dto: PortalDocumentDto[] = docs.map((d) => {
+      const ack = acks.get(d.id);
+      return {
+        id: d.id, reservationId: d.reservationId, documentType: d.documentType, kind: d.kind,
+        fileName: d.fileName, uploadDate: d.uploadDate.toISOString(),
+        ack: ack ? { by: ack.name, at: ack.ackedAt.toISOString() } : null,
+      };
+    });
     res.json(dto);
+  });
+
+  // "Gezien en akkoord" on a contract: recorded once, with name, time and address.
+  app.post("/api/portal/documents/:id/ack", requirePortalUser, requireFeature("canViewContracts"), async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const ctx = ctxOf(req);
+    const docs = await portalStorage.listDocumentsForCustomer(ctx.customerId, ctx.scope);
+    const doc = docs.find((d) => d.id === id);
+    if (!doc) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Document not found");
+    const ack = await portalStorage.ackDocument({ documentId: id, customerId: ctx.customerId, portalUserId: ctx.user.id, name: ctx.user.fullName, ip: req.ip ?? null });
+    await logPortalActivity(req, "document_acknowledged", { entity: "document", entityId: id, details: { fileName: doc.fileName, kind: doc.kind } });
+    await notifyStaffOfPortalEvent({
+      kind: "portal_document_ack",
+      title: `Contract gezien en akkoord: ${doc.fileName}`,
+      description: `${ctx.user.fullName} heeft ${doc.kind === "contract" ? "het contract" : "het document"} van reservering #${doc.reservationId ?? "?"} gezien en akkoord gegeven.`,
+      link: doc.reservationId ? `/reservations/${doc.reservationId}` : undefined, customerId: ctx.customerId,
+    });
+    res.json({ by: ack.name, at: ack.ackedAt.toISOString() });
+  });
+
+  // ---- notifications for the customer -------------------------------------------------------
+  app.get("/api/portal/notifications", requirePortalUser, async (req, res) => {
+    const ctx = ctxOf(req);
+    const rows = await customerNotifications.listForUser(ctx.customerId, ctx.user.id);
+    res.json(rows.map((n) => ({ id: n.id, type: n.type, title: n.title, description: n.description, link: n.link, isRead: n.isRead, createdAt: n.createdAt.toISOString() })));
+  });
+  app.get("/api/portal/notifications/unread-count", requirePortalUser, async (req, res) => {
+    const ctx = ctxOf(req);
+    res.json({ count: await customerNotifications.countUnread(ctx.customerId, ctx.user.id) });
+  });
+  app.post("/api/portal/notifications/read", requirePortalUser, async (req, res) => {
+    const ctx = ctxOf(req);
+    const parsed = z.object({ ids: z.array(z.number().int().positive()).max(200).optional() }).safeParse(req.body ?? {});
+    if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Invalid input");
+    await customerNotifications.markRead(ctx.customerId, parsed.data.ids ?? "all", ctx.user.id);
+    res.json({ ok: true });
   });
 
   app.get("/api/portal/documents/:id/download", requirePortalUser, requireFeature("canViewContracts"), async (req, res) => {
@@ -203,6 +251,26 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     res.json(toRequestDto(row, false));
   });
 
+  // The customer adds to the conversation on an open request; staff see it in the inbox.
+  app.post("/api/portal/requests/:id/messages", ...requireRequests, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const ctx = ctxOf(req);
+    const parsed = z.object({ body: z.string().trim().min(1).max(4000) }).safeParse(req.body);
+    if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Message is required");
+    const row = await requestsStorage.getRequestForCustomer(id, ctx.customerId, requestScope(req));
+    if (!row) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Request not found");
+    if (row.status === "done" || row.status === "rejected") return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Deze aanvraag is afgehandeld; stuur een nieuwe aanvraag");
+    const msg = await requestsStorage.addMessage({ requestId: id, author: "customer", authorName: ctx.user.fullName, body: parsed.data.body });
+    await logPortalActivity(req, "request_message", { entity: "request", entityId: id });
+    const customer = await storage.getCustomer(ctx.customerId);
+    await notifyStaffOfPortalEvent({
+      kind: "portal_request_message",
+      title: `Reactie op aanvraag #${id}: ${customer?.companyName || customer?.name || ctx.customerId}`,
+      description: parsed.data.body.slice(0, 200), link: `/portal-admin?request=${id}`, customerId: ctx.customerId,
+    });
+    res.status(201).json({ id: msg.id, author: "customer", authorName: msg.authorName, body: msg.body, createdAt: msg.createdAt.toISOString() });
+  });
+
   // A customer may withdraw a request nobody has picked up yet.
   app.delete("/api/portal/requests/:id", ...requireRequests, async (req, res) => {
     const id = idParam(req, res); if (id === null) return;
@@ -239,7 +307,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     const files = (req.files as Express.Multer.File[] | undefined) ?? [];
     const discard = () => files.forEach((f) => fs.rmSync(f.path, { force: true }));
     const base = z.object({
-      type: z.enum([PortalRequestType.BOOKING, PortalRequestType.EXTENSION, PortalRequestType.EARLY_RETURN, PortalRequestType.DAMAGE, PortalRequestType.FINE_QUESTION, PortalRequestType.OTHER]),
+      type: z.enum([PortalRequestType.BOOKING, PortalRequestType.EXTENSION, PortalRequestType.EARLY_RETURN, PortalRequestType.DAMAGE, PortalRequestType.MAINTENANCE, PortalRequestType.MILEAGE, PortalRequestType.FINE_QUESTION, PortalRequestType.OTHER]),
       message: z.string().trim().min(1).max(4000),
       reservationId: z.coerce.number().int().positive().optional(),
       fineId: z.coerce.number().int().positive().optional(),

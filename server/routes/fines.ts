@@ -10,6 +10,7 @@ import { finesStorage } from "../services/fines-storage";
 import { findCandidates, linkFineManually, unlinkFine } from "../services/fine-attribution";
 import { createFineWithAttribution } from "../services/fine-create";
 import { sendFineLinkedMail } from "../services/portal-mail";
+import { customerNotifications } from "../services/portal-customer-notifications";
 import { getPortalConfig } from "../services/portal-config";
 import { storage } from "../storage";
 import { AuditLogger } from "../utils/security/auditLogger";
@@ -56,6 +57,15 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
 
   async function notifyLinked(fineId: number) {
     try { await sendFineLinkedMail(fineId); } catch (e) { console.error("fine linked mail failed:", e); }
+    try {
+      const fine = await finesStorage.getFine(fineId);
+      if (fine?.customerId) {
+        await customerNotifications.notify({
+          customerId: fine.customerId, type: "fine_linked", title: `Nieuwe bekeuring: ${fine.licensePlate}`,
+          description: `${fine.description} · € ${fine.amount}`, link: `/bekeuringen/${fineId}`, dedupeTag: `fine:${fineId}`, dedupeDays: 365,
+        });
+      }
+    } catch (e) { console.error("fine linked notification failed:", e); }
   }
 
   // ---- CJIB import (FTPS) --------------------------------------------------------

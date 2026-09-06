@@ -17,6 +17,7 @@ import { getUploadsDir as getPortalUploadsDir } from "../shared/paths";
 import { BackupScheduler } from "./backupScheduler";
 import { ApkScanScheduler } from "./apkScanScheduler";
 import { ServiceDueScheduler } from "./serviceDueScheduler";
+import { PortalAlertScheduler } from "./portalAlertScheduler";
 import { initializeDefaultAdmin, displayDeploymentInfo } from "./initAdmin";
 import notificationRoutes from "./routes/notifications.js";
 import vehiclesWithReservationsRoutes from "./routes/vehicles-with-reservations.js";
@@ -39,6 +40,7 @@ let io: SocketIOServer | null = null;
 let backupScheduler: any = null;
 let apkScanScheduler: any = null;
 let serviceDueScheduler: any = null;
+let portalAlertScheduler: any = null;
 let isShuttingDown = false;
 
 async function gracefulShutdown(signal: string) {
@@ -93,6 +95,7 @@ async function gracefulShutdown(signal: string) {
     }
 
     // Stop service-due scan scheduler
+    if (portalAlertScheduler) portalAlertScheduler.stop();
     if (serviceDueScheduler) {
       serviceDueScheduler.stop();
       console.log('✅ Service-due scheduler stopped');
@@ -442,6 +445,8 @@ apkScanScheduler.start();
 // Initialize regular-service due scan scheduler (notifications)
 serviceDueScheduler = new ServiceDueScheduler();
 serviceDueScheduler.start();
+portalAlertScheduler = new PortalAlertScheduler();
+portalAlertScheduler.start();
 
 // Seed the portal e-mail templates once (staff edit them afterwards).
 startCjibScheduler().catch((e) => console.error("CJIB scheduler failed to start:", e));

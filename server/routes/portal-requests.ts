@@ -8,6 +8,7 @@ import type { PortalBookingAlternativeDto } from "../../shared/portal-types";
 import { NOT_RENTABLE } from "../services/portal-storage";
 import { assignDriverToReservation } from "../services/driver-assignments";
 import { realtimeEvents } from "../realtime-events";
+import { customerNotifications } from "../services/portal-customer-notifications";
 import { requestsStorage, toRequestDto } from "../services/portal-requests-storage";
 import { sendRequestReplyMail } from "../services/portal-mail";
 import { portalStorage } from "../services/portal-storage";
@@ -31,8 +32,16 @@ function idParam(req: Request, res: Response, name = "id"): number | null {
 export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): void {
   const actor = (req: Request) => req.user?.username ?? "system";
 
+  const STATUS_LABEL: Record<string, string> = { done: "afgehandeld", rejected: "afgewezen", in_progress: "in behandeling" };
   async function finish(req: Request, id: number, reply: string, status: PortalRequestStatusValue, customerId: number) {
     const updated = await requestsStorage.updateRequest(id, { staffReply: reply, repliedAt: new Date(), repliedBy: actor(req), status, handledBy: actor(req) });
+    if (reply) await requestsStorage.addMessage({ requestId: id, author: "staff", authorName: actor(req), body: reply });
+    await customerNotifications.notify({
+      customerId, type: `request_${status}`,
+      title: `Aanvraag #${id} ${STATUS_LABEL[status] ?? status}`,
+      description: reply ? reply.slice(0, 300) : `Lam Groep heeft uw aanvraag #${id} ${STATUS_LABEL[status] ?? status}.`,
+      link: `/aanvragen/${id}`,
+    });
     try { await sendRequestReplyMail(id); } catch (e) { console.error("request reply mail failed:", e); }
     await portalStorage.logActivity({ customerId, action: "request_replied", entity: "request", entityId: id, details: { status, by: actor(req) } });
     await AuditLogger.logFromRequest(req, "portal_request.reply", "portal_request", id, { status });
@@ -66,6 +75,20 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     res.setHeader("Content-Type", att.contentType);
     res.setHeader("Content-Disposition", `inline; filename="${sanitizeFilename(att.fileName)}"`);
     fs.createReadStream(file).pipe(res);
+  });
+
+  // Staff add to the conversation without closing the request.
+  app.post("/api/portal-requests/:id/messages", canManage, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const row = await requestsStorage.getRequest(id);
+    if (!row) return res.status(404).json({ message: "Request not found" });
+    const parsed = z.object({ body: z.string().trim().min(1).max(4000) }).safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: "Message is required" });
+    const msg = await requestsStorage.addMessage({ requestId: id, author: "staff", authorName: actor(req), body: parsed.data.body });
+    if (row.status === "new") await requestsStorage.updateRequest(id, { status: "in_progress", handledBy: actor(req) });
+    await customerNotifications.notify({ customerId: row.customerId, type: "request_message", title: `Nieuw bericht bij aanvraag #${id}`, description: parsed.data.body.slice(0, 300), link: `/aanvragen/${id}` });
+    await portalStorage.logActivity({ customerId: row.customerId, action: "request_message_staff", entity: "request", entityId: id, details: { by: actor(req) } });
+    res.status(201).json({ id: msg.id, author: "staff", authorName: msg.authorName, body: msg.body, createdAt: msg.createdAt.toISOString() });
   });
 
   app.post("/api/portal-requests/:id/take", canManage, async (req, res) => {

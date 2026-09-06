@@ -456,6 +456,8 @@ export const portalUsers = pgTable("portal_users", {
   pendingEmail: text("pending_email"),
   emailChangeTokenHash: text("email_change_token_hash"),
   emailChangeExpiresAt: timestamp("email_change_expires_at"),
+  /** Browsers this account logged in from; a login from an unknown one triggers a warning mail. */
+  knownDevices: jsonb("known_devices").$type<PortalKnownDevice[]>().notNull().default([]),
   lastLoginAt: timestamp("last_login_at"),
   // Touched at most once a minute while the user is active; "online" in the
   // staff overview means seen within the last 10 minutes.
@@ -662,6 +664,46 @@ export const portalRequestAttachments = pgTable("portal_request_attachments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 export type PortalRequestAttachment = typeof portalRequestAttachments.$inferSelect;
+
+export interface PortalKnownDevice { id: string; ua: string; firstSeen: string; lastSeen: string }
+
+/** Back-and-forth on a request: the customer and staff each add messages. */
+export const portalRequestMessages = pgTable("portal_request_messages", {
+  id: serial("id").primaryKey(),
+  requestId: integer("request_id").notNull().references(() => portalRequests.id, { onDelete: "cascade" }),
+  author: text("author").notNull(), // 'customer' | 'staff'
+  authorName: text("author_name").notNull(),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({ requestIdx: index("portal_request_messages_request_idx").on(table.requestId) }));
+export type PortalRequestMessage = typeof portalRequestMessages.$inferSelect;
+
+/** What the customer sees under the bell in the portal. portalUserId null = every account of the customer. */
+export const portalNotifications = pgTable("portal_notifications", {
+  id: serial("id").primaryKey(),
+  customerId: integer("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }),
+  portalUserId: integer("portal_user_id").references(() => portalUsers.id, { onDelete: "cascade" }),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  link: text("link"),
+  dedupeTag: text("dedupe_tag"),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({ customerIdx: index("portal_notifications_customer_idx").on(table.customerId, table.createdAt) }));
+export type PortalNotification = typeof portalNotifications.$inferSelect;
+
+/** "Gezien en akkoord" on a contract, by whom and when. */
+export const portalDocumentAcks = pgTable("portal_document_acks", {
+  id: serial("id").primaryKey(),
+  documentId: integer("document_id").notNull().references(() => documents.id, { onDelete: "cascade" }),
+  customerId: integer("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }),
+  portalUserId: integer("portal_user_id").references(() => portalUsers.id, { onDelete: "set null" }),
+  name: text("name").notNull(),
+  ip: text("ip"),
+  ackedAt: timestamp("acked_at").defaultNow().notNull(),
+}, (table) => ({ documentIdx: uniqueIndex("portal_document_acks_document_idx").on(table.documentId) }));
+export type PortalDocumentAck = typeof portalDocumentAcks.$inferSelect;
 
 // Reservations table
 export const reservations = pgTable("reservations", {

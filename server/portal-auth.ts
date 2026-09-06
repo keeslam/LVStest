@@ -11,10 +11,12 @@ import { useSecureCookies } from "./utils/secure-cookies.js";
 import { createCsrfMiddleware } from "./middleware/security/csrf.js";
 import { checkAccountLockout, recordLoginAttempt, clearFailedAttempts, loginLimiter } from "./middleware/security/rateLimiter.js";
 import { portalStorage, type PortalScope } from "./services/portal-storage";
-import { sendPortalInvite, sendEmailChangeMail } from "./services/portal-mail";
+import { sendPortalInvite, sendEmailChangeMail, sendNewDeviceMail } from "./services/portal-mail";
+import { getPortalConfig } from "./services/portal-config";
+import { randomBytes } from "crypto";
 import { notifyStaffOfPortalEvent } from "./services/portal-notifications";
 import { hashInviteToken } from "./services/portal-tokens";
-import { PortalUserRole, type PortalUser, type PortalCustomerSettings } from "../shared/schema";
+import { PortalUserRole, type PortalUser, type PortalCustomerSettings, type PortalKnownDevice } from "../shared/schema";
 import { PORTAL_ERROR, type PortalErrorCode, type PortalMe, type PortalSettingsFlags, type PortalCompanyEmails } from "../shared/portal-types";
 
 export interface PortalRequestContext {
@@ -54,7 +56,7 @@ export function settingsFlags(s: PortalCustomerSettings, user?: Pick<PortalUser,
 }
 
 async function buildMe(ctx: PortalRequestContext): Promise<PortalMe> {
-  const customer = await storage.getCustomer(ctx.customerId);
+  const [customer, config] = await Promise.all([storage.getCustomer(ctx.customerId), getPortalConfig()]);
   const languageOverride = ctx.user.language === "en" || ctx.user.language === "nl" ? ctx.user.language : null;
   const company: PortalCompanyEmails | undefined = ctx.user.role === "admin" && customer
     ? { email: customer.email ?? null, emailForMOT: customer.emailForMOT ?? null, emailForInvoices: customer.emailForInvoices ?? null, emailGeneral: customer.emailGeneral ?? null }
@@ -69,7 +71,36 @@ async function buildMe(ctx: PortalRequestContext): Promise<PortalMe> {
     pendingEmail: ctx.user.pendingEmail && ctx.user.emailChangeExpiresAt && ctx.user.emailChangeExpiresAt.getTime() > Date.now() ? ctx.user.pendingEmail : null,
     company,
     settings: settingsFlags(ctx.settings, ctx.user),
+    info: { pickupAddress: config.pickupAddress, openingHours: config.openingHours, pickupInstructions: config.pickupInstructions, privacyUrl: config.privacyUrl },
   };
+}
+
+const DEVICE_COOKIE = "portal_device";
+const MAX_KNOWN_DEVICES = 10;
+
+/**
+ * Remembers the browser in a long-lived cookie. A login from a browser this
+ * account has not used before gets a warning mail (not on the very first login).
+ */
+async function rememberDevice(req: Request, res: Response, user: PortalUser): Promise<void> {
+  const ua = (req.get("user-agent") || "unknown").slice(0, 300);
+  const now = new Date().toISOString();
+  const known: PortalKnownDevice[] = Array.isArray(user.knownDevices) ? [...user.knownDevices] : [];
+  // No cookie-parser in this app: read the header directly.
+  const cookieId = (req.headers.cookie ?? "").split(";").map((c) => c.trim()).find((c) => c.startsWith(DEVICE_COOKIE + "="))?.slice(DEVICE_COOKIE.length + 1) || null;
+  const seen = cookieId ? known.find((d) => d.id === cookieId) : undefined;
+  if (seen) {
+    seen.lastSeen = now; seen.ua = ua;
+  } else {
+    const id = randomBytes(16).toString("hex");
+    const sec = useSecureCookies(); res.cookie(DEVICE_COOKIE, id, { httpOnly: true, sameSite: "lax", secure: sec === "auto" ? undefined : sec, maxAge: 400 * 86_400_000, path: "/api/portal" });
+    const firstLoginEver = known.length === 0 && !user.lastLoginAt;
+    known.push({ id, ua, firstSeen: now, lastSeen: now });
+    if (!firstLoginEver) {
+      try { await sendNewDeviceMail(user, { ua, ip: req.ip || "onbekend", at: now }); } catch (e) { console.error("new device mail failed:", e); }
+    }
+  }
+  await portalStorage.updatePortalUser(user.id, { knownDevices: known.slice(-MAX_KNOWN_DEVICES) });
 }
 
 /** Loads user + settings; returns a reason when the account may not be used. */
@@ -227,6 +258,7 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
           if (loginErr) return next(loginErr);
           await recordLoginAttempt(lockKey, ip, ua, true);
           await clearFailedAttempts(lockKey);
+          await rememberDevice(req, res, user);
           await portalStorage.updatePortalUser(user.id, { lastLoginAt: new Date() });
           req.portalUser = ctx;
           await logPortalActivity(req, "login");

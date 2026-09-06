@@ -16,6 +16,7 @@ export const PORTAL_TEMPLATE = {
   FINE_LINKED: "portal_fine_linked",
   REQUEST_REPLIED: "portal_request_replied",
   EMAIL_CHANGE: "portal_email_change",
+  NEW_DEVICE: "portal_new_device",
 } as const;
 
 // Seeded once; staff edit them afterwards in Communicatie > E-mailsjablonen.
@@ -37,6 +38,15 @@ const DEFAULT_TEMPLATES: Array<{ name: string; subject: string; content: string 
 <p>Bevestig dit via deze link (72 uur geldig):</p>
 <p><a href="{{link}}">{{link}}</a></p>
 <p>Heeft u dit niet aangevraagd, dan kunt u deze e-mail negeren; uw huidige adres blijft dan in gebruik.</p>
+<p>Met vriendelijke groet,<br>Lam Groep</p>`,
+  },
+  {
+    name: PORTAL_TEMPLATE.NEW_DEVICE,
+    subject: "Nieuwe aanmelding op uw klantenportaal-account",
+    content: `<p>Beste {{name}},</p>
+<p>Er is zojuist ingelogd op uw account van het klantenportaal van Lam Groep vanaf een browser of apparaat dat we nog niet kenden.</p>
+<p>Tijdstip: {{at}}<br>Browser: {{ua}}<br>IP-adres: {{ip}}</p>
+<p>Was u dit zelf? Dan hoeft u niets te doen. Herkent u dit niet, wijzig dan direct uw wachtwoord in het portaal en neem contact op met Lam Groep.</p>
 <p>Met vriendelijke groet,<br>Lam Groep</p>`,
   },
   {
@@ -123,6 +133,14 @@ export async function sendPortalInvite(user: PortalUser, kind: "invite" | "reset
     text: stripHtml(html),
   }, "custom");
   return { sent, token };
+}
+
+/** Warns the account holder about a login from a browser the account has not used before. */
+export async function sendNewDeviceMail(user: PortalUser, info: { ua: string; ip: string; at: string }): Promise<boolean> {
+  const template = await getPortalTemplate(PORTAL_TEMPLATE.NEW_DEVICE);
+  const vars = { name: user.fullName, ua: info.ua, ip: info.ip, at: new Date(info.at).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam" }) };
+  const html = renderTemplate(template.content, vars);
+  return sendEmail({ to: user.email, toName: user.fullName, subject: renderTemplate(template.subject, vars), html, text: stripHtml(html) }, "custom");
 }
 
 /** Sends the confirmation link for a new address to that new address; only its hash is stored. */

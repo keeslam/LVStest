@@ -60,6 +60,8 @@ export interface PortalMe {
   /** The company's contact addresses; only sent to admin accounts, who may edit them. */
   company?: PortalCompanyEmails;
   settings: PortalSettingsFlags;
+  /** Pickup details and privacy link from the portal configuration. */
+  info: { pickupAddress: string; openingHours: string; pickupInstructions: string; privacyUrl: string };
 }
 
 export interface PortalCompanyEmails {
@@ -84,9 +86,11 @@ export interface PortalReservationDto {
   contractNumber: string | null;
   /** Only present when the customer's showPrices switch is on. */
   totalPrice?: string | null;
-  vehicle: { id: number; licensePlate: string; brand: string; model: string } | null;
+  vehicle: { id: number; licensePlate: string; brand: string; model: string; apkDate: string | null; dailyPrice?: string | null } | null;
   driver: { id: number; displayName: string } | null;
   replacementForReservationId: number | null;
+  /** Detail view only: service is due (or due soon) on this vehicle. */
+  serviceDue?: 'due' | 'soon' | null;
 }
 
 /** A vehicle Lam Groep offers online, as a customer sees it (blacklisted ones are never sent). */
@@ -142,6 +146,18 @@ export interface PortalDocumentDto {
   kind: 'contract' | 'damage_check';
   fileName: string;
   uploadDate: string;
+  /** "Gezien en akkoord" by a portal user, if given. */
+  ack: { by: string; at: string } | null;
+}
+
+export interface PortalNotificationDto {
+  id: number;
+  type: string;
+  title: string;
+  description: string;
+  link: string | null;
+  isRead: boolean;
+  createdAt: string;
 }
 
 export interface PortalDriverDto {
@@ -166,6 +182,12 @@ export interface PortalConfig {
   portalBaseUrl: string;
   /** Default administration fee (EUR) pre-filled on a new fine. */
   fineAdminFee: number;
+  /** Shown to customers with a booked reservation. */
+  pickupAddress: string;
+  openingHours: string;
+  pickupInstructions: string;
+  /** Link to the privacy statement, shown in the portal footer and on the login page. */
+  privacyUrl: string;
 }
 
 export const DEFAULT_PORTAL_CONFIG: PortalConfig = {
@@ -173,6 +195,10 @@ export const DEFAULT_PORTAL_CONFIG: PortalConfig = {
   notificationEmail: '',
   portalBaseUrl: '',
   fineAdminFee: 0,
+  pickupAddress: 'Kerkweg 47a, 3214 VC Zuidland',
+  openingHours: 'Maandag t/m vrijdag 08:00 - 17:00',
+  pickupInstructions: 'Neem een geldig rijbewijs mee van de bestuurder die de auto ophaalt.',
+  privacyUrl: 'https://lamgroep.nl/privacy',
 };
 
 export const PORTAL_CONFIG_KEY = 'portal_config';

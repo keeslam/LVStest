@@ -1,7 +1,7 @@
 import { db } from "../db";
 import {
   portalUsers, portalCustomerSettings, portalActivityLog, reservationDriverAssignments,
-  reservations, vehicles, drivers, documents, customers, vehicleCustomerBlacklist,
+  reservations, vehicles, drivers, documents, customers, vehicleCustomerBlacklist, portalDocumentAcks, type PortalDocumentAck,
   type PortalUser, type InsertPortalUser, type PortalCustomerSettings,
   type InsertPortalActivityLogEntry, type PortalActivityLogEntry,
   type Driver, type Reservation, type Document, type Vehicle,
@@ -23,7 +23,7 @@ export type PortalDocument = Document & { kind: "contract" | "damage_check" };
 
 type PortalUserUpdate = Partial<Pick<PortalUser,
   "fullName" | "role" | "driverId" | "active" | "permissions" | "passwordHash" | "inviteTokenHash" | "inviteExpiresAt" | "lastLoginAt" | "lastSeenAt" | "updatedBy"
-  | "email" | "language" | "pendingEmail" | "emailChangeTokenHash" | "emailChangeExpiresAt">>;
+  | "email" | "language" | "pendingEmail" | "emailChangeTokenHash" | "emailChangeExpiresAt" | "knownDevices">>;
 
 /** One row per customer that has a portal (settings row or at least one account). */
 export interface PortalCustomerOverviewRow {
@@ -280,6 +280,18 @@ export const portalStorage = {
   async updateBlacklistEntry(id: number, data: { vehicleId?: number; customerId?: number; reason?: string | null }): Promise<boolean> {
     const [row] = await db.update(vehicleCustomerBlacklist).set(data).where(eq(vehicleCustomerBlacklist.id, id)).returning({ id: vehicleCustomerBlacklist.id });
     return Boolean(row);
+  },
+  async getDocumentAcks(documentIds: number[]): Promise<Map<number, PortalDocumentAck>> {
+    if (documentIds.length === 0) return new Map();
+    const rows = await db.select().from(portalDocumentAcks).where(inArray(portalDocumentAcks.documentId, documentIds));
+    return new Map(rows.map((r) => [r.documentId, r]));
+  },
+  /** First ack wins: a contract is acknowledged once. Returns the existing one when already given. */
+  async ackDocument(input: { documentId: number; customerId: number; portalUserId: number; name: string; ip: string | null }): Promise<PortalDocumentAck> {
+    const [existing] = await db.select().from(portalDocumentAcks).where(eq(portalDocumentAcks.documentId, input.documentId));
+    if (existing) return existing;
+    const [row] = await db.insert(portalDocumentAcks).values(input).returning();
+    return row;
   },
   /** Every block, joined for the staff list. */
   async listBlacklist(): Promise<Array<{ id: number; vehicleId: number; licensePlate: string; brand: string; model: string; offeredOnline: boolean; customerId: number; customerName: string; reason: string | null; createdAt: Date }>> {
