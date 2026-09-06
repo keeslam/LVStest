@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useFilePreview } from "@/components/documents/use-file-preview";
 import type { PortalRequestDto } from "@shared/portal-requests";
 import { portalQueryFn, portalFetch, PortalApiError } from "@/lib/portal-api";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ function RequestProgress({ status }: { status: string }) {
 /** One request the customer submitted, with Lam Groep's reply. */
 export function RequestDialog({ id, onClose }: { id: number | null; onClose: () => void }) {
   const { t } = useTranslation("portal");
+  const preview = useFilePreview();
   const { openReservation, openFine } = usePortalDialogs();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -42,7 +44,7 @@ export function RequestDialog({ id, onClose }: { id: number | null; onClose: () 
   const { data: r, isLoading, isError } = useQuery<PortalRequestDto>({ queryKey: ["portal", `/api/portal/requests/${id}`], queryFn: portalQueryFn, enabled: id !== null });
   const p = (r?.payload ?? {}) as Record<string, string>;
 
-  return (
+  return (<>
     <Dialog open={id !== null} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg" data-testid="portal-request-dialog">
         <DialogHeader>
@@ -86,7 +88,7 @@ export function RequestDialog({ id, onClose }: { id: number | null; onClose: () 
               <div className="text-sm">
                 <div className="font-medium">{t("requests.attachments")}</div>
                 <ul className="list-disc pl-5">
-                  {r.attachments.map((a) => <li key={a.id}><a className="underline" href={`/api/portal/requests/${r.id}/attachments/${a.id}`} target="_blank" rel="noopener">{a.fileName}</a></li>)}
+                  {r.attachments.map((a) => <li key={a.id}><button type="button" className="underline" onClick={() => preview.open(`/api/portal/requests/${r.id}/attachments/${a.id}`, a.fileName)}>{a.fileName}</button></li>)}
                 </ul>
               </div>
             )}
@@ -100,5 +102,6 @@ export function RequestDialog({ id, onClose }: { id: number | null; onClose: () 
         )}
       </DialogContent>
     </Dialog>
-  );
+    {preview.dialog}
+  </>);
 }

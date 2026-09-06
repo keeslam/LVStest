@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useFilePreview } from "@/components/documents/use-file-preview";
 import { Users, UserPlus, Mail, Phone, IdCard, FileText, Car, Receipt, History } from "lucide-react";
 import type { PortalDriverDto, PortalReservationDto } from "@shared/portal-types";
 import type { PortalFineDto } from "@shared/fines";
@@ -19,6 +20,7 @@ const carsOf = (reservations: PortalReservationDto[], driverId: number) =>
 
 export default function PortalDriversPage() {
   const { t } = useTranslation("portal");
+  const preview = useFilePreview();
   const queryClient = useQueryClient();
   const { me } = usePortalAuth();
   const { openReservation, openList } = usePortalDialogs();
@@ -91,7 +93,7 @@ export default function PortalDriversPage() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   {canAssign && d.status === "active" && carsOf(reservations, d.id).length === 0 && <Button size="sm" variant="outline" className={btnSecondary} onClick={() => setAssigning(d)} data-testid={`button-assign-car-${d.id}`}><Car className="mr-1 h-4 w-4" />{t("drivers.assignToCar")}</Button>}
                   {historyCount(d.id) > 0 && <Button size="sm" variant="outline" className={btnSecondary} onClick={() => setHistoryOf(d)} data-testid={`button-driver-history-${d.id}`}><History className="mr-1 h-4 w-4" />{t("drivers.history", { count: historyCount(d.id) })}</Button>}
-                  {d.hasLicenseFile && <Button asChild size="sm" variant="ghost"><a href={`/api/portal/drivers/${d.id}/license`} target="_blank" rel="noopener"><FileText className="mr-1 h-4 w-4" />{t("actions.viewLicense")}</a></Button>}
+                  {d.hasLicenseFile && <Button size="sm" variant="ghost" onClick={() => preview.open(`/api/portal/drivers/${d.id}/license`, `${t("actions.viewLicense")} · ${d.displayName}`)}><FileText className="mr-1 h-4 w-4" />{t("actions.viewLicense")}</Button>}
                   <DriverFormDialog driver={d}><Button size="sm" variant="outline" className={btnSecondary}>{t("actions.edit")}</Button></DriverFormDialog>
                   <Button size="sm" variant="outline" className={btnSecondary} onClick={() => toggle.mutate(d)}>{d.status === "active" ? t("actions.deactivate") : t("actions.activate")}</Button>
                 </div>
@@ -101,6 +103,7 @@ export default function PortalDriversPage() {
         )}
       {assigning && <AssignVehicleDialog driver={assigning} open onOpenChange={(o) => { if (!o) setAssigning(null); }} />}
       {historyOf && <DriverHistoryDialog driver={historyOf} reservations={reservations} open onOpenChange={(o) => { if (!o) setHistoryOf(null); }} />}
+      {preview.dialog}
     </div>
   );
 }

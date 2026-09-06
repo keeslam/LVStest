@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useFilePreview } from "@/components/documents/use-file-preview";
 import type { PortalRequestDto } from "@shared/portal-requests";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
@@ -18,6 +19,7 @@ type ConflictError = Error & { conflicts?: Array<{ id: number; startDate: string
 /** Staff view of one customer request: take, reply/close, reject, approve. Driven by GlobalDialogContext. */
 export function PortalRequestDialog() {
   const { t } = useTranslation("portal");
+  const preview = useFilePreview();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { dialogState, closePortalRequestDialog, openCustomerDialog, openReservationDialog, openFineDialog } = useGlobalDialog();
@@ -51,7 +53,8 @@ export function PortalRequestDialog() {
   const p = (r?.payload ?? {}) as Record<string, string>;
 
   if (!open) return null;
-  return (
+  return (<>
+    {preview.dialog}
     <Dialog open={open} onOpenChange={(o) => !o && closePortalRequestDialog()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -88,7 +91,7 @@ export function PortalRequestDialog() {
               <div>
                 <Label>{t("admin.requests.dialog.attachments")}</Label>
                 <ul className="list-disc pl-5">
-                  {r.attachments.map((a) => <li key={a.id}><a className="underline" href={`/api/portal-requests/${r.id}/attachments/${a.id}`} target="_blank" rel="noopener">{a.fileName}</a></li>)}
+                  {r.attachments.map((a) => <li key={a.id}><button type="button" className="underline" onClick={() => preview.open(`/api/portal-requests/${r.id}/attachments/${a.id}`, a.fileName)}>{a.fileName}</button></li>)}
                 </ul>
               </div>
             )}
@@ -122,5 +125,5 @@ export function PortalRequestDialog() {
         )}
       </DialogContent>
     </Dialog>
-  );
+  </>);
 }

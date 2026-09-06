@@ -1,6 +1,7 @@
 import { formatLicensePlate } from "@/lib/format-utils";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useFilePreview } from "@/components/documents/use-file-preview";
 import type { PortalFineDto } from "@shared/fines";
 import { portalQueryFn } from "@/lib/portal-api";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
@@ -14,11 +15,12 @@ import { StatusBadge, btnPrimary } from "./ui";
 /** One fine as the customer sees it: what, when, how much, and a way to ask about it. */
 export function FineDialog({ id, onClose }: { id: number | null; onClose: () => void }) {
   const { t } = useTranslation("portal");
+  const preview = useFilePreview();
   const { me } = usePortalAuth();
   const { openNewRequest } = usePortalDialogs();
   const { data: f, isLoading, isError } = useQuery<PortalFineDto>({ queryKey: ["portal", `/api/portal/fines/${id}`], queryFn: portalQueryFn, enabled: id !== null });
 
-  return (
+  return (<>
     <Dialog open={id !== null} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg" data-testid="portal-fine-dialog">
         <DialogHeader>
@@ -39,12 +41,13 @@ export function FineDialog({ id, onClose }: { id: number | null; onClose: () => 
               <DetailRow label={t("fines.fields.note")} value={f.customerNote} />
             </dl>
             <div className="flex flex-wrap gap-2">
-              {f.hasLetter && <Button asChild size="sm" variant="outline"><a href={`/api/portal/fines/${f.id}/letter`} target="_blank" rel="noopener">{t("fines.letter")}</a></Button>}
+              {f.hasLetter && <Button size="sm" variant="outline" onClick={() => preview.open(`/api/portal/fines/${f.id}/letter`, t("fines.letter"))} data-testid="button-fine-letter">{t("fines.letter")}</Button>}
               {me?.settings.canSubmitRequests && <Button size="sm" className={btnPrimary} onClick={() => openNewRequest({ type: "fine_question", fineId: f.id })} data-testid="button-fine-ask">{t("fines.ask")}</Button>}
             </div>
           </div>
         )}
       </DialogContent>
     </Dialog>
-  );
+    {preview.dialog}
+  </>);
 }

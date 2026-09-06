@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useFilePreview } from "@/components/documents/use-file-preview";
 import type { Customer, Driver } from "@shared/schema";
 import { FINE_TRANSITIONS, type FineStatusValue } from "@shared/fines";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
@@ -27,6 +28,7 @@ type FineDetail = FineRow & {
 /** View/edit one fine: attribution picker while `new`, status actions afterwards. Driven by GlobalDialogContext. */
 export function FineDialog() {
   const { t } = useTranslation("portal");
+  const preview = useFilePreview();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { dialogState, closeFineDialog, openCustomerDialog, openReservationDialog } = useGlobalDialog();
@@ -62,7 +64,8 @@ export function FineDialog() {
   const disabled = !canManage || closed;
 
   if (!open) return null;
-  return (
+  return (<>
+    {preview.dialog}
     <Dialog open={open} onOpenChange={(o) => !o && closeFineDialog()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -85,7 +88,7 @@ export function FineDialog() {
               {fine.reservationId && <Button size="sm" variant="link" className="px-0" onClick={() => openReservationDialog(fine.reservationId!)}>{t("admin.fines.dialog.openReservation")} #{fine.reservationId}</Button>}
               {fine.driverName && <span>· {fine.driverName}</span>}
               {fine.linkedBy && <span className="text-muted-foreground">· {t("admin.fines.dialog.linkedBy", { by: fine.linkedBy, at: fine.linkedAt ? new Date(fine.linkedAt).toLocaleString() : "" })}</span>}
-              {fine.letterFilePath && <Button asChild size="sm" variant="outline"><a href={`/api/fines/${id}/letter`} target="_blank" rel="noopener">{t("admin.fines.dialog.viewLetter")}</a></Button>}
+              {fine.letterFilePath && <Button size="sm" variant="outline" onClick={() => preview.open(`/api/fines/${id}/letter`, t("admin.fines.dialog.viewLetter"))} data-testid="button-view-letter">{t("admin.fines.dialog.viewLetter")}</Button>}
             </div>
 
             {fine.status === "new" && canManage && (
@@ -147,5 +150,5 @@ export function FineDialog() {
         )}
       </DialogContent>
     </Dialog>
-  );
+  </>);
 }
