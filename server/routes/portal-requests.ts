@@ -260,6 +260,20 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
 
   type Row = NonNullable<Awaited<ReturnType<typeof requestsStorage.getRequest>>>;
 
+  /** Creates the placeholder spare for a rental; an existing one is kept (createPlaceholderReservation throws on duplicates). */
+  async function ensurePlaceholderSpare(rentalId: number, customerId: number, startDate: string, endDate: string, requestId: number): Promise<void> {
+    try {
+      await storage.createPlaceholderReservation(rentalId, customerId, startDate, endDate);
+    } catch (e) {
+      console.error(`createPlaceholderReservation failed for rental #${rentalId} (portal request #${requestId}):`, e);
+    }
+  }
+
+  /** "Ingepland op 2026-10-02 tot en met 2026-10-03. <note>" */
+  function scheduledReply(verb: "Ingepland op" | "Verplaatst naar", startDate: string, endDate: string, days: number, note?: string): string {
+    return `${verb} ${startDate}${days > 1 ? ` tot en met ${endDate}` : ""}.${note ? ` ${note}` : ""}`;
+  }
+
   /** Puts the reported maintenance in the calendar; a placeholder spare when the customer asked for one. */
   async function approveMaintenance(req: Request, res: Response, id: number, row: Row) {
     if (!isValidRequestTransition(row.status, "done")) return res.status(400).json({ message: "Request is already closed" });
@@ -282,11 +296,7 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
       createdBy: actor(req), updatedBy: actor(req),
     } as any))!;
     if (p.needsReplacement && rental.customerId) {
-      try {
-        await storage.createPlaceholderReservation(rental.id, rental.customerId, b.startDate, endDate);
-      } catch (e) {
-        console.error(`createPlaceholderReservation failed for rental #${rental.id} (portal request #${id}):`, e);
-      }
+      await ensurePlaceholderSpare(rental.id, rental.customerId, b.startDate, endDate, id);
     }
     const km = Number(p.mileage);
     if (Number.isFinite(km) && km > 0) {
@@ -297,7 +307,7 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     realtimeEvents.reservations.created(block);
     await onMaintenanceBlockChanged(null, block);
     await AuditLogger.logFromRequest(req, "reservation.create", "reservation", block.id, { viaPortalRequest: id, maintenance: true });
-    const reply = `Ingepland op ${b.startDate}${b.durationDays > 1 ? ` tot en met ${endDate}` : ""}.${b.note ? ` ${b.note}` : ""}`;
+    const reply = scheduledReply("Ingepland op", b.startDate, endDate, b.durationDays, b.note);
     const updated = await finish(req, id, reply, "done", row.customerId);
     res.json({ ...updated, block });
   }
@@ -333,19 +343,13 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
         await storage.updateReservation(placeholder.id, { startDate: b.startDate, endDate, updatedBy: actor(req) } as any);
       } else if (p.needsReplacement) {
         const rental = await storage.getReservation(rentalId);
-        if (rental?.customerId) {
-          try {
-            await storage.createPlaceholderReservation(rental.id, rental.customerId, b.startDate, endDate);
-          } catch (e) {
-            console.error(`createPlaceholderReservation failed for rental #${rentalId} (portal request #${id}):`, e);
-          }
-        }
+        if (rental?.customerId) await ensurePlaceholderSpare(rental.id, rental.customerId, b.startDate, endDate, id);
       }
     }
     realtimeEvents.reservations.updated(after);
     await onMaintenanceBlockChanged(before, after);
     await AuditLogger.logFromRequest(req, "reservation.update", "reservation", after.id, { viaPortalRequest: id, startDate: b.startDate, endDate });
-    const reply = `Verplaatst naar ${b.startDate}${days > 1 ? ` tot en met ${endDate}` : ""}.${b.note ? ` ${b.note}` : ""}`;
+    const reply = scheduledReply("Verplaatst naar", b.startDate, endDate, days, b.note);
     const updated = await finish(req, id, reply, "done", row.customerId);
     res.json({ ...updated, block: after });
   }
