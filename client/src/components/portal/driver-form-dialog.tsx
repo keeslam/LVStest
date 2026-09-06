@@ -109,8 +109,8 @@ export function DriverFormDialog({ driver, children, open: controlledOpen, onOpe
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className={width} data-testid="portal-driver-form">
         <DialogHeader><DialogTitle>{isEdit ? t("drivers.editTitle", { name: driver?.displayName }) : t("drivers.addTitle")}</DialogTitle></DialogHeader>
-        <form onSubmit={submit} className="space-y-4">
-          <div className={`grid items-start gap-4 ${grid}`}>
+        <form onSubmit={submit} className="space-y-3">
+          <div className={`grid items-start gap-3 ${grid}`}>
             <div className="space-y-4">
               <div className="space-y-3 rounded-xl border border-[#e6e8f0] p-4">
                 {text("displayName", "text", { autoFocus: !isEdit, placeholder: t("drivers.namePlaceholder") })}
@@ -135,7 +135,7 @@ export function DriverFormDialog({ driver, children, open: controlledOpen, onOpe
                   <Label htmlFor="drv-licenseOrigin">{t("fields.licenseOrigin")}</Label>
                   <SearchListPicker items={COUNTRY_OPTIONS.map((c, i) => ({ id: i + 1, label: c.label }))} value={values.licenseOrigin ? COUNTRY_OPTIONS.findIndex((c) => c.value === values.licenseOrigin) + 1 || null : null}
                     onChange={(id) => set("licenseOrigin", id ? COUNTRY_OPTIONS[id - 1].value : "")}
-                    searchPlaceholder={t("drivers.searchCountries")} emptyText={t("drivers.noCountries")} changeLabel={t("actions.change")} searchFrom={0} maxShown={3} testId="driver-country" />
+                    searchPlaceholder={t("drivers.searchCountries")} emptyText={t("drivers.noCountries")} changeLabel={t("actions.change")} searchFrom={0} maxShown={2} testId="driver-country" />
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
