@@ -9,6 +9,7 @@ import { useState } from "react";
 import { PORTAL_SITE, isEmbedded } from "@/lib/portal-site";
 import { Avatar, useGreeting } from "@/components/portal/ui";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
+import { LanguageToggle } from "@/components/portal/language-toggle";
 
 /** Tells the embedding website how tall the document is, so the iframe can grow. */
 export function usePortalHeightReporter(routeKey?: string) {
@@ -183,7 +184,10 @@ export function PortalLayout({ children }: { children: ReactNode }) {
         <header className="bg-white">
           <div className="mx-auto flex min-h-[4.5rem] max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
             <Wordmark />
-            <a href={PORTAL_SITE.siteUrl} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#334155] hover:text-[#1a1d62]" data-testid="link-back-to-site"><ArrowLeft className="h-4 w-4" />{t("site.backToSite")}</a>
+            <div className="flex items-center gap-3">
+              <LanguageToggle />
+              <a href={PORTAL_SITE.siteUrl} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#334155] hover:text-[#1a1d62]" data-testid="link-back-to-site"><ArrowLeft className="h-4 w-4" />{t("site.backToSite")}</a>
+            </div>
           </div>
         </header>
         <div className="flex-1">
@@ -222,7 +226,7 @@ export function PortalLayout({ children }: { children: ReactNode }) {
               <div className="text-sm text-[#64748b]">{me.fullName}</div>
             </div>
           </div>
-          {logoutButton}
+          <div className="flex items-center gap-2"><LanguageToggle />{logoutButton}</div>
         </header>
         <div className="hidden sm:block"><PillNav tabs={tabs} location={location} dark={false} /></div>
         <main className="pb-20 sm:pb-0">{children}</main>
@@ -238,6 +242,7 @@ export function PortalLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center justify-between gap-3">
             <Wordmark light />
             <div className="flex items-center gap-1 sm:gap-2">
+              <LanguageToggle dark className="mr-1" />
               <a href={PORTAL_SITE.siteUrl} className="hidden items-center gap-1.5 rounded-full px-3 py-2 text-sm text-[#dfe2ff] hover:bg-white/10 hover:text-white sm:inline-flex" data-testid="link-back-to-site">
                 <ArrowLeft className="h-4 w-4" />{t("site.backToSite")}
               </a>
