@@ -63,16 +63,15 @@ describe("fines routes", () => {
     expect((await request(viewer).post(`/api/fines/${fineId}/status`).send({ status: "charged" })).status).toBe(403);
   });
 
-  it("enforces transitions and records charge/paid timestamps", async () => {
+  it("enforces transitions; charged and paid are no longer reachable", async () => {
     const bad = await request(manager).post(`/api/fines/${fineId}/status`).send({ status: "paid" });
     expect(bad.status).toBe(400);
-    expect(bad.body.allowed).toEqual(["charged", "disputed", "cancelled", "new"]);
-    const charged = await request(manager).post(`/api/fines/${fineId}/status`).send({ status: "charged", invoiceReference: "F-2026-001" });
-    expect(charged.body.status).toBe("charged");
-    expect(charged.body.invoiceReference).toBe("F-2026-001");
-    expect(charged.body.chargedAt).toBeTruthy();
-    const paid = await request(manager).post(`/api/fines/${fineId}/status`).send({ status: "paid" });
-    expect(paid.body.paidAt).toBeTruthy();
+    expect(bad.body.allowed).toEqual(["disputed", "cancelled", "new"]);
+    expect((await request(manager).post(`/api/fines/${fineId}/status`).send({ status: "charged" })).status).toBe(400);
+    const disputed = await request(manager).post(`/api/fines/${fineId}/status`).send({ status: "disputed" });
+    expect(disputed.body.status).toBe("disputed");
+    const back = await request(manager).post(`/api/fines/${fineId}/status`).send({ status: "linked" });
+    expect(back.body.status).toBe("linked");
   });
 
   it("unlinks and relinks manually with validation", async () => {

@@ -397,8 +397,7 @@
       "notificationEmail": "E-mailadres voor meldingen uit het portaal",
       "portalBaseUrl": "Basis-URL van het portaal (voor uitnodigingsmails), bv. https://portaal.lamgroep.nl",
       "templatesHint": "De e-mailsjablonen portal_invite, portal_password_reset en portal_staff_notification staan onder Communicatie.",
-      "saved": "Portaalinstellingen opgeslagen.",
-      "fineAdminFee": "Standaard administratiekosten per bekeuring (€)"
+      "saved": "Portaalinstellingen opgeslagen."
     },
     "fines": {
       "title": "Bekeuringen",
@@ -449,7 +448,7 @@
         "driver": "Bestuurder",
         "amount": "Bedrag",
         "fee": "Adm.kosten",
-        "total": "Totaal",
+        "total": "Bedrag",
         "status": "Status"
       },
       "filters": {
@@ -473,11 +472,9 @@
         "reference": "Kenmerk (CJIB)",
         "description": "Omschrijving",
         "amount": "Bedrag (€)",
-        "adminFee": "Administratiekosten (€)",
         "letter": "Brief (PDF/JPG/PNG)",
         "internalNotes": "Interne notities",
-        "customerNote": "Toelichting voor klant",
-        "invoiceReference": "Factuurkenmerk"
+        "customerNote": "Toelichting voor klant"
       },
       "dialog": {
         "title": "Bekeuring #{{id}}",
@@ -490,8 +487,6 @@
         "chooseDriver": "Bestuurder (optioneel)",
         "link": "Koppelen",
         "unlink": "Ontkoppelen",
-        "charge": "Doorbelasten",
-        "paid": "Betaald",
         "dispute": "Betwist",
         "cancel": "Annuleren",
         "viewLetter": "Brief bekijken",
@@ -500,7 +495,6 @@
         "openCustomer": "Klant openen",
         "openReservation": "Reservering openen",
         "linkedBy": "Gekoppeld door {{by}} op {{at}}",
-        "closed": "Deze bekeuring is afgesloten.",
         "pickCustomer": "Kies klant…",
         "searchCustomer": "Klant zoeken…",
         "noCustomer": "Geen klant gevonden",
@@ -698,8 +692,6 @@
       "reference": "Kenmerk",
       "driver": "Bestuurder",
       "amount": "Bedrag",
-      "adminFee": "Administratiekosten",
-      "total": "Totaal",
       "status": "Status",
       "note": "Toelichting"
     },

@@ -1,7 +1,6 @@
 import { finesStorage } from "./fines-storage";
 import { attributeFine } from "./fine-attribution";
 import { sendFineLinkedMail } from "./portal-mail";
-import { getPortalConfig } from "./portal-config";
 import { normalizeLicensePlate, type FineSource } from "../../shared/fines";
 import type { Fine } from "../../shared/schema";
 import type { CandidateReservation } from "./fine-attribution";
@@ -37,7 +36,8 @@ export interface CreatedFine {
 export async function createFineWithAttribution(input: NewFineInput, actor: string): Promise<CreatedFine> {
   const plate = normalizeLicensePlate(input.licensePlate);
   const vehicle = await finesStorage.getVehicleByPlate(plate);
-  const adminFee = input.adminFee ?? (await getPortalConfig()).fineAdminFee;
+  // Recharging is done outside the app, so no administration fee is added here.
+  const adminFee = input.adminFee ?? 0;
   const fine = await finesStorage.createFine({
     licensePlate: plate, vehicleId: vehicle?.id ?? null, offenceAt: input.offenceAt,
     receivedAt: input.receivedAt ?? null, reference: input.reference ?? null, description: input.description,

@@ -89,7 +89,6 @@ export function NewFineDialog() {
             <div><Label htmlFor="nf-recv">{t("admin.fines.fields.receivedAt")}</Label><Input id="nf-recv" type="date" value={form.receivedAt} onChange={set("receivedAt")} /></div>
             <div><Label htmlFor="nf-ref">{t("admin.fines.fields.reference")}</Label><Input id="nf-ref" value={form.reference} onChange={set("reference")} className={low("reference")} /></div>
             <div><Label htmlFor="nf-amount">{t("admin.fines.fields.amount")}</Label><Input id="nf-amount" type="number" step="0.01" min="0" value={form.amount} onChange={set("amount")} required className={low("amount")} data-testid="input-fine-amount" /></div>
-            <div><Label htmlFor="nf-fee">{t("admin.fines.fields.adminFee")}</Label><Input id="nf-fee" type="number" step="0.01" min="0" value={form.adminFee} onChange={set("adminFee")} /></div>
           </div>
           <div><Label htmlFor="nf-desc">{t("admin.fines.fields.description")}</Label><Input id="nf-desc" value={form.description} onChange={set("description")} required data-testid="input-fine-description" /></div>
           <div><Label htmlFor="nf-notes">{t("admin.fines.fields.internalNotes")}</Label><Textarea id="nf-notes" rows={2} value={form.internalNotes} onChange={set("internalNotes")} /></div>

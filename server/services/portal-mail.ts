@@ -50,7 +50,7 @@ const DEFAULT_TEMPLATES: Array<{ name: string; subject: string; content: string 
     subject: "Bekeuring {{plate}} van {{date}}",
     content: `<p>Beste {{name}},</p>
 <p>Er is een bekeuring op naam van {{company}} verwerkt:</p>
-<p>Kenteken {{plate}}, {{date}}<br>{{description}}<br>Bedrag € {{amount}} + € {{adminFee}} administratiekosten = <strong>€ {{total}}</strong></p>
+<p>Kenteken {{plate}}, {{date}}<br>{{description}}<br>Bedrag <strong>€ {{amount}}</strong></p>
 <p>Bekijk de bekeuring in het klantenportaal: <a href="{{link}}">{{link}}</a></p>
 <p>Met vriendelijke groet,<br>Lam Groep</p>`,
   },

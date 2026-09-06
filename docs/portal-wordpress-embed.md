@@ -58,7 +58,10 @@ Naast de uitnodigings- en wachtwoordmails gebruikt het portaal twee sjablonen
 (te bewerken onder Communicatie > E-mailsjablonen):
 
 - `portal_fine_linked`: naar de klant zodra een bekeuring aan hem is gekoppeld
-  (bedrag, administratiekosten, link naar de bekeuring in het portaal).
+  (bedrag en link naar de bekeuring in het portaal). Doorbelasten en betaling
+  lopen buiten de app om via het boekhoudprogramma: er is geen status
+  "doorbelast"/"betaald" en geen administratiekosten meer; de app toont alleen
+  het bedrag van de bekeuring.
 - `portal_request_replied`: naar de indiener van een aanvraag zodra Lam Groep
   antwoordt of een verlenging/eerder inleveren goedkeurt.
 

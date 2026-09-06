@@ -397,8 +397,7 @@
       "notificationEmail": "E-mail address for notifications from the portal",
       "portalBaseUrl": "Base URL of the portal (for invitation e-mails), e.g. https://portaal.lamgroep.nl",
       "templatesHint": "The e-mail templates portal_invite, portal_password_reset and portal_staff_notification are under Communication.",
-      "saved": "Portal settings saved.",
-      "fineAdminFee": "Default administration fee per fine (€)"
+      "saved": "Portal settings saved."
     },
     "fines": {
       "title": "Fines",
@@ -449,7 +448,7 @@
         "driver": "Driver",
         "amount": "Amount",
         "fee": "Adm. fee",
-        "total": "Total",
+        "total": "Amount",
         "status": "Status"
       },
       "filters": {
@@ -473,11 +472,9 @@
         "reference": "Reference (CJIB)",
         "description": "Description",
         "amount": "Amount (€)",
-        "adminFee": "Administration fee (€)",
         "letter": "Letter (PDF/JPG/PNG)",
         "internalNotes": "Internal notes",
-        "customerNote": "Note for the customer",
-        "invoiceReference": "Invoice reference"
+        "customerNote": "Note for the customer"
       },
       "dialog": {
         "title": "Fine #{{id}}",
@@ -490,8 +487,6 @@
         "chooseDriver": "Driver (optional)",
         "link": "Link",
         "unlink": "Unlink",
-        "charge": "Charge",
-        "paid": "Paid",
         "dispute": "Disputed",
         "cancel": "Cancel",
         "viewLetter": "View letter",
@@ -500,7 +495,6 @@
         "openCustomer": "Open customer",
         "openReservation": "Open reservation",
         "linkedBy": "Linked by {{by}} on {{at}}",
-        "closed": "This fine is closed.",
         "pickCustomer": "Choose customer…",
         "searchCustomer": "Search customer…",
         "noCustomer": "No customer found",
@@ -698,8 +692,6 @@
       "reference": "Reference",
       "driver": "Driver",
       "amount": "Amount",
-      "adminFee": "Administration fee",
-      "total": "Total",
       "status": "Status",
       "note": "Note"
     },

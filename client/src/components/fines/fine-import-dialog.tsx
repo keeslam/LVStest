@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Loader2, Upload, CheckCircle2, AlertTriangle } from "lucide-react";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
@@ -10,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { PortalConfig } from "@shared/portal-types";
 import type { FineScanResult } from "@shared/fines";
 import { linkVerdict, scanLetter, scanToForm, type FineFormFields } from "./fine-scan";
 
@@ -30,11 +28,6 @@ export function FineImportDialog() {
   const { t } = useTranslation("portal");
   const { dialogState, closeFineImportDialog, openFineDialog } = useGlobalDialog();
   const open = dialogState.fineImport.open;
-  const { data: config } = useQuery<PortalConfig>({
-    queryKey: ["/api/portal-admin/config"],
-    queryFn: async () => (await apiRequest("GET", "/api/portal-admin/config")).json(),
-    enabled: open,
-  });
   const [items, setItems] = useState<Item[]>([]);
   const [dragging, setDragging] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -78,7 +71,6 @@ export function FineImportDialog() {
       update(item.key, { status: "creating" });
       const body = new FormData();
       Object.entries(item.form).forEach(([k, v]) => { if (v !== "") body.append(k, k === "offenceAt" ? new Date(v).toISOString() : v); });
-      if (config) body.append("adminFee", String(config.fineAdminFee));
       body.append("letterFile", item.file);
       try {
         const res = await fetch("/api/fines", { method: "POST", body, credentials: "include" });

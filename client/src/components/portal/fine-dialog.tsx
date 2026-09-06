@@ -35,8 +35,6 @@ export function FineDialog({ id, onClose }: { id: number | null; onClose: () => 
               <DetailRow label={t("fines.fields.reference")} value={f.reference} />
               <DetailRow label={t("fines.fields.driver")} value={f.driver?.displayName} />
               <DetailRow label={t("fines.fields.amount")} value={`€ ${f.amount}`} />
-              <DetailRow label={t("fines.fields.adminFee")} value={`€ ${f.adminFee}`} />
-              <DetailRow label={t("fines.fields.total")} value={`€ ${f.totalAmount}`} />
               <DetailRow label={t("fines.fields.note")} value={f.customerNote} />
             </dl>
             <div className="flex flex-wrap gap-2">

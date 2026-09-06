@@ -3,14 +3,16 @@ export const FineStatus = {
 } as const;
 export type FineStatusValue = typeof FineStatus[keyof typeof FineStatus];
 
-// Lam Groep pays the authority and recharges the customer (+ admin fee):
-// new -> linked -> charged -> paid, with disputed/cancelled on the side.
+// The app only records and shows fines; recharging and payment are handled in the
+// accounting package. So: new -> linked, with disputed/cancelled on the side.
+// 'charged' and 'paid' remain as values for rows created before that decision,
+// but nothing moves into them any more.
 export const FINE_TRANSITIONS: Record<FineStatusValue, FineStatusValue[]> = {
   new: ['linked', 'cancelled'],
-  linked: ['charged', 'disputed', 'cancelled', 'new'],
-  charged: ['paid', 'disputed'],
-  disputed: ['linked', 'charged', 'cancelled'],
-  paid: [],
+  linked: ['disputed', 'cancelled', 'new'],
+  charged: ['linked', 'disputed', 'cancelled'],
+  disputed: ['linked', 'cancelled'],
+  paid: ['linked'],
   cancelled: ['new', 'linked'],
 };
 
