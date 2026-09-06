@@ -12,6 +12,7 @@ import { portalStorage } from "../services/portal-storage";
 import { hashPassword } from "../auth";
 import { getUploadsDir } from "../../shared/paths";
 import { storage } from "../storage";
+import { requestsStorage } from "../services/portal-requests-storage";
 
 const password = "wachtwoord-1234";
 
@@ -143,8 +144,10 @@ describe("portal routes", () => {
     const blockedForA = await createTestVehicle();
     const offline = await createTestVehicle();
     const rented = await createTestVehicle();
+    const broken = await createTestVehicle();
     await storage.updateVehicle(online.id, { offeredOnline: true, onlineDescription: "Ruime bus" });
     await storage.updateVehicle(rented.id, { offeredOnline: true, availabilityStatus: "rented" });
+    await storage.updateVehicle(broken.id, { offeredOnline: true, availabilityStatus: "needs_fixing" });
     await storage.updateVehicle(blockedForA.id, { offeredOnline: true });
     const block = await storage.addToBlacklist({ vehicleId: blockedForA.id, customerId: a, reason: "test", createdBy: null });
 
@@ -168,13 +171,47 @@ describe("portal routes", () => {
     expect(blocked.status).toBe(403);
     expect(blocked.body.code).toBe("PORTAL_VEHICLE_BLOCKED");
     expect((await send(offline.id)).status).toBe(404);
-    const busy = await send(rented.id);
+    // A vehicle that is out of service is never bookable, whatever the calendar says.
+    const busy = await send(broken.id);
     expect(busy.status).toBe(409);
     expect(busy.body.code).toBe("PORTAL_VEHICLE_UNAVAILABLE");
     const ok = await send(online.id);
     expect(ok.status).toBe(201);
     expect(ok.body.type).toBe("booking");
     expect(ok.body.payload.vehicleLabel).toContain(online.licensePlate);
+
+    // Period first: a vehicle booked next month is free this week but not then.
+    const nextMonth = new Date(); nextMonth.setDate(nextMonth.getDate() + 30);
+    const nm = nextMonth.toISOString().slice(0, 10);
+    const nmEnd = new Date(nextMonth.getTime() + 5 * 86_400_000).toISOString().slice(0, 10);
+    await createTestReservation({ customerId: b, vehicleId: online.id, startDate: nm, endDate: nmEnd });
+    const thisWeek = await agent.get(`/api/portal/vehicles?start=${today}&end=${today}`);
+    expect(thisWeek.body.map((v: any) => v.id)).toContain(online.id);
+    const thatWeek = await agent.get(`/api/portal/vehicles?start=${nm}&end=${nmEnd}`);
+    expect(thatWeek.body.map((v: any) => v.id)).not.toContain(online.id);
+    expect((await agent.get(`/api/portal/vehicles?start=${nmEnd}&end=${nm}`)).status).toBe(400);
+    // A rented vehicle with a free calendar in the period is offered when a period is given.
+    expect(((await agent.get(`/api/portal/vehicles?start=${nm}&end=${nmEnd}`)).body as any[]).map((v) => v.id)).toContain(rented.id);
+    // Booking that period on the busy vehicle is refused; a duplicate open request too.
+    const sendFull = (vehicleId: number, payload: Record<string, unknown>) => agent.post("/api/portal/requests").set("X-CSRF-Token", csrf)
+      .field("type", "booking").field("message", "Graag").field("payload", JSON.stringify({ vehicleId, ...payload }));
+    expect((await sendFull(online.id, { startDate: nm, endDate: nmEnd })).status).toBe(409);
+    expect((await sendFull(broken.id, { startDate: nm, endDate: nmEnd })).status).toBe(409);
+    // The earlier open-ended request for this vehicle already covers today.
+    const dup = await sendFull(online.id, { startDate: today, endDate: today });
+    expect(dup.status).toBe(409);
+    expect(dup.body.code).toBe("PORTAL_DUPLICATE_REQUEST");
+    // Driver and times travel with the request.
+    const chauffeur = await createTestDriver(a, "Chauffeur B");
+    const withDriver = await sendFull(rented.id, { startDate: today, endDate: today, startTime: "09:00", endTime: "17:30", driverId: chauffeur.id });
+    expect(withDriver.status).toBe(201);
+    expect(withDriver.body.payload).toMatchObject({ startTime: "09:00", endTime: "17:30", driverId: String(chauffeur.id), driverLabel: "Chauffeur B" });
+    expect((await sendFull(rented.id, { startDate: today, endDate: today, startTime: "9h" })).status).toBe(400);
+    // Withdraw: only while nothing happened to it yet.
+    expect((await agent.delete(`/api/portal/requests/${withDriver.body.id}`).set("X-CSRF-Token", csrf)).status).toBe(200);
+    expect((await agent.get(`/api/portal/requests/${withDriver.body.id}`)).status).toBe(404);
+    await requestsStorage.updateRequest(ok.body.id, { status: "in_progress" });
+    expect((await agent.delete(`/api/portal/requests/${ok.body.id}`).set("X-CSRF-Token", csrf)).status).toBe(400);
 
     // Lifting the block makes the vehicle visible and bookable again.
     await storage.removeFromBlacklist(block.id);

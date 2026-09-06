@@ -83,6 +83,13 @@ export const requestsStorage = {
     const [row] = await db.update(portalRequests).set({ ...patch, updatedAt: new Date() }).where(eq(portalRequests.id, id)).returning();
     return row;
   },
+  /** Removes the request and its attachment rows; returns the attachments so files can be cleaned up. */
+  async deleteRequest(id: number): Promise<PortalRequestAttachment[]> {
+    const atts = await db.select().from(portalRequestAttachments).where(eq(portalRequestAttachments.requestId, id));
+    await db.delete(portalRequestAttachments).where(eq(portalRequestAttachments.requestId, id));
+    await db.delete(portalRequests).where(eq(portalRequests.id, id));
+    return atts;
+  },
   async countNewRequests(): Promise<number> {
     const [r] = await db.select({ n: sql<number>`count(*)::int` }).from(portalRequests).where(eq(portalRequests.status, "new"));
     return r?.n ?? 0;

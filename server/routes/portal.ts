@@ -4,6 +4,7 @@ import fs from "fs";
 import multer from "multer";
 import { z } from "zod";
 import { portalStorage, type PortalReservation } from "../services/portal-storage";
+import { overlaps } from "../services/booking-period";
 import { settingsFlags, requireFeature, requirePortalRole, portalError, logPortalActivity } from "../portal-auth";
 import { assignDriverToReservation, getDriverAssignments } from "../services/driver-assignments";
 import { notifyStaffOfPortalEvent } from "../services/portal-notifications";
@@ -202,6 +203,19 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     res.json(toRequestDto(row, false));
   });
 
+  // A customer may withdraw a request nobody has picked up yet.
+  app.delete("/api/portal/requests/:id", ...requireRequests, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const ctx = ctxOf(req);
+    const row = await requestsStorage.getRequestForCustomer(id, ctx.customerId, requestScope(req));
+    if (!row) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Request not found");
+    if (row.status !== "new") return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Alleen een aanvraag die nog niet in behandeling is kan worden ingetrokken");
+    const atts = await requestsStorage.deleteRequest(id);
+    for (const a of atts) { const file = resolveDocumentFilePath(a.filePath); if (file) fs.rmSync(file, { force: true }); }
+    await logPortalActivity(req, "request_withdrawn", { entity: "request", entityId: id, details: { type: row.type } });
+    res.json({ ok: true });
+  });
+
   app.get("/api/portal/requests/:id/attachments/:attachmentId", ...requireRequests, async (req, res) => {
     const id = idParam(req, res); if (id === null) return;
     const attachmentId = parseInt(req.params.attachmentId, 10);
@@ -251,7 +265,8 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     if (type === "booking") {
       // The blacklist is enforced here, whatever the client showed.
       if (!settingsFlags(ctx.settings, ctx.user).canBook) { discard(); return portalError(res, 403, PORTAL_ERROR.FEATURE_DISABLED, "Online booking is disabled for your account"); }
-      const check = await portalStorage.canCustomerBookVehicle(Number(p.vehicleId), ctx.customerId);
+      const vehicleId = Number(p.vehicleId);
+      const check = await portalStorage.canCustomerBookVehicle(vehicleId, ctx.customerId, { forPeriod: true });
       if (!check.ok) {
         discard();
         if (check.reason === "blocked") return portalError(res, 403, PORTAL_ERROR.VEHICLE_BLOCKED, "Dit voertuig is voor uw bedrijf niet beschikbaar");
@@ -260,6 +275,22 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
       }
       if (p.startDate < today) { discard(); return portalError(res, 400, PORTAL_ERROR.REQUEST_INVALID_PERIOD, "Start date must be today or later"); }
       if (p.endDate && p.endDate < p.startDate) { discard(); return portalError(res, 400, PORTAL_ERROR.REQUEST_INVALID_PERIOD, "End date must be after the start date"); }
+      // Free in the requested period? (calendar, not just today's status)
+      const busy = await portalStorage.listBusyVehicleIds(p.startDate, p.endDate || null);
+      if (busy.has(vehicleId)) { discard(); return portalError(res, 409, PORTAL_ERROR.VEHICLE_UNAVAILABLE, "Dit voertuig is in deze periode niet beschikbaar"); }
+      // One open request per vehicle and period.
+      const duplicate = (await requestsStorage.listRequestsForCustomer(ctx.customerId, {})).find((r) =>
+        r.type === "booking" && (r.status === "new" || r.status === "in_progress") && Number((r.payload as Record<string, unknown>).vehicleId) === vehicleId
+        && overlaps(String((r.payload as Record<string, unknown>).startDate), String((r.payload as Record<string, unknown>).endDate || "") || null, p.startDate, p.endDate || null));
+      if (duplicate) { discard(); return portalError(res, 409, PORTAL_ERROR.DUPLICATE_REQUEST, `Er staat al een aanvraag (#${duplicate.id}) open voor dit voertuig in deze periode`); }
+      // Driver: chosen by an admin, or the driver-role user themself.
+      const driverId = p.driverId ? Number(p.driverId) : ctx.user.role === "driver" && ctx.user.driverId ? ctx.user.driverId : null;
+      if (driverId) {
+        const driver = await portalStorage.getDriverForCustomer(driverId, ctx.customerId);
+        if (!driver || driver.status !== "active") { discard(); return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Driver not found"); }
+        p.driverId = String(driver.id);
+        p.driverLabel = driver.displayName;
+      }
       p.vehicleLabel = `${check.vehicle.brand} ${check.vehicle.model} · ${check.vehicle.licensePlate}`;
     }
     if (type === "extension" && reservation?.endDate && p.newEndDate <= reservation.endDate) {
@@ -297,9 +328,20 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
   });
 
   // ---- vehicles offered online -------------------------------------------------
+  // ?start=YYYY-MM-DD[&end=YYYY-MM-DD]: only vehicles free in that period (calendar checked).
   app.get("/api/portal/vehicles", requirePortalUser, requireFeature("canBook"), async (req, res) => {
     const ctx = ctxOf(req);
-    const rows = await portalStorage.listOnlineVehiclesForCustomer(ctx.customerId);
+    // The client sends end= (empty) for an open end.
+    const day = z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.literal("")]).optional();
+    const period = z.object({ start: day, end: day }).safeParse(req.query);
+    if (!period.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Use YYYY-MM-DD");
+    const start = period.data.start || undefined, end = period.data.end || undefined;
+    if (start && end && end < start) return portalError(res, 400, PORTAL_ERROR.REQUEST_INVALID_PERIOD, "End date must be after the start date");
+    let rows = await portalStorage.listOnlineVehiclesForCustomer(ctx.customerId, { forPeriod: Boolean(start) });
+    if (start) {
+      const busy = await portalStorage.listBusyVehicleIds(start, end ?? null);
+      rows = rows.filter((v) => !busy.has(v.id));
+    }
     const showPrices = settingsFlags(ctx.settings, ctx.user).showPrices;
     res.json(rows.map((v) => ({
       id: v.id, licensePlate: v.licensePlate, brand: v.brand, model: v.model, vehicleType: v.vehicleType, fuel: v.fuel,

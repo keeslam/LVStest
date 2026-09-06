@@ -1,7 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { PortalRequestDto } from "@shared/portal-requests";
-import { portalQueryFn } from "@/lib/portal-api";
+import { portalQueryFn, portalFetch, PortalApiError } from "@/lib/portal-api";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { usePortalDialogs } from "@/hooks/use-portal-dialogs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
@@ -30,6 +32,13 @@ function RequestProgress({ status }: { status: string }) {
 export function RequestDialog({ id, onClose }: { id: number | null; onClose: () => void }) {
   const { t } = useTranslation("portal");
   const { openReservation, openFine } = usePortalDialogs();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const withdraw = useMutation({
+    mutationFn: () => portalFetch("DELETE", `/api/portal/requests/${id}`),
+    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ["portal"] }); toast({ title: t("requests.withdrawn") }); onClose(); },
+    onError: (e) => toast({ title: e instanceof PortalApiError ? e.message : t("errors.PORTAL_SERVER_ERROR"), variant: "destructive" }),
+  });
   const { data: r, isLoading, isError } = useQuery<PortalRequestDto>({ queryKey: ["portal", `/api/portal/requests/${id}`], queryFn: portalQueryFn, enabled: id !== null });
   const p = (r?.payload ?? {}) as Record<string, string>;
 
@@ -56,13 +65,23 @@ export function RequestDialog({ id, onClose }: { id: number | null; onClose: () 
                 <div className="grid gap-0.5 text-sm sm:grid-cols-3 sm:gap-2"><dt className="text-muted-foreground">{t("requests.form.fine")}</dt>
                   <dd className="sm:col-span-2"><button type="button" className="underline" onClick={() => openFine(r.fineId!)}>#{r.fineId}</button></dd></div>
               )}
-              {r.type === "booking" && <><DetailRow label={t("requests.form.vehicle")} value={p.vehicleLabel} /><DetailRow label={t("requests.form.startDate")} value={p.startDate} /><DetailRow label={t("requests.form.endDateDetail")} value={p.endDate || t("requests.form.openEnd")} /></>}
+              {r.type === "booking" && <>
+                <DetailRow label={t("requests.form.vehicle")} value={p.vehicleLabel} />
+                <DetailRow label={t("requests.form.startDate")} value={p.startTime ? `${p.startDate} ${p.startTime}` : p.startDate} />
+                <DetailRow label={t("requests.form.endDateDetail")} value={p.endDate ? (p.endTime ? `${p.endDate} ${p.endTime}` : p.endDate) : t("requests.form.openEnd")} />
+                {p.driverLabel && <DetailRow label={t("requests.form.driver")} value={p.driverLabel} />}
+              </>}
               {r.type === "extension" && <DetailRow label={t("requests.form.newEndDate")} value={p.newEndDate} />}
               {r.type === "early_return" && <DetailRow label={t("requests.form.returnDate")} value={p.returnDate} />}
               {r.type === "damage" && <><DetailRow label={t("requests.form.location")} value={p.location} /><DetailRow label={t("requests.form.occurredAt")} value={p.occurredAt} /></>}
               {r.type === "other" && <DetailRow label={t("requests.form.subject")} value={p.subject} />}
             </dl>
             <p className="whitespace-pre-wrap rounded-md bg-muted p-2 text-sm">{r.message}</p>
+            {r.status === "new" && (
+              <div className="flex justify-end">
+                <Button size="sm" variant="outline" disabled={withdraw.isPending} onClick={() => withdraw.mutate()} data-testid="button-withdraw-request">{t("requests.withdraw")}</Button>
+              </div>
+            )}
             {r.attachments.length > 0 && (
               <div className="text-sm">
                 <div className="font-medium">{t("requests.attachments")}</div>

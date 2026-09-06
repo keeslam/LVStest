@@ -23,6 +23,11 @@ function isoDay(offsetDays: number): string {
  * counters, items that need a reply or a link, the latest portal notifications
  * and the pickups/returns of portal customers in the next two weeks.
  */
+/** A rental request open longer than this is flagged on the dashboard. */
+const STALE_REQUEST_DAYS = 2;
+/** A rental request whose start date is within this many days (or passed) is flagged. */
+const SOON_DAYS = 3;
+
 export async function getPortalDashboard(): Promise<PortalDashboard> {
   const today = isoDay(0);
   const horizon = isoDay(DASHBOARD_WINDOW_DAYS);
@@ -54,7 +59,18 @@ export async function getPortalDashboard(): Promise<PortalDashboard> {
     db.select({ n: sql<number>`count(*)::int` }).from(vehicleCustomerBlacklist),
   ]);
 
-  const openRequests = requests.filter((r) => r.status === "new" || r.status === "in_progress");
+  const staleBefore = new Date(Date.now() - STALE_REQUEST_DAYS * 86_400_000);
+  const soonHorizon = isoDay(SOON_DAYS);
+  const urgencyOf = (r: (typeof requests)[number]): "stale" | "soon" | null => {
+    if (r.type !== "booking") return null;
+    const start = String((r.payload as Record<string, unknown>).startDate ?? "");
+    if (start && start <= soonHorizon) return "soon";
+    if (r.createdAt < staleBefore) return "stale";
+    return null;
+  };
+  const rank = { soon: 0, stale: 1 } as const;
+  const openRequests = requests.filter((r) => r.status === "new" || r.status === "in_progress")
+    .sort((a, b) => (urgencyOf(a) ? rank[urgencyOf(a)!] : 2) - (urgencyOf(b) ? rank[urgencyOf(b)!] : 2));
   const upcoming: PortalDashboard["upcoming"] = [];
   for (const row of upcomingRows) {
     const base = {
@@ -82,6 +98,8 @@ export async function getPortalDashboard(): Promise<PortalDashboard> {
       requests: openRequests.slice(0, ATTENTION_LIMIT).map((r) => ({
         id: r.id, type: r.type, status: r.status, customerId: r.customerId, customerName: r.customerName,
         reservationLabel: r.reservationLabel, createdAt: r.createdAt.toISOString(),
+        startDate: r.type === "booking" ? String((r.payload as Record<string, unknown>).startDate ?? "") || null : null,
+        urgency: urgencyOf(r),
       })),
       fines: unlinked.map((f) => ({ id: f.id, licensePlate: f.licensePlate, description: f.description, totalAmount: f.totalAmount, offenceAt: f.offenceAt.toISOString() })),
     },

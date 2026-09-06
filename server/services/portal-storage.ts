@@ -15,6 +15,10 @@ export interface PortalScope {
 }
 
 export type PortalReservation = Reservation & { vehicle?: Vehicle; driver?: Driver };
+
+/** Statuses that rule a vehicle out for any rental, whatever the calendar says. */
+export const NOT_RENTABLE = ["not_for_rental", "needs_fixing"];
+const RENTABLE_STATUS = sql`${vehicles.availabilityStatus} not in ('not_for_rental', 'needs_fixing')`;
 export type PortalDocument = Document & { kind: "contract" | "damage_check" };
 
 type PortalUserUpdate = Partial<Pick<PortalUser,
@@ -229,23 +233,44 @@ export const portalStorage = {
   },
 
   // ---- drivers (always scoped) ----------------------------------------------
-  /** Vehicles offered online, available right now, that this customer may rent (blacklist applied here, never in the client). */
-  async listOnlineVehiclesForCustomer(customerId: number): Promise<Vehicle[]> {
+  /**
+   * Vehicles offered online that this customer may rent (blacklist applied here, never
+   * in the client). Without a period only vehicles free right now; with a period every
+   * rentable vehicle, so the caller can check the calendar for that period.
+   */
+  async listOnlineVehiclesForCustomer(customerId: number, opts: { forPeriod?: boolean } = {}): Promise<Vehicle[]> {
     const blocked = db.select({ id: vehicleCustomerBlacklist.vehicleId }).from(vehicleCustomerBlacklist).where(eq(vehicleCustomerBlacklist.customerId, customerId));
     return db.select().from(vehicles)
-      .where(and(eq(vehicles.offeredOnline, true), eq(vehicles.availabilityStatus, "available"), sql`${vehicles.id} not in (${blocked})`))
+      .where(and(eq(vehicles.offeredOnline, true), opts.forPeriod ? RENTABLE_STATUS : eq(vehicles.availabilityStatus, "available"), sql`${vehicles.id} not in (${blocked})`))
       .orderBy(vehicles.brand, vehicles.model, vehicles.licensePlate);
   },
-  /** True when the vehicle is offered online, available, and the customer is not blocked for it. */
-  async canCustomerBookVehicle(vehicleId: number, customerId: number): Promise<{ ok: true; vehicle: Vehicle } | { ok: false; reason: "not_found" | "not_online" | "not_available" | "blocked" }> {
+  /** True when the vehicle is offered online, rentable, and the customer is not blocked for it. */
+  async canCustomerBookVehicle(vehicleId: number, customerId: number, opts: { forPeriod?: boolean } = {}): Promise<{ ok: true; vehicle: Vehicle } | { ok: false; reason: "not_found" | "not_online" | "not_available" | "blocked" }> {
     const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, vehicleId));
     if (!vehicle) return { ok: false, reason: "not_found" };
     if (!vehicle.offeredOnline) return { ok: false, reason: "not_online" };
-    if (vehicle.availabilityStatus !== "available") return { ok: false, reason: "not_available" };
+    if (opts.forPeriod ? NOT_RENTABLE.includes(vehicle.availabilityStatus) : vehicle.availabilityStatus !== "available") return { ok: false, reason: "not_available" };
     const [block] = await db.select({ id: vehicleCustomerBlacklist.id }).from(vehicleCustomerBlacklist)
       .where(and(eq(vehicleCustomerBlacklist.vehicleId, vehicleId), eq(vehicleCustomerBlacklist.customerId, customerId)));
     if (block) return { ok: false, reason: "blocked" };
     return { ok: true, vehicle };
+  },
+  /** Vehicles with a live reservation touching the period (a shared day counts; the final check at approval allows same-day handovers). */
+  async listBusyVehicleIds(startDate: string, endDate: string | null): Promise<Set<number>> {
+    const end = endDate ?? "9999-12-31";
+    const rows = await db.select({ vehicleId: reservations.vehicleId }).from(reservations).where(and(
+      isNull(reservations.deletedAt),
+      sql`${reservations.status} not in ('cancelled', 'completed', 'returned')`,
+      sql`${reservations.vehicleId} is not null`,
+      sql`${reservations.startDate} <= ${end}`,
+      sql`coalesce(${reservations.endDate}, '9999-12-31') >= ${startDate}`,
+    ));
+    return new Set(rows.map((r) => r.vehicleId!).filter(Boolean));
+  },
+  async isVehicleBlockedForCustomer(vehicleId: number, customerId: number): Promise<boolean> {
+    const [block] = await db.select({ id: vehicleCustomerBlacklist.id }).from(vehicleCustomerBlacklist)
+      .where(and(eq(vehicleCustomerBlacklist.vehicleId, vehicleId), eq(vehicleCustomerBlacklist.customerId, customerId)));
+    return Boolean(block);
   },
   /** Every block, joined for the staff list. */
   async listBlacklist(): Promise<Array<{ id: number; vehicleId: number; licensePlate: string; brand: string; model: string; offeredOnline: boolean; customerId: number; customerName: string; reason: string | null; createdAt: Date }>> {

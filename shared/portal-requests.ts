@@ -19,10 +19,22 @@ export function isValidRequestTransition(from: string, to: string): boolean {
 }
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
+export const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use HH:MM");
+/** Form fields arrive as "" when left empty; treat that as absent. */
+const blankToUndefined = (v: unknown) => (v === "" || v === null ? undefined : v);
 
 export const requestPayloadSchemas = {
   /** Rental request for a vehicle offered online; the server adds vehicleLabel. */
-  booking: z.object({ vehicleId: z.coerce.number().int().positive(), startDate: isoDate, endDate: z.union([isoDate, z.literal("")]).default(""), vehicleLabel: z.string().max(200).optional() }),
+  booking: z.object({
+    vehicleId: z.coerce.number().int().positive(),
+    startDate: isoDate,
+    endDate: z.union([isoDate, z.literal("")]).default(""),
+    startTime: z.preprocess(blankToUndefined, hhmm.optional()),
+    endTime: z.preprocess(blankToUndefined, hhmm.optional()),
+    driverId: z.preprocess(blankToUndefined, z.coerce.number().int().positive().optional()),
+    vehicleLabel: z.string().max(200).optional(),
+    driverLabel: z.string().max(200).optional(),
+  }),
   extension: z.object({ newEndDate: isoDate }),
   early_return: z.object({ returnDate: isoDate }),
   damage: z.object({ location: z.string().trim().max(200).default(""), occurredAt: z.string().trim().max(40).default("") }),

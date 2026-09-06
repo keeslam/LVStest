@@ -193,7 +193,8 @@
     "PORTAL_ATTACHMENT_LIMIT": "At most 5 attachments.",
     "PORTAL_DRIVER_BUSY": "This driver already has another car. One car per driver.",
     "PORTAL_VEHICLE_BLOCKED": "This vehicle is not available for your company. Please contact Lam Groep.",
-    "PORTAL_VEHICLE_UNAVAILABLE": "This vehicle is not available at the moment."
+    "PORTAL_VEHICLE_UNAVAILABLE": "This vehicle is not available at the moment.",
+    "PORTAL_DUPLICATE_REQUEST": "There is already an open request for this vehicle in this period."
   },
   "admin": {
     "navLabel": "Customer portal",
@@ -226,7 +227,10 @@
         "allRequests": "All requests",
         "allFines": "All fines",
         "fine": "Fine {{plate}}",
-        "unlinked": "Not linked"
+        "unlinked": "Not linked",
+        "stale": "Waiting long",
+        "soon": "Starts soon",
+        "from": "from {{date}}"
       },
       "notifications": {
         "title": "Notifications",
@@ -648,6 +652,28 @@
       "removed": "Block removed.",
       "empty": "No blocks. Every customer may request every online vehicle.",
       "noMatch": "No block found."
+    },
+    "booking": {
+      "title": "Create a reservation from this request",
+      "open": "Approve: create reservation",
+      "approve": "Create reservation and approve",
+      "created": "Reservation #{{id}} created; the customer has been informed.",
+      "pickupTime": "Pickup time",
+      "returnTime": "Return time",
+      "invalidPeriod": "Enter a valid period (end date after start date).",
+      "requestedVehicle": "Requested",
+      "requestedUnavailable": "The requested vehicle is no longer possible (blocked or not rentable). Pick another vehicle.",
+      "suggestions": "Same type, free",
+      "searchVehicle": "Search another vehicle by plate, brand or type…",
+      "willBook": "Will be booked: {{vehicle}}",
+      "free": "Free",
+      "busy": "Busy in this period",
+      "blocked": "Blacklist",
+      "driver": "Driver",
+      "noDriver": "No driver (assign later)",
+      "requestedDriver": "Customer asked for: {{name}}",
+      "reply": "Message to customer (optional)",
+      "replyPlaceholder": "Empty = standard confirmation with reservation number, car and period."
     }
   },
   "fines": {
@@ -720,13 +746,22 @@
       "endDate": "Until (optional)",
       "openEnd": "Open end",
       "bookingHint": "This is a request. Lam Groep confirms the reservation and gets in touch.",
-      "endDateDetail": "Until"
+      "endDateDetail": "Until",
+      "pickupTime": "Pickup time",
+      "returnTime": "Return time",
+      "pickPeriodFirst": "Choose a period first",
+      "noneFree": "No car free in this period",
+      "vehicleNotFree": "This car is no longer free in the chosen period. Pick another car or period.",
+      "driver": "Driver",
+      "driverLater": "Decide later"
     },
     "date": "Submitted on",
     "subtitle": "Extend, return early, report damage or ask a question.",
     "replied": "Lam Groep has replied",
     "progress": "Progress",
-    "noneOpen": "No open requests."
+    "noneOpen": "No open requests.",
+    "withdraw": "Withdraw request",
+    "withdrawn": "Request withdrawn."
   },
   "site": {
     "backToSite": "Back to lamgroep.nl",
@@ -769,6 +804,11 @@
     "perDay": "per day",
     "perMonth": "per month",
     "request": "Request",
-    "quick": "Rent a car"
+    "quick": "Rent a car",
+    "from": "From",
+    "until": "Until",
+    "periodHint": "Only cars that are free in this period.",
+    "openEndHint": "No end date: only cars without a next reservation.",
+    "invalidPeriod": "The end date must be after the start date."
   }
 }

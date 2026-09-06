@@ -7,7 +7,8 @@ vi.mock("../services/reservation-pdf-regeneration", () => ({ scheduleContractReg
 import { registerPortalRequestRoutes } from "../routes/portal-requests";
 import { requestsStorage } from "../services/portal-requests-storage";
 import { portalStorage } from "../services/portal-storage";
-import { buildStaffTestApp, createTestCustomer, createTestVehicle, createTestReservation, cleanupPortalTestData, TEST_EMAIL_DOMAIN } from "./portal-helpers";
+import { buildStaffTestApp, createTestCustomer, createTestVehicle, createTestReservation, createTestDriver, cleanupPortalTestData, TEST_EMAIL_DOMAIN } from "./portal-helpers";
+import { storage } from "../storage";
 import { UserPermission, reservations } from "../../shared/schema";
 import { getUploadsDir } from "../../shared/paths";
 import { db } from "../db";
@@ -29,6 +30,56 @@ describe("staff portal requests", () => {
     otherId = (await requestsStorage.createRequest({ customerId, portalUserId: userId, type: "other", payload: { subject: "Vraag" }, message: "Hallo" })).id;
   });
   afterAll(cleanupPortalTestData);
+
+  it("approves a rental request into a booked reservation, with vehicle, period and driver adjustable", async () => {
+    const wanted = await createTestVehicle();
+    const sameType = await createTestVehicle();
+    const otherType = await createTestVehicle();
+    await storage.updateVehicle(wanted.id, { offeredOnline: true, vehicleType: "Bestelwagen" });
+    await storage.updateVehicle(sameType.id, { vehicleType: "Bestelwagen" });
+    await storage.updateVehicle(otherType.id, { vehicleType: "SUV" });
+    const driver = await createTestDriver(customerId, "Chauffeur");
+    const busyDriver = await createTestDriver(customerId, "Bezet");
+    await createTestReservation({ customerId, vehicleId: otherType.id, driverId: busyDriver.id, startDate: "2026-11-01", endDate: "2026-11-05" });
+    // The wanted vehicle is taken in the requested week.
+    await createTestReservation({ customerId, vehicleId: wanted.id, startDate: "2026-10-12", endDate: "2026-10-14" });
+    const reqId = (await requestsStorage.createRequest({ customerId, portalUserId: userId, type: "booking", payload: { vehicleId: wanted.id, startDate: "2026-10-10", endDate: "2026-10-15", driverId: String(driver.id), driverLabel: "Chauffeur" }, message: "Graag een bus" })).id;
+
+    const alts = await request(manager).get(`/api/portal-requests/${reqId}/alternatives`);
+    expect(alts.status).toBe(200);
+    const byId = (id: number) => alts.body.vehicles.find((v: any) => v.id === id);
+    expect(byId(wanted.id)).toMatchObject({ requested: true, free: false });
+    expect(byId(sameType.id)).toMatchObject({ sameType: true, free: true });
+    expect(byId(otherType.id)).toMatchObject({ sameType: false, free: true });
+    // Order: the requested vehicle, then free vehicles of the same type, then the rest.
+    const order = alts.body.vehicles as Array<{ id: number; sameType: boolean; free: boolean }>;
+    expect(order[0].id).toBe(wanted.id);
+    const iSame = order.findIndex((v) => v.id === sameType.id);
+    const iOther = order.findIndex((v) => v.id === otherType.id);
+    expect(iSame).toBeGreaterThan(0);
+    expect(iSame).toBeLessThan(iOther);
+    expect(order.slice(1, iSame + 1).every((v) => v.sameType && v.free)).toBe(true);
+
+    // Approving as requested conflicts; a busy driver is refused; the same-type alternative works.
+    const conflict = await request(manager).post(`/api/portal-requests/${reqId}/approve`).send({});
+    expect(conflict.status).toBe(409);
+    expect(conflict.body.conflicts[0].startDate).toBe("2026-10-12");
+    expect((await request(manager).post(`/api/portal-requests/${reqId}/approve`).send({ vehicleId: sameType.id, driverId: busyDriver.id })).status).toBe(409);
+    expect((await request(manager).post(`/api/portal-requests/${reqId}/approve`).send({ vehicleId: sameType.id, endDate: "2026-10-01" })).status).toBe(400);
+    await storage.addToBlacklist({ vehicleId: otherType.id, customerId, reason: "t", createdBy: null });
+    expect((await request(manager).post(`/api/portal-requests/${reqId}/approve`).send({ vehicleId: otherType.id })).status).toBe(409);
+    expect((await request(manager).get(`/api/portal-requests/${reqId}/alternatives`)).body.vehicles.some((v: any) => v.id === otherType.id)).toBe(false);
+
+    const ok = await request(manager).post(`/api/portal-requests/${reqId}/approve`).send({ vehicleId: sameType.id, startTime: "08:30", endDate: "2026-10-16" });
+    expect(ok.status).toBe(200);
+    expect(ok.body.status).toBe("done");
+    expect(ok.body.reservationId).toBe(ok.body.reservation.id);
+    expect(ok.body.staffReply).toContain(`#${ok.body.reservation.id}`);
+    const created = await storage.getReservation(ok.body.reservation.id);
+    expect(created).toMatchObject({ customerId, vehicleId: sameType.id, driverId: driver.id, startDate: "2026-10-10", endDate: "2026-10-16", startTime: "08:30", status: "booked", type: "standard" });
+    // Closed requests cannot be approved twice.
+    expect((await request(manager).post(`/api/portal-requests/${reqId}/approve`).send({})).status).toBe(400);
+  });
 
   it("lists, counts new and takes a request", async () => {
     const list = await request(manager).get("/api/portal-requests?status=new");

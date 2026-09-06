@@ -16,6 +16,7 @@ export const PORTAL_ERROR = {
   DRIVER_BUSY: 'PORTAL_DRIVER_BUSY',
   VEHICLE_BLOCKED: 'PORTAL_VEHICLE_BLOCKED',
   VEHICLE_UNAVAILABLE: 'PORTAL_VEHICLE_UNAVAILABLE',
+  DUPLICATE_REQUEST: 'PORTAL_DUPLICATE_REQUEST',
   REQUEST_INVALID_PERIOD: 'PORTAL_REQUEST_INVALID_PERIOD',
   ATTACHMENT_LIMIT: 'PORTAL_ATTACHMENT_LIMIT',
   CSRF: 'PORTAL_CSRF',
@@ -89,6 +90,22 @@ export interface PortalVehicleDto {
   monthlyPrice?: string | null;
 }
 
+/** A vehicle staff can put on an approved rental request, with whether it is free in the period. */
+export interface PortalBookingAlternativeDto {
+  id: number;
+  licensePlate: string;
+  brand: string;
+  model: string;
+  vehicleType: string | null;
+  availabilityStatus: string;
+  offeredOnline: boolean;
+  /** The vehicle the customer asked for. */
+  requested: boolean;
+  sameType: boolean;
+  /** No overlapping reservation in the period. */
+  free: boolean;
+}
+
 /** Staff view of one vehicle/customer block. */
 export interface PortalBlacklistEntryDto {
   id: number;
@@ -160,7 +177,13 @@ export interface PortalDashboard {
     unreadNotifications: number;
   };
   attention: {
-    requests: Array<{ id: number; type: string; status: string; customerId: number; customerName: string; reservationLabel: string | null; createdAt: string }>;
+    requests: Array<{
+      id: number; type: string; status: string; customerId: number; customerName: string; reservationLabel: string | null; createdAt: string;
+      /** Booking requests: the requested start date. */
+      startDate: string | null;
+      /** 'stale' = open too long, 'soon' = start date is near or passed. */
+      urgency: 'stale' | 'soon' | null;
+    }>;
     fines: Array<{ id: number; licensePlate: string; description: string; totalAmount: string; offenceAt: string }>;
   };
   notifications: Array<{ id: number; type: string; title: string; description: string; link: string; isRead: boolean; createdAt: string }>;

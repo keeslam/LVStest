@@ -3,7 +3,11 @@ import fs from "fs";
 import { z } from "zod";
 import { hasPermission } from "../middleware/permissions.js";
 import { UserPermission } from "../../shared/schema";
-import { isValidRequestTransition, REQUEST_TRANSITIONS, type PortalRequestStatusValue } from "../../shared/portal-requests";
+import { isValidRequestTransition, REQUEST_TRANSITIONS, hhmm, type PortalRequestStatusValue } from "../../shared/portal-requests";
+import type { PortalBookingAlternativeDto } from "../../shared/portal-types";
+import { NOT_RENTABLE } from "../services/portal-storage";
+import { assignDriverToReservation } from "../services/driver-assignments";
+import { realtimeEvents } from "../realtime-events";
 import { requestsStorage, toRequestDto } from "../services/portal-requests-storage";
 import { sendRequestReplyMail } from "../services/portal-mail";
 import { portalStorage } from "../services/portal-storage";
@@ -88,11 +92,47 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     res.json(await finish(req, id, reply, parsed.data.status, row.customerId));
   });
 
+  const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+  const bookingPeriod = (row: { payload: Record<string, unknown> }, q: Record<string, unknown>) => ({
+    startDate: typeof q.start === "string" && q.start ? q.start : String(row.payload.startDate ?? ""),
+    endDate: (typeof q.end === "string" ? q.end : String(row.payload.endDate ?? "")) || null,
+  });
+
+  /**
+   * Vehicles staff could put on a rental request: the requested one first, then the same
+   * type, then the rest; each flagged free/busy for the period and never a blacklisted one.
+   */
+  app.get("/api/portal-requests/:id/alternatives", canView, async (req, res) => {
+    const id = idParam(req, res); if (id === null) return;
+    const row = await requestsStorage.getRequest(id);
+    if (!row) return res.status(404).json({ message: "Request not found" });
+    if (row.type !== "booking") return res.status(400).json({ message: "Only rental requests have alternatives" });
+    const { startDate, endDate } = bookingPeriod(row, req.query as Record<string, unknown>);
+    if (!isoDate.safeParse(startDate).success) return res.status(400).json({ message: "Invalid period" });
+    const requestedId = Number(row.payload.vehicleId);
+    const [all, blocks, busy] = await Promise.all([
+      storage.getAllVehicles(),
+      portalStorage.listBlacklist(),
+      portalStorage.listBusyVehicleIds(startDate, endDate),
+    ]);
+    const blocked = new Set(blocks.filter((b) => b.customerId === row.customerId).map((b) => b.vehicleId));
+    const requested = all.find((v) => v.id === requestedId);
+    const list: PortalBookingAlternativeDto[] = all
+      .filter((v) => !blocked.has(v.id) && !NOT_RENTABLE.includes(v.availabilityStatus))
+      .map((v) => ({
+        id: v.id, licensePlate: v.licensePlate, brand: v.brand, model: v.model, vehicleType: v.vehicleType, availabilityStatus: v.availabilityStatus,
+        offeredOnline: v.offeredOnline, requested: v.id === requestedId, sameType: Boolean(requested?.vehicleType) && v.vehicleType === requested?.vehicleType, free: !busy.has(v.id),
+      }))
+      .sort((a, b) => Number(b.requested) - Number(a.requested) || Number(b.sameType) - Number(a.sameType) || Number(b.free) - Number(a.free) || a.brand.localeCompare(b.brand) || a.model.localeCompare(b.model));
+    res.json({ startDate, endDate, requestedBlocked: blocked.has(requestedId), vehicles: list });
+  });
+
   app.post("/api/portal-requests/:id/approve", canManage, async (req, res) => {
     const id = idParam(req, res); if (id === null) return;
     const row = await requestsStorage.getRequest(id);
     if (!row) return res.status(404).json({ message: "Request not found" });
-    if (row.type !== "extension" && row.type !== "early_return") return res.status(400).json({ message: "Only extensions and early returns can be approved" });
+    if (row.type === "booking") return approveBooking(req, res, id, row);
+    if (row.type !== "extension" && row.type !== "early_return") return res.status(400).json({ message: "Only extensions, early returns and rental requests can be approved" });
     if (!isValidRequestTransition(row.status, "done")) return res.status(400).json({ message: "Request is already closed" });
     const reservation = row.reservationId ? await storage.getReservation(row.reservationId) : undefined;
     if (!reservation || !reservation.vehicleId) return res.status(400).json({ message: "Reservation not found" });
@@ -112,4 +152,65 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     const reply = row.type === "extension" ? `Goedgekeurd: nieuwe einddatum ${newEnd}.` : `Goedgekeurd: inleverdatum ${newEnd}.`;
     res.json(await finish(req, id, reply, "done", row.customerId));
   });
+
+  /**
+   * Approving a rental request creates the reservation (status booked) so it lands in the
+   * calendar and the normal flow. Staff may change vehicle, period, times and driver first;
+   * blacklist, calendar conflicts and the one-car-per-driver rule are checked here regardless.
+   */
+  async function approveBooking(req: Request, res: Response, id: number, row: NonNullable<Awaited<ReturnType<typeof requestsStorage.getRequest>>>) {
+    if (!isValidRequestTransition(row.status, "done")) return res.status(400).json({ message: "Request is already closed" });
+    const parsed = z.object({
+      vehicleId: z.number().int().positive().optional(),
+      startDate: isoDate.optional(),
+      endDate: z.union([isoDate, z.literal(""), z.null()]).optional(),
+      startTime: z.union([hhmm, z.literal(""), z.null()]).optional(),
+      endTime: z.union([hhmm, z.literal(""), z.null()]).optional(),
+      driverId: z.number().int().positive().nullable().optional(),
+      reply: z.string().trim().max(4000).optional(),
+    }).safeParse(req.body ?? {});
+    if (!parsed.success) return res.status(400).json({ message: parsed.error.errors[0]?.message ?? "Invalid input" });
+    const b = parsed.data;
+    const p = row.payload as Record<string, unknown>;
+    const vehicleId = b.vehicleId ?? Number(p.vehicleId);
+    const startDate = b.startDate ?? String(p.startDate ?? "");
+    const endDate = (b.endDate !== undefined ? b.endDate : String(p.endDate ?? "")) || null;
+    const startTime = (b.startTime !== undefined ? b.startTime : (p.startTime as string | undefined)) || null;
+    const endTime = (b.endTime !== undefined ? b.endTime : (p.endTime as string | undefined)) || null;
+    const driverId = b.driverId !== undefined ? b.driverId : p.driverId ? Number(p.driverId) : null;
+    if (!isoDate.safeParse(startDate).success) return res.status(400).json({ message: "Request has no valid start date" });
+    if (endDate && endDate < startDate) return res.status(400).json({ message: "End date must be after the start date", field: "endDate" });
+
+    const vehicle = await storage.getVehicle(vehicleId);
+    if (!vehicle) return res.status(404).json({ message: "Vehicle not found", field: "vehicleId" });
+    if (await portalStorage.isVehicleBlockedForCustomer(vehicleId, row.customerId)) return res.status(409).json({ message: "Deze klant staat op de blacklist voor dit voertuig", field: "vehicleId" });
+    if (NOT_RENTABLE.includes(vehicle.availabilityStatus)) return res.status(409).json({ message: "Dit voertuig is niet verhuurbaar (status " + vehicle.availabilityStatus + ")", field: "vehicleId" });
+    const conflicts = await storage.checkReservationConflicts(vehicleId, startDate, endDate, null, false, startTime, endTime);
+    if (conflicts.length > 0) {
+      return res.status(409).json({
+        message: "Conflicts with another reservation", field: "vehicleId",
+        conflicts: conflicts.map((c) => ({ id: c.id, startDate: c.startDate, endDate: c.endDate, customerId: c.customerId })),
+      });
+    }
+    if (driverId) {
+      const driver = await portalStorage.getDriverForCustomer(driverId, row.customerId);
+      if (!driver || driver.status !== "active") return res.status(400).json({ message: "Driver not found for this customer", field: "driverId" });
+      const busy = (await portalStorage.listReservationsForCustomer(row.customerId, {})).find((r) => r.driverId === driverId && (r.status === "booked" || r.status === "picked_up"));
+      if (busy) return res.status(409).json({ message: `${driver.displayName} rijdt al in ${busy.vehicle?.licensePlate ?? `#${busy.id}`}`, field: "driverId" });
+    }
+
+    const reservation = await storage.createReservation({
+      customerId: row.customerId, vehicleId, driverId, startDate, endDate, startTime, endTime,
+      status: "booked", type: "standard", notes: `Via klantenportaal (aanvraag #${id})`,
+      createdBy: actor(req), updatedBy: actor(req),
+    } as any);
+    if (driverId) await assignDriverToReservation({ reservationId: reservation.id, driverId, byUserId: req.user?.id, note: `portal request #${id}` });
+    await storage.syncVehicleAvailabilityWithReservations();
+    realtimeEvents.reservations.created(reservation);
+    await requestsStorage.updateRequest(id, { reservationId: reservation.id });
+    await AuditLogger.logFromRequest(req, "reservation.create", "reservation", reservation.id, { viaPortalRequest: id, vehicleId, startDate, endDate, driverId });
+    const reply = b.reply || `Goedgekeurd: reservering #${reservation.id}, ${vehicle.brand} ${vehicle.model} (${vehicle.licensePlate}) vanaf ${startDate}${endDate ? ` tot en met ${endDate}` : ""}.`;
+    const updated = await finish(req, id, reply, "done", row.customerId);
+    res.json({ ...updated, reservation });
+  }
 }

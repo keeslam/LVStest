@@ -138,9 +138,29 @@ Op de pagina Aanvragen ziet een klant met het recht "online huren" (canBook)
 alleen voertuigen die staff online heeft gezet (Klantenportaal > Voertuigen
 online) én die nu de status "beschikbaar" hebben; verhuurde of geblokkeerde
 auto's komen niet mee. Per auto: omschrijving en, als "prijzen tonen" aanstaat, dag- en maandprijs.
-"Aanvragen" opent een huuraanvraag (type `booking`: voertuig, vanaf, tot en
-met) die als gewone aanvraag bij staff binnenkomt; staff maakt daarna zelf de
-reservering.
+De klant kiest eerst een periode (vanaf, tot en met of open einde); de lijst
+toont dan alleen auto's die in die periode in de kalender vrij zijn
+(`GET /api/portal/vehicles?start=&end=`, één overlapquery via
+`portalStorage.listBusyVehicleIds`). "Aanvragen" opent een huuraanvraag (type
+`booking`: voertuig, periode, ophaal- en inlevertijd, optioneel een
+bestuurder uit de eigen lijst; een bestuurder-account vraagt automatisch voor
+zichzelf). De server weigert een aanvraag voor een auto die in die periode bezet
+is (`PORTAL_VEHICLE_UNAVAILABLE`) en een tweede open aanvraag voor dezelfde
+auto en periode (`PORTAL_DUPLICATE_REQUEST`). Een aanvraag met status
+"ingediend" kan de klant zelf intrekken (`DELETE /api/portal/requests/:id`).
+
+Staff keurt een huuraanvraag goed in de aanvraagdialoog via "Goedkeuren:
+reservering aanmaken". Dat paneel toont periode, tijden, de gevraagde auto (met
+vrij/bezet/blacklist) en suggesties van hetzelfde type die vrij zijn
+(`GET /api/portal-requests/:id/alternatives`); alles is nog aan te passen.
+`POST /api/portal-requests/:id/approve` maakt dan een reservering met status
+booked (klant, auto, periode, tijden, bestuurder, notitie "Via klantenportaal"),
+na controle op blacklist, kalenderconflicten (`checkReservationConflicts`) en
+de regel één auto per bestuurder. De aanvraag krijgt het reserveringsnummer,
+gaat op "afgehandeld" met een bevestiging aan de klant, en de reservering staat
+direct in de kalender en bij de klant onder "Aankomend". Op het dashboard
+markeert "Aandacht nodig" huuraanvragen die binnen 3 dagen starten of langer
+dan 2 dagen open staan.
 
 De blacklist (tabel `vehicle_customer_blacklist`, dezelfde als in de klant-
 en voertuigdialoog) wordt op de server toegepast: `GET /api/portal/vehicles`

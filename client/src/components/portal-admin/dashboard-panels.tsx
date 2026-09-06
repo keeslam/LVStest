@@ -110,9 +110,12 @@ export function AttentionPanel({ attention, canViewFines }: { attention: PortalD
           <Row key={`r${r.id}`} onClick={() => openPortalRequestDialog(r.id)} testId={`attention-request-${r.id}`}>
             <div className="min-w-0">
               <div className="truncate">{t(`admin.requests.type.${r.type}`, { defaultValue: r.type })} · {r.customerName}</div>
-              <div className="truncate text-xs text-muted-foreground">#{r.id}{r.reservationLabel ? ` · ${r.reservationLabel}` : ""} · {ago(r.createdAt, t)}</div>
+              <div className="truncate text-xs text-muted-foreground">#{r.id}{r.reservationLabel ? ` · ${r.reservationLabel}` : ""}{r.startDate ? ` · ${t("admin.dashboard.attention.from", { date: r.startDate })}` : ""} · {ago(r.createdAt, t)}</div>
             </div>
-            <RequestStatusBadge status={r.status} />
+            <div className="flex shrink-0 items-center gap-1">
+              {r.urgency && <Badge variant={r.urgency === "soon" ? "destructive" : "secondary"}>{t(`admin.dashboard.attention.${r.urgency}`)}</Badge>}
+              <RequestStatusBadge status={r.status} />
+            </div>
           </Row>
         ))}
         {fines.map((f) => (

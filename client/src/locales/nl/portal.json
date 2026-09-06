@@ -193,7 +193,8 @@
     "PORTAL_ATTACHMENT_LIMIT": "Maximaal 5 bijlagen.",
     "PORTAL_DRIVER_BUSY": "Deze bestuurder rijdt al in een andere auto. Eén auto per bestuurder.",
     "PORTAL_VEHICLE_BLOCKED": "Dit voertuig is voor uw bedrijf niet beschikbaar. Neem contact op met Lam Groep.",
-    "PORTAL_VEHICLE_UNAVAILABLE": "Dit voertuig is op dit moment niet beschikbaar."
+    "PORTAL_VEHICLE_UNAVAILABLE": "Dit voertuig is op dit moment niet beschikbaar.",
+    "PORTAL_DUPLICATE_REQUEST": "Er staat al een aanvraag open voor dit voertuig in deze periode."
   },
   "admin": {
     "navLabel": "Klantenportaal",
@@ -226,7 +227,10 @@
         "allRequests": "Alle aanvragen",
         "allFines": "Alle bekeuringen",
         "fine": "Bekeuring {{plate}}",
-        "unlinked": "Niet gekoppeld"
+        "unlinked": "Niet gekoppeld",
+        "stale": "Wacht al lang",
+        "soon": "Start binnenkort",
+        "from": "vanaf {{date}}"
       },
       "notifications": {
         "title": "Meldingen",
@@ -648,6 +652,28 @@
       "removed": "Blokkade opgeheven.",
       "empty": "Geen blokkades. Elke klant mag elk online voertuig aanvragen.",
       "noMatch": "Geen blokkade gevonden."
+    },
+    "booking": {
+      "title": "Reservering aanmaken uit deze aanvraag",
+      "open": "Goedkeuren: reservering aanmaken",
+      "approve": "Reservering aanmaken en goedkeuren",
+      "created": "Reservering #{{id}} aangemaakt; de klant is geïnformeerd.",
+      "pickupTime": "Ophaaltijd",
+      "returnTime": "Inlevertijd",
+      "invalidPeriod": "Vul een geldige periode in (einddatum na begindatum).",
+      "requestedVehicle": "Gevraagd",
+      "requestedUnavailable": "Het gevraagde voertuig kan niet meer (geblokkeerd of niet verhuurbaar). Kies een ander voertuig.",
+      "suggestions": "Zelfde type, vrij",
+      "searchVehicle": "Ander voertuig zoeken op kenteken, merk of type…",
+      "willBook": "Wordt geboekt: {{vehicle}}",
+      "free": "Vrij",
+      "busy": "Bezet in deze periode",
+      "blocked": "Blacklist",
+      "driver": "Bestuurder",
+      "noDriver": "Geen bestuurder (later toewijzen)",
+      "requestedDriver": "Klant vroeg: {{name}}",
+      "reply": "Bericht aan klant (optioneel)",
+      "replyPlaceholder": "Leeg = standaardbevestiging met reserveringsnummer, auto en periode."
     }
   },
   "fines": {
@@ -720,13 +746,22 @@
       "endDate": "Tot en met (optioneel)",
       "openEnd": "Open einde",
       "bookingHint": "Dit is een aanvraag. Lam Groep bevestigt de reservering en neemt contact op.",
-      "endDateDetail": "Tot en met"
+      "endDateDetail": "Tot en met",
+      "pickupTime": "Ophaaltijd",
+      "returnTime": "Inlevertijd",
+      "pickPeriodFirst": "Kies eerst een periode",
+      "noneFree": "Geen auto vrij in deze periode",
+      "vehicleNotFree": "Deze auto is in de gekozen periode niet meer vrij. Kies een andere auto of periode.",
+      "driver": "Bestuurder",
+      "driverLater": "Later bepalen"
     },
     "date": "Ingediend op",
     "subtitle": "Verlengen, eerder inleveren, schade melden of een vraag stellen.",
     "replied": "Lam Groep heeft geantwoord",
     "progress": "Voortgang",
-    "noneOpen": "Geen openstaande aanvragen."
+    "noneOpen": "Geen openstaande aanvragen.",
+    "withdraw": "Aanvraag intrekken",
+    "withdrawn": "Aanvraag ingetrokken."
   },
   "site": {
     "backToSite": "Naar lamgroep.nl",
@@ -769,6 +804,11 @@
     "perDay": "per dag",
     "perMonth": "per maand",
     "request": "Aanvragen",
-    "quick": "Auto huren"
+    "quick": "Auto huren",
+    "from": "Vanaf",
+    "until": "Tot en met",
+    "periodHint": "Alleen auto's die in deze periode vrij zijn.",
+    "openEndHint": "Geen einddatum: alleen auto's zonder volgende reservering.",
+    "invalidPeriod": "De einddatum moet na de begindatum liggen."
   }
 }
