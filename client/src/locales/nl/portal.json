@@ -225,7 +225,16 @@
         "expired": "{{n}} verlopen",
         "vehiclesOnline": "{{n}} voertuigen online",
         "blacklist": "Blacklist",
-        "blacklistSub": "voertuig/klant-blokkades"
+        "blacklistSub": "voertuig/klant-blokkades",
+        "new": "nieuw",
+        "newPlusInProgress": "nieuw · {{n}} in behandeling",
+        "notLinked": "niet gekoppeld",
+        "nowOnline": "nu online",
+        "invitesOpen": "uitnodigingen open",
+        "invitesExpired": "open · {{n}} verlopen",
+        "offeredOnline": "online aangeboden",
+        "blocks": "blokkades",
+        "activitySub": "Laatste acties in het portaal"
       },
       "attention": {
         "title": "Aandacht nodig",
@@ -677,7 +686,8 @@
       "replyPlaceholder": "Leeg = standaardbevestiging met reserveringsnummer, auto en periode.",
       "period": "Periode",
       "closeHint": "Een huuraanvraag wordt pas afgehandeld via \"Goedkeuren: reservering aanmaken\" (zet hem in de kalender) of \"Afwijzen\". Een antwoord sturen kan altijd; de aanvraag blijft dan open."
-    }
+    },
+    "pageSubtitle": "Aanvragen, accounts, bekeuringen en het aanbod voor klanten op één plek. Klik op een tegel om die lijst te openen."
   },
   "fines": {
     "title": "Bekeuringen",

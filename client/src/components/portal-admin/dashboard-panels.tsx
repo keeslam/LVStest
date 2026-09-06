@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
-import { AlertCircle, Bell, CalendarClock, Users, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
+import { AlertCircle, Bell, CalendarClock, Users, ArrowDownToLine, ArrowUpFromLine, Inbox, Receipt, UserCircle, Car, Ban, History, ChevronRight } from "lucide-react";
 import type { PortalDashboard } from "@shared/portal-types";
 import { apiRequest } from "@/lib/queryClient";
 import { formatLicensePlate } from "@/lib/format-utils";
@@ -53,17 +53,34 @@ function dayLabel(iso: string, t: (k: string) => string): string {
   return d.toLocaleDateString(undefined, { weekday: "short", day: "2-digit", month: "2-digit" });
 }
 
-// ---- tiles ----------------------------------------------------------------------
+// ---- section tiles -------------------------------------------------------------
+// One card per section of the portal admin: the icon and name say where it goes,
+// the number says whether it needs a look. They replace a row of buttons, and the
+// grid folds from four columns on desktop to two on a phone.
 
-function Tile({ label, value, sub, accent, onClick, testId }: { label: string; value: number; sub?: string; accent: string; onClick: () => void; testId: string }) {
+type SectionKind = "requests" | "fines" | "customers" | "accounts" | "vehicles" | "blacklist" | "activity";
+const SECTION_ICON: Record<SectionKind, ReactNode> = {
+  requests: <Inbox className="h-5 w-5" />, fines: <Receipt className="h-5 w-5" />, customers: <Users className="h-5 w-5" />,
+  accounts: <UserCircle className="h-5 w-5" />, vehicles: <Car className="h-5 w-5" />, blacklist: <Ban className="h-5 w-5" />, activity: <History className="h-5 w-5" />,
+};
+const SECTION_TONE: Record<SectionKind, string> = {
+  requests: "bg-amber-100 text-amber-800", fines: "bg-red-100 text-red-800", customers: "bg-emerald-100 text-emerald-800",
+  accounts: "bg-sky-100 text-sky-800", vehicles: "bg-indigo-100 text-indigo-800", blacklist: "bg-slate-200 text-slate-800", activity: "bg-violet-100 text-violet-800",
+};
+
+function SectionTile({ kind, value, sub, alert, onClick }: { kind: SectionKind; value?: number; sub: string; alert?: boolean; onClick: () => void }) {
+  const { t } = useTranslation("portal");
   return (
-    <button type="button" onClick={onClick} data-testid={testId}
-      className={`rounded-lg border bg-card p-4 text-left hover:bg-muted/40 border-l-4 ${accent}`}>
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="mt-1 flex items-baseline gap-2">
-        <span className="text-2xl font-semibold">{value}</span>
-        {sub && <span className="text-xs text-muted-foreground">{sub}</span>}
-      </div>
+    <button type="button" onClick={onClick} data-testid={`tile-${kind}`}
+      className={`group flex items-center gap-3 rounded-xl border bg-card p-3 text-left transition-shadow hover:shadow-md sm:p-4 ${alert ? "border-amber-400 ring-1 ring-amber-200" : ""}`}>
+      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${SECTION_TONE[kind]}`}>{SECTION_ICON[kind]}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-medium">{t(`admin.tabs.${kind}`)}</span>
+        <span className="block truncate text-xs text-muted-foreground">
+          {value !== undefined && <span className={`mr-1 text-base font-semibold ${alert ? "text-amber-700" : "text-foreground"}`}>{value}</span>}{sub}
+        </span>
+      </span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
     </button>
   );
 }
@@ -71,23 +88,20 @@ function Tile({ label, value, sub, accent, onClick, testId }: { label: string; v
 export function DashboardTiles({ counts, canViewFines }: { counts: PortalDashboard["counts"]; canViewFines: boolean }) {
   const { t } = useTranslation("portal");
   const { openPortalListDialog } = useGlobalDialog();
+  const invites = counts.pendingInvites + counts.expiredInvites;
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
-      <Tile label={t("admin.dashboard.tiles.newRequests")} value={counts.newRequests} accent={counts.newRequests > 0 ? "border-l-amber-500" : "border-l-transparent"}
-        sub={counts.inProgressRequests > 0 ? t("admin.dashboard.tiles.inProgress", { n: counts.inProgressRequests }) : undefined}
-        onClick={() => openPortalListDialog("requests")} testId="tile-new-requests" />
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 xl:grid-cols-4" data-testid="dashboard-tiles">
+      <SectionTile kind="requests" value={counts.newRequests} alert={counts.newRequests > 0}
+        sub={counts.inProgressRequests > 0 ? t("admin.dashboard.tiles.newPlusInProgress", { n: counts.inProgressRequests }) : t("admin.dashboard.tiles.new")}
+        onClick={() => openPortalListDialog("requests")} />
       {canViewFines && (
-        <Tile label={t("admin.dashboard.tiles.unlinkedFines")} value={counts.unlinkedFines} accent={counts.unlinkedFines > 0 ? "border-l-red-500" : "border-l-transparent"}
-          onClick={() => openPortalListDialog("fines")} testId="tile-unlinked-fines" />
+        <SectionTile kind="fines" value={counts.unlinkedFines} alert={counts.unlinkedFines > 0} sub={t("admin.dashboard.tiles.notLinked")} onClick={() => openPortalListDialog("fines")} />
       )}
-      <Tile label={t("admin.dashboard.tiles.onlineNow")} value={counts.onlineNow} accent={counts.onlineNow > 0 ? "border-l-green-600" : "border-l-transparent"}
-        sub={t("admin.dashboard.tiles.vehiclesOnline", { n: counts.vehiclesOnline })}
-        onClick={() => openPortalListDialog("customers")} testId="tile-online-now" />
-      <Tile label={t("admin.dashboard.tiles.invites")} value={counts.pendingInvites + counts.expiredInvites} accent="border-l-transparent"
-        sub={counts.expiredInvites > 0 ? t("admin.dashboard.tiles.expired", { n: counts.expiredInvites }) : undefined}
-        onClick={() => openPortalListDialog("accounts")} testId="tile-invites" />
-      <Tile label={t("admin.dashboard.tiles.blacklist")} value={counts.blacklistEntries} accent={counts.blacklistEntries > 0 ? "border-l-slate-700" : "border-l-transparent"}
-        sub={t("admin.dashboard.tiles.blacklistSub")} onClick={() => openPortalListDialog("blacklist")} testId="tile-blacklist" />
+      <SectionTile kind="customers" value={counts.onlineNow} sub={t("admin.dashboard.tiles.nowOnline")} onClick={() => openPortalListDialog("customers")} />
+      <SectionTile kind="accounts" value={invites} sub={counts.expiredInvites > 0 ? t("admin.dashboard.tiles.invitesExpired", { n: counts.expiredInvites }) : t("admin.dashboard.tiles.invitesOpen")} onClick={() => openPortalListDialog("accounts")} />
+      <SectionTile kind="vehicles" value={counts.vehiclesOnline} sub={t("admin.dashboard.tiles.offeredOnline")} onClick={() => openPortalListDialog("vehicles")} />
+      <SectionTile kind="blacklist" value={counts.blacklistEntries} sub={t("admin.dashboard.tiles.blocks")} onClick={() => openPortalListDialog("blacklist")} />
+      <SectionTile kind="activity" sub={t("admin.dashboard.tiles.activitySub")} onClick={() => openPortalListDialog("activity")} />
     </div>
   );
 }

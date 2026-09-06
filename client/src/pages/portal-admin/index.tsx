@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useSearch } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { UserPlus, Users, Inbox, Receipt, Car, History, Loader2, ScanSearch, Ban } from "lucide-react";
+import { UserPlus, Loader2, ScanSearch } from "lucide-react";
 import type { PortalDashboard } from "@shared/portal-types";
 import { apiRequest } from "@/lib/queryClient";
 import { useGlobalDialog, type PortalListKind } from "@/contexts/GlobalDialogContext";
@@ -42,31 +42,22 @@ export default function PortalAdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const listButton = (kind: PortalListKind, icon: React.ReactNode) => (
-    <Button size="sm" variant="outline" onClick={() => openPortalListDialog(kind)} data-testid={`button-open-${kind}`}>
-      {icon}{t(`admin.tabs.${kind}`)}
-    </Button>
-  );
-
   return (
     <div className="space-y-4 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">{t("admin.pageTitle")}</h1>
-        <div className="flex flex-wrap gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">{t("admin.pageTitle")}</h1>
+          <p className="text-sm text-muted-foreground">{t("admin.pageSubtitle")}</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:flex">
+          {canManageFines && (
+            <Button size="sm" variant="outline" onClick={openFineImportDialog} data-testid="button-import-fines"><ScanSearch className="mr-1.5 h-4 w-4" />{t("admin.fines.import.button")}</Button>
+          )}
           {canManage && (
             <AccountDialog>
               <Button size="sm" data-testid="button-invite-portal-account"><UserPlus className="mr-1.5 h-4 w-4" />{t("admin.dashboard.inviteAccount")}</Button>
             </AccountDialog>
           )}
-          {listButton("accounts", <Users className="mr-1.5 h-4 w-4" />)}
-          {listButton("requests", <Inbox className="mr-1.5 h-4 w-4" />)}
-          {canViewFines && listButton("fines", <Receipt className="mr-1.5 h-4 w-4" />)}
-          {canManageFines && (
-            <Button size="sm" variant="outline" onClick={openFineImportDialog} data-testid="button-import-fines"><ScanSearch className="mr-1.5 h-4 w-4" />{t("admin.fines.import.button")}</Button>
-          )}
-          {listButton("vehicles", <Car className="mr-1.5 h-4 w-4" />)}
-          {listButton("blacklist", <Ban className="mr-1.5 h-4 w-4" />)}
-          {listButton("activity", <History className="mr-1.5 h-4 w-4" />)}
         </div>
       </div>
 
