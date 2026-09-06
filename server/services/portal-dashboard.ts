@@ -93,6 +93,7 @@ export async function getPortalDashboard(): Promise<PortalDashboard> {
       vehiclesOnline: vehiclesOnline?.n ?? 0,
       blacklistEntries: blacklistEntries?.n ?? 0,
       unreadNotifications: notes.filter((n) => !n.isRead).length,
+      maintenance: 0,
     },
     attention: {
       requests: openRequests.slice(0, ATTENTION_LIMIT).map((r) => ({

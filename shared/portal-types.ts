@@ -17,6 +17,7 @@ export const PORTAL_ERROR = {
   VEHICLE_BLOCKED: 'PORTAL_VEHICLE_BLOCKED',
   VEHICLE_UNAVAILABLE: 'PORTAL_VEHICLE_UNAVAILABLE',
   DUPLICATE_REQUEST: 'PORTAL_DUPLICATE_REQUEST',
+  MAINTENANCE_TOO_LATE: 'PORTAL_MAINTENANCE_TOO_LATE',
   EMAIL_IN_USE: 'PORTAL_EMAIL_IN_USE',
   REQUEST_INVALID_PERIOD: 'PORTAL_REQUEST_INVALID_PERIOD',
   ATTACHMENT_LIMIT: 'PORTAL_ATTACHMENT_LIMIT',
@@ -61,7 +62,7 @@ export interface PortalMe {
   company?: PortalCompanyEmails;
   settings: PortalSettingsFlags;
   /** Pickup details and privacy link from the portal configuration. */
-  info: { pickupAddress: string; openingHours: string; pickupInstructions: string; privacyUrl: string };
+  info: { pickupAddress: string; openingHours: string; pickupInstructions: string; privacyUrl: string; phone: string };
 }
 
 export interface PortalCompanyEmails {
@@ -107,6 +108,32 @@ export interface PortalVehicleDto {
   /** Only present when the customer's showPrices switch is on. */
   dailyPrice?: string | null;
   monthlyPrice?: string | null;
+}
+
+/** Planned or running maintenance on a vehicle the customer has in use. Placeholder spares are never sent. */
+export interface PortalVehicleMaintenanceDto {
+  blockId: number;
+  startDate: string;
+  endDate: string | null;
+  status: 'scheduled' | 'in' | 'out';
+  category: 'scheduled_maintenance' | 'repair' | null;
+  /** False within 48 hours of the start or once the car is in. */
+  canRequestChange: boolean;
+  openChangeRequestId: number | null;
+  replacement: { licensePlate: string; brand: string; model: string; status: string | null } | null;
+}
+
+/** One vehicle the customer has on the road, as shown on the Voertuigen page. */
+export interface PortalMyVehicleDto {
+  reservationId: number;
+  vehicle: { id: number; licensePlate: string; brand: string; model: string; apkDate: string | null; currentMileage: number | null };
+  driver: { id: number; displayName: string } | null;
+  startDate: string;
+  endDate: string | null;
+  lastReportedMileage: { value: number; at: string } | null;
+  serviceDue: 'due' | 'soon' | null;
+  maintenance: PortalVehicleMaintenanceDto | null;
+  openMaintenanceRequestId: number | null;
 }
 
 /** A vehicle staff can put on an approved rental request, with whether it is free in the period. */
@@ -188,6 +215,8 @@ export interface PortalConfig {
   pickupInstructions: string;
   /** Link to the privacy statement, shown in the portal footer and on the login page. */
   privacyUrl: string;
+  /** Phone number customers should call for changes that the portal no longer allows (e.g. maintenance within 48 hours). */
+  phone: string;
 }
 
 export const DEFAULT_PORTAL_CONFIG: PortalConfig = {
@@ -199,6 +228,7 @@ export const DEFAULT_PORTAL_CONFIG: PortalConfig = {
   openingHours: 'Maandag t/m vrijdag 08:00 - 17:00',
   pickupInstructions: 'Neem een geldig rijbewijs mee van de bestuurder die de auto ophaalt.',
   privacyUrl: 'https://lamgroep.nl/privacy',
+  phone: '0181 - 45 10 40',
 };
 
 export const PORTAL_CONFIG_KEY = 'portal_config';
@@ -216,6 +246,8 @@ export interface PortalDashboard {
     /** Vehicle/customer combinations that are blocked. */
     blacklistEntries: number;
     unreadNotifications: number;
+    /** Open maintenance and maintenance-change requests plus placeholder spares from portal blocks that still need a car. */
+    maintenance: number;
   };
   attention: {
     requests: Array<{

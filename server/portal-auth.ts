@@ -71,7 +71,7 @@ async function buildMe(ctx: PortalRequestContext): Promise<PortalMe> {
     pendingEmail: ctx.user.pendingEmail && ctx.user.emailChangeExpiresAt && ctx.user.emailChangeExpiresAt.getTime() > Date.now() ? ctx.user.pendingEmail : null,
     company,
     settings: settingsFlags(ctx.settings, ctx.user),
-    info: { pickupAddress: config.pickupAddress, openingHours: config.openingHours, pickupInstructions: config.pickupInstructions, privacyUrl: config.privacyUrl },
+    info: { pickupAddress: config.pickupAddress, openingHours: config.openingHours, pickupInstructions: config.pickupInstructions, privacyUrl: config.privacyUrl, phone: config.phone },
   };
 }
 

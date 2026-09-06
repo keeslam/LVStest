@@ -745,7 +745,8 @@ export const reservations = pgTable("reservations", {
   maintenanceCategory: text("maintenance_category"), // 'scheduled_maintenance' | 'repair' to distinguish service types
   spareAssignmentDecision: text("spare_assignment_decision"), // 'spare_assigned' | 'customer_arranging' | 'not_handled' for maintenance tracking
   affectedRentalId: integer("affected_rental_id"), // FK to the rental that's affected by this maintenance
-  
+  portalRequestId: integer("portal_request_id"), // Set on a maintenance block created from a customer portal request
+
   // Mileage Tracking
   pickupMileage: integer("pickup_mileage"), // Odometer reading when vehicle was picked up
   returnMileage: integer("return_mileage"), // Odometer reading when vehicle was returned

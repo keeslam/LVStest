@@ -1083,6 +1083,7 @@ async function runMigrations() {
       )`);
     await addColumnIfNotExists('fines', 'source', 'TEXT');
     await addColumnIfNotExists('fines', 'import_file_id', 'INTEGER REFERENCES fine_import_files(id) ON DELETE SET NULL');
+    await addColumnIfNotExists('reservations', 'portal_request_id', 'INTEGER');
 
     await createTableIfNotExists('portal_requests', `
       CREATE TABLE portal_requests (

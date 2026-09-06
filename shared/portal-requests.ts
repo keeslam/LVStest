@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const PortalRequestType = {
-  BOOKING: 'booking', EXTENSION: 'extension', EARLY_RETURN: 'early_return', DAMAGE: 'damage', MAINTENANCE: 'maintenance', MILEAGE: 'mileage', FINE_QUESTION: 'fine_question', OTHER: 'other',
+  BOOKING: 'booking', EXTENSION: 'extension', EARLY_RETURN: 'early_return', DAMAGE: 'damage', MAINTENANCE: 'maintenance', MAINTENANCE_CHANGE: 'maintenance_change', MILEAGE: 'mileage', FINE_QUESTION: 'fine_question', OTHER: 'other',
 } as const;
 export type PortalRequestTypeValue = typeof PortalRequestType[keyof typeof PortalRequestType];
 
@@ -22,6 +22,7 @@ const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
 export const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use HH:MM");
 /** Form fields arrive as "" when left empty; treat that as absent. */
 const blankToUndefined = (v: unknown) => (v === "" || v === null ? undefined : v);
+const formBool = z.preprocess((v) => v === true || v === "true", z.boolean().default(false));
 
 export const requestPayloadSchemas = {
   /** Rental request for a vehicle offered online; the server adds vehicleLabel. */
@@ -39,7 +40,20 @@ export const requestPayloadSchemas = {
   early_return: z.object({ returnDate: isoDate }),
   damage: z.object({ location: z.string().trim().max(200).default(""), occurredAt: z.string().trim().max(40).default("") }),
   /** Something wrong with the car (noise, warning light, tyres) or a service that is due. */
-  maintenance: z.object({ issue: z.string().trim().min(1).max(500), mileage: z.preprocess(blankToUndefined, z.coerce.number().int().min(0).optional()), urgent: z.preprocess((v) => v === true || v === "true", z.boolean().default(false)) }),
+  maintenance: z.object({
+    issue: z.string().trim().min(1).max(500),
+    mileage: z.preprocess(blankToUndefined, z.coerce.number().int().min(0).optional()),
+    urgent: formBool,
+    /** "Ik heb vervangend vervoer nodig": approval then creates a placeholder spare for staff to fill. */
+    needsReplacement: formBool,
+    preferredDate: z.preprocess(blankToUndefined, isoDate.optional()),
+  }),
+  /** Ask to move a planned maintenance block; the linked reservation is the block itself. */
+  maintenance_change: z.object({
+    newDate: isoDate,
+    reason: z.string().trim().min(1).max(500),
+    needsReplacement: formBool,
+  }),
   /** Current odometer reading. */
   mileage: z.object({ mileage: z.coerce.number().int().min(0) }),
   fine_question: z.object({}),
@@ -48,7 +62,7 @@ export const requestPayloadSchemas = {
 
 /** Which link a type requires. */
 export const REQUEST_NEEDS: Record<PortalRequestTypeValue, 'reservation' | 'fine' | null> = {
-  booking: null, extension: 'reservation', early_return: 'reservation', damage: 'reservation', maintenance: 'reservation', mileage: 'reservation', fine_question: 'fine', other: null,
+  booking: null, extension: 'reservation', early_return: 'reservation', damage: 'reservation', maintenance: 'reservation', maintenance_change: 'reservation', mileage: 'reservation', fine_question: 'fine', other: null,
 };
 
 export interface PortalRequestAttachmentDto { id: number; fileName: string; contentType: string; fileSize: number }

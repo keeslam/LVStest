@@ -6,7 +6,8 @@
     "drivers": "Drivers",
     "account": "My account",
     "fines": "Fines",
-    "requests": "Requests"
+    "requests": "Requests",
+    "vehicles": "Vehicles"
   },
   "actions": {
     "logout": "Log out",
@@ -251,7 +252,8 @@
     "PORTAL_VEHICLE_BLOCKED": "This vehicle is not available for your company. Please contact Lam Groep.",
     "PORTAL_VEHICLE_UNAVAILABLE": "This vehicle is not available at the moment.",
     "PORTAL_DUPLICATE_REQUEST": "There is already an open request for this vehicle in this period.",
-    "PORTAL_EMAIL_IN_USE": "This e-mail address is already used by another account."
+    "PORTAL_EMAIL_IN_USE": "This e-mail address is already used by another account.",
+    "PORTAL_MAINTENANCE_TOO_LATE": "This maintenance starts within 48 hours and can no longer be changed through the portal. Please call Lam Groep."
   },
   "admin": {
     "navLabel": "Customer portal",
@@ -263,7 +265,8 @@
       "activity": "Activity",
       "fines": "Fines",
       "requests": "Requests",
-      "blacklist": "Blacklist"
+      "blacklist": "Blacklist",
+      "maintenance": "Maintenance"
     },
     "dashboard": {
       "inviteAccount": "Invite account",
@@ -285,7 +288,8 @@
         "invitesExpired": "open · {{n}} expired",
         "offeredOnline": "offered online",
         "blocks": "blocks",
-        "activitySub": "Latest actions in the portal"
+        "activitySub": "Latest actions in the portal",
+        "maintenanceSub": "reports and placeholders"
       },
       "attention": {
         "title": "Needs attention",
@@ -461,7 +465,8 @@
       "pickupAddress": "Pickup address (for customers with a booked reservation)",
       "openingHours": "Opening hours",
       "pickupInstructions": "What the customer should bring or know at pickup",
-      "privacyUrl": "Link to the privacy statement"
+      "privacyUrl": "Link to the privacy statement",
+      "phone": "Phone number for customers"
     },
     "fines": {
       "title": "Fines",
@@ -656,6 +661,7 @@
         "other": "Other",
         "booking": "Rental request",
         "maintenance": "Maintenance/fault",
+        "maintenance_change": "Change maintenance",
         "mileage": "Mileage"
       },
       "status": {
@@ -756,6 +762,32 @@
       "period": "Period",
       "closeHint": "A rental request is only closed via \"Approve: create reservation\" (puts it in the calendar) or \"Reject\". You can always send a reply; the request then stays open."
     },
+    "maintenance": {
+      "title": "Schedule in the maintenance calendar",
+      "moveTitle": "Move maintenance",
+      "date": "Date",
+      "duration": "Duration (days)",
+      "category": "Type",
+      "categoryService": "Service",
+      "categoryRepair": "Repair",
+      "note": "Note for the customer",
+      "approve": "Schedule and confirm",
+      "move": "Move and confirm",
+      "created": "Maintenance #{{id}} is in the calendar",
+      "moved": "Maintenance #{{id}} has been moved",
+      "closeHint": "A maintenance report can only be closed via Schedule (puts it in the calendar) or Reject.",
+      "summary": "Report from the customer",
+      "issue": "Complaint",
+      "mileage": "Mileage",
+      "urgent": "Urgent",
+      "wantsReplacement": "Replacement vehicle wanted",
+      "preferredDate": "Preferred date",
+      "currentDate": "Currently planned on",
+      "requestedDate": "Requested date",
+      "reason": "Reason",
+      "placeholderNote": "A replacement placeholder is created; assign a car later in the maintenance calendar.",
+      "fromPortal": "From customer portal, request #{{id}}"
+    },
     "pageSubtitle": "Requests, accounts, fines and what customers can rent, in one place. Click a tile to open that list.",
     "preview": {
       "shown": "{{shown}} of {{total}} shown",
@@ -810,6 +842,7 @@
       "other": "Other",
       "booking": "Rent a car",
       "maintenance": "Report maintenance or a fault",
+      "maintenance_change": "Change maintenance",
       "mileage": "Report mileage"
     },
     "status": {
@@ -859,7 +892,14 @@
       "noReservationMatch": "No reservation found. Try another plate.",
       "moreReservations": "{{shown}} of {{total}} shown, type to narrow down.",
       "pickReservationFirst": "First choose the reservation this is about.",
-      "yes": "Yes"
+      "yes": "Yes",
+      "needsReplacement": "I need a replacement vehicle during the maintenance",
+      "preferredDate": "Preferred date (optional)",
+      "currentMaintenanceDate": "Planned on",
+      "newDate": "New preferred date",
+      "reason": "Reason",
+      "stillNeedsReplacement": "I still need a replacement vehicle",
+      "changeHint": "Lam Groep checks whether the new date fits and confirms it."
     },
     "date": "Submitted on",
     "subtitle": "Extend, return early, report damage or ask a question.",
@@ -904,7 +944,7 @@
   "vehicles": {
     "title": "Available to rent",
     "subtitle": "{{count}} vehicle(s) available right now. Request a car and Lam Groep confirms the reservation.",
-    "search": "Search by brand, model, plate or type…",
+    "search": "Search by plate, car or driver",
     "empty": "No vehicle is available at the moment. Check back later or ask via a request.",
     "available": "Available",
     "perDay": "per day",
@@ -916,7 +956,26 @@
     "periodHint": "Only cars that are free in this period.",
     "openEndHint": "No end date: only cars without a next reservation.",
     "invalidPeriod": "The end date must be after the start date.",
-    "period": "Period"
+    "period": "Period",
+    "mine": "My vehicles",
+    "none": "No car in use.",
+    "apk": "APK until",
+    "apkExpired": "APK expired on {{date}}",
+    "apkSoon": "APK expires on {{date}}",
+    "mileage": "Mileage",
+    "noMileage": "No mileage reported yet",
+    "mileageAt": "{{value}} km on {{date}}",
+    "serviceSoon": "Service due soon",
+    "serviceDue": "Service due",
+    "maintenanceScheduled": "Maintenance planned on {{date}}",
+    "maintenanceIn": "Car in maintenance since {{date}}",
+    "maintenanceOut": "Maintenance finished on {{date}}",
+    "replacement": "Replacement vehicle: {{car}}",
+    "changeMaintenance": "Change maintenance",
+    "changeTooLate": "Changes are possible until 48 hours before. Call Lam Groep: {{phone}}",
+    "changePending": "Change requested (#{{id}})",
+    "requestPending": "View maintenance report #{{id}}",
+    "viewAll": "View all and search"
   },
   "period": {
     "pick": "Choose a period",

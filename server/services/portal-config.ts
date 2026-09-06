@@ -11,6 +11,7 @@ export const portalConfigSchema = z.object({
   openingHours: z.string().max(300).default(DEFAULT_PORTAL_CONFIG.openingHours),
   pickupInstructions: z.string().max(1000).default(DEFAULT_PORTAL_CONFIG.pickupInstructions),
   privacyUrl: z.union([z.string().url(), z.literal("")]).default(DEFAULT_PORTAL_CONFIG.privacyUrl),
+  phone: z.string().max(50).default(DEFAULT_PORTAL_CONFIG.phone),
 });
 
 const CACHE_TTL_MS = 60_000;

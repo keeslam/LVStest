@@ -6,7 +6,8 @@
     "drivers": "Bestuurders",
     "account": "Mijn account",
     "fines": "Bekeuringen",
-    "requests": "Aanvragen"
+    "requests": "Aanvragen",
+    "vehicles": "Voertuigen"
   },
   "actions": {
     "logout": "Uitloggen",
@@ -251,7 +252,8 @@
     "PORTAL_VEHICLE_BLOCKED": "Dit voertuig is voor uw bedrijf niet beschikbaar. Neem contact op met Lam Groep.",
     "PORTAL_VEHICLE_UNAVAILABLE": "Dit voertuig is op dit moment niet beschikbaar.",
     "PORTAL_DUPLICATE_REQUEST": "Er staat al een aanvraag open voor dit voertuig in deze periode.",
-    "PORTAL_EMAIL_IN_USE": "Dit e-mailadres is al in gebruik bij een ander account."
+    "PORTAL_EMAIL_IN_USE": "Dit e-mailadres is al in gebruik bij een ander account.",
+    "PORTAL_MAINTENANCE_TOO_LATE": "Dit onderhoud start binnen 48 uur en kan via het portaal niet meer worden gewijzigd. Bel Lam Groep."
   },
   "admin": {
     "navLabel": "Klantenportaal",
@@ -263,7 +265,8 @@
       "activity": "Activiteit",
       "fines": "Bekeuringen",
       "requests": "Aanvragen",
-      "blacklist": "Blacklist"
+      "blacklist": "Blacklist",
+      "maintenance": "Onderhoud"
     },
     "dashboard": {
       "inviteAccount": "Account uitnodigen",
@@ -285,7 +288,8 @@
         "invitesExpired": "open · {{n}} verlopen",
         "offeredOnline": "online aangeboden",
         "blocks": "blokkades",
-        "activitySub": "Laatste acties in het portaal"
+        "activitySub": "Laatste acties in het portaal",
+        "maintenanceSub": "meldingen en placeholders"
       },
       "attention": {
         "title": "Aandacht nodig",
@@ -461,7 +465,8 @@
       "pickupAddress": "Ophaaladres (voor klanten met een geboekte reservering)",
       "openingHours": "Openingstijden",
       "pickupInstructions": "Wat de klant moet meenemen of weten bij ophalen",
-      "privacyUrl": "Link naar de privacyverklaring"
+      "privacyUrl": "Link naar de privacyverklaring",
+      "phone": "Telefoonnummer voor klanten"
     },
     "fines": {
       "title": "Bekeuringen",
@@ -656,6 +661,7 @@
         "other": "Overig",
         "booking": "Huuraanvraag",
         "maintenance": "Onderhoud/storing",
+        "maintenance_change": "Onderhoud wijzigen",
         "mileage": "Kilometerstand"
       },
       "status": {
@@ -756,6 +762,32 @@
       "period": "Periode",
       "closeHint": "Een huuraanvraag wordt pas afgehandeld via \"Goedkeuren: reservering aanmaken\" (zet hem in de kalender) of \"Afwijzen\". Een antwoord sturen kan altijd; de aanvraag blijft dan open."
     },
+    "maintenance": {
+      "title": "Inplannen in de onderhoudskalender",
+      "moveTitle": "Onderhoud verplaatsen",
+      "date": "Datum",
+      "duration": "Duur (dagen)",
+      "category": "Soort",
+      "categoryService": "Onderhoudsbeurt",
+      "categoryRepair": "Reparatie",
+      "note": "Notitie voor de klant",
+      "approve": "Inplannen en bevestigen",
+      "move": "Verplaatsen en bevestigen",
+      "created": "Onderhoud #{{id}} staat in de kalender",
+      "moved": "Onderhoud #{{id}} is verplaatst",
+      "closeHint": "Een onderhoudsmelding kan alleen worden afgehandeld via Inplannen (zet het in de kalender) of Afwijzen.",
+      "summary": "Melding van de klant",
+      "issue": "Klacht",
+      "mileage": "Kilometerstand",
+      "urgent": "Dringend",
+      "wantsReplacement": "Vervangend vervoer gewenst",
+      "preferredDate": "Gewenste datum",
+      "currentDate": "Nu gepland op",
+      "requestedDate": "Gevraagde datum",
+      "reason": "Reden",
+      "placeholderNote": "Er wordt een vervanger-placeholder aangemaakt; wijs later een auto toe in de onderhoudskalender.",
+      "fromPortal": "Uit klantenportaal, aanvraag #{{id}}"
+    },
     "pageSubtitle": "Aanvragen, accounts, bekeuringen en het aanbod voor klanten op één plek. Klik op een tegel om die lijst te openen.",
     "preview": {
       "shown": "{{shown}} van {{total}} getoond",
@@ -810,6 +842,7 @@
       "other": "Overig",
       "booking": "Auto huren",
       "maintenance": "Onderhoud of storing melden",
+      "maintenance_change": "Onderhoud wijzigen",
       "mileage": "Kilometerstand doorgeven"
     },
     "status": {
@@ -859,7 +892,14 @@
       "noReservationMatch": "Geen reservering gevonden. Probeer een ander kenteken.",
       "moreReservations": "{{shown}} van {{total}} getoond, typ om te verfijnen.",
       "pickReservationFirst": "Kies eerst de reservering waar het om gaat.",
-      "yes": "Ja"
+      "yes": "Ja",
+      "needsReplacement": "Ik heb vervangend vervoer nodig tijdens het onderhoud",
+      "preferredDate": "Gewenste datum (optioneel)",
+      "currentMaintenanceDate": "Gepland op",
+      "newDate": "Nieuwe gewenste datum",
+      "reason": "Reden",
+      "stillNeedsReplacement": "Ik heb nog steeds vervangend vervoer nodig",
+      "changeHint": "Lam Groep bekijkt of de nieuwe datum past en bevestigt dit."
     },
     "date": "Ingediend op",
     "subtitle": "Verlengen, eerder inleveren, schade melden of een vraag stellen.",
@@ -904,7 +944,7 @@
   "vehicles": {
     "title": "Beschikbaar om te huren",
     "subtitle": "{{count}} voertuig(en) nu beschikbaar. Vraag een auto aan en Lam Groep bevestigt de reservering.",
-    "search": "Zoek op merk, model, kenteken of type…",
+    "search": "Zoek op kenteken, auto of bestuurder",
     "empty": "Er is op dit moment geen voertuig beschikbaar. Kijk later nog eens of stel een vraag via een aanvraag.",
     "available": "Beschikbaar",
     "perDay": "per dag",
@@ -916,7 +956,26 @@
     "periodHint": "Alleen auto's die in deze periode vrij zijn.",
     "openEndHint": "Geen einddatum: alleen auto's zonder volgende reservering.",
     "invalidPeriod": "De einddatum moet na de begindatum liggen.",
-    "period": "Periode"
+    "period": "Periode",
+    "mine": "Mijn voertuigen",
+    "none": "Geen auto in gebruik.",
+    "apk": "APK tot",
+    "apkExpired": "APK verlopen op {{date}}",
+    "apkSoon": "APK verloopt op {{date}}",
+    "mileage": "Kilometerstand",
+    "noMileage": "Nog geen kilometerstand doorgegeven",
+    "mileageAt": "{{value}} km op {{date}}",
+    "serviceSoon": "Bijna toe aan onderhoud",
+    "serviceDue": "Onderhoud nodig",
+    "maintenanceScheduled": "Onderhoud gepland op {{date}}",
+    "maintenanceIn": "Auto in onderhoud sinds {{date}}",
+    "maintenanceOut": "Onderhoud klaar op {{date}}",
+    "replacement": "Vervangend vervoer: {{car}}",
+    "changeMaintenance": "Onderhoud wijzigen",
+    "changeTooLate": "Wijzigen kan tot 48 uur van tevoren. Bel Lam Groep: {{phone}}",
+    "changePending": "Wijziging aangevraagd (#{{id}})",
+    "requestPending": "Onderhoudsmelding #{{id}} bekijken",
+    "viewAll": "Alles bekijken en zoeken"
   },
   "period": {
     "pick": "Kies een periode",
