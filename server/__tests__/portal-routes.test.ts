@@ -13,6 +13,7 @@ import { hashPassword } from "../auth";
 import { getUploadsDir } from "../../shared/paths";
 import { storage } from "../storage";
 import { requestsStorage } from "../services/portal-requests-storage";
+import { customerNotifications } from "../services/portal-customer-notifications";
 
 const password = "wachtwoord-1234";
 
@@ -223,6 +224,51 @@ describe("portal routes", () => {
     expect((await agent.get("/api/portal/vehicles")).status).toBe(403);
     expect((await send(online.id)).status).toBe(403);
     await portalStorage.updateCustomerSettings(a, { canBook: true }, "t");
+  });
+
+  it("maintenance and mileage requests, the conversation on a request, contract acknowledgement and the bell", async () => {
+    const { agent, csrf } = await loginAs(app, emailA);
+    const maint = await agent.post("/api/portal/requests").set("X-CSRF-Token", csrf)
+      .field("type", "maintenance").field("message", "Er brandt een lampje").field("reservationId", String(resA))
+      .field("payload", JSON.stringify({ issue: "Motorlampje brandt", mileage: "12345", urgent: "true" }));
+    expect(maint.status).toBe(201);
+    expect(maint.body.payload).toMatchObject({ issue: "Motorlampje brandt", mileage: 12345, urgent: true });
+    const km = await agent.post("/api/portal/requests").set("X-CSRF-Token", csrf)
+      .field("type", "mileage").field("message", "Stand doorgegeven").field("reservationId", String(resA)).field("payload", JSON.stringify({ mileage: "12400" }));
+    expect(km.status).toBe(201);
+    expect(km.body.payload.mileage).toBe(12400);
+    expect((await agent.post("/api/portal/requests").set("X-CSRF-Token", csrf).field("type", "maintenance").field("message", "x").field("reservationId", String(resA)).field("payload", JSON.stringify({}))).status).toBe(400);
+
+    // Conversation: the customer can add to an open request, not to a closed one.
+    const msg = await agent.post(`/api/portal/requests/${maint.body.id}/messages`).set("X-CSRF-Token", csrf).send({ body: "Het lampje is oranje, geen rood." });
+    expect(msg.status).toBe(201);
+    expect(msg.body).toMatchObject({ author: "customer", body: "Het lampje is oranje, geen rood." });
+    expect((await agent.get(`/api/portal/requests/${maint.body.id}`)).body.messages).toHaveLength(1);
+    await requestsStorage.updateRequest(km.body.id, { status: "done" });
+    expect((await agent.post(`/api/portal/requests/${km.body.id}/messages`).set("X-CSRF-Token", csrf).send({ body: "nog iets" })).status).toBe(400);
+
+    // Contract acknowledgement: once, with the user's name; second call returns the first.
+    const docs = await agent.get("/api/portal/documents");
+    const contract = docs.body.find((d: any) => d.id === docA);
+    expect(contract.ack).toBeNull();
+    const ack = await agent.post(`/api/portal/documents/${docA}/ack`).set("X-CSRF-Token", csrf);
+    expect(ack.status).toBe(200);
+    expect(ack.body.by).toBe("U");
+    const again = await agent.post(`/api/portal/documents/${docA}/ack`).set("X-CSRF-Token", csrf);
+    expect(again.body.at).toBe(ack.body.at);
+    expect((await agent.get("/api/portal/documents")).body.find((d: any) => d.id === docA).ack.by).toBe("U");
+
+    // The bell: a notification written for the customer shows up unread, then read.
+    await customerNotifications.notify({ customerId: a, type: "test", title: "Testmelding", description: "Hallo", link: "/aanvragen/1" });
+    expect((await agent.get("/api/portal/notifications/unread-count")).body.count).toBeGreaterThanOrEqual(1);
+    const list = await agent.get("/api/portal/notifications");
+    const mine = list.body.find((n: any) => n.title === "Testmelding");
+    expect(mine.isRead).toBe(false);
+    expect((await agent.post("/api/portal/notifications/read").set("X-CSRF-Token", csrf).send({ ids: [mine.id] })).status).toBe(200);
+    expect((await agent.get("/api/portal/notifications")).body.find((n: any) => n.id === mine.id).isRead).toBe(true);
+    // Customer B never sees A's notification.
+    const asB = await loginAs(app, emailB);
+    expect((await asB.agent.get("/api/portal/notifications")).body.some((n: any) => n.id === mine.id)).toBe(false);
   });
 
   it("driver-role users cannot manage drivers", async () => {

@@ -9,6 +9,7 @@ import { requestsStorage } from "../services/portal-requests-storage";
 import { portalStorage } from "../services/portal-storage";
 import { buildStaffTestApp, createTestCustomer, createTestVehicle, createTestReservation, createTestDriver, cleanupPortalTestData, TEST_EMAIL_DOMAIN } from "./portal-helpers";
 import { storage } from "../storage";
+import { customerNotifications } from "../services/portal-customer-notifications";
 import { UserPermission, reservations } from "../../shared/schema";
 import { getUploadsDir } from "../../shared/paths";
 import { db } from "../db";
@@ -30,6 +31,20 @@ describe("staff portal requests", () => {
     otherId = (await requestsStorage.createRequest({ customerId, portalUserId: userId, type: "other", payload: { subject: "Vraag" }, message: "Hallo" })).id;
   });
   afterAll(cleanupPortalTestData);
+
+  it("staff messages and replies reach the customer's bell", async () => {
+    const convId = (await requestsStorage.createRequest({ customerId, portalUserId: userId, type: "other", payload: { subject: "Gesprek" }, message: "Vraag over factuur" })).id;
+    const msg = await request(manager).post(`/api/portal-requests/${convId}/messages`).send({ body: "Kunt u een foto sturen?" });
+    expect(msg.status).toBe(201);
+    expect((await request(manager).get(`/api/portal-requests/${convId}`)).body).toMatchObject({ status: "in_progress" });
+    expect((await request(manager).get(`/api/portal-requests/${convId}`)).body.messages).toHaveLength(1);
+    const before = await customerNotifications.listForUser(customerId, userId);
+    expect(before.some((n) => n.type === "request_message" && n.link === `/aanvragen/${convId}`)).toBe(true);
+    expect((await request(manager).post(`/api/portal-requests/${convId}/reply`).send({ reply: "Bedankt, geregeld.", status: "done" })).status).toBe(200);
+    const after = await customerNotifications.listForUser(customerId, userId);
+    expect(after.some((n) => n.type === "request_done" && n.description.includes("Bedankt, geregeld."))).toBe(true);
+    expect((await request(manager).get(`/api/portal-requests/${convId}`)).body.messages).toHaveLength(2);
+  });
 
   it("approves a rental request into a booked reservation, with vehicle, period and driver adjustable", async () => {
     const wanted = await createTestVehicle();
