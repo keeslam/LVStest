@@ -15,6 +15,7 @@ export const PORTAL_TEMPLATE = {
   STAFF: "portal_staff_notification",
   FINE_LINKED: "portal_fine_linked",
   REQUEST_REPLIED: "portal_request_replied",
+  EMAIL_CHANGE: "portal_email_change",
 } as const;
 
 // Seeded once; staff edit them afterwards in Communicatie > E-mailsjablonen.
@@ -26,6 +27,16 @@ const DEFAULT_TEMPLATES: Array<{ name: string; subject: string; content: string 
 <p>Er is een account voor u aangemaakt in het klantenportaal van Lam Groep voor {{company}}.</p>
 <p>Kies uw wachtwoord via deze link (72 uur geldig):</p>
 <p><a href="{{link}}">{{link}}</a></p>
+<p>Met vriendelijke groet,<br>Lam Groep</p>`,
+  },
+  {
+    name: PORTAL_TEMPLATE.EMAIL_CHANGE,
+    subject: "Bevestig uw nieuwe e-mailadres - klantenportaal Lam Groep",
+    content: `<p>Beste {{name}},</p>
+<p>U heeft gevraagd om het e-mailadres van uw account in het klantenportaal van Lam Groep te wijzigen naar {{newEmail}}.</p>
+<p>Bevestig dit via deze link (72 uur geldig):</p>
+<p><a href="{{link}}">{{link}}</a></p>
+<p>Heeft u dit niet aangevraagd, dan kunt u deze e-mail negeren; uw huidige adres blijft dan in gebruik.</p>
 <p>Met vriendelijke groet,<br>Lam Groep</p>`,
   },
   {
@@ -111,6 +122,19 @@ export async function sendPortalInvite(user: PortalUser, kind: "invite" | "reset
     html,
     text: stripHtml(html),
   }, "custom");
+  return { sent, token };
+}
+
+/** Sends the confirmation link for a new address to that new address; only its hash is stored. */
+export async function sendEmailChangeMail(user: PortalUser, newEmail: string): Promise<{ sent: boolean; token: string }> {
+  const { token, hash } = generateInviteToken();
+  await portalStorage.updatePortalUser(user.id, { pendingEmail: newEmail, emailChangeTokenHash: hash, emailChangeExpiresAt: new Date(Date.now() + INVITE_TTL_MS) });
+  const config = await getPortalConfig();
+  const link = `${config.portalBaseUrl.replace(/\/$/, "")}/portaal/email-bevestigen?token=${token}`;
+  const template = await getPortalTemplate(PORTAL_TEMPLATE.EMAIL_CHANGE);
+  const vars = { name: user.fullName, newEmail, link };
+  const html = renderTemplate(template.content, vars);
+  const sent = await sendEmail({ to: newEmail, toName: user.fullName, subject: renderTemplate(template.subject, vars), html, text: stripHtml(html) }, "custom");
   return { sent, token };
 }
 

@@ -193,7 +193,32 @@
     "title": "My account",
     "changePassword": "Change password",
     "passwordChanged": "Password changed.",
-    "nameSaved": "Name saved."
+    "nameSaved": "Name saved.",
+    "profileSaved": "Profile saved.",
+    "sectionProfile": "Name and language",
+    "language": "Portal language",
+    "languageDefault": "Your company's default ({{lang}})",
+    "languageHint": "Applies to this account only. Without a choice the portal follows the language Lam Groep set for your company.",
+    "sectionEmail": "Sign-in",
+    "currentEmail": "E-mail address (login)",
+    "changeEmail": "Change e-mail address",
+    "newEmail": "New e-mail address",
+    "emailHint": "You will receive an e-mail with a confirmation link at the new address. The address changes only after confirmation; until then you sign in with your current address.",
+    "sendConfirmation": "Send confirmation mail",
+    "emailMailSent": "Confirmation mail sent to {{email}}. Click the link in that mail to complete the change.",
+    "pendingEmail": "Awaiting confirmation: {{email}}",
+    "cancelEmailChange": "Cancel",
+    "emailChangeCancelled": "Change cancelled.",
+    "sectionCompany": "Your company's e-mail addresses",
+    "companyHint": "This is where Lam Groep sends mail about your company. Leave a field empty if it does not apply.",
+    "companySaved": "E-mail addresses saved. Lam Groep has been notified.",
+    "company": {
+      "email": "Primary e-mail address",
+      "emailForMOT": "E-mail address for MOT",
+      "emailForInvoices": "E-mail address for invoices",
+      "emailGeneral": "General e-mail address",
+      "placeholder": "name@company.com"
+    }
   },
   "errors": {
     "PORTAL_NOT_AUTHENTICATED": "You are not logged in.",
@@ -213,7 +238,8 @@
     "PORTAL_DRIVER_BUSY": "This driver already has another car. One car per driver.",
     "PORTAL_VEHICLE_BLOCKED": "This vehicle is not available for your company. Please contact Lam Groep.",
     "PORTAL_VEHICLE_UNAVAILABLE": "This vehicle is not available at the moment.",
-    "PORTAL_DUPLICATE_REQUEST": "There is already an open request for this vehicle in this period."
+    "PORTAL_DUPLICATE_REQUEST": "There is already an open request for this vehicle in this period.",
+    "PORTAL_EMAIL_IN_USE": "This e-mail address is already used by another account."
   },
   "admin": {
     "navLabel": "Customer portal",
@@ -857,5 +883,14 @@
     "hintEndRequired": "Now click the last day.",
     "done": "Done",
     "noTime": "No preference"
+  },
+  "confirmEmail": {
+    "doneTitle": "E-mail address confirmed",
+    "doneText": "From now on you sign in with {{email}}.",
+    "toPortal": "To the portal",
+    "toLogin": "To sign-in",
+    "failedTitle": "Confirmation failed",
+    "failedHint": "Request the change again via My account.",
+    "toAccount": "To My account"
   }
 }

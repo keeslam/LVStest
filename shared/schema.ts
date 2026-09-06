@@ -450,6 +450,12 @@ export const portalUsers = pgTable("portal_users", {
   permissions: jsonb("permissions").$type<Record<string, boolean>>().notNull().default({}),
   inviteTokenHash: text("invite_token_hash"),
   inviteExpiresAt: timestamp("invite_expires_at"),
+  /** Own language choice; null = follow the customer's preferred language. */
+  language: text("language"),
+  /** A new address waits here until the confirmation link in the mail to it is used. */
+  pendingEmail: text("pending_email"),
+  emailChangeTokenHash: text("email_change_token_hash"),
+  emailChangeExpiresAt: timestamp("email_change_expires_at"),
   lastLoginAt: timestamp("last_login_at"),
   // Touched at most once a minute while the user is active; "online" in the
   // staff overview means seen within the last 10 minutes.

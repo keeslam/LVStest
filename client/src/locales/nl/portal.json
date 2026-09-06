@@ -193,7 +193,32 @@
     "title": "Mijn account",
     "changePassword": "Wachtwoord wijzigen",
     "passwordChanged": "Wachtwoord gewijzigd.",
-    "nameSaved": "Naam opgeslagen."
+    "nameSaved": "Naam opgeslagen.",
+    "profileSaved": "Profiel opgeslagen.",
+    "sectionProfile": "Naam en taal",
+    "language": "Taal van het portaal",
+    "languageDefault": "Standaard van uw bedrijf ({{lang}})",
+    "languageHint": "Geldt alleen voor dit account. Zonder keuze volgt het portaal de taal die Lam Groep voor uw bedrijf heeft ingesteld.",
+    "sectionEmail": "Inloggen",
+    "currentEmail": "E-mailadres (inlognaam)",
+    "changeEmail": "E-mailadres wijzigen",
+    "newEmail": "Nieuw e-mailadres",
+    "emailHint": "U ontvangt op het nieuwe adres een e-mail met een bevestigingslink. Pas na bevestiging wordt het adres gewijzigd; tot die tijd logt u in met uw huidige adres.",
+    "sendConfirmation": "Bevestigingsmail sturen",
+    "emailMailSent": "Bevestigingsmail verstuurd naar {{email}}. Klik op de link in die mail om de wijziging af te ronden.",
+    "pendingEmail": "Wacht op bevestiging: {{email}}",
+    "cancelEmailChange": "Intrekken",
+    "emailChangeCancelled": "Wijziging ingetrokken.",
+    "sectionCompany": "E-mailadressen van uw bedrijf",
+    "companyHint": "Hier stuurt Lam Groep post over uw bedrijf naartoe. Laat een veld leeg als het niet van toepassing is.",
+    "companySaved": "E-mailadressen opgeslagen. Lam Groep is op de hoogte gebracht.",
+    "company": {
+      "email": "Primair e-mailadres",
+      "emailForMOT": "E-mailadres voor APK",
+      "emailForInvoices": "E-mailadres voor facturen",
+      "emailGeneral": "Algemeen e-mailadres",
+      "placeholder": "naam@bedrijf.nl"
+    }
   },
   "errors": {
     "PORTAL_NOT_AUTHENTICATED": "U bent niet ingelogd.",
@@ -213,7 +238,8 @@
     "PORTAL_DRIVER_BUSY": "Deze bestuurder rijdt al in een andere auto. Eén auto per bestuurder.",
     "PORTAL_VEHICLE_BLOCKED": "Dit voertuig is voor uw bedrijf niet beschikbaar. Neem contact op met Lam Groep.",
     "PORTAL_VEHICLE_UNAVAILABLE": "Dit voertuig is op dit moment niet beschikbaar.",
-    "PORTAL_DUPLICATE_REQUEST": "Er staat al een aanvraag open voor dit voertuig in deze periode."
+    "PORTAL_DUPLICATE_REQUEST": "Er staat al een aanvraag open voor dit voertuig in deze periode.",
+    "PORTAL_EMAIL_IN_USE": "Dit e-mailadres is al in gebruik bij een ander account."
   },
   "admin": {
     "navLabel": "Klantenportaal",
@@ -857,5 +883,14 @@
     "hintEndRequired": "Klik nu op de laatste dag.",
     "done": "Klaar",
     "noTime": "Geen voorkeur"
+  },
+  "confirmEmail": {
+    "doneTitle": "E-mailadres bevestigd",
+    "doneText": "U logt voortaan in met {{email}}.",
+    "toPortal": "Naar het portaal",
+    "toLogin": "Naar inloggen",
+    "failedTitle": "Bevestigen niet gelukt",
+    "failedHint": "Vraag de wijziging opnieuw aan via Mijn account.",
+    "toAccount": "Naar Mijn account"
   }
 }

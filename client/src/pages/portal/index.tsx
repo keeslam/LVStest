@@ -3,6 +3,7 @@ import { PortalAuthProvider } from "@/hooks/use-portal-auth";
 import { PortalLayout } from "@/layouts/PortalLayout";
 import PortalLoginPage from "./login";
 import PortalActivatePage from "./activate";
+import PortalConfirmEmailPage from "./confirm-email";
 import PortalOverviewPage from "./overview";
 import PortalReservationsPage from "./reservations";
 import PortalDocumentsPage from "./documents";
@@ -20,6 +21,7 @@ export default function PortalApp() {
         <Switch>
           <Route path="/login" component={PortalLoginPage} />
           <Route path="/activeren" component={PortalActivatePage} />
+          <Route path="/email-bevestigen" component={PortalConfirmEmailPage} />
           <Route path="/reserveringen/:id" component={PortalReservationsPage} />
           <Route path="/reserveringen" component={PortalReservationsPage} />
           <Route path="/documenten" component={PortalDocumentsPage} />

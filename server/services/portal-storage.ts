@@ -22,7 +22,8 @@ const RENTABLE_STATUS = sql`${vehicles.availabilityStatus} not in ('not_for_rent
 export type PortalDocument = Document & { kind: "contract" | "damage_check" };
 
 type PortalUserUpdate = Partial<Pick<PortalUser,
-  "fullName" | "role" | "driverId" | "active" | "permissions" | "passwordHash" | "inviteTokenHash" | "inviteExpiresAt" | "lastLoginAt" | "lastSeenAt" | "updatedBy">>;
+  "fullName" | "role" | "driverId" | "active" | "permissions" | "passwordHash" | "inviteTokenHash" | "inviteExpiresAt" | "lastLoginAt" | "lastSeenAt" | "updatedBy"
+  | "email" | "language" | "pendingEmail" | "emailChangeTokenHash" | "emailChangeExpiresAt">>;
 
 /** One row per customer that has a portal (settings row or at least one account). */
 export interface PortalCustomerOverviewRow {
@@ -98,6 +99,10 @@ export const portalStorage = {
   },
   async getPortalUserByEmail(email: string): Promise<PortalUser | undefined> {
     const [row] = await db.select().from(portalUsers).where(sql`lower(${portalUsers.email}) = ${email.trim().toLowerCase()}`);
+    return row;
+  },
+  async getPortalUserByEmailChangeTokenHash(hash: string): Promise<PortalUser | undefined> {
+    const [row] = await db.select().from(portalUsers).where(eq(portalUsers.emailChangeTokenHash, hash));
     return row;
   },
   async getPortalUserByInviteTokenHash(hash: string): Promise<PortalUser | undefined> {

@@ -17,6 +17,7 @@ export const PORTAL_ERROR = {
   VEHICLE_BLOCKED: 'PORTAL_VEHICLE_BLOCKED',
   VEHICLE_UNAVAILABLE: 'PORTAL_VEHICLE_UNAVAILABLE',
   DUPLICATE_REQUEST: 'PORTAL_DUPLICATE_REQUEST',
+  EMAIL_IN_USE: 'PORTAL_EMAIL_IN_USE',
   REQUEST_INVALID_PERIOD: 'PORTAL_REQUEST_INVALID_PERIOD',
   ATTACHMENT_LIMIT: 'PORTAL_ATTACHMENT_LIMIT',
   CSRF: 'PORTAL_CSRF',
@@ -50,8 +51,22 @@ export interface PortalMe {
   driverId: number | null;
   customerId: number;
   customerName: string;
+  /** Language the portal shows: the account's own choice, else the customer's preferred language. */
   language: 'nl' | 'en';
+  /** The account's own choice; null = follow the customer. */
+  languageOverride: 'nl' | 'en' | null;
+  /** New e-mail address waiting for confirmation, if any. */
+  pendingEmail: string | null;
+  /** The company's contact addresses; only sent to admin accounts, who may edit them. */
+  company?: PortalCompanyEmails;
   settings: PortalSettingsFlags;
+}
+
+export interface PortalCompanyEmails {
+  email: string | null;
+  emailForMOT: string | null;
+  emailForInvoices: string | null;
+  emailGeneral: string | null;
 }
 
 export interface PortalReservationDto {

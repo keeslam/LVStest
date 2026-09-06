@@ -11,10 +11,11 @@ import { useSecureCookies } from "./utils/secure-cookies.js";
 import { createCsrfMiddleware } from "./middleware/security/csrf.js";
 import { checkAccountLockout, recordLoginAttempt, clearFailedAttempts, loginLimiter } from "./middleware/security/rateLimiter.js";
 import { portalStorage, type PortalScope } from "./services/portal-storage";
-import { sendPortalInvite } from "./services/portal-mail";
+import { sendPortalInvite, sendEmailChangeMail } from "./services/portal-mail";
+import { notifyStaffOfPortalEvent } from "./services/portal-notifications";
 import { hashInviteToken } from "./services/portal-tokens";
 import { PortalUserRole, type PortalUser, type PortalCustomerSettings } from "../shared/schema";
-import { PORTAL_ERROR, type PortalErrorCode, type PortalMe, type PortalSettingsFlags } from "../shared/portal-types";
+import { PORTAL_ERROR, type PortalErrorCode, type PortalMe, type PortalSettingsFlags, type PortalCompanyEmails } from "../shared/portal-types";
 
 export interface PortalRequestContext {
   user: PortalUser;
@@ -54,12 +55,19 @@ export function settingsFlags(s: PortalCustomerSettings, user?: Pick<PortalUser,
 
 async function buildMe(ctx: PortalRequestContext): Promise<PortalMe> {
   const customer = await storage.getCustomer(ctx.customerId);
+  const languageOverride = ctx.user.language === "en" || ctx.user.language === "nl" ? ctx.user.language : null;
+  const company: PortalCompanyEmails | undefined = ctx.user.role === "admin" && customer
+    ? { email: customer.email ?? null, emailForMOT: customer.emailForMOT ?? null, emailForInvoices: customer.emailForInvoices ?? null, emailGeneral: customer.emailGeneral ?? null }
+    : undefined;
   return {
     id: ctx.user.id, email: ctx.user.email, fullName: ctx.user.fullName,
     role: ctx.user.role as "admin" | "driver", driverId: ctx.user.driverId,
     customerId: ctx.customerId,
     customerName: customer?.companyName || customer?.name || "",
-    language: customer?.preferredLanguage === "en" ? "en" : "nl",
+    language: languageOverride ?? (customer?.preferredLanguage === "en" ? "en" : "nl"),
+    languageOverride,
+    pendingEmail: ctx.user.pendingEmail && ctx.user.emailChangeExpiresAt && ctx.user.emailChangeExpiresAt.getTime() > Date.now() ? ctx.user.pendingEmail : null,
+    company,
     settings: settingsFlags(ctx.settings, ctx.user),
   };
 }
@@ -139,7 +147,7 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
   const csrf = createCsrfMiddleware({
     cookieName: "PORTAL-XSRF-TOKEN",
     sameSite: "lax",
-    exemptPaths: ["/api/portal/login", "/api/portal/forgot", "/api/portal/activate"],
+    exemptPaths: ["/api/portal/login", "/api/portal/forgot", "/api/portal/activate", "/api/portal/email/confirm"],
   });
 
   portalPassport.use("portal-local", new LocalStrategy({ usernameField: "email", passwordField: "password" }, async (email, password, done) => {
@@ -246,11 +254,75 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
   });
 
   app.patch("/api/portal/me", requirePortalUser, async (req, res) => {
-    const parsed = z.object({ fullName: z.string().trim().min(1).max(200) }).safeParse(req.body);
-    if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Name is required");
-    await portalStorage.updatePortalUser(req.portalUser!.user.id, { fullName: parsed.data.fullName, updatedBy: req.portalUser!.user.email });
+    const parsed = z.object({ fullName: z.string().trim().min(1).max(200).optional(), language: z.enum(["nl", "en"]).nullable().optional() }).safeParse(req.body);
+    if (!parsed.success || (parsed.data.fullName === undefined && parsed.data.language === undefined)) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Nothing to save");
+    const patch: Record<string, unknown> = { updatedBy: req.portalUser!.user.email };
+    if (parsed.data.fullName !== undefined) patch.fullName = parsed.data.fullName;
+    if (parsed.data.language !== undefined) patch.language = parsed.data.language;
+    await portalStorage.updatePortalUser(req.portalUser!.user.id, patch);
     const { ctx } = await loadContext(req.portalUser!.user.id);
     res.json(await buildMe(ctx!));
+  });
+
+  // Change the login address: the new address gets a confirmation link; nothing changes until it is used.
+  app.post("/api/portal/me/email", requirePortalUser, async (req, res) => {
+    const parsed = z.object({ newEmail: z.string().trim().email().max(200), currentPassword: z.string().min(1) }).safeParse(req.body);
+    if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, parsed.error.errors[0]?.message ?? "Invalid input");
+    const user = req.portalUser!.user;
+    if (!user.passwordHash || !(await comparePasswords(parsed.data.currentPassword, user.passwordHash))) {
+      return portalError(res, 400, PORTAL_ERROR.INVALID_CREDENTIALS, "Current password is incorrect");
+    }
+    const newEmail = parsed.data.newEmail.toLowerCase();
+    if (newEmail === user.email.toLowerCase()) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Dit is al uw e-mailadres");
+    const taken = await portalStorage.getPortalUserByEmail(newEmail);
+    if (taken && taken.id !== user.id) return portalError(res, 409, PORTAL_ERROR.EMAIL_IN_USE, "Dit e-mailadres is al in gebruik");
+    try { await sendEmailChangeMail(user, newEmail); } catch (error) { console.error("email change mail failed:", error); return portalError(res, 500, PORTAL_ERROR.SERVER, "Mail could not be sent"); }
+    await logPortalActivity(req, "email_change_requested", { details: { newEmail } });
+    res.json({ ok: true, pendingEmail: newEmail });
+  });
+
+  app.post("/api/portal/me/email/cancel", requirePortalUser, async (req, res) => {
+    await portalStorage.updatePortalUser(req.portalUser!.user.id, { pendingEmail: null, emailChangeTokenHash: null, emailChangeExpiresAt: null, updatedBy: req.portalUser!.user.email });
+    res.json({ ok: true });
+  });
+
+  // Public: the link from the mail. Works without being logged in.
+  // No login limiter here: the token is 256 random bits, and the limiter would count against real logins.
+  app.post("/api/portal/email/confirm", async (req, res) => {
+    const parsed = z.object({ token: z.string().regex(/^[0-9a-f]{64}$/) }).safeParse(req.body);
+    if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Invalid token");
+    const user = await portalStorage.getPortalUserByEmailChangeTokenHash(hashInviteToken(parsed.data.token));
+    if (!user || !user.pendingEmail) return portalError(res, 400, PORTAL_ERROR.TOKEN_INVALID, "This link is not valid");
+    if (!user.emailChangeExpiresAt || user.emailChangeExpiresAt.getTime() < Date.now()) return portalError(res, 400, PORTAL_ERROR.TOKEN_EXPIRED, "This link has expired");
+    const taken = await portalStorage.getPortalUserByEmail(user.pendingEmail);
+    if (taken && taken.id !== user.id) return portalError(res, 409, PORTAL_ERROR.EMAIL_IN_USE, "Dit e-mailadres is inmiddels in gebruik");
+    const oldEmail = user.email;
+    await portalStorage.updatePortalUser(user.id, { email: user.pendingEmail, pendingEmail: null, emailChangeTokenHash: null, emailChangeExpiresAt: null, updatedBy: user.pendingEmail });
+    await portalStorage.logActivity({ customerId: user.customerId, portalUserId: user.id, action: "email_changed", details: { from: oldEmail, to: user.pendingEmail } });
+    res.json({ ok: true, email: user.pendingEmail });
+  });
+
+  // Company contact addresses (APK, invoices, general): admin accounts may keep them up to date.
+  app.patch("/api/portal/me/company", requirePortalUser, async (req, res) => {
+    const ctx = req.portalUser!;
+    if (ctx.user.role !== "admin") return portalError(res, 403, PORTAL_ERROR.ROLE_FORBIDDEN, "Only admin accounts can change company details");
+    const optionalEmail = z.union([z.string().trim().email().max(200), z.literal("")]).optional();
+    const parsed = z.object({ email: optionalEmail, emailForMOT: optionalEmail, emailForInvoices: optionalEmail, emailGeneral: optionalEmail }).safeParse(req.body);
+    if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, parsed.error.errors[0]?.message ?? "Invalid e-mail address");
+    const data: Record<string, string | null> = {};
+    for (const [k, v] of Object.entries(parsed.data)) if (v !== undefined) data[k] = v === "" ? null : v;
+    if (Object.keys(data).length === 0) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Nothing to save");
+    const customer = await storage.updateCustomer(ctx.customerId, data as any);
+    if (!customer) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Customer not found");
+    await logPortalActivity(req, "company_emails_updated", { entity: "customer", entityId: ctx.customerId, details: data });
+    await notifyStaffOfPortalEvent({
+      kind: "portal_customer_update",
+      title: `E-mailadressen gewijzigd: ${customer.companyName || customer.name}`,
+      description: `${ctx.user.fullName} heeft via het portaal bijgewerkt: ${Object.keys(data).join(", ")}.`,
+      link: `/customers/${ctx.customerId}`, customerId: ctx.customerId,
+    });
+    const { ctx: fresh } = await loadContext(ctx.user.id);
+    res.json(await buildMe(fresh!));
   });
 
   app.post("/api/portal/me/password", requirePortalUser, async (req, res) => {

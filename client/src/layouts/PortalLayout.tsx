@@ -164,7 +164,7 @@ export function PortalLayout({ children }: { children: ReactNode }) {
   usePortalHeightReporter(location);
   const embedded = isEmbedded();
 
-  const isPublicPage = location.startsWith("/login") || location.startsWith("/activeren");
+  const isPublicPage = location.startsWith("/login") || location.startsWith("/activeren") || location.startsWith("/email-bevestigen");
 
   useEffect(() => {
     if (!isLoading && !me && !isPublicPage) navigate("/login", { replace: true });

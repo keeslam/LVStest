@@ -174,3 +174,9 @@ portaal: Klantenportaal > Blacklist (tegel op het dashboard, knop in de
 werkbalk, kolom "Geblokkeerd" bij Voertuigen online): zoeken, blokkade
 toevoegen (voertuig + klant + reden) en opheffen. Routes:
 `GET/POST /api/portal-admin/blacklist`, `DELETE /api/portal-admin/blacklist/:id`.
+
+## Mijn account in het portaal
+
+- **Taal**: het portaal volgt de voorkeurstaal van de klant (customers.preferred_language). Een account kan bij Mijn account een eigen taal kiezen (`portal_users.language`, leeg = klantinstelling).
+- **E-mailadres wijzigen**: klant vult nieuw adres + huidig wachtwoord in; het nieuwe adres krijgt een mail (sjabloon `portal_email_change`) met een link naar `/portaal/email-bevestigen?token=…` (72 uur geldig, alleen de hash staat in `portal_users.email_change_token_hash`). Pas na bevestiging (`POST /api/portal/email/confirm`) verandert de inlognaam; tot die tijd staat het adres als `pending_email` en kan het worden ingetrokken. Een adres dat al bij een ander account hoort wordt geweigerd.
+- **E-mailadressen van het bedrijf**: beheerdersaccounts kunnen het primaire, APK-, factuur- en algemene e-mailadres van de klant bijwerken (`PATCH /api/portal/me/company`); staff krijgt daarvan een melding en het staat in de activiteit.
