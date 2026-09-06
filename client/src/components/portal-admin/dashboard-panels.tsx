@@ -188,7 +188,7 @@ export function NotificationsPanel({ notifications, unread }: { notifications: P
   const { t } = useTranslation("portal");
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
-  const { openPortalRequestDialog, openFineDialog } = useGlobalDialog();
+  const { openPortalRequestDialog, openFineDialog, openReservationDialog, openCustomerDialog, openVehicleDialog, openPortalListDialog } = useGlobalDialog();
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: DASHBOARD_KEY });
     queryClient.invalidateQueries({ queryKey: ["/api/portal-admin/unread-count"] });
@@ -196,12 +196,21 @@ export function NotificationsPanel({ notifications, unread }: { notifications: P
   const markAll = useMutation({ mutationFn: () => apiRequest("POST", "/api/portal-admin/notifications/mark-read"), onSuccess: refresh });
   const markOne = useMutation({ mutationFn: (id: number) => apiRequest("POST", `/api/portal-admin/notifications/${id}/read`), onSuccess: refresh });
 
+  // Every notification opens a dialog; only links we do not recognise fall back to a page.
   const follow = (n: PortalDashboard["notifications"][number]) => {
     if (!n.isRead) markOne.mutate(n.id);
-    const params = new URLSearchParams(n.link.split("?")[1] ?? "");
-    const request = params.get("request"); const fine = params.get("fine");
+    const [path, query] = n.link.split("?");
+    const params = new URLSearchParams(query ?? "");
+    const request = params.get("request"); const fine = params.get("fine"); const tab = params.get("tab");
     if (request) return openPortalRequestDialog(Number(request));
     if (fine) return openFineDialog(Number(fine));
+    const reservation = path.match(/^\/reservations\/(?:edit\/)?(\d+)/);
+    if (reservation) return openReservationDialog(Number(reservation[1]));
+    const customer = path.match(/^\/customers\/(\d+)/);
+    if (customer) return openCustomerDialog(Number(customer[1]), "portal");
+    const vehicle = path.match(/^\/vehicles\/(\d+)/);
+    if (vehicle) return openVehicleDialog(Number(vehicle[1]));
+    if (tab) return openPortalListDialog(tab as Parameters<typeof openPortalListDialog>[0], { plate: params.get("plate") ?? undefined, importFileId: params.get("importFileId") ? Number(params.get("importFileId")) : undefined });
     if (n.link && !n.link.startsWith("/portal-admin")) navigate(n.link);
   };
 
