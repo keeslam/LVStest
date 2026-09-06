@@ -620,7 +620,8 @@
         "vehicle": "Vehicle",
         "startDate": "From",
         "endDate": "Until",
-        "openEnd": "Open end"
+        "openEnd": "Open end",
+        "replyOnly": "Send reply (stays open)"
       }
     },
     "alert": {
@@ -674,7 +675,8 @@
       "requestedDriver": "Customer asked for: {{name}}",
       "reply": "Message to customer (optional)",
       "replyPlaceholder": "Empty = standard confirmation with reservation number, car and period.",
-      "period": "Period"
+      "period": "Period",
+      "closeHint": "A rental request is only closed via \"Approve: create reservation\" (puts it in the calendar) or \"Reject\". You can always send a reply; the request then stays open."
     }
   },
   "fines": {

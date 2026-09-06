@@ -89,6 +89,11 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     if (row.status !== parsed.data.status && !isValidRequestTransition(row.status, parsed.data.status)) {
       return res.status(400).json({ message: `Cannot go from ${row.status} to ${parsed.data.status}`, allowed: REQUEST_TRANSITIONS[row.status as PortalRequestStatusValue] });
     }
+    // Closing a rental request as "done" without a reservation would tell the customer it is
+    // arranged while nothing is in the calendar: only approve (creates it) or reject can close it.
+    if (row.type === "booking" && parsed.data.status === "done" && !row.reservationId) {
+      return res.status(400).json({ message: "Een huuraanvraag kan alleen worden afgehandeld via Goedkeuren (maakt de reservering) of Afwijzen", code: "BOOKING_NEEDS_RESERVATION" });
+    }
     res.json(await finish(req, id, reply, parsed.data.status, row.customerId));
   });
 

@@ -620,7 +620,8 @@
         "vehicle": "Voertuig",
         "startDate": "Vanaf",
         "endDate": "Tot en met",
-        "openEnd": "Open einde"
+        "openEnd": "Open einde",
+        "replyOnly": "Antwoord sturen (blijft open)"
       }
     },
     "alert": {
@@ -674,7 +675,8 @@
       "requestedDriver": "Klant vroeg: {{name}}",
       "reply": "Bericht aan klant (optioneel)",
       "replyPlaceholder": "Leeg = standaardbevestiging met reserveringsnummer, auto en periode.",
-      "period": "Periode"
+      "period": "Periode",
+      "closeHint": "Een huuraanvraag wordt pas afgehandeld via \"Goedkeuren: reservering aanmaken\" (zet hem in de kalender) of \"Afwijzen\". Een antwoord sturen kan altijd; de aanvraag blijft dan open."
     }
   },
   "fines": {

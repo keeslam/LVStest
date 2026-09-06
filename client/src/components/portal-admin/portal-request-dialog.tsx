@@ -93,6 +93,9 @@ export function PortalRequestDialog() {
               </div>
             )}
             {r.staffReply && <div><Label>{t("admin.requests.dialog.previousReply")}</Label><p className="whitespace-pre-wrap rounded-md border p-2">{r.staffReply}</p></div>}
+            {canManage && isOpen && r.type === "booking" && !approving && (
+              <p className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">{t("admin.booking.closeHint")}</p>
+            )}
             {canManage && isOpen && r.type === "booking" && approving && (
               <BookingApproval request={r} onApproved={(reservationId) => { done(); setApproving(false); openReservationDialog(reservationId); }} />
             )}
@@ -108,7 +111,9 @@ export function PortalRequestDialog() {
                   {r.type === "booking" && !approving && (
                     <Button size="sm" onClick={() => setApproving(true)} data-testid="button-approve-request">{t("admin.booking.open")}</Button>
                   )}
-                  <Button size="sm" onClick={() => needReply() && act.mutate({ url: `/api/portal-requests/${id}/reply`, body: { reply, status: "done" } })} data-testid="button-answer-request">{t("admin.requests.dialog.answer")}</Button>
+                  {r.type === "booking"
+                    ? <Button size="sm" variant="outline" onClick={() => needReply() && act.mutate({ url: `/api/portal-requests/${id}/reply`, body: { reply, status: "in_progress" } })} data-testid="button-answer-request">{t("admin.requests.dialog.replyOnly")}</Button>
+                    : <Button size="sm" onClick={() => needReply() && act.mutate({ url: `/api/portal-requests/${id}/reply`, body: { reply, status: "done" } })} data-testid="button-answer-request">{t("admin.requests.dialog.answer")}</Button>}
                   <Button size="sm" variant="destructive" onClick={() => needReply() && act.mutate({ url: `/api/portal-requests/${id}/reply`, body: { reply, status: "rejected" } })}>{t("admin.requests.dialog.reject")}</Button>
                 </div>
               </div>

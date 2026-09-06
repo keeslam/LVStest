@@ -60,6 +60,11 @@ describe("staff portal requests", () => {
     expect(iSame).toBeLessThan(iOther);
     expect(order.slice(1, iSame + 1).every((v) => v.sameType && v.free)).toBe(true);
 
+    // "Done" without a reservation is refused: the customer would be told it is arranged.
+    const closeEarly = await request(manager).post(`/api/portal-requests/${reqId}/reply`).send({ reply: "Geregeld", status: "done" });
+    expect(closeEarly.status).toBe(400);
+    expect(closeEarly.body.code).toBe("BOOKING_NEEDS_RESERVATION");
+    expect((await request(manager).post(`/api/portal-requests/${reqId}/reply`).send({ reply: "We kijken ernaar", status: "in_progress" })).status).toBe(200);
     // Approving as requested conflicts; a busy driver is refused; the same-type alternative works.
     const conflict = await request(manager).post(`/api/portal-requests/${reqId}/approve`).send({});
     expect(conflict.status).toBe(409);
@@ -82,7 +87,7 @@ describe("staff portal requests", () => {
   });
 
   it("lists, counts new and takes a request", async () => {
-    const list = await request(manager).get("/api/portal-requests?status=new");
+    const list = await request(manager).get(`/api/portal-requests?status=new&customerId=${customerId}`);
     expect(list.body.map((r: any) => r.id).sort()).toEqual([extId, otherId].sort());
     expect(list.body[0].customerName).toContain("RQ");
     expect((await request(manager).get("/api/portal-requests/count-new")).body.count).toBeGreaterThanOrEqual(2);
