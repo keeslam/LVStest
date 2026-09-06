@@ -4,7 +4,7 @@ import fs from "fs";
 import multer from "multer";
 import { z } from "zod";
 import { portalStorage, type PortalReservation } from "../services/portal-storage";
-import { overlaps } from "../services/booking-period";
+import { overlaps, isWeekend } from "../services/booking-period";
 import { customerNotifications } from "../services/portal-customer-notifications";
 import { getServiceDueVehicles } from "../utils/service-due-scanner";
 import { settingsFlags, requireFeature, requirePortalRole, portalError, logPortalActivity } from "../portal-auth";
@@ -386,9 +386,11 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
       if (openSame) { discard(); return portalError(res, 409, PORTAL_ERROR.DUPLICATE_REQUEST, `Er staat al een aanvraag (#${openSame.id}) open hiervoor`); }
     }
     if (type === "maintenance" && p.preferredDate && p.preferredDate < today) { discard(); return portalError(res, 400, PORTAL_ERROR.REQUEST_INVALID_PERIOD, "Preferred date must be today or later"); }
+    if (type === "maintenance" && p.preferredDate && isWeekend(p.preferredDate)) { discard(); return portalError(res, 400, PORTAL_ERROR.MAINTENANCE_WEEKEND, "Weekend"); }
     if (type === "maintenance_change" && block) {
       if (!canCustomerChangeMaintenance(block)) { discard(); return portalError(res, 400, PORTAL_ERROR.MAINTENANCE_TOO_LATE, "Maintenance starts within 48 hours"); }
       if (p.newDate <= today) { discard(); return portalError(res, 400, PORTAL_ERROR.REQUEST_INVALID_PERIOD, "New date must be tomorrow or later"); }
+      if (isWeekend(p.newDate)) { discard(); return portalError(res, 400, PORTAL_ERROR.MAINTENANCE_WEEKEND, "Weekend"); }
     }
 
     for (const f of files) {

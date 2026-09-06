@@ -155,7 +155,8 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={payload.needsReplacement === "true"} onChange={(e) => setPayload({ ...payload, needsReplacement: e.target.checked ? "true" : "" })} data-testid="checkbox-needs-replacement" />{t("requests.form.needsReplacement")}</label>
           <div>
             <Label htmlFor="rq-pref">{t("requests.form.preferredDate")}</Label>
-            <PeriodPicker id="rq-pref" start={payload.preferredDate ?? ""} end="" single minDate={tomorrowIso()} onChange={(s) => setPayload({ ...payload, preferredDate: s })} testId="request-preferred-date" />
+            <PeriodPicker id="rq-pref" start={payload.preferredDate ?? ""} end="" single disableWeekends minDate={tomorrowIso()} onChange={(s) => setPayload({ ...payload, preferredDate: s })} testId="request-preferred-date" />
+            <p className="mt-1 text-xs text-[#64748b]">{t("requests.form.weekdaysOnly")}</p>
           </div>
           <p className="text-xs text-[#64748b]">{t("requests.form.maintenanceHint")}</p>
         </div>
@@ -164,7 +165,8 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
         <div className="space-y-2">
           <div>
             <Label htmlFor="rq-newdate">{t("requests.form.newDate")}</Label>
-            <PeriodPicker id="rq-newdate" start={payload.newDate ?? ""} end="" single minDate={tomorrowIso()} onChange={(s) => setPayload({ ...payload, newDate: s })} testId="request-new-date" />
+            <PeriodPicker id="rq-newdate" start={payload.newDate ?? ""} end="" single disableWeekends minDate={tomorrowIso()} onChange={(s) => setPayload({ ...payload, newDate: s })} testId="request-new-date" />
+            <p className="mt-1 text-xs text-[#64748b]">{t("requests.form.weekdaysOnly")}</p>
           </div>
           <div><Label htmlFor="rq-reason">{t("requests.form.reason")}</Label><Input id="rq-reason" value={payload.reason ?? ""} onChange={setP("reason")} required data-testid="input-change-reason" /></div>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={payload.needsReplacement === "true"} onChange={(e) => setPayload({ ...payload, needsReplacement: e.target.checked ? "true" : "" })} />{t("requests.form.stillNeedsReplacement")}</label>

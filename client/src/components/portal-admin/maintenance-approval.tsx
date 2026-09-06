@@ -62,7 +62,11 @@ export function MaintenanceApproval({ request: r, onApproved }: { request: Porta
     <div className="space-y-3 rounded-lg border bg-muted/30 p-3" data-testid="maintenance-approval">
       <div className="flex items-center gap-2 font-medium">{isChange ? <CalendarClock className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}{t(isChange ? "admin.maintenance.moveTitle" : "admin.maintenance.title")}</div>
       <div className="grid gap-2 md:grid-cols-3">
-        <div><Label htmlFor="ma-date">{t("admin.maintenance.date")}</Label><PeriodPicker id="ma-date" start={startDate} end="" single onChange={(s) => setStartDate(s)} testId="maintenance-date" /></div>
+        <div>
+          <Label htmlFor="ma-date">{t("admin.maintenance.date")}</Label>
+          <PeriodPicker id="ma-date" start={startDate} end="" single disableWeekends onChange={(s) => setStartDate(s)} testId="maintenance-date" />
+          <p className="mt-1 text-xs text-muted-foreground">{t("admin.maintenance.weekdaysOnly")}</p>
+        </div>
         {isChange ? (
           <div><Label htmlFor="ma-days">{t("admin.maintenance.duration")}</Label><Input id="ma-days" type="number" min={1} max={60} placeholder={t("admin.maintenance.keepDuration")} value={durationStr} onChange={(e) => { const v = e.target.value; setDurationStr(v === "" ? "" : String(Math.min(60, Math.max(1, Number(v) || 1)))); }} data-testid="input-maintenance-days" /></div>
         ) : (

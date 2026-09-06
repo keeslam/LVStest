@@ -91,6 +91,15 @@ export function formatLicensePlate(licensePlate: string): string {
 }
 
 /**
+ * True when the ISO date (YYYY-MM-DD) falls on a Saturday or Sunday.
+ * Uses UTC noon so the result never drifts with the viewer's timezone.
+ */
+export function isWeekendIso(iso: string): boolean {
+  const day = new Date(iso + 'T12:00:00Z').getUTCDay();
+  return day === 0 || day === 6;
+}
+
+/**
  * Format a reservation status to a human-readable string
  */
 export function formatReservationStatus(status: string): string {

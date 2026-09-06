@@ -251,7 +251,8 @@
     "PORTAL_VEHICLE_UNAVAILABLE": "This vehicle is not available at the moment.",
     "PORTAL_DUPLICATE_REQUEST": "There is already an open request for this vehicle in this period.",
     "PORTAL_EMAIL_IN_USE": "This e-mail address is already used by another account.",
-    "PORTAL_MAINTENANCE_TOO_LATE": "This maintenance starts within 48 hours and can no longer be changed through the portal. Please call Lam Groep."
+    "PORTAL_MAINTENANCE_TOO_LATE": "This maintenance starts within 48 hours and can no longer be changed through the portal. Please call Lam Groep.",
+    "PORTAL_MAINTENANCE_WEEKEND": "Choose a weekday: the workshop is closed at weekends."
   },
   "admin": {
     "navLabel": "Customer portal",
@@ -785,7 +786,8 @@
       "requestedDate": "Requested date",
       "reason": "Reason",
       "placeholderNote": "A replacement placeholder is created; assign a car later in the maintenance calendar.",
-      "fromPortal": "From customer portal, request #{{id}}"
+      "fromPortal": "From customer portal, request #{{id}}",
+      "weekdaysOnly": "Weekdays only (Mon–Fri)."
     },
     "pageSubtitle": "Requests, accounts, fines and what customers can rent, in one place. Click a tile to open that list.",
     "preview": {
@@ -898,7 +900,8 @@
       "newDate": "New preferred date",
       "reason": "Reason",
       "stillNeedsReplacement": "I still need a replacement vehicle",
-      "changeHint": "Lam Groep checks whether the new date fits and confirms it."
+      "changeHint": "Lam Groep checks whether the new date fits and confirms it.",
+      "weekdaysOnly": "Weekdays only (Mon–Fri)."
     },
     "date": "Submitted on",
     "subtitle": "Extend, return early, report damage or ask a question.",

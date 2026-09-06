@@ -8,6 +8,7 @@ import { Link } from "wouter";
 import { Vehicle, Reservation } from "@shared/schema";
 import type { ServiceDueInfo } from "@shared/service-due";
 import { displayLicensePlate } from "@/lib/utils";
+import { isWeekendIso } from "@/lib/format-utils";
 import { 
   Select, 
   SelectContent, 
@@ -331,28 +332,25 @@ export default function MaintenanceCalendar() {
     // Month view calculations
     const start = startOfMonth(currentDate);
     const end = endOfMonth(currentDate);
-    
+
     // Get the first Monday before or on the first day of the month
     const firstDay = new Date(start);
     const firstDayOfWeek = getDay(firstDay) || 7; // Convert Sunday (0) to 7
     firstDay.setDate(firstDay.getDate() - ((firstDayOfWeek - 1) || 0));
-    
+
     // Get the last Sunday after or on the last day of the month
     const lastDay = new Date(end);
     const lastDayOfWeek = getDay(lastDay) || 7; // Convert Sunday (0) to 7
     lastDay.setDate(lastDay.getDate() + (7 - lastDayOfWeek));
-    
-    // Generate all days in the calendar grid, but only weekdays
+
+    // Generate all days in the calendar grid (Monday through Sunday); weekends are
+    // trimmed later, once we know which of them have a maintenance block on them.
     const dayCount = differenceInDays(lastDay, firstDay) + 1;
     const allDays = Array.from({ length: dayCount }, (_, i) => addDays(firstDay, i));
-    const days = allDays.filter(day => {
-      const dayOfWeek = getDay(day);
-      return dayOfWeek >= 1 && dayOfWeek <= 5; // Monday to Friday only
-    });
-    
+
     const rangeText = format(currentDate, "MMMM yyyy");
-    
-    return { start, end, days, rangeText };
+
+    return { start, end, allDays, rangeText };
   }, [currentDate]);
   
   // Fetch vehicles
@@ -374,13 +372,15 @@ export default function MaintenanceCalendar() {
     queryKey: ['/api/vehicles/service-due'],
   });
 
-  // Fetch reservations for the full calendar view (including adjacent month dates)
+  // Fetch reservations for the full calendar view (including adjacent month dates).
+  // Uses the full Monday-Sunday grid, not just the weekday cells we may end up
+  // showing, so a weekend maintenance block is never missed by the range query.
   const { data: reservations, isLoading: isLoadingReservations } = useQuery<Reservation[]>({
     queryKey: [
-      "/api/reservations/range", 
+      "/api/reservations/range",
       {
-        startDate: format(dateRanges.days[0], "yyyy-MM-dd"),
-        endDate: format(dateRanges.days[dateRanges.days.length - 1], "yyyy-MM-dd")
+        startDate: format(dateRanges.allDays[0], "yyyy-MM-dd"),
+        endDate: format(dateRanges.allDays[dateRanges.allDays.length - 1], "yyyy-MM-dd")
       }
     ],
   });
@@ -388,9 +388,35 @@ export default function MaintenanceCalendar() {
   // Fetch scheduled maintenance blocks (reservations with type maintenance_block)
   const { data: maintenanceBlocks = [] } = useQuery<Reservation[]>({
     queryKey: ['/api/reservations'],
-    select: (reservations: Reservation[]) => 
+    select: (reservations: Reservation[]) =>
       reservations.filter(r => r.type === 'maintenance_block' && r.maintenanceStatus !== 'out') // Exclude completed maintenance
   });
+
+  // ISO days (start..end inclusive) covered by a still-relevant maintenance block, so a
+  // weekend a block starts on or spans stays visible even though the workshop is normally
+  // closed then.
+  const maintenanceCoveredDays = useMemo(() => {
+    const covered = new Set<string>();
+    for (const block of maintenanceBlocks) {
+      if (!block.startDate) continue;
+      let cursor = block.startDate;
+      const end = block.endDate ?? block.startDate;
+      // Guard against a malformed/open-ended range looping forever.
+      for (let i = 0; i < 366 && cursor <= end; i += 1) {
+        covered.add(cursor);
+        cursor = format(addDays(parseISO(cursor), 1), "yyyy-MM-dd");
+      }
+    }
+    return covered;
+  }, [maintenanceBlocks]);
+
+  // Weekday cells always show; a weekend cell shows only when a maintenance block covers it.
+  const days = useMemo(() => {
+    return dateRanges.allDays.filter((day) => {
+      const iso = format(day, "yyyy-MM-dd");
+      return !isWeekendIso(iso) || maintenanceCoveredDays.has(iso);
+    });
+  }, [dateRanges.allDays, maintenanceCoveredDays]);
 
   // Fetch completed maintenance blocks separately
   const { data: completedMaintenanceBlocks = [] } = useQuery<Reservation[]>({
@@ -1007,15 +1033,14 @@ export default function MaintenanceCalendar() {
   // Generate calendar grid for month view
   const calendarGrid = useMemo(() => {
     const rows: Date[][] = [];
-    const days = dateRanges.days;
-    
+
     // Group days into rows of 5 columns
     for (let i = 0; i < days.length; i += COLUMNS) {
       rows.push(days.slice(i, i + COLUMNS));
     }
-    
+
     return rows;
-  }, [dateRanges.days]);
+  }, [days]);
 
   return (
     <div className="space-y-6">

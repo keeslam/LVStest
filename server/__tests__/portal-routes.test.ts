@@ -412,4 +412,14 @@ describe("my vehicles", () => {
     const foreign = await storage.createMaintenanceBlock((await createTestVehicle()).id, "2099-04-01", "2099-04-02");
     expect((await change(foreign.id)).status).toBe(404);
   });
+
+  it("maintenance change: refuses a weekend newDate", async () => {
+    const far = new Date(Date.now() + 49 * 3600e3);
+    const block = await storage.createMaintenanceBlock(vehicleId, amsDate(far), undefined);
+    await db.update(reservations).set({ startTime: amsTime(far) }).where(eq(reservations.id, block.id));
+    // 2099-01-04 is a Sunday.
+    const res = await agent.post("/api/portal/requests").set("X-CSRF-Token", csrf).send({ type: "maintenance_change", message: "Weekend", reservationId: block.id, payload: JSON.stringify({ newDate: "2099-01-04", reason: "Vakantie" }) });
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe("PORTAL_MAINTENANCE_WEEKEND");
+  });
 });

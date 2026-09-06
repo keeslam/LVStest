@@ -18,6 +18,7 @@ import { resolveDocumentFilePath } from "../services/document-paths";
 import { sanitizeFilename } from "../utils/security/fileUploadSecurity";
 import { AuditLogger } from "../utils/security/auditLogger";
 import { onMaintenanceBlockChanged, findPortalCustomerForBlock } from "../services/portal-maintenance-events";
+import { isWeekend } from "../services/booking-period";
 import { db } from "../db";
 import { reservations } from "../../shared/schema";
 import { and, eq, isNull } from "drizzle-orm";
@@ -268,6 +269,7 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     }).safeParse(req.body ?? {});
     if (!parsed.success) return res.status(400).json({ message: parsed.error.errors[0]?.message ?? "startDate is required", field: "startDate" });
     const b = parsed.data;
+    if (isWeekend(b.startDate)) return res.status(400).json({ message: "Kies een werkdag: de werkplaats is in het weekend gesloten", field: "startDate", code: "MAINTENANCE_WEEKEND" });
     const rental = row.reservationId ? await storage.getReservation(row.reservationId) : undefined;
     if (!rental?.vehicleId) return res.status(400).json({ message: "Reservation not found" });
     const p = row.payload as Record<string, unknown>;
@@ -306,6 +308,7 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     const parsed = z.object({ startDate: isoDate, durationDays: z.number().int().min(1).max(60).optional(), note: z.string().trim().max(2000).optional() }).safeParse(req.body ?? {});
     if (!parsed.success) return res.status(400).json({ message: "startDate is required", field: "startDate" });
     const b = parsed.data;
+    if (isWeekend(b.startDate)) return res.status(400).json({ message: "Kies een werkdag: de werkplaats is in het weekend gesloten", field: "startDate", code: "MAINTENANCE_WEEKEND" });
     const before = row.reservationId ? await storage.getReservation(row.reservationId) : undefined;
     if (!before || before.type !== "maintenance_block" || before.deletedAt) return res.status(400).json({ message: "Maintenance block not found" });
     if (before.maintenanceStatus !== "scheduled") return res.status(409).json({ message: "Het onderhoud is al gestart" });

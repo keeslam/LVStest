@@ -155,6 +155,16 @@ describe("staff portal requests", () => {
     await db.delete(reservations).where(eq(reservations.portalRequestId, reqId));
   });
 
+  it("approving a maintenance report refuses a weekend startDate", async () => {
+    const car = await createTestVehicle();
+    const rental = await createTestReservation({ customerId, vehicleId: car.id, startDate: "2026-09-01", endDate: null, status: "picked_up" });
+    const reqId = (await requestsStorage.createRequest({ customerId, portalUserId: userId, type: "maintenance", reservationId: rental.id, payload: { issue: "Lampje" }, message: "Lampje brandt" })).id;
+    // 2099-01-03 is a Saturday.
+    const res = await request(manager).post(`/api/portal-requests/${reqId}/approve`).send({ startDate: "2099-01-03", durationDays: 1 });
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe("MAINTENANCE_WEEKEND");
+  });
+
   it("approving a change request moves the block and its placeholder", async () => {
     const car = await createTestVehicle();
     const rental = await createTestReservation({ customerId, vehicleId: car.id, startDate: "2026-09-01", endDate: null, status: "picked_up" });

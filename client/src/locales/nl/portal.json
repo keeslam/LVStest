@@ -251,7 +251,8 @@
     "PORTAL_VEHICLE_UNAVAILABLE": "Dit voertuig is op dit moment niet beschikbaar.",
     "PORTAL_DUPLICATE_REQUEST": "Er staat al een aanvraag open voor dit voertuig in deze periode.",
     "PORTAL_EMAIL_IN_USE": "Dit e-mailadres is al in gebruik bij een ander account.",
-    "PORTAL_MAINTENANCE_TOO_LATE": "Dit onderhoud start binnen 48 uur en kan via het portaal niet meer worden gewijzigd. Bel Lam Groep."
+    "PORTAL_MAINTENANCE_TOO_LATE": "Dit onderhoud start binnen 48 uur en kan via het portaal niet meer worden gewijzigd. Bel Lam Groep.",
+    "PORTAL_MAINTENANCE_WEEKEND": "Kies een doordeweekse dag: de werkplaats is in het weekend gesloten."
   },
   "admin": {
     "navLabel": "Klantenportaal",
@@ -785,7 +786,8 @@
       "requestedDate": "Gevraagde datum",
       "reason": "Reden",
       "placeholderNote": "Er wordt een vervanger-placeholder aangemaakt; wijs later een auto toe in de onderhoudskalender.",
-      "fromPortal": "Uit klantenportaal, aanvraag #{{id}}"
+      "fromPortal": "Uit klantenportaal, aanvraag #{{id}}",
+      "weekdaysOnly": "Alleen werkdagen (ma t/m vr)."
     },
     "pageSubtitle": "Aanvragen, accounts, bekeuringen en het aanbod voor klanten op één plek. Klik op een tegel om die lijst te openen.",
     "preview": {
@@ -898,7 +900,8 @@
       "newDate": "Nieuwe gewenste datum",
       "reason": "Reden",
       "stillNeedsReplacement": "Ik heb nog steeds vervangend vervoer nodig",
-      "changeHint": "Lam Groep bekijkt of de nieuwe datum past en bevestigt dit."
+      "changeHint": "Lam Groep bekijkt of de nieuwe datum past en bevestigt dit.",
+      "weekdaysOnly": "Alleen werkdagen (ma t/m vr)."
     },
     "date": "Ingediend op",
     "subtitle": "Verlengen, eerder inleveren, schade melden of een vraag stellen.",

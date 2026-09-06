@@ -18,15 +18,16 @@ const todayIso = () => format(new Date(), "yyyy-MM-dd");
  * click the first day, then the last day. A single day, or "open einde"
  * (no end date), are both fine. Past days cannot be chosen.
  */
-export function PeriodPicker({ start, end, onChange, allowOpenEnd = true, minDate, single, id, testId = "period" }: {
+export function PeriodPicker({ start, end, onChange, allowOpenEnd = true, minDate, single, id, testId = "period", disableWeekends }: {
   start: string; end: string; onChange: (start: string, end: string) => void;
-  allowOpenEnd?: boolean; minDate?: string; single?: boolean; id?: string; testId?: string;
+  allowOpenEnd?: boolean; minDate?: string; single?: boolean; id?: string; testId?: string; disableWeekends?: boolean;
 }) {
   const { t, i18n } = useTranslation("portal");
   const locale = i18n.language?.startsWith("en") ? enGB : nl;
   const [open, setOpen] = useState(false);
   const range: DateRange = useMemo(() => ({ from: fromIso(start), to: fromIso(end) }), [start, end]);
   const min = fromIso(minDate ?? todayIso())!;
+  const disabledMatcher = disableWeekends ? [{ before: min }, { dayOfWeek: [0, 6] }] : { before: min };
   const day = (d: Date, withYear = true) => format(d, withYear ? "EEEEEE d MMM yyyy" : "EEEEEE d MMM", { locale }).replace(/\./g, "");
   // First click = first day; second click = last day (or open end when it is the same day);
   // a click before the first day moves the first day; a click after a complete range starts over.
@@ -57,11 +58,11 @@ export function PeriodPicker({ start, end, onChange, allowOpenEnd = true, minDat
       <PopoverContent className="w-auto p-0" align="start">
         {single ? (
           <Calendar mode="single" locale={locale} numberOfMonths={months} defaultMonth={range.from ?? min} selected={range.from}
-            disabled={{ before: min }} weekStartsOn={1} initialFocus
+            disabled={disabledMatcher} weekStartsOn={1} initialFocus
             onSelect={() => undefined} onDayClick={(d, mods) => { if (!mods.disabled) { onChange(toIso(d), ""); setOpen(false); } }} />
         ) : (<>
           <Calendar mode="range" locale={locale} numberOfMonths={months} defaultMonth={range.from ?? min} selected={range}
-            disabled={{ before: min }} weekStartsOn={1} initialFocus
+            disabled={disabledMatcher} weekStartsOn={1} initialFocus
             onSelect={() => undefined} onDayClick={(d, mods) => { if (!mods.disabled) pickDay(d); }} />
           <div className="flex flex-wrap items-center justify-between gap-2 border-t px-3 py-2 text-xs text-[#64748b]">
             <span>{range.from && !range.to ? (allowOpenEnd ? t("period.hintEnd") : t("period.hintEndRequired")) : t("period.hintStart")}</span>

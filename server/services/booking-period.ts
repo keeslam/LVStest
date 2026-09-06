@@ -18,3 +18,9 @@ export function daysBetween(start: string, end: string): number {
   const ms = new Date(end).getTime() - new Date(start).getTime();
   return Math.max(1, Math.round(ms / 86_400_000));
 }
+
+/** True when the ISO date falls on a Saturday or Sunday (UTC noon avoids DST/timezone drift). */
+export function isWeekend(iso: string): boolean {
+  const day = new Date(iso + "T12:00:00Z").getUTCDay();
+  return day === 0 || day === 6;
+}
