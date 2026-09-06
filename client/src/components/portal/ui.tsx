@@ -135,7 +135,7 @@ export function usePortalSearch() {
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
   // Plates are typed with or without dashes (38-XT-128 / 38XT128); match both ways.
-  const flat = (v: string) => v.replace(/[-s]/g, "");
+  const flat = (v: string) => v.replace(/[-\s]/g, "");
   const qFlat = flat(q);
   const hit = (...parts: Array<string | number | null | undefined>) => {
     if (!q) return true;
