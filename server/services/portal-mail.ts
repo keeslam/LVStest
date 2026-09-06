@@ -17,6 +17,7 @@ export const PORTAL_TEMPLATE = {
   REQUEST_REPLIED: "portal_request_replied",
   EMAIL_CHANGE: "portal_email_change",
   NEW_DEVICE: "portal_new_device",
+  MAINTENANCE: "portal_maintenance",
 } as const;
 
 // Seeded once; staff edit them afterwards in Communicatie > E-mailsjablonen.
@@ -82,6 +83,16 @@ const DEFAULT_TEMPLATES: Array<{ name: string; subject: string; content: string 
 <p>Wij hebben uw aanvraag ({{type}}) beantwoord:</p>
 <blockquote>{{reply}}</blockquote>
 <p>Status: {{status}}. Bekijk de aanvraag in het klantenportaal: <a href="{{link}}">{{link}}</a></p>
+<p>Met vriendelijke groet,<br>Lam Groep</p>`,
+  },
+  {
+    name: PORTAL_TEMPLATE.MAINTENANCE,
+    subject: "Onderhoud {{plate}}: {{event}}",
+    content: `<p>Beste {{name}},</p>
+<p>{{event}} voor {{car}} ({{plate}}).</p>
+<p>Datum: {{date}}{{endDate}}</p>
+<p>Adres: {{pickupAddress}}<br>Openingstijden: {{openingHours}}</p>
+<p>In het klantenportaal ziet u de actuele status: <a href="{{link}}">{{link}}</a></p>
 <p>Met vriendelijke groet,<br>Lam Groep</p>`,
   },
 ];
@@ -175,6 +186,25 @@ export async function sendFineLinkedMail(fineId: number): Promise<boolean> {
   };
   const html = renderTemplate(template.content, vars);
   return sendEmail({ to, subject: renderTemplate(template.subject, vars), html, text: stripHtml(html) }, "custom");
+}
+
+/** Maintenance news for a customer: planned, moved, car in, car ready, cancelled, replacement ready. */
+export async function sendMaintenanceMail(customerId: number, vars: { plate: string; car: string; event: string; date: string; endDate: string | null }): Promise<boolean> {
+  const [customer, settings, config] = await Promise.all([
+    storage.getCustomer(customerId), portalStorage.getOrCreateCustomerSettings(customerId), getPortalConfig(),
+  ]);
+  const to = customer?.emailForMOT || customer?.email;
+  if (!customer || !settings.portalEnabled || !to) return false;
+  const template = await getPortalTemplate(PORTAL_TEMPLATE.MAINTENANCE);
+  const v = {
+    name: customer.contactPerson || customer.companyName || customer.name,
+    plate: vars.plate, car: vars.car, event: vars.event, date: vars.date,
+    endDate: vars.endDate && vars.endDate !== vars.date ? ` tot en met ${vars.endDate}` : "",
+    pickupAddress: config.pickupAddress, openingHours: config.openingHours,
+    link: `${config.portalBaseUrl.replace(/\/$/, "")}/portaal/voertuigen`,
+  };
+  const html = renderTemplate(template.content, v);
+  return sendEmail({ to, subject: renderTemplate(template.subject, v), html, text: stripHtml(html) }, "custom");
 }
 
 const REQUEST_TYPE_LABEL: Record<string, string> = { extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", fine_question: "vraag over bekeuring", other: "overig" };
