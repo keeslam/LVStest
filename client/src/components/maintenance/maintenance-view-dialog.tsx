@@ -126,6 +126,11 @@ export function MaintenanceViewDialog({
     const rentalStart = new Date(r.startDate);
     const rentalEnd = r.endDate ? new Date(r.endDate) : new Date('2099-12-31');
 
+    // A picked-up rental is already on the road: only its end bounds the overlap, its
+    // start does not (it may have started long before the maintenance block).
+    if (r.status === 'picked_up') {
+      return !r.endDate || rentalEnd >= maintenanceStart;
+    }
     return (rentalStart <= maintenanceEnd && rentalEnd >= maintenanceStart);
   }) : [];
 

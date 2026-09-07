@@ -138,7 +138,8 @@ describe("staff portal requests", () => {
   it("approving a maintenance report puts a block in the calendar, with a placeholder spare when asked", async () => {
     const car = await createTestVehicle();
     await storage.updateVehicle(car.id, { currentMileage: 10000 });
-    const rental = await createTestReservation({ customerId, vehicleId: car.id, startDate: "2026-09-01", endDate: null, status: "picked_up" });
+    // endDate before the block's end so the placeholder period is clipped to the rental.
+    const rental = await createTestReservation({ customerId, vehicleId: car.id, startDate: "2026-09-01", endDate: "2026-11-02", status: "picked_up" });
     const reqId = (await requestsStorage.createRequest({ customerId, portalUserId: userId, type: "maintenance", reservationId: rental.id, payload: { issue: "Lampje", mileage: 12000, urgent: true, needsReplacement: true }, message: "Lampje brandt" })).id;
     expect((await request(manager).post(`/api/portal-requests/${reqId}/approve`).send({})).status).toBe(400);
     expect((await request(manager).post(`/api/portal-requests/${reqId}/reply`).send({ reply: "ok", status: "done" })).body.code).toBe("MAINTENANCE_NEEDS_BLOCK");
@@ -146,9 +147,15 @@ describe("staff portal requests", () => {
     expect(res.status).toBe(200);
     expect(res.body.status).toBe("done");
     const block = res.body.block;
-    expect(block).toMatchObject({ type: "maintenance_block", vehicleId: car.id, startDate: "2026-11-02", endDate: "2026-11-03", maintenanceCategory: "repair", maintenanceDuration: 2, portalRequestId: reqId, affectedRentalId: rental.id });
+    expect(block).toMatchObject({ type: "maintenance_block", vehicleId: car.id, customerId, startDate: "2026-11-02", endDate: "2026-11-03", maintenanceCategory: "repair", maintenanceDuration: 2, portalRequestId: reqId, affectedRentalId: rental.id });
+    expect(block.notes.startsWith("other: Lampje")).toBe(true);
+    expect(block.notes).toContain("Portaal aanvraag #");
+    expect((await storage.getReservation(rental.id))!.spareAssignmentDecision).toBe("spare_assigned");
     const placeholders = await db.select().from(reservations).where(eq(reservations.replacementForReservationId, rental.id));
-    expect(placeholders.filter((p) => p.placeholderSpare && !p.deletedAt)).toHaveLength(1);
+    const activePlaceholders = placeholders.filter((p) => p.placeholderSpare && !p.deletedAt);
+    expect(activePlaceholders).toHaveLength(1);
+    // The rental ends before the block does, so the placeholder is clipped to the rental's end.
+    expect(activePlaceholders[0].endDate).toBe("2026-11-02");
     expect((await storage.getVehicle(car.id))!.currentMileage).toBe(12000);
     expect((await customerNotifications.listForUser(customerId, userId)).some((n) => n.type === "maintenance_planned" && n.link === `/voertuigen?block=${block.id}`)).toBe(true);
     expect((await request(manager).get(`/api/portal-requests/${reqId}`)).body.staffReply).toContain("2026-11-02");

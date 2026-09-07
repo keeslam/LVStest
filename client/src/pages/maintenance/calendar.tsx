@@ -850,6 +850,29 @@ export default function MaintenanceCalendar() {
       const displayTitle = maintenanceTypeMap[maintenanceTypeRaw] || t('maintenance:listDialog.scheduledMaintenance');
       const descriptionPart = noteParts[1]?.split('\n')[0]?.trim() || '';
 
+      // Rentals this block would displace: standard, booked or already on the road, same
+      // vehicle, overlapping the block (a picked-up rental only needs its end checked, since
+      // it is already running — same rule as the maintenance view dialog's overlap check).
+      const maintenanceStart = new Date(reservation.startDate);
+      const maintenanceEnd = reservation.endDate ? new Date(reservation.endDate) : maintenanceStart;
+      const overlappingRentals = (reservations || []).filter((r: Reservation) => {
+        if (r.type !== 'standard') return false;
+        if (r.status !== 'booked' && r.status !== 'picked_up') return false;
+        if (r.vehicleId !== reservation.vehicleId) return false;
+        const rentalStart = new Date(r.startDate);
+        const rentalEnd = r.endDate ? new Date(r.endDate) : new Date('2099-12-31');
+        if (r.status === 'picked_up') {
+          return !r.endDate || rentalEnd >= maintenanceStart;
+        }
+        return rentalStart <= maintenanceEnd && rentalEnd >= maintenanceStart;
+      });
+      // Still needs a spare when one of those rentals has a TBD placeholder spare pending.
+      const needsSpareVehicle = overlappingRentals.some((rental) =>
+        (reservations || []).some((r: Reservation) =>
+          r.type === 'replacement' && r.replacementForReservationId === rental.id && r.placeholderSpare === true && r.vehicleId == null && !r.deletedAt
+        )
+      );
+
       events.push({
         id: `scheduled_maintenance_${reservation.id}`, // Avoid ID conflicts
         vehicleId: reservation.vehicleId!, // Using ! since we already checked vehicle exists
@@ -860,7 +883,8 @@ export default function MaintenanceCalendar() {
         endDate: reservation.endDate || undefined,
         title: displayTitle,
         description: descriptionPart || t('calendarPage.events.scheduledMaintenanceForVehicle', { title: displayTitle, vehicle: `${vehicle.brand} ${vehicle.model}` }),
-        needsSpareVehicle: false,
+        needsSpareVehicle,
+        currentReservations: overlappingRentals,
         priority: 'high'
       });
     });

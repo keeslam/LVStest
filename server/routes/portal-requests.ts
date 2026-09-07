@@ -260,12 +260,29 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
 
   type Row = NonNullable<Awaited<ReturnType<typeof requestsStorage.getRequest>>>;
 
-  /** Creates the placeholder spare for a rental; an existing one is kept (createPlaceholderReservation throws on duplicates). */
-  async function ensurePlaceholderSpare(rentalId: number, customerId: number, startDate: string, endDate: string, requestId: number): Promise<void> {
+  /**
+   * Clips a maintenance block's period to where the rental it displaces actually runs;
+   * null when they no longer overlap. A picked-up rental is already on the road, so its
+   * start never bounds the clip — only its end (if any) does.
+   */
+  function clipToRental(blockStart: string, blockEnd: string, rental: { startDate: string; endDate: string | null; status: string }): { start: string; end: string } | null {
+    const start = rental.status === "picked_up" ? blockStart : (rental.startDate > blockStart ? rental.startDate : blockStart);
+    const end = rental.endDate && rental.endDate < blockEnd ? rental.endDate : blockEnd;
+    return start > end ? null : { start, end };
+  }
+
+  /** Creates the placeholder spare for a rental, clipped to the block/rental overlap; an existing one is kept (createPlaceholderReservation throws on duplicates). */
+  async function ensurePlaceholderSpare(rental: { id: number; customerId: number | null; startDate: string; endDate: string | null; status: string }, blockStart: string, blockEnd: string, requestId: number): Promise<void> {
+    if (!rental.customerId) return;
+    const clipped = clipToRental(blockStart, blockEnd, rental);
+    if (!clipped) {
+      console.error(`ensurePlaceholderSpare: block ${blockStart}..${blockEnd} does not overlap rental #${rental.id} (${rental.startDate}..${rental.endDate ?? "open"}), skipping placeholder (portal request #${requestId})`);
+      return;
+    }
     try {
-      await storage.createPlaceholderReservation(rentalId, customerId, startDate, endDate);
+      await storage.createPlaceholderReservation(rental.id, rental.customerId, clipped.start, clipped.end);
     } catch (e) {
-      console.error(`createPlaceholderReservation failed for rental #${rentalId} (portal request #${requestId}):`, e);
+      console.error(`createPlaceholderReservation failed for rental #${rental.id} (portal request #${requestId}):`, e);
     }
   }
 
@@ -288,15 +305,19 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     if (!rental?.vehicleId) return res.status(400).json({ message: "Reservation not found" });
     const p = row.payload as Record<string, unknown>;
     const endDate = addDays(b.startDate, b.durationDays - 1);
-    const created = await storage.createMaintenanceBlock(rental.vehicleId, b.startDate, endDate);
+    const created = await storage.createMaintenanceBlock(rental.vehicleId, b.startDate, endDate, rental.customerId);
+    // Same notes shape staff use directly ("{maintenanceType}: {description}\n{notes}"), so the
+    // calendar and view dialog parse it the same way regardless of where the block came from.
+    const maintenanceType = b.category === "scheduled_maintenance" ? "regular_maintenance" : "other";
     const block = (await storage.updateReservation(created.id, {
       maintenanceCategory: b.category, maintenanceDuration: b.durationDays, portalRequestId: id, affectedRentalId: rental.id,
-      spareAssignmentDecision: p.needsReplacement ? "spare_assigned" : "customer_arranging",
-      notes: `Portaal aanvraag #${id}: ${String(p.issue ?? "")}${p.urgent ? " (dringend)" : ""}${b.note ? `\n${b.note}` : ""}`,
+      notes: `${maintenanceType}: ${String(p.issue ?? "")}\nPortaal aanvraag #${id}${p.urgent ? " (dringend)" : ""}${b.note ? `\n${b.note}` : ""}`,
       createdBy: actor(req), updatedBy: actor(req),
     } as any))!;
-    if (p.needsReplacement && rental.customerId) {
-      await ensurePlaceholderSpare(rental.id, rental.customerId, b.startDate, endDate, id);
+    if (p.needsReplacement) {
+      // The spare decision lives on the rental, same as when staff assign it directly.
+      await storage.updateReservation(rental.id, { spareAssignmentDecision: "spare_assigned" } as any);
+      await ensurePlaceholderSpare(rental, b.startDate, endDate, id);
     }
     const km = Number(p.mileage);
     if (Number.isFinite(km) && km > 0) {
@@ -338,12 +359,17 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     const after = (await storage.updateReservation(before.id, { startDate: b.startDate, endDate, maintenanceDuration: days, affectedRentalId: rentalId, updatedBy: actor(req) } as any))!;
     await storage.syncVehicleAvailabilityWithReservations();
     if (rentalId) {
+      const rental = await storage.getReservation(rentalId);
       const [placeholder] = await db.select().from(reservations).where(and(eq(reservations.replacementForReservationId, rentalId), eq(reservations.placeholderSpare, true), isNull(reservations.deletedAt))).limit(1);
       if (placeholder) {
-        await storage.updateReservation(placeholder.id, { startDate: b.startDate, endDate, updatedBy: actor(req) } as any);
-      } else if (p.needsReplacement) {
-        const rental = await storage.getReservation(rentalId);
-        if (rental?.customerId) await ensurePlaceholderSpare(rental.id, rental.customerId, b.startDate, endDate, id);
+        const clipped = rental ? clipToRental(b.startDate, endDate, rental) : { start: b.startDate, end: endDate };
+        if (clipped) {
+          await storage.updateReservation(placeholder.id, { startDate: clipped.start, endDate: clipped.end, updatedBy: actor(req) } as any);
+        } else {
+          console.error(`approveMaintenanceChange: moved block ${b.startDate}..${endDate} no longer overlaps rental #${rentalId}; leaving placeholder #${placeholder.id} untouched (portal request #${id})`);
+        }
+      } else if (p.needsReplacement && rental) {
+        await ensurePlaceholderSpare(rental, b.startDate, endDate, id);
       }
     }
     realtimeEvents.reservations.updated(after);
