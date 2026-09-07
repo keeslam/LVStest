@@ -162,6 +162,23 @@ describe("staff portal requests", () => {
     await db.delete(reservations).where(eq(reservations.portalRequestId, reqId));
   });
 
+  it("approving a maintenance report moves an existing unassigned placeholder to the approved period instead of duplicating it", async () => {
+    const car = await createTestVehicle();
+    const rental = await createTestReservation({ customerId, vehicleId: car.id, startDate: "2026-09-01", endDate: null, status: "picked_up" });
+    const stale = await storage.createPlaceholderReservation(rental.id, customerId, "2026-12-20", "2026-12-21");
+    const reqId = (await requestsStorage.createRequest({ customerId, portalUserId: userId, type: "maintenance", reservationId: rental.id, payload: { issue: "Lampje", needsReplacement: true }, message: "Lampje brandt" })).id;
+    // 2026-11-05 is a Thursday.
+    const res = await request(manager).post(`/api/portal-requests/${reqId}/approve`).send({ startDate: "2026-11-05", durationDays: 1, category: "repair" });
+    expect(res.status).toBe(200);
+    const placeholders = await db.select().from(reservations).where(eq(reservations.replacementForReservationId, rental.id));
+    const activePlaceholders = placeholders.filter((p) => p.placeholderSpare && !p.deletedAt);
+    expect(activePlaceholders).toHaveLength(1);
+    expect(activePlaceholders[0].id).toBe(stale.id);
+    expect(activePlaceholders[0].startDate).toBe("2026-11-05");
+    await db.delete(reservations).where(eq(reservations.portalRequestId, reqId));
+    await db.delete(reservations).where(eq(reservations.id, stale.id));
+  });
+
   it("approving a maintenance report refuses a weekend startDate", async () => {
     const car = await createTestVehicle();
     const rental = await createTestReservation({ customerId, vehicleId: car.id, startDate: "2026-09-01", endDate: null, status: "picked_up" });

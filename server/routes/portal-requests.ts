@@ -271,8 +271,8 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     return start > end ? null : { start, end };
   }
 
-  /** Creates the placeholder spare for a rental, clipped to the block/rental overlap; an existing one is kept (createPlaceholderReservation throws on duplicates). */
-  async function ensurePlaceholderSpare(rental: { id: number; customerId: number | null; startDate: string; endDate: string | null; status: string }, blockStart: string, blockEnd: string, requestId: number): Promise<void> {
+  /** Creates the placeholder spare for a rental, clipped to the block/rental overlap; a stale unassigned one moves to the new period instead (same as the staff flow). */
+  async function ensurePlaceholderSpare(rental: { id: number; customerId: number | null; startDate: string; endDate: string | null; status: string }, blockStart: string, blockEnd: string, requestId: number, updatedBy: string): Promise<void> {
     if (!rental.customerId) return;
     const clipped = clipToRental(blockStart, blockEnd, rental);
     if (!clipped) {
@@ -280,6 +280,18 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
       return;
     }
     try {
+      const [existing] = await db.select().from(reservations).where(and(
+        eq(reservations.type, "replacement"),
+        eq(reservations.placeholderSpare, true),
+        isNull(reservations.vehicleId),
+        isNull(reservations.deletedAt),
+        eq(reservations.replacementForReservationId, rental.id),
+      )).limit(1);
+      if (existing) {
+        const startDate = clipped.start, endDate = clipped.end;
+        await storage.updateReservation(existing.id, { startDate, endDate, updatedBy } as any);
+        return;
+      }
       await storage.createPlaceholderReservation(rental.id, rental.customerId, clipped.start, clipped.end);
     } catch (e) {
       console.error(`createPlaceholderReservation failed for rental #${rental.id} (portal request #${requestId}):`, e);
@@ -317,7 +329,7 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     if (p.needsReplacement) {
       // The spare decision lives on the rental, same as when staff assign it directly.
       await storage.updateReservation(rental.id, { spareAssignmentDecision: "spare_assigned" } as any);
-      await ensurePlaceholderSpare(rental, b.startDate, endDate, id);
+      await ensurePlaceholderSpare(rental, b.startDate, endDate, id, actor(req));
     }
     const km = Number(p.mileage);
     if (Number.isFinite(km) && km > 0) {
@@ -369,7 +381,7 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
           console.error(`approveMaintenanceChange: moved block ${b.startDate}..${endDate} no longer overlaps rental #${rentalId}; leaving placeholder #${placeholder.id} untouched (portal request #${id})`);
         }
       } else if (p.needsReplacement && rental) {
-        await ensurePlaceholderSpare(rental, b.startDate, endDate, id);
+        await ensurePlaceholderSpare(rental, b.startDate, endDate, id, actor(req));
       }
     }
     realtimeEvents.reservations.updated(after);
