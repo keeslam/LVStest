@@ -230,8 +230,8 @@ function quoteIdent(name) {
 // only the hand-written steps above (and any future ones) know about
 // those; this sync only fills in bare columns/tables so the app doesn't
 // crash with "column ... does not exist" / "relation ... does not exist".
-async function syncSchemaFromManifest() {
-  console.log('🔄 Syncing schema from Drizzle manifest (schema-columns.json)...');
+async function syncSchemaFromManifest({ createTables = true } = {}) {
+  console.log(`🔄 Syncing schema from Drizzle manifest (schema-columns.json${createTables ? '' : ', columns only'})...`);
 
   let manifest;
   try {
@@ -262,6 +262,7 @@ async function syncSchemaFromManifest() {
       }
 
       if (!tableExists) {
+        if (!createTables) continue; // the explicit steps below create it with its foreign keys
         const primaryCol = table.columns.find((c) => c.primary);
         const columnDefs = table.columns.map((col) => {
           let def = `${quoteIdent(col.name)} ${col.type}`;
@@ -380,6 +381,13 @@ async function runMigrations() {
       }
     } else {
       console.log('✅ All core tables present');
+
+    // Columns first: every column declared in shared/schema.ts is added to the
+    // tables that already exist, so none of the explicit steps below can fail on
+    // a column that only ever existed in dev (drizzle-kit push). Missing tables
+    // are created by the explicit steps (with their foreign keys) and, as a last
+    // resort, by the full sync at the end.
+    await syncSchemaFromManifest({ createTables: false });
     }
     
     // Create settings table if it doesn't exist (safe to create even on existing DB)
@@ -1067,41 +1075,6 @@ async function runMigrations() {
     await addColumnIfNotExists('portal_users', 'email_change_token_hash', 'TEXT');
     await addColumnIfNotExists('portal_users', 'email_change_expires_at', 'TIMESTAMP');
     await addColumnIfNotExists('portal_users', 'known_devices', "JSONB NOT NULL DEFAULT '[]'::jsonb");
-    await createTableIfNotExists('portal_request_messages', `
-      CREATE TABLE portal_request_messages (
-        id SERIAL PRIMARY KEY,
-        request_id INTEGER NOT NULL REFERENCES portal_requests(id) ON DELETE CASCADE,
-        author TEXT NOT NULL,
-        author_name TEXT NOT NULL,
-        body TEXT NOT NULL,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW()
-      )`);
-    await db.execute(sql`CREATE INDEX IF NOT EXISTS portal_request_messages_request_idx ON portal_request_messages (request_id)`);
-    await createTableIfNotExists('portal_notifications', `
-      CREATE TABLE portal_notifications (
-        id SERIAL PRIMARY KEY,
-        customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-        portal_user_id INTEGER REFERENCES portal_users(id) ON DELETE CASCADE,
-        type TEXT NOT NULL,
-        title TEXT NOT NULL,
-        description TEXT NOT NULL,
-        link TEXT,
-        dedupe_tag TEXT,
-        is_read BOOLEAN NOT NULL DEFAULT false,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW()
-      )`);
-    await db.execute(sql`CREATE INDEX IF NOT EXISTS portal_notifications_customer_idx ON portal_notifications (customer_id, created_at)`);
-    await createTableIfNotExists('portal_document_acks', `
-      CREATE TABLE portal_document_acks (
-        id SERIAL PRIMARY KEY,
-        document_id INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-        customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-        portal_user_id INTEGER REFERENCES portal_users(id) ON DELETE SET NULL,
-        name TEXT NOT NULL,
-        ip TEXT,
-        acked_at TIMESTAMP NOT NULL DEFAULT NOW()
-      )`);
-    await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS portal_document_acks_document_idx ON portal_document_acks (document_id)`);
     await addColumnIfNotExists('portal_customer_settings', 'can_return', 'BOOLEAN NOT NULL DEFAULT true');
 
     await createTableIfNotExists('portal_customer_settings', `
@@ -1242,6 +1215,42 @@ async function runMigrations() {
         file_name TEXT NOT NULL, file_path TEXT NOT NULL, content_type TEXT NOT NULL, file_size INTEGER NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT NOW()
       )`);
+    // These reference portal_requests / documents, so they come after them.
+    await createTableIfNotExists('portal_request_messages', `
+      CREATE TABLE portal_request_messages (
+        id SERIAL PRIMARY KEY,
+        request_id INTEGER NOT NULL REFERENCES portal_requests(id) ON DELETE CASCADE,
+        author TEXT NOT NULL,
+        author_name TEXT NOT NULL,
+        body TEXT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS portal_request_messages_request_idx ON portal_request_messages (request_id)`);
+    await createTableIfNotExists('portal_notifications', `
+      CREATE TABLE portal_notifications (
+        id SERIAL PRIMARY KEY,
+        customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+        portal_user_id INTEGER REFERENCES portal_users(id) ON DELETE CASCADE,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        link TEXT,
+        dedupe_tag TEXT,
+        is_read BOOLEAN NOT NULL DEFAULT false,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS portal_notifications_customer_idx ON portal_notifications (customer_id, created_at)`);
+    await createTableIfNotExists('portal_document_acks', `
+      CREATE TABLE portal_document_acks (
+        id SERIAL PRIMARY KEY,
+        document_id INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+        customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+        portal_user_id INTEGER REFERENCES portal_users(id) ON DELETE SET NULL,
+        name TEXT NOT NULL,
+        ip TEXT,
+        acked_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )`);
+    await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS portal_document_acks_document_idx ON portal_document_acks (document_id)`);
     console.log('✅ Fines and portal request tables ready');
 
     // ==================== ADDITIVE SCHEMA SYNC ====================
