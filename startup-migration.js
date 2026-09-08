@@ -238,8 +238,7 @@ async function syncSchemaFromManifest() {
     const manifestUrl = new URL('./schema-columns.json', import.meta.url);
     manifest = JSON.parse(readFileSync(manifestUrl, 'utf8'));
   } catch (error) {
-    console.error('❌ Could not read schema-columns.json, skipping schema sync:', error.message);
-    return;
+    throw new Error('schema-columns.json is missing or unreadable: ' + error.message + ' (the build must run "npm run schema:export")');
   }
 
   const existingTablesResult = await db.execute(sql`
@@ -362,6 +361,12 @@ async function runMigrations() {
       // find every table/column already present).
       console.log(`🔄 Missing core tables (${missingTables.join(', ')}) - bootstrapping the full schema from the Drizzle manifest before continuing...`);
       await syncSchemaFromManifest();
+
+      console.warn(
+        '⚠️ Fresh database bootstrapped from schema-columns.json: tables and columns only.\n' +
+        'Foreign keys, unique constraints and indexes from shared/schema.ts are NOT created by the sync.\n' +
+        'For a new environment run "npm run db:push" (drizzle-kit) once after this start.'
+      );
 
       // syncSchemaFromManifest creates tables structurally but seeds no
       // data. createTableIfNotExists('settings', ...) below only seeds its

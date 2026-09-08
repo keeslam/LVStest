@@ -8,7 +8,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import path from "path";
-import { buildManifest } from "./export-schema";
+import type { PgColumn } from "drizzle-orm/pg-core";
+import { buildManifest, renderDefault } from "./export-schema";
 
 describe("schema-columns.json drift guard", () => {
   it("matches the manifest built from the current shared/schema.ts", () => {
@@ -16,5 +17,16 @@ describe("schema-columns.json drift guard", () => {
     const committed = readFileSync(manifestPath, "utf8").replace(/\r\n/g, "\n");
     const rebuilt = (JSON.stringify(buildManifest(), null, 2) + "\n").replace(/\r\n/g, "\n");
     expect(committed).toBe(rebuilt);
+  });
+});
+
+describe("renderDefault", () => {
+  it("escapes single quotes inside a text[] default's Postgres array literal", () => {
+    const col = {
+      default: ["O'Brien"],
+      getSQLType: () => "text[]",
+    } as unknown as PgColumn;
+
+    expect(renderDefault(col)).toBe(`'{"O''Brien"}'`);
   });
 });

@@ -43,7 +43,7 @@ export interface ManifestTable {
 // suitable for a `DEFAULT <...>` clause, or null when the column has no
 // default (or its "default" is really just the implicit serial sequence,
 // which needs no DEFAULT clause of its own).
-function renderDefault(col: PgColumn): string | null {
+export function renderDefault(col: PgColumn): string | null {
   const value = (col as unknown as { default: unknown }).default;
   if (value === undefined || value === null) return null;
 
@@ -70,7 +70,8 @@ function renderDefault(col: PgColumn): string | null {
       const body = items
         .map((item) => `"${String(item).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`)
         .join(",");
-      return `'{${body}}'`;
+      const inner = `{${body}}`;
+      return `'${inner.replace(/'/g, "''")}'`;
     }
     // jsonb column with an object/array default
     return `'${JSON.stringify(value).replace(/'/g, "''")}'::jsonb`;
