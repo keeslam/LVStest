@@ -39,6 +39,7 @@ COPY --from=builder /app/dist ./dist
 # Copy necessary runtime files
 COPY --from=builder /app/drizzle.config.ts ./
 COPY --from=builder /app/startup-migration.js ./
+COPY --from=builder /app/schema-columns.json ./
 COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/uploads ./uploads
 

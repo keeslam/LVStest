@@ -8,6 +8,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
 import pkg from 'pg';
+import { readFileSync } from 'fs';
 const { Pool } = pkg;
 
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -211,6 +212,126 @@ async function backfillAndDropLegacyDamageCheckFields() {
   console.log('✅ Dropped damageCheckPdfTemplates family tables (if present)');
 }
 
+function quoteIdent(name) {
+  return `"${name}"`;
+}
+
+// ==================== ADDITIVE SCHEMA SYNC (from shared/schema.ts) ====================
+// Reads schema-columns.json - built by `npm run schema:export`
+// (scripts/export-schema.ts) and regenerated automatically as the first
+// step of `npm run build`, so a deploy can never ship a stale manifest -
+// and creates any table or column that is declared in the Drizzle schema
+// but missing from this database. This is what lets a table/column added
+// in dev via `drizzle-kit push` actually reach production, which only
+// ever runs this script (never `drizzle-kit push`).
+//
+// Additive only: this never drops or alters an existing column/table.
+// Foreign keys, unique constraints and indexes are NOT created here -
+// only the hand-written steps above (and any future ones) know about
+// those; this sync only fills in bare columns/tables so the app doesn't
+// crash with "column ... does not exist" / "relation ... does not exist".
+async function syncSchemaFromManifest() {
+  console.log('🔄 Syncing schema from Drizzle manifest (schema-columns.json)...');
+
+  let manifest;
+  try {
+    const manifestUrl = new URL('./schema-columns.json', import.meta.url);
+    manifest = JSON.parse(readFileSync(manifestUrl, 'utf8'));
+  } catch (error) {
+    console.error('❌ Could not read schema-columns.json, skipping schema sync:', error.message);
+    return;
+  }
+
+  const existingTablesResult = await db.execute(sql`
+    SELECT tablename FROM pg_tables WHERE schemaname = 'public'
+  `);
+  const existingTables = new Set(existingTablesResult.rows.map((r) => r.tablename));
+
+  const errors = [];
+
+  for (const table of manifest) {
+    try {
+      const tableExists = existingTables.has(table.name);
+
+      // express-session (via connect-pg-simple) owns the `session` table
+      // and creates/manages it itself. If it already exists, leave its
+      // columns alone entirely - only fall through to create it below if
+      // it is genuinely missing.
+      if (table.name === 'session' && tableExists) {
+        console.log('✅ Table session already exists (owned by express-session), leaving it alone');
+        continue;
+      }
+
+      if (!tableExists) {
+        const primaryCol = table.columns.find((c) => c.primary);
+        const columnDefs = table.columns.map((col) => {
+          let def = `${quoteIdent(col.name)} ${col.type}`;
+          if (col.default !== null && col.default !== undefined) {
+            def += ` DEFAULT ${col.default}`;
+          }
+          // The table is brand new (zero rows), so NOT NULL is always
+          // safe here even without a default.
+          if (col.notNull) {
+            def += ' NOT NULL';
+          }
+          return def;
+        });
+        if (primaryCol) {
+          columnDefs.push(`PRIMARY KEY (${quoteIdent(primaryCol.name)})`);
+        }
+        const createSQL = `CREATE TABLE ${quoteIdent(table.name)} (\n  ${columnDefs.join(',\n  ')}\n)`;
+        await db.execute(sql.raw(createSQL));
+        console.log(`📝 Created table ${table.name} (${table.columns.length} columns)`);
+        continue;
+      }
+
+      // Table exists - diff its columns against the manifest.
+      const existingColumnsResult = await db.execute(sql`
+        SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = ${table.name}
+      `);
+      const existingColumns = new Set(existingColumnsResult.rows.map((r) => r.column_name));
+
+      for (const col of table.columns) {
+        if (existingColumns.has(col.name)) continue;
+
+        try {
+          const hasDefault = col.default !== null && col.default !== undefined;
+          let colSQL = `${quoteIdent(col.name)} ${col.type}`;
+          if (hasDefault) {
+            colSQL += ` DEFAULT ${col.default}`;
+          }
+          // A NOT NULL column can only be added to a table that may already
+          // have rows when it also has a default (Postgres backfills
+          // existing rows with it). Without a default, add it nullable
+          // instead rather than fail the whole deploy.
+          if (col.notNull && hasDefault) {
+            colSQL += ' NOT NULL';
+          } else if (col.notNull) {
+            console.warn(`⚠️ ${table.name}.${col.name} is NOT NULL with no default - adding it nullable instead (cannot safely add a required column to a table that may already have rows)`);
+          }
+          await db.execute(sql.raw(
+            `ALTER TABLE ${quoteIdent(table.name)} ADD COLUMN IF NOT EXISTS ${colSQL}`
+          ));
+          console.log(`📝 Added column ${table.name}.${col.name}`);
+        } catch (colError) {
+          console.error(`❌ Failed to add column ${table.name}.${col.name}:`, colError.message);
+          errors.push(`${table.name}.${col.name}: ${colError.message}`);
+        }
+      }
+    } catch (tableError) {
+      console.error(`❌ Failed to sync table ${table.name}:`, tableError.message);
+      errors.push(`${table.name}: ${tableError.message}`);
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Schema sync failed for ${errors.length} column/table(s): ${errors.join('; ')}`);
+  }
+
+  console.log('✅ Schema sync from manifest complete');
+}
+
 async function runMigrations() {
   try {
     console.log('🔍 Checking database schema...');
@@ -232,22 +353,29 @@ async function runMigrations() {
     }
     
     if (missingTables.length > 0) {
-      console.error('❌ Missing core tables:', missingTables.join(', '));
-      console.error('');
-      console.error('🚨 DATABASE NOT INITIALIZED!');
-      console.error('');
-      console.error('Your database is missing required tables. This migration script is designed');
-      console.error('to UPDATE existing databases, not create new ones.');
-      console.error('');
-      console.error('To initialize a new database, run this ONCE:');
-      console.error('  npm run db:push');
-      console.error('');
-      console.error('After initialization, this migration script will handle safe updates.');
-      console.error('');
-      process.exit(1);
+      // This used to be a hard exit telling the operator to run
+      // `npm run db:push` first. Now that syncSchemaFromManifest() can
+      // create every table declared in shared/schema.ts (not just patch
+      // columns onto existing tables), a genuinely empty database can be
+      // bootstrapped from the manifest instead - so do that, then let the
+      // rest of this function's steps proceed as normal (they'll simply
+      // find every table/column already present).
+      console.log(`🔄 Missing core tables (${missingTables.join(', ')}) - bootstrapping the full schema from the Drizzle manifest before continuing...`);
+      await syncSchemaFromManifest();
+
+      // syncSchemaFromManifest creates tables structurally but seeds no
+      // data. createTableIfNotExists('settings', ...) below only seeds its
+      // default row when it is the one creating the table - which just
+      // happened via the bootstrap above instead - so replicate that here
+      // to match the original fresh-install behaviour.
+      const settingsRowCheck = await db.execute(sql`SELECT id FROM settings LIMIT 1`);
+      if (settingsRowCheck.rows.length === 0) {
+        await db.execute(sql`INSERT INTO settings (contract_number_start) VALUES (1)`);
+        console.log('✅ Seeded default settings row');
+      }
+    } else {
+      console.log('✅ All core tables present');
     }
-    
-    console.log('✅ All core tables present');
     
     // Create settings table if it doesn't exist (safe to create even on existing DB)
     await createTableIfNotExists(
@@ -1110,6 +1238,13 @@ async function runMigrations() {
         created_at TIMESTAMP NOT NULL DEFAULT NOW()
       )`);
     console.log('✅ Fines and portal request tables ready');
+
+    // ==================== ADDITIVE SCHEMA SYNC ====================
+    // Runs last: catches any table/column declared in shared/schema.ts
+    // that isn't covered by one of the explicit steps above (which only
+    // production ever needed a hand-written step for). See
+    // syncSchemaFromManifest's own comment for details.
+    await syncSchemaFromManifest();
 
     console.log('✅ Database migration completed successfully!');
     

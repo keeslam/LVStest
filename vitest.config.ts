@@ -9,7 +9,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["server/**/*.test.ts", "shared/**/*.test.ts"],
+    include: ["server/**/*.test.ts", "shared/**/*.test.ts", "scripts/**/*.test.ts"],
     setupFiles: ["./server/__tests__/setup.ts"],
     // DB-backed tests share one Postgres; run files one after another.
     fileParallelism: false,
