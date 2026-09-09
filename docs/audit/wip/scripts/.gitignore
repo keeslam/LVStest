@@ -1,0 +1,10 @@
+files/
+*.txt
+*.out
+*.jsonl
+*-results.json
+*.json
+*.bin
+*.pdf
+*.jpg
+*.png
