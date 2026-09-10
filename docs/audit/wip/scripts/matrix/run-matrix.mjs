@@ -14,23 +14,48 @@ const PORTAL_IDENTITIES = ['portal-admin', 'portal-other', 'portal-driver'];
 const ALL_IDENTITIES = [...STAFF_IDENTITIES, ...PORTAL_IDENTITIES];
 const MUTATION_IDENTITIES = ['anon', 'nobody', 'viewer', 'portal-admin', 'portal-other', 'portal-driver'];
 
-// AM-xxx workaround: apiLimiter (1000 req/15min per IP, server/middleware/security/rateLimiter.ts)
+// AM-001 workaround: apiLimiter (1000 req/15min per IP, server/middleware/security/rateLimiter.ts)
 // is mounted at server/index.ts:174, BEFORE setupAuth() (line 187) wires up passport.session().
 // Its skip() checks req.isAuthenticated, which does not exist yet at that point in the middleware
 // chain, so "skip rate limiting for authenticated users" never fires and ALL traffic (8 identities x
 // 360 endpoints from one real IP) shares one 1000-request bucket. Same trust-proxy/X-Forwarded-For
-// situation as the documented BUG-009 login-limiter workaround, so give each identity its own IP.
-const FORWARDED_FOR = {
-  anon: '10.20.30.8', nobody: '10.20.30.2', viewer: '10.20.30.3', manager: '10.20.30.4', admin: '10.20.30.1',
-  'portal-admin': '10.20.30.5', 'portal-other': '10.20.30.6', 'portal-driver': '10.20.30.7',
+// situation as the documented BUG-009 login-limiter workaround. A single static IP per identity
+// still trips the 1000/15min bucket once an identity crosses ~1000 requests combined with any other
+// traffic sharing that /24 in the same window, so each identity also ROTATES its forwarded IP every
+// 200 requests (Session.currentForwardedFor() in lib.mjs), via a distinct `a` octet per identity
+// (10.<a>.<b>.<c>) so no two identities' ranges ever collide even while rotating independently.
+const FORWARDED_FOR_BASE = {
+  admin: { a: 21, b: 30 }, manager: { a: 22, b: 30 }, viewer: { a: 23, b: 30 }, nobody: { a: 24, b: 30 },
+  anon: { a: 25, b: 30 }, 'portal-admin': { a: 26, b: 30 }, 'portal-other': { a: 27, b: 30 }, 'portal-driver': { a: 28, b: 30 },
 };
+const ROTATE_EVERY = 200;
+const CONCURRENCY = 4;
 
 function loadSession(name) {
-  const s = new Session(name, { forwardedFor: FORWARDED_FOR[name] });
+  const s = new Session(name, { forwardedForBase: FORWARDED_FOR_BASE[name], rotateEvery: ROTATE_EVERY });
   const f = sessionFile(name);
   if (fs.existsSync(f)) s.loadFrom(f);
   return s;
 }
+
+// Self-healing-logout workaround: POST /api/logout and POST /api/portal/logout are
+// mutating endpoints, so "safe mode" fires them (empty body) at every MUTATION_IDENTITY
+// as part of full coverage. But logout destroys the *server-side* session for that
+// connect.sid/portal.sid, so without this, the very first time the runner reaches either
+// logout endpoint for a given identity, every one of that identity's remaining ~400
+// requests in this run comes back 401 "Not authenticated" instead of its real
+// authorization outcome (only discovered because AM-001's IP-rotation workaround finally
+// let requests reach 9-360 instead of dying to 429 first). Re-login immediately after
+// firing the logout test so the shared Session object keeps working for the rest of the run.
+const PW = 'AuditMatrix123!';
+const RELOGIN = {
+  nobody: (s) => s.loginStaff('AUDIT-matrix-nobody', PW),
+  viewer: (s) => s.loginStaff('AUDIT-matrix-viewer', PW),
+  'portal-admin': (s) => s.loginPortal('portaal-test@example.com', 'portaal-test-1234'),
+  'portal-other': (s) => s.loginPortal('audit-matrix-other@example.com', 'portaal-test-1234'),
+  'portal-driver': (s) => s.loginPortal('audit-matrix-driver@example.com', 'portaal-test-1234'),
+};
+const LOGOUT_PATHS = new Set(['/api/logout', '/api/portal/logout']);
 
 const sessions = {};
 for (const id of ALL_IDENTITIES) sessions[id] = loadSession(id);
@@ -135,38 +160,61 @@ async function callSafe(session, method, p, body, opts) {
   }
 }
 
-async function main() {
-  console.log(`Matrix run starting: ${endpoints.length} endpoints x up to ${ALL_IDENTITIES.length} identities`);
-  let done = 0;
-  for (const ep of endpoints) {
-    const { method, path: p } = ep;
-    if (method === 'GET') {
-      for (const identity of ALL_IDENTITIES) {
-        const session = sessions[identity];
-        const realPath = substitute(p, 'real');
-        const r = await callSafe(session, 'GET', realPath, undefined);
-        const flags = detectFlags(identity, method, p, r.status, r.bytes, r.text);
-        record(identity, method, p, realPath, r.status, r.bytes, flags);
-        if (hasIdParam(p)) {
-          const nfPath = substitute(p, 'notfound');
-          const r2 = await callSafe(session, 'GET', nfPath, undefined);
-          const flags2 = detectFlags(identity, method, p, r2.status, r2.bytes, r2.text);
-          record(identity, method + ' [999999999]', p, nfPath, r2.status, r2.bytes, flags2);
-        }
-      }
-    } else {
-      // mutating: anon, nobody, viewer, portal-* ONLY, empty JSON body
-      for (const identity of MUTATION_IDENTITIES) {
-        const session = sessions[identity];
-        const realPath = substitute(p, 'real');
-        const r = await callSafe(session, method, realPath, {});
-        const flags = detectFlags(identity, method, p, r.status, r.bytes, r.text);
-        record(identity, method, p, realPath, r.status, r.bytes, flags);
+// ---- job list (built up front so a small worker pool can run them concurrently) ----
+const jobs = [];
+for (const ep of endpoints) {
+  const { method, path: p } = ep;
+  if (method === 'GET') {
+    for (const identity of ALL_IDENTITIES) {
+      const realPath = substitute(p, 'real');
+      jobs.push({ identity, method, epPath: p, actualPath: realPath, label: method, body: undefined });
+      if (hasIdParam(p)) {
+        const nfPath = substitute(p, 'notfound');
+        jobs.push({ identity, method, epPath: p, actualPath: nfPath, label: method + ' [999999999]', body: undefined });
       }
     }
-    done++;
-    if (done % 25 === 0) console.log(`  ...${done}/${endpoints.length} endpoints done, ${reqCount} requests`);
+  } else {
+    // mutating: anon, nobody, viewer, portal-* ONLY, empty JSON body
+    for (const identity of MUTATION_IDENTITIES) {
+      const realPath = substitute(p, 'real');
+      jobs.push({ identity, method, epPath: p, actualPath: realPath, label: method, body: {} });
+    }
   }
+}
+
+async function runPool(items, limit, worker) {
+  let idx = 0;
+  let active = 0;
+  return new Promise((resolve, reject) => {
+    function pump() {
+      if (idx >= items.length && active === 0) return resolve();
+      while (active < limit && idx < items.length) {
+        const item = items[idx++];
+        active++;
+        worker(item).then(() => {
+          active--;
+          pump();
+        }).catch(reject);
+      }
+    }
+    pump();
+  });
+}
+
+async function main() {
+  console.log(`Matrix run starting: ${endpoints.length} endpoints x up to ${ALL_IDENTITIES.length} identities = ${jobs.length} requests, concurrency ${CONCURRENCY}`);
+  let done = 0;
+  await runPool(jobs, CONCURRENCY, async (job) => {
+    const session = sessions[job.identity];
+    const r = await callSafe(session, job.method, job.actualPath, job.body);
+    const flags = detectFlags(job.identity, job.method, job.epPath, r.status, r.bytes, r.text);
+    record(job.identity, job.label, job.epPath, job.actualPath, r.status, r.bytes, flags);
+    if (LOGOUT_PATHS.has(job.epPath) && RELOGIN[job.identity]) {
+      try { await RELOGIN[job.identity](session); } catch (e) { console.error(`re-login after logout failed for ${job.identity}:`, e.message); }
+    }
+    done++;
+    if (done % 200 === 0) console.log(`  ...${done}/${jobs.length} requests done`);
+  });
 
   const header = 'endpoint,identity,status,bytes,flag\n';
   const csvRows = rows.map(r => {

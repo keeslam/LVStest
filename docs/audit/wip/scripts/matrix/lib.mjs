@@ -27,7 +27,26 @@ export class Session {
     this.name = name;
     this.cookies = new Map();
     this.csrf = null;
-    this.forwardedFor = opts.forwardedFor; // BUG-009 workaround for login limiter
+    this.forwardedFor = opts.forwardedFor; // BUG-009 workaround for login limiter (static IP)
+    // Rotating-IP workaround for AM-001 (apiLimiter's authenticated-skip never fires, so every
+    // identity shares a 1000-req/15min bucket keyed by X-Forwarded-For, per BUG-009's trust-proxy
+    // behavior). opts.forwardedForBase = { a, b }: address is 10.<a>.<b>.<c>, where <c> increments
+    // once every `rotateEvery` requests, giving each identity its own distinct /24-ish range (via
+    // its own `a`) that itself rotates through several source IPs as the run progresses.
+    this.forwardedForBase = opts.forwardedForBase;
+    this.rotateEvery = opts.rotateEvery || 200;
+    this.reqCount = 0;
+  }
+  currentForwardedFor() {
+    if (this.forwardedForBase) {
+      const { a, b } = this.forwardedForBase;
+      const rotIdx = Math.floor(this.reqCount / this.rotateEvery);
+      // roll rotIdx into c (2..251), overflowing into b if a single identity ever needs >250 rotations
+      const c = 2 + (rotIdx % 250);
+      const bb = b + Math.floor(rotIdx / 250);
+      return `10.${a}.${bb}.${c}`;
+    }
+    return this.forwardedFor;
   }
   _applySetCookies(headers) {
     for (const sc of parseSetCookies(headers)) {
@@ -59,8 +78,10 @@ export class Session {
     const isMutating = !['GET', 'HEAD'].includes(method.toUpperCase());
     if (isMutating && this.csrf && !opts.omitCsrf) headers['X-CSRF-Token'] = this.csrf;
     if (opts.csrfOverride !== undefined) headers['X-CSRF-Token'] = opts.csrfOverride;
-    if (this.forwardedFor) headers['X-Forwarded-For'] = this.forwardedFor;
+    const ff = this.currentForwardedFor();
+    if (ff) headers['X-Forwarded-For'] = ff;
     if (opts.accept) headers['Accept'] = opts.accept;
+    this.reqCount++;
     const res = await fetchWithRetry(BASE + urlPath, {
       method,
       headers,
