@@ -1,0 +1,25 @@
+import { q, pool } from '../db.mjs';
+
+const out = {};
+out.vehicle = (await q(`select id from vehicles order by id limit 1`))[0]?.id;
+out.customer = (await q(`select id from customers order by id limit 1`))[0]?.id;
+out.reservation = (await q(`select id from reservations order by id limit 1`))[0]?.id;
+out.document = (await q(`select id from documents order by id limit 1`))[0]?.id;
+out.pdfTemplate = (await q(`select id from pdf_templates order by id limit 1`).catch(() => []))[0]?.id;
+out.user = (await q(`select id from users order by id limit 1`))[0]?.id;
+out.fine = (await q(`select id from fines order by id limit 1`).catch(() => []))[0]?.id;
+out.portalRequest = (await q(`select id from portal_requests order by id limit 1`).catch(() => []))[0]?.id;
+out.transport = (await q(`select id from vehicle_transports order by id limit 1`).catch(() => []))[0]?.id;
+out.pdfTemplateId2 = (await q(`select id from pdf_templates order by id desc limit 1`).catch(() => []))[0]?.id;
+out.damageCheckTemplate = (await q(`select id from damage_check_templates order by id limit 1`).catch(() => []))[0]?.id;
+out.vehicleDiagramTemplate = (await q(`select id from vehicle_diagram_templates order by id limit 1`).catch(() => []))[0]?.id;
+out.interactiveDamageCheck = (await q(`select id from interactive_damage_checks order by id limit 1`).catch(() => []))[0]?.id;
+out.reportAndLabelTemplate = (await q(`select id from barcode_label_templates order by id limit 1`).catch(() => []))[0]?.id;
+out.customNotification = (await q(`select id from custom_notifications order by id limit 1`).catch(() => []))[0]?.id;
+out.emailTemplate = (await q(`select id from email_templates order by id limit 1`).catch(() => []))[0]?.id;
+out.driver = (await q(`select id from drivers order by id limit 1`).catch(() => []))[0]?.id;
+out.customer179 = 179;
+out.licensePlate = (await q(`select license_plate from vehicles order by id limit 1`).catch(() => []))[0]?.license_plate;
+out.expense = (await q(`select id from expenses order by id limit 1`).catch(() => []))[0]?.id;
+console.log(JSON.stringify(out, null, 2));
+await pool.end();
