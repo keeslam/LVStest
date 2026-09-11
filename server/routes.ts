@@ -14,6 +14,7 @@ import {
   insertCustomerSchema, 
   insertReservationSchema, 
   insertReservationSchemaBase,
+  normaliseLicensePlate,
   insertSettingsSchema,
   reservations,
   vehicles,
@@ -105,6 +106,8 @@ import type { RouteDeps } from "./routes/deps";
 import { installIdParamValidation, rejectNullBytesInPath } from "./middleware/parseIntParam";
 import { parsePartialUpdate, parseCreateBody, BodyValidationError } from "./middleware/validateBody";
 import { sendRouteError, HttpError } from "./utils/route-errors";
+import { db } from "./db";
+import { sql } from "drizzle-orm";
 
 /**
  * The fields that move a booking in time or onto another vehicle. A PATCH that
@@ -113,6 +116,22 @@ import { sendRouteError, HttpError } from "./utils/route-errors";
  * reservation that already overlaps another one still saves.
  */
 const SCHEDULING_FIELDS = ["vehicleId", "startDate", "endDate", "startTime", "endTime", "type"] as const;
+
+/**
+ * BUG-020 — finds a vehicle whose plate is the *same plate*, whatever separators
+ * and casing it was typed with. The database's unique constraint only sees the
+ * raw text, so this is the check that actually stops a duplicate.
+ */
+async function findVehicleByNormalisedPlate(plate: string): Promise<{ id: number } | undefined> {
+  const normalised = normaliseLicensePlate(plate);
+  if (!normalised) return undefined;
+  const [row] = await db
+    .select({ id: vehicles.id })
+    .from(vehicles)
+    .where(sql`regexp_replace(upper(${vehicles.licensePlate}), '[^A-Z0-9]', '', 'g') = ${normalised}`)
+    .limit(1);
+  return row;
+}
 
 export async function registerRoutes(app: Express): Promise<void> {
   // FIX-A (BUG-002, BUG-061, BUG-101): make every handler registered anywhere in
@@ -826,12 +845,27 @@ export async function registerRoutes(app: Express): Promise<void> {
         vehicleData = insertVehicleSchema.parse(sanitizedData);
       } catch (parseError) {
         console.error("Validation error:", parseError);
-        return res.status(400).json({ 
-          message: "Invalid vehicle data format", 
-          error: parseError 
+        return res.status(400).json({
+          message: "Invalid vehicle data format",
+          errors:
+            parseError instanceof z.ZodError
+              ? parseError.errors.map((e) => ({ field: e.path.join(".") || "(body)", message: e.message }))
+              : [],
         });
       }
       
+      // BUG-020: the unique constraint compares raw text, so "AB-123-C" and
+      // "ab123c" were two vehicles. Compare the normalised form — the same
+      // normalisation server/utils/rdw-api.ts uses — before the insert.
+      const plateClash = await findVehicleByNormalisedPlate(vehicleData.licensePlate);
+      if (plateClash) {
+        return res.status(409).json({
+          message: "A vehicle with this license plate already exists. Please use a different license plate or edit the existing vehicle.",
+          field: "licensePlate",
+          conflictingVehicleId: plateClash.id,
+        });
+      }
+
       // Add user tracking information
       const user = req.user;
       const dataWithTracking = {
@@ -1190,9 +1224,24 @@ export async function registerRoutes(app: Express): Promise<void> {
       const vehicleData = parsePartialUpdate(sanitizedData, {
         table: vehicles,
         schema: insertVehicleSchema,
-        strip: ["registeredToBy", "companyBy", "mileageDecreasedBy", "mileageDecreasedAt", "previousMileage"],
+        // BUG-125: the barcode identifies the row and is assigned by the server
+        // (VEH-<id>); an edit may not overwrite it, or a scan points at the
+        // wrong vehicle. Admins regenerate it through the dedicated route.
+        strip: ["registeredToBy", "companyBy", "mileageDecreasedBy", "mileageDecreasedAt", "previousMileage", "barcode"],
         message: "Invalid vehicle data",
       });
+
+      // BUG-020: an edit may not land on another vehicle's plate either.
+      if (vehicleData.licensePlate) {
+        const clash = await findVehicleByNormalisedPlate(vehicleData.licensePlate);
+        if (clash && clash.id !== id) {
+          return res.status(409).json({
+            message: "A vehicle with this license plate already exists. Please use a different license plate or edit the existing vehicle.",
+            field: "licensePlate",
+            conflictingVehicleId: clash.id,
+          });
+        }
+      }
       
       // Validate status change if availability status is being updated
       if (sanitizedData.availabilityStatus && 

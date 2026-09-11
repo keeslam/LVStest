@@ -383,14 +383,22 @@ export class DatabaseStorage implements IStorage {
     if (!vehicle) return undefined;
     // Parse current revision from an existing -R<n> suffix; bump it.
     const match = /-R(\d+)$/.exec(vehicle.barcode ?? "");
-    const nextRevision = match ? parseInt(match[1], 10) + 1 : 2;
-    const newBarcode = formatVehicleBarcode(id, nextRevision);
-    const [updated] = await db
-      .update(vehicles)
-      .set({ barcode: newBarcode, updatedBy: updatedBy ?? vehicle.updatedBy, updatedAt: new Date() })
-      .where(eq(vehicles.id, id))
-      .returning();
-    return updated;
+    // BUG-125: the next revision was computed from this vehicle's own suffix
+    // only, so a code already taken elsewhere collided with the unique index and
+    // the route answered 500. Walk forward until a free revision is found.
+    let revision = match ? parseInt(match[1], 10) + 1 : 2;
+    for (let attempt = 0; attempt < 50; attempt++, revision++) {
+      const candidate = formatVehicleBarcode(id, revision);
+      const taken = await this.getVehicleByBarcode(candidate);
+      if (taken && taken.id !== id) continue;
+      const [updated] = await db
+        .update(vehicles)
+        .set({ barcode: candidate, updatedBy: updatedBy ?? vehicle.updatedBy, updatedAt: new Date() })
+        .where(eq(vehicles.id, id))
+        .returning();
+      return updated;
+    }
+    throw new Error("No free barcode revision found for this vehicle");
   }
 
   async updateVehicle(id: number, vehicleData: Partial<InsertVehicle>): Promise<Vehicle | undefined> {

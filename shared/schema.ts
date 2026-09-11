@@ -295,6 +295,73 @@ export const vehicles = pgTable("vehicles", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+/**
+ * BUG-111 — the reservation date columns are `text`, and nothing checked what
+ * went into them, so "not-a-date" and "2026-13-45" were stored verbatim and
+ * every date comparison downstream (conflict checks, overdue lists, the
+ * calendar) silently stopped working for that row. One yyyy-MM-dd schema that
+ * also rejects an impossible calendar day.
+ */
+export function isCalendarDate(value: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!m) return false;
+  const [year, month, day] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  if (month < 1 || month > 12 || day < 1 || day > 31) return false;
+  const d = new Date(Date.UTC(year, month - 1, day));
+  return d.getUTCFullYear() === year && d.getUTCMonth() === month - 1 && d.getUTCDate() === day;
+}
+
+export const ymdDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Use the yyyy-MM-dd format")
+  .refine(isCalendarDate, "That is not a real calendar date");
+
+/**
+ * FIX-Z (BUG-020, BUG-058) — the plate column is `text .notNull().unique()` and
+ * nothing normalised it, so "AB-123-C", "ab123c" and "AB 123 C" were three
+ * different vehicles as far as the unique constraint was concerned, and nothing
+ * stopped an emoji or a 100-character plate either.
+ *
+ * `normaliseLicensePlate` is the same normalisation `server/utils/rdw-api.ts`
+ * already uses before calling the RDW; the routes compare *this* form when they
+ * check for a duplicate.
+ */
+export function normaliseLicensePlate(value: string): string {
+  return value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+}
+
+export const licensePlateSchema = z
+  .string()
+  .trim()
+  .min(1, "License plate is required")
+  .max(20, "License plate is too long")
+  .regex(/^[A-Za-z0-9][A-Za-z0-9 .-]*$/, "A license plate holds only letters, digits, spaces and dashes")
+  .refine((v) => {
+    const n = normaliseLicensePlate(v);
+    return n.length >= 4 && n.length <= 16;
+  }, "That is not a usable license plate")
+  .transform((v) => v.trim().toUpperCase());
+
+/** A whole, non-negative odometer reading. BUG-041. */
+const mileageField = z.coerce
+  .number({ invalid_type_error: "Mileage must be a number" })
+  .int("Mileage must be a whole number")
+  .min(0, "Mileage cannot be negative")
+  .max(9999999, "Mileage is out of range")
+  .nullable()
+  .optional();
+
+/** A yyyy-MM-dd date column that may be empty. BUG-042. */
+const optionalYmd = ymdDateSchema.nullable().optional();
+
+/** A service interval: whole, positive, or absent. BUG-149. */
+const serviceIntervalField = z.coerce
+  .number({ invalid_type_error: "The interval must be a number" })
+  .int("The interval must be a whole number")
+  .positive("The interval must be greater than zero")
+  .nullable()
+  .optional();
+
 export const insertVehicleSchema = createInsertSchema(vehicles).omit({
   id: true,
   createdAt: true,
@@ -303,7 +370,32 @@ export const insertVehicleSchema = createInsertSchema(vehicles).omit({
   // createdBy: true,
   // updatedBy: true,
 }).extend({
-  currentMileage: z.number().int().min(0, "Mileage cannot be negative").nullable().optional(),
+  // BUG-020 / BUG-058
+  licensePlate: licensePlateSchema,
+  // BUG-041 — currentMileage already had a floor; its two siblings did not.
+  currentMileage: mileageField,
+  departureMileage: mileageField,
+  returnMileage: mileageField,
+  lastServiceMileage: mileageField,
+  // BUG-042 — every one of these is a `text` column that only ever holds a
+  // yyyy-MM-dd day; "2026-02-30" used to be stored verbatim.
+  apkDate: optionalYmd,
+  companyDate: optionalYmd,
+  creationDate: optionalYmd,
+  damageCheckAttachmentDate: optionalYmd,
+  damageCheckDate: optionalYmd,
+  dateIn: optionalYmd,
+  dateOut: optionalYmd,
+  euroZoneEndDate: optionalYmd,
+  lastServiceDate: optionalYmd,
+  moveIziExpirationDate: optionalYmd,
+  moveIziRegistrationDate: optionalYmd,
+  productionDate: optionalYmd,
+  registeredToDate: optionalYmd,
+  warrantyEndDate: optionalYmd,
+  // BUG-149 — "0", "-1" and "abc" all silently switched the service reminder off.
+  serviceIntervalKm: serviceIntervalField,
+  serviceIntervalMonths: serviceIntervalField,
 });
 
 // Customers table
@@ -388,6 +480,9 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   createdByUser: true,
   updatedByUser: true,
 }).extend({
+  // BUG-044 / BUG-059 — `name` is NOT NULL in the database and nothing else,
+  // so "   " created a nameless customer and a 5 000-character name was fine.
+  name: z.string().trim().min(1, "Name is required").max(255, "Name is too long"),
   email: optionalEmail,
   emailForMOT: optionalEmail,
   emailForInvoices: optionalEmail,
@@ -819,26 +914,29 @@ export const reservations = pgTable("reservations", {
   statusStartDateIdx: index("reservations_status_start_date_idx").on(table.status, table.startDate),
 }));
 
-/**
- * BUG-111 — the reservation date columns are `text`, and nothing checked what
- * went into them, so "not-a-date" and "2026-13-45" were stored verbatim and
- * every date comparison downstream (conflict checks, overdue lists, the
- * calendar) silently stopped working for that row. One yyyy-MM-dd schema that
- * also rejects an impossible calendar day.
- */
-export function isCalendarDate(value: string): boolean {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!m) return false;
-  const [year, month, day] = [Number(m[1]), Number(m[2]), Number(m[3])];
-  if (month < 1 || month > 12 || day < 1 || day > 31) return false;
-  const d = new Date(Date.UTC(year, month - 1, day));
-  return d.getUTCFullYear() === year && d.getUTCMonth() === month - 1 && d.getUTCDate() === day;
-}
 
-export const ymdDateSchema = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "Use the yyyy-MM-dd format")
-  .refine(isCalendarDate, "That is not a real calendar date");
+/**
+ * BUG-054 — a money amount: a real number, not negative, and inside something a
+ * `numeric` column and a human can both live with. An empty field clears it.
+ */
+export const priceSchema = z
+  .union([
+    z.null(),
+    z.number(),
+    z.string().transform((val, ctx) => {
+      if (val.trim() === "") return null;
+      const num = Number(val);
+      if (Number.isNaN(num)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "That is not an amount" });
+        return z.NEVER;
+      }
+      return num;
+    }),
+  ])
+  .refine((v) => v === null || (Number.isFinite(v) && v >= 0 && v <= 10_000_000), {
+    message: "The amount must be between 0 and 10000000",
+  })
+  .optional();
 
 // Base schema that can be extended by frontend forms
 export const insertReservationSchemaBase = createInsertSchema(reservations).omit({
@@ -852,20 +950,12 @@ export const insertReservationSchemaBase = createInsertSchema(reservations).omit
   deletedByUser: true,
 })
 .extend({
-  totalPrice: z.number().optional().or(
-    z.string().transform(val => {
-      // Convert empty strings to undefined, otherwise convert to number
-      if (val === '' || val === null) {
-        return undefined;
-      }
-      
-      const num = Number(val);
-      // Check if the result is NaN and return undefined instead
-      return isNaN(num) ? undefined : num;
-    })
+  // BUG-054 — this had no bounds at all, and non-numeric input silently became
+  // `undefined`: typing "abc" as a price saved the reservation with no price and
+  // told nobody. Out of range or unparseable is now a 400 naming the field.
   // BUG-202: the edit form posts every column, and an empty price arrives as ""
   // which the generic coercion turns into null. Clearing a price is legal.
-  ).or(z.null()),
+  totalPrice: priceSchema,
   startDate: ymdDateSchema, // BUG-111: a text column, but only ever a real yyyy-MM-dd date
   endDate: ymdDateSchema.optional().or(z.null()), // optional for open-ended rentals; still a real date
   startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use 24-hour HH:MM").optional().or(z.literal('')).or(z.null()),
