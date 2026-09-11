@@ -1405,6 +1405,12 @@ export const emailLogs = pgTable("email_logs", {
   failureReason: text("failure_reason"),
   vehicleIds: jsonb("vehicle_ids").$type<number[]>().default([]).notNull(),
   sentAt: text("sent_at").notNull(),
+  // FIX-M (BUG-155, BUG-185): every single send attempt writes its own row, so
+  // "did this customer get the contract" has an answer and a bulk run that
+  // dies halfway still leaves a trail. Nullable, because the pre-existing rows
+  // are per-run summaries that have neither.
+  recipient: text("recipient"),
+  result: text("result"), // 'sent' | 'failed'
 });
 
 export const insertEmailLogSchema = createInsertSchema(emailLogs)

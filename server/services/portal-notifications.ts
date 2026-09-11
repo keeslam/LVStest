@@ -2,7 +2,22 @@ import { storage } from "../storage";
 import { broadcastDataUpdate } from "../realtime-events";
 import { sendEmail } from "../utils/email-service";
 import { getPortalConfig } from "./portal-config";
-import { getPortalTemplate, renderTemplate, PORTAL_TEMPLATE } from "./portal-mail";
+import { getPortalTemplate, renderTemplate, renderTemplateText, PORTAL_TEMPLATE } from "./portal-mail";
+
+/**
+ * FIX-M (BUG-196) — turns the in-app link of a staff event into something a
+ * mail client can actually open. A relative `/portal-admin?request=12` becomes
+ * `<base>/portal-admin?request=12`; an already-absolute link is left alone, and
+ * an empty one stays empty (the template then renders a dead "Openen in de app"
+ * rather than a wrong destination).
+ */
+export function absoluteStaffLink(baseUrl: string, link?: string): string {
+  if (!link) return "";
+  if (/^https?:\/\//i.test(link)) return link;
+  const base = (baseUrl || "").replace(/\/$/, "");
+  if (!base) return link;
+  return `${base}${link.startsWith("/") ? "" : "/"}${link}`;
+}
 
 export interface PortalStaffEvent {
   /** e.g. 'portal_driver_change', later 'portal_booking_request', 'portal_request' */
@@ -56,11 +71,14 @@ export async function notifyStaffOfPortalEvent(event: PortalStaffEvent): Promise
       title: event.title,
       description: event.description,
       company: customer?.companyName || customer?.name || (event.customerId ? String(event.customerId) : "CJIB"),
-      link: event.link ?? "",
+      // BUG-196: "Openen in de app" pointed at a relative path, which is not a
+      // link at all once it is in somebody's mailbox. Absolute, built on the
+      // configured base URL, with the query string intact.
+      link: absoluteStaffLink(config.portalBaseUrl, event.link),
     };
     await sendEmail({
       to: config.notificationEmail,
-      subject: renderTemplate(template.subject, vars),
+      subject: renderTemplateText(template.subject, vars),
       html: renderTemplate(template.content, vars),
     }, "custom");
   } catch (error) {

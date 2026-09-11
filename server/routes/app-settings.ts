@@ -8,7 +8,7 @@ import { parsePartialUpdate } from "../middleware/validateBody";
 import { sendRouteError } from "../utils/route-errors";
 import multer from "multer";
 import { hasPermission, requireAdmin } from "../middleware/permissions.js";
-import { clearEmailConfigCache, testSmtpConnection } from "../utils/email-service";
+import { clearEmailConfigCache, testSmtpConnection, isSafeHeaderValue } from "../utils/email-service";
 import { mergeHolidaysWithOverrides } from "../../shared/holidays";
 import { createSecureMulterFilter, sanitizeFilename } from "../utils/security/fileUploadSecurity";
 import type { Express } from "express";
@@ -293,6 +293,39 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
     }
   });
 
+  /**
+   * FIX-M (BUG-100) — validates an `email` app-setting before it is stored.
+   * Returns the 400 body, or null when there is nothing to complain about.
+   */
+  function validateEmailSetting(category: unknown, value: unknown): { message: string; errors: Array<{ field: string; message: string }> } | null {
+    if (category !== "email" || value === null || value === undefined) return null;
+    let parsed: any = value;
+    if (typeof parsed === "string") {
+      try { parsed = JSON.parse(parsed); } catch { return null; }
+    }
+    if (!parsed || typeof parsed !== "object") return null;
+
+    const errors: Array<{ field: string; message: string }> = [];
+    for (const field of ["fromName", "fromEmail", "smtpHost", "smtpUser"]) {
+      const v = parsed[field];
+      if (v !== undefined && v !== null && !isSafeHeaderValue(String(v))) {
+        errors.push({ field, message: "A line break is not allowed here" });
+      }
+    }
+    if (parsed.fromEmail !== undefined && parsed.fromEmail !== null && parsed.fromEmail !== "") {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(parsed.fromEmail))) {
+        errors.push({ field: "fromEmail", message: "That is not an e-mail address" });
+      }
+    }
+    if (parsed.smtpPort !== undefined && parsed.smtpPort !== null && parsed.smtpPort !== "") {
+      const port = Number(parsed.smtpPort);
+      if (!Number.isInteger(port) || port < 1 || port > 65535) {
+        errors.push({ field: "smtpPort", message: "The port must be a number between 1 and 65535" });
+      }
+    }
+    return errors.length ? { message: "Invalid e-mail settings", errors } : null;
+  }
+
   // Get app settings by category
   app.get("/api/app-settings/:category", hasPermission(UserPermission.MANAGE_SETTINGS), async (req: Request, res: Response) => {
     try {
@@ -337,6 +370,13 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
       const user = req.user;
       const { key, value, category, description } = req.body;
 
+      // BUG-100: an e-mail configuration is validated before it is stored — a
+      // fromName carrying `\r\nBcc: …`, a host with a line break or a port
+      // outside 1-65535 is refused here rather than surfacing as an injected
+      // header (or a broken transporter) on every message afterwards.
+      const emailProblem = validateEmailSetting(category, value);
+      if (emailProblem) return res.status(400).json(emailProblem);
+
       // Check if setting with this key already exists
       const existing = await storage.getAppSettingByKey(key);
 
@@ -379,6 +419,10 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
       const user = req.user;
       const id = parseInt(req.params.id);
       const { key, value, category, description } = req.body;
+
+      // BUG-100: same validation as the upsert above.
+      const emailProblem = validateEmailSetting(category, value);
+      if (emailProblem) return res.status(400).json(emailProblem);
 
       const updated = await storage.updateAppSetting(id, {
         key,

@@ -54,10 +54,14 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
       description: reply ? reply.slice(0, 300) : `Lam Groep heeft uw aanvraag #${id} ${STATUS_LABEL[status] ?? status}.`,
       link: `/aanvragen/${id}`,
     });
-    try { await sendRequestReplyMail(id); } catch (e) { console.error("request reply mail failed:", e); }
+    // BUG-155: whether the customer actually got the mail is part of the
+    // answer, not something to swallow into the log. The caller passes it on as
+    // `mailSent`, so the staff screen can say "reply saved, mail failed".
+    let mailSent = false;
+    try { mailSent = await sendRequestReplyMail(id); } catch (e) { console.error("request reply mail failed:", e); }
     await portalStorage.logActivity({ customerId, action: "request_replied", entity: "request", entityId: id, details: { status, by: actor(req) } });
     await AuditLogger.logFromRequest(req, "portal_request.reply", "portal_request", id, { status });
-    return updated;
+    return { ...(updated as Record<string, unknown>), mailSent } as typeof updated & { mailSent: boolean };
   }
 
   app.get("/api/portal-requests", canView, async (req, res) => {

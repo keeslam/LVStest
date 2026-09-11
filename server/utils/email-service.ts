@@ -1,5 +1,7 @@
 import { storage } from "../storage";
 import nodemailer from "nodemailer";
+import { db } from "../db";
+import { emailLogs } from "../../shared/schema";
 
 export interface EmailAttachment {
   filename: string;
@@ -14,6 +16,53 @@ export interface EmailOptions {
   html?: string;
   text?: string;
   attachments?: EmailAttachment[];
+  /**
+   * FIX-M (BUG-196): transfer encoding for the body parts. Portal mail sends
+   * base64 so a euro sign survives every hop and a `?request=12` deep link can
+   * never be read back as a quoted-printable escape.
+   */
+  textEncoding?: "base64" | "quoted-printable";
+  /** What the `email_logs` row is filed under; defaults to the purpose. */
+  logTemplate?: string;
+}
+
+/**
+ * FIX-M (BUG-100) — a header value may never carry CR or LF. Without this an
+ * SMTP-settings save of `Lam Groep\r\nBcc: evil@example.com` became a real Bcc
+ * header on every message the app sent.
+ */
+export function isSafeHeaderValue(value: unknown): boolean {
+  return typeof value === "string" && !/[\r\n]/.test(value);
+}
+
+/**
+ * One `email_logs` row per attempt — success and failure — written where the
+ * attempt happens instead of once after a loop (BUG-155, BUG-185). Never
+ * throws: logging a mail must not fail the mail.
+ */
+async function logEmailAttempt(entry: {
+  template: string;
+  subject: string;
+  recipient: string;
+  sent: boolean;
+  failureReason?: string | null;
+}): Promise<void> {
+  try {
+    await db.insert(emailLogs).values({
+      template: entry.template.slice(0, 120),
+      subject: entry.subject.slice(0, 500),
+      recipients: 1,
+      emailsSent: entry.sent ? 1 : 0,
+      emailsFailed: entry.sent ? 0 : 1,
+      failureReason: entry.sent ? null : (entry.failureReason ?? "unknown error").slice(0, 1000),
+      vehicleIds: [],
+      sentAt: new Date().toISOString(),
+      recipient: entry.recipient.slice(0, 320),
+      result: entry.sent ? "sent" : "failed",
+    });
+  } catch (error) {
+    console.error("Failed to write email_logs row:", error);
+  }
 }
 
 export interface EmailError {
@@ -31,6 +80,8 @@ interface EmailConfig {
   smtpUser: string;
   smtpPassword: string;
   smtpSecure: boolean;
+  /** BUG-080: TLS certificate validation. On unless a setting turns it off. */
+  rejectUnauthorized: boolean;
 }
 
 // Cache for email configs by purpose
@@ -94,14 +145,39 @@ async function getEmailConfig(purpose?: 'apk' | 'maintenance' | 'gps' | 'documen
       return null;
     }
 
+    // BUG-100: a stored fromName/fromEmail with a CR or LF in it would become
+    // extra headers on every message. Refuse the config outright rather than
+    // sending with an attacker-chosen Bcc.
+    if (!isSafeHeaderValue(value.fromEmail) || !isSafeHeaderValue(value.fromName ?? '')) {
+      console.error('❌ Email configuration rejected: fromEmail/fromName contains a line break');
+      return null;
+    }
+
+    const smtpPort = value.smtpPort ? parseInt(String(value.smtpPort)) : 587;
+    // BUG-186: the stored `smtpSecure` flag was ignored — `secure` was derived
+    // from a *string* comparison against '465', so a config saved as TLS on 465
+    // with a numeric port went out in plain text and one saved as secure on 587
+    // never used it. Honour the flag; fall back to the port convention only
+    // when it was never stored.
+    const smtpSecure = value.smtpSecure === undefined || value.smtpSecure === null
+      ? smtpPort === 465
+      : value.smtpSecure === true || value.smtpSecure === 'true';
+
+    // BUG-080: certificate validation was switched off for every outgoing
+    // connection, which makes the TLS meaningless. On by default; an explicit
+    // setting can turn it off for a relay with a self-signed certificate, and
+    // that choice is logged loudly every time a transporter is built.
+    const rejectUnauthorized = !(value.smtpAllowInvalidCert === true || value.smtpAllowInvalidCert === 'true');
+
     const config: EmailConfig = {
       fromEmail: value.fromEmail,
       fromName: value.fromName || 'Autolease Lam',
       smtpHost: value.smtpHost,
-      smtpPort: value.smtpPort ? parseInt(value.smtpPort) : 587,
+      smtpPort,
       smtpUser: value.smtpUser,
       smtpPassword: value.smtpPassword,
-      smtpSecure: value.smtpPort === '465'
+      smtpSecure,
+      rejectUnauthorized,
     };
 
     cachedConfigs.set(cacheKey, { config, timestamp: now });
@@ -193,6 +269,8 @@ export interface SmtpTestInput {
   smtpUser: string;
   smtpPassword: string;
   smtpSecure: boolean;
+  /** BUG-080: only an explicit opt-out skips certificate validation. */
+  smtpAllowInvalidCert?: boolean;
 }
 
 export interface SmtpTestResult {
@@ -214,10 +292,14 @@ export async function testSmtpConnection(input: SmtpTestInput): Promise<SmtpTest
       pass: input.smtpPassword,
     },
     tls: {
-      rejectUnauthorized: false
+      // BUG-080: the connection test validates the certificate too, so an
+      // admin finds out here rather than by trusting a relay that mail is
+      // silently being handed to unverified.
+      rejectUnauthorized: input.smtpAllowInvalidCert !== true,
     },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
+    connectionTimeout: SMTP_TIMEOUT_MS,
+    greetingTimeout: SMTP_TIMEOUT_MS,
+    socketTimeout: SMTP_TIMEOUT_MS,
   });
 
   try {
@@ -240,14 +322,31 @@ export async function testSmtpConnection(input: SmtpTestInput): Promise<SmtpTest
 const cachedTransporters: Map<string, nodemailer.Transporter> = new Map();
 
 function transporterKey(config: EmailConfig): string {
-  return `${config.smtpHost}:${config.smtpPort}:${config.smtpUser}:${config.smtpSecure}`;
+  return `${config.smtpHost}:${config.smtpPort}:${config.smtpUser}:${config.smtpSecure}:${config.rejectUnauthorized}`;
 }
+
+/**
+ * FIX-M (BUG-171): 10 s on each of the three phases. Without them a mail
+ * server that accepts the TCP connection and then says nothing holds a pooled
+ * connection open forever; with `maxConnections: 2`, two such messages stop
+ * *all* mail from the application — including password recovery — with no
+ * error anywhere.
+ */
+export const SMTP_TIMEOUT_MS = 10000;
 
 function getTransporter(config: EmailConfig): nodemailer.Transporter {
   const key = transporterKey(config);
   const cached = cachedTransporters.get(key);
   if (cached) {
     return cached;
+  }
+
+  if (!config.rejectUnauthorized) {
+    console.warn(
+      `⚠️ SMTP certificate validation is DISABLED for ${config.smtpHost}:${config.smtpPort} ` +
+      `(smtpAllowInvalidCert). Mail to this relay can be intercepted; turn it back on as soon as the ` +
+      `certificate is fixed.`,
+    );
   }
 
   const transporter = nodemailer.createTransport({
@@ -259,8 +358,13 @@ function getTransporter(config: EmailConfig): nodemailer.Transporter {
       pass: config.smtpPassword,
     },
     tls: {
-      rejectUnauthorized: false // Allow certificate validation bypass for servers with certificate mismatches
+      // BUG-080: validation is on unless the stored settings explicitly waive it.
+      rejectUnauthorized: config.rejectUnauthorized,
     },
+    // BUG-171: a hanging mail server must fail this send, not every send.
+    connectionTimeout: SMTP_TIMEOUT_MS,
+    greetingTimeout: SMTP_TIMEOUT_MS,
+    socketTimeout: SMTP_TIMEOUT_MS,
     pool: true,
     maxConnections: 2,
     maxMessages: 100,
@@ -269,17 +373,45 @@ function getTransporter(config: EmailConfig): nodemailer.Transporter {
   return transporter;
 }
 
-async function sendViaSmtp(config: EmailConfig, options: EmailOptions): Promise<boolean> {
+/** Exposed for the regression test: the options a transporter is built with. */
+export function describeTransportOptions(config: EmailConfig): Record<string, unknown> {
+  return {
+    host: config.smtpHost,
+    port: config.smtpPort,
+    secure: config.smtpSecure,
+    rejectUnauthorized: config.rejectUnauthorized,
+    connectionTimeout: SMTP_TIMEOUT_MS,
+    greetingTimeout: SMTP_TIMEOUT_MS,
+    socketTimeout: SMTP_TIMEOUT_MS,
+  };
+}
+
+/** The resolved SMTP configuration for a purpose — for tests and diagnostics. */
+export async function resolveEmailConfig(purpose?: 'apk' | 'maintenance' | 'gps' | 'documents' | 'custom') {
+  return getEmailConfig(purpose);
+}
+
+async function sendViaSmtp(config: EmailConfig, options: EmailOptions): Promise<{ sent: boolean; failureReason?: string }> {
   try {
     const transporter = getTransporter(config);
 
     const mailOptions: any = {
-      from: `"${config.fromName}" <${config.fromEmail}>`,
-      to: options.to,
+      // BUG-100: the address is handed over in object form, so nodemailer
+      // encodes the display name instead of us pasting it into a header.
+      from: { name: config.fromName, address: config.fromEmail },
+      to: options.toName && isSafeHeaderValue(options.toName)
+        ? { name: options.toName, address: options.to }
+        : options.to,
       subject: options.subject,
       text: options.text,
       html: options.html,
     };
+
+    // BUG-196: an explicit transfer encoding for the body parts. base64 is the
+    // default now: quoted-printable is where the euro sign came out as `â¬`
+    // and where a `?request=12` deep link could be read back as an escape
+    // sequence. The charset stays UTF-8, declared per part by nodemailer.
+    mailOptions.textEncoding = options.textEncoding ?? "base64";
 
     if (options.attachments && options.attachments.length > 0) {
       mailOptions.attachments = options.attachments;
@@ -287,7 +419,7 @@ async function sendViaSmtp(config: EmailConfig, options: EmailOptions): Promise<
 
     const info = await transporter.sendMail(mailOptions);
     console.log('✅ SMTP email sent:', info.messageId);
-    return true;
+    return { sent: true };
   } catch (error: any) {
     const { userMessage, suggestion } = getSmtpErrorMessage(error);
     console.error('❌ SMTP email error:', error);
@@ -295,19 +427,45 @@ async function sendViaSmtp(config: EmailConfig, options: EmailOptions): Promise<
     if (suggestion) {
       console.error('💡 Suggestion:', suggestion);
     }
-    return false;
+    return { sent: false, failureReason: `${error?.code || error?.responseCode || 'ERROR'}: ${userMessage}` };
   }
 }
 
 export async function sendEmail(options: EmailOptions, purpose?: 'apk' | 'maintenance' | 'gps' | 'documents' | 'custom'): Promise<boolean> {
-  const config = await getEmailConfig(purpose);
+  // FIX-M (BUG-155, BUG-185): every attempt is accounted for — the send that
+  // worked, the send that failed, and the send that never happened because the
+  // configuration is missing. The row is written in a `finally`, so a throw on
+  // the way out still leaves the trail.
+  let sent = false;
+  let failureReason: string | undefined;
+  try {
+    const config = await getEmailConfig(purpose);
 
-  if (!config) {
-    console.error(`❌ Cannot send email: No valid email configuration found for purpose: ${purpose || 'default'}`);
-    return false;
+    if (!config) {
+      failureReason = `No valid email configuration for purpose: ${purpose || 'default'}`;
+      console.error(`❌ Cannot send email: ${failureReason}`);
+      return false;
+    }
+
+    if (!isSafeHeaderValue(options.to) || !isSafeHeaderValue(options.subject)) {
+      failureReason = 'Recipient or subject contains a line break';
+      console.error(`❌ Cannot send email: ${failureReason}`);
+      return false;
+    }
+
+    const result = await sendViaSmtp(config, options);
+    sent = result.sent;
+    failureReason = result.failureReason;
+    return sent;
+  } finally {
+    await logEmailAttempt({
+      template: options.logTemplate || purpose || 'default',
+      subject: options.subject,
+      recipient: options.to,
+      sent,
+      failureReason,
+    });
   }
-
-  return sendViaSmtp(config, options);
 }
 
 // Clear the cache - useful when settings are updated. Also closes any pooled

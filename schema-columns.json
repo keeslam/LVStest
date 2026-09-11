@@ -1833,6 +1833,20 @@
         "notNull": true,
         "primary": false,
         "default": null
+      },
+      {
+        "name": "recipient",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "result",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
       }
     ]
   },

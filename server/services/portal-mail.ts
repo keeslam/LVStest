@@ -105,8 +105,34 @@ export async function ensurePortalEmailTemplates(): Promise<void> {
   }
 }
 
+/**
+ * FIX-M (BUG-187) — every interpolated value is HTML-escaped.
+ *
+ * These templates are HTML and the variables are portal-controlled: a customer
+ * who names a driver `<img src=x onerror=…>`, or types a request message full
+ * of markup, had it rendered as live HTML in staff mail and in the stored
+ * in-app notification. Escaping at the one substitution point is what fixes
+ * every template at once, including the ones staff edit themselves.
+ */
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export function renderTemplate(content: string, vars: Record<string, string>): string {
-  return content.replace(/\{\{\s*(\w+)\s*\}\}/g, (_m, key: string) => vars[key] ?? "");
+  return content.replace(/\{\{\s*(\w+)\s*\}\}/g, (_m, key: string) => escapeHtml(String(vars[key] ?? "")));
+}
+
+/**
+ * The same substitution for a value that is NOT HTML — a subject line, where
+ * `&amp;` would be read literally by every mail client.
+ */
+export function renderTemplateText(content: string, vars: Record<string, string>): string {
+  return content.replace(/\{\{\s*(\w+)\s*\}\}/g, (_m, key: string) => String(vars[key] ?? ""));
 }
 
 export async function getPortalTemplate(name: string): Promise<{ subject: string; content: string }> {
@@ -117,7 +143,17 @@ export async function getPortalTemplate(name: string): Promise<{ subject: string
 }
 
 function stripHtml(html: string): string {
-  return html.replace(/<[^>]+>/g, "").replace(/\n{2,}/g, "\n").trim();
+  // The HTML half is escaped (BUG-187); the plain-text half has to read back as
+  // what the customer actually typed, not as entities.
+  return html
+    .replace(/<[^>]+>/g, "")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/\n{2,}/g, "\n")
+    .trim();
 }
 
 /**
@@ -139,7 +175,7 @@ export async function sendPortalInvite(user: PortalUser, kind: "invite" | "reset
   const sent = await sendEmail({
     to: user.email,
     toName: user.fullName,
-    subject: renderTemplate(template.subject, vars),
+    subject: renderTemplateText(template.subject, vars),
     html,
     text: stripHtml(html),
   }, "custom");
@@ -151,7 +187,7 @@ export async function sendNewDeviceMail(user: PortalUser, info: { ua: string; ip
   const template = await getPortalTemplate(PORTAL_TEMPLATE.NEW_DEVICE);
   const vars = { name: user.fullName, ua: info.ua, ip: info.ip, at: new Date(info.at).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam" }) };
   const html = renderTemplate(template.content, vars);
-  return sendEmail({ to: user.email, toName: user.fullName, subject: renderTemplate(template.subject, vars), html, text: stripHtml(html) }, "custom");
+  return sendEmail({ to: user.email, toName: user.fullName, subject: renderTemplateText(template.subject, vars), html, text: stripHtml(html) }, "custom");
 }
 
 /** Sends the confirmation link for a new address to that new address; only its hash is stored. */
@@ -163,7 +199,7 @@ export async function sendEmailChangeMail(user: PortalUser, newEmail: string): P
   const template = await getPortalTemplate(PORTAL_TEMPLATE.EMAIL_CHANGE);
   const vars = { name: user.fullName, newEmail, link };
   const html = renderTemplate(template.content, vars);
-  const sent = await sendEmail({ to: newEmail, toName: user.fullName, subject: renderTemplate(template.subject, vars), html, text: stripHtml(html) }, "custom");
+  const sent = await sendEmail({ to: newEmail, toName: user.fullName, subject: renderTemplateText(template.subject, vars), html, text: stripHtml(html) }, "custom");
   return { sent, token };
 }
 
@@ -185,7 +221,7 @@ export async function sendFineLinkedMail(fineId: number): Promise<boolean> {
     link: `${config.portalBaseUrl.replace(/\/$/, "")}/portaal/bekeuringen/${fine.id}`,
   };
   const html = renderTemplate(template.content, vars);
-  return sendEmail({ to, subject: renderTemplate(template.subject, vars), html, text: stripHtml(html) }, "custom");
+  return sendEmail({ to, subject: renderTemplateText(template.subject, vars), html, text: stripHtml(html) }, "custom");
 }
 
 /** Maintenance news for a customer: planned, moved, car in, car ready, cancelled, replacement ready. */
@@ -204,7 +240,7 @@ export async function sendMaintenanceMail(customerId: number, vars: { plate: str
     link: `${config.portalBaseUrl.replace(/\/$/, "")}/portaal/voertuigen`,
   };
   const html = renderTemplate(template.content, v);
-  return sendEmail({ to, subject: renderTemplate(template.subject, v), html, text: stripHtml(html) }, "custom");
+  return sendEmail({ to, subject: renderTemplateText(template.subject, v), html, text: stripHtml(html) }, "custom");
 }
 
 const REQUEST_TYPE_LABEL: Record<string, string> = { extension: "verlenging", early_return: "eerder inleveren", damage: "schademelding", fine_question: "vraag over bekeuring", other: "overig" };
@@ -222,5 +258,5 @@ export async function sendRequestReplyMail(requestId: number): Promise<boolean> 
     link: `${config.portalBaseUrl.replace(/\/$/, "")}/portaal/aanvragen/${row.id}`,
   };
   const html = renderTemplate(template.content, vars);
-  return sendEmail({ to: row.submitterEmail, toName: row.submittedBy ?? undefined, subject: renderTemplate(template.subject, vars), html, text: stripHtml(html) }, "custom");
+  return sendEmail({ to: row.submitterEmail, toName: row.submittedBy ?? undefined, subject: renderTemplateText(template.subject, vars), html, text: stripHtml(html) }, "custom");
 }
