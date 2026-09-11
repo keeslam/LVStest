@@ -36,6 +36,16 @@ import {
   getStatusOnReturn,
   VehicleAvailabilityStatus
 } from "./vehicle-status-helper";
+import {
+  overlapWhere,
+  partitionOverlaps,
+  vehicleLockSql,
+  bookableVerdict,
+  refusedVerdict,
+  BookingConflictError,
+  type BookingRequest,
+  type BookabilityVerdict,
+} from "./services/bookability";
 import { getDataSource, getField as getReportField } from "../shared/report-builder-config";
 import { buildDefaultDamageCheckCanvasFields } from "../shared/damage-check-default-layout";
 
@@ -1533,6 +1543,70 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
+  /**
+   * FIX-F — the one bookability predicate (CQ-006). Every writer and every
+   * read-only availability check goes through this; the SQL lives in
+   * `server/services/bookability.ts`.
+   *
+   * Pass `executor` an open transaction to have the check read inside the same
+   * transaction (and behind the same advisory lock) as the write it guards —
+   * that, and not the check itself, is what stops two concurrent writers from
+   * both winning (BUG-006, BUG-159, BUG-160, BUG-173).
+   */
+  async isVehicleBookable(request: BookingRequest, executor: any = db): Promise<BookabilityVerdict> {
+    const rows: Reservation[] = await executor
+      .select()
+      .from(reservations)
+      .where(overlapWhere(request));
+
+    const [vehicle] = await executor.select().from(vehicles).where(eq(vehicles.id, request.vehicleId));
+    const { conflicts, maintenanceBlocks } = partitionOverlaps(rows, !!request.isMaintenanceBlock);
+
+    // Batch-load customers instead of one query per reservation.
+    const customerIds = Array.from(new Set(
+      rows.map(r => r.customerId).filter((id): id is number => id !== null && id !== undefined)
+    ));
+    const customerRows: Customer[] = customerIds.length
+      ? await executor.select().from(customers).where(inArray(customers.id, customerIds))
+      : [];
+    const customerById = new Map(customerRows.map(c => [c.id, c]));
+    const enrich = (list: Reservation[]) => list.map(reservation => ({
+      ...reservation,
+      vehicle: vehicle ?? undefined,
+      customer: reservation.customerId !== null && reservation.customerId !== undefined
+        ? customerById.get(reservation.customerId)
+        : undefined,
+    }));
+
+    const enrichedConflicts = enrich(conflicts);
+    const enrichedBlocks = enrich(maintenanceBlocks);
+
+    // besluiten.md B-01 — "beschikbaar" is free in the period AND status ok.
+    // A vehicle that is no longer in `vehicles` is in the recycle bin (the
+    // delete snapshots the row into `deleted_records`); booking onto it is what
+    // produced the ghost reservations of BUG-108.
+    if (!vehicle) {
+      return refusedVerdict("VEHICLE_NOT_FOUND", null, [], enrichedBlocks);
+    }
+    if (enrichedConflicts.length > 0) {
+      return refusedVerdict("CONFLICT", vehicle, enrichedConflicts, enrichedBlocks);
+    }
+    // BUG-018 — `not_for_rental` stayed bookable through the API. Scheduling
+    // the workshop on such a vehicle must stay possible, so the gate applies to
+    // rentals only, never to a maintenance block.
+    if (!request.isMaintenanceBlock && vehicle.availabilityStatus === 'not_for_rental') {
+      return refusedVerdict("NOT_FOR_RENTAL", vehicle, [], enrichedBlocks);
+    }
+    return bookableVerdict(vehicle, enrichedBlocks);
+  }
+
+  /**
+   * The read-only half of the predicate, kept under its old name and shape for
+   * the ~20 existing callers (check-conflicts, check-availability, the overlap
+   * screens). It is the same SQL the writers run — that identity is the point
+   * of FIX-F: the screen that says "conflict" and the save that refuses it can
+   * no longer disagree.
+   */
   async checkReservationConflicts(
     vehicleId: number,
     startDate: string,
@@ -1542,91 +1616,261 @@ export class DatabaseStorage implements IStorage {
     startTime: string | null = null,
     endTime: string | null = null
   ): Promise<Reservation[]> {
-    // For open-ended rentals (null endDate), use a far-future date for conflict checking
-    // This ensures that an open-ended rental conflicts with all future reservations
-    const effectiveEndDate = endDate || '9999-12-31';
-    const newStartTime = startTime || null;
-    const newEndTime = endTime || null;
+    const verdict = await this.isVehicleBookable({
+      vehicleId,
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+      excludeReservationId,
+      isMaintenanceBlock,
+    });
+    return verdict.conflicts;
+  }
 
-    // Build the base conditions
-    const baseConditions = [
-      eq(reservations.vehicleId, vehicleId),
-      sql`${reservations.status} != 'cancelled'`,
-      sql`${reservations.status} != 'completed'`,
-      sql`${reservations.status} != 'returned'`,
-      isNull(reservations.deletedAt),
-      // Overlap check with same-day turnover allowed: a rental ending the same
-      // calendar day another begins is a normal handover (return in the morning,
-      // new pickup that afternoon), not a double-booking — UNLESS both sides
-      // recorded a scheduled time and those times actually overlap (e.g. existing
-      // returns at 18:00 but the new pickup wants 09:00 the same day, so the car
-      // genuinely isn't back yet). Missing a time on either side falls back to the
-      // permissive date-only behavior, since there's nothing more precise to check.
-      // A genuine multi-day overlap (or an identical range) always still conflicts.
-      sql`(
-        (
-          (${reservations.startDate} <= ${effectiveEndDate} AND ${reservations.endDate} >= ${startDate})
-          OR (${reservations.startDate} <= ${effectiveEndDate} AND (${reservations.endDate} IS NULL OR ${reservations.endDate} = 'undefined'))
-        )
-        AND NOT (
-          (
-            ${reservations.endDate} IS NOT NULL AND ${reservations.endDate} = ${startDate}
-            AND (
-              ${reservations.endTime} IS NULL OR ${newStartTime}::text IS NULL
-              OR ${reservations.endTime} <= ${newStartTime}
-            )
-          )
-          OR (
-            ${effectiveEndDate} = ${reservations.startDate}
-            AND (
-              ${newEndTime}::text IS NULL OR ${reservations.startTime} IS NULL
-              OR ${newEndTime} <= ${reservations.startTime}
-            )
-          )
-        )
-      )`
-    ];
-    
-    // If this is a maintenance block, only check for conflicts with OTHER maintenance blocks
-    // Regular rentals can continue during maintenance (with spare vehicles)
-    if (isMaintenanceBlock) {
-      baseConditions.push(sql`${reservations.type} = 'maintenance_block'`);
-    } else {
-      // For regular rentals, maintenance blocks don't cause conflicts (rentals continue during maintenance)
-      baseConditions.push(sql`${reservations.type} != 'maintenance_block'`);
-    }
-    
-    // Add exclusion if provided
-    if (excludeReservationId !== null) {
-      baseConditions.push(sql`${reservations.id} != ${excludeReservationId}`);
-    }
-    
-    const reservationsData = await db
-      .select()
-      .from(reservations)
-      .where(and(...baseConditions));
-    
-    const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, vehicleId));
+  /**
+   * Runs `fn` inside one transaction holding a transaction-scoped advisory lock
+   * on every vehicle involved, taken in **ascending id order** so two requests
+   * touching the same pair can never take them in opposite orders (the deadlock
+   * rule of plan §9.1). Pass `executor` to join a transaction that is already
+   * open instead of nesting a new one.
+   */
+  private async withBookingLocks<T>(
+    vehicleIds: Array<number | null | undefined>,
+    fn: (tx: any) => Promise<T>,
+    executor?: any,
+  ): Promise<T> {
+    const ids = Array.from(new Set(
+      vehicleIds.filter((id): id is number => typeof id === 'number' && Number.isFinite(id))
+    )).sort((a, b) => a - b);
 
-    // Batch-load customers instead of one query per reservation.
-    const customerIds = Array.from(new Set(
-      reservationsData
-        .map(r => r.customerId)
-        .filter((id): id is number => id !== null && id !== undefined)
-    ));
+    const run = async (tx: any): Promise<T> => {
+      for (const id of ids) {
+        await tx.execute(vehicleLockSql(id));
+      }
+      return fn(tx);
+    };
 
-    const customerRows = customerIds.length
-      ? await db.select().from(customers).where(inArray(customers.id, customerIds))
-      : [];
-    const customerById = new Map(customerRows.map(c => [c.id, c]));
+    if (executor && executor !== db) return run(executor);
+    return db.transaction(run as any) as Promise<T>;
+  }
 
-    return reservationsData.map(reservation => ({
-      ...reservation,
-      vehicle,
-      customer: reservation.customerId !== null && reservation.customerId !== undefined
-        ? customerById.get(reservation.customerId)
+  /** The `totalPrice` coercion `createReservation` has always done. */
+  private normalizeReservationInsert(reservationData: InsertReservation): any {
+    return {
+      ...reservationData,
+      totalPrice: reservationData.totalPrice !== undefined
+        ? String(reservationData.totalPrice)
         : undefined,
-    }));
+    };
+  }
+
+  /** The empty-string/"undefined" cleanup `updateReservation` has always done. */
+  private normalizeReservationUpdate(reservationData: Partial<InsertReservation>): any {
+    const dataToUpdate: any = { ...reservationData };
+
+    if ('totalPrice' in dataToUpdate) {
+      const val = dataToUpdate.totalPrice;
+      dataToUpdate.totalPrice = (val === '' || val === null || val === undefined || val === 'undefined')
+        ? null
+        : String(val);
+    }
+
+    const numericFields = [
+      'deliveryFee', 'fuelCost', 'departureMileage', 'startMileage',
+      'deliveryStaffId', 'driverId', 'replacementForReservationId',
+      'affectedRentalId', 'recurringParentId', 'maintenanceDuration'
+    ];
+    numericFields.forEach(field => {
+      if (field in dataToUpdate) {
+        const val = dataToUpdate[field];
+        if (val === '' || val === null || val === undefined || val === 'undefined') {
+          dataToUpdate[field] = null;
+        }
+      }
+    });
+
+    return dataToUpdate;
+  }
+
+  /** Attaches the vehicle and customer a reservation response carries. */
+  private async attachReservationRelations(reservation: typeof reservations.$inferSelect): Promise<Reservation> {
+    let vehicle: Vehicle | undefined = undefined;
+    if (reservation.vehicleId !== null) {
+      const [v] = await db.select().from(vehicles).where(eq(vehicles.id, reservation.vehicleId));
+      vehicle = v ?? undefined;
+    }
+    const c = reservation.customerId !== null
+      ? (await db.select().from(customers).where(eq(customers.id, reservation.customerId)))[0]
+      : undefined;
+    return { ...reservation, vehicle, customer: c ?? undefined };
+  }
+
+  /**
+   * FIX-F — create a reservation with the bookability check **inside** the same
+   * transaction as the insert, behind the vehicle's advisory lock. This is the
+   * only create path a rental should use; `createReservation` stays for the
+   * rows that are not a booking decision (placeholders, restores, imports).
+   *
+   * Throws `BookingConflictError` (409/404) when the vehicle is not bookable.
+   */
+  async createReservationChecked(reservationData: InsertReservation): Promise<Reservation> {
+    const vehicleId = reservationData.vehicleId ?? null;
+    if (vehicleId === null) {
+      // A placeholder spare has no vehicle yet — nothing to check or lock.
+      return this.createReservation(reservationData);
+    }
+
+    const inserted = await this.withBookingLocks([vehicleId], async (tx) => {
+      const verdict = await this.isVehicleBookable({
+        vehicleId,
+        startDate: reservationData.startDate,
+        endDate: reservationData.endDate ?? null,
+        startTime: reservationData.startTime ?? null,
+        endTime: reservationData.endTime ?? null,
+        isMaintenanceBlock: reservationData.type === 'maintenance_block',
+      }, tx);
+      if (!verdict.bookable) throw new BookingConflictError(verdict);
+
+      const [row] = await tx
+        .insert(reservations)
+        .values(this.normalizeReservationInsert(reservationData))
+        .returning();
+      return row as typeof reservations.$inferSelect;
+    });
+
+    await this.syncDeliveryTransport(inserted);
+    return this.attachReservationRelations(inserted);
+  }
+
+  /**
+   * FIX-F — update a reservation with the bookability check inside the same
+   * transaction as the UPDATE (BUG-106, BUG-159). `check` is the *effective*
+   * row after the patch, computed by the caller; pass `null` for a patch that
+   * does not move the booking.
+   */
+  async updateReservationChecked(
+    id: number,
+    reservationData: Partial<InsertReservation>,
+    check: BookingRequest | null,
+  ): Promise<Reservation | undefined> {
+    const updated = await this.withBookingLocks([check?.vehicleId ?? null], async (tx) => {
+      if (check) {
+        const verdict = await this.isVehicleBookable({ ...check, excludeReservationId: id }, tx);
+        if (!verdict.bookable) throw new BookingConflictError(verdict);
+      }
+      const [row] = await tx
+        .update(reservations)
+        .set(this.normalizeReservationUpdate(reservationData))
+        .where(and(eq(reservations.id, id), isNull(reservations.deletedAt)))
+        .returning();
+      return (row ?? null) as typeof reservations.$inferSelect | null;
+    });
+
+    if (!updated) return undefined;
+    await this.syncDeliveryTransport(updated);
+    return this.attachReservationRelations(updated);
+  }
+
+  /**
+   * FIX-F — the whole `maintenance-with-spare` write as one transaction
+   * (BUG-121, BUG-160, BUG-173).
+   *
+   * The route used to pre-validate every spare against the database on separate
+   * connections and then create the block and the replacements one by one, so
+   * (a) two assignments in one payload never saw each other, (b) a double click
+   * created everything twice and (c) a failure halfway left a maintenance block
+   * without its spares. Here every vehicle involved is locked in ascending id
+   * order, each replacement is judged against the rows the *same transaction*
+   * has already inserted, and a refusal rolls the entire payload back.
+   */
+  async applyMaintenanceWithSpares(input: {
+    maintenanceId?: number | null;
+    maintenanceData: any;
+    replacements: Array<Record<string, any>>;
+    replacedOriginalIds?: number[];
+  }): Promise<{
+    maintenanceBefore: Reservation | null;
+    maintenanceReservation: Reservation | undefined;
+    replacements: Reservation[];
+  }> {
+    const spareVehicleIds = input.replacements.map((r) => r.vehicleId as number);
+    const lockIds = [input.maintenanceData?.vehicleId ?? null, ...spareVehicleIds];
+
+    const result = await this.withBookingLocks(lockIds, async (tx) => {
+      let maintenanceBefore: typeof reservations.$inferSelect | null = null;
+      let maintenanceRow: typeof reservations.$inferSelect | null = null;
+
+      if (input.maintenanceId) {
+        const [before] = await tx.select().from(reservations).where(eq(reservations.id, input.maintenanceId));
+        maintenanceBefore = before ?? null;
+
+        // Replace the previous spares for the same rentals, exactly as before.
+        const originalIds = input.replacedOriginalIds ?? [];
+        if (originalIds.length > 0) {
+          const oldReplacements = await tx
+            .select({ id: reservations.id })
+            .from(reservations)
+            .where(and(
+              eq(reservations.type, 'replacement'),
+              inArray(reservations.replacementForReservationId, originalIds),
+            ));
+          const oldIds = oldReplacements.map((r: { id: number }) => r.id);
+          if (oldIds.length > 0) {
+            await tx.update(vehicleTransports)
+              .set({ status: 'cancelled', updatedAt: new Date() })
+              .where(and(
+                inArray(vehicleTransports.reservationId, oldIds),
+                ne(vehicleTransports.status, 'completed'),
+                ne(vehicleTransports.status, 'cancelled'),
+              ));
+            await tx.delete(reservations).where(inArray(reservations.id, oldIds));
+          }
+        }
+      }
+
+      const replacementRows: Array<typeof reservations.$inferSelect> = [];
+      for (const replacement of input.replacements) {
+        const verdict = await this.isVehicleBookable({
+          vehicleId: replacement.vehicleId,
+          startDate: replacement.startDate,
+          endDate: replacement.endDate ?? null,
+          startTime: replacement.startTime ?? null,
+          endTime: replacement.endTime ?? null,
+        }, tx);
+        if (!verdict.bookable) throw new BookingConflictError(verdict);
+
+        const [row] = await tx.insert(reservations).values(replacement).returning();
+        replacementRows.push(row);
+      }
+
+      if (input.maintenanceId) {
+        const [row] = await tx
+          .update(reservations)
+          .set(this.normalizeReservationUpdate(input.maintenanceData))
+          .where(and(eq(reservations.id, input.maintenanceId), isNull(reservations.deletedAt)))
+          .returning();
+        maintenanceRow = row ?? null;
+      } else {
+        const [row] = await tx
+          .insert(reservations)
+          .values(this.normalizeReservationInsert(input.maintenanceData))
+          .returning();
+        maintenanceRow = row ?? null;
+      }
+
+      return { maintenanceBefore, maintenanceRow, replacementRows };
+    });
+
+    return {
+      maintenanceBefore: result.maintenanceBefore
+        ? await this.attachReservationRelations(result.maintenanceBefore)
+        : null,
+      maintenanceReservation: result.maintenanceRow
+        ? await this.attachReservationRelations(result.maintenanceRow)
+        : undefined,
+      replacements: await Promise.all(result.replacementRows.map((r) => this.attachReservationRelations(r))),
+    };
   }
 
   async pickupReservation(
@@ -2088,11 +2332,21 @@ export class DatabaseStorage implements IStorage {
           // window so two different transports can't both claim this vehicle on
           // the same day — and exclude this reservation from its own conflict
           // check since it's being updated, not inserted fresh.
-          const conflicts = await this.checkReservationConflicts(
-            nextRelatedVehicleId, current.scheduledDate, current.scheduledDate, spareReservationId, false, '00:00', '23:59'
-          );
-          if (conflicts.length > 0) {
-            throw new Error('Replacement vehicle has conflicting reservations for this date');
+          // FIX-F (BUG-160): the check now runs on `tx`, behind this vehicle's
+          // advisory lock, so it sees (and blocks) a concurrent assignment of
+          // the same spare instead of reading a stale free slot on another
+          // connection.
+          await tx.execute(vehicleLockSql(nextRelatedVehicleId));
+          const verdict = await this.isVehicleBookable({
+            vehicleId: nextRelatedVehicleId,
+            startDate: current.scheduledDate,
+            endDate: current.scheduledDate,
+            startTime: '00:00',
+            endTime: '23:59',
+            excludeReservationId: spareReservationId,
+          }, tx);
+          if (!verdict.bookable) {
+            throw new BookingConflictError(verdict, 'Replacement vehicle has conflicting reservations for this date');
           }
           await tx.update(reservations)
             .set({ vehicleId: nextRelatedVehicleId, placeholderSpare: false, startTime: '00:00', endTime: '23:59', updatedAt: new Date() })
@@ -2110,11 +2364,17 @@ export class DatabaseStorage implements IStorage {
           // DIFFERENT transports both wanting the same spare on the same day must
           // actually conflict, so give the reservation an explicit full-day window
           // rather than leaving times null.
-          const conflicts = await this.checkReservationConflicts(
-            nextRelatedVehicleId, current.scheduledDate, current.scheduledDate, null, false, '00:00', '23:59'
-          );
-          if (conflicts.length > 0) {
-            throw new Error('Replacement vehicle has conflicting reservations for this date');
+          // FIX-F (BUG-160): tx-scoped and lock-protected, see above.
+          await tx.execute(vehicleLockSql(nextRelatedVehicleId));
+          const verdict = await this.isVehicleBookable({
+            vehicleId: nextRelatedVehicleId,
+            startDate: current.scheduledDate,
+            endDate: current.scheduledDate,
+            startTime: '00:00',
+            endTime: '23:59',
+          }, tx);
+          if (!verdict.bookable) {
+            throw new BookingConflictError(verdict, 'Replacement vehicle has conflicting reservations for this date');
           }
         }
 
@@ -3072,32 +3332,50 @@ export class DatabaseStorage implements IStorage {
       throw new Error('End date must be specified when assigning vehicle to open-ended placeholder reservation');
     }
 
-    // Check for conflicts with the new vehicle assignment
-    const conflicts = await this.checkReservationConflicts(
-      vehicleId,
-      reservation.startDate,
-      assignmentEndDate || reservation.startDate,
-      reservationId
-    );
-
-    if (conflicts.length > 0) {
-      throw new Error('Vehicle has conflicting reservations during the assignment period');
-    }
-
-    // Assign the vehicle to the placeholder
-    const [updatedReservation] = await db
-      .update(reservations)
-      .set({
+    // FIX-F / FIX-G (BUG-158, BUG-160) — the conflict check and the write are
+    // one transaction behind the vehicle's advisory lock, and the UPDATE
+    // carries its own precondition: the row must still be an unassigned
+    // placeholder. Two callers assigning the same placeholder, or the same
+    // vehicle to two placeholders, no longer both succeed — the loser gets a
+    // 409 instead of silently overwriting the winner.
+    const updatedReservation = await this.withBookingLocks([vehicleId], async (tx) => {
+      const verdict = await this.isVehicleBookable({
         vehicleId,
-        endDate: assignmentEndDate,
-        placeholderSpare: false,
-        notes: reservation.replacementForReservationId != null
-          ? `Spare vehicle ${vehicle.licensePlate} (${vehicle.brand} ${vehicle.model}) assigned for reservation #${reservation.replacementForReservationId}`
-          : `Spare vehicle ${vehicle.licensePlate} (${vehicle.brand} ${vehicle.model}) assigned`,
-        updatedAt: new Date()
-      })
-      .where(eq(reservations.id, reservationId))
-      .returning();
+        startDate: reservation.startDate,
+        endDate: assignmentEndDate || reservation.startDate,
+        excludeReservationId: reservationId,
+      }, tx);
+      if (!verdict.bookable) throw new BookingConflictError(verdict);
+
+      const [row] = await tx
+        .update(reservations)
+        .set({
+          vehicleId,
+          endDate: assignmentEndDate,
+          placeholderSpare: false,
+          notes: reservation.replacementForReservationId != null
+            ? `Spare vehicle ${vehicle.licensePlate} (${vehicle.brand} ${vehicle.model}) assigned for reservation #${reservation.replacementForReservationId}`
+            : `Spare vehicle ${vehicle.licensePlate} (${vehicle.brand} ${vehicle.model}) assigned`,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(reservations.id, reservationId),
+          eq(reservations.placeholderSpare, true),
+          isNull(reservations.vehicleId),
+          isNull(reservations.deletedAt),
+        ))
+        .returning();
+      return row as typeof reservations.$inferSelect | undefined;
+    });
+
+    if (!updatedReservation) {
+      // Someone else assigned this placeholder between the read above and the
+      // write — report it as a conflict, never as a silent success.
+      throw new BookingConflictError(
+        refusedVerdict("CONFLICT", vehicle, [], []),
+        "This placeholder has already been assigned a vehicle.",
+      );
+    }
 
     // Keep the originating Transport's relatedVehicleId mirrored to whatever
     // just got assigned here, so the Transports page reflects it too.
@@ -3211,13 +3489,7 @@ export class DatabaseStorage implements IStorage {
 
     const finalEndDate = endDate || original.endDate;
 
-    // Check for conflicts on the spare vehicle
-    const conflicts = await this.checkReservationConflicts(spareVehicleId, startDate, finalEndDate || startDate, null);
-    if (conflicts.length > 0) {
-      throw new Error('Spare vehicle has conflicting reservations');
-    }
-
-    const originalVehicleInfo = originalVehicle 
+    const originalVehicleInfo = originalVehicle
       ? `${originalVehicle.licensePlate} (${originalVehicle.brand} ${originalVehicle.model})`
       : `Vehicle ID ${original.vehicleId}`;
     const spareVehicleInfo = spareVehicle 
@@ -3238,12 +3510,25 @@ export class DatabaseStorage implements IStorage {
       damageCheckPath: null
     };
 
-    const [replacement] = await db
-      .insert(reservations)
-      .values(replacementData as unknown as typeof reservations.$inferInsert)
-      .returning();
+    // FIX-F (BUG-160) — the availability of the spare is decided inside the
+    // same transaction as the insert, behind the spare's advisory lock, so two
+    // staff members assigning the same spare at the same moment cannot both
+    // win. A refusal is a `BookingConflictError` (409), not a bare Error the
+    // route turned into a 400 carrying a sentence.
+    return this.withBookingLocks([spareVehicleId], async (tx) => {
+      const verdict = await this.isVehicleBookable({
+        vehicleId: spareVehicleId,
+        startDate,
+        endDate: finalEndDate || startDate,
+      }, tx);
+      if (!verdict.bookable) throw new BookingConflictError(verdict);
 
-    return replacement;
+      const [replacement] = await tx
+        .insert(reservations)
+        .values(replacementData as unknown as typeof reservations.$inferInsert)
+        .returning();
+      return replacement as Reservation;
+    });
   }
 
   async updateLegacyNotesWithVehicleDetails(): Promise<number> {

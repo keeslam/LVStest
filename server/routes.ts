@@ -85,6 +85,7 @@ import {
   cleanupSupersededDamageCheckVersions,
   pickBestDamageCheckTemplate,
 } from "./services/reservation-pdf-regeneration";
+import { BookingConflictError, type BookingRequest } from "./services/bookability";
 import { reservationIsOld, verifyAdminPassword, authorizeMileageDecrease } from "./services/authorization";
 import { assignDriverToReservation } from "./services/driver-assignments";
 import { getServiceDueVehicles, scanVehiclesForServiceDue } from "./utils/service-due-scanner";
@@ -2741,24 +2742,12 @@ export async function registerRoutes(app: Express): Promise<void> {
         // No conflicts, return the created maintenance reservation
         return res.status(201).json(reservation);
       } else {
-        // For regular reservations, check for conflicts normally
-        const conflicts = await storage.checkReservationConflicts(
-          reservationData.vehicleId!,
-          reservationData.startDate,
-          reservationData.endDate ?? null,
-          null,
-          false,
-          reservationData.startTime,
-          reservationData.endTime
-        );
-        
-        if (conflicts.length > 0) {
-          return res.status(409).json({ 
-            message: "Reservation conflicts with existing bookings",
-            conflicts
-          });
-        }
-        
+        // FIX-F (BUG-006, BUG-107, BUG-018): the conflict check that used to
+        // stand here — on its own connection, minutes of request time before
+        // the insert — is gone. `createReservationChecked` below runs the one
+        // predicate inside the same transaction as the INSERT, behind the
+        // vehicle's advisory lock, and throws a BookingConflictError (409).
+
         // Check for overdue reservations on this vehicle (ended 3+ days ago, not completed)
         const overdueReservations = await storage.getOverdueReservationsByVehicle(reservationData.vehicleId!);
         if (overdueReservations.length > 0) {
@@ -2790,7 +2779,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         // Don't fail the reservation, just log the error
       }
       
-      const reservation = await storage.createReservation(dataWithTracking);
+      const reservation = await storage.createReservationChecked(dataWithTracking);
 
       // First row of the driver assignment history (see services/driver-assignments.ts)
       if (reservation.driverId) {
@@ -2912,12 +2901,17 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       res.status(201).json(reservation);
     } catch (error) {
+      // FIX-F: a refused booking is a 409 with the conflicting rows, not a
+      // blanket 400 — the booking form has always read `conflicts`.
+      if (error instanceof BookingConflictError) {
+        return res.status(error.status).json(error.toBody());
+      }
       console.error("Error creating reservation:", error);
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid reservation data", error: error.errors });
       } else {
-        res.status(400).json({ 
-          message: "Failed to create reservation", 
+        res.status(400).json({
+          message: "Failed to create reservation",
         });
       }
     }
@@ -2955,23 +2949,28 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       
       // PRE-VALIDATE ALL ASSIGNMENTS BEFORE ANY UPDATES (for atomicity)
+      // FIX-F (BUG-121, BUG-160, BUG-173): this loop no longer decides
+      // availability. It works out the period each spare is needed for and
+      // refuses impossible input; whether the spare is actually free is decided
+      // once, inside the write transaction, where it can also see the other
+      // assignments in this same payload.
       const validationPromises = spareVehicleAssignments.map(async (assignment: any) => {
         const { reservationId, spareVehicleId, startDate: customStartDate, endDate: customEndDate } = assignment;
-        
+
         const originalReservation = await storage.getReservation(reservationId);
         if (!originalReservation) {
           throw new Error(`Reservation ${reservationId} not found`);
         }
-        
+
         let overlapStart: Date;
         let overlapEnd: Date;
         let isOpenEnded = false;
-        
+
         // Use custom dates if provided, otherwise calculate from maintenance period
         if (customStartDate) {
           // Custom dates provided from the duration dialog
           overlapStart = new Date(customStartDate);
-          
+
           if (customEndDate) {
             overlapEnd = new Date(customEndDate);
           } else {
@@ -2981,7 +2980,7 @@ export async function registerRoutes(app: Express): Promise<void> {
             // But we'll store null as the actual end date
             overlapEnd = new Date(maintenanceData.endDate || customStartDate);
           }
-          
+
           if (isNaN(overlapStart.getTime())) {
             throw new Error(`Invalid custom start date for reservation ${reservationId}`);
           }
@@ -2996,23 +2995,23 @@ export async function registerRoutes(app: Express): Promise<void> {
           const maintenanceStart = new Date(maintenanceData.startDate);
           const maintenanceEnd = new Date(maintenanceData.endDate);
           const rentalStart = new Date(originalReservation.startDate);
-          
+
           // Validate dates are valid and maintenance period is valid
           if (isNaN(maintenanceStart.getTime()) || isNaN(maintenanceEnd.getTime()) || isNaN(rentalStart.getTime())) {
             throw new Error(`Invalid date format in maintenance or rental ${reservationId}`);
           }
-          
+
           if (maintenanceStart > maintenanceEnd) {
             throw new Error(`Invalid maintenance period: end date cannot be before start date`);
           }
-          
+
           // Handle open-ended rentals (endDate is null, undefined, or "undefined")
           if (!originalReservation.endDate || originalReservation.endDate === "undefined" || originalReservation.endDate === null) {
             // For open-ended rentals, customer has vehicle indefinitely
             // Spare vehicle assignment covers the entire maintenance period
             overlapStart = new Date(Math.max(maintenanceStart.getTime(), rentalStart.getTime()));
             overlapEnd = maintenanceEnd; // Spare vehicle for entire maintenance period
-            
+
             // Validate overlap for open-ended rentals too (allow same-day overlaps)
             if (overlapStart > overlapEnd) {
               throw new Error(`No overlap between maintenance and open-ended rental ${reservationId}: rental starts after maintenance ends`);
@@ -3020,45 +3019,29 @@ export async function registerRoutes(app: Express): Promise<void> {
           } else {
             // For regular rentals with end dates
             const rentalEnd = new Date(originalReservation.endDate);
-            
+
             if (isNaN(rentalEnd.getTime())) {
               throw new Error(`Invalid end date format in rental ${reservationId}`);
             }
-            
+
             overlapStart = new Date(Math.max(maintenanceStart.getTime(), rentalStart.getTime()));
             overlapEnd = new Date(Math.min(maintenanceEnd.getTime(), rentalEnd.getTime()));
-            
+
             // Allow same-day overlaps (overlapStart can equal overlapEnd)
             if (overlapStart > overlapEnd) {
               throw new Error(`No overlap between maintenance and rental ${reservationId}`);
             }
           }
         }
-        
-        // Pre-validate spare vehicle availability (skip for open-ended as we can't check infinite period)
-        if (!isOpenEnded) {
-          const spareConflicts = await storage.checkReservationConflicts(
-            spareVehicleId,
-            overlapStart.toISOString().split('T')[0],
-            overlapEnd.toISOString().split('T')[0],
-            null
-          );
-          
-          if (spareConflicts.length > 0) {
-            throw new Error(`Spare vehicle ${spareVehicleId} is not available during the specified period`);
-          }
-        }
-        
+
         return { originalReservation, overlapStart, overlapEnd: isOpenEnded ? null : overlapEnd, spareVehicleId, isOpenEnded };
       });
-      
+
       // Execute all validations (will throw if any fail)
       const validatedAssignments = await Promise.all(validationPromises);
-      
-      let maintenanceReservation;
-      let updatedReservations;
+
       const user = req.user;
-      
+
       if (maintenanceId) {
         // Validate that maintenanceId refers to an existing maintenance_block reservation
         const existingReservation = await storage.getReservation(maintenanceId);
@@ -3068,140 +3051,70 @@ export async function registerRoutes(app: Express): Promise<void> {
         if (existingReservation.type !== 'maintenance_block') {
           return res.status(400).json({ message: "Reservation is not a maintenance block" });
         }
-        
-        // Clean up old replacement reservations using structured approach
-        if (spareVehicleAssignments.length > 0) {
-          // Find old replacements for the same reservations being updated
-          const conflictingReservationIds = spareVehicleAssignments.map(a => a.reservationId);
-          const allReservations = await storage.getAllReservations();
-          const oldReplacements = allReservations.filter(r => 
-            r.type === 'replacement' && 
-            r.replacementForReservationId && 
-            conflictingReservationIds.includes(r.replacementForReservationId)
-          );
-          
-          for (const oldReplacement of oldReplacements) {
-            await storage.deleteReservation(oldReplacement.id);
-          }
-        }
-        
-        // CREATE REPLACEMENTS FIRST for true atomicity
-        const replacementPromises = validatedAssignments.map(async (validated) => {
-          const { originalReservation, overlapStart, overlapEnd, spareVehicleId, isOpenEnded } = validated;
-          
-          // Get vehicle details for better notes
-          const spareVehicle = await storage.getVehicle(spareVehicleId);
-          const originalVehicle = originalReservation.vehicle || await storage.getVehicle(originalReservation.vehicleId!);
-          
-          const originalVehicleDesc = originalVehicle ? 
-            `${originalVehicle.licensePlate} (${originalVehicle.brand} ${originalVehicle.model})` : 
-            `vehicle ${originalReservation.vehicleId}`;
-          const spareVehicleDesc = spareVehicle ? 
-            `${spareVehicle.licensePlate} (${spareVehicle.brand} ${spareVehicle.model})` : 
-            `vehicle ${spareVehicleId}`;
-          
-          // Format dates, handling open-ended spare rentals
-          const startDateStr = overlapStart.toISOString().split('T')[0];
-          const endDateStr = isOpenEnded || !overlapEnd ? null : overlapEnd.toISOString().split('T')[0];
-          const originalEndNote = originalReservation.endDate || 'open-ended';
-          
-          // Create replacement reservation for overlap period ONLY
-          const created = await storage.createReservation({
-            vehicleId: spareVehicleId,
-            customerId: originalReservation.customerId,
-            startDate: startDateStr,
-            endDate: endDateStr,
-            type: 'replacement',
-            replacementForReservationId: originalReservation.id,
-            placeholderSpare: false,
-            status: 'booked',
-            totalPrice: 0,
-            createdBy: user ? user.username : null,
-            updatedBy: user ? user.username : null,
-            notes: `Spare vehicle ${spareVehicleDesc} for reservation #${originalReservation.id} during maintenance of ${originalVehicleDesc}. Original rental: ${originalReservation.startDate} to ${originalEndNote}.`
-          });
-          void onReplacementAssigned(created);
-          return created;
-        });
-
-        const newReplacements = await Promise.all(replacementPromises);
-
-        // ONLY AFTER successful replacement creation, update maintenance
-        const maintenanceWithTracking = {
-          ...maintenanceData,
-          updatedBy: user ? user.username : null
-        };
-        const maintBefore = await storage.getReservation(maintenanceId);
-        maintenanceReservation = await storage.updateReservation(maintenanceId, maintenanceWithTracking);
-        void onMaintenanceBlockChanged(maintBefore ?? null, maintenanceReservation ?? null);
-
-        updatedReservations = newReplacements;
-      } else {
-        // Create new maintenance block
-        const maintenanceWithTracking = {
-          ...maintenanceData,
-          createdBy: user ? user.username : null,
-          updatedBy: user ? user.username : null
-        };
-        maintenanceReservation = await storage.createReservation(maintenanceWithTracking);
-        void onMaintenanceBlockChanged(null, maintenanceReservation);
-
-        // Clean up existing placeholder reservations for the same original reservations
-        if (spareVehicleAssignments.length > 0) {
-          const conflictingReservationIds = spareVehicleAssignments.map((a: any) => a.reservationId);
-          const allReservations = await storage.getAllReservations();
-          const oldPlaceholders = allReservations.filter((r: any) => 
-            r.type === 'replacement' && 
-            r.replacementForReservationId && 
-            conflictingReservationIds.includes(r.replacementForReservationId)
-          );
-          
-          for (const oldPlaceholder of oldPlaceholders) {
-            await storage.deleteReservation(oldPlaceholder.id);
-          }
-        }
-        
-        // Create replacement reservations using pre-validated data
-        const updatePromises = validatedAssignments.map(async (validated) => {
-          const { originalReservation, overlapStart, overlapEnd, spareVehicleId, isOpenEnded } = validated;
-          
-          // Get vehicle details for better notes
-          const spareVehicle = await storage.getVehicle(spareVehicleId);
-          const originalVehicle = originalReservation.vehicle || await storage.getVehicle(originalReservation.vehicleId!);
-          
-          const originalVehicleDesc = originalVehicle ? 
-            `${originalVehicle.licensePlate} (${originalVehicle.brand} ${originalVehicle.model})` : 
-            `vehicle ${originalReservation.vehicleId}`;
-          const spareVehicleDesc = spareVehicle ? 
-            `${spareVehicle.licensePlate} (${spareVehicle.brand} ${spareVehicle.model})` : 
-            `vehicle ${spareVehicleId}`;
-          
-          // Format dates, handling open-ended spare rentals
-          const startDateStr = overlapStart.toISOString().split('T')[0];
-          const endDateStr = isOpenEnded || !overlapEnd ? null : overlapEnd.toISOString().split('T')[0];
-          const originalEndNote = originalReservation.endDate || 'open-ended';
-          
-          const created = await storage.createReservation({
-            vehicleId: spareVehicleId,
-            customerId: originalReservation.customerId,
-            startDate: startDateStr,
-            endDate: endDateStr,
-            type: 'replacement',
-            replacementForReservationId: originalReservation.id,
-            placeholderSpare: false,
-            status: 'booked',
-            totalPrice: 0,
-            createdBy: user ? user.username : null,
-            updatedBy: user ? user.username : null,
-            notes: `Spare vehicle ${spareVehicleDesc} for reservation #${originalReservation.id} during maintenance of ${originalVehicleDesc}. Original rental: ${originalReservation.startDate} to ${originalEndNote}.`
-          });
-          void onReplacementAssigned(created);
-          return created;
-        });
-
-        updatedReservations = await Promise.all(updatePromises);
       }
-      
+
+      // Build every replacement row up front (read-only lookups), so the
+      // transaction below only writes.
+      const replacementRows = await Promise.all(validatedAssignments.map(async (validated) => {
+        const { originalReservation, overlapStart, overlapEnd, spareVehicleId, isOpenEnded } = validated;
+
+        // Get vehicle details for better notes
+        const spareVehicle = await storage.getVehicle(spareVehicleId);
+        const originalVehicle = originalReservation.vehicle || await storage.getVehicle(originalReservation.vehicleId!);
+
+        const originalVehicleDesc = originalVehicle ?
+          `${originalVehicle.licensePlate} (${originalVehicle.brand} ${originalVehicle.model})` :
+          `vehicle ${originalReservation.vehicleId}`;
+        const spareVehicleDesc = spareVehicle ?
+          `${spareVehicle.licensePlate} (${spareVehicle.brand} ${spareVehicle.model})` :
+          `vehicle ${spareVehicleId}`;
+
+        // Format dates, handling open-ended spare rentals
+        const startDateStr = overlapStart.toISOString().split('T')[0];
+        const endDateStr = isOpenEnded || !overlapEnd ? null : overlapEnd.toISOString().split('T')[0];
+        const originalEndNote = originalReservation.endDate || 'open-ended';
+
+        return {
+          vehicleId: spareVehicleId,
+          customerId: originalReservation.customerId,
+          startDate: startDateStr,
+          endDate: endDateStr,
+          type: 'replacement',
+          replacementForReservationId: originalReservation.id,
+          placeholderSpare: false,
+          status: 'booked',
+          totalPrice: '0',
+          createdBy: user ? user.username : null,
+          updatedBy: user ? user.username : null,
+          notes: `Spare vehicle ${spareVehicleDesc} for reservation #${originalReservation.id} during maintenance of ${originalVehicleDesc}. Original rental: ${originalReservation.startDate} to ${originalEndNote}.`
+        };
+      }));
+
+      // FIX-F — one transaction for the block, the replaced spares and the new
+      // ones, with every vehicle involved locked in ascending id order. Two
+      // assignments in one payload are judged against each other (BUG-121), a
+      // double click cannot create the whole set twice (BUG-173), and a refusal
+      // leaves no half-written maintenance behind.
+      const applied = await storage.applyMaintenanceWithSpares({
+        maintenanceId: maintenanceId ?? null,
+        maintenanceData: {
+          ...maintenanceData,
+          ...(maintenanceId
+            ? { updatedBy: user ? user.username : null }
+            : { createdBy: user ? user.username : null, updatedBy: user ? user.username : null }),
+        },
+        replacements: replacementRows,
+        replacedOriginalIds: spareVehicleAssignments.map((a: any) => a.reservationId),
+      });
+
+      const maintenanceReservation = applied.maintenanceReservation;
+      const updatedReservations = applied.replacements;
+
+      void onMaintenanceBlockChanged(applied.maintenanceBefore, maintenanceReservation ?? null);
+      for (const replacement of updatedReservations) {
+        void onReplacementAssigned(replacement);
+      }
+
       // Broadcast real-time updates for all created reservations
       if (maintenanceReservation) {
         realtimeEvents.reservations.created(maintenanceReservation);
@@ -3211,16 +3124,21 @@ export async function registerRoutes(app: Express): Promise<void> {
           realtimeEvents.reservations.created(replacement);
         }
       }
-      
+
       res.status(201).json({
         maintenanceReservation,
         updatedReservations,
         message: "Maintenance scheduled and spare vehicles assigned"
       });
     } catch (error) {
+      // FIX-F: an unavailable spare — including the same spare twice in one
+      // payload — is a 409 naming the conflicting rows, and nothing was written.
+      if (error instanceof BookingConflictError) {
+        return res.status(error.status).json(error.toBody());
+      }
       console.error("Error creating maintenance with spare:", error);
-      res.status(400).json({ 
-        message: "Failed to create maintenance with spare vehicles", 
+      res.status(400).json({
+        message: "Failed to create maintenance with spare vehicles",
       });
     }
   });
@@ -3363,8 +3281,23 @@ export async function registerRoutes(app: Express): Promise<void> {
         ...reservationData,
         updatedBy: user ? user.username : null
       };
-      
-      const reservation = await storage.updateReservation(id, dataWithTracking);
+
+      // FIX-F (BUG-159): the same check once more, but this time inside the
+      // transaction that writes — the pre-check above only decides what the
+      // response looks like, it cannot keep a parallel edit out.
+      const reservation = await storage.updateReservationChecked(
+        id,
+        dataWithTracking,
+        touchesSchedule && effectiveVehicleId && basicStartDate
+          ? {
+              vehicleId: effectiveVehicleId,
+              startDate: basicStartDate,
+              endDate: basicEndDate ?? null,
+              startTime: (reservationData.startTime ?? existingBasic.startTime) ?? null,
+              endTime: (reservationData.endTime ?? existingBasic.endTime) ?? null,
+            }
+          : null,
+      );
 
       if (!reservation) {
         return res.status(404).json({ message: "Reservation not found" });
@@ -3737,41 +3670,32 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Check for conflicts only if this patch actually moves the booking. With
       // partial updates the values to check are the *effective* ones — the old
       // code only looked when vehicleId AND startDate happened to be in the body.
+      // FIX-F (BUG-106, BUG-159): the check is handed to
+      // `updateReservationChecked`, which runs it inside the same transaction as
+      // the UPDATE and behind the vehicle's advisory lock, so the calendar drag
+      // cannot land on a slot a parallel edit just took.
       const effectiveVehicleIdForPatch = (reservationData.vehicleId ?? existingReservationForDiff.vehicleId) as number | null;
-      if (SCHEDULING_FIELDS.some((f) => f in reservationData) && effectiveVehicleIdForPatch && mergedStartDate) {
-        // Reuse the loaded reservation for the conflict check
-        const existingReservation = existingReservationForDiff;
+      const bookingCheckForPatch: BookingRequest | null =
+        SCHEDULING_FIELDS.some((f) => f in reservationData) && effectiveVehicleIdForPatch && mergedStartDate
+          ? {
+              vehicleId: effectiveVehicleIdForPatch,
+              startDate: mergedStartDate,
+              endDate: mergedEndDate || null,
+              startTime: (reservationData.startTime ?? existingReservationForDiff.startTime) ?? null,
+              endTime: (reservationData.endTime ?? existingReservationForDiff.endTime) ?? null,
+              isMaintenanceBlock: (reservationData.type === 'maintenance_block') ||
+                                  (existingReservationForDiff.type === 'maintenance_block'),
+            }
+          : null;
 
-        // Determine if this is a maintenance block - check both the update data and existing reservation
-        const isMaintenanceBlock = (reservationData.type === 'maintenance_block') ||
-                                   (existingReservation.type === 'maintenance_block');
-
-        const conflicts = await storage.checkReservationConflicts(
-          effectiveVehicleIdForPatch,
-          mergedStartDate,
-          mergedEndDate || null,
-          id,
-          isMaintenanceBlock,
-          (reservationData.startTime ?? existingReservation.startTime) ?? undefined,
-          (reservationData.endTime ?? existingReservation.endTime) ?? undefined
-        );
-        
-        if (conflicts.length > 0) {
-          return res.status(409).json({ 
-            message: "Reservation conflicts with existing bookings",
-            conflicts
-          });
-        }
-      }
-      
       // Add user tracking information for updates
       const user = req.user;
       const dataWithTracking = {
         ...reservationData,
         updatedBy: user ? user.username : null
       };
-      
-      const reservation = await storage.updateReservation(id, dataWithTracking);
+
+      const reservation = await storage.updateReservationChecked(id, dataWithTracking, bookingCheckForPatch);
 
       if (!reservation) {
         return res.status(404).json({ message: "Reservation not found" });
@@ -3990,6 +3914,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       });
       
     } catch (error) {
+      // FIX-F (BUG-160): an unavailable spare is a 409 with the conflicting
+      // rows, not a 400 carrying a sentence the UI has to string-match.
+      if (error instanceof BookingConflictError) {
+        return res.status(error.status).json(error.toBody());
+      }
       console.error("Error assigning spare vehicle:", error);
       if (error instanceof Error) {
         res.status(400).json({ message: error.message });
@@ -4746,8 +4675,14 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.json(updatedReservation);
       
     } catch (error) {
+      // FIX-F/FIX-G (BUG-158, BUG-160): an occupied vehicle, or a placeholder
+      // a parallel request already filled in, is a 409 — not a 400 built from
+      // a string match on the error message.
+      if (error instanceof BookingConflictError) {
+        return res.status(error.status).json(error.toBody());
+      }
       console.error("Error assigning vehicle to placeholder:", error);
-      
+
       if (error instanceof z.ZodError) {
         return res.status(400).json({ 
           message: "Invalid request data", 

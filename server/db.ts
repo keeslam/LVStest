@@ -50,6 +50,11 @@ const pool = global.dbPool || new Pool({
   connectionTimeoutMillis: 10000, // Wait up to 10s for connection
   allowExitOnIdle: true,
   query_timeout: 30000,
+  // FIX-F/FIX-G (plan §9.1): the booking writes now take row/advisory locks.
+  // A lock-ordering mistake must fail the test run fast and loudly instead of
+  // hanging it, so every statement on a test connection is capped. Production
+  // keeps the existing 30 s client-side `query_timeout` and no server-side cap.
+  ...(process.env.NODE_ENV === 'test' ? { statement_timeout: 8000 } : {}),
 });
 
 if (!isProduction) {

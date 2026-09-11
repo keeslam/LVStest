@@ -24,6 +24,7 @@
 import type { Response } from "express";
 import { z } from "zod";
 import { BodyValidationError } from "../middleware/validateBody";
+import { BookingConflictError } from "../services/bookability";
 import { describeDbError, dbErrorBody } from "./db-errors";
 
 /** A route-thrown error that already knows its status and safe message. */
@@ -60,6 +61,13 @@ export function sendRouteError(res: Response, error: unknown, fallbackMessage: s
   if (error instanceof z.ZodError) {
     res.status(400).json(zodBody(error, fallbackMessage));
     return 400;
+  }
+  // FIX-F — a write the bookability predicate refused. 409 (or 404 when the
+  // vehicle itself is gone), with the conflicting rows the booking screens
+  // already know how to show, and never a 500.
+  if (error instanceof BookingConflictError) {
+    res.status(error.status).json(error.toBody());
+    return error.status;
   }
   if (error instanceof HttpError) {
     const body: Record<string, unknown> = { message: error.message };

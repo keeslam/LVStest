@@ -19,6 +19,7 @@ import { sanitizeFilename } from "../utils/security/fileUploadSecurity";
 import { AuditLogger } from "../utils/security/auditLogger";
 import { onMaintenanceBlockChanged, findPortalCustomerForBlock } from "../services/portal-maintenance-events";
 import { isWeekend } from "../services/booking-period";
+import { BookingConflictError } from "../services/bookability";
 import { db } from "../db";
 import { reservations } from "../../shared/schema";
 import { and, eq, isNull } from "drizzle-orm";
@@ -243,11 +244,29 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
       if (busy) return res.status(409).json({ message: `${driver.displayName} rijdt al in ${busy.vehicle?.licensePlate ?? `#${busy.id}`}`, field: "driverId" });
     }
 
-    const reservation = await storage.createReservation({
-      customerId: row.customerId, vehicleId, driverId, startDate, endDate, startTime, endTime,
-      status: "booked", type: "standard", notes: `Via klantenportaal (aanvraag #${id})`,
-      createdBy: actor(req), updatedBy: actor(req),
-    } as any);
+    // FIX-F — the approval is a booking like any other: the predicate runs
+    // inside the insert's transaction, behind the vehicle's advisory lock, so
+    // approving a portal request can no longer land on a slot the office took
+    // in the meantime (the pre-check above only shapes the response).
+    let reservation;
+    try {
+      reservation = await storage.createReservationChecked({
+        customerId: row.customerId, vehicleId, driverId, startDate, endDate, startTime, endTime,
+        status: "booked", type: "standard", notes: `Via klantenportaal (aanvraag #${id})`,
+        createdBy: actor(req), updatedBy: actor(req),
+      } as any);
+    } catch (error) {
+      if (error instanceof BookingConflictError) {
+        return res.status(error.status).json({
+          message: error.status === 409 ? "Conflicts with another reservation" : error.message,
+          field: "vehicleId",
+          conflicts: error.verdict.conflicts.map((c) => ({
+            id: c.id, startDate: c.startDate, endDate: c.endDate, customerId: c.customerId,
+          })),
+        });
+      }
+      throw error;
+    }
     if (driverId) await assignDriverToReservation({ reservationId: reservation.id, driverId, byUserId: req.user?.id, note: `portal request #${id}` });
     await storage.syncVehicleAvailabilityWithReservations();
     realtimeEvents.reservations.created(reservation);
