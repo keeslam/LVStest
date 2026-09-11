@@ -69,8 +69,29 @@ export async function createTestDocument(input: { reservationId: number; vehicle
   return row;
 }
 
-/** Deletes everything the helpers above created. */
+/**
+ * Deletes everything the helpers above created.
+ *
+ * BUG-145: reservations are removed by **test-vehicle id as well as** by
+ * test-customer id, and always before the `PT%` vehicles themselves. Cleaning
+ * by customer id alone left every `customer_id IS NULL` row — a maintenance
+ * block — behind as an orphan pointing at a vehicle that no longer exists;
+ * 258 of those had accumulated in the shared dev database.
+ */
 export async function cleanupPortalTestData(): Promise<void> {
+  const testVehicles = await db.select({ id: vehicles.id }).from(vehicles).where(like(vehicles.licensePlate, "PT%"));
+  const vehicleIds = testVehicles.map((v) => v.id);
+  if (vehicleIds.length) {
+    const vehicleRes = await db.select({ id: reservations.id }).from(reservations).where(inArray(reservations.vehicleId, vehicleIds));
+    const vehicleResIds = vehicleRes.map((r) => r.id);
+    if (vehicleResIds.length) {
+      await db.delete(reservationDriverAssignments).where(inArray(reservationDriverAssignments.reservationId, vehicleResIds));
+      await db.delete(documents).where(inArray(documents.reservationId, vehicleResIds));
+      await db.delete(reservations).where(inArray(reservations.id, vehicleResIds));
+    }
+    await db.delete(documents).where(inArray(documents.vehicleId, vehicleIds));
+  }
+
   const testCustomers = await db.select({ id: customers.id }).from(customers).where(like(customers.name, `${TEST_PREFIX}%`));
   const ids = testCustomers.map((c) => c.id);
   if (ids.length) {
