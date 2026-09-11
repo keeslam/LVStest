@@ -5136,18 +5136,15 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "No file path found for this document" });
       }
 
-      // Convert relative path to absolute path (handles both with and without uploads/ prefix)
-      let absolutePath = path.join(process.cwd(), document.filePath);
-      
-      // Check if file exists, try adding uploads/ prefix if not found
-      if (!fs.existsSync(absolutePath)) {
-        const altPath = path.join(process.cwd(), 'uploads', document.filePath);
-        if (fs.existsSync(altPath)) {
-          absolutePath = altPath;
-        } else {
-          console.error(`Document file not found: ${absolutePath} or ${altPath}`);
-          return res.status(404).json({ message: "Document file not found on disk" });
-        }
+      // BUG-012: path.join(process.cwd(), filePath) let a stored '../package.json'
+      // (or an absolute path) escape the uploads directory on view, download and
+      // delete. resolveDocumentFilePath() tries exactly the same two candidates —
+      // cwd-relative and uploads-relative, so legacy rows keep working — but
+      // refuses anything that resolves outside uploads/.
+      const absolutePath = resolveDocumentFilePath(document.filePath);
+      if (!absolutePath) {
+        console.error(`Document file not found or outside the uploads directory (document ${document.id}): ${document.filePath}`);
+        return res.status(404).json({ message: "Document file not found on disk" });
       }
 
       // Set appropriate headers for inline viewing (not download)
@@ -5190,18 +5187,15 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "No file path found for this document" });
       }
 
-      // Convert relative path to absolute path (handles both with and without uploads/ prefix)
-      let absolutePath = path.join(process.cwd(), document.filePath);
-      
-      // Check if file exists, try adding uploads/ prefix if not found
-      if (!fs.existsSync(absolutePath)) {
-        const altPath = path.join(process.cwd(), 'uploads', document.filePath);
-        if (fs.existsSync(altPath)) {
-          absolutePath = altPath;
-        } else {
-          console.error(`Document file not found: ${absolutePath} or ${altPath}`);
-          return res.status(404).json({ message: "Document file not found on disk" });
-        }
+      // BUG-012: path.join(process.cwd(), filePath) let a stored '../package.json'
+      // (or an absolute path) escape the uploads directory on view, download and
+      // delete. resolveDocumentFilePath() tries exactly the same two candidates —
+      // cwd-relative and uploads-relative, so legacy rows keep working — but
+      // refuses anything that resolves outside uploads/.
+      const absolutePath = resolveDocumentFilePath(document.filePath);
+      if (!absolutePath) {
+        console.error(`Document file not found or outside the uploads directory (document ${document.id}): ${document.filePath}`);
+        return res.status(404).json({ message: "Document file not found on disk" });
       }
 
       // Set appropriate headers for download
@@ -5424,17 +5418,15 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Document not found" });
       }
 
-      // Try to delete the file if it exists
+      // BUG-012: never unlink a path that resolves outside the uploads directory —
+      // a stored '../package.json' used to be an arbitrary file delete.
       if (document.filePath) {
-        // Convert relative path to absolute path
-        const absolutePath = path.join(process.cwd(), document.filePath);
-        console.log(`Attempting to delete file at: ${absolutePath}`);
-        
-        if (fs.existsSync(absolutePath)) {
+        const absolutePath = resolveDocumentFilePath(document.filePath);
+        if (absolutePath) {
           fs.unlinkSync(absolutePath);
           console.log(`File deleted successfully: ${absolutePath}`);
         } else {
-          console.log(`File not found at: ${absolutePath}`);
+          console.warn(`Refused to delete a file outside the uploads directory (document ${document.id}): ${document.filePath}`);
         }
       }
 
