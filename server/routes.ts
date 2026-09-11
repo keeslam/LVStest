@@ -7717,6 +7717,18 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid transport data", errors: error.errors });
       }
+      // FIX-W (BUG-136, BUG-114, BUG-115): an unknown or illegal transport
+      // status is a 400 naming the states, a spare that cannot follow the new
+      // date a 409 naming the conflict — never a 500 and never a string match.
+      if (error instanceof StateTransitionError) {
+        return res.status(error.status).json(error.toBody());
+      }
+      if (error instanceof BookingConflictError) {
+        return res.status(error.status).json(error.toBody());
+      }
+      if (error instanceof HttpError) {
+        return res.status(error.status).json({ message: error.message, code: error.code });
+      }
       const message = error instanceof Error ? error.message : "Failed to update transport";
       if (message === "Transport not found") {
         return res.status(404).json({ message });

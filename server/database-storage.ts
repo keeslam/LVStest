@@ -37,6 +37,7 @@ import {
 import {
   deriveVehicleAvailability,
   decideHandover,
+  assertTransportTransition,
   isoToday,
   assertReservationStatusValue,
   normalizeReservationStatus,
@@ -2450,6 +2451,9 @@ export class DatabaseStorage implements IStorage {
   ): Promise<VehicleTransport> {
     let restoreMaintenanceAfterCommit = false;
     let markServiceAfterCommit = false;
+    // Spare vehicles released by this update — recomputed after the commit so
+    // they do not stay `scheduled` (BUG-115).
+    const freedSpareVehicleIds: number[] = [];
 
     const updatedRow = await db.transaction(async (tx) => {
       // FIX-G (BUG-142): `POST /api/transports` used to insert the transport on
@@ -2474,12 +2478,32 @@ export class DatabaseStorage implements IStorage {
       const nextSpareRequired = changes.spareRequired ?? current.spareRequired;
       const nextRelatedVehicleId = changes.relatedVehicleId !== undefined ? changes.relatedVehicleId : current.relatedVehicleId;
       const nextIsBreakdown = changes.isBreakdownOrMaintenance ?? current.isBreakdownOrMaintenance;
+
+      // FIX-W (BUG-136) — `status` was free text: `garbage_status` was stored,
+      // and `completed -> in_progress` reopened a closed transport without
+      // undoing any of the side effects closing it had. One table, one place.
+      if (changes.status !== undefined) {
+        changes = { ...changes, status: assertTransportTransition(current.status, changes.status) };
+      }
+
       // Hoisted: the spare branches below have to know that this update closes
       // the transport (BUG-137 — completing one used to *create* a placeholder).
       const closingNow = changes.status !== undefined && changes.status !== current.status &&
         (changes.status === 'completed' || changes.status === 'cancelled');
+      const cancellingNow = changes.status === 'cancelled' && current.status !== 'cancelled';
 
-      if (nextRelatedVehicleId != null && nextRelatedVehicleId === current.vehicleId) {
+      // FIX-W (BUG-114) — the day the transport happens, after this update.
+      const nextScheduledDate = changes.scheduledDate ?? current.scheduledDate;
+      const scheduledDateChanged = nextScheduledDate !== current.scheduledDate;
+      // FIX-W (BUG-116) — the guard compared the *incoming* replacement with the
+      // *current* original, so `PATCH {vehicleId: <the replacement>}` was
+      // accepted and produced a transport where the car replaces itself — after
+      // which every further vehicleId edit answered 400 and only a call that
+      // also changed relatedVehicleId could get it out again.
+      const nextVehicleId = changes.vehicleId !== undefined ? changes.vehicleId : current.vehicleId;
+      const vehicleChanged = nextVehicleId !== current.vehicleId;
+
+      if (nextRelatedVehicleId != null && nextRelatedVehicleId === nextVehicleId) {
         throw new Error('Replacement vehicle cannot be the same as the original vehicle');
       }
 
@@ -2651,6 +2675,101 @@ export class DatabaseStorage implements IStorage {
         spareReservationId = spareReservation.id;
       }
 
+      // FIX-W (BUG-114) — moving the transport moves its replacement booking.
+      // Without this branch the spare stayed reserved on the *old* day (blocked
+      // for nothing) while being free on the day it was actually needed, so a
+      // second transport could claim the same car for the same day.
+      if (scheduledDateChanged && spareReservationId) {
+        const [spareRow] = await tx.select().from(reservations).where(eq(reservations.id, spareReservationId));
+        if (spareRow && normalizeReservationStatus(spareRow.status) === 'booked') {
+          if (spareRow.vehicleId != null) {
+            await tx.execute(vehicleLockSql(spareRow.vehicleId));
+            const verdict = await this.isVehicleBookable({
+              vehicleId: spareRow.vehicleId,
+              startDate: nextScheduledDate,
+              endDate: nextScheduledDate,
+              startTime: '00:00',
+              endTime: '23:59',
+              excludeReservationId: spareReservationId,
+            }, tx);
+            if (!verdict.bookable) {
+              throw new BookingConflictError(verdict, 'Replacement vehicle has conflicting reservations for this date');
+            }
+          }
+          await tx.update(reservations)
+            .set({ startDate: nextScheduledDate, endDate: nextScheduledDate, updatedAt: new Date() })
+            .where(eq(reservations.id, spareReservationId));
+        } else if (spareRow) {
+          // Already handed over: moving the paperwork under the driver is not a
+          // date edit, it is a new decision. Same refusal as reassignment.
+          throw new HttpError(
+            409,
+            'Cannot move this transport — its replacement vehicle has already been picked up. Return it first, or leave the date as-is.',
+            { code: 'SPARE_ALREADY_PICKED_UP' },
+          );
+        }
+      }
+
+      // FIX-W (BUG-115) — cancelling frees the replacement. `DELETE
+      // /api/transports/:id` has always done this; `PATCH {status:'cancelled'}`
+      // did not, so every cancelled transport kept a spare car blocked for that
+      // day and the calendar kept showing a replacement for a trip that never
+      // happened. A spare that is already picked up is a real handover and is
+      // left alone.
+      if (cancellingNow && spareReservationId) {
+        const [spareRow] = await tx.select().from(reservations).where(eq(reservations.id, spareReservationId));
+        if (spareRow && normalizeReservationStatus(spareRow.status) === 'booked') {
+          await tx.update(reservations)
+            .set({ status: 'cancelled', placeholderSpare: false, updatedAt: new Date() })
+            .where(eq(reservations.id, spareReservationId));
+          if (spareRow.vehicleId != null) freedSpareVehicleIds.push(spareRow.vehicleId);
+          spareReservationId = null;
+        }
+      }
+
+      // FIX-W (BUG-135) — the transport changed car. The workshop flag, and the
+      // "replacing <plate>" note on the spare, described the *old* one: the wrong
+      // car stayed marked `needs_service` with a note naming this transport, the
+      // new one was never flagged, and the transport letter named a vehicle that
+      // is no longer part of it.
+      if (vehicleChanged) {
+        if (current.vehicleId != null && !current.isExternalVehicle && current.isBreakdownOrMaintenance) {
+          await this.markVehicleForService(current.vehicleId, 'ok', undefined, tx);
+          restoreMaintenanceAfterCommit = true;
+        }
+        if (nextVehicleId != null && !(changes.isExternalVehicle ?? current.isExternalVehicle) && nextIsBreakdown) {
+          await this.markVehicleForService(
+            nextVehicleId,
+            'needs_service',
+            `Replacement vehicle required for transport #${id}`,
+            tx,
+          );
+          markServiceAfterCommit = true;
+        }
+        if (spareReservationId) {
+          const [newOriginal] = nextVehicleId != null
+            ? await tx.select().from(vehicles).where(eq(vehicles.id, nextVehicleId))
+            : [undefined];
+          const [affectedRental] = nextVehicleId != null
+            ? await tx.select().from(reservations).where(and(
+                eq(reservations.vehicleId, nextVehicleId),
+                eq(reservations.status, 'picked_up'),
+                isNull(reservations.deletedAt),
+              ))
+            : [undefined];
+          await tx.update(reservations)
+            .set({
+              replacementForReservationId: affectedRental?.id ?? null,
+              customerId: affectedRental?.customerId ?? current.customerId ?? null,
+              notes: newOriginal
+                ? `Replacement vehicle for ${newOriginal.brand} ${newOriginal.model} (${newOriginal.licensePlate})`
+                : `Replacement vehicle for transport #${id}`,
+              updatedAt: new Date(),
+            })
+            .where(eq(reservations.id, spareReservationId));
+        }
+      }
+
       // isBreakdownOrMaintenance is what actually means "the original vehicle needs
       // service" — independent of whether a replacement has been assigned yet or is
       // still TBD, and independent of relatedVehicleId changing in this same call.
@@ -2682,9 +2801,23 @@ export class DatabaseStorage implements IStorage {
       // `number` in the zod schema but `string` in the drizzle column type) — cast
       // rather than fight a codebase-wide drizzle-zod mismatch outside this feature's
       // scope.
+      // BUG-136 — the dashboard sends `completedDate`; every API caller forgot
+      // to, and the row was recorded as completed with no date at all. The
+      // server fills it in on the transition, and clears it when the transport
+      // leaves `completed`.
+      const completedDatePatch: Record<string, unknown> = {};
+      if (changes.status !== undefined && changes.status !== current.status) {
+        if (changes.status === 'completed' && changes.completedDate == null && current.completedDate == null) {
+          completedDatePatch.completedDate = isoToday();
+        } else if (current.status === 'completed' && changes.status !== 'completed') {
+          completedDatePatch.completedDate = null;
+        }
+      }
+
       const [row] = await tx.update(vehicleTransports)
         .set({
           ...changes,
+          ...completedDatePatch,
           relatedVehicleId: nextRelatedVehicleId,
           spareRequired: nextSpareRequired,
           isBreakdownOrMaintenance: nextIsBreakdown,
@@ -2697,6 +2830,9 @@ export class DatabaseStorage implements IStorage {
       return row;
     });
 
+    for (const vehicleId of Array.from(new Set(freedSpareVehicleIds))) {
+      await this.recomputeVehicleAvailability(vehicleId);
+    }
     if (markServiceAfterCommit || restoreMaintenanceAfterCommit) {
       await this.syncVehicleAvailabilityWithReservations();
     }
