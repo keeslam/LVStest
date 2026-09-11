@@ -1,9 +1,13 @@
 import { Router } from 'express';
+import { installIdParamValidation } from '../middleware/parseIntParam';
 import { db } from '../db.js';
 import { vehicles, customers, reservations } from '../../shared/schema.js';
 import { eq, isNotNull, and, gte, lte } from 'drizzle-orm';
 
 const router = Router();
+// FIX-E (BUG-103): Express param callbacks do not cross a router mount,
+// so this router validates its own `:id`-style parameters itself.
+installIdParamValidation(router);
 
 // Get vehicles that currently have active reservations
 router.get('/', async (req, res) => {

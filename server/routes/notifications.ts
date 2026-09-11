@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { installIdParamValidation } from '../middleware/parseIntParam';
 import { db } from '../db.js';
 import { vehicles, customers, reservations, emailLogs } from '../../shared/schema.js';
 import { eq, and, isNotNull, inArray } from 'drizzle-orm';
@@ -83,6 +84,9 @@ function formatLicensePlate(plate: string | null): string {
 }
 
 const router = Router();
+// FIX-E (BUG-103): Express param callbacks do not cross a router mount,
+// so this router validates its own `:id`-style parameters itself.
+installIdParamValidation(router);
 
 // Send notifications to customers
 router.post('/send', async (req, res) => {

@@ -1,9 +1,13 @@
 import { Router } from 'express';
+import { installIdParamValidation } from '../middleware/parseIntParam';
 import { db } from '../db.js';
 import { vehicles, customers, reservations, expenses } from '../../shared/schema.js';
 import { eq, isNotNull, and, gte, lte, sql, desc, like, or } from 'drizzle-orm';
 
 const router = Router();
+// FIX-E (BUG-103): Express param callbacks do not cross a router mount,
+// so this router validates its own `:id`-style parameters itself.
+installIdParamValidation(router);
 
 // Helper function to calculate date differences in months
 function getDateDifferenceInDays(date1: string, date2: string): number {

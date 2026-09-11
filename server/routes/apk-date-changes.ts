@@ -1,10 +1,14 @@
 import { Router } from 'express';
+import { installIdParamValidation } from '../middleware/parseIntParam';
 import { storage } from '../storage';
 import { hasPermission } from '../middleware/permissions.js';
 import { UserPermission } from '../../shared/schema.js';
 import { scanVehiclesForApkChanges, type ApkScanResult } from '../utils/rdw-apk-scanner.js';
 
 const router = Router();
+// FIX-E (BUG-103): Express param callbacks do not cross a router mount,
+// so this router validates its own `:id`-style parameters itself.
+installIdParamValidation(router);
 
 // A full scan takes minutes (one request per vehicle against RDW). Running it
 // as a blocking request/response meant any reverse proxy or gateway in front

@@ -31,24 +31,10 @@ export function registerDamageCheckTemplateRoutes(app: Express, deps: RouteDeps)
     }
   });
 
-  // Get damage check template by ID
-  app.get("/api/damage-check-templates/:id", hasPermission(UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      const template = await storage.getDamageCheckTemplate(id);
-      
-      if (!template) {
-        return res.status(404).json({ message: "Template not found" });
-      }
-      
-      res.json(template);
-    } catch (error) {
-      console.error("Error fetching damage check template:", error);
-      res.status(500).json({ message: "Error fetching damage check template" });
-    }
-  });
-
-  // Get templates by vehicle criteria
+  // Get templates by vehicle criteria.
+  // BUG-088: this MUST stay above the `/:id` registration below. Express takes
+  // the first matching layer, so with `/:id` first this route was unreachable —
+  // `by-vehicle` was parsed as an id and the request died in the storage layer.
   app.get("/api/damage-check-templates/by-vehicle", hasPermission(UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
     try {
       const { make, model, type } = req.query;
@@ -61,6 +47,23 @@ export function registerDamageCheckTemplateRoutes(app: Express, deps: RouteDeps)
     } catch (error) {
       console.error("Error fetching templates by vehicle:", error);
       res.status(500).json({ message: "Error fetching templates" });
+    }
+  });
+
+  // Get damage check template by ID
+  app.get("/api/damage-check-templates/:id", hasPermission(UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const template = await storage.getDamageCheckTemplate(id);
+
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching damage check template:", error);
+      res.status(500).json({ message: "Error fetching damage check template" });
     }
   });
 

@@ -1,10 +1,14 @@
 import { Router } from 'express';
+import { installIdParamValidation } from '../middleware/parseIntParam';
 import { db } from '../db.js';
 import { emailTemplates } from '../../shared/schema.js';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 const router = Router();
+// FIX-E (BUG-103): Express param callbacks do not cross a router mount,
+// so this router validates its own `:id`-style parameters itself.
+installIdParamValidation(router);
 
 // Create email template validation schema
 const createTemplateSchema = z.object({

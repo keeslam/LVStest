@@ -94,12 +94,24 @@ import { registerVehicleDiagramTemplateRoutes } from "./routes/vehicle-diagram-t
 import { registerReportAndLabelTemplateRoutes } from "./routes/report-and-label-templates";
 import { onMaintenanceBlockChanged, onReplacementAssigned } from "./services/portal-maintenance-events";
 import type { RouteDeps } from "./routes/deps";
+import { installIdParamValidation, rejectNullBytesInPath } from "./middleware/parseIntParam";
 
 export async function registerRoutes(app: Express): Promise<void> {
   // FIX-A (BUG-002, BUG-061, BUG-101): make every handler registered anywhere in
   // this process async-safe, so a rejected handler promise becomes a 500 on that
   // one request instead of an unhandledRejection that kills the server.
   installAsyncErrorHandling();
+
+  // FIX-E (BUG-103): one validated id parser for every `:id`-style path
+  // parameter on this app — including the routes the sub-modules below register
+  // on it. Param callbacks run before the route's own middleware stack, so a
+  // non-numeric, oversized or null-byte id is a 400 before multer, before the
+  // permission check's storage reads, and before any `WHERE id = NaN`.
+  installIdParamValidation(app);
+  // …and the other half of BUG-103's payload set: a `%00` in the path reached
+  // the string-keyed lookups (`:category`, `:key`, `:code`) as a real NUL,
+  // which Postgres rejects for every column type. One early 400 covers them all.
+  app.use(rejectNullBytesInPath);
 
   // Initialize object storage service
   const objectStorageService = new ObjectStorageService();

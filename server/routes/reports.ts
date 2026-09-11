@@ -18,6 +18,28 @@ function parseReportRange(query: Record<string, unknown>): DateRangeYmd {
   return from <= to ? { from, to } : { from: to, to: from };
 }
 
+/**
+ * BUG-089 — `GET /api/reports/maintenance-costs` answered an unconditional 500
+ * in the audit's environment, which this dataset does not reproduce. Every
+ * crash-prone spot in the aggregation rests on the same two assumptions: that
+ * `expenses.amount` is never null (`null.toString()` is a TypeError) and that
+ * `expenses.date` always parses (date-fns `format` throws `RangeError: Invalid
+ * time value` on an invalid Date). Both are nullable / free text in the schema,
+ * so the report tolerates them instead of dying on them.
+ */
+function toAmount(value: unknown): number {
+  if (value === null || value === undefined) return 0;
+  const n = typeof value === "number" ? value : parseFloat(String(value));
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** A parsed date, or null when the stored text is not one. */
+function toDate(value: unknown): Date | null {
+  if (typeof value !== "string" && !(value instanceof Date)) return null;
+  const d = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 function parseVehicleIdFilter(query: Record<string, unknown>): number | null {
   if (typeof query.vehicleId !== "string" || query.vehicleId === "all") return null;
   const id = parseInt(query.vehicleId, 10);
@@ -62,7 +84,10 @@ export function registerReportRoutes(app: Express): void {
             break;
         }
         
-        filteredExpenses = expenses.filter(e => new Date(e.date) >= cutoffDate);
+        filteredExpenses = expenses.filter(e => {
+          const d = toDate(e.date);
+          return d !== null && d >= cutoffDate;
+        });
       }
       
       // Filter by brand if specified
@@ -74,7 +99,7 @@ export function registerReportRoutes(app: Express): void {
       }
       
       // Calculate total costs
-      const totalCosts = filteredExpenses.reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0);
+      const totalCosts = filteredExpenses.reduce((sum, e) => sum + toAmount(e.amount), 0);
       
       // Calculate average cost per vehicle
       const vehiclesWithExpenses = new Set(filteredExpenses.map(e => e.vehicleId));
@@ -90,14 +115,15 @@ export function registerReportRoutes(app: Express): void {
       // Category breakdown
       const categoryMap = new Map<string, number>();
       filteredExpenses.forEach(e => {
-        const current = categoryMap.get(e.category) || 0;
-        categoryMap.set(e.category, current + parseFloat(e.amount.toString()));
+        const category = e.category ?? 'unknown';
+        const current = categoryMap.get(category) || 0;
+        categoryMap.set(category, current + toAmount(e.amount));
       });
       
       const categoryBreakdown = Array.from(categoryMap.entries()).map(([category, amount]) => ({
         category,
         amount,
-        percentage: (amount / totalCosts) * 100
+        percentage: totalCosts > 0 ? (amount / totalCosts) * 100 : 0
       }));
       
       // Brand comparison
@@ -105,10 +131,11 @@ export function registerReportRoutes(app: Express): void {
       filteredExpenses.forEach(e => {
         const vehicle = vehicles.find(v => v.id === e.vehicleId);
         if (vehicle) {
-          const brandData = brandMap.get(vehicle.brand) || {totalCost: 0, vehicles: new Set()};
-          brandData.totalCost += parseFloat(e.amount.toString());
+          const brand = vehicle.brand ?? 'unknown';
+          const brandData = brandMap.get(brand) || {totalCost: 0, vehicles: new Set<number>()};
+          brandData.totalCost += toAmount(e.amount);
           brandData.vehicles.add(vehicle.id);
-          brandMap.set(vehicle.brand, brandData);
+          brandMap.set(brand, brandData);
         }
       });
       
@@ -124,7 +151,7 @@ export function registerReportRoutes(app: Express): void {
       filteredExpenses.forEach(e => {
         const data = vehicleExpenseMap.get(e.vehicleId) || {expenses: [], totalCost: 0};
         data.expenses.push(e);
-        data.totalCost += parseFloat(e.amount.toString());
+        data.totalCost += toAmount(e.amount);
         vehicleExpenseMap.set(e.vehicleId, data);
       });
       
@@ -157,9 +184,11 @@ export function registerReportRoutes(app: Express): void {
       }
       
       filteredExpenses.forEach(e => {
-        const monthKey = format(new Date(e.date), 'MMM yyyy');
+        const parsed = toDate(e.date);
+        if (!parsed) return;
+        const monthKey = format(parsed, 'MMM yyyy');
         if (monthlyMap.has(monthKey)) {
-          monthlyMap.set(monthKey, (monthlyMap.get(monthKey) || 0) + parseFloat(e.amount.toString()));
+          monthlyMap.set(monthKey, (monthlyMap.get(monthKey) || 0) + toAmount(e.amount));
         }
       });
       
