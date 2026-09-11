@@ -359,8 +359,15 @@ async function testDatabaseConnection() {
 // Gated behind requireAuth: these files include customer contracts, damage-check
 // photos, and license scans, which must never be reachable by an unauthenticated
 // request that merely guesses or obtains a file path.
+// BUG-085: requireAuth alone meant every logged-in employee — a cleaner, a
+// kiosk account — could fetch any contract, damage photo or driving-licence
+// scan by guessing or reading a path out of an API response it was allowed to
+// see, bypassing the per-customer scoping of the portal routes entirely. The
+// mount now also demands manage_documents; the scoped download routes
+// (/api/documents/view|download) remain the intended way in, and no client
+// code links to /uploads at all.
 const uploadsPath = path.join(process.cwd(), 'uploads');
-app.use('/uploads', requireAuth, express.static(uploadsPath));
+app.use('/uploads', requireAuth, hasPermission(UserPermission.MANAGE_DOCUMENTS), express.static(uploadsPath));
 console.log('📁 Serving uploads from:', uploadsPath);
 
 // API root

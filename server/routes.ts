@@ -3772,7 +3772,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // ==================== SPARE VEHICLE MANAGEMENT ROUTES ====================
   
   // Get available spare vehicles for a date range
-  app.get("/api/spare-vehicles/available", requireAuth, async (req: Request, res: Response) => {
+  app.get("/api/spare-vehicles/available", requireAuth, hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
     try {
       const { startDate, endDate, excludeVehicleId } = req.query;
       
@@ -4016,7 +4016,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Update spare vehicle status
-  app.patch("/api/reservations/:id/spare-status", requireAuth, async (req: Request, res: Response) => {
+  app.patch("/api/reservations/:id/spare-status", requireAuth, hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
     try {
       const reservationId = parseInt(req.params.id);
       if (isNaN(reservationId)) {
@@ -4467,7 +4467,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // ==================== PLACEHOLDER SPARE VEHICLE ROUTES ====================
   
   // Create a placeholder spare vehicle reservation
-  app.post("/api/placeholder-reservations", requireAuth, async (req: Request, res: Response) => {
+  app.post("/api/placeholder-reservations", requireAuth, hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
     try {
       // Handle the case where the body is double-wrapped (from apiRequest function)
       let requestData = req.body;
@@ -4519,7 +4519,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Get placeholder reservations with optional date filtering
-  app.get("/api/placeholder-reservations", requireAuth, async (req: Request, res: Response) => {
+  app.get("/api/placeholder-reservations", requireAuth, hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
     try {
       // Validate query parameters with Zod
       const validatedQuery = placeholderQuerySchema.parse(req.query);
@@ -4546,7 +4546,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Get placeholder reservations needing assignment (upcoming within specified days)
-  app.get("/api/placeholder-reservations/needing-assignment", requireAuth, async (req: Request, res: Response) => {
+  app.get("/api/placeholder-reservations/needing-assignment", requireAuth, hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
     try {
       // Validate query parameters with Zod
       const validatedQuery = placeholderNeedingAssignmentQuerySchema.parse(req.query);
@@ -4570,7 +4570,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Assign a vehicle to a placeholder reservation
-  app.post("/api/placeholder-reservations/:id/assign-vehicle", requireAuth, async (req: Request, res: Response) => {
+  app.post("/api/placeholder-reservations/:id/assign-vehicle", requireAuth, hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
     try {
       // Validate path parameter
       const placeholderReservationId = parseInt(req.params.id);
@@ -4624,7 +4624,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
 
   // Delete reservation (soft delete with user tracking)
-  app.delete("/api/reservations/:id", requireAuth, async (req: Request, res: Response) => {
+  app.delete("/api/reservations/:id", requireAuth, hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -4752,7 +4752,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
   // ==================== VEHICLE-SPECIFIC CUSTOMER ROUTES ====================
   // Get customers who have rented a specific vehicle (for APK reminders, etc.)
-  app.get('/api/vehicles/:vehicleId/customers-with-reservations', requireAuth, async (req: Request, res: Response) => {
+  app.get('/api/vehicles/:vehicleId/customers-with-reservations', requireAuth, hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
     try {
       const vehicleId = parseInt(req.params.vehicleId);
       
@@ -6575,7 +6575,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Migration endpoint: Transfer driver license data from customers to drivers table
-  app.post("/api/migrate/customer-drivers", requireAuth, async (req, res) => {
+  app.post("/api/migrate/customer-drivers", requireAuth, hasPermission(UserPermission.MANAGE_CUSTOMERS), async (req, res) => {
     try {
       const username = req.user?.username || 'system';
       const userId = req.user?.id || null;
@@ -6644,7 +6644,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   registerDamageCheckTemplateRoutes(app, routeDeps);
 
   // Generate damage check PDF for a vehicle
-  app.get("/api/vehicles/:id/damage-check-pdf", requireAuth, async (req: Request, res: Response) => {
+  app.get("/api/vehicles/:id/damage-check-pdf", requireAuth, hasPermission(UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
     try {
       const vehicleId = parseInt(req.params.id);
       
@@ -6786,7 +6786,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // INTERACTIVE DAMAGE CHECK ROUTES
   
   // Get all interactive damage checks
-  app.get("/api/interactive-damage-checks", requireAuth, async (req: Request, res: Response) => {
+  app.get("/api/interactive-damage-checks", requireAuth, hasPermission(UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
     try {
       const checks = await storage.getAllInteractiveDamageChecks();
       res.json(checks);
@@ -6797,7 +6797,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Get interactive damage check by ID
-  app.get("/api/interactive-damage-checks/:id", requireAuth, async (req: Request, res: Response) => {
+  app.get("/api/interactive-damage-checks/:id", requireAuth, hasPermission(UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const check = await storage.getInteractiveDamageCheck(id);
@@ -6814,7 +6814,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Get interactive damage checks by vehicle
-  app.get("/api/interactive-damage-checks/vehicle/:vehicleId", requireAuth, async (req: Request, res: Response) => {
+  app.get("/api/interactive-damage-checks/vehicle/:vehicleId", requireAuth, hasPermission(UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
     try {
       const vehicleId = parseInt(req.params.vehicleId);
       const checks = await storage.getInteractiveDamageChecksByVehicle(vehicleId);
@@ -6826,7 +6826,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Get interactive damage checks by reservation
-  app.get("/api/interactive-damage-checks/reservation/:reservationId", requireAuth, async (req: Request, res: Response) => {
+  app.get("/api/interactive-damage-checks/reservation/:reservationId", requireAuth, hasPermission(UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
     try {
       const reservationId = parseInt(req.params.reservationId);
       const checks = await storage.getInteractiveDamageChecksByReservation(reservationId);
@@ -6838,7 +6838,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Get recent damage checks by vehicle and customer
-  app.get("/api/interactive-damage-checks/vehicle/:vehicleId/customer/:customerId", requireAuth, async (req: Request, res: Response) => {
+  app.get("/api/interactive-damage-checks/vehicle/:vehicleId/customer/:customerId", requireAuth, hasPermission(UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
     try {
       const vehicleId = parseInt(req.params.vehicleId);
       const customerId = parseInt(req.params.customerId);
@@ -6852,7 +6852,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Create interactive damage check
-  app.post("/api/interactive-damage-checks", requireAuth, async (req: Request, res: Response) => {
+  app.post("/api/interactive-damage-checks", requireAuth, hasPermission(UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
     try {
       const user = req.user;
       const checkData = {
@@ -7007,7 +7007,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Update interactive damage check
-  app.put("/api/interactive-damage-checks/:id", requireAuth, async (req: Request, res: Response) => {
+  app.put("/api/interactive-damage-checks/:id", requireAuth, hasPermission(UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const user = req.user;
@@ -7216,7 +7216,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Generate PDF for interactive damage check
-  app.get("/api/interactive-damage-checks/:id/pdf", requireAuth, async (req: Request, res: Response) => {
+  app.get("/api/interactive-damage-checks/:id/pdf", requireAuth, hasPermission(UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const check = await storage.getInteractiveDamageCheck(id);
@@ -7306,7 +7306,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Delete interactive damage check
-  app.delete("/api/interactive-damage-checks/:id", requireAuth, async (req: Request, res: Response) => {
+  app.delete("/api/interactive-damage-checks/:id", requireAuth, hasPermission(UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
 

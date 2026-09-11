@@ -4,6 +4,8 @@ import path from "path";
 import fs from "fs";
 import { validateAfterUpload } from "../utils/security/fileUploadSecurity";
 import { getRelativePath } from "../services/document-paths";
+import { hasPermission } from "../middleware/permissions.js";
+import { UserPermission } from "../../shared/schema";
 import type { RouteDeps } from "./deps";
 
 // Moved verbatim out of server/routes.ts (registerRoutes) - see git history for context.
@@ -86,7 +88,7 @@ export function registerVehicleDiagramTemplateRoutes(app: Express, deps: RouteDe
   });
 
   // Create vehicle diagram template (with file upload)
-  app.post("/api/vehicle-diagram-templates", requireAuth, diagramUpload.single('diagram'), async (req: Request, res: Response) => {
+  app.post("/api/vehicle-diagram-templates", requireAuth, hasPermission(UserPermission.MANAGE_VEHICLES), diagramUpload.single('diagram'), async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "Diagram image is required" });
@@ -135,7 +137,7 @@ export function registerVehicleDiagramTemplateRoutes(app: Express, deps: RouteDe
   });
 
   // Update vehicle diagram template
-  app.patch("/api/vehicle-diagram-templates/:id", requireAuth, diagramUpload.single('diagram'), async (req: Request, res: Response) => {
+  app.patch("/api/vehicle-diagram-templates/:id", requireAuth, hasPermission(UserPermission.MANAGE_VEHICLES), diagramUpload.single('diagram'), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const user = req.user as Express.User | undefined;
@@ -208,7 +210,7 @@ export function registerVehicleDiagramTemplateRoutes(app: Express, deps: RouteDe
   });
 
   // Delete vehicle diagram template
-  app.delete("/api/vehicle-diagram-templates/:id", requireAuth, async (req: Request, res: Response) => {
+  app.delete("/api/vehicle-diagram-templates/:id", requireAuth, hasPermission(UserPermission.MANAGE_VEHICLES), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const template = await storage.getVehicleDiagramTemplate(id);

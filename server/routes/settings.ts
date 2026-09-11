@@ -10,30 +10,42 @@ import type { RouteDeps } from "./deps";
 export function registerSettingsRoutes(app: Express, deps: RouteDeps): void {
   const { requireAuth } = deps;
 
+  /**
+   * BUG-010: these routes returned app_settings rows verbatim, so the
+   * email_config row handed out the plaintext SMTP password. Same redaction as
+   * server/routes/app-settings.ts, which had it right all along.
+   */
+  function redactAppSetting<T extends { value?: any } | undefined>(setting: T): T {
+    if (!setting?.value || typeof setting.value !== "object" || !("smtpPassword" in setting.value)) {
+      return setting;
+    }
+    return { ...setting, value: { ...setting.value, smtpPassword: "" } };
+  }
+
 
   // App Settings Routes
-  app.get("/api/settings", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.get("/api/settings", hasPermission(UserPermission.MANAGE_SETTINGS), async (req, res) => {
     try {
       const settings = await storage.getAllAppSettings();
-      res.json(settings);
+      res.json(settings.map(redactAppSetting));
     } catch (error) {
       console.error("Error fetching app settings:", error);
       res.status(500).json({ error: "Failed to fetch settings" });
     }
   });
 
-  app.get("/api/settings/category/:category", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.get("/api/settings/category/:category", hasPermission(UserPermission.MANAGE_SETTINGS), async (req, res) => {
     try {
       const { category } = req.params;
       const settings = await storage.getAppSettingsByCategory(category);
-      res.json(settings);
+      res.json(settings.map(redactAppSetting));
     } catch (error) {
       console.error(`Error fetching settings for category ${req.params.category}:`, error);
       res.status(500).json({ error: "Failed to fetch settings" });
     }
   });
 
-  app.get("/api/settings/key/:key", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.get("/api/settings/key/:key", hasPermission(UserPermission.MANAGE_SETTINGS), async (req, res) => {
     try {
       const { key } = req.params;
       const setting = await storage.getAppSettingByKey(key);
@@ -42,7 +54,7 @@ export function registerSettingsRoutes(app: Express, deps: RouteDeps): void {
         return res.status(404).json({ error: "Setting not found" });
       }
       
-      res.json(setting);
+      res.json(redactAppSetting(setting));
     } catch (error) {
       console.error("Error fetching setting by key:", error);
       res.status(500).json({ error: "Failed to fetch setting" });
@@ -88,7 +100,7 @@ export function registerSettingsRoutes(app: Express, deps: RouteDeps): void {
   });
 
   // Set contract number override (smart override feature)
-  app.post("/api/settings/contract-number-override", requireAuth, async (req: Request, res: Response) => {
+  app.post("/api/settings/contract-number-override", requireAuth, hasPermission(UserPermission.MANAGE_SETTINGS), async (req: Request, res: Response) => {
     try {
       const { overrideNumber } = req.body;
       
@@ -119,7 +131,7 @@ export function registerSettingsRoutes(app: Express, deps: RouteDeps): void {
   });
 
   // Clear contract number override
-  app.delete("/api/settings/contract-number-override", requireAuth, async (req: Request, res: Response) => {
+  app.delete("/api/settings/contract-number-override", requireAuth, hasPermission(UserPermission.MANAGE_SETTINGS), async (req: Request, res: Response) => {
     try {
       const username = req.user?.username || 'Unknown';
       const updatedSettings = await storage.clearContractNumberOverride(username);
@@ -137,7 +149,7 @@ export function registerSettingsRoutes(app: Express, deps: RouteDeps): void {
     }
   });
 
-  app.get("/api/settings/:id", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+  app.get("/api/settings/:id", hasPermission(UserPermission.MANAGE_SETTINGS), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const setting = await storage.getAppSetting(id);
@@ -146,7 +158,7 @@ export function registerSettingsRoutes(app: Express, deps: RouteDeps): void {
         return res.status(404).json({ error: "Setting not found" });
       }
       
-      res.json(setting);
+      res.json(redactAppSetting(setting));
     } catch (error) {
       console.error("Error fetching setting:", error);
       res.status(500).json({ error: "Failed to fetch setting" });
@@ -169,7 +181,7 @@ export function registerSettingsRoutes(app: Express, deps: RouteDeps): void {
         clearEmailConfigCache();
       }
       
-      res.status(201).json(newSetting);
+      res.status(201).json(redactAppSetting(newSetting));
     } catch (error) {
       console.error("Error creating setting:", error);
       res.status(500).json({ error: "Failed to create setting" });
@@ -196,7 +208,7 @@ export function registerSettingsRoutes(app: Express, deps: RouteDeps): void {
         clearEmailConfigCache();
       }
       
-      res.json(updatedSetting);
+      res.json(redactAppSetting(updatedSetting));
     } catch (error) {
       console.error("Error updating setting:", error);
       res.status(500).json({ error: "Failed to update setting" });

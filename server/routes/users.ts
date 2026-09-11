@@ -92,7 +92,14 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
   app.post("/api/users", requireAuth, hasPermission(UserPermission.MANAGE_USERS), async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
-      
+
+      // BUG-001: manage_users is a permission you hand a shift leader. It must
+      // not be a route to creating administrators — only a real admin may set
+      // role:"admin".
+      if (userData.role === UserRole.ADMIN && req.user!.role !== UserRole.ADMIN) {
+        return res.status(403).json({ message: "Only an administrator can create an administrator account" });
+      }
+
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(userData.username);
       if (existingUser) {
@@ -194,6 +201,20 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         delete userData.permissions;
         delete userData.active;
         delete userData.hidePrices;
+      }
+
+      // BUG-001: two privilege-escalation doors closed. A caller who is not a
+      // real admin may never set role:"admin" on anybody, and may never touch
+      // role or permissions on their *own* row — which is how a manager with
+      // manage_users promoted itself to admin during the audit.
+      if (!isAdmin) {
+        if (userData.role === UserRole.ADMIN) {
+          return res.status(403).json({ message: "Only an administrator can grant the admin role" });
+        }
+        if (isSelfUpdate) {
+          delete userData.role;
+          delete userData.permissions;
+        }
       }
       
       // Handle password separately

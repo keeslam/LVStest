@@ -110,6 +110,32 @@ describe("FIX-J — Socket.IO and /health", () => {
     }
   }, 45_000);
 
+  it("BUG-085: /uploads is not readable by an employee without manage_documents", async () => {
+    // The static mount lives in server/index.ts, so this only exists on a real
+    // server. A view_vehicles account used to be served driving-licence scans.
+    const viewerName = `FIXT-user-socket-viewer-${Date.now().toString(36)}`;
+    await db.insert(users).values({
+      username: viewerName,
+      password: await hashPassword(password),
+      role: "manager",
+      permissions: ["view_vehicles"],
+      active: true,
+    });
+    const loginBody = JSON.stringify({ username: viewerName, password });
+    const login = await rawRequest(server.port, "POST", "/api/login", {
+      body: loginBody,
+      headers: { "content-type": "application/json", "content-length": String(Buffer.byteLength(loginBody)) },
+    });
+    expect(login.status).toBe(200);
+    const viewerCookies = collectCookies("", login);
+
+    const res = await rawRequest(server.port, "GET", "/uploads/drivers/anything.pdf", { headers: { cookie: viewerCookies } });
+    expect(res.status).toBe(403);
+
+    // Anonymous is still 401, not 403.
+    expect((await rawRequest(server.port, "GET", "/uploads/drivers/anything.pdf")).status).toBe(401);
+  }, 45_000);
+
   it("BUG-093: /health is sober — no envVars, no userCount", async () => {
     const res = await get(server.port, "/health");
     expect(res.status).toBe(200);

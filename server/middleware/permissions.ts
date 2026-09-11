@@ -4,7 +4,10 @@ import { UserRole } from '../../shared/schema.js';
 // Check if user has specific permission(s) - supports multiple permissions (OR logic)
 // NOTE: This middleware assumes authentication has already been verified upstream via requireAuth
 export const hasPermission = (...permissions: string[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  // Named on purpose: server/__tests__/fix-i-permission-matrix.test.ts walks the
+  // router stack at runtime and recognises the guard by this name, which is what
+  // makes "every route is gated unless it is on the public allowlist" testable.
+  return function hasPermissionMiddleware(req: Request, res: Response, next: NextFunction) {
     // Trust that req.user exists if authentication middleware was applied upstream
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });

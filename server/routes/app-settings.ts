@@ -460,7 +460,12 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
   });
 
   // Update system settings
-  app.put("/api/system-settings", requireAuth, async (req: Request, res: Response) => {
+  // BUG-011: writing system-wide configuration (contract numbering, toll rate,
+  // depot address, service-interval defaults) requires manage_settings. The GET
+  // stays on requireAuth: the transport dialog, the vehicle detail screen and
+  // the maintenance calendar all read it for ordinary staff, and the row holds
+  // no secret.
+  app.put("/api/system-settings", requireAuth, hasPermission(UserPermission.MANAGE_SETTINGS), async (req: Request, res: Response) => {
     try {
       const user = req.user;
       const {
