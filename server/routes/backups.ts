@@ -361,7 +361,6 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
       // here silently swallowed the safety-backup guard's refusal message and
       // made it indistinguishable from any other failure.
       res.status(500).json({
-        error: error instanceof Error ? error.message : "Failed to restore app data",
         details: error instanceof Error ? error.message : "Unknown error"
       });
     }
@@ -544,7 +543,6 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
       // not a fixed generic string - see the matching comment in
       // /api/backups/restore-data's catch block above.
       res.status(500).json({
-        error: error instanceof Error ? error.message : "Failed to restore uploaded files",
         details: error instanceof Error ? error.message : "Unknown error"
       });
     }
@@ -693,7 +691,6 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
     } catch (error) {
       console.error("Error running backup:", error);
       res.status(500).json({ 
-        error: error instanceof Error ? error.message : "Failed to run backup" 
       });
     }
   });
@@ -924,7 +921,6 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
     } catch (error) {
       console.error("Error restoring database:", error);
       res.status(500).json({
-        error: error instanceof Error ? error.message : "Failed to restore database"
       });
     }
   });
@@ -965,7 +961,6 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
     } catch (error) {
       console.error("Error restoring files:", error);
       res.status(500).json({
-        error: error instanceof Error ? error.message : "Failed to restore files"
       });
     }
   });
@@ -1024,7 +1019,6 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
     } catch (error) {
       console.error("Error performing complete restore:", error);
       res.status(500).json({ 
-        error: error instanceof Error ? error.message : "Failed to perform complete restore" 
       });
     }
   });

@@ -104,8 +104,19 @@ export function registerSettingsRoutes(app: Express, deps: RouteDeps): void {
     try {
       const { overrideNumber } = req.body;
       
-      if (overrideNumber !== null && (typeof overrideNumber !== 'number' || overrideNumber < 1)) {
-        return res.status(400).json({ message: "Invalid override number. Must be a positive integer or null to clear." });
+      // BUG-025: "typeof number && >= 1" let 9e18 through, which then overflowed
+      // the int4 column at the driver and came back as a 500.
+      if (
+        overrideNumber !== null &&
+        (typeof overrideNumber !== 'number' ||
+          !Number.isInteger(overrideNumber) ||
+          overrideNumber < 1 ||
+          overrideNumber > 2147483647)
+      ) {
+        return res.status(400).json({
+          message: "Invalid override number. Must be a whole number between 1 and 2147483647, or null to clear.",
+          field: "overrideNumber",
+        });
       }
       
       const username = req.user?.username || 'Unknown';

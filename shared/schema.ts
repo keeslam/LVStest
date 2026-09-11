@@ -166,6 +166,27 @@ export const updateUserSchema = createInsertSchema(users).pick({
   updatedBy: true,
 }).partial();
 
+/**
+ * BUG-063 — `PATCH /api/users/:id` spread the raw body into the update, so any
+ * column of `users` was writable from a request (including `id` and the
+ * bookkeeping columns) and `password` was accepted for *any* account. This is
+ * the closed list of fields that endpoint may write; the route decides who may
+ * write which of them.
+ */
+export const patchUserSchema = createInsertSchema(users)
+  .pick({
+    username: true,
+    password: true,
+    fullName: true,
+    email: true,
+    role: true,
+    permissions: true,
+    active: true,
+    hidePrices: true,
+    mileageOverridePasswordHash: true,
+  })
+  .partial();
+
 // Vehicles table
 export const vehicles = pgTable("vehicles", {
   id: serial("id").primaryKey(),
@@ -798,6 +819,27 @@ export const reservations = pgTable("reservations", {
   statusStartDateIdx: index("reservations_status_start_date_idx").on(table.status, table.startDate),
 }));
 
+/**
+ * BUG-111 — the reservation date columns are `text`, and nothing checked what
+ * went into them, so "not-a-date" and "2026-13-45" were stored verbatim and
+ * every date comparison downstream (conflict checks, overdue lists, the
+ * calendar) silently stopped working for that row. One yyyy-MM-dd schema that
+ * also rejects an impossible calendar day.
+ */
+export function isCalendarDate(value: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!m) return false;
+  const [year, month, day] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  if (month < 1 || month > 12 || day < 1 || day > 31) return false;
+  const d = new Date(Date.UTC(year, month - 1, day));
+  return d.getUTCFullYear() === year && d.getUTCMonth() === month - 1 && d.getUTCDate() === day;
+}
+
+export const ymdDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Use the yyyy-MM-dd format")
+  .refine(isCalendarDate, "That is not a real calendar date");
+
 // Base schema that can be extended by frontend forms
 export const insertReservationSchemaBase = createInsertSchema(reservations).omit({
   id: true,
@@ -821,8 +863,11 @@ export const insertReservationSchemaBase = createInsertSchema(reservations).omit
       // Check if the result is NaN and return undefined instead
       return isNaN(num) ? undefined : num;
     })
-  ),
-  endDate: z.string().optional().or(z.null()), // Make end date optional for open-ended rentals
+  // BUG-202: the edit form posts every column, and an empty price arrives as ""
+  // which the generic coercion turns into null. Clearing a price is legal.
+  ).or(z.null()),
+  startDate: ymdDateSchema, // BUG-111: a text column, but only ever a real yyyy-MM-dd date
+  endDate: ymdDateSchema.optional().or(z.null()), // optional for open-ended rentals; still a real date
   startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use 24-hour HH:MM").optional().or(z.literal('')).or(z.null()),
   endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use 24-hour HH:MM").optional().or(z.literal('')).or(z.null()),
   type: z.enum(["standard", "replacement", "maintenance_block"]).optional(),
@@ -833,7 +878,8 @@ export const insertReservationSchemaBase = createInsertSchema(reservations).omit
   placeholderSpare: z.boolean().optional().default(false), // Default to false for normal reservations
   affectedRentalId: z.number().optional().or(z.null()), // Allow null
   maintenanceDuration: z.number().optional().or(z.null()), // Allow null
-  maintenanceStatus: z.string().optional().or(z.null()), // Allow null
+  // BUG-052: the generic PATCH wrote this column with no enum check at all.
+  maintenanceStatus: z.enum(["scheduled", "in", "out"]).optional().or(z.null()),
   maintenanceCategory: z.string().optional().or(z.null()), // Allow null
   spareAssignmentDecision: z.string().optional().or(z.null()), // Allow null
   contractNumber: z.string().optional().or(z.null()), // Contract number is assigned during pickup, not creation

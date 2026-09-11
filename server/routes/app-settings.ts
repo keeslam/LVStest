@@ -3,7 +3,9 @@ import { format } from "date-fns";
 import { storage } from "../storage";
 import path from "path";
 import fs from "fs";
-import { UserPermission, damageCheckFieldsConfigSchema, DEFAULT_DAMAGE_CHECK_FIELDS, DAMAGE_CHECK_FIELDS_KEY } from "../../shared/schema";
+import { UserPermission, damageCheckFieldsConfigSchema, DEFAULT_DAMAGE_CHECK_FIELDS, DAMAGE_CHECK_FIELDS_KEY, settings, insertSettingsSchema } from "../../shared/schema";
+import { parsePartialUpdate } from "../middleware/validateBody";
+import { sendRouteError } from "../utils/route-errors";
 import multer from "multer";
 import { hasPermission, requireAdmin } from "../middleware/permissions.js";
 import { clearEmailConfigCache, testSmtpConnection } from "../utils/email-service";
@@ -468,49 +470,23 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
   app.put("/api/system-settings", requireAuth, hasPermission(UserPermission.MANAGE_SETTINGS), async (req: Request, res: Response) => {
     try {
       const user = req.user;
-      const {
-        contractNumberStart,
-        maintenanceExcludedStatuses,
-        showApkReminders,
-        showWarrantyReminders,
-        showMaintenanceBlocks,
-        apkReminderDays,
-        warrantyReminderDays,
-        showServiceReminders,
-        defaultServiceIntervalKm,
-        defaultServiceIntervalMonths,
-        serviceReminderKm,
-        serviceReminderDays,
-        tollRatePerKm,
-        depotAddress,
-        depotCity,
-        depotPostalCode
-      } = req.body;
+      // BUG-025: this used to destructure req.body straight into updateSettings()
+      // with no schema at all, so a wrongly-typed field — or an integer past the
+      // int4 range — first failed at the driver and came back as a 500.
+      const settingsPatch = parsePartialUpdate(req.body, {
+        table: settings,
+        schema: insertSettingsSchema,
+        message: "Invalid settings data",
+      });
 
       const updated = await storage.updateSettings({
-        contractNumberStart,
-        maintenanceExcludedStatuses,
-        showApkReminders,
-        showWarrantyReminders,
-        showMaintenanceBlocks,
-        apkReminderDays,
-        warrantyReminderDays,
-        showServiceReminders,
-        defaultServiceIntervalKm,
-        defaultServiceIntervalMonths,
-        serviceReminderKm,
-        serviceReminderDays,
-        tollRatePerKm,
-        depotAddress,
-        depotCity,
-        depotPostalCode,
+        ...settingsPatch,
         updatedBy: user ? user.username : null,
       });
 
       res.json(updated);
     } catch (error) {
-      console.error("Error updating settings:", error);
-      res.status(500).json({ message: "Error updating settings" });
+      sendRouteError(res, error, "Error updating settings");
     }
   });
 }

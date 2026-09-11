@@ -19,7 +19,6 @@ export function registerCustomNotificationRoutes(app: Express): void {
       console.error("Error fetching custom notifications:", error);
       res.status(500).json({ 
         message: "Failed to fetch custom notifications", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -33,7 +32,6 @@ export function registerCustomNotificationRoutes(app: Express): void {
       console.error("Error fetching unread custom notifications:", error);
       res.status(500).json({ 
         message: "Failed to fetch unread custom notifications", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -48,7 +46,6 @@ export function registerCustomNotificationRoutes(app: Express): void {
       console.error("Error fetching custom notifications by type:", error);
       res.status(500).json({ 
         message: "Failed to fetch custom notifications by type", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -63,7 +60,6 @@ export function registerCustomNotificationRoutes(app: Express): void {
       console.error("Error fetching user custom notifications:", error);
       res.status(500).json({ 
         message: "Failed to fetch user custom notifications", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -86,7 +82,6 @@ export function registerCustomNotificationRoutes(app: Express): void {
       console.error("Error fetching custom notification:", error);
       res.status(500).json({ 
         message: "Failed to fetch custom notification", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -116,7 +111,6 @@ export function registerCustomNotificationRoutes(app: Express): void {
       } else {
         res.status(400).json({ 
           message: "Failed to create custom notification", 
-          error: error instanceof Error ? error.message : "Unknown error" 
         });
       }
     }
@@ -155,7 +149,6 @@ export function registerCustomNotificationRoutes(app: Express): void {
       console.error("Error updating custom notification:", error);
       res.status(400).json({ 
         message: "Failed to update custom notification", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -180,7 +173,6 @@ export function registerCustomNotificationRoutes(app: Express): void {
       console.error("Error marking notification as read:", error);
       res.status(500).json({ 
         message: "Failed to mark notification as read", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -205,7 +197,6 @@ export function registerCustomNotificationRoutes(app: Express): void {
       console.error("Error marking notification as unread:", error);
       res.status(500).json({ 
         message: "Failed to mark notification as unread", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -231,7 +222,6 @@ export function registerCustomNotificationRoutes(app: Express): void {
       console.error("Error deleting custom notification:", error);
       res.status(500).json({ 
         message: "Failed to delete notification", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });

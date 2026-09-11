@@ -1,4 +1,7 @@
 import type { Request, Response } from "express";
+import { pdfTemplates } from "../../shared/schema";
+import { parsePartialUpdate } from "../middleware/validateBody";
+import { sendRouteError } from "../utils/route-errors";
 import { storage } from "../storage";
 import { generateRentalContractFromTemplate } from "../utils/pdf-generator";
 import path from "path";
@@ -30,7 +33,6 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error fetching PDF templates:", error);
       res.status(500).json({ 
         message: "Failed to fetch PDF templates", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -48,7 +50,6 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error fetching default PDF template:", error);
       res.status(500).json({ 
         message: "Failed to fetch default template", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -71,7 +72,6 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error fetching PDF template:", error);
       res.status(500).json({ 
         message: "Failed to fetch PDF template", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -159,7 +159,6 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error generating template preview:", error);
       res.status(500).json({ 
         message: "Failed to generate template preview", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -184,7 +183,6 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       } else {
         res.status(400).json({ 
           message: "Failed to create PDF template", 
-          error: error instanceof Error ? error.message : "Unknown error" 
         });
       }
     }
@@ -236,8 +234,15 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
         delete requestBody.backgroundPath;
       }
       
+      // BUG-194: the body used to go to the storage layer unvalidated, so a
+      // wrongly-typed field surfaced as a driver error (and `fields` could be
+      // any JSON at all). Validate against the template schema, partially.
       const templateData = {
-        ...requestBody,
+        ...parsePartialUpdate(requestBody, {
+          table: pdfTemplates,
+          schema: insertPdfTemplateSchema,
+          message: "Invalid PDF template data",
+        }),
         updatedBy: user ? user.username : null
       };
       
@@ -256,11 +261,7 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       
       res.json(updatedTemplate);
     } catch (error) {
-      console.error("Error updating PDF template:", error);
-      res.status(400).json({ 
-        message: "Failed to update PDF template", 
-        error: error instanceof Error ? error.message : "Unknown error" 
-      });
+      sendRouteError(res, error, "Failed to update PDF template");
     }
   });
 
@@ -288,7 +289,6 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error deleting PDF template:", error);
       res.status(500).json({ 
         message: "Failed to delete template", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -405,7 +405,6 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error uploading template background:", error);
       res.status(400).json({ 
         message: "Failed to upload template background", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -460,7 +459,6 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error removing template background:", error);
       res.status(500).json({ 
         message: "Failed to remove template background", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -475,7 +473,6 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error fetching all template backgrounds:", error);
       res.status(500).json({ 
         message: "Failed to fetch template backgrounds", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -494,7 +491,6 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error fetching template backgrounds:", error);
       res.status(500).json({ 
         message: "Failed to fetch template backgrounds", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -596,7 +592,6 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error adding background to library:", error);
       res.status(400).json({ 
         message: "Failed to add background to library", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -622,7 +617,6 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error selecting background:", error);
       res.status(500).json({ 
         message: "Failed to select background", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -675,7 +669,6 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error deleting background:", error);
       res.status(500).json({ 
         message: "Failed to delete background", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });

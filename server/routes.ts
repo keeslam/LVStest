@@ -13,6 +13,13 @@ import {
   insertVehicleSchema, 
   insertCustomerSchema, 
   insertReservationSchema, 
+  insertReservationSchemaBase,
+  insertSettingsSchema,
+  reservations,
+  vehicles,
+  settings as settingsTable,
+  vehicleTransports,
+  interactiveDamageChecks, 
   insertExpenseSchema, 
   insertDocumentSchema,
   insertUserSchema,
@@ -23,6 +30,7 @@ import {
   insertTransportReportTemplateBackgroundSchema,
   insertDriverSchema,
   insertDamageCheckTemplateSchema,
+  insertInteractiveDamageCheckSchema,
   insertVehicleTransportSchema,
   createPlaceholderReservationSchema,
   placeholderQuerySchema,
@@ -95,6 +103,16 @@ import { registerReportAndLabelTemplateRoutes } from "./routes/report-and-label-
 import { onMaintenanceBlockChanged, onReplacementAssigned } from "./services/portal-maintenance-events";
 import type { RouteDeps } from "./routes/deps";
 import { installIdParamValidation, rejectNullBytesInPath } from "./middleware/parseIntParam";
+import { parsePartialUpdate, parseCreateBody, BodyValidationError } from "./middleware/validateBody";
+import { sendRouteError, HttpError } from "./utils/route-errors";
+
+/**
+ * The fields that move a booking in time or onto another vehicle. A PATCH that
+ * touches none of them cannot create a double booking, so the (expensive)
+ * conflict check is skipped — and, more importantly, a note-only edit on a
+ * reservation that already overlaps another one still saves.
+ */
+const SCHEDULING_FIELDS = ["vehicleId", "startDate", "endDate", "startTime", "endTime", "type"] as const;
 
 export async function registerRoutes(app: Express): Promise<void> {
   // FIX-A (BUG-002, BUG-061, BUG-101): make every handler registered anywhere in
@@ -859,7 +877,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Generic error for other types of failures
       res.status(400).json({ 
         message: "Failed to create vehicle. Please check your data and try again.", 
-        error: error && typeof error === 'object' && 'message' in error ? error.message : String(error)
       });
     }
   });
@@ -1165,14 +1182,17 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Vehicle not found" });
       }
 
-      // For partial updates, we need to merge with existing data
-      const mergedData = {
-        ...existingVehicle,
-        ...sanitizedData
-      };
-
-      // Parse the sanitized merged data
-      const vehicleData = insertVehicleSchema.parse(mergedData);
+      // BUG-122 / FIX-D: this used to be `insertVehicleSchema.parse({...existingVehicle, ...body})`
+      // followed by an UPDATE of every parsed column — a read-merge-write that
+      // overwrote whatever a colleague had changed between the read and the write,
+      // and that re-validated (and could therefore start rejecting) columns the
+      // request never mentioned. Validate and write only what was sent.
+      const vehicleData = parsePartialUpdate(sanitizedData, {
+        table: vehicles,
+        schema: insertVehicleSchema,
+        strip: ["registeredToBy", "companyBy", "mileageDecreasedBy", "mileageDecreasedAt", "previousMileage"],
+        message: "Invalid vehicle data",
+      });
       
       // Validate status change if availability status is being updated
       if (sanitizedData.availabilityStatus && 
@@ -1199,17 +1219,12 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
       }
       
-      // Preserve the registration specific tracking fields
-      const { registeredToBy, companyBy } = existingVehicle;
-      
-      // Add user tracking information for updates
+      // The registration tracking fields no longer need to be "preserved": a
+      // partial update never touches a column it was not given.
       const user = req.user;
       const dataWithTracking: Record<string, any> = {
         ...vehicleData,
         updatedBy: user ? user.username : null,
-        // Preserve the registration tracking fields
-        registeredToBy,
-        companyBy
       };
       
       // A decrease needs the same authorization as one entered at pickup
@@ -1242,11 +1257,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       res.json(vehicle);
     } catch (error) {
-      console.error("Error updating vehicle:", error);
       // BUG-148: a duplicate barcode used to come back as the raw constraint
       // text 'duplicate key value violates unique constraint vehicles_barcode_unique'.
-      const dbError = describeDbError(error, "Invalid vehicle data");
-      res.status(dbError.recognised ? dbError.status : 400).json(dbErrorBody(dbError));
+      sendRouteError(res, error, "Invalid vehicle data");
     }
   });
   
@@ -1285,7 +1298,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error updating vehicle maintenance status:", error);
       res.status(500).json({
         message: "Failed to update vehicle maintenance status",
-        error: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });
@@ -1380,7 +1392,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error updating vehicle mileage:", error);
       return res.status(500).json({ 
         message: "Failed to update vehicle mileage", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -1607,7 +1618,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error updating fuel status:", error);
       res.status(500).json({ 
         message: "Failed to update fuel status", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -1776,7 +1786,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error restoring deleted record:", error);
       res.status(500).json({
         message: "Error restoring deleted record",
-        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
@@ -1959,28 +1968,24 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (error instanceof RDWNotFoundError) {
         return res.status(404).json({ 
           message: "Vehicle not found", 
-          error: error.message 
         });
       }
       
       if (error instanceof RDWTimeoutError) {
         return res.status(504).json({ 
           message: "RDW service timeout", 
-          error: error.message 
         });
       }
       
       if (error instanceof RDWUpstreamError) {
         return res.status(502).json({ 
           message: "RDW service error", 
-          error: error.message 
         });
       }
       
       // Fallback for unexpected errors
       res.status(500).json({ 
         message: "Failed to fetch vehicle information from RDW", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -2801,7 +2806,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       } else {
         res.status(400).json({ 
           message: "Failed to create reservation", 
-          error: error instanceof Error ? error.message : "Unknown error" 
         });
       }
     }
@@ -3105,7 +3109,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error creating maintenance with spare:", error);
       res.status(400).json({ 
         message: "Failed to create maintenance with spare vehicles", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -3130,34 +3133,56 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
       }
 
-      // Convert string fields to the correct types
-      if (bodyData.vehicleId) bodyData.vehicleId = parseInt(bodyData.vehicleId);
-      if (bodyData.customerId) bodyData.customerId = parseInt(bodyData.customerId);
-      
-      // Handle totalPrice properly - treat empty string and NaN as undefined
-      if (bodyData.totalPrice === "" || bodyData.totalPrice === null) {
-        bodyData.totalPrice = undefined;
-      } else if (bodyData.totalPrice) {
-        const parsedPrice = parseFloat(bodyData.totalPrice);
-        bodyData.totalPrice = isNaN(parsedPrice) ? undefined : parsedPrice;
+      // FIX-D (BUG-172): this route used to run the *full* insert schema over the
+      // body and then write every parsed column back, so a dialog that posted
+      // three fields silently overwrote everything a colleague had changed — and
+      // any field the dialog did not know about was reset to its schema default.
+      // Same generic coercion + partial validation as PATCH /:id.
+      const existingBasic = await storage.getReservation(id);
+      if (!existingBasic) {
+        return res.status(404).json({ message: "Reservation not found" });
       }
-      const reservationData = insertReservationSchema.parse(bodyData);
-      
-      // Check for conflicts (exclude the current reservation)
-      const conflicts = await storage.checkReservationConflicts(
-        reservationData.vehicleId!,
-        reservationData.startDate,
-        reservationData.endDate ?? null,
-        id,
-        false,
-        reservationData.startTime ?? null,
-        reservationData.endTime ?? null
-      );
+      const reservationData = parsePartialUpdate(bodyData, {
+        table: reservations,
+        schema: insertReservationSchemaBase,
+        strip: ["damageCheckPath"],
+        message: "Invalid reservation data",
+      });
+
+      // BUG-111: the date-order rule lives on the merged row, not on the patch.
+      const basicStartDate = (reservationData.startDate ?? existingBasic.startDate) as string | null;
+      const basicEndDate = ("endDate" in reservationData ? reservationData.endDate : existingBasic.endDate) as string | null;
+      if (basicStartDate && basicEndDate && basicEndDate < basicStartDate) {
+        return res.status(400).json({
+          message: "Invalid reservation data",
+          errors: [{ field: "endDate", message: "End date must be on or after start date" }],
+        });
+      }
+
+      // The effective row after this patch — what the conflict check has to judge.
+      const effectiveVehicleId = (reservationData.vehicleId ?? existingBasic.vehicleId) as number | null;
+      const effectiveType = (reservationData.type ?? existingBasic.type) as string;
+
+      // Check for conflicts (exclude the current reservation) — only when this
+      // patch actually moves the booking. Re-running it for a note-only edit
+      // would refuse to save a reservation that already overlaps another one.
+      const touchesSchedule = SCHEDULING_FIELDS.some((f) => f in reservationData);
+      const conflicts = touchesSchedule && effectiveVehicleId && basicStartDate
+        ? await storage.checkReservationConflicts(
+            effectiveVehicleId,
+            basicStartDate,
+            basicEndDate ?? null,
+            id,
+            false,
+            (reservationData.startTime ?? existingBasic.startTime) ?? null,
+            (reservationData.endTime ?? existingBasic.endTime) ?? null
+          )
+        : [];
       
       // Special handling for maintenance_block edits: customer rentals during the
       // maintenance period should NOT block the update — they should trigger the
       // spare vehicle assignment flow (same as POST /api/reservations).
-      if (reservationData.type === 'maintenance_block') {
+      if (effectiveType === 'maintenance_block') {
         const customerConflicts = conflicts.filter(r => r.type !== 'maintenance_block');
 
         // Apply the maintenance update first so the dates are persisted
@@ -3166,7 +3191,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           ...reservationData,
           updatedBy: userForMaint ? userForMaint.username : null,
         };
-        const maintBefore = await storage.getReservation(id);
+        const maintBefore = existingBasic;
         const updatedMaintenance = await storage.updateReservation(id, maintDataWithTracking);
         if (!updatedMaintenance) {
           return res.status(404).json({ message: "Reservation not found" });
@@ -3198,7 +3223,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Auto-convert BV → Opnaam before updating reservation (legal requirement)
       // Always check and convert BV vehicles to ensure compliance
       try {
-        const vehicle = await storage.getVehicle(reservationData.vehicleId!);
+        const vehicle = effectiveVehicleId ? await storage.getVehicle(effectiveVehicleId) : undefined;
         if (vehicle && vehicle.company === "true") {
           console.log(`🔄 Auto-converting vehicle ${vehicle.id} from BV to Opnaam (required for rental)`);
           
@@ -3236,17 +3261,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       res.json(reservation);
     } catch (error) {
-      console.error("Error updating reservation:", error);
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Invalid reservation data", 
-          error: error.errors 
-        });
-      }
-      // BUG-148: error.message here is the Postgres constraint text
+      // BUG-148: error.message here used to be the Postgres constraint text
       // ("violates foreign key constraint reservations_driver_id_drivers_id_fk").
-      const dbError = describeDbError(error, "Failed to update reservation");
-      res.status(dbError.status).json(dbErrorBody(dbError));
+      sendRouteError(res, error, "Failed to update reservation");
     }
   });
 
@@ -3460,7 +3477,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error('Error updating reservation status:', error);
       res.status(500).json({ 
         message: "Failed to update reservation status", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -3473,147 +3489,34 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(400).json({ message: "Invalid reservation ID" });
       }
 
-      // Convert string fields to the correct types (FormData sends everything as strings)
-      if (req.body.vehicleId) req.body.vehicleId = parseInt(req.body.vehicleId);
-      if (req.body.customerId) req.body.customerId = parseInt(req.body.customerId);
-      
-      // Handle driverId - convert to number or null
-      if (req.body.driverId === "null" || req.body.driverId === "" || req.body.driverId === null) {
-        req.body.driverId = null;
-      } else if (req.body.driverId) {
-        req.body.driverId = parseInt(req.body.driverId);
+      // FIX-D (BUG-202, BUG-084, BUG-111, BUG-052, BUG-172): the 25 hand-written
+      // "" -> null blocks that used to live here are gone. Coercion is derived
+      // from the drizzle table, validation is `insertReservationSchemaBase.partial()`,
+      // `id`/`created*`/`deleted*` and the server-owned path column can never come
+      // from the body, and the result holds ONLY the fields this request sent —
+      // so a PATCH stops rewriting columns it was never given.
+      // "not_recorded" is the form's way of saying "no fuel level recorded".
+      for (const key of ["fuelLevelPickup", "fuelLevelReturn"]) {
+        if (req.body?.[key] === "not_recorded") req.body[key] = null;
       }
-      
-      // Handle totalPrice properly - treat empty string and NaN as undefined
-      if (req.body.totalPrice === "" || req.body.totalPrice === null) {
-        req.body.totalPrice = undefined;
-      } else if (req.body.totalPrice) {
-        const parsedPrice = parseFloat(req.body.totalPrice);
-        req.body.totalPrice = isNaN(parsedPrice) ? undefined : parsedPrice;
-      }
-      
-      // Convert "null" string to actual null for nullable fields
-      if (req.body.replacementForReservationId === "null" || req.body.replacementForReservationId === "") {
-        req.body.replacementForReservationId = null;
-      } else if (req.body.replacementForReservationId) {
-        req.body.replacementForReservationId = parseInt(req.body.replacementForReservationId);
-      }
-      
-      if (req.body.affectedRentalId === "null" || req.body.affectedRentalId === "") {
-        req.body.affectedRentalId = null;
-      } else if (req.body.affectedRentalId) {
-        req.body.affectedRentalId = parseInt(req.body.affectedRentalId);
-      }
-      
-      if (req.body.maintenanceDuration === "null" || req.body.maintenanceDuration === "") {
-        req.body.maintenanceDuration = null;
-      } else if (req.body.maintenanceDuration) {
-        req.body.maintenanceDuration = parseInt(req.body.maintenanceDuration);
-      }
-      
-      // Convert string booleans to actual booleans
-      if (req.body.placeholderSpare === "true") req.body.placeholderSpare = true;
-      else if (req.body.placeholderSpare === "false") req.body.placeholderSpare = false;
-      
-      if (req.body.isRecurring === "true") req.body.isRecurring = true;
-      else if (req.body.isRecurring === "false") req.body.isRecurring = false;
-      
-      // Handle nullable string fields
-      if (req.body.maintenanceStatus === "null" || req.body.maintenanceStatus === "") {
-        req.body.maintenanceStatus = null;
-      }
-      if (req.body.spareAssignmentDecision === "null" || req.body.spareAssignmentDecision === "") {
-        req.body.spareAssignmentDecision = null;
-      }
-      
-      // Handle recurring reservation fields
-      if (req.body.recurringParentId === "null" || req.body.recurringParentId === "") {
-        req.body.recurringParentId = null;
-      } else if (req.body.recurringParentId) {
-        req.body.recurringParentId = parseInt(req.body.recurringParentId);
-      }
-      
-      if (req.body.recurringDayOfWeek === "null" || req.body.recurringDayOfWeek === "") {
-        req.body.recurringDayOfWeek = null;
-      } else if (req.body.recurringDayOfWeek) {
-        req.body.recurringDayOfWeek = parseInt(req.body.recurringDayOfWeek);
-      }
-      
-      if (req.body.recurringDayOfMonth === "null" || req.body.recurringDayOfMonth === "") {
-        req.body.recurringDayOfMonth = null;
-      } else if (req.body.recurringDayOfMonth) {
-        req.body.recurringDayOfMonth = parseInt(req.body.recurringDayOfMonth);
-      }
-      
-      if (req.body.recurringEndDate === "null" || req.body.recurringEndDate === "") {
-        req.body.recurringEndDate = null;
-      }
-      
-      if (req.body.recurringFrequency === "null" || req.body.recurringFrequency === "") {
-        req.body.recurringFrequency = null;
-      }
-      
-      // Handle mileage fields
-      if (req.body.pickupMileage === "null" || req.body.pickupMileage === "" || req.body.pickupMileage === null) {
-        req.body.pickupMileage = null;
-      } else if (req.body.pickupMileage) {
-        const parsed = parseInt(req.body.pickupMileage);
-        req.body.pickupMileage = isNaN(parsed) ? null : parsed;
-      }
-      
-      if (req.body.returnMileage === "null" || req.body.returnMileage === "" || req.body.returnMileage === null) {
-        req.body.returnMileage = null;
-      } else if (req.body.returnMileage) {
-        const parsed = parseInt(req.body.returnMileage);
-        req.body.returnMileage = isNaN(parsed) ? null : parsed;
-      }
-      
-      // Handle fuel-related fields
-      // fuelLevelPickup and fuelLevelReturn are text strings (e.g., "full", "1/2", "empty")
-      if (req.body.fuelLevelPickup === "null" || req.body.fuelLevelPickup === "" || req.body.fuelLevelPickup === null || req.body.fuelLevelPickup === "not_recorded") {
-        req.body.fuelLevelPickup = null;
-      }
-      
-      if (req.body.fuelLevelReturn === "null" || req.body.fuelLevelReturn === "" || req.body.fuelLevelReturn === null || req.body.fuelLevelReturn === "not_recorded") {
-        req.body.fuelLevelReturn = null;
-      }
-      
-      // fuelCost is numeric
-      if (req.body.fuelCost === "null" || req.body.fuelCost === "" || req.body.fuelCost === null) {
-        req.body.fuelCost = null;
-      } else if (req.body.fuelCost) {
-        const parsed = parseFloat(req.body.fuelCost);
-        req.body.fuelCost = isNaN(parsed) ? null : parsed;
-      }
-      
-      // Handle nullable fuel text fields
-      if (req.body.fuelCardNumber === "null" || req.body.fuelCardNumber === "") {
-        req.body.fuelCardNumber = null;
-      }
-      
-      if (req.body.fuelNotes === "null" || req.body.fuelNotes === "") {
-        req.body.fuelNotes = null;
-      }
-      
-      // Normalize contractNumber: trim or null
-      if (req.body.contractNumber === "null" || req.body.contractNumber === "" || req.body.contractNumber === null) {
-        req.body.contractNumber = null;
-      } else if (typeof req.body.contractNumber === "string") {
-        req.body.contractNumber = req.body.contractNumber.trim();
-      }
+      const reservationData = parsePartialUpdate(req.body, {
+        table: reservations,
+        schema: insertReservationSchemaBase,
+        strip: ["damageCheckPath"],
+        message: "Invalid reservation data",
+      });
 
       // If contractNumber is being set, verify it's not in use by another reservation
-      if (req.body.contractNumber) {
+      if (reservationData.contractNumber) {
+        reservationData.contractNumber = String(reservationData.contractNumber).trim();
         const existing = await storage.getReservation(id);
         // Only validate when the value actually changes
-        if (existing && existing.contractNumber !== req.body.contractNumber) {
+        if (existing && existing.contractNumber !== reservationData.contractNumber) {
           const all = await storage.getAllReservations();
-          const duplicate = all.find(
-            (r) => r.id !== id && r.contractNumber === req.body.contractNumber,
-          );
+          const duplicate = all.find((r) => r.id !== id && r.contractNumber === reservationData.contractNumber);
           if (duplicate) {
             return res.status(409).json({
-              message: `Contract number "${req.body.contractNumber}" is already used by reservation #${duplicate.id}.`,
+              message: `Contract number "${reservationData.contractNumber}" is already used by reservation #${duplicate.id}.`,
               code: "DUPLICATE_CONTRACT_NUMBER",
               conflictingReservationId: duplicate.id,
             });
@@ -3621,15 +3524,46 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
       }
 
-      // For updates, bypass full schema validation and just use the raw data
-      // This allows partial updates without requiring all fields
-      const reservationData = req.body;
-
       // Load the existing reservation once so we can diff contract-relevant
       // fields after the update and trigger contract PDF regeneration.
       const existingReservationForDiff = await storage.getReservation(id);
       if (!existingReservationForDiff) {
         return res.status(404).json({ message: "Reservation not found" });
+      }
+
+      // BUG-127 — the two odometer readings were freely editable and never
+      // compared with each other, so a completed rental could end up with a
+      // return reading below its pickup reading. Checked on the merged row for
+      // the same reason the dates are.
+      const mergedPickupMileage = ("pickupMileage" in reservationData
+        ? reservationData.pickupMileage
+        : existingReservationForDiff.pickupMileage) as number | null;
+      const mergedReturnMileage = ("returnMileage" in reservationData
+        ? reservationData.returnMileage
+        : existingReservationForDiff.returnMileage) as number | null;
+      if (
+        mergedPickupMileage != null &&
+        mergedReturnMileage != null &&
+        mergedReturnMileage < mergedPickupMileage
+      ) {
+        return res.status(400).json({
+          message: "Invalid reservation data",
+          errors: [{ field: "returnMileage", message: "The return mileage cannot be lower than the pickup mileage" }],
+        });
+      }
+
+      // BUG-111 — the cross-field rule has to be checked on the MERGED row: a
+      // partial PATCH that moves only one of the two dates can still invert the
+      // range, and the per-field schema cannot see that.
+      const mergedStartDate = (reservationData.startDate ?? existingReservationForDiff.startDate) as string | null;
+      const mergedEndDate = ("endDate" in reservationData
+        ? reservationData.endDate
+        : existingReservationForDiff.endDate) as string | null;
+      if (mergedStartDate && mergedEndDate && mergedEndDate < mergedStartDate) {
+        return res.status(400).json({
+          message: "Invalid reservation data",
+          errors: [{ field: "endDate", message: "End date must be on or after start date" }],
+        });
       }
 
       // Old-rental admin password override: if the reservation was picked up
@@ -3665,23 +3599,26 @@ export async function registerRoutes(app: Express): Promise<void> {
         );
       }
 
-      // Check for conflicts only if vehicle, startDate or endDate are being updated
-      if (reservationData.vehicleId && reservationData.startDate) {
+      // Check for conflicts only if this patch actually moves the booking. With
+      // partial updates the values to check are the *effective* ones — the old
+      // code only looked when vehicleId AND startDate happened to be in the body.
+      const effectiveVehicleIdForPatch = (reservationData.vehicleId ?? existingReservationForDiff.vehicleId) as number | null;
+      if (SCHEDULING_FIELDS.some((f) => f in reservationData) && effectiveVehicleIdForPatch && mergedStartDate) {
         // Reuse the loaded reservation for the conflict check
         const existingReservation = existingReservationForDiff;
-        
+
         // Determine if this is a maintenance block - check both the update data and existing reservation
-        const isMaintenanceBlock = (reservationData.type === 'maintenance_block') || 
+        const isMaintenanceBlock = (reservationData.type === 'maintenance_block') ||
                                    (existingReservation.type === 'maintenance_block');
-        
+
         const conflicts = await storage.checkReservationConflicts(
-          reservationData.vehicleId!,
-          reservationData.startDate,
-          reservationData.endDate || null,
+          effectiveVehicleIdForPatch,
+          mergedStartDate,
+          mergedEndDate || null,
           id,
           isMaintenanceBlock,
-          reservationData.startTime,
-          reservationData.endTime
+          (reservationData.startTime ?? existingReservation.startTime) ?? undefined,
+          (reservationData.endTime ?? existingReservation.endTime) ?? undefined
         );
         
         if (conflicts.length > 0) {
@@ -3775,14 +3712,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       res.json(reservation);
     } catch (error) {
-      console.error("Error updating reservation:", error);
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ message: "Invalid reservation data", error: error.errors });
-      } else {
-        // BUG-148: no constraint names in the response.
-        const dbError = describeDbError(error, "Failed to update reservation");
-        res.status(dbError.recognised ? dbError.status : 400).json(dbErrorBody(dbError));
-      }
+      // FIX-D/BUG-148: one envelope — a validation failure names the fields, a
+      // recognised constraint names our field, everything else is a bare 500.
+      sendRouteError(res, error, "Failed to update reservation");
     }
   });
 
@@ -4761,7 +4693,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error deleting reservation:", error);
       res.status(500).json({ 
         message: "Failed to delete reservation", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -5082,7 +5013,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       } else {
         res.status(400).json({ 
           message: "Failed to upload document", 
-          error: error instanceof Error ? error.message : "Unknown error" 
         });
       }
     }
@@ -5125,7 +5055,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error updating document:", error);
       res.status(400).json({ 
         message: "Failed to update document", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -5176,7 +5105,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error viewing document:", error);
       res.status(500).json({ 
         message: "Failed to view document", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -5227,7 +5155,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error downloading document:", error);
       res.status(500).json({ 
         message: "Failed to download document", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -5313,7 +5240,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error sending email:", error);
       res.status(500).json({ 
         message: "Failed to send email", 
-        error: error instanceof Error ? error.message : "Email service error" 
       });
     }
   });
@@ -5411,7 +5337,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error sending email with multiple documents:", error);
       res.status(500).json({ 
         message: "Failed to send email", 
-        error: error instanceof Error ? error.message : "Email service error" 
       });
     }
   });
@@ -5456,7 +5381,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error deleting document:", error);
       res.status(500).json({ 
         message: "Failed to delete document", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -5682,7 +5606,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error generating contract:", error);
       res.status(500).json({ 
         message: "Failed to generate contract", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -5774,7 +5697,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error generating contract preview:", error);
       res.status(500).json({ 
         message: "Failed to generate contract preview", 
-        error: error instanceof Error ? error.message : String(error) 
       });
     }
   });
@@ -5804,7 +5726,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error retrieving contract preview:", error);
       res.status(500).json({ 
         message: "Failed to retrieve contract preview", 
-        error: error instanceof Error ? error.message : String(error) 
       });
     }
   });
@@ -5969,7 +5890,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error generating versioned contract:", error);
       res.status(500).json({ 
         message: "Failed to generate versioned contract", 
-        error: error instanceof Error ? error.message : String(error) 
       });
     }
   });
@@ -6086,7 +6006,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error generating contract with default template:", error);
       res.status(500).json({ 
         message: "Failed to generate contract", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -6122,7 +6041,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error generating contract data:", error);
       res.status(500).json({ 
         message: "Failed to generate contract data", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -6308,7 +6226,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error generating damage check:", error);
       res.status(500).json({ 
         message: "Failed to generate damage check", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -6786,7 +6703,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error generating damage check PDF:", error);
       res.status(500).json({ 
         message: "Error generating damage check PDF", 
-        error: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });
@@ -6864,9 +6780,19 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.post("/api/interactive-damage-checks", requireAuth, hasPermission(UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
     try {
       const user = req.user;
+      // BUG-104: this used to be `{...req.body}` with no schema and no required-field
+      // check at all, so `POST {}` reached the insert and came back as a 500.
+      const checkBody = parseCreateBody(
+        { ...req.body, checkDate: req.body?.checkDate ?? new Date().toISOString() },
+        {
+          table: interactiveDamageChecks,
+          schema: insertInteractiveDamageCheckSchema,
+          strip: ["completedBy"],
+          message: "Invalid damage check data",
+        },
+      );
       const checkData = {
-        ...req.body,
-        checkDate: req.body.checkDate ? new Date(req.body.checkDate) : new Date(),
+        ...checkBody,
         completedBy: user ? user.username : null,
       };
       
@@ -7010,8 +6936,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       res.status(201).json(created);
     } catch (error) {
-      console.error("Error creating interactive damage check:", error);
-      res.status(500).json({ message: "Error creating interactive damage check" });
+      sendRouteError(res, error, "Error creating interactive damage check");
     }
   });
 
@@ -7417,6 +7342,26 @@ export async function registerRoutes(app: Express): Promise<void> {
       } else if (transportData.vehicleId == null) {
         return res.status(400).json({ message: "Please select a vehicle" });
       }
+      // BUG-148: there is a real FK on vehicle_id / related_vehicle_id, so a
+      // non-existent id used to surface as a raw 23503 ("violates foreign key
+      // constraint ...") in a 500. Check first and answer 404 naming the field.
+      for (const [field, value] of [
+        ["vehicleId", transportData.vehicleId],
+        ["relatedVehicleId", transportData.relatedVehicleId],
+      ] as const) {
+        if (value == null) continue;
+        const exists = await storage.getVehicle(value);
+        if (!exists) {
+          return res.status(404).json({ message: "Vehicle not found", field });
+        }
+      }
+      if (transportData.customerId != null) {
+        const customer = await storage.getCustomer(transportData.customerId);
+        if (!customer) {
+          return res.status(404).json({ message: "Customer not found", field: "customerId" });
+        }
+      }
+
       // Spare/replacement-vehicle fields (spareRequired/relatedVehicleId/
       // isBreakdownOrMaintenance) are applied via the same atomic path PATCH uses
       // (reservation creation + maintenance status), rather than duplicating that
@@ -7435,18 +7380,15 @@ export async function registerRoutes(app: Express): Promise<void> {
       });
       res.status(201).json(transport);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid transport data", errors: error.errors });
-      }
-      const message = error instanceof Error ? error.message : "Failed to create transport";
+      const message = error instanceof Error ? error.message : "";
+      // Two messages this code raises itself, and therefore may repeat.
       if (message.includes("conflicting reservations")) {
         return res.status(409).json({ message });
       }
       if (message.includes("cannot be the same as")) {
         return res.status(400).json({ message });
       }
-      console.error("Error creating transport:", error);
-      res.status(500).json({ message: "Failed to create transport" });
+      sendRouteError(res, error, "Failed to create transport");
     }
   });
 

@@ -1,4 +1,6 @@
 import { storage } from "../storage";
+import { users, patchUserSchema } from "../../shared/schema";
+import { parsePartialUpdate } from "../middleware/validateBody";
 import { z } from "zod";
 import { insertUserSchema, UserRole, UserPermission } from "../../shared/schema";
 import { hashPassword, comparePasswords } from "../auth";
@@ -133,7 +135,6 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error creating user:", error);
       res.status(400).json({ 
         message: "Failed to create user", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -163,25 +164,45 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         return res.status(404).json({ message: "User not found" });
       }
       
+      // BUG-063: the body is validated against a closed field list instead of
+      // being spread, so `id`, `createdAt`, `createdBy` and every other column
+      // simply cannot be written from a request.
+      const patch = parsePartialUpdate(req.body, {
+        table: users,
+        schema: patchUserSchema,
+        message: "Invalid user data",
+      }) as Record<string, any>;
+
+      // BUG-063: resetting *another* account's password was reachable for anyone
+      // with manage_users. A password may only be set on your own row, or by a
+      // real administrator.
+      if (patch.password !== undefined && !isSelfUpdate && !isAdmin) {
+        return res.status(403).json({
+          message: "Only an administrator can set another account's password",
+          field: "password",
+        });
+      }
+
       // If updating username, check if new username already exists
-      if (req.body.username && req.body.username !== user.username) {
-        const existingUser = await storage.getUserByUsername(req.body.username);
+      if (patch.username && patch.username !== user.username) {
+        const existingUser = await storage.getUserByUsername(patch.username);
         if (existingUser) {
           return res.status(400).json({ message: "Username already exists" });
         }
       }
-      
+
       // For self-update, only allow certain fields (username, fullName, email)
       let userData: Record<string, any>;
       if (isSelfUpdate && !isAdmin && !hasManageUsersPermission) {
-        const { username, fullName, email } = req.body;
+        const { username, fullName, email, password } = patch;
         userData = {
           username,
           fullName,
           email,
+          password,
           updatedBy: currentUser.username
         };
-        
+
         // Filter out undefined values
         Object.keys(userData).forEach(key => 
           userData[key] === undefined && delete userData[key]
@@ -189,7 +210,7 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       } else {
         // Admin and users with MANAGE_USERS permission can update all fields
         userData = {
-          ...req.body,
+          ...patch,
           updatedBy: currentUser.username
         };
       }
@@ -260,7 +281,6 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error updating user:", error);
       res.status(400).json({ 
         message: "Failed to update user", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -330,7 +350,6 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error updating user:", error);
       res.status(400).json({ 
         message: "Failed to update user", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -361,7 +380,6 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error deleting user:", error);
       res.status(500).json({ 
         message: "Failed to delete user", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -413,7 +431,6 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error updating password:", error);
       res.status(500).json({ 
         message: "Failed to update password", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });

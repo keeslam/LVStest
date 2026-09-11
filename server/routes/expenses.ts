@@ -217,7 +217,6 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error deleting expense:", error);
       res.status(500).json({ 
         message: "Failed to delete expense", 
-        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -268,7 +267,6 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
       } else {
         res.status(400).json({ 
           message: "Failed to create expense", 
-          error: error instanceof Error ? error.message : "Unknown error" 
         });
       }
     }
@@ -334,7 +332,6 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
       } else {
         res.status(400).json({ 
           message: "Failed to create expense", 
-          error: error instanceof Error ? error.message : "Unknown error" 
         });
       }
     }
@@ -398,7 +395,6 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
       } else {
         res.status(400).json({ 
           message: "Failed to update expense", 
-          error: error instanceof Error ? error.message : "Unknown error" 
         });
       }
     }
@@ -462,7 +458,6 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
       } else {
         res.status(400).json({ 
           message: "Failed to update expense", 
-          error: error instanceof Error ? error.message : "Unknown error" 
         });
       }
     }
@@ -555,7 +550,6 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
       }
       res.status(500).json({
         message: "Failed to scan invoice",
-        error: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });
@@ -631,7 +625,6 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error creating expenses from invoice:", error);
       res.status(500).json({
         message: "Failed to create expenses from invoice",
-        error: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });
