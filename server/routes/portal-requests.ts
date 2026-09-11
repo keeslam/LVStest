@@ -334,6 +334,15 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     if (isWeekend(b.startDate)) return res.status(400).json({ message: "Kies een werkdag: de werkplaats is in het weekend gesloten", field: "startDate", code: "MAINTENANCE_WEEKEND" });
     const rental = row.reservationId ? await storage.getReservation(row.reservationId) : undefined;
     if (!rental?.vehicleId) return res.status(400).json({ message: "Reservation not found" });
+
+    // BUG-141: claim the request before doing any of the work. Two staff
+    // members approving the same request at the same moment used to create two
+    // maintenance blocks, two replies and two customer notifications; the
+    // transition is now the first write and only one caller can make it.
+    const claim = await requestsStorage.claimForApproval(id, actor(req));
+    if (!claim) return res.status(409).json({ message: "Request is already closed", code: "ALREADY_HANDLED" });
+
+    try {
     const p = row.payload as Record<string, unknown>;
     const endDate = addDays(b.startDate, b.durationDays - 1);
     const created = await storage.createMaintenanceBlock(rental.vehicleId, b.startDate, endDate, rental.customerId);
@@ -362,6 +371,10 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     const reply = scheduledReply("Ingepland op", b.startDate, endDate, b.durationDays, b.note);
     const updated = await finish(req, id, reply, "done", row.customerId);
     res.json({ ...updated, block });
+    } catch (error) {
+      await claim.release().catch(() => {});
+      throw error;
+    }
   }
 
   /** Moves the block (and its placeholder spare) to the date staff confirm. */

@@ -254,7 +254,14 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
         fields: templateData.fields ? 'JSON string' : undefined
       });
       
-      const updatedTemplate = await storage.updatePdfTemplate(id, templateData);
+      // BUG-175: the editor may send back the `updatedAt` it loaded; the save
+      // is then conditional on nobody else having saved in the meantime.
+      const rawStamp = (req.body as any)?.updatedAt;
+      const expectedUpdatedAt = typeof rawStamp === "string" && !Number.isNaN(Date.parse(rawStamp))
+        ? new Date(rawStamp)
+        : null;
+
+      const updatedTemplate = await storage.updatePdfTemplate(id, templateData, expectedUpdatedAt);
       if (!updatedTemplate) {
         return res.status(404).json({ message: "Failed to update template" });
       }

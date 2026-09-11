@@ -423,9 +423,16 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         return res.status(400).json({ message: "Current password is incorrect" });
       }
       
-      // Hash and update new password
+      // Hash and update new password.
+      // BUG-189: the write carries the old hash as its precondition, so two
+      // tabs submitting the same current password cannot both succeed — the
+      // second is told its "current password" is no longer current, which by
+      // then is exactly true.
       const hashedPassword = await hashPassword(newPassword);
-      await storage.updateUserPassword(user.id, hashedPassword);
+      const changed = await storage.updateUserPasswordIfCurrent(user.id, user.password, hashedPassword);
+      if (!changed) {
+        return res.status(400).json({ message: "Current password is incorrect" });
+      }
 
       // BUG-091: a password change left every other session of this account
       // logged in, so changing it after a compromise changed nothing for the

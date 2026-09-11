@@ -46,6 +46,7 @@ import {
   type BookingRequest,
   type BookabilityVerdict,
 } from "./services/bookability";
+import { HttpError } from "./utils/route-errors";
 import { getDataSource, getField as getReportField } from "../shared/report-builder-config";
 import { buildDefaultDamageCheckCanvasFields } from "../shared/damage-check-default-layout";
 
@@ -55,9 +56,21 @@ export class ReportValidationError extends Error {
     this.name = "ReportValidationError";
   }
 }
+
+/**
+ * FIX-G — a restore that must be rolled back with a named reason. Thrown inside
+ * `restoreDeletedRecord`'s transaction so the claim on `deleted_records` is
+ * undone with everything else.
+ */
+class RestoreAbort extends Error {
+  constructor(readonly reason: string) {
+    super(reason);
+    this.name = "RestoreAbort";
+  }
+}
 import { addMonths, addDays, parseISO, isBefore, isAfter, isEqual } from "date-fns";
 import { db } from "./db";
-import { eq, ne, and, gte, lte, desc, sql, inArray, not, or, ilike, isNull, isNotNull, getTableColumns } from "drizzle-orm";
+import { eq, ne, and, gte, lte, desc, sql, inArray, not, or, ilike, isNull, isNotNull, getTableColumns, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { IStorage } from "./storage";
 import { formatVehicleBarcode, parseBarcode, normalizeScannedCode } from "../shared/barcode";
@@ -180,6 +193,20 @@ export class DatabaseStorage implements IStorage {
     return updatedUser;
   }
   
+  /**
+   * FIX-G (BUG-189) — a password change from two tabs used to succeed twice:
+   * both verified the same old password and both wrote, so the winner was
+   * whichever finished last and the user was told both had worked. The current
+   * hash is the precondition of the write, so exactly one of them can win.
+   */
+  async updateUserPasswordIfCurrent(id: number, currentHash: string, hashedPassword: string): Promise<boolean> {
+    const result = await db
+      .update(users)
+      .set({ password: hashedPassword, updatedAt: new Date() })
+      .where(and(eq(users.id, id), eq(users.password, currentHash)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
   async updateUserPassword(id: number, hashedPassword: string): Promise<boolean> {
     const result = await db
       .update(users)
@@ -557,7 +584,11 @@ export class DatabaseStorage implements IStorage {
     // Start a transaction to ensure all related records are deleted
     return await db.transaction(async (tx) => {
       try {
-        const [vehicle] = await tx.select().from(vehicles).where(eq(vehicles.id, id));
+        // FIX-G (BUG-188): SELECT … FOR UPDATE, so two parallel deletes of the
+        // same vehicle serialise here. The second one re-reads after the first
+        // commits, finds no row, and returns false (404) instead of writing a
+        // second snapshot into the recycle bin.
+        const [vehicle] = await tx.select().from(vehicles).where(eq(vehicles.id, id)).for('update');
         if (!vehicle) return false;
 
         // Snapshot everything that is about to disappear, including the rows
@@ -666,19 +697,42 @@ export class DatabaseStorage implements IStorage {
     const vehicle = payload?.vehicle;
     if (!vehicle) return { restored: false, reason: 'empty_snapshot', record };
 
-    // The id may have been taken by a later insert, and the license plate may
-    // have been re-created by hand after the delete (which is exactly what
-    // people do when a vehicle disappears). Both block a clean restore.
-    const [idTaken] = await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.id, vehicle.id));
-    if (idTaken) return { restored: false, reason: 'id_taken', record };
+    try {
+      await db.transaction(async (tx) => {
+      // FIX-G (BUG-043): claim the record first, with the precondition in the
+      // WHERE clause. Five parallel restores used to read "not restored yet"
+      // together and then all insert the same ids, which surfaced as raw 500s
+      // from the primary key. Now exactly one claim succeeds; the others find
+      // the row already claimed and get a clean 409.
+      const [claimed] = await tx
+        .update(deletedRecords)
+        .set({ restoredAt: new Date(), restoredBy: actor?.username || null })
+        .where(and(eq(deletedRecords.id, id), isNull(deletedRecords.restoredAt)))
+        .returning();
+      if (!claimed) throw new RestoreAbort('already_restored');
 
-    const [plateTaken] = await db
-      .select({ id: vehicles.id })
-      .from(vehicles)
-      .where(eq(vehicles.licensePlate, vehicle.licensePlate));
-    if (plateTaken) return { restored: false, reason: 'license_plate_taken', record };
+      // The id may have been taken by a later insert, and the license plate may
+      // have been re-created by hand after the delete (which is exactly what
+      // people do when a vehicle disappears). Both block a clean restore, and
+      // so does the barcode (BUG-126) — which used to be the one unique column
+      // nobody checked, so the collision came back as a 500.
+      const [idTaken] = await tx.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.id, vehicle.id));
+      if (idTaken) throw new RestoreAbort('id_taken');
 
-    await db.transaction(async (tx) => {
+      const [plateTaken] = await tx
+        .select({ id: vehicles.id })
+        .from(vehicles)
+        .where(eq(vehicles.licensePlate, vehicle.licensePlate));
+      if (plateTaken) throw new RestoreAbort('license_plate_taken');
+
+      if (vehicle.barcode) {
+        const [barcodeTaken] = await tx
+          .select({ id: vehicles.id })
+          .from(vehicles)
+          .where(eq(vehicles.barcode, vehicle.barcode));
+        if (barcodeTaken) throw new RestoreAbort('barcode_taken');
+      }
+
       // JSON has no date type, so every timestamp came back out of the
       // snapshot as a string. Which columns those are is read from the table
       // definition — hand-listing them missed uploadDate, checkDate and the
@@ -732,12 +786,15 @@ export class DatabaseStorage implements IStorage {
           )
         `);
       }
-
-      await tx
-        .update(deletedRecords)
-        .set({ restoredAt: new Date(), restoredBy: actor?.username || null })
-        .where(eq(deletedRecords.id, id));
-    });
+      });
+    } catch (error) {
+      // A failed precondition rolls the claim back with the transaction, so the
+      // record stays restorable once the clash is cleared up.
+      if (error instanceof RestoreAbort) {
+        return { restored: false, reason: error.reason, record };
+      }
+      throw error;
+    }
 
     return { restored: true, record };
   }
@@ -766,11 +823,21 @@ export class DatabaseStorage implements IStorage {
     if (revived.vehicleId && !(await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.id, revived.vehicleId)))[0]) revived.vehicleId = null;
     if (revived.importFileId) revived.importFileId = null;
 
-    await db.transaction(async (tx) => {
-      await tx.insert(fines).values(revived);
-      await tx.execute(sql`SELECT setval(pg_get_serial_sequence('fines', 'id'), GREATEST((SELECT COALESCE(MAX(id), 1) FROM "fines"), 1))`);
-      await tx.update(deletedRecords).set({ restoredAt: new Date(), restoredBy: actor?.username || null }).where(eq(deletedRecords.id, record.id));
-    });
+    try {
+      await db.transaction(async (tx) => {
+        // FIX-G (BUG-043): same claim-first rule as the vehicle restore.
+        const [claimed] = await tx.update(deletedRecords)
+          .set({ restoredAt: new Date(), restoredBy: actor?.username || null })
+          .where(and(eq(deletedRecords.id, record.id), isNull(deletedRecords.restoredAt)))
+          .returning();
+        if (!claimed) throw new RestoreAbort('already_restored');
+        await tx.insert(fines).values(revived);
+        await tx.execute(sql`SELECT setval(pg_get_serial_sequence('fines', 'id'), GREATEST((SELECT COALESCE(MAX(id), 1) FROM "fines"), 1))`);
+      });
+    } catch (error) {
+      if (error instanceof RestoreAbort) return { restored: false, reason: error.reason, record };
+      throw error;
+    }
     return { restored: true, record };
   }
 
@@ -1931,8 +1998,16 @@ export class DatabaseStorage implements IStorage {
           : reservation.notes,
         updatedAt: new Date()
       })
-      .where(eq(reservations.id, reservationId))
+      // FIX-G (BUG-174): the precondition travels with the write. Two pickups
+      // of the same reservation — two tabs, two counters, two contract numbers
+      // — used to both succeed, and the second silently overwrote the first's
+      // contract number. Now the second one updates nothing and is told so.
+      .where(and(eq(reservations.id, reservationId), eq(reservations.status, 'booked')))
       .returning();
+
+    if (!updatedReservation) {
+      throw new HttpError(409, 'This reservation has already been picked up.', { code: 'ALREADY_PICKED_UP' });
+    }
 
     const vehicleUpdate: any = {
       currentMileage: pickupData.pickupMileage,
@@ -2274,11 +2349,29 @@ export class DatabaseStorage implements IStorage {
   //    original vehicle via markVehicleForService(..., 'ok').
   // Everything happens inside one db.transaction so a conflict or failed write can
   // never leave the spare reserved without the original vehicle updated, or vice versa.
-  async applyTransportUpdate(id: number, changes: Partial<InsertVehicleTransport>): Promise<VehicleTransport> {
+  async applyTransportUpdate(
+    id: number,
+    changes: Partial<InsertVehicleTransport>,
+    options?: { create?: InsertVehicleTransport },
+  ): Promise<VehicleTransport> {
     let restoreMaintenanceAfterCommit = false;
     let markServiceAfterCommit = false;
 
     const updatedRow = await db.transaction(async (tx) => {
+      // FIX-G (BUG-142): `POST /api/transports` used to insert the transport on
+      // one connection and then apply the spare workflow in this transaction.
+      // When the spare turned out to be taken, the 409 rolled back only the
+      // second half and left an orphan transport behind — which staff then
+      // duplicated by retrying. Creating the row inside this same transaction
+      // means a refusal leaves nothing at all.
+      if (options?.create) {
+        const [createdRow] = await tx
+          .insert(vehicleTransports)
+          .values(options.create as unknown as typeof vehicleTransports.$inferInsert)
+          .returning();
+        id = createdRow.id;
+      }
+
       const [current] = await tx.select().from(vehicleTransports).where(eq(vehicleTransports.id, id));
       if (!current) {
         throw new Error('Transport not found');
@@ -2666,7 +2759,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async updatePdfTemplate(id: number, templateData: Partial<InsertPdfTemplate>): Promise<PdfTemplate | undefined> {
+  async updatePdfTemplate(id: number, templateData: Partial<InsertPdfTemplate>, expectedUpdatedAt?: Date | null): Promise<PdfTemplate | undefined> {
     try {
       console.log('💾 Storage layer received:', {
         id,
@@ -2725,7 +2818,7 @@ export class DatabaseStorage implements IStorage {
       });
       
       // Build dynamic SQL using Drizzle's sql template
-      const setClauses = [];
+      const setClauses: SQL[] = [];
       
       if (updateData.name !== undefined) {
         setClauses.push(sql`name = ${updateData.name}`);
@@ -2758,14 +2851,26 @@ export class DatabaseStorage implements IStorage {
       console.log('Updating template with ID:', id);
       console.log('Update data:', updateData);
       
-      // Use proper Drizzle SQL template syntax
-      const result = await db.execute(sql`
-        UPDATE pdf_templates 
+      // Use proper Drizzle SQL template syntax.
+      // FIX-G (BUG-175): with an `expectedUpdatedAt` the row is locked and
+      // compared first, so two people saving one template no longer silently
+      // overwrite each other's fields — the second is told to reload.
+      const result = await db.transaction(async (tx) => {
+        if (expectedUpdatedAt) {
+          const locked = await tx.execute(sql`SELECT updated_at FROM pdf_templates WHERE id = ${id} FOR UPDATE`);
+          const current = (locked.rows[0] as any)?.updated_at;
+          if (current && new Date(current).getTime() !== expectedUpdatedAt.getTime()) {
+            throw new HttpError(409, "Someone else saved this template while you were editing. Reload and try again.", { code: "STALE_WRITE" });
+          }
+        }
+        return await tx.execute(sql`
+        UPDATE pdf_templates
         SET ${sql.join(setClauses, sql`, `)}
         WHERE id = ${id}
         RETURNING *
       `);
-      
+      });
+
       if (result.rows.length > 0) {
         const row: any = result.rows[0];
         console.log('Template updated successfully:', row);
@@ -2789,6 +2894,8 @@ export class DatabaseStorage implements IStorage {
       console.log('Template not found for update');
       return undefined;
     } catch (error) {
+      // A refused stale write is an answer, not a failure to be swallowed.
+      if (error instanceof HttpError) throw error;
       console.error('Error updating PDF template:', error);
       return undefined;
     }
@@ -3889,23 +3996,41 @@ export class DatabaseStorage implements IStorage {
     return settingsRecord || undefined;
   }
 
-  async updateSettings(settingData: UpdateSettings): Promise<Settings | undefined> {
+  /**
+   * FIX-G (BUG-175) — optional optimistic concurrency. When the caller passes
+   * the `updatedAt` it loaded, that value becomes the precondition of the
+   * write: two settings screens saving from the same starting point no longer
+   * silently overwrite each other, the second gets a 409 STALE_WRITE and can
+   * reload. Callers that pass nothing keep the old last-writer-wins behaviour.
+   */
+  async updateSettings(settingData: UpdateSettings, expectedUpdatedAt?: Date | null): Promise<Settings | undefined> {
     const updateData = {
       ...settingData,
       updatedAt: new Date()
     };
-    
+
     // First, try to get existing settings
     const existingSettings = await this.getSettings();
-    
+
     if (existingSettings) {
-      // Update existing record
-      const [updatedSettings] = await db
-        .update(settings)
-        .set(updateData)
-        .where(eq(settings.id, existingSettings.id))
-        .returning();
-      return updatedSettings || undefined;
+      // Update existing record. With an expected stamp the row is locked, the
+      // comparison happens on the same value the API published (a JS Date on
+      // both sides, so no timestamp-precision or time-zone games), and the
+      // write follows inside the same transaction.
+      return await db.transaction(async (tx) => {
+        if (expectedUpdatedAt) {
+          const [locked] = await tx.select().from(settings).where(eq(settings.id, existingSettings.id)).for('update');
+          if (locked && locked.updatedAt && locked.updatedAt.getTime() !== expectedUpdatedAt.getTime()) {
+            throw new HttpError(409, "Someone else saved these settings while you were editing. Reload and try again.", { code: "STALE_WRITE" });
+          }
+        }
+        const [updatedSettings] = await tx
+          .update(settings)
+          .set(updateData)
+          .where(eq(settings.id, existingSettings.id))
+          .returning();
+        return updatedSettings || undefined;
+      });
     } else {
       // Create new record if none exists
       const [newSettings] = await db

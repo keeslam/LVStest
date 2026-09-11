@@ -479,10 +479,23 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
         message: "Invalid settings data",
       });
 
+      // BUG-175: when the form sends back the `updatedAt` it loaded, the save
+      // is conditional on nothing having changed since — a second screen saving
+      // from a stale copy is refused (409 STALE_WRITE) instead of quietly
+      // dropping the first save's fields. Omitting it keeps the old behaviour.
+      const rawStamp = (req.body as any)?.updatedAt;
+      const expectedUpdatedAt = rawStamp ? new Date(rawStamp) : null;
+      if (rawStamp && Number.isNaN(expectedUpdatedAt!.getTime())) {
+        return res.status(400).json({
+          message: "Invalid settings data",
+          errors: [{ field: "updatedAt", message: "That is not a timestamp" }],
+        });
+      }
+
       const updated = await storage.updateSettings({
         ...settingsPatch,
         updatedBy: user ? user.username : null,
-      });
+      }, expectedUpdatedAt);
 
       res.json(updated);
     } catch (error) {

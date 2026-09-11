@@ -89,6 +89,34 @@ export const requestsStorage = {
       scope.portalUserId ? eq(portalRequests.portalUserId, scope.portalUserId) : undefined,
     )))[0];
   },
+  /**
+   * FIX-G (BUG-141) — claims a request for an approval in one statement.
+   *
+   * Two staff members approving the same maintenance request at the same moment
+   * both read status `new`, both created a maintenance block, both replied and
+   * both mailed the customer. The transition to `done` is now the *first* thing
+   * the approval does, with the allowed source statuses in the WHERE clause, so
+   * the second caller updates nothing and is told the request is already closed.
+   * `release()` puts the status back if the approval itself then fails.
+   */
+  async claimForApproval(id: number, handledBy: string): Promise<{ claimed: PortalRequest; release: () => Promise<void> } | undefined> {
+    const [row] = await db
+      .update(portalRequests)
+      .set({ status: "done", handledBy, updatedAt: new Date() })
+      .where(and(eq(portalRequests.id, id), inArray(portalRequests.status, ["new", "in_progress"])))
+      .returning();
+    if (!row) return undefined;
+    return {
+      claimed: row,
+      // The approval failed after the claim: hand the request back as "being
+      // handled" rather than leaving it closed with nothing to show for it.
+      release: async () => {
+        await db.update(portalRequests)
+          .set({ status: "in_progress", updatedAt: new Date() })
+          .where(and(eq(portalRequests.id, id), eq(portalRequests.status, "done")));
+      },
+    };
+  },
   async updateRequest(id: number, patch: Partial<PortalRequest>): Promise<PortalRequest | undefined> {
     const [row] = await db.update(portalRequests).set({ ...patch, updatedAt: new Date() }).where(eq(portalRequests.id, id)).returning();
     return row;

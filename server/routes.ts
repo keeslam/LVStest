@@ -1868,6 +1868,8 @@ export async function registerRoutes(app: Express): Promise<void> {
           empty_snapshot: "The stored snapshot is empty, so there is nothing to restore.",
           id_taken: "Another vehicle already uses the original ID, so it cannot be restored.",
           license_plate_taken: "A vehicle with the same license plate already exists. Delete or rename it first.",
+          // BUG-126: the barcode is unique too, and used to come back as a 500.
+          barcode_taken: "Another vehicle already uses the same barcode. Clear it there first.",
         };
         const reason = result?.reason || 'not_found';
         return res.status(reason === 'not_found' ? 404 : 409).json({
@@ -4294,8 +4296,13 @@ export async function registerRoutes(app: Express): Promise<void> {
         contractDocument
       });
     } catch (error) {
+      // FIX-G (BUG-174): the loser of two parallel pickups gets a 409 with a
+      // code, not a 400 built by string-matching an error message.
+      if (error instanceof HttpError) {
+        return res.status(error.status).json({ message: error.message, code: error.code });
+      }
       console.error("Error during reservation pickup:", error);
-      
+
       if (error instanceof Error) {
         if (error.message.includes('cannot be less than')) {
           return res.status(409).json({ message: error.message });
@@ -7515,17 +7522,20 @@ export async function registerRoutes(app: Express): Promise<void> {
       // isBreakdownOrMaintenance) are applied via the same atomic path PATCH uses
       // (reservation creation + maintenance status), rather than duplicating that
       // logic here — insert the row without them, then apply.
+      // BUG-142: the insert happens inside applyTransportUpdate's transaction,
+      // so a refused spare leaves no orphan transport row behind.
       const { relatedVehicleId, spareRequired, isBreakdownOrMaintenance, ...barebones } = transportData;
-      const created = await storage.createTransport({
-        ...barebones,
-        relatedVehicleId: null,
-        spareRequired: false,
-        isBreakdownOrMaintenance: false,
-      });
-      const transport = await storage.applyTransportUpdate(created.id, {
+      const transport = await storage.applyTransportUpdate(0, {
         relatedVehicleId: relatedVehicleId ?? null,
         spareRequired: spareRequired ?? false,
         isBreakdownOrMaintenance: isBreakdownOrMaintenance ?? false,
+      }, {
+        create: {
+          ...barebones,
+          relatedVehicleId: null,
+          spareRequired: false,
+          isBreakdownOrMaintenance: false,
+        },
       });
       res.status(201).json(transport);
     } catch (error) {
