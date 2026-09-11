@@ -44,6 +44,7 @@ import { backupService } from "./backupService";
 import { ObjectStorageService } from "./objectStorage";
 import { realtimeEvents } from "./realtime-events";
 import { hasPermission, requireAdmin } from "./middleware/permissions.js";
+import { describeDbError, dbErrorBody } from "./utils/db-errors.js";
 import { installAsyncErrorHandling } from "./middleware/asyncHandler.js";
 import { AuditLogger } from "./utils/security/auditLogger.js";
 import { auditMutations } from "./middleware/audit";
@@ -829,19 +830,18 @@ export async function registerRoutes(app: Express): Promise<void> {
     } catch (error) {
       console.error("Error creating vehicle:", error);
       
-      // Check for duplicate license plate error (PostgreSQL unique constraint violation)
-      if (error && typeof error === 'object' && 'code' in error) {
-        // PostgreSQL error code 23505 = unique_violation
-        if (error.code === '23505' || error.code === 23505) {
-          // Check if it's specifically about license_plate
-          const errorMessage = String((error as { message?: unknown }).message || '').toLowerCase();
-          if (errorMessage.includes('license_plate') || errorMessage.includes('duplicate key')) {
-            return res.status(409).json({ 
-              message: "A vehicle with this license plate already exists. Please use a different license plate or edit the existing vehicle.",
-              field: "licensePlate"
-            });
-          }
+      // BUG-148: any 23505 used to be reported as a duplicate license plate, so
+      // staff were told to change the plate when the barcode was the problem.
+      // describeDbError() names the field from error.constraint instead.
+      const dbError = describeDbError(error);
+      if (dbError.recognised) {
+        if (dbError.field === "licensePlate") {
+          return res.status(409).json({
+            message: "A vehicle with this license plate already exists. Please use a different license plate or edit the existing vehicle.",
+            field: "licensePlate",
+          });
         }
+        return res.status(dbError.status).json(dbErrorBody(dbError));
       }
       
       // Generic error for other types of failures
@@ -1231,10 +1231,10 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.json(vehicle);
     } catch (error) {
       console.error("Error updating vehicle:", error);
-      res.status(400).json({ 
-        message: "Invalid vehicle data", 
-        error: error instanceof Error ? error.message : "Unknown error" 
-      });
+      // BUG-148: a duplicate barcode used to come back as the raw constraint
+      // text 'duplicate key value violates unique constraint vehicles_barcode_unique'.
+      const dbError = describeDbError(error, "Invalid vehicle data");
+      res.status(dbError.recognised ? dbError.status : 400).json(dbErrorBody(dbError));
     }
   });
   
@@ -1691,8 +1691,11 @@ export async function registerRoutes(app: Express): Promise<void> {
         restorable: true,
       });
     } catch (error) {
+      // BUG-148: this used to serialise the entire pg error object — code,
+      // detail with a row id, schema, table, constraint and the server source file.
       console.error("Error deleting vehicle:", error);
-      res.status(500).json({ message: "Error deleting vehicle", error });
+      const dbError = describeDbError(error, "Error deleting vehicle");
+      res.status(dbError.status).json(dbErrorBody(dbError));
     }
   });
 
@@ -2135,7 +2138,10 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       res.status(204).send();
     } catch (error) {
-      res.status(500).json({ message: "Failed to delete customer", error });
+      // BUG-148: no raw pg error object in the response.
+      console.error("Error deleting customer:", error);
+      const dbError = describeDbError(error, "Failed to delete customer");
+      res.status(dbError.status).json(dbErrorBody(dbError));
     }
   });
 
@@ -3225,10 +3231,10 @@ export async function registerRoutes(app: Express): Promise<void> {
           error: error.errors 
         });
       }
-      res.status(500).json({ 
-        message: "Failed to update reservation", 
-        error: error instanceof Error ? error.message : "Unknown error" 
-      });
+      // BUG-148: error.message here is the Postgres constraint text
+      // ("violates foreign key constraint reservations_driver_id_drivers_id_fk").
+      const dbError = describeDbError(error, "Failed to update reservation");
+      res.status(dbError.status).json(dbErrorBody(dbError));
     }
   });
 
@@ -3761,10 +3767,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid reservation data", error: error.errors });
       } else {
-        res.status(400).json({ 
-          message: "Failed to update reservation", 
-          error: error instanceof Error ? error.message : "Unknown error" 
-        });
+        // BUG-148: no constraint names in the response.
+        const dbError = describeDbError(error, "Failed to update reservation");
+        res.status(dbError.recognised ? dbError.status : 400).json(dbErrorBody(dbError));
       }
     }
   });

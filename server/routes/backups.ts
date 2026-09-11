@@ -8,6 +8,39 @@ import { getUploadsDir } from "../../shared/paths";
 import { validateAfterUpload } from "../utils/security/fileUploadSecurity";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
+import { spawn } from "child_process";
+
+/**
+ * BUG-075: runs pg_dump without ever putting the connection string in a shell
+ * command, and without the password in argv. Errors carry the exit code and
+ * pg_dump's own stderr — never the command line, never the credentials.
+ */
+export async function runPgDump(databaseUrl: string, outputPath: string): Promise<void> {
+  const url = new URL(databaseUrl);
+  const args = [
+    "--host", url.hostname,
+    "--port", url.port || "5432",
+    "--username", decodeURIComponent(url.username),
+    "--dbname", url.pathname.replace(/^\//, ""),
+    "--no-password",
+  ];
+  const env = { ...process.env } as NodeJS.ProcessEnv;
+  if (url.password) env.PGPASSWORD = decodeURIComponent(url.password);
+
+  await new Promise<void>((resolve, reject) => {
+    const out = fs.createWriteStream(outputPath);
+    const child = spawn("pg_dump", args, { env });
+    let stderr = "";
+    child.stdout.pipe(out);
+    child.stderr.on("data", (chunk) => { stderr += String(chunk); });
+    child.on("error", (err) => reject(new Error(`pg_dump could not be started: ${err.message}`)));
+    child.on("close", (code) => {
+      out.end();
+      if (code === 0) return resolve();
+      reject(new Error(`pg_dump exited with code ${code}: ${stderr.trim().slice(0, 500)}`));
+    });
+  });
+}
 
 // Moved verbatim out of server/routes.ts (registerRoutes) - see git history for context.
 export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
@@ -74,26 +107,26 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   // Simple download app data (database only)
   app.get("/api/backups/download-data", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
     try {
-      const { exec } = await import('child_process');
-      const { promisify } = await import('util');
-      const execAsync = promisify(exec);
-      
       const timestamp = new Date().toISOString().split('T')[0];
       const filename = `car-rental-data-${timestamp}.sql`;
       const filepath = path.join(process.cwd(), 'temp', filename);
-      
+
       // Create temp directory if it doesn't exist
       await fs.promises.mkdir(path.join(process.cwd(), 'temp'), { recursive: true });
-      
+
       // Export database using pg_dump
       const databaseUrl = process.env.DATABASE_URL;
       if (!databaseUrl) {
         throw new Error('DATABASE_URL not configured');
       }
-      
-      // Use pg_dump to export the database
-      await execAsync(`pg_dump "${databaseUrl}" > "${filepath}"`);
-      
+
+      // BUG-075: this used to be exec(`pg_dump "${DATABASE_URL}" > …`), whose
+      // failure message is the whole command line — user, password, host and
+      // database — and that message was handed back to the client as `details`.
+      // spawn() with an argument array keeps the URL out of any shell string,
+      // and the password travels in PGPASSWORD instead of argv.
+      await runPgDump(databaseUrl, filepath);
+
       // Send file
       res.download(filepath, filename, async (err) => {
         // Clean up temp file after download
@@ -108,11 +141,10 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
         }
       });
     } catch (error) {
+      // BUG-075: the detail is for the container log, never for the client —
+      // it is the one place the connection string can still surface.
       console.error("Error downloading app data:", error);
-      res.status(500).json({ 
-        error: "Failed to download app data",
-        details: error instanceof Error ? error.message : "Unknown error"
-      });
+      res.status(500).json({ error: "Failed to download app data" });
     }
   });
 

@@ -33,6 +33,7 @@ import { securityHeaders, customSecurityHeaders, portalFrameHeaders } from "./mi
 import { sanitizeInput } from "./middleware/security/sanitization.js";
 import { apiLimiter } from "./middleware/security/rateLimiter.js";
 import { startSessionCleanupScheduler } from "./utils/security/sessionManager.js";
+import { redactForLog } from "./utils/log-redaction.js";
 
 // Graceful shutdown implementation
 let server: any = null;
@@ -278,6 +279,15 @@ function setupSocketIO(server: any) {
 }
 
 
+// BUG-079: response bodies are not logged. Every /api response used to be
+// written to the container log as `:: ${JSON.stringify(body)}`, which put the
+// SMTP password, portal tokens, the backup path and customer data in the
+// Docker/Coolify log permanently — no attacker required, and an archived log
+// bundle became a secret store. Set LOG_RESPONSE_BODIES=true to get the old
+// behaviour back for local debugging; the known secret keys stay redacted even
+// then.
+const LOG_RESPONSE_BODIES = process.env.LOG_RESPONSE_BODIES === 'true';
+
 // Request logging middleware
 app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
@@ -287,11 +297,13 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const requestUrl = req.originalUrl || requestPath;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson: any) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.call(res, bodyJson);
-  };
+  if (LOG_RESPONSE_BODIES) {
+    const originalResJson = res.json;
+    res.json = function (bodyJson: any) {
+      capturedJsonResponse = bodyJson;
+      return originalResJson.call(res, bodyJson);
+    };
+  }
 
   res.on("finish", () => {
     const duration = Date.now() - start;
@@ -301,7 +313,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       // Destructive calls get the user attached — "who deleted this" should
       // never again be unanswerable from the logs.
       if (req.method === "DELETE" && actor) logLine += ` [by ${actor}]`;
-      if (capturedJsonResponse) logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      if (capturedJsonResponse) logLine += ` :: ${JSON.stringify(redactForLog(capturedJsonResponse))}`;
       if (logLine.length > 200) logLine = logLine.slice(0, 199) + "…";
       console.log(logLine);
     }
