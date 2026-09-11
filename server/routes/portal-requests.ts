@@ -22,7 +22,8 @@ import { isWeekend } from "../services/booking-period";
 import { BookingConflictError } from "../services/bookability";
 import { db } from "../db";
 import { reservations } from "../../shared/schema";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
+import { isoToday, normalizeReservationStatus } from "../services/lifecycle";
 import type { RouteDeps } from "./deps";
 
 const canView = hasPermission(UserPermission.VIEW_PORTAL, UserPermission.MANAGE_PORTAL);
@@ -336,8 +337,22 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     if (!parsed.success) return res.status(400).json({ message: parsed.error.errors[0]?.message ?? "startDate is required", field: "startDate" });
     const b = parsed.data;
     if (isWeekend(b.startDate)) return res.status(400).json({ message: "Kies een werkdag: de werkplaats is in het weekend gesloten", field: "startDate", code: "MAINTENANCE_WEEKEND" });
+    // BUG-138a: approving with a date in the past created a block and a spare
+    // request for days that had already gone by, told the customer "onderhoud
+    // gepland op <vorige week>", and left the placeholder in needing-assignment
+    // for ever. The customer form already refuses it; the approval did not.
+    if (b.startDate < isoToday()) {
+      return res.status(400).json({ message: "Onderhoud kan niet in het verleden worden ingepland", field: "startDate", code: "MAINTENANCE_IN_PAST" });
+    }
     const rental = row.reservationId ? await storage.getReservation(row.reservationId) : undefined;
     if (!rental?.vehicleId) return res.status(400).json({ message: "Reservation not found" });
+    // BUG-138b: a cancelled or finished rental has no car to service and no
+    // customer waiting for a replacement, yet the approval planned both and
+    // stamped spare_assignment_decision on the cancelled row.
+    const rentalStatus = normalizeReservationStatus(rental.status);
+    if (rentalStatus !== "booked" && rentalStatus !== "picked_up") {
+      return res.status(400).json({ message: "De verhuring is niet meer actief; onderhoud kan niet worden ingepland", field: "reservationId", code: "RENTAL_NOT_ACTIVE" });
+    }
 
     // BUG-141: claim the request before doing any of the work. Two staff
     // members approving the same request at the same moment used to create two
@@ -408,13 +423,39 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     await storage.syncVehicleAvailabilityWithReservations();
     if (rentalId) {
       const rental = await storage.getReservation(rentalId);
-      const [placeholder] = await db.select().from(reservations).where(and(eq(reservations.replacementForReservationId, rentalId), eq(reservations.placeholderSpare, true), isNull(reservations.deletedAt))).limit(1);
+      // BUG-117: this looked for placeholderSpare = true only. Once staff had
+      // actually assigned a car, the query found nothing, so the assigned spare
+      // stayed booked on the *old* dates (a car blocked on days with no
+      // maintenance) and ensurePlaceholderSpare created a **second** live
+      // replacement for the same rental, with the customer told twice. Every
+      // live replacement moves with the block now; an assigned one is checked
+      // against the new period first.
+      const [placeholder] = await db.select().from(reservations).where(and(
+        eq(reservations.replacementForReservationId, rentalId),
+        eq(reservations.type, "replacement"),
+        isNull(reservations.deletedAt),
+        sql`${reservations.status} NOT IN ('cancelled','completed','returned')`,
+      )).limit(1);
       if (placeholder) {
         const clipped = rental ? clipToRental(b.startDate, endDate, rental) : { start: b.startDate, end: endDate };
         if (clipped) {
+          if (placeholder.vehicleId != null) {
+            // An assigned spare is a real booking: moving it passes the same
+            // conflict check as any other move, or staff are told to reassign.
+            const spareConflicts = (await storage.checkReservationConflicts(
+              placeholder.vehicleId, clipped.start, clipped.end, placeholder.id,
+            )).filter((c) => c.id !== placeholder.id);
+            if (spareConflicts.length > 0) {
+              return res.status(409).json({
+                message: "De toegewezen vervanger is niet vrij in de nieuwe periode; wijs eerst een andere auto toe",
+                code: "SPARE_CONFLICT",
+                conflicts: spareConflicts.map((c) => ({ id: c.id, startDate: c.startDate, endDate: c.endDate })),
+              });
+            }
+          }
           await storage.updateReservation(placeholder.id, { startDate: clipped.start, endDate: clipped.end, updatedBy: actor(req) } as any);
         } else {
-          console.error(`approveMaintenanceChange: moved block ${b.startDate}..${endDate} no longer overlaps rental #${rentalId}; leaving placeholder #${placeholder.id} untouched (portal request #${id})`);
+          console.error(`approveMaintenanceChange: moved block ${b.startDate}..${endDate} no longer overlaps rental #${rentalId}; leaving replacement #${placeholder.id} untouched (portal request #${id})`);
         }
       } else if (p.needsReplacement && rental) {
         await ensurePlaceholderSpare(rental, b.startDate, endDate, id, actor(req));

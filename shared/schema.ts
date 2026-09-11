@@ -853,6 +853,13 @@ export const reservations = pgTable("reservations", {
   // (swap/tow/etc.) rather than a customer rental.
   replacementForTransportId: integer("replacement_for_transport_id"),
   placeholderSpare: boolean("placeholder_spare").default(false).notNull(), // True when vehicleId is null and spare vehicle assignment is pending
+  // FIX-V (BUG-118, BUG-014) — which maintenance block this replacement was
+  // created for. Until this column existed, a spare was attached to its parent
+  // *rental* only, so the block-delete cascade had to guess by date overlap and
+  // happily wiped the spares of a different, still-live block on the same
+  // vehicle. Nullable and additive: rows written before this are matched by the
+  // old rule as a fallback.
+  maintenanceBlockId: integer("maintenance_block_id"),
   spareVehicleStatus: text("spare_vehicle_status").default("assigned"), // 'assigned', 'ready', 'picked_up', 'returned'
   
   // Maintenance-specific fields

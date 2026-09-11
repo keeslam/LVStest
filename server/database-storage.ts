@@ -1880,6 +1880,9 @@ export class DatabaseStorage implements IStorage {
   }> {
     const spareVehicleIds = input.replacements.map((r) => r.vehicleId as number);
     const lockIds = [input.maintenanceData?.vehicleId ?? null, ...spareVehicleIds];
+    // Spare vehicles whose reservation this call cancels — their availability is
+    // recomputed after the commit (BUG-014: they used to stay `scheduled`).
+    const freedVehicleIds: number[] = [];
 
     const result = await this.withBookingLocks(lockIds, async (tx) => {
       let maintenanceBefore: typeof reservations.$inferSelect | null = null;
@@ -1889,45 +1892,71 @@ export class DatabaseStorage implements IStorage {
         const [before] = await tx.select().from(reservations).where(eq(reservations.id, input.maintenanceId));
         maintenanceBefore = before ?? null;
 
-        // Replace the previous spares for the same rentals, exactly as before.
+        // FIX-V — replace the previous spares **of this block**.
+        //
+        // BUG-118: the old rule was "every replacement of every rental in this
+        // payload", which on a vehicle with two live blocks threw away the
+        // other block's spare too. The link is now explicit; the
+        // replacementForReservationId fallback only covers rows written before
+        // the column existed.
         const originalIds = input.replacedOriginalIds ?? [];
-        if (originalIds.length > 0) {
-          const oldReplacements = await tx
-            .select({ id: reservations.id })
-            .from(reservations)
+        const oldReplacements = await tx
+          .select({ id: reservations.id, status: reservations.status, vehicleId: reservations.vehicleId })
+          .from(reservations)
+          .where(and(
+            eq(reservations.type, 'replacement'),
+            isNull(reservations.deletedAt),
+            or(
+              eq(reservations.maintenanceBlockId, input.maintenanceId),
+              originalIds.length > 0
+                ? and(
+                    isNull(reservations.maintenanceBlockId),
+                    inArray(reservations.replacementForReservationId, originalIds),
+                  )
+                : sql`false`,
+            ),
+          ));
+
+        // BUG-004 (CRITICAL) — a spare that has actually been handed over is
+        // a physical fact, not a draft. The old code ran an unconditional
+        // `db.delete` on it: the row, its mileage, its pickup date and its
+        // contract link disappeared without a soft delete, a cancellation or
+        // an audit entry. Same refusal `applyTransportUpdate` already gives.
+        const handedOver = oldReplacements.find(
+          (r: { status: string }) => normalizeReservationStatus(r.status) === 'picked_up',
+        );
+        if (handedOver) {
+          throw new HttpError(
+            409,
+            'Cannot change the replacement vehicle — the current one has already been picked up. Return it first, or leave it as-is.',
+            { code: 'SPARE_ALREADY_PICKED_UP' },
+          );
+        }
+
+        const oldIds = oldReplacements.map((r: { id: number }) => r.id);
+        if (oldIds.length > 0) {
+          await tx.update(vehicleTransports)
+            .set({ status: 'cancelled', updatedAt: new Date() })
             .where(and(
-              eq(reservations.type, 'replacement'),
-              inArray(reservations.replacementForReservationId, originalIds),
+              inArray(vehicleTransports.reservationId, oldIds),
+              ne(vehicleTransports.status, 'completed'),
+              ne(vehicleTransports.status, 'cancelled'),
             ));
-          const oldIds = oldReplacements.map((r: { id: number }) => r.id);
-          if (oldIds.length > 0) {
-            await tx.update(vehicleTransports)
-              .set({ status: 'cancelled', updatedAt: new Date() })
-              .where(and(
-                inArray(vehicleTransports.reservationId, oldIds),
-                ne(vehicleTransports.status, 'completed'),
-                ne(vehicleTransports.status, 'cancelled'),
-              ));
-            await tx.delete(reservations).where(inArray(reservations.id, oldIds));
-          }
+          // Cancelled, not deleted: the calendar and the audit trail keep the
+          // record that this spare was once planned.
+          await tx.update(reservations)
+            .set({ status: 'cancelled', updatedAt: new Date() })
+            .where(inArray(reservations.id, oldIds));
+          freedVehicleIds.push(
+            ...oldReplacements
+              .map((r: { vehicleId: number | null }) => r.vehicleId)
+              .filter((v: number | null): v is number => v != null),
+          );
         }
       }
 
-      const replacementRows: Array<typeof reservations.$inferSelect> = [];
-      for (const replacement of input.replacements) {
-        const verdict = await this.isVehicleBookable({
-          vehicleId: replacement.vehicleId,
-          startDate: replacement.startDate,
-          endDate: replacement.endDate ?? null,
-          startTime: replacement.startTime ?? null,
-          endTime: replacement.endTime ?? null,
-        }, tx);
-        if (!verdict.bookable) throw new BookingConflictError(verdict);
-
-        const [row] = await tx.insert(reservations).values(replacement).returning();
-        replacementRows.push(row);
-      }
-
+      // The block is written **first**, so its id can be stamped on every
+      // replacement it owns (BUG-118).
       if (input.maintenanceId) {
         const [row] = await tx
           .update(reservations)
@@ -1943,8 +1972,30 @@ export class DatabaseStorage implements IStorage {
         maintenanceRow = row ?? null;
       }
 
+      const replacementRows: Array<typeof reservations.$inferSelect> = [];
+      for (const replacement of input.replacements) {
+        const verdict = await this.isVehicleBookable({
+          vehicleId: replacement.vehicleId,
+          startDate: replacement.startDate,
+          endDate: replacement.endDate ?? null,
+          startTime: replacement.startTime ?? null,
+          endTime: replacement.endTime ?? null,
+        }, tx);
+        if (!verdict.bookable) throw new BookingConflictError(verdict);
+
+        const [row] = await tx.insert(reservations).values({
+          ...replacement,
+          maintenanceBlockId: maintenanceRow?.id ?? null,
+        }).returning();
+        replacementRows.push(row);
+      }
+
       return { maintenanceBefore, maintenanceRow, replacementRows };
     });
+
+    for (const vehicleId of Array.from(new Set(freedVehicleIds))) {
+      await this.recomputeVehicleAvailability(vehicleId);
+    }
 
     return {
       maintenanceBefore: result.maintenanceBefore
@@ -2423,6 +2474,10 @@ export class DatabaseStorage implements IStorage {
       const nextSpareRequired = changes.spareRequired ?? current.spareRequired;
       const nextRelatedVehicleId = changes.relatedVehicleId !== undefined ? changes.relatedVehicleId : current.relatedVehicleId;
       const nextIsBreakdown = changes.isBreakdownOrMaintenance ?? current.isBreakdownOrMaintenance;
+      // Hoisted: the spare branches below have to know that this update closes
+      // the transport (BUG-137 — completing one used to *create* a placeholder).
+      const closingNow = changes.status !== undefined && changes.status !== current.status &&
+        (changes.status === 'completed' || changes.status === 'cancelled');
 
       if (nextRelatedVehicleId != null && nextRelatedVehicleId === current.vehicleId) {
         throw new Error('Replacement vehicle cannot be the same as the original vehicle');
@@ -2453,7 +2508,10 @@ export class DatabaseStorage implements IStorage {
 
         if (spareTurnedOff) {
           await tx.update(reservations)
-            .set({ status: 'cancelled', updatedAt: new Date() })
+            // BUG-137: `placeholderSpare` stayed true on the cancelled row, so
+            // the assignment widget kept offering it and `assign-vehicle`
+            // happily booked a real car onto a cancelled reservation.
+            .set({ status: 'cancelled', placeholderSpare: false, updatedAt: new Date() })
             .where(eq(reservations.id, spareReservationId));
           spareReservationId = null;
         } else if (nextRelatedVehicleId == null) {
@@ -2490,7 +2548,24 @@ export class DatabaseStorage implements IStorage {
         }
       }
 
-      if (nextSpareRequired && !spareReservationId) {
+      if (closingNow && spareReservationId) {
+        // BUG-137: completing or cancelling a transport left its TBD placeholder
+        // `booked` and in `needing-assignment` for ever, and a real vehicle could
+        // still be booked onto a transport that had already happened. A spare
+        // that was actually assigned is left alone — that is a real handover.
+        const [openSpare] = await tx.select().from(reservations).where(eq(reservations.id, spareReservationId));
+        if (openSpare && openSpare.placeholderSpare && normalizeReservationStatus(openSpare.status) === 'booked') {
+          await tx.update(reservations)
+            .set({ status: 'cancelled', placeholderSpare: false, updatedAt: new Date() })
+            .where(eq(reservations.id, spareReservationId));
+          spareReservationId = null;
+        }
+      }
+
+      // BUG-137: `applyTransportUpdate` runs on *every* update, so a PATCH that
+      // only said `status: completed` created a brand-new placeholder for a
+      // transport that was finished.
+      if (nextSpareRequired && !spareReservationId && !closingNow) {
         if (nextRelatedVehicleId != null) {
           // A transport's spare reservation spans a single calendar day (startDate
           // === endDate). checkReservationConflicts has a deliberate "same-day
@@ -2583,8 +2658,6 @@ export class DatabaseStorage implements IStorage {
       // toggling it off, or closing the transport while it was on, restores it.
       const breakdownFlagTurnedOn = !current.isBreakdownOrMaintenance && nextIsBreakdown;
       const breakdownFlagTurnedOff = current.isBreakdownOrMaintenance && !nextIsBreakdown;
-      const closingNow = changes.status !== undefined && changes.status !== current.status &&
-        (changes.status === 'completed' || changes.status === 'cancelled');
 
       // An external/outside vehicle never enters the fleet, so there's no vehicle
       // record here to put into maintenance status — everything else about the
@@ -3363,14 +3436,33 @@ export class DatabaseStorage implements IStorage {
           eq(reservations.type, 'replacement'),
           sql`${reservations.vehicleId} IS NULL`,
           lte(reservations.startDate, cutoffDateString),
-          isNull(reservations.deletedAt)
+          isNull(reservations.deletedAt),
+          // BUG-137: the widget showed cancelled placeholders (and offered
+          // them for assignment), and kept asking for a spare for a transport
+          // that had already been completed or cancelled.
+          eq(reservations.status, 'booked'),
+          sql`(
+            ${reservations.replacementForTransportId} IS NULL
+            OR EXISTS (
+              SELECT 1 FROM vehicle_transports t
+              WHERE t.id = ${reservations.replacementForTransportId}
+                AND t.status NOT IN ('completed','cancelled')
+                AND t.spare_required = true
+            )
+          )`
         )
       );
     
     return results as any;
   }
 
-  async createPlaceholderReservation(originalReservationId: number, customerId: number, startDate: string, endDate?: string): Promise<Reservation> {
+  /**
+   * FIX-V (BUG-035) — `customerId` is **derived** from the original rental, not
+   * taken from the body. A placeholder stands in for the real renter; letting
+   * the caller name a different customer produced a spare booked to someone
+   * who had nothing to do with the rental it replaced.
+   */
+  async createPlaceholderReservation(originalReservationId: number, customerId: number, startDate: string, endDate?: string, options: { maintenanceBlockId?: number | null } = {}): Promise<Reservation> {
     // Verify the original reservation exists
     const [originalReservation] = await db
       .select()
@@ -3399,13 +3491,15 @@ export class DatabaseStorage implements IStorage {
 
     const placeholderData: InsertReservation = {
       vehicleId: null,
-      customerId,
+      // BUG-035: the rental decides who this spare belongs to.
+      customerId: originalReservation.customerId ?? customerId,
       startDate,
       endDate: endDate || null,
       status: 'booked',
       type: 'replacement',
       replacementForReservationId: originalReservationId,
       placeholderSpare: true,
+      maintenanceBlockId: options.maintenanceBlockId ?? null,
       notes: `TBD spare vehicle for reservation #${originalReservationId}`,
       totalPrice: undefined,
       damageCheckPath: null
@@ -3448,6 +3542,13 @@ export class DatabaseStorage implements IStorage {
       return undefined;
     }
 
+    // BUG-137: a cancelled placeholder was still assignable — the result was a
+    // `cancelled` row carrying a real vehicle, and a transport reading
+    // `spare_required=false` next to a filled-in `related_vehicle_id`.
+    if (normalizeReservationStatus(reservation.status) !== 'booked') {
+      throw new HttpError(409, 'This spare request is no longer open.', { code: 'PLACEHOLDER_CLOSED' });
+    }
+
     // A placeholder created from a Transport is still just a normal spare
     // reservation from here on — assignable from this widget exactly like any
     // other. The Transport that created it is kept in sync below (its own
@@ -3458,6 +3559,15 @@ export class DatabaseStorage implements IStorage {
       const [linkedTransport] = await db.select().from(vehicleTransports).where(eq(vehicleTransports.id, reservation.replacementForTransportId));
       if (linkedTransport && linkedTransport.vehicleId === vehicleId) {
         throw new Error('Replacement vehicle cannot be the same as the original vehicle');
+      }
+      // BUG-137: booking a real car for a transport that has already happened,
+      // or whose spare was explicitly switched off, is not an assignment — it
+      // is a vehicle taken out of the fleet for nothing.
+      if (linkedTransport && (linkedTransport.status === 'completed' || linkedTransport.status === 'cancelled')) {
+        throw new HttpError(409, 'This transport is already closed; its spare request no longer applies.', { code: 'TRANSPORT_CLOSED' });
+      }
+      if (linkedTransport && !linkedTransport.spareRequired) {
+        throw new HttpError(409, 'This transport no longer needs a replacement vehicle.', { code: 'SPARE_NOT_REQUIRED' });
       }
     }
 
@@ -3611,7 +3721,17 @@ export class DatabaseStorage implements IStorage {
     return replacement || undefined;
   }
 
-  async createReplacementReservation(originalReservationId: number, spareVehicleId: number, startDate: string, endDate?: string): Promise<Reservation> {
+  /**
+   * FIX-V (BUG-032, BUG-014) — assign a spare to a rental or a block.
+   *
+   * `assign-spare` could be called twice and left **two** live replacements on
+   * two different vehicles for the same rental: nobody could tell which car the
+   * customer actually had, both were blocked, and neither had a closing path.
+   * A second assignment now cancels the first in the same transaction, the way
+   * `applyTransportUpdate` has always done for transports — unless that first
+   * one has really been handed over, which is refused (BUG-004's rule).
+   */
+  async createReplacementReservation(originalReservationId: number, spareVehicleId: number, startDate: string, endDate?: string, options: { maintenanceBlockId?: number | null } = {}): Promise<Reservation> {
     const [original] = await db
       .select()
       .from(reservations)
@@ -3668,7 +3788,32 @@ export class DatabaseStorage implements IStorage {
     // staff members assigning the same spare at the same moment cannot both
     // win. A refusal is a `BookingConflictError` (409), not a bare Error the
     // route turned into a 400 carrying a sentence.
-    return this.withBookingLocks([spareVehicleId], async (tx) => {
+    const freed: number[] = [];
+    const created = await this.withBookingLocks([spareVehicleId], async (tx) => {
+      // BUG-032 — close whatever is already standing in for this rental first.
+      const existing = await tx
+        .select({ id: reservations.id, status: reservations.status, vehicleId: reservations.vehicleId })
+        .from(reservations)
+        .where(and(
+          eq(reservations.type, 'replacement'),
+          eq(reservations.replacementForReservationId, originalReservationId),
+          isNull(reservations.deletedAt),
+          sql`${reservations.status} NOT IN ('cancelled','completed','returned')`,
+        ));
+      if (existing.some((r: { status: string }) => normalizeReservationStatus(r.status) === 'picked_up')) {
+        throw new HttpError(
+          409,
+          'Cannot assign another replacement — the current one has already been picked up. Return it first.',
+          { code: 'SPARE_ALREADY_PICKED_UP' },
+        );
+      }
+      if (existing.length > 0) {
+        await tx.update(reservations)
+          .set({ status: 'cancelled', updatedAt: new Date() })
+          .where(inArray(reservations.id, existing.map((r: { id: number }) => r.id)));
+        freed.push(...existing.map((r: { vehicleId: number | null }) => r.vehicleId).filter((v: number | null): v is number => v != null));
+      }
+
       const verdict = await this.isVehicleBookable({
         vehicleId: spareVehicleId,
         startDate,
@@ -3678,10 +3823,20 @@ export class DatabaseStorage implements IStorage {
 
       const [replacement] = await tx
         .insert(reservations)
-        .values(replacementData as unknown as typeof reservations.$inferInsert)
+        .values({
+          ...replacementData,
+          // BUG-118: when the spare stands in for a maintenance block, say so.
+          maintenanceBlockId: options.maintenanceBlockId
+            ?? (original.type === 'maintenance_block' ? original.id : null),
+        } as unknown as typeof reservations.$inferInsert)
         .returning();
       return replacement as Reservation;
     });
+
+    for (const vehicleId of Array.from(new Set(freed))) {
+      await this.recomputeVehicleAvailability(vehicleId);
+    }
+    return created;
   }
 
   async updateLegacyNotesWithVehicleDetails(): Promise<number> {

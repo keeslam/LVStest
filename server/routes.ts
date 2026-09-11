@@ -67,6 +67,7 @@ import {
 import {
   assertReservationTransition,
   assertReservationStatusValue,
+  BLOCK_TO_VEHICLE_MAINTENANCE,
   assertVehicleMaintenanceStatus,
   normalizeReservationStatus,
   decideHandover,
@@ -1437,6 +1438,31 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       await storage.markVehicleForService(id, status, note);
+
+      // BUG-154: this route was the only workshop toggle that did not touch the
+      // maintenance block it belongs to, so `vehicles.maintenance_status` said
+      // `in_service` while the block on the calendar still said `scheduled`, and
+      // the portal customer was never told the car had gone in. Two sources of
+      // truth for "is it in the workshop"; now one, and the same portal hook
+      // `PATCH /api/reservations/:id` already fires.
+      const today = new Date().toISOString().split('T')[0];
+      const openBlocks = (await storage.getReservationsByVehicle(id)).filter((r) =>
+        r.type === 'maintenance_block' &&
+        !r.deletedAt &&
+        r.status !== 'cancelled' &&
+        r.status !== 'completed' &&
+        (!r.endDate || r.endDate >= today),
+      );
+      const targetBlockStatus = BLOCK_TO_VEHICLE_MAINTENANCE[status];
+      for (const block of openBlocks) {
+        if (block.maintenanceStatus === targetBlockStatus) continue;
+        const updatedBlock = await storage.updateReservation(block.id, {
+          maintenanceStatus: targetBlockStatus,
+          updatedBy: (req.user as any)?.username ?? null,
+        } as any);
+        if (updatedBlock) void onMaintenanceBlockChanged(block, updatedBlock);
+      }
+
       const vehicle = await storage.getVehicle(id);
 
       // Broadcast real-time update to all connected clients
@@ -3095,6 +3121,26 @@ export async function registerRoutes(app: Express): Promise<void> {
         if (existingReservation.type !== 'maintenance_block') {
           return res.status(400).json({ message: "Reservation is not a maintenance block" });
         }
+      } else {
+        // BUG-033: the new-block branch handed `maintenanceData` straight to
+        // `createReservation`, so none of the cross-field rules of
+        // `insertReservationSchema` applied on this path — a block without a
+        // vehicle came back 201 and then could not be shown on the maintenance
+        // calendar, which groups by vehicle. Same validation the direct
+        // `POST /api/reservations` path runs.
+        const blockCheck = insertReservationSchema.safeParse({
+          ...maintenanceData,
+          type: 'maintenance_block',
+        });
+        if (!blockCheck.success) {
+          return res.status(400).json({
+            message: "Invalid maintenance data",
+            errors: blockCheck.error.errors.map((e) => ({
+              field: e.path.join('.') || '(maintenanceData)',
+              message: e.message,
+            })),
+          });
+        }
       }
 
       // Build every replacement row up front (read-only lookups), so the
@@ -3179,6 +3225,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       // payload — is a 409 naming the conflicting rows, and nothing was written.
       if (error instanceof BookingConflictError) {
         return res.status(error.status).json(error.toBody());
+      }
+      // FIX-V (BUG-004): refusing to wipe an already-picked-up spare is a 409
+      // with a code, not the blanket 400 below.
+      if (error instanceof HttpError) {
+        return res.status(error.status).json({ message: error.message, code: error.code });
       }
       console.error("Error creating maintenance with spare:", error);
       res.status(400).json({
@@ -3983,6 +4034,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (error instanceof BookingConflictError) {
         return res.status(error.status).json(error.toBody());
       }
+      // FIX-V (BUG-032/BUG-004): "the current spare is already picked up" is a
+      // 409 with a code, like the transport path has always answered.
+      if (error instanceof HttpError) {
+        return res.status(error.status).json({ message: error.message, code: error.code });
+      }
       console.error("Error assigning spare vehicle:", error);
       if (error instanceof Error) {
         res.status(400).json({ message: error.message });
@@ -4766,6 +4822,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (error instanceof BookingConflictError) {
         return res.status(error.status).json(error.toBody());
       }
+      // FIX-V (BUG-137): a closed transport or a cancelled placeholder is a 409
+      // with a code, not a 400 built by string-matching the message.
+      if (error instanceof HttpError) {
+        return res.status(error.status).json({ message: error.message, code: error.code });
+      }
       console.error("Error assigning vehicle to placeholder:", error);
 
       if (error instanceof z.ZodError) {
@@ -4819,54 +4880,60 @@ export async function registerRoutes(app: Express): Promise<void> {
         contractNumber: null // Free up contract number when deleting reservation
       };
       
-      // If this is a maintenance block, also delete related replacement reservations
+      // FIX-V — deleting a maintenance block closes **its own** spares.
+      //
+      // BUG-118: the cascade used to collect every customer rental on the same
+      // vehicle whose period overlapped the block, and then soft-delete every
+      // replacement of those rentals — regardless of which block had created
+      // them. On a vehicle with two live blocks, deleting the stale one booked
+      // the real one's spare away and left the customer without a car, while
+      // `needing-assignment` showed nothing. The link is now explicit
+      // (`maintenanceBlockId`); the date-overlap rule survives only as a
+      // fallback for rows written before that column existed.
+      //
+      // BUG-014: the freed spare vehicles are recomputed afterwards, so they do
+      // not stay `scheduled` for ever.
+      const freedSpareVehicleIds: number[] = [];
       if (reservation.type === 'maintenance_block') {
-        console.log(`🔧 Deleting maintenance block ${id} - checking for related spare vehicle reservations...`);
-        
-        // Get all reservations to find related replacements
         const allReservations = await storage.getAllReservations();
-        
-        // Find all customer rentals on the same vehicle that overlap with the maintenance
-        const maintenanceStart = new Date(reservation.startDate);
-        const maintenanceEnd = reservation.endDate ? new Date(reservation.endDate) : new Date('9999-12-31');
-        
-        const affectedRentals = allReservations.filter(r => 
-          r.id !== id && 
+
+        const maintenanceStart = reservation.startDate;
+        const maintenanceEnd = reservation.endDate || '9999-12-31';
+
+        const legacyAffectedRentalIds = allReservations.filter(r =>
+          r.id !== id &&
           !r.deletedAt &&
           r.vehicleId === reservation.vehicleId &&
           r.type === 'standard' &&
-          r.customerId !== null
-        ).filter(r => {
-          const rentalStart = new Date(r.startDate);
-          const rentalEnd = r.endDate ? new Date(r.endDate) : new Date('9999-12-31');
-          return rentalStart <= maintenanceEnd && rentalEnd >= maintenanceStart;
+          r.customerId !== null &&
+          r.startDate <= maintenanceEnd &&
+          (r.endDate || '9999-12-31') >= maintenanceStart
+        ).map(r => r.id);
+
+        const replacementsToClose = allReservations.filter(r => {
+          if (r.type !== 'replacement' || r.deletedAt) return false;
+          if (r.maintenanceBlockId != null) return r.maintenanceBlockId === id;
+          // Legacy row: no owner recorded. Match the old rule, but only within
+          // the block's own period, so a spare for a different period survives.
+          if (r.replacementForReservationId == null) return false;
+          if (!legacyAffectedRentalIds.includes(r.replacementForReservationId)) return false;
+          return r.startDate <= maintenanceEnd && (r.endDate || '9999-12-31') >= maintenanceStart;
         });
-        
-        console.log(`📋 Found ${affectedRentals.length} customer rentals affected by this maintenance`);
-        
-        // Find all replacement reservations for these affected rentals
-        const affectedRentalIds = affectedRentals.map(r => r.id);
-        const replacementsToDelete = allReservations.filter(r =>
-          r.type === 'replacement' &&
-          r.replacementForReservationId !== null &&
-          affectedRentalIds.includes(r.replacementForReservationId) &&
-          !r.deletedAt
-        );
-        
-        console.log(`🚗 Found ${replacementsToDelete.length} spare vehicle reservations to delete`);
-        
-        // Delete all related replacement reservations and their notifications
-        for (const replacement of replacementsToDelete) {
+
+        for (const replacement of replacementsToClose) {
+          // BUG-004's rule, here too: a spare that is really at the customer is
+          // not swept away by deleting the workshop appointment.
+          if (normalizeReservationStatus(replacement.status) === 'picked_up') {
+            console.warn(`[block-delete] spare #${replacement.id} is picked up — left in place`);
+            continue;
+          }
           await storage.updateReservation(replacement.id, softDeleteData);
+          if (replacement.vehicleId != null) freedSpareVehicleIds.push(replacement.vehicleId);
           realtimeEvents.reservations.deleted({ id: replacement.id });
-          
-          // Delete associated spare assignment notification if this was a placeholder
+
           if (replacement.placeholderSpare) {
             await storage.deleteNotificationsByTypeAndPattern("spare_assignment", `[placeholder:${replacement.id}]`);
-            console.log(`🔔 Deleted spare assignment notification for placeholder ${replacement.id}`);
           }
-          
-          console.log(`✅ Deleted spare vehicle reservation ${replacement.id}`);
         }
       }
       
@@ -4880,8 +4947,12 @@ export async function registerRoutes(app: Express): Promise<void> {
           console.log(`🔔 Deleted spare assignment notification for placeholder ${id}`);
         }
         
-        // Sync vehicle availability status after deleting reservation
-        await storage.syncVehicleAvailabilityWithReservations();
+        // FIX-H/FIX-V — recompute the vehicles this delete touched: the one the
+        // reservation was on, and every spare it just released (BUG-014).
+        await storage.recomputeVehicleAvailability(reservation.vehicleId);
+        for (const spareVehicleId of Array.from(new Set(freedSpareVehicleIds))) {
+          await storage.recomputeVehicleAvailability(spareVehicleId);
+        }
 
         await AuditLogger.logFromRequest(
           req,

@@ -3535,6 +3535,13 @@
         "default": "false"
       },
       {
+        "name": "maintenance_block_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
         "name": "spare_vehicle_status",
         "type": "text",
         "notNull": false,
