@@ -206,6 +206,23 @@ export async function validateUploadedFile(
   }
 }
 
+/**
+ * BUG-030 — multer's `fileFilter` runs as middleware *before* the route
+ * handler, so the route's own try/catch never sees its rejection: a plain
+ * `new Error(...)` reached the generic Express handler, which defaults to 500
+ * and attaches `err.stack` whenever NODE_ENV is not "production". A refused
+ * upload is a client mistake, so the error carries its own status.
+ */
+export class UploadRejectedError extends Error {
+  readonly status = 400;
+  readonly statusCode = 400;
+
+  constructor(message: string) {
+    super(message);
+    this.name = "UploadRejectedError";
+  }
+}
+
 export function createSecureMulterFilter(
   allowedTypes: keyof typeof FILE_TYPE_CONFIGS | (keyof typeof FILE_TYPE_CONFIGS)[]
 ) {
@@ -216,7 +233,7 @@ export function createSecureMulterFilter(
     const declaredMime = file.mimetype;
     
     if (isDangerousExtension(filename)) {
-      return callback(new Error('This file type is not permitted for security reasons'), false);
+      return callback(new UploadRejectedError('This file type is not permitted for security reasons'), false);
     }
 
     let allowed = false;
@@ -248,7 +265,7 @@ export function createSecureMulterFilter(
         .filter((v, i, a) => a.indexOf(v) === i);
       
       return callback(
-        new Error(`Only ${allExtensions.join(', ')} files are allowed`),
+        new UploadRejectedError(`Only ${allExtensions.join(', ')} files are allowed`),
         false
       );
     }

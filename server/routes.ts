@@ -15,6 +15,7 @@ import {
   insertReservationSchema, 
   insertReservationSchemaBase,
   normaliseLicensePlate,
+  isCalendarDate,
   insertSettingsSchema,
   reservations,
   vehicles,
@@ -106,6 +107,7 @@ import type { RouteDeps } from "./routes/deps";
 import { installIdParamValidation, rejectNullBytesInPath } from "./middleware/parseIntParam";
 import { parsePartialUpdate, parseCreateBody, BodyValidationError } from "./middleware/validateBody";
 import { sendRouteError, HttpError } from "./utils/route-errors";
+import { UploadRejectedError } from "./utils/security/fileUploadSecurity";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 
@@ -132,6 +134,45 @@ async function findVehicleByNormalisedPlate(plate: string): Promise<{ id: number
     .limit(1);
   return row;
 }
+
+/**
+ * BUG-039 - reservations.vehicle_id and customer_id have no FK, so nothing but
+ * this check stands between a typo and an orphan row. Returns the 404 body
+ * (naming the field) when a referenced row is not there, else null.
+ */
+async function findMissingReservationReferences(
+  data: { vehicleId?: number | null; customerId?: number | null },
+): Promise<{ message: string; field: string } | null> {
+  if (data.vehicleId != null && !(await storage.getVehicle(data.vehicleId))) {
+    return { message: "Vehicle not found", field: "vehicleId" };
+  }
+  if (data.customerId != null && !(await storage.getCustomer(data.customerId))) {
+    return { message: "Customer not found", field: "customerId" };
+  }
+  return null;
+}
+
+/**
+ * BUG-017 - the blacklist was checked on create and on neither edit path, so
+ * swapping the vehicle or the customer of an existing reservation walked right
+ * past it. Judged on the *effective* pair after the patch.
+ */
+async function blacklistedAfterPatch(
+  patch: { vehicleId?: number | null; customerId?: number | null },
+  existing: { vehicleId: number | null; customerId: number | null },
+): Promise<boolean> {
+  const vehicleId = patch.vehicleId ?? existing.vehicleId;
+  const customerId = patch.customerId ?? existing.customerId;
+  if (vehicleId == null || customerId == null) return false;
+  if (vehicleId === existing.vehicleId && customerId === existing.customerId) return false;
+  return storage.isCustomerBlacklistedForVehicle(vehicleId, customerId);
+}
+
+/** The 409 both PATCH handlers answer with. */
+const BLACKLIST_CONFLICT = {
+  message: "This customer is blacklisted for this vehicle and cannot be booked on it.",
+  field: "customerId",
+} as const;
 
 export async function registerRoutes(app: Express): Promise<void> {
   // FIX-A (BUG-002, BUG-061, BUG-101): make every handler registered anywhere in
@@ -930,6 +971,14 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       for (const licensePlate of licensePlates) {
         try {
+          // BUG-123: without this guard an empty or absent plate was normalised
+          // to "" and inserted - a vehicle with a blank plate that the delete
+          // confirmation could never match. bulk-import-csv already had it.
+          if (typeof licensePlate !== 'string' || licensePlate.trim() === '') {
+            failed.push({ licensePlate, error: "License plate is required" });
+            continue;
+          }
+
           // Normalize license plate (remove dashes and spaces)
           const normalizedPlate = licensePlate.replace(/[-\s]/g, '').toUpperCase();
           
@@ -1052,46 +1101,53 @@ export async function registerRoutes(app: Express): Promise<void> {
             }
           }
           
-          // Helper function to convert Excel serial date to ISO date string
-          const convertExcelDate = (value: string): string | null => {
-            if (!value) return null;
-            const trimmed = value.trim();
-            
-            // Check if it's an Excel serial date (a number)
-            if (/^\d+$/.test(trimmed)) {
+          // BUG-124: `new Date("09-03-2026")` is parsed by V8 as *American*
+          // month-first, so a Dutch 9 March became 3 September; and
+          // `toISOString()` then shifted the result by the local UTC offset, so
+          // a date could move a further day. An unparseable date was silently
+          // dropped instead of failing its row. Explicit formats, explicit
+          // formatting, explicit failure.
+          const convertImportDate = (value: unknown): string | null | undefined => {
+            if (value == null || value === '') return null;
+            const trimmed = String(value).trim();
+            if (trimmed === '') return null;
+
+            // Excel serial number (days since 1899-12-30), kept in UTC.
+            if (/^\d{1,5}$/.test(trimmed)) {
               const serial = parseInt(trimmed, 10);
-              // Excel dates start from January 1, 1900 (serial 1)
-              // But Excel incorrectly treats 1900 as a leap year, so subtract 1 for dates after Feb 28, 1900
-              const excelEpoch = new Date(1899, 11, 30); // Dec 30, 1899
-              const date = new Date(excelEpoch.getTime() + serial * 24 * 60 * 60 * 1000);
-              if (!isNaN(date.getTime())) {
-                return date.toISOString().split('T')[0]; // Return YYYY-MM-DD
-              }
+              const millis = Date.UTC(1899, 11, 30) + serial * 86_400_000;
+              const date = new Date(millis);
+              if (!Number.isNaN(date.getTime())) return date.toISOString().slice(0, 10);
+              return undefined;
             }
-            
-            // Try parsing as a regular date string
-            const parsed = new Date(trimmed);
-            if (!isNaN(parsed.getTime())) {
-              return parsed.toISOString().split('T')[0];
+
+            for (const pattern of [
+              /^(?<d>\d{1,2})[-/.](?<m>\d{1,2})[-/.](?<y>\d{4})$/, // dd-mm-yyyy, dd/mm/yyyy
+              /^(?<y>\d{4})[-/.](?<m>\d{1,2})[-/.](?<d>\d{1,2})$/, // yyyy-mm-dd
+            ]) {
+              const m = pattern.exec(trimmed);
+              if (!m?.groups) continue;
+              const ymd =
+                m.groups.y +
+                '-' + m.groups.m.padStart(2, '0') +
+                '-' + m.groups.d.padStart(2, '0');
+              return isCalendarDate(ymd) ? ymd : undefined;
             }
-            
-            return null;
+            return undefined;
           };
-          
-          // Handle APK date
-          if (vehicleInput.apkDate) {
-            const convertedApkDate = convertExcelDate(vehicleInput.apkDate);
-            if (convertedApkDate) {
-              vehicleData.apkDate = convertedApkDate;
-            }
+
+          // `undefined` means "given, but not a date" — that fails the row
+          // instead of disappearing.
+          const importDateFields = ['apkDate', 'companyDate'] as const;
+          let badDateField: string | null = null;
+          for (const field of importDateFields) {
+            const converted = convertImportDate(vehicleInput[field]);
+            if (converted === undefined) { badDateField = field; break; }
+            if (converted !== null) (vehicleData as Record<string, unknown>)[field] = converted;
           }
-          
-          // Handle company date (BV/Opnaam date)
-          if (vehicleInput.companyDate) {
-            const convertedCompanyDate = convertExcelDate(vehicleInput.companyDate);
-            if (convertedCompanyDate) {
-              vehicleData.companyDate = convertedCompanyDate;
-            }
+          if (badDateField) {
+            failed.push({ licensePlate, error: `${badDateField} is not a date we can read (use dd-mm-yyyy or yyyy-MM-dd)` });
+            continue;
           }
           
           // Handle boolean fields
@@ -2577,6 +2633,13 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       const reservationData = insertReservationSchema.parse(bodyData);
 
+      // BUG-039: reservations.vehicle_id / customer_id carry no foreign key, so
+      // a booking on an id that does not exist was accepted and became an orphan
+      // row nobody could explain. The maintenance_block branch below skipped even
+      // the incidental getVehicle() the standard branch happened to do.
+      const missingReference = await findMissingReservationReferences(reservationData);
+      if (missingReference) return res.status(404).json(missingReference);
+
       // Refuse blacklisted vehicle/customer pairings. The reservation form hides
       // them from its dropdowns, but nothing stopped a booking created any other
       // way (calendar drag, a stale page, a direct API call) from going through.
@@ -3198,6 +3261,11 @@ export async function registerRoutes(app: Express): Promise<void> {
         message: "Invalid reservation data",
       });
 
+      // BUG-017: same blacklist check as the create path and as PATCH /:id.
+      if (await blacklistedAfterPatch(reservationData, existingBasic)) {
+        return res.status(409).json(BLACKLIST_CONFLICT);
+      }
+
       // BUG-111: the date-order rule lives on the merged row, not on the patch.
       const basicStartDate = (reservationData.startDate ?? existingBasic.startDate) as string | null;
       const basicEndDate = ("endDate" in reservationData ? reservationData.endDate : existingBasic.endDate) as string | null;
@@ -3297,17 +3365,29 @@ export async function registerRoutes(app: Express): Promise<void> {
       };
       
       const reservation = await storage.updateReservation(id, dataWithTracking);
-      
+
       if (!reservation) {
         return res.status(404).json({ message: "Reservation not found" });
       }
-      
+
+      // BUG-133: a driver changed through this route never reached the driver
+      // history, so the portal and the fines attribution kept seeing the old
+      // driver. PATCH /:id has always done this; /basic did not.
+      if ('driverId' in reservationData && (reservationData.driverId ?? null) !== (existingBasic.driverId ?? null)) {
+        await assignDriverToReservation({
+          reservationId: id,
+          driverId: (reservationData.driverId as number | null) ?? null,
+          byUserId: req.user?.id,
+          note: 'staff',
+        });
+      }
+
       // Sync vehicle availability status after updating reservation
       await storage.syncVehicleAvailabilityWithReservations();
-      
+
       // Broadcast real-time update to all connected clients
       realtimeEvents.reservations.updated(reservation);
-      
+
       res.json(reservation);
     } catch (error) {
       // BUG-148: error.message here used to be the Postgres constraint text
@@ -3580,6 +3660,12 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Reservation not found" });
       }
 
+      // BUG-017: the blacklist is checked on create and, until now, on neither
+      // edit path - so swapping the vehicle or the customer walked past it.
+      if (await blacklistedAfterPatch(reservationData, existingReservationForDiff)) {
+        return res.status(409).json(BLACKLIST_CONFLICT);
+      }
+
       // BUG-127 — the two odometer readings were freely editable and never
       // compared with each other, so a completed rental could end up with a
       // return reading below its pickup reading. Checked on the merged row for
@@ -3805,6 +3891,25 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Validate required fields
       if (!maintenanceStatus) {
         return res.status(400).json({ message: "maintenanceStatus is required" });
+      }
+
+      // BUG-031: this route calls storage.createMaintenanceBlock() directly and
+      // so bypasses the zod refinement every other creation path runs, which is
+      // how an end date before the start date got inserted.
+      for (const [field, value] of [["serviceStartDate", serviceStartDate], ["serviceEndDate", serviceEndDate]] as const) {
+        if (value == null || value === "") continue;
+        if (typeof value !== "string" || !isCalendarDate(value)) {
+          return res.status(400).json({
+            message: "Invalid service date",
+            errors: [{ field, message: "Use a real yyyy-MM-dd date" }],
+          });
+        }
+      }
+      if (serviceStartDate && serviceEndDate && serviceEndDate < serviceStartDate) {
+        return res.status(400).json({
+          message: "Invalid service date range",
+          errors: [{ field: "serviceEndDate", message: "The end date must be on or after the start date" }],
+        });
       }
       
       // Get the reservation to find the vehicle
@@ -4078,9 +4183,36 @@ export async function registerRoutes(app: Express): Promise<void> {
       const { contractNumber, pickupMileage, fuelLevelPickup, pickupDate, pickupNotes, templateId, allowMileageDecrease, overridePassword, overrideContractNumber } = req.body;
       
       if (!contractNumber || contractNumber.trim() === '') {
-        return res.status(400).json({ 
-          message: "Contract number is required" 
+        return res.status(400).json({
+          message: "Contract number is required"
         });
+      }
+
+      // BUG-131: pickupDate was destructured and used unvalidated - it lands in
+      // the reservation, in every later date comparison, and in a generated
+      // filename. Only a real yyyy-MM-dd day gets through.
+      if (pickupDate != null && pickupDate !== '' && (typeof pickupDate !== 'string' || !isCalendarDate(pickupDate))) {
+        return res.status(400).json({
+          message: "Invalid pickup date",
+          errors: [{ field: "pickupDate", message: "Use a real yyyy-MM-dd date" }],
+        });
+      }
+
+      // BUG-038: PATCH /:id has always pre-checked the contract number; the
+      // pickup handler did not, so the second pickup with the same number hit
+      // the unique constraint and the raw driver message reached the client.
+      if (!overrideContractNumber) {
+        const allForContract = await storage.getAllReservations();
+        const duplicateContract = allForContract.find(
+          (r) => r.id !== reservationId && r.contractNumber === contractNumber.trim(),
+        );
+        if (duplicateContract) {
+          return res.status(409).json({
+            message: `Contract number "${contractNumber.trim()}" is already used by reservation #${duplicateContract.id}.`,
+            code: "DUPLICATE_CONTRACT_NUMBER",
+            conflictingReservationId: duplicateContract.id,
+          });
+        }
       }
 
       // Handle contract number override - MUST happen BEFORE pickup to avoid unique constraint
@@ -4258,10 +4390,28 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       const { returnMileage, fuelLevelReturn, returnDate, returnNotes } = req.body;
-      
+
+      // BUG-131: same as pickupDate - unvalidated text went into the row and
+      // into a filename, and a return before the pickup was accepted.
+      if (returnDate != null && returnDate !== '' && (typeof returnDate !== 'string' || !isCalendarDate(returnDate))) {
+        return res.status(400).json({
+          message: "Invalid return date",
+          errors: [{ field: "returnDate", message: "Use a real yyyy-MM-dd date" }],
+        });
+      }
+      if (returnDate) {
+        const existingForReturn = await storage.getReservation(reservationId);
+        if (existingForReturn?.actualPickupDate && returnDate < existingForReturn.actualPickupDate) {
+          return res.status(400).json({
+            message: "Invalid return date",
+            errors: [{ field: "returnDate", message: "The return date cannot be before the pickup date" }],
+          });
+        }
+      }
+
       if (returnMileage === undefined || returnMileage === null || returnMileage === '' || !fuelLevelReturn) {
-        return res.status(400).json({ 
-          message: "Return mileage and fuel level are required" 
+        return res.status(400).json({
+          message: "Return mileage and fuel level are required"
         });
       }
 
@@ -4806,11 +4956,24 @@ export async function registerRoutes(app: Express): Promise<void> {
 
   // ==================== DOCUMENT ROUTES ====================
   // Setup storage for document uploads
+  /**
+   * BUG-049 — multer's `destination` callback runs the moment the `file` part
+   * appears in the stream, so `req.body.vehicleId` is only there if the client
+   * happened to send that field first. Read the query parameter as well, which
+   * is parsed before any part of the body.
+   */
+  const documentVehicleId = (req: Request): string | undefined => {
+    const fromQuery = req.query?.vehicleId;
+    if (typeof fromQuery === "string" && fromQuery !== "") return fromQuery;
+    const fromBody = (req.body as Record<string, unknown> | undefined)?.vehicleId;
+    return typeof fromBody === "string" || typeof fromBody === "number" ? String(fromBody) : undefined;
+  };
+
   const createDocumentUploadStorage = async (req: Request, file: Express.Multer.File, callback: Function) => {
     try {
-      const vehicleId = req.body.vehicleId;
+      const vehicleId = documentVehicleId(req);
       if (!vehicleId) {
-        return callback(new Error("Vehicle ID is required"), false);
+        return callback(new UploadRejectedError("Vehicle ID is required. Send vehicleId before the file, or as a query parameter."), false);
       }
       
       // Get vehicle details for organizing files
@@ -4868,8 +5031,10 @@ export async function registerRoutes(app: Express): Promise<void> {
         return callback(new Error(`Failed to create upload directory: ${error instanceof Error ? error.message : String(error)}`), false);
       }
     } catch (error) {
+      // BUG-049: this used to hand the generic Express handler a bare Error, so
+      // a missing/late vehicleId became a 500 with a stack instead of a 400.
       console.error("Error with document upload:", error);
-      callback(new Error(`Document upload error: ${error instanceof Error ? error.message : String(error)}`), false);
+      callback(new UploadRejectedError("Could not determine where to store this document. Send vehicleId before the file, or as a query parameter."), false);
     }
   };
 
@@ -4889,9 +5054,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         const extension = path.extname(sanitizedOriginal);
         const documentType = sanitizeFilename(req.body.documentType || 'document');
         
-        // Get vehicle license plate
-        const vehicleId = parseInt(req.body.vehicleId);
-        const vehicle = await storage.getVehicle(vehicleId);
+        // Get vehicle license plate (BUG-049: query first, then the body)
+        const vehicleId = parseInt(documentVehicleId(req) ?? "");
+        const vehicle = Number.isInteger(vehicleId) ? await storage.getVehicle(vehicleId) : undefined;
         
         if (!vehicle) {
           throw new Error("Vehicle not found");
