@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 
 /** Which portal-admin list opens in the shared list dialog (see portal-list-dialog.tsx). */
 export type PortalListKind = 'customers' | 'accounts' | 'requests' | 'fines' | 'vehicles' | 'activity' | 'blacklist';
@@ -233,9 +233,24 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  return (
-    <GlobalDialogContext.Provider
-      value={{
+  // BUG-210 — a Radix dialog locks the scroll while it is open and restores
+  // the vertical offset on close, but leaves the horizontal one behind. On a
+  // 1182 px laptop, where the calendar page already scrolls sideways, that
+  // left window.scrollX at 234 px and the fixed sidebar covering the page
+  // heading ("Reserveringskalender" cut down to "er").
+  const anyDialogOpen = Object.values(dialogState).some(
+    (state) => state && typeof state === "object" && (state as { open?: boolean }).open,
+  );
+  useEffect(() => {
+    if (anyDialogOpen) return;
+    if (typeof window === "undefined" || window.scrollX === 0) return;
+    window.scrollTo({ left: 0, top: window.scrollY });
+  }, [anyDialogOpen]);
+
+  // BUG-228 — a fresh object here on every render made every consumer of this
+  // context re-render whenever any dialog state changed anywhere in the app.
+  const contextValue = useMemo(
+    () => ({
         dialogState,
         openReservationDialog,
         closeReservationDialog,
@@ -267,10 +282,16 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
         closeExpenseDialog,
         openRdwApkChangesDialog,
         closeRdwApkChangesDialog,
-        openScanDialog,
-        closeScanDialog,
-      }}
-    >
+      openScanDialog,
+      closeScanDialog,
+    }),
+    // The callbacks are stable setState wrappers; only the state can change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dialogState],
+  );
+
+  return (
+    <GlobalDialogContext.Provider value={contextValue}>
       {children}
     </GlobalDialogContext.Provider>
   );

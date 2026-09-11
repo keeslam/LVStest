@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { plateMatches } from "@/lib/format-utils";
 import {
   ColumnDef,
@@ -43,6 +44,7 @@ export function DataTable<TData, TValue>({
   pagination = true,
   globalFilterFn,
 }: DataTableProps<TData, TValue>) {
+  const { t } = useTranslation("common");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -114,7 +116,8 @@ export function DataTable<TData, TValue>({
           />
         </div>
       ) : null}
-      <div className="rounded-md border">
+      {/* BUG-222: the table itself scrolls, instead of the page. */}
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -151,7 +154,7 @@ export function DataTable<TData, TValue>({
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
+                  {t("table.noResults")}
                 </TableCell>
               </TableRow>
             )}
@@ -164,11 +167,11 @@ export function DataTable<TData, TValue>({
             <p className="text-sm text-muted-foreground">
               {(() => {
                 const total = table.getFilteredRowModel().rows.length;
-                if (total === 0) return "Showing 0 of 0";
+                if (total === 0) return t("table.showingNone");
                 const { pageIndex, pageSize } = table.getState().pagination;
                 const from = pageIndex * pageSize + 1;
                 const to = Math.min((pageIndex + 1) * pageSize, total);
-                return `Showing ${from}-${to} of ${total}`;
+                return t("table.showing", { from, to, total });
               })()}
             </p>
             <Select
@@ -196,7 +199,7 @@ export function DataTable<TData, TValue>({
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
             >
-              Previous
+              {t("actions.previous")}
             </Button>
             <Button
               variant="outline"
@@ -204,7 +207,7 @@ export function DataTable<TData, TValue>({
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
             >
-              Next
+              {t("actions.next")}
             </Button>
           </div>
         </div>

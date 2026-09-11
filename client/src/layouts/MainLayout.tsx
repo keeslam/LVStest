@@ -187,7 +187,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       {/* Mobile backdrop: closes the drawer when tapping outside it */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-20 bg-black/40 md:hidden"
+          className="fixed inset-0 z-20 bg-black/40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
         />
@@ -195,7 +195,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 w-64 bg-white shadow-md z-30 transform transition-transform duration-300 ease-in-out md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 w-64 bg-white shadow-md z-30 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         onClick={(e) => {
@@ -207,7 +207,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-primary-600">Auto Lease LAM</h1>
             <button 
-              className="md:hidden text-gray-500"
+              className="lg:hidden text-gray-500"
               onClick={() => setSidebarOpen(false)}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x">
@@ -222,11 +222,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
       </aside>
 
       {/* Header */}
-      <header className="bg-white shadow-sm md:ml-64">
+      <header className="bg-white shadow-sm lg:ml-64">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center">
             <button 
-              className="md:hidden text-gray-500 mr-4"
+              className="lg:hidden text-gray-500 mr-4"
               onClick={() => setSidebarOpen(true)}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-menu">
@@ -438,7 +438,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       </header>
 
       {/* Main Content */}
-      <main className="md:ml-64 pt-4 px-4 pb-12">
+      <main className="lg:ml-64 min-w-0 pt-4 px-4 pb-12">
         {children}
       </main>
 

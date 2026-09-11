@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { bucketByVehicleAndDay, cellKey, type BucketableReservation } from "@/lib/reservation-buckets";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { format, addDays, subDays, isSameDay, parseISO, startOfMonth, endOfMonth, getDate, getDay, getMonth, getYear, isSameMonth, addMonths, startOfDay, endOfDay, isBefore, isAfter, differenceInDays, startOfWeek, endOfWeek } from "date-fns";
@@ -923,20 +924,24 @@ export default function ReservationCalendarPage() {
     }
   };
 
-  // Function to get reservations for a specific day and vehicle
+  /**
+   * BUG-228 — this used to run a full `.filter` over every reservation, per
+   * vehicle cell, on every render: with ~460 visible reservations and 35
+   * vehicles × 30 days of cells that is around half a million predicate
+   * evaluations per render. The rows are bucketed once per data change
+   * instead; a cell is now a `Map.get`.
+   *
+   * The predicate itself is unchanged — `bucketByVehicleAndDay` covers each
+   * day between start and end, with an open-ended reservation on its start
+   * day, exactly as `isDateInRange` did.
+   */
+  const reservationCells = useMemo(
+    () => bucketByVehicleAndDay((reservations ?? []) as unknown as BucketableReservation[]),
+    [reservations],
+  );
+
   const getReservationsForDay = (vehicleId: number, day: Date) => {
-    if (!reservations) return [];
-    
-    return reservations.filter(res => {
-      const startDate = safeParseDateISO(res.startDate);
-      const endDate = safeParseDateISO(res.endDate);
-      
-      if (!startDate) return false;
-      // For open-ended reservations, endDate might be null
-      const actualEndDate = endDate || startDate;
-      
-      return res.vehicleId === vehicleId && isDateInRange(day, startDate, actualEndDate);
-    });
+    return (reservationCells.get(cellKey(vehicleId, day)) ?? []) as unknown as NonNullable<typeof reservations>;
   };
   
   // This function is no longer used since we only display pickup and return days

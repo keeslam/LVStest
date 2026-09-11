@@ -115,7 +115,7 @@
   },
   "notFoundPage": {
     "title": "404 Pagina niet gevonden",
-    "description": "Ben je vergeten de pagina aan de router toe te voegen?"
+    "description": "Deze pagina bestaat niet (meer). Gebruik het menu of ga terug naar het vorige scherm."
   },
   "searchPage": {
     "toasts": {
@@ -164,5 +164,10 @@
     "vehicleLabel": "Voertuig:",
     "priceLabel": "Prijs:",
     "kvkLabel": "KVK:"
+  },
+  "table": {
+    "noResults": "Geen resultaten.",
+    "showingNone": "0 van 0 getoond",
+    "showing": "{{from}}-{{to}} van {{total}} getoond"
   }
 }

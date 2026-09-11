@@ -115,7 +115,7 @@
   },
   "notFoundPage": {
     "title": "404 Page Not Found",
-    "description": "Did you forget to add the page to the router?"
+    "description": "This page does not exist. Use the menu, or go back to the previous screen."
   },
   "searchPage": {
     "toasts": {
@@ -164,5 +164,10 @@
     "vehicleLabel": "Vehicle:",
     "priceLabel": "Price:",
     "kvkLabel": "KVK:"
+  },
+  "table": {
+    "noResults": "No results.",
+    "showingNone": "Showing 0 of 0",
+    "showing": "Showing {{from}}-{{to}} of {{total}}"
   }
 }

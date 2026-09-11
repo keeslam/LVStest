@@ -1,21 +1,15 @@
-import { format, parseISO } from 'date-fns';
+import { formatDateNl } from '@/lib/format-date-nl';
 import i18n from '@/i18n';
 
 /**
- * Format a date string or Date object into a readable format: 'MMM dd, yyyy'
+ * BUG-223 — this used to be `format(date, 'MMM dd, yyyy')` with no locale, so
+ * every screen that shows a date showed an American one ("Sep 11, 2026"). In a
+ * rental administration month-before-day is genuinely misread. One wrapper now
+ * owns the format, and an unreadable value renders as an en dash instead of the
+ * literal text "Invalid date".
  */
 export function formatDate(date: string | Date): string {
-  try {
-    // If it's already a Date object, use it directly
-    if (date instanceof Date) {
-      return format(date, 'MMM dd, yyyy');
-    }
-    // If it's a string, parse it first
-    return format(parseISO(date), 'MMM dd, yyyy');
-  } catch (e) {
-    // If all else fails, return a safe fallback
-    return 'Invalid date';
-  }
+  return formatDateNl(date, 'long');
 }
 
 /**
