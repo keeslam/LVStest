@@ -133,14 +133,37 @@ process.on('uncaughtException', (error) => {
   });
 });
 
+// FIX-A / BUG-002, BUG-061, BUG-101: an unhandled rejection is NOT fatal.
+//
+// This handler used to call gracefulShutdown() for every rejection, which made
+// a single malformed field from any low-privileged portal account a remote kill
+// switch for the entire application (reproduced three times during the audit).
+// Request-scoped errors no longer arrive here at all — installAsyncErrorHandling()
+// routes them to the Express error handler as a clean 500 — so anything that
+// still reaches this point is a background promise. Those must be loud, and
+// they must be survivable.
+//
+// Deliberate deviation from the plan's "exit on a repeated rejection": handlers
+// in this codebase start fire-and-forget promises (PDF regeneration, mail) on
+// attacker-reachable routes, so any count-based exit would still hand an
+// attacker a way to kill the process by repeating one request. The counter is
+// kept and escalated in the log instead.
+let unhandledRejectionCount = 0;
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ UNHANDLED PROMISE REJECTION at:', promise);
-  console.error('Reason:', reason);
-  
-  // Log and perform graceful shutdown for fatal errors
-  gracefulShutdown('UNHANDLED_REJECTION').catch(() => {
-    process.exit(1);
-  });
+  unhandledRejectionCount += 1;
+  const err = reason instanceof Error ? reason : new Error(String(reason));
+  console.error(
+    `❌ UNHANDLED PROMISE REJECTION #${unhandledRejectionCount} (process stays up):`,
+    err.message
+  );
+  console.error('Stack trace:', err.stack);
+  console.error('Rejected promise:', promise);
+  if (unhandledRejectionCount >= 10) {
+    console.error(
+      `🚨 ${unhandledRejectionCount} unhandled rejections since start — something is systematically ` +
+      `failing outside the request path. Investigate; the process is intentionally NOT exiting.`
+    );
+  }
 });
 
 // Signal handlers for graceful shutdown

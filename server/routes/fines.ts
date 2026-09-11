@@ -91,6 +91,13 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
     if (!/\.(xml|csv|txt)$/i.test(req.file.originalname)) return res.status(400).json({ message: "Only XML or CSV files" });
     const result = await importCjibFile({ buffer: req.file.buffer, fileName: req.file.originalname, source: "cjib_upload", createdBy: actor(req) });
     await AuditLogger.logFromRequest(req, "fine.import.upload", "fine_import", result.file.id, { fileName: req.file.originalname, skipped: result.skipped, status: result.file.status });
+    // BUG-101: a file the parser could not read at all is a bad request, not a
+    // created import. The failed import row and its notification are still
+    // written by importCjibFile(), so the bookkeeping is unchanged; only the
+    // status code now tells the caller that nothing was imported.
+    if (!result.skipped && result.file.status === "failed") {
+      return res.status(400).json({ ...result, message: result.file.errorMessage ?? "The file could not be parsed" });
+    }
     res.status(result.skipped ? 200 : 201).json(result);
   });
 

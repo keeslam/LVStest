@@ -21,6 +21,7 @@ import { requestsStorage, toRequestDto } from "../services/portal-requests-stora
 import { requestPayloadSchemas, REQUEST_NEEDS, PortalRequestType } from "../../shared/portal-requests";
 import { listMyVehicles } from "../services/portal-vehicles";
 import { findPortalCustomerForBlock, canCustomerChangeMaintenance } from "../services/portal-maintenance-events";
+import { installAsyncErrorHandling } from "../middleware/asyncHandler.js";
 
 export function toFineDto(f: FineListRow): PortalFineDto {
   return {
@@ -86,6 +87,9 @@ function idParam(req: Request, res: Response): number | null {
 }
 
 export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void {
+  // FIX-A (BUG-002): a rejected handler promise must become a 400/500 on that
+  // request, never an unhandledRejection that takes the whole process down.
+  installAsyncErrorHandling();
   const { requirePortalUser, uploadsDir } = deps;
   const ctxOf = (req: Request) => req.portalUser!;
 
@@ -313,7 +317,19 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
       message: z.string().trim().min(1).max(4000),
       reservationId: z.coerce.number().int().positive().optional(),
       fineId: z.coerce.number().int().positive().optional(),
-      payload: z.preprocess((v) => (typeof v === "string" ? JSON.parse(v || "{}") : v ?? {}), z.record(z.unknown())),
+      // BUG-002: a bare JSON.parse here threw a SyntaxError that zod's safeParse
+      // does not catch, which escaped the async handler and killed the process.
+      // ctx.addIssue + z.NEVER turns it into the 400 the adjacent "valid JSON but
+      // not an object" case already produced.
+      payload: z.preprocess((v, ctx) => {
+        if (typeof v !== "string") return v ?? {};
+        try {
+          return JSON.parse(v || "{}");
+        } catch {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: "payload is not valid JSON" });
+          return z.NEVER;
+        }
+      }, z.record(z.unknown())),
     }).safeParse(req.body);
     if (!base.success) { discard(); return portalError(res, 400, PORTAL_ERROR.VALIDATION, base.error.errors[0]?.message ?? "Invalid input"); }
     const { type, message, reservationId, fineId } = base.data;

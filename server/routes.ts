@@ -44,6 +44,7 @@ import { backupService } from "./backupService";
 import { ObjectStorageService } from "./objectStorage";
 import { realtimeEvents } from "./realtime-events";
 import { hasPermission, requireAdmin } from "./middleware/permissions.js";
+import { installAsyncErrorHandling } from "./middleware/asyncHandler.js";
 import { AuditLogger } from "./utils/security/auditLogger.js";
 import { auditMutations } from "./middleware/audit";
 import { clearEmailConfigCache, sendEmail, testSmtpConnection } from "./utils/email-service";
@@ -94,6 +95,11 @@ import { onMaintenanceBlockChanged, onReplacementAssigned } from "./services/por
 import type { RouteDeps } from "./routes/deps";
 
 export async function registerRoutes(app: Express): Promise<void> {
+  // FIX-A (BUG-002, BUG-061, BUG-101): make every handler registered anywhere in
+  // this process async-safe, so a rejected handler promise becomes a 500 on that
+  // one request instead of an unhandledRejection that kills the server.
+  installAsyncErrorHandling();
+
   // Initialize object storage service
   const objectStorageService = new ObjectStorageService();
   

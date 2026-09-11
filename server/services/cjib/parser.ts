@@ -105,11 +105,22 @@ function isRecordNode(node: any): boolean {
   return CJIB_FIELDS.reference.some((a) => keys.includes(a)) && CJIB_FIELDS.licensePlate.some((a) => keys.includes(a));
 }
 
-function collectRecordNodes(node: any, out: any[]): void {
-  if (Array.isArray(node)) { node.forEach((n) => collectRecordNodes(n, out)); return; }
+/**
+ * BUG-101: this walk had no depth limit, so a deeply nested XML document
+ * exhausted the call stack. A RangeError there used to reach the process-level
+ * handler and stop the server; a real CJIB export is a handful of levels deep,
+ * so refusing anything past 100 is free.
+ */
+const MAX_XML_DEPTH = 100;
+
+function collectRecordNodes(node: any, out: any[], depth = 0): void {
+  if (depth > MAX_XML_DEPTH) {
+    throw new Error(`XML is nested deeper than ${MAX_XML_DEPTH} levels`);
+  }
+  if (Array.isArray(node)) { node.forEach((n) => collectRecordNodes(n, out, depth + 1)); return; }
   if (!node || typeof node !== "object") return;
   if (isRecordNode(node)) { out.push(node); return; }
-  Object.values(node).forEach((v) => collectRecordNodes(v, out));
+  Object.values(node).forEach((v) => collectRecordNodes(v, out, depth + 1));
 }
 
 function parseXml(text: string): Record<string, string>[] {

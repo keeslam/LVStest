@@ -106,13 +106,28 @@ export function registerPortalAdminRoutes(app: Express, _deps: RouteDeps): void 
   });
 
   // ---- customer settings ---------------------------------------------------------
+  // BUG-061: getOrCreateCustomerSettings() inserts a row with a real FK to
+  // customers, so an unknown :customerId used to raise a Postgres FK violation
+  // that escaped the handler as an unhandled rejection and killed the process.
+  // A 404 is what every other :id-not-found route answers.
+  const customerMustExist = async (customerId: number, res: Response): Promise<boolean> => {
+    const customer = await storage.getCustomer(customerId);
+    if (!customer) {
+      res.status(404).json({ message: "Customer not found" });
+      return false;
+    }
+    return true;
+  };
+
   app.get("/api/portal-admin/customers/:customerId/settings", canView, async (req, res) => {
     const customerId = intParam(req, res, "customerId"); if (customerId === null) return;
+    if (!(await customerMustExist(customerId, res))) return;
     res.json(await portalStorage.getOrCreateCustomerSettings(customerId));
   });
 
   app.patch("/api/portal-admin/customers/:customerId/settings", canManage, async (req, res) => {
     const customerId = intParam(req, res, "customerId"); if (customerId === null) return;
+    if (!(await customerMustExist(customerId, res))) return;
     const parsed = updatePortalCustomerSettingsSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ message: parsed.error.errors[0]?.message ?? "Invalid input" });
     const row = await portalStorage.updateCustomerSettings(customerId, parsed.data, actor(req));
