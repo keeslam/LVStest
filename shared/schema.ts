@@ -1029,6 +1029,16 @@ export const insertExpenseSchema = createInsertSchema(expenses).omit({
   updatedAt: true,
   createdByUser: true,
   updatedByUser: true,
+  // BUG-060: these describe a file the server wrote and are set from
+  // req.file after the upload. Leaving them in the insert schema let a request
+  // body point receiptFilePath at any file in the container
+  // (/proc/self/environ was read this way during the audit).
+  // receiptUrl stays: it is a link the user types in the expense form, not a
+  // path the server ever opens.
+  receiptFile: true,
+  receiptFilePath: true,
+  receiptFileSize: true,
+  receiptContentType: true,
 }).extend({
   amount: z.union([
     z.number(),

@@ -1933,7 +1933,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Lookup vehicle via RDW API
-  app.get("/api/rdw/vehicle/:licensePlate", async (req, res) => {
+  app.get("/api/rdw/vehicle/:licensePlate", requireAuth, hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), async (req, res) => {
     try {
       const licensePlate = req.params.licensePlate;
       const vehicleInfo = await fetchVehicleInfoByLicensePlate(licensePlate);
@@ -7341,7 +7341,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Serve object storage files (for template backgrounds)
-  app.get('/object-storage/*', async (req, res) => {
+  app.get('/object-storage/*', requireAuth, async (req, res) => {
     try {
       const objectPath = req.path.replace('/object-storage', '');
       console.log(`Serving object storage file: ${objectPath}`);

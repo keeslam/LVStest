@@ -140,7 +140,10 @@ export function setupAuth(app: Express) {
   const unlessPortal = (mw: RequestHandler): RequestHandler => (req, res, next) =>
     isPortalPath(req.path) ? next() : mw(req, res, next);
 
-  app.use(unlessPortal(session(sessionSettings)));
+  // Kept as a named value so the Socket.IO handshake can run the very same
+  // middleware to validate a connection (BUG-005).
+  const sessionMiddleware = session(sessionSettings);
+  app.use(unlessPortal(sessionMiddleware));
   app.use(unlessPortal(passport.initialize()));
   app.use(unlessPortal(passport.session()));
 
@@ -472,5 +475,5 @@ export function setupAuth(app: Express) {
   });
 
   // Return the auth middleware
-  return { requireAuth };
+  return { requireAuth, sessionMiddleware };
 }

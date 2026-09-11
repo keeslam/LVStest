@@ -10,7 +10,7 @@ import { realtimeEvents } from "../realtime-events";
 import { hasPermission } from "../middleware/permissions.js";
 import { getUploadsDir } from "../../shared/paths";
 import { validateAfterUpload, sanitizeFilename, createSecureMulterFilter } from "../utils/security/fileUploadSecurity";
-import { getRelativePath } from "../services/document-paths";
+import { getRelativePath, resolveDocumentFilePath } from "../services/document-paths";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
 
@@ -155,7 +155,7 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
   });
   
   // Get expense receipt
-  app.get("/api/expenses/:id/receipt", async (req: Request, res: Response) => {
+  app.get("/api/expenses/:id/receipt", hasPermission(UserPermission.MANAGE_EXPENSES), async (req: Request, res: Response) => {
     try {
       const expense = await storage.getExpense(parseInt(req.params.id));
       if (!expense) {
@@ -166,9 +166,12 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
         return res.status(404).json({ error: "No receipt file found for this expense" });
       }
 
-      // Check if file exists
-      const filePath = path.resolve(expense.receiptFilePath);
-      if (!fs.existsSync(filePath)) {
+      // BUG-060: path.resolve() on a stored string served any absolute path in
+      // the container. Everything now goes through resolveDocumentFilePath(),
+      // which refuses anything outside the uploads directory.
+      const filePath = resolveDocumentFilePath(expense.receiptFilePath);
+      if (!filePath) {
+        console.warn(`Refused receipt path outside the uploads directory (expense ${expense.id}): ${expense.receiptFilePath}`);
         return res.status(404).json({ error: "Receipt file not found on disk" });
       }
 
@@ -272,7 +275,7 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
   });
   
   // Create expense with receipt upload (Dedicated endpoint for file uploads)
-  app.post("/api/expenses/with-receipt", expenseReceiptUpload.single('receiptFile'), async (req, res) => {
+  app.post("/api/expenses/with-receipt", hasPermission(UserPermission.MANAGE_EXPENSES), expenseReceiptUpload.single('receiptFile'), async (req, res) => {
     try {
       console.log("Handling expense with receipt upload");
       console.log("Request body:", req.body);
@@ -338,7 +341,7 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
   });
 
   // Update expense with receipt upload
-  app.patch("/api/expenses/:id", expenseReceiptUpload.single('receiptFile'), async (req, res) => {
+  app.patch("/api/expenses/:id", hasPermission(UserPermission.MANAGE_EXPENSES), expenseReceiptUpload.single('receiptFile'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -402,7 +405,7 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
   });
   
   // Update expense with receipt upload (Dedicated endpoint for file uploads)
-  app.patch("/api/expenses/:id/with-receipt", expenseReceiptUpload.single('receiptFile'), async (req, res) => {
+  app.patch("/api/expenses/:id/with-receipt", hasPermission(UserPermission.MANAGE_EXPENSES), expenseReceiptUpload.single('receiptFile'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {

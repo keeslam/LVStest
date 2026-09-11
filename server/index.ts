@@ -207,7 +207,7 @@ app.use(sanitizeInput);
 // protection (attachCsrfToken + csrfProtection) and registers /api/login,
 // /api/register, and /api/logout — see setupAuth() in auth.ts for why the
 // CSRF middleware has to live inside that same call rather than after it.
-const { requireAuth } = setupAuth(app);
+const { requireAuth, sessionMiddleware } = setupAuth(app);
 
 // Customer portal: its own session cookie, Passport instance and CSRF cookie
 // on /api/portal. Mounted before registerRoutes() so the staff audit
@@ -236,6 +236,24 @@ function setupSocketIO(server: any) {
     },
     pingTimeout: 60000, // Increase ping timeout for stability
     pingInterval: 25000
+  });
+
+  // BUG-005: the handshake used to accept any connection, cookie or not, and
+  // broadcastDataUpdate() then pushed whole customer/vehicle/expense records to
+  // it. Every connection now has to carry a logged-in staff session: the very
+  // same express-session middleware runs over the handshake request, and
+  // passport's user id has to be in that session.
+  io.use((socket, next) => {
+    const req = socket.request as any;
+    sessionMiddleware(req, {} as any, () => {
+      const userId = req.session?.passport?.user;
+      if (!userId) {
+        console.warn(`🚫 Socket.IO handshake refused (no staff session) from ${socket.handshake.address}`);
+        return next(new Error('unauthorized'));
+      }
+      (socket.data as any).userId = userId;
+      next();
+    });
   });
 
   // Set the socket instance for the realtime-events module
@@ -300,34 +318,24 @@ app.get('/health', async (_req, res) => {
     const { getPoolStats } = await import('./db');
     const poolStats = await getPoolStats();
     
+    // BUG-093: no envVars, no userCount. This endpoint is anonymous, so it says
+    // whether the app is up and nothing else about how it is configured.
     res.json({
       status: dbStatus.connected ? 'OK' : 'ERROR',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development',
       database: {
-        ...dbStatus,
+        connected: dbStatus.connected,
         pool: poolStats
-      },
-      envVars: {
-        DATABASE_URL: !!process.env.DATABASE_URL,
-        SESSION_SECRET: !!process.env.SESSION_SECRET,
-        NODE_ENV: process.env.NODE_ENV
       }
     });
   } catch (error) {
+    console.error('Health check failed:', error);
     res.status(500).json({
       status: 'ERROR',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      database: { connected: false, error: 'Connection test failed' },
-      envVars: {
-        DATABASE_URL: !!process.env.DATABASE_URL,
-        SESSION_SECRET: !!process.env.SESSION_SECRET,
-        NODE_ENV: process.env.NODE_ENV
-      }
+      database: { connected: false }
     });
   }
 });
@@ -335,20 +343,15 @@ app.get('/health', async (_req, res) => {
 // Helper function to test database connection
 async function testDatabaseConnection() {
   try {
-    const { storage } = await import('./storage');
-    // Try to get a user count or similar simple operation
-    const users = await storage.getAllUsers();
-    return { 
-      connected: true, 
-      userCount: users.length,
-      message: 'Database connection successful'
-    };
+    // BUG-093: this used to run getAllUsers() — a full table scan on every
+    // monitoring poll, whose row count was then published anonymously. A
+    // trivial round-trip proves the connection just as well.
+    const { pool } = await import('./db');
+    await pool.query('SELECT 1');
+    return { connected: true };
   } catch (error) {
-    return {
-      connected: false,
-      error: error instanceof Error ? error.message : 'Unknown database error',
-      message: 'Database connection failed'
-    };
+    console.error('Database connection test failed:', error);
+    return { connected: false };
   }
 }
 

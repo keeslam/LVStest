@@ -10,7 +10,7 @@
  */
 import express, { type Express } from "express";
 import request from "supertest";
-import { like } from "drizzle-orm";
+import { like, inArray } from "drizzle-orm";
 import { db } from "../../db";
 import { users, auditLogs, loginAttempts } from "../../../shared/schema";
 import { setupAuth, hashPassword } from "../../auth";
@@ -140,7 +140,12 @@ export async function anonAgent(): Promise<TestAgent> {
  * FK order; see BUG-145 for what "clean by one key only" costs.
  */
 export async function cleanupFixtureUsers(): Promise<void> {
+  const rows = await db.select({ id: users.id }).from(users).where(like(users.username, `${FIXTURE_USER_PREFIX}%`));
+  const ids = rows.map((r) => r.id);
   await db.delete(auditLogs).where(like(auditLogs.username, `${FIXTURE_USER_PREFIX}%`));
+  // audit_logs.user_id is a real FK, and a row may carry the id without the
+  // username (AuditLogger.logFromRequest), so clean on both keys.
+  if (ids.length) await db.delete(auditLogs).where(inArray(auditLogs.userId, ids));
   await db.delete(loginAttempts).where(like(loginAttempts.username, `${FIXTURE_USER_PREFIX}%`));
   await db.delete(users).where(like(users.username, `${FIXTURE_USER_PREFIX}%`));
 }

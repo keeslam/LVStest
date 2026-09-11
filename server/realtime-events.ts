@@ -7,17 +7,40 @@ export function setSocketInstance(socketInstance: SocketIOServer) {
   io = socketInstance;
 }
 
+/**
+ * BUG-005: this used to emit the whole record — license plate, chassis number,
+ * customer, cost lines — to every connected socket, and the socket accepted
+ * connections without a cookie. Connections are authenticated in
+ * setupSocketIO() now; the payload is cut down to what the client actually
+ * reads, which is the id it needs to invalidate a query.
+ *
+ * Deviation from the plan's literal `{entityType, action, id}`: use-socket.tsx
+ * also reads `data.vehicleId` (reservations, expenses, documents) to invalidate
+ * the vehicle's queries, and the "portal" entityType carries a toast title and
+ * description that are not a database record at all. Both are preserved; every
+ * other field of every record is dropped.
+ */
+function reducePayload(entityType: string, data: any): any {
+  if (data === undefined || data === null) return undefined;
+  if (entityType === 'portal') return data;
+  if (typeof data !== 'object') return undefined;
+  const reduced: Record<string, unknown> = {};
+  if (data.id !== undefined) reduced.id = data.id;
+  if (data.vehicleId !== undefined) reduced.vehicleId = data.vehicleId;
+  return reduced;
+}
+
 // Broadcast functions for real-time updates
 export function broadcastDataUpdate(entityType: string, action: string, data?: any) {
   if (!io) return;
-  
+
   console.log(`📡 Broadcasting: ${entityType} ${action}`);
-  
-  // Broadcast to all connected clients
+
+  // Broadcast to all connected (authenticated) clients
   io.emit('data-update', {
     entityType,
     action, // 'created', 'updated', 'deleted'
-    data,
+    data: reducePayload(entityType, data),
     timestamp: new Date().toISOString()
   });
 }
