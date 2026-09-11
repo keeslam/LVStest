@@ -8,8 +8,12 @@ import { pool } from "./db";
 import { storage } from "./storage";
 import { hashPassword, comparePasswords } from "./auth";
 import { useSecureCookies } from "./utils/secure-cookies.js";
+import { resolveSessionSecret } from "./auth.js";
 import { createCsrfMiddleware } from "./middleware/security/csrf.js";
-import { checkAccountLockout, recordLoginAttempt, clearFailedAttempts, loginLimiter } from "./middleware/security/rateLimiter.js";
+import {
+  checkAccountLockout, recordLoginAttempt, clearFailedAttempts,
+  portalLoginLimiter, portalForgotLimiter, portalActivateLimiter,
+} from "./middleware/security/rateLimiter.js";
 import { portalStorage, type PortalScope } from "./services/portal-storage";
 import { sendPortalInvite, sendEmailChangeMail, sendNewDeviceMail } from "./services/portal-mail";
 import { getPortalConfig } from "./services/portal-config";
@@ -152,6 +156,24 @@ export function requirePortalRole(role: "admin"): RequestHandler {
   };
 }
 
+/**
+ * BUG-091 - the portal realm stores its sessions in the shared connect-pg-simple
+ * table, with the passport payload in `sess`. Deleting every row that belongs to
+ * this portal user (except the caller's own) is what actually ends their other
+ * sessions: the cookie still exists in those browsers, but the store no longer
+ * has anything to load for it.
+ */
+export async function revokePortalSessionsExcept(portalUserId: number, exceptSessionId?: string): Promise<number> {
+  const result = await pool.query(
+    `delete from session
+       where sess -> 'passport' -> 'user' ->> 'kind' = 'portal'
+         and sess -> 'passport' -> 'user' ->> 'id' = $1
+         and ($2::text is null or sid <> $2)`,
+    [String(portalUserId), exceptSessionId ?? null],
+  );
+  return result.rowCount ?? 0;
+}
+
 const passwordSchema = z.string().min(PORTAL_PASSWORD_MIN, `Password must be at least ${PORTAL_PASSWORD_MIN} characters`);
 
 export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandler } {
@@ -160,7 +182,12 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
 
   const portalSession = session({
     name: "portal.sid",
-    secret: process.env.SESSION_SECRET || "portal-dev-secret",
+    // BUG-083: this used to fall back to a hard-coded development secret,
+    // so a deployment without SESSION_SECRET signed every portal session cookie
+    // with a value that is in this repository. resolveSessionSecret() is the
+    // staff realm's resolver: a configured secret, or a random one with a loud
+    // warning - never a known constant.
+    secret: resolveSessionSecret(),
     resave: false,
     saveUninitialized: false,
     rolling: true,
@@ -230,7 +257,9 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
 
   app.get("/api/portal/csrf-token", (_req, res) => res.json({ token: res.locals.csrfToken }));
 
-  app.post("/api/portal/login", loginLimiter, async (req, res, next) => {
+  // BUG-105: its own limiter instance, so a burst on the portal login cannot
+  // consume the staff login's budget (they used to share one counter).
+  app.post("/api/portal/login", portalLoginLimiter, async (req, res, next) => {
     const parsed = z.object({ email: z.string().email(), password: z.string().min(1) }).safeParse(req.body);
     if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "E-mail and password are required");
     const email = parsed.data.email.trim().toLowerCase();
@@ -365,12 +394,25 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
       return portalError(res, 400, PORTAL_ERROR.INVALID_CREDENTIALS, "Current password is incorrect");
     }
     await portalStorage.updatePortalUser(user.id, { passwordHash: await hashPassword(parsed.data.newPassword), updatedBy: user.email });
+    // BUG-091: a password change has to end every other session of this
+    // account, or the whole point of changing it after a compromise is lost.
+    // The portal realm keeps its sessions in the shared express-session store;
+    // clearing every row that carries this portal user id logs them all out.
+    try {
+      await revokePortalSessionsExcept(user.id, req.sessionID);
+    } catch (revokeError) {
+      console.error("Failed to revoke other portal sessions after a password change:", revokeError);
+    }
     await logPortalActivity(req, "password_changed");
     res.json({ ok: true });
   });
 
   // Always 200: never reveal whether an address exists.
-  app.post("/api/portal/forgot", loginLimiter, async (req, res) => {
+  // BUG-092: the shared limiter carried skipSuccessfulRequests, and this route
+  // answers 200 whatever happens (deliberately, so it cannot be used to find
+  // out which addresses exist) - so every request was "successful" and nothing
+  // was ever counted. Its own instance counts every request.
+  app.post("/api/portal/forgot", portalForgotLimiter, async (req, res) => {
     const parsed = z.object({ email: z.string().email() }).safeParse(req.body);
     if (parsed.success) {
       const user = await portalStorage.getPortalUserByEmail(parsed.data.email);
@@ -381,7 +423,7 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
     res.json({ ok: true });
   });
 
-  app.post("/api/portal/activate", loginLimiter, async (req, res, next) => {
+  app.post("/api/portal/activate", portalActivateLimiter, async (req, res, next) => {
     const parsed = z.object({ token: z.string().regex(/^[0-9a-f]{64}$/), password: passwordSchema }).safeParse(req.body);
     if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, parsed.error.errors[0]?.message ?? "Invalid input");
     const user = await portalStorage.getPortalUserByInviteTokenHash(hashInviteToken(parsed.data.token));

@@ -51,7 +51,14 @@ function verifyCsrfToken(token: string, secret: string): boolean {
       .update(timestamp)
       .digest('hex');
 
-    return hash === expectedHash;
+    // BUG-096: `hash === expectedHash` compares byte by byte and returns on the
+    // first difference, so how long it takes leaks how much of a guess was
+    // right. Both sides are fixed-length hex here, but the comparison is the
+    // thing an attacker measures, so it is constant-time.
+    const suppliedBuf = Buffer.from(hash, 'hex');
+    const expectedBuf = Buffer.from(expectedHash, 'hex');
+    if (suppliedBuf.length !== expectedBuf.length) return false;
+    return crypto.timingSafeEqual(suppliedBuf, expectedBuf);
   } catch (error) {
     return false;
   }

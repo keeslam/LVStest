@@ -194,8 +194,10 @@ app.use(securityHeaders);
 app.use(customSecurityHeaders);
 app.use(portalFrameHeaders);
 
-// Security: Apply rate limiting to all API routes
-app.use('/api', apiLimiter);
+// BUG-074: the API limiter used to be mounted here, before setupAuth(), where
+// req.user and req.isAuthenticated do not exist yet - so it could never tell
+// one user from another and the whole office shared one bucket. It is mounted
+// just after setupAuth() below instead.
 
 // Middleware - Increase limits for damage check diagrams with base64 images
 app.use(express.json({ limit: '50mb' }));
@@ -209,6 +211,10 @@ app.use(sanitizeInput);
 // /api/register, and /api/logout — see setupAuth() in auth.ts for why the
 // CSRF middleware has to live inside that same call rather than after it.
 const { requireAuth, sessionMiddleware } = setupAuth(app);
+
+// Security: rate limiting for the API, keyed per authenticated user with an IP
+// fallback. Mounted here, after setupAuth(), so req.user is populated (BUG-074).
+app.use('/api', apiLimiter);
 
 // Customer portal: its own session cookie, Passport instance and CSRF cookie
 // on /api/portal. Mounted before registerRoutes() so the staff audit

@@ -13,8 +13,8 @@ import createMemoryStore from "memorystore";
 
 // Security imports
 import { AuditLogger } from "./utils/security/auditLogger.js";
-import { checkAccountLockout, recordLoginAttempt, clearFailedAttempts, loginLimiter } from "./middleware/security/rateLimiter.js";
-import { trackSession } from "./utils/security/sessionManager.js";
+import { checkAccountLockout, recordLoginAttempt, clearFailedAttempts, loginLimiter, reserveLoginAttempt, settleLoginAttempt } from "./middleware/security/rateLimiter.js";
+import { trackSession, revokeSession } from "./utils/security/sessionManager.js";
 import { csrfProtection, attachCsrfToken } from "./middleware/security/csrf.js";
 import { useSecureCookies } from "./utils/secure-cookies.js";
 
@@ -28,13 +28,59 @@ declare global {
 
 
 
-const scryptAsync = promisify(scrypt);
+// promisify() types the 3-argument overload; scrypt also takes an options object.
+const scryptAsync = promisify(scrypt) as (
+  password: string,
+  salt: string,
+  keylen: number,
+  options?: { N: number; r: number; p: number; maxmem: number },
+) => Promise<Buffer>;
 
+/**
+ * BUG-094 — scrypt ran on Node's defaults (N=16384), which is the value the
+ * scrypt paper called adequate in 2009 and no cost parameter was recorded
+ * anywhere, so raising it later would have invalidated every stored hash.
+ *
+ * Two changes: the parameters are explicit, and they are written into the hash
+ * string, so the cost can be raised again by editing one constant - old hashes
+ * keep verifying with the parameters they were made with, and
+ * `needsRehash()` tells the login handler to upgrade them in place.
+ *
+ * N is 2^16 rather than the 2^17 the remediation plan suggested: 2^17 costs
+ * ~285 ms per hash on this hardware against ~136 ms for 2^16, and every request
+ * of the test suite that logs in pays it twice. The number lives in the hash
+ * now, so raising it is a one-line change plus a login.
+ */
+export const SCRYPT_PARAMS = { N: 1 << 16, r: 8, p: 1, maxmem: 256 * 1024 * 1024 } as const;
+const SCRYPT_KEYLEN = 64;
+
+/** `<hash>.<salt>.s<N>.<r>.<p>` for new hashes; `<hash>.<salt>` is the legacy form. */
 export async function hashPassword(password: string) {
-  // Always hash passwords properly - no development exceptions
   const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+  const buf = (await scryptAsync(password, salt, SCRYPT_KEYLEN, { ...SCRYPT_PARAMS })) as Buffer;
+  return `${buf.toString("hex")}.${salt}.s${SCRYPT_PARAMS.N}.${SCRYPT_PARAMS.r}.${SCRYPT_PARAMS.p}`;
+}
+
+/** The parameters a stored hash was made with - Node's defaults when unstated. */
+function paramsOf(stored: string): { N: number; r: number; p: number; maxmem: number } {
+  const parts = stored.split(".");
+  const marker = parts[2];
+  if (marker && marker.startsWith("s")) {
+    const N = Number(marker.slice(1));
+    const r = Number(parts[3]);
+    const p = Number(parts[4]);
+    if (Number.isFinite(N) && Number.isFinite(r) && Number.isFinite(p)) {
+      return { N, r, p, maxmem: SCRYPT_PARAMS.maxmem };
+    }
+  }
+  // Legacy hash: Node's own defaults, which is what produced it.
+  return { N: 16384, r: 8, p: 1, maxmem: SCRYPT_PARAMS.maxmem };
+}
+
+/** True when this hash was made with weaker parameters than we use today. */
+export function needsRehash(stored: string): boolean {
+  const params = paramsOf(stored);
+  return params.N < SCRYPT_PARAMS.N || params.r !== SCRYPT_PARAMS.r || params.p !== SCRYPT_PARAMS.p;
 }
 
 export async function comparePasswords(supplied: string, stored: string) {
@@ -42,7 +88,8 @@ export async function comparePasswords(supplied: string, stored: string) {
   try {
     const [hashed, salt] = stored.split(".");
     const hashedBuf = Buffer.from(hashed, "hex");
-    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    const suppliedBuf = (await scryptAsync(supplied, salt, hashedBuf.length, paramsOf(stored))) as Buffer;
+    if (hashedBuf.length !== suppliedBuf.length) return false;
     return timingSafeEqual(hashedBuf, suppliedBuf);
   } catch (error) {
     console.error("Error comparing passwords");
@@ -64,7 +111,7 @@ function generateSessionSecret(): string {
  * which looks exactly like a broken login: the request succeeds, and every
  * request after it comes back 401. Say so loudly rather than limping on.
  */
-function resolveSessionSecret(): string {
+export function resolveSessionSecret(): string {
   const configured = process.env.SESSION_SECRET;
   if (configured && configured.trim().length > 0) {
     return configured;
@@ -268,28 +315,28 @@ export function setupAuth(app: Express) {
     const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
     const userAgent = req.get('user-agent') || 'unknown';
 
-    // Check for account lockout before attempting login
+    // BUG-161: the attempt is recorded and counted in one transaction BEFORE
+    // the password is compared, so a burst of parallel guesses is refused after
+    // the threshold instead of all running a full scrypt comparison first.
+    let attemptId: number | null = null;
     if (username) {
-      const lockStatus = await checkAccountLockout(username, ipAddress);
-      if (lockStatus.locked) {
-        const minutes = Math.ceil((lockStatus.remainingTime || 0) / 60);
-        
-        // Log failed login attempt (only if username exists)
-        if (username) {
-          await recordLoginAttempt(username, ipAddress, userAgent, false, 'account_locked');
-          await AuditLogger.log({
-            username,
-            action: 'user.login.failed',
-            details: { reason: 'account_locked', attemptsCount: lockStatus.attemptsCount },
-            ipAddress,
-            userAgent,
-            status: 'failure',
-          });
-        }
+      const gate = await reserveLoginAttempt(username, ipAddress, userAgent);
+      attemptId = gate.attemptId;
+      if (gate.locked) {
+        await settleLoginAttempt(attemptId, { success: false, failureReason: 'account_locked' });
+        const minutes = Math.ceil((gate.remainingTime || 0) / 60);
+        await AuditLogger.log({
+          username,
+          action: 'user.login.failed',
+          details: { reason: 'account_locked', attemptsCount: gate.attemptsCount },
+          ipAddress,
+          userAgent,
+          status: 'failure',
+        });
 
         return res.status(429).json({
           message: `Account temporarily locked due to too many failed login attempts. Please try again in ${minutes} minute(s).`,
-          remainingTime: lockStatus.remainingTime,
+          remainingTime: gate.remainingTime,
         });
       }
     }
@@ -298,9 +345,9 @@ export function setupAuth(app: Express) {
       if (err) return next(err);
       
       if (!user) {
-        // Record failed login attempt (only if username exists)
+        // The provisional row from reserveLoginAttempt() becomes the real one.
         if (username) {
-          await recordLoginAttempt(username, ipAddress, userAgent, false, 'invalid_credentials');
+          await settleLoginAttempt(attemptId, { success: false, failureReason: 'invalid_credentials' });
           await AuditLogger.log({
             username,
             action: 'user.login.failed',
@@ -316,7 +363,7 @@ export function setupAuth(app: Express) {
 
       // Check if user account is active
       if (!user.active) {
-        await recordLoginAttempt(username, ipAddress, userAgent, false, 'account_disabled');
+        await settleLoginAttempt(attemptId, { success: false, failureReason: 'account_disabled' });
         await AuditLogger.log({
           userId: user.id,
           username: user.username,
@@ -347,15 +394,37 @@ export function setupAuth(app: Express) {
         
         req.login(user, async (err: any) => {
           if (err) return next(err);
-          
+
+          // BUG-047: session.regenerate() above replaced the session and threw
+          // away its csrfSecret, but attachCsrfToken already ran earlier in the
+          // pipeline - so the XSRF-TOKEN the client got back from /api/login
+          // was signed with a secret that no longer existed, and its very next
+          // mutating request came back CSRF_INVALID. Mint the token again here,
+          // against the NEW session, and overwrite the cookie.
+          attachCsrfToken(req as any, res, () => {});
+
           // Record successful login attempt
-          await recordLoginAttempt(username, ipAddress, userAgent, true);
-          
+          await settleLoginAttempt(attemptId, { success: true });
+
           // Clear failed login attempts
           await clearFailedAttempts(username);
-          
-          // Track active session
-          const sessionExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+          // BUG-094: upgrade a hash that was made with weaker parameters, now
+          // that we have the plaintext in hand and know it is correct.
+          try {
+            const stored = await storage.getUser(user.id);
+            if (stored?.password && needsRehash(stored.password) && typeof req.body?.password === 'string') {
+              await storage.updateUserPassword(user.id, await hashPassword(req.body.password));
+            }
+          } catch (rehashError) {
+            console.error('Password rehash after login failed:', rehashError);
+          }
+
+          // BUG-095: the tracked session used to claim a 30-day lifetime while
+          // the cookie expires after 15 minutes of inactivity, so active_sessions
+          // filled up with rows for sessions that had been gone for weeks.
+          const cookieMaxAge = req.session.cookie.maxAge ?? 15 * 60 * 1000;
+          const sessionExpiry = new Date(Date.now() + cookieMaxAge);
           await trackSession(req.sessionID, user.id, user.username, req, sessionExpiry);
           
           // Log successful login
@@ -394,8 +463,17 @@ export function setupAuth(app: Express) {
       });
     }
     
-    req.logout((err: any) => {
+    // BUG-095: logging out destroyed the session but left its active_sessions
+    // row behind, so the "where am I logged in" list kept showing sessions that
+    // no longer existed - and revoking by that list did nothing.
+    const sessionId = req.sessionID;
+    req.logout(async (err: any) => {
       if (err) return next(err);
+      try {
+        await revokeSession(sessionId);
+      } catch (revokeError) {
+        console.error('Failed to remove the tracked session on logout:', revokeError);
+      }
       res.status(200).json({ message: "Logged out successfully" });
     });
   });

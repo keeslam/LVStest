@@ -1,6 +1,7 @@
 import { storage } from "../storage";
 import { users, patchUserSchema } from "../../shared/schema";
 import { parsePartialUpdate } from "../middleware/validateBody";
+import { revokeUserSessions } from "../utils/security/sessionManager.js";
 import { z } from "zod";
 import { insertUserSchema, UserRole, UserPermission } from "../../shared/schema";
 import { hashPassword, comparePasswords } from "../auth";
@@ -425,7 +426,20 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       // Hash and update new password
       const hashedPassword = await hashPassword(newPassword);
       await storage.updateUserPassword(user.id, hashedPassword);
-      
+
+      // BUG-091: a password change left every other session of this account
+      // logged in, so changing it after a compromise changed nothing for the
+      // attacker. Every session but the caller's own is revoked, and its row
+      // is removed from the store so the cookie cannot be loaded again.
+      try {
+        const revoked = await revokeUserSessions(user.id, req.sessionID);
+        if (revoked > 0) {
+          console.log(`[password-change] Revoked ${revoked} other session(s) for user #${user.id}.`);
+        }
+      } catch (revokeError) {
+        console.error("Failed to revoke other sessions after a password change:", revokeError);
+      }
+
       res.json({ success: true, message: "Password successfully updated" });
     } catch (error) {
       console.error("Error updating password:", error);

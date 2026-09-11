@@ -1,4 +1,4 @@
-import { db } from '../../db';
+import { db, pool } from '../../db';
 import { activeSessions } from '../../../shared/schema';
 import { eq, and, lt, gt } from 'drizzle-orm';
 import type { Request } from 'express';
@@ -85,14 +85,32 @@ export async function getUserActiveSessions(userId: number) {
 }
 
 /**
+ * BUG-091 / BUG-095 — deleting the `active_sessions` row only removed this
+ * server's *bookkeeping*; the session itself lives in the connect-pg-simple
+ * `session` table, and until that row is gone the cookie still works. Every
+ * revocation therefore has to clear both.
+ *
+ * Staff sessions serialise `passport.user` as the bare numeric user id
+ * (server/auth.ts), which is what lets us find a user's rows in the store.
+ */
+async function deleteSessionRows(sessionIds: string[]): Promise<void> {
+  if (sessionIds.length === 0) return;
+  try {
+    await pool.query('delete from session where sid = any($1::text[])', [sessionIds]);
+  } catch (error) {
+    // The store table may not exist yet on a first run; the tracking rows are
+    // already gone, so this is worth logging and not worth failing over.
+    console.error('Error deleting session store rows:', error);
+  }
+}
+
+/**
  * Revoke a specific session
  */
 export async function revokeSession(sessionId: string): Promise<boolean> {
   try {
-    const result = await db
-      .delete(activeSessions)
-      .where(eq(activeSessions.sessionId, sessionId));
-    
+    await db.delete(activeSessions).where(eq(activeSessions.sessionId, sessionId));
+    await deleteSessionRows([sessionId]);
     return true;
   } catch (error) {
     console.error('Error revoking session:', error);
@@ -108,30 +126,39 @@ export async function revokeUserSessions(
   exceptSessionId?: string
 ): Promise<number> {
   try {
-    if (exceptSessionId) {
-      // Get all sessions for this user
-      const allSessions = await db
-        .select()
-        .from(activeSessions)
-        .where(eq(activeSessions.userId, userId));
-      
-      // Delete all sessions except the current one
-      let deletedCount = 0;
-      for (const session of allSessions) {
-        if (session.sessionId !== exceptSessionId) {
-          await db
-            .delete(activeSessions)
-            .where(eq(activeSessions.id, session.id));
-          deletedCount++;
-        }
+    const allSessions = await db
+      .select()
+      .from(activeSessions)
+      .where(eq(activeSessions.userId, userId));
+
+    const doomed = allSessions
+      .map((row) => row.sessionId)
+      .filter((sessionId) => sessionId !== exceptSessionId);
+
+    for (const session of allSessions) {
+      if (session.sessionId !== exceptSessionId) {
+        await db.delete(activeSessions).where(eq(activeSessions.id, session.id));
       }
-      
-      return deletedCount;
-    } else {
-      // Delete all sessions for the user
-      await db.delete(activeSessions).where(eq(activeSessions.userId, userId));
-      return 0;
     }
+
+    // BUG-091: and out of the session store itself, so the cookies those
+    // browsers still hold cannot be loaded any more.
+    await deleteSessionRows(doomed);
+
+    // Any store row for this user that was never tracked (a session predating
+    // trackSession, or one whose tracking row was pruned) goes as well.
+    try {
+      await pool.query(
+        `delete from session
+           where sess -> 'passport' ->> 'user' = $1
+             and ($2::text is null or sid <> $2)`,
+        [String(userId), exceptSessionId ?? null],
+      );
+    } catch (error) {
+      console.error('Error clearing untracked session rows:', error);
+    }
+
+    return doomed.length;
   } catch (error) {
     console.error('Error revoking user sessions:', error);
     return 0;
