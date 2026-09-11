@@ -1,6 +1,32 @@
+/**
+ * FIX-H — what is left of this module after `server/services/lifecycle.ts`
+ * took ownership of the two state machines.
+ *
+ * Six of the twelve exports were dead code (`calculateCorrectStatus`,
+ * `getStatusOnPickup`, `getStatusOnReturn`, `getStatusOnMaintenanceStart`,
+ * `getStatusOnMaintenanceEnd`, `getStatusOnReservationCancel`,
+ * `VEHICLE_STATUS_LABELS`, `VEHICLE_STATUS_COLORS`) — `getStatusOnReturn` was
+ * even imported and never called, which is how the audit found the module in
+ * the first place. Each of them carried its *own* answer to "what is this
+ * vehicle's status now", and those answers disagreed.
+ *
+ * What remains is the manual-change gate the vehicle edit form needs, and the
+ * reservation context it reads. The derivation itself lives in
+ * `deriveVehicleAvailability()`; nothing here computes a status.
+ */
 import { Vehicle, Reservation } from "@shared/schema";
+import {
+  assertVehicleAvailabilityStatus,
+  normalizeReservationStatus,
+  CLOSED_RESERVATION_STATUSES,
+  isOpenBlockMaintenanceStatus,
+  isoToday,
+  StateTransitionError,
+  type VehicleAvailability,
+} from "./services/lifecycle";
 
-export type VehicleAvailabilityStatus = 'available' | 'rented' | 'scheduled' | 'needs_fixing' | 'not_for_rental';
+/** Kept under its old name: six modules import this type. */
+export type VehicleAvailabilityStatus = VehicleAvailability;
 
 export interface StatusTransitionResult {
   allowed: boolean;
@@ -22,45 +48,55 @@ export function getVehicleStatusContext(
   vehicle: Vehicle,
   allReservations: Reservation[]
 ): VehicleStatusContext {
-  const today = new Date().toISOString().split('T')[0];
-  
-  const vehicleReservations = allReservations.filter(r => 
-    r.vehicleId === vehicle.id && 
+  const today = isoToday();
+
+  const vehicleReservations = allReservations.filter(r =>
+    r.vehicleId === vehicle.id &&
     !r.deletedAt &&
-    r.status !== 'cancelled' &&
-    r.status !== 'completed' &&
-    r.status !== 'returned'
+    // FIX-H: one definition of "closed", shared with the derivation. This list
+    // used to be spelled out here by hand and drifted from the other four.
+    !CLOSED_RESERVATION_STATUSES.has(normalizeReservationStatus(r.status) ?? '')
   );
-  
-  // Find overdue reservations: picked_up but past end date (customer still has the car!)
+
+  // Overdue: picked_up but past end date (the customer still has the car).
   const overdueReservations = vehicleReservations.filter(r => {
     if (r.type === 'maintenance_block') return false;
-    return r.status === 'picked_up' && r.endDate && r.endDate < today;
+    return normalizeReservationStatus(r.status) === 'picked_up' && r.endDate && r.endDate < today;
   });
-  
-  // Active reservations: currently within date range OR overdue but still picked up
+
   const activeReservations = vehicleReservations.filter(r => {
     if (r.type === 'maintenance_block') return false;
+    const status = normalizeReservationStatus(r.status);
+    // BUG-211: a picked-up rental counts whatever its dates say. The old rule
+    // only looked at "today is inside the period", so a rental picked up weeks
+    // early left the vehicle advertised as free.
+    if (status === 'picked_up') return true;
     const started = r.startDate <= today;
     const notEnded = !r.endDate || r.endDate >= today;
-    const isOverduePickedUp = r.status === 'picked_up' && r.endDate && r.endDate < today;
-    return (started && notEnded) || isOverduePickedUp;
+    return started && notEnded;
   });
-  
-  // Has picked up includes both current and overdue
-  const hasPickedUpReservation = activeReservations.some(r => r.status === 'picked_up');
-  const hasBookedReservation = activeReservations.some(r => r.status === 'booked');
-  
+
+  const hasPickedUpReservation = activeReservations.some(
+    r => normalizeReservationStatus(r.status) === 'picked_up'
+  );
+  // BUG-146: the warning this feeds says "upcoming booked reservations", but it
+  // was computed from *active* ones only — a booking three days out therefore
+  // produced no warning at all, on top of the warning being discarded by the
+  // route. A live booking that has not ended yet counts, whether it has started
+  // or not.
+  const hasBookedReservation = vehicleReservations.some(r => {
+    if (r.type === 'maintenance_block') return false;
+    if (normalizeReservationStatus(r.status) !== 'booked') return false;
+    return !r.endDate || r.endDate >= today;
+  });
+
   const hasMaintenanceBlock = vehicleReservations.some(r => {
     if (r.type !== 'maintenance_block') return false;
     const started = r.startDate <= today;
     const notEnded = !r.endDate || r.endDate >= today;
-    const activeMaintenanceStatus = r.maintenanceStatus === 'scheduled' || 
-                                     r.maintenanceStatus === 'in' || 
-                                     r.maintenanceStatus === 'in_service';
-    return started && notEnded && activeMaintenanceStatus;
+    return started && notEnded && isOpenBlockMaintenanceStatus(r.maintenanceStatus);
   });
-  
+
   return {
     vehicle,
     activeReservations,
@@ -71,249 +107,93 @@ export function getVehicleStatusContext(
   };
 }
 
+/**
+ * The gate on a **manual** status change from the vehicle form.
+ *
+ * BUG-021: there was no allowlist on `newStatus`, so anything that matched
+ * none of the from/to branches — `"banana_not_real"` — fell through to
+ * `{allowed:true}` on the last line and was persisted. The vehicle then
+ * disappeared from every status-driven screen.
+ *
+ * Throws `StateTransitionError` (400) for a value outside the enum; returns a
+ * verdict for everything else, exactly as before.
+ */
 export function validateManualStatusChange(
   currentStatus: VehicleAvailabilityStatus,
   newStatus: VehicleAvailabilityStatus,
   context: VehicleStatusContext
 ): StatusTransitionResult {
-  if (currentStatus === newStatus) {
-    return { allowed: true, newStatus };
+  // The allowlist the audit found missing. Deliberately a throw and not
+  // `{allowed:false}`: every caller already maps this to a 400 with a field.
+  const target = assertVehicleAvailabilityStatus(newStatus);
+  const current = assertVehicleAvailabilityStatus(currentStatus || 'available');
+
+  if (current === target) {
+    return { allowed: true, newStatus: target };
   }
-  
+
   if (context.hasPickedUpReservation) {
-    if (newStatus === 'available') {
+    if (target === 'available') {
       return {
         allowed: false,
         error: `Cannot set vehicle to "available" while it has an active picked-up rental. Please return the vehicle first.`
       };
     }
-    if (newStatus === 'needs_fixing') {
+    if (target === 'needs_fixing') {
       return {
         allowed: true,
-        newStatus,
+        newStatus: target,
         warning: `Vehicle has an active rental. Setting to "needs fixing" will not affect the current rental, but the vehicle will need attention after return.`
       };
     }
-    if (newStatus === 'not_for_rental') {
+    if (target === 'not_for_rental') {
       return {
         allowed: true,
-        newStatus,
+        newStatus: target,
         warning: `Vehicle has an active rental. It will be marked as "not for rental" after the current rental ends.`
       };
     }
   }
-  
+
   if (context.hasMaintenanceBlock) {
-    if (newStatus === 'available') {
+    if (target === 'available') {
       return {
         allowed: false,
         error: `Cannot set vehicle to "available" while it has an active maintenance block. Please close the maintenance first.`
       };
     }
-    if (newStatus === 'not_for_rental') {
+    if (target === 'not_for_rental') {
       return {
         allowed: true,
-        newStatus,
+        newStatus: target,
         warning: `Vehicle has active maintenance. It will be marked as "not for rental" after maintenance is complete.`
       };
     }
   }
-  
-  if (context.hasBookedReservation && (newStatus === 'needs_fixing' || newStatus === 'not_for_rental')) {
+
+  if (context.hasBookedReservation && (target === 'needs_fixing' || target === 'not_for_rental')) {
     return {
       allowed: true,
-      newStatus,
+      newStatus: target,
       warning: `Vehicle has upcoming booked reservations. Changing status may require rescheduling those bookings.`
     };
   }
-  
-  if (newStatus === 'rented' && !context.hasPickedUpReservation) {
+
+  if (target === 'rented' && !context.hasPickedUpReservation) {
     return {
       allowed: false,
       error: `Cannot manually set vehicle to "rented". This status is set automatically when a reservation is picked up.`
     };
   }
-  
-  if (newStatus === 'scheduled' && !context.hasBookedReservation) {
+
+  if (target === 'scheduled' && !context.hasBookedReservation) {
     return {
       allowed: false,
       error: `Cannot manually set vehicle to "scheduled". This status is set automatically when there are upcoming reservations.`
     };
   }
-  
-  return { allowed: true, newStatus };
+
+  return { allowed: true, newStatus: target };
 }
 
-export function calculateCorrectStatus(context: VehicleStatusContext): VehicleAvailabilityStatus {
-  const currentStatus = (context.vehicle.availabilityStatus || 'available') as VehicleAvailabilityStatus;
-  
-  if (currentStatus === 'not_for_rental' || currentStatus === 'needs_fixing') {
-    return currentStatus;
-  }
-  
-  if (context.hasPickedUpReservation) {
-    return 'rented';
-  }
-  
-  if (context.hasMaintenanceBlock) {
-    return 'needs_fixing';
-  }
-  
-  if (context.hasBookedReservation) {
-    return 'scheduled';
-  }
-  
-  return 'available';
-}
-
-export function getStatusOnPickup(
-  currentStatus: VehicleAvailabilityStatus
-): StatusTransitionResult {
-  if (currentStatus === 'not_for_rental') {
-    return {
-      allowed: false,
-      error: `Cannot pickup vehicle that is marked as "not for rental".`
-    };
-  }
-  
-  return {
-    allowed: true,
-    newStatus: 'rented'
-  };
-}
-
-export function getStatusOnReturn(
-  currentStatus: VehicleAvailabilityStatus,
-  context: VehicleStatusContext
-): StatusTransitionResult {
-  if (currentStatus === 'needs_fixing') {
-    return {
-      allowed: true,
-      newStatus: 'needs_fixing',
-      warning: `Vehicle will remain as "needs fixing" after return.`
-    };
-  }
-  
-  if (currentStatus === 'not_for_rental') {
-    return {
-      allowed: true,
-      newStatus: 'not_for_rental',
-      warning: `Vehicle will remain as "not for rental" after return.`
-    };
-  }
-  
-  const otherActiveReservations = context.activeReservations.filter(r => r.status === 'picked_up');
-  if (otherActiveReservations.length > 1) {
-    return {
-      allowed: true,
-      newStatus: 'rented',
-      warning: `Vehicle has other active rentals.`
-    };
-  }
-  
-  if (context.hasBookedReservation) {
-    return {
-      allowed: true,
-      newStatus: 'scheduled'
-    };
-  }
-  
-  return {
-    allowed: true,
-    newStatus: 'available'
-  };
-}
-
-export function getStatusOnMaintenanceStart(
-  currentStatus: VehicleAvailabilityStatus
-): StatusTransitionResult {
-  if (currentStatus === 'rented') {
-    return {
-      allowed: false,
-      error: `Cannot start maintenance on a rented vehicle. Please return the vehicle first or schedule maintenance for after the rental ends.`
-    };
-  }
-  
-  return {
-    allowed: true,
-    newStatus: 'needs_fixing'
-  };
-}
-
-export function getStatusOnMaintenanceEnd(
-  currentStatus: VehicleAvailabilityStatus,
-  context: VehicleStatusContext
-): StatusTransitionResult {
-  if (currentStatus === 'not_for_rental') {
-    return {
-      allowed: true,
-      newStatus: 'not_for_rental'
-    };
-  }
-  
-  if (context.hasPickedUpReservation) {
-    return {
-      allowed: true,
-      newStatus: 'rented'
-    };
-  }
-  
-  if (context.hasBookedReservation) {
-    return {
-      allowed: true,
-      newStatus: 'scheduled'
-    };
-  }
-  
-  return {
-    allowed: true,
-    newStatus: 'available'
-  };
-}
-
-export function getStatusOnReservationCancel(
-  currentStatus: VehicleAvailabilityStatus,
-  context: VehicleStatusContext
-): StatusTransitionResult {
-  if (currentStatus === 'not_for_rental' || currentStatus === 'needs_fixing') {
-    return {
-      allowed: true,
-      newStatus: currentStatus
-    };
-  }
-  
-  if (context.hasPickedUpReservation) {
-    return {
-      allowed: true,
-      newStatus: 'rented'
-    };
-  }
-  
-  if (context.hasBookedReservation) {
-    return {
-      allowed: true,
-      newStatus: 'scheduled'
-    };
-  }
-  
-  return {
-    allowed: true,
-    newStatus: 'available'
-  };
-}
-
-export const VEHICLE_STATUS_LABELS: Record<VehicleAvailabilityStatus, string> = {
-  available: 'Available',
-  rented: 'Rented',
-  scheduled: 'Scheduled',
-  needs_fixing: 'Needs Fixing',
-  not_for_rental: 'Not for Rental'
-};
-
-export const VEHICLE_STATUS_COLORS: Record<VehicleAvailabilityStatus, string> = {
-  available: 'bg-green-500',
-  rented: 'bg-blue-500',
-  scheduled: 'bg-yellow-500',
-  needs_fixing: 'bg-orange-500',
-  not_for_rental: 'bg-gray-500'
-};
+export { StateTransitionError };

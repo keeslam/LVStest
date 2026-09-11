@@ -32,10 +32,19 @@ import {
 } from "../shared/schema";
 import {
   getVehicleStatusContext,
-  getStatusOnPickup,
-  getStatusOnReturn,
   VehicleAvailabilityStatus
 } from "./vehicle-status-helper";
+import {
+  deriveVehicleAvailability,
+  decideHandover,
+  isoToday,
+  assertReservationStatusValue,
+  normalizeReservationStatus,
+  CLOSED_RESERVATION_STATUSES,
+  type AvailabilityReservation,
+  type VehicleAvailability,
+  type HandoverOverride,
+} from "./services/lifecycle";
 import {
   overlapWhere,
   partitionOverlaps,
@@ -255,138 +264,126 @@ export class DatabaseStorage implements IStorage {
       .limit(10);
   }
 
-  // Sync vehicle availability status with active reservations
-  // This function manages automatic status transitions: "available" ↔ "scheduled" ↔ "rented"
-  // It preserves manual statuses like "needs_fixing" and "not_for_rental"
+  /**
+   * FIX-H — the **one** writer of `vehicles.availability_status`.
+   *
+   * Before this, three unrelated pieces of code wrote the column: this sync
+   * (called from inside two GET handlers, BUG-217), `markVehicleForService`,
+   * and pickup/return. They disagreed, so a deliberate `not_for_rental`
+   * vanished after a workshop visit (BUG-109) and a completed rental left the
+   * car on `rented` for ever (BUG-130 — the old priority-3 reset only touched
+   * vehicles with *no* reservation at all, so `rented -> scheduled` was
+   * unreachable).
+   *
+   * The value is derived by `deriveVehicleAvailability()` and written here and
+   * only here. The sweep loads the vehicles and their live reservations once
+   * and issues at most one UPDATE per target status, for the differences only.
+   */
   async syncVehicleAvailabilityWithReservations(): Promise<void> {
-    const today = new Date().toISOString().split('T')[0];
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    const thirtyDaysDate = thirtyDaysFromNow.toISOString().split('T')[0];
-    
-    // Get all vehicles with active reservations (currently rented - covers today)
-    // INCLUDES: reservations within date range OR overdue picked_up reservations (customer still has vehicle)
-    const activeReservations = await db
-      .select({ vehicleId: reservations.vehicleId })
+    const today = isoToday();
+
+    const vehicleRows = await db
+      .select({
+        id: vehicles.id,
+        availabilityStatus: vehicles.availabilityStatus,
+        maintenanceStatus: vehicles.maintenanceStatus,
+      })
+      .from(vehicles);
+    if (vehicleRows.length === 0) return;
+
+    const reservationRows = await db
+      .select({
+        vehicleId: reservations.vehicleId,
+        status: reservations.status,
+        type: reservations.type,
+        startDate: reservations.startDate,
+        endDate: reservations.endDate,
+        maintenanceStatus: reservations.maintenanceStatus,
+      })
       .from(reservations)
-      .where(
-        and(
-          sql`${reservations.status} != 'cancelled'`,
-          sql`${reservations.status} != 'returned'`,
-          sql`${reservations.status} != 'completed'`,
-          sql`${reservations.type} != 'maintenance_block'`, // Exclude maintenance
-          isNull(reservations.deletedAt),
-          sql`${reservations.vehicleId} IS NOT NULL`,
-          or(
-            // Normal active: started and not ended
-            and(
-              sql`${reservations.startDate} <= ${today}`,
-              or(
-                sql`${reservations.endDate} >= ${today}`,
-                isNull(reservations.endDate) // Include open-ended rentals
-              )
-            ),
-            // Overdue: past end date but still picked_up (customer still has the car!)
-            and(
-              sql`${reservations.status} = 'picked_up'`,
-              sql`${reservations.endDate} < ${today}`
-            )
-          )
-        )
-      );
-    
-    // Filter out null vehicle IDs to prevent SQL query issues (e.g., from placeholder reservations)
-    const rentedVehicleIds = new Set(
-      activeReservations
-        .map(r => r.vehicleId)
-        .filter((id): id is number => id !== null && id !== undefined)
-    );
-    
-    // Get all vehicles with upcoming reservations (within 30 days, not yet started)
-    const upcomingReservations = await db
-      .select({ vehicleId: reservations.vehicleId })
+      .where(and(
+        isNull(reservations.deletedAt),
+        sql`${reservations.vehicleId} IS NOT NULL`,
+        sql`${reservations.status} NOT IN ('cancelled','completed','returned')`,
+      ));
+
+    const byVehicle = new Map<number, AvailabilityReservation[]>();
+    for (const row of reservationRows) {
+      if (row.vehicleId == null) continue;
+      const list = byVehicle.get(row.vehicleId);
+      if (list) list.push(row as AvailabilityReservation);
+      else byVehicle.set(row.vehicleId, [row as AvailabilityReservation]);
+    }
+
+    const targets = new Map<VehicleAvailability, number[]>();
+    for (const vehicle of vehicleRows) {
+      const next = deriveVehicleAvailability({
+        currentStatus: vehicle.availabilityStatus,
+        maintenanceStatus: vehicle.maintenanceStatus,
+        reservations: byVehicle.get(vehicle.id) ?? [],
+        today,
+      });
+      if (next === vehicle.availabilityStatus) continue;
+      const bucket = targets.get(next);
+      if (bucket) bucket.push(vehicle.id);
+      else targets.set(next, [vehicle.id]);
+    }
+
+    for (const [status, ids] of Array.from(targets.entries())) {
+      await db.update(vehicles).set({ availabilityStatus: status }).where(inArray(vehicles.id, ids));
+    }
+  }
+
+  /**
+   * FIX-H — recompute one vehicle's availability from the same rule, right
+   * after the mutation that could have changed it. This is what replaces the
+   * sync call that used to sit inside `GET /api/vehicles` (BUG-217): the write
+   * happens where the change happens, not on the hottest read path.
+   *
+   * `clearWorkshopFlag` is passed by the single caller that deliberately ends a
+   * workshop job; without it a manual `needs_fixing` is sticky, which is what
+   * besluiten B-03 asks for.
+   */
+  async recomputeVehicleAvailability(
+    vehicleId: number | null | undefined,
+    options: { executor?: any; clearWorkshopFlag?: boolean } = {},
+  ): Promise<VehicleAvailability | undefined> {
+    if (vehicleId == null) return undefined;
+    const executor = options.executor ?? db;
+
+    const [vehicle] = await executor
+      .select({
+        id: vehicles.id,
+        availabilityStatus: vehicles.availabilityStatus,
+        maintenanceStatus: vehicles.maintenanceStatus,
+      })
+      .from(vehicles)
+      .where(eq(vehicles.id, vehicleId));
+    if (!vehicle) return undefined;
+
+    const rows = await executor
+      .select({
+        status: reservations.status,
+        type: reservations.type,
+        startDate: reservations.startDate,
+        endDate: reservations.endDate,
+        maintenanceStatus: reservations.maintenanceStatus,
+        deletedAt: reservations.deletedAt,
+      })
       .from(reservations)
-      .where(
-        and(
-          sql`${reservations.status} != 'cancelled'`,
-          sql`${reservations.status} != 'returned'`,
-          sql`${reservations.status} != 'completed'`,
-          sql`${reservations.type} != 'maintenance_block'`, // Exclude maintenance
-          isNull(reservations.deletedAt),
-          sql`${reservations.vehicleId} IS NOT NULL`,
-          sql`${reservations.startDate} > ${today}`, // Starts in the future
-          sql`${reservations.startDate} <= ${thirtyDaysDate}` // Within 30 days
-        )
-      );
-    
-    // Filter out null vehicle IDs to prevent SQL query issues
-    const scheduledVehicleIds = new Set(
-      upcomingReservations
-        .map(r => r.vehicleId)
-        .filter((id): id is number => id !== null && id !== undefined)
-    );
-    
-    // Priority 1: Set vehicles to "rented" if they have active reservations
-    // ONLY update "available" or "scheduled" vehicles
-    if (rentedVehicleIds.size > 0) {
-      await db
-        .update(vehicles)
-        .set({ availabilityStatus: 'rented' })
-        .where(
-          and(
-            inArray(vehicles.id, Array.from(rentedVehicleIds)),
-            or(
-              eq(vehicles.availabilityStatus, 'available'),
-              eq(vehicles.availabilityStatus, 'scheduled')
-            )
-          )
-        );
+      .where(and(eq(reservations.vehicleId, vehicleId), isNull(reservations.deletedAt)));
+
+    const next = deriveVehicleAvailability({
+      currentStatus: vehicle.availabilityStatus,
+      maintenanceStatus: vehicle.maintenanceStatus,
+      reservations: rows as AvailabilityReservation[],
+      clearWorkshopFlag: options.clearWorkshopFlag,
+    });
+
+    if (next !== vehicle.availabilityStatus) {
+      await executor.update(vehicles).set({ availabilityStatus: next }).where(eq(vehicles.id, vehicleId));
     }
-    
-    // Priority 2: Set vehicles to "scheduled" if they have upcoming reservations (but not currently rented)
-    // ONLY update "available" vehicles
-    const scheduledNotRented = Array.from(scheduledVehicleIds).filter(id => !rentedVehicleIds.has(id));
-    if (scheduledNotRented.length > 0) {
-      await db
-        .update(vehicles)
-        .set({ availabilityStatus: 'scheduled' })
-        .where(
-          and(
-            inArray(vehicles.id, scheduledNotRented),
-            eq(vehicles.availabilityStatus, 'available')
-          )
-        );
-    }
-    
-    // Priority 3: Reset vehicles back to "available" when they have no active or upcoming reservations
-    // This preserves the business rule: manual statuses are never overwritten
-    const allReservedVehicleIds = new Set([...rentedVehicleIds, ...scheduledVehicleIds]);
-    
-    if (allReservedVehicleIds.size > 0) {
-      await db
-        .update(vehicles)
-        .set({ availabilityStatus: 'available' })
-        .where(
-          and(
-            or(
-              eq(vehicles.availabilityStatus, 'rented'),
-              eq(vehicles.availabilityStatus, 'scheduled')
-            ),
-            notInArray(vehicles.id, Array.from(allReservedVehicleIds))
-          )
-        );
-    } else {
-      // If no vehicles have reservations, reset all vehicles with "rented" or "scheduled" status
-      await db
-        .update(vehicles)
-        .set({ availabilityStatus: 'available' })
-        .where(
-          or(
-            eq(vehicles.availabilityStatus, 'rented'),
-            eq(vehicles.availabilityStatus, 'scheduled')
-          )
-        );
-    }
+    return next;
   }
 
   async getVehicle(id: number): Promise<Vehicle | undefined> {
@@ -1212,7 +1209,22 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
+  /**
+   * FIX-H (BUG-016, BUG-129) - the enum gate every reservation writer passes.
+   *
+   * `PATCH /:id` and `/basic` used to write `status` straight through, so
+   * `"garbage"` reached the column and `GET` served it back; the storage
+   * layer itself wrote `active`/`pending`, values the transition table did
+   * not know, which is what stranded 278 live rows. The value is validated
+   * and canonicalised here, so no writer can get past it.
+   */
+  private gateReservationStatus<T extends Record<string, any>>(data: T): T {
+    if (data == null || !('status' in data) || data.status === undefined || data.status === null) return data;
+    return { ...data, status: assertReservationStatusValue(data.status) };
+  }
+
   async createReservation(reservationData: InsertReservation): Promise<Reservation> {
+    reservationData = this.gateReservationStatus(reservationData);
     // Convert totalPrice to string if it's a number
     const dataToInsert = {
       ...reservationData,
@@ -1292,6 +1304,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateReservation(id: number, reservationData: Partial<InsertReservation>): Promise<Reservation | undefined> {
+    reservationData = this.gateReservationStatus(reservationData);
     // Clean up numeric fields - convert empty strings and "undefined" to null
     const dataToUpdate: any = { ...reservationData };
     
@@ -1597,8 +1610,11 @@ export class DatabaseStorage implements IStorage {
           sql`${reservations.endDate} IS NOT NULL`,
           sql`${reservations.endDate} != ''`,
           sql`${reservations.endDate} < ${cutoffDateStr}`,
-          sql`${reservations.status} != 'completed'`,
-          sql`${reservations.status} != 'cancelled'`
+          // BUG-113 / besluiten B-02: a rental that went through the return
+          // flow is finished. Counting `returned` as "the customer still has
+          // the car" is what made every normal return block its vehicle on
+          // day four, with a hard 409 on the booking form and the portal.
+          sql`${reservations.status} NOT IN ('completed','cancelled','returned')`
         )
       )
       .orderBy(desc(reservations.endDate));
@@ -1724,6 +1740,7 @@ export class DatabaseStorage implements IStorage {
 
   /** The `totalPrice` coercion `createReservation` has always done. */
   private normalizeReservationInsert(reservationData: InsertReservation): any {
+    reservationData = this.gateReservationStatus(reservationData);
     return {
       ...reservationData,
       totalPrice: reservationData.totalPrice !== undefined
@@ -1734,7 +1751,7 @@ export class DatabaseStorage implements IStorage {
 
   /** The empty-string/"undefined" cleanup `updateReservation` has always done. */
   private normalizeReservationUpdate(reservationData: Partial<InsertReservation>): any {
-    const dataToUpdate: any = { ...reservationData };
+    const dataToUpdate: any = { ...this.gateReservationStatus(reservationData) };
 
     if ('totalPrice' in dataToUpdate) {
       const val = dataToUpdate.totalPrice;
@@ -1940,6 +1957,16 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
+  /**
+   * FIX-H (BUG-120, BUG-109, besluiten B-03) - the handover, in one
+   * transaction, with every check evaluated **before** the first write.
+   *
+   * The old shape was: UPDATE the reservation, then look at the vehicle, then
+   * throw. A refused pickup therefore left the rental on `picked_up` with a
+   * burnt contract number and an untouched vehicle, and the retry failed on
+   * the status. Nothing is written now until the vehicle has been judged, and
+   * a refusal rolls the whole thing back.
+   */
   async pickupReservation(
     reservationId: number,
     pickupData: {
@@ -1952,6 +1979,8 @@ export class DatabaseStorage implements IStorage {
       // with an admin/manager account password - see POST /api/reservations/:id/pickup.
       allowMileageDecrease?: boolean;
       mileageDecreaseAuthorizedBy?: string;
+      /** besluiten B-03 - the administrator override for a blocked vehicle. */
+      workshopOverride?: HandoverOverride;
     }
   ): Promise<Reservation | undefined> {
     const reservation = await this.getReservation(reservationId);
@@ -1959,89 +1988,103 @@ export class DatabaseStorage implements IStorage {
       throw new Error('Reservation not found');
     }
 
-    if (reservation.status !== 'booked') {
+    if (normalizeReservationStatus(reservation.status) !== 'booked') {
       throw new Error(`Cannot pickup reservation with status: ${reservation.status}. Only 'booked' reservations can be picked up.`);
     }
 
     if (!reservation.vehicleId) {
       throw new Error('Cannot pickup reservation without a vehicle');
     }
+    const vehicleId = reservation.vehicleId;
+    const pickupDate = pickupData.pickupDate || isoToday();
 
-    const vehicle = await this.getVehicle(reservation.vehicleId);
-    if (!vehicle) {
-      throw new Error('Vehicle not found');
-    }
+    await db.transaction(async (tx) => {
+      const [vehicle] = await tx.select().from(vehicles).where(eq(vehicles.id, vehicleId)).for('update');
+      if (!vehicle) {
+        throw new Error('Vehicle not found');
+      }
 
-    const isMileageDecrease = !!vehicle.currentMileage && pickupData.pickupMileage < vehicle.currentMileage;
+      const isMileageDecrease = !!vehicle.currentMileage && pickupData.pickupMileage < vehicle.currentMileage;
+      if (isMileageDecrease && !pickupData.allowMileageDecrease) {
+        throw new Error(`Pickup mileage (${pickupData.pickupMileage}) cannot be less than vehicle's current mileage (${vehicle.currentMileage})`);
+      }
 
-    if (isMileageDecrease && !pickupData.allowMileageDecrease) {
-      throw new Error(`Pickup mileage (${pickupData.pickupMileage}) cannot be less than vehicle's current mileage (${vehicle.currentMileage})`);
-    }
+      // besluiten B-03 - blocked unless an administrator forces it with a
+      // reason. This throws (409/400) before anything is written; the old code
+      // only looked at `not_for_rental`, and only after the reservation row had
+      // already been updated.
+      const handover = decideHandover(vehicle, pickupData.workshopOverride ?? {});
+      const overrideNote = handover.overrideNote;
+      const noteParts = [
+        reservation.notes || '',
+        pickupData.pickupNotes ? `[PICKUP ${pickupDate}] ${pickupData.pickupNotes}` : '',
+        overrideNote ?? '',
+      ].filter((part) => part && part.length > 0);
 
-    const pickupDate = pickupData.pickupDate || new Date().toISOString().split('T')[0];
+      const [updatedReservation] = await tx
+        .update(reservations)
+        .set({
+          contractNumber: pickupData.contractNumber,
+          pickupMileage: pickupData.pickupMileage,
+          fuelLevelPickup: pickupData.fuelLevelPickup,
+          actualPickupDate: pickupDate,
+          status: 'picked_up',
+          // Kept in lockstep with `status` here - the widget's Actief tab reads
+          // spareVehicleStatus, not status, and this is its only write path for
+          // a real pickup.
+          ...(reservation.type === 'replacement' ? { spareVehicleStatus: 'picked_up' } : {}),
+          notes: noteParts.length > 0 ? noteParts.join('\n').trim() : reservation.notes,
+          updatedAt: new Date()
+        })
+        // FIX-G (BUG-174): the precondition travels with the write. Two pickups
+        // of the same reservation - two tabs, two counters, two contract numbers
+        // - used to both succeed, and the second silently overwrote the first's
+        // contract number. Now the second one updates nothing and is told so.
+        .where(and(eq(reservations.id, reservationId), eq(reservations.status, 'booked')))
+        .returning();
 
-    const [updatedReservation] = await db
-      .update(reservations)
-      .set({
-        contractNumber: pickupData.contractNumber,
-        pickupMileage: pickupData.pickupMileage,
-        fuelLevelPickup: pickupData.fuelLevelPickup,
-        actualPickupDate: pickupDate,
-        status: 'picked_up',
-        // Kept in lockstep with `status` here — the widget's "Beheer vervangende
-        // voertuigen" Actief tab reads spareVehicleStatus, not status, and this is
-        // its only write path for a real pickup (it was previously never set,
-        // which meant that tab could never actually populate from a real handover).
-        ...(reservation.type === 'replacement' ? { spareVehicleStatus: 'picked_up' } : {}),
-        notes: pickupData.pickupNotes
-          ? `${reservation.notes || ''}\n[PICKUP ${pickupDate}] ${pickupData.pickupNotes}`.trim()
-          : reservation.notes,
+      if (!updatedReservation) {
+        throw new HttpError(409, 'This reservation has already been picked up.', { code: 'ALREADY_PICKED_UP' });
+      }
+
+      const vehicleUpdate: any = {
+        currentMileage: pickupData.pickupMileage,
+        currentFuelLevel: pickupData.fuelLevelPickup,
         updatedAt: new Date()
-      })
-      // FIX-G (BUG-174): the precondition travels with the write. Two pickups
-      // of the same reservation — two tabs, two counters, two contract numbers
-      // — used to both succeed, and the second silently overwrote the first's
-      // contract number. Now the second one updates nothing and is told so.
-      .where(and(eq(reservations.id, reservationId), eq(reservations.status, 'booked')))
-      .returning();
+      };
 
-    if (!updatedReservation) {
-      throw new HttpError(409, 'This reservation has already been picked up.', { code: 'ALREADY_PICKED_UP' });
-    }
+      // Same audit trail the vehicle edit form writes - Vehicle Details shows
+      // this to admins as the mileage-decrease banner.
+      if (isMileageDecrease) {
+        vehicleUpdate.mileageDecreasedBy = pickupData.mileageDecreaseAuthorizedBy || 'unknown';
+        vehicleUpdate.mileageDecreasedAt = new Date();
+        vehicleUpdate.previousMileage = vehicle.currentMileage;
+      }
 
-    const vehicleUpdate: any = {
-      currentMileage: pickupData.pickupMileage,
-      currentFuelLevel: pickupData.fuelLevelPickup,
-      updatedAt: new Date()
-    };
+      await tx.update(vehicles).set(vehicleUpdate).where(eq(vehicles.id, vehicleId));
 
-    // Same audit trail the vehicle edit form writes - Vehicle Details shows this
-    // to admins as "verlaagd vanaf X km door Y".
-    if (isMileageDecrease) {
-      vehicleUpdate.mileageDecreasedBy = pickupData.mileageDecreaseAuthorizedBy || 'unknown';
-      vehicleUpdate.mileageDecreasedAt = new Date();
-      vehicleUpdate.previousMileage = vehicle.currentMileage;
-    }
-
-    const currentStatus = (vehicle.availabilityStatus || 'available') as VehicleAvailabilityStatus;
-    const pickupStatusResult = getStatusOnPickup(currentStatus);
-    
-    if (!pickupStatusResult.allowed) {
-      throw new Error(pickupStatusResult.error || 'Cannot pickup vehicle with current status');
-    }
-    
-    if (pickupStatusResult.newStatus && pickupStatusResult.newStatus !== currentStatus) {
-      vehicleUpdate.availabilityStatus = pickupStatusResult.newStatus;
-    }
-
-    await db
-      .update(vehicles)
-      .set(vehicleUpdate)
-      .where(eq(vehicles.id, reservation.vehicleId));
+      // FIX-H - the single writer decides what the status becomes. BUG-211: a
+      // rental picked up before its start date now makes the vehicle `rented`,
+      // where the date-window rule left it advertised as free. B-03: a forced
+      // handover keeps the workshop flag visible.
+      await this.recomputeVehicleAvailability(vehicleId, { executor: tx });
+    });
 
     return this.getReservation(reservationId);
   }
 
+  /**
+   * FIX-H - the return, in one transaction.
+   *
+   * besluiten **B-02**: taking the vehicle back closes the rental. The row goes
+   * straight to `completed`, so the car is bookable again the same second and
+   * the overdue guard can never mistake a normal return for a customer who
+   * still has the car, four days later (BUG-113).
+   *
+   * BUG-019/BUG-128: `endDate` is the *planned* end and is never rewritten; the
+   * actual return day lives in `actualReturnDate`/`completionDate`, which the
+   * row has always had.
+   */
   async returnReservation(
     reservationId: number,
     returnData: {
@@ -2056,63 +2099,63 @@ export class DatabaseStorage implements IStorage {
       throw new Error('Reservation not found');
     }
 
-    if (reservation.status !== 'picked_up') {
+    if (normalizeReservationStatus(reservation.status) !== 'picked_up') {
       throw new Error(`Cannot return reservation with status: ${reservation.status}. Only 'picked_up' reservations can be returned.`);
     }
 
     if (!reservation.vehicleId) {
       throw new Error('Cannot return reservation without a vehicle');
     }
-
-    const vehicle = await this.getVehicle(reservation.vehicleId);
-    if (!vehicle) {
-      throw new Error('Vehicle not found');
-    }
+    const vehicleId = reservation.vehicleId;
 
     if (reservation.pickupMileage && returnData.returnMileage < reservation.pickupMileage) {
       throw new Error(`Return mileage (${returnData.returnMileage}) cannot be less than pickup mileage (${reservation.pickupMileage})`);
     }
 
-    const returnDate = returnData.returnDate || new Date().toISOString().split('T')[0];
+    const returnDate = returnData.returnDate || isoToday();
 
-    const [updatedReservation] = await db
-      .update(reservations)
-      .set({
-        returnMileage: returnData.returnMileage,
-        fuelLevelReturn: returnData.fuelLevelReturn,
-        actualReturnDate: returnDate,
-        status: 'returned',
-        ...(reservation.type === 'replacement' ? { spareVehicleStatus: 'returned' } : {}),
-        endDate: returnDate,
-        completionDate: returnDate,
-        notes: returnData.returnNotes
-          ? `${reservation.notes || ''}\n[RETURN ${returnDate}] ${returnData.returnNotes}`.trim()
-          : reservation.notes,
-        updatedAt: new Date()
-      })
-      .where(eq(reservations.id, reservationId))
-      .returning();
+    await db.transaction(async (tx) => {
+      const [updatedReservation] = await tx
+        .update(reservations)
+        .set({
+          returnMileage: returnData.returnMileage,
+          fuelLevelReturn: returnData.fuelLevelReturn,
+          actualReturnDate: returnDate,
+          // besluiten B-02 - the return closes the rental.
+          status: 'completed',
+          ...(reservation.type === 'replacement' ? { spareVehicleStatus: 'returned' } : {}),
+          // BUG-019: endDate stays the planned end. It used to be overwritten
+          // with the return day, which produced end < start on every early
+          // return and on every backdated one.
+          completionDate: returnDate,
+          notes: returnData.returnNotes
+            ? `${reservation.notes || ''}\n[RETURN ${returnDate}] ${returnData.returnNotes}`.trim()
+            : reservation.notes,
+          updatedAt: new Date()
+        })
+        // FIX-G: the precondition travels with the write, so two returns of one
+        // rental cannot both succeed.
+        .where(and(eq(reservations.id, reservationId), eq(reservations.status, 'picked_up')))
+        .returning();
 
-    const vehicleUpdate: any = {
-      currentMileage: returnData.returnMileage,
-      currentFuelLevel: returnData.fuelLevelReturn,
-      updatedAt: new Date()
-    };
+      if (!updatedReservation) {
+        throw new HttpError(409, 'This reservation has already been returned.', { code: 'ALREADY_RETURNED' });
+      }
 
-    const currentStatus = (vehicle.availabilityStatus || 'available') as VehicleAvailabilityStatus;
-    
-    if (currentStatus === 'needs_fixing' || currentStatus === 'not_for_rental') {
-      console.log(`[Vehicle Status] Vehicle ${vehicle.id} returning with manual status "${currentStatus}" - preserving status`);
-    } else {
-      vehicleUpdate.availabilityStatus = 'available';
-    }
+      await tx
+        .update(vehicles)
+        .set({
+          currentMileage: returnData.returnMileage,
+          currentFuelLevel: returnData.fuelLevelReturn,
+          updatedAt: new Date()
+        })
+        .where(eq(vehicles.id, vehicleId));
 
-    await db
-      .update(vehicles)
-      .set(vehicleUpdate)
-      .where(eq(vehicles.id, reservation.vehicleId));
-    
-    await this.syncVehicleAvailabilityWithReservations();
+      // besluiten B-03 - the workshop flag survives the return: the derivation
+      // reads `maintenance_status` and the sticky manual status, so it cannot be
+      // washed away by an unconditional 'available' the way the old branch did.
+      await this.recomputeVehicleAvailability(vehicleId, { executor: tx });
+    });
 
     return this.getReservation(reservationId);
   }
@@ -3608,7 +3651,10 @@ export class DatabaseStorage implements IStorage {
       customerId: original.customerId,
       startDate,
       endDate: finalEndDate,
-      status: new Date(startDate) <= new Date() ? 'active' : 'pending',
+      // BUG-129: 'active'/'pending' are not statuses the machine knows, so the
+      // four rows written like that could never be picked up, closed or
+      // cancelled. A spare is a booking like any other until it is handed over.
+      status: 'booked',
       type: 'replacement',
       replacementForReservationId: originalReservationId,
       placeholderSpare: false,
@@ -3686,38 +3732,30 @@ export class DatabaseStorage implements IStorage {
       updatedAt: new Date()
     };
 
-    // Update availability status based on maintenance status
-    // Only update if vehicle is not currently rented (preserve rental status)
-    const currentAvailability = currentVehicle.availabilityStatus || 'available';
-
-    if (maintenanceStatus === 'in_service' || maintenanceStatus === 'scheduled') {
-      // Set to needs_fixing only if not currently rented
-      if (currentAvailability !== 'rented') {
-        updateData.availabilityStatus = 'needs_fixing';
-        console.log(`[Vehicle Status] Vehicle ${vehicleId} marked for service - setting to 'needs_fixing'`);
-      } else {
-        console.log(`[Vehicle Status] Vehicle ${vehicleId} marked for service but currently rented - preserving 'rented' status`);
-      }
-    } else if (maintenanceStatus === 'ok' || maintenanceStatus === 'completed') {
-      // Restore to available only if currently needs_fixing
-      if (currentAvailability === 'needs_fixing') {
-        updateData.availabilityStatus = 'available';
-        console.log(`[Vehicle Status] Vehicle ${vehicleId} service completed - setting to 'available'`);
-      }
-    }
-
+    // FIX-H - this used to be the *second* writer of availability_status, with
+    // its own rules ('needs_fixing' unless rented, 'available' when the job
+    // closes). Both of those disagreed with the sync, which is how a manual
+    // `not_for_rental` ended up washed away (BUG-109). The workshop flag is
+    // written here; what the availability then *is* is decided in one place.
     const [updatedVehicle] = await dbExecutor
       .update(vehicles)
       .set(updateData)
       .where(eq(vehicles.id, vehicleId))
       .returning();
 
-    if (dbExecutor === db) {
-      // Sync vehicle availability after maintenance status change
-      await this.syncVehicleAvailabilityWithReservations();
-    }
+    // Closing the job is the one moment a sticky manual `needs_fixing` may be
+    // cleared - besluiten B-03 makes it survive everything else.
+    const closingJob = maintenanceStatus === 'ok' || maintenanceStatus === 'completed';
+    await this.recomputeVehicleAvailability(vehicleId, {
+      executor: dbExecutor,
+      clearWorkshopFlag: closingJob,
+    });
 
-    return updatedVehicle || undefined;
+    if (updatedVehicle) {
+      const [fresh] = await dbExecutor.select().from(vehicles).where(eq(vehicles.id, vehicleId));
+      return fresh || updatedVehicle;
+    }
+    return undefined;
   }
 
   async createMaintenanceBlock(vehicleId: number, startDate: string, endDate?: string, customerId?: number | null): Promise<Reservation> {
@@ -3726,7 +3764,10 @@ export class DatabaseStorage implements IStorage {
       customerId: customerId ?? null,
       startDate,
       endDate: endDate || null,
-      status: 'active',
+      // BUG-129: this wrote 'active', a value no transition in the table starts
+      // from, so 265 blocks could never be closed or cancelled through any UI
+      // action and kept their vehicles on `rented`.
+      status: 'booked',
       type: 'maintenance_block',
       // Match the fields the maintenance scheduler sets so these blocks show
       // and behave the same on the maintenance calendar (its filters and

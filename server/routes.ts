@@ -64,6 +64,16 @@ import {
   validateManualStatusChange, 
   VehicleAvailabilityStatus 
 } from "./vehicle-status-helper";
+import {
+  assertReservationTransition,
+  assertReservationStatusValue,
+  assertVehicleMaintenanceStatus,
+  normalizeReservationStatus,
+  decideHandover,
+  StateTransitionError,
+  WorkshopBlockedError,
+  type HandoverOverride,
+} from "./services/lifecycle";
 import { calculateDutchHolidays, mergeHolidaysWithOverrides } from "../shared/holidays";
 import { geocodeAddress, haversineDistanceKm, nearestNeighborOrder, getRoadRouteDistances } from "./geocoding";
 import { isDamageCheckDocument } from "../shared/document-types";
@@ -370,6 +380,22 @@ export async function registerRoutes(app: Express): Promise<void> {
   registerFineRoutes(app, routeDeps);
   registerPortalRequestRoutes(app, routeDeps);
   
+  /**
+   * besluiten **B-03** — an administrator may force a handover of a vehicle
+   * that is in the workshop, with a reason. Reads the two body fields the
+   * refusal advertises (`overrideFields`) and the caller's role; the decision
+   * itself is `decideHandover()`, so `/pickup` and `/status` cannot drift.
+   */
+  function workshopOverrideFrom(req: Request): HandoverOverride {
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    return {
+      force: body.forceWorkshopOverride === true || body.forceWorkshopOverride === 'true',
+      isAdmin: (req.user as any)?.role === UserRole.ADMIN,
+      reason: typeof body.forceWorkshopReason === 'string' ? body.forceWorkshopReason : null,
+      username: (req.user as any)?.username ?? null,
+    };
+  }
+
   // ==================== VEHICLE ROUTES ====================
   // Get available vehicles (optionally for a specific date range)
   app.get("/api/vehicles/available", hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), async (req, res) => {
@@ -523,9 +549,11 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Get vehicle availability status breakdown
   app.get("/api/vehicles/status/breakdown", hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), async (req, res) => {
     try {
-      // Sync availability status with reservations first
-      await storage.syncVehicleAvailabilityWithReservations();
-      
+      // BUG-217: this used to call syncVehicleAvailabilityWithReservations()
+      // first — 2 SELECTs and up to 3 UPDATEs over hundreds of rows, on a read.
+      // The status is now written where it changes (every reservation mutation,
+      // the workshop toggle, pickup/return and the nightly scheduler), so the
+      // read is a read.
       const vehicles = await storage.getAllVehicles();
       
       // Count vehicles by status
@@ -560,9 +588,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
       
-      // Sync availability status with reservations before fetching
-      await storage.syncVehicleAvailabilityWithReservations();
-      
+      // BUG-217: the status sync used to run here, on the single hottest read
+      // path in the app (25 useQuery call sites), writing up to 3 UPDATEs per
+      // list load. Reading the fleet no longer writes to it.
       const searchQuery = req.query.search as string | undefined;
       const vehicles = await storage.getAllVehicles(searchQuery);
       res.json(vehicles);
@@ -1300,8 +1328,12 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
       }
       
-      // Validate status change if availability status is being updated
-      if (sanitizedData.availabilityStatus && 
+      // Validate status change if availability status is being updated.
+      // BUG-021: `validateManualStatusChange` now refuses anything outside the
+      // five-value enum instead of falling through to `{allowed:true}` — this
+      // is where "banana_not_real" used to get in.
+      let statusWarning: string | undefined;
+      if (sanitizedData.availabilityStatus !== undefined &&
           sanitizedData.availabilityStatus !== existingVehicle.availabilityStatus) {
         const currentStatus = (existingVehicle.availabilityStatus || 'available') as VehicleAvailabilityStatus;
         const newStatus = sanitizedData.availabilityStatus as VehicleAvailabilityStatus;
@@ -1319,9 +1351,21 @@ export async function registerRoutes(app: Express): Promise<void> {
           });
         }
         
-        // Include warning in response if present
-        if (validation.warning) {
-          console.log(`[Vehicle Status] Warning for vehicle ${id}: ${validation.warning}`);
+        // BUG-146: the state machine exists precisely to warn staff when they
+        // take a booked or rented vehicle out of service. The warning was built
+        // and then thrown away in a console.log; nobody ever saw it.
+        statusWarning = validation.warning;
+
+        // FIX-H — one source of truth for "is this car in the workshop". A
+        // manual needs_fixing now raises the workshop flag, and a manual
+        // 'available' lowers it, so vehicles.maintenance_status and
+        // vehicles.availability_status can no longer contradict each other
+        // (BUG-109: `available` sitting next to `in_service`).
+        if (newStatus === 'needs_fixing' && existingVehicle.maintenanceStatus === 'ok') {
+          vehicleData.maintenanceStatus = 'needs_service';
+        } else if (newStatus === 'available' && existingVehicle.maintenanceStatus !== 'ok') {
+          vehicleData.maintenanceStatus = 'ok';
+          vehicleData.maintenanceNote = null;
         }
       }
       
@@ -1361,7 +1405,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Broadcast real-time update to all connected clients
       realtimeEvents.vehicles.updated(vehicle);
       
-      res.json(vehicle);
+      // BUG-146: the warning travels with the response so the vehicle form can
+      // show it. The body is otherwise byte-identical to what it always was.
+      res.json(statusWarning ? { ...vehicle, warning: statusWarning } : vehicle);
     } catch (error) {
       // BUG-148: a duplicate barcode used to come back as the raw constraint
       // text 'duplicate key value violates unique constraint vehicles_barcode_unique'.
@@ -1381,10 +1427,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(400).json({ message: "Invalid vehicle ID" });
       }
 
-      const { status, note } = req.body;
-      if (!["ok", "needs_service", "in_service"].includes(status)) {
-        return res.status(400).json({ message: "Invalid status. Must be 'ok', 'needs_service', or 'in_service'" });
-      }
+      // FIX-H — the same allowlist the rest of the app uses, in one place.
+      const { status: rawStatus, note } = req.body;
+      const status = assertVehicleMaintenanceStatus(rawStatus);
 
       const existingVehicle = await storage.getVehicle(id);
       if (!existingVehicle) {
@@ -1401,10 +1446,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       res.json(vehicle);
     } catch (error) {
-      console.error("Error updating vehicle maintenance status:", error);
-      res.status(500).json({
-        message: "Failed to update vehicle maintenance status",
-      });
+      sendRouteError(res, error, "Failed to update vehicle maintenance status");
     }
   });
 
@@ -3181,6 +3223,14 @@ export async function registerRoutes(app: Express): Promise<void> {
         message: "Invalid reservation data",
       });
 
+      // FIX-H (BUG-016): `/basic` ran the shape validation and then wrote
+      // `status` straight through — no enum check, no transition check — so a
+      // dialog could jump `booked -> completed` in one step, or persist
+      // literal "garbage". Same gate as `/status` now.
+      if ('status' in reservationData) {
+        reservationData.status = assertReservationTransition(existingBasic.status, reservationData.status);
+      }
+
       // BUG-017: same blacklist check as the create path and as PATCH /:id.
       if (await blacklistedAfterPatch(reservationData, existingBasic)) {
         return res.status(409).json(BLACKLIST_CONFLICT);
@@ -3339,12 +3389,11 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(400).json({ message: "Invalid reservation ID" });
       }
       
-      // Validate that status is a string and is one of the expected values
+      // FIX-H — the enum and the transition table are the state machine's, not
+      // this handler's. The inline allow-list used to live here and nowhere
+      // else, which is why the other four writers had no rules at all.
       const { status } = req.body;
-      if (!status || typeof status !== 'string' || 
-          !['booked', 'picked_up', 'returned', 'completed', 'cancelled'].includes(status.toLowerCase())) {
-        return res.status(400).json({ message: "Invalid status value" });
-      }
+      assertReservationStatusValue(status);
       
       // Get the current reservation to check for vehicle info
       const existingReservation = await storage.getReservation(id);
@@ -3353,26 +3402,19 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Reservation not found" });
       }
       
-      // Validate status transition (skip for reversion flows handled below)
       const currentStatus = existingReservation.status;
-      const newStatus = status.toLowerCase();
-      if (!isValidReservationTransition(currentStatus, newStatus)) {
-        // Allow certain reversion flows that are explicitly handled
-        const isAllowedReversion = 
-          (currentStatus === 'picked_up' && newStatus === 'booked') ||
-          (currentStatus === 'returned' && newStatus === 'picked_up') ||
-          (currentStatus === 'completed' && ['picked_up', 'booked'].includes(newStatus));
-        
-        if (!isAllowedReversion) {
-          return res.status(400).json({ 
-            message: `Invalid status transition from '${currentStatus}' to '${newStatus}'`,
-            details: {
-              currentStatus,
-              requestedStatus: newStatus,
-              hint: "Check valid transitions: booked → picked_up → completed"
-            }
-          });
-        }
+      // `allowReversion` keeps the documented undo steps staff rely on
+      // (picked_up -> booked, completed -> picked_up, …) working on this one
+      // endpoint, exactly as before.
+      const newStatus = assertReservationTransition(currentStatus, status, { allowReversion: true });
+
+      // besluiten B-03 (BUG-109 step 5) — `/status` reached `picked_up` with no
+      // vehicle check whatsoever, so it walked straight past the `not_for_rental`
+      // guard that `/pickup` did apply, and past the workshop flag that neither
+      // applied. Same gate, same override, on both paths.
+      if (newStatus === 'picked_up' && normalizeReservationStatus(currentStatus) !== 'picked_up' && existingReservation.vehicleId) {
+        const vehicleForHandover = await storage.getVehicle(existingReservation.vehicleId);
+        decideHandover(vehicleForHandover, workshopOverrideFrom(req));
       }
       
       // If status is "completed", check mileage validation
@@ -3441,29 +3483,33 @@ export async function registerRoutes(app: Express): Promise<void> {
         dataWithTracking.contractNumber = null;
       }
       
-      // When reverting from "returned" to "picked_up", clear return data
-      if (existingReservation.status === "returned" && status === "picked_up") {
-        console.log('🔄 Reverting from returned to picked_up - clearing return data');
+      // When reverting from "returned" to "picked_up", clear return data.
+      // BUG-128b: this also set `endDate = null`, which threw away the planned
+      // end and turned the rental open-ended — conflicting with every future
+      // booking on that vehicle. The planned end is not return data.
+      if (normalizeReservationStatus(existingReservation.status) === "returned" && newStatus === "picked_up") {
         dataWithTracking.actualReturnDate = null;
         dataWithTracking.returnMileage = null;
         dataWithTracking.fuelLevelReturn = null;
         dataWithTracking.fuelCost = null;
         dataWithTracking.fuelCardNumber = null;
         dataWithTracking.fuelNotes = null;
-        dataWithTracking.endDate = null;
       }
       
       // When reverting from "completed" to any other status, clear completion data
-      if (existingReservation.status === "completed" && status !== "completed") {
-        console.log('🔄 Reverting from completed status - clearing completion data');
+      if (normalizeReservationStatus(existingReservation.status) === "completed" && newStatus !== "completed") {
         dataWithTracking.completionDate = null;
-        dataWithTracking.endDate = null;
       }
       
-      // When marking as completed, set endDate to today (actual completion date)
-      if (status === "completed") {
-        // Set completion date to today
-        dataWithTracking.endDate = new Date().toISOString().split('T')[0];
+      // BUG-019 — marking a reservation completed used to overwrite `endDate`
+      // with today, so a rental ending 2026-10-05 and closed today came out as
+      // `end_date` < `start_date`: negative rental periods in every report and a
+      // date range no widget can render. The actual close date belongs in
+      // `completionDate`, which the row has always had.
+      if (newStatus === "completed") {
+        dataWithTracking.completionDate = existingReservation.completionDate
+          ?? existingReservation.actualReturnDate
+          ?? new Date().toISOString().split('T')[0];
       }
       
       // Add return mileage when completing reservation
@@ -3517,8 +3563,11 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Reservation not found" });
       }
       
-      // Sync vehicle availability status after status update
-      await storage.syncVehicleAvailabilityWithReservations();
+      // FIX-H (BUG-130) — recompute *this* vehicle from the one rule. The old
+      // code leaned on the fleet-wide sync, whose reset branch only touched
+      // vehicles with no reservation at all, so a car with a booking 10 days out
+      // stayed `rented` for ever after its rental was completed.
+      await storage.recomputeVehicleAvailability(reservation.vehicleId);
       
       // Fetch related data to return enriched reservation
       const vehicle = reservation.vehicleId ? await storage.getVehicle(reservation.vehicleId) : null;
@@ -3538,10 +3587,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       return res.status(200).json(enrichedReservation);
     } catch (error) {
-      console.error('Error updating reservation status:', error);
-      res.status(500).json({ 
-        message: "Failed to update reservation status", 
-      });
+      // FIX-H: a refused transition is a 400 naming the states, a blocked
+      // handover a 409 naming the override — never a bare 500.
+      sendRouteError(res, error, "Failed to update reservation status");
     }
   });
 
@@ -3570,6 +3618,12 @@ export async function registerRoutes(app: Express): Promise<void> {
         message: "Invalid reservation data",
       });
 
+      // FIX-H (BUG-016): the generic PATCH deliberately bypassed
+      // `insertReservationSchema` ("bypass full schema validation and just use
+      // the raw data"), so it was the one writer that could put any string at
+      // all into `status`. It is now gated like every other path; the existing
+      // row is read a few lines below, so the check happens there.
+
       // If contractNumber is being set, verify it's not in use by another reservation
       if (reservationData.contractNumber) {
         reservationData.contractNumber = String(reservationData.contractNumber).trim();
@@ -3593,6 +3647,14 @@ export async function registerRoutes(app: Express): Promise<void> {
       const existingReservationForDiff = await storage.getReservation(id);
       if (!existingReservationForDiff) {
         return res.status(404).json({ message: "Reservation not found" });
+      }
+
+      // FIX-H (BUG-016) — the enum and the transition table, on this path too.
+      if ('status' in reservationData) {
+        reservationData.status = assertReservationTransition(
+          existingReservationForDiff.status,
+          reservationData.status,
+        );
       }
 
       // BUG-017: the blacklist is checked on create and, until now, on neither
@@ -4072,6 +4134,18 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Reservation not found" });
       }
 
+      // BUG-036: `spareVehicleStatus` is a concept of replacement vehicles.
+      // The route validated the value and the transition but never the row, so
+      // an ordinary customer rental could be stamped 'ready' and every screen
+      // that reads the column for a handover state showed nonsense.
+      if (existingReservation.type !== 'replacement') {
+        return res.status(400).json({
+          message: "Spare vehicle status can only be set on a replacement reservation.",
+          field: "spareVehicleStatus",
+          details: { reservationType: existingReservation.type },
+        });
+      }
+
       // Validate spare vehicle status transition
       const currentSpareStatus = existingReservation.spareVehicleStatus;
       if (!isValidSpareTransition(currentSpareStatus, spareVehicleStatus)) {
@@ -4199,7 +4273,10 @@ export async function registerRoutes(app: Express): Promise<void> {
         pickupDate,
         pickupNotes,
         allowMileageDecrease: !!mileageDecreaseAuthorizedBy,
-        mileageDecreaseAuthorizedBy
+        mileageDecreaseAuthorizedBy,
+        // besluiten B-03 — the administrator override for a vehicle that is in
+        // the workshop or marked not for rental.
+        workshopOverride: workshopOverrideFrom(req),
       });
 
       if (!updatedReservation) {
@@ -4296,6 +4373,11 @@ export async function registerRoutes(app: Express): Promise<void> {
         contractDocument
       });
     } catch (error) {
+      // FIX-H (besluiten B-03): the workshop refusal and the override rules
+      // answer with their own status and code, before the legacy string matching.
+      if (error instanceof WorkshopBlockedError || error instanceof StateTransitionError) {
+        return res.status(error.status).json(error.toBody());
+      }
       // FIX-G (BUG-174): the loser of two parallel pickups gets a 409 with a
       // code, not a 400 built by string-matching an error message.
       if (error instanceof HttpError) {
@@ -4369,15 +4451,11 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Reservation not found" });
       }
 
-      // Update vehicle availability to "available" after return
-      if (updatedReservation.vehicleId) {
-        await storage.updateVehicle(updatedReservation.vehicleId, {
-          availabilityStatus: 'available',
-          currentMileage: mileage,
-          currentFuelLevel: fuelLevelReturn
-        });
-        console.log(`✅ Vehicle ${updatedReservation.vehicleId} set to available after return`);
-      }
+      // FIX-H / besluiten B-03 — this unconditional `availabilityStatus:
+      // 'available'` was the third writer of the column, and the one that
+      // silently wiped a deliberate `needs_fixing` on every return (BUG-109).
+      // `returnReservation` has already written the mileage and the fuel level
+      // and recomputed the status from the one rule, inside its transaction.
 
       let damageCheckDocument = null;
       try {

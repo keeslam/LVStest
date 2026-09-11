@@ -25,6 +25,7 @@ import type { Response } from "express";
 import { z } from "zod";
 import { BodyValidationError } from "../middleware/validateBody";
 import { BookingConflictError } from "../services/bookability";
+import { StateTransitionError, WorkshopBlockedError } from "../services/lifecycle";
 import { describeDbError, dbErrorBody } from "./db-errors";
 
 /** A route-thrown error that already knows its status and safe message. */
@@ -66,6 +67,17 @@ export function sendRouteError(res: Response, error: unknown, fallbackMessage: s
   // vehicle itself is gone), with the conflicting rows the booking screens
   // already know how to show, and never a 500.
   if (error instanceof BookingConflictError) {
+    res.status(error.status).json(error.toBody());
+    return error.status;
+  }
+  // FIX-H — a write the state machine refused: an unknown enum value or an
+  // illegal jump (400), or a handover blocked by the workshop (409, besluiten
+  // B-03). Both used to surface as a 200 that persisted nonsense, or a 500.
+  if (error instanceof StateTransitionError) {
+    res.status(error.status).json(error.toBody());
+    return error.status;
+  }
+  if (error instanceof WorkshopBlockedError) {
     res.status(error.status).json(error.toBody());
     return error.status;
   }
