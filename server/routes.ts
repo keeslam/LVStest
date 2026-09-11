@@ -2313,6 +2313,30 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Delete customer
+  /**
+   * besluiten **B-08** — the impact list the delete dialog shows first. The
+   * vehicle side has had this since before the audit; the customer side had
+   * nothing, which is how BUG-007 (a 204 and a `booked` reservation pointing
+   * at a customer that no longer exists) happened.
+   */
+  app.get("/api/customers/:id/delete-impact", hasPermission(UserPermission.MANAGE_CUSTOMERS), async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid id" });
+    const impact = await storage.getCustomerDeleteImpact?.(id);
+    if (!impact) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+    res.json({
+      customer: { id: impact.customer.id, name: impact.customer.name, companyName: impact.customer.companyName },
+      counts: impact.counts,
+      blocked: impact.blockingReservations.length > 0,
+      blockingReservations: impact.blockingReservations.map((r) => ({
+        id: r.id, vehicleId: r.vehicleId, startDate: r.startDate, endDate: r.endDate, status: r.status,
+      })),
+      restorable: true,
+    });
+  });
+
   app.delete("/api/customers/:id", hasPermission(UserPermission.MANAGE_CUSTOMERS), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -2320,9 +2344,22 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(400).json({ message: "Invalid customer ID" });
       }
 
-      const success = await storage.deleteCustomer(id);
-      
-      if (!success) {
+      // besluiten B-08 — recycle bin plus a block while a current or future
+      // rental exists. BUG-007 (CRITICAL): this was a bare hard delete with no
+      // impact check and no snapshot.
+      const user = req.user as any;
+      const result = await storage.deleteCustomer(id, { username: user?.username ?? null, userId: user?.id ?? null });
+
+      if (!result.deleted && result.reason === "has_live_reservations") {
+        return res.status(409).json({
+          message: "Deze klant heeft een lopende of toekomstige reservering en kan niet worden verwijderd.",
+          code: "CUSTOMER_HAS_LIVE_RESERVATIONS",
+          blockingReservations: (result.blockingReservations ?? []).map((r) => ({
+            id: r.id, vehicleId: r.vehicleId, startDate: r.startDate, endDate: r.endDate, status: r.status,
+          })),
+        });
+      }
+      if (!result.deleted) {
         return res.status(404).json({ message: "Customer not found" });
       }
       
@@ -3432,6 +3469,25 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  /**
+   * besluiten **B-04** — what hangs off this reservation, so the cancel dialog
+   * can ask per item whether it goes too (the dialog itself is OPT-028,
+   * phase 34). Cancelling used to touch none of it (BUG-112).
+   */
+  app.get("/api/reservations/:id/cancel-impact", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid id" });
+    const reservation = await storage.getReservation(id);
+    if (!reservation) return res.status(404).json({ message: "Reservation not found" });
+    const impact = await storage.getReservationCancelImpact(id);
+    res.json({
+      transports: impact.transports.map((t) => ({ id: t.id, scheduledDate: t.scheduledDate, status: t.status, transportType: t.transportType })),
+      spares: impact.spares.map((r) => ({ id: r.id, vehicleId: r.vehicleId, startDate: r.startDate, endDate: r.endDate, status: r.status })),
+      placeholders: impact.placeholders.map((r) => ({ id: r.id, startDate: r.startDate, endDate: r.endDate, status: r.status })),
+      drivers: impact.drivers.map((d) => ({ id: d.id, driverId: d.driverId, assignedFrom: d.assignedFrom })),
+    });
+  });
+
   // Update reservation status only (special endpoint for status changes)
   app.patch("/api/reservations/:id/status", hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
     try {
@@ -3614,6 +3670,30 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Reservation not found" });
       }
       
+      // besluiten B-04 (BUG-112) — cancelling closes what the caller asked to
+      // close, and nothing else. The impact travels back in the response so the
+      // dialog can ask and re-submit; a silent sweep is exactly what the owner
+      // decided against.
+      let cancelCascade: Record<string, unknown> | undefined;
+      if (newStatus === "cancelled") {
+        const requested = (req.body?.cascade ?? {}) as Record<string, unknown>;
+        const result = await storage.applyReservationCancelCascade(id, {
+          transports: requested.transports === true,
+          spares: requested.spares === true,
+          placeholders: requested.placeholders === true,
+          drivers: requested.drivers === true,
+        }, { username: (req.user as any)?.username ?? null });
+        cancelCascade = {
+          applied: result.applied,
+          remaining: {
+            transports: result.impact.transports.length - (result.applied.transports ?? 0),
+            spares: result.impact.spares.length - (result.applied.spares ?? 0),
+            placeholders: result.impact.placeholders.length - (result.applied.placeholders ?? 0),
+            drivers: result.impact.drivers.length - (result.applied.drivers ?? 0),
+          },
+        };
+      }
+
       // FIX-H (BUG-130) — recompute *this* vehicle from the one rule. The old
       // code leaned on the fleet-wide sync, whose reset branch only touched
       // vehicles with no reservation at all, so a car with a booking 10 days out
@@ -3636,7 +3716,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Broadcast real-time update to all connected clients
       realtimeEvents.reservations.updated(reservation);
       
-      return res.status(200).json(enrichedReservation);
+      return res.status(200).json(cancelCascade ? { ...enrichedReservation, cancelCascade } : enrichedReservation);
     } catch (error) {
       // FIX-H: a refused transition is a 400 naming the states, a blocked
       // handover a 409 naming the override — never a bare 500.
@@ -4937,9 +5017,18 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
       }
       
-      // Delete the main reservation
-      const updatedReservation = await storage.updateReservation(id, softDeleteData);
-      if (updatedReservation) {
+      // FIX-X (BUG-090, BUG-055) — one conditional write: the precondition
+      // travels with it, so two parallel deletes give one 200 and one 410
+      // instead of a 500 echoing `error.message`. It also closes the open
+      // driver assignment and the delivery transport in the same transaction.
+      const updatedReservation = await storage.softDeleteReservation(id, {
+        username: user ? user.username : null,
+        userId: user ? user.id : null,
+      });
+      if (!updatedReservation) {
+        return res.status(410).json({ message: "Reservation already deleted" });
+      }
+      {
         if (reservation.type === 'maintenance_block') void onMaintenanceBlockChanged(reservation, null);
         // If this was a placeholder spare reservation, delete its notification
         if (reservation.placeholderSpare && reservation.type === 'replacement') {
@@ -4976,14 +5065,10 @@ export async function registerRoutes(app: Express): Promise<void> {
           message: "Reservation deleted successfully",
           deletedBy: user ? user.username : 'Unknown'
         });
-      } else {
-        res.status(500).json({ message: "Failed to delete reservation" });
       }
     } catch (error) {
-      console.error("Error deleting reservation:", error);
-      res.status(500).json({ 
-        message: "Failed to delete reservation", 
-      });
+      // FIX-X (BUG-090): never `error.message` in the body.
+      sendRouteError(res, error, "Failed to delete reservation");
     }
   });
   registerExpenseRoutes(app, routeDeps);

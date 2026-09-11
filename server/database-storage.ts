@@ -28,6 +28,7 @@ import {
   vehicleTransports, type VehicleTransport, type InsertVehicleTransport,
   vehicleWaitlist,
   deletedRecords, type DeletedRecord, fines,
+  reservationDriverAssignments, type ReservationDriverAssignment,
   auditLogs, type AuditLog
 } from "../shared/schema";
 import {
@@ -57,6 +58,12 @@ import {
   type BookabilityVerdict,
 } from "./services/bookability";
 import { HttpError } from "./utils/route-errors";
+import {
+  collectCascadeSnapshot,
+  restoreCascadeSnapshot,
+  snapshotCounts,
+  type CascadeSnapshot,
+} from "./services/cascade-snapshot";
 import { getDataSource, getField as getReportField } from "../shared/report-builder-config";
 import { buildDefaultDamageCheckCanvasFields } from "../shared/damage-check-default-layout";
 
@@ -538,6 +545,16 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  /**
+   * The tables the vehicle snapshot builds by hand, in their own payload keys.
+   * The generic FK walk skips them so nothing is captured twice, but still
+   * descends *through* them to find their own dependants (BUG-110).
+   */
+  private static readonly VEHICLE_SNAPSHOT_TABLES = [
+    "reservations", "documents", "expenses", "interactive_damage_checks",
+    "vehicle_waitlist", "vehicle_transports", "vehicle_customer_blacklist",
+  ];
+
   async getVehicleDeleteImpact(id: number): Promise<{
     vehicle: Vehicle;
     counts: Record<string, number>;
@@ -555,6 +572,19 @@ export class DatabaseStorage implements IStorage {
       db.select().from(vehicleCustomerBlacklist).where(eq(vehicleCustomerBlacklist.vehicleId, id)),
     ]);
 
+    // BUG-110 — the seven hand-listed tables were never the whole story.
+    // `reservation_driver_assignments` and `apk_date_changes` go with a
+    // CASCADE, and `fines`/`vehicle_transports` columns of *other* vehicles
+    // are quietly set to NULL. None of it was counted, so "this will delete 3
+    // documents" was simply wrong. The rest is discovered from the FK graph.
+    const cascade = await collectCascadeSnapshot(db, "vehicles", id, {
+      skipTables: DatabaseStorage.VEHICLE_SNAPSHOT_TABLES,
+      // reservations.vehicle_id has no FK (BUG-039), so the graph walk cannot
+      // reach them on its own - yet deleteVehicle removes them by hand and
+      // Postgres then cascades their driver assignments away.
+      seeds: [{ table: 'reservations', ids: res.map((r) => r.id) }],
+    });
+
     return {
       vehicle,
       counts: {
@@ -565,6 +595,7 @@ export class DatabaseStorage implements IStorage {
         waitlist: waitlist.length,
         transports: transports.length,
         blacklist: blacklist.length,
+        ...snapshotCounts(cascade),
       },
     };
   }
@@ -609,6 +640,13 @@ export class DatabaseStorage implements IStorage {
           tx.select().from(vehicleCustomerBlacklist).where(eq(vehicleCustomerBlacklist.vehicleId, id)),
         ]);
 
+        // BUG-110 — everything else the delete takes with it, discovered from
+        // the foreign-key graph rather than from a list that goes stale.
+        const cascade = await collectCascadeSnapshot(tx, "vehicles", id, {
+          skipTables: DatabaseStorage.VEHICLE_SNAPSHOT_TABLES,
+          seeds: [{ table: 'reservations', ids: vehicleReservations.map((r) => r.id) }],
+        });
+
         await tx.insert(deletedRecords).values({
           entityType: 'vehicle',
           entityId: id,
@@ -622,8 +660,10 @@ export class DatabaseStorage implements IStorage {
             waitlist: vehicleWaitlistEntries,
             transports: vehicleTransportRows,
             blacklist: vehicleBlacklistRows,
+            cascade,
           },
           relatedCounts: {
+            ...snapshotCounts(cascade),
             reservations: vehicleReservations.length,
             documents: vehicleDocuments.length,
             expenses: vehicleExpenses.length,
@@ -684,16 +724,20 @@ export class DatabaseStorage implements IStorage {
   async restoreDeletedRecord(
     id: number,
     actor?: { username?: string | null }
-  ): Promise<{ restored: boolean; reason?: string; record?: DeletedRecord }> {
+  ): Promise<{ restored: boolean; reason?: string; record?: DeletedRecord; conflicts?: number[] }> {
     const record = await this.getDeletedRecord(id);
     if (!record) return { restored: false, reason: 'not_found' };
     if (record.restoredAt) return { restored: false, reason: 'already_restored', record };
     if (record.entityType === 'fine') return this.restoreDeletedFine(record, actor);
+    // besluiten B-08 — a customer goes to the recycle bin like a vehicle, and
+    // comes back the same way.
+    if (record.entityType === 'customer') return this.restoreDeletedCustomer(record, actor);
     if (record.entityType !== 'vehicle') return { restored: false, reason: 'unsupported_type', record };
 
     const payload = record.payload as any;
     const vehicle = payload?.vehicle;
     if (!vehicle) return { restored: false, reason: 'empty_snapshot', record };
+    let restoreConflicts: number[] = [];
 
     try {
       await db.transaction(async (tx) => {
@@ -756,6 +800,32 @@ export class DatabaseStorage implements IStorage {
 
       await tx.insert(vehicles).values(revive(vehicles, [vehicle])[0]);
 
+      // BUG-108 — the snapshotted bookings used to be re-inserted blind, on top
+      // of whatever had been booked on that vehicle in the meantime: restore a
+      // wrongly deleted car and you silently had two customers on the same days.
+      // Every live snapshotted booking is checked against what is there now; a
+      // clash comes back as `cancelled` with a note, so the row is preserved and
+      // visible instead of double-booking the car.
+      const snapshotReservations: any[] = payload.reservations || [];
+      const conflictedIds = new Set<number>();
+      for (const row of snapshotReservations) {
+        if (!row || row.vehicleId == null && row.vehicle_id == null) continue;
+        const status = normalizeReservationStatus(row.status ?? 'booked');
+        if (status && CLOSED_RESERVATION_STATUSES.has(status)) continue;
+        const verdict = await this.isVehicleBookable({
+          vehicleId: row.vehicleId ?? row.vehicle_id,
+          startDate: row.startDate ?? row.start_date,
+          endDate: row.endDate ?? row.end_date ?? null,
+          isMaintenanceBlock: (row.type ?? 'standard') === 'maintenance_block',
+        }, tx);
+        if (!verdict.bookable && verdict.reason === "CONFLICT") {
+          conflictedIds.add(row.id);
+          row.status = 'cancelled';
+          row.notes = `${row.notes ?? ''}\n[RESTORE] Niet hersteld als actieve boeking: het voertuig was in de tussentijd geboekt (${verdict.conflicts.map((c) => `#${c.id}`).join(', ')}).`.trim();
+        }
+      }
+      restoreConflicts = Array.from(conflictedIds);
+
       for (const [table, rows] of [
         [reservations, payload.reservations],
         [documents, payload.documents],
@@ -772,6 +842,11 @@ export class DatabaseStorage implements IStorage {
       }
 
       // Keep the serial sequences ahead of the ids we just forced back in.
+      // BUG-110 — and everything the FK walk captured: driver assignments, APK
+      // date changes, the fines that pointed here, and the transport columns of
+      // other vehicles that a SET NULL had blanked.
+      await restoreCascadeSnapshot(tx, payload.cascade as CascadeSnapshot | undefined);
+
       for (const tableName of [
         'vehicles', 'reservations', 'documents', 'expenses',
         'interactive_damage_checks', 'vehicle_waitlist', 'vehicle_transports',
@@ -788,6 +863,59 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       // A failed precondition rolls the claim back with the transaction, so the
       // record stays restorable once the clash is cleared up.
+      if (error instanceof RestoreAbort) {
+        return { restored: false, reason: error.reason, record };
+      }
+      throw error;
+    }
+
+    return { restored: true, record, conflicts: restoreConflicts };
+  }
+
+  /**
+   * besluiten **B-08** — the customer half of the recycle bin.
+   *
+   * `deleteCustomer` was a bare `db.delete(customers)`: no impact check, no
+   * snapshot, and — because `reservations.customer_id` has no foreign key — a
+   * `booked` reservation simply kept pointing at a customer that no longer
+   * existed, with no UI path back (BUG-007).
+   */
+  private async restoreDeletedCustomer(
+    record: DeletedRecord,
+    actor?: { username?: string | null }
+  ): Promise<{ restored: boolean; reason?: string; record?: DeletedRecord }> {
+    const payload = record.payload as any;
+    const customer = payload?.customer;
+    if (!customer) return { restored: false, reason: 'empty_snapshot', record };
+
+    try {
+      await db.transaction(async (tx) => {
+        const [claimed] = await tx
+          .update(deletedRecords)
+          .set({ restoredAt: new Date(), restoredBy: actor?.username || null })
+          .where(and(eq(deletedRecords.id, record.id), isNull(deletedRecords.restoredAt)))
+          .returning();
+        if (!claimed) throw new RestoreAbort('already_restored');
+
+        const [idTaken] = await tx.select({ id: customers.id }).from(customers).where(eq(customers.id, customer.id));
+        if (idTaken) throw new RestoreAbort('id_taken');
+
+        const revived: any = { ...customer };
+        for (const key of Object.keys(revived)) {
+          if ((key === 'createdAt' || key === 'updatedAt') && typeof revived[key] === 'string') {
+            revived[key] = new Date(revived[key]);
+          }
+        }
+        await tx.insert(customers).values(revived);
+        await restoreCascadeSnapshot(tx, payload.cascade as CascadeSnapshot | undefined);
+        await tx.execute(sql`
+          SELECT setval(
+            pg_get_serial_sequence('customers', 'id'),
+            GREATEST((SELECT COALESCE(MAX(id), 1) FROM customers), 1)
+          )
+        `);
+      });
+    } catch (error) {
       if (error instanceof RestoreAbort) {
         return { restored: false, reason: error.reason, record };
       }
@@ -1060,12 +1188,84 @@ export class DatabaseStorage implements IStorage {
     return updatedCustomer || undefined;
   }
 
-  async deleteCustomer(id: number): Promise<boolean> {
-    const deletedRows = await db
-      .delete(customers)
-      .where(eq(customers.id, id));
-    
-    return (deletedRows.rowCount ?? 0) > 0;
+  /**
+   * besluiten **B-08** — what disappears if this customer is deleted, and what
+   * blocks the delete.
+   *
+   * The vehicle side has had `GET /api/vehicles/:id/delete-impact` and a typed
+   * confirmation since before the audit; the customer side had nothing at all —
+   * a 204 and a `booked` reservation left pointing at a row that no longer
+   * exists (BUG-007, CRITICAL).
+   */
+  async getCustomerDeleteImpact(id: number): Promise<{
+    customer: Customer;
+    counts: Record<string, number>;
+    blockingReservations: Reservation[];
+  } | undefined> {
+    const customer = await this.getCustomer(id);
+    if (!customer) return undefined;
+
+    const today = isoToday();
+    const customerReservations = await db
+      .select()
+      .from(reservations)
+      .where(and(eq(reservations.customerId, id), isNull(reservations.deletedAt)));
+
+    // "Lopend of toekomstig": not closed, and not already over.
+    const blockingReservations = customerReservations.filter((r) => {
+      const status = normalizeReservationStatus(r.status);
+      if (status && CLOSED_RESERVATION_STATUSES.has(status)) return false;
+      const end = r.endDate && r.endDate !== '' && r.endDate !== 'undefined' ? r.endDate : null;
+      return end === null || end >= today;
+    });
+
+    const cascade = await collectCascadeSnapshot(db, "customers", id);
+
+    return {
+      customer,
+      counts: {
+        reservations: customerReservations.length,
+        ...snapshotCounts(cascade),
+      },
+      blockingReservations,
+    };
+  }
+
+  /**
+   * besluiten **B-08** — "prullenbak plus blokkade bij een lopende of
+   * toekomstige huur". Refused while such a reservation exists; otherwise the
+   * customer and everything Postgres cascades away are snapshotted into
+   * `deleted_records` first, exactly like a vehicle.
+   */
+  async deleteCustomer(
+    id: number,
+    actor?: { username?: string | null; userId?: number | null }
+  ): Promise<{ deleted: boolean; reason?: 'not_found' | 'has_live_reservations'; blockingReservations?: Reservation[] }> {
+    const impact = await this.getCustomerDeleteImpact(id);
+    if (!impact) return { deleted: false, reason: 'not_found' };
+    if (impact.blockingReservations.length > 0) {
+      return { deleted: false, reason: 'has_live_reservations', blockingReservations: impact.blockingReservations };
+    }
+
+    return db.transaction(async (tx) => {
+      const [customer] = await tx.select().from(customers).where(eq(customers.id, id)).for('update');
+      if (!customer) return { deleted: false, reason: 'not_found' as const };
+
+      const cascade = await collectCascadeSnapshot(tx, "customers", id);
+
+      await tx.insert(deletedRecords).values({
+        entityType: 'customer',
+        entityId: id,
+        label: `${customer.name}${customer.companyName ? ` (${customer.companyName})` : ''}`.trim(),
+        payload: { customer, cascade },
+        relatedCounts: snapshotCounts(cascade),
+        deletedBy: actor?.username || null,
+        deletedByUserId: actor?.userId ?? null,
+      });
+
+      const deletedRows = await tx.delete(customers).where(eq(customers.id, id));
+      return { deleted: (deletedRows.rowCount ?? 0) > 0 };
+    });
   }
 
   // Reservation methods
@@ -1366,6 +1566,156 @@ export class DatabaseStorage implements IStorage {
     };
   }
   
+  /**
+   * besluiten **B-04** — what hangs off a reservation, so the app can ask per
+   * item whether it goes too.
+   *
+   * Cancelling used to touch nothing else at all (BUG-112): the delivery
+   * transport stayed `scheduled` and a driver was sent out for a rental that
+   * was off, the driver assignment stayed open, and the spare car plus the
+   * placeholder stayed booked for a customer who had cancelled.
+   */
+  async getReservationCancelImpact(id: number): Promise<{
+    transports: VehicleTransport[];
+    spares: Reservation[];
+    placeholders: Reservation[];
+    drivers: ReservationDriverAssignment[];
+  }> {
+    const [transportRows, replacementRows, driverRows] = await Promise.all([
+      db.select().from(vehicleTransports).where(and(
+        eq(vehicleTransports.reservationId, id),
+        ne(vehicleTransports.status, 'completed'),
+        ne(vehicleTransports.status, 'cancelled'),
+      )),
+      db.select().from(reservations).where(and(
+        eq(reservations.type, 'replacement'),
+        eq(reservations.replacementForReservationId, id),
+        isNull(reservations.deletedAt),
+        sql`${reservations.status} NOT IN ('cancelled','completed','returned')`,
+      )),
+      db.select().from(reservationDriverAssignments).where(and(
+        eq(reservationDriverAssignments.reservationId, id),
+        isNull(reservationDriverAssignments.assignedUntil),
+      )),
+    ]);
+
+    return {
+      transports: transportRows as VehicleTransport[],
+      spares: replacementRows.filter((r) => !r.placeholderSpare) as Reservation[],
+      placeholders: replacementRows.filter((r) => r.placeholderSpare) as Reservation[],
+      drivers: driverRows as ReservationDriverAssignment[],
+    };
+  }
+
+  /**
+   * besluiten **B-04** — "vragen wat er mee moet, daarna uitvoeren".
+   *
+   * Nothing cascades unless the caller says so, per kind. That is deliberate:
+   * the owner chose an explicit question over a silent sweep, and the dialog
+   * that asks it is phase-34 work (OPT-028). Until then every caller gets the
+   * impact list back and decides.
+   */
+  async applyReservationCancelCascade(
+    id: number,
+    cascade: { transports?: boolean; spares?: boolean; placeholders?: boolean; drivers?: boolean } = {},
+    actor?: { username?: string | null },
+  ): Promise<{ impact: Awaited<ReturnType<DatabaseStorage['getReservationCancelImpact']>>; applied: Record<string, number> }> {
+    const impact = await this.getReservationCancelImpact(id);
+    const applied: Record<string, number> = { transports: 0, spares: 0, placeholders: 0, drivers: 0 };
+    const freedVehicleIds: number[] = [];
+
+    const closeReplacements = async (tx: any, rows: Reservation[], key: string) => {
+      for (const row of rows) {
+        // A spare that is really at the customer is a physical fact; the same
+        // rule FIX-V applies everywhere else.
+        if (normalizeReservationStatus(row.status) === 'picked_up') continue;
+        await tx.update(reservations)
+          .set({ status: 'cancelled', placeholderSpare: false, updatedBy: actor?.username ?? null, updatedAt: new Date() })
+          .where(eq(reservations.id, row.id));
+        if (row.vehicleId != null) freedVehicleIds.push(row.vehicleId);
+        applied[key] += 1;
+      }
+    };
+
+    await db.transaction(async (tx) => {
+      if (cascade.transports && impact.transports.length > 0) {
+        const result = await tx.update(vehicleTransports)
+          .set({ status: 'cancelled', updatedBy: actor?.username ?? null, updatedAt: new Date() })
+          .where(and(
+            inArray(vehicleTransports.id, impact.transports.map((t) => t.id)),
+            ne(vehicleTransports.status, 'completed'),
+            ne(vehicleTransports.status, 'cancelled'),
+          ));
+        applied.transports = result.rowCount ?? impact.transports.length;
+      }
+      if (cascade.spares) await closeReplacements(tx, impact.spares, "spares");
+      if (cascade.placeholders) await closeReplacements(tx, impact.placeholders, "placeholders");
+      if (cascade.drivers && impact.drivers.length > 0) {
+        const result = await tx.update(reservationDriverAssignments)
+          .set({ assignedUntil: new Date() })
+          .where(and(
+            inArray(reservationDriverAssignments.id, impact.drivers.map((d) => d.id)),
+            isNull(reservationDriverAssignments.assignedUntil),
+          ));
+        applied.drivers = result.rowCount ?? impact.drivers.length;
+      }
+    });
+
+    for (const vehicleId of Array.from(new Set(freedVehicleIds))) {
+      await this.recomputeVehicleAvailability(vehicleId);
+    }
+    return { impact, applied };
+  }
+
+  /**
+   * FIX-X (BUG-090, BUG-055) — the soft delete as **one** conditional write.
+   *
+   * The route read the row, ran a 70-line cascade, and only then wrote: two
+   * parallel deletes both passed the `deletedAt` guard and the loser came back
+   * as a 500 carrying `error.message`. The precondition travels with the write
+   * now, and zero rows means "someone else just deleted it".
+   *
+   * The open driver assignment is closed in the same transaction — it used to
+   * stay open for ever on a deleted rental, so every "current drivers" screen
+   * kept showing it (BUG-055).
+   */
+  async softDeleteReservation(
+    id: number,
+    actor?: { username?: string | null; userId?: number | null },
+  ): Promise<Reservation | undefined> {
+    return db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(reservations)
+        .set({
+          deletedAt: new Date(),
+          deletedBy: actor?.username ?? null,
+          deletedByUser: actor?.userId ?? null,
+          updatedBy: actor?.username ?? null,
+          contractNumber: null,
+        })
+        .where(and(eq(reservations.id, id), isNull(reservations.deletedAt)))
+        .returning();
+      if (!row) return undefined;
+
+      await tx.update(reservationDriverAssignments)
+        .set({ assignedUntil: new Date() })
+        .where(and(
+          eq(reservationDriverAssignments.reservationId, id),
+          isNull(reservationDriverAssignments.assignedUntil),
+        ));
+
+      await tx.update(vehicleTransports)
+        .set({ status: 'cancelled', updatedAt: new Date() })
+        .where(and(
+          eq(vehicleTransports.reservationId, id),
+          ne(vehicleTransports.status, 'completed'),
+          ne(vehicleTransports.status, 'cancelled'),
+        ));
+
+      return row as Reservation;
+    });
+  }
+
   async deleteReservation(id: number): Promise<boolean> {
     // Cancel (not delete) any transport this reservation auto-created via
     // syncDeliveryTransport, so it doesn't linger referencing a reservation that

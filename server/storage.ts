@@ -63,7 +63,7 @@ export interface IStorage {
   getVehicleDeleteImpact?(id: number): Promise<{ vehicle: Vehicle; counts: Record<string, number> } | undefined>;
   getDeletedRecords?(limit?: number): Promise<any[]>;
   getDeletedRecord?(id: number): Promise<any | undefined>;
-  restoreDeletedRecord?(id: number, actor?: { username?: string | null }): Promise<{ restored: boolean; reason?: string; record?: any }>;
+  restoreDeletedRecord?(id: number, actor?: { username?: string | null }): Promise<{ restored: boolean; reason?: string; record?: any; conflicts?: number[] }>;
   getAvailableVehicles(): Promise<Vehicle[]>;
   getVehiclesWithApkExpiringSoon(): Promise<Vehicle[]>;
   getVehiclesWithWarrantyExpiringSoon(): Promise<Vehicle[]>;
@@ -73,7 +73,10 @@ export interface IStorage {
   getCustomer(id: number): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: number, customerData: Partial<InsertCustomer>): Promise<Customer | undefined>;
-  deleteCustomer(id: number): Promise<boolean>;
+  // besluiten B-08 — the delete is refused while a current or future rental
+  // exists, so the result carries the reason and the blocking rows.
+  deleteCustomer(id: number, actor?: { username?: string | null; userId?: number | null }): Promise<{ deleted: boolean; reason?: "not_found" | "has_live_reservations"; blockingReservations?: Reservation[] }>;
+  getCustomerDeleteImpact?(id: number): Promise<{ customer: Customer; counts: Record<string, number>; blockingReservations: Reservation[] } | undefined>;
   
   // Reservation methods
   getAllReservations(): Promise<Reservation[]>;
