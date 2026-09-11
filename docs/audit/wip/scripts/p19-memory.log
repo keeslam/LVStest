@@ -1,0 +1,9 @@
+baseline                     rss=799.3MB private=1013.5MB pool={"total":1,"idle":1,"waiting":0}
+baseline+2s                  rss=799.3MB private=1013.5MB pool={"total":1,"idle":1,"waiting":0}
+after 500 mixed              rss=751MB private=964.6MB pool={"total":10,"idle":10,"waiting":0}
+after 500 mixed +3s          rss=751MB private=964.6MB pool={"total":10,"idle":10,"waiting":0}
+after 20 large lists         rss=708.9MB private=922MB pool={"total":3,"idle":3,"waiting":0}
+after 20 large lists +3s     rss=708.9MB private=922MB pool={"total":3,"idle":3,"waiting":0}
+after 50 contract PDFs       rss=757.7MB private=968.7MB pool={"total":3,"idle":3,"waiting":0}
+after 20 s idle              rss=757.7MB private=968.7MB pool={"total":1,"idle":1,"waiting":0}
+written p19-memory.out.json

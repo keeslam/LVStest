@@ -1,0 +1,17 @@
+/api/reservations                                                                200  rows=2076  bytes=8033805   p50=204.2 p95=246.9 burst p95=2221.5 wall=2230.8
+/api/reservations?search=A                                                       200  rows=10    bytes=42057     p50=43.8 p95=56.7 burst p95=255 wall=256.3
+/api/reservations?search=AU                                                      200  rows=10    bytes=42012     p50=28.5 p95=35.5 burst p95=129.4 wall=131.2
+/api/reservations?search=ZZZZNOMATCH                                             200  rows=0     bytes=2         p50=18.6 p95=30.1 burst p95=41.1 wall=42.2
+/api/reservations/range?startDate=2026-08-31&endDate=2026-10-04                  200  rows=462   bytes=1655775   p50=1079.9 p95=1484.7 burst p95=5830.1 wall=5834
+/api/reservations/range?startDate=2026-01-01&endDate=2026-12-31                  200  rows=1894  bytes=7380927   p50=4255.2 p95=4328.7 burst p95=22941.8 wall=22950.2
+/api/reservations/upcoming                                                       200  rows=5     bytes=21529     p50=15.9 p95=31.5 burst p95=77.6 wall=79.7
+/api/reservations/upcoming-maintenance                                           200  rows=159   bytes=257469    p50=30.4 p95=37.8 burst p95=165.5 wall=166.4
+/api/reservations/overdue                                                        200  rows=358   bytes=1501628   p50=61 p95=82.5 burst p95=473.5 wall=475.7
+/api/reservations/3535                                                           200  rows=59    bytes=4213      p50=13.3 p95=28.7 burst p95=54.5 wall=55.2
+/api/reservations/vehicle/1870                                                   200  rows=1     bytes=4215      p50=14.4 p95=26.2 burst p95=42.8 wall=44.3
+/api/reservations/check-conflicts?vehicleId=1870&startDate=2026-09-10&endDate=2026-09-12 200  rows=1     bytes=4215      p50=16.4 p95=24.5 burst p95=44.8 wall=45.5
+/api/placeholder-reservations/needing-assignment?daysAhead=30                    200  rows=8     bytes=8951      p50=15.6 p95=21.9 burst p95=45.7 wall=46.5
+/api/vehicles/with-reservations                                                  200  rows=90    bytes=381532    p50=30.1 p95=36.1 burst p95=188.5 wall=189.6
+/api/customers/with-reservations                                                 200  rows=348   bytes=416405    p50=83 p95=131.9 burst p95=737 wall=737.9
+/api/portal/reservations                                                         200  rows=23    bytes=9012      p50=15.3 p95=39.4 burst p95=64.1 wall=64.8
+written p19-timing.out.json

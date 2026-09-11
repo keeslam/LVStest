@@ -1,0 +1,7 @@
+reservations   9 requests, 19.61 MB, wall 1907 ms, slowest 1902.4 ms
+dashboard      17 requests, 13.06 MB, wall 1561 ms, slowest 1557.7 ms
+vehicles       4 requests, 8.77 MB, wall 248 ms, slowest 246.7 ms
+customers      5 requests, 8.05 MB, wall 218 ms, slowest 216.5 ms
+maintenance    10 requests, 10.51 MB, wall 1647 ms, slowest 1644.5 ms
+documents      7 requests, 1.28 MB, wall 79 ms, slowest 76.4 ms
+written p19-page-replay.out.json

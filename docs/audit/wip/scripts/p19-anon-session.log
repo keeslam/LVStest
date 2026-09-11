@@ -1,0 +1,21 @@
+{
+  "before": 49,
+  "after": 99,
+  "created": 50,
+  "requests": 50,
+  "setCookieCount": 50,
+  "statuses": {
+    "200": 26,
+    "401": 24
+  },
+  "sample": [
+    {
+      "expire": "2026-09-10T22:03:31.000Z",
+      "sess": "{\"cookie\": {\"path\": \"/\", \"secure\": false, \"expires\": \"2026-09-10T22:03:30.249Z\", \"httpOnly\": true, \"sameSite\": \"lax\", \"originalMaxAge\": 3600000}, \"passport\": {\"user\": {\"id\": 30, \"kind\": \"portal\"}}, \"c"
+    },
+    {
+      "expire": "2026-09-10T22:03:23.000Z",
+      "sess": "{\"cookie\": {\"path\": \"/\", \"secure\": false, \"expires\": \"2026-09-10T22:03:22.819Z\", \"httpOnly\": true, \"sameSite\": \"lax\", \"originalMaxAge\": 3600000}, \"passport\": {\"user\": {\"id\": 30, \"kind\": \"portal\"}}, \"c"
+    }
+  ]
+}
