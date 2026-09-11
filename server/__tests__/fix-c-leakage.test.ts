@@ -6,6 +6,9 @@
  * response body — ends up outside the process.
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import os from "os";
+import nodePath from "path";
+import nodeFs from "fs";
 import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { vehicles } from "../../shared/schema";
@@ -17,6 +20,7 @@ import { cleanupFixtures, createFixtureVehicle, FIXTURE_PLATE_PREFIX } from "./h
 describe("BUG-075 — the backup export never returns the connection string", () => {
   it("a pg_dump failure carries no postgres:// URL, no password and no command line", async () => {
     const url = "postgresql://backup_user:SUPER-SECRET-PW@db.internal:5432/car_rental";
+    const dumpPath = nodePath.join(os.tmpdir(), `fixt-pgdump-${Date.now()}.sql`);
     let message = "";
     try {
       // A binary that does not exist forces the failure path without needing a
@@ -24,7 +28,7 @@ describe("BUG-075 — the backup export never returns the connection string", ()
       const originalPath = process.env.PATH;
       process.env.PATH = "";
       try {
-        await runPgDump(url, "does-not-matter.sql");
+        await runPgDump(url, dumpPath);
       } finally {
         process.env.PATH = originalPath;
       }
@@ -35,6 +39,8 @@ describe("BUG-075 — the backup export never returns the connection string", ()
     expect(message).not.toContain("SUPER-SECRET-PW");
     expect(message).not.toContain("postgresql://");
     expect(message).not.toContain("backup_user");
+    // And no half-written dump is left behind for someone to download.
+    expect(nodeFs.existsSync(dumpPath)).toBe(false);
   }, 30_000);
 });
 

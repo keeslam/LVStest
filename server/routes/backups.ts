@@ -33,11 +33,16 @@ export async function runPgDump(databaseUrl: string, outputPath: string): Promis
     let stderr = "";
     child.stdout.pipe(out);
     child.stderr.on("data", (chunk) => { stderr += String(chunk); });
-    child.on("error", (err) => reject(new Error(`pg_dump could not be started: ${err.message}`)));
-    child.on("close", (code) => {
+    const failed = (message: string) => {
       out.end();
-      if (code === 0) return resolve();
-      reject(new Error(`pg_dump exited with code ${code}: ${stderr.trim().slice(0, 500)}`));
+      // Never leave a half-written dump behind for someone to download.
+      try { fs.unlinkSync(outputPath); } catch { /* nothing to remove */ }
+      reject(new Error(message));
+    };
+    child.on("error", (err) => failed(`pg_dump could not be started: ${err.message}`));
+    child.on("close", (code) => {
+      if (code === 0) { out.end(); return resolve(); }
+      failed(`pg_dump exited with code ${code}: ${stderr.trim().slice(0, 500)}`);
     });
   });
 }
