@@ -89,6 +89,21 @@ const SKIPPED_PATH_PATTERNS = [
   /^\/api\/preview-token/,
 ];
 
+/**
+ * Routes that already write their own, richer audit entry (BUG-147).
+ *
+ * Matched **per method**: `DELETE /api/vehicles/:id` logs the typed
+ * confirmation and the recycle-bin record itself, so logging it here as well
+ * gave every vehicle deletion two `vehicle.delete` rows - 15 of them for one
+ * vehicle in the audit database - and made the one question that matters
+ * after an incident ("who deleted this car") read as if it happened twice.
+ * `PATCH /api/vehicles/:id` is a different method and is still logged here.
+ */
+const SELF_LOGGED: Array<{ method: string; pattern: RegExp }> = [
+  { method: 'DELETE', pattern: /^\/api\/vehicles\/\d+$/ },
+  { method: 'POST', pattern: /^\/api\/deleted-records\/\d+\/restore$/ },
+];
+
 const isSecret = (field: string) => SECRET_FIELDS.has(field.toLowerCase());
 
 function summarize(value: any): any {
@@ -173,6 +188,7 @@ export function auditMutations(req: Request, res: Response, next: NextFunction) 
   if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return next();
   if (!req.path.startsWith('/api/')) return next();
   if (SKIPPED_PATH_PATTERNS.some((pattern) => pattern.test(req.path))) return next();
+  if (SELF_LOGGED.some((entry) => entry.method === method && entry.pattern.test(req.path))) return next();
 
   const { id, type, tracked, subAction } = describeRequest(req.path);
   const requestBody = sanitizeBody(req.body);
@@ -218,7 +234,13 @@ export function auditMutations(req: Request, res: Response, next: NextFunction) 
 
       void AuditLogger.logFromRequest(
         req,
-        `${type}.${verbFor(method)}`,
+        // BUG-152: every reservation sub-action was logged as
+        // `reservation.create`, with the real operation buried in `details`,
+        // so the activity log said "reservering aangemaakt" three times for
+        // one rental and filtering on the action was misleading.
+        subAction && id !== null
+          ? `${type}.${subAction.split(".")[0]}`
+          : `${type}.${verbFor(method)}`,
         type,
         id !== null ? id : (responseBody?.id ?? undefined),
         details,

@@ -19,6 +19,15 @@ type KnownAuditAction =
   | 'vehicle.create'
   | 'vehicle.update'
   | 'vehicle.delete'
+  // BUG-147: a restore was recorded as `vehicle.update` purely because this
+  // union had no word for it, so it could not be searched or reported on.
+  | 'vehicle.restore'
+  | 'customer.restore'
+  // BUG-152: the reservation sub-actions the middleware now emits.
+  | 'reservation.pickup'
+  | 'reservation.return'
+  | 'reservation.status'
+  | 'reservation.cancel'
   | 'customer.create'
   | 'customer.update'
   | 'customer.delete'

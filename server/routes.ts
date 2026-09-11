@@ -1949,7 +1949,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       const entityType = result.record?.entityType ?? 'vehicle';
       await AuditLogger.logFromRequest(
         req,
-        entityType === 'vehicle' ? 'vehicle.update' : `${entityType}.restore`,
+        `${entityType}.restore` as any,
         entityType,
         result.record?.entityId,
         { restoredFromDeletedRecord: id, label: result.record?.label },
