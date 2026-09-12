@@ -1,5 +1,6 @@
 import * as cron from 'node-cron';
 import { backupService, type BackupService } from './backupService';
+import { cleanupStaleTempFiles, restoreToolsAvailable } from './restoreSafety';
 
 export class BackupScheduler {
   // Shared singleton (see server/backupService.ts) so the scheduler's
@@ -33,6 +34,28 @@ export class BackupScheduler {
         }
       })
       .catch((error) => console.error('Failed to resolve backup path for logging:', error));
+
+    // BUG-206/BUG-207: earlier versions left a 13 MB dump and a 118 MB archive
+    // in os.tmpdir() after every backup, and a plaintext dump after every
+    // restore — 149 files and 1.3 GB of them on the audit host. Those paths
+    // now clean up after themselves; this sweeps what they, and any crash,
+    // left behind.
+    cleanupStaleTempFiles();
+
+    // BUG-219: restore needs psql and pg_dump. Discovering that they are
+    // missing during an emergency, after a minute-long safety backup, is too
+    // late — say it once at start-up instead. Not fatal: a host that only
+    // serves the app is still a working host.
+    restoreToolsAvailable()
+      .then(({ ok, missing }) => {
+        if (!ok) {
+          console.warn(
+            `PostgreSQL client tools missing (${missing.join(', ')}): backups and restores will fail on this host. ` +
+            `Install postgresql-client, or set PG_BIN_DIR to the directory that holds them.`
+          );
+        }
+      })
+      .catch(() => { /* never block start-up on a probe */ });
 
     // Schedule backup to run at 2:00 AM every day
     this.scheduledTask = cron.schedule('0 2 * * *', async () => {
@@ -91,20 +114,20 @@ export class BackupScheduler {
     }
   }
 
-  // Get scheduler status
+  /**
+   * BUG-221(b): this added a day unconditionally and then a SECOND day when it
+   * was already past 02:00, so it was always at least one day wrong. The
+   * schedule is 02:00 local time daily; the next run is today's 02:00 while
+   * that is still ahead, and tomorrow's otherwise.
+   */
   getStatus(): { isRunning: boolean; nextRun?: string; nextRunFormatted?: string } {
     if (!this.scheduledTask) {
       return { isRunning: false };
     }
 
-    // Calculate next run time (2:00 AM tomorrow)
-    const now = new Date();
-    const nextRun = new Date(now);
-    nextRun.setDate(nextRun.getDate() + 1);
+    const nextRun = new Date();
     nextRun.setHours(2, 0, 0, 0);
-    
-    // If it's already past 2 AM today, next run is tomorrow
-    if (now.getHours() >= 2) {
+    if (nextRun.getTime() <= Date.now()) {
       nextRun.setDate(nextRun.getDate() + 1);
     }
 

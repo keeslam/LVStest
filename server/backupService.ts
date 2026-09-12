@@ -1,8 +1,8 @@
 import { spawn } from 'child_process';
-import { createReadStream, createWriteStream, existsSync, readFileSync, writeFileSync, copyFileSync, readdirSync, statSync } from 'fs';
+import { createReadStream, createWriteStream, existsSync, readFileSync, writeFileSync, copyFileSync, readdirSync, statSync, unlinkSync, rmdirSync } from 'fs';
 import { readdir, stat, mkdir, unlink } from 'fs/promises';
 import { pipeline } from 'stream/promises';
-import { join, dirname } from 'path';
+import { join, dirname, resolve } from 'path';
 import { tmpdir } from 'os';
 import { createGzip } from 'zlib';
 import { createHash } from 'crypto';
@@ -12,6 +12,11 @@ import { db } from './db';
 import { backupSettings, backupRuns, type BackupRun } from '@shared/schema';
 import { getUploadsDir, getBackupPathFromEnv } from '@shared/paths';
 import { verifyDatabaseBackup, verifyFilesBackup } from './backupVerification';
+import {
+  inspectDump, dumpTargetsForeignDatabase, databaseNameFromUrl, runPsqlRestore,
+  inspectFilesArchive, extractFilesArchive, makeRestoreTempDir, safeUnlink,
+  cleanupStaleTempFiles, gunzipTo, isGzip, pgTool, restoreToolsAvailable,
+} from './restoreSafety';
 
 export interface BackupManifest {
   timestamp: string;
@@ -224,13 +229,18 @@ export class BackupService {
     }
   }
 
-  // Get next scheduled backup time (2:00 AM tomorrow)
+  /**
+   * BUG-221(b): this said "tomorrow at 02:00" unconditionally, so between
+   * midnight and 02:00 — the window in which an operator is most likely to be
+   * watching — it was a full day out. The schedule really is 02:00 local time
+   * daily (see BackupScheduler), so the next run is today at 02:00 when that is
+   * still ahead of us, and tomorrow at 02:00 otherwise.
+   */
   private getNextScheduledTime(): string {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(2, 0, 0, 0);
-    return tomorrow.toISOString();
+    const next = new Date();
+    next.setHours(2, 0, 0, 0);
+    if (next.getTime() <= Date.now()) next.setDate(next.getDate() + 1);
+    return next.toISOString();
   }
 
   // Create database backup
@@ -247,13 +257,21 @@ export class BackupService {
     console.log('Creating database backup...');
     
     // Create pg_dump command
-    const pgDumpProcess = spawn('pg_dump', [
+    // BUG-220: backup_runs is dumped with everything else, so restoring an
+    // archive resurrects the two `running` rows that were open while it was
+    // being written — ghost runs that never finish — and wipes the pre-restore
+    // row that records the way back. Its *schema* is still dumped; only its
+    // data is excluded, and restoreDatabase reconciles the table afterwards.
+    // BUG-219: pgTool() lets a host that keeps the client binaries outside
+    // PATH say so, instead of failing with a bare ENOENT after a minute.
+    const pgDumpProcess = spawn(pgTool('pg_dump'), [
       process.env.DATABASE_URL!,
       '--verbose',
       '--clean',
       '--if-exists',
       '--no-owner',
-      '--no-privileges'
+      '--no-privileges',
+      '--exclude-table-data=backup_runs'
     ]);
 
     // Create gzip stream
@@ -326,6 +344,12 @@ export class BackupService {
       const errorMessage = `Failed to save database backup to ${backupPath}: ${error instanceof Error ? error.message : String(error)}`;
       console.error(`❌ ${errorMessage}`);
       throw new Error(errorMessage);
+    } finally {
+      // BUG-206: every backup left its 13 MB temp copy in os.tmpdir() for ever
+      // (149 of them, 312 MB, on the audit host). In a container /tmp is the
+      // writable layer, so this is what eventually makes the backups themselves
+      // start failing. The copy in the backup directory is the one that counts.
+      safeUnlink(tempFile);
     }
 
     return manifest;
@@ -408,9 +432,13 @@ export class BackupService {
       writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 
       console.log(`✅ Files backup saved: ${filename} (${fileStats.size} bytes, ${fileCount} files) in ${fullPath}`);
+      // BUG-206: see createDatabaseBackup — the 118 MB temp archive used to
+      // stay in os.tmpdir() for ever.
+      safeUnlink(tempFile);
     } catch (error) {
       const errorMessage = `Failed to save files backup to ${backupPath}: ${error instanceof Error ? error.message : String(error)}`;
       console.error(`❌ ${errorMessage}`);
+      safeUnlink(tempFile);
       throw new Error(errorMessage);
     }
 
@@ -709,318 +737,292 @@ export class BackupService {
     }
   }
 
-  // Restore database from backup
+  /**
+   * Locate a backup file on disk: directly in the backup root (an uploaded
+   * copy) or inside the dated year/month/day structure (a created one).
+   */
+  private locateRestoreSource(backupPath: string, type: 'database' | 'files', backupFilename: string): string {
+    const candidates = [
+      join(backupPath, backupFilename),
+      join(backupPath, type, backupFilename),
+      ...this.findFileInDateStructure(join(backupPath, type), backupFilename),
+    ];
+    const found = candidates.find(existsSync);
+    if (!found) throw new Error(`Backup file not found in local filesystem: ${backupFilename}`);
+    console.log(`Found backup file at: ${found}`);
+    return found;
+  }
+
+  /**
+   * Checksum check against the manifest, when there is one. A missing manifest
+   * is tolerated (older or uploaded backups may not have one); a mismatch is
+   * not, and must abort before anything destructive runs.
+   */
+  private async assertChecksumMatches(backupFilename: string, type: 'database' | 'files', filePath: string): Promise<void> {
+    const manifest = await this.getBackupManifest(backupFilename, type).catch(() => null);
+    if (!manifest) {
+      console.warn('Could not verify backup integrity (manifest may be missing)');
+      return;
+    }
+    if (manifest.checksum && manifest.checksum !== 'uploaded') {
+      const actual = await this.calculateChecksum(filePath);
+      if (actual !== manifest.checksum) {
+        throw new Error('Backup file integrity check failed - checksum mismatch. Nothing was changed.');
+      }
+    }
+  }
+
+  /**
+   * BUG-220: a restored dump used to bring back its own backup_runs rows —
+   * including the two that were still 'running' while it was being written,
+   * which then sat there for ever — and it wiped the pre-restore row that
+   * records the operator's way back. The dump no longer carries backup_runs
+   * data (--exclude-table-data), so this rewrites the history to match
+   * reality: any stale 'running' row is closed as interrupted, and the
+   * pre-restore row is written again now that psql has finished.
+   */
+  private async reconcileRunHistoryAfterRestore(safetyBackupFilename?: string): Promise<void> {
+    try {
+      await db.update(backupRuns)
+        .set({ status: 'failed', finishedAt: new Date(), error: 'interrupted by a database restore' })
+        .where(eq(backupRuns.status, 'running'));
+      if (safetyBackupFilename) {
+        const runId = await this.startRun('database', 'pre-restore');
+        await this.finishRun(runId, { status: 'success', filename: safetyBackupFilename, verified: true });
+      }
+    } catch (error) {
+      // Never fail a successful restore because the bookkeeping could not be
+      // written; the restore itself already happened.
+      console.error('Could not reconcile backup_runs after the restore:', error instanceof Error ? error.message : error);
+    }
+  }
+
+  /**
+   * Restore the database from a backup.
+   *
+   * BUG-197 (CRITICAL) is the reason this reads the way it does. The order is
+   * deliberate and each step exists because the old one did not have it:
+   *
+   *   1. locate and checksum the archive;
+   *   2. read it end to end and prove it is a COMPLETE dump that cannot leave
+   *      this database — before anything is dropped. A download cut in half
+   *      looks perfectly healthy in its first 4 KB, which is all the old sniff
+   *      inspected, and restoring it emptied users/vehicles/reservations and
+   *      reset every sequence to 1 while answering 200 "success";
+   *   3. refuse an archive aimed at a different database (BUG-199);
+   *   4. only then take the safety backup — it costs up to a minute and two
+   *      large files, and it used to be spent before discovering the archive
+   *      was unusable (BUG-219);
+   *   5. decompress with zlib into a private temp directory, never beside the
+   *      archive on the backup volume (BUG-207);
+   *   6. run psql with ON_ERROR_STOP inside a single transaction, so a bad
+   *      statement rolls the whole thing back instead of being skipped;
+   *   7. reconcile backup_runs (BUG-220);
+   *   8. remove every temp file in a finally (BUG-206, BUG-207).
+   */
   async restoreDatabase(backupFilename: string, opts?: { skipSafetyBackup?: boolean }): Promise<{ safetyBackupFilename?: string }> {
     console.log(`Starting database restore from: ${backupFilename}`);
 
-    // Restoring overwrites whatever is currently live. Before touching anything,
-    // take a fresh backup of the current state and verify it - so a mistaken or
-    // wrong-file restore is itself reversible. skipSafetyBackup exists only for
-    // the case of restoring *because* backups are broken; it defaults to off.
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) throw new Error('DATABASE_URL is not configured; refusing to restore.');
+
+    const settings = await this.getBackupSettings();
+    const backupPath = this.resolveBackupPath(settings);
+    const sourceFile = this.locateRestoreSource(backupPath, 'database', backupFilename);
+
+    await this.assertChecksumMatches(backupFilename, 'database', sourceFile);
+
+    // --- verify BEFORE anything is touched -----------------------------------
+    const inspection = await inspectDump(sourceFile);
+    if (!inspection.ok) {
+      throw new Error(`Refusing to restore: ${inspection.reason}.`);
+    }
+    const foreign = dumpTargetsForeignDatabase(inspection, databaseUrl);
+    if (foreign) {
+      throw new Error(`Refusing to restore: ${foreign}.`);
+    }
+    console.log(
+      `Archive verified: ${inspection.bytes} bytes of SQL, ends with the pg_dump completion marker, ` +
+      `targets ${databaseNameFromUrl(databaseUrl)}`
+    );
+
+    // --- only now is it worth taking the safety backup -----------------------
     let safetyBackupFilename: string | undefined;
     if (!opts?.skipSafetyBackup) {
       const safety = await this.takeSafetyBackup('database');
       safetyBackupFilename = safety.filename;
     }
 
-    // Get backup settings and resolve where backups are stored
-    const settings = await this.getBackupSettings();
-    const backupPath = this.resolveBackupPath(settings);
-
-    let tempFile = `/tmp/restore-${Date.now()}-${backupFilename}`;
-
+    const tempDir = makeRestoreTempDir();
+    let sqlFile = sourceFile;
     try {
-      // Find the backup file on the local filesystem
-      const localBackupPath = join(backupPath, backupFilename);
-
-      if (existsSync(localBackupPath)) {
-        // File is directly in backups directory (uploaded backup)
-        tempFile = localBackupPath;
-      } else {
-        // Try to find in organized structure (created backup)
-        const searchPaths = [
-          join(backupPath, 'database', backupFilename),
-          ...this.findFileInDateStructure(join(backupPath, 'database'), backupFilename)
-        ];
-
-        let found = false;
-        for (const path of searchPaths) {
-          if (existsSync(path)) {
-            tempFile = path;
-            found = true;
-            break;
-          }
-        }
-
-        if (!found) {
-          throw new Error(`Backup file not found in local filesystem: ${backupFilename}`);
-        }
+      if (isGzip(sourceFile)) {
+        // BUG-207: this used to write the plain dump next to the archive with
+        // `tempFile.replace('.gz','')` — a 20 MB unprotected copy of the whole
+        // database that listBackups() then offered as a restorable backup —
+        // and the cleanup that should have removed it used `require` inside an
+        // ES module, so it threw and was swallowed.
+        sqlFile = join(tempDir, 'restore.sql');
+        console.log('Archive is gzipped - decompressing with zlib');
+        await gunzipTo(sourceFile, sqlFile);
       }
 
-      console.log(`Found backup file at: ${tempFile}`);
-    } catch (error) {
-      throw new Error(`Failed to locate backup file: ${error instanceof Error ? error.message : String(error)}`);
-    }
-
-    const isTemporaryFile = tempFile.startsWith('/tmp/');
-    let uncompressedFile = tempFile;
-    
-    try {
-      // Decompress if needed
-      if (tempFile.endsWith('.gz')) {
-        uncompressedFile = tempFile.replace('.gz', '');
-        console.log(`Decompressing ${tempFile} to ${uncompressedFile}`);
-        
-        const gunzipProcess = spawn('gunzip', ['-c', tempFile]);
-        const writeStream = createWriteStream(uncompressedFile);
-        
-        gunzipProcess.stdout.pipe(writeStream);
-        
-        await new Promise<void>((resolve, reject) => {
-          gunzipProcess.on('close', (code) => {
-            if (code === 0) {
-              resolve();
-            } else {
-              reject(new Error(`Decompression failed with code ${code}`));
-            }
-          });
-          gunzipProcess.on('error', reject);
-        });
-      }
-      
-      // Verify backup integrity. A missing manifest is tolerated (older or
-      // uploaded backups may not have one) and only logs a warning. A checksum
-      // mismatch means the backup is corrupt and must NOT be swallowed here -
-      // it has to abort the restore before psql runs against a live database.
-      const manifest = await this.getBackupManifest(backupFilename, 'database').catch(() => null);
-      if (!manifest) {
-        console.warn('Could not verify backup integrity (manifest may be missing)');
-      } else if (manifest.checksum && manifest.checksum !== 'uploaded') {
-        const actualChecksum = await this.calculateChecksum(tempFile);
-        if (actualChecksum !== manifest.checksum) {
-          throw new Error('Backup file integrity check failed - checksum mismatch');
-        }
-      }
-
-      // Stop application connections (in production, you'd want more sophisticated handling)
       console.log('WARNING: Database restore will disconnect all users');
-      
-      // Import database
-      const psqlProcess = spawn('psql', [
-        process.env.DATABASE_URL!,
-        '-f', uncompressedFile
-      ]);
+      await runPsqlRestore(databaseUrl, sqlFile);
+      console.log('Database restore completed successfully');
 
-      let stderr = '';
-      psqlProcess.stderr.on('data', (data) => {
-        stderr += data.toString();
-        console.log(`psql restore: ${data}`);
-      });
-
-      psqlProcess.stdout.on('data', (data) => {
-        console.log(`psql restore: ${data}`);
-      });
-
-      // Wait for completion
-      await new Promise<void>((resolve, reject) => {
-        psqlProcess.on('close', (code) => {
-          if (code === 0) {
-            console.log('Database restore completed successfully');
-            resolve();
-          } else {
-            reject(new Error(`Database restore failed with code ${code}. Error: ${stderr}`));
-          }
-        });
-      });
-
+      await this.reconcileRunHistoryAfterRestore(safetyBackupFilename);
     } finally {
-      // Cleanup temp files (but not the original backup file)
-      if (isTemporaryFile && existsSync(tempFile)) {
-        try {
-          require('fs').unlinkSync(tempFile);
-        } catch (error) {
-          console.error('Error cleaning up temp restore file:', error);
-        }
-      }
-      
-      // Cleanup uncompressed file if it was created
-      if (uncompressedFile !== tempFile && existsSync(uncompressedFile)) {
-        try {
-          require('fs').unlinkSync(uncompressedFile);
-        } catch (error) {
-          console.error('Error cleaning up uncompressed file:', error);
-        }
-      }
+      // BUG-206/BUG-207: never leave a plaintext dump behind, on any path.
+      safeUnlink(sqlFile === sourceFile ? null : sqlFile);
+      try { rmdirSync(tempDir); } catch { /* not empty, or already gone */ }
     }
 
     return { safetyBackupFilename };
   }
 
-  // Restore files from backup
-  //
-  // targetPath is NOT wired to any HTTP request body: the extraction target
-  // must always match where the safety backup above just archived from
-  // (getUploadsDir()), or the verified safety net points at the wrong
-  // directory while tar overwrites a different one. Only pass targetPath
-  // from trusted internal callers (e.g. tests), never from user input.
-  async restoreFiles(backupFilename: string, targetPath?: string, opts?: { skipSafetyBackup?: boolean }): Promise<{ safetyBackupFilename?: string }> {
+  /**
+   * Restore uploaded files from a backup.
+   *
+   * BUG-198: this extracted into `targetPath || process.cwd()` while the
+   * safety backup it had just taken archived `getUploadsDir()` — two different
+   * directories the moment UPLOADS_DIR is set, which is the documented
+   * production configuration. The result was a restore that restored nothing,
+   * reported "Files restore completed successfully", and overwrote the
+   * application directory instead.
+   *
+   * BUG-069/BUG-219: extraction went through `spawn('tar', ['-xzf', …,
+   * '--overwrite'])`, which trusts every path in the archive (an authenticated
+   * write-anywhere primitive) and does not exist on a Windows host. It now
+   * runs through the `tar` npm package, after a listing pass that refuses the
+   * archive outright if any entry could land outside the uploads directory.
+   *
+   * targetPath stays an internal parameter for tests; no route passes it.
+   */
+  async restoreFiles(backupFilename: string, targetPath?: string, opts?: { skipSafetyBackup?: boolean }): Promise<{ safetyBackupFilename?: string; filesWritten: number }> {
     console.log(`Starting files restore from: ${backupFilename}`);
 
-    // Restoring overwrites whatever is currently in uploads/ (scanned documents,
-    // vehicle photos, damage-check header images, template backgrounds). Before
-    // touching anything, take a fresh backup of the current files and verify it -
-    // so a mistaken or wrong-file restore is itself reversible. skipSafetyBackup
-    // exists only for the case of restoring *because* backups are broken; it
-    // defaults to off.
+    const settings = await this.getBackupSettings();
+    const backupPath = this.resolveBackupPath(settings);
+    const sourceFile = this.locateRestoreSource(backupPath, 'files', backupFilename);
+
+    await this.assertChecksumMatches(backupFilename, 'files', sourceFile);
+
+    // --- verify the archive BEFORE overwriting anything ----------------------
+    const archive = await inspectFilesArchive(sourceFile);
+    if (!archive.ok) {
+      if (archive.rejected.length) {
+        console.error(`Refused archive entries: ${archive.rejected.slice(0, 10).join(', ')}`);
+      }
+      throw new Error(`Refusing to restore: ${archive.reason}.`);
+    }
+
+    // The extraction target MUST be the directory the safety backup archives
+    // from, or the verified safety net protects a directory the restore does
+    // not touch.
+    const extractPath = targetPath ?? getUploadsDir();
+    if (resolve(extractPath) !== resolve(getUploadsDir())) {
+      throw new Error(
+        `Refusing to restore: the extraction target ${extractPath} is not the uploads directory ${getUploadsDir()}.`
+      );
+    }
+
     let safetyBackupFilename: string | undefined;
     if (!opts?.skipSafetyBackup) {
       const safety = await this.takeSafetyBackup('files');
       safetyBackupFilename = safety.filename;
     }
 
-    // Get backup settings and resolve where backups are stored
-    const settings = await this.getBackupSettings();
-    const backupPath = this.resolveBackupPath(settings);
+    await mkdir(extractPath, { recursive: true });
+    console.log(`Extracting ${archive.entries} files to: ${extractPath}`);
+    const filesWritten = await extractFilesArchive(sourceFile, extractPath);
+    console.log(`Files restore completed successfully (${filesWritten} files)`);
 
-    let tempFile = `/tmp/restore-${Date.now()}-${backupFilename}`;
-
-    try {
-      // Find the backup file on the local filesystem
-      const localBackupPath = join(backupPath, backupFilename);
-
-      if (existsSync(localBackupPath)) {
-        // File is directly in backups directory (uploaded backup)
-        tempFile = localBackupPath;
-      } else {
-        // Try to find in organized structure (created backup)
-        const searchPaths = [
-          join(backupPath, 'files', backupFilename),
-          ...this.findFileInDateStructure(join(backupPath, 'files'), backupFilename)
-        ];
-
-        let found = false;
-        for (const path of searchPaths) {
-          if (existsSync(path)) {
-            tempFile = path;
-            found = true;
-            break;
-          }
-        }
-
-        if (!found) {
-          throw new Error(`Backup file not found in local filesystem: ${backupFilename}`);
-        }
-      }
-
-      console.log(`Found backup file at: ${tempFile}`);
-    } catch (error) {
-      throw new Error(`Failed to locate backup file: ${error instanceof Error ? error.message : String(error)}`);
-    }
-
-    const isTemporaryFile = tempFile.startsWith('/tmp/');
-    
-    try {
-      // Verify backup integrity. A missing manifest is tolerated (older or
-      // uploaded backups may not have one) and only logs a warning. A checksum
-      // mismatch means the backup is corrupt and must NOT be swallowed here -
-      // it has to abort the restore before tar extracts over live files.
-      const manifest = await this.getBackupManifest(backupFilename, 'files').catch(() => null);
-      if (!manifest) {
-        console.warn('Could not verify backup integrity (manifest may be missing)');
-      } else if (manifest.checksum && manifest.checksum !== 'uploaded') {
-        const actualChecksum = await this.calculateChecksum(tempFile);
-        if (actualChecksum !== manifest.checksum) {
-          throw new Error('Backup file integrity check failed - checksum mismatch');
-        }
-      }
-
-      // Extract files
-      const extractPath = targetPath || process.cwd();
-      console.log(`Extracting files to: ${extractPath}`);
-      
-      const tarProcess = spawn('tar', [
-        '-xzf', tempFile,
-        '-C', extractPath,
-        '--overwrite'
-      ]);
-
-      let stderr = '';
-      tarProcess.stderr.on('data', (data) => {
-        stderr += data.toString();
-        console.log(`tar restore: ${data}`);
-      });
-
-      tarProcess.stdout.on('data', (data) => {
-        console.log(`tar restore: ${data}`);
-      });
-
-      // Wait for completion
-      await new Promise<void>((resolve, reject) => {
-        tarProcess.on('close', (code) => {
-          if (code === 0) {
-            console.log('Files restore completed successfully');
-            resolve();
-          } else {
-            reject(new Error(`Files restore failed with code ${code}. Error: ${stderr}`));
-          }
-        });
-      });
-
-    } finally {
-      // Cleanup temp files (but not the original backup file)
-      if (isTemporaryFile && existsSync(tempFile)) {
-        try {
-          require('fs').unlinkSync(tempFile);
-        } catch (error) {
-          console.error('Error cleaning up temp restore file:', error);
-        }
-      }
-    }
-
-    return { safetyBackupFilename };
+    return { safetyBackupFilename, filesWritten };
   }
 
-  // Complete system restore (database + files)
-  async restoreComplete(databaseBackup: string, filesBackup: string, opts?: { skipSafetyBackup?: boolean }): Promise<{ databaseSafetyBackupFilename?: string; filesSafetyBackupFilename?: string }> {
+  /**
+   * Complete system restore (database + files).
+   *
+   * BUG-208: this ran the database half and then the files half. When the
+   * files half failed the response said the whole restore had failed — while
+   * the database had already been replaced and everyone was logged out, with
+   * no mention of which half had landed or of the two safety backups.
+   *
+   * The files archive is now verified FIRST, so the commonest failure (a bad
+   * or hostile files archive) is discovered while the database is still
+   * untouched. The outcome is reported per half rather than as one flat
+   * boolean, because after the database has been replaced "it failed" is not
+   * a true answer.
+   */
+  async restoreComplete(databaseBackup: string, filesBackup: string, opts?: { skipSafetyBackup?: boolean }): Promise<{
+    databaseRestored: boolean;
+    filesRestored: boolean;
+    databaseSafetyBackupFilename?: string;
+    filesSafetyBackupFilename?: string;
+    error?: string;
+  }> {
     console.log('Starting complete system restore...');
     console.log(`Database backup: ${databaseBackup}`);
     console.log(`Files backup: ${filesBackup}`);
 
-    // "Complete" restore overwrites BOTH the database and uploads/ (documents,
-    // vehicle photos, damage-check images, template backgrounds). A safety net
-    // that only covers the database half would read as protection while
-    // leaving files unrecoverable, which is worse than no safety net at all -
-    // so take and verify safety backups of both before any destructive work.
-    // Each call throws its own "Refusing to restore" error if it fails, and
-    // the files backup is never attempted if the database one already failed.
+    const settings = await this.getBackupSettings();
+    const backupPath = this.resolveBackupPath(settings);
+
+    // Stage 1 - verify BOTH archives before either half is applied.
+    const filesSource = this.locateRestoreSource(backupPath, 'files', filesBackup);
+    const filesCheck = await inspectFilesArchive(filesSource);
+    if (!filesCheck.ok) {
+      throw new Error(`Refusing to restore: the files archive is unusable - ${filesCheck.reason}.`);
+    }
+    const dbSource = this.locateRestoreSource(backupPath, 'database', databaseBackup);
+    const dbCheck = await inspectDump(dbSource);
+    if (!dbCheck.ok) {
+      throw new Error(`Refusing to restore: the database archive is unusable - ${dbCheck.reason}.`);
+    }
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) throw new Error('DATABASE_URL is not configured; refusing to restore.');
+    const foreign = dumpTargetsForeignDatabase(dbCheck, databaseUrl);
+    if (foreign) throw new Error(`Refusing to restore: ${foreign}.`);
+
+    // Stage 2 - safety backups of both halves.
     let databaseSafetyBackupFilename: string | undefined;
     let filesSafetyBackupFilename: string | undefined;
     if (!opts?.skipSafetyBackup) {
-      const dbSafety = await this.takeSafetyBackup('database');
-      databaseSafetyBackupFilename = dbSafety.filename;
-      const filesSafety = await this.takeSafetyBackup('files');
-      filesSafetyBackupFilename = filesSafety.filename;
+      databaseSafetyBackupFilename = (await this.takeSafetyBackup('database')).filename;
+      filesSafetyBackupFilename = (await this.takeSafetyBackup('files')).filename;
     }
 
+    // Stage 3 - apply. Files first: they are reversible from the safety
+    // archive without anyone being logged out, and the database half is the
+    // one that ends every session.
+    let filesRestored = false;
+    let databaseRestored = false;
     try {
-      // Restore database and files. Both safety backups were already taken
-      // above (or explicitly skipped), so don't take them again inside the
-      // individual restore calls.
-      await this.restoreDatabase(databaseBackup, { skipSafetyBackup: true });
-
-      // Then restore files
       await this.restoreFiles(filesBackup, undefined, { skipSafetyBackup: true });
-
-      console.log('Complete system restore finished successfully!');
-      console.log('IMPORTANT: Please restart the application to ensure all changes take effect.');
-
+      filesRestored = true;
+      await this.restoreDatabase(databaseBackup, { skipSafetyBackup: true });
+      databaseRestored = true;
     } catch (error) {
-      console.error('Complete restore failed:', error);
-      throw new Error(`Complete restore failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Complete restore failed:', message);
+      const applied = [filesRestored ? 'the files' : null, databaseRestored ? 'the database' : null]
+        .filter(Boolean).join(' and ');
+      throw Object.assign(
+        new Error(
+          `Complete restore failed: ${message}` +
+          (applied ? ` IMPORTANT: ${applied} ${applied.includes('and') ? 'have' : 'has'} already been replaced.` : ' Nothing was changed.') +
+          (databaseSafetyBackupFilename ? ` Safety backups: ${databaseSafetyBackupFilename}, ${filesSafetyBackupFilename}.` : '')
+        ),
+        { databaseRestored, filesRestored, databaseSafetyBackupFilename, filesSafetyBackupFilename },
+      );
     }
 
-    return { databaseSafetyBackupFilename, filesSafetyBackupFilename };
+    console.log('Complete system restore finished successfully!');
+    console.log('IMPORTANT: Please restart the application to ensure all changes take effect.');
+    return { databaseRestored, filesRestored, databaseSafetyBackupFilename, filesSafetyBackupFilename };
   }
+
 
   // Helper method to get backup manifest from the local filesystem
   private async getBackupManifest(filename: string, type: 'database' | 'files'): Promise<BackupManifest | null> {
@@ -1234,7 +1236,48 @@ export class BackupService {
       }
     }
 
-    console.log(`Cleanup completed. Deleted ${deletedCount} old backups.`);
+    // BUG-221(d): retention removed the files but left the year/month/day
+    // directories behind for ever, so the backup volume slowly filled with
+    // empty folders and an operator browsing it could not tell which dates
+    // still held anything.
+    const cleanupSettings = await this.getBackupSettings();
+    const removedDirs = this.pruneEmptyDateDirectories(this.resolveBackupPath(cleanupSettings));
+
+    console.log(`Cleanup completed. Deleted ${deletedCount} old backups` +
+      (removedDirs ? ` and ${removedDirs} empty date folder(s).` : '.'));
+  }
+
+  /**
+   * Removes now-empty year/month/day folders under the backup root. Never
+   * touches the backup root itself or the type directories (database/, files/),
+   * which the writers recreate and which an operator expects to see.
+   */
+  private pruneEmptyDateDirectories(backupPath: string): number {
+    let removed = 0;
+    const prune = (dir: string, depth: number): boolean => {
+      if (!existsSync(dir)) return false;
+      let entries: string[];
+      try { entries = readdirSync(dir); } catch { return false; }
+      for (const entry of entries) {
+        const full = join(dir, entry);
+        try {
+          if (statSync(full).isDirectory()) prune(full, depth + 1);
+        } catch { /* vanished mid-walk */ }
+      }
+      if (depth < 2) return false;
+      try {
+        if (readdirSync(dir).length === 0) {
+          rmdirSync(dir);
+          removed += 1;
+          return true;
+        }
+      } catch { /* not empty, or in use */ }
+      return false;
+    };
+    for (const type of ['database', 'files']) {
+      prune(join(backupPath, type), 1);
+    }
+    return removed;
   }
 }
 

@@ -10,6 +10,30 @@ import type { Express } from "express";
 import type { RouteDeps } from "./deps";
 import { spawn } from "child_process";
 import { sanitizeFilename } from "../utils/security/fileUploadSecurity";
+import {
+  inspectDump, dumpTargetsForeignDatabase, runPsqlRestore, inspectFilesArchive,
+  extractFilesArchive, makeRestoreTempDir, safeUnlink, gunzipTo, isGzip,
+  restoreToolsAvailable, RestoreFailedError,
+} from "../restoreSafety";
+
+/**
+ * BUG-075/BUG-197: a restore that fails must say so, and must say WHY, without
+ * ever handing the client a connection string. The guards in restoreSafety
+ * raise messages written to be read by an operator ("Refusing to restore: the
+ * dump does not end with ..."); psql failures arrive as RestoreFailedError
+ * carrying psql's own first ERROR: line. Anything else is reported as a
+ * generic failure and logged in full on the server.
+ */
+function restoreErrorMessage(error: unknown): string {
+  if (error instanceof RestoreFailedError) return error.message;
+  const message = error instanceof Error ? error.message : '';
+  if (/^Refusing to restore/.test(message) || /^Complete restore failed/.test(message)) {
+    // Still belt-and-braces: never let a connection string through, whatever
+    // an underlying library decided to put in its message.
+    return message.replace(/postgres(?:ql)?:\/\/\S+/gi, '[database connection]');
+  }
+  return 'The restore failed. Nothing was changed, or the server log explains what was. Check the server log for details.';
+}
 
 /**
  * BUG-097 hardening. `filename` must be exactly its own basename on both
@@ -231,11 +255,40 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
     }
   });
 
-  // Restore app data from uploaded SQL file
+  /**
+   * Restore the database from an UPLOADED dump.
+   *
+   * This route has its own destructive path — it drops every table and
+   * restores over the result, bypassing backupService.restoreDatabase — so it
+   * needs the same guarantees, not a weaker copy of them (BUG-197, BUG-199,
+   * BUG-221f).
+   */
   app.post("/api/backups/restore-data", hasPermission(UserPermission.MANAGE_BACKUPS), backupUpload.single('backup'), async (req, res) => {
+    const cleanupUpload = async () => {
+      if (req.file?.path) {
+        try { await fs.promises.unlink(req.file.path); } catch { /* already gone */ }
+      }
+    };
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'No backup file uploaded' });
+      }
+
+      // BUG-221(f): /restore/database and /restore/complete require the
+      // operator to type the exact filename before replacing everything; these
+      // upload routes dropped the whole database on a single click. Same rail.
+      const { confirm } = req.body ?? {};
+      if (confirm !== req.file.originalname) {
+        await cleanupUpload();
+        return res.status(400).json({
+          error: 'Confirmation does not match. Send `confirm` with the exact name of the file you are uploading to confirm this restore.',
+        });
+      }
+
+      // BUG-221(e): a zero-byte upload is never a backup.
+      if (!req.file.size) {
+        await cleanupUpload();
+        return res.status(400).json({ error: 'That file is empty, so the restore was cancelled. Nothing was changed.' });
       }
 
       // Post-upload validation - verify file content matches backup type
@@ -246,159 +299,117 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
         'backup'
       );
       if (!fileValidation.valid) {
+        await cleanupUpload();
         return res.status(400).json({ error: fileValidation.error });
       }
 
-      const { exec } = await import('child_process');
-      const { promisify } = await import('util');
-      const os = await import('os');
-      const execAsync = promisify(exec);
-
       const databaseUrl = process.env.DATABASE_URL;
       if (!databaseUrl) {
-        throw new Error('DATABASE_URL not configured');
+        await cleanupUpload();
+        return res.status(500).json({ error: 'The database connection is not configured; nothing was changed.' });
       }
 
-      console.log('🔄 Starting database restore from:', req.file.path);
-      console.log('📊 File size:', req.file.size, 'bytes');
+      console.log('Starting database restore from an uploaded file, size:', req.file.size, 'bytes');
 
-      // The scheduled backups are written as .sql.gz, and .gz is an accepted
-      // upload extension, but psql cannot read gzip. Restoring one used to drop
-      // every table and only then fail on the binary, leaving an empty database
-      // with nothing to roll back to. Decompress first, and verify the result
-      // actually looks like a dump *before* anything is dropped.
-      let restoreFilePath = req.file.path;
-      let decompressedPath: string | null = null;
-
-      const header = Buffer.alloc(2);
-      const fd = await fs.promises.open(req.file.path, 'r');
-      try {
-        await fd.read(header, 0, 2, 0);
-      } finally {
-        await fd.close();
+      // --- verify the archive end to end BEFORE anything is dropped ---------
+      // BUG-197: the old check read the first 4 KB and looked for something
+      // dump-shaped. A download truncated at 50 % passes that test, and
+      // restoring it emptied users, vehicles, reservations and session while
+      // answering 200 "Database restored successfully". inspectDump() reads
+      // the whole file and insists on the pg_dump completion marker.
+      const inspection = await inspectDump(req.file.path);
+      if (!inspection.ok) {
+        await cleanupUpload();
+        return res.status(400).json({ error: `Refusing to restore: ${inspection.reason}.` });
+      }
+      // BUG-199: a dump carrying \connect restores into — and first drops —
+      // another database while this one is left untouched and the API says
+      // "success". inspectDump already refuses \connect; this names the
+      // database so the operator understands why.
+      const foreign = dumpTargetsForeignDatabase(inspection, databaseUrl);
+      if (foreign) {
+        await cleanupUpload();
+        return res.status(400).json({ error: `Refusing to restore: ${foreign}.` });
       }
 
-      if (header[0] === 0x1f && header[1] === 0x8b) {
-        const { createGunzip } = await import('zlib');
-        const { pipeline } = await import('stream/promises');
-        decompressedPath = path.join(os.tmpdir(), `restore-${Date.now()}.sql`);
-        console.log('📦 Backup is gzipped — decompressing before restore');
-        await pipeline(
-          fs.createReadStream(req.file.path),
-          createGunzip(),
-          fs.createWriteStream(decompressedPath)
-        );
-        restoreFilePath = decompressedPath;
-      }
-
-      // Refuse anything that is not recognisably a SQL dump, while the existing
-      // data is still intact.
-      const probe = await fs.promises.readFile(restoreFilePath, { encoding: 'utf8', flag: 'r' })
-        .then(text => text.slice(0, 4096))
-        .catch(() => '');
-      if (!/PostgreSQL database dump|CREATE TABLE|SET statement_timeout|INSERT INTO|COPY /i.test(probe)) {
-        if (decompressedPath) {
-          try { await fs.promises.unlink(decompressedPath); } catch {}
-        }
-        return res.status(400).json({
-          error: 'That file does not look like a PostgreSQL dump, so the restore was cancelled. Nothing was changed.',
-        });
-      }
-
-      // This route drops every table and restores over it, bypassing
-      // backupService.restoreDatabase entirely - it has its own destructive
-      // path, so it needs its own safety net. Take and verify a fresh backup
-      // of the CURRENT database before anything is dropped. If this can't be
-      // done, refuse to restore rather than proceed with no way back.
+      // Take and verify a backup of the CURRENT database before dropping it.
+      // Throws "Refusing to restore: ..." if that cannot be done.
       const safety = await backupService.takeSafetyBackup('database');
 
-      // Step 1: Drop all tables with CASCADE to remove dependencies
-      console.log('🗑️ Dropping all existing tables...');
-      const dropTablesQuery = `
-        DO $$ DECLARE
-          r RECORD;
-        BEGIN
-          FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
-            EXECUTE 'DROP TABLE IF EXISTS public.' || quote_ident(r.tablename) || ' CASCADE';
-          END LOOP;
-        END $$;
-      `;
-      
-      // Write query to a temp file to avoid shell escaping issues with $$
-      const dropScriptPath = path.join(os.tmpdir(), `drop-tables-${Date.now()}.sql`);
-      await fs.promises.writeFile(dropScriptPath, dropTablesQuery);
-      
+      const tempDir = makeRestoreTempDir();
+      let sqlFile = req.file.path;
       try {
-        await execAsync(`psql "${databaseUrl}" -f "${dropScriptPath}"`);
-        console.log('✅ All tables dropped');
+        if (isGzip(req.file.path)) {
+          // zlib, not an external gunzip (BUG-219), and into a private temp
+          // directory rather than beside the archive (BUG-207).
+          sqlFile = path.join(tempDir, 'restore.sql');
+          await gunzipTo(req.file.path, sqlFile);
+        }
+
+        // Drop every table first: an uploaded dump is not necessarily a
+        // --clean dump, so without this the restore would collide with the
+        // existing schema. The drop and the restore run as one psql
+        // invocation inside a single transaction, so if the restore fails the
+        // drop is rolled back with it — which is the whole of BUG-197.
+        const dropAndRestore = path.join(tempDir, 'drop-and-restore.sql');
+        const dropStatements = [
+          'DO $$ DECLARE r RECORD;',
+          "BEGIN FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP",
+          "  EXECUTE 'DROP TABLE IF EXISTS public.' || quote_ident(r.tablename) || ' CASCADE';",
+          'END LOOP; END $$;',
+          '',
+        ].join('\n');
+        await fs.promises.writeFile(dropAndRestore, dropStatements + await fs.promises.readFile(sqlFile, 'utf8'));
+
+        await runPsqlRestore(databaseUrl, dropAndRestore);
+        console.log('Database restore completed successfully');
+
+        await cleanupUpload();
+        return res.json({
+          success: true,
+          message: 'Database restored successfully. Please refresh your browser and log in again.',
+          safetyBackupFilename: safety.filename,
+        });
       } finally {
-        // Clean up temp file
-        try {
-          await fs.promises.unlink(dropScriptPath);
-        } catch (e) {
-          // Ignore cleanup errors
-        }
+        // BUG-206/BUG-207: nothing is left behind, on any path.
+        safeUnlink(sqlFile === req.file.path ? null : sqlFile);
+        safeUnlink(path.join(tempDir, 'drop-and-restore.sql'));
+        try { fs.rmdirSync(tempDir); } catch { /* not empty, or already gone */ }
       }
-
-      // Step 2: Restore database using psql
-      console.log('📥 Restoring database from backup...');
-      const { stdout, stderr } = await execAsync(
-        `psql "${databaseUrl}" -f "${restoreFilePath}" 2>&1`,
-        { maxBuffer: 10 * 1024 * 1024 } // 10MB buffer for large restores
-      );
-
-      if (stdout) {
-        console.log('📝 psql stdout:', stdout.substring(0, 1000)); // Log first 1000 chars
-      }
-      if (stderr) {
-        console.log('⚠️ psql stderr:', stderr.substring(0, 1000));
-      }
-
-      console.log('✅ Database restore completed successfully');
-
-      // Clean up uploaded file
-      try {
-        await fs.promises.unlink(req.file.path);
-        if (decompressedPath) await fs.promises.unlink(decompressedPath);
-      } catch (cleanupError) {
-        console.error('Error cleaning up uploaded file:', cleanupError);
-      }
-
-      res.json({
-        success: true,
-        message: 'Database restored successfully. Please refresh your browser and log in again.',
-        safetyBackupFilename: safety.filename,
-      });
     } catch (error) {
-      // Clean up file on error
-      if (req.file) {
-        try {
-          await fs.promises.unlink(req.file.path);
-        } catch (cleanupError) {
-          console.error('Error cleaning up uploaded file:', cleanupError);
-        }
-      }
-
-      console.error("❌ Error restoring app data:", error);
-      // Surface the real reason (e.g. "Refusing to restore: ...") as `error`,
-      // not a fixed generic string - both restore-data and restore-files are
-      // read by client code that only looks at error.error, so a fixed string
-      // here silently swallowed the safety-backup guard's refusal message and
-      // made it indistinguishable from any other failure.
-      res.status(500).json({
-        details: error instanceof Error ? error.message : "Unknown error"
-      });
+      await cleanupUpload();
+      console.error("Error restoring app data:", error);
+      // The message is the guard's own refusal ("Refusing to restore: ...") or
+      // psql's first ERROR: line — never error.message from a connection
+      // attempt, which is where the connection string used to surface.
+      return res.status(500).json({ error: restoreErrorMessage(error) });
     }
   });
 
-  // Restore app code from uploaded tar.gz file
+  /**
+   * Restore the application's source code from an uploaded archive.
+   *
+   * BUG-069: this was `tar -xzf <uploaded file> -C <cwd>`, which trusts every
+   * path inside an operator-supplied archive and writes it over the running
+   * application — an authenticated remote code execution primitive, followed
+   * by process.exit(0) to make the new code run. Extraction now goes through
+   * the `tar` npm package with a per-entry filter, so an entry with `..` or an
+   * absolute path is dropped instead of honoured.
+   */
   app.post("/api/backups/restore-code", hasPermission(UserPermission.MANAGE_BACKUPS), backupUpload.single('backup'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'No backup file uploaded' });
       }
 
-      // Post-upload validation - verify file content matches backup type
+      const { confirm } = req.body ?? {};
+      if (confirm !== req.file.originalname) {
+        try { await fs.promises.unlink(req.file.path); } catch {}
+        return res.status(400).json({
+          error: 'Confirmation does not match. Send `confirm` with the exact name of the file you are uploading to confirm this restore.',
+        });
+      }
+
       const fileValidation = await validateAfterUpload(
         req.file.path,
         req.file.originalname,
@@ -406,26 +417,34 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
         'backup'
       );
       if (!fileValidation.valid) {
+        try { await fs.promises.unlink(req.file.path); } catch {}
         return res.status(400).json({ error: fileValidation.error });
       }
 
-      const { exec } = await import('child_process');
-      const { promisify } = await import('util');
-      const execAsync = promisify(exec);
+      const tarModule = await import('tar');
+      let rejected = 0;
+      await tarModule.x({
+        file: req.file.path,
+        cwd: process.cwd(),
+        preservePaths: false,
+        filter: (entryPath: string) => {
+          const p = String(entryPath).replace(/\\/g, '/');
+          const unsafe =
+            p.startsWith('/') || /^[A-Za-z]:/.test(p) || p.split('/').some((seg) => seg === '..');
+          if (unsafe) {
+            rejected += 1;
+            console.error(`Refused code-restore entry outside the application directory: ${p.slice(0, 200)}`);
+          }
+          return !unsafe;
+        },
+      } as any);
 
-      // Extract tar.gz to current directory (will overwrite existing files)
-      await execAsync(`tar -xzf "${req.file.path}" -C "${process.cwd()}"`);
-
-      // Clean up uploaded file
-      try {
-        await fs.promises.unlink(req.file.path);
-      } catch (cleanupError) {
-        console.error('Error cleaning up uploaded file:', cleanupError);
-      }
+      try { await fs.promises.unlink(req.file.path); } catch {}
 
       res.json({
         success: true,
         message: 'Code restored successfully. The application will restart automatically.',
+        rejectedEntries: rejected,
       });
 
       // Restart the application after a short delay
@@ -433,20 +452,11 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
         process.exit(0); // PM2 or the process manager will restart the app
       }, 2000);
     } catch (error) {
-      // Clean up file on error
       if (req.file) {
-        try {
-          await fs.promises.unlink(req.file.path);
-        } catch (cleanupError) {
-          console.error('Error cleaning up uploaded file:', cleanupError);
-        }
+        try { await fs.promises.unlink(req.file.path); } catch {}
       }
-      
       console.error("Error restoring app code:", error);
-      res.status(500).json({ 
-        error: "Failed to restore app code",
-        details: error instanceof Error ? error.message : "Unknown error"
-      });
+      res.status(500).json({ error: restoreErrorMessage(error) });
     }
   });
 
@@ -512,14 +522,42 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
     }
   });
 
-  // Restore uploaded files from tar.gz archive
+  /**
+   * Restore uploaded files from an UPLOADED tar.gz archive.
+   *
+   * BUG-198: this extracted into process.cwd() while the safety backup it had
+   * just taken archived getUploadsDir() — so with UPLOADS_DIR set (the
+   * documented production configuration) it restored nothing into the served
+   * directory, overwrote the application directory instead, and reported
+   * success. BUG-069: `tar -xzf … -C cwd` honours every path in an
+   * operator-supplied archive.
+   */
   app.post("/api/backups/restore-files", hasPermission(UserPermission.MANAGE_BACKUPS), backupUpload.single('backup'), async (req, res) => {
+    const cleanupUpload = async () => {
+      if (req.file?.path) {
+        try { await fs.promises.unlink(req.file.path); } catch { /* already gone */ }
+      }
+    };
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'No backup file uploaded' });
       }
 
-      // Post-upload validation - verify file content matches backup type
+      // BUG-221(f): the same typed confirmation the non-upload restore routes require.
+      const { confirm } = req.body ?? {};
+      if (confirm !== req.file.originalname) {
+        await cleanupUpload();
+        return res.status(400).json({
+          error: 'Confirmation does not match. Send `confirm` with the exact name of the file you are uploading to confirm this restore.',
+        });
+      }
+
+      // BUG-221(e): a zero-byte upload is never a backup.
+      if (!req.file.size) {
+        await cleanupUpload();
+        return res.status(400).json({ error: 'That file is empty, so the restore was cancelled. Nothing was changed.' });
+      }
+
       const fileValidation = await validateAfterUpload(
         req.file.path,
         req.file.originalname,
@@ -527,55 +565,45 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
         'backup'
       );
       if (!fileValidation.valid) {
+        await cleanupUpload();
         return res.status(400).json({ error: fileValidation.error });
       }
 
-      const { exec } = await import('child_process');
-      const { promisify } = await import('util');
-      const execAsync = promisify(exec);
-
-      // This route extracts straight over uploads/, bypassing
-      // backupService.restoreFiles entirely - it has its own destructive
-      // path, so it needs its own safety net. Take and verify a fresh backup
-      // of the CURRENT uploads/ before anything is overwritten. If this can't
-      // be done, refuse to restore rather than proceed with no way back.
-      const safety = await backupService.takeSafetyBackup('files');
-
-      // Extract tar.gz to current directory (will restore uploads folder)
-      await execAsync(`tar -xzf "${req.file.path}" -C "${process.cwd()}"`);
-
-      // Clean up uploaded file
-      try {
-        await fs.promises.unlink(req.file.path);
-      } catch (cleanupError) {
-        console.error('Error cleaning up uploaded file:', cleanupError);
+      // --- verify the archive BEFORE anything is overwritten ---------------
+      const archive = await inspectFilesArchive(req.file.path);
+      if (!archive.ok) {
+        if (archive.rejected.length) {
+          console.error(`Refused archive entries: ${archive.rejected.slice(0, 10).join(', ')}`);
+        }
+        await cleanupUpload();
+        return res.status(400).json({ error: `Refusing to restore: ${archive.reason}.` });
       }
 
+      // Take and verify a backup of the CURRENT uploads directory first.
+      const safety = await backupService.takeSafetyBackup('files');
+
+      // BUG-198: into the uploads directory the application actually serves
+      // and backs up — the same directory the safety backup above archived —
+      // never into process.cwd().
+      const target = getUploadsDir();
+      await fs.promises.mkdir(target, { recursive: true });
+      const filesWritten = await extractFilesArchive(req.file.path, target);
+
+      await cleanupUpload();
       res.json({
         success: true,
-        message: 'All uploaded files have been restored successfully.',
+        message: `All uploaded files have been restored successfully (${filesWritten} files).`,
+        filesWritten,
+        restoredTo: target,
         safetyBackupFilename: safety.filename,
       });
     } catch (error) {
-      // Clean up file on error
-      if (req.file) {
-        try {
-          await fs.promises.unlink(req.file.path);
-        } catch (cleanupError) {
-          console.error('Error cleaning up uploaded file:', cleanupError);
-        }
-      }
-
+      await cleanupUpload();
       console.error("Error restoring uploaded files:", error);
-      // Surface the real reason (e.g. "Refusing to restore: ...") as `error`,
-      // not a fixed generic string - see the matching comment in
-      // /api/backups/restore-data's catch block above.
-      res.status(500).json({
-        details: error instanceof Error ? error.message : "Unknown error"
-      });
+      res.status(500).json({ error: restoreErrorMessage(error) });
     }
   });
-  
+
   // List available backups
   app.get("/api/backups/list", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
     try {
@@ -684,13 +712,38 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
       const ageHours = lastSuccessAt
         ? Math.round((Date.now() - new Date(lastSuccessAt).getTime()) / 3600000)
         : null;
+
+      // BUG-221(c): renaming or unmounting the backup directory made health
+      // answer 200 with stale:false and lastError:null while /list returned an
+      // empty array — the entire history gone without a single warning. The
+      // directory's existence, and whether it actually holds anything, is part
+      // of the health answer.
+      const backupPathExists = fs.existsSync(pathInfo.path);
+      const backupCount = backupPathExists ? (await backupService.listBackups()).length : 0;
+      const backupPathError = !backupPathExists
+        ? `The backup directory ${pathInfo.path} does not exist.`
+        : backupCount === 0 ? `No backups were found in ${pathInfo.path}.` : null;
+
+      // BUG-219: restore depends on psql/pg_dump being startable. Finding that
+      // out during an emergency, after a minute-long safety backup, is too late.
+      const tools = await restoreToolsAvailable();
+
       res.json({
         lastSuccessAt,
         ageHours,
-        stale: ageHours === null || ageHours > 48,
-        lastError: status.lastError ?? null,
+        stale: ageHours === null || ageHours > 48 || !backupPathExists || backupCount === 0,
+        // A real failed run still wins the lastError slot, because a backup
+        // that failed is more urgent than a directory that is merely empty —
+        // but the path problem gets its own field so the UI can show both,
+        // and so neither can hide the other.
+        lastError: status.lastError ?? backupPathError,
+        backupPathError,
         backupPath: pathInfo.path,
+        backupPathExists,
+        backupCount,
         backupPathFromEnv: pathInfo.fromEnv,
+        restoreToolsOk: tools.ok,
+        restoreToolsMissing: tools.missing,
       });
     } catch (error) {
       console.error('Error reading backup health:', error);
@@ -720,9 +773,18 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
         backups: result
       });
     } catch (error) {
+      // BUG-221(a): a second "Back up now" while one is running is not a
+      // server error, it is a conflict — and the caller can be told when to
+      // try again instead of being left to guess.
+      if (error instanceof Error && /already running/i.test(error.message)) {
+        res.setHeader('Retry-After', '60');
+        return res.status(409).json({
+          error: "A backup is already running. Wait for it to finish before starting another.",
+          retryAfterSeconds: 60,
+        });
+      }
       console.error("Error running backup:", error);
-      res.status(500).json({ 
-      });
+      res.status(500).json({ error: "The backup failed. Check the server log for details." });
     }
   });
 
@@ -823,6 +885,13 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
 
       const file = req.file;
       const backupType = req.body.type; // 'database' or 'files'
+
+      // BUG-221(e): a zero-byte file was accepted with 200 and then listed as
+      // a restorable backup.
+      if (!file.size) {
+        fs.unlinkSync(file.path);
+        return res.status(400).json({ error: "That file is empty. A backup of zero bytes is not a backup." });
+      }
 
       // Post-upload validation - verify file content matches backup type
       const fileValidation = await validateAfterUpload(
@@ -965,8 +1034,12 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
       });
     } catch (error) {
       console.error("Error restoring database:", error);
-      res.status(500).json({
-      });
+      // BUG-197: the body used to be {} — a 500 with nothing in it, which the
+      // UI could only render as a shrug. A refused archive says exactly what
+      // was wrong with it and that nothing was changed; a psql failure carries
+      // psql's own first ERROR: line. Never the connection string (BUG-075).
+      const refused = error instanceof Error && /^Refusing to restore/.test(error.message);
+      res.status(refused ? 400 : 500).json({ error: restoreErrorMessage(error) });
     }
   });
 
@@ -1000,13 +1073,14 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
 
       res.json({
         success: true,
-        message: "Files restore completed successfully",
+        message: `Files restore completed successfully (${result.filesWritten} files)`,
+        filesWritten: result.filesWritten,
         safetyBackupFilename: result.safetyBackupFilename,
       });
     } catch (error) {
       console.error("Error restoring files:", error);
-      res.status(500).json({
-      });
+      const refused = error instanceof Error && /^Refusing to restore/.test(error.message);
+      res.status(refused ? 400 : 500).json({ error: restoreErrorMessage(error) });
     }
   });
 
@@ -1058,12 +1132,24 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
         success: true,
         message: "Complete system restore finished successfully!",
         warning: "IMPORTANT: Please restart the application to ensure all changes take effect",
+        databaseRestored: result.databaseRestored,
+        filesRestored: result.filesRestored,
         databaseSafetyBackupFilename: result.databaseSafetyBackupFilename,
         filesSafetyBackupFilename: result.filesSafetyBackupFilename,
       });
     } catch (error) {
       console.error("Error performing complete restore:", error);
-      res.status(500).json({ 
+      // BUG-208: a failure here is not a flat "it failed" — by the time the
+      // second half fails the first one has already been applied and everyone
+      // may already be logged out. Say which half landed.
+      const partial = error as { databaseRestored?: boolean; filesRestored?: boolean; databaseSafetyBackupFilename?: string; filesSafetyBackupFilename?: string };
+      const refused = error instanceof Error && /^Refusing to restore/.test(error.message);
+      res.status(refused ? 400 : 500).json({
+        error: restoreErrorMessage(error),
+        databaseRestored: partial?.databaseRestored ?? false,
+        filesRestored: partial?.filesRestored ?? false,
+        databaseSafetyBackupFilename: partial?.databaseSafetyBackupFilename,
+        filesSafetyBackupFilename: partial?.filesSafetyBackupFilename,
       });
     }
   });
