@@ -2050,20 +2050,16 @@ export default function MaintenanceCalendar() {
                       }
                     }
 
-                    // Build vehicle update payload
-                    const vehicleUpdates: any = {
-                      maintenanceStatus: 'ok',
-                    };
-
-                    // Add APK date if provided
-                    if (apkDateInput) {
-                      vehicleUpdates.apkDate = apkDateInput;
-                    }
-
                     // Get the actual completion date (may be different from scheduled date)
                     const completionDate = completingReservation.startDate;
 
-                    // Add mileage data to vehicle updates if provided
+                    // OPT-015: the readings the workshop took are the only thing
+                    // that still belongs on the vehicle row; the block, the
+                    // workshop flag and the spare are one action now.
+                    const vehicleUpdates: any = {};
+                    if (apkDateInput) {
+                      vehicleUpdates.apkDate = apkDateInput;
+                    }
                     if (currentMileage && parseInt(currentMileage) > 0) {
                       vehicleUpdates.currentMileage = parseInt(currentMileage);
                       // Only update last service date/mileage for scheduled maintenance
@@ -2072,22 +2068,24 @@ export default function MaintenanceCalendar() {
                         vehicleUpdates.lastServiceMileage = parseInt(currentMileage);
                       }
                     }
+                    if (Object.keys(vehicleUpdates).length > 0) {
+                      await apiRequest('PATCH', `/api/vehicles/${completingReservation.vehicleId}`, vehicleUpdates);
+                    }
 
-                    // Update vehicle with new dates
-                    await apiRequest('PATCH', `/api/vehicles/${completingReservation.vehicleId}`, vehicleUpdates);
-
-                    // Update maintenance reservation to mark as complete with details
                     const maintenanceType = completingReservation.notes?.split(':')[0] || t('calendarPage.maintenanceTypeFallback');
                     const updatedNotes = maintenanceDetails
                       ? `${maintenanceType}:\n${maintenanceDetails}`
                       : completingReservation.notes || t('calendarPage.maintenanceCompletedNotesFallback');
 
-                    await apiRequest('PATCH', `/api/reservations/${completingReservation.id}`, {
-                      startDate: completionDate,
-                      endDate: completionDate,
-                      maintenanceStatus: 'out',
-                      maintenanceCategory: maintenanceCategory,
-                      notes: updatedNotes
+                    // OPT-015 - one transactional action: the block closes, the
+                    // workshop flag clears and the spare comes back, or none of
+                    // the three does. This used to be three calls across two
+                    // screens with nothing enforcing the order, and the two
+                    // closing paths wrote different dates.
+                    await apiRequest('POST', `/api/reservations/${completingReservation.id}/complete-maintenance`, {
+                      completionDate,
+                      maintenanceCategory,
+                      notes: updatedNotes,
                     });
 
                     invalidateRelatedQueries('reservations', { vehicleId: completingReservation.vehicleId });

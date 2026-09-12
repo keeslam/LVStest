@@ -30,6 +30,16 @@ import {
 import { formatVehicleBarcode } from "../shared/barcode";
 import { addMonths, addDays, parseISO, isBefore, isAfter, isEqual } from "date-fns";
 
+/** OPT-015 — the outcome of "Onderhoud afronden". */
+export type CompleteMaintenanceResult =
+  | {
+      ok: true;
+      block: Reservation | undefined;
+      vehicle: Vehicle | null;
+      spareReservation: Reservation | null;
+    }
+  | { ok: false; status: number; message: string };
+
 export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
@@ -126,6 +136,13 @@ export interface IStorage {
   closeReplacementReservation(replacementReservationId: number, endDate: string): Promise<Reservation | undefined>;
   markVehicleForService(vehicleId: number, maintenanceStatus: string, maintenanceNote?: string): Promise<Vehicle | undefined>;
   createMaintenanceBlock(vehicleId: number, startDate: string, endDate?: string, customerId?: number | null): Promise<Reservation>;
+  // OPT-015 - "de reparatie is klaar" as ONE transactional action.
+  completeMaintenance(blockId: number, input: {
+    completionDate: string;
+    maintenanceCategory?: string | null;
+    notes?: string | null;
+    username?: string | null;
+  }): Promise<CompleteMaintenanceResult>;
   closeMaintenanceBlock(blockReservationId: number, endDate: string): Promise<Reservation | undefined>;
   getSpareVehicleForVehicle(vehicleId: number): Promise<{ spareVehicle: Vehicle; replacementReservation: Reservation; customer: Customer | null; originalReservation: Reservation } | null>;
   getActingAsSpareInfo(vehicleId: number): Promise<{ originalVehicle: Vehicle; originalReservation: Reservation; replacementReservation: Reservation; customer: Customer | null } | null>;

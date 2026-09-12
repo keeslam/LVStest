@@ -4389,6 +4389,63 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  /**
+   * OPT-015 - "Onderhoud afronden" as ONE handling.
+   *
+   * Closing a repair cost three actions across two screens (block to `out`,
+   * vehicle flag back to `ok`, `return-from-service` on the spare), nothing
+   * enforced the order, nothing warned when one was skipped, and the two
+   * closing paths wrote different dates. This is that single business event,
+   * in one transaction, with one date convention: the completion date is the
+   * block's end date and the start date is never rewritten.
+   */
+  app.post("/api/reservations/:id/complete-maintenance", hasPermission(UserPermission.MANAGE_MAINTENANCE, UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
+    try {
+      const blockId = parseInt(req.params.id);
+      if (isNaN(blockId)) {
+        return res.status(400).json({ message: "Invalid maintenance block ID" });
+      }
+
+      const { completionDate, maintenanceCategory, notes } = req.body ?? {};
+      if (completionDate != null && completionDate !== '' &&
+        (typeof completionDate !== 'string' || !isCalendarDate(completionDate))) {
+        return res.status(400).json({
+          message: "Invalid completion date",
+          errors: [{ field: "completionDate", message: "Use a real yyyy-MM-dd date" }],
+        });
+      }
+      if (maintenanceCategory != null && typeof maintenanceCategory !== 'string') {
+        return res.status(400).json({ message: "Invalid maintenance category" });
+      }
+      if (notes != null && typeof notes !== 'string') {
+        return res.status(400).json({ message: "Invalid notes" });
+      }
+
+      const result = await storage.completeMaintenance(blockId, {
+        completionDate: completionDate || isoToday(),
+        maintenanceCategory: maintenanceCategory ?? null,
+        notes: notes ?? null,
+        username: (req as any).user?.username ?? null,
+      });
+
+      if (!result.ok) {
+        return res.status(result.status).json({ message: result.message });
+      }
+
+      if (result.block) realtimeEvents.reservations.updated(result.block);
+      if (result.vehicle) realtimeEvents.vehicles.updated(result.vehicle);
+
+      res.json({
+        block: result.block,
+        vehicle: result.vehicle,
+        spareReservation: result.spareReservation,
+      });
+    } catch (error) {
+      console.error("Error completing maintenance:", error);
+      res.status(500).json({ message: "Failed to finish the maintenance" });
+    }
+  });
+
   // Return vehicle from service and close replacement
   app.post("/api/reservations/:id/return-from-service", hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
     try {

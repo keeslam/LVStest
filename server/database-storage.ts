@@ -98,7 +98,7 @@ import { addMonths, addDays, parseISO, isBefore, isAfter, isEqual } from "date-f
 import { db } from "./db";
 import { eq, ne, and, gte, lte, desc, sql, inArray, not, or, ilike, isNull, isNotNull, getTableColumns, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { IStorage } from "./storage";
+import { IStorage, type CompleteMaintenanceResult } from "./storage";
 import { formatVehicleBarcode, parseBarcode, normalizeScannedCode } from "../shared/barcode";
 // besluiten B-16 + B-07: one day count and one total, shared with the form.
 import { recalculateTotalPrice } from "../shared/rental-pricing";
@@ -4856,6 +4856,138 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return maintenanceBlock;
+  }
+
+  /**
+   * OPT-015 — "Onderhoud afronden" as one handling instead of three.
+   *
+   * Closing one repair cost three actions across two screens: put the block on
+   * `out`, put the vehicle's `maintenance_status` back to `ok`, and run
+   * `return-from-service` on the spare. Nothing enforced the order and nothing
+   * warned when one was skipped — skip the second and the car stays "in de
+   * werkplaats" forever; skip the first and the block stays open and keeps
+   * blocking the calendar (44 vehicles with an unclosed block in the clone).
+   * The two closing paths also wrote different dates.
+   *
+   * One date convention, stated once: the completion date is the block's
+   * **end date**. The start date is never rewritten — the repair started when
+   * it started, and the old calendar path overwrote both, destroying that.
+   *
+   * All three writes are in one transaction: a failure halfway leaves none of
+   * them, which is the acceptance criterion in the plan.
+   */
+  async completeMaintenance(blockId: number, input: {
+    completionDate: string;
+    maintenanceCategory?: string | null;
+    notes?: string | null;
+    username?: string | null;
+  }): Promise<CompleteMaintenanceResult> {
+    const [block] = await db.select().from(reservations).where(
+      and(eq(reservations.id, blockId), isNull(reservations.deletedAt)),
+    );
+    if (!block) {
+      return { ok: false, status: 404, message: 'Maintenance block not found' };
+    }
+    if (block.type !== 'maintenance_block') {
+      return {
+        ok: false,
+        status: 400,
+        message: 'This reservation is not a maintenance block, so there is no repair to finish here.',
+      };
+    }
+    if (!block.vehicleId) {
+      return { ok: false, status: 400, message: 'This maintenance block has no vehicle.' };
+    }
+    if (block.endDate && input.completionDate < block.startDate) {
+      return {
+        ok: false,
+        status: 400,
+        message: 'The completion date cannot be before the block started.',
+      };
+    }
+
+    const vehicleId = block.vehicleId;
+    // Looked up before the transaction: this read walks the reservation table
+    // and must not hold the block's row lock while it does.
+    //
+    // Deliberately NOT getSpareVehicleForVehicle(): that one only sees a spare
+    // whose period contains *today*, which is right for a dashboard widget and
+    // wrong here. Finishing a repair returns the spare that belongs to it,
+    // whenever the repair happens to be finished.
+    const openSpares = await db
+      .select({ id: reservations.id, vehicleId: reservations.vehicleId })
+      .from(reservations)
+      .innerJoin(
+        alias(reservations, 'original'),
+        eq(reservations.replacementForReservationId, sql`original.id`),
+      )
+      .where(and(
+        eq(reservations.type, 'replacement'),
+        isNull(reservations.deletedAt),
+        sql`${reservations.status} NOT IN ('completed','cancelled')`,
+        sql`original.vehicle_id = ${vehicleId}`,
+        sql`original.deleted_at IS NULL`,
+      ));
+    const spare = openSpares[0] ?? null;
+
+    const result = await db.transaction(async (tx) => {
+      const [closedBlock] = await tx
+        .update(reservations)
+        .set({
+          endDate: input.completionDate,
+          maintenanceStatus: 'out',
+          status: 'completed',
+          ...(input.maintenanceCategory ? { maintenanceCategory: input.maintenanceCategory } : {}),
+          ...(input.notes ? { notes: input.notes } : {}),
+          updatedBy: input.username ?? null,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(reservations.id, blockId), isNull(reservations.deletedAt)))
+        .returning();
+
+      // The workshop flag. besluiten B-03 makes it survive an inname and a
+      // completed transport; closing the job is the one moment it is cleared,
+      // and markVehicleForService() is where that rule lives.
+      const vehicle = await this.markVehicleForService(vehicleId, 'ok', undefined, tx);
+
+      let closedSpare: Reservation | null = null;
+      if (spare) {
+        const [row] = await tx
+          .update(reservations)
+          .set({
+            endDate: input.completionDate,
+            status: 'completed',
+            spareVehicleStatus: 'returned',
+            updatedBy: input.username ?? null,
+            updatedAt: new Date(),
+          })
+          .where(and(
+            eq(reservations.id, spare.id),
+            isNull(reservations.deletedAt),
+            isNotNull(reservations.replacementForReservationId),
+          ))
+          .returning();
+        closedSpare = row ?? null;
+      }
+
+      return { closedBlock, vehicle, closedSpare };
+    });
+
+    // The derivation is deliberately outside the transaction: it runs on its
+    // own connection and would deadlock against the rows just locked. The
+    // vehicle's own recompute already ran inside markVehicleForService(); the
+    // spare's has to be asked for here, because its reservation only closed a
+    // moment ago.
+    if (result.closedSpare?.vehicleId) {
+      await this.recomputeVehicleAvailability(result.closedSpare.vehicleId);
+    }
+
+    return {
+      ok: true,
+      block: result.closedBlock,
+      vehicle: result.vehicle ?? null,
+      spareReservation: result.closedSpare,
+    };
   }
 
   async closeMaintenanceBlock(blockReservationId: number, endDate: string): Promise<Reservation | undefined> {
