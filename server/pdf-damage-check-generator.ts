@@ -5,6 +5,7 @@ import { db } from './db';
 import { damageCheckTemplates, vehicleDiagramTemplates } from '../shared/schema';
 import { eq } from 'drizzle-orm';
 import { ObjectStorageService } from './objectStorage';
+import { resolveDocumentFilePath } from './services/document-paths';
 
 /**
  * Format a license plate consistently throughout the application
@@ -338,7 +339,7 @@ async function generateDamageCheckPDFFromCanvas(
       const tryEmbed = async (row: any) => {
         if (!row?.diagramPath) return null;
         try {
-          const filePath = path.join(process.cwd(), row.diagramPath);
+          const filePath = resolveDocumentFilePath(row.diagramPath) ?? '';
           const bytes = await fs.readFile(filePath);
           return row.diagramPath.toLowerCase().endsWith('.png')
             ? await pdfDoc.embedPng(bytes)
@@ -382,7 +383,7 @@ async function generateDamageCheckPDFFromCanvas(
       const setting = await appStorage.getAppSettingByKey('damage_check_fields');
       const customPath = (setting?.value as any)?.headerImagePath as string | undefined;
       if (customPath) {
-        const candidate = path.isAbsolute(customPath) ? customPath : path.join(process.cwd(), customPath);
+        const candidate = resolveDocumentFilePath(customPath) ?? '';
         try { await fs.access(candidate); headerPath = candidate; } catch {}
       }
     } catch {}

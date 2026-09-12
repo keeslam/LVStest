@@ -49,7 +49,7 @@ export class BackupService {
    * defaulting to the application directory, which a container wipes on every
    * redeploy.
    */
-  private resolveBackupPath(settings: { localPath?: string | null } | null): string {
+  resolveBackupPath(settings: { localPath?: string | null } | null): string {
     return getBackupPathFromEnv() || settings?.localPath || join(process.cwd(), 'backups');
   }
 
@@ -64,6 +64,17 @@ export class BackupService {
   async getBackupPathInfo(): Promise<{ path: string; fromEnv: boolean }> {
     const settings = await this.getBackupSettings();
     return { path: this.resolveBackupPath(settings), fromEnv: !!getBackupPathFromEnv() };
+  }
+
+  /**
+   * BUG-200/FIX-B: the upload route used to write into
+   * path.join(process.cwd(), 'backups'), which is neither BACKUP_PATH nor the
+   * configured localPath. An uploaded backup therefore landed where nothing
+   * looked for it: /api/backups never listed it and every restore of it 404'd.
+   * One owner for "where do backups live", shared with the routes.
+   */
+  async resolveBackupDirectory(): Promise<string> {
+    return this.resolveBackupPath(await this.getBackupSettings());
   }
 
   // Get backup settings from database

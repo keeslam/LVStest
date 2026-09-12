@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { storage } from "../storage";
+import { getRelativePath, unlinkStoredFile } from "../services/document-paths";
 import path from "path";
 import fs from "fs";
 import { z } from "zod";
@@ -274,17 +275,15 @@ export function registerReportAndLabelTemplateRoutes(app: Express, deps: RouteDe
       if (!fs.existsSync(templatesDir)) fs.mkdirSync(templatesDir, { recursive: true });
 
       if (template.backgroundPath) {
-        try {
-          await fs.promises.unlink(path.join(process.cwd(), template.backgroundPath));
-        } catch (error) {
-          console.error("Error deleting old transport report background:", error);
-        }
+        // BUG-070/FIX-B: contained delete only — this used to join cwd onto a
+        // stored path column, which is an arbitrary file delete.
+        await unlinkStoredFile(template.backgroundPath);
       }
 
       const filename = `template_${id}_background_${Date.now()}${ext}`;
       const filePath = path.join(templatesDir, filename);
       await fs.promises.writeFile(filePath, req.file.buffer);
-      const backgroundPath = path.relative(process.cwd(), filePath);
+      const backgroundPath = getRelativePath(filePath);
 
       const updated = await storage.updateTransportReportTemplate(id, {
         backgroundPath,
@@ -306,11 +305,8 @@ export function registerReportAndLabelTemplateRoutes(app: Express, deps: RouteDe
       if (!template) return res.status(404).json({ message: "Template not found" });
 
       if (template.backgroundPath) {
-        try {
-          await fs.promises.unlink(path.join(process.cwd(), template.backgroundPath));
-        } catch (error) {
-          console.error("Error deleting transport report background:", error);
-        }
+        // BUG-070/FIX-B: contained delete only.
+        await unlinkStoredFile(template.backgroundPath);
       }
 
       const updated = await storage.updateTransportReportTemplate(id, {
@@ -372,7 +368,7 @@ export function registerReportAndLabelTemplateRoutes(app: Express, deps: RouteDe
       const filename = `library_${templateId}_${Date.now()}${ext}`;
       const filePath = path.join(templatesDir, filename);
       await fs.promises.writeFile(filePath, req.file.buffer);
-      const backgroundPath = path.relative(process.cwd(), filePath);
+      const backgroundPath = getRelativePath(filePath);
 
       const background = await storage.createTransportReportTemplateBackground({
         templateId,
@@ -408,11 +404,8 @@ export function registerReportAndLabelTemplateRoutes(app: Express, deps: RouteDe
       const background = await storage.getTransportReportTemplateBackground(backgroundId);
       if (!background) return res.status(404).json({ message: "Background not found" });
 
-      try {
-        await fs.promises.unlink(path.join(process.cwd(), background.backgroundPath));
-      } catch (error) {
-        console.error("Error deleting transport report background file:", error);
-      }
+      // BUG-070/FIX-B: contained delete only.
+      await unlinkStoredFile(background.backgroundPath);
 
       const deleted = await storage.deleteTransportReportTemplateBackground(backgroundId);
       if (!deleted) return res.status(500).json({ message: "Failed to delete background" });

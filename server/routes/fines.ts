@@ -15,7 +15,7 @@ import { getPortalConfig } from "../services/portal-config";
 import { storage } from "../storage";
 import { AuditLogger } from "../utils/security/auditLogger";
 import { createSecureMulterFilter, sanitizeFilename, validateAfterUpload } from "../utils/security/fileUploadSecurity";
-import { resolveDocumentFilePath } from "../services/document-paths";
+import { resolveDocumentFilePath, getRelativePath } from "../services/document-paths";
 import { processFineLetterWithAI } from "../utils/fine-scanner";
 import type { FineScanResult } from "../../shared/fines";
 import { cjibConfigSchema, getCjibConfig, maskCjibConfig, saveCjibConfig } from "../services/cjib/config";
@@ -52,7 +52,7 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
     if (!req.file) return null;
     const check = await validateAfterUpload(req.file.path, req.file.originalname, req.file.mimetype, "document");
     if (!check.valid) { fs.rmSync(req.file.path, { force: true }); throw new Error(check.error ?? "Invalid file"); }
-    return path.relative(process.cwd(), req.file.path);
+    return getRelativePath(req.file.path);
   }
 
   async function notifyLinked(fineId: number) {
@@ -104,8 +104,10 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
   app.get("/api/fines/imports/:id/file", canView, async (req, res) => {
     const id = idParam(req, res); if (id === null) return;
     const file = await importStorage.get(id);
-    const abs = file?.rawPath ? path.resolve(process.cwd(), file.rawPath) : null;
-    if (!file || !abs || !fs.existsSync(abs)) return res.status(404).json({ message: "No file" });
+    // FIX-B: resolve the stored path through the one owner, which handles both
+    // shapes and refuses anything outside the uploads root.
+    const abs = file?.rawPath ? resolveDocumentFilePath(file.rawPath) : null;
+    if (!file || !abs) return res.status(404).json({ message: "No file" });
     res.download(abs, file.fileName);
   });
 

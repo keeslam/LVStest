@@ -11,6 +11,7 @@ import { hasPermission, requireAdmin } from "../middleware/permissions.js";
 import { clearEmailConfigCache, testSmtpConnection, isSafeHeaderValue } from "../utils/email-service";
 import { mergeHolidaysWithOverrides } from "../../shared/holidays";
 import { createSecureMulterFilter, sanitizeFilename } from "../utils/security/fileUploadSecurity";
+import { getRelativePath, resolveDocumentFilePath, resolveStoredPathForWrite } from "../services/document-paths";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
 
@@ -85,10 +86,11 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
       const cfg = setting?.value as any;
       const customPath = cfg?.headerImagePath as string | undefined;
       if (customPath) {
-        const absolute = path.isAbsolute(customPath)
-          ? customPath
-          : path.join(process.cwd(), customPath);
-        if (fs.existsSync(absolute)) {
+        // FIX-B: the header lives under getUploadsDir()/damage-check, so it
+        // resolves through the one owner — path.join(cwd, …) only found it
+        // while UPLOADS_DIR happened to be cwd/uploads.
+        const absolute = resolveDocumentFilePath(customPath);
+        if (absolute) {
           return res.sendFile(absolute);
         }
       }
@@ -109,17 +111,19 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
   app.post("/api/damage-check-fields/header", requireAuth, requireAdmin, damageCheckHeaderUpload.single('header'), async (req: Request, res: Response) => {
     try {
       if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
-      const relPath = path.relative(process.cwd(), req.file.path);
+      const relPath = getRelativePath(req.file.path);
       const username = (req.user as any)?.username || 'system';
       const existing = await storage.getAppSettingByKey(DAMAGE_CHECK_FIELDS_KEY);
       const baseValue = (existing?.value as any) || DEFAULT_DAMAGE_CHECK_FIELDS;
       // Clean up previous uploaded file if any
       const prevPath = baseValue?.headerImagePath as string | undefined;
       if (prevPath) {
-        try {
-          const abs = path.isAbsolute(prevPath) ? prevPath : path.join(process.cwd(), prevPath);
-          if (abs.includes(path.join('uploads', 'damage-check')) && fs.existsSync(abs)) fs.unlinkSync(abs);
-        } catch {}
+        // FIX-B: contained delete only — the previous header is resolved
+        // through the uploads root, never by joining cwd onto a stored value.
+        const abs = resolveStoredPathForWrite(prevPath);
+        if (abs && abs.includes(`${path.sep}damage-check${path.sep}`)) {
+          try { fs.unlinkSync(abs); } catch {}
+        }
       }
       const newValue = { ...baseValue, headerImagePath: relPath };
       if (existing) {
@@ -141,10 +145,12 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
       const baseValue = (existing.value as any) || {};
       const prevPath = baseValue?.headerImagePath as string | undefined;
       if (prevPath) {
-        try {
-          const abs = path.isAbsolute(prevPath) ? prevPath : path.join(process.cwd(), prevPath);
-          if (abs.includes(path.join('uploads', 'damage-check')) && fs.existsSync(abs)) fs.unlinkSync(abs);
-        } catch {}
+        // FIX-B: contained delete only — the previous header is resolved
+        // through the uploads root, never by joining cwd onto a stored value.
+        const abs = resolveStoredPathForWrite(prevPath);
+        if (abs && abs.includes(`${path.sep}damage-check${path.sep}`)) {
+          try { fs.unlinkSync(abs); } catch {}
+        }
       }
       const username = (req.user as any)?.username || 'system';
       const newValue = { ...baseValue, headerImagePath: null };

@@ -89,6 +89,7 @@ import {
 } from "./utils/security/fileUploadSecurity";
 
 import { getRelativePath, resolveDocumentFilePath } from "./services/document-paths";
+import { resolveUploadsPath } from "../shared/paths";
 import {
   CONTRACT_RELEVANT_FIELDS,
   scheduleReservationPdfRegeneration,
@@ -2943,12 +2944,16 @@ export async function registerRoutes(app: Express): Promise<void> {
                 
                 // Save contract to filesystem
                 const licensePlate = vehicle.licensePlate.replace(/[^a-zA-Z0-9]/g, '');
-                const contractsDir = path.join(process.cwd(), 'uploads', 'contracts', licensePlate);
+                // FIX-B: the uploads root, not cwd/uploads — and the stored path
+                // relative to that root, so the row resolves wherever UPLOADS_DIR
+                // points. BUG-184: the filename carried only the date, so two
+                // contracts finalised for one plate on one day shared one file.
+                const contractsDir = resolveUploadsPath('contracts', licensePlate);
                 await fs.promises.mkdir(contractsDir, { recursive: true });
-                
-                const fileName = `${licensePlate}_contract_${format(new Date(), 'yyyyMMdd')}.pdf`;
+
+                const fileName = `${licensePlate}_contract_${format(new Date(), 'yyyyMMdd')}_${Date.now()}.pdf`;
                 const filePath = path.join(contractsDir, fileName);
-                const relativeFilePath = `uploads/contracts/${licensePlate}/${fileName}`;
+                const relativeFilePath = getRelativePath(filePath);
                 
                 await fs.promises.writeFile(filePath, pdfBuffer);
                 console.log(`✅ Contract saved to: ${filePath}`);
@@ -5247,8 +5252,12 @@ export async function registerRoutes(app: Express): Promise<void> {
                              (new Date().getMonth() + 1).toString().padStart(2, '0') + 
                              new Date().getDate().toString().padStart(2, '0');
           
-          // Match format used in contract generation route
-          const newFilename = `${sanitizedPlate}_contract_${currentDate}${extension}`;
+          // BUG-184: the contract branch was the one document type without a
+          // timestamp, so a second contract upload for the same plate on the same
+          // day overwrote the first file on disk while still creating a second
+          // documents row — and the older row then served the newer bytes. The
+          // millisecond stamp is what every other branch below already does.
+          const newFilename = `${sanitizedPlate}_contract_${currentDate}_${timestamp}${extension}`;
           console.log(`Creating contract filename: ${newFilename}`);
           cb(null, newFilename);
           return;
@@ -5585,11 +5594,11 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "No file path found for this document" });
       }
 
-      // Convert relative path to absolute path
-      const absolutePath = path.join(process.cwd(), document.filePath);
-      
-      // Check if file exists
-      if (!fs.existsSync(absolutePath)) {
+      // FIX-B/BUG-012: the stored path resolves through the one owner, which
+      // copes with both the uploads-relative and the legacy cwd-relative shape
+      // and refuses anything that leaves the uploads root.
+      const absolutePath = resolveDocumentFilePath(document.filePath);
+      if (!absolutePath) {
         return res.status(404).json({ message: "Document file not found on disk" });
       }
 
@@ -5680,12 +5689,10 @@ export async function registerRoutes(app: Express): Promise<void> {
       for (const document of validDocuments) {
         if (!document || !document.filePath) continue;
         
-        // Convert relative path to absolute path
-        const absolutePath = path.join(process.cwd(), document.filePath);
-        
-        // Check if file exists
-        if (!fs.existsSync(absolutePath)) {
-          console.warn(`Document file not found: ${absolutePath}`);
+        // FIX-B/BUG-012: resolve through the one owner (see above).
+        const absolutePath = resolveDocumentFilePath(document.filePath);
+        if (!absolutePath) {
+          console.warn(`Document file not found or outside uploads: ${document.filePath}`);
           continue;
         }
 
@@ -6750,7 +6757,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         ...validation.data,
         customerId,
         // Only set licenseFilePath from multer upload, never from user input
-        ...(req.file ? { licenseFilePath: path.relative(process.cwd(), req.file.path) } : {}),
+        ...(req.file ? { licenseFilePath: getRelativePath(req.file.path) } : {}),
         createdBy: username,
         updatedBy: username,
         createdByUser: userId,
@@ -6811,7 +6818,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       const updateData = {
         ...validation.data,
         // Only set licenseFilePath from multer upload, never from user input
-        ...(req.file ? { licenseFilePath: path.relative(process.cwd(), req.file.path) } : {}),
+        ...(req.file ? { licenseFilePath: getRelativePath(req.file.path) } : {}),
         updatedBy: username,
         updatedByUser: userId
       };
@@ -6840,18 +6847,19 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ error: "License file not found" });
       }
 
-      // Resolve the file path and validate it's within uploads directory
-      const uploadsDir = path.resolve(process.cwd(), 'uploads');
-      const requestedPath = path.resolve(process.cwd(), driver.licenseFilePath);
-      
-      // Security: Prevent path traversal by ensuring file is within uploads directory
-      if (!requestedPath.startsWith(uploadsDir)) {
-        console.error('Path traversal attempt detected:', driver.licenseFilePath);
+      // BUG-169/FIX-B: this used to compare path.resolve(cwd, licenseFilePath)
+      // against a hardcoded path.resolve(cwd, 'uploads'). With UPLOADS_DIR set —
+      // the production and Coolify shape — the real file lives outside cwd/uploads,
+      // so the containment check failed for EVERY legitimately uploaded licence and
+      // the route answered 403. resolveDocumentFilePath() resolves both the
+      // uploads-relative and the legacy cwd-relative shape, then enforces
+      // containment (and symlink containment, BUG-098) against the configured
+      // root — the same helper the portal counterpart already used, which is why
+      // that one worked and this one did not.
+      const requestedPath = resolveDocumentFilePath(driver.licenseFilePath);
+      if (!requestedPath) {
+        console.error('Refusing driver licence outside the uploads directory:', driver.licenseFilePath);
         return res.status(403).json({ error: "Access denied" });
-      }
-
-      if (!fs.existsSync(requestedPath)) {
-        return res.status(404).json({ error: "License file not found on disk" });
       }
 
       res.sendFile(requestedPath);
@@ -7299,13 +7307,13 @@ export async function registerRoutes(app: Express): Promise<void> {
             
             // Save PDF to uploads directory
             const filename = `damage_check_${created.vehicleId}_${created.checkType}_${format(new Date(created.checkDate), 'yyyy-MM-dd')}_v${created.id}.pdf`;
-            const damageCheckDir = path.join(process.cwd(), 'uploads', vehicle.licensePlate.replace(/[^a-zA-Z0-9]/g, '-'), 'damage-checks');
+            const damageCheckDir = resolveUploadsPath(vehicle.licensePlate.replace(/[^a-zA-Z0-9]/g, '-'), 'damage-checks');
             await fs.promises.mkdir(damageCheckDir, { recursive: true });
             const filepath = path.join(damageCheckDir, filename);
             await fs.promises.writeFile(filepath, pdfBuffer);
             
             // Create document entry
-            const relativePath = path.relative(process.cwd(), filepath);
+            const relativePath = getRelativePath(filepath);
             await storage.createDocument({
               vehicleId: created.vehicleId,
               reservationId: created.reservationId,
@@ -7490,13 +7498,13 @@ export async function registerRoutes(app: Express): Promise<void> {
             // Save new PDF with current timestamp in filename
             const timestamp = format(new Date(), 'yyyy-MM-dd_HHmmss');
             const filename = `damage_check_${updated.vehicleId}_${updated.checkType}_${timestamp}_v${updated.id}.pdf`;
-            const damageCheckDir = path.join(process.cwd(), 'uploads', vehicle.licensePlate.replace(/[^a-zA-Z0-9]/g, '-'), 'damage-checks');
+            const damageCheckDir = resolveUploadsPath(vehicle.licensePlate.replace(/[^a-zA-Z0-9]/g, '-'), 'damage-checks');
             await fs.promises.mkdir(damageCheckDir, { recursive: true });
             const filepath = path.join(damageCheckDir, filename);
             await fs.promises.writeFile(filepath, pdfBuffer);
             
             // Create new document entry
-            const relativePath = path.relative(process.cwd(), filepath);
+            const relativePath = getRelativePath(filepath);
             await storage.createDocument({
               vehicleId: updated.vehicleId,
               reservationId: updated.reservationId,
@@ -8094,7 +8102,11 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       const filePath = path.join(reportsDir, fileName);
       fs.writeFileSync(filePath, pdfBuffer);
-      const relativePath = path.relative(uploadsDir, filePath);
+      // BUG-029/FIX-B: this was the only document-creating route computing its
+      // own path.relative(uploadsDir, …) while every other one used
+      // getRelativePath(); the two only agreed while UPLOADS_DIR happened to be
+      // cwd/uploads, so every report generated in production 404'd on download.
+      const relativePath = getRelativePath(filePath);
 
       const user = req.user;
       const singleVehicleId = transports.length === 1 ? transports[0].vehicleId : null;

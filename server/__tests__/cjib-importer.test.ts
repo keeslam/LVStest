@@ -6,6 +6,7 @@ const { sendEmail } = vi.hoisted(() => ({ sendEmail: vi.fn(async () => true) }))
 vi.mock("../utils/email-service", () => ({ sendEmail }));
 
 import { importCjibFile } from "../services/cjib/importer";
+import { resolveDocumentFilePath } from "../services/document-paths";
 import { importStorage } from "../services/cjib/import-storage";
 import { finesStorage } from "../services/fines-storage";
 import { storage } from "../storage";
@@ -35,10 +36,16 @@ describe("cjib importer", () => {
   it("creates and links fines from the XML fixture, and tells staff", async () => {
     const before = (await storage.getCustomNotificationsByType("portal_fine_import")).length;
     const { file, skipped } = await importCjibFile({ buffer: fixture("beschikkingen.xml"), fileName: `${TEST_PREFIX}beschikkingen.xml`, source: "cjib_upload", createdBy: "test" });
-    rawPaths.push(file.rawPath!);
+    // FIX-B: rawPath is now stored relative to the uploads root rather than to
+    // process.cwd(), so it resolves through the one owner — which additionally
+    // proves the file really is inside the uploads directory. Cleanup uses the
+    // resolved absolute path.
+    const rawAbsolute = resolveDocumentFilePath(file.rawPath!);
+    if (rawAbsolute) rawPaths.push(rawAbsolute);
     expect(skipped).toBe(false);
     expect(file).toMatchObject({ status: "processed", recordsTotal: 2, recordsCreated: 2, recordsLinked: 1, recordsDuplicate: 0, recordsFailed: 0 });
-    expect(fs.existsSync(file.rawPath!)).toBe(true);
+    expect(rawAbsolute).not.toBeNull();
+    expect(fs.existsSync(rawAbsolute!)).toBe(true);
 
     const linked = file.details.find((d) => d.reference === "1234567890")!;
     expect(linked.outcome).toBe("linked");
@@ -61,13 +68,13 @@ describe("cjib importer", () => {
     // Same beschikkingsnummer in a differently formatted file: not created twice.
     const csv = "beschikkingsnummer;kenteken;pleegdatum;bedrag;omschrijving\n1234567890;PT-CJ-01;26-07-2026;95;dubbel\n";
     const { file } = await importCjibFile({ buffer: Buffer.from(csv), fileName: `${TEST_PREFIX}dubbel.csv`, source: "cjib_upload", createdBy: "test" });
-    rawPaths.push(file.rawPath!);
+    { const abs = resolveDocumentFilePath(file.rawPath!); if (abs) rawPaths.push(abs); }
     expect(file).toMatchObject({ recordsTotal: 1, recordsCreated: 0, recordsDuplicate: 1 });
   });
 
   it("records a parse error instead of throwing", async () => {
     const { file } = await importCjibFile({ buffer: Buffer.from("kapot"), fileName: `${TEST_PREFIX}kapot.csv`, source: "cjib_upload", createdBy: "test" });
-    rawPaths.push(file.rawPath!);
+    { const abs = resolveDocumentFilePath(file.rawPath!); if (abs) rawPaths.push(abs); }
     expect(file.status).toBe("failed");
     expect(file.errorMessage).toMatch(/CSV/);
   });
@@ -75,7 +82,7 @@ describe("cjib importer", () => {
   it("keeps going when one record is broken", async () => {
     const csv = "beschikkingsnummer;kenteken;pleegdatum;bedrag\n3000000001;PT-CJ-02;01-08-2026;50\n3000000002;;01-08-2026;50\n";
     const { file } = await importCjibFile({ buffer: Buffer.from(csv), fileName: `${TEST_PREFIX}half.csv`, source: "cjib_upload", createdBy: "test" });
-    rawPaths.push(file.rawPath!);
+    { const abs = resolveDocumentFilePath(file.rawPath!); if (abs) rawPaths.push(abs); }
     expect(file).toMatchObject({ status: "processed", recordsTotal: 2, recordsCreated: 1, recordsFailed: 1 });
     expect(file.details.find((d) => d.outcome === "failed")!.error).toMatch(/missing kenteken/);
     expect(await importStorage.get(file.id)).toBeDefined();

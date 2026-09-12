@@ -14,6 +14,7 @@ import { ensurePortalEmailTemplates } from "./services/portal-mail";
 import { startCjibScheduler } from "./services/cjib/poller";
 import { registerPortalRoutes } from "./routes/portal";
 import { getUploadsDir as getPortalUploadsDir } from "../shared/paths";
+import { mountUploads } from "./middleware/uploads-mount";
 import { BackupScheduler } from "./backupScheduler";
 import { ApkScanScheduler } from "./apkScanScheduler";
 import { ServiceDueScheduler } from "./serviceDueScheduler";
@@ -373,20 +374,12 @@ async function testDatabaseConnection() {
   }
 }
 
-// Serve uploads directory for static files (diagrams, documents, etc.)
-// Gated behind requireAuth: these files include customer contracts, damage-check
-// photos, and license scans, which must never be reachable by an unauthenticated
-// request that merely guesses or obtains a file path.
-// BUG-085: requireAuth alone meant every logged-in employee — a cleaner, a
-// kiosk account — could fetch any contract, damage photo or driving-licence
-// scan by guessing or reading a path out of an API response it was allowed to
-// see, bypassing the per-customer scoping of the portal routes entirely. The
-// mount now also demands manage_documents; the scoped download routes
-// (/api/documents/view|download) remain the intended way in, and no client
-// code links to /uploads at all.
-const uploadsPath = path.join(process.cwd(), 'uploads');
-app.use('/uploads', requireAuth, hasPermission(UserPermission.MANAGE_DOCUMENTS), express.static(uploadsPath));
-console.log('📁 Serving uploads from:', uploadsPath);
+// Serve uploads directory for static files (diagrams, documents, etc.).
+// The mount itself — its permission gate and, since FIX-B, its one and only
+// source of truth for *where* uploads live — lives in server/middleware/
+// uploads-mount.ts, so the route tests mount exactly the same thing.
+const uploadsPath = mountUploads(app, requireAuth);
+console.log('📁 Serving uploads from:', uploadsPath, process.env.UPLOADS_DIR ? '(UPLOADS_DIR)' : '(default: cwd/uploads)');
 
 // API root
 app.get('/api', (_req, res) => {

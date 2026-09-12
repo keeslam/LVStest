@@ -10,7 +10,7 @@ import { getServiceDueVehicles } from "../utils/service-due-scanner";
 import { settingsFlags, requireFeature, requirePortalRole, portalError, logPortalActivity } from "../portal-auth";
 import { assignDriverToReservation, getDriverAssignments } from "../services/driver-assignments";
 import { notifyStaffOfPortalEvent } from "../services/portal-notifications";
-import { resolveDocumentFilePath } from "../services/document-paths";
+import { resolveDocumentFilePath, getRelativePath } from "../services/document-paths";
 import { createSecureMulterFilter, sanitizeFilename, validateAfterUpload } from "../utils/security/fileUploadSecurity";
 import { storage } from "../storage";
 import { PORTAL_ERROR, type PortalReservationDto, type PortalDocumentDto, type PortalDriverDto } from "../../shared/portal-types";
@@ -420,7 +420,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
       payload: payload.data as Record<string, unknown>, message,
     });
     for (const f of files) {
-      await requestsStorage.addAttachment({ requestId: created.id, fileName: sanitizeFilename(f.originalname), filePath: path.relative(process.cwd(), f.path), contentType: f.mimetype, fileSize: f.size });
+      await requestsStorage.addAttachment({ requestId: created.id, fileName: sanitizeFilename(f.originalname), filePath: getRelativePath(f.path), contentType: f.mimetype, fileSize: f.size });
     }
     await logPortalActivity(req, "request_submitted", { entity: "request", entityId: created.id, details: { type } });
     const customer = await storage.getCustomer(ctx.customerId);
@@ -526,7 +526,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     if (!req.file) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "No file uploaded");
     const check = await validateAfterUpload(req.file.path, req.file.originalname, req.file.mimetype, "document");
     if (!check.valid) { fs.rmSync(req.file.path, { force: true }); return portalError(res, 400, PORTAL_ERROR.VALIDATION, check.error ?? "Invalid file"); }
-    const driver = await storage.updateDriver(id, { licenseFilePath: path.relative(process.cwd(), req.file.path), updatedBy: ctx.user.email });
+    const driver = await storage.updateDriver(id, { licenseFilePath: getRelativePath(req.file.path), updatedBy: ctx.user.email });
     await logPortalActivity(req, "driver_license_uploaded", { entity: "driver", entityId: id });
     res.json(toDriverDto(driver!));
   });

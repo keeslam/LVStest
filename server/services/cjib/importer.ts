@@ -2,6 +2,7 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import { getUploadsDir } from "../../../shared/paths";
+import { getRelativePath } from "../document-paths";
 import type { FineImportDetail, FineImportFile } from "../../../shared/schema";
 import type { CjibRecord } from "../../../shared/fines";
 import { parseCjibFile } from "./parser";
@@ -30,7 +31,7 @@ function storeRaw(buffer: Buffer, fileName: string): string {
   fs.mkdirSync(dir, { recursive: true });
   const target = path.join(dir, `${Date.now()}_${safeName(fileName)}`);
   fs.writeFileSync(target, buffer);
-  return path.relative(process.cwd(), target);
+  return getRelativePath(target);
 }
 
 async function importRecord(record: CjibRecord, importFileId: number, createdBy: string): Promise<FineImportDetail> {

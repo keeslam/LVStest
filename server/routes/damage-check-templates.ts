@@ -7,7 +7,7 @@ import { insertDamageCheckTemplateSchema, UserPermission, DEFAULT_DAMAGE_CHECK_F
 import multer from "multer";
 import { hasPermission } from "../middleware/permissions.js";
 import { createSecureMulterFilter, validateFileBuffer } from "../utils/security/fileUploadSecurity";
-import { getRelativePath } from "../services/document-paths";
+import { getRelativePath, unlinkStoredFile } from "../services/document-paths";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
 
@@ -350,17 +350,15 @@ export function registerDamageCheckTemplateRoutes(app: Express, deps: RouteDeps)
       if (!fs.existsSync(templatesDir)) fs.mkdirSync(templatesDir, { recursive: true });
 
       if ((template as any).backgroundPath) {
-        try {
-          await fs.promises.unlink(path.join(process.cwd(), (template as any).backgroundPath));
-        } catch (error) {
-          console.error("Error deleting old damage-check template background:", error);
-        }
+        // BUG-070/FIX-B: contained delete only — this used to join cwd onto a
+        // stored path column, which is an arbitrary file delete.
+        await unlinkStoredFile((template as any).backgroundPath);
       }
 
       const filename = `template_${id}_background_${Date.now()}${ext}`;
       const filePath = path.join(templatesDir, filename);
       await fs.promises.writeFile(filePath, req.file.buffer);
-      const backgroundPath = path.relative(process.cwd(), filePath);
+      const backgroundPath = getRelativePath(filePath);
 
       const updated = await storage.updateDamageCheckTemplate(id, {
         backgroundPath,
@@ -382,11 +380,8 @@ export function registerDamageCheckTemplateRoutes(app: Express, deps: RouteDeps)
       if (!template) return res.status(404).json({ message: "Template not found" });
 
       if ((template as any).backgroundPath) {
-        try {
-          await fs.promises.unlink(path.join(process.cwd(), (template as any).backgroundPath));
-        } catch (error) {
-          console.error("Error deleting damage-check template background:", error);
-        }
+        // BUG-070/FIX-B: contained delete only.
+        await unlinkStoredFile((template as any).backgroundPath);
       }
 
       const updated = await storage.updateDamageCheckTemplate(id, {
@@ -447,7 +442,7 @@ export function registerDamageCheckTemplateRoutes(app: Express, deps: RouteDeps)
       const filename = `library_${templateId}_${Date.now()}${ext}`;
       const filePath = path.join(templatesDir, filename);
       await fs.promises.writeFile(filePath, req.file.buffer);
-      const backgroundPath = path.relative(process.cwd(), filePath);
+      const backgroundPath = getRelativePath(filePath);
 
       const background = await storage.createDamageCheckTemplateBackground({
         templateId,
@@ -483,11 +478,8 @@ export function registerDamageCheckTemplateRoutes(app: Express, deps: RouteDeps)
       const background = await storage.getDamageCheckTemplateBackground(backgroundId);
       if (!background) return res.status(404).json({ message: "Background not found" });
 
-      try {
-        await fs.promises.unlink(path.join(process.cwd(), background.backgroundPath));
-      } catch (error) {
-        console.error("Error deleting damage-check template background file:", error);
-      }
+      // BUG-070/FIX-B: contained delete only.
+      await unlinkStoredFile(background.backgroundPath);
 
       const deleted = await storage.deleteDamageCheckTemplateBackground(backgroundId);
       if (!deleted) return res.status(500).json({ message: "Failed to delete background" });

@@ -9,6 +9,23 @@ import { validateAfterUpload } from "../utils/security/fileUploadSecurity";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
 import { spawn } from "child_process";
+import { sanitizeFilename } from "../utils/security/fileUploadSecurity";
+
+/**
+ * BUG-097 hardening. `filename` must be exactly its own basename on both
+ * POSIX and Win32 separators, must not be a relative-directory token, and must
+ * not be absolute. Replaces the `includes('..') || includes('/')` blacklist,
+ * which missed the backslash — harmless on the Linux deployment today, but a
+ * blacklist where an allowlist belongs.
+ */
+export function isPlainFilename(filename: string): boolean {
+  if (!filename || filename === '.' || filename === '..') return false;
+  if (filename.includes('\0')) return false;
+  if (path.posix.basename(filename) !== filename) return false;
+  if (path.win32.basename(filename) !== filename) return false;
+  if (path.posix.isAbsolute(filename) || path.win32.isAbsolute(filename)) return false;
+  return true;
+}
 
 /**
  * BUG-075: runs pg_dump without ever putting the connection string in a shell
@@ -23,6 +40,14 @@ export async function runPgDump(databaseUrl: string, outputPath: string): Promis
     "--username", decodeURIComponent(url.username),
     "--dbname", url.pathname.replace(/^\//, ""),
     "--no-password",
+    // BUG-209: without --clean/--if-exists the downloaded dump cannot be
+    // restored over a populated database (every CREATE TABLE fails), and
+    // without --no-owner/--no-privileges it fails on any host where the
+    // original role does not exist. The scheduled backups already pass these.
+    "--clean",
+    "--if-exists",
+    "--no-owner",
+    "--no-privileges",
   ];
   const env = { ...process.env } as NodeJS.ProcessEnv;
   if (url.password) env.PGPASSWORD = decodeURIComponent(url.password);
@@ -439,7 +464,10 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
       // Create temp directory if it doesn't exist
       await fs.promises.mkdir(path.join(process.cwd(), 'temp'), { recursive: true });
       
-      const uploadsDir = path.join(process.cwd(), 'uploads');
+      // BUG-209/FIX-B: this archived cwd/uploads while every upload route
+      // writes to getUploadsDir(). With UPLOADS_DIR set the download was an
+      // archive of an empty or stale tree, reported as a successful backup.
+      const uploadsDir = getUploadsDir();
       
       // Check if uploads directory exists
       try {
@@ -460,7 +488,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
       }
       
       // Create tar.gz of uploads directory
-      await execAsync(`tar -czf "${filepath}" -C "${process.cwd()}" uploads`);
+      await execAsync(`tar -czf "${filepath}" -C "${path.dirname(uploadsDir)}" "${path.basename(uploadsDir)}"`);
       
       // Send file
       res.download(filepath, filename, async (err) => {
@@ -582,8 +610,11 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
     try {
       const { filename } = req.params;
 
-      // Security: prevent directory traversal
-      if (filename.includes('..') || filename.includes('/')) {
+      // BUG-097 hardening: an includes() blacklist that happened to miss the
+      // backslash. A basename comparison is an allowlist by construction: any
+      // filename that is not already its own basename is rejected, whatever
+      // the separator or encoding.
+      if (!isPlainFilename(filename)) {
         return res.status(400).json({ error: 'Invalid filename' });
       }
 
@@ -704,8 +735,8 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
         return res.status(400).json({ error: "Invalid backup type" });
       }
 
-      // Security: prevent directory traversal (see /api/backups/download/:filename above)
-      if (filename.includes('..') || filename.includes('/')) {
+      // BUG-097 hardening (see /api/backups/download/:filename above).
+      if (!isPlainFilename(filename)) {
         return res.status(400).json({ error: 'Invalid filename' });
       }
 
@@ -752,8 +783,8 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
         return res.status(400).json({ error: "Invalid backup type" });
       }
 
-      // Security: prevent directory traversal (see /api/backups/download/:filename above)
-      if (filename.includes('..') || filename.includes('/')) {
+      // BUG-097 hardening (see /api/backups/download/:filename above).
+      if (!isPlainFilename(filename)) {
         return res.status(400).json({ error: 'Invalid filename' });
       }
 
@@ -828,18 +859,32 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
         });
       }
 
-      // Create backup directory if it doesn't exist
-      const backupDir = path.join(process.cwd(), 'backups');
+      // BUG-200/FIX-B: this used to be path.join(process.cwd(), 'backups'),
+      // which is neither BACKUP_PATH nor the configured localPath — so the
+      // uploaded file was written somewhere listBackups() never looks, and was
+      // then invisible in /api/backups and un-restorable. One owner.
+      const backupDir = await backupService.resolveBackupDirectory();
       if (!fs.existsSync(backupDir)) {
         fs.mkdirSync(backupDir, { recursive: true });
       }
 
-      // Generate a unique filename with timestamp
+      // Generate a unique filename with timestamp.
+      // BUG-076 hardening: the original name is reduced to its basename and
+      // sanitised before it becomes part of a path. busboy already strips the
+      // directory part of Content-Disposition in this multer version, so this
+      // is not an open hole today — but the protection then comes from a
+      // library detail rather than from our own code, and the containment
+      // assertion below is what actually guarantees it.
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const originalName = file.originalname.replace(/\.[^/.]+$/, ""); // Remove extension
-      const extension = file.originalname.substring(file.originalname.lastIndexOf('.'));
+      const safeOriginal = sanitizeFilename(path.basename(file.originalname));
+      const originalName = safeOriginal.replace(/\.[^/.]+$/, ""); // Remove extension
+      const extension = safeOriginal.substring(safeOriginal.lastIndexOf('.'));
       const newFilename = `uploaded-${backupType}-${timestamp}-${originalName}${extension}`;
       const destinationPath = path.join(backupDir, newFilename);
+      if (path.dirname(path.resolve(destinationPath)) !== path.resolve(backupDir)) {
+        fs.unlinkSync(file.path);
+        return res.status(400).json({ error: "Invalid backup filename" });
+      }
 
       // Move the uploaded file to backups directory
       fs.renameSync(file.path, destinationPath);

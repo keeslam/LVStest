@@ -3,6 +3,7 @@ import { pdfTemplates } from "../../shared/schema";
 import { parsePartialUpdate } from "../middleware/validateBody";
 import { sendRouteError } from "../utils/route-errors";
 import { storage } from "../storage";
+import { getRelativePath, unlinkStoredFile } from "../services/document-paths";
 import { generateRentalContractFromTemplate } from "../utils/pdf-generator";
 import path from "path";
 import fs from "fs";
@@ -346,13 +347,10 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
 
       // Delete old background file if it exists (skip default template)
       if (template.backgroundPath && !template.backgroundPath.includes('rental_contract_template.pdf')) {
-        const oldBackgroundPath = path.join(process.cwd(), template.backgroundPath);
-        try {
-          await fs.promises.unlink(oldBackgroundPath);
-          console.log(`🗑️ Deleted old background: ${oldBackgroundPath}`);
-        } catch (error) {
-          console.error("Error deleting old background file:", error);
-        }
+        // BUG-070/FIX-B: an unlink built by joining cwd onto a stored path
+        // column is an arbitrary file delete. unlinkStoredFile() resolves
+        // through the uploads root and refuses anything that leaves it.
+        await unlinkStoredFile(template.backgroundPath);
       }
 
       // Save file to filesystem
@@ -374,7 +372,7 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       console.log(`✅ Background saved successfully (${stats.size} bytes)`);
       
       // Store relative path (like contract PDFs)
-      const backgroundPath = path.relative(process.cwd(), filePath);
+      const backgroundPath = getRelativePath(filePath);
       console.log(`📝 Storing relative path in database: ${backgroundPath}`);
 
       // If PDF, generate preview image for editor
@@ -385,7 +383,7 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
           const { convertPdfToPng, getPreviewPath } = await import('../utils/pdf-to-image');
           const previewPath = path.join(templatesDir, `template_${id}_background_preview.png`);
           await convertPdfToPng(filePath, previewPath);
-          backgroundPreviewPath = path.relative(process.cwd(), previewPath);
+          backgroundPreviewPath = getRelativePath(previewPath);
           console.log(`✅ Preview image generated: ${backgroundPreviewPath}`);
         } catch (error) {
           console.error('⚠️ Failed to generate preview image:', error);
@@ -431,24 +429,14 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
 
       // Delete the custom background file if it exists (filesystem only)
       if (template.backgroundPath && !template.backgroundPath.includes('rental_contract_template.pdf')) {
-        try {
-          const backgroundPath = path.join(process.cwd(), template.backgroundPath);
-          await fs.promises.unlink(backgroundPath);
-          console.log(`🗑️ Deleted background from filesystem: ${backgroundPath}`);
-        } catch (error) {
-          console.error("Error deleting background:", error);
-        }
+        // BUG-070/FIX-B: see above — contained delete only.
+        await unlinkStoredFile(template.backgroundPath);
       }
 
       // Delete the preview image if it exists
       if ((template as any).backgroundPreviewPath) {
-        try {
-          const previewPath = path.join(process.cwd(), (template as any).backgroundPreviewPath);
-          await fs.promises.unlink(previewPath);
-          console.log(`🗑️ Deleted preview image from filesystem: ${previewPath}`);
-        } catch (error) {
-          console.error("Error deleting preview image:", error);
-        }
+        // BUG-070/FIX-B: see above — contained delete only.
+        await unlinkStoredFile((template as any).backgroundPreviewPath);
       }
 
       // Update template to remove background paths (will use default)
@@ -562,7 +550,7 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       console.log(`✅ Background saved successfully (${stats.size} bytes)`);
       
       // Store relative path
-      const backgroundPath = path.relative(process.cwd(), filePath);
+      const backgroundPath = getRelativePath(filePath);
       console.log(`📝 Storing relative path in database: ${backgroundPath}`);
 
       // Generate preview image if uploaded file is a PDF
@@ -575,7 +563,7 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
           const previewFullPath = path.join(templatesDir, previewFilename);
           
           await convertPdfToPng(filePath, previewFullPath);
-          previewPath = path.relative(process.cwd(), previewFullPath);
+          previewPath = getRelativePath(previewFullPath);
           console.log(`✅ Preview image generated: ${previewPath}`);
         } catch (error) {
           console.error('⚠️ Failed to generate preview image:', error);
@@ -645,23 +633,13 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       }
 
       // Delete the background files from filesystem
-      try {
-        const backgroundPath = path.join(process.cwd(), background.backgroundPath);
-        await fs.promises.unlink(backgroundPath);
-        console.log(`🗑️ Deleted background file: ${backgroundPath}`);
-      } catch (error) {
-        console.error("Error deleting background file:", error);
-      }
+      // BUG-070/FIX-B: contained delete only.
+      await unlinkStoredFile(background.backgroundPath);
 
       // Delete the preview image if different from background
       if (background.previewPath !== background.backgroundPath) {
-        try {
-          const previewPath = path.join(process.cwd(), background.previewPath);
-          await fs.promises.unlink(previewPath);
-          console.log(`🗑️ Deleted preview file: ${previewPath}`);
-        } catch (error) {
-          console.error("Error deleting preview file:", error);
-        }
+        // BUG-070/FIX-B: contained delete only.
+        await unlinkStoredFile(background.previewPath);
       }
 
       // Delete from database

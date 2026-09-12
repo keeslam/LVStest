@@ -11,6 +11,8 @@ import * as path from 'path';
 import { PDFDocument, rgb, StandardFonts, TextAlignment } from 'pdf-lib';
 import { formatReservationBarcode } from '../../shared/barcode';
 import { renderBarcodePng } from './barcode-png';
+import { resolveUploadsPath } from '../../shared/paths';
+import { resolveDocumentFilePath } from '../services/document-paths';
 
 /**
  * Format a license plate consistently throughout the application
@@ -71,7 +73,7 @@ export async function generateRentalContractFromTemplate(reservation: Reservatio
     try {
       // Use custom background if specified in template, otherwise use default
       const backgroundPath = template?.backgroundPath || 'uploads/templates/rental_contract_template.pdf';
-      const defaultTemplatePath = path.join(process.cwd(), 'uploads/templates/rental_contract_template.pdf');
+      const defaultTemplatePath = resolveUploadsPath('templates', 'rental_contract_template.pdf');
       
       console.log('Loading template from path:', backgroundPath);
       
@@ -91,8 +93,10 @@ export async function generateRentalContractFromTemplate(reservation: Reservatio
         console.log('Successfully loaded background from object storage');
       } else {
         // Local filesystem path
-        const templatePath = path.join(process.cwd(), backgroundPath);
-        if (fs.existsSync(templatePath)) {
+        // FIX-B: a stored background path resolves through the uploads root,
+        // not cwd, and can never point outside it.
+        const templatePath = resolveDocumentFilePath(backgroundPath);
+        if (templatePath) {
           templateBytes = fs.readFileSync(templatePath);
           ext = path.extname(templatePath).toLowerCase();
         } else {
@@ -200,7 +204,7 @@ export async function generateRentalContractFromTemplate(reservation: Reservatio
       console.error('Error loading template background:', error);
       // Final fallback - try default template one more time
       try {
-        const defaultTemplatePath = path.join(process.cwd(), 'uploads/templates/rental_contract_template.pdf');
+        const defaultTemplatePath = resolveUploadsPath('templates', 'rental_contract_template.pdf');
         if (fs.existsSync(defaultTemplatePath)) {
           const defaultBytes = fs.readFileSync(defaultTemplatePath);
           pdfDoc = await PDFDocument.load(defaultBytes);
@@ -544,7 +548,7 @@ export async function generateRentalContract(reservation: Reservation): Promise<
     const contractData = prepareContractData(reservation);
     
     // Load the template PDF
-    const templatePath = path.join(process.cwd(), 'uploads/templates/rental_contract_template.pdf');
+    const templatePath = resolveUploadsPath('templates', 'rental_contract_template.pdf');
     const templateBytes = fs.readFileSync(templatePath);
     
     // Load the PDF document
@@ -1461,8 +1465,9 @@ export async function generateTransportReportsPdf(
   let backgroundImage: any = null;
   if (template?.backgroundPath) {
     try {
-      const backgroundFullPath = path.join(process.cwd(), template.backgroundPath);
-      if (fs.existsSync(backgroundFullPath)) {
+      // FIX-B: contained resolution of the stored background path.
+      const backgroundFullPath = resolveDocumentFilePath(template.backgroundPath);
+      if (backgroundFullPath) {
         const bytes = fs.readFileSync(backgroundFullPath);
         const ext = path.extname(backgroundFullPath).toLowerCase();
         if (ext === '.png') {

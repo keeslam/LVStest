@@ -3,7 +3,8 @@ import { storage } from "../storage";
 import path from "path";
 import fs from "fs";
 import { validateAfterUpload } from "../utils/security/fileUploadSecurity";
-import { getRelativePath } from "../services/document-paths";
+import { getRelativePath, resolveDocumentFilePath, unlinkStoredFile } from "../services/document-paths";
+import { resolveUploadsPath } from "../../shared/paths";
 import { hasPermission } from "../middleware/permissions.js";
 import { UserPermission } from "../../shared/schema";
 import type { RouteDeps } from "./deps";
@@ -162,8 +163,7 @@ export function registerVehicleDiagramTemplateRoutes(app: Express, deps: RouteDe
           return res.status(400).json({ message: fileValidation.error });
         }
         
-        const uploadsDir = path.join(process.cwd(), 'uploads');
-        const diagramsDir = path.join(uploadsDir, 'vehicle-diagrams');
+        const diagramsDir = resolveUploadsPath('vehicle-diagrams');
         
         // Create directory if it doesn't exist
         if (!fs.existsSync(diagramsDir)) {
@@ -171,16 +171,11 @@ export function registerVehicleDiagramTemplateRoutes(app: Express, deps: RouteDe
         }
         
         // Delete old diagram file if it exists
+        // BUG-070/FIX-B: this route is reachable by any logged-in account
+        // (BUG-066), and the unlink was path.join(cwd, <stored column>) — an
+        // arbitrary file delete. Contained delete only.
         if (template.diagramPath) {
-          try {
-            const oldFilePath = path.join(process.cwd(), template.diagramPath);
-            if (fs.existsSync(oldFilePath)) {
-              await fs.promises.unlink(oldFilePath);
-              console.log(`✅ Deleted old diagram: ${template.diagramPath}`);
-            }
-          } catch (err) {
-            console.error("Error deleting old diagram file:", err);
-          }
+          await unlinkStoredFile(template.diagramPath);
         }
         
         // Move new file to diagrams directory
@@ -223,16 +218,9 @@ export function registerVehicleDiagramTemplateRoutes(app: Express, deps: RouteDe
       await storage.unlinkDiagramTemplateFromDamageChecks(id);
       
       // Delete the diagram file from filesystem
+      // BUG-070/FIX-B: contained delete only.
       if (template.diagramPath) {
-        try {
-          const filePath = path.join(process.cwd(), template.diagramPath);
-          if (fs.existsSync(filePath)) {
-            await fs.promises.unlink(filePath);
-            console.log(`✅ Deleted vehicle diagram: ${template.diagramPath}`);
-          }
-        } catch (err) {
-          console.error("Error deleting diagram file:", err);
-        }
+        await unlinkStoredFile(template.diagramPath);
       }
       
       const deleted = await storage.deleteVehicleDiagramTemplate(id);
@@ -263,16 +251,12 @@ export function registerVehicleDiagramTemplateRoutes(app: Express, deps: RouteDe
         return res.status(404).json({ message: "No diagram image available" });
       }
       
-      const filePath = path.join(process.cwd(), template.diagramPath);
-      console.log(`📁 Serving diagram template ${id}:`);
-      console.log(`   Stored path: ${template.diagramPath}`);
-      console.log(`   Resolved path: ${filePath}`);
-      console.log(`   File exists: ${fs.existsSync(filePath)}`);
-      console.log(`   Current working dir: ${process.cwd()}`);
-      console.log(`   Uploads dir: ${uploadsDir}`);
-      
-      if (!fs.existsSync(filePath)) {
-        console.log(`❌ File not found at: ${filePath}`);
+      // FIX-B: resolve through the one owner, which copes with both the
+      // uploads-relative and the legacy cwd-relative shape and refuses
+      // anything outside the uploads root (including via a symlink).
+      const filePath = resolveDocumentFilePath(template.diagramPath);
+      if (!filePath) {
+        console.log(`❌ Diagram not found or outside uploads: ${template.diagramPath}`);
         return res.status(404).json({ message: "Diagram image not found" });
       }
       

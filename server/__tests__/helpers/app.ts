@@ -14,6 +14,7 @@ import { like, inArray } from "drizzle-orm";
 import { db } from "../../db";
 import { users, auditLogs, loginAttempts } from "../../../shared/schema";
 import { setupAuth, hashPassword } from "../../auth";
+import { mountUploads } from "../../middleware/uploads-mount";
 import { registerRoutes } from "../../routes";
 
 /** Prefix for every user this helper creates, so a leak is greppable. */
@@ -32,7 +33,13 @@ export async function makeApp(): Promise<Express> {
   const app = express();
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
-  setupAuth(app);
+  const { requireAuth } = setupAuth(app);
+  // FIX-B: the static /uploads mount is part of the app under test. It lives in
+  // server/index.ts in production, which this harness deliberately does not
+  // load (it listens and starts four schedulers), so mount the shared
+  // definition here — otherwise BUG-026 ("200 with the SPA shell instead of the
+  // file") would be untestable in-process.
+  mountUploads(app, requireAuth);
   await registerRoutes(app);
   // Terminal error handler, mirroring server/index.ts. Without it Express'
   // default handler answers with an HTML stack trace, which would make the
