@@ -1,6 +1,39 @@
 import { z } from "zod";
 import { storage } from "../../storage";
 import { CJIB_CONFIG_KEY, CJIB_PASSWORD_MASK, DEFAULT_CJIB_CONFIG, type CjibConfig } from "../../../shared/fines";
+import { assertPublicHost, OutboundBlockedError } from "../../utils/security/outboundGuard";
+
+/**
+ * FIX-U (BUG-071). The FTPS host came straight from the request body, so
+ * "test the connection" was a port scanner for anything the container could
+ * reach — and the directory listing came back in the response. The destination
+ * is now restricted to the operator's allowlist (one suffix per entry) and, on
+ * top of that, has to resolve to a public address.
+ *
+ * Deployments that use a CJIB endpoint outside cjib.nl set CJIB_ALLOWED_HOSTS
+ * to a comma-separated list of host suffixes.
+ */
+export const CJIB_DEFAULT_ALLOWED_HOSTS = ["cjib.nl"];
+
+export function cjibAllowedHostSuffixes(): string[] {
+  const configured = (process.env.CJIB_ALLOWED_HOSTS ?? "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase().replace(/^\.+/, ""))
+    .filter(Boolean);
+  return configured.length ? configured : CJIB_DEFAULT_ALLOWED_HOSTS;
+}
+
+export function isAllowedCjibHost(host: string): boolean {
+  const name = String(host ?? "").trim().toLowerCase().replace(/\.$/, "");
+  if (!name) return false;
+  return cjibAllowedHostSuffixes().some((suffix) => name === suffix || name.endsWith("." + suffix));
+}
+
+/** Throws OutboundBlockedError — one generic message, no oracle — when refused. */
+export async function assertAllowedCjibHost(host: string): Promise<void> {
+  if (!isAllowedCjibHost(host)) throw new OutboundBlockedError();
+  await assertPublicHost(host);
+}
 
 export const cjibConfigSchema = z.object({
   enabled: z.boolean().default(false),

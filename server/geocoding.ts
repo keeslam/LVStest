@@ -1,9 +1,27 @@
+import { fetchWithTimeout } from "./utils/security/outboundGuard";
+
 // Free geocoding via OpenStreetMap Nominatim, no API key required.
 // Usage policy caps requests at ~1/sec and requires a descriptive User-Agent:
 // https://operations.osmfoundation.org/policies/nominatim/
-const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
+// FIX-U (BUG-099): endpoints and deadlines are read per call, so the timeout
+// can be proven against a local stub that never answers. Production sets
+// none of these and uses the defaults.
+const nominatimUrl = () => process.env.NOMINATIM_URL || "https://nominatim.openstreetmap.org/search";
 const MIN_REQUEST_INTERVAL_MS = 1100;
 const USER_AGENT = "LVS-Fleet-Management/1.0 (internal route planning tool)";
+
+/**
+ * FIX-U (BUG-099). Neither outgoing call had a deadline. `fetch()` without a
+ * signal waits for the OS socket timeout, so one unresponsive third party held
+ * a route-planning request - and its database connection - open for minutes.
+ * Both calls are best-effort already (they return null on any failure), so a
+ * timeout simply turns "hangs" into "falls back to the straight-line estimate".
+ */
+export const geocodeTimeoutMs = () => Number(process.env.GEOCODE_TIMEOUT_MS) || 8000;
+export const routeTimeoutMs = () => Number(process.env.ROUTE_TIMEOUT_MS) || 10000;
+
+/** OSRM's demo server is a public third party; do not hand it unbounded input. */
+const MAX_ROUTE_POINTS = 26;
 
 export interface Coordinates {
   lat: number;
@@ -32,9 +50,10 @@ export async function geocodeAddress(query: string): Promise<Coordinates | null>
   await throttle();
 
   try {
-    const url = `${NOMINATIM_URL}?format=json&limit=1&q=${encodeURIComponent(query)}`;
-    const response = await fetch(url, {
+    const url = `${nominatimUrl()}?format=json&limit=1&q=${encodeURIComponent(query)}`;
+    const response = await fetchWithTimeout(url, {
       headers: { "User-Agent": USER_AGENT },
+      timeoutMs: geocodeTimeoutMs(),
     });
 
     if (!response.ok) {
@@ -102,7 +121,7 @@ export function nearestNeighborOrder<T extends Coordinates>(
 // key). Straight-line distance can be off by 20-40% from what a driver actually
 // covers, which matters once it's feeding toll-cost/billing numbers. Returns null
 // on any failure so callers can fall back to the haversine estimate.
-const OSRM_ROUTE_URL = "https://router.project-osrm.org/route/v1/driving";
+const osrmRouteUrl = () => process.env.OSRM_ROUTE_URL || "https://router.project-osrm.org/route/v1/driving";
 
 export interface RoadRoute {
   legDistancesKm: number[];
@@ -111,11 +130,17 @@ export interface RoadRoute {
 
 export async function getRoadRouteDistances(points: Coordinates[]): Promise<RoadRoute | null> {
   if (points.length < 2) return null;
+  // A caller that somehow assembles more stops than the route planner allows
+  // does not get to build an arbitrarily long URL for a public service.
+  if (points.length > MAX_ROUTE_POINTS) return null;
 
   try {
     const coordsParam = points.map((p) => `${p.lon},${p.lat}`).join(";");
-    const url = `${OSRM_ROUTE_URL}/${coordsParam}?overview=false`;
-    const response = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
+    const url = `${osrmRouteUrl()}/${coordsParam}?overview=false`;
+    const response = await fetchWithTimeout(url, {
+      headers: { "User-Agent": USER_AGENT },
+      timeoutMs: routeTimeoutMs(),
+    });
     if (!response.ok) return null;
 
     const data = (await response.json()) as {

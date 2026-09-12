@@ -1,9 +1,16 @@
 import { storage } from "../storage";
 import { DEFAULT_PORTAL_CONFIG, PORTAL_CONFIG_KEY, type PortalConfig } from "../../shared/portal-types";
 import { z } from "zod";
+import { isValidFrameOrigin, normalizeFrameOrigin, FRAME_ORIGIN_MESSAGE } from "../../shared/frame-origins";
 
 export const portalConfigSchema = z.object({
-  allowedFrameOrigins: z.array(z.string().url()).default(DEFAULT_PORTAL_CONFIG.allowedFrameOrigins),
+  // FIX-U (BUG-087): these strings end up inside the CSP header of every
+  // portal response, so only a bare scheme://host[:port] is accepted and it is
+  // stored in its canonical form.
+  allowedFrameOrigins: z
+    .array(z.string().refine(isValidFrameOrigin, FRAME_ORIGIN_MESSAGE).transform(normalizeFrameOrigin))
+    .max(20)
+    .default(DEFAULT_PORTAL_CONFIG.allowedFrameOrigins),
   notificationEmail: z.union([z.string().email(), z.literal("")]).default(""),
   portalBaseUrl: z.union([z.string().url(), z.literal("")]).default(""),
   fineAdminFee: z.coerce.number().min(0).default(0),

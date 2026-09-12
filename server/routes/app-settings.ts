@@ -9,6 +9,7 @@ import { sendRouteError } from "../utils/route-errors";
 import multer from "multer";
 import { hasPermission, requireAdmin } from "../middleware/permissions.js";
 import { clearEmailConfigCache, testSmtpConnection, isSafeHeaderValue } from "../utils/email-service";
+import { assertPublicHost, OutboundBlockedError, OUTBOUND_BLOCKED_MESSAGE } from "../utils/security/outboundGuard";
 import { mergeHolidaysWithOverrides } from "../../shared/holidays";
 import { createSecureMulterFilter, sanitizeFilename } from "../utils/security/fileUploadSecurity";
 import { getRelativePath, resolveDocumentFilePath, resolveStoredPathForWrite } from "../services/document-paths";
@@ -353,6 +354,21 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
 
       if (!smtpHost || !smtpUser || !smtpPassword) {
         return res.status(400).json({ success: false, userMessage: 'SMTP host, username and password are required to test the connection.' });
+      }
+
+      // FIX-U (BUG-077): the host came straight from the form, so "test the
+      // connection" opened a TCP connection to any address the container could
+      // reach and reported back whether it answered — a port scanner with a
+      // login box. Private, loopback and link-local destinations are refused
+      // before a socket is opened, with one message that says nothing about
+      // what is (or is not) listening there.
+      try {
+        await assertPublicHost(String(smtpHost));
+      } catch (blocked) {
+        if (blocked instanceof OutboundBlockedError) {
+          return res.status(400).json({ success: false, userMessage: OUTBOUND_BLOCKED_MESSAGE });
+        }
+        throw blocked;
       }
 
       const result = await testSmtpConnection({

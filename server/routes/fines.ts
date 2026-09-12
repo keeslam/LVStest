@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs";
 import multer from "multer";
 import { z } from "zod";
+import { OutboundBlockedError, OUTBOUND_BLOCKED_MESSAGE } from "../utils/security/outboundGuard";
 import { hasPermission } from "../middleware/permissions.js";
 import { UserPermission, insertFineSchema } from "../../shared/schema";
 import { isValidFineTransition, FINE_TRANSITIONS, normalizeLicensePlate, type FineStatusValue } from "../../shared/fines";
@@ -137,6 +138,12 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
       const files = await ftpsClient.listInbox(config);
       res.json({ ok: true, files: files.map((f) => ({ ...f, matches: pattern.test(f.name) })) });
     } catch (e) {
+      // FIX-U (BUG-071): a destination outside the allowlist, or one that
+      // resolves into a private range, gets exactly one answer whatever is
+      // actually listening there — the route is no longer a port scanner.
+      if (e instanceof OutboundBlockedError) {
+        return res.status(400).json({ ok: false, message: OUTBOUND_BLOCKED_MESSAGE });
+      }
       res.status(502).json({ ok: false, message: (e as Error).message });
     }
   });

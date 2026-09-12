@@ -2,6 +2,7 @@ import { Writable } from "stream";
 import path from "path/posix";
 import { Client, type FileInfo } from "basic-ftp";
 import type { CjibConfig } from "../../../shared/fines";
+import { assertAllowedCjibHost } from "./config";
 
 export interface RemoteFile { name: string; size: number; modifiedAt: string | null }
 
@@ -14,6 +15,10 @@ export interface CjibFtpsClient {
 
 async function withClient<T>(config: CjibConfig, fn: (client: Client) => Promise<T>): Promise<T> {
   if (!config.host) throw new Error("CJIB FTPS host is not configured");
+  // FIX-U (BUG-071): every connection this client opens — the poller's as well
+  // as the admin's "test connection" — passes the allowlist and the
+  // private-range check first.
+  await assertAllowedCjibHost(config.host);
   const client = new Client(30_000);
   try {
     await client.access({
