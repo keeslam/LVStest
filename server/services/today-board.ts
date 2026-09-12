@@ -166,6 +166,15 @@ export async function buildTodayBoard(
             // 'out' is a finished repair: OPT-015's "onderhoud afronden" wrote
             // it, and it is not today's work any more.
             sql`(${reservations.maintenanceStatus} IS NULL OR ${reservations.maintenanceStatus} <> 'out')`,
+            // A block whose vehicle no longer exists is not work anyone can do:
+            // there is no car to open the bonnet of and the row renders as a
+            // dash. `reservations.vehicle_id` has no foreign key (BUG-039), so
+            // such rows exist in real data — 88 of them covered "today" in the
+            // regression clone, every one of them a leftover of the test suite
+            // (BUG-145), and together they made up the whole group and most of
+            // the screen's headline count. Skip them here; cleaning the rows
+            // themselves is the data question under BUG-143.
+            sql`EXISTS (SELECT 1 FROM ${vehicles} WHERE ${vehicles.id} = ${reservations.vehicleId})`,
           ),
         )
         .orderBy(reservations.startDate, reservations.id)

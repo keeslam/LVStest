@@ -460,6 +460,29 @@ describe("OPT-001 — the groups keep to their own population", () => {
     expect(handoverIds).not.toContain(created.maintenanceId);
   });
 
+  it("a block whose vehicle no longer exists is not today's work (regression, phase 36)", async () => {
+    // `reservations.vehicle_id` has no foreign key (BUG-039), so a block can
+    // outlive its vehicle. The regression clone held 88 such blocks covering
+    // one day — the entire maintenance group and most of the headline count,
+    // every row rendering as a dash. Nobody can act on a car that is not there.
+    const ghost = await insertReservation({
+      customerId: null,
+      vehicleId: 2147483000, // an id no vehicle has
+      startDate: TODAY,
+      endDate: TODAY,
+      status: "active",
+      type: "maintenance_block",
+    });
+    try {
+      const res = await admin.get(`/api/today?date=${TODAY}`);
+      expect(res.status).toBe(200);
+      expect(res.body.maintenance.map((r: any) => r.id)).not.toContain(ghost);
+      expect(JSON.stringify(res.body)).not.toContain(`"id":${ghost}`);
+    } finally {
+      await db.delete(reservations).where(eq(reservations.id, ghost));
+    }
+  });
+
   it("a cancelled row is not today's work", async () => {
     const vehicle = await createFixtureVehicle();
     const cancelled = await insertReservation({
