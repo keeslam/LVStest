@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { User, UserRole, UserPermission } from "@shared/schema";
+import { permissionLabel } from "@shared/permission-labels";
 import { Shield, ShieldCheck, User as UserIcon, UserX, Trash2, Plus, Edit, Mail, Calendar, Check, X, Loader2, ArrowLeft } from "lucide-react";
 import {
   Dialog,
@@ -364,7 +365,7 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
                         <X className="h-3 w-3 text-muted-foreground" />
                       )}
                       <span className={`text-xs ${hasPermission ? "font-medium" : "text-muted-foreground"}`}>
-                        {permission}
+                        {permissionLabel(permission)}
                       </span>
                     </div>
                   );
@@ -723,7 +724,7 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
                           />
                         </FormControl>
                         <FormLabel className="text-xs font-normal cursor-pointer">
-                          {permission}
+                          {permissionLabel(permission)}
                         </FormLabel>
                       </FormItem>
                     )}

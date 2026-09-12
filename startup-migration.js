@@ -332,6 +332,65 @@ async function syncSchemaFromManifest({ createTables = true } = {}) {
   console.log('✅ Schema sync from manifest complete');
 }
 
+// ==================== B-23: DOCUMENT PERMISSIONS (BUG-167) ====================
+// besluiten.md B-23 - "extra vinkje in admin panel of dit ook bekeken/bewerkt
+// mag worden". Every /api/contracts/* route used to be requireAuth-only, so an
+// account with nothing but view_vehicles could read a customer's address,
+// telephone number and driving-licence number out of contracts/data. The
+// routes now demand view_documents / manage_documents, and this step hands
+// those to the accounts whose present-day work needs them so nobody silently
+// loses access:
+//
+//   has manage_documents    -> + view_documents
+//   has manage_reservations -> + view_documents, + manage_documents
+//   has view_reservations   -> + view_documents
+//   anything else only      -> nothing (that is exactly BUG-167's account)
+//
+// role='admin' is skipped: hasPermission() short-circuits on the admin role.
+// Runs exactly once, recorded by the app_settings marker below - so an
+// administrator who later unticks a box does not get it back on the next boot.
+// The same mapping lives, testable, in scripts/migrate-document-permissions.ts.
+const B23_MARKER = 'migration:b23_document_permissions';
+
+async function grantDocumentPermissions() {
+  const already = await db.execute(sql`SELECT 1 FROM app_settings WHERE key = ${B23_MARKER}`);
+  if (already.rows.length > 0) {
+    console.log('B-23 document permissions already mapped, skipping');
+    return;
+  }
+
+  const viewResult = await db.execute(sql`
+    UPDATE users
+       SET permissions = permissions || '["view_documents"]'::jsonb
+     WHERE role <> 'admin'
+       AND NOT (permissions ? 'view_documents')
+       AND (permissions ?| array['manage_documents','manage_reservations','view_reservations'])
+  `);
+  const manageResult = await db.execute(sql`
+    UPDATE users
+       SET permissions = permissions || '["manage_documents"]'::jsonb
+     WHERE role <> 'admin'
+       AND NOT (permissions ? 'manage_documents')
+       AND (permissions ?| array['manage_documents','manage_reservations'])
+  `);
+
+  await db.execute(sql`
+    INSERT INTO app_settings (key, value, category, description)
+    VALUES (
+      ${B23_MARKER},
+      ${JSON.stringify({ appliedAt: new Date().toISOString() })}::jsonb,
+      'general',
+      'B-23: view_documents/manage_documents mapped onto the existing accounts'
+    )
+    ON CONFLICT (key) DO NOTHING
+  `);
+
+  console.log(
+    'B-23 document permissions mapped: ' + (viewResult.rowCount ?? 0) +
+    ' account(s) gained view_documents, ' + (manageResult.rowCount ?? 0) + ' gained manage_documents'
+  );
+}
+
 async function runMigrations() {
   try {
     console.log('🔍 Checking database schema...');
@@ -1259,6 +1318,10 @@ async function runMigrations() {
     // production ever needed a hand-written step for). See
     // syncSchemaFromManifest's own comment for details.
     await syncSchemaFromManifest();
+
+    // B-23 (BUG-167): once the schema is in place, map the document
+    // permissions onto the accounts that already had the access.
+    await grantDocumentPermissions();
 
     console.log('✅ Database migration completed successfully!');
     

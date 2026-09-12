@@ -97,6 +97,10 @@ export const UserPermission = {
   MANAGE_EXPENSES: 'manage_expenses',
   
   // Documents & Templates
+  // besluit B-23 (BUG-167): documents have a permission of their own, with a
+  // separate checkbox for "may look at it" and "may generate/change it". They
+  // deliberately do NOT ride along on the vehicle or reservation permission.
+  VIEW_DOCUMENTS: 'view_documents',
   MANAGE_DOCUMENTS: 'manage_documents',
   MANAGE_PDF_TEMPLATES: 'manage_pdf_templates',
   

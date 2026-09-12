@@ -32,13 +32,10 @@ const AUTHENTICATED_ONLY_ROUTES = new Set([
   "POST /api/reauthenticate",
   "PATCH /api/users/:id", // self-service profile; role/permissions are guarded inside (BUG-001)
   "POST /api/users/change-password", // own password, old password required
-  // Contract generation for a reservation the user can already see.
-  "GET /api/contracts/generate/:reservationId",
-  "POST /api/contracts/preview",
-  "GET /api/contracts/preview/:token",
-  "POST /api/contracts/generate-versioned/:reservationId",
-  "GET /api/contracts/generate-default/:reservationId",
-  "GET /api/contracts/data/:reservationId",
+  // (The six /api/contracts/* routes used to live here. Besluit B-23 /
+  // BUG-167 moved them onto view_documents / manage_documents; they are now
+  // permission-guarded like everything else, which is what makes the
+  // view_vehicles-only account lose its 200 on contracts/data.)
   // Contract numbering reads, used by the pickup dialog.
   "GET /api/settings/next-contract-number",
   "GET /api/settings/check-contract-number/:contractNumber",
@@ -112,6 +109,6 @@ describe("FIX-I — default deny over the whole router", () => {
   it("the allowlists themselves stay small", async () => {
     // A guard against the easy fix: silencing the test by growing the list.
     expect(PUBLIC_ROUTES.size).toBeLessThanOrEqual(6);
-    expect(AUTHENTICATED_ONLY_ROUTES.size).toBeLessThanOrEqual(30);
+    expect(AUTHENTICATED_ONLY_ROUTES.size).toBeLessThanOrEqual(24);
   });
 });

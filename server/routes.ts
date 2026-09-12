@@ -4919,7 +4919,7 @@ export async function registerRoutes(app: Express): Promise<void> {
    * been recorded; only the contract failed, so this produces it again without
    * making the employee redo the handover.
    */
-  app.post("/api/reservations/:id/contract", hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
+  app.post("/api/reservations/:id/contract", hasPermission(UserPermission.MANAGE_RESERVATIONS), hasPermission(UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
     try {
       const reservationId = parseInt(req.params.id);
       if (isNaN(reservationId)) {
@@ -5671,7 +5671,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   }));
 
   // Get all documents
-  app.get("/api/documents", hasPermission(UserPermission.MANAGE_DOCUMENTS), async (req, res) => {
+  app.get("/api/documents", hasPermission(UserPermission.VIEW_DOCUMENTS, UserPermission.MANAGE_DOCUMENTS), async (req, res) => {
     // Prevent caching to ensure fresh data is always returned
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.setHeader('Pragma', 'no-cache');
@@ -5685,7 +5685,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Get documents by vehicle
-  app.get("/api/documents/vehicle/:vehicleId", hasPermission(UserPermission.MANAGE_DOCUMENTS), async (req, res) => {
+  app.get("/api/documents/vehicle/:vehicleId", hasPermission(UserPermission.VIEW_DOCUMENTS, UserPermission.MANAGE_DOCUMENTS), async (req, res) => {
     const vehicleId = parseInt(req.params.vehicleId);
     if (isNaN(vehicleId)) {
       return res.status(400).json({ message: "Invalid vehicle ID" });
@@ -5696,7 +5696,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Get documents by reservation
-  app.get("/api/documents/reservation/:reservationId", hasPermission(UserPermission.MANAGE_DOCUMENTS), async (req, res) => {
+  app.get("/api/documents/reservation/:reservationId", hasPermission(UserPermission.VIEW_DOCUMENTS, UserPermission.MANAGE_DOCUMENTS), async (req, res) => {
     const reservationId = parseInt(req.params.reservationId);
     if (isNaN(reservationId)) {
       return res.status(400).json({ message: "Invalid reservation ID" });
@@ -5719,7 +5719,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Get single document
-  app.get("/api/documents/:id", hasPermission(UserPermission.MANAGE_DOCUMENTS), async (req, res) => {
+  app.get("/api/documents/:id", hasPermission(UserPermission.VIEW_DOCUMENTS, UserPermission.MANAGE_DOCUMENTS), async (req, res) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
       return res.status(400).json({ message: "Invalid document ID" });
@@ -5850,7 +5850,7 @@ export async function registerRoutes(app: Express): Promise<void> {
    * question "heeft de klant het contract gekregen?" still had no answer at the
    * counter. Newest first; the UI shows the most recent line.
    */
-  app.get("/api/documents/:id/email-status", hasPermission(UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
+  app.get("/api/documents/:id/email-status", hasPermission(UserPermission.VIEW_DOCUMENTS, UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -5877,7 +5877,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // View document (for preview/print)
-  app.get("/api/documents/view/:id", hasPermission(UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
+  app.get("/api/documents/view/:id", hasPermission(UserPermission.VIEW_DOCUMENTS, UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -5927,7 +5927,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Download document
-  app.get("/api/documents/download/:id", hasPermission(UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
+  app.get("/api/documents/download/:id", hasPermission(UserPermission.VIEW_DOCUMENTS, UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -6233,7 +6233,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
   // ==================== CONTRACT GENERATION ====================
   // Generate rental contract PDF
-  app.get("/api/contracts/generate/:reservationId", requireAuth, async (req: Request, res: Response) => {
+  app.get("/api/contracts/generate/:reservationId", hasPermission(UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
     try {
       const reservationId = parseInt(req.params.reservationId);
       if (isNaN(reservationId)) {
@@ -6311,7 +6311,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
   
   // Generate contract preview with form data (returns preview token)
-  app.post("/api/contracts/preview", requireAuth, async (req: Request, res: Response) => {
+  app.post("/api/contracts/preview", hasPermission(UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
     try {
       const { vehicleId, customerId, startDate, endDate, notes } = req.body;
       const templateId = req.query.templateId ? parseInt(req.query.templateId as string) : undefined;
@@ -6402,7 +6402,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Get contract preview by token
-  app.get("/api/contracts/preview/:token", requireAuth, async (req: Request, res: Response) => {
+  app.get("/api/contracts/preview/:token", hasPermission(UserPermission.VIEW_DOCUMENTS, UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
     try {
       const { token } = req.params;
       const { previewTokenService } = await import('./preview-token-service');
@@ -6431,7 +6431,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Generate versioned contract with form data (for edit mode)
-  app.post("/api/contracts/generate-versioned/:reservationId", requireAuth, async (req: Request, res: Response) => {
+  app.post("/api/contracts/generate-versioned/:reservationId", hasPermission(UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
     try {
       const reservationId = parseInt(req.params.reservationId);
       if (isNaN(reservationId)) {
@@ -6545,7 +6545,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
   
   // Generate contract using default template
-  app.get("/api/contracts/generate-default/:reservationId", requireAuth, async (req: Request, res: Response) => {
+  app.get("/api/contracts/generate-default/:reservationId", hasPermission(UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
     try {
       const reservationId = parseInt(req.params.reservationId);
       if (isNaN(reservationId)) {
@@ -6610,7 +6610,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
   
   // Get contract data as JSON (for display in browser)
-  app.get("/api/contracts/data/:reservationId", requireAuth, async (req: Request, res: Response) => {
+  app.get("/api/contracts/data/:reservationId", hasPermission(UserPermission.VIEW_DOCUMENTS, UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
     try {
       const reservationId = parseInt(req.params.reservationId);
       if (isNaN(reservationId)) {
