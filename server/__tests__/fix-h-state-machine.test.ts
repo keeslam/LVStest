@@ -234,7 +234,11 @@ describe("FIX-H — every status write path is gated", () => {
 
   it("PATCH /:id/status still accepts a legal transition", async () => {
     const vehicle = await createFixtureVehicle();
-    const r = await createFixtureReservation({ customerId, vehicleId: vehicle.id });
+    // A rental whose period has started: BUG-144 refuses `picked_up` on one
+    // that has not, so the dates are what make this a *legal* transition.
+    const r = await createFixtureReservation({
+      customerId, vehicleId: vehicle.id, startDate: day(-1), endDate: day(3),
+    });
 
     const res = await admin.patch(`/api/reservations/${r.id}/status`).send({ status: "picked_up" });
     expect(res.status).toBe(200);
@@ -256,15 +260,16 @@ describe("FIX-H — every status write path is gated", () => {
 describe("FIX-H — the four behavioural corrections", () => {
   it("completing a reservation never rewrites endDate (BUG-019, BUG-128)", async () => {
     const vehicle = await createFixtureVehicle();
+    // Running, not future: BUG-144 refuses a pickup before the period starts.
     const r = await createFixtureReservation({
-      customerId, vehicleId: vehicle.id, startDate: day(30), endDate: day(35),
+      customerId, vehicleId: vehicle.id, startDate: day(-2), endDate: day(5),
     });
 
     expect((await admin.patch(`/api/reservations/${r.id}/status`).send({ status: "picked_up" })).status).toBe(200);
     expect((await admin.patch(`/api/reservations/${r.id}/status`).send({ status: "completed" })).status).toBe(200);
 
     const row = await rowOf(r.id);
-    expect(row.endDate).toBe(day(35));
+    expect(row.endDate).toBe(day(5));
     expect(row.endDate! >= row.startDate).toBe(true);
   });
 

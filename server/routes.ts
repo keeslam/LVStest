@@ -94,8 +94,11 @@ import {
   StateTransitionError,
   WorkshopBlockedError,
   isoToday,
+  assertPickupPeriodStarted,
+  PickupBeforeStartError,
   type HandoverOverride,
 } from "./services/lifecycle";
+import { recalculateTotalPrice } from "../shared/rental-pricing";
 import { calculateDutchHolidays, mergeHolidaysWithOverrides } from "../shared/holidays";
 import { geocodeAddress, haversineDistanceKm, nearestNeighborOrder, getRoadRouteDistances } from "./geocoding";
 import { isDamageCheckDocument } from "../shared/document-types";
@@ -3570,6 +3573,8 @@ export async function registerRoutes(app: Express): Promise<void> {
       // literal "garbage". Same gate as `/status` now.
       if ('status' in reservationData) {
         reservationData.status = assertReservationTransition(existingBasic.status, reservationData.status);
+        // besluiten B-16 / BUG-144 — no pickup before the period starts.
+        await applyPickupPeriodRule(existingBasic, reservationData as Record<string, any>, req);
       }
 
       // BUG-017: same blacklist check as the create path and as PATCH /:id.
@@ -3745,6 +3750,37 @@ export async function registerRoutes(app: Express): Promise<void> {
     });
   });
 
+  /**
+   * besluiten **B-16** / BUG-144 — the period rule for every writer that can
+   * set `picked_up`.
+   *
+   * `/pickup` has asked the question since wave 10; the three status writers
+   * did not, so phase 36 set `picked_up` on a rental starting 2026-11-11
+   * through `PATCH /:id` and `PATCH /:id/status` and got 200 from both — a row
+   * claiming a pickup with an empty pickup date and an empty pickup mileage.
+   *
+   * The rule itself lives in the state machine (`assertPickupPeriodStarted`);
+   * this applies its answer to the patch: the start date moves to today and,
+   * per **B-07**, the total follows from the same day count the booking form
+   * uses. Throws `PickupBeforeStartError` (409) when nobody answered the
+   * question.
+   */
+  async function applyPickupPeriodRule(
+    existing: { status?: string | null; startDate?: string | null; endDate?: string | null; vehicleId?: number | null },
+    patch: Record<string, any>,
+    req: Request,
+  ): Promise<void> {
+    if (normalizeReservationStatus(patch.status) !== "picked_up") return;
+    if (normalizeReservationStatus(existing.status) === "picked_up") return;
+    const shiftTo = assertPickupPeriodStarted(existing, { confirmedShift: req.body?.shiftStartDate === true });
+    if (!shiftTo) return;
+    patch.startDate = shiftTo;
+    const vehicle = existing.vehicleId ? await storage.getVehicle(existing.vehicleId) : null;
+    const endDate = (patch.endDate ?? existing.endDate) as string | null | undefined;
+    const total = recalculateTotalPrice(vehicle?.dailyPrice ?? null, shiftTo, endDate ?? null);
+    if (total != null) patch.totalPrice = String(total);
+  }
+
   // Update reservation status only (special endpoint for status changes)
   app.patch("/api/reservations/:id/status", hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
     try {
@@ -3780,6 +3816,13 @@ export async function registerRoutes(app: Express): Promise<void> {
         const vehicleForHandover = await storage.getVehicle(existingReservation.vehicleId);
         decideHandover(vehicleForHandover, workshopOverrideFrom(req));
       }
+
+      // besluiten B-16 / BUG-144 — and the period gate, on this path too: a
+      // rental that has not started cannot be "picked up" unless the employee
+      // answered the question, in which case the start date (and the total)
+      // move to today.
+      const pickupShift: Record<string, any> = { status: newStatus };
+      await applyPickupPeriodRule(existingReservation, pickupShift, req);
       
       // If status is "completed", check mileage validation
       if (status === "completed" && existingReservation.vehicleId && req.body.departureMileage) {
@@ -3805,7 +3848,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       const user = req.user;
       const dataWithTracking: any = {
         status,
-        updatedBy: user ? user.username : null
+        updatedBy: user ? user.username : null,
+        // besluiten B-16: the confirmed early pickup moves the period, and the
+        // price with it. Empty on every other status change.
+        ...(pickupShift.startDate ? { startDate: pickupShift.startDate } : {}),
+        ...(pickupShift.totalPrice ? { totalPrice: pickupShift.totalPrice } : {}),
       };
       
       // Add pickup mileage when status is confirmed (picked up) OR when updating mileage for confirmed reservation
@@ -4043,6 +4090,8 @@ export async function registerRoutes(app: Express): Promise<void> {
           existingReservationForDiff.status,
           reservationData.status,
         );
+        // besluiten B-16 / BUG-144 — no pickup before the period starts.
+        await applyPickupPeriodRule(existingReservationForDiff, reservationData as Record<string, any>, req);
       }
 
       // BUG-017: the blacklist is checked on create and, until now, on neither
@@ -4725,17 +4774,18 @@ export async function registerRoutes(app: Express): Promise<void> {
       // eerder ingaat". Without the answer nothing is written at all; with it
       // the start date moves to today and the total follows (B-07). Refusing
       // happens only when the employee answers no, which is this 409.
-      const todayForPickup = isoToday();
-      const startsLater = reservation.startDate > todayForPickup;
-      const confirmedShift = req.body?.shiftStartDate === true;
-      if (startsLater && !confirmedShift) {
-        return res.status(409).json({
-          code: "PICKUP_BEFORE_START_DATE",
-          message: `Deze huur begint pas op ${reservation.startDate}. Gaat de huur vandaag in?`,
-          startDate: reservation.startDate,
-          endDate: reservation.endDate ?? null,
-          today: todayForPickup,
+      // The question itself lives in the state machine now, so this route and
+      // the three status writers refuse — and shift — identically (BUG-144).
+      let shiftStartDateTo: string | null = null;
+      try {
+        shiftStartDateTo = assertPickupPeriodStarted(reservation, {
+          confirmedShift: req.body?.shiftStartDate === true,
         });
+      } catch (error) {
+        if (error instanceof PickupBeforeStartError) {
+          return res.status(error.status).json(error.toBody());
+        }
+        throw error;
       }
 
       let mileageDecreaseAuthorizedBy: string | undefined;
@@ -4766,7 +4816,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         // the workshop or marked not for rental.
         workshopOverride: workshopOverrideFrom(req),
         // besluiten B-16 — only set once the question has been answered "ja".
-        ...(startsLater && confirmedShift ? { shiftStartDateTo: todayForPickup } : {}),
+        ...(shiftStartDateTo ? { shiftStartDateTo } : {}),
       });
 
       if (!updatedReservation) {

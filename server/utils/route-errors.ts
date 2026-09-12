@@ -25,7 +25,7 @@ import type { Response } from "express";
 import { z } from "zod";
 import { BodyValidationError } from "../middleware/validateBody";
 import { BookingConflictError } from "../services/bookability";
-import { StateTransitionError, WorkshopBlockedError } from "../services/lifecycle";
+import { StateTransitionError, WorkshopBlockedError, PickupBeforeStartError } from "../services/lifecycle";
 import { describeDbError, dbErrorBody } from "./db-errors";
 
 /** A route-thrown error that already knows its status and safe message. */
@@ -78,6 +78,13 @@ export function sendRouteError(res: Response, error: unknown, fallbackMessage: s
     return error.status;
   }
   if (error instanceof WorkshopBlockedError) {
+    res.status(error.status).json(error.toBody());
+    return error.status;
+  }
+  // besluiten B-16 / BUG-144 — a pickup on a rental whose period has not
+  // started: 409 with the question the dialog turns into "gaat de huur vandaag
+  // in?", not a 200 that writes a pickup that never happened.
+  if (error instanceof PickupBeforeStartError) {
     res.status(error.status).json(error.toBody());
     return error.status;
   }

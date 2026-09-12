@@ -362,6 +362,65 @@ export function isoToday(): string {
   return new Date().toISOString().split("T")[0];
 }
 
+/* ------------------------------------------------------------------ *
+ * Picking up before the start date — besluiten B-16, BUG-144
+ * ------------------------------------------------------------------ */
+
+/**
+ * besluiten **B-16** — "de medewerker krijgt de vraag of de huur eerder ingaat;
+ * na bevestiging schuift de startdatum naar vandaag". 409, because the caller
+ * can resolve it by answering the question.
+ */
+export class PickupBeforeStartError extends Error {
+  readonly status = 409;
+  readonly code = "PICKUP_BEFORE_START_DATE";
+
+  constructor(
+    readonly startDate: string,
+    readonly endDate: string | null,
+    readonly today: string,
+  ) {
+    super(`Deze huur begint pas op ${startDate}. Gaat de huur vandaag in?`);
+    this.name = "PickupBeforeStartError";
+  }
+
+  toBody(): Record<string, unknown> {
+    return {
+      code: this.code,
+      message: this.message,
+      startDate: this.startDate,
+      endDate: this.endDate,
+      today: this.today,
+    };
+  }
+}
+
+/**
+ * BUG-144 — the code half. `/pickup` has asked the B-16 question since wave 10,
+ * but the three status writers did not: phase 36 set `status: "picked_up"` on a
+ * reservation starting 2026-11-11 through both `PATCH /:id` and
+ * `PATCH /:id/status`, got 200 from both, and left a row claiming a pickup with
+ * an empty pickup date and an empty pickup mileage. That is where the 123
+ * `picked_up` rows with a future start date came from.
+ *
+ * Returns the date the rental should start (today) when the employee has
+ * confirmed the shift, and null when the period has already started and there
+ * is nothing to move. Throws `PickupBeforeStartError` when the question has not
+ * been answered.
+ */
+export function assertPickupPeriodStarted(
+  reservation: { startDate?: string | null; endDate?: string | null },
+  opts: { confirmedShift?: boolean; today?: string } = {},
+): string | null {
+  const today = opts.today ?? isoToday();
+  const startDate = reservation.startDate ?? null;
+  if (!startDate || startDate <= today) return null;
+  if (!opts.confirmedShift) {
+    throw new PickupBeforeStartError(startDate, reservation.endDate ?? null, today);
+  }
+  return today;
+}
+
 function plusDays(day: string, days: number): string {
   const d = new Date(`${day}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
