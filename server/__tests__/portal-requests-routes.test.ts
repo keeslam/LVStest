@@ -221,17 +221,28 @@ describe("staff portal requests", () => {
     await db.delete(reservations).where(eq(reservations.id, placeholder.id));
   });
 
-  it("approving a change request refuses to move a block onto another maintenance block", async () => {
+  /**
+   * besluiten **B-09** (BUG-037) changed this rule. Until 2026-09-12 moving a
+   * block onto another block was a 409 "Conflicts with another maintenance
+   * block"; the owner has now decided that two overlapping blocks on one car
+   * are allowed and that staff get a warning naming the period instead. The
+   * test asserts the decided behaviour, and that the warning really carries the
+   * other block — silently moving it would be the regression.
+   */
+  it("approving a change request moves a block onto another one and warns about it (B-09)", async () => {
     const car = await createTestVehicle();
     const blockA = await storage.createMaintenanceBlock(car.id, "2097-04-01", "2097-04-02");
     const blockB = await storage.createMaintenanceBlock(car.id, "2097-04-10", "2097-04-11");
     const reqId = (await requestsStorage.createRequest({ customerId, portalUserId: userId, type: "maintenance_change", reservationId: blockA.id, payload: { newDate: "2097-04-10", reason: "Verplaatsen" }, message: "Graag verplaatsen" })).id;
     const res = await request(manager).post(`/api/portal-requests/${reqId}/approve`).send({ startDate: "2097-04-10", durationDays: 2 });
-    expect(res.status).toBe(409);
-    expect(res.body.message).toBe("Conflicts with another maintenance block");
-    expect(res.body.conflicts[0].id).toBe(blockB.id);
-    // The refused move must not have gone through.
-    expect((await storage.getReservation(blockA.id))!.startDate).toBe("2097-04-01");
+    expect(res.status).toBe(200);
+    expect(res.body.block).toMatchObject({ id: blockA.id, startDate: "2097-04-10", endDate: "2097-04-11" });
+    const warning = (res.body.warnings ?? []).find((w: any) => w.code === "MAINTENANCE_OVERLAP");
+    expect(warning).toBeDefined();
+    expect(warning.maintenanceBlocks.map((b: any) => b.id)).toContain(blockB.id);
+    expect(warning.message).toContain("10-04-2097");
+    // The move really went through.
+    expect((await storage.getReservation(blockA.id))!.startDate).toBe("2097-04-10");
     await db.delete(reservations).where(eq(reservations.id, blockA.id));
     await db.delete(reservations).where(eq(reservations.id, blockB.id));
   });

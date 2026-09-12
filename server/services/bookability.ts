@@ -19,14 +19,20 @@
  * the availability check.
  *
  * Deliberately NOT enforced here: an overlapping *maintenance block* does not
- * make a rental illegal. B-01 names it, but BUG-013/BUG-037 (hard block or soft
- * warning, may two blocks overlap) are the still-open OPT-023 decision, so the
- * predicate *reports* the overlapping blocks in `maintenanceBlocks` and leaves
- * the policy to the caller. Today no writer blocks on it, which is the
- * behaviour the app already had.
+ * make a rental illegal. besluiten.md **B-09** settled OPT-023 — "waarschuwen,
+ * de medewerker mag doorgaan" — so the predicate *reports* the overlapping
+ * blocks in `maintenanceBlocks` and never turns them into a conflict, for a
+ * rental (BUG-013) or for a second block on the same car (BUG-037) alike. The
+ * caller turns that list into the warning of `shared/booking-warnings.ts`.
+ *
+ * B-01 is untouched by that: "in onderhoud" still does not count as *available*
+ * in the dashboard counts or in the suggestion lists — that derivation lives in
+ * `services/lifecycle.ts` (`deriveVehicleAvailability`) and is a different
+ * question from "may this booking be written".
  */
 import { and, eq, ne, isNull, sql, type SQL } from "drizzle-orm";
 import { reservations, type Reservation, type Vehicle } from "../../shared/schema";
+import { bookingWarningsFor, type BookingWarning } from "../../shared/booking-warnings";
 
 /**
  * First key of `pg_advisory_xact_lock(int4, int4)`; the second is the vehicle
@@ -177,16 +183,34 @@ export function overlapWhere(request: BookingRequest): SQL {
   return and(...conditions)!;
 }
 
-/** Splits an overlap result into the two lists the verdict carries. */
+/**
+ * Splits an overlap result into the two lists the verdict carries.
+ *
+ * besluiten.md **B-09** (BUG-013, BUG-037): a maintenance block is never a
+ * conflict. Not for a rental — a rental runs on during maintenance, with a
+ * spare — and, since B-09, not for another maintenance block either. Both come
+ * back in `maintenanceBlocks`, which is what the warning is built from.
+ *
+ * A *rental* is still only judged against other rentals, so scheduling the
+ * workshop on a car that is out with a customer stays possible.
+ */
 export function partitionOverlaps(rows: Reservation[], isMaintenanceBlock: boolean): {
   conflicts: Reservation[];
   maintenanceBlocks: Reservation[];
 } {
   const blocks = rows.filter((r) => r.type === "maintenance_block");
   return {
-    conflicts: isMaintenanceBlock ? blocks : rows.filter((r) => r.type !== "maintenance_block"),
+    conflicts: isMaintenanceBlock ? [] : rows.filter((r) => r.type !== "maintenance_block"),
     maintenanceBlocks: blocks,
   };
+}
+
+/**
+ * The B-09 warning for a verdict, or `null` when there is nothing to warn
+ * about. Kept here so every writer produces the identical body.
+ */
+export function warningsForVerdict(verdict: BookabilityVerdict): BookingWarning[] {
+  return bookingWarningsFor(verdict.maintenanceBlocks);
 }
 
 /**

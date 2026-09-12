@@ -19,7 +19,7 @@ import { sanitizeFilename } from "../utils/security/fileUploadSecurity";
 import { AuditLogger } from "../utils/security/auditLogger";
 import { onMaintenanceBlockChanged, findPortalCustomerForBlock } from "../services/portal-maintenance-events";
 import { isWeekend } from "../services/booking-period";
-import { BookingConflictError } from "../services/bookability";
+import { BookingConflictError, warningsForVerdict } from "../services/bookability";
 import { db } from "../db";
 import { reservations } from "../../shared/schema";
 import { and, eq, isNull, sql } from "drizzle-orm";
@@ -408,13 +408,18 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     if (before.maintenanceStatus !== "scheduled") return res.status(409).json({ message: "Het onderhoud is al gestart" });
     const days = b.durationDays ?? before.maintenanceDuration ?? 1;
     const endDate = addDays(b.startDate, days - 1);
-    const conflicts = (await storage.checkReservationConflicts(before.vehicleId!, b.startDate, endDate, before.id, true)).filter((c) => c.id !== before.id);
-    if (conflicts.length > 0) {
-      return res.status(409).json({
-        message: "Conflicts with another maintenance block",
-        conflicts: conflicts.map((c) => ({ id: c.id, startDate: c.startDate, endDate: c.endDate, customerId: c.customerId })),
-      });
-    }
+    // besluiten **B-09** (BUG-037) — this used to be a 409 "Conflicts with
+    // another maintenance block". Two overlapping blocks on one car are now
+    // allowed; staff get the warning instead, with the period of the block they
+    // land on.
+    const blockVerdict = await storage.isVehicleBookable({
+      vehicleId: before.vehicleId!,
+      startDate: b.startDate,
+      endDate,
+      excludeReservationId: before.id,
+      isMaintenanceBlock: true,
+    });
+    const blockWarnings = warningsForVerdict(blockVerdict);
     const p = row.payload as Record<string, unknown>;
     // A block staff planned directly in the calendar has no affectedRentalId: fall back to
     // whichever rental has this vehicle on the road, and persist it so it sticks from here on.
@@ -466,6 +471,6 @@ export function registerPortalRequestRoutes(app: Express, _deps: RouteDeps): voi
     await AuditLogger.logFromRequest(req, "reservation.update", "reservation", after.id, { viaPortalRequest: id, startDate: b.startDate, endDate });
     const reply = scheduledReply("Verplaatst naar", b.startDate, endDate, days, b.note);
     const updated = await finish(req, id, reply, "done", row.customerId);
-    res.json({ ...updated, block: after });
+    res.json({ ...updated, block: after, ...(blockWarnings.length ? { warnings: blockWarnings } : {}) });
   }
 }

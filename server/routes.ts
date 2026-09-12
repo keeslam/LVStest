@@ -113,7 +113,8 @@ import {
 import { selectContractTemplate } from "./services/pdf-template-selection";
 import { buildDamageCheckReservationData } from "./services/damage-check-data";
 import { regenerateDocument } from "./services/document-regeneration";
-import { BookingConflictError, type BookingRequest } from "./services/bookability";
+import { BookingConflictError, warningsForVerdict, type BookingRequest, type BookabilityVerdict } from "./services/bookability";
+import { bookingWarningsFor, type BookingWarning } from "../shared/booking-warnings";
 import { reservationIsOld, verifyAdminPassword, authorizeMileageDecrease } from "./services/authorization";
 import { assignDriverToReservation } from "./services/driver-assignments";
 import { getServiceDueVehicles, scanVehiclesForServiceDue } from "./utils/service-due-scanner";
@@ -2536,6 +2537,59 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  /**
+   * besluiten **B-09** — the pre-save check the booking form runs.
+   *
+   * `check-conflicts` answers with a bare array and twenty callers read it that
+   * way, so it keeps its shape. This is the same predicate with the whole
+   * verdict in the body: the conflicts that refuse the save *and* the
+   * maintenance blocks that only warn (BUG-013, BUG-037), with the maintenance
+   * period already formatted into the message.
+   */
+  app.get("/api/reservations/booking-check", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req, res) => {
+    const vehicleId = parseInt(req.query.vehicleId as string);
+    const startDate = req.query.startDate as string;
+    const endDateRaw = req.query.endDate as string | undefined;
+    const excludeRaw = req.query.excludeReservationId as string | undefined;
+    const excludeReservationId = excludeRaw ? parseInt(excludeRaw) : null;
+
+    if (isNaN(vehicleId)) {
+      return res.status(400).json({ message: "Invalid vehicle ID" });
+    }
+    if (!startDate || !isCalendarDate(startDate)) {
+      return res.status(400).json({ message: "Start date is required" });
+    }
+    const endDate = (!endDateRaw || endDateRaw === "undefined") ? null : endDateRaw;
+    if (endDate && !isCalendarDate(endDate)) {
+      return res.status(400).json({ message: "Invalid end date" });
+    }
+
+    try {
+      const verdict = await storage.isVehicleBookable({
+        vehicleId,
+        startDate,
+        endDate,
+        startTime: (req.query.startTime as string) || null,
+        endTime: (req.query.endTime as string) || null,
+        excludeReservationId: excludeReservationId === null || isNaN(excludeReservationId)
+          ? null
+          : excludeReservationId,
+        isMaintenanceBlock: req.query.type === "maintenance_block",
+      });
+
+      res.json({
+        bookable: verdict.bookable,
+        reason: verdict.reason,
+        message: verdict.message,
+        conflicts: verdict.conflicts,
+        warnings: warningsForVerdict(verdict),
+      });
+    } catch (error) {
+      console.error("Error running the booking check:", error);
+      res.status(500).json({ message: "Failed to check this booking" });
+    }
+  });
+
   // Get all reservations with optional search
   app.get("/api/reservations", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req, res) => {
     try {
@@ -2777,6 +2831,17 @@ export async function registerRoutes(app: Express): Promise<void> {
         const reservation = await storage.createReservation(dataWithTracking);
         void onMaintenanceBlockChanged(null, reservation);
 
+        // besluiten B-09 (BUG-037) — a second block overlapping the first is
+        // allowed, but the desk is told which block it lands on.
+        const blockVerdict = await storage.isVehicleBookable({
+          vehicleId: reservationData.vehicleId!,
+          startDate: reservationData.startDate,
+          endDate: reservationData.endDate ?? null,
+          excludeReservationId: reservation.id,
+          isMaintenanceBlock: true,
+        });
+        const blockWarnings = warningsForVerdict(blockVerdict);
+
         const customerReservations = await storage.checkReservationConflicts(
           reservationData.vehicleId!,
           reservationData.startDate,
@@ -2836,18 +2901,21 @@ export async function registerRoutes(app: Express): Promise<void> {
           console.log(
             `🔧 [Maintenance #${reservation.id}] Returning needsSpareVehicle=true with ${customerConflicts.length} conflict(s).`
           );
-          return res.status(200).json({ 
+          return res.status(200).json({
             message: "Customer reservations found during maintenance period",
             needsSpareVehicle: true,
             conflictingReservations: customerConflicts,
             maintenanceData: reservationData,
-            maintenanceReservationId: reservation.id // Include the created maintenance ID
+            maintenanceReservationId: reservation.id, // Include the created maintenance ID
+            ...(blockWarnings.length ? { warnings: blockWarnings } : {}),
           });
         }
-        
+
         console.log(`🔧 [Maintenance #${reservation.id}] No customer conflicts — returning 201.`);
         // No conflicts, return the created maintenance reservation
-        return res.status(201).json(reservation);
+        return res.status(201).json(
+          blockWarnings.length ? { ...reservation, warnings: blockWarnings } : reservation,
+        );
       } else {
         // FIX-F (BUG-006, BUG-107, BUG-018): the conflict check that used to
         // stand here — on its own connection, minutes of request time before
@@ -2886,7 +2954,12 @@ export async function registerRoutes(app: Express): Promise<void> {
         // Don't fail the reservation, just log the error
       }
       
-      const reservation = await storage.createReservationChecked(dataWithTracking);
+      // besluiten B-09 (BUG-013) — the write is allowed over a maintenance
+      // block, but the response says which block it lands on.
+      let bookingWarnings: BookingWarning[] = [];
+      const reservation = await storage.createReservationChecked(dataWithTracking, {
+        onVerdict: (verdict) => { bookingWarnings = warningsForVerdict(verdict); },
+      });
 
       // First row of the driver assignment history (see services/driver-assignments.ts)
       if (reservation.driverId) {
@@ -3010,7 +3083,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         });
       }
       
-      res.status(201).json(reservation);
+      res.status(201).json(
+        bookingWarnings.length ? { ...reservation, warnings: bookingWarnings } : reservation,
+      );
     } catch (error) {
       // FIX-F: a refused booking is a 409 with the conflicting rows, not a
       // blanket 400 — the booking form has always read `conflicts`.
@@ -3894,7 +3969,12 @@ export async function registerRoutes(app: Express): Promise<void> {
         updatedBy: user ? user.username : null
       };
 
-      const reservation = await storage.updateReservationChecked(id, dataWithTracking, bookingCheckForPatch);
+      // besluiten B-09 (BUG-013) — an edit that moves a rental over a
+      // maintenance block saves, and says so.
+      let patchWarnings: BookingWarning[] = [];
+      const reservation = await storage.updateReservationChecked(id, dataWithTracking, bookingCheckForPatch, {
+        onVerdict: (verdict) => { patchWarnings = warningsForVerdict(verdict); },
+      });
 
       if (!reservation) {
         return res.status(404).json({ message: "Reservation not found" });
@@ -3967,8 +4047,8 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       // Broadcast real-time update to all connected clients
       realtimeEvents.reservations.updated(reservation);
-      
-      res.json(reservation);
+
+      res.json(patchWarnings.length ? { ...reservation, warnings: patchWarnings } : reservation);
     } catch (error) {
       // FIX-D/BUG-148: one envelope — a validation failure names the fields, a
       // recognised constraint names our field, everything else is a bare 500.

@@ -58,6 +58,15 @@ import {
   type BookabilityVerdict,
 } from "./services/bookability";
 import { HttpError } from "./utils/route-errors";
+
+/**
+ * besluiten **B-09** — the checked writers hand their verdict back so the route
+ * can turn `verdict.maintenanceBlocks` into the warning of
+ * `shared/booking-warnings.ts` without running the predicate a second time.
+ */
+export interface CheckedWriteOptions {
+  onVerdict?: (verdict: BookabilityVerdict) => void;
+}
 import {
   collectCascadeSnapshot,
   restoreCascadeSnapshot,
@@ -2239,7 +2248,10 @@ export class DatabaseStorage implements IStorage {
    *
    * Throws `BookingConflictError` (409/404) when the vehicle is not bookable.
    */
-  async createReservationChecked(reservationData: InsertReservation): Promise<Reservation> {
+  async createReservationChecked(
+    reservationData: InsertReservation,
+    options?: CheckedWriteOptions,
+  ): Promise<Reservation> {
     const vehicleId = reservationData.vehicleId ?? null;
     if (vehicleId === null) {
       // A placeholder spare has no vehicle yet — nothing to check or lock.
@@ -2255,6 +2267,9 @@ export class DatabaseStorage implements IStorage {
         endTime: reservationData.endTime ?? null,
         isMaintenanceBlock: reservationData.type === 'maintenance_block',
       }, tx);
+      // besluiten B-09: the overlapping maintenance blocks are not a refusal,
+      // but the caller has to be able to say so (BUG-013, BUG-037).
+      options?.onVerdict?.(verdict);
       if (!verdict.bookable) throw new BookingConflictError(verdict);
 
       const [row] = await tx
@@ -2278,10 +2293,13 @@ export class DatabaseStorage implements IStorage {
     id: number,
     reservationData: Partial<InsertReservation>,
     check: BookingRequest | null,
+    options?: CheckedWriteOptions,
   ): Promise<Reservation | undefined> {
     const updated = await this.withBookingLocks([check?.vehicleId ?? null], async (tx) => {
       if (check) {
         const verdict = await this.isVehicleBookable({ ...check, excludeReservationId: id }, tx);
+        // besluiten B-09 — see createReservationChecked.
+        options?.onVerdict?.(verdict);
         if (!verdict.bookable) throw new BookingConflictError(verdict);
       }
       const [row] = await tx

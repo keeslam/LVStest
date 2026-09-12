@@ -8,6 +8,8 @@ import { apiRequest, invalidateByPrefix, invalidateRelatedQueries } from "@/lib/
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { insertReservationSchemaBase } from "@shared/schema";
+import type { BookingWarning } from "@shared/booking-warnings";
+import { MaintenanceWarningBanner } from "@/components/reservations/maintenance-warning-banner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { CustomerForm } from "@/components/customers/customer-form";
 import { VehicleQuickForm } from "@/components/vehicles/vehicle-quick-form";
@@ -603,6 +605,10 @@ export function ReservationForm({
 
   // Check for reservation conflicts
   const [hasOverlap, setHasOverlap] = useState(false);
+  // besluiten B-09 (BUG-013, BUG-037) — an overlapping maintenance block does
+  // not block the save; it has to be *shown*, with the maintenance period in
+  // the message, before the employee saves.
+  const [maintenanceWarnings, setMaintenanceWarnings] = useState<BookingWarning[]>([]);
   
   // Watch for status changes
   useEffect(() => {
@@ -705,6 +711,7 @@ export function ReservationForm({
       // Skip conflict checking for open-ended rentals
       if (isOpenEndedWatch) {
         setHasOverlap(false);
+        setMaintenanceWarnings([]);
         return;
       }
 
@@ -730,10 +737,14 @@ export function ReservationForm({
             params.append('excludeReservationId', initialData.id.toString());
           }
 
-          const response = await fetch(`/api/reservations/check-conflicts?${params.toString()}`);
+          // besluiten B-09 — `booking-check` is `check-conflicts` plus the
+          // warnings: the conflicts still refuse the save, the maintenance
+          // blocks only warn (BUG-013, BUG-037).
+          const response = await fetch(`/api/reservations/booking-check?${params.toString()}`);
           if (response.ok) {
-            const conflicts = await response.json();
-            setHasOverlap(conflicts.length > 0);
+            const verdict = await response.json();
+            setHasOverlap(Array.isArray(verdict.conflicts) && verdict.conflicts.length > 0);
+            setMaintenanceWarnings(Array.isArray(verdict.warnings) ? verdict.warnings : []);
           }
         } catch (error) {
           console.error("Failed to check reservation conflicts:", error);
@@ -2727,6 +2738,11 @@ export function ReservationForm({
                 )}
               </div>
             </div>
+
+            {/* besluiten B-09 — maintenance overlap: a warning, never a block.
+                The submit button above stays enabled; only `hasOverlap` (a real
+                double booking) disables it. */}
+            <MaintenanceWarningBanner warnings={maintenanceWarnings} />
 
             {/* Booking Conflict Warning */}
             {hasOverlap && (
