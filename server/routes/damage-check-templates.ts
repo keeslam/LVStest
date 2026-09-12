@@ -4,6 +4,42 @@ import { storage } from "../storage";
 import path from "path";
 import fs from "fs";
 import { insertDamageCheckTemplateSchema, UserPermission, DEFAULT_DAMAGE_CHECK_FIELDS, DAMAGE_CHECK_FIELDS_KEY } from "../../shared/schema";
+import { canvasFieldsSchema } from "../../shared/template-fields";
+
+/**
+ * FIX-P (BUG-168, BUG-176, BUG-048, BUG-194): `canvasFields` used to be
+ * written straight from `req.body` with no schema at all, and the generator
+ * trusted it: one entry with `page: 40000` made every later PDF from that
+ * template allocate forty thousand A4 pages and block the event loop for over
+ * a minute, and one malformed entry broke every PDF that template produced.
+ * Every route that stores or renders a template body now passes through here.
+ */
+function validateCanvasFields(res: Response, body: any): boolean {
+  if (body == null || typeof body !== "object" || Array.isArray(body)) {
+    res.status(400).json({ message: "Template data must be an object" });
+    return false;
+  }
+  if (!("canvasFields" in body) || body.canvasFields === undefined || body.canvasFields === null) {
+    return true;
+  }
+  if (!Array.isArray(body.canvasFields)) {
+    res.status(400).json({ message: "canvasFields must be an array of field definitions" });
+    return false;
+  }
+  const parsed = canvasFieldsSchema.safeParse(body.canvasFields);
+  if (!parsed.success) {
+    res.status(400).json({
+      message: "Invalid template field definitions",
+      error: parsed.error.issues.slice(0, 20).map((issue) => ({
+        path: issue.path.join("."),
+        message: issue.message,
+      })),
+    });
+    return false;
+  }
+  body.canvasFields = parsed.data;
+  return true;
+}
 import multer from "multer";
 import { hasPermission } from "../middleware/permissions.js";
 import { createSecureMulterFilter, validateFileBuffer } from "../utils/security/fileUploadSecurity";
@@ -93,6 +129,7 @@ export function registerDamageCheckTemplateRoutes(app: Express, deps: RouteDeps)
     async (req: Request, res: Response) => {
       try {
         const draft = req.body ?? {};
+        if (!validateCanvasFields(res, draft)) return;
 
         // Build a synthetic template so the generator has all fields it
         // expects. Missing fields default to sensible values so an empty
@@ -203,6 +240,7 @@ export function registerDamageCheckTemplateRoutes(app: Express, deps: RouteDeps)
   app.post("/api/damage-check-templates", hasPermission(UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
     try {
       const user = req.user;
+      if (!validateCanvasFields(res, req.body)) return;
       const templateData = {
         ...req.body,
         createdBy: user ? user.username : null,
@@ -221,7 +259,11 @@ export function registerDamageCheckTemplateRoutes(app: Express, deps: RouteDeps)
   app.put("/api/damage-check-templates/:id", hasPermission(UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      if (Number.isNaN(id)) {
+        return res.status(400).json({ message: "Invalid template id" });
+      }
       const user = req.user;
+      if (!validateCanvasFields(res, req.body)) return;
       const templateData = {
         ...req.body,
         updatedBy: user ? user.username : null,
@@ -558,6 +600,7 @@ export function registerDamageCheckTemplateRoutes(app: Express, deps: RouteDeps)
       }
 
       // Validate the import data using the insert schema
+      if (!validateCanvasFields(res, importData)) return;
       const validatedData = insertDamageCheckTemplateSchema.parse(importData);
 
       const templateData = {

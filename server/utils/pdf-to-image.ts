@@ -2,9 +2,19 @@ import { createCanvas } from 'canvas';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import fs from 'fs';
 import path from 'path';
+import { pathToFileURL } from 'url';
 
-// Set up PDF.js worker to avoid runtime warnings
-const workerSrc = path.join(process.cwd(), 'node_modules', 'pdfjs-dist', 'legacy', 'build', 'pdf.worker.mjs');
+/**
+ * BUG-193: the worker was registered as a bare Windows path
+ * (`C:\…\pdf.worker.mjs`). pdfjs feeds that value to a dynamic `import()`,
+ * which on Windows reads `C:` as a URL scheme and throws
+ * `ERR_UNSUPPORTED_ESM_URL_SCHEME` — so every background preview failed on the
+ * machine the app is developed and demoed on, and the editor showed a blank
+ * canvas with no error anywhere. `pathToFileURL().href` is the portable form.
+ */
+const workerSrc = pathToFileURL(
+  path.join(process.cwd(), 'node_modules', 'pdfjs-dist', 'legacy', 'build', 'pdf.worker.mjs'),
+).href;
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 /**

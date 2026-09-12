@@ -9,6 +9,8 @@ import path from "path";
 import fs from "fs";
 import { z } from "zod";
 import { insertPdfTemplateSchema, Reservation, UserPermission } from "../../shared/schema";
+import { templateFieldsSchema, coerceFieldArray } from "../../shared/template-fields";
+import { detectActivePdfContent } from "../utils/pdf-generator";
 import multer from "multer";
 import { hasPermission } from "../middleware/permissions.js";
 import { createSecureMulterFilter, validateFileBuffer } from "../utils/security/fileUploadSecurity";
@@ -164,11 +166,51 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
     }
   });
 
+  /**
+   * FIX-P (BUG-048, BUG-191, BUG-194): `fields` was jsonb written from the
+   * request body in any shape at all — a string, an object, an array of
+   * nonsense — and the renderer then quietly drew nothing, or drew a value at
+   * `x: 1e9`. One schema, applied on create and on update.
+   */
+  const validateTemplateFields = (res: Response, body: any): boolean => {
+    if (body == null || typeof body !== "object" || Array.isArray(body)) {
+      res.status(400).json({ message: "Template data must be an object" });
+      return false;
+    }
+    if (!("fields" in body) || body.fields === undefined || body.fields === null) return true;
+    let candidate: unknown = body.fields;
+    if (typeof candidate === "string") {
+      const parsedArray = coerceFieldArray(candidate);
+      // An empty array only counts when the string really said so; anything
+      // else that does not parse is rejected rather than silently emptied.
+      candidate = candidate.trim() === "" || parsedArray.length > 0 ? parsedArray : candidate;
+    }
+    if (!Array.isArray(candidate)) {
+      res.status(400).json({ message: "fields must be an array of field definitions" });
+      return false;
+    }
+    const parsed = templateFieldsSchema.safeParse(candidate);
+    if (!parsed.success) {
+      res.status(400).json({
+        message: "Invalid template field definitions",
+        error: parsed.error.issues.slice(0, 20).map((issue) => ({
+          path: issue.path.join("."),
+          message: issue.message,
+        })),
+      });
+      return false;
+    }
+    body.fields = parsed.data;
+    return true;
+  };
+
   // Create a new PDF template
   app.post("/api/pdf-templates", hasPermission(UserPermission.MANAGE_PDF_TEMPLATES), async (req: Request, res: Response) => {
     try {
       // Add user tracking information
       const user = req.user;
+      
+      if (!validateTemplateFields(res, req.body)) return;
       
       const templateData = insertPdfTemplateSchema.parse({
         ...req.body,
@@ -216,6 +258,8 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       
       // Process the request body to ensure fields are properly formatted
       const requestBody = { ...req.body };
+      
+      if (!validateTemplateFields(res, requestBody)) return;
       
       // Convert fields to string if it's an object (this fixes the date handling issue)
       if (requestBody.fields && typeof requestBody.fields === 'object') {
@@ -292,6 +336,20 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
         return res.status(500).json({ message: "Failed to delete template" });
       }
 
+      // BUG-050/FIX-O: deleting the template left its background and preview
+      // on disk for ever — the row that pointed at them was the only thing
+      // that knew they existed. Same shared-default guard the replace path
+      // already has: the bundled rental_contract_template.pdf is used by every
+      // template that has no background of its own and must survive.
+      const SHARED_DEFAULT = 'rental_contract_template.pdf';
+      if (template.backgroundPath && !template.backgroundPath.includes(SHARED_DEFAULT)) {
+        await unlinkStoredFile(template.backgroundPath);
+      }
+      const previewPath = (template as any).backgroundPreviewPath as string | null | undefined;
+      if (previewPath && !previewPath.includes(SHARED_DEFAULT) && previewPath !== template.backgroundPath) {
+        await unlinkStoredFile(previewPath);
+      }
+
       res.status(200).json({ message: "Template deleted successfully" });
     } catch (error) {
       console.error("Error deleting PDF template:", error);
@@ -300,6 +358,33 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       });
     }
   });
+
+  /**
+   * FIX-P (BUG-180, BUG-193): the stored extension came from
+   * `path.extname(originalname)`, so a PNG renamed to .pdf was loaded as a PDF
+   * and every contract from that template silently lost its background; and a
+   * background PDF carrying `/OpenAction` JavaScript had that JavaScript
+   * copied into every contract the template produced. The bytes decide what
+   * the file is, and an active-content PDF is refused at the door.
+   */
+  const rejectUnsafeBackground = async (bytes: Buffer, originalName: string): Promise<string | null> => {
+    const declared = path.extname(originalName).toLowerCase();
+    const isPdf = bytes.length > 5 && bytes.slice(0, 5).toString('latin1') === '%PDF-';
+    const isPng = bytes.length > 4 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
+    const isJpg = bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+    const actual = isPdf ? '.pdf' : isPng ? '.png' : isJpg ? '.jpg' : null;
+    if (!actual) {
+      return 'A template background must be a PDF, PNG or JPEG file.';
+    }
+    const declaredNormalised = declared === '.jpeg' ? '.jpg' : declared;
+    if (declaredNormalised !== actual) {
+      return `This file is a ${actual.slice(1).toUpperCase()} but is named "${originalName}". Upload it with the right extension.`;
+    }
+    if (isPdf && (await detectActivePdfContent(bytes))) {
+      return 'This PDF contains document-level JavaScript or an automatic action. Export it without active content and upload it again.';
+    }
+    return null;
+  };
 
   // Configure multer for template background uploads (memory storage) with enhanced security
   const templateBackgroundUpload = multer({
@@ -337,6 +422,11 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       );
       if (!bufferValidation.valid) {
         return res.status(400).json({ message: bufferValidation.error });
+      }
+
+      const backgroundRejection = await rejectUnsafeBackground(req.file.buffer, req.file.originalname);
+      if (backgroundRejection) {
+        return res.status(400).json({ message: backgroundRejection });
       }
 
       // ALWAYS use filesystem storage (same as contract PDFs)
@@ -521,6 +611,11 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       );
       if (!bufferValidation.valid) {
         return res.status(400).json({ message: bufferValidation.error });
+      }
+
+      const libraryRejection = await rejectUnsafeBackground(req.file.buffer, req.file.originalname);
+      if (libraryRejection) {
+        return res.status(400).json({ message: libraryRejection });
       }
 
       // Save file to filesystem (same pattern as regular background upload)

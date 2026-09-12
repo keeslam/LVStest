@@ -5,6 +5,42 @@ import path from "path";
 import fs from "fs";
 import { z } from "zod";
 import { insertTransportReportTemplateSchema, insertBarcodeLabelTemplateSchema, UserPermission } from "../../shared/schema";
+import { templateFieldsSchema, coerceFieldArray } from "../../shared/template-fields";
+
+/**
+ * FIX-P (BUG-191, BUG-194): the transport-report template's `fields` is the
+ * same jsonb blob as the contract template's, written from the request body
+ * and trusted by the renderer. Same schema, same bounds, same refusal.
+ */
+function validateReportTemplateFields(res: Response, body: any): boolean {
+  if (body == null || typeof body !== "object" || Array.isArray(body)) {
+    res.status(400).json({ message: "Template data must be an object" });
+    return false;
+  }
+  if (!("fields" in body) || body.fields === undefined || body.fields === null) return true;
+  let candidate: unknown = body.fields;
+  if (typeof candidate === "string") {
+    const parsedArray = coerceFieldArray(candidate);
+    candidate = candidate.trim() === "" || parsedArray.length > 0 ? parsedArray : candidate;
+  }
+  if (!Array.isArray(candidate)) {
+    res.status(400).json({ message: "fields must be an array of field definitions" });
+    return false;
+  }
+  const parsed = templateFieldsSchema.safeParse(candidate);
+  if (!parsed.success) {
+    res.status(400).json({
+      message: "Invalid template field definitions",
+      error: parsed.error.issues.slice(0, 20).map((issue) => ({
+        path: issue.path.join("."),
+        message: issue.message,
+      })),
+    });
+    return false;
+  }
+  body.fields = parsed.data;
+  return true;
+}
 import multer from "multer";
 import { hasPermission } from "../middleware/permissions.js";
 import { createSecureMulterFilter, validateFileBuffer } from "../utils/security/fileUploadSecurity";
@@ -101,6 +137,7 @@ export function registerReportAndLabelTemplateRoutes(app: Express, deps: RouteDe
 
   app.post("/api/transport-report-templates", hasPermission(UserPermission.MANAGE_PDF_TEMPLATES), async (req: Request, res: Response) => {
     try {
+      if (!validateReportTemplateFields(res, req.body)) return;
       const templateData = insertTransportReportTemplateSchema.parse(req.body);
       const template = await storage.createTransportReportTemplate(templateData);
       res.status(201).json(template);
@@ -122,6 +159,7 @@ export function registerReportAndLabelTemplateRoutes(app: Express, deps: RouteDe
       const existing = await storage.getTransportReportTemplate(id);
       if (!existing) return res.status(404).json({ message: "Template not found" });
 
+      if (!validateReportTemplateFields(res, req.body)) return;
       const templateData = insertTransportReportTemplateSchema.partial().parse(req.body);
       const updated = await storage.updateTransportReportTemplate(id, templateData);
       if (!updated) return res.status(404).json({ message: "Failed to update template" });
