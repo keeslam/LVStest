@@ -667,5 +667,17 @@
       "fleetNumber": "Vlootnummer",
       "staticText": "Vaste tekst"
     }
+  },
+  "staleness": {
+    "badge": "Verouderd",
+    "badgeTitle": "Dit document is gemaakt vóór een wijziging aan de reservering en klopt mogelijk niet meer.",
+    "reasonLabel": "Reden: {{reason}}",
+    "versionLabel": "versie {{version}}",
+    "regenerate": "Opnieuw genereren",
+    "regenerating": "Bezig met genereren…",
+    "regeneratedTitle": "Nieuwe versie aangemaakt",
+    "regeneratedDescription": "Versie {{version}} van {{fileName}} staat nu in het dossier. De oude versie blijft bewaard.",
+    "failedTitle": "Opnieuw genereren is niet gelukt",
+    "notRegeneratable": "Dit document is geüpload of elders gemaakt; er is niets om het opnieuw uit op te bouwen."
   }
 }

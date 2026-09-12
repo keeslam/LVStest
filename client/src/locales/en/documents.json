@@ -667,5 +667,17 @@
       "fleetNumber": "Fleet number",
       "staticText": "Static text"
     }
+  },
+  "staleness": {
+    "badge": "Outdated",
+    "badgeTitle": "This document was produced before a change to the reservation and may no longer match it.",
+    "reasonLabel": "Reason: {{reason}}",
+    "versionLabel": "version {{version}}",
+    "regenerate": "Regenerate",
+    "regenerating": "Generating…",
+    "regeneratedTitle": "New version created",
+    "regeneratedDescription": "Version {{version}} of {{fileName}} is now in the dossier. The old version is kept.",
+    "failedTitle": "Could not regenerate",
+    "notRegeneratable": "This document was uploaded or produced elsewhere, so there is nothing to reproduce it from."
   }
 }

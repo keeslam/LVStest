@@ -14,6 +14,10 @@ import { Loader2, FileText, Download, ExternalLink } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { formatDate } from "@/lib/format-utils";
 import { InlineDocumentUpload } from "@/components/documents/inline-document-upload";
+import {
+  RegenerateDocumentButton,
+  StaleDocumentBadge,
+} from "@/components/documents/stale-document";
 import { queryClient , invalidateByPrefix } from "@/lib/queryClient";
 
 interface ReservationDocumentsDialogProps {
@@ -129,7 +133,11 @@ export function ReservationDocumentsDialog({
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <h4 className="font-medium text-gray-900">{doc.fileName}</h4>
+                              <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                                {doc.fileName}
+                                {/* B-05: the old version is kept, but it says so. */}
+                                <StaleDocumentBadge document={doc} />
+                              </h4>
                               <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
                                 <span>{t('documentsDialog.uploadedLabel', { date: formatDate(doc.uploadDate) })}</span>
                                 {doc.createdBy && <span>{t('documentsDialog.byLabel', { name: doc.createdBy })}</span>}
@@ -141,6 +149,14 @@ export function ReservationDocumentsDialog({
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
+                              {/* B-05: a new version is produced deliberately,
+                                  by the employee, never silently by the server. */}
+                              <RegenerateDocumentButton
+                                document={doc}
+                                onRegenerated={() => {
+                                  if (vehicleId) invalidateByPrefix(`/api/documents/vehicle/${vehicleId}`);
+                                }}
+                              />
                               <Button
                                 variant="ghost"
                                 size="sm"

@@ -26,6 +26,10 @@ import { Document, Vehicle } from "@shared/schema";
 import { formatDate, formatFileSize } from "@/lib/format-utils";
 import { displayLicensePlate } from "@/lib/utils";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
+import {
+  RegenerateDocumentButton,
+  StaleDocumentBadge,
+} from "@/components/documents/stale-document";
 import PDFTemplateEditor from "./template-editor";
 import TransportReportTemplateEditor from "./transport-report-template-editor";
 import BarcodeLabelTemplateEditor from "./barcode-label-template-editor";
@@ -736,7 +740,15 @@ export default function DocumentsIndex() {
                                       <h5 className="font-medium mb-2 truncate" title={doc.fileName}>
                                         {doc.fileName}
                                       </h5>
-                                      
+
+                                      {/* B-05: a document that no longer matches its
+                                          reservation is kept, marked, and regenerated
+                                          on purpose — not replaced behind the scenes. */}
+                                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                                        <StaleDocumentBadge document={doc} />
+                                        <RegenerateDocumentButton document={doc} />
+                                      </div>
+
                                       <div className="flex items-center text-sm text-gray-500 mb-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
                                           <path d="M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
