@@ -2200,37 +2200,19 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Get customers with reservation status
   app.get("/api/customers/with-reservations", hasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS), async (req, res) => {
     try {
-      const customers = await storage.getAllCustomers();
-      const reservations = await storage.getAllReservations();
-      
-      const today = new Date();
-      
-      // Add hasActiveReservation property to each customer
-      const customersWithReservations = customers.map(customer => {
-        const customerReservations = reservations.filter(reservation => 
-          reservation.customerId === customer.id
-        );
-        
-        const hasActiveReservation = customerReservations.some(reservation => {
-          // Handle undefined or invalid endDate
-          if (!reservation.endDate || reservation.endDate === "undefined") {
-            return false;
-          }
-          
-          const startDate = new Date(reservation.startDate);
-          const endDate = new Date(reservation.endDate);
-          
-          // Check if reservation is active (started but not ended)
-          return startDate <= today && endDate >= today;
-        });
-        
-        return {
-          ...customer,
-          hasActiveReservation
-        };
-      });
-      
-      res.json(customersWithReservations);
+      // BUG-226: this used to load every reservation — with its embedded
+      // vehicle and customer, 8 MB of objects — to compute one boolean per
+      // customer. The predicate now runs in Postgres and comes back as a set
+      // of ids; the answer is identical.
+      const [customers, activeCustomerIds] = await Promise.all([
+        storage.getAllCustomers(),
+        storage.getCustomerIdsWithActiveReservation(),
+      ]);
+
+      res.json(customers.map(customer => ({
+        ...customer,
+        hasActiveReservation: activeCustomerIds.has(customer.id),
+      })));
     } catch (error) {
       console.error("Error fetching customers with reservations:", error);
       res.status(500).json({ message: "Failed to fetch customers with reservations", error });
@@ -2570,8 +2552,9 @@ export async function registerRoutes(app: Express): Promise<void> {
   app.get("/api/reservations/find-by-contract/:contractNumber", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req, res) => {
     try {
       const contractNumber = req.params.contractNumber;
-      const reservations = await storage.getAllReservations();
-      const reservation = reservations.find(r => r.contractNumber === contractNumber);
+      // BUG-226: an indexed lookup on a uniquely-indexed column, instead of
+      // loading and enriching the whole reservation table to find one row.
+      const reservation = await storage.getReservationByContractNumber(contractNumber);
       
       if (!reservation) {
         return res.json({ exists: false, reservation: null });
@@ -6777,7 +6760,12 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Get all interactive damage checks
   app.get("/api/interactive-damage-checks", requireAuth, hasPermission(UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS), async (req: Request, res: Response) => {
     try {
-      const checks = await storage.getAllInteractiveDamageChecks();
+      // BUG-216 (technical half): the list is served without the base64
+      // diagram and signature columns — 17 MB for 14 rows. The only screen
+      // that reads this endpoint (the calendar's admin history) uses
+      // reservationId, checkDate/createdAt and completedBy, and opens the PDF
+      // route for the picture.
+      const checks = await storage.getInteractiveDamageCheckSummaries();
       res.json(checks);
     } catch (error) {
       console.error("Error fetching interactive damage checks:", error);

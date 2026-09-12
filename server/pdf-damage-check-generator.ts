@@ -5,6 +5,7 @@ import { db } from './db';
 import { damageCheckTemplates, vehicleDiagramTemplates } from '../shared/schema';
 import { eq } from 'drizzle-orm';
 import { ObjectStorageService } from './objectStorage';
+import { prepareHeaderImage } from './utils/header-image-cache';
 import { resolveDocumentFilePath } from './services/document-paths';
 import { sanitizeForWinAnsi, wrapTextToWidth } from './utils/pdf-text';
 import { parseCanvasFields, pageCountFor, MAX_TEMPLATE_PAGES } from '../shared/template-fields';
@@ -401,11 +402,19 @@ async function generateDamageCheckPDFFromCanvas(
       );
       throw new Error('damage check header image not available');
     }
-    const headerBytes = await fs.readFile(headerPath);
+    // BUG-215: the uploaded header (1983x793, 1.6 MB) used to be decoded and
+    // re-deflated by pdf-lib on every single generation — 581 ms of CPU on the
+    // event loop per PDF and 3.5 MB of output. It is scaled to at most 1200 px
+    // once and cached; the band it is drawn into is 70 pt tall, so the result
+    // is indistinguishable in print.
     const isJpeg = headerPath.toLowerCase().endsWith('.jpg') || headerPath.toLowerCase().endsWith('.jpeg');
-    const headerImg = isJpeg
-      ? await pdfDoc.embedJpg(headerBytes)
-      : await pdfDoc.embedPng(headerBytes);
+    let headerImg;
+    if (isJpeg) {
+      headerImg = await pdfDoc.embedJpg(await fs.readFile(headerPath));
+    } else {
+      const prepared = await prepareHeaderImage(headerPath);
+      headerImg = await pdfDoc.embedPng(prepared.bytes);
+    }
     // BUG-177: the header used to be drawn at `595 * (srcH / srcW)` — its
     // height came from whatever image an admin happened to upload, so a
     // portrait logo covered a third of the page and sat on top of the template

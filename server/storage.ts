@@ -85,6 +85,10 @@ export interface IStorage {
   updateReservation(id: number, reservationData: Partial<InsertReservation>): Promise<Reservation | undefined>;
   deleteReservation(id: number): Promise<boolean>;
   getReservationsInDateRange(startDate: string, endDate: string): Promise<Reservation[]>;
+  /** FIX-T (BUG-226): the active-rental predicate, evaluated in Postgres. */
+  getCustomerIdsWithActiveReservation(): Promise<Set<number>>;
+  /** FIX-T (BUG-226): an indexed lookup instead of a full-table scan in Node. */
+  getReservationByContractNumber(contractNumber: string): Promise<Reservation | undefined>;
   getUpcomingReservations(): Promise<Reservation[]>;
   getUpcomingMaintenanceReservations(): Promise<Reservation[]>;
   getReservationsByVehicle(vehicleId: number): Promise<Reservation[]>;
@@ -276,6 +280,19 @@ export interface IStorage {
   
   // Interactive Damage Check methods
   getAllInteractiveDamageChecks(): Promise<InteractiveDamageCheck[]>;
+  /** FIX-T (BUG-216): the same list without the base64 diagram/signature blobs. */
+  getInteractiveDamageCheckSummaries(): Promise<Array<Omit<InteractiveDamageCheck,
+    'diagramWithAnnotations' | 'drawingPaths' | 'damageMarkers' | 'checklistData' | 'renterSignature' | 'customerSignature'>>>;
+  /** FIX-T (BUG-216): just the odometer readings, for the mileage report. */
+  getDamageCheckMileageReadings(): Promise<Array<{
+    id: number;
+    vehicleId: number | null;
+    reservationId: number | null;
+    checkType: string | null;
+    checkDate: string | Date | null;
+    mileage: number | null;
+    createdAt: Date | null;
+  }>>;
   getInteractiveDamageCheck(id: number): Promise<InteractiveDamageCheck | undefined>;
   getInteractiveDamageChecksByVehicle(vehicleId: number): Promise<InteractiveDamageCheck[]>;
   getInteractiveDamageChecksByReservation(reservationId: number): Promise<InteractiveDamageCheck[]>;

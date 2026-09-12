@@ -320,10 +320,13 @@ export function registerReportRoutes(app: Express): void {
       const [vehicles, reservations, damageChecks] = await Promise.all([
         storage.getAllVehicles(),
         storage.getAllReservations(),
-        storage.getAllInteractiveDamageChecks(),
+        // BUG-216 (technical half): the report reads a mileage integer; it
+        // used to pull 17 MB of base64 diagrams along with it (104 ms of its
+        // 127 ms of SQL time).
+        storage.getDamageCheckMileageReadings(),
       ]);
       const selected = vehicleId ? vehicles.filter(v => v.id === vehicleId) : vehicles;
-      res.json(buildMileagePerMonth(selected, reservations, damageChecks, range));
+      res.json(buildMileagePerMonth(selected, reservations, damageChecks as any, range));
     } catch (error) {
       console.error("Error building mileage-per-month report:", error);
       res.status(500).json({ message: "Error building mileage-per-month report" });

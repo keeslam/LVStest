@@ -1411,6 +1411,68 @@ export class DatabaseStorage implements IStorage {
   }
 
   /**
+   * FIX-T (BUG-226) — the ids of customers with a rental running right now.
+   *
+   * `GET /api/customers/with-reservations` used to materialise every
+   * reservation (plus every embedded vehicle and customer — 8 MB of objects in
+   * process) to compute one boolean per customer. The same predicate runs in
+   * Postgres and returns a few hundred integers.
+   *
+   * The comparison is deliberately the old one, instant-for-instant: the JS
+   * code parsed `yyyy-MM-dd` as UTC midnight and compared it against `new
+   * Date()`, so `(date || 'T00:00:00Z')::timestamptz` against `now()` is the
+   * same test and the boundary behaviour does not shift. Rows whose dates are
+   * not a plain date (the literal string `'undefined'`, an empty string) were
+   * excluded before and are excluded here — that is the open-ended-rental
+   * case, which this endpoint has never counted as active.
+   */
+  async getCustomerIdsWithActiveReservation(): Promise<Set<number>> {
+    const rows = await db.execute<{ customer_id: number }>(sql`
+      SELECT DISTINCT ${reservations.customerId} AS customer_id
+      FROM ${reservations}
+      WHERE ${reservations.deletedAt} IS NULL
+        AND ${reservations.customerId} IS NOT NULL
+        AND ${reservations.startDate} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+        AND ${reservations.endDate} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+        AND (${reservations.startDate} || 'T00:00:00Z')::timestamptz <= now()
+        AND (${reservations.endDate} || 'T00:00:00Z')::timestamptz >= now()
+    `);
+    const ids = new Set<number>();
+    for (const row of (rows as any).rows ?? rows) {
+      if (row.customer_id !== null && row.customer_id !== undefined) ids.add(Number(row.customer_id));
+    }
+    return ids;
+  }
+
+  /**
+   * FIX-T (BUG-226) — one reservation by its contract number.
+   *
+   * `GET /api/reservations/find-by-contract/:n` used to call
+   * `getAllReservations()` and `Array.find` the result, i.e. load and enrich
+   * every reservation in the database to return one row. The column is
+   * uniquely indexed; look it up. The shape returned is the same one
+   * `getAllReservations` produced: the row plus its vehicle and customer.
+   */
+  async getReservationByContractNumber(contractNumber: string): Promise<Reservation | undefined> {
+    const [row] = await db
+      .select()
+      .from(reservations)
+      .where(and(eq(reservations.contractNumber, contractNumber), isNull(reservations.deletedAt)))
+      .limit(1);
+    if (!row) return undefined;
+
+    const [vehicleRows, customerRows] = await Promise.all([
+      row.vehicleId !== null && row.vehicleId !== undefined
+        ? db.select().from(vehicles).where(eq(vehicles.id, row.vehicleId))
+        : Promise.resolve([] as Vehicle[]),
+      row.customerId !== null && row.customerId !== undefined
+        ? db.select().from(customers).where(eq(customers.id, row.customerId))
+        : Promise.resolve([] as Customer[]),
+    ]);
+    return { ...row, vehicle: vehicleRows[0] ?? undefined, customer: customerRows[0] ?? undefined };
+  }
+
+  /**
    * FIX-H (BUG-016, BUG-129) - the enum gate every reservation writer passes.
    *
    * `PATCH /:id` and `/basic` used to write `status` straight through, so
@@ -1742,66 +1804,94 @@ export class DatabaseStorage implements IStorage {
             AND ${reservations.deletedAt} IS NULL`
       );
     
-    const result: Reservation[] = [];
-    
-    // Fetch vehicle, customer, and driver data for each reservation
-    for (const reservation of reservationsData) {
-      // Handle null vehicleId for placeholder spare reservations
-      let vehicle: Vehicle | undefined = undefined;
-      if (reservation.vehicleId !== null) {
-        const [v] = await db.select().from(vehicles).where(eq(vehicles.id, reservation.vehicleId));
-        vehicle = v ?? undefined;
-      }
-      
-      let customer: Customer | undefined = undefined;
-      let driver: Driver | undefined = undefined;
-      
-      // For maintenance blocks, try to find customer from active open-ended rental
-      if (reservation.type === 'maintenance_block' && !reservation.customerId && reservation.vehicleId) {
-        console.log(`🔍 Looking for active rental for maintenance block ${reservation.id} on vehicle ${reservation.vehicleId}`);
-        const [activeRental] = await db.select()
-          .from(reservations)
-          .where(
-            and(
-              eq(reservations.vehicleId, reservation.vehicleId),
-              eq(reservations.type, 'standard'),
-              sql`(${reservations.endDate} IS NULL OR ${reservations.endDate} = 'undefined')`,
-              sql`${reservations.status} IN ('confirmed', 'pending')`,
-              isNull(reservations.deletedAt)
+    // BUG-203 (HIGH): this used to run two to three `await db.select()` calls
+    // *inside the loop* — 924 statements for one month view (462 rows) and
+    // 3 774 for a year, growing linearly with the calendar's contents. The
+    // related rows are now batch-loaded with the same `inArray()` pattern
+    // `getAllReservations` already uses, so the statement count is constant
+    // (five) whatever the range holds. The returned shape is unchanged.
+    //
+    // BUG-227: the per-row console.log went with it. The September grid has
+    // 114 customer-less maintenance blocks, and each one wrote four lines —
+    // one of them a full `util.inspect` of a reservation row — so every
+    // dashboard, reservations and maintenance page load produced ~17.6 KB of
+    // container log for nothing.
+    const uniq = (ids: Array<number | null | undefined>): number[] =>
+      Array.from(new Set(ids.filter((id): id is number => id !== null && id !== undefined)));
+
+    const vehicleIds = uniq(reservationsData.map((r) => r.vehicleId));
+    const driverIds = uniq(reservationsData.map((r) => r.driverId));
+
+    // Maintenance blocks with no customer of their own borrow the customer of
+    // the vehicle's open-ended rental. That was one extra query per block;
+    // it is now one query for all of them.
+    const blockVehicleIds = uniq(
+      reservationsData
+        .filter((r) => r.type === 'maintenance_block' && !r.customerId && r.vehicleId)
+        .map((r) => r.vehicleId),
+    );
+
+    const [vehicleRows, driverRows, openEndedRentals] = await Promise.all([
+      vehicleIds.length
+        ? db.select().from(vehicles).where(inArray(vehicles.id, vehicleIds))
+        : Promise.resolve([] as Vehicle[]),
+      driverIds.length
+        ? db.select().from(drivers).where(inArray(drivers.id, driverIds))
+        : Promise.resolve([] as Driver[]),
+      blockVehicleIds.length
+        ? db
+            .select({ vehicleId: reservations.vehicleId, customerId: reservations.customerId })
+            .from(reservations)
+            .where(
+              and(
+                inArray(reservations.vehicleId, blockVehicleIds),
+                eq(reservations.type, 'standard'),
+                sql`(${reservations.endDate} IS NULL OR ${reservations.endDate} = 'undefined')`,
+                sql`${reservations.status} IN ('confirmed', 'pending')`,
+                isNull(reservations.deletedAt),
+              ),
             )
-          )
-          .limit(1);
-        
-        console.log(`📋 Found active rental:`, activeRental);
-        
-        if (activeRental && activeRental.customerId) {
-          const [rentalCustomer] = await db.select().from(customers).where(eq(customers.id, activeRental.customerId));
-          customer = rentalCustomer ?? undefined;
-          console.log(`✅ Found customer from active rental:`, customer?.name);
-        } else {
-          console.log(`❌ No active rental found for vehicle ${reservation.vehicleId}`);
-        }
-      } else if (reservation.customerId) {
-        // Normal reservation with direct customer assignment
-        const [directCustomer] = await db.select().from(customers).where(eq(customers.id, reservation.customerId));
-        customer = directCustomer ?? undefined;
+        : Promise.resolve([] as Array<{ vehicleId: number | null; customerId: number | null }>),
+    ]);
+
+    // One open-ended rental per vehicle, first one wins — the same row the
+    // per-row `.limit(1)` would have returned.
+    const openEndedCustomerByVehicle = new Map<number, number>();
+    for (const row of openEndedRentals) {
+      if (row.vehicleId === null || row.customerId === null) continue;
+      if (!openEndedCustomerByVehicle.has(row.vehicleId)) {
+        openEndedCustomerByVehicle.set(row.vehicleId, row.customerId);
       }
-      
-      // Fetch driver data if driverId is present
-      if (reservation.driverId) {
-        const [driverData] = await db.select().from(drivers).where(eq(drivers.id, reservation.driverId));
-        driver = driverData ?? undefined;
-      }
-      
-      result.push({
-        ...reservation,
-        vehicle,
-        customer,
-        driver
-      });
     }
-    
-    return result;
+
+    const customerIds = uniq([
+      ...reservationsData.map((r) => r.customerId),
+      ...openEndedCustomerByVehicle.values(),
+    ]);
+    const customerRows = customerIds.length
+      ? await db.select().from(customers).where(inArray(customers.id, customerIds))
+      : [];
+
+    const vehicleById = new Map(vehicleRows.map((v) => [v.id, v]));
+    const customerById = new Map(customerRows.map((c) => [c.id, c]));
+    const driverById = new Map(driverRows.map((d) => [d.id, d]));
+
+    return reservationsData.map((reservation) => {
+      let customer: Customer | undefined = undefined;
+      if (reservation.type === 'maintenance_block' && !reservation.customerId && reservation.vehicleId) {
+        const borrowedId = openEndedCustomerByVehicle.get(reservation.vehicleId);
+        customer = borrowedId !== undefined ? customerById.get(borrowedId) : undefined;
+      } else if (reservation.customerId) {
+        customer = customerById.get(reservation.customerId);
+      }
+
+      return {
+        ...reservation,
+        vehicle: reservation.vehicleId !== null ? vehicleById.get(reservation.vehicleId) : undefined,
+        customer,
+        driver: reservation.driverId ? driverById.get(reservation.driverId) : undefined,
+      };
+    });
   }
 
   async getUpcomingReservations(): Promise<Reservation[]> {
@@ -5440,6 +5530,76 @@ export class DatabaseStorage implements IStorage {
   // Interactive Damage Check methods
   async getAllInteractiveDamageChecks(): Promise<InteractiveDamageCheck[]> {
     return await db.select().from(interactiveDamageChecks).orderBy(desc(interactiveDamageChecks.checkDate));
+  }
+
+  /**
+   * FIX-T (BUG-216, technical half) — the damage-check list without its images.
+   *
+   * `interactive_damage_checks` is 18 MB for 14 rows because
+   * `diagram_with_annotations` holds a ~1.3 MB base64 PNG per row, and the
+   * signatures another two. `GET /api/interactive-damage-checks` served all of
+   * it — 17 MB, 266 ms, 2.5 s under ten parallel — to the calendar's admin
+   * history dialog, which reads `reservationId`, `checkDate`/`createdAt` and
+   * `completedBy` and renders none of the images (it links to the PDF route
+   * instead). This projection is what that list gets.
+   *
+   * Every read that *does* need the images — by id, by vehicle, by
+   * reservation, the PDF generator — is unchanged.
+   *
+   * Note: whether those blobs should live in text columns at all is BUG-216's
+   * open question for the owner (OPT-033). This changes only which columns the
+   * list endpoint selects.
+   */
+  async getInteractiveDamageCheckSummaries(): Promise<Array<Omit<InteractiveDamageCheck,
+    'diagramWithAnnotations' | 'drawingPaths' | 'damageMarkers' | 'checklistData' | 'renterSignature' | 'customerSignature'>>> {
+    return await db
+      .select({
+        id: interactiveDamageChecks.id,
+        vehicleId: interactiveDamageChecks.vehicleId,
+        reservationId: interactiveDamageChecks.reservationId,
+        checkType: interactiveDamageChecks.checkType,
+        checkDate: interactiveDamageChecks.checkDate,
+        diagramTemplateId: interactiveDamageChecks.diagramTemplateId,
+        notes: interactiveDamageChecks.notes,
+        mileage: interactiveDamageChecks.mileage,
+        fuelLevel: interactiveDamageChecks.fuelLevel,
+        completedBy: interactiveDamageChecks.completedBy,
+        createdAt: interactiveDamageChecks.createdAt,
+        updatedAt: interactiveDamageChecks.updatedAt,
+        createdBy: interactiveDamageChecks.createdBy,
+        updatedBy: interactiveDamageChecks.updatedBy,
+      })
+      .from(interactiveDamageChecks)
+      .orderBy(desc(interactiveDamageChecks.checkDate)) as any;
+  }
+
+  /**
+   * FIX-T (BUG-216, technical half) — the three columns the mileage report
+   * actually reads. `GET /api/reports/mileage-per-month` called
+   * `getAllInteractiveDamageChecks()`, so it pulled 17 MB of base64 through
+   * Postgres and Node (104 ms of its 127 ms of SQL time) to look at an integer.
+   */
+  async getDamageCheckMileageReadings(): Promise<Array<{
+    id: number;
+    vehicleId: number | null;
+    reservationId: number | null;
+    checkType: string | null;
+    checkDate: string | Date | null;
+    mileage: number | null;
+    createdAt: Date | null;
+  }>> {
+    return await db
+      .select({
+        id: interactiveDamageChecks.id,
+        vehicleId: interactiveDamageChecks.vehicleId,
+        reservationId: interactiveDamageChecks.reservationId,
+        checkType: interactiveDamageChecks.checkType,
+        checkDate: interactiveDamageChecks.checkDate,
+        mileage: interactiveDamageChecks.mileage,
+        createdAt: interactiveDamageChecks.createdAt,
+      })
+      .from(interactiveDamageChecks)
+      .orderBy(desc(interactiveDamageChecks.checkDate)) as any;
   }
 
   async getInteractiveDamageCheck(id: number): Promise<InteractiveDamageCheck | undefined> {

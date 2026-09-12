@@ -15,6 +15,7 @@ import { db } from "../../db";
 import { users, auditLogs, loginAttempts } from "../../../shared/schema";
 import { setupAuth, hashPassword } from "../../auth";
 import { mountUploads } from "../../middleware/uploads-mount";
+import { mountBodyParsers } from "../../middleware/body-limits";
 import { registerRoutes } from "../../routes";
 
 /** Prefix for every user this helper creates, so a leak is greppable. */
@@ -31,8 +32,10 @@ let cachedApp: Express | null = null;
 export async function makeApp(): Promise<Express> {
   if (cachedApp) return cachedApp;
   const app = express();
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: false }));
+  // FIX-T (BUG-218): the per-route body limits are part of the app under test,
+  // so a 413 assertion exercises the production configuration rather than
+  // body-parser's 100 kB default.
+  mountBodyParsers(app);
   const { requireAuth } = setupAuth(app);
   // FIX-B: the static /uploads mount is part of the app under test. It lives in
   // server/index.ts in production, which this harness deliberately does not

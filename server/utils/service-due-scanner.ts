@@ -30,11 +30,17 @@ export interface ServiceDueScanResult {
  * Honours the maintenance-calendar exclusions (availability statuses that
  * never get reminders) and skips vehicles already in the workshop.
  */
-export async function getServiceDueVehicles(): Promise<ServiceDueVehicle[]> {
-  const settings = await storage.getSettings();
+export async function getServiceDueVehicles(preloaded?: {
+  settings?: Awaited<ReturnType<typeof storage.getSettings>>;
+  vehicles?: Awaited<ReturnType<typeof storage.getAllVehicles>>;
+}): Promise<ServiceDueVehicle[]> {
+  // BUG-230: the nightly scan called this *and* loaded the settings and the
+  // whole fleet again for its own counters — two full 665-row reads and two
+  // settings reads per run. The caller may hand in what it has already.
+  const settings = preloaded?.settings !== undefined ? preloaded.settings : await storage.getSettings();
   const defaults = serviceDueDefaultsFromSettings(settings);
   const excludedStatuses = settings?.maintenanceExcludedStatuses || ["not_for_rental"];
-  const vehicles = await storage.getAllVehicles();
+  const vehicles = preloaded?.vehicles ?? await storage.getAllVehicles();
 
   const result: ServiceDueVehicle[] = [];
   for (const vehicle of vehicles) {
@@ -97,8 +103,9 @@ export async function scanVehiclesForServiceDue(): Promise<ServiceDueScanResult>
     return result;
   }
 
-  const dueVehicles = await getServiceDueVehicles();
-  result.scanned = (await storage.getAllVehicles()).length;
+  const allVehicles = await storage.getAllVehicles();
+  const dueVehicles = await getServiceDueVehicles({ settings, vehicles: allVehicles });
+  result.scanned = allVehicles.length;
   const stillDue = new Set<number>();
   const today = new Date().toISOString().slice(0, 10);
 

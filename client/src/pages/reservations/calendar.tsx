@@ -630,6 +630,14 @@ export default function ReservationCalendarPage() {
   }, [allReservations]);
   
   // Fetch ALL reservations for building lookup maps (includes completed reservations outside calendar range)
+  //
+  // FIX-T (BUG-204): this used to be fetched twice on first paint. A second
+  // useQuery had the key ['/api/reservations', vehicles?.length] — the extra
+  // element is a number, which the query function ignores when it builds the
+  // URL, so it was a second cache entry for the same 8 MB response. Phase 19
+  // measured 19.6 MB on first paint, 16 MB of it this list, downloaded twice;
+  // and every socket reservation event refetched both copies again. One key,
+  // one request; the completed list is derived from it below.
   const { data: allReservationsForLookup = [] } = useQuery<Reservation[]>({
     queryKey: ['/api/reservations'],
   });
@@ -655,27 +663,24 @@ export default function ReservationCalendarPage() {
     return vehicles?.find(v => v.id === originalVehicleId);
   };
   
-  // Fetch completed/returned rentals separately for the completed list with vehicle data
-  const { data: completedRentals = [] } = useQuery<Reservation[]>({
-    queryKey: ['/api/reservations', vehicles?.length],
-    select: (reservations: Reservation[]) => {
-      // Include both returned and completed statuses in the completed list
-      const completed = reservations.filter(r => 
-        (r.status === 'completed' || r.status === 'returned') && 
-        r.type !== 'maintenance_block'
-      );
-      // Enrich with vehicle data for mileage display
-      return completed.map(rental => {
-        const vehicle = vehicles?.find(v => v.id === rental.vehicleId);
-        return {
-          ...rental,
-          // Use reservation's returnMileage if available, otherwise fall back to vehicle's returnMileage
-          displayReturnMileage: rental.returnMileage ?? vehicle?.returnMileage ?? null
-        };
-      });
-    },
-    enabled: !!vehicles
-  });
+  // The completed/returned list is a projection of the list above — same URL,
+  // same rows, enriched with the vehicle for the mileage column. It used to be
+  // its own useQuery on a second key for the same URL (BUG-204).
+  const completedRentals = useMemo<Reservation[]>(() => {
+    if (!vehicles) return [];
+    const completed = allReservationsForLookup.filter(r =>
+      (r.status === 'completed' || r.status === 'returned') &&
+      r.type !== 'maintenance_block'
+    );
+    return completed.map(rental => {
+      const vehicle = vehicles.find(v => v.id === rental.vehicleId);
+      return {
+        ...rental,
+        // Use reservation's returnMileage if available, otherwise fall back to vehicle's returnMileage
+        displayReturnMileage: rental.returnMileage ?? vehicle?.returnMileage ?? null
+      };
+    });
+  }, [allReservationsForLookup, vehicles]);
 
   // Fetch overdue reservations (picked_up but past end date)
   // Note: No refetchInterval - real-time updates come via WebSocket to prevent dialog closures

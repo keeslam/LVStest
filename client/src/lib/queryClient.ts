@@ -9,7 +9,10 @@ import {
   RequestTimeoutError,
 } from "./request-policy";
 
+import { queryKeyUrl } from "./query-key-url";
+
 export { fetchWithTimeout, shouldForceLogout, REQUEST_TIMEOUT_MS, RequestTimeoutError };
+export { queryKeyUrl };
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -155,24 +158,10 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    let url = queryKey[0] as string;
-    const params = queryKey[1];
-    
-    // Handle query parameters if they exist
-    if (params && typeof params === 'object') {
-      const searchParams = new URLSearchParams();
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          searchParams.append(key, String(value));
-        }
-      });
-      
-      const queryString = searchParams.toString();
-      if (queryString) {
-        url = `${url}?${queryString}`;
-      }
-    }
-    
+    // BUG-204: the key-to-URL rule lives in one place now, so a test can walk a
+    // page's query keys and prove no two of them fetch the same URL.
+    const url = queryKeyUrl(queryKey as readonly unknown[]);
+
     const startedAt = Date.now();
     const res = await fetchWithTimeout(url, {
       credentials: "include",

@@ -16,6 +16,7 @@ import { registerPortalRoutes } from "./routes/portal";
 import { getUploadsDir as getPortalUploadsDir } from "../shared/paths";
 import { mountUploads } from "./middleware/uploads-mount";
 import { BackupScheduler } from "./backupScheduler";
+import { mountBodyParsers } from "./middleware/body-limits";
 import { ApkScanScheduler } from "./apkScanScheduler";
 import { ServiceDueScheduler } from "./serviceDueScheduler";
 import { PortalAlertScheduler } from "./portalAlertScheduler";
@@ -200,9 +201,11 @@ app.use(portalFrameHeaders);
 // one user from another and the whole office shared one bucket. It is mounted
 // just after setupAuth() below instead.
 
-// Middleware - Increase limits for damage check diagrams with base64 images
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: false, limit: '50mb' }));
+// BUG-218: 1 MB everywhere, 25 MB only on the routes that carry base64 images
+// (the interactive damage check and the template editors). The global 50 MB
+// limit meant any authenticated caller could make the server buffer, parse and
+// sanitize 20 MB — +100 MB RSS — before a single validation ran.
+mountBodyParsers(app);
 
 // Security: Sanitize all inputs to prevent XSS
 app.use(sanitizeInput);

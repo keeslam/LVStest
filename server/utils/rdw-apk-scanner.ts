@@ -25,6 +25,15 @@ function delay(ms: number): Promise<void> {
  */
 export async function scanVehiclesForApkChanges(): Promise<ApkScanResult> {
   const vehicles = await storage.getAllVehicles();
+  // BUG-230: this ran one `getPendingApkDateChangeForVehicle` SELECT per
+  // vehicle — 665 statements a night on top of 665 external calls. The pending
+  // rows are a short list; read them once.
+  const pendingByVehicle = new Map<number, Awaited<ReturnType<typeof storage.getPendingApkDateChangeForVehicle>>>();
+  for (const pending of await storage.getPendingApkDateChanges()) {
+    if (pending.vehicleId !== null && pending.vehicleId !== undefined && !pendingByVehicle.has(pending.vehicleId)) {
+      pendingByVehicle.set(pending.vehicleId, pending as any);
+    }
+  }
   const result: ApkScanResult = { scanned: 0, changesFound: 0, errors: 0 };
 
   for (const vehicle of vehicles) {
@@ -42,7 +51,7 @@ export async function scanVehiclesForApkChanges(): Promise<ApkScanResult> {
         continue;
       }
 
-      const existingPending = await storage.getPendingApkDateChangeForVehicle(vehicle.id);
+      const existingPending = pendingByVehicle.get(vehicle.id);
 
       if (existingPending) {
         if (existingPending.newApkDate !== rdwApkDate) {
