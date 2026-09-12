@@ -44,6 +44,18 @@ function weekday(offset: number): string {
   return d.toISOString().split("T")[0];
 }
 
+/**
+ * The nearest weekday at or before `offset` days from today. The past-date and the weekend check
+ * both live in the same guard, so a past date that happens to fall on a Saturday would prove the
+ * wrong one — which is exactly what happened when the suite first ran on a Saturday.
+ */
+function pastWeekday(offset: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1);
+  return d.toISOString().split("T")[0];
+}
+
 async function liveReplacements(rentalId: number) {
   return db.select().from(reservations).where(and(
     eq(reservations.type, "replacement"),
@@ -77,7 +89,7 @@ describe("FIX-V — portal maintenance approval", () => {
 
     const before = (await db.select({ n: sql<number>`count(*)::int` }).from(reservations))[0].n;
     const res = await request(manager).post(`/api/portal-requests/${reqId}/approve`)
-      .send({ startDate: day(-7), durationDays: 2 });
+      .send({ startDate: pastWeekday(-7), durationDays: 2 });
 
     expect(res.status).toBe(400);
     expect(res.body.code).toBe("MAINTENANCE_IN_PAST");
