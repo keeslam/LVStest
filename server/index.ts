@@ -35,6 +35,7 @@ import { securityHeaders, customSecurityHeaders, portalFrameHeaders } from "./mi
 import { sanitizeInput } from "./middleware/security/sanitization.js";
 import { logStartupWarnings } from "./startup-checks";
 import { apiLimiter } from "./middleware/security/rateLimiter.js";
+import { mountCompression } from "./middleware/compression.js";
 import { startSessionCleanupScheduler } from "./utils/security/sessionManager.js";
 import { redactForLog } from "./utils/log-redaction.js";
 
@@ -191,6 +192,12 @@ const appRoot = path.resolve(__dirname, '..'); // /app in Docker
 // Setup Express
 const app = express();
 const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
+
+// besluiten B-19 (BUG-214): HTTP-compressie in de applicatie zelf, niet
+// afhankelijk van wat de proxy doet. Vroeg gemount, want het omwikkelt
+// res.write/res.end van alles wat erna komt; dubbele compressie wordt
+// overgeslagen als een antwoord al een Content-Encoding draagt.
+mountCompression(app);
 
 // Security: Apply security headers first
 app.use(securityHeaders);
