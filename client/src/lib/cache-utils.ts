@@ -1,4 +1,7 @@
 import { queryClient, scheduleInvalidation } from "./queryClient";
+import { matchesEntityId } from "./query-key-match";
+
+export { matchesEntityId };
 
 /**
  * Invalidate vehicle-related data.
@@ -8,7 +11,7 @@ import { queryClient, scheduleInvalidation } from "./queryClient";
 export function invalidateVehicleData(vehicleId?: number) {
   scheduleInvalidation((key) => {
     if (key.startsWith('/api/vehicles')) return true;
-    if (vehicleId && key.includes(`/${vehicleId}`)) return true;
+    if (vehicleId && matchesEntityId(key, vehicleId)) return true;
 
     return false;
   });
@@ -22,8 +25,8 @@ export function invalidateReservationData(reservationId?: number, vehicleId?: nu
   scheduleInvalidation((key) => {
     if (key.startsWith('/api/reservations')) return true;
     if (key.startsWith('/api/placeholder-reservations')) return true;
-    if (reservationId && key.includes(`/${reservationId}`)) return true;
-    if (vehicleId && key.includes(`/${vehicleId}`)) return true;
+    if (reservationId && matchesEntityId(key, reservationId)) return true;
+    if (vehicleId && matchesEntityId(key, vehicleId)) return true;
 
     return false;
   });
@@ -35,7 +38,7 @@ export function invalidateReservationData(reservationId?: number, vehicleId?: nu
 export function invalidateCustomerData(customerId?: number) {
   scheduleInvalidation((key) => {
     if (key.startsWith('/api/customers')) return true;
-    if (customerId && key.includes(`/${customerId}`)) return true;
+    if (customerId && matchesEntityId(key, customerId)) return true;
 
     return false;
   });
@@ -47,8 +50,8 @@ export function invalidateCustomerData(customerId?: number) {
 export function invalidateExpenseData(expenseId?: number, vehicleId?: number) {
   scheduleInvalidation((key) => {
     if (key.startsWith('/api/expenses')) return true;
-    if (expenseId && key.includes(`/${expenseId}`)) return true;
-    if (vehicleId && key.includes(`/vehicle/${vehicleId}`)) return true;
+    if (expenseId && matchesEntityId(key, expenseId)) return true;
+    if (vehicleId && matchesEntityId(key, `vehicle/${vehicleId}`)) return true;
 
     return false;
   });
@@ -60,8 +63,8 @@ export function invalidateExpenseData(expenseId?: number, vehicleId?: number) {
 export function invalidateDocumentData(documentId?: number, vehicleId?: number) {
   scheduleInvalidation((key) => {
     if (key.startsWith('/api/documents')) return true;
-    if (documentId && key.includes(`/${documentId}`)) return true;
-    if (vehicleId && key.includes(`/vehicle/${vehicleId}`)) return true;
+    if (documentId && matchesEntityId(key, documentId)) return true;
+    if (vehicleId && matchesEntityId(key, `vehicle/${vehicleId}`)) return true;
 
     return false;
   });
@@ -74,7 +77,7 @@ export function invalidateNotificationData(notificationId?: number) {
   scheduleInvalidation((key) => {
     if (key.startsWith('/api/notifications')) return true;
     if (key.startsWith('/api/custom-notifications')) return true;
-    if (notificationId && key.includes(`/${notificationId}`)) return true;
+    if (notificationId && matchesEntityId(key, notificationId)) return true;
 
     return false;
   });

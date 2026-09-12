@@ -164,7 +164,12 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
         ...template,
         fields: typeof template.fields === 'string' 
           ? template.fields 
-          : JSON.stringify(template.fields)
+          : JSON.stringify(template.fields),
+        // FIX-Q / BUG-175 (client half): the editor holds the template it
+        // loaded, so send its timestamp back. The server then refuses a save
+        // that would overwrite someone else's (409 STALE_WRITE) instead of
+        // quietly dropping their field positions.
+        updatedAt: template.id ? (template as any).updatedAt ?? undefined : undefined,
       };
       
       const res = await apiRequest(method, url, dataToSend);

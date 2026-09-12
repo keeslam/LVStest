@@ -1,22 +1,24 @@
-import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { QueryCache, QueryClient, QueryFunction } from "@tanstack/react-query";
 import { invokeSessionExpired } from "./session-expiry";
 import { promptForAdminPassword } from "./admin-password-prompt";
+import { toast } from "@/hooks/use-toast";
+import {
+  fetchWithTimeout,
+  shouldForceLogout,
+  REQUEST_TIMEOUT_MS,
+  RequestTimeoutError,
+} from "./request-policy";
+
+export { fetchWithTimeout, shouldForceLogout, REQUEST_TIMEOUT_MS, RequestTimeoutError };
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    // Handle session expiration (401)
-    if (res.status === 401) {
-      // Try to parse response to check for expiry flag
-      try {
-        const data = await res.clone().json();
-        if (data.expired || data.message === "Session expired due to inactivity") {
-          // Session expired - trigger logout
-          await invokeSessionExpired();
-        }
-      } catch (e) {
-        // If we can't parse JSON, still invoke expiry for any 401
-        await invokeSessionExpired();
-      }
+    // BUG-213: any 401 on a staff endpoint means this tab's session is gone.
+    // Clear the cache so no stale row is rendered behind the login page, then
+    // let the registered handler log out and navigate.
+    if (shouldForceLogout(res.url || "", res.status)) {
+      queryClient.clear();
+      await invokeSessionExpired();
     }
     
     const text = (await res.text()) || res.statusText;
@@ -96,7 +98,7 @@ export async function apiRequest(
     }
   }
 
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method,
     headers,
     body: bodyPayload !== undefined && bodyPayload !== null ? JSON.stringify(bodyPayload) : undefined,
@@ -172,7 +174,7 @@ export const getQueryFn: <T>(options: {
     }
     
     const startedAt = Date.now();
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       credentials: "include",
       cache: "no-store", // Bypass browser HTTP cache entirely - always get fresh data from the server
     });
@@ -180,6 +182,10 @@ export const getQueryFn: <T>(options: {
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;
+    }
+    if (shouldForceLogout(url, res.status)) {
+      queryClient.clear();
+      await invokeSessionExpired();
     }
 
     await throwIfResNotOk(res);
@@ -198,6 +204,21 @@ const globalForQueryClient = globalThis as unknown as {
 export const queryClient =
   globalForQueryClient.__appQueryClient ??
   new QueryClient({
+    // BUG-212: a failed GET used to render as an empty state - "no results" is
+    // indistinguishable from "the server is down". One place now says so out
+    // loud, whichever screen the query belongs to. 401 is excluded: that path
+    // navigates to the login page and a toast would only add noise.
+    queryCache: new QueryCache({
+      onError: (error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        if (/^401:/.test(message)) return;
+        toast({
+          title: "Could not load the data",
+          description: message || "Try again, or reload the page.",
+          variant: "destructive",
+        });
+      },
+    }),
     defaultOptions: {
       queries: {
         queryFn: getQueryFn({ on401: "throw" }),

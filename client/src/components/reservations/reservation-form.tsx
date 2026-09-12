@@ -198,6 +198,12 @@ interface ReservationFormProps {
   onSuccess?: (reservation: Reservation) => void;
   onCancel?: () => void;
   onPreviewModeChange?: (isPreviewMode: boolean) => void;
+  /**
+   * FIX-Q (BUG-225): the dialog wrapper needs to know whether anything has
+   * been typed, so a stray click next to the dialog does not silently throw
+   * the whole form away.
+   */
+  onDirtyChange?: (isDirty: boolean) => void;
   onPickupReturnDialogChange?: (isOpen: boolean) => void;
   onTriggerPickupDialog?: (reservation: Reservation) => void;
   onTriggerReturnDialog?: (reservation: Reservation) => void;
@@ -212,6 +218,7 @@ export function ReservationForm({
   onSuccess,
   onCancel,
   onPreviewModeChange,
+  onDirtyChange,
   onPickupReturnDialogChange,
   onTriggerPickupDialog,
   onTriggerReturnDialog
@@ -1300,6 +1307,14 @@ export function ReservationForm({
   };
   
   // Log form errors when they change
+  // BUG-225: report "the user has typed something" upwards. react-hook-form's
+  // isDirty is a subscribed value, so reading it here re-renders on the first
+  // change only, not on every keystroke.
+  const isFormDirty = form.formState.isDirty;
+  useEffect(() => {
+    onDirtyChange?.(isFormDirty);
+  }, [isFormDirty, onDirtyChange]);
+
   useEffect(() => {
     const errors = form.formState.errors;
     if (Object.keys(errors).length > 0) {

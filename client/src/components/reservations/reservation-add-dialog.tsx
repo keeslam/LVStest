@@ -55,6 +55,25 @@ export function ReservationAddDialog({
   }, [isControlled, controlledOnOpenChange]);
   const [isInPreviewMode, setIsInPreviewMode] = useState(false);
   const [isPickupReturnDialogOpen, setIsPickupReturnDialogOpen] = useState(false);
+  // FIX-Q (BUG-225): once anything has been typed, a click next to the dialog
+  // no longer throws the form away. The X and Cancel buttons still close it —
+  // those are a decision, an accidental click on the backdrop is not.
+  const isFormDirtyRef = useRef(false);
+  const handleDirtyChange = useCallback((dirty: boolean) => {
+    isFormDirtyRef.current = dirty;
+  }, []);
+  const keepOpenBecauseDirty = (e: { preventDefault: () => void }) => {
+    if (!isFormDirtyRef.current) return false;
+    e.preventDefault();
+    toast({
+      title: t('addDialog.unsavedChangesTitle', 'Niet opgeslagen wijzigingen'),
+      description: t(
+        'addDialog.unsavedChangesDescription',
+        'Gebruik Annuleren of het kruisje om te sluiten; je ingevoerde gegevens blijven anders behouden.',
+      ),
+    });
+    return true;
+  };
   // Use ref for synchronous access in event handlers (React state updates are async)
   const isPickupReturnDialogOpenRef = useRef(false);
   const { toast } = useToast();
@@ -164,6 +183,7 @@ export function ReservationAddDialog({
             e.preventDefault();
             return;
           }
+          if (keepOpenBecauseDirty(e)) return;
           // Prevent closing when the click target is inside another open dialog/popover
           // (e.g. the Quick Add Driver dialog, customer search, etc.) — those are portaled
           // outside this dialog so Radix considers them "outside" clicks.
@@ -177,6 +197,7 @@ export function ReservationAddDialog({
             e.preventDefault();
             return;
           }
+          if (keepOpenBecauseDirty(e)) return;
           const target = e.target as HTMLElement | null;
           if (target && target.closest('[role="dialog"], [data-radix-popper-content-wrapper]')) {
             e.preventDefault();
@@ -201,6 +222,7 @@ export function ReservationAddDialog({
         </DialogHeader>
         <div className="mt-4">
           <ReservationForm 
+            onDirtyChange={handleDirtyChange}
             initialVehicleId={initialVehicleId}
             initialCustomerId={initialCustomerId}
             initialStartDate={initialStartDate}

@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { bucketByVehicleAndDay, cellKey, type BucketableReservation } from "@/lib/reservation-buckets";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { safeFormatDate } from "@/lib/safe-date";
 import { format, addDays, subDays, isSameDay, parseISO, startOfMonth, endOfMonth, getDate, getDay, getMonth, getYear, isSameMonth, addMonths, startOfDay, endOfDay, isBefore, isAfter, differenceInDays, startOfWeek, endOfWeek } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -401,7 +402,7 @@ export default function ReservationCalendarPage() {
       
       toast({
         title: t('common:status.success'),
-        description: t('calendarPage.reservationMovedDescription', { date: format(parseISO(newStartDate), 'MMM d, yyyy') }),
+        description: t('calendarPage.reservationMovedDescription', { date: safeFormatDate(newStartDate, 'MMM d, yyyy') }),
       });
     } catch (error) {
       console.error('Error moving reservation:', error);
@@ -2317,7 +2318,7 @@ export default function ReservationCalendarPage() {
                               setPreviewDialogOpen(true);
                             }}
                             className="flex items-center gap-2 pr-8"
-                            title={`${doc.documentType || 'Document'}${doc.uploadDate ? ` | Uploaded: ${format(new Date(doc.uploadDate), 'PPp')}` : ''}`}
+                            title={`${doc.documentType || 'Document'}${doc.uploadDate ? ` | Uploaded: ${safeFormatDate(doc.uploadDate, 'PPp')}` : ''}`}
                           >
                             {getFileIcon(doc.contentType, doc.fileName)}
                             <div className="text-left">
@@ -2403,7 +2404,7 @@ export default function ReservationCalendarPage() {
                                 {check.checkType === 'pickup' ? t('form.pickupLabel') : t('form.returnLabel')}
                               </Badge>
                               <span className="text-xs text-purple-900">
-                                {check.createdAt ? format(new Date(check.createdAt), 'PP') : t('calendarPage.noDate')}
+                                {safeFormatDate(check.createdAt, 'PP', t('calendarPage.noDate'))}
                               </span>
                               {check.mileage && (
                                 <span className="text-xs text-purple-600">• {Number(check.mileage).toLocaleString()} km</span>
@@ -2456,7 +2457,7 @@ export default function ReservationCalendarPage() {
                                 {check.checkType === 'pickup' ? t('form.pickupLabel') : t('form.returnLabel')}
                               </Badge>
                               <span className="text-xs text-purple-900">
-                                {check.createdAt ? format(new Date(check.createdAt), 'PP') : t('calendarPage.noDate')}
+                                {safeFormatDate(check.createdAt, 'PP', t('calendarPage.noDate'))}
                               </span>
                               {check.mileage && (
                                 <span className="text-xs text-purple-600">• {Number(check.mileage).toLocaleString()} km</span>
@@ -2975,7 +2976,7 @@ export default function ReservationCalendarPage() {
           <DialogHeader>
             <DialogTitle>{t('addDialog.newReservation')}</DialogTitle>
             <DialogDescription>
-              {t('calendarPage.newReservationForDate', { date: selectedDate ? format(parseISO(selectedDate), 'MMMM d, yyyy') : t('calendarPage.selectedDateFallback') })}
+              {t('calendarPage.newReservationForDate', { date: selectedDate ? safeFormatDate(selectedDate, 'MMMM d, yyyy', t('calendarPage.selectedDateFallback')) : t('calendarPage.selectedDateFallback') })}
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4">
@@ -3207,7 +3208,7 @@ export default function ReservationCalendarPage() {
                               </Badge>
                             </div>
                             <p className="text-sm text-gray-600">
-                              {format(parseISO(rental.startDate), 'MMM d, yyyy')} - {rental.endDate ? format(parseISO(rental.endDate), 'MMM d, yyyy') : t('indexPage.tbdDate')}
+                              {safeFormatDate(rental.startDate, 'MMM d, yyyy')} - {rental.endDate ? safeFormatDate(rental.endDate, 'MMM d, yyyy') : t('indexPage.tbdDate')}
                             </p>
 
                             {/* Mileage and Fuel Information */}
@@ -3424,7 +3425,7 @@ export default function ReservationCalendarPage() {
                     <div className="flex items-center gap-2 text-sm">
                       <Calendar className="h-3 w-3 text-muted-foreground" />
                       <span className="text-muted-foreground">
-                        {t('indexPage.shouldHaveReturnedLabel', { date: reservation.endDate ? format(parseISO(reservation.endDate), 'MMM d, yyyy') : t('indexPage.notAvailable') })}
+                        {t('indexPage.shouldHaveReturnedLabel', { date: reservation.endDate ? safeFormatDate(reservation.endDate, 'MMM d, yyyy', t('indexPage.notAvailable')) : t('indexPage.notAvailable') })}
                       </span>
                     </div>
                   </div>
@@ -3681,7 +3682,7 @@ export default function ReservationCalendarPage() {
                                       <span className="font-medium">{rental.customer?.companyName || rental.customer?.name || '-'}</span>
                                     </TableCell>
                                     <TableCell className="px-2 py-1">
-                                      {rental.startDate ? format(parseISO(rental.startDate), 'dd MMM yyyy') : '-'}
+                                      {safeFormatDate(rental.startDate, 'dd MMM yyyy', '-')}
                                     </TableCell>
                                   </TableRow>
                                 );
@@ -3945,17 +3946,17 @@ export default function ReservationCalendarPage() {
                                       <span className="font-medium text-sm">{rental.customer?.companyName || rental.customer?.name || '-'}</span>
                                     </TableCell>
                                     <TableCell className="px-2 py-1 border-r text-sm whitespace-nowrap">
-                                      {rental.startDate ? format(parseISO(rental.startDate), 'dd MMM yy') : '-'}
+                                      {safeFormatDate(rental.startDate, 'dd MMM yy', '-')}
                                     </TableCell>
                                     <TableCell className="px-2 py-1 border-r text-sm whitespace-nowrap">
-                                      {rental.endDate ? format(parseISO(rental.endDate), 'dd MMM yy') : '-'}
+                                      {safeFormatDate(rental.endDate, 'dd MMM yy', '-')}
                                     </TableCell>
                                     <TableCell className="px-2 py-1 border-r whitespace-nowrap">
                                       {damageCheck ? (
                                         <span className="text-xs">
                                           <Badge variant="default" className="bg-green-100 text-green-800 text-xs">{t('common:actions.yes')}</Badge>
                                           <span className="text-muted-foreground ml-1">
-                                            {damageCheck.date ? format(parseISO(damageCheck.date), 'dd MMM yyyy') : ''} {damageCheck.completedBy}
+                                            {safeFormatDate(damageCheck.date, 'dd MMM yyyy', '')} {damageCheck.completedBy}
                                           </span>
                                         </span>
                                       ) : (

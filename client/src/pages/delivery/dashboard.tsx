@@ -313,17 +313,41 @@ export default function DeliveryDashboard() {
     },
   });
 
+  // FIX-Q (BUG-053): `Promise.all` rejected on the first failure, so a bulk of
+  // ten where number three was already completed reported one error, cleared
+  // nothing, and left the operator with no idea which of the ten went through
+  // (they had: the requests were already in flight). Settle them all, keep the
+  // rows that failed selected, and name them.
   const bulkCompleteTransportMutation = useMutation({
     mutationFn: async (ids: number[]) => {
-      await Promise.all(ids.map(id => apiRequest("PATCH", `/api/transports/${id}`, {
-        status: "completed",
-        completedDate: new Date().toISOString().split("T")[0],
-      })));
+      const results = await Promise.allSettled(
+        ids.map(id => apiRequest("PATCH", `/api/transports/${id}`, {
+          status: "completed",
+          completedDate: new Date().toISOString().split("T")[0],
+        })),
+      );
+      const succeeded: number[] = [];
+      const failed: Array<{ id: number; message: string }> = [];
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") succeeded.push(ids[index]);
+        else failed.push({ id: ids[index], message: (result.reason as Error)?.message ?? "" });
+      });
+      return { succeeded, failed };
     },
-    onSuccess: (_data, ids) => {
+    onSuccess: ({ succeeded, failed }) => {
       invalidateByPrefix("/api/transports");
-      toast({ title: t('dashboardPage.toasts.transportCompleted') });
-      setSelectedRowKeys(prev => prev.filter(key => !ids.some(id => key === `t${id}`)));
+      // Only the rows that actually completed leave the selection.
+      setSelectedRowKeys(prev => prev.filter(key => !succeeded.some(id => key === `t${id}`)));
+      if (succeeded.length) {
+        toast({ title: t('dashboardPage.toasts.transportCompleted') });
+      }
+      if (failed.length) {
+        toast({
+          title: t('dashboardPage.toasts.updateFailedTitle'),
+          description: failed.map(f => `#${f.id}: ${f.message || t('dashboardPage.toasts.genericTryAgain')}`).join(", "),
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: any) => {
       toast({

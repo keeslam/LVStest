@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import Dashboard from "@/pages/dashboard";
 import VehiclesIndex from "@/pages/vehicles/index";
 import CustomersIndex from "@/pages/customers/index";
@@ -25,9 +25,14 @@ import { GlobalDialogs } from "@/components/global-dialogs";
 import { InactivityPrompt } from "@/components/InactivityPrompt";
 import { ApkDateChangesDialog } from "@/components/vehicles/apk-date-changes-dialog";
 import { apiRequest } from "@/lib/queryClient";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 function AppRoutes() {
   const { user, logoutMutation } = useAuth();
+  // FIX-Q (BUG-201): the boundary sits inside the layout, so a page that
+  // throws while rendering loses the page and keeps the shell. Navigating
+  // away clears it — the location is the reset key.
+  const [location] = useLocation();
 
   const handleLogout = () => {
     logoutMutation.mutate();
@@ -54,6 +59,7 @@ function AppRoutes() {
       <Route>
         {() => (
           <MainLayout>
+            <ErrorBoundary resetKey={location}>
             <Switch>
               <ProtectedRoute path="/" component={Dashboard} />
               <ProtectedRoute path="/vehicles" component={VehiclesIndex} />
@@ -72,6 +78,7 @@ function AppRoutes() {
               <Route path="/auth" component={AuthPage} />
               <Route component={NotFound} />
             </Switch>
+            </ErrorBoundary>
           </MainLayout>
         )}
       </Route>

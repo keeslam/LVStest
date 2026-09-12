@@ -252,6 +252,13 @@ export function SettingsPanel() {
     depotAddress?: string | null;
     depotCity?: string | null;
     depotPostalCode?: string | null;
+    /**
+     * FIX-Q / BUG-175 (client half): the server only performs its
+     * optimistic-concurrency check when the form sends back the timestamp it
+     * loaded. Without it two settings screens saved on top of each other and
+     * the first one's fields were silently dropped.
+     */
+    updatedAt?: string | null;
   }>({
     queryKey: ['/api/system-settings'],
   });
@@ -495,6 +502,8 @@ export function SettingsPanel() {
         defaultServiceIntervalMonths: parseInt(defaultServiceIntervalMonths) || 12,
         serviceReminderKm: parseInt(serviceReminderKm) || 1000,
         serviceReminderDays: parseInt(serviceReminderDays) || 30,
+        // BUG-175: engages the server's conditional update (409 STALE_WRITE).
+        updatedAt: systemSettings?.updatedAt ?? undefined,
       };
       await apiRequest('PUT', '/api/system-settings', data);
     },
@@ -502,8 +511,15 @@ export function SettingsPanel() {
       invalidateByPrefix('/api/system-settings');
       toast({ title: t('common:status.success'), description: t('settingsPage.toasts.maintenanceCalendarSavedDescription') });
     },
-    onError: () => {
-      toast({ title: t('common:status.error'), description: t('settingsPage.toasts.maintenanceCalendarSaveFailedDescription'), variant: "destructive" });
+    onError: (error: any) => {
+      // BUG-175: a refused stale write has to say so, not fail anonymously.
+      toast({
+        title: t('common:status.error'),
+        description: error?.code === 'STALE_WRITE'
+          ? error.message
+          : t('settingsPage.toasts.maintenanceCalendarSaveFailedDescription'),
+        variant: "destructive",
+      });
     },
   });
 
@@ -515,14 +531,22 @@ export function SettingsPanel() {
         depotAddress: depotAddress || null,
         depotCity: depotCity || null,
         depotPostalCode: depotPostalCode || null,
+        // BUG-175: same conditional update as the maintenance-calendar save.
+        updatedAt: systemSettings?.updatedAt ?? undefined,
       });
     },
     onSuccess: () => {
       invalidateByPrefix('/api/system-settings');
       toast({ title: t('common:status.success'), description: t('settingsPage.toasts.transportSettingsSavedDescription') });
     },
-    onError: () => {
-      toast({ title: t('common:status.error'), description: t('settingsPage.toasts.transportSettingsSaveFailedDescription'), variant: "destructive" });
+    onError: (error: any) => {
+      toast({
+        title: t('common:status.error'),
+        description: error?.code === 'STALE_WRITE'
+          ? error.message
+          : t('settingsPage.toasts.transportSettingsSaveFailedDescription'),
+        variant: "destructive",
+      });
     },
   });
 
