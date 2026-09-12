@@ -148,6 +148,7 @@ import { registerPortalAdminRoutes } from "./routes/portal-admin";
 import { registerFineRoutes } from "./routes/fines";
 import { registerPortalRequestRoutes } from "./routes/portal-requests";
 import { registerTodayRoutes } from "./routes/today";
+import { registerReservationWorklistRoutes } from "./routes/reservation-worklist";
 import { registerExpenseRoutes } from "./routes/expenses";
 import { registerPdfTemplateRoutes } from "./routes/pdf-templates";
 import { storedPathGuard, TEMPLATE_ROUTE_PREFIXES } from "./middleware/stored-path-guard";
@@ -427,6 +428,9 @@ export async function registerRoutes(app: Express): Promise<void> {
   registerPortalRequestRoutes(app, routeDeps);
   // OPT-001 — the one request behind the "Vandaag" work-day screen.
   registerTodayRoutes(app, routeDeps);
+  // B-21: the "Nog buiten" worklist. Before /api/reservations/:id so the
+  // literal path wins.
+  registerReservationWorklistRoutes(app);
   
   /**
    * besluiten **B-03** — an administrator may force a handover of a vehicle

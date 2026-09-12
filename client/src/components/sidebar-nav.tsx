@@ -28,9 +28,12 @@ export function SidebarNav() {
     { href: "/customers", labelKey: "customers", icon: "people", permissions: [UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS] },
     { href: "/portal-admin", labelKey: "portalAdmin", icon: "people", permissions: [UserPermission.VIEW_PORTAL, UserPermission.MANAGE_PORTAL] },
     { href: "/reservations", labelKey: "reservations", icon: "event", permissions: [UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS] },
+    // B-21 — de werklijst met verhuringen die nog buiten staan; besluit B-21
+    // verbiedt uitdrukkelijk dat een script die afsluit.
+    { href: "/reservations/nog-buiten", labelKey: "stillOut", icon: "event", permissions: [UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS] },
     { href: "/maintenance", labelKey: "maintenance", icon: "maintenance", permissions: [UserPermission.MANAGE_MAINTENANCE] },
     { href: "/expenses", labelKey: "expenses", icon: "euro", permissions: [UserPermission.MANAGE_EXPENSES] },
-    { href: "/documents", labelKey: "documents", icon: "description", permissions: [UserPermission.MANAGE_DOCUMENTS] },
+    { href: "/documents", labelKey: "documents", icon: "description", permissions: [UserPermission.VIEW_DOCUMENTS, UserPermission.MANAGE_DOCUMENTS] },
     { href: "/delivery", labelKey: "transports", icon: "delivery", permissions: [UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS] },
     { href: "/communications", labelKey: "communications", icon: "email", permissions: [UserPermission.MANAGE_EMAIL_TEMPLATES, UserPermission.MANAGE_NOTIFICATIONS] },
     { href: "/reports", labelKey: "reports", icon: "assessment", permissions: [UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS] }
