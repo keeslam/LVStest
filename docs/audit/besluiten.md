@@ -62,6 +62,29 @@ De klant gaat naar de prullenbak (herstelbaar, zoals voertuigen); verwijderen wo
 er een lopende of toekomstige reservering is; vooraf een duidelijke impactlijst.
 Raakt: OPT-033, BUG-007, BUG-039, BUG-143.
 
+## Vastgelegd 2026-09-12
+
+### B-09 — Verhuring op een auto met een onderhoudsblok (OPT-023, BUG-013, BUG-037)
+**Besluit:** waarschuwen, de medewerker mag doorgaan.
+Bij het boeken van een periode die over een actief onderhoudsblok valt toont de app een duidelijke
+waarschuwing met de onderhoudsperiode erbij; opslaan blijft toegestaan. Het blok blijft zichtbaar in
+de kalender. Twee overlappende onderhoudsblokken op één auto vallen onder dezelfde regel.
+Let op de samenhang met B-01: "in onderhoud" telt niet mee als *beschikbaar* in tellingen en
+suggesties, maar blokkeert het bewust boeken niet.
+
+### B-10 — Kentekens normaliseren (BUG-020)
+**Besluit:** ja, bestaande gegevens normaliseren plus een harde uniciteitsregel in de database.
+Volgorde: eerst in productie meten of er voertuigen zijn die na normalisatie samenvallen; als die er
+zijn, stoppen en de lijst voorleggen. Pas daarna de opschoning en de unieke index.
+
+### B-11 — Wachtwoord van een ander account zetten (BUG-063)
+**Besluit:** beheerdersrecht is voldoende, geen extra herbevestiging van het eigen wachtwoord.
+De handeling wordt vastgelegd in het auditspoor.
+
+### B-12 — Bulkimport met onleesbare datums (BUG-124)
+**Besluit:** de regel afkeuren met een melding per regel; de overige regels worden gewoon
+geïmporteerd. Stil weglaten van een APK-datum mag niet meer voorkomen.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - OPT-001 — wat telt als "openstaand punt" op het werkdagscherm.
