@@ -19,7 +19,13 @@
   "search": {
     "viewAllResults": "View all results",
     "noContactInfo": "No contact info",
-    "resultsFor": "Search Results for \"{{query}}\""
+    "resultsFor": "Search Results for \"{{query}}\"",
+    "noResultsFor": "No results found for \"{{query}}\"",
+    "maintenanceBadge": "Maintenance",
+    "unknownCustomer": "Unknown customer",
+    "dateRange": "{{from}} to {{to}}",
+    "openEnded": "open ended",
+    "contractNumberLabel": "Contract no. {{number}}"
   },
   "userMenu": {
     "profile": "Profile",

@@ -1492,6 +1492,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Reservation methods
+
+  /**
+   * OPT-012 - what a contract number looks like when it is typed into a search
+   * box: digits, with the dashes and spaces people add stripped off. Kept
+   * deliberately narrow so an ordinary word never triggers the exact lookup.
+   */
+  private static readonly CONTRACT_NUMBER_SHAPE = /^[0-9][0-9/-]{1,19}$/;
+
   async getAllReservations(searchQuery?: string): Promise<Reservation[]> {
     let reservationsData;
     
@@ -1499,11 +1507,27 @@ export class DatabaseStorage implements IStorage {
     // reservation by id, so scanner input works in reservation search boxes.
     const parsedCode = searchQuery ? parseBarcode(searchQuery) : null;
 
+    // OPT-012 - the number the customer reads out over the phone. Searching for
+    // it used to be a dead end: the box matched vehicles, customers, dates and
+    // statuses, and the indexed `find-by-contract` lookup was wired only to the
+    // duplicate check in the pickup dialog. One row read (BUG-226's index), and
+    // only for input shaped like a contract number, so an ordinary word never
+    // pays for it.
+    let contractMatch: typeof reservations.$inferSelect | undefined;
+    if (searchQuery && !parsedCode && DatabaseStorage.CONTRACT_NUMBER_SHAPE.test(searchQuery.trim())) {
+      [contractMatch] = await db.select()
+        .from(reservations)
+        .where(and(eq(reservations.contractNumber, searchQuery.trim()), isNull(reservations.deletedAt)))
+        .limit(1);
+    }
+
     if (searchQuery && parsedCode?.kind === "reservation") {
       reservationsData = await db.select()
         .from(reservations)
         .where(and(eq(reservations.id, parsedCode.reservationId), isNull(reservations.deletedAt)))
         .limit(1);
+    } else if (contractMatch) {
+      reservationsData = [contractMatch];
     } else if (searchQuery) {
       // Sanitize the search query to handle license plates with or without dashes
       const sanitizedQuery = searchQuery.replace(/-/g, "").toUpperCase();
@@ -1558,7 +1582,9 @@ export class DatabaseStorage implements IStorage {
               or(
                 sql`UPPER(${reservations.startDate}) LIKE ${`%${sanitizedQuery}%`}`,
                 sql`UPPER(${reservations.endDate}) LIKE ${`%${sanitizedQuery}%`}`,
-                sql`UPPER(${reservations.status}) LIKE ${`%${sanitizedQuery}%`}`
+                sql`UPPER(${reservations.status}) LIKE ${`%${sanitizedQuery}%`}`,
+                // OPT-012 - a partial contract number still finds the booking.
+                sql`UPPER(${reservations.contractNumber}) LIKE ${`%${sanitizedQuery}%`}`
               ),
               isNull(reservations.deletedAt)
             )

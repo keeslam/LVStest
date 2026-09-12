@@ -19,7 +19,13 @@
   "search": {
     "viewAllResults": "Bekijk alle resultaten",
     "noContactInfo": "Geen contactgegevens",
-    "resultsFor": "Zoekresultaten voor \"{{query}}\""
+    "resultsFor": "Zoekresultaten voor \"{{query}}\"",
+    "noResultsFor": "Geen resultaten gevonden voor \"{{query}}\"",
+    "maintenanceBadge": "Onderhoud",
+    "unknownCustomer": "Onbekende klant",
+    "dateRange": "{{from}} t/m {{to}}",
+    "openEnded": "open einde",
+    "contractNumberLabel": "Contractnr. {{number}}"
   },
   "userMenu": {
     "profile": "Profiel",

@@ -9,6 +9,7 @@ import { ScrollToTop } from "@/components/scroll-to-top";
 import { NotificationCenter } from "@/components/ui/notification-center";
 import { PortalAlertChip } from "@/components/portal-admin/portal-alert-chip";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useDebouncedValue, DEFAULT_DEBOUNCE_MS } from "@/hooks/use-debounced-value";
 import { Loader2, Car, User, Calendar, X, ClipboardCheck } from "lucide-react";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { invalidateRelatedQueries } from "@/lib/queryClient";
@@ -52,6 +53,8 @@ interface SearchResultReservation {
   endDate: string;
   status: string;
   type?: string;
+  /** OPT-012: shown so a contract-number search visibly found the right row. */
+  contractNumber?: string | null;
   maintenanceCategory?: string;
   vehicle?: {
     licensePlate: string;
@@ -69,6 +72,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
+  // OPT-012: three parallel queries used to fire on every keystroke, so a
+  // seven-character plate cost 21 API calls. The vehicles page already
+  // debounced at 300 ms; this is the same, from one shared hook.
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, DEFAULT_DEBOUNCE_MS);
   const [showResults, setShowResults] = useState(false);
   const [showAllResultsDialog, setShowAllResultsDialog] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -88,42 +95,53 @@ export default function MainLayout({ children }: MainLayoutProps) {
   
   // Query for vehicles based on search
   const { data: vehicleResults = [], isLoading: vehiclesLoading } = useQuery({
-    queryKey: ["/api/vehicles", "search", searchQuery],
+    queryKey: ["/api/vehicles", "search", debouncedSearchQuery],
     queryFn: async () => {
-      if (!searchQuery || searchQuery.length < 2) return [];
-      console.log("Searching vehicles for:", searchQuery);
-      const response = await fetch(`/api/vehicles?search=${encodeURIComponent(searchQuery)}`);
+      if (!debouncedSearchQuery || debouncedSearchQuery.length < 2) return [];
+      const response = await fetch(`/api/vehicles?search=${encodeURIComponent(debouncedSearchQuery)}`);
       if (!response.ok) throw new Error("Failed to search vehicles");
-      const data = await response.json();
-      console.log("Vehicle search results:", data);
-      return data;
+      return response.json();
     },
-    enabled: searchQuery.length >= 2
+    enabled: debouncedSearchQuery.length >= 2
   });
 
   // Query for customers based on search
   const { data: customerResults = [], isLoading: customersLoading } = useQuery({
-    queryKey: ["/api/customers", "search", searchQuery],
+    queryKey: ["/api/customers", "search", debouncedSearchQuery],
     queryFn: async () => {
-      if (!searchQuery || searchQuery.length < 2) return [];
-      const response = await fetch(`/api/customers?search=${encodeURIComponent(searchQuery)}`);
+      if (!debouncedSearchQuery || debouncedSearchQuery.length < 2) return [];
+      const response = await fetch(`/api/customers?search=${encodeURIComponent(debouncedSearchQuery)}`);
       if (!response.ok) throw new Error("Failed to search customers");
       return response.json();
     },
-    enabled: searchQuery.length >= 2
+    enabled: debouncedSearchQuery.length >= 2
   });
 
-  // Query for reservations based on search
+  // Query for reservations based on search. OPT-012: the server resolves a
+  // contract number through the indexed lookup, so the number the customer
+  // reads out over the phone lands here too.
   const { data: reservationResults = [], isLoading: reservationsLoading } = useQuery({
-    queryKey: ["/api/reservations", "search", searchQuery],
+    queryKey: ["/api/reservations", "search", debouncedSearchQuery],
     queryFn: async () => {
-      if (!searchQuery || searchQuery.length < 2) return [];
-      const response = await fetch(`/api/reservations?search=${encodeURIComponent(searchQuery)}`);
+      if (!debouncedSearchQuery || debouncedSearchQuery.length < 2) return [];
+      const response = await fetch(`/api/reservations?search=${encodeURIComponent(debouncedSearchQuery)}`);
       if (!response.ok) throw new Error("Failed to search reservations");
       return response.json();
     },
-    enabled: searchQuery.length >= 2
+    enabled: debouncedSearchQuery.length >= 2
   });
+
+  /**
+   * OPT-012 - picking a result clears the box. It used to keep the term, so
+   * focusing the field reopened the dropdown over the record you had just
+   * opened.
+   */
+  const chooseResult = (open: () => void) => {
+    open();
+    setSearchQuery("");
+    setShowResults(false);
+    setShowAllResultsDialog(false);
+  };
   
   // Import the utility function from format-utils.ts instead of defining it here
   // This ensures consistency across the application
@@ -306,8 +324,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     {/* No results */}
                     {!vehiclesLoading && !customersLoading && !reservationsLoading && 
                      (!vehicleResults?.length && !customerResults?.length && !reservationResults?.length) && (
-                      <div className="p-4 text-center text-gray-500">
-                        No results found for "{searchQuery}"
+                      <div className="p-4 text-center text-gray-500" data-testid="search-no-results">
+                        {t('search.noResultsFor', { query: searchQuery })}
                       </div>
                     )}
                     
@@ -339,7 +357,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                             <li key={`vehicle-${vehicle.id}`} className="hover:bg-gray-50 rounded">
                               <button 
                                 className="flex items-center p-2 w-full text-left"
-                                onClick={() => openVehicleDialog(vehicle.id)}
+                                onClick={() => chooseResult(() => openVehicleDialog(vehicle.id))}
                               >
                                 <Car className="h-4 w-4 text-primary-500 mr-2" />
                                 <div>
@@ -364,7 +382,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                             <li key={`customer-${customer.id}`} className="hover:bg-gray-50 rounded">
                               <button 
                                 className="flex items-center p-2 w-full text-left"
-                                onClick={() => openCustomerDialog(customer.id)}
+                                onClick={() => chooseResult(() => openCustomerDialog(customer.id))}
                               >
                                 <User className="h-4 w-4 text-primary-500 mr-2" />
                                 <div>
@@ -393,7 +411,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                               <li key={`reservation-${reservation.id}`} className="hover:bg-gray-50 rounded">
                                 <button 
                                   className="flex items-center p-2 w-full text-left"
-                                  onClick={() => openReservationDialog(reservation.id)}
+                                  onClick={() => chooseResult(() => openReservationDialog(reservation.id))}
                                 >
                                   {isMaintenance ? (
                                     <ClipboardCheck className="h-4 w-4 text-purple-500 mr-2" />
@@ -408,15 +426,26 @@ export default function MainLayout({ children }: MainLayoutProps) {
                                       </span>
                                       {isMaintenance && (
                                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                                          Maintenance
+                                          {t('search.maintenanceBadge')}
+                                        </span>
+                                      )}
+                                      {reservation.contractNumber && (
+                                        <span className="text-xs text-gray-500" data-testid={`search-contract-${reservation.id}`}>
+                                          {t('search.contractNumberLabel', { number: reservation.contractNumber })}
                                         </span>
                                       )}
                                     </div>
                                     <div className="text-xs text-gray-500">
                                       {isMaintenance ? (
-                                        <>{reservation.maintenanceCategory || "Maintenance"} • {reservation.startDate}</>
+                                        <>{reservation.maintenanceCategory || t('search.maintenanceBadge')} • {reservation.startDate}</>
                                       ) : (
-                                        <>{reservation.customer?.name || "Unknown Customer"} • {reservation.startDate} to {reservation.endDate}</>
+                                        <>
+                                          {reservation.customer?.name || t('search.unknownCustomer')} •{' '}
+                                          {t('search.dateRange', {
+                                            from: reservation.startDate,
+                                            to: reservation.endDate || t('search.openEnded'),
+                                          })}
+                                        </>
                                       )}
                                     </div>
                                   </div>
@@ -461,7 +490,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     <button
                       key={`dialog-vehicle-${vehicle.id}`}
                       className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-gray-50 transition-colors text-left"
-                      onClick={() => openVehicleDialog(vehicle.id)}
+                      onClick={() => chooseResult(() => openVehicleDialog(vehicle.id))}
                       data-testid={`vehicle-result-${vehicle.id}`}
                     >
                       <Car className="h-5 w-5 text-primary-500 flex-shrink-0" />
@@ -487,7 +516,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     <button
                       key={`dialog-customer-${customer.id}`}
                       className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-gray-50 transition-colors text-left"
-                      onClick={() => openCustomerDialog(customer.id)}
+                      onClick={() => chooseResult(() => openCustomerDialog(customer.id))}
                       data-testid={`customer-result-${customer.id}`}
                     >
                       <User className="h-5 w-5 text-primary-500 flex-shrink-0" />
@@ -517,7 +546,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                       <button
                         key={`dialog-reservation-${reservation.id}`}
                         className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-gray-50 transition-colors text-left"
-                        onClick={() => openReservationDialog(reservation.id)}
+                        onClick={() => chooseResult(() => openReservationDialog(reservation.id))}
                         data-testid={`reservation-result-${reservation.id}`}
                       >
                         {isMaintenance ? (
@@ -533,15 +562,26 @@ export default function MainLayout({ children }: MainLayoutProps) {
                             </span>
                             {isMaintenance && (
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                                Maintenance
+                                {t('search.maintenanceBadge')}
+                              </span>
+                            )}
+                            {reservation.contractNumber && (
+                              <span className="text-xs text-gray-500">
+                                {t('search.contractNumberLabel', { number: reservation.contractNumber })}
                               </span>
                             )}
                           </div>
                           <div className="text-sm text-gray-500">
                             {isMaintenance ? (
-                              <>{reservation.maintenanceCategory || "Maintenance"} • {reservation.startDate}</>
+                              <>{reservation.maintenanceCategory || t('search.maintenanceBadge')} • {reservation.startDate}</>
                             ) : (
-                              <>{reservation.customer?.name || "Unknown Customer"} • {reservation.startDate} to {reservation.endDate}</>
+                              <>
+                                {reservation.customer?.name || t('search.unknownCustomer')} •{' '}
+                                {t('search.dateRange', {
+                                  from: reservation.startDate,
+                                  to: reservation.endDate || t('search.openEnded'),
+                                })}
+                              </>
                             )}
                           </div>
                         </div>
@@ -555,7 +595,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             {/* No Results */}
             {vehicleResults?.length === 0 && customerResults?.length === 0 && reservationResults?.length === 0 && (
               <div className="text-center py-12 text-gray-500">
-                No results found for "{searchQuery}"
+                {t('search.noResultsFor', { query: searchQuery })}
               </div>
             )}
           </ScrollArea>
