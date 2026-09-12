@@ -1,4 +1,7 @@
 import { PDFDocument, PDFPage, rgb, StandardFonts } from 'pdf-lib';
+// besluiten B-18 (BUG-192): dd-mm-jjjj, not the en-GB dd/MM/yyyy this used
+// to print next to the Dutch dates of the reservation block.
+import { formatDateNL } from './utils/dutch-format';
 import fs from 'fs/promises';
 import path from 'path';
 import { db } from './db';
@@ -305,7 +308,7 @@ async function generateDamageCheckPDFFromCanvas(
     startDate: reservationData?.startDate || '',
     endDate: reservationData?.endDate || '',
     rentalDays: reservationData?.rentalDays ? String(reservationData.rentalDays) : '',
-    currentDate: new Date().toLocaleDateString('en-GB'),
+    currentDate: formatDateNL(new Date()),
     notes: checkNotes || '',
     inspectorName: inspectorName || '',
   };
@@ -431,7 +434,7 @@ async function generateDamageCheckPDFFromCanvas(
     const drawX = (headerW - drawW) / 2;
     const bandBottom = PAGE_H - HEADER_BAND_H;
     const drawY = bandBottom + (HEADER_BAND_H - drawH) / 2;
-    const dateStr = new Date().toLocaleDateString('en-GB');
+    const dateStr = formatDateNL(new Date());
     const contractStr = reservationData?.contractNumber || '';
     // Overlay positions as a fraction of the drawn image, so they follow the
     // letterboxed image instead of the raw pixel size of whatever was uploaded.

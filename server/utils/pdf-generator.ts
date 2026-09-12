@@ -4,8 +4,9 @@
  */
 
 import { Reservation, PdfTemplate, VehicleTransport, TransportReportTemplate } from "../../shared/schema";
+// Only the contract *number* still uses date-fns (a yyyyMMdd stamp); every
+// human-readable date goes through ./dutch-format below (besluiten B-18).
 import { format } from "date-fns";
-import { nl } from "date-fns/locale";
 import * as fs from 'fs';
 import * as path from 'path';
 import { PDFDocument, PDFName, rgb, StandardFonts, TextAlignment } from 'pdf-lib';
@@ -14,6 +15,11 @@ import { renderBarcodePng } from './barcode-png';
 import { resolveUploadsPath } from '../../shared/paths';
 import { resolveDocumentFilePath } from '../services/document-paths';
 import { sanitizeForWinAnsi, wrapTextToWidth } from './pdf-text';
+// besluiten B-18 (BUG-192): every date, number and amount on a generated
+// document goes through one Dutch formatter.
+import {
+  formatDateNL, formatLongDateNL, formatLongDateTimeNL, formatCurrencyNL, formatDaysNL, formatKilometresNL,
+} from './dutch-format';
 import {
   parseTemplateFields,
   PAGE_WIDTH,
@@ -419,7 +425,7 @@ export function prepareContractData(reservation: Reservation) {
   
   return {
     contractNumber: reservation.contractNumber || `C-${reservation.id}-${format(new Date(), 'yyyyMMdd')}`,
-    contractDate: format(new Date(), 'd MMMM yyyy', { locale: nl }),
+    contractDate: formatLongDateNL(new Date()),
     licensePlate: formatLicensePlate(vehicle.licensePlate),
     brand: vehicle.brand,
     model: vehicle.model,
@@ -437,39 +443,24 @@ export function prepareContractData(reservation: Reservation) {
     driverPhone,
     driverLicenseNumber,
     driverLicenseExpiry,
-    startDate: format(startDate, 'MMMM d, yyyy'),
-    endDate: endDate ? format(endDate, 'MMMM d, yyyy') : 'To be determined',
-    duration: `${diffDays} day${diffDays !== 1 ? 's' : ''}`,
+    startDate: formatDateNL(startDate),
+    endDate: endDate ? formatDateNL(endDate) : 'nader te bepalen',
+    duration: formatDaysNL(diffDays),
     totalPrice: formatCurrency(totalPrice),
     vehicleId: reservation.vehicleId || 0,  // Add vehicleId for document cache invalidation
   };
 }
 
 /**
- * Format a value as currency (Euro)
- * Handles number, string, null, or undefined
+ * Format a value as currency (Euro).
+ *
+ * besluiten B-18: Dutch notation, always — `€ 1.234,50`. A missing or
+ * unparseable amount used to print `€0.00`, with a point; it now prints
+ * `€ 0,00`, because a contract field that is on the page has to read as money.
  */
 function formatCurrency(amount: any): string {
-  if (amount === null || amount === undefined) {
-    return '€0.00';
-  }
-  
-  // Convert to number if it's a string
-  const numericAmount = typeof amount === 'string' 
-    ? parseFloat(amount.replace(/[^\d.-]/g, '')) 
-    : amount;
-  
-  // If it's NaN after conversion, return zero
-  if (isNaN(numericAmount)) {
-    return '€0.00';
-  }
-  
-  return new Intl.NumberFormat('nl-NL', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(numericAmount);
+  const formatted = formatCurrencyNL(amount);
+  return formatted === '' ? formatCurrencyNL(0) : formatted;
 }
 
 /**
@@ -586,7 +577,7 @@ export async function generateInteractiveDamageCheckPDF(damageCheck: any, vehicl
       font: helveticaFont,
     });
     drawBox(page, sidebarX, y - 20, sidebarWidth, 15);
-    const checkDate = damageCheck.checkDate ? format(new Date(damageCheck.checkDate), 'dd-MM-yyyy') : '--';
+    const checkDate = damageCheck.checkDate ? formatDateNL(damageCheck.checkDate) : '--';
     page.drawText(checkDate, {
       x: sidebarX + 5,
       y: y - 17,
@@ -767,7 +758,7 @@ export async function generateInteractiveDamageCheckPDF(damageCheck: any, vehicl
     colY -= 19;
     const controlHeight = 40;
     drawBox(page, sidebarX, colY - controlHeight, sidebarWidth, controlHeight);
-    const controlDate = damageCheck.checkDate ? format(new Date(damageCheck.checkDate), 'dd-MM-yyyy') : '--';
+    const controlDate = damageCheck.checkDate ? formatDateNL(damageCheck.checkDate) : '--';
     page.drawText(`Datum: ${controlDate}`, {
       x: sidebarX + 3,
       y: colY - 10,
@@ -848,8 +839,8 @@ export async function generateInteractiveDamageCheckPDF(damageCheck: any, vehicl
 // ---------------------------------------------------------------------------
 
 const TRANSPORT_TYPE_REPORT_LABELS: Record<string, string> = {
-  swap: 'Vehicle Swap',
-  tow: 'Tow',
+  swap: 'Voertuigruil',
+  tow: 'Sleepopdracht',
   repossession: 'Terughaling',
   delivery: 'Aflevering',
   other: 'Overig',
@@ -862,17 +853,13 @@ const TRANSPORT_STATUS_REPORT_LABELS: Record<string, string> = {
   cancelled: 'Geannuleerd',
 };
 
-const DUTCH_MONTHS = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
-
+/**
+ * besluiten B-18 — one Dutch formatter for every generated document. This used
+ * to be a second month table living next to the contract's `date-fns`
+ * formatting, which is how the two halves of one document drifted apart.
+ */
 function formatDutchDate(date: Date, withTime = false): string {
-  const day = date.getDate();
-  const month = DUTCH_MONTHS[date.getMonth()];
-  const year = date.getFullYear();
-  const datePart = `${day} ${month} ${year}`;
-  if (!withTime) return datePart;
-  const hh = date.getHours().toString().padStart(2, '0');
-  const mm = date.getMinutes().toString().padStart(2, '0');
-  return `${datePart} ${hh}:${mm}`;
+  return withTime ? formatLongDateTimeNL(date) : formatLongDateNL(date);
 }
 
 export function prepareTransportReportData(transport: VehicleTransport): Record<string, string> {
@@ -898,9 +885,9 @@ export function prepareTransportReportData(transport: VehicleTransport): Record<
   const completedDate = transport.completedDate ? formatDutchDate(new Date(transport.completedDate)) : '';
   const originFull = [transport.originAddress, transport.originCity].filter(Boolean).join(', ');
   const destinationFull = [transport.destinationAddress, transport.destinationCity].filter(Boolean).join(', ');
-  const distanceKm = transport.distanceKm != null ? `${Number(transport.distanceKm)} km` : '';
-  const tollCost = transport.tollCost != null ? `€${Number(transport.tollCost).toFixed(2)}` : '';
-  const billableAmount = transport.billableAmount != null ? `€${Number(transport.billableAmount).toFixed(2)}` : '';
+  const distanceKm = transport.distanceKm != null ? formatKilometresNL(transport.distanceKm) : '';
+  const tollCost = transport.tollCost != null ? formatCurrencyNL(transport.tollCost) : '';
+  const billableAmount = transport.billableAmount != null ? formatCurrencyNL(transport.billableAmount) : '';
   const generatedDate = formatDutchDate(new Date(), true);
 
   return {
