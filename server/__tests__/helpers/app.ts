@@ -17,6 +17,9 @@ import { setupAuth, hashPassword } from "../../auth";
 import { mountUploads } from "../../middleware/uploads-mount";
 import { mountBodyParsers } from "../../middleware/body-limits";
 import { registerRoutes } from "../../routes";
+import notificationRoutes from "../../routes/notifications";
+import { hasPermission } from "../../middleware/permissions";
+import { UserPermission } from "../../../shared/schema";
 
 /** Prefix for every user this helper creates, so a leak is greppable. */
 export const FIXTURE_USER_PREFIX = "FIXT-user-";
@@ -43,6 +46,16 @@ export async function makeApp(): Promise<Express> {
   // definition here — otherwise BUG-026 ("200 with the SPA shell instead of the
   // file") would be untestable in-process.
   mountUploads(app, requireAuth);
+  // The notification router is a `Router`, not a `register*()` function, so
+  // `registerRoutes()` does not mount it — server/index.ts does, which this
+  // harness deliberately does not load. Mounted with the same guards here, so
+  // besluit B-24 (who gets a vehicle reminder) is testable in-process.
+  app.use(
+    "/api/notifications",
+    requireAuth,
+    hasPermission(UserPermission.MANAGE_NOTIFICATIONS),
+    notificationRoutes,
+  );
   await registerRoutes(app);
   // Terminal error handler, mirroring server/index.ts. Without it Express'
   // default handler answers with an HTML stack trace, which would make the

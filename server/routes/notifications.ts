@@ -3,7 +3,9 @@ import { installIdParamValidation } from '../middleware/parseIntParam';
 import { db } from '../db.js';
 import { vehicles, customers, reservations, emailLogs } from '../../shared/schema.js';
 import { eq, and, isNotNull, inArray } from 'drizzle-orm';
-import { sendEmail, EmailTemplates } from '../utils/email-service.js';
+import { sendEmail, EmailTemplates, resolveEmailConfig } from '../utils/email-service.js';
+import { vehicleNotificationTargets } from '../services/vehicle-notification-recipients.js';
+import { formatDateNL } from '../utils/dutch-format.js';
 import { 
   getApkReminderTemplate, 
   getMaintenanceReminderTemplate,
@@ -83,6 +85,37 @@ function formatLicensePlate(plate: string | null): string {
   return plate; // Return original if not 6 characters
 }
 
+/** Minimal escaping for the office notice, which is built here rather than from a template. */
+function escapeHtmlText(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
+ * Where "alleen een melding naar kantoor" goes (besluiten B-24).
+ *
+ * The app setting `notification_office_email` wins when it is set; otherwise
+ * the office is the address the application already sends *from*, which is the
+ * mailbox the staff read. No new owner decision needed for either.
+ */
+async function resolveOfficeEmail(): Promise<string | null> {
+  try {
+    const setting = await db.query.appSettings.findFirst({
+      where: (appSettings, { eq }) => eq(appSettings.key, 'notification_office_email'),
+    });
+    const raw = setting?.value as any;
+    const configured = typeof raw === 'string' ? raw : raw?.email;
+    if (typeof configured === 'string' && configured.includes('@')) return configured.trim();
+  } catch (error) {
+    console.error('Could not read notification_office_email:', error);
+  }
+  const config = await resolveEmailConfig();
+  return config?.fromEmail ?? null;
+}
+
 const router = Router();
 // FIX-E (BUG-103): Express param callbacks do not cross a router mount,
 // so this router validates its own `:id`-style parameters itself.
@@ -108,6 +141,13 @@ router.post('/send', async (req, res) => {
     }
 
     let vehicleData: Array<{ vehicle: any | null; customer: any }> = [];
+    /**
+     * besluiten **B-24**: "Staat de auto leeg, dan gaat er alleen een melding
+     * naar kantoor." These are the vehicles with no running or upcoming rental
+     * — and the ones whose current renter has no usable e-mail address, which
+     * is the same problem from the office's point of view.
+     */
+    const unrentedVehicles: any[] = [];
 
     // If sending to specific customers directly (custom messages without vehicles)
     if (customerIds && customerIds.length > 0 && (!vehicleIds || vehicleIds.length === 0)) {
@@ -128,23 +168,27 @@ router.post('/send', async (req, res) => {
     } 
     // If sending to customers with specific vehicles (custom messages with vehicle context)
     else if (vehicleIds && vehicleIds.length > 0) {
-      const data = await db
-        .select({
-          vehicle: vehicles,
-          customer: customers,
-        })
-        .from(vehicles)
-        .leftJoin(reservations, eq(reservations.vehicleId, vehicles.id))
-        .leftJoin(customers, eq(customers.id, reservations.customerId))
-        .where(inArray(vehicles.id, vehicleIds));
-
-      // Filter out entries where customer has no valid email addresses
-      const filteredData = data.filter(item => {
-        const customer = item.customer;
-        return customer && (customer.email || customer.emailGeneral || customer.emailForMOT || customer.emailForInvoices);
-      });
-      
-      vehicleData = filteredData;
+      // besluiten **B-24** (BUG-170): one APK reminder for one vehicle used to
+      // produce three mails — the current holder, somebody who rented the car
+      // in 2021, and somebody whose rental starts in 2027 — because this was a
+      // vehicle → reservation → customer join with no filter on status or date
+      // and no de-duplication. The recipient is the customer of the running or
+      // next reservation, and nobody else; a vehicle that is not rented out
+      // gets no customer at all and is reported to the office below.
+      const targets = await vehicleNotificationTargets(vehicleIds);
+      for (const target of targets) {
+        if (!target.customer) {
+          unrentedVehicles.push(target.vehicle);
+          continue;
+        }
+        const c = target.customer;
+        if (c.email || c.emailGeneral || c.emailForMOT || c.emailForInvoices) {
+          vehicleData.push({ vehicle: target.vehicle, customer: c });
+        } else {
+          // A current renter we cannot reach is still the office's problem.
+          unrentedVehicles.push(target.vehicle);
+        }
+      }
 
       // If customerIds are also provided, add those customers without vehicles
       if (customerIds && customerIds.length > 0) {
@@ -170,7 +214,7 @@ router.post('/send', async (req, res) => {
       }
     }
 
-    if (vehicleData.length === 0) {
+    if (vehicleData.length === 0 && unrentedVehicles.length === 0) {
       return res.status(400).json({ error: 'No recipients found with valid email addresses' });
     }
 
@@ -320,6 +364,42 @@ router.post('/send', async (req, res) => {
       } catch (error) {
         results.failed++;
         results.errors.push(`Error sending to ${selectedEmail}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
+    // besluiten B-24 — the cars nobody is renting right now: one message to the
+    // office, naming them, instead of a mail to every customer who ever had
+    // that plate.
+    if (unrentedVehicles.length > 0) {
+      const officeEmail = await resolveOfficeEmail();
+      if (!officeEmail) {
+        results.failed += unrentedVehicles.length;
+        results.errors.push(
+          `${unrentedVehicles.length} vehicle(s) are not rented out and there is no office e-mail address configured to report them to.`,
+        );
+      } else {
+        const lines = unrentedVehicles.map((v) => {
+          const plate = formatLicensePlate(v.licensePlate);
+          const apk = v.apkDate ? formatDateNL(v.apkDate) : 'onbekend';
+          return `${plate} — ${[v.brand, v.model].filter(Boolean).join(' ')} — APK ${apk}`;
+        });
+        const subject = `Herinnering: ${unrentedVehicles.length} voertuig(en) zonder huurder`;
+        const text =
+          `Deze voertuigen zijn nu niet verhuurd, dus er is geen huurder om te waarschuwen:\n\n` +
+          `${lines.join('\n')}\n\nDeze melding gaat alleen naar kantoor.`;
+        const sent = await sendEmail({
+          to: officeEmail,
+          subject,
+          html: `<p>Deze voertuigen zijn nu niet verhuurd, dus er is geen huurder om te waarschuwen:</p><ul>${
+            lines.map((l) => `<li>${escapeHtmlText(l)}</li>`).join('')
+          }</ul><p>Deze melding gaat alleen naar kantoor.</p>`,
+          text,
+        }, template === 'apk' ? 'apk' : template === 'maintenance' ? 'maintenance' : 'custom');
+        if (sent) results.sent += 1;
+        else {
+          results.failed += 1;
+          results.errors.push(`Failed to send the office notice about ${unrentedVehicles.length} unrented vehicle(s).`);
+        }
       }
     }
 
