@@ -85,6 +85,23 @@ De handeling wordt vastgelegd in het auditspoor.
 **Besluit:** de regel afkeuren met een melding per regel; de overige regels worden gewoon
 geïmporteerd. Stil weglaten van een APK-datum mag niet meer voorkomen.
 
+### B-13 — Huur verhuist naar een andere auto (BUG-139)
+**Besluit:** het onderhoudsblok blijft bij de fysieke auto.
+De gekoppelde vervanger en de bijbehorende klantmelding vervallen; de klant krijgt bericht dat het
+onderhoud niet meer bij zijn huur hoort (conform B-06).
+
+### B-14 — Voertuig verwijderen met lopende of geplande huur (BUG-022)
+**Besluit:** weigeren zolang er een huur loopt of gepland staat, met een impactlijst vooraf; daarna
+gaat het voertuig naar de prullenbak. Dezelfde regel als voor klanten (B-08).
+
+### B-15 — Prullenbak voor reserveringen en transporten (BUG-140, BUG-151)
+**Besluit:** ja, allebei herstelbaar, met dezelfde impactcontrole als bij voertuigen.
+
+### B-16 — Ophalen vóór de startdatum (BUG-211)
+**Besluit:** de medewerker krijgt de vraag of de huur eerder ingaat; na bevestiging schuift de
+startdatum naar vandaag, zodat periode en prijs kloppen (samen met B-07). Weigeren gebeurt alleen als
+de medewerker de vraag met nee beantwoordt.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - OPT-001 — wat telt als "openstaand punt" op het werkdagscherm.
