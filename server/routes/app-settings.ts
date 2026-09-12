@@ -1,4 +1,8 @@
 import type { Request, Response } from "express";
+// FIX-R (BUG-086): multer parses the multipart body inside the route chain,
+// long after app.use(sanitizeInput) ran — so these wrappers sanitize what it
+// parsed.
+import { sanitizeUploadedFields } from "../middleware/security/sanitization";
 import { format } from "date-fns";
 import { storage } from "../storage";
 import path from "path";
@@ -74,11 +78,11 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
       cb(null, `header-${Date.now()}${ext}`);
     },
   });
-  const damageCheckHeaderUpload = multer({
+  const damageCheckHeaderUpload = sanitizeUploadedFields(multer({
     storage: damageCheckHeaderStorage,
     limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: createSecureMulterFilter('image'),
-  });
+  }));
 
   app.get("/api/damage-check-fields/header", requireAuth, async (_req: Request, res: Response) => {
     try {

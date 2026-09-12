@@ -126,3 +126,43 @@ describe("FIX-Z — totalPrice (BUG-054)", () => {
     expect(insertReservationSchemaBase.parse({ ...base, totalPrice: null }).totalPrice).toBeNull();
   });
 });
+
+/**
+ * FIX-R (BUG-072) — the stored-link half of the XSS cluster.
+ *
+ * `expense.receiptUrl` is typed in by one employee and opened by another with
+ * `window.open()`. The client refuses to open an unsafe one; the schema refuses
+ * to store it, so the two cannot drift apart.
+ */
+describe("BUG-072 — receiptUrl may only be a link we are willing to open", () => {
+  const baseExpense = { vehicleId: 1, amount: 12.5, category: "fuel", date: "2026-03-09" };
+
+  it("accepts the links an employee really pastes", async () => {
+    const { insertExpenseSchema } = await import("./schema");
+
+    for (const receiptUrl of [
+      "https://mijn.bank.nl/bon/123.pdf",
+      "http://intranet/bonnen/123.pdf",
+      "/uploads/receipts/123.pdf",
+      "",
+    ]) {
+      expect(insertExpenseSchema.safeParse({ ...baseExpense, receiptUrl }).success).toBe(true);
+    }
+    expect(insertExpenseSchema.safeParse({ ...baseExpense, receiptUrl: null }).success).toBe(true);
+    expect(insertExpenseSchema.safeParse(baseExpense).success).toBe(true);
+  });
+
+  it("refuses a javascript: URL — the stored XSS the audit demonstrated", async () => {
+    const { insertExpenseSchema } = await import("./schema");
+
+    for (const receiptUrl of [
+      "javascript:alert(1)",
+      "JaVaScRiPt:alert(1)",
+      "data:text/html,<script>alert(1)</script>",
+      "vbscript:msgbox(1)",
+    ]) {
+      const result = insertExpenseSchema.safeParse({ ...baseExpense, receiptUrl });
+      expect(result.success, `expected ${receiptUrl} to be rejected`).toBe(false);
+    }
+  });
+});

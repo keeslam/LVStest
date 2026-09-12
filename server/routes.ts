@@ -1,4 +1,8 @@
 import type { Express, Request, Response, NextFunction } from "express";
+// FIX-R (BUG-086): multer parses the multipart body inside the route chain,
+// long after app.use(sanitizeInput) ran — so these wrappers sanitize what it
+// parsed.
+import { sanitizeUploadedFields } from "./middleware/security/sanitization";
 import { createServer, type Server } from "http";
 import { format } from "date-fns";
 import { storage } from "./storage";
@@ -253,22 +257,22 @@ export async function registerRoutes(app: Express): Promise<void> {
   }
 
   // Configure multer for file uploads (PDFs for invoices/expenses) with enhanced security
-  const upload = multer({
+  const upload = sanitizeUploadedFields(multer({
     dest: path.join(uploadsDir, 'temp'),
     limits: {
       fileSize: 25 * 1024 * 1024, // 25MB limit for invoices
     },
     fileFilter: createSecureMulterFilter('pdf'),
-  });
+  }));
 
   // Configure multer for backup uploads (backup files) with enhanced security
-  const backupUpload = multer({
+  const backupUpload = sanitizeUploadedFields(multer({
     dest: path.join(uploadsDir, 'temp'),
     limits: {
       fileSize: 1000 * 1024 * 1024, // 1GB limit for backups
     },
     fileFilter: createSecureMulterFilter('backup'),
-  });
+  }));
   
   // Configure multer for diagram images - using disk storage like all other uploads
   const diagramStorage = multer.diskStorage({
@@ -289,13 +293,13 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Configure multer for diagram images with enhanced security
-  const diagramUpload = multer({
+  const diagramUpload = sanitizeUploadedFields(multer({
     storage: diagramStorage,
     limits: {
       fileSize: 10 * 1024 * 1024, // 10MB limit for images
     },
     fileFilter: createSecureMulterFilter('image'),
-  });
+  }));
 
   // Configure multer for fuel receipt uploads
   const fuelReceiptStorage = multer.diskStorage({
@@ -365,13 +369,13 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
   
   // Configure multer for fuel receipt uploads with enhanced security
-  const fuelReceiptUpload = multer({
+  const fuelReceiptUpload = sanitizeUploadedFields(multer({
     storage: fuelReceiptStorage,
     limits: {
       fileSize: 25 * 1024 * 1024, // 25MB limit for PDFs and images
     },
     fileFilter: createSecureMulterFilter('document'),
-  });
+  }));
   
   // Set up authentication routes and middleware
   const { requireAuth } = setupAuth(app);
@@ -2661,13 +2665,13 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
   
   // Configure multer for damage check uploads with enhanced security
-  const damageCheckUpload = multer({
+  const damageCheckUpload = sanitizeUploadedFields(multer({
     storage: damageCheckStorage,
     limits: {
       fileSize: 10 * 1024 * 1024, // 10MB limit
     },
     fileFilter: createSecureMulterFilter('document'),
-  });
+  }));
   
   // Create reservation with damage check upload
   app.post("/api/reservations", hasPermission(UserPermission.MANAGE_RESERVATIONS), damageCheckUpload.single('damageCheckFile'), async (req: Request, res: Response) => {
@@ -5219,13 +5223,13 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
   
   // Configure multer for document uploads with enhanced security
-  const documentUpload = multer({
+  const documentUpload = sanitizeUploadedFields(multer({
     storage: documentStorage,
     limits: {
       fileSize: 25 * 1024 * 1024, // 25MB limit for documents
     },
     fileFilter: createSecureMulterFilter('document'),
-  });
+  }));
 
   // Get all documents
   app.get("/api/documents", hasPermission(UserPermission.MANAGE_DOCUMENTS), async (req, res) => {
@@ -6306,13 +6310,13 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
   
   // Configure multer for driver license uploads with enhanced security
-  const driverLicenseUpload = multer({
+  const driverLicenseUpload = sanitizeUploadedFields(multer({
     storage: driverLicenseStorage,
     limits: {
       fileSize: 10 * 1024 * 1024, // 10MB limit
     },
     fileFilter: createSecureMulterFilter('document'),
-  });
+  }));
   
   // Get all drivers for a specific customer
   app.get("/api/customers/:customerId/drivers", hasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS), async (req, res) => {

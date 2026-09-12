@@ -1,4 +1,7 @@
 import { useState } from "react";
+// FIX-R (BUG-102): every database value that goes into the print HTML is
+// escaped at the point it is interpolated.
+import { escapeHtml as esc } from "@/lib/html-escape";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -614,8 +617,8 @@ export default function ReportsPage() {
 
               return `
                 <tr>
-                  <td>${v.brand} ${v.model}</td>
-                  <td>${formatLicensePlate(v.licensePlate)}</td>
+                  <td>${esc(v.brand)} ${esc(v.model)}</td>
+                  <td>${esc(formatLicensePlate(v.licensePlate))}</td>
                   <td>${v.apkDate ? formatDate(v.apkDate) : t('reportsPage.common.notSet')}</td>
                   <td class="${statusClass}">${statusText}</td>
                 </tr>
@@ -637,6 +640,12 @@ export default function ReportsPage() {
     printFrame.style.width = '0';
     printFrame.style.height = '0';
     printFrame.style.border = '0';
+    // FIX-R (BUG-102), defence in depth: without `allow-scripts` nothing in
+    // this document can execute — not a <script>, not an onerror handler — so
+    // a value that slips past the escaping above still cannot run anything.
+    // `allow-same-origin` is what lets this page write into contentDocument,
+    // and `allow-modals` is what lets print() open the print dialog.
+    printFrame.setAttribute('sandbox', 'allow-same-origin allow-modals');
     
     document.body.appendChild(printFrame);
     
@@ -868,8 +877,8 @@ export default function ReportsPage() {
                 ${vehicleUtilizationData.sort((a, b) => b.utilizationPercentage - a.utilizationPercentage)
                   .map(vehicle => `
                     <tr>
-                      <td>${vehicle.brand} ${vehicle.model}</td>
-                      <td>${formatLicensePlate(vehicle.licensePlate)}</td>
+                      <td>${esc(vehicle.brand)} ${esc(vehicle.model)}</td>
+                      <td>${esc(formatLicensePlate(vehicle.licensePlate))}</td>
                       <td>${vehicle.daysReserved} ${t('common:units.days')}</td>
                       <td>${vehicle.reservationCount}</td>
                       <td>${vehicle.utilizationPercentage}%</td>
@@ -928,7 +937,7 @@ export default function ReportsPage() {
                       .sort(([_, a], [__, b]) => b - a)
                       .map(([category, amount]) => `
                         <tr>
-                          <td style="text-transform: capitalize;">${category}</td>
+                          <td style="text-transform: capitalize;">${esc(category)}</td>
                           <td>${filteredExpenses.filter(e => e.category === category).length}</td>
                           <td>${formatCurrency(Number(amount))}</td>
                         </tr>
@@ -960,10 +969,10 @@ export default function ReportsPage() {
                           <tr>
                             <td>${formatDate(expense.date)}</td>
                             <td>${vehicle
-                              ? `${vehicle.brand} ${vehicle.model} (${formatLicensePlate(vehicle.licensePlate)})`
+                              ? `${esc(vehicle.brand)} ${esc(vehicle.model)} (${esc(formatLicensePlate(vehicle.licensePlate))})`
                               : t('reportsPage.common.unknownVehicle')}</td>
-                            <td style="text-transform: capitalize;">${expense.category}</td>
-                            <td>${expense.description}</td>
+                            <td style="text-transform: capitalize;">${esc(expense.category)}</td>
+                            <td>${esc(expense.description)}</td>
                             <td>${formatCurrency(Number(expense.amount))}</td>
                           </tr>
                         `;
@@ -1033,8 +1042,8 @@ export default function ReportsPage() {
 
                       return `
                         <tr>
-                          <td>${v.brand} ${v.model}</td>
-                          <td>${formatLicensePlate(v.licensePlate)}</td>
+                          <td>${esc(v.brand)} ${esc(v.model)}</td>
+                          <td>${esc(formatLicensePlate(v.licensePlate))}</td>
                           <td>${v.warrantyEndDate ? format(new Date(v.warrantyEndDate), 'dd/MM/yyyy') : t('reportsPage.common.notApplicable')}</td>
                           <td class="${statusClass}">${daysRemaining !== null
                             ? daysRemaining < 0
@@ -1121,7 +1130,7 @@ export default function ReportsPage() {
                 ${customerReservationStats.length > 0
                   ? customerReservationStats.map(customer => `
                       <tr>
-                        <td>${customer.name}</td>
+                        <td>${esc(customer.name)}</td>
                         <td>${customer.reservationCount}</td>
                         <td>${customer.totalReservationDays} ${t('common:units.days')}</td>
                         <td>${customer.vehicleCount}</td>
@@ -1137,7 +1146,7 @@ export default function ReportsPage() {
             <h2>${t('reportsPage.printReport.sections.customerExpenseBreakdownByCategory')}</h2>
             ${customerReservationStats.length > 0
               ? customerReservationStats.filter(c => c.totalExpenses > 0).map(customer => `
-                  <h3>${customer.name}</h3>
+                  <h3>${esc(customer.name)}</h3>
                   <table>
                     <thead>
                       <tr>
@@ -1151,7 +1160,7 @@ export default function ReportsPage() {
                             .sort(([_, a], [__, b]) => b - a)
                             .map(([category, amount]) => `
                               <tr>
-                                <td style="text-transform: capitalize;">${category}</td>
+                                <td style="text-transform: capitalize;">${esc(category)}</td>
                                 <td>${formatCurrency(Number(amount))}</td>
                               </tr>
                             `).join('')
@@ -1225,14 +1234,14 @@ export default function ReportsPage() {
                     : t('reportsPage.transportsTab.notBillable');
                   return `
                     <tr>
-                      <td>${vehicleLabel}</td>
-                      <td>${TRANSPORT_TYPE_LABELS[transport.transportType] || transport.transportType}</td>
-                      <td>${route}</td>
+                      <td>${esc(vehicleLabel)}</td>
+                      <td>${esc(TRANSPORT_TYPE_LABELS[transport.transportType] || transport.transportType)}</td>
+                      <td>${esc(route)}</td>
                       <td>${formatDate(transport.scheduledDate)}</td>
                       <td>${transport.distanceKm ? `${Number(transport.distanceKm)} km` : '-'}</td>
                       <td>${transport.tollCost ? formatCurrency(Number(transport.tollCost)) : '-'}</td>
-                      <td>${billing}</td>
-                      <td style="text-transform: capitalize;">${transport.status.replace(/_/g, ' ')}</td>
+                      <td>${esc(billing)}</td>
+                      <td style="text-transform: capitalize;">${esc(transport.status.replace(/_/g, ' '))}</td>
                     </tr>
                   `;
                 }).join('') : `<tr><td colspan="8" class="text-center">${t('reportsPage.printReport.noTransports')}</td></tr>`}

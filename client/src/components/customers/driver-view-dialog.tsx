@@ -1,4 +1,6 @@
 import { useTranslation } from "react-i18next";
+// FIX-R (BUG-073): the fallback link is checked before it is rendered.
+import { isSafeHttpUrl } from "@/lib/safe-url";
 import {
   Dialog,
   DialogContent,
@@ -158,19 +160,37 @@ export function DriverViewDialog({ driver, activeReservation, open, onOpenChange
                       className="w-full h-auto"
                       data-testid="img-driver-license-preview"
                       onError={(e) => {
+                        // FIX-R (BUG-073): this used to build the fallback with
+                        // innerHTML and `driver.licenseFilePath` interpolated
+                        // straight into it, so a file path containing
+                        // `<img src=x onerror=…>` executed. Nodes and
+                        // textContent cannot execute anything, and the link is
+                        // only rendered when the path is a safe one.
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
                         const parent = target.parentElement;
-                        if (parent) {
-                          parent.innerHTML = `
-                            <div class="p-4 text-center text-sm text-muted-foreground">
-                              <p>${t('driverView.licensePreviewNotAvailable')}</p>
-                              <a href="/${driver.licenseFilePath}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">
-                                ${t('driverView.viewDocument')}
-                              </a>
-                            </div>
-                          `;
+                        if (!parent) return;
+                        parent.replaceChildren();
+
+                        const box = document.createElement('div');
+                        box.className = 'p-4 text-center text-sm text-muted-foreground';
+
+                        const message = document.createElement('p');
+                        message.textContent = t('driverView.licensePreviewNotAvailable');
+                        box.appendChild(message);
+
+                        const href = `/${driver.licenseFilePath}`;
+                        if (isSafeHttpUrl(href)) {
+                          const link = document.createElement('a');
+                          link.href = href;
+                          link.target = '_blank';
+                          link.rel = 'noopener noreferrer';
+                          link.className = 'text-primary hover:underline';
+                          link.textContent = t('driverView.viewDocument');
+                          box.appendChild(link);
                         }
+
+                        parent.appendChild(box);
                       }}
                     />
                   </div>

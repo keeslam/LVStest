@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+// FIX-R (BUG-072): a stored link is opened through one guard, never raw.
+import { openStoredUrl } from "@/lib/safe-url";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -273,7 +275,7 @@ export function RouteOptimizationDialog({
                   type="button"
                   variant="outline"
                   className="w-full"
-                  onClick={() => window.open(result.mapsUrl!, "_blank", "noopener,noreferrer")}
+                  onClick={() => openStoredUrl(result.mapsUrl!)}
                   data-testid="link-open-in-maps"
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />

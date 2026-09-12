@@ -1,4 +1,6 @@
 import { useState } from "react";
+// FIX-R (BUG-072): a stored link is opened through one guard, never raw.
+import { openStoredUrl } from "@/lib/safe-url";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -383,7 +385,7 @@ export function ExpenseViewDialog({
                                         <Button
                                           variant="ghost"
                                           size="sm"
-                                          onClick={() => expense.receiptUrl && window.open(expense.receiptUrl, '_blank')}
+                                          onClick={() => expense.receiptUrl && openStoredUrl(expense.receiptUrl)}
                                           className="h-8 w-8 p-0"
                                           title={t('viewDialog.viewReceiptTitle')}
                                         >

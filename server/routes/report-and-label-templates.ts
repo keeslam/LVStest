@@ -1,4 +1,8 @@
 import type { Request, Response } from "express";
+// FIX-R (BUG-086): multer parses the multipart body inside the route chain,
+// long after app.use(sanitizeInput) ran — so these wrappers sanitize what it
+// parsed.
+import { sanitizeUploadedFields } from "../middleware/security/sanitization";
 import { storage } from "../storage";
 import { getRelativePath, unlinkStoredFile } from "../services/document-paths";
 import path from "path";
@@ -286,11 +290,11 @@ export function registerReportAndLabelTemplateRoutes(app: Express, deps: RouteDe
   });
 
   // Configure multer for transport report background uploads — images only
-  const transportReportBackgroundUpload = multer({
+  const transportReportBackgroundUpload = sanitizeUploadedFields(multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: createSecureMulterFilter('document'),
-  });
+  }));
 
   app.post("/api/transport-report-templates/:id/background", hasPermission(UserPermission.MANAGE_PDF_TEMPLATES), transportReportBackgroundUpload.single('background'), async (req: Request, res: Response) => {
     try {

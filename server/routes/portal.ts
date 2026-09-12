@@ -1,4 +1,8 @@
 import type { Express, RequestHandler, Request, Response } from "express";
+// FIX-R (BUG-086): multer parses the multipart body inside the route chain,
+// long after app.use(sanitizeInput) ran — so these wrappers sanitize what it
+// parsed.
+import { sanitizeUploadedFields } from "../middleware/security/sanitization";
 import path from "path";
 import fs from "fs";
 import multer from "multer";
@@ -235,14 +239,14 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
 
   // ---- requests -----------------------------------------------------------------
   const requestScope = (req: Request) => (ctxOf(req).user.role === "driver" ? { portalUserId: ctxOf(req).user.id } : {});
-  const attachmentUpload = multer({
+  const attachmentUpload = sanitizeUploadedFields(multer({
     storage: multer.diskStorage({
       destination: (_req, _file, cb) => { const dir = path.join(uploadsDir, "portal-requests"); fs.mkdirSync(dir, { recursive: true }); cb(null, dir); },
       filename: (req, file, cb) => cb(null, `req_c${req.portalUser?.customerId ?? 0}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}${path.extname(sanitizeFilename(file.originalname))}`),
     }),
     limits: { fileSize: 10 * 1024 * 1024, files: 5 },
     fileFilter: createSecureMulterFilter("document"),
-  });
+  }));
   const requireRequests: RequestHandler[] = [requirePortalUser, requireFeature("canSubmitRequests")];
 
   app.get("/api/portal/requests", ...requireRequests, async (req, res) => {
@@ -502,7 +506,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
   // No hard delete from the portal: deactivate via PATCH status=inactive.
   app.delete("/api/portal/drivers/:id", requirePortalUser, (_req, res) => portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Not available"));
 
-  const licenseUpload = multer({
+  const licenseUpload = sanitizeUploadedFields(multer({
     storage: multer.diskStorage({
       destination: (_req, _file, cb) => {
         const dir = path.join(uploadsDir, "drivers");
@@ -516,7 +520,7 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
     }),
     limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: createSecureMulterFilter("document"),
-  });
+  }));
 
   app.post("/api/portal/drivers/:id/license", ...manageDrivers, licenseUpload.single("licenseFile"), async (req, res) => {
     const id = idParam(req, res); if (id === null) return;

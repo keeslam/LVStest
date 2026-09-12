@@ -1,4 +1,8 @@
 import type { Express, Request, Response } from "express";
+// FIX-R (BUG-086): multer parses the multipart body inside the route chain,
+// long after app.use(sanitizeInput) ran — so these wrappers sanitize what it
+// parsed.
+import { sanitizeUploadedFields } from "../middleware/security/sanitization";
 import path from "path";
 import fs from "fs";
 import multer from "multer";
@@ -40,14 +44,14 @@ function idParam(req: Request, res: Response): number | null {
 /** Staff side of traffic fines: entry, attribution, linking, charging, letters. */
 export function registerFineRoutes(app: Express, deps: RouteDeps): void {
   const actor = (req: Request) => req.user?.username ?? "system";
-  const letterUpload = multer({
+  const letterUpload = sanitizeUploadedFields(multer({
     storage: multer.diskStorage({
       destination: (_req, _file, cb) => { const dir = path.join(deps.uploadsDir, "fines"); fs.mkdirSync(dir, { recursive: true }); cb(null, dir); },
       filename: (_req, file, cb) => cb(null, `fine_${Date.now()}${path.extname(sanitizeFilename(file.originalname))}`),
     }),
     limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: createSecureMulterFilter("document"),
-  });
+  }));
 
   async function storeLetter(req: Request): Promise<string | null> {
     if (!req.file) return null;
@@ -70,7 +74,7 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
   }
 
   // ---- CJIB import (FTPS) --------------------------------------------------------
-  const importUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+  const importUpload = sanitizeUploadedFields(multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } }));
 
   app.get("/api/fines/imports", canView, async (_req, res) => {
     res.json(await importStorage.list(100));

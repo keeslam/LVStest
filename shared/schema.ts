@@ -2,6 +2,9 @@ import { pgTable, text, serial, integer, boolean, timestamp, numeric, jsonb, ind
 import { createInsertSchema } from "drizzle-zod";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
+// FIX-R (BUG-072): one definition of "a link we are willing to open", shared
+// by the client sink guard and this schema.
+import { isSafeHttpUrl, SAFE_URL_MESSAGE } from "./safe-url";
 
 // User Roles enum
 export const UserRole = {
@@ -1190,6 +1193,16 @@ export const insertExpenseSchema = createInsertSchema(expenses).omit({
     message: "Amount must be greater than 0 and no more than €1,000,000",
   }),
   receiptPath: z.string().nullable().optional(),
+  // FIX-R (BUG-072): this is a link an employee types in and another employee
+  // later opens with window.open(). `javascript:alert(1)` stored here executed
+  // in the application's own origin. The client refuses to open an unsafe one;
+  // this refuses to store it.
+  receiptUrl: z
+    .string()
+    .max(2048)
+    .refine((value) => value === "" || isSafeHttpUrl(value), { message: SAFE_URL_MESSAGE })
+    .nullable()
+    .optional(),
 });
 
 // Documents table

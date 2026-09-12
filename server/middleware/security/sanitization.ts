@@ -118,3 +118,44 @@ export function validateFileUpload(
 
   return { valid: true };
 }
+
+/**
+ * FIX-R (BUG-086) — "De globale input-sanitizer raakt multipart-bodies niet
+ * (bewezen stored payload)."
+ *
+ * `app.use(sanitizeInput)` runs before the router, and a multipart body does
+ * not exist yet at that point: multer parses it inside the route chain. So
+ * every text field sent alongside a file — notes, descriptions, file labels —
+ * reached the database untouched, which phase 6-8 demonstrated with a stored
+ * payload. Rather than move the global middleware (it must stay in front of
+ * JSON bodies), the multer instances are wrapped: whatever multer just parsed
+ * into `req.body` goes through exactly the same sanitizer.
+ *
+ * Defence in depth, not the only defence — the client sinks are guarded
+ * independently (BUG-072, BUG-073, BUG-102), because an ingress filter is one
+ * import script away from being bypassed.
+ */
+export function sanitizeUploadedFields<T extends object>(upload: T): T {
+  const wrapped = new Set(["single", "array", "fields", "any", "none"]);
+  return new Proxy(upload, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver);
+      if (typeof value !== "function") return value;
+      if (!wrapped.has(String(prop))) return value.bind(target);
+      return (...args: unknown[]) => {
+        const handler = (value as (...a: unknown[]) => unknown).apply(target, args) as (
+          req: Request,
+          res: Response,
+          next: NextFunction,
+        ) => void;
+        return (req: Request, res: Response, next: NextFunction) => {
+          handler(req, res, (error?: unknown) => {
+            if (error) return next(error);
+            if (req.body) req.body = sanitizeValue(req.body);
+            next();
+          });
+        };
+      };
+    },
+  });
+}

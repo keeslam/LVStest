@@ -1,4 +1,8 @@
 import multer from "multer";
+// FIX-R (BUG-086): multer parses the multipart body inside the route chain,
+// long after app.use(sanitizeInput) ran — so these wrappers sanitize what it
+// parsed.
+import { sanitizeUploadedFields } from "../middleware/security/sanitization";
 import type { Request, Response } from "express";
 import { storage } from "../storage";
 import { processInvoiceWithAI, generateInvoiceHash, validateParsedInvoice } from "../utils/invoice-scanner";
@@ -101,13 +105,13 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
   });
   
   // Configure multer for expense receipt uploads with enhanced security
-  const expenseReceiptUpload = multer({
+  const expenseReceiptUpload = sanitizeUploadedFields(multer({
     storage: expenseReceiptStorage,
     limits: {
       fileSize: 25 * 1024 * 1024, // 25MB limit for PDFs and images
     },
     fileFilter: createSecureMulterFilter('document'),
-  });
+  }));
 
 
   app.get("/api/expenses/recent", hasPermission(UserPermission.MANAGE_EXPENSES), async (req, res) => {

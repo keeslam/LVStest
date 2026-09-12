@@ -1,4 +1,8 @@
 import type { Request, Response } from "express";
+// FIX-R (BUG-086): multer parses the multipart body inside the route chain,
+// long after app.use(sanitizeInput) ran — so these wrappers sanitize what it
+// parsed.
+import { sanitizeUploadedFields } from "../middleware/security/sanitization";
 import { format } from "date-fns";
 import { storage } from "../storage";
 import path from "path";
@@ -365,11 +369,11 @@ export function registerDamageCheckTemplateRoutes(app: Express, deps: RouteDeps)
   });
 
   // Configure multer for damage-check template background uploads — images only
-  const damageCheckTemplateBackgroundUpload = multer({
+  const damageCheckTemplateBackgroundUpload = sanitizeUploadedFields(multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: createSecureMulterFilter('document'),
-  });
+  }));
 
   app.post("/api/damage-check-templates/:id/background", hasPermission(UserPermission.MANAGE_DAMAGE_CHECKS), damageCheckTemplateBackgroundUpload.single('background'), async (req: Request, res: Response) => {
     try {

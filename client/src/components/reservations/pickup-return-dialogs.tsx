@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+// FIX-R (BUG-072): a stored link is opened through one guard, never raw.
+import { openStoredUrl } from "@/lib/safe-url";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -734,7 +736,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                                 type="button"
                                 size="sm"
                                 variant="outline"
-                                onClick={() => window.open(check.pdfPath, '_blank')}
+                                onClick={() => openStoredUrl(check.pdfPath)}
                                 title={t('pickupReturn.common.viewPdfTitle')}
                               >
                                 <ExternalLink className="h-3 w-3 mr-1" />
@@ -779,7 +781,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                             type="button"
                             size="sm"
                             variant="outline"
-                            onClick={() => window.open(doc.filePath, '_blank')}
+                            onClick={() => openStoredUrl(doc.filePath)}
                             title={t('pickupReturn.common.viewDocumentTitle')}
                           >
                             <ExternalLink className="h-3 w-3 mr-1" />
@@ -1535,7 +1537,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                                 type="button"
                                 size="sm"
                                 variant="outline"
-                                onClick={() => window.open(check.pdfPath, '_blank')}
+                                onClick={() => openStoredUrl(check.pdfPath)}
                                 title={t('pickupReturn.common.viewPdfTitle')}
                               >
                                 <ExternalLink className="h-3 w-3 mr-1" />
@@ -1580,7 +1582,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
                             type="button"
                             size="sm"
                             variant="outline"
-                            onClick={() => window.open(doc.filePath, '_blank')}
+                            onClick={() => openStoredUrl(doc.filePath)}
                             title={t('pickupReturn.common.viewDocumentTitle')}
                           >
                             <ExternalLink className="h-3 w-3 mr-1" />

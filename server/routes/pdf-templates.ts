@@ -1,4 +1,8 @@
 import type { Request, Response } from "express";
+// FIX-R (BUG-086): multer parses the multipart body inside the route chain,
+// long after app.use(sanitizeInput) ran — so these wrappers sanitize what it
+// parsed.
+import { sanitizeUploadedFields } from "../middleware/security/sanitization";
 import { pdfTemplates } from "../../shared/schema";
 import { parsePartialUpdate } from "../middleware/validateBody";
 import { sendRouteError } from "../utils/route-errors";
@@ -387,13 +391,13 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
   };
 
   // Configure multer for template background uploads (memory storage) with enhanced security
-  const templateBackgroundUpload = multer({
+  const templateBackgroundUpload = sanitizeUploadedFields(multer({
     storage: multer.memoryStorage(),
     limits: {
       fileSize: 10 * 1024 * 1024, // 10MB limit for backgrounds
     },
     fileFilter: createSecureMulterFilter('document'),
-  });
+  }));
 
   // Upload template background
   app.post("/api/pdf-templates/:id/background", hasPermission(UserPermission.MANAGE_PDF_TEMPLATES), templateBackgroundUpload.single('background'), async (req: Request, res: Response) => {
