@@ -147,6 +147,7 @@ import { registerPortalRequestRoutes } from "./routes/portal-requests";
 import { registerTodayRoutes } from "./routes/today";
 import { registerExpenseRoutes } from "./routes/expenses";
 import { registerPdfTemplateRoutes } from "./routes/pdf-templates";
+import { storedPathGuard, TEMPLATE_ROUTE_PREFIXES } from "./middleware/stored-path-guard";
 import { registerCustomNotificationRoutes } from "./routes/custom-notifications";
 import { registerBackupRoutes } from "./routes/backups";
 import { registerSettingsRoutes } from "./routes/settings";
@@ -6712,6 +6713,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       });
     }
   });
+  // BUG-070: a stored-file path arriving in a request body is only ever
+  // legitimate when it resolves inside the uploads root — the upload routes
+  // write those columns themselves. One guard in front of the four template
+  // families, so none of them can be talked into storing `../../x`.
+  app.use(TEMPLATE_ROUTE_PREFIXES, storedPathGuard);
   registerPdfTemplateRoutes(app, routeDeps);
   registerCustomNotificationRoutes(app);
   registerBackupRoutes(app, routeDeps);
