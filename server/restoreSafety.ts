@@ -397,6 +397,102 @@ export async function extractFilesArchive(archivePath: string, targetDir: string
   return written;
 }
 
+// ---------------------------------------------------------------- code archives
+
+/**
+ * BUG-069 — the code restore.
+ *
+ * `/api/backups/restore-code` used to run `tar.x({ cwd: process.cwd() })` over
+ * an operator-uploaded archive behind nothing but a `..`/absolute filter, and
+ * then called `process.exit(0)` so the freshly written files would be the code
+ * that came back up. Phase 36 replayed that filter against the documented
+ * payload: it rejected **zero** entries and wrote `dist/server/index.js`. That
+ * is an upload turning into running code.
+ *
+ * The route is now **off unless the deployment says otherwise**
+ * (`ALLOW_CODE_RESTORE=true`), and when it is on the archive is verified and
+ * unpacked into a staging directory — never over the running application, and
+ * never followed by an unchecked process exit. The owner deploys through
+ * Coolify, so redeploying is how code gets replaced; he can still switch the
+ * button back on for a host where that is not true.
+ */
+export function codeRestoreEnabled(): boolean {
+  return String(process.env.ALLOW_CODE_RESTORE ?? '').trim().toLowerCase() === 'true';
+}
+
+/** The same containment rule as the uploads archive, without the fixed prefix. */
+function codeEntryIsSafe(entryPath: string): boolean {
+  const p = entryPath.replace(/\\/g, '/');
+  if (!p || p.includes('\0')) return false;
+  if (p.startsWith('/') || isAbsolute(p) || /^[A-Za-z]:/.test(p)) return false;
+  if (p.split('/').some((seg) => seg === '..')) return false;
+  const normalised = normalize(p);
+  if (normalised.startsWith('..') || isAbsolute(normalised)) return false;
+  return true;
+}
+
+/**
+ * Lists a code archive and refuses it if any entry could land outside the
+ * staging directory — before a single byte is written, exactly as
+ * `inspectFilesArchive()` does for the uploads archive.
+ */
+export async function inspectCodeArchive(archivePath: string): Promise<ArchiveInspection> {
+  if (!existsSync(archivePath)) {
+    return { ok: false, entries: 0, rejected: [], reason: `backup file is missing: ${archivePath}` };
+  }
+  const rejected: string[] = [];
+  let entries = 0;
+  try {
+    await tar.t({
+      file: archivePath,
+      onentry: (entry: any) => {
+        const p = String(entry.path);
+        if (p.endsWith('/')) return; // directory entry
+        entries += 1;
+        if (!codeEntryIsSafe(p)) rejected.push(p.slice(0, 200));
+      },
+    } as any);
+  } catch (error) {
+    return { ok: false, entries, rejected, reason: `the archive is corrupt or truncated (${errText(error)})` };
+  }
+  if (rejected.length > 0) {
+    return {
+      ok: false,
+      entries,
+      rejected,
+      reason:
+        `the archive contains ${rejected.length} entr${rejected.length === 1 ? 'y' : 'ies'} that would be written ` +
+        `outside the staging directory (for example "${rejected[0]}"). Nothing was changed`,
+    };
+  }
+  if (entries === 0) {
+    return { ok: false, entries, rejected, reason: 'the archive contains no files. Nothing was changed' };
+  }
+  return { ok: true, entries, rejected };
+}
+
+/** Extracts a verified code archive into `targetDir`, filter applied again. */
+export async function extractCodeArchive(archivePath: string, targetDir: string): Promise<number> {
+  let written = 0;
+  await tar.x({
+    file: archivePath,
+    cwd: targetDir,
+    preservePaths: false,
+    filter: (p: string, entry: any) => {
+      const original = String(entry?.path ?? p);
+      const safe = codeEntryIsSafe(original);
+      if (safe && !original.endsWith('/')) written += 1;
+      return safe;
+    },
+  } as any);
+  return written;
+}
+
+/** A private staging directory for one code restore. Never `process.cwd()`. */
+export function makeCodeStagingDir(): string {
+  return mkdtempSync(join(backupTempDir(), 'lvs-code-restore-'));
+}
+
 // ---------------------------------------------------------------- temp files
 
 const TEMP_PREFIXES = ['db-backup-', 'files-backup-', 'lvs-restore-'];

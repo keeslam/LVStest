@@ -14,6 +14,7 @@ import {
   inspectDump, dumpTargetsForeignDatabase, runPsqlRestore, inspectFilesArchive,
   extractFilesArchive, makeRestoreTempDir, safeUnlink, gunzipTo, isGzip,
   restoreToolsAvailable, RestoreFailedError,
+  codeRestoreEnabled, inspectCodeArchive, extractCodeArchive, makeCodeStagingDir,
 } from "../restoreSafety";
 
 /**
@@ -387,27 +388,58 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   });
 
   /**
-   * Restore the application's source code from an uploaded archive.
+   * Unpack an uploaded code archive into a staging directory.
    *
-   * BUG-069: this was `tar -xzf <uploaded file> -C <cwd>`, which trusts every
-   * path inside an operator-supplied archive and writes it over the running
-   * application — an authenticated remote code execution primitive, followed
-   * by process.exit(0) to make the new code run. Extraction now goes through
-   * the `tar` npm package with a per-entry filter, so an entry with `..` or an
-   * absolute path is dropped instead of honoured.
+   * BUG-069: this was `tar.x({ cwd: process.cwd() })` over an operator-supplied
+   * archive behind nothing but a `..`/absolute filter, followed by
+   * `process.exit(0)` so the freshly written files would be the code that came
+   * back up. Phase 36 replayed that filter against the documented payload: it
+   * rejected **zero** entries and wrote `dist/server/index.js`. An
+   * authenticated upload became running code.
+   *
+   * Three changes, all of them here:
+   *   1. The route is **off** unless the deployment sets
+   *      `ALLOW_CODE_RESTORE=true`. This installation deploys through Coolify,
+   *      where redeploying is how code is replaced; the owner can still switch
+   *      the button on for a host where that is not true.
+   *   2. When it is on, the archive goes through the same verify-then-extract
+   *      path the file restore uses (`restoreSafety`), into a **staging
+   *      directory** — never over the running application.
+   *   3. Nothing calls `process.exit`. Whoever asked for the restore decides
+   *      what to do with the staged tree.
    */
   app.post("/api/backups/restore-code", hasPermission(UserPermission.MANAGE_BACKUPS), backupUpload.single('backup'), async (req, res) => {
+    const cleanupUpload = async () => {
+      if (req.file?.path) {
+        try { await fs.promises.unlink(req.file.path); } catch { /* already gone */ }
+      }
+    };
     try {
+      if (!codeRestoreEnabled()) {
+        await cleanupUpload();
+        return res.status(503).json({
+          error:
+            'Restoring application code is switched off on this server. It writes program code, so it stays off ' +
+            'unless the deployment sets ALLOW_CODE_RESTORE=true. Code is normally replaced by redeploying.',
+          code: 'CODE_RESTORE_DISABLED',
+        });
+      }
+
       if (!req.file) {
         return res.status(400).json({ error: 'No backup file uploaded' });
       }
 
       const { confirm } = req.body ?? {};
       if (confirm !== req.file.originalname) {
-        try { await fs.promises.unlink(req.file.path); } catch {}
+        await cleanupUpload();
         return res.status(400).json({
           error: 'Confirmation does not match. Send `confirm` with the exact name of the file you are uploading to confirm this restore.',
         });
+      }
+
+      if (!req.file.size) {
+        await cleanupUpload();
+        return res.status(400).json({ error: 'That file is empty, so the restore was cancelled. Nothing was changed.' });
       }
 
       const fileValidation = await validateAfterUpload(
@@ -417,46 +449,37 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
         'backup'
       );
       if (!fileValidation.valid) {
-        try { await fs.promises.unlink(req.file.path); } catch {}
+        await cleanupUpload();
         return res.status(400).json({ error: fileValidation.error });
       }
 
-      const tarModule = await import('tar');
-      let rejected = 0;
-      await tarModule.x({
-        file: req.file.path,
-        cwd: process.cwd(),
-        preservePaths: false,
-        filter: (entryPath: string) => {
-          const p = String(entryPath).replace(/\\/g, '/');
-          const unsafe =
-            p.startsWith('/') || /^[A-Za-z]:/.test(p) || p.split('/').some((seg) => seg === '..');
-          if (unsafe) {
-            rejected += 1;
-            console.error(`Refused code-restore entry outside the application directory: ${p.slice(0, 200)}`);
-          }
-          return !unsafe;
-        },
-      } as any);
-
-      try { await fs.promises.unlink(req.file.path); } catch {}
-
-      res.json({
-        success: true,
-        message: 'Code restored successfully. The application will restart automatically.',
-        rejectedEntries: rejected,
-      });
-
-      // Restart the application after a short delay
-      setTimeout(() => {
-        process.exit(0); // PM2 or the process manager will restart the app
-      }, 2000);
-    } catch (error) {
-      if (req.file) {
-        try { await fs.promises.unlink(req.file.path); } catch {}
+      // Verify BEFORE anything is written, exactly as the file restore does.
+      const archive = await inspectCodeArchive(req.file.path);
+      if (!archive.ok) {
+        if (archive.rejected.length) {
+          console.error(`Refused code-restore entries: ${archive.rejected.slice(0, 10).join(', ')}`);
+        }
+        await cleanupUpload();
+        return res.status(400).json({ error: `Refusing to restore: ${archive.reason}.` });
       }
+
+      const stagingPath = makeCodeStagingDir();
+      const filesWritten = await extractCodeArchive(req.file.path, stagingPath);
+
+      await cleanupUpload();
+      console.log(`[restore] staged ${filesWritten} code file(s) in ${stagingPath}; the running application was not touched`);
+      return res.json({
+        success: true,
+        message:
+          `The archive was unpacked into a staging directory (${filesWritten} files). The running application was ` +
+          `not changed and did not restart — deploy the staged code the normal way.`,
+        stagingPath,
+        filesWritten,
+      });
+    } catch (error) {
+      await cleanupUpload();
       console.error("Error restoring app code:", error);
-      res.status(500).json({ error: restoreErrorMessage(error) });
+      return res.status(500).json({ error: restoreErrorMessage(error) });
     }
   });
 
