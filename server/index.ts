@@ -33,6 +33,7 @@ import { UserPermission } from "../shared/schema.js";
 // Security middleware imports
 import { securityHeaders, customSecurityHeaders, portalFrameHeaders } from "./middleware/security/headers.js";
 import { sanitizeInput } from "./middleware/security/sanitization.js";
+import { logStartupWarnings } from "./startup-checks";
 import { apiLimiter } from "./middleware/security/rateLimiter.js";
 import { startSessionCleanupScheduler } from "./utils/security/sessionManager.js";
 import { redactForLog } from "./utils/log-redaction.js";
@@ -510,6 +511,9 @@ const enableHTTPS = process.env.ENABLE_HTTPS === 'true' && sslKeyPath && sslCert
 
 // Server startup function
 async function startServer() {
+  // BUG-057: say so, loudly, when this process would hand out stack traces.
+  logStartupWarnings();
+
   if (enableHTTPS) {
     // Check if certificate files exist
     if (!fs.existsSync(sslKeyPath!) || !fs.existsSync(sslCertPath!)) {

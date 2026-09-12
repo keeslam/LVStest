@@ -644,7 +644,8 @@
         "successTitle": "Gelukt",
         "successDescription": "Voertuigstatus bijgewerkt naar {{status}}",
         "errorTitle": "Fout",
-        "errorDescription": "Beschikbaarheid bijwerken mislukt"
+        "errorDescription": "Beschikbaarheid bijwerken mislukt",
+        "warningTitle": "Let op"
       }
     },
     "quickEdit": {

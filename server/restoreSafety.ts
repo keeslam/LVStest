@@ -401,9 +401,23 @@ export async function extractFilesArchive(archivePath: string, targetDir: string
 
 const TEMP_PREFIXES = ['db-backup-', 'files-backup-', 'lvs-restore-'];
 
+/**
+ * Where the backup and restore code puts its scratch files.
+ *
+ * Defaults to the operating system temp directory, which is what production
+ * uses. `LVS_TEMP_DIR` exists for the test suite: os.tmpdir() is shared with
+ * every other process on the machine — including another instance of this very
+ * application — so "nothing was left behind in the temp directory" is not an
+ * assertion a test can make about a directory it does not own.
+ */
+export function backupTempDir(): string {
+  const configured = process.env.LVS_TEMP_DIR;
+  return configured && configured.trim() !== "" ? configured : tmpdir();
+}
+
 /** A private temp directory for one restore, removed by the caller. */
 export function makeRestoreTempDir(): string {
-  return mkdtempSync(join(tmpdir(), 'lvs-restore-'));
+  return mkdtempSync(join(backupTempDir(), 'lvs-restore-'));
 }
 
 /** Best-effort unlink that never throws — for `finally` blocks. */
@@ -425,7 +439,7 @@ export function safeUnlink(filePath: string | null | undefined): void {
  */
 export function cleanupStaleTempFiles(maxAgeMs = 60 * 60 * 1000): number {
   let removed = 0;
-  const dir = tmpdir();
+  const dir = backupTempDir();
   let entries: string[];
   try {
     entries = readdirSync(dir);

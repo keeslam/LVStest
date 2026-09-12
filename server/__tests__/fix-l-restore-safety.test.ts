@@ -62,11 +62,28 @@ const write = (name: string, data: string | Buffer): string => {
   return target;
 };
 
+/**
+ * Wave 9: os.tmpdir() is shared with every other process on this machine —
+ * including another instance of this very application, which is exactly what
+ * made "nothing was left in the temp directory" fail once for a reason that
+ * had nothing to do with the code under test. `LVS_TEMP_DIR` points the
+ * backup and restore code at a directory this file owns, so the assertion is
+ * about our own leftovers and nobody else's.
+ */
+let tempRoot = "";
+let previousTempDir: string | undefined;
+
 beforeAll(() => {
   workDir = fs.mkdtempSync(path.join(os.tmpdir(), "lvs-fixl-"));
+  tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "lvs-fixl-temp-"));
+  previousTempDir = process.env.LVS_TEMP_DIR;
+  process.env.LVS_TEMP_DIR = tempRoot;
 });
 afterAll(() => {
+  if (previousTempDir === undefined) delete process.env.LVS_TEMP_DIR;
+  else process.env.LVS_TEMP_DIR = previousTempDir;
   fs.rmSync(workDir, { recursive: true, force: true });
+  fs.rmSync(tempRoot, { recursive: true, force: true });
 });
 
 // ---------------------------------------------------------------------------
@@ -257,9 +274,9 @@ describe("FIX-L — file archives cannot write outside the uploads directory", (
 // ---------------------------------------------------------------------------
 describe("FIX-L — temporary files and external tools", () => {
   it("BUG-206: stale db-backup/files-backup temp files are swept, fresh ones are kept", () => {
-    const stale = path.join(os.tmpdir(), `db-backup-FIXT-${process.pid}-stale.sql.gz`);
-    const fresh = path.join(os.tmpdir(), `db-backup-FIXT-${process.pid}-fresh.sql.gz`);
-    const unrelated = path.join(os.tmpdir(), `something-else-FIXT-${process.pid}.txt`);
+    const stale = path.join(tempRoot, `db-backup-FIXT-${process.pid}-stale.sql.gz`);
+    const fresh = path.join(tempRoot, `db-backup-FIXT-${process.pid}-fresh.sql.gz`);
+    const unrelated = path.join(tempRoot, `something-else-FIXT-${process.pid}.txt`);
     fs.writeFileSync(stale, "x");
     fs.writeFileSync(fresh, "x");
     fs.writeFileSync(unrelated, "x");
@@ -502,15 +519,13 @@ e2e("FIX-L — a real restore into a scratch database", () => {
     }
   }, 120_000);
 
-  it("no db-backup-* or files-backup-* file is left in os.tmpdir() by any of this", () => {
-    const leaked = fs.readdirSync(os.tmpdir()).filter((name) => {
-      if (!/^(db-backup-|files-backup-)/.test(name)) return false;
-      try {
-        return fs.statSync(path.join(os.tmpdir(), name)).mtimeMs > Date.now() - 10 * 60 * 1000;
-      } catch {
-        return false;
-      }
-    });
+  it("no db-backup-* or files-backup-* file is left in the temp directory by any of this", () => {
+    // Wave 9: this used to scan os.tmpdir() for anything younger than ten
+    // minutes, so a dev server running beside the suite and taking a backup
+    // failed the test — a red run that said nothing about the code. The
+    // directory scanned now contains only what this file's own code put there
+    // (see LVS_TEMP_DIR in beforeAll), so a leftover here really is a leak.
+    const leaked = fs.readdirSync(tempRoot).filter((name) => /^(db-backup-|files-backup-)/.test(name));
     expect(leaked).toEqual([]);
   });
 });

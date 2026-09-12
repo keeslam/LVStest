@@ -1,4 +1,6 @@
 import { useState } from "react";
+// BUG-146: the state machine warning that never reached a screen.
+import { statusChangeWarning } from "@/lib/status-warning";
 import * as React from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -3763,11 +3765,18 @@ function AvailabilityToggleDialog({
   
   const updateAvailabilityMutation = useMutation({
     mutationFn: async (availabilityStatus: string) => {
-      return await apiRequest("PATCH", `/api/vehicles/${vehicle.id}`, {
+      const response = await apiRequest("PATCH", `/api/vehicles/${vehicle.id}`, {
         availabilityStatus
       });
+      // BUG-146: the response carries the state machine's warning; reading the
+      // body is the only way it can ever reach the screen.
+      try {
+        return await response.json();
+      } catch {
+        return null;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (updated) => {
       const statusLabels: Record<string, string> = {
         'available': t('details.availabilityDialog.available'),
         'needs_fixing': t('details.availabilityDialog.needsFixing'),
@@ -3778,6 +3787,18 @@ function AvailabilityToggleDialog({
         title: t('details.availabilityDialog.toasts.successTitle'),
         description: t('details.availabilityDialog.toasts.successDescription', { status: statusLabels[availabilityStatus] })
       });
+      // BUG-146: "this car has upcoming booked reservations" is exactly what
+      // the employee needs to see, and until now nobody ever did. Its own
+      // toast, so it is not lost under the confirmation.
+      const warning = statusChangeWarning(updated);
+      if (warning) {
+        toast({
+          title: t('details.availabilityDialog.toasts.warningTitle', 'Let op'),
+          description: warning,
+          variant: "default",
+          duration: 10000,
+        });
+      }
       onSuccess();
       setOpen(false);
       setShowRentedWarning(false);

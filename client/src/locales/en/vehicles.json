@@ -644,7 +644,8 @@
         "successTitle": "Success",
         "successDescription": "Vehicle status updated to {{status}}",
         "errorTitle": "Error",
-        "errorDescription": "Failed to update availability"
+        "errorDescription": "Failed to update availability",
+        "warningTitle": "Please note"
       }
     },
     "quickEdit": {

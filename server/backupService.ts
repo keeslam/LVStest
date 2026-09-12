@@ -15,7 +15,7 @@ import { verifyDatabaseBackup, verifyFilesBackup } from './backupVerification';
 import {
   inspectDump, dumpTargetsForeignDatabase, databaseNameFromUrl, runPsqlRestore,
   inspectFilesArchive, extractFilesArchive, makeRestoreTempDir, safeUnlink,
-  cleanupStaleTempFiles, gunzipTo, isGzip, pgTool, restoreToolsAvailable,
+  backupTempDir, cleanupStaleTempFiles, gunzipTo, isGzip, pgTool, restoreToolsAvailable,
 } from './restoreSafety';
 
 export interface BackupManifest {
@@ -252,7 +252,7 @@ export class BackupService {
     const startedAtIso = new Date().toISOString();
     const filenameStamp = startedAtIso.replace(/[:.]/g, '-');
     const filename = `db-backup-${filenameStamp}.sql.gz`;
-    const tempFile = join(tmpdir(), filename);
+    const tempFile = join(backupTempDir(), filename);
     
     console.log('Creating database backup...');
     
@@ -364,7 +364,7 @@ export class BackupService {
     const startedAtIso = new Date().toISOString();
     const filenameStamp = startedAtIso.replace(/[:.]/g, '-');
     const filename = `files-backup-${filenameStamp}.tar.gz`;
-    const tempFile = join(tmpdir(), filename);
+    const tempFile = join(backupTempDir(), filename);
     
     console.log('Creating files backup...');
 
