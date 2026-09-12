@@ -679,5 +679,11 @@
     "regeneratedDescription": "Version {{version}} of {{fileName}} is now in the dossier. The old version is kept.",
     "failedTitle": "Could not regenerate",
     "notRegeneratable": "This document was uploaded or produced elsewhere, so there is nothing to reproduce it from."
+  },
+  "mailStatus": {
+    "sent": "Sent on {{date}} to {{recipient}}",
+    "failed": "Sending failed — {{reason}}",
+    "unknownReason": "reason unknown",
+    "unknownRecipient": "unknown recipient"
   }
 }

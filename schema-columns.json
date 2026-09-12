@@ -1875,6 +1875,13 @@
         "notNull": false,
         "primary": false,
         "default": null
+      },
+      {
+        "name": "document_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
       }
     ]
   },

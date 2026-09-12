@@ -1455,6 +1455,11 @@ export const emailLogs = pgTable("email_logs", {
   // are per-run summaries that have neither.
   recipient: text("recipient"),
   result: text("result"), // 'sent' | 'failed'
+  // OPT-013: which document this attempt carried, so "heeft de klant het
+  // contract gekregen?" has an answer *on the document* and not only in a flat
+  // log nobody opens. Nullable: most mail (APK reminders, portal notices)
+  // carries no document at all.
+  documentId: integer("document_id"),
 });
 
 export const insertEmailLogSchema = createInsertSchema(emailLogs)

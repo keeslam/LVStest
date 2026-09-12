@@ -20,6 +20,7 @@ import {
   RegenerateDocumentButton,
   StaleDocumentBadge,
 } from "@/components/documents/stale-document";
+import { DocumentMailStatus } from "@/components/documents/document-mail-status";
 import { queryClient , invalidateByPrefix } from "@/lib/queryClient";
 
 interface ReservationDocumentsDialogProps {
@@ -148,6 +149,12 @@ export function ReservationDocumentsDialog({
                                     {t('documentsDialog.reservationHash', { id: doc.reservationId })}
                                   </span>
                                 )}
+                              </div>
+                              {/* OPT-013: "verzonden op … aan …" / "verzenden
+                                  mislukt" - the answer to "heeft de klant het
+                                  contract gekregen?", on the document itself. */}
+                              <div className="mt-1">
+                                <DocumentMailStatus documentId={doc.id} />
                               </div>
                             </div>
                             <div className="flex items-center gap-2">

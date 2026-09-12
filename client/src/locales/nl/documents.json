@@ -679,5 +679,11 @@
     "regeneratedDescription": "Versie {{version}} van {{fileName}} staat nu in het dossier. De oude versie blijft bewaard.",
     "failedTitle": "Opnieuw genereren is niet gelukt",
     "notRegeneratable": "Dit document is geüpload of elders gemaakt; er is niets om het opnieuw uit op te bouwen."
+  },
+  "mailStatus": {
+    "sent": "Verzonden op {{date}} aan {{recipient}}",
+    "failed": "Verzenden mislukt — {{reason}}",
+    "unknownReason": "reden onbekend",
+    "unknownRecipient": "onbekende ontvanger"
   }
 }

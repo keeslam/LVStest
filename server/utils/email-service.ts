@@ -24,6 +24,13 @@ export interface EmailOptions {
   textEncoding?: "base64" | "quoted-printable";
   /** What the `email_logs` row is filed under; defaults to the purpose. */
   logTemplate?: string;
+  /**
+   * OPT-013: the document(s) this message carried. One `email_logs` row is
+   * written per document, so the status can be shown *on the document* -
+   * "verzonden op … aan …" / "verzenden mislukt" - instead of only in a flat
+   * log nobody opens. A send with no document writes one row, as before.
+   */
+  logDocumentIds?: number[];
 }
 
 /**
@@ -46,20 +53,29 @@ async function logEmailAttempt(entry: {
   recipient: string;
   sent: boolean;
   failureReason?: string | null;
+  documentIds?: number[];
 }): Promise<void> {
   try {
-    await db.insert(emailLogs).values({
+    const base = {
       template: entry.template.slice(0, 120),
       subject: entry.subject.slice(0, 500),
       recipients: 1,
       emailsSent: entry.sent ? 1 : 0,
       emailsFailed: entry.sent ? 0 : 1,
       failureReason: entry.sent ? null : (entry.failureReason ?? "unknown error").slice(0, 1000),
-      vehicleIds: [],
+      vehicleIds: [] as number[],
       sentAt: new Date().toISOString(),
       recipient: entry.recipient.slice(0, 320),
       result: entry.sent ? "sent" : "failed",
-    });
+    };
+    // OPT-013: one row per document, so a send of three documents can be
+    // answered for each of them separately. No document: one row, as before.
+    const documentIds = (entry.documentIds ?? []).filter((id) => Number.isInteger(id));
+    if (documentIds.length === 0) {
+      await db.insert(emailLogs).values({ ...base, documentId: null });
+      return;
+    }
+    await db.insert(emailLogs).values(documentIds.map((documentId) => ({ ...base, documentId })));
   } catch (error) {
     console.error("Failed to write email_logs row:", error);
   }
@@ -464,6 +480,7 @@ export async function sendEmail(options: EmailOptions, purpose?: 'apk' | 'mainte
       recipient: options.to,
       sent,
       failureReason,
+      documentIds: options.logDocumentIds,
     });
   }
 }

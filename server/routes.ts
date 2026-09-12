@@ -22,6 +22,8 @@ import {
   isCalendarDate,
   insertSettingsSchema,
   reservations,
+  // OPT-013: read per document for the "verzonden op … aan …" line.
+  emailLogs,
   vehicles,
   settings as settingsTable,
   vehicleTransports,
@@ -159,7 +161,7 @@ import { parsePartialUpdate, parseCreateBody, BodyValidationError } from "./midd
 import { sendRouteError, HttpError } from "./utils/route-errors";
 import { UploadRejectedError } from "./utils/security/fileUploadSecurity";
 import { db } from "./db";
-import { sql } from "drizzle-orm";
+import { sql, eq, desc } from "drizzle-orm";
 
 /**
  * The fields that move a booking in time or onto another vehicle. A PATCH that
@@ -5786,6 +5788,40 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  /**
+   * OPT-013 - "toon de status op het document".
+   *
+   * FIX-M already writes an `email_logs` row for every attempt, success and
+   * failure. What was missing was a way to ask about one document, so the
+   * question "heeft de klant het contract gekregen?" still had no answer at the
+   * counter. Newest first; the UI shows the most recent line.
+   */
+  app.get("/api/documents/:id/email-status", hasPermission(UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid document ID" });
+      }
+      const rows = await db
+        .select({
+          id: emailLogs.id,
+          recipient: emailLogs.recipient,
+          result: emailLogs.result,
+          failureReason: emailLogs.failureReason,
+          sentAt: emailLogs.sentAt,
+          subject: emailLogs.subject,
+        })
+        .from(emailLogs)
+        .where(eq(emailLogs.documentId, id))
+        .orderBy(desc(emailLogs.sentAt))
+        .limit(20);
+      res.json({ attempts: rows });
+    } catch (error) {
+      console.error("Error fetching document email status:", error);
+      res.status(500).json({ message: "Failed to fetch the e-mail status of this document" });
+    }
+  });
+
   // View document (for preview/print)
   app.get("/api/documents/view/:id", hasPermission(UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
     try {
@@ -5950,6 +5986,9 @@ export async function registerRoutes(app: Express): Promise<void> {
           filename: document.fileName,
           content: fileData,
         }],
+        // OPT-013: the log row is filed under this document, so the status can
+        // be shown on the document itself.
+        logDocumentIds: [document.id],
       }, 'documents');
 
       if (!emailSent) {
@@ -6013,6 +6052,9 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       // Prepare attachments for all documents
       const attachments: { filename: string; content: Buffer; encoding?: string }[] = [];
+      // OPT-013: the documents that really got attached - one log row each, so
+      // "is dit document verstuurd?" is answerable per document.
+      const attachedDocumentIds: number[] = [];
       
       for (const document of validDocuments) {
         if (!document || !document.filePath) continue;
@@ -6032,6 +6074,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           content: fileData,
           encoding: 'base64'
         });
+        attachedDocumentIds.push(document.id);
       }
 
       if (attachments.length === 0) {
@@ -6044,7 +6087,8 @@ export async function registerRoutes(app: Express): Promise<void> {
         subject: subject,
         text: message || "Please find the attached documents.",
         html: `<p>${(message || "Please find the attached documents.").replace(/\n/g, '<br>')}</p>`,
-        attachments: attachments
+        attachments: attachments,
+        logDocumentIds: attachedDocumentIds,
       }, 'documents');
 
       if (!emailSent) {
