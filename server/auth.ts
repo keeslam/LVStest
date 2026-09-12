@@ -13,7 +13,7 @@ import createMemoryStore from "memorystore";
 
 // Security imports
 import { AuditLogger } from "./utils/security/auditLogger.js";
-import { checkAccountLockout, recordLoginAttempt, clearFailedAttempts, loginLimiter, reserveLoginAttempt, settleLoginAttempt } from "./middleware/security/rateLimiter.js";
+import { checkAccountLockout, recordLoginAttempt, clearFailedAttempts, loginLimiter, reserveLoginAttempt, settleLoginAttempt, trustProxyHops } from "./middleware/security/rateLimiter.js";
 import { trackSession, revokeSession } from "./utils/security/sessionManager.js";
 import { csrfProtection, attachCsrfToken } from "./middleware/security/csrf.js";
 import { useSecureCookies } from "./utils/secure-cookies.js";
@@ -179,7 +179,20 @@ export function setupAuth(app: Express) {
     console.log('   auto: the cookie is marked Secure only for HTTPS requests (X-Forwarded-Proto is honoured behind a proxy).');
   }
 
-  app.set("trust proxy", 1);
+  // BUG-009: how many proxies really sit in front of this process is
+  // configuration, not a hardcoded 1. Behind Coolify (production) that is one
+  // hop; a process you can reach directly must trust no forwarding header at
+  // all, or `X-Forwarded-For` decides both `req.ip` and the login rate-limit
+  // bucket. Set TRUST_PROXY_HOPS to the number of proxies that really append
+  // to the chain.
+  const hops = trustProxyHops();
+  app.set("trust proxy", hops);
+  console.log(
+    `🌐 trust proxy: ${hops} hop(s)` +
+    (hops === 0
+      ? " — X-Forwarded-For is ignored. Set TRUST_PROXY_HOPS if a reverse proxy sits in front of this process."
+      : " — the last entry of X-Forwarded-For is treated as written by that proxy."),
+  );
   // express-session refuses to run when req.session already exists, so the
   // customer portal (its own cookie, its own Passport instance, see
   // portal-auth.ts) can only mount its stack if the staff stack skips portal

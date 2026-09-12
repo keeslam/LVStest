@@ -1,8 +1,73 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { Request, Response } from 'express';
 import { db } from '../../db';
 import { loginAttempts } from '../../../shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
+
+/**
+ * BUG-009 — how many proxies really sit in front of this process.
+ *
+ * `app.set("trust proxy", 1)` was hardcoded, and `loginLimiter` had no
+ * `keyGenerator`, so `req.ip` — and with it the rate-limit bucket — was
+ * whatever the caller put in `X-Forwarded-For`. Phase 36: ten logins with ten
+ * invented addresses, ten 401s, not one 429; the same ten from one address are
+ * refused at number six. The brake on password guessing could be switched off
+ * from the open internet.
+ *
+ * The hop count is configuration now. It defaults to **1 in production**,
+ * which is this deployment's shape (Coolify terminates TLS and appends the
+ * real client address, so the last entry of the chain is written by the proxy
+ * and cannot be chosen by the caller), and to **0 everywhere else** — a
+ * process you can reach directly must trust no forwarding header at all.
+ * `TRUST_PROXY_HOPS` overrides both: set it to the number of proxies that
+ * really append to the chain.
+ */
+export function trustProxyHops(): number {
+  const raw = process.env.TRUST_PROXY_HOPS;
+  if (raw !== undefined && raw !== null && String(raw).trim() !== '') {
+    const parsed = Number.parseInt(String(raw).trim(), 10);
+    if (Number.isFinite(parsed) && parsed >= 0) return parsed;
+    console.warn(`⚠️ TRUST_PROXY_HOPS="${raw}" is not a number of proxy hops; falling back to the default.`);
+    return 0;
+  }
+  return process.env.NODE_ENV === 'production' ? 1 : 0;
+}
+
+/**
+ * The first address in the chain that the deployment does NOT trust — the one
+ * the closest trusted proxy wrote down, which an outsider cannot choose.
+ *
+ * With no trusted hop the forwarding header is ignored completely and the
+ * socket's own peer address is used. When the chain is shorter than the
+ * configured number of hops it is a lie (a direct connection claiming to come
+ * through a proxy), and the socket peer is used again.
+ */
+export function firstUntrustedAddress(req: Request): string {
+  const socketAddress =
+    req.socket?.remoteAddress || (req as any).connection?.remoteAddress || req.ip || 'unknown';
+  const hops = trustProxyHops();
+  if (hops <= 0) return socketAddress;
+
+  const header = typeof req.headers?.['x-forwarded-for'] === 'string'
+    ? (req.headers['x-forwarded-for'] as string)
+    : Array.isArray(req.headers?.['x-forwarded-for'])
+      ? (req.headers['x-forwarded-for'] as string[]).join(',')
+      : '';
+  const chain = header.split(',').map((part) => part.trim()).filter(Boolean);
+  if (chain.length < hops) return socketAddress;
+  return chain[chain.length - hops] || socketAddress;
+}
+
+/**
+ * The login bucket key. Exported so the keying rule itself is testable.
+ *
+ * `ipKeyGenerator` is the library's own helper: without it express-rate-limit
+ * logs `ERR_ERL_KEY_GEN_IPV6` at start-up, because a bare IPv6 address lets
+ * one attacker with a /64 allocation take a fresh bucket per request.
+ */
+export function loginLimiterKey(req: Request): string {
+  return ipKeyGenerator(firstUntrustedAddress(req));
+}
 
 /** How long a burst of failures keeps an account locked. */
 export const LOCKOUT_WINDOW_MINUTES = 15;
@@ -24,7 +89,10 @@ export const LOCKOUT_THRESHOLD = 5;
 export function apiLimiterKey(req: Request & { user?: { id?: number } }): string {
   const userId = req.user?.id;
   if (typeof userId === 'number') return `user:${userId}`;
-  return `ip:${req.ip || req.socket?.remoteAddress || 'unknown'}`;
+  // BUG-009: the same first-untrusted-address rule as the login limiter, and
+  // through the library's ipKeyGenerator so an IPv6 client cannot take a fresh
+  // bucket per request (ERR_ERL_KEY_GEN_IPV6, logged at every start-up).
+  return `ip:${ipKeyGenerator(firstUntrustedAddress(req))}`;
 }
 
 export const apiLimiter = rateLimit({
@@ -55,6 +123,9 @@ function createAuthLimiter(options: { max: number; skipSuccessfulRequests: boole
     skipSuccessfulRequests: options.skipSuccessfulRequests,
     standardHeaders: true,
     legacyHeaders: false,
+    // BUG-009: never the raw X-Forwarded-For. The bucket is the first address
+    // the deployment does not trust, for the configured number of proxy hops.
+    keyGenerator: loginLimiterKey,
   });
 }
 
