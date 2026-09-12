@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { TrendingUp, TrendingDown, DollarSign, Wrench, Car, Calendar } from "lucide-react";
+import { QueryErrorState } from "@/components/ui/query-error-state";
 
 interface MaintenanceCostData {
   totalCosts: number;
@@ -37,7 +38,7 @@ export default function MaintenanceCostsPage() {
   const [selectedBrand, setSelectedBrand] = useState("all");
 
   // Fetch maintenance cost analysis data
-  const { data: costData, isLoading } = useQuery<MaintenanceCostData>({
+  const { data: costData, isLoading, isError, error, refetch } = useQuery<MaintenanceCostData>({
     queryKey: ['/api/reports/maintenance-costs', timeRange, selectedBrand],
   });
 
@@ -45,6 +46,18 @@ export default function MaintenanceCostsPage() {
     return (
       <div className="flex justify-center items-center h-96">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // BUG-212: a 500 from this report used to render "Geen onderhoudskostgegevens
+  // beschikbaar" — the same sentence the page shows when the vehicles genuinely
+  // cost nothing. A failed load now says it failed, and offers the retry that
+  // did not exist anywhere in the application.
+  if (isError) {
+    return (
+      <div className="p-8">
+        <QueryErrorState error={error} onRetry={() => { void refetch(); }} />
       </div>
     );
   }

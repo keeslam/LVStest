@@ -169,5 +169,12 @@
     "noResults": "Geen resultaten.",
     "showingNone": "0 van 0 getoond",
     "showing": "{{from}}-{{to}} van {{total}} getoond"
+  },
+  "queryError": {
+    "title": "Kon de gegevens niet laden",
+    "description": "De server gaf een fout terug. Dit is iets anders dan “geen resultaten” — probeer het opnieuw of herlaad de pagina.",
+    "timeoutTitle": "De server antwoordde niet op tijd",
+    "timeoutDescription": "Het verzoek is na 30 seconden afgebroken. Controleer de verbinding en probeer het opnieuw.",
+    "retry": "Opnieuw proberen"
   }
 }

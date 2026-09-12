@@ -169,5 +169,12 @@
     "noResults": "No results.",
     "showingNone": "Showing 0 of 0",
     "showing": "Showing {{from}}-{{to}} of {{total}}"
+  },
+  "queryError": {
+    "title": "Could not load the data",
+    "description": "The server returned an error. That is not the same as “no results” — try again, or reload the page.",
+    "timeoutTitle": "The server did not answer in time",
+    "timeoutDescription": "The request was aborted after 30 seconds. Check the connection and try again.",
+    "retry": "Try again"
   }
 }

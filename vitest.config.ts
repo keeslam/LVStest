@@ -9,6 +9,9 @@ export default defineConfig({
     },
   },
   test: {
+    // Named so the two projects (this one and vitest.client.config.ts, added
+    // in wave 9) are distinguishable in the reporter output.
+    name: "server",
     // FIX-S: the two pure client helpers (date formatting, calendar bucketing)
     // run in the same node project — they touch no DOM. The jsdom project for
     // component tests is wave 9 (plan §8).

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { ReservationForm } from "@/components/reservations/reservation-form";
 import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
+import { createDirtyCloseGuard } from "@/components/dialogs/dirty-close-guard";
 import { PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Reservation } from "@shared/schema";
@@ -62,18 +63,19 @@ export function ReservationAddDialog({
   const handleDirtyChange = useCallback((dirty: boolean) => {
     isFormDirtyRef.current = dirty;
   }, []);
-  const keepOpenBecauseDirty = (e: { preventDefault: () => void }) => {
-    if (!isFormDirtyRef.current) return false;
-    e.preventDefault();
-    toast({
-      title: t('addDialog.unsavedChangesTitle', 'Niet opgeslagen wijzigingen'),
-      description: t(
-        'addDialog.unsavedChangesDescription',
-        'Gebruik Annuleren of het kruisje om te sluiten; je ingevoerde gegevens blijven anders behouden.',
-      ),
-    });
-    return true;
-  };
+  // The rule itself lives in `dirty-close-guard.ts` so wave 9 could put a
+  // component test on it without mounting the whole reservation form.
+  const keepOpenBecauseDirty = createDirtyCloseGuard({
+    isDirty: () => isFormDirtyRef.current,
+    onBlocked: () =>
+      toast({
+        title: t('addDialog.unsavedChangesTitle', 'Niet opgeslagen wijzigingen'),
+        description: t(
+          'addDialog.unsavedChangesDescription',
+          'Gebruik Annuleren of het kruisje om te sluiten; je ingevoerde gegevens blijven anders behouden.',
+        ),
+      }),
+  });
   // Use ref for synchronous access in event handlers (React state updates are async)
   const isPickupReturnDialogOpenRef = useRef(false);
   const { toast } = useToast();
