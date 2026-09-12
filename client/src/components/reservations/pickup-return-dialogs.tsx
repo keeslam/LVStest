@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import type { Reservation, Vehicle } from "@shared/schema";
 import { formatDutchDate } from "@shared/booking-warnings";
+import { needsRemarkConfirmation, hasRemarks } from "@shared/remark-confirmation";
 import { Car, Fuel, Calendar, FileText, ClipboardCheck, ExternalLink, CheckCircle2, Edit, Trash2, Upload, AlertTriangle } from "lucide-react";
 import { MileageOverridePasswordDialog } from "@/components/mileage-override-password-dialog";
 import InteractiveDamageCheck from "@/pages/interactive-damage-check";
@@ -174,9 +175,17 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
         setRemarksWarningOpen(false);
         
         // Check if vehicle has remarks and show warning (only for non-TBD reservations)
-        // For TBD spares, the warning will be shown when a vehicle is selected
-        if (!isTBDSpare && reservation.vehicle?.remarks && reservation.vehicle.remarks.trim() !== '') {
+        // For TBD spares, the warning will be shown when a vehicle is selected.
+        //
+        // OPT-011: only when the remark differs from the one confirmed at this
+        // vehicle's last pickup. An unchanged note is still on screen; it just
+        // no longer costs a click on every one of the ~50 pickups a day.
+        if (!isTBDSpare && needsRemarkConfirmation(reservation.vehicle)) {
           setRemarksWarningOpen(true);
+        } else if (!isTBDSpare && hasRemarks(reservation.vehicle)) {
+          // Already confirmed once for this exact text - no question, but the
+          // banner must not look unread.
+          setRemarksAcknowledged(true);
         }
         
         // If reservation already has a contract number, use it
@@ -255,10 +264,12 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       setRemarksAcknowledged(false);
       // Close any existing warning dialog first
       setRemarksWarningOpen(false);
-      // If the new vehicle has remarks, show the warning after a short delay
-      // (to ensure state has been cleared first)
-      if (selectedVehicle.remarks && selectedVehicle.remarks.trim() !== '') {
+      // If the new vehicle has a remark nobody has confirmed yet, show the
+      // warning after a short delay (to ensure state has been cleared first).
+      if (needsRemarkConfirmation(selectedVehicle)) {
         setTimeout(() => setRemarksWarningOpen(true), 0);
+      } else if (hasRemarks(selectedVehicle)) {
+        setRemarksAcknowledged(true);
       }
     } else if (isTBDSpare && !selectedVehicle) {
       // No vehicle selected - reset states
@@ -386,7 +397,9 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
     // For TBD spare, check the selected vehicle's remarks
     // For regular reservations, check the reservation's vehicle remarks
     const vehicleToCheck = isTBDSpare ? selectedVehicle : reservation.vehicle;
-    const vehicleHasRemarks = vehicleToCheck?.remarks && vehicleToCheck.remarks.trim() !== '';
+    // OPT-011: the gate is "this remark has not been confirmed", not "this
+    // vehicle has ever had a remark".
+    const vehicleHasRemarks = needsRemarkConfirmation(vehicleToCheck);
     if (vehicleHasRemarks && !remarksAcknowledged) {
       // Show the remarks warning dialog
       setRemarksWarningOpen(true);

@@ -239,6 +239,13 @@ export const vehicles = pgTable("vehicles", {
   spareKeyWithCustomer: boolean("spare_key_with_customer"), // Is the spare key currently with a customer?
   spareKeyCustomerName: text("spare_key_customer_name"), // Name of customer who has the spare key
   remarks: text("remarks"),
+  // OPT-011 - the remark text that was on this vehicle at its last completed
+  // pickup, and who confirmed it. A warning that fires on every single pickup
+  // of every car that has ever had a note is not a warning any more; the
+  // employee is asked again only when the text has changed since then.
+  remarksConfirmedText: text("remarks_confirmed_text"),
+  remarksConfirmedAt: timestamp("remarks_confirmed_at"),
+  remarksConfirmedBy: text("remarks_confirmed_by"),
   winterTires: boolean("winter_tires"),
   tireSize: text("tire_size"),
   wokNotification: boolean("wok_notification"),
@@ -369,6 +376,12 @@ export const insertVehicleSchema = createInsertSchema(vehicles).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  // OPT-011 - server-owned bookkeeping: which remark text was in force at the
+  // last pickup. It is written by the pickup route, never by a request body,
+  // so a PATCH cannot silence the warning for a remark that was never read.
+  remarksConfirmedText: true,
+  remarksConfirmedAt: true,
+  remarksConfirmedBy: true,
   // No longer omit these fields so they can be set during insert/update
   // createdBy: true,
   // updatedBy: true,

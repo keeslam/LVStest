@@ -5385,6 +5385,27 @@
         "default": null
       },
       {
+        "name": "remarks_confirmed_text",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "remarks_confirmed_at",
+        "type": "timestamp",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "remarks_confirmed_by",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
         "name": "winter_tires",
         "type": "boolean",
         "notNull": false,

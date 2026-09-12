@@ -52,6 +52,7 @@ import {
   DAMAGE_CHECK_FIELDS_KEY,
 } from "../shared/schema";
 import { getTransportSpareStatus } from "../shared/transport-spare-status";
+import { hasRemarks } from "../shared/remark-confirmation";
 import multer from "multer";
 import { setupAuth, hashPassword, comparePasswords } from "./auth";
 import { backupService } from "./backupService";
@@ -4576,6 +4577,23 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       if (!updatedReservation) {
         return res.status(404).json({ message: "Reservation not found" });
+      }
+
+      // OPT-011 - record which remark text was in force when this vehicle
+      // actually left the yard. The next pickup compares against this, so an
+      // unchanged note no longer demands a click and a changed one does.
+      // Best effort: a bookkeeping write must not fail a completed handover.
+      try {
+        const pickedUpVehicle = updatedReservation.vehicle;
+        if (pickedUpVehicle && hasRemarks(pickedUpVehicle)) {
+          await storage.updateVehicle(pickedUpVehicle.id, {
+            remarksConfirmedText: pickedUpVehicle.remarks,
+            remarksConfirmedAt: new Date(),
+            remarksConfirmedBy: (req as any).user?.username ?? null,
+          } as any);
+        }
+      } catch (remarkError) {
+        console.error("Warning: failed to record the confirmed vehicle remarks:", remarkError);
       }
 
       // Auto-clear contract number override if this contract number matches the override
