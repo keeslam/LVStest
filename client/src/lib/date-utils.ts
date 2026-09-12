@@ -1,4 +1,6 @@
-import { format, parseISO, addDays, startOfWeek, endOfWeek, isAfter, isBefore, differenceInDays, isValid } from 'date-fns';
+import { parseISO, addDays, startOfWeek, endOfWeek, isAfter, isBefore, differenceInDays, isValid } from 'date-fns';
+// BUG-223: Dutch dates on a Dutch screen (see format-date-nl.ts).
+import { formatNl as format } from '@/lib/format-date-nl';
 
 /**
  * Get color class based on urgency (days until expiration)
@@ -80,7 +82,8 @@ export function getDaysUntil(dateStr: string | null | undefined): number {
  * Format a date range
  */
 export function formatDateRange(startDate: Date, endDate: Date): string {
-  return `${format(startDate, "MMMM d")} - ${format(endDate, "d, yyyy")}`;
+  // BUG-223: was "MMMM d" + "d, yyyy" — month before day, in English.
+  return `${format(startDate, "d MMMM")} - ${format(endDate, "d MMMM yyyy")}`;
 }
 
 /**

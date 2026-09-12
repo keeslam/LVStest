@@ -82,3 +82,22 @@ export function formatDateRangeNl(
 ): string {
   return `${formatDateNl(from, pattern)} – ${formatDateNl(to, pattern)}`;
 }
+
+/**
+ * A drop-in replacement for `date-fns`' `format` that is Dutch by default.
+ *
+ * Wave 9 (BUG-223): eleven screens called `format(date, 'MMM d, yyyy')`
+ * directly, which is `en-US` — "Sep 11, 2026" in a Dutch rental
+ * administration. Importing this as `format` makes every call in a file Dutch
+ * without touching the call sites, and a caller that really wants another
+ * locale can still pass one.
+ */
+export function formatNl(
+  value: Date | number | string,
+  pattern: string,
+  options?: Parameters<typeof format>[2],
+): string {
+  const date = typeof value === "string" ? toDate(value) : value;
+  if (date === null || date === undefined) return EMPTY_DATE;
+  return format(date, pattern, { locale: nl, ...(options ?? {}) });
+}

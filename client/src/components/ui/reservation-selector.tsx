@@ -19,7 +19,10 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { format, parseISO } from "date-fns";
+import { parseISO } from "date-fns";
+// BUG-223: Dutch dates on a Dutch screen — formatNl is date-fns' format
+// with the nl locale applied, so every call below writes "11 sep 2026".
+import { formatNl as format } from "@/lib/format-date-nl";
 
 interface ReservationSelectorProps {
   reservations: Reservation[];
@@ -98,7 +101,7 @@ export function ReservationSelector({
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return '';
     try {
-      return format(parseISO(dateStr), 'MMM d');
+      return format(parseISO(dateStr), 'd MMM');
     } catch {
       return '';
     }

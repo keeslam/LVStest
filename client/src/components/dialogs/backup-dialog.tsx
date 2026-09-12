@@ -462,9 +462,10 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     if (!dateString) return t('backupDialog.never');
     const date = new Date(dateString);
     if (Number.isNaN(date.getTime())) return t('backupDialog.unknownDate');
-    return date.toLocaleString('en-US', {
-      month: 'short',
+    // BUG-223: this was 'en-US' — "Sep 11, 2026, 12:54 AM" on a Dutch screen.
+    return date.toLocaleString('nl-NL', {
       day: 'numeric',
+      month: 'short',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'

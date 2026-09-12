@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { formatDate, formatCurrency, formatLicensePlate, formatReservationStatus } from "@/lib/format-utils";
+import { formatDate, formatCurrency, formatLicensePlate, formatReservationStatus, formatFuelLevel } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { Reservation, Vehicle, Customer, Driver, Document } from "@shared/schema";
 import { BarcodeSvg } from "@/components/barcodes/barcode-svg";
@@ -784,13 +784,13 @@ export function ReservationViewDialog({
                       {reservation.fuelLevelPickup && (
                         <div>
                           <p className="text-xs text-blue-600 font-medium">{t('viewDialog.fuelAtPickupLabel')}</p>
-                          <p className="text-sm font-semibold text-blue-900 mt-1">{reservation.fuelLevelPickup}</p>
+                          <p className="text-sm font-semibold text-blue-900 mt-1">{formatFuelLevel(reservation.fuelLevelPickup)}</p>
                         </div>
                       )}
                       {reservation.fuelLevelReturn && (
                         <div>
                           <p className="text-xs text-blue-600 font-medium">{t('viewDialog.fuelAtReturnLabel')}</p>
-                          <p className="text-sm font-semibold text-blue-900 mt-1">{reservation.fuelLevelReturn}</p>
+                          <p className="text-sm font-semibold text-blue-900 mt-1">{formatFuelLevel(reservation.fuelLevelReturn)}</p>
                         </div>
                       )}
                       {reservation.fuelCost && (

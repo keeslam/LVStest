@@ -21,8 +21,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+// BUG-223: Dutch dates on a Dutch screen — formatNl is date-fns' format
+// with the nl locale applied, so every call below writes "11 sep 2026".
+import { formatNl as format } from "@/lib/format-date-nl";
 import {
-  format,
   addMonths,
   subMonths,
   startOfMonth,
@@ -567,10 +569,10 @@ export function ReservationCalendar() {
                                     <div>
                                       <div className="grid grid-cols-2 gap-2 text-xs">
                                         <div>
-                                          <span className="text-gray-500">{t('reservationCalendar.start')}</span> {res.startDate ? safeFormat(safeParseDateISO(res.startDate), 'MMM d, yyyy', t('reservationCalendar.invalidDate')) : t('reservationCalendar.notSet')}
+                                          <span className="text-gray-500">{t('reservationCalendar.start')}</span> {res.startDate ? safeFormat(safeParseDateISO(res.startDate), 'd MMM yyyy', t('reservationCalendar.invalidDate')) : t('reservationCalendar.notSet')}
                                         </div>
                                         <div>
-                                          <span className="text-gray-500">{t('reservationCalendar.end')}</span> {res.endDate ? safeFormat(safeParseDateISO(res.endDate), 'MMM d, yyyy', t('reservationCalendar.invalidDate')) : t('reservationCalendar.openEnded')}
+                                          <span className="text-gray-500">{t('reservationCalendar.end')}</span> {res.endDate ? safeFormat(safeParseDateISO(res.endDate), 'd MMM yyyy', t('reservationCalendar.invalidDate')) : t('reservationCalendar.openEnded')}
                                         </div>
                                         <div className="col-span-2">
                                           <span className="text-gray-500">{t('reservationCalendar.duration')}</span> {t('reservationCalendar.day', { count: rentalDuration })}
@@ -763,11 +765,11 @@ export function ReservationCalendar() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div>
                     <label className="text-xs font-medium text-gray-500 uppercase">{t('reservationCalendar.startDate')}</label>
-                    <p className="text-sm font-medium mt-1">{selectedReservation.startDate ? safeFormat(safeParseDateISO(selectedReservation.startDate), 'MMM d, yyyy', t('reservationCalendar.invalid')) : t('reservationCalendar.notSet')}</p>
+                    <p className="text-sm font-medium mt-1">{selectedReservation.startDate ? safeFormat(safeParseDateISO(selectedReservation.startDate), 'd MMM yyyy', t('reservationCalendar.invalid')) : t('reservationCalendar.notSet')}</p>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-500 uppercase">{t('reservationCalendar.endDate')}</label>
-                    <p className="text-sm font-medium mt-1">{selectedReservation.endDate ? safeFormat(safeParseDateISO(selectedReservation.endDate), 'MMM d, yyyy', t('reservationCalendar.openEnded')) : t('reservationCalendar.openEnded')}</p>
+                    <p className="text-sm font-medium mt-1">{selectedReservation.endDate ? safeFormat(safeParseDateISO(selectedReservation.endDate), 'd MMM yyyy', t('reservationCalendar.openEnded')) : t('reservationCalendar.openEnded')}</p>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-500 uppercase">{t('reservationCalendar.duration')}</label>

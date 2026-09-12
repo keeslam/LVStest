@@ -102,3 +102,45 @@ describe("FIX-S — reservation bucketing (BUG-228)", () => {
     expect(dayKey(new Date(2026, 11, 31, 23, 30))).toBe("2026-12-31");
   });
 });
+
+/**
+ * Wave 9 — the BUG-223 remainder. Wave 4 gave the app one Dutch wrapper;
+ * eleven screens still called `date-fns` `format()` (and `safeFormatDate`)
+ * directly, which is `en-US`, and their patterns were month-first. Both halves
+ * are asserted here: the language and the order.
+ */
+describe("BUG-223 — the screens that formatted their own dates", () => {
+  it("formatNl writes Dutch month names for a caller that passes its own pattern", async () => {
+    const { formatNl } = await import("../format-date-nl");
+
+    expect(formatNl(new Date(2026, 8, 11), "d MMM yyyy")).toBe("11 sep. 2026");
+    expect(formatNl(new Date(2026, 8, 11), "d MMMM yyyy")).toBe("11 september 2026");
+    // The shape the audit reported — "Sep 11, 2026" — cannot come out of it.
+    expect(formatNl(new Date(2026, 8, 11), "d MMM yyyy")).not.toMatch(/Sep/);
+  });
+
+  it("formatNl accepts the ISO strings the API returns, and never throws", async () => {
+    const { formatNl, EMPTY_DATE } = await import("../format-date-nl");
+
+    expect(formatNl("2026-09-11", "d MMM yyyy")).toBe("11 sep. 2026");
+    expect(formatNl("not-a-date", "d MMM yyyy")).toBe(EMPTY_DATE);
+  });
+
+  it("safeFormatDate is Dutch too, so the date on a reservation row is not American", async () => {
+    const { safeFormatDate } = await import("../safe-date");
+
+    expect(safeFormatDate("2026-09-11", "d MMM yyyy")).toBe("11 sep. 2026");
+    expect(safeFormatDate("2026-09-11", "EEEE d MMMM yyyy")).toBe("vrijdag 11 september 2026");
+    // Still never throws — that is BUG-201's guarantee and it must survive.
+    expect(() => safeFormatDate(undefined, "d MMM yyyy")).not.toThrow();
+  });
+
+  it("formatFuelLevel says 'Vol' and 'Leeg', and leaves the fractions alone", async () => {
+    const { formatFuelLevel } = await import("../format-utils");
+
+    expect(formatFuelLevel("Full")).toBe("Vol");
+    expect(formatFuelLevel("Empty")).toBe("Leeg");
+    expect(formatFuelLevel("3/4")).toBe("3/4");
+    expect(formatFuelLevel(null)).toBe("");
+  });
+});

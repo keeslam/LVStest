@@ -2,7 +2,7 @@ import { formatDateNl } from '@/lib/format-date-nl';
 import i18n from '@/i18n';
 
 /**
- * BUG-223 — this used to be `format(date, 'MMM dd, yyyy')` with no locale, so
+ * BUG-223 — this used to be `format(date, 'd MMM yyyy')` with no locale, so
  * every screen that shows a date showed an American one ("Sep 11, 2026"). In a
  * rental administration month-before-day is genuinely misread. One wrapper now
  * owns the format, and an unreadable value renders as an en dash instead of the
@@ -101,6 +101,20 @@ export function formatReservationStatus(status: string): string {
   const normalizedKey = key === 'pending' ? 'scheduled' : key === 'confirmed' ? 'active' : key;
   const fallback = status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   return i18n.t(`reservations:detailsPage.statusLabels.${normalizedKey}`, { defaultValue: fallback });
+}
+
+/**
+ * BUG-223 — the reservation details dialog printed the stored fuel level as it
+ * is in the database ("Full", "Empty"), so a Dutch screen said "Full" next to
+ * "Brandstofniveau bij ophalen". The fractions ("3/4") are language-neutral and
+ * stay as they are; only the two words have a Dutch reading.
+ */
+export function formatFuelLevel(level: string | null | undefined): string {
+  if (!level) return "";
+  const key = level.trim().toLowerCase();
+  if (key === "full") return i18n.t("reservations:pickupReturn.common.fuelFull", { defaultValue: level });
+  if (key === "empty") return i18n.t("reservations:pickupReturn.common.fuelEmpty", { defaultValue: level });
+  return level;
 }
 
 /**

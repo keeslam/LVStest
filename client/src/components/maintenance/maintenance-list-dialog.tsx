@@ -32,7 +32,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { format, parseISO, differenceInDays } from "date-fns";
+import { parseISO, differenceInDays } from "date-fns";
+// BUG-223: Dutch dates on a Dutch screen — formatNl is date-fns' format
+// with the nl locale applied, so every call below writes "11 sep 2026".
+import { formatNl as format } from "@/lib/format-date-nl";
 import { 
   AlertTriangle, 
   Shield, 

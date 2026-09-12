@@ -20,7 +20,10 @@ import { Vehicle, Expense, Reservation, Customer, VehicleTransport } from "@shar
 import { formatDate, formatCurrency, formatLicensePlate, sumMoney, plateMatches } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { isTrueValue } from "@/lib/utils";
-import { addDays, format, subMonths, subDays, startOfMonth, endOfMonth, isWithinInterval, differenceInDays, parseISO, startOfDay } from "date-fns";
+import { addDays, subMonths, subDays, startOfMonth, endOfMonth, isWithinInterval, differenceInDays, parseISO, startOfDay } from "date-fns";
+// BUG-223: Dutch dates on a Dutch screen — formatNl is date-fns' format
+// with the nl locale applied, so every call below writes "11 sep 2026".
+import { formatNl as format } from "@/lib/format-date-nl";
 import { 
   Calendar, Download, FileText, TrendingUp, Car, Settings, User, 
   DollarSign, AlertTriangle, Printer, Search, ExternalLink, Database, LineChart, X

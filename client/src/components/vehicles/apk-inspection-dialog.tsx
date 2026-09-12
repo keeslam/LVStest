@@ -8,7 +8,10 @@ import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Vehicle, Reservation } from "@shared/schema";
 import { formatLicensePlate } from "@/lib/format-utils";
-import { format, addDays, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, startOfWeek, endOfWeek } from "date-fns";
+import { addDays, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, startOfWeek, endOfWeek } from "date-fns";
+// BUG-223: Dutch dates on a Dutch screen — formatNl is date-fns' format
+// with the nl locale applied, so every call below writes "11 sep 2026".
+import { formatNl as format } from "@/lib/format-date-nl";
 
 import {
   Dialog,
@@ -361,7 +364,7 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-sm">
-                      {t('apkInspectionDialog.scheduledFor', { date: format(selectedDate, 'MMMM d, yyyy') })}
+                      {t('apkInspectionDialog.scheduledFor', { date: format(selectedDate, 'd MMMM yyyy') })}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -485,8 +488,8 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
                                 </p>
                                 <p className="text-orange-700 text-xs">
                                   {t('apkInspectionDialog.rentalLabel', {
-                                    start: format(parseISO(conflictingRental.startDate), 'MMM d, yyyy'),
-                                    end: conflictingRental.endDate ? format(parseISO(conflictingRental.endDate), 'MMM d, yyyy') : t('apkInspectionDialog.openEnded'),
+                                    start: format(parseISO(conflictingRental.startDate), 'd MMM yyyy'),
+                                    end: conflictingRental.endDate ? format(parseISO(conflictingRental.endDate), 'd MMM yyyy') : t('apkInspectionDialog.openEnded'),
                                   })}
                                 </p>
                               </div>
@@ -541,7 +544,7 @@ export function ApkInspectionDialog({ open, onOpenChange, vehicle, onSuccess }: 
                           {t('apkInspectionDialog.vehicleLabelPrefix')} <strong>{vehicle.brand} {vehicle.model}</strong> ({formatLicensePlate(vehicle.licensePlate)})
                         </p>
                         <p className="text-blue-700">
-                          {t('apkInspectionDialog.currentApkDateLabelPrefix')} <strong>{vehicle.apkDate ? format(parseISO(vehicle.apkDate), 'MMM d, yyyy') : t('apkInspectionDialog.notSet')}</strong>
+                          {t('apkInspectionDialog.currentApkDateLabelPrefix')} <strong>{vehicle.apkDate ? format(parseISO(vehicle.apkDate), 'd MMM yyyy') : t('apkInspectionDialog.notSet')}</strong>
                         </p>
                       </div>
                     </div>

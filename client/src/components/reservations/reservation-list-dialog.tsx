@@ -30,7 +30,10 @@ import { apiRequest, queryClient, invalidateRelatedQueries , invalidateByPrefix 
 import { Reservation, Vehicle } from "@shared/schema";
 import { formatLicensePlate, formatCurrency, plateMatches } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
-import { format, parseISO, differenceInDays } from "date-fns";
+import { parseISO, differenceInDays } from "date-fns";
+// BUG-223: Dutch dates on a Dutch screen — formatNl is date-fns' format
+// with the nl locale applied, so every call below writes "11 sep 2026".
+import { formatNl as format } from "@/lib/format-date-nl";
 
 interface ReservationListDialogProps {
   open: boolean;
@@ -330,11 +333,11 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
           <div className="text-xs">
             <div className="flex items-center gap-1">
               <span className="text-gray-500">{t('listDialog.outLabel')}</span>
-              <span className="font-medium">{reservation.startDate ? format(parseISO(reservation.startDate), 'dd MMM yy') : '-'}</span>
+              <span className="font-medium">{reservation.startDate ? format(parseISO(reservation.startDate), 'd MMM yyyy') : '-'}</span>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-gray-500">{t('listDialog.inLabel')}</span>
-              <span className="font-medium">{reservation.endDate ? format(parseISO(reservation.endDate), 'dd MMM yy') : '-'}</span>
+              <span className="font-medium">{reservation.endDate ? format(parseISO(reservation.endDate), 'd MMM yyyy') : '-'}</span>
               {duration && <span className="text-gray-400">({duration})</span>}
             </div>
           </div>
@@ -529,7 +532,7 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
                                     )}
                                     <span className="flex items-center gap-1">
                                       <Calendar className="h-3 w-3" />
-                                      {t('listDialog.dueLabel', { date: reservation.endDate ? format(parseISO(reservation.endDate), 'MMM d') : 'N/A' })}
+                                      {t('listDialog.dueLabel', { date: reservation.endDate ? format(parseISO(reservation.endDate), 'd MMM') : 'N/A' })}
                                     </span>
                                   </div>
                                 </div>

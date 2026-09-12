@@ -8,13 +8,16 @@
  * whole reservations page — a white screen, every time that row was in range.
  *
  * `safeFormatDate` is the one call that cannot throw: bad input renders as an
- * en dash. It keeps the caller's pattern as-is; *which* pattern and which
- * language a screen should use is BUG-223 (see `format-date-nl.ts`), a
- * separate change.
+ * en dash. It keeps the caller's pattern as-is, but it no longer keeps the
+ * caller's language: wave 9 gave it the Dutch locale (BUG-223), so a screen
+ * that asks for `MMM` gets "mrt" and not "Mar". Which *pattern* a screen uses
+ * is still the screen's own business — `format-date-nl.ts` holds the house
+ * patterns for the ones that were written month-first.
  *
  * Dependency-free apart from date-fns, so it is unit-testable without a DOM.
  */
 import { format, parseISO, isValid } from "date-fns";
+import { nl } from "date-fns/locale";
 
 /** What a date that cannot be read renders as. Never "Invalid date". */
 export const EMPTY_DATE = "–";
@@ -51,7 +54,9 @@ export function safeFormatDate(
   const date = toSafeDate(value);
   if (!date) return fallback;
   try {
-    return format(date, pattern);
+    // BUG-223: without a locale date-fns falls back to en-US, which is how a
+    // Dutch rental administration ended up showing "Sep 11, 2026".
+    return format(date, pattern, { locale: nl });
   } catch {
     return fallback;
   }

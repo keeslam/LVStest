@@ -1,6 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { format, addDays, subDays, addWeeks, isSameDay, parseISO, startOfMonth, endOfMonth, getDate, getDay, getMonth, getYear, isSameMonth, addMonths, subMonths, startOfDay, endOfDay, isBefore, isAfter, differenceInDays, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
+import { addDays, subDays, addWeeks, isSameDay, parseISO, startOfMonth, endOfMonth, getDate, getDay, getMonth, getYear, isSameMonth, addMonths, subMonths, startOfDay, endOfDay, isBefore, isAfter, differenceInDays, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
+// BUG-223: Dutch dates on a Dutch screen — formatNl is date-fns' format
+// with the nl locale applied, so every call below writes "11 sep 2026".
+import { formatNl as format } from "@/lib/format-date-nl";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1474,7 +1477,7 @@ export default function MaintenanceCalendar() {
       }}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{t('calendarPage.dayDialog.title', { date: selectedDay ? safeFormat(selectedDay, 'MMMM d, yyyy', t('calendarPage.dayDialog.selectedDayFallback')) : t('calendarPage.dayDialog.dayFallback') })}</DialogTitle>
+            <DialogTitle>{t('calendarPage.dayDialog.title', { date: selectedDay ? safeFormat(selectedDay, 'd MMMM yyyy', t('calendarPage.dayDialog.selectedDayFallback')) : t('calendarPage.dayDialog.dayFallback') })}</DialogTitle>
             <DialogDescription>
               {t('calendarPage.dayDialog.description')}
             </DialogDescription>
@@ -1875,7 +1878,7 @@ export default function MaintenanceCalendar() {
                     {vehicle.apkDate && (
                       <div className="flex items-center">
                         <span className="text-muted-foreground mr-1">{t('calendarPage.completeMaintenanceDialog.currentApkLabel')}</span>
-                        <span className="font-medium">{format(parseISO(vehicle.apkDate), 'MMM d, yyyy')}</span>
+                        <span className="font-medium">{format(parseISO(vehicle.apkDate), 'd MMM yyyy')}</span>
                       </div>
                     )}
                   </div>
@@ -2160,7 +2163,7 @@ export default function MaintenanceCalendar() {
                               </Badge>
                             </div>
                             <p className="text-sm text-gray-600">
-                              {t('calendarPage.completedHistoryDialog.completedLabel', { date: format(parseISO(maintenance.startDate), 'MMM d, yyyy') })}
+                              {t('calendarPage.completedHistoryDialog.completedLabel', { date: format(parseISO(maintenance.startDate), 'd MMM yyyy') })}
                             </p>
                             {maintenanceDetails && (
                               <p className="text-sm mt-2 text-gray-700">{maintenanceDetails}</p>

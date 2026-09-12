@@ -3,7 +3,10 @@ import { bucketByVehicleAndDay, cellKey, type BucketableReservation } from "@/li
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { safeFormatDate } from "@/lib/safe-date";
-import { format, addDays, subDays, isSameDay, parseISO, startOfMonth, endOfMonth, getDate, getDay, getMonth, getYear, isSameMonth, addMonths, startOfDay, endOfDay, isBefore, isAfter, differenceInDays, startOfWeek, endOfWeek } from "date-fns";
+import { addDays, subDays, isSameDay, parseISO, startOfMonth, endOfMonth, getDate, getDay, getMonth, getYear, isSameMonth, addMonths, startOfDay, endOfDay, isBefore, isAfter, differenceInDays, startOfWeek, endOfWeek } from "date-fns";
+// BUG-223: Dutch dates on a Dutch screen — formatNl is date-fns' format
+// with the nl locale applied, so every call below writes "11 sep 2026".
+import { formatNl as format } from "@/lib/format-date-nl";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +58,7 @@ import { UserPermission, UserRole } from "@shared/schema";
 import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
 import { ColorCodingDialog } from "@/components/calendar/color-coding-dialog";
 import { CalendarLegend } from "@/components/calendar/calendar-legend";
-import { formatReservationStatus } from "@/lib/format-utils";
+import { formatReservationStatus, formatFuelLevel } from "@/lib/format-utils";
 import { formatCurrency } from "@/lib/utils";
 import { getCustomReservationStyle, getCustomReservationStyleObject, getCustomIndicatorStyle, getCustomTBDStyle } from "@/lib/calendar-styling";
 import { Calendar, User, Car, CreditCard, Edit, Eye, ClipboardEdit, Palette, Trash2, Wrench, ClipboardCheck, Mail, Search, FileText, Building, MapPin, Clock, History, AlertTriangle, Phone, RotateCcw, Printer } from "lucide-react";
@@ -402,7 +405,7 @@ export default function ReservationCalendarPage() {
       
       toast({
         title: t('common:status.success'),
-        description: t('calendarPage.reservationMovedDescription', { date: safeFormatDate(newStartDate, 'MMM d, yyyy') }),
+        description: t('calendarPage.reservationMovedDescription', { date: safeFormatDate(newStartDate, 'd MMM yyyy') }),
       });
     } catch (error) {
       console.error('Error moving reservation:', error);
@@ -1608,10 +1611,10 @@ export default function ReservationCalendarPage() {
                                       <div>
                                         <div className="grid grid-cols-2 gap-2 text-xs">
                                           <div>
-                                            <span className="text-gray-500">{t('calendarPage.hoverCard.startColonLabel')}</span> {startDate ? format(startDate, 'MMM d, yyyy') : t('calendarPage.invalidDate')}
+                                            <span className="text-gray-500">{t('calendarPage.hoverCard.startColonLabel')}</span> {startDate ? format(startDate, 'd MMM yyyy') : t('calendarPage.invalidDate')}
                                           </div>
                                           <div>
-                                            <span className="text-gray-500">{t('calendarPage.hoverCard.endColonLabel')}</span> {endDate ? format(endDate, 'MMM d, yyyy') : t('vehicleReservationsStatusDialog.openEnded')}
+                                            <span className="text-gray-500">{t('calendarPage.hoverCard.endColonLabel')}</span> {endDate ? format(endDate, 'd MMM yyyy') : t('vehicleReservationsStatusDialog.openEnded')}
                                           </div>
                                           <div className="col-span-2">
                                             <span className="text-gray-500">{t('calendarPage.hoverCard.durationColonLabel')}</span> {t('form.dayCount', { count: rentalDuration })}
@@ -2130,13 +2133,13 @@ export default function ReservationCalendarPage() {
                     {selectedReservation.fuelLevelPickup && (
                       <div>
                         <p className="text-[10px] text-blue-600 font-medium">{t('form.pickupLabel')}</p>
-                        <p className="text-xs font-semibold text-blue-900 mt-0.5">{selectedReservation.fuelLevelPickup}</p>
+                        <p className="text-xs font-semibold text-blue-900 mt-0.5">{formatFuelLevel(selectedReservation.fuelLevelPickup)}</p>
                       </div>
                     )}
                     {selectedReservation.fuelLevelReturn && (
                       <div>
                         <p className="text-[10px] text-blue-600 font-medium">{t('form.returnLabel')}</p>
-                        <p className="text-xs font-semibold text-blue-900 mt-0.5">{selectedReservation.fuelLevelReturn}</p>
+                        <p className="text-xs font-semibold text-blue-900 mt-0.5">{formatFuelLevel(selectedReservation.fuelLevelReturn)}</p>
                       </div>
                     )}
                     {selectedReservation.fuelCost && (
@@ -2819,7 +2822,7 @@ export default function ReservationCalendarPage() {
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {t('calendarPage.dayDialog.title', { date: selectedDay ? format(selectedDay, 'EEEE, MMMM d, yyyy') : '' })}
+              {t('calendarPage.dayDialog.title', { date: selectedDay ? format(selectedDay, 'EEEE d MMMM yyyy') : '' })}
             </DialogTitle>
             <DialogDescription>
               {selectedDay ?
@@ -2947,7 +2950,7 @@ export default function ReservationCalendarPage() {
                         ) : null;
                       })()}
                       <div>
-                        <span className="font-medium">{t('calendarPage.dayDialog.periodColonLabel')}</span> {startDate ? format(startDate, 'MMM d') : t('calendarPage.invalidDate')} → {endDate ? format(endDate, 'MMM d') : t('calendarPage.dayDialog.openShort')}
+                        <span className="font-medium">{t('calendarPage.dayDialog.periodColonLabel')}</span> {startDate ? format(startDate, 'd MMM') : t('calendarPage.invalidDate')} → {endDate ? format(endDate, 'd MMM') : t('calendarPage.dayDialog.openShort')}
                       </div>
                       {reservation.type !== 'replacement' && (
                         <div>
@@ -2981,7 +2984,7 @@ export default function ReservationCalendarPage() {
           <DialogHeader>
             <DialogTitle>{t('addDialog.newReservation')}</DialogTitle>
             <DialogDescription>
-              {t('calendarPage.newReservationForDate', { date: selectedDate ? safeFormatDate(selectedDate, 'MMMM d, yyyy', t('calendarPage.selectedDateFallback')) : t('calendarPage.selectedDateFallback') })}
+              {t('calendarPage.newReservationForDate', { date: selectedDate ? safeFormatDate(selectedDate, 'd MMMM yyyy', t('calendarPage.selectedDateFallback')) : t('calendarPage.selectedDateFallback') })}
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4">
@@ -3213,7 +3216,7 @@ export default function ReservationCalendarPage() {
                               </Badge>
                             </div>
                             <p className="text-sm text-gray-600">
-                              {safeFormatDate(rental.startDate, 'MMM d, yyyy')} - {rental.endDate ? safeFormatDate(rental.endDate, 'MMM d, yyyy') : t('indexPage.tbdDate')}
+                              {safeFormatDate(rental.startDate, 'd MMM yyyy')} - {rental.endDate ? safeFormatDate(rental.endDate, 'd MMM yyyy') : t('indexPage.tbdDate')}
                             </p>
 
                             {/* Mileage and Fuel Information */}
@@ -3430,7 +3433,7 @@ export default function ReservationCalendarPage() {
                     <div className="flex items-center gap-2 text-sm">
                       <Calendar className="h-3 w-3 text-muted-foreground" />
                       <span className="text-muted-foreground">
-                        {t('indexPage.shouldHaveReturnedLabel', { date: reservation.endDate ? safeFormatDate(reservation.endDate, 'MMM d, yyyy', t('indexPage.notAvailable')) : t('indexPage.notAvailable') })}
+                        {t('indexPage.shouldHaveReturnedLabel', { date: reservation.endDate ? safeFormatDate(reservation.endDate, 'd MMM yyyy', t('indexPage.notAvailable')) : t('indexPage.notAvailable') })}
                       </span>
                     </div>
                   </div>
@@ -3951,10 +3954,10 @@ export default function ReservationCalendarPage() {
                                       <span className="font-medium text-sm">{rental.customer?.companyName || rental.customer?.name || '-'}</span>
                                     </TableCell>
                                     <TableCell className="px-2 py-1 border-r text-sm whitespace-nowrap">
-                                      {safeFormatDate(rental.startDate, 'dd MMM yy', '-')}
+                                      {safeFormatDate(rental.startDate, 'd MMM yyyy', '-')}
                                     </TableCell>
                                     <TableCell className="px-2 py-1 border-r text-sm whitespace-nowrap">
-                                      {safeFormatDate(rental.endDate, 'dd MMM yy', '-')}
+                                      {safeFormatDate(rental.endDate, 'd MMM yyyy', '-')}
                                     </TableCell>
                                     <TableCell className="px-2 py-1 border-r whitespace-nowrap">
                                       {damageCheck ? (

@@ -34,7 +34,10 @@ import {
   Eye
 } from "lucide-react";
 import { displayLicensePlate } from "@/lib/utils";
-import { format, parseISO } from "date-fns";
+import { parseISO } from "date-fns";
+// BUG-223: Dutch dates on a Dutch screen — formatNl is date-fns' format
+// with the nl locale applied, so every call below writes "11 sep 2026".
+import { formatNl as format } from "@/lib/format-date-nl";
 import { useState } from "react";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
@@ -404,13 +407,13 @@ export function MaintenanceViewDialog({
               <div>
                 <label className="text-xs font-medium text-muted-foreground">{t('viewDialog.startDate')}</label>
                 <div className="text-sm font-medium mt-1">
-                  {format(new Date(reservation.startDate), 'MMM dd, yyyy')}
+                  {format(new Date(reservation.startDate), 'd MMM yyyy')}
                 </div>
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">{t('viewDialog.endDate')}</label>
                 <div className="text-sm font-medium mt-1">
-                  {reservation.endDate ? format(new Date(reservation.endDate), 'MMM dd, yyyy') : t('viewDialog.notSet')}
+                  {reservation.endDate ? format(new Date(reservation.endDate), 'd MMM yyyy') : t('viewDialog.notSet')}
                 </div>
               </div>
               <div>
@@ -540,8 +543,8 @@ export function MaintenanceViewDialog({
                           </div>
                           <div className="text-xs text-blue-700 dark:text-blue-300 mt-1">
                             {t('viewDialog.rentalRange', {
-                              start: format(new Date(rental.startDate), 'MMM dd, yyyy'),
-                              end: rental.endDate ? format(new Date(rental.endDate), 'MMM dd, yyyy') : t('viewDialog.open')
+                              start: format(new Date(rental.startDate), 'd MMM yyyy'),
+                              end: rental.endDate ? format(new Date(rental.endDate), 'd MMM yyyy') : t('viewDialog.open')
                             })}
                           </div>
                           {rentalCustomer?.phone && (

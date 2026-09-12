@@ -1,6 +1,8 @@
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { format } from "date-fns";
+// BUG-223: "Aug 11, 2026 - Sep 10, 2026" in the reports header was the audit's
+// own example. formatNl writes it as "11 aug 2026 - 10 sep 2026".
+import { formatNl as format } from "@/lib/format-date-nl";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { DateRange } from "react-day-picker";
 
@@ -48,11 +50,11 @@ export function DatePickerWithRange({
             {date?.from ? (
               date.to ? (
                 <>
-                  {format(date.from, "LLL dd, y")} -{" "}
-                  {format(date.to, "LLL dd, y")}
+                  {format(date.from, "d MMM yyyy")} -{" "}
+                  {format(date.to, "d MMM yyyy")}
                 </>
               ) : (
-                format(date.from, "LLL dd, y")
+                format(date.from, "d MMM yyyy")
               )
             ) : (
               <span>{t('datePicker.pickDateRange')}</span>
