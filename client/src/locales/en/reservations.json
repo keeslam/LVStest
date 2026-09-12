@@ -247,6 +247,19 @@
       "returnFailedTitle": "Return Failed",
       "processReturnFailedFallback": "Failed to process return. Please try again.",
       "returnMileageLessThanPickup": "Return mileage cannot be less than pickup mileage ({{km}} km)."
+    },
+    "handoverResult": {
+      "contractReadyTitle": "Contract ready",
+      "contractFailedTitle": "The contract could not be created",
+      "damageCheckReadyTitle": "Damage check ready",
+      "damageCheckFailedTitle": "The damage check could not be created",
+      "readyDescription": "{{fileName}} has been created. Print it or e-mail it to the customer right away.",
+      "failedDescription": "The handover was recorded, but the document was not created. Try again or check the templates.",
+      "print": "Print",
+      "email": "E-mail to customer",
+      "retry": "Try again",
+      "retrySucceeded": "The contract has been created after all",
+      "retryFailed": "The contract still could not be created"
     }
   },
   "addDialog": {

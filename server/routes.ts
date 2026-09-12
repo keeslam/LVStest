@@ -114,6 +114,11 @@ import {
 import { selectContractTemplate } from "./services/pdf-template-selection";
 import { buildDamageCheckReservationData } from "./services/damage-check-data";
 import { regenerateDocument } from "./services/document-regeneration";
+import {
+  generateContractForReservation,
+  generateContractById,
+  type ContractGenerationResult,
+} from "./services/contract-generation";
 import { BookingConflictError, warningsForVerdict, type BookingRequest, type BookabilityVerdict } from "./services/bookability";
 import { bookingWarningsFor, type BookingWarning } from "../shared/booking-warnings";
 import { reservationIsOld, verifyAdminPassword, authorizeMileageDecrease } from "./services/authorization";
@@ -4589,50 +4594,36 @@ export async function registerRoutes(app: Express): Promise<void> {
         // Don't fail the pickup if override clear fails
       }
 
-      let contractDocument = null;
+      // OPT-005: the contract is produced by the one shared code path
+      // (FIX-N/FIX-O picker + registry) and the *outcome* travels back with the
+      // response. The pickup itself has already happened and must not be undone
+      // by a template problem, so a failure is reported, not thrown - but it is
+      // reported, which is the whole point: the dialog used to say "Contract is
+      // gegenereerd" either way.
+      let contractDocument: Extract<ContractGenerationResult, { ok: true }>["document"] | null = null;
+      let contractError: string | null = null;
       try {
-        // FIX-N/FIX-O: the same picker and the same registry as every other
-        // contract endpoint. The legacy fixed-coordinate renderer that used to
-        // be the "built-in default" is gone (BUG-164): it never applied the
-        // 842-y flip, so every value it drew landed in the wrong box.
         const pickupTemplateId = templateId ? parseInt(String(templateId), 10) : undefined;
-        const pickupSelection = await selectContractTemplate(
-          Number.isInteger(pickupTemplateId as number) && (pickupTemplateId as number) > 0
-            ? (pickupTemplateId as number)
-            : undefined,
-        );
-
-        if (!pickupSelection.ok) {
-          console.warn(
-            `No usable contract template for reservation ${reservationId}: ${pickupSelection.message}`,
-          );
-        } else if (updatedReservation.vehicle) {
-          const { generateRentalContractFromTemplate } = await import('./utils/pdf-generator');
-          console.log(
-            `Generating contract for reservation ${reservationId} using template ${pickupSelection.template.id}`,
-          );
-          const contractPdf = await generateRentalContractFromTemplate(
-            updatedReservation,
-            pickupSelection.template,
-          );
-          contractDocument = await registerGeneratedDocument({
-            documentType: DOCUMENT_TYPE_CONTRACT_UNSIGNED,
-            bytes: contractPdf,
-            vehicleId: updatedReservation.vehicleId ?? null,
-            vehiclePlate: updatedReservation.vehicle.licensePlate,
-            reservationId: updatedReservation.id,
-            createdBy: (req as any).user?.username || 'system',
-            notes: `Contract generated at pickup of reservation #${reservationId}`,
-          });
-          console.log(`Contract document registered in database`);
+        const generated = await generateContractForReservation(updatedReservation, {
+          username: (req as any).user?.username,
+          templateId: pickupTemplateId,
+          notes: `Contract generated at pickup of reservation #${reservationId}`,
+        });
+        if (generated.ok) {
+          contractDocument = generated.document;
+        } else {
+          contractError = generated.message;
+          console.warn(`No contract for reservation ${reservationId}: ${generated.message}`);
         }
       } catch (pdfError) {
+        contractError = pdfError instanceof Error ? pdfError.message : "Contract generation failed";
         console.error("Error generating contract PDF:", pdfError);
       }
 
       res.json({
         ...updatedReservation,
-        contractDocument
+        contractDocument,
+        contractError,
       });
     } catch (error) {
       // FIX-H (besluiten B-03): the workshop refusal and the override rules
@@ -4658,6 +4649,42 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  /**
+   * OPT-005 - "Opnieuw proberen" from the pickup dialog. The pickup has already
+   * been recorded; only the contract failed, so this produces it again without
+   * making the employee redo the handover.
+   */
+  app.post("/api/reservations/:id/contract", hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
+    try {
+      const reservationId = parseInt(req.params.id);
+      if (isNaN(reservationId)) {
+        return res.status(400).json({ message: "Invalid reservation ID" });
+      }
+      const rawTemplateId = (req.body ?? {}).templateId;
+      let templateId: number | undefined;
+      if (rawTemplateId !== undefined && rawTemplateId !== null && rawTemplateId !== '') {
+        const parsed = parseInt(String(rawTemplateId), 10);
+        if (!Number.isInteger(parsed) || parsed <= 0) {
+          return res.status(400).json({ message: "Invalid template ID" });
+        }
+        templateId = parsed;
+      }
+
+      const result = await generateContractById(reservationId, {
+        username: (req as any).user?.username,
+        templateId,
+      });
+      if (!result.ok) {
+        return res.status(result.status).json({ message: result.message });
+      }
+      realtimeEvents.documents.created(result.document);
+      res.json({ contractDocument: result.document });
+    } catch (error) {
+      console.error("Error generating contract:", error);
+      res.status(500).json({ message: "Failed to generate the contract" });
     }
   });
 

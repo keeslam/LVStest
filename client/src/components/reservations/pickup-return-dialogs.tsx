@@ -19,6 +19,8 @@ import { Car, Fuel, Calendar, FileText, ClipboardCheck, ExternalLink, CheckCircl
 import { MileageOverridePasswordDialog } from "@/components/mileage-override-password-dialog";
 import InteractiveDamageCheck from "@/pages/interactive-damage-check";
 import { VehicleRemarksWarningDialog } from "@/components/vehicles/vehicle-remarks-warning-dialog";
+import { HandoverResultDialog, type HandoverDocumentKind } from "@/components/reservations/handover-result-dialog";
+import type { Document as StoredDocument } from "@shared/schema";
 
 interface PickupDialogProps {
   open: boolean;
@@ -69,6 +71,12 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
     uploadedPaperCheckIdsRef.current = [];
     setUploadedPaperCheckIds([]);
   };
+
+  // OPT-005: what the pickup produced, shown after the dialog closes.
+  const [handoverResult, setHandoverResult] = useState<{
+    document: StoredDocument | null;
+    errorMessage: string | null;
+  } | null>(null);
 
   // Vehicle remarks warning state - shown when vehicle has remarks before pickup
   const [remarksWarningOpen, setRemarksWarningOpen] = useState(false);
@@ -277,7 +285,16 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       lastPickupPayloadRef.current = data;
       return await apiRequest("POST", `/api/reservations/${reservation.id}/pickup`, data);
     },
-    onSuccess: async () => {
+    onSuccess: async (response: Response) => {
+      // OPT-005: the response says whether the contract exists. Read it before
+      // telling the employee anything, instead of the old unconditional
+      // "Contract is gegenereerd".
+      let body: { contractDocument?: StoredDocument | null; contractError?: string | null } = {};
+      try {
+        body = await response.clone().json();
+      } catch {
+        /* a body we cannot read is handled as "no contract" below */
+      }
       toast({
         title: t('pickupReturn.pickup.pickupCompletedTitle'),
         description: t('pickupReturn.pickup.pickupCompletedDescription'),
@@ -299,6 +316,13 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       
       // Then close the pickup dialog
       onOpenChange(false);
+
+      // OPT-005: ...and hand the contract over from here, rather than through
+      // close-reopen-scroll-expand-preview.
+      setHandoverResult({
+        document: body.contractDocument ?? null,
+        errorMessage: body.contractError ?? null,
+      });
     },
     onError: (error: any) => {
       if (error.requiresOverride) {
@@ -1162,6 +1186,20 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
         </DialogContent>
       </Dialog>
       
+      {/* OPT-005 - "Contract klaar" met Afdrukken / Mail naar klant, of
+          "Contract kon niet gemaakt worden" met Opnieuw proberen. */}
+      {handoverResult && (
+        <HandoverResultDialog
+          open
+          onOpenChange={(next) => { if (!next) setHandoverResult(null); }}
+          reservation={reservation}
+          document={handoverResult.document}
+          errorMessage={handoverResult.errorMessage}
+          kind={"contract" as HandoverDocumentKind}
+          onDone={() => setHandoverResult(null)}
+        />
+      )}
+
       {/* Vehicle Remarks Warning Dialog - shown when vehicle has remarks before pickup */}
       <VehicleRemarksWarningDialog
         open={remarksWarningOpen}
@@ -1258,6 +1296,11 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
     new Date().toISOString().split('T')[0]
   );
   const [returnNotes, setReturnNotes] = useState("");
+  // OPT-005: what the return produced, shown after the dialog closes.
+  const [handoverResult, setHandoverResult] = useState<{
+    document: StoredDocument | null;
+    errorMessage: string | null;
+  } | null>(null);
   const [damageCheckDialogOpen, setDamageCheckDialogOpen] = useState(false);
   const [editingDamageCheckId, setEditingDamageCheckId] = useState<number | null>(null);
   const [uploadingPaperDamageCheck, setUploadingPaperDamageCheck] = useState(false);
@@ -1354,7 +1397,15 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
     }) => {
       return await apiRequest("POST", `/api/reservations/${reservation.id}/return`, data);
     },
-    onSuccess: async () => {
+    onSuccess: async (response: Response) => {
+      // OPT-005 - the return route produces the damage check; say which of the
+      // two happened and offer to print or mail it from here.
+      let body: { damageCheckDocument?: StoredDocument | null } = {};
+      try {
+        body = await response.clone().json();
+      } catch {
+        /* a body we cannot read is handled as "no document" below */
+      }
       toast({
         title: t('pickupReturn.return.returnCompletedTitle'),
         description: t('pickupReturn.return.returnCompletedDescription'),
@@ -1374,6 +1425,8 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
       
       // Then close the return dialog
       onOpenChange(false);
+
+      setHandoverResult({ document: body.damageCheckDocument ?? null, errorMessage: null });
     },
     onError: (error: any) => {
       toast({
@@ -1415,6 +1468,19 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
   };
 
   return (
+    <>
+    {/* OPT-005 - "Schadeformulier klaar" met Afdrukken / Mail naar klant. */}
+    {handoverResult && (
+      <HandoverResultDialog
+        open
+        onOpenChange={(next) => { if (!next) setHandoverResult(null); }}
+        reservation={reservation}
+        document={handoverResult.document}
+        errorMessage={handoverResult.errorMessage}
+        kind={"damageCheck" as HandoverDocumentKind}
+        onDone={() => setHandoverResult(null)}
+      />
+    )}
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {/* z-[60]: same stacking issue as the pickup dialog above. */}
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto z-[60]">
@@ -1955,5 +2021,6 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
         onCancel={() => setReturnPaperCheckToDelete(null)}
       />
     </Dialog>
+    </>
   );
 }

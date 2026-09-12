@@ -247,6 +247,19 @@
       "returnFailedTitle": "Inleveren mislukt",
       "processReturnFailedFallback": "Inleveren verwerken mislukt. Probeer het opnieuw.",
       "returnMileageLessThanPickup": "Kilometerstand bij inleveren kan niet lager zijn dan bij ophalen ({{km}} km)."
+    },
+    "handoverResult": {
+      "contractReadyTitle": "Contract klaar",
+      "contractFailedTitle": "Contract kon niet gemaakt worden",
+      "damageCheckReadyTitle": "Schadeformulier klaar",
+      "damageCheckFailedTitle": "Schadeformulier kon niet gemaakt worden",
+      "readyDescription": "{{fileName}} is aangemaakt. Print het of mail het direct naar de klant.",
+      "failedDescription": "De handeling is vastgelegd, maar het document is niet aangemaakt. Probeer het opnieuw of controleer de sjablonen.",
+      "print": "Afdrukken",
+      "email": "Mail naar klant",
+      "retry": "Opnieuw proberen",
+      "retrySucceeded": "Contract is alsnog aangemaakt",
+      "retryFailed": "Contract kon nog steeds niet gemaakt worden"
     }
   },
   "addDialog": {
