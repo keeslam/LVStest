@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RecordHistory } from "@/components/audit/record-history";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { usePortalAccounts } from "@/hooks/use-portal-accounts";
@@ -1428,6 +1429,14 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
                 ) : (
                   <RentalTable rentals={pastRentals} emptyMessage={t('details.noRentalHistory')} />
                 )}
+              </CardContent>
+            </Card>
+
+            {/* OPT-022 - the audited changes to the customer record itself,
+                next to the rentals that record has had. */}
+            <Card>
+              <CardContent className="pt-6">
+                <RecordHistory resourceType="customer" resourceId={customerId} />
               </CardContent>
             </Card>
           </div>

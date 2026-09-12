@@ -176,5 +176,13 @@
     "timeoutTitle": "The server did not answer in time",
     "timeoutDescription": "The request was aborted after 30 seconds. Check the connection and try again.",
     "retry": "Try again"
+  },
+  "recordHistory": {
+    "title": "History",
+    "description": "Every change to this record, with who made it and when.",
+    "empty": "Nothing has been changed on this record yet.",
+    "loadFailed": "The history could not be loaded.",
+    "notPermitted": "You do not have permission to view this record's history.",
+    "systemUser": "System"
   }
 }

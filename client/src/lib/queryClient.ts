@@ -42,6 +42,11 @@ async function throwIfResNotOk(res: Response) {
     if (parsed && typeof parsed === "object") {
       Object.assign(error, parsed);
     }
+    // OPT-022: the HTTP status, under a name no server payload uses, so a
+    // caller can tell "you may not see this" (403) from "this broke" (500).
+    // Set after the merge on purpose - a body field must not be able to
+    // rewrite it.
+    (error as Error & { httpStatus?: number }).httpStatus = res.status;
     throw error;
   }
 }

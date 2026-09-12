@@ -37,6 +37,7 @@ import { UploadContractButton } from "@/components/documents/contract-upload-but
 import { SpareVehicleDialog } from "@/components/reservations/spare-vehicle-dialog";
 import { ServiceVehicleDialog } from "@/components/reservations/service-vehicle-dialog";
 import { ReturnFromServiceDialog } from "@/components/reservations/return-from-service-dialog";
+import { RecordHistory } from "@/components/audit/record-history";
 import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { ReservationDocumentsDialog } from "@/components/reservations/reservation-documents-dialog";
@@ -870,6 +871,16 @@ export function ReservationViewDialog({
                   </div>
                 </div>
               )}
+
+              {/* OPT-022 - "Geschiedenis": who changed this reservation, what
+                  they changed and when. The rows have always been written; the
+                  question could not be asked until the resourceId filter
+                  worked. */}
+              {reservationId ? (
+                <div className="border-t pt-4">
+                  <RecordHistory resourceType="reservation" resourceId={reservationId} />
+                </div>
+              ) : null}
 
             </div>
           )}

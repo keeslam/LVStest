@@ -42,6 +42,9 @@ export interface IStorage {
     username?: string;
     action?: string;
     resourceType?: string;
+    // OPT-022: the per-record filter. `GET /api/audit-logs?resourceId=3563`
+    // used to answer with every row in the table, because nothing read it.
+    resourceId?: string;
     search?: string;
     from?: string;
     to?: string;

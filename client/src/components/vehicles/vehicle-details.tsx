@@ -5,6 +5,7 @@ import * as React from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RecordHistory } from "@/components/audit/record-history";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -3364,6 +3365,13 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                       <p className="text-gray-500">{t('details.history.noExpensesRecorded')}</p>
                     )}
                   </div>
+                </div>
+
+                {/* OPT-022 - every audited change to this vehicle, from the
+                    audit log that has always recorded them but could never be
+                    asked about one record. */}
+                <div className="border p-4 rounded-lg">
+                  <RecordHistory resourceType="vehicle" resourceId={vehicle.id} />
                 </div>
               </div>
             </CardContent>

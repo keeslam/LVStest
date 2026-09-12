@@ -138,6 +138,7 @@ export class DatabaseStorage implements IStorage {
     username?: string;
     action?: string;
     resourceType?: string;
+    resourceId?: string;
     search?: string;
     from?: string;
     to?: string;
@@ -147,6 +148,10 @@ export class DatabaseStorage implements IStorage {
     if (options.username) conditions.push(eq(auditLogs.username, options.username));
     if (options.action) conditions.push(eq(auditLogs.action, options.action));
     if (options.resourceType) conditions.push(eq(auditLogs.resourceType, options.resourceType));
+    // OPT-022 - the filter the workflow report found ignored: asking for one
+    // reservation's history answered with all 906 rows. `resource_id` is text,
+    // so the caller's id is compared as text, exactly as it is written.
+    if (options.resourceId) conditions.push(eq(auditLogs.resourceId, options.resourceId));
     if (options.from) conditions.push(gte(auditLogs.createdAt, new Date(`${options.from}T00:00:00`)));
     if (options.to) conditions.push(lte(auditLogs.createdAt, new Date(`${options.to}T23:59:59.999`)));
 

@@ -176,5 +176,13 @@
     "timeoutTitle": "De server antwoordde niet op tijd",
     "timeoutDescription": "Het verzoek is na 30 seconden afgebroken. Controleer de verbinding en probeer het opnieuw.",
     "retry": "Opnieuw proberen"
+  },
+  "recordHistory": {
+    "title": "Geschiedenis",
+    "description": "Elke wijziging aan dit record, met wie het deed en wanneer.",
+    "empty": "Er is nog niets gewijzigd aan dit record.",
+    "loadFailed": "De geschiedenis kon niet geladen worden.",
+    "notPermitted": "Je hebt geen rechten om de geschiedenis van dit record te bekijken.",
+    "systemUser": "Systeem"
   }
 }

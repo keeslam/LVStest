@@ -25,6 +25,10 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         username: typeof req.query.username === 'string' && req.query.username ? req.query.username : undefined,
         action: typeof req.query.action === 'string' && req.query.action ? req.query.action : undefined,
         resourceType: typeof req.query.resourceType === 'string' && req.query.resourceType ? req.query.resourceType : undefined,
+        // OPT-022: the filter existed in the query string and in the UI, but
+        // never reached the query - one reservation's history came back as 906
+        // rows.
+        resourceId: typeof req.query.resourceId === 'string' && req.query.resourceId ? req.query.resourceId : undefined,
         search: typeof req.query.search === 'string' && req.query.search ? req.query.search : undefined,
         from: typeof req.query.from === 'string' && req.query.from ? req.query.from : undefined,
         to: typeof req.query.to === 'string' && req.query.to ? req.query.to : undefined,
@@ -36,6 +40,66 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       res.status(500).json({ message: "Failed to fetch activity log" });
     }
   });
+
+  /**
+   * OPT-022 - the "Geschiedenis" tab on the reservation, vehicle and customer
+   * dialog. One record's rows, newest first.
+   *
+   * Permission: the *manage* permission of the record's own type (a
+   * MANAGE_USERS holder keeps access to everything, as on the activity log
+   * itself). The audit rows carry colleagues' usernames, so viewing a record
+   * is deliberately not enough; see the note in the phase-34 report - the
+   * owner has not been asked which permission this should be.
+   */
+  const HISTORY_PERMISSIONS: Record<string, string[]> = {
+    reservation: [UserPermission.MANAGE_USERS, UserPermission.MANAGE_RESERVATIONS],
+    vehicle: [UserPermission.MANAGE_USERS, UserPermission.MANAGE_VEHICLES],
+    customer: [UserPermission.MANAGE_USERS, UserPermission.MANAGE_CUSTOMERS],
+  };
+
+  app.get(
+    "/api/audit-logs/resource/:resourceType/:resourceId",
+    requireAuth,
+    // Coarse gate so the default-deny net (FIX-I) sees a permission guard; the
+    // per-type check below is the narrow one.
+    hasPermission(
+      UserPermission.MANAGE_USERS,
+      UserPermission.MANAGE_RESERVATIONS,
+      UserPermission.MANAGE_VEHICLES,
+      UserPermission.MANAGE_CUSTOMERS,
+    ),
+    async (req, res) => {
+    try {
+      const resourceType = String(req.params.resourceType);
+      const allowed = HISTORY_PERMISSIONS[resourceType];
+      if (!allowed) {
+        return res.status(400).json({ message: "Unsupported resource type" });
+      }
+      // hasPermission() is middleware; this route picks its permission set from
+      // the path, so the same check runs here by hand.
+      const user = req.user as { role?: string; permissions?: string[] } | undefined;
+      const permitted = user?.role === "admin"
+        || allowed.some((p) => (user?.permissions ?? []).includes(p));
+      if (!permitted) {
+        return res.status(403).json({ message: "You do not have permission to view this history" });
+      }
+
+      const resourceId = String(req.params.resourceId);
+      if (!/^[0-9]{1,12}$/.test(resourceId)) {
+        return res.status(400).json({ message: "Invalid resource id" });
+      }
+
+      const limit = Math.min(parseInt(String(req.query.limit ?? '100'), 10) || 100, 200);
+      const offset = Math.max(parseInt(String(req.query.offset ?? '0'), 10) || 0, 0);
+
+      const result = await storage.getAuditLogs({ limit, offset, resourceType, resourceId });
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching record history:", error);
+      res.status(500).json({ message: "Failed to fetch record history" });
+    }
+  },
+  );
 
   // Distinct values for the activity log filters
   app.get("/api/audit-logs/filters", requireAuth, hasPermission(UserPermission.MANAGE_USERS), async (_req, res) => {
