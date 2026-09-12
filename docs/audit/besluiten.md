@@ -102,9 +102,30 @@ gaat het voertuig naar de prullenbak. Dezelfde regel als voor klanten (B-08).
 startdatum naar vandaag, zodat periode en prijs kloppen (samen met B-07). Weigeren gebeurt alleen als
 de medewerker de vraag met nee beantwoordt.
 
+### B-17 — Inhoud van het werkdagscherm "Vandaag" (OPT-001)
+**Besluit:** onder "Openstaande punten" staan drie dingen:
+1. wat vandaag opgehaald en ingenomen moet worden, met de knop om dat direct te doen;
+2. onderhoud en transport van vandaag, inclusief vervangers die nog toegewezen moeten worden;
+3. nieuwe portaalaanvragen die beoordeeld moeten worden.
+**Niet** gekozen: een lijst "te laat terug". Die is bewust weggelaten; zolang de oude rijen niet zijn
+afgesloten (B-02) zou die lijst vooral ruis tonen. Later alsnog toevoegen kan, maar pas na de
+opschoning en na een nieuw besluit.
+
+### B-18 — Taal en notatie van gegenereerde documenten (BUG-192)
+**Besluit:** altijd Nederlands met Nederlandse notatie (dd-mm-jjjj, bedragen met een komma),
+ongeacht wie het document genereert of welke taal de klant in het portaal gebruikt.
+
+### B-19 — HTTP-compressie (BUG-214)
+**Besluit:** aanzetten in de applicatie zelf, niet afhankelijk van wat de proxy doet. Dubbele
+compressie wordt overgeslagen wanneer de proxy het al heeft gedaan.
+
+### B-20 — Bonnetjesveld met een lokaal pad
+**Besluit:** weigeren. Alleen een echte link of een geüpload bestand; een lokaal of netwerkpad werkt
+voor collega's toch niet.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
-- OPT-001 — wat telt als "openstaand punt" op het werkdagscherm.
+- (beslist, zie B-17) OPT-001 — wat telt als "openstaand punt" op het werkdagscherm.
 - OPT-009 — mag de app zelf een vervanger voorstellen/toewijzen, en op welke criteria.
 - OPT-017 — welke statusomkeringen mogen, en door wie.
 - OPT-025 — welke velden verplicht zijn voordat een voertuig verhuurd mag worden.
