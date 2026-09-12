@@ -19,7 +19,12 @@
       "all": "Alle",
       "later": "Later",
       "earlier": "Eerder"
-    }
+    },
+    "bulkPartialTitle": "{{succeeded}} gelukt, {{failed}} mislukt",
+    "bulkAllFailedTitle": "Geen enkele regel is verwerkt",
+    "bulkFailedRow": "#{{id}}: {{message}}",
+    "bulkRowNotFound": "Bestaat niet meer",
+    "bulkRowNotPending": "Al afgehandeld"
   },
   "mileageOverrideDialog": {
     "enterPasswordError": "Voer je accountwachtwoord in",

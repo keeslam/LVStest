@@ -125,30 +125,91 @@ router.get('/scan-status', hasPermission(UserPermission.MANAGE_VEHICLES), (_req,
   res.json(scanState);
 });
 
+/**
+ * OPT-016 - "Bulkacties met resultaat per rij".
+ *
+ * Both bulk actions used to answer with a single number. A row that was already
+ * resolved, or had been deleted, was counted as "not done" and never named; a
+ * failure halfway produced a 500 and the part that *had* been written was
+ * invisible. The employee's only option was to check by hand what had happened.
+ *
+ * This is the shape `server/services/cjib/importer.ts` already uses: one entry
+ * per requested row, in the order they were asked for, each with its own
+ * outcome — plus the aggregate counts the old clients read.
+ */
+type BulkRowResult =
+  | { id: number; ok: true }
+  | { id: number; ok: false; reason: 'not_found' | 'not_pending' | 'error'; message: string };
+
+function summarise(results: BulkRowResult[]) {
+  const succeeded = results.filter((r) => r.ok).length;
+  return { results, succeeded, failed: results.length - succeeded };
+}
+
+/** Shared by both routes: same validation, same per-row isolation. */
+async function applyPerRow(
+  ids: number[],
+  apply: (change: NonNullable<Awaited<ReturnType<typeof storage.getApkDateChange>>>) => Promise<void>,
+): Promise<BulkRowResult[]> {
+  const results: BulkRowResult[] = [];
+  for (const id of ids) {
+    try {
+      const change = await storage.getApkDateChange(id);
+      if (!change) {
+        results.push({ id, ok: false, reason: 'not_found', message: 'This APK date change no longer exists.' });
+        continue;
+      }
+      if (change.status !== 'pending') {
+        results.push({
+          id,
+          ok: false,
+          reason: 'not_pending',
+          message: `Already ${change.status}.`,
+        });
+        continue;
+      }
+      await apply(change);
+      results.push({ id, ok: true });
+    } catch (error) {
+      // One bad row must not throw away the rows that already succeeded.
+      console.error(`Error handling APK date change ${id}:`, error);
+      results.push({
+        id,
+        ok: false,
+        reason: 'error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+  return results;
+}
+
+function parseIds(body: any): number[] | null {
+  const ids: unknown = body?.ids;
+  if (!Array.isArray(ids) || ids.length === 0) return null;
+  if (!ids.every((id) => Number.isInteger(id))) return null;
+  return ids as number[];
+}
+
 // Bulk-dismiss: keep the vehicles' current dates, clear several rows at once
 router.post('/bulk-dismiss', hasPermission(UserPermission.MANAGE_VEHICLES), async (req, res) => {
   try {
-    const ids: unknown = req.body?.ids;
-    if (!Array.isArray(ids) || ids.length === 0 || !ids.every((id) => typeof id === 'number')) {
+    const ids = parseIds(req.body);
+    if (!ids) {
       return res.status(400).json({ message: 'ids must be a non-empty array of numbers' });
     }
 
     const resolvedBy = req.user?.username || null;
-    let dismissed = 0;
+    const results = await applyPerRow(ids, async (change) => {
+      await storage.updateApkDateChange(change.id, {
+        status: 'dismissed',
+        resolvedAt: new Date(),
+        resolvedBy,
+      });
+    });
 
-    for (const id of ids) {
-      const change = await storage.getApkDateChange(id);
-      if (change && change.status === 'pending') {
-        await storage.updateApkDateChange(id, {
-          status: 'dismissed',
-          resolvedAt: new Date(),
-          resolvedBy,
-        });
-        dismissed++;
-      }
-    }
-
-    res.json({ dismissed });
+    const summary = summarise(results);
+    res.json({ ...summary, dismissed: summary.succeeded });
   } catch (error) {
     console.error('Error bulk-dismissing APK date changes:', error);
     res.status(500).json({ message: 'Failed to dismiss the selected APK date changes' });
@@ -158,28 +219,23 @@ router.post('/bulk-dismiss', hasPermission(UserPermission.MANAGE_VEHICLES), asyn
 // Bulk-confirm: apply the RDW date to several vehicles at once
 router.post('/bulk-confirm', hasPermission(UserPermission.MANAGE_VEHICLES), async (req, res) => {
   try {
-    const ids: unknown = req.body?.ids;
-    if (!Array.isArray(ids) || ids.length === 0 || !ids.every((id) => typeof id === 'number')) {
+    const ids = parseIds(req.body);
+    if (!ids) {
       return res.status(400).json({ message: 'ids must be a non-empty array of numbers' });
     }
 
     const resolvedBy = req.user?.username || null;
-    let confirmed = 0;
+    const results = await applyPerRow(ids, async (change) => {
+      await storage.updateVehicle(change.vehicleId, { apkDate: change.newApkDate });
+      await storage.updateApkDateChange(change.id, {
+        status: 'confirmed',
+        resolvedAt: new Date(),
+        resolvedBy,
+      });
+    });
 
-    for (const id of ids) {
-      const change = await storage.getApkDateChange(id);
-      if (change && change.status === 'pending') {
-        await storage.updateVehicle(change.vehicleId, { apkDate: change.newApkDate });
-        await storage.updateApkDateChange(id, {
-          status: 'confirmed',
-          resolvedAt: new Date(),
-          resolvedBy,
-        });
-        confirmed++;
-      }
-    }
-
-    res.json({ confirmed });
+    const summary = summarise(results);
+    res.json({ ...summary, confirmed: summary.succeeded });
   } catch (error) {
     console.error('Error bulk-confirming APK date changes:', error);
     res.status(500).json({ message: 'Failed to confirm the selected APK date changes' });

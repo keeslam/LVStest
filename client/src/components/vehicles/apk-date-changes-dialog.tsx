@@ -27,6 +27,26 @@ import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 
 type DirectionFilter = "all" | "later" | "earlier";
 
+/**
+ * OPT-016 - the shape both bulk routes answer with: one entry per requested
+ * row, in the order they were asked for, plus the aggregate counts.
+ */
+export type BulkRowFailure = {
+  id: number;
+  ok: false;
+  reason: "not_found" | "not_pending" | "error";
+  message: string;
+};
+export type BulkRowResult = { id: number; ok: true } | BulkRowFailure;
+export interface BulkActionResponse {
+  results?: BulkRowResult[];
+  succeeded?: number;
+  failed?: number;
+  /** Kept by the routes for older readers. */
+  dismissed?: number;
+  confirmed?: number;
+}
+
 // Survives a page refresh (sessionStorage) but not a real new session/login
 // (cleared on logout in use-auth.tsx) - a hard refresh used to remount this
 // component and reset an in-memory ref, popping the dialog open again on
@@ -110,18 +130,57 @@ export function ApkDateChangesDialog() {
     },
   });
 
+  /**
+   * OPT-016 - report the outcome per row. A green toast with a count used to
+   * hide a half-finished batch: rows that were already resolved, or gone, were
+   * simply not counted and never named, and the employee had to check by hand.
+   */
+  const reportBulkResult = (
+    result: BulkActionResponse,
+    successDescriptionKey: "apkDateChanges.bulkDismissedDescription" | "apkDateChanges.bulkConfirmedDescription",
+  ) => {
+    const failures = (result.results ?? []).filter((row): row is BulkRowFailure => !row.ok);
+    if (failures.length === 0) {
+      toast({
+        title: t("common:status.success"),
+        description: t(successDescriptionKey, { count: result.succeeded ?? 0 }),
+      });
+      return;
+    }
+    // Every failed row is named, with its own reason.
+    const lines = failures.map((row) =>
+      t("apkDateChanges.bulkFailedRow", { id: row.id, message: rowReason(row) }),
+    );
+    toast({
+      variant: (result.succeeded ?? 0) > 0 ? "default" : "destructive",
+      title: (result.succeeded ?? 0) > 0
+        ? t("apkDateChanges.bulkPartialTitle", { succeeded: result.succeeded, failed: failures.length })
+        : t("apkDateChanges.bulkAllFailedTitle"),
+      description: lines.join(" · "),
+    });
+  };
+
+  /** Keeps the rows that failed selected, so a retry is one click. */
+  const keepFailedSelected = (result: BulkActionResponse) => {
+    const failedIds = new Set((result.results ?? []).filter((row) => !row.ok).map((row) => row.id));
+    setSelectedIds(failedIds);
+  };
+
+  const rowReason = (row: BulkRowFailure): string => {
+    if (row.reason === "not_found") return t("apkDateChanges.bulkRowNotFound");
+    if (row.reason === "not_pending") return t("apkDateChanges.bulkRowNotPending");
+    return row.message;
+  };
+
   const bulkDismissMutation = useMutation({
     mutationFn: async (ids: number[]) => {
       const response = await apiRequest("POST", "/api/apk-date-changes/bulk-dismiss", { ids });
-      return response.json();
+      return (await response.json()) as BulkActionResponse;
     },
-    onSuccess: (result: { dismissed: number }) => {
+    onSuccess: (result) => {
       invalidateByPrefix("/api/apk-date-changes");
-      setSelectedIds(new Set());
-      toast({
-        title: t("common:status.success"),
-        description: t("apkDateChanges.bulkDismissedDescription", { count: result.dismissed }),
-      });
+      keepFailedSelected(result);
+      reportBulkResult(result, "apkDateChanges.bulkDismissedDescription");
     },
     onError: (error: any) => {
       toast({ title: t("common:status.error"), description: error.message, variant: "destructive" });
@@ -131,16 +190,13 @@ export function ApkDateChangesDialog() {
   const bulkConfirmMutation = useMutation({
     mutationFn: async (ids: number[]) => {
       const response = await apiRequest("POST", "/api/apk-date-changes/bulk-confirm", { ids });
-      return response.json();
+      return (await response.json()) as BulkActionResponse;
     },
-    onSuccess: (result: { confirmed: number }) => {
+    onSuccess: (result) => {
       invalidateByPrefix("/api/apk-date-changes");
       invalidateByPrefix("/api/vehicles");
-      setSelectedIds(new Set());
-      toast({
-        title: t("common:status.success"),
-        description: t("apkDateChanges.bulkConfirmedDescription", { count: result.confirmed }),
-      });
+      keepFailedSelected(result);
+      reportBulkResult(result, "apkDateChanges.bulkConfirmedDescription");
     },
     onError: (error: any) => {
       toast({ title: t("common:status.error"), description: error.message, variant: "destructive" });

@@ -19,7 +19,12 @@
       "all": "All",
       "later": "Later",
       "earlier": "Earlier"
-    }
+    },
+    "bulkPartialTitle": "{{succeeded}} succeeded, {{failed}} failed",
+    "bulkAllFailedTitle": "No row was processed",
+    "bulkFailedRow": "#{{id}}: {{message}}",
+    "bulkRowNotFound": "No longer exists",
+    "bulkRowNotPending": "Already handled"
   },
   "mileageOverrideDialog": {
     "enterPasswordError": "Please enter your account password",
