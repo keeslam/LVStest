@@ -42,6 +42,23 @@ export const customerNotifications = {
     return row;
   },
 
+  /**
+   * besluiten **B-13** (BUG-139) — a notification can stop being true. When a
+   * rental moves to another car the "Onderhoud gepland" for the block it left
+   * behind is no longer about that customer, so it goes, and a
+   * `maintenance_unlinked` takes its place. Matched on the dedupe tag, which is
+   * the only stable key these rows have (`maint:<blockId>:…`).
+   */
+  async removeByDedupePrefix(customerId: number, prefix: string): Promise<number> {
+    const removed = await db.delete(portalNotifications)
+      .where(and(
+        eq(portalNotifications.customerId, customerId),
+        sql`${portalNotifications.dedupeTag} LIKE ${`${prefix}%`}`,
+      ))
+      .returning({ id: portalNotifications.id });
+    return removed.length;
+  },
+
   async listForUser(customerId: number, portalUserId: number, limit = 100): Promise<PortalNotification[]> {
     return db.select().from(portalNotifications)
       .where(and(eq(portalNotifications.customerId, customerId), or(isNull(portalNotifications.portalUserId), eq(portalNotifications.portalUserId, portalUserId))))

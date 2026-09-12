@@ -132,7 +132,7 @@ import { registerReportRoutes } from "./routes/reports";
 import { registerDamageCheckTemplateRoutes } from "./routes/damage-check-templates";
 import { registerVehicleDiagramTemplateRoutes } from "./routes/vehicle-diagram-templates";
 import { registerReportAndLabelTemplateRoutes } from "./routes/report-and-label-templates";
-import { onMaintenanceBlockChanged, onReplacementAssigned } from "./services/portal-maintenance-events";
+import { onMaintenanceBlockChanged, onReplacementAssigned, onRentalVehicleChanged } from "./services/portal-maintenance-events";
 import type { RouteDeps } from "./routes/deps";
 import { installIdParamValidation, rejectNullBytesInPath } from "./middleware/parseIntParam";
 import { parsePartialUpdate, parseCreateBody, BodyValidationError } from "./middleware/validateBody";
@@ -3563,6 +3563,10 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Reservation not found" });
       }
 
+      // besluiten B-13 (BUG-139) — `/basic` can move a rental to another car
+      // too, so the same cascade runs here.
+      await onRentalVehicleChanged(existingBasic, reservation);
+
       // BUG-133: a driver changed through this route never reached the driver
       // history, so the portal and the fines attribution kept seeing the old
       // driver. PATCH /:id has always done this; /basic did not.
@@ -4021,6 +4025,11 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Reservation not found" });
       }
       void onMaintenanceBlockChanged(existingReservationForDiff, reservation);
+      // besluiten B-13 (BUG-139) — the rental moved to another car: the block
+      // stays with the physical car, its spare and the customer's maintenance
+      // notification lapse, and the customer is told. Awaited so the response
+      // already reflects the cascade.
+      await onRentalVehicleChanged(existingReservationForDiff, reservation);
 
       // Keep the driver assignment history in sync with staff edits so the
       // customer portal (and later the fines attribution) sees every change.
