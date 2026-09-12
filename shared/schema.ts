@@ -142,8 +142,8 @@ export const users = pgTable("users", {
   active: boolean("active").notNull().default(true),
   hidePrices: boolean("hide_prices").notNull().default(false),
   mileageOverridePasswordHash: text("mileage_override_password_hash"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by"),
   updatedBy: text("updated_by"),
 });
@@ -248,7 +248,7 @@ export const vehicles = pgTable("vehicles", {
   // of every car that has ever had a note is not a warning any more; the
   // employee is asked again only when the text has changed since then.
   remarksConfirmedText: text("remarks_confirmed_text"),
-  remarksConfirmedAt: timestamp("remarks_confirmed_at"),
+  remarksConfirmedAt: timestamp("remarks_confirmed_at", { withTimezone: true }),
   remarksConfirmedBy: text("remarks_confirmed_by"),
   winterTires: boolean("winter_tires"),
   tireSize: text("tire_size"),
@@ -274,7 +274,7 @@ export const vehicles = pgTable("vehicles", {
   
   // Mileage decrease tracking (admin-only visibility)
   mileageDecreasedBy: text("mileage_decreased_by"), // Username who decreased the mileage
-  mileageDecreasedAt: timestamp("mileage_decreased_at"), // When mileage was decreased
+  mileageDecreasedAt: timestamp("mileage_decreased_at", { withTimezone: true }), // When mileage was decreased
   previousMileage: integer("previous_mileage"), // Mileage before the decrease
   
   // Fuel level tracking (independent of reservations)
@@ -282,7 +282,7 @@ export const vehicles = pgTable("vehicles", {
   fuelRefillCost: numeric("fuel_refill_cost", { precision: 10, scale: 2 }), // Cost of last refill
   fuelRefillReceipt: text("fuel_refill_receipt"), // Path to receipt image/PDF
   fuelRefillNotes: text("fuel_refill_notes"), // Notes about the refill
-  fuelRefillDate: timestamp("fuel_refill_date"), // When the refill was done
+  fuelRefillDate: timestamp("fuel_refill_date", { withTimezone: true }), // When the refill was done
   
   // Oil specification
   recommendedOil: text("recommended_oil"), // e.g., "5W-30", "10W-40", or custom specification
@@ -305,8 +305,8 @@ export const vehicles = pgTable("vehicles", {
   offeredOnline: boolean("offered_online").default(false).notNull(),
   onlineDescription: text("online_description"),
 
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 /**
@@ -483,8 +483,8 @@ export const customers = pgTable("customers", {
   billingContactPhone: text("billing_contact_phone"),
   
   // Tracking
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by"),
   updatedBy: text("updated_by"),
   createdByUser: integer("created_by_user_id").references(() => users.id),
@@ -542,8 +542,8 @@ export const drivers = pgTable("drivers", {
   preferredLanguage: text("preferred_language").default("nl"), // 'nl' | 'en'
   
   // Tracking
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by"),
   updatedBy: text("updated_by"),
   createdByUser: integer("created_by_user_id").references(() => users.id),
@@ -585,21 +585,21 @@ export const portalUsers = pgTable("portal_users", {
   /** Per-account restrictions on top of the customer settings; see PortalAccountPermissions. */
   permissions: jsonb("permissions").$type<Record<string, boolean>>().notNull().default({}),
   inviteTokenHash: text("invite_token_hash"),
-  inviteExpiresAt: timestamp("invite_expires_at"),
+  inviteExpiresAt: timestamp("invite_expires_at", { withTimezone: true }),
   /** Own language choice; null = follow the customer's preferred language. */
   language: text("language"),
   /** A new address waits here until the confirmation link in the mail to it is used. */
   pendingEmail: text("pending_email"),
   emailChangeTokenHash: text("email_change_token_hash"),
-  emailChangeExpiresAt: timestamp("email_change_expires_at"),
+  emailChangeExpiresAt: timestamp("email_change_expires_at", { withTimezone: true }),
   /** Browsers this account logged in from; a login from an unknown one triggers a warning mail. */
   knownDevices: jsonb("known_devices").$type<PortalKnownDevice[]>().notNull().default([]),
-  lastLoginAt: timestamp("last_login_at"),
+  lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
   // Touched at most once a minute while the user is active; "online" in the
   // staff overview means seen within the last 10 minutes.
-  lastSeenAt: timestamp("last_seen_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by"),
   updatedBy: text("updated_by"),
 }, (table) => ({
@@ -636,8 +636,8 @@ export const portalCustomerSettings = pgTable("portal_customer_settings", {
   showPrices: boolean("show_prices").notNull().default(false),
   canReturn: boolean("can_return").notNull().default(true),
   internalNotes: text("internal_notes"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   updatedBy: text("updated_by"),
 });
 
@@ -656,12 +656,12 @@ export const reservationDriverAssignments = pgTable("reservation_driver_assignme
   id: serial("id").primaryKey(),
   reservationId: integer("reservation_id").notNull().references(() => reservations.id, { onDelete: "cascade" }),
   driverId: integer("driver_id").references(() => drivers.id, { onDelete: "set null" }),
-  assignedFrom: timestamp("assigned_from").notNull(),
-  assignedUntil: timestamp("assigned_until"),
+  assignedFrom: timestamp("assigned_from", { withTimezone: true }).notNull(),
+  assignedUntil: timestamp("assigned_until", { withTimezone: true }),
   assignedByPortalUserId: integer("assigned_by_portal_user_id").references(() => portalUsers.id, { onDelete: "set null" }),
   assignedByUserId: integer("assigned_by_user_id").references(() => users.id, { onDelete: "set null" }),
   note: text("note"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   reservationFromIdx: index("rda_reservation_from_idx").on(table.reservationId, table.assignedFrom),
 }));
@@ -681,7 +681,7 @@ export const portalActivityLog = pgTable("portal_activity_log", {
   entityId: integer("entity_id"),
   details: jsonb("details").$type<Record<string, unknown>>(),
   ip: text("ip"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   customerCreatedIdx: index("portal_activity_customer_created_idx").on(table.customerId, table.createdAt),
 }));
@@ -698,7 +698,7 @@ export const fines = pgTable("fines", {
   id: serial("id").primaryKey(),
   licensePlate: text("license_plate").notNull(),
   vehicleId: integer("vehicle_id").references(() => vehicles.id, { onDelete: "set null" }),
-  offenceAt: timestamp("offence_at").notNull(),
+  offenceAt: timestamp("offence_at", { withTimezone: true }).notNull(),
   receivedAt: text("received_at"),
   reference: text("reference"),
   description: text("description").notNull(),
@@ -710,18 +710,18 @@ export const fines = pgTable("fines", {
   customerId: integer("customer_id").references(() => customers.id, { onDelete: "set null" }),
   reservationId: integer("reservation_id").references(() => reservations.id, { onDelete: "set null" }),
   driverId: integer("driver_id").references(() => drivers.id, { onDelete: "set null" }),
-  linkedAt: timestamp("linked_at"),
+  linkedAt: timestamp("linked_at", { withTimezone: true }),
   linkedBy: text("linked_by"),
-  chargedAt: timestamp("charged_at"),
+  chargedAt: timestamp("charged_at", { withTimezone: true }),
   invoiceReference: text("invoice_reference"),
-  paidAt: timestamp("paid_at"),
+  paidAt: timestamp("paid_at", { withTimezone: true }),
   internalNotes: text("internal_notes"),
   customerNote: text("customer_note"),
   /** manual | scan | cjib; null = manual (rows from before the import feature) */
   source: text("source"),
   importFileId: integer("import_file_id"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by"),
   updatedBy: text("updated_by"),
 }, (table) => ({
@@ -745,8 +745,8 @@ export const fineImportFiles = pgTable("fine_import_files", {
   recordsFailed: integer("records_failed").notNull().default(0),
   errorMessage: text("error_message"),
   details: jsonb("details").$type<FineImportDetail[]>().notNull().default([]),
-  receivedAt: timestamp("received_at").defaultNow().notNull(),
-  processedAt: timestamp("processed_at"),
+  receivedAt: timestamp("received_at", { withTimezone: true }).defaultNow().notNull(),
+  processedAt: timestamp("processed_at", { withTimezone: true }),
   createdBy: text("created_by"),
 });
 export interface FineImportDetail { reference: string | null; licensePlate: string | null; fineId?: number; outcome: 'created' | 'linked' | 'duplicate' | 'failed'; error?: string }
@@ -778,11 +778,11 @@ export const portalRequests = pgTable("portal_requests", {
   message: text("message").notNull(),
   status: text("status").notNull().default("new"),
   staffReply: text("staff_reply"),
-  repliedAt: timestamp("replied_at"),
+  repliedAt: timestamp("replied_at", { withTimezone: true }),
   repliedBy: text("replied_by"),
   handledBy: text("handled_by"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   customerCreatedIdx: index("portal_requests_customer_created_idx").on(table.customerId, table.createdAt),
   statusIdx: index("portal_requests_status_idx").on(table.status),
@@ -797,7 +797,7 @@ export const portalRequestAttachments = pgTable("portal_request_attachments", {
   filePath: text("file_path").notNull(),
   contentType: text("content_type").notNull(),
   fileSize: integer("file_size").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 export type PortalRequestAttachment = typeof portalRequestAttachments.$inferSelect;
 
@@ -810,7 +810,7 @@ export const portalRequestMessages = pgTable("portal_request_messages", {
   author: text("author").notNull(), // 'customer' | 'staff'
   authorName: text("author_name").notNull(),
   body: text("body").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({ requestIdx: index("portal_request_messages_request_idx").on(table.requestId) }));
 export type PortalRequestMessage = typeof portalRequestMessages.$inferSelect;
 
@@ -825,7 +825,7 @@ export const portalNotifications = pgTable("portal_notifications", {
   link: text("link"),
   dedupeTag: text("dedupe_tag"),
   isRead: boolean("is_read").notNull().default(false),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({ customerIdx: index("portal_notifications_customer_idx").on(table.customerId, table.createdAt) }));
 export type PortalNotification = typeof portalNotifications.$inferSelect;
 
@@ -837,7 +837,7 @@ export const portalDocumentAcks = pgTable("portal_document_acks", {
   portalUserId: integer("portal_user_id").references(() => portalUsers.id, { onDelete: "set null" }),
   name: text("name").notNull(),
   ip: text("ip"),
-  ackedAt: timestamp("acked_at").defaultNow().notNull(),
+  ackedAt: timestamp("acked_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({ documentIdx: uniqueIndex("portal_document_acks_document_idx").on(table.documentId) }));
 export type PortalDocumentAck = typeof portalDocumentAcks.$inferSelect;
 
@@ -920,15 +920,15 @@ export const reservations = pgTable("reservations", {
   deliveryNotes: text("delivery_notes"), // Special delivery instructions
   
   // Tracking
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by"),
   updatedBy: text("updated_by"),
   createdByUser: integer("created_by_user_id").references(() => users.id),
   updatedByUser: integer("updated_by_user_id").references(() => users.id),
   
   // Soft delete tracking
-  deletedAt: timestamp("deleted_at"),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
   deletedBy: text("deleted_by"),
   deletedByUser: integer("deleted_by_user_id").references(() => users.id),
 }, (table) => ({
@@ -1174,8 +1174,8 @@ export const expenses = pgTable("expenses", {
   receiptContentType: text("receipt_content_type"), // Stores the file content type
   
   // Tracking
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by"),
   updatedBy: text("updated_by"),
   createdByUser: integer("created_by_user_id").references(() => users.id),
@@ -1232,7 +1232,7 @@ export const documents = pgTable("documents", {
   filePath: text("file_path").notNull(),
   fileSize: integer("file_size").notNull(),
   contentType: text("content_type").notNull(),
-  uploadDate: timestamp("upload_date").defaultNow().notNull(),
+  uploadDate: timestamp("upload_date", { withTimezone: true }).defaultNow().notNull(),
   notes: text("notes"),
 
   // B-05 / FIX-O: the version number lives in its own column instead of being
@@ -1244,7 +1244,7 @@ export const documents = pgTable("documents", {
   // marked "verouderd"; the employee regenerates a new version deliberately.
   isStale: boolean("is_stale").default(false),
   staleReason: text("stale_reason"),
-  staleSince: timestamp("stale_since"),
+  staleSince: timestamp("stale_since", { withTimezone: true }),
 
   // Tracking
   createdBy: text("created_by"),
@@ -1294,8 +1294,8 @@ export const pdfTemplates = pgTable("pdf_templates", {
   backgroundPath: text("background_path"), // Custom background PDF/image path (null = use default)
   backgroundPreviewPath: text("background_preview_path"), // Preview image for editor (PNG converted from PDF)
   templatePreviewPath: text("template_preview_path"), // Preview thumbnail of the complete template for library display
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   fields: jsonb("fields").default([])
 });
 
@@ -1312,7 +1312,7 @@ export const templateBackgrounds = pgTable("template_backgrounds", {
   name: text("name").notNull(), // User-friendly label for the background
   backgroundPath: text("background_path").notNull(), // Path to PDF file
   previewPath: text("preview_path").notNull(), // Path to PNG preview
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const insertTemplateBackgroundSchema = createInsertSchema(templateBackgrounds)
@@ -1332,8 +1332,8 @@ export const transportReportTemplates = pgTable("transport_report_templates", {
   backgroundPath: text("background_path"),
   backgroundPreviewPath: text("background_preview_path"),
   templatePreviewPath: text("template_preview_path"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   fields: jsonb("fields").default([])
 });
 
@@ -1349,7 +1349,7 @@ export const transportReportTemplateBackgrounds = pgTable("transport_report_temp
   name: text("name").notNull(),
   backgroundPath: text("background_path").notNull(),
   previewPath: text("preview_path").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const insertTransportReportTemplateBackgroundSchema = createInsertSchema(transportReportTemplateBackgrounds)
@@ -1369,8 +1369,8 @@ export const barcodeLabelTemplates = pgTable("barcode_label_templates", {
   labelWidthMm: integer("label_width_mm").default(62).notNull(),
   labelHeightMm: integer("label_height_mm").default(29).notNull(),
   fields: jsonb("fields").default([]),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
 export const insertBarcodeLabelTemplateSchema = createInsertSchema(barcodeLabelTemplates)
@@ -1390,7 +1390,7 @@ export const scanEvents = pgTable("scan_events", {
   reservationId: integer("reservation_id"),
   licensePlate: text("license_plate"),
   scannedBy: text("scanned_by"),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
 export const insertScanEventSchema = createInsertSchema(scanEvents)
@@ -1411,8 +1411,8 @@ export const customNotifications = pgTable("custom_notifications", {
   icon: text("icon").default("Bell"),
   priority: text("priority").default("normal"),
   userId: integer("user_id").references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const insertCustomNotificationSchema = createInsertSchema(customNotifications).omit({
@@ -1483,8 +1483,8 @@ export const apkDateChanges = pgTable("apk_date_changes", {
   previousApkDate: text("previous_apk_date"),
   newApkDate: text("new_apk_date").notNull(),
   status: text("status").notNull().default("pending"), // 'pending' | 'confirmed' | 'dismissed'
-  detectedAt: timestamp("detected_at").defaultNow().notNull(),
-  resolvedAt: timestamp("resolved_at"),
+  detectedAt: timestamp("detected_at", { withTimezone: true }).defaultNow().notNull(),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
   resolvedBy: text("resolved_by"),
 });
 
@@ -1505,8 +1505,8 @@ export const backupSettings = pgTable("backup_settings", {
   backupSchedule: text("backup_schedule").notNull().default("0 2 * * *"), // Cron expression
   retentionDays: integer("retention_days").notNull().default(30),
   settings: jsonb("settings").$type<Record<string, any>>().default({}).notNull(), // Additional settings
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by"),
   updatedBy: text("updated_by"),
 });
@@ -1526,8 +1526,8 @@ export type InsertBackupSettings = z.infer<typeof insertBackupSettingsSchema>;
 // sat on disk and failures left no trace.
 export const backupRuns = pgTable("backup_runs", {
   id: serial("id").primaryKey(),
-  startedAt: timestamp("started_at").defaultNow().notNull(),
-  finishedAt: timestamp("finished_at"),
+  startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
   type: text("type").notNull(), // 'database' | 'files'
   status: text("status").notNull(), // 'running' | 'success' | 'failed'
   filename: text("filename"),
@@ -1553,8 +1553,8 @@ export const appSettings = pgTable("app_settings", {
   value: jsonb("value").$type<Record<string, any>>().default({}).notNull(), // Setting value as JSON
   category: text("category").notNull().default("general"), // 'email', 'general', 'notifications', etc.
   description: text("description"), // Human-readable description
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by"),
   updatedBy: text("updated_by"),
 });
@@ -1667,10 +1667,10 @@ export const vehicleWaitlist = pgTable("vehicle_waitlist", {
   priority: text("priority").default("normal").notNull(), // 'low', 'normal', 'high'
   status: text("status").default("active").notNull(), // 'active', 'contacted', 'fulfilled', 'cancelled'
   notes: text("notes"),
-  contactedAt: timestamp("contacted_at"),
-  fulfilledAt: timestamp("fulfilled_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  contactedAt: timestamp("contacted_at", { withTimezone: true }),
+  fulfilledAt: timestamp("fulfilled_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by"),
   updatedBy: text("updated_by"),
 });
@@ -1712,15 +1712,15 @@ export const deliveryTasks = pgTable("delivery_tasks", {
   pickupLongitude: numeric("pickup_longitude"),
   
   // Scheduling
-  scheduledDeliveryTime: timestamp("scheduled_delivery_time"),
-  scheduledPickupTime: timestamp("scheduled_pickup_time"),
-  estimatedDeliveryTime: timestamp("estimated_delivery_time"),
-  estimatedPickupTime: timestamp("estimated_pickup_time"),
+  scheduledDeliveryTime: timestamp("scheduled_delivery_time", { withTimezone: true }),
+  scheduledPickupTime: timestamp("scheduled_pickup_time", { withTimezone: true }),
+  estimatedDeliveryTime: timestamp("estimated_delivery_time", { withTimezone: true }),
+  estimatedPickupTime: timestamp("estimated_pickup_time", { withTimezone: true }),
   
   // Status tracking
   status: text("status").default("scheduled").notNull(), // 'scheduled' | 'en_route_delivery' | 'delivered' | 'en_route_pickup' | 'completed' | 'cancelled'
-  deliveryCompletedAt: timestamp("delivery_completed_at"),
-  pickupCompletedAt: timestamp("pickup_completed_at"),
+  deliveryCompletedAt: timestamp("delivery_completed_at", { withTimezone: true }),
+  pickupCompletedAt: timestamp("pickup_completed_at", { withTimezone: true }),
   
   // Staff assignment
   assignedStaffId: integer("assigned_staff_id").references(() => users.id),
@@ -1745,8 +1745,8 @@ export const deliveryTasks = pgTable("delivery_tasks", {
   customerInstructions: text("customer_instructions"),
   
   // Tracking
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by"),
   updatedBy: text("updated_by"),
 });
@@ -1831,8 +1831,8 @@ export const vehicleTransports = pgTable("vehicle_transports", {
   reason: text("reason"),
   notes: text("notes"),
 
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by"),
   updatedBy: text("updated_by"),
   createdByUser: integer("created_by_user_id").references(() => users.id),
@@ -1903,16 +1903,16 @@ export const savedReports = pgTable("saved_reports", {
   scheduleDayOfMonth: integer("schedule_day_of_month"), // 1-31 for monthly
   scheduleTime: text("schedule_time"), // HH:MM format
   emailRecipients: jsonb("email_recipients").$type<string[]>().default([]), // Email addresses to send to
-  lastRunAt: timestamp("last_run_at"),
-  nextRunAt: timestamp("next_run_at"),
+  lastRunAt: timestamp("last_run_at", { withTimezone: true }),
+  nextRunAt: timestamp("next_run_at", { withTimezone: true }),
   
   // Sharing
   isPublic: boolean("is_public").default(false).notNull(), // Can other users view this report
   sharedWithUsers: jsonb("shared_with_users").$type<number[]>().default([]), // User IDs with access
   
   // Tracking
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by"),
   createdByUserId: integer("created_by_user_id").references(() => users.id),
   updatedBy: text("updated_by"),
@@ -1981,8 +1981,8 @@ export const damageCheckTemplates = pgTable("damage_check_templates", {
   language: text("language").default("nl").notNull(), // "nl" | "en" for Dutch or English
   
   // Tracking
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by"),
   updatedBy: text("updated_by"),
 }, (table) => ({
@@ -2013,7 +2013,7 @@ export const damageCheckTemplateBackgrounds = pgTable("damage_check_template_bac
   name: text("name").notNull(),
   backgroundPath: text("background_path").notNull(),
   previewPath: text("preview_path").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const insertDamageCheckTemplateBackgroundSchema = createInsertSchema(damageCheckTemplateBackgrounds)
@@ -2038,8 +2038,8 @@ export const vehicleDiagramTemplates = pgTable("vehicle_diagram_templates", {
   description: text("description"), // Optional description
   
   // Tracking
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by"),
   updatedBy: text("updated_by"),
 });
@@ -2063,7 +2063,7 @@ export const interactiveDamageChecks = pgTable("interactive_damage_checks", {
   
   // Damage check data
   checkType: text("check_type").notNull(), // "pickup" | "return"
-  checkDate: timestamp("check_date").notNull(),
+  checkDate: timestamp("check_date", { withTimezone: true }).notNull(),
   
   // Diagram template reference
   diagramTemplateId: integer("diagram_template_id").references(() => vehicleDiagramTemplates.id),
@@ -2093,8 +2093,8 @@ export const interactiveDamageChecks = pgTable("interactive_damage_checks", {
   completedBy: text("completed_by"),
   
   // Tracking
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by"),
   updatedBy: text("updated_by"),
 }, (table) => ({
@@ -2128,7 +2128,7 @@ export const auditLogs = pgTable("audit_logs", {
   ipAddress: text("ip_address"), // User's IP address
   userAgent: text("user_agent"), // Browser/client info
   status: text("status").notNull().default("success"), // 'success' | 'failure'
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
@@ -2150,10 +2150,10 @@ export const deletedRecords = pgTable("deleted_records", {
   label: text("label").notNull(), // human-readable, e.g. "HND-55-N Kia Picanto"
   payload: jsonb("payload").$type<Record<string, any>>().notNull(), // full row snapshot incl. related rows
   relatedCounts: jsonb("related_counts").$type<Record<string, number>>(), // {reservations: 1, documents: 0, expenses: 0}
-  deletedAt: timestamp("deleted_at").defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }).defaultNow().notNull(),
   deletedBy: text("deleted_by"),
   deletedByUserId: integer("deleted_by_user_id"),
-  restoredAt: timestamp("restored_at"),
+  restoredAt: timestamp("restored_at", { withTimezone: true }),
   restoredBy: text("restored_by"),
 }, (table) => ({
   entityIdx: index("deleted_records_entity_idx").on(table.entityType, table.entityId),
@@ -2173,7 +2173,7 @@ export const passwordHistory = pgTable("password_history", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   passwordHash: text("password_hash").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const insertPasswordHistorySchema = createInsertSchema(passwordHistory).omit({
@@ -2192,7 +2192,7 @@ export const loginAttempts = pgTable("login_attempts", {
   userAgent: text("user_agent"),
   success: boolean("success").notNull(),
   failureReason: text("failure_reason"), // e.g., 'invalid_password', 'account_locked', 'invalid_username'
-  attemptedAt: timestamp("attempted_at").defaultNow().notNull(),
+  attemptedAt: timestamp("attempted_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const insertLoginAttemptSchema = createInsertSchema(loginAttempts).omit({
@@ -2211,9 +2211,9 @@ export const activeSessions = pgTable("active_sessions", {
   username: text("username").notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
-  lastActivity: timestamp("last_activity").defaultNow().notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
+  lastActivity: timestamp("last_activity", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 });
 
 export const insertActiveSessionSchema = createInsertSchema(activeSessions).omit({
@@ -2251,7 +2251,7 @@ export const settings = pgTable("settings", {
   depotAddress: text("depot_address"),
   depotCity: text("depot_city"),
   depotPostalCode: text("depot_postal_code"),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   updatedBy: text("updated_by"),
   updatedByUser: integer("updated_by_user_id").references(() => users.id),
 });
@@ -2293,7 +2293,7 @@ export const vehicleCustomerBlacklist = pgTable("vehicle_customer_blacklist", {
   vehicleId: integer("vehicle_id").notNull().references(() => vehicles.id, { onDelete: 'cascade' }),
   customerId: integer("customer_id").notNull().references(() => customers.id, { onDelete: 'cascade' }),
   reason: text("reason"), // Optional reason for blacklisting
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: integer("created_by").references(() => users.id),
 }, (table) => ({
   uniqueVehicleCustomer: uniqueIndex("vehicle_customer_blacklist_unique").on(table.vehicleId, table.customerId),
@@ -2311,5 +2311,5 @@ export type InsertVehicleCustomerBlacklist = z.infer<typeof insertVehicleCustome
 export const session = pgTable("session", {
   sid: varchar("sid").primaryKey(),
   sess: jsonb("sess").notNull(),
-  expire: timestamp("expire").notNull(),
+  expire: timestamp("expire", { withTimezone: true }).notNull(),
 });

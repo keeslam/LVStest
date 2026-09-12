@@ -153,8 +153,12 @@ export const portalStorage = {
   },
 
   // ---- staff overview per customer ------------------------------------------
-  // Timestamps are stored as UTC wall-clock (drizzle timestamp without tz), so
-  // compare against now() expressed in UTC as well.
+  // besluit B-22 (BUG-224): the timestamp columns carry a time zone now, so
+  // now() compares instant against instant. This used to line the comparison
+  // up with the UTC wall clock drizzle wrote into a tz-less column; against a
+  // timestamptz that expression is a bare timestamp again and Postgres
+  // re-reads it in the session zone, which put "now" two hours into the
+  // future and made an expired invitation look pending.
   async listCustomersOverview(): Promise<PortalCustomerOverviewRow[]> {
     const result = await db.execute(sql`
       WITH acc AS (
@@ -162,9 +166,9 @@ export const portalStorage = {
                count(*)::int                                                         AS accounts_total,
                count(*) FILTER (WHERE active AND password_hash IS NOT NULL)::int      AS accounts_active,
                count(*) FILTER (WHERE NOT active)::int                                AS accounts_blocked,
-               count(*) FILTER (WHERE active AND last_seen_at > timezone('utc', now()) - make_interval(mins => ${ONLINE_WINDOW_MINUTES}))::int AS online_now,
-               count(*) FILTER (WHERE invite_token_hash IS NOT NULL AND invite_expires_at > timezone('utc', now()))::int  AS pending_invites,
-               count(*) FILTER (WHERE invite_token_hash IS NOT NULL AND invite_expires_at <= timezone('utc', now()))::int AS expired_invites,
+               count(*) FILTER (WHERE active AND last_seen_at > now() - make_interval(mins => ${ONLINE_WINDOW_MINUTES}))::int AS online_now,
+               count(*) FILTER (WHERE invite_token_hash IS NOT NULL AND invite_expires_at > now())::int  AS pending_invites,
+               count(*) FILTER (WHERE invite_token_hash IS NOT NULL AND invite_expires_at <= now())::int AS expired_invites,
                max(last_login_at)                                                     AS last_login_at
         FROM portal_users GROUP BY customer_id
       ),

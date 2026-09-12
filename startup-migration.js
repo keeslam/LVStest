@@ -391,6 +391,79 @@ async function grantDocumentPermissions() {
   );
 }
 
+
+// ==================== B-22: TIMESTAMPS WITH A TIME ZONE (BUG-224) ====================
+// besluiten.md B-22 - "migreren naar tijdzone-bewuste kolommen, met de
+// aanname dat bestaande waarden Amsterdamse tijd zijn".
+//
+// All 101 timestamp columns were `timestamp without time zone`. Nearly all of
+// them are filled by the column default now(), which Postgres evaluates in the
+// session's time zone - Europe/Amsterdam for this office - so 21:18:26 Dutch
+// time went into the column as the bare wall clock 21:18:26. Drizzle reads a
+// tz-less column back as if it were UTC, so the screen showed 23:18:26. That
+// is BUG-224, and it is the same two hours on every document, every audit line
+// and every notification.
+//
+// B-22 also says: "Migratie eerst op een kloon draaien en de uitkomst
+// voorleggen voordat productie aan de beurt is." So this step does NOT convert
+// anything on its own. It reports what is still pending on every boot, loudly,
+// and converts only when TIMESTAMPTZ_MIGRATION=apply is set - the one
+// deliberate action the owner takes after seeing the clone report from
+// `scripts/migrate-timestamps-to-timestamptz.ts --report`.
+//
+// Every ALTER below takes an ACCESS EXCLUSIVE lock and rewrites the table, so
+// it belongs in a maintenance window.
+const ASSUMED_TIMESTAMP_ZONE = 'Europe/Amsterdam';
+
+async function convertTimestampsToTimestamptz(manifest) {
+  const wanted = [];
+  for (const table of manifest) {
+    for (const column of table.columns) {
+      if (/^timestamp\b.*with time zone/i.test(column.type)) {
+        wanted.push({ table: table.name, column: column.name });
+      }
+    }
+  }
+
+  const existing = await db.execute(sql`
+    SELECT table_name, column_name, data_type
+      FROM information_schema.columns
+     WHERE table_schema = 'public' AND data_type LIKE 'timestamp%'
+  `);
+  const actual = new Map(existing.rows.map((r) => [`${r.table_name}.${r.column_name}`, r.data_type]));
+
+  const pending = wanted.filter(
+    (c) => actual.get(`${c.table}.${c.column}`) === 'timestamp without time zone'
+  );
+
+  if (pending.length === 0) {
+    console.log('B-22: every timestamp column already carries a time zone');
+    return;
+  }
+
+  if (process.env.TIMESTAMPTZ_MIGRATION !== 'apply') {
+    console.warn(
+      `B-22 PENDING: ${pending.length} column(s) are still "timestamp without time zone". ` +
+      'Times on documents, in the audit trail and in notifications are off by the Amsterdam ' +
+      'offset (BUG-224). Run scripts/migrate-timestamps-to-timestamptz.ts --report against a ' +
+      'clone, put the outcome to the owner, then start once with TIMESTAMPTZ_MIGRATION=apply. ' +
+      'Nothing was changed.'
+    );
+    return;
+  }
+
+  console.log(`B-22: converting ${pending.length} column(s) to timestamptz, reading existing values as ${ASSUMED_TIMESTAMP_ZONE}...`);
+  let converted = 0;
+  for (const column of pending) {
+    await db.execute(sql.raw(
+      `ALTER TABLE "${column.table}" ALTER COLUMN "${column.column}" ` +
+      `TYPE timestamptz USING "${column.column}" AT TIME ZONE '${ASSUMED_TIMESTAMP_ZONE}'`
+    ));
+    converted += 1;
+  }
+  console.log(`B-22: converted ${converted} column(s) to timestamptz`);
+}
+
 async function runMigrations() {
   try {
     console.log('🔍 Checking database schema...');
@@ -683,8 +756,8 @@ async function runMigrations() {
         backup_schedule TEXT NOT NULL DEFAULT '0 2 * * *',
         retention_days INTEGER NOT NULL DEFAULT 30,
         settings JSONB NOT NULL DEFAULT '{}',
-        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         created_by TEXT,
         updated_by TEXT
       )`,
@@ -719,8 +792,8 @@ async function runMigrations() {
       'backup_runs',
       `CREATE TABLE backup_runs (
         id SERIAL PRIMARY KEY,
-        started_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        finished_at TIMESTAMP,
+        started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        finished_at TIMESTAMPTZ,
         type TEXT NOT NULL,
         status TEXT NOT NULL,
         filename TEXT,
@@ -741,7 +814,7 @@ async function runMigrations() {
         vehicle_id INTEGER NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
         customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
         reason TEXT,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         created_by INTEGER REFERENCES users(id)
       )`
     );
@@ -831,8 +904,8 @@ async function runMigrations() {
         driver_name TEXT,
         reason TEXT,
         notes TEXT,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         created_by TEXT,
         updated_by TEXT,
         created_by_user_id INTEGER REFERENCES users(id),
@@ -995,8 +1068,8 @@ async function runMigrations() {
         background_path TEXT,
         background_preview_path TEXT,
         template_preview_path TEXT,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW(),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
         fields JSONB DEFAULT '[]'
       )`
     );
@@ -1009,7 +1082,7 @@ async function runMigrations() {
         name TEXT NOT NULL,
         background_path TEXT NOT NULL,
         preview_path TEXT NOT NULL,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`
     );
 
@@ -1058,8 +1131,8 @@ async function runMigrations() {
         label_width_mm INTEGER NOT NULL DEFAULT 62,
         label_height_mm INTEGER NOT NULL DEFAULT 29,
         fields JSONB DEFAULT '[]',
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
       )`
     );
 
@@ -1075,7 +1148,7 @@ async function runMigrations() {
         reservation_id INTEGER,
         license_plate TEXT,
         scanned_by TEXT,
-        created_at TIMESTAMP DEFAULT NOW()
+        created_at TIMESTAMPTZ DEFAULT NOW()
       )`
     );
 
@@ -1118,21 +1191,21 @@ async function runMigrations() {
         driver_id INTEGER REFERENCES drivers(id) ON DELETE SET NULL,
         active BOOLEAN NOT NULL DEFAULT true,
         invite_token_hash TEXT,
-        invite_expires_at TIMESTAMP,
-        last_login_at TIMESTAMP,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        invite_expires_at TIMESTAMPTZ,
+        last_login_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         created_by TEXT,
         updated_by TEXT
       )`);
     await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS portal_users_email_lower_idx ON portal_users (lower(email))`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS portal_users_customer_id_idx ON portal_users (customer_id)`);
-    await addColumnIfNotExists('portal_users', 'last_seen_at', 'TIMESTAMP');
+    await addColumnIfNotExists('portal_users', 'last_seen_at', 'TIMESTAMPTZ');
     await addColumnIfNotExists('portal_users', 'permissions', "JSONB NOT NULL DEFAULT '{}'::jsonb");
     await addColumnIfNotExists('portal_users', 'language', 'TEXT');
     await addColumnIfNotExists('portal_users', 'pending_email', 'TEXT');
     await addColumnIfNotExists('portal_users', 'email_change_token_hash', 'TEXT');
-    await addColumnIfNotExists('portal_users', 'email_change_expires_at', 'TIMESTAMP');
+    await addColumnIfNotExists('portal_users', 'email_change_expires_at', 'TIMESTAMPTZ');
     await addColumnIfNotExists('portal_users', 'known_devices', "JSONB NOT NULL DEFAULT '[]'::jsonb");
     await addColumnIfNotExists('portal_customer_settings', 'can_return', 'BOOLEAN NOT NULL DEFAULT true');
 
@@ -1148,8 +1221,8 @@ async function runMigrations() {
         can_view_contracts BOOLEAN NOT NULL DEFAULT true,
         show_prices BOOLEAN NOT NULL DEFAULT false,
         internal_notes TEXT,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_by TEXT
       )`);
 
@@ -1158,12 +1231,12 @@ async function runMigrations() {
         id SERIAL PRIMARY KEY,
         reservation_id INTEGER NOT NULL REFERENCES reservations(id) ON DELETE CASCADE,
         driver_id INTEGER REFERENCES drivers(id) ON DELETE SET NULL,
-        assigned_from TIMESTAMP NOT NULL,
-        assigned_until TIMESTAMP,
+        assigned_from TIMESTAMPTZ NOT NULL,
+        assigned_until TIMESTAMPTZ,
         assigned_by_portal_user_id INTEGER REFERENCES portal_users(id) ON DELETE SET NULL,
         assigned_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
         note TEXT,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS rda_reservation_from_idx ON reservation_driver_assignments (reservation_id, assigned_from)`);
 
@@ -1177,7 +1250,7 @@ async function runMigrations() {
         entity_id INTEGER,
         details JSONB,
         ip TEXT,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS portal_activity_customer_created_idx ON portal_activity_log (customer_id, created_at)`);
 
@@ -1204,7 +1277,7 @@ async function runMigrations() {
         id SERIAL PRIMARY KEY,
         license_plate TEXT NOT NULL,
         vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE SET NULL,
-        offence_at TIMESTAMP NOT NULL,
+        offence_at TIMESTAMPTZ NOT NULL,
         received_at TEXT,
         reference TEXT,
         description TEXT NOT NULL,
@@ -1216,11 +1289,11 @@ async function runMigrations() {
         customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
         reservation_id INTEGER REFERENCES reservations(id) ON DELETE SET NULL,
         driver_id INTEGER REFERENCES drivers(id) ON DELETE SET NULL,
-        linked_at TIMESTAMP, linked_by TEXT,
-        charged_at TIMESTAMP, invoice_reference TEXT,
-        paid_at TIMESTAMP,
+        linked_at TIMESTAMPTZ, linked_by TEXT,
+        charged_at TIMESTAMPTZ, invoice_reference TEXT,
+        paid_at TIMESTAMPTZ,
         internal_notes TEXT, customer_note TEXT,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW(), updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         created_by TEXT, updated_by TEXT
       )`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS fines_plate_offence_idx ON fines (license_plate, offence_at)`);
@@ -1242,8 +1315,8 @@ async function runMigrations() {
         records_failed INTEGER NOT NULL DEFAULT 0,
         error_message TEXT,
         details JSONB NOT NULL DEFAULT '[]'::jsonb,
-        received_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        processed_at TIMESTAMP,
+        received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        processed_at TIMESTAMPTZ,
         created_by TEXT
       )`);
     await addColumnIfNotExists('fines', 'source', 'TEXT');
@@ -1261,8 +1334,8 @@ async function runMigrations() {
         payload JSONB NOT NULL DEFAULT '{}'::jsonb,
         message TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'new',
-        staff_reply TEXT, replied_at TIMESTAMP, replied_by TEXT, handled_by TEXT,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW(), updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+        staff_reply TEXT, replied_at TIMESTAMPTZ, replied_by TEXT, handled_by TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS portal_requests_customer_created_idx ON portal_requests (customer_id, created_at)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS portal_requests_status_idx ON portal_requests (status)`);
@@ -1272,7 +1345,7 @@ async function runMigrations() {
         id SERIAL PRIMARY KEY,
         request_id INTEGER NOT NULL REFERENCES portal_requests(id) ON DELETE CASCADE,
         file_name TEXT NOT NULL, file_path TEXT NOT NULL, content_type TEXT NOT NULL, file_size INTEGER NOT NULL,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`);
     // These reference portal_requests / documents, so they come after them.
     await createTableIfNotExists('portal_request_messages', `
@@ -1282,7 +1355,7 @@ async function runMigrations() {
         author TEXT NOT NULL,
         author_name TEXT NOT NULL,
         body TEXT NOT NULL,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS portal_request_messages_request_idx ON portal_request_messages (request_id)`);
     await createTableIfNotExists('portal_notifications', `
@@ -1296,7 +1369,7 @@ async function runMigrations() {
         link TEXT,
         dedupe_tag TEXT,
         is_read BOOLEAN NOT NULL DEFAULT false,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS portal_notifications_customer_idx ON portal_notifications (customer_id, created_at)`);
     await createTableIfNotExists('portal_document_acks', `
@@ -1307,7 +1380,7 @@ async function runMigrations() {
         portal_user_id INTEGER REFERENCES portal_users(id) ON DELETE SET NULL,
         name TEXT NOT NULL,
         ip TEXT,
-        acked_at TIMESTAMP NOT NULL DEFAULT NOW()
+        acked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`);
     await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS portal_document_acks_document_idx ON portal_document_acks (document_id)`);
     console.log('✅ Fines and portal request tables ready');
@@ -1322,6 +1395,12 @@ async function runMigrations() {
     // B-23 (BUG-167): once the schema is in place, map the document
     // permissions onto the accounts that already had the access.
     await grantDocumentPermissions();
+
+    // B-22 (BUG-224): report - and, only on the owner's explicit switch,
+    // perform - the conversion to time-zone-aware columns.
+    await convertTimestampsToTimestamptz(
+      JSON.parse(readFileSync(new URL('./schema-columns.json', import.meta.url), 'utf8'))
+    );
 
     console.log('✅ Database migration completed successfully!');
     

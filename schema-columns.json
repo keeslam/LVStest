@@ -46,21 +46,21 @@
       },
       {
         "name": "last_activity",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "expires_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": null
@@ -107,14 +107,14 @@
       },
       {
         "name": "detected_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "resolved_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -168,14 +168,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -271,7 +271,7 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -290,14 +290,14 @@
       },
       {
         "name": "started_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "finished_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -421,14 +421,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -496,14 +496,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": "now()"
@@ -585,14 +585,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -919,14 +919,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -1001,7 +1001,7 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -1125,14 +1125,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -1200,7 +1200,7 @@
       },
       {
         "name": "deleted_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -1221,7 +1221,7 @@
       },
       {
         "name": "restored_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -1331,28 +1331,28 @@
       },
       {
         "name": "scheduled_delivery_time",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
       },
       {
         "name": "scheduled_pickup_time",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
       },
       {
         "name": "estimated_delivery_time",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
       },
       {
         "name": "estimated_pickup_time",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -1366,14 +1366,14 @@
       },
       {
         "name": "delivery_completed_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
       },
       {
         "name": "pickup_completed_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -1478,14 +1478,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -1567,7 +1567,7 @@
       },
       {
         "name": "upload_date",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -1602,7 +1602,7 @@
       },
       {
         "name": "stale_since",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -1754,14 +1754,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -2028,14 +2028,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -2166,14 +2166,14 @@
       },
       {
         "name": "received_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "processed_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -2213,7 +2213,7 @@
       },
       {
         "name": "offence_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": null
@@ -2297,7 +2297,7 @@
       },
       {
         "name": "linked_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -2311,7 +2311,7 @@
       },
       {
         "name": "charged_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -2325,7 +2325,7 @@
       },
       {
         "name": "paid_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -2360,14 +2360,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -2421,7 +2421,7 @@
       },
       {
         "name": "check_date",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": null
@@ -2505,14 +2505,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -2580,7 +2580,7 @@
       },
       {
         "name": "attempted_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -2613,7 +2613,7 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -2667,14 +2667,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": "now()"
@@ -2749,7 +2749,7 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -2838,14 +2838,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -2906,7 +2906,7 @@
       },
       {
         "name": "acked_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -2981,7 +2981,7 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -3035,7 +3035,7 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -3082,7 +3082,7 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -3164,7 +3164,7 @@
       },
       {
         "name": "replied_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -3185,14 +3185,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -3274,7 +3274,7 @@
       },
       {
         "name": "invite_expires_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -3302,7 +3302,7 @@
       },
       {
         "name": "email_change_expires_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -3316,28 +3316,28 @@
       },
       {
         "name": "last_login_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
       },
       {
         "name": "last_seen_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -3384,14 +3384,14 @@
       },
       {
         "name": "assigned_from",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": null
       },
       {
         "name": "assigned_until",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -3419,7 +3419,7 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -3774,14 +3774,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -3816,7 +3816,7 @@
       },
       {
         "name": "deleted_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -3968,14 +3968,14 @@
       },
       {
         "name": "last_run_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
       },
       {
         "name": "next_run_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -3996,14 +3996,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -4085,7 +4085,7 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": "now()"
@@ -4111,7 +4111,7 @@
       },
       {
         "name": "expire",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": null
@@ -4249,7 +4249,7 @@
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -4310,7 +4310,7 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -4357,7 +4357,7 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -4411,14 +4411,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": "now()"
@@ -4507,14 +4507,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -4568,7 +4568,7 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -4643,14 +4643,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -4900,14 +4900,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -5017,28 +5017,28 @@
       },
       {
         "name": "contacted_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
       },
       {
         "name": "fulfilled_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
@@ -5400,7 +5400,7 @@
       },
       {
         "name": "remarks_confirmed_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -5533,7 +5533,7 @@
       },
       {
         "name": "mileage_decreased_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -5575,7 +5575,7 @@
       },
       {
         "name": "fuel_refill_date",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": false,
         "primary": false,
         "default": null
@@ -5617,14 +5617,14 @@
       },
       {
         "name": "created_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
       },
       {
         "name": "updated_at",
-        "type": "timestamp",
+        "type": "timestamp with time zone",
         "notNull": true,
         "primary": false,
         "default": "now()"
