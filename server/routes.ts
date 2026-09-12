@@ -51,7 +51,10 @@ import {
   DEFAULT_DAMAGE_CHECK_FIELDS,
   DAMAGE_CHECK_FIELDS_KEY,
 } from "../shared/schema";
-import { getTransportSpareStatus } from "../shared/transport-spare-status";
+import {
+  getTransportSpareStatus,
+  reservationStatusForSpareStatus,
+} from "../shared/transport-spare-status";
 import { hasRemarks } from "../shared/remark-confirmation";
 import { findCustomerDuplicates, findDriverDuplicates } from "./services/duplicate-detection";
 import {
@@ -84,6 +87,7 @@ import {
   BLOCK_TO_VEHICLE_MAINTENANCE,
   assertVehicleMaintenanceStatus,
   normalizeReservationStatus,
+  isReservationTransitionAllowed,
   decideHandover,
   StateTransitionError,
   WorkshopBlockedError,
@@ -4552,8 +4556,19 @@ export async function registerRoutes(app: Express): Promise<void> {
         });
       }
 
+      // OPT-008 - the button registered the handover correctly and the system
+      // drew no conclusion from it: the replacement reservation stayed on
+      // `pending`, so the car read `available` while it was with the customer.
+      // The reservation's own status now follows what the car physically is,
+      // through the module phase 20 called "the model, not the problem".
+      const derivedStatus = reservationStatusForSpareStatus(spareVehicleStatus);
+      const currentStatus = normalizeReservationStatus(existingReservation.status);
+      const statusFollows = currentStatus !== derivedStatus
+        && isReservationTransitionAllowed(existingReservation.status, derivedStatus, { allowReversion: true });
+
       const updatedReservation = await storage.updateReservation(reservationId, { 
         spareVehicleStatus,
+        ...(statusFollows ? { status: derivedStatus } : {}),
         updatedBy: (req as any).user?.username 
       });
 
