@@ -159,7 +159,12 @@
       "noLicensePlatesFoundDescription": "Voer minstens één geldig kenteken in.",
       "noValidVehiclesTitle": "Geen geldige voertuigen",
       "noValidVehiclesDescription": "Alle rijen hebben validatiefouten. Corrigeer ze en probeer het opnieuw."
-    }
+    },
+    "processingVehicleDataWithProgress": "Voertuiggegevens verwerken… {{percent}}%",
+    "rdwEnrichedCount": "{{count}} voertuig(en) aangevuld met RDW-gegevens.",
+    "rdwNotFound": "Niet gevonden bij de RDW; alleen het kenteken is opgeslagen.",
+    "rdwDifference": "{{field}}: blad \"{{sheet}}\" / RDW \"{{rdw}}\"",
+    "rdwDifferencesTitle": "Afwijkingen ten opzichte van de RDW"
   },
   "addDialog": {
     "addVehicleButton": "Voertuig toevoegen",

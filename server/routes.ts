@@ -54,6 +54,14 @@ import {
 import { getTransportSpareStatus } from "../shared/transport-spare-status";
 import { hasRemarks } from "../shared/remark-confirmation";
 import { findCustomerDuplicates, findDriverDuplicates } from "./services/duplicate-detection";
+import {
+  MAX_IMPORT_BATCH,
+  normalizePlate,
+  loadFleetPlates,
+  enrichFromRdw,
+  applyRdwData,
+  diffAgainstRdw,
+} from "./services/vehicle-import";
 import multer from "multer";
 import { setupAuth, hashPassword, comparePasswords } from "./auth";
 import { backupService } from "./backupService";
@@ -1021,9 +1029,23 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(400).json({ message: "Please provide an array of license plates" });
       }
 
+      // OPT-031: a batch has a bound. Without one, a paste of ten thousand
+      // plates became ten thousand RDW calls inside one request.
+      if (licensePlates.length > MAX_IMPORT_BATCH) {
+        return res.status(400).json({
+          message: `Import at most ${MAX_IMPORT_BATCH} license plates at a time.`,
+          maxBatch: MAX_IMPORT_BATCH,
+          received: licensePlates.length,
+        });
+      }
+
       const imported: any[] = [];
       const failed: any[] = [];
       const user = req.user;
+
+      // OPT-031: one query for the whole batch, instead of the whole fleet per
+      // row.
+      const fleetPlates = await loadFleetPlates();
 
       for (const licensePlate of licensePlates) {
         try {
@@ -1035,44 +1057,53 @@ export async function registerRoutes(app: Express): Promise<void> {
             continue;
           }
 
-          // Normalize license plate (remove dashes and spaces)
-          const normalizedPlate = licensePlate.replace(/[-\s]/g, '').toUpperCase();
-          
-          // Check if vehicle already exists
-          const existingVehicles = await storage.getAllVehicles();
-          const exists = existingVehicles.some(v => 
-            v.licensePlate.replace(/[-\s]/g, '').toUpperCase() === normalizedPlate
-          );
-          
-          if (exists) {
+          const normalizedPlate = normalizePlate(licensePlate);
+
+          if (fleetPlates.has(normalizedPlate)) {
             failed.push({ licensePlate, error: "Vehicle already exists" });
             continue;
           }
 
-          // Create vehicle with minimal data (user can fill in details later)
-          const vehicleData = {
+          // OPT-031 - the Dutch screen promises that the vehicle's data is
+          // fetched from the RDW automatically; the handler never called the
+          // client that already exists and wrote brand/model "Unknown". A
+          // failed lookup falls back per row: the vehicle is still created,
+          // with the reason recorded, so an RDW outage never fails the import.
+          const enrichment = await enrichFromRdw(licensePlate);
+
+          const vehicleData: Record<string, unknown> = {
             licensePlate: licensePlate.toUpperCase(),
             brand: "Unknown",
             model: "Unknown",
             createdBy: user ? user.username : null,
             updatedBy: user ? user.username : null,
           };
+          const enrichedFields = enrichment.ok ? applyRdwData(vehicleData, enrichment.data) : [];
 
           const vehicle = await storage.createVehicle(vehicleData as any);
-          imported.push({ licensePlate, vehicle });
-          
+          fleetPlates.add(normalizedPlate);
+          imported.push({
+            licensePlate,
+            vehicle,
+            enriched: enrichment.ok,
+            enrichedFields,
+            ...(enrichment.ok
+              ? {}
+              : { enrichmentError: enrichment.message, enrichmentReason: enrichment.reason }),
+          });
+
           // Broadcast real-time update
           realtimeEvents.vehicles.created(vehicle);
         } catch (error) {
           console.error(`Error importing vehicle ${licensePlate}:`, error);
-          failed.push({ 
-            licensePlate, 
-            error: error instanceof Error ? error.message : "Unknown error" 
+          failed.push({
+            licensePlate,
+            error: error instanceof Error ? error.message : "Unknown error"
           });
         }
       }
 
-      res.json({ imported, failed });
+      res.json({ imported, failed, maxBatch: MAX_IMPORT_BATCH });
     } catch (error) {
       console.error("Error in bulk import:", error);
       res.status(500).json({ message: "Failed to process bulk import" });
@@ -1088,6 +1119,19 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(400).json({ message: "Please provide an array of vehicles" });
       }
 
+      // OPT-031: the same bound as the plate import. The client sends the sheet
+      // in chunks of this size, which is what makes the progress bar real.
+      if (vehicles.length > MAX_IMPORT_BATCH) {
+        return res.status(400).json({
+          message: `Import at most ${MAX_IMPORT_BATCH} vehicles at a time.`,
+          maxBatch: MAX_IMPORT_BATCH,
+          received: vehicles.length,
+        });
+      }
+
+      // OPT-031: once, not per row.
+      const fleetPlates = await loadFleetPlates();
+
       const imported: any[] = [];
       const failed: any[] = [];
       const user = req.user;
@@ -1101,16 +1145,9 @@ export async function registerRoutes(app: Express): Promise<void> {
             continue;
           }
 
-          // Normalize license plate for comparison
-          const normalizedPlate = licensePlate.replace(/[-\s]/g, '').toUpperCase();
-          
-          // Check if vehicle already exists
-          const existingVehicles = await storage.getAllVehicles();
-          const exists = existingVehicles.some(v => 
-            v.licensePlate.replace(/[-\s]/g, '').toUpperCase() === normalizedPlate
-          );
-          
-          if (exists) {
+          const normalizedPlate = normalizePlate(licensePlate);
+
+          if (fleetPlates.has(normalizedPlate)) {
             failed.push({ licensePlate, error: "Vehicle already exists" });
             continue;
           }
@@ -1233,12 +1270,45 @@ export async function registerRoutes(app: Express): Promise<void> {
             }
           }
 
+          // OPT-031 - the sheet's own values win (the employee typed them on
+          // purpose), but every field where the RDW disagrees is reported, and
+          // a field the sheet left empty is filled in from the RDW. A failed
+          // lookup never fails the row.
+          const enrichment = await enrichFromRdw(licensePlate);
+          let differences: ReturnType<typeof diffAgainstRdw> = [];
+          let filledFromRdw: string[] = [];
+          if (enrichment.ok) {
+            differences = diffAgainstRdw(vehicleData, enrichment.data);
+            const sheetValues: Record<string, unknown> = { ...vehicleData };
+            // "Unknown" is this route's own placeholder, not something the
+            // employee typed, so the RDW answer may replace it.
+            const ownValues = new Set(
+              Object.keys(sheetValues).filter((key) => {
+                const value = sheetValues[key];
+                if (value === null || value === undefined || value === '') return false;
+                if ((key === 'brand' || key === 'model') && value === 'Unknown') return false;
+                return true;
+              }),
+            );
+            applyRdwData(vehicleData, enrichment.data);
+            for (const key of ownValues) {
+              (vehicleData as Record<string, unknown>)[key] = sheetValues[key];
+            }
+            filledFromRdw = Object.keys(vehicleData).filter((key) => !ownValues.has(key)
+              && (vehicleData as Record<string, unknown>)[key] !== sheetValues[key]);
+          }
+
           const vehicle = await storage.createVehicle(vehicleData);
+          fleetPlates.add(normalizedPlate);
           imported.push({ 
             licensePlate, 
             brand: vehicle.brand,
             model: vehicle.model,
-            vehicle 
+            vehicle,
+            rdwVerified: enrichment.ok,
+            differences,
+            filledFromRdw,
+            ...(enrichment.ok ? {} : { enrichmentError: enrichment.message, enrichmentReason: enrichment.reason }),
           });
           
           // Broadcast real-time update
@@ -1252,7 +1322,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
       }
 
-      res.json({ imported, failed });
+      res.json({ imported, failed, maxBatch: MAX_IMPORT_BATCH });
     } catch (error) {
       console.error("Error in CSV bulk import:", error);
       res.status(500).json({ message: "Failed to process CSV bulk import" });

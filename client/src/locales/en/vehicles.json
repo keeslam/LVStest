@@ -159,7 +159,12 @@
       "noLicensePlatesFoundDescription": "Please enter at least one valid license plate.",
       "noValidVehiclesTitle": "No Valid Vehicles",
       "noValidVehiclesDescription": "All rows have validation errors. Please fix them and try again."
-    }
+    },
+    "processingVehicleDataWithProgress": "Processing vehicle data… {{percent}}%",
+    "rdwEnrichedCount": "{{count}} vehicle(s) filled in from the RDW.",
+    "rdwNotFound": "Not found at the RDW; only the license plate was stored.",
+    "rdwDifference": "{{field}}: sheet \"{{sheet}}\" / RDW \"{{rdw}}\"",
+    "rdwDifferencesTitle": "Differences from the RDW"
   },
   "addDialog": {
     "addVehicleButton": "Add Vehicle",

@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { chunk, IMPORT_CHUNK_SIZE } from "@/lib/import-chunks";
 import { FileText, Check, X, AlertCircle, Upload, UploadCloud, Download, ArrowLeft } from "lucide-react";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -586,11 +587,27 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
     }
   };
 
-  // Handle license plate bulk import
+  // Handle license plate bulk import.
+  //
+  // OPT-031: sent in chunks, and the bar moves per chunk. The old bar was set
+  // to 5 and never moved again, so people cancelled imports that were simply
+  // busy. Chunking is also what keeps one request inside the server's batch
+  // bound now that every row costs an RDW lookup.
   const importMutation = useMutation({
     mutationFn: async (licensePlates: string[]) => {
-      const response = await apiRequest("POST", "/api/vehicles/bulk-import-plates", { licensePlates });
-      return response.json();
+      const combined: { imported: any[]; failed: any[] } = { imported: [], failed: [] };
+      const chunks = chunk(licensePlates, IMPORT_CHUNK_SIZE);
+      let done = 0;
+      setImportProgress(0);
+      for (const batch of chunks) {
+        const response = await apiRequest("POST", "/api/vehicles/bulk-import-plates", { licensePlates: batch });
+        const result = await response.json();
+        combined.imported.push(...(result.imported ?? []));
+        combined.failed.push(...(result.failed ?? []));
+        done += batch.length;
+        setImportProgress(Math.round((done / licensePlates.length) * 100));
+      }
+      return combined;
     },
     onSuccess: (data: { imported: any[], failed: any[] }) => {
       invalidateByPrefix("/api/vehicles");
@@ -614,11 +631,22 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
     },
   });
 
-  // Handle CSV bulk import
+  // Handle CSV bulk import - same chunking, same real progress (OPT-031).
   const csvImportMutation = useMutation({
     mutationFn: async (vehicles: ParsedVehicle[]) => {
-      const response = await apiRequest("POST", "/api/vehicles/bulk-import-csv", { vehicles });
-      return response.json();
+      const combined: { imported: any[]; failed: any[] } = { imported: [], failed: [] };
+      const chunks = chunk(vehicles, IMPORT_CHUNK_SIZE);
+      let done = 0;
+      setImportProgress(0);
+      for (const batch of chunks) {
+        const response = await apiRequest("POST", "/api/vehicles/bulk-import-csv", { vehicles: batch });
+        const result = await response.json();
+        combined.imported.push(...(result.imported ?? []));
+        combined.failed.push(...(result.failed ?? []));
+        done += batch.length;
+        setImportProgress(Math.round((done / vehicles.length) * 100));
+      }
+      return combined;
     },
     onSuccess: (data: { imported: any[], failed: any[] }) => {
       invalidateByPrefix("/api/vehicles");
@@ -666,8 +694,8 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
       return;
     }
 
-    // Start the import process
-    setImportProgress(5);
+    // OPT-031: no fake head start - the bar starts at 0 and is moved by the
+    // chunks that actually finished.
     importMutation.mutate(licensePlates);
   };
 
@@ -947,9 +975,9 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
                 <CardTitle>{t('bulkImportDialog.importProgressTitle')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <Progress value={importProgress} className="h-2" />
+                <Progress value={importProgress} className="h-2" data-testid="import-progress" />
                 <p className="text-center mt-2 text-sm text-gray-500">
-                  {t('bulkImportDialog.processingVehicleData')}
+                  {t('bulkImportDialog.processingVehicleDataWithProgress', { percent: importProgress })}
                 </p>
               </CardContent>
             </Card>
@@ -973,9 +1001,31 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
                     <div className="bg-gray-50 p-4 rounded-md mb-6 max-h-32 overflow-y-auto">
                       <ul className="space-y-1">
                         {importResults.imported.map((item, index) => (
-                          <li key={`success-${index}`} className="text-sm flex items-center">
-                            <Check className="h-4 w-4 mr-2 text-green-500" />
-                            {item.licensePlate} - {item.vehicle?.brand || item.brand} {item.vehicle?.model || item.model}
+                          <li key={`success-${index}`} className="text-sm" data-testid={`import-row-${item.licensePlate}`}>
+                            <span className="flex items-center">
+                              <Check className="h-4 w-4 mr-2 text-green-500" />
+                              {item.licensePlate} - {item.vehicle?.brand || item.brand} {item.vehicle?.model || item.model}
+                            </span>
+                            {/* OPT-031 - the screen promised RDW auto-fill; now
+                                it reports what it actually got. */}
+                            {item.enrichmentError && (
+                              <span className="block pl-6 text-xs text-amber-700">
+                                {t('bulkImportDialog.rdwNotFound')}
+                              </span>
+                            )}
+                            {Array.isArray(item.differences) && item.differences.length > 0 && (
+                              <span className="block pl-6 text-xs text-amber-700">
+                                {t('bulkImportDialog.rdwDifferencesTitle')}:{' '}
+                                {item.differences
+                                  .map((difference: { field: string; sheet: unknown; rdw: unknown }) =>
+                                    t('bulkImportDialog.rdwDifference', {
+                                      field: difference.field,
+                                      sheet: String(difference.sheet ?? ''),
+                                      rdw: String(difference.rdw ?? ''),
+                                    }))
+                                  .join('; ')}
+                              </span>
+                            )}
                           </li>
                         ))}
                       </ul>
