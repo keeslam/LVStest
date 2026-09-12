@@ -18,7 +18,7 @@ import { Reservation, Vehicle, Customer, Driver, Document } from "@shared/schema
 import { BarcodeSvg } from "@/components/barcodes/barcode-svg";
 import { formatReservationBarcode } from "@shared/barcode";
 import { differenceInDays, parseISO } from "date-fns";
-import { Wrench, Car, ArrowRightLeft, Trash2, Edit, FileText, Upload, FileCheck, X, Camera, AlertCircle } from "lucide-react";
+import { Wrench, Car, ArrowRightLeft, Trash2, Edit, FileText, Upload, FileCheck, X, Camera, AlertCircle, Calendar as CalendarIcon } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { 
   AlertDialog,
@@ -38,6 +38,11 @@ import { SpareVehicleDialog } from "@/components/reservations/spare-vehicle-dial
 import { ServiceVehicleDialog } from "@/components/reservations/service-vehicle-dialog";
 import { ReturnFromServiceDialog } from "@/components/reservations/return-from-service-dialog";
 import { RecordHistory } from "@/components/audit/record-history";
+import {
+  EditDatesDialog,
+  EditCustomerDialog,
+  EditVehicleDialog,
+} from "@/components/reservations/quick-edit-dialogs";
 import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { ReservationDocumentsDialog } from "@/components/reservations/reservation-documents-dialog";
@@ -67,6 +72,8 @@ export function ReservationViewDialog({
   const { toast } = useToast();
   const { openVehicleDialog, openCustomerDialog } = useGlobalDialog();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  // OPT-010 — which micro edit is open, if any.
+  const [quickEdit, setQuickEdit] = useState<'dates' | 'customer' | 'vehicle' | null>(null);
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [isSpareDialogOpen, setIsSpareDialogOpen] = useState(false);
   const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
@@ -925,10 +932,36 @@ export function ReservationViewDialog({
               {t('viewDialog.closeButton')}
             </Button>
 
+            {/* OPT-010 - the three micro edits, next to the full form. Each
+                sends only the fields it owns, to the same PATCH handler. */}
+            <Button
+              variant="outline"
+              onClick={() => setQuickEdit('dates')}
+              data-testid="button-quick-edit-dates"
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {t('quickEdit.dates.title')}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setQuickEdit('customer')}
+              data-testid="button-quick-edit-customer"
+            >
+              <Edit className="mr-2 h-4 w-4" />
+              {t('quickEdit.customer.title')}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setQuickEdit('vehicle')}
+              data-testid="button-quick-edit-vehicle"
+            >
+              <Edit className="mr-2 h-4 w-4" />
+              {t('quickEdit.vehicle.title')}
+            </Button>
+
             <Button
               variant="outline"
               onClick={() => {
-                console.log('Edit button clicked', { reservationId, onEdit });
                 if (reservationId) onEdit?.(reservationId);
               }}
               data-testid="button-edit-reservation"
@@ -965,6 +998,30 @@ export function ReservationViewDialog({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* OPT-010 - "Datums wijzigen" / "Klant wijzigen" / "Voertuig wijzigen".
+          Each sends only its own fields to PATCH /api/reservations/:id, which is
+          the same handler - and therefore the same conflict check, blacklist
+          check and price recalculation - the full form uses. */}
+      {reservation && (
+        <>
+          <EditDatesDialog
+            open={quickEdit === 'dates'}
+            onOpenChange={(next) => { if (!next) setQuickEdit(null); }}
+            reservation={reservation}
+          />
+          <EditCustomerDialog
+            open={quickEdit === 'customer'}
+            onOpenChange={(next) => { if (!next) setQuickEdit(null); }}
+            reservation={reservation}
+          />
+          <EditVehicleDialog
+            open={quickEdit === 'vehicle'}
+            onOpenChange={(next) => { if (!next) setQuickEdit(null); }}
+            reservation={reservation}
+          />
+        </>
+      )}
 
       {/* Service-related dialogs */}
       <ServiceVehicleDialog

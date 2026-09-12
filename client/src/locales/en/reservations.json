@@ -1130,5 +1130,32 @@
       "resetEndDate": "Reset end date",
       "endBeforeStart": "The end date cannot be before the start date."
     }
+  },
+  "quickEdit": {
+    "dates": {
+      "title": "Change dates",
+      "description": "Only the start and end date change; the rest of the booking stays as it is.",
+      "startLabel": "Start date",
+      "endLabel": "End date",
+      "invalidRange": "The end date cannot be before the start date.",
+      "savedTitle": "Dates changed",
+      "failedTitle": "Could not change the dates"
+    },
+    "customer": {
+      "title": "Change customer",
+      "description": "Only the customer changes; the rest of the booking stays as it is.",
+      "searchPlaceholder": "Search by name, company or debtor number...",
+      "noResults": "No customers found",
+      "changeLabel": "Pick another customer",
+      "savedTitle": "Customer changed",
+      "failedTitle": "Could not change the customer"
+    },
+    "vehicle": {
+      "title": "Change vehicle",
+      "description": "Only the vehicle changes; availability is checked again.",
+      "searchPlaceholder": "Pick a vehicle...",
+      "savedTitle": "Vehicle changed",
+      "failedTitle": "Could not change the vehicle"
+    }
   }
 }

@@ -1130,5 +1130,32 @@
       "resetEndDate": "Einddatum terugzetten",
       "endBeforeStart": "De einddatum kan niet vóór de startdatum liggen."
     }
+  },
+  "quickEdit": {
+    "dates": {
+      "title": "Datums wijzigen",
+      "description": "Alleen de begin- en einddatum worden gewijzigd; de rest van de boeking blijft zoals hij is.",
+      "startLabel": "Begindatum",
+      "endLabel": "Einddatum",
+      "invalidRange": "De einddatum kan niet vóór de begindatum liggen.",
+      "savedTitle": "Datums gewijzigd",
+      "failedTitle": "Datums wijzigen mislukt"
+    },
+    "customer": {
+      "title": "Klant wijzigen",
+      "description": "Alleen de klant wordt gewijzigd; de rest van de boeking blijft zoals hij is.",
+      "searchPlaceholder": "Zoek op naam, bedrijf of debiteurnummer...",
+      "noResults": "Geen klanten gevonden",
+      "changeLabel": "Andere klant kiezen",
+      "savedTitle": "Klant gewijzigd",
+      "failedTitle": "Klant wijzigen mislukt"
+    },
+    "vehicle": {
+      "title": "Voertuig wijzigen",
+      "description": "Alleen het voertuig wordt gewijzigd; de beschikbaarheid wordt opnieuw gecontroleerd.",
+      "searchPlaceholder": "Kies een voertuig...",
+      "savedTitle": "Voertuig gewijzigd",
+      "failedTitle": "Voertuig wijzigen mislukt"
+    }
   }
 }
