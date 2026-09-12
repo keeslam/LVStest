@@ -1,0 +1,34 @@
+'use strict';
+const { admin, q, pool, d } = require('./p36c-lib.cjs');
+const log = (k, v) => console.log(k + ' :: ' + (typeof v === 'string' ? v : JSON.stringify(v)));
+const RUN = process.env.RUN || String(Date.now()).slice(-5);
+(async () => {
+  const s = await admin('c21');
+  const mk = async (tag) => {
+    const plate = 'P36U' + RUN + tag;
+    const rr = await s.post('/api/vehicles', { licensePlate: plate, brand: 'AUDIT-P36C', model: 'U', vehicleType: 'Personenauto', chassisNumber: 'CH' + plate, currentMileage: 1000 });
+    if (rr.status !== 201) throw new Error(plate + ' ' + rr.status + rr.text.slice(0, 200));
+    return rr.json.id;
+  };
+  let r;
+  const V = await mk('A'), VS = await mk('S');
+  const drivers = await q('select id from drivers order by id limit 1');
+  r = await s.post('/api/reservations', { customerId: 179, vehicleId: V, startDate: d(100), endDate: d(104), type: 'standard', totalPrice: 100, notes: 'AUDIT-P36C u112', deliveryRequired: true, driverId: drivers[0].id });
+  const R = r.json.id;
+  log('112 rental', [r.status, R]);
+  log('112 transports', await q('select id,status from vehicle_transports where reservation_id=$1', [R]));
+  r = await s.post('/api/reservations/' + R + '/mark-needs-service', { maintenanceStatus: 'scheduled', maintenanceType: 'repair', notes: 'AUDIT-P36C u112' });
+  log('112 mark-needs-service', [r.status, r.text.slice(0, 120)]);
+  r = await s.post('/api/reservations/' + R + '/assign-spare', { spareVehicleId: VS, startDate: d(100), endDate: d(104) });
+  log('112 assign-spare', [r.status, r.text.slice(0, 140)]);
+  r = await s.get('/api/reservations/' + R + '/cancel-impact');
+  log('112 cancel-impact (B-04 asks first)', [r.status, r.text.slice(0, 400)]);
+  r = await s.patch('/api/reservations/' + R + '/status', { status: 'cancelled', cascade: { transports: true, spares: true, placeholders: true, drivers: true } });
+  log('112 cancel with cascade=true', [r.status, (r.text.match(/"cancelCascade".*$/) || [''])[0].slice(0, 300)]);
+  log('112 transports after', await q('select id,status from vehicle_transports where reservation_id=$1', [R]));
+  log('112 children after', await q("select id,type,status,placeholder_spare,deleted_at from reservations where replacement_for_reservation_id=$1 or affected_rental_id=$1", [R]));
+  log('112 driver assignments after', await q('select id,driver_id,assigned_until from reservation_driver_assignments where reservation_id=$1', [R]));
+  r = await s.get('/api/placeholder-reservations/needing-assignment');
+  log('112 needing-assignment contains ours?', [r.status, (r.json || []).filter(x => x.replacementForReservationId === R || x.affectedRentalId === R).map(x => x.id)]);
+  await pool.end();
+})();

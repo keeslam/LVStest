@@ -123,6 +123,31 @@ compressie wordt overgeslagen wanneer de proxy het al heeft gedaan.
 **Besluit:** weigeren. Alleen een echte link of een geüpload bestand; een lokaal of netwerkpad werkt
 voor collega's toch niet.
 
+### B-21 — De ~790 oude, niet-afgesloten reserveringen (uitwerking van B-02)
+**Besluit:** gesplitst afhandelen.
+- De 380 rijen met status `booked` die nooit zijn opgehaald en de 38 met een verouderde status
+  (`active`, `scheduled`, `in`, …) worden automatisch geannuleerd/afgesloten.
+- De 363 rijen met status `picked_up` worden **niet** automatisch afgesloten: die beweren dat de auto
+  nog buiten staat. Die komen op een werklijst die iemand echt naloopt.
+Het bestaande script `scripts/close-returned-reservations.ts` dekt deze regel niet (het sloot er 4
+van 790) en moet hierop worden uitgebreid.
+
+### B-22 — Tijdzone van tijdstempels (BUG-224)
+**Besluit:** migreren naar tijdzone-bewuste kolommen, met de aanname dat bestaande waarden
+Amsterdamse tijd zijn. Daarna kloppen tijden op documenten, in het auditspoor en in meldingen.
+Migratie eerst op een kloon draaien en de uitkomst voorleggen voordat productie aan de beurt is.
+
+### B-23 — Wie documenten mag genereren en inzien (BUG-167)
+**Besluit (letterlijk van Kees):** "extra vinkje in admin panel of dit ook bekeken/bewerkt mag worden."
+Dus: een apart recht voor documenten, per medewerker aan te zetten in het beheerscherm, met
+onderscheid tussen **bekijken** en **bewerken/genereren**. Niet meeliften op het voertuigen- of
+reserveringenrecht.
+
+### B-24 — Ontvanger van een APK-herinnering (BUG-170)
+**Besluit:** alleen de huidige huurder, dat wil zeggen de klant van de lopende of eerstvolgende
+reservering op dat voertuig. Staat de auto leeg, dan gaat er alleen een melding naar kantoor. Nooit
+meer naar iedereen die ooit op dat kenteken heeft gehuurd.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - (beslist, zie B-17) OPT-001 — wat telt als "openstaand punt" op het werkdagscherm.

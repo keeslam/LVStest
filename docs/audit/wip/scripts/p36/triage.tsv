@@ -1,0 +1,230 @@
+BUG-001	CRITICAL	TECHNICAL-FIX	FIX-I permission gaps
+BUG-002	CRITICAL	TECHNICAL-FIX	FIX-A async errors (CQ-001)
+BUG-003	CRITICAL	TECHNICAL-FIX	FIX-J unauth endpoints
+BUG-004	CRITICAL	TECHNICAL-FIX	FIX-V maintenance/spare cascade
+BUG-005	CRITICAL	TECHNICAL-FIX	FIX-J unauth endpoints
+BUG-006	CRITICAL	TECHNICAL-FIX	FIX-F bookability (CQ-006)
+BUG-007	CRITICAL	TECHNICAL-FIX	FIX-X delete/cancel cascade
+BUG-008	HIGH	TECHNICAL-FIX	FIX-K auth/session/limits
+BUG-009	HIGH	DEFERRED	DEFERRED — needs the real Coolify/Traefik hop count and XFF-strip behaviour
+BUG-010	HIGH	TECHNICAL-FIX	FIX-I permission gaps
+BUG-011	HIGH	TECHNICAL-FIX	FIX-I permission gaps
+BUG-012	HIGH	TECHNICAL-FIX	FIX-C path containment
+BUG-013	HIGH	BUSINESS-DECISION	OPT-023 — hard block or soft warning when booking over an active maintenance block?
+BUG-014	HIGH	TECHNICAL-FIX	FIX-V maintenance/spare cascade
+BUG-015	HIGH	TECHNICAL-FIX	FIX-I permission gaps
+BUG-016	HIGH	TECHNICAL-FIX	FIX-H state machine (CQ-005)
+BUG-017	HIGH	TECHNICAL-FIX	FIX-AA route domain guards
+BUG-018	HIGH	BUSINESS-DECISION	OPT-004 — does not_for_rental / needs_fixing make a vehicle unbookable, and may staff override?
+BUG-019	HIGH	TECHNICAL-FIX	FIX-H state machine (CQ-005)
+BUG-020	HIGH	TECHNICAL-FIX	FIX-Z schema validation
+BUG-021	HIGH	TECHNICAL-FIX	FIX-H state machine (CQ-005)
+BUG-022	HIGH	BUSINESS-DECISION	OPT-033 — may a vehicle with live reservations be deleted at all, and what happens to other customers' rows?
+BUG-023	HIGH	TECHNICAL-FIX	FIX-I permission gaps
+BUG-024	MEDIUM	BUSINESS-DECISION	no OPT — password policy: enforce history/reuse ban, or drop the unused table?
+BUG-025	MEDIUM	TECHNICAL-FIX	FIX-D body validation (CQ-009)
+BUG-026	MEDIUM	TECHNICAL-FIX	FIX-B uploads path (CQ-003)
+BUG-027	MEDIUM	TECHNICAL-FIX	FIX-O document registration (CQ-008)
+BUG-028	MEDIUM	TECHNICAL-FIX	FIX-P template validation
+BUG-029	MEDIUM	TECHNICAL-FIX	FIX-B uploads path (CQ-003)
+BUG-030	MEDIUM	TECHNICAL-FIX	FIX-AA route domain guards
+BUG-031	MEDIUM	TECHNICAL-FIX	FIX-AA route domain guards
+BUG-032	MEDIUM	TECHNICAL-FIX	FIX-V maintenance/spare cascade
+BUG-033	MEDIUM	TECHNICAL-FIX	FIX-V maintenance/spare cascade
+BUG-034	MEDIUM	BUSINESS-DECISION	OPT-006 — does creating a maintenance block change the vehicle status, and back again on delete?
+BUG-035	MEDIUM	TECHNICAL-FIX	FIX-V maintenance/spare cascade
+BUG-036	MEDIUM	TECHNICAL-FIX	FIX-H state machine (CQ-005)
+BUG-037	MEDIUM	BUSINESS-DECISION	OPT-023 — may two maintenance blocks overlap on one vehicle?
+BUG-038	MEDIUM	TECHNICAL-FIX	FIX-AA route domain guards
+BUG-039	MEDIUM	TECHNICAL-FIX	FIX-AA route domain guards
+BUG-040	MEDIUM	BUSINESS-DECISION	OPT-001/OPT-003 — is backdating a start date allowed, and what does the overdue gate count?
+BUG-041	MEDIUM	TECHNICAL-FIX	FIX-Z schema validation
+BUG-042	MEDIUM	TECHNICAL-FIX	FIX-Z schema validation
+BUG-043	MEDIUM	TECHNICAL-FIX	FIX-G atomic transitions
+BUG-044	MEDIUM	TECHNICAL-FIX	FIX-Z schema validation
+BUG-045	MEDIUM	BUSINESS-DECISION	OPT-019 — must debtorNumber be unique, or only warn?
+BUG-046	MEDIUM	TECHNICAL-FIX	FIX-J unauth endpoints
+BUG-047	MEDIUM	TECHNICAL-FIX	FIX-K auth/session/limits
+BUG-048	LOW	TECHNICAL-FIX	FIX-P template validation
+BUG-049	LOW	TECHNICAL-FIX	FIX-AA route domain guards
+BUG-050	LOW	TECHNICAL-FIX	FIX-O document registration (CQ-008)
+BUG-051	LOW	TECHNICAL-FIX	FIX-J unauth endpoints
+BUG-052	LOW	TECHNICAL-FIX	FIX-D body validation (CQ-009)
+BUG-053	LOW	TECHNICAL-FIX	FIX-Q client robustness
+BUG-054	LOW	TECHNICAL-FIX	FIX-Z schema validation
+BUG-055	LOW	TECHNICAL-FIX	FIX-X delete/cancel cascade
+BUG-056	LOW	BUSINESS-DECISION	no OPT — implement recurring reservations or remove the fields?
+BUG-057	LOW	ENV/DEV-ONLY	ENV — correct in code, dev-gated; verify NODE_ENV=production in Coolify
+BUG-058	LOW	TECHNICAL-FIX	FIX-Z schema validation
+BUG-059	LOW	TECHNICAL-FIX	FIX-Z schema validation
+BUG-060	CRITICAL	TECHNICAL-FIX	FIX-C path containment
+BUG-061	CRITICAL	TECHNICAL-FIX	FIX-A async errors (CQ-001)
+BUG-062	HIGH	TECHNICAL-FIX	FIX-K auth/session/limits
+BUG-063	HIGH	TECHNICAL-FIX	FIX-D body validation (CQ-009)
+BUG-064	HIGH	TECHNICAL-FIX	FIX-I permission gaps
+BUG-065	HIGH	TECHNICAL-FIX	FIX-I permission gaps
+BUG-066	HIGH	TECHNICAL-FIX	FIX-I permission gaps
+BUG-067	HIGH	TECHNICAL-FIX	FIX-I permission gaps
+BUG-068	HIGH	TECHNICAL-FIX	FIX-I permission gaps
+BUG-069	HIGH	TECHNICAL-FIX	FIX-L restore safety
+BUG-070	HIGH	TECHNICAL-FIX	FIX-C path containment
+BUG-071	HIGH	TECHNICAL-FIX	FIX-U outbound/headers
+BUG-072	HIGH	TECHNICAL-FIX	FIX-R client XSS sinks
+BUG-073	HIGH	TECHNICAL-FIX	FIX-R client XSS sinks
+BUG-074	HIGH	TECHNICAL-FIX	FIX-K auth/session/limits
+BUG-075	HIGH	TECHNICAL-FIX	FIX-L restore safety
+BUG-076	MEDIUM	REFUTED	REFUTED — busboy reduces originalname to basename; defensive hardening only (phase 15 runtime)
+BUG-077	MEDIUM	TECHNICAL-FIX	FIX-U outbound/headers
+BUG-078	MEDIUM	TECHNICAL-FIX	FIX-U outbound/headers
+BUG-079	MEDIUM	TECHNICAL-FIX	FIX-U outbound/headers
+BUG-080	MEDIUM	TECHNICAL-FIX	FIX-M mail reliability
+BUG-081	MEDIUM	BUSINESS-DECISION	OPT-027/OPT-013 — may staff mail a document to a free address, or only to the reservation customer?
+BUG-082	MEDIUM	DEFERRED	DEFERRED — same trust-proxy topology fact as BUG-009
+BUG-083	MEDIUM	TECHNICAL-FIX	FIX-K auth/session/limits
+BUG-084	MEDIUM	TECHNICAL-FIX	FIX-D body validation (CQ-009)
+BUG-085	MEDIUM	TECHNICAL-FIX	FIX-I permission gaps
+BUG-086	MEDIUM	TECHNICAL-FIX	FIX-R client XSS sinks
+BUG-087	MEDIUM	TECHNICAL-FIX	FIX-U outbound/headers
+BUG-088	MEDIUM	TECHNICAL-FIX	FIX-E :id validation (CQ-007)
+BUG-089	MEDIUM	TECHNICAL-FIX	FIX-E :id validation (CQ-007)
+BUG-090	MEDIUM	TECHNICAL-FIX	FIX-X delete/cancel cascade
+BUG-091	MEDIUM	TECHNICAL-FIX	FIX-K auth/session/limits
+BUG-092	MEDIUM	TECHNICAL-FIX	FIX-K auth/session/limits
+BUG-093	LOW	TECHNICAL-FIX	FIX-J unauth endpoints
+BUG-094	LOW	TECHNICAL-FIX	FIX-K auth/session/limits
+BUG-095	LOW	TECHNICAL-FIX	FIX-K auth/session/limits
+BUG-096	LOW	TECHNICAL-FIX	FIX-K auth/session/limits
+BUG-097	LOW	REFUTED	REFUTED — ".." is rejected before the backslash gap matters; hardening only (phase 15 runtime)
+BUG-098	LOW	TECHNICAL-FIX	FIX-C path containment
+BUG-099	LOW	TECHNICAL-FIX	FIX-U outbound/headers
+BUG-100	LOW	TECHNICAL-FIX	FIX-M mail reliability
+BUG-101	LOW	TECHNICAL-FIX	FIX-A async errors (CQ-001)
+BUG-102	LOW	TECHNICAL-FIX	FIX-R client XSS sinks
+BUG-103	LOW	TECHNICAL-FIX	FIX-E :id validation (CQ-007)
+BUG-104	LOW	TECHNICAL-FIX	FIX-D body validation (CQ-009)
+BUG-105	LOW	TECHNICAL-FIX	FIX-K auth/session/limits
+BUG-106	CRITICAL	TECHNICAL-FIX	FIX-F bookability (CQ-006)
+BUG-107	CRITICAL	TECHNICAL-FIX	FIX-F bookability (CQ-006)
+BUG-108	HIGH	TECHNICAL-FIX	FIX-X delete/cancel cascade
+BUG-109	HIGH	BUSINESS-DECISION	OPT-007 — block or warn on pickup of a workshop-flagged vehicle, and who may override?
+BUG-110	HIGH	TECHNICAL-FIX	FIX-X delete/cancel cascade
+BUG-111	HIGH	TECHNICAL-FIX	FIX-D body validation (CQ-009)
+BUG-112	HIGH	TECHNICAL-FIX	FIX-X delete/cancel cascade
+BUG-113	HIGH	TECHNICAL-FIX	FIX-H state machine (CQ-005)
+BUG-114	HIGH	TECHNICAL-FIX	FIX-W transport consistency
+BUG-115	HIGH	TECHNICAL-FIX	FIX-W transport consistency
+BUG-116	HIGH	TECHNICAL-FIX	FIX-W transport consistency
+BUG-117	HIGH	TECHNICAL-FIX	FIX-V maintenance/spare cascade
+BUG-118	HIGH	TECHNICAL-FIX	FIX-V maintenance/spare cascade
+BUG-119	HIGH	TECHNICAL-FIX	FIX-N PDF rendering
+BUG-120	HIGH	TECHNICAL-FIX	FIX-H state machine (CQ-005)
+BUG-121	HIGH	TECHNICAL-FIX	FIX-F bookability (CQ-006)
+BUG-122	MEDIUM	TECHNICAL-FIX	FIX-D body validation (CQ-009)
+BUG-123	MEDIUM	TECHNICAL-FIX	FIX-AA route domain guards
+BUG-124	MEDIUM	TECHNICAL-FIX	FIX-AA route domain guards
+BUG-125	MEDIUM	TECHNICAL-FIX	FIX-Z schema validation
+BUG-126	MEDIUM	TECHNICAL-FIX	FIX-G atomic transitions
+BUG-127	MEDIUM	TECHNICAL-FIX	FIX-D body validation (CQ-009)
+BUG-128	MEDIUM	TECHNICAL-FIX	FIX-H state machine (CQ-005)
+BUG-129	MEDIUM	TECHNICAL-FIX	FIX-H state machine (CQ-005)
+BUG-130	MEDIUM	TECHNICAL-FIX	FIX-H state machine (CQ-005)
+BUG-131	MEDIUM	TECHNICAL-FIX	FIX-AA route domain guards
+BUG-132	MEDIUM	BUSINESS-DECISION	OPT-017 — may a picked_up rental be cancelled/deleted, and does the contract number stay burned?
+BUG-133	MEDIUM	TECHNICAL-FIX	FIX-AA route domain guards
+BUG-134	MEDIUM	BUSINESS-DECISION	OPT-027 — which office-side changes does the portal customer get told about?
+BUG-135	MEDIUM	TECHNICAL-FIX	FIX-W transport consistency
+BUG-136	MEDIUM	TECHNICAL-FIX	FIX-H state machine (CQ-005)
+BUG-137	MEDIUM	TECHNICAL-FIX	FIX-V maintenance/spare cascade
+BUG-138	MEDIUM	TECHNICAL-FIX	FIX-V maintenance/spare cascade
+BUG-139	MEDIUM	TECHNICAL-FIX	FIX-V maintenance/spare cascade
+BUG-140	MEDIUM	BUSINESS-DECISION	OPT-018 — does a deleted transport go to the recycle bin?
+BUG-141	MEDIUM	TECHNICAL-FIX	FIX-G atomic transitions
+BUG-142	MEDIUM	TECHNICAL-FIX	FIX-G atomic transitions
+BUG-143	MEDIUM	BUSINESS-DECISION	OPT-033 — clean up or keep the existing orphan rows before FKs are switched on?
+BUG-144	MEDIUM	BUSINESS-DECISION	OPT-033 — reconcile the out-of-state-machine lifecycle data, or leave it as history?
+BUG-145	MEDIUM	ENV/DEV-ONLY	ENV — test-suite pollution; fixed by lvs_fixtest + helper cleanup widening
+BUG-146	LOW	TECHNICAL-FIX	FIX-H state machine (CQ-005)
+BUG-147	LOW	TECHNICAL-FIX	FIX-Y audit log
+BUG-148	LOW	TECHNICAL-FIX	FIX-D body validation (CQ-009)
+BUG-149	LOW	TECHNICAL-FIX	FIX-Z schema validation
+BUG-150	LOW	TECHNICAL-FIX	FIX-O document registration (CQ-008)
+BUG-151	LOW	BUSINESS-DECISION	OPT-018 — trash + restore for reservations, and who may restore?
+BUG-152	LOW	TECHNICAL-FIX	FIX-Y audit log
+BUG-153	LOW	BUSINESS-DECISION	OPT-030 — which rental-day convention is authoritative (contract or financial report)?
+BUG-154	LOW	TECHNICAL-FIX	FIX-H state machine (CQ-005)
+BUG-155	LOW	TECHNICAL-FIX	FIX-M mail reliability
+BUG-156	LOW	TECHNICAL-FIX	FIX-N PDF rendering
+BUG-157	LOW	BUSINESS-DECISION	no OPT — is the contract number zero-padded, and are existing rows normalised?
+BUG-158	LOW	TECHNICAL-FIX	FIX-G atomic transitions
+BUG-159	CRITICAL	TECHNICAL-FIX	FIX-F bookability (CQ-006)
+BUG-160	HIGH	TECHNICAL-FIX	FIX-F bookability (CQ-006)
+BUG-161	HIGH	TECHNICAL-FIX	FIX-K auth/session/limits
+BUG-162	HIGH	TECHNICAL-FIX	FIX-N PDF rendering
+BUG-163	HIGH	BUSINESS-DECISION	OPT-014 — may contract generation hard-fail (no document) instead of delivering an unusable file?
+BUG-164	HIGH	TECHNICAL-FIX	FIX-N PDF rendering
+BUG-165	HIGH	TECHNICAL-FIX	FIX-N PDF rendering
+BUG-166	HIGH	TECHNICAL-FIX	FIX-N PDF rendering
+BUG-167	HIGH	BUSINESS-DECISION	OPT-014 — which role/permission covers generating, previewing and viewing contract & damage-check PDFs?
+BUG-168	HIGH	TECHNICAL-FIX	FIX-P template validation
+BUG-169	HIGH	TECHNICAL-FIX	FIX-B uploads path (CQ-003)
+BUG-170	HIGH	BUSINESS-DECISION	OPT-027 — who is the recipient of a vehicle reminder: only the current holder, or every past/future renter?
+BUG-171	HIGH	TECHNICAL-FIX	FIX-M mail reliability
+BUG-172	MEDIUM	TECHNICAL-FIX	FIX-D body validation (CQ-009)
+BUG-173	MEDIUM	TECHNICAL-FIX	FIX-F bookability (CQ-006)
+BUG-174	MEDIUM	TECHNICAL-FIX	FIX-G atomic transitions
+BUG-175	MEDIUM	TECHNICAL-FIX	FIX-G atomic transitions
+BUG-176	MEDIUM	TECHNICAL-FIX	FIX-P template validation
+BUG-177	MEDIUM	TECHNICAL-FIX	FIX-P template validation
+BUG-178	MEDIUM	BUSINESS-DECISION	OPT-014 — truncate, wrap or reject values that do not fit on the PDF?
+BUG-179	MEDIUM	TECHNICAL-FIX	FIX-P template validation
+BUG-180	MEDIUM	TECHNICAL-FIX	FIX-P template validation
+BUG-181	MEDIUM	BUSINESS-DECISION	OPT-014 — refuse to generate when no default template is marked, or pick one?
+BUG-182	MEDIUM	BUSINESS-DECISION	OPT-014 — is "draft contract before saving" a supported workflow, and how is it archived?
+BUG-183	MEDIUM	BUSINESS-DECISION	OPT-025/OPT-014 — which reservation belongs on a damage check when no rental runs today?
+BUG-184	MEDIUM	TECHNICAL-FIX	FIX-O document registration (CQ-008)
+BUG-185	MEDIUM	TECHNICAL-FIX	FIX-M mail reliability
+BUG-186	MEDIUM	TECHNICAL-FIX	FIX-M mail reliability
+BUG-187	MEDIUM	TECHNICAL-FIX	FIX-M mail reliability
+BUG-188	LOW	TECHNICAL-FIX	FIX-G atomic transitions
+BUG-189	LOW	TECHNICAL-FIX	FIX-G atomic transitions
+BUG-190	LOW	TECHNICAL-FIX	FIX-O document registration (CQ-008)
+BUG-191	LOW	TECHNICAL-FIX	FIX-N PDF rendering
+BUG-192	LOW	BUSINESS-DECISION	OPT-014 — which source decides document language and date/currency format?
+BUG-193	LOW	TECHNICAL-FIX	FIX-P template validation
+BUG-194	LOW	TECHNICAL-FIX	FIX-D body validation (CQ-009)
+BUG-195	LOW	BUSINESS-DECISION	OPT-014/OPT-033 — mark, hide or clean up a document whose file is gone?
+BUG-196	LOW	TECHNICAL-FIX	FIX-M mail reliability
+BUG-197	CRITICAL	TECHNICAL-FIX	FIX-L restore safety
+BUG-198	HIGH	TECHNICAL-FIX	FIX-B uploads path (CQ-003)
+BUG-199	HIGH	TECHNICAL-FIX	FIX-L restore safety
+BUG-200	HIGH	TECHNICAL-FIX	FIX-B uploads path (CQ-003)
+BUG-201	HIGH	TECHNICAL-FIX	FIX-Q client robustness
+BUG-202	HIGH	TECHNICAL-FIX	FIX-D body validation (CQ-009)
+BUG-203	HIGH	TECHNICAL-FIX	FIX-T performance
+BUG-204	HIGH	TECHNICAL-FIX	FIX-T performance
+BUG-205	HIGH	BUSINESS-DECISION	OPT-001 — API contract: may list endpoints stop embedding full vehicle/customer rows and start paginating?
+BUG-206	MEDIUM	TECHNICAL-FIX	FIX-L restore safety
+BUG-207	MEDIUM	TECHNICAL-FIX	FIX-L restore safety
+BUG-208	MEDIUM	TECHNICAL-FIX	FIX-L restore safety
+BUG-209	MEDIUM	TECHNICAL-FIX	FIX-B uploads path (CQ-003)
+BUG-210	MEDIUM	TECHNICAL-FIX	FIX-S UI layout/i18n
+BUG-211	MEDIUM	BUSINESS-DECISION	OPT-017 — early pickup: confirm and move the start date, or block?
+BUG-212	MEDIUM	TECHNICAL-FIX	FIX-Q client robustness
+BUG-213	MEDIUM	TECHNICAL-FIX	FIX-Q client robustness
+BUG-214	MEDIUM	DEFERRED	DEFERRED — first confirm whether Traefik already gzips in production
+BUG-215	MEDIUM	TECHNICAL-FIX	FIX-T performance
+BUG-216	MEDIUM	BUSINESS-DECISION	OPT-033 — move diagram/signature blobs out of the text columns into files or object storage?
+BUG-217	MEDIUM	TECHNICAL-FIX	FIX-H state machine (CQ-005)
+BUG-218	MEDIUM	TECHNICAL-FIX	FIX-T performance
+BUG-219	LOW	TECHNICAL-FIX	FIX-L restore safety
+BUG-220	LOW	TECHNICAL-FIX	FIX-L restore safety
+BUG-221	LOW	TECHNICAL-FIX	FIX-L restore safety
+BUG-222	LOW	TECHNICAL-FIX	FIX-S UI layout/i18n
+BUG-223	LOW	TECHNICAL-FIX	FIX-S UI layout/i18n
+BUG-224	LOW	BUSINESS-DECISION	OPT-033 — timestamptz migration across nearly every table: run it, and what happens to existing values?
+BUG-225	LOW	TECHNICAL-FIX	FIX-Q client robustness
+BUG-226	LOW	TECHNICAL-FIX	FIX-T performance
+BUG-227	LOW	TECHNICAL-FIX	FIX-T performance
+BUG-228	LOW	TECHNICAL-FIX	FIX-S UI layout/i18n
+BUG-229	LOW	TECHNICAL-FIX	FIX-Q client robustness
+BUG-230	LOW	TECHNICAL-FIX	FIX-T performance
