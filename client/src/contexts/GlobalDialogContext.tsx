@@ -23,6 +23,9 @@ interface DialogState {
   // OPT-002: the dashboard's "Ophalen starten" / "Innemen starten" tiles carry
   // their intent into the scan panel.
   scan: { open: boolean; intent?: HandoverKind | null };
+  // OPT-021: the "N" shortcut needs a new-reservation dialog that is not a
+  // trigger inside one page's markup.
+  newReservation: { open: boolean };
 }
 
 interface GlobalDialogContextType {
@@ -59,6 +62,8 @@ interface GlobalDialogContextType {
   closeRdwApkChangesDialog: () => void;
   openScanDialog: (intent?: HandoverKind | null) => void;
   closeScanDialog: () => void;
+  openNewReservationDialog: () => void;
+  closeNewReservationDialog: () => void;
 }
 
 const GlobalDialogContext = createContext<GlobalDialogContextType | undefined>(undefined);
@@ -81,6 +86,7 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     expense: { open: false, expenseId: null, hideVehicleExpensesLink: false },
     rdwApkChanges: { open: false },
     scan: { open: false, intent: null },
+    newReservation: { open: false },
   });
 
   const openReservationDialog = (id: number) => {
@@ -236,6 +242,14 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const openNewReservationDialog = () => {
+    setDialogState(prev => ({ ...prev, newReservation: { open: true } }));
+  };
+
+  const closeNewReservationDialog = () => {
+    setDialogState(prev => ({ ...prev, newReservation: { open: false } }));
+  };
+
   // BUG-210 — a Radix dialog locks the scroll while it is open and restores
   // the vertical offset on close, but leaves the horizontal one behind. On a
   // 1182 px laptop, where the calendar page already scrolls sideways, that
@@ -287,6 +301,8 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
         closeRdwApkChangesDialog,
       openScanDialog,
       closeScanDialog,
+      openNewReservationDialog,
+      closeNewReservationDialog,
     }),
     // The callbacks are stable setState wrappers; only the state can change.
     // eslint-disable-next-line react-hooks/exhaustive-deps

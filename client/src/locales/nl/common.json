@@ -184,5 +184,18 @@
     "loadFailed": "De geschiedenis kon niet geladen worden.",
     "notPermitted": "Je hebt geen rechten om de geschiedenis van dit record te bekijken.",
     "systemUser": "Systeem"
+  },
+  "shortcuts": {
+    "title": "Sneltoetsen",
+    "description": "Een kleine, vaste set voor het baliewerk.",
+    "scannerNote": "Sneltoetsen met een losse letter werken nooit terwijl je in een invoerveld of in het scanveld typt, zodat een barcodescanner er niet per ongeluk een aanzet.",
+    "actions": {
+      "search": "Zoekbalk",
+      "newReservation": "Nieuwe reservering",
+      "scan": "Scannen",
+      "help": "Dit overzicht",
+      "escape": "Dialoog sluiten",
+      "enter": "Formulier versturen"
+    }
   }
 }

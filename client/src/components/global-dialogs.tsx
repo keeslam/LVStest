@@ -17,6 +17,7 @@ import { FineImportsDialog } from '@/components/fines/fine-imports-dialog';
 import { PortalRequestDialog } from '@/components/portal-admin/portal-request-dialog';
 import { PortalListDialog } from '@/components/portal-admin/portal-list-dialog';
 import { ScanDialog } from '@/components/barcodes/scan-dialog';
+import { ReservationAddDialog } from '@/components/reservations/reservation-add-dialog';
 import { Vehicle, Reservation } from '@shared/schema';
 
 export function GlobalDialogs() {
@@ -35,6 +36,7 @@ export function GlobalDialogs() {
     closeExpenseVehicleDialog,
     closeExpenseDialog,
     closeScanDialog,
+    closeNewReservationDialog,
   } = useGlobalDialog();
   
   const handleEditReservation = (reservationId: number) => {
@@ -172,6 +174,12 @@ export function GlobalDialogs() {
         open={dialogState.scan.open}
         intent={dialogState.scan.intent ?? null}
         onOpenChange={(open) => !open && closeScanDialog()}
+      />
+
+      {/* OPT-021 - the "N" shortcut's destination, and the dashboard tile's. */}
+      <ReservationAddDialog
+        open={dialogState.newReservation.open}
+        onOpenChange={(open) => !open && closeNewReservationDialog()}
       />
     </>
   );

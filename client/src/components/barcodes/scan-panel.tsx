@@ -257,6 +257,10 @@ export function ScanPanel({ active = true, intent = null }: ScanPanelProps) {
           onChange={(e) => setCode(e.target.value)}
           placeholder={t("scanPage.inputPlaceholder")}
           aria-label={t("scanPage.inputPlaceholder")}
+          // OPT-021: belt and braces. A global letter shortcut firing while the
+          // scanner types a code is worse than no shortcut, so the field says
+          // what it is rather than relying on it happening to be an <input>.
+          data-scan-input=""
           autoComplete="off"
           autoFocus
           className="text-lg"

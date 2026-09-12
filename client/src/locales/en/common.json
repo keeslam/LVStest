@@ -184,5 +184,18 @@
     "loadFailed": "The history could not be loaded.",
     "notPermitted": "You do not have permission to view this record's history.",
     "systemUser": "System"
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "description": "A small, fixed set for the counter.",
+    "scannerNote": "Single-letter shortcuts never fire while you are typing in a field or in the scan box, so a barcode scanner cannot trigger one by accident.",
+    "actions": {
+      "search": "Search bar",
+      "newReservation": "New reservation",
+      "scan": "Scan",
+      "help": "This overview",
+      "escape": "Close dialog",
+      "enter": "Submit form"
+    }
   }
 }

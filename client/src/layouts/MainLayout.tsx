@@ -10,6 +10,9 @@ import { NotificationCenter } from "@/components/ui/notification-center";
 import { PortalAlertChip } from "@/components/portal-admin/portal-alert-chip";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebouncedValue, DEFAULT_DEBOUNCE_MS } from "@/hooks/use-debounced-value";
+import { useGlobalShortcuts } from "@/hooks/use-global-shortcuts";
+import { ShortcutsDialog } from "@/components/shortcuts-dialog";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { Loader2, Car, User, Calendar, X, ClipboardCheck } from "lucide-react";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { invalidateRelatedQueries } from "@/lib/queryClient";
@@ -79,6 +82,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [showResults, setShowResults] = useState(false);
   const [showAllResultsDialog, setShowAllResultsDialog] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  // OPT-021: the search box the "/" and Ctrl+K shortcuts focus.
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   
   // Dialog states for viewing details
   const [viewVehicleId, setViewVehicleId] = useState<number | null>(null);
@@ -92,6 +98,19 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const { t } = useTranslation("nav");
 
   const title = getPageTitle(location, t);
+
+  // OPT-021 - the one global key handler. The rule that keeps it out of the
+  // scanner's way lives in @/lib/keyboard-shortcuts.
+  const { openScanDialog, openNewReservationDialog } = useGlobalDialog();
+  useGlobalShortcuts({
+    search: () => {
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    },
+    newReservation: openNewReservationDialog,
+    scan: () => openScanDialog(null),
+    help: () => setShortcutsOpen(true),
+  });
   
   // Query for vehicles based on search
   const { data: vehicleResults = [], isLoading: vehiclesLoading } = useQuery({
@@ -272,6 +291,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
               }}>
                 <input 
                   type="text" 
+                  ref={searchInputRef}
+                  data-testid="input-global-search"
                   placeholder={t('common:searchPage.searchPlaceholder')}
                   autoComplete="off"
                   className="w-full py-2 pl-10 pr-4 text-gray-700 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -651,6 +672,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
           invalidateRelatedQueries('reservations');
         }}
       />
+
+      {/* OPT-021 - the overview the '?' key opens. */}
+      <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
     </div>
   );
 }
