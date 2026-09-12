@@ -100,6 +100,8 @@ import { eq, ne, and, gte, lte, desc, sql, inArray, not, or, ilike, isNull, isNo
 import { alias } from "drizzle-orm/pg-core";
 import { IStorage } from "./storage";
 import { formatVehicleBarcode, parseBarcode, normalizeScannedCode } from "../shared/barcode";
+// besluiten B-16 + B-07: one day count and one total, shared with the form.
+import { recalculateTotalPrice } from "../shared/rental-pricing";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -2718,6 +2720,13 @@ export class DatabaseStorage implements IStorage {
       mileageDecreaseAuthorizedBy?: string;
       /** besluiten B-03 - the administrator override for a blocked vehicle. */
       workshopOverride?: HandoverOverride;
+      /**
+       * besluiten **B-16** - the employee answered "ja, de huur gaat eerder in".
+       * The start date moves to this day and, per **B-07**, the total follows
+       * from the new period. Only ever set by the pickup route, and only after
+       * the confirmation; without it an early pickup is refused (BUG-211).
+       */
+      shiftStartDateTo?: string;
     }
   ): Promise<Reservation | undefined> {
     const reservation = await this.getReservation(reservationId);
@@ -2756,7 +2765,22 @@ export class DatabaseStorage implements IStorage {
         reservation.notes || '',
         pickupData.pickupNotes ? `[PICKUP ${pickupDate}] ${pickupData.pickupNotes}` : '',
         overrideNote ?? '',
+        // Filled in just below, once the shift has been decided.
       ].filter((part) => part && part.length > 0);
+
+      // besluiten **B-16** (BUG-211) — the rental really starts today, so the
+      // period says so and, per **B-07**, the total follows from it. The day
+      // count is the one the booking form has always used (shared/rental-
+      // pricing.ts); no rate on file means no invented price.
+      const shiftTo = pickupData.shiftStartDateTo && pickupData.shiftStartDateTo < reservation.startDate
+        ? pickupData.shiftStartDateTo
+        : null;
+      const shiftedTotal = shiftTo
+        ? recalculateTotalPrice(vehicle.dailyPrice, shiftTo, reservation.endDate ?? null)
+        : null;
+      const shiftNote = shiftTo
+        ? `[B-16 ${shiftTo}] Huur eerder ingegaan: startdatum verplaatst van ${reservation.startDate} naar ${shiftTo}${shiftedTotal != null ? `, totaal herberekend naar € ${shiftedTotal.toFixed(2)}` : ''}.`
+        : '';
 
       const [updatedReservation] = await tx
         .update(reservations)
@@ -2766,11 +2790,16 @@ export class DatabaseStorage implements IStorage {
           fuelLevelPickup: pickupData.fuelLevelPickup,
           actualPickupDate: pickupDate,
           status: 'picked_up',
+          ...(shiftTo ? { startDate: shiftTo } : {}),
+          ...(shiftedTotal != null ? { totalPrice: String(shiftedTotal) } : {}),
           // Kept in lockstep with `status` here - the widget's Actief tab reads
           // spareVehicleStatus, not status, and this is its only write path for
           // a real pickup.
           ...(reservation.type === 'replacement' ? { spareVehicleStatus: 'picked_up' } : {}),
-          notes: noteParts.length > 0 ? noteParts.join('\n').trim() : reservation.notes,
+          notes: (() => {
+            const parts = shiftNote ? [...noteParts, shiftNote] : noteParts;
+            return parts.length > 0 ? parts.join('\n').trim() : reservation.notes;
+          })(),
           updatedAt: new Date()
         })
         // FIX-G (BUG-174): the precondition travels with the write. Two pickups

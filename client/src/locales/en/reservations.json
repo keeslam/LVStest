@@ -214,7 +214,11 @@
       "invalidMileageTitle": "Invalid Mileage",
       "invalidMileageDescription": "Please enter a valid mileage value.",
       "assignmentFailedTitle": "Assignment Failed",
-      "assignmentFailedDescription": "Failed to assign vehicle to reservation."
+      "assignmentFailedDescription": "Failed to assign vehicle to reservation.",
+      "earlyPickupTitle": "The rental starts earlier — move the date?",
+      "earlyPickupDescription": "This rental is planned from {{startDate}}, but the vehicle leaves today ({{today}}). Move the start date to today so the period and the price are right?",
+      "earlyPickupConfirm": "Yes, start today",
+      "earlyPickupCancel": "No, do not pick up"
     },
     "return": {
       "startReturnProcess": "Start Return Process",

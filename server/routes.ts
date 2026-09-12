@@ -77,6 +77,7 @@ import {
   decideHandover,
   StateTransitionError,
   WorkshopBlockedError,
+  isoToday,
   type HandoverOverride,
 } from "./services/lifecycle";
 import { calculateDutchHolidays, mergeHolidaysWithOverrides } from "../shared/holidays";
@@ -4520,6 +4521,23 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Reservation or vehicle not found" });
       }
 
+      // besluiten **B-16** (BUG-211) — "de medewerker krijgt de vraag of de huur
+      // eerder ingaat". Without the answer nothing is written at all; with it
+      // the start date moves to today and the total follows (B-07). Refusing
+      // happens only when the employee answers no, which is this 409.
+      const todayForPickup = isoToday();
+      const startsLater = reservation.startDate > todayForPickup;
+      const confirmedShift = req.body?.shiftStartDate === true;
+      if (startsLater && !confirmedShift) {
+        return res.status(409).json({
+          code: "PICKUP_BEFORE_START_DATE",
+          message: `Deze huur begint pas op ${reservation.startDate}. Gaat de huur vandaag in?`,
+          startDate: reservation.startDate,
+          endDate: reservation.endDate ?? null,
+          today: todayForPickup,
+        });
+      }
+
       let mileageDecreaseAuthorizedBy: string | undefined;
 
       if (reservation.vehicle.currentMileage && mileage < reservation.vehicle.currentMileage) {
@@ -4547,6 +4565,8 @@ export async function registerRoutes(app: Express): Promise<void> {
         // besluiten B-03 — the administrator override for a vehicle that is in
         // the workshop or marked not for rental.
         workshopOverride: workshopOverrideFrom(req),
+        // besluiten B-16 — only set once the question has been answered "ja".
+        ...(startsLater && confirmedShift ? { shiftStartDateTo: todayForPickup } : {}),
       });
 
       if (!updatedReservation) {

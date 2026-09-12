@@ -81,6 +81,10 @@ describe("FIX-G — atomic transitions", () => {
         pickupMileage: 1200,
         fuelLevelPickup: "full",
         pickupDate: "2031-01-05",
+        // besluiten B-16 (BUG-211): this rental has not started yet, so the
+        // pickup carries the employee's confirmation. The race under test is
+        // the write, not the question.
+        shiftStartDate: true,
       }),
     );
 

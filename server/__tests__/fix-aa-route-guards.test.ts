@@ -123,12 +123,20 @@ describe("FIX-AA — route guards", () => {
       const second = await createFixtureReservation({ vehicleId: b.id, customerId });
 
       const ok = await admin.post(`/api/reservations/${first.id}/pickup`).send({
+        // besluiten B-16 (BUG-211): the fixture rental starts later, so the
+        // pickup carries the employee's confirmation. The subject here is the
+        // contract number, not the start date.
         contractNumber, pickupMileage: 1000, fuelLevelPickup: "full", pickupDate: "2026-10-01",
+        shiftStartDate: true,
       });
       expect(ok.status, bodyText(ok.body)).toBe(200);
 
       const clash = await admin.post(`/api/reservations/${second.id}/pickup`).send({
+        // besluiten B-16 (BUG-211): the fixture rental starts later, so the
+        // pickup carries the employee's confirmation. The subject here is the
+        // contract number, not the start date.
         contractNumber, pickupMileage: 1000, fuelLevelPickup: "full", pickupDate: "2026-10-01",
+        shiftStartDate: true,
       });
       expect(clash.status, bodyText(clash.body)).toBe(409);
       expect(leaksInternals(clash.body), bodyText(clash.body)).toBe(false);

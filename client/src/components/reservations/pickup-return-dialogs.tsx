@@ -14,6 +14,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import type { Reservation, Vehicle } from "@shared/schema";
+import { formatDutchDate } from "@shared/booking-warnings";
 import { Car, Fuel, Calendar, FileText, ClipboardCheck, ExternalLink, CheckCircle2, Edit, Trash2, Upload, AlertTriangle } from "lucide-react";
 import { MileageOverridePasswordDialog } from "@/components/mileage-override-password-dialog";
 import InteractiveDamageCheck from "@/pages/interactive-damage-check";
@@ -41,6 +42,10 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
     new Date().toISOString().split('T')[0]
   );
   const [pickupNotes, setPickupNotes] = useState("");
+  // besluiten B-16 (BUG-211) — the question the server asks when the rental has
+  // not started yet, and the payload to send again once it is answered.
+  const [earlyPickup, setEarlyPickup] = useState<{ startDate: string; today: string } | null>(null);
+  const lastPickupPayloadRef = useRef<Record<string, unknown> | null>(null);
   const [contractNumber, setContractNumber] = useState("");
   const [isDuplicateContract, setIsDuplicateContract] = useState(false);
   const [isHighContractNumber, setIsHighContractNumber] = useState(false);
@@ -264,7 +269,12 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       allowMileageDecrease?: boolean;
       overridePassword?: string;
       overrideContractNumber?: boolean;
+      /** besluiten B-16 — set only after the employee has answered the question. */
+      shiftStartDate?: boolean;
     }) => {
+      // Kept so the B-16 question can send the very same pickup again, with the
+      // answer attached, instead of asking the employee to fill it all in twice.
+      lastPickupPayloadRef.current = data;
       return await apiRequest("POST", `/api/reservations/${reservation.id}/pickup`, data);
     },
     onSuccess: async () => {
@@ -298,6 +308,12 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       }
       // The override dialog reports these inline - a toast would double up.
       if (error.code === "MILEAGE_OVERRIDE_INVALID_PASSWORD" || error.code === "MILEAGE_OVERRIDE_FORBIDDEN") {
+        return;
+      }
+      // besluiten B-16 (BUG-211) — not a failure but a question: "de huur start
+      // eerder, datum aanpassen?". Nothing was written; the answer decides.
+      if (error.code === "PICKUP_BEFORE_START_DATE") {
+        setEarlyPickup({ startDate: error.startDate, today: error.today });
         return;
       }
       toast({
@@ -1082,6 +1098,30 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* besluiten B-16 (BUG-211) — "de huur start eerder, datum aanpassen?".
+          The server refused the pickup with PICKUP_BEFORE_START_DATE and wrote
+          nothing; answering yes sends the same pickup again with the
+          confirmation, and the start date (and the price, per B-07) follow. */}
+      <ConfirmDialog
+        open={earlyPickup !== null}
+        onOpenChange={(open) => { if (!open) setEarlyPickup(null); }}
+        variant="warning"
+        title={t('pickupReturn.pickup.earlyPickupTitle')}
+        description={t('pickupReturn.pickup.earlyPickupDescription', {
+          startDate: formatDutchDate(earlyPickup?.startDate ?? null),
+          today: formatDutchDate(earlyPickup?.today ?? null),
+        })}
+        confirmLabel={t('pickupReturn.pickup.earlyPickupConfirm')}
+        cancelLabel={t('pickupReturn.pickup.earlyPickupCancel')}
+        isLoading={pickupMutation.isPending}
+        onConfirm={() => {
+          const payload = lastPickupPayloadRef.current;
+          setEarlyPickup(null);
+          if (payload) pickupMutation.mutate({ ...(payload as any), shiftStartDate: true });
+        }}
+        onCancel={() => setEarlyPickup(null)}
+      />
 
       {/* Mileage Override Dialog */}
       <MileageOverridePasswordDialog

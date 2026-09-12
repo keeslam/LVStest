@@ -118,6 +118,9 @@ describe("FIX-V — the maintenance-with-spare resubmission", () => {
     // The spare is physically handed to the customer.
     expect((await admin.post(`/api/reservations/${spareReservationId}/pickup`).send({
       contractNumber: `FIXT-V-${Date.now()}`, pickupMileage: 900, fuelLevelPickup: "full", pickupDate: day(6),
+      // besluiten B-16 (BUG-211): the spare's period starts in a few days, so
+      // the early handover carries the employee's confirmation.
+      shiftStartDate: true,
     })).status).toBe(200);
 
     const second = await planMaintenanceWithSpare({

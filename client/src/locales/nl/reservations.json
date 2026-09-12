@@ -214,7 +214,11 @@
       "invalidMileageTitle": "Ongeldige kilometerstand",
       "invalidMileageDescription": "Voer een geldige kilometerstand in.",
       "assignmentFailedTitle": "Toewijzing mislukt",
-      "assignmentFailedDescription": "Voertuig toewijzen aan reservering mislukt."
+      "assignmentFailedDescription": "Voertuig toewijzen aan reservering mislukt.",
+      "earlyPickupTitle": "De huur start eerder — datum aanpassen?",
+      "earlyPickupDescription": "Deze huur staat gepland vanaf {{startDate}}, maar het voertuig gaat vandaag ({{today}}) mee. Zet de startdatum op vandaag, zodat de periode en de prijs kloppen?",
+      "earlyPickupConfirm": "Ja, startdatum naar vandaag",
+      "earlyPickupCancel": "Nee, niet ophalen"
     },
     "return": {
       "startReturnProcess": "Inleverproces starten",
