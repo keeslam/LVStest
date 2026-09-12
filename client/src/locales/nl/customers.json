@@ -266,5 +266,16 @@
     "columnCity": "Plaats",
     "newReservationButton": "Nieuwe reservering",
     "portalBadge": "Portaal ({{count}})"
+  },
+  "duplicates": {
+    "customerTitle": "Deze klant bestaat mogelijk al",
+    "driverTitle": "Deze chauffeur bestaat mogelijk al",
+    "match": "{{name}} — zelfde {{on}}",
+    "on": {
+      "email": "e-mailadres",
+      "phone": "telefoonnummer"
+    },
+    "open": "Openen",
+    "hint": "Je kunt gewoon doorgaan; dit is een waarschuwing, geen blokkade."
   }
 }

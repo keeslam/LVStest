@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { DuplicateWarning } from "@/components/customers/duplicate-warning";
+import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { insertCustomerSchema } from "@shared/schema";
@@ -83,6 +85,7 @@ export function CustomerForm({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [_, navigate] = useLocation();
+  const { openCustomerDialog } = useGlobalDialog();
   
   // Helper function to transform null values to empty strings and numbers to strings
   const transformInitialData = (data: any) => {
@@ -157,7 +160,12 @@ export function CustomerForm({
       billingContactPhone: ""
     },
   });
-  
+
+  // OPT-019: watched so the duplicate warning appears while the form is being
+  // filled in, not after the record has been created.
+  const watchedEmail = form.watch("email");
+  const watchedPhone = form.watch("phone");
+
   const createCustomerMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
       const response = await fetch(
@@ -509,6 +517,16 @@ export function CustomerForm({
                       )}
                     />
                   </div>
+
+                  {/* OPT-019 - names an existing customer with the same e-mail
+                      or phone number. A warning, never a block. */}
+                  <DuplicateWarning
+                    kind="customer"
+                    email={watchedEmail}
+                    phone={watchedPhone}
+                    excludeId={editMode ? initialData?.id ?? null : null}
+                    onOpen={openCustomerDialog}
+                  />
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField

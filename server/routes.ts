@@ -53,6 +53,7 @@ import {
 } from "../shared/schema";
 import { getTransportSpareStatus } from "../shared/transport-spare-status";
 import { hasRemarks } from "../shared/remark-confirmation";
+import { findCustomerDuplicates, findDriverDuplicates } from "./services/duplicate-detection";
 import multer from "multer";
 import { setupAuth, hashPassword, comparePasswords } from "./auth";
 import { backupService } from "./backupService";
@@ -2272,6 +2273,26 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  /**
+   * OPT-019 - "bestaat deze klant al?" as a question that can be asked before
+   * the form is submitted. Read-only; it never blocks anything.
+   */
+  app.get("/api/customers/duplicates", hasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS), async (req: Request, res: Response) => {
+    try {
+      const excludeRaw = req.query.excludeId;
+      const excludeId = excludeRaw !== undefined ? parseInt(String(excludeRaw), 10) : NaN;
+      const duplicates = await findCustomerDuplicates({
+        email: typeof req.query.email === 'string' ? req.query.email : null,
+        phone: typeof req.query.phone === 'string' ? req.query.phone : null,
+        excludeId: Number.isInteger(excludeId) ? excludeId : null,
+      });
+      res.json({ duplicates });
+    } catch (error) {
+      console.error("Error looking for duplicate customers:", error);
+      res.status(500).json({ message: "Failed to check for duplicates" });
+    }
+  });
+
   // Get single customer
   app.get("/api/customers/:id", hasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS), async (req, res) => {
     const id = parseInt(req.params.id);
@@ -2288,10 +2309,35 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Create customer
+  app.get("/api/drivers/duplicates", hasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS), async (req: Request, res: Response) => {
+    try {
+      const excludeRaw = req.query.excludeId;
+      const excludeId = excludeRaw !== undefined ? parseInt(String(excludeRaw), 10) : NaN;
+      const duplicates = await findDriverDuplicates({
+        email: typeof req.query.email === 'string' ? req.query.email : null,
+        phone: typeof req.query.phone === 'string' ? req.query.phone : null,
+        excludeId: Number.isInteger(excludeId) ? excludeId : null,
+      });
+      res.json({ duplicates });
+    } catch (error) {
+      console.error("Error looking for duplicate drivers:", error);
+      res.status(500).json({ message: "Failed to check for duplicates" });
+    }
+  });
+
   app.post("/api/customers", hasPermission(UserPermission.MANAGE_CUSTOMERS), async (req: Request, res: Response) => {
     try {
       const customerData = insertCustomerSchema.parse(req.body);
-      
+
+      // OPT-019 - look *before* inserting, so the answer names the rows that
+      // were already there and not the one just created. Never a refusal: two
+      // drivers of one company legitimately share a phone number, and the
+      // report is explicit that a hard block would hurt honest cases.
+      const duplicates = await findCustomerDuplicates({
+        email: customerData.email,
+        phone: customerData.phone,
+      });
+
       // Add user tracking information
       const user = req.user;
       const dataWithTracking = {
@@ -2305,7 +2351,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Broadcast real-time update to all connected clients
       realtimeEvents.customers.created(customer);
       
-      res.status(201).json(customer);
+      res.status(201).json({ ...customer, duplicates });
     } catch (error) {
       res.status(400).json({ message: "Invalid customer data", error });
     }
@@ -6615,8 +6661,16 @@ export async function registerRoutes(app: Express): Promise<void> {
         updatedByUser: userId
       };
 
+      // OPT-019 - the driver dialog has the same one-required-field shape as
+      // the customer form. Same rule: name the matches, never refuse.
+      const duplicates = await findDriverDuplicates({
+        customerId,
+        email: (validation.data as { email?: string | null }).email,
+        phone: (validation.data as { phone?: string | null }).phone,
+      });
+
       const driver = await storage.createDriver(driverData);
-      res.status(201).json(driver);
+      res.status(201).json({ ...driver, duplicates });
     } catch (error) {
       console.error("Error creating driver:", error);
       res.status(500).json({ error: "Failed to create driver" });

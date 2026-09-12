@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
+import { DuplicateWarning } from "@/components/customers/duplicate-warning";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { insertDriverSchema, Driver } from "@shared/schema";
@@ -118,6 +119,11 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
       preferredLanguage: driver?.preferredLanguage ?? "nl",
     },
   });
+
+  // OPT-019: watched so the duplicate warning shows while the dialog is being
+  // filled in, not after the driver has been created.
+  const watchedEmail = form.watch("email");
+  const watchedPhone = form.watch("phone");
 
   // Reset form when the dialog opens or the driver being edited changes.
   // Guarded so a background refetch (new `driver` object reference from the
@@ -341,6 +347,15 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                     <FormMessage />
                   </FormItem>
                 )}
+              />
+
+              {/* OPT-019 - the driver book has the same one-required-field
+                  shape as the customer form. Warn, never block. */}
+              <DuplicateWarning
+                kind="driver"
+                email={watchedEmail}
+                phone={watchedPhone}
+                excludeId={driver?.id ?? null}
               />
 
               <FormField

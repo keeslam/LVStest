@@ -266,5 +266,16 @@
     "columnCity": "City",
     "newReservationButton": "New Reservation",
     "portalBadge": "Portal ({{count}})"
+  },
+  "duplicates": {
+    "customerTitle": "This customer may already exist",
+    "driverTitle": "This driver may already exist",
+    "match": "{{name}} — same {{on}}",
+    "on": {
+      "email": "e-mail address",
+      "phone": "phone number"
+    },
+    "open": "Open",
+    "hint": "You can continue; this is a warning, not a block."
   }
 }
