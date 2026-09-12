@@ -59,7 +59,12 @@ export interface IStorage {
   regenerateVehicleBarcode(id: number, updatedBy?: string): Promise<Vehicle | undefined>;
   createVehicle(vehicle: InsertVehicle): Promise<Vehicle>;
   updateVehicle(id: number, vehicleData: Partial<InsertVehicle>): Promise<Vehicle | undefined>;
-  deleteVehicle(id: number, actor?: { username?: string | null; userId?: number | null }): Promise<boolean>;
+  // besluiten B-14 (BUG-022): refused while a rental is live or planned, so the
+  // answer is no longer a bare boolean.
+  deleteVehicle(
+    id: number,
+    actor?: { username?: string | null; userId?: number | null },
+  ): Promise<{ deleted: boolean; reason?: 'not_found' | 'has_live_reservations'; blockingReservations?: Reservation[] }>;
   getVehicleDeleteImpact?(id: number): Promise<{ vehicle: Vehicle; counts: Record<string, number> } | undefined>;
   getDeletedRecords?(limit?: number): Promise<any[]>;
   getDeletedRecord?(id: number): Promise<any | undefined>;

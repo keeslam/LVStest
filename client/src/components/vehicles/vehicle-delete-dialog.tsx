@@ -87,12 +87,21 @@ export function VehicleDeleteDialog({
   const { data: impact, isLoading: isLoadingImpact } = useQuery<{
     licensePlate: string;
     counts: Record<string, number>;
+    // besluiten B-14 (BUG-022): a live or planned rental refuses the delete.
+    blocked?: boolean;
+    blockingReservations?: Array<{
+      id: number; startDate: string; endDate: string | null; status: string; type: string;
+    }>;
   }>({
     queryKey: [`/api/vehicles/${vehicleId}/delete-impact`],
     enabled: open,
   });
 
   const cascadeEntries = Object.entries(impact?.counts || {}).filter(([, count]) => count > 0);
+  // besluiten B-14 — the server refuses this with a 409; the dialog says so
+  // before the employee types the plate back for nothing.
+  const blockingReservations = impact?.blockingReservations ?? [];
+  const isBlocked = impact?.blocked === true;
   const confirmationMatches =
     normalizePlate(confirmation) === normalizePlate(vehicleLicensePlate) && confirmation.trim() !== "";
 
@@ -146,7 +155,7 @@ export function VehicleDeleteDialog({
   });
 
   const handleDelete = () => {
-    if (!confirmationMatches) return;
+    if (!confirmationMatches || isBlocked) return;
     deleteVehicleMutation.mutate();
   };
 
@@ -181,6 +190,34 @@ export function VehicleDeleteDialog({
             />
           </DialogDescription>
         </DialogHeader>
+
+        {isBlocked && (
+          <div
+            className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900"
+            data-testid="vehicle-delete-blocked"
+            role="alert"
+          >
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+              <div className="space-y-1">
+                <p className="font-medium">{t('deleteDialog.blockedTitle')}</p>
+                <ul className="list-disc pl-4">
+                  {blockingReservations.map((reservation) => (
+                    <li key={reservation.id} data-testid={`blocking-reservation-${reservation.id}`}>
+                      {t('deleteDialog.blockedReservation', {
+                        id: reservation.id,
+                        start: reservation.startDate,
+                        end: reservation.endDate ?? '—',
+                        status: reservation.status,
+                      })}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-red-800/80">{t('deleteDialog.blockedHint')}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
           <div className="flex items-start gap-2">
@@ -242,7 +279,9 @@ export function VehicleDeleteDialog({
           <Button
             variant="destructive"
             onClick={handleDelete}
-            disabled={deleteVehicleMutation.isPending || !confirmationMatches}
+            // besluiten B-14 — blocked is blocked: the server would answer 409,
+            // so the dialog does not let the employee get that far.
+            disabled={deleteVehicleMutation.isPending || !confirmationMatches || isBlocked}
             data-testid={`button-confirm-delete-${vehicleId}`}
           >
             {deleteVehicleMutation.isPending ? t('deleteDialog.deletingButton') : t('deleteDialog.deleteButton')}

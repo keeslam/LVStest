@@ -564,9 +564,31 @@ export class DatabaseStorage implements IStorage {
     "vehicle_waitlist", "vehicle_transports", "vehicle_customer_blacklist",
   ];
 
+  /**
+   * besluiten **B-14** — "lopend of toekomstig" for a vehicle, by exactly the
+   * rule B-08 already uses for a customer: a live row (not cancelled, not
+   * completed, not returned, not in the recycle bin) whose period has not ended
+   * yet, plus anything that is physically out (`picked_up`) whatever its dates
+   * say — that is BUG-211's lesson.
+   *
+   * A maintenance block counts: the car is spoken for by the workshop, and
+   * deleting it would take the block with it.
+   */
+  private blockingVehicleReservations(rows: Reservation[], today: string): Reservation[] {
+    return rows.filter((r) => {
+      if (r.deletedAt) return false;
+      const status = normalizeReservationStatus(r.status);
+      if (status && CLOSED_RESERVATION_STATUSES.has(status)) return false;
+      if (status === 'picked_up') return true;
+      const end = r.endDate && r.endDate !== '' && r.endDate !== 'undefined' ? r.endDate : null;
+      return end === null || end >= today;
+    });
+  }
+
   async getVehicleDeleteImpact(id: number): Promise<{
     vehicle: Vehicle;
     counts: Record<string, number>;
+    blockingReservations: Reservation[];
   } | undefined> {
     const vehicle = await this.getVehicle(id);
     if (!vehicle) return undefined;
@@ -606,6 +628,8 @@ export class DatabaseStorage implements IStorage {
         blacklist: blacklist.length,
         ...snapshotCounts(cascade),
       },
+      // besluiten B-14 (BUG-022) — what refuses the delete.
+      blockingReservations: this.blockingVehicleReservations(res, isoToday()),
     };
   }
 
@@ -614,11 +638,17 @@ export class DatabaseStorage implements IStorage {
    * checks with it. Everything is snapshotted into `deleted_records` inside the
    * same transaction first, so the delete stays reversible via
    * restoreDeletedRecord() and always leaves a trace of who did it.
+   *
+   * besluiten **B-14** (BUG-022) — and it is refused outright while a rental is
+   * running or planned on the car. The check sits inside the same transaction
+   * as the snapshot, behind the `FOR UPDATE` below, so a booking created a
+   * millisecond earlier cannot be wiped by a delete that read "no bookings"
+   * before it.
    */
   async deleteVehicle(
     id: number,
     actor?: { username?: string | null; userId?: number | null }
-  ): Promise<boolean> {
+  ): Promise<{ deleted: boolean; reason?: 'not_found' | 'has_live_reservations'; blockingReservations?: Reservation[] }> {
     // Start a transaction to ensure all related records are deleted
     return await db.transaction(async (tx) => {
       try {
@@ -627,7 +657,7 @@ export class DatabaseStorage implements IStorage {
         // commits, finds no row, and returns false (404) instead of writing a
         // second snapshot into the recycle bin.
         const [vehicle] = await tx.select().from(vehicles).where(eq(vehicles.id, id)).for('update');
-        if (!vehicle) return false;
+        if (!vehicle) return { deleted: false, reason: 'not_found' as const };
 
         // Snapshot everything that is about to disappear, including the rows
         // Postgres would cascade away without us touching them.
@@ -648,6 +678,14 @@ export class DatabaseStorage implements IStorage {
           tx.select().from(vehicleTransports).where(eq(vehicleTransports.vehicleId, id)),
           tx.select().from(vehicleCustomerBlacklist).where(eq(vehicleCustomerBlacklist.vehicleId, id)),
         ]);
+
+        // besluiten B-14 (BUG-022) — refuse while a rental is live or planned.
+        // Before this, deleting a car hard-deleted the bookings of every
+        // customer on it without asking.
+        const blocking = this.blockingVehicleReservations(vehicleReservations as Reservation[], isoToday());
+        if (blocking.length > 0) {
+          return { deleted: false, reason: 'has_live_reservations' as const, blockingReservations: blocking };
+        }
 
         // BUG-110 — everything else the delete takes with it, discovered from
         // the foreign-key graph rather than from a list that goes stale.
@@ -705,7 +743,7 @@ export class DatabaseStorage implements IStorage {
           .where(eq(vehicles.id, id))
           .returning();
 
-        return !!deleted;
+        return { deleted: !!deleted, ...(deleted ? {} : { reason: 'not_found' as const }) };
       } catch (error) {
         console.error("Error during vehicle deletion transaction:", error);
         throw error;

@@ -1828,11 +1828,19 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Vehicle not found" });
       }
 
+      // besluiten B-14 (BUG-022) — the same body the customer side has had
+      // since B-08: what goes with it, and what refuses the delete.
       res.json({
         licensePlate: impact.vehicle.licensePlate,
         brand: impact.vehicle.brand,
         model: impact.vehicle.model,
         counts: impact.counts,
+        blocked: impact.blockingReservations.length > 0,
+        blockingReservations: impact.blockingReservations.map((r) => ({
+          id: r.id, customerId: r.customerId, startDate: r.startDate, endDate: r.endDate,
+          status: r.status, type: r.type,
+        })),
+        restorable: true,
       });
     } catch (error) {
       console.error("Error building vehicle delete impact:", error);
@@ -1874,12 +1882,33 @@ export async function registerRoutes(app: Express): Promise<void> {
         });
       }
 
-      const deleted = await storage.deleteVehicle(id, {
+      const result = await storage.deleteVehicle(id, {
         username: req.user?.username ?? null,
         userId: req.user?.id ?? null,
       });
 
-      if (!deleted) {
+      // besluiten B-14 (BUG-022) — refused while a rental is live or planned,
+      // the same shape as the customer rule of B-08.
+      if (!result.deleted && result.reason === 'has_live_reservations') {
+        await AuditLogger.logFromRequest(
+          req,
+          'vehicle.delete',
+          'vehicle',
+          id,
+          { reason: 'has_live_reservations', licensePlate: impact.vehicle.licensePlate },
+          'failure',
+        );
+        return res.status(409).json({
+          message: "Dit voertuig heeft een lopende of geplande huur en kan niet worden verwijderd.",
+          code: "VEHICLE_HAS_LIVE_RESERVATIONS",
+          blockingReservations: (result.blockingReservations ?? []).map((r) => ({
+            id: r.id, customerId: r.customerId, startDate: r.startDate, endDate: r.endDate,
+            status: r.status, type: r.type,
+          })),
+        });
+      }
+
+      if (!result.deleted) {
         return res.status(404).json({ message: "Vehicle not found" });
       }
 

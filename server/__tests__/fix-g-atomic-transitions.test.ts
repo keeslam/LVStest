@@ -99,8 +99,12 @@ describe("FIX-G — atomic transitions", () => {
 
   it("five parallel restores of one deleted record: one 200, four 409, zero 5xx (BUG-043)", async () => {
     const vehicle = await createFixtureVehicle();
+    // Closed history: besluiten B-14 (BUG-022) refuses to delete a vehicle with
+    // a live or planned rental, and this test is about the restore, not the
+    // refusal.
     await createFixtureReservation({
-      customerId, vehicleId: vehicle.id, startDate: "2031-02-01", endDate: "2031-02-05",
+      customerId, vehicleId: vehicle.id, startDate: "2019-02-01", endDate: "2019-02-05",
+      status: "completed",
     });
     const recordId = await deleteVehicleViaApi(vehicle.id, vehicle.licensePlate);
 

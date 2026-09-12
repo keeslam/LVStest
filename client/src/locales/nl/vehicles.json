@@ -63,7 +63,10 @@
       "deletedDescription": "{{brand}} {{model}} is verwijderd. Een beheerder kan het terugzetten vanuit de prullenbak.",
       "errorTitle": "Fout",
       "errorFallback": "Voertuig verwijderen mislukt"
-    }
+    },
+    "blockedTitle": "Verwijderen kan niet: dit voertuig heeft een lopende of geplande huur.",
+    "blockedReservation": "Reservering #{{id}} — {{start}} t/m {{end}} ({{status}})",
+    "blockedHint": "Rond de huur af of annuleer hem eerst; daarna kan het voertuig naar de prullenbak."
   },
   "bulkImportDialog": {
     "triggerButton": "Bulk importeren",

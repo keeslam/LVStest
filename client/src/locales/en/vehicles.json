@@ -63,7 +63,10 @@
       "deletedDescription": "{{brand}} {{model}} has been deleted. An admin can restore it from the recycle bin.",
       "errorTitle": "Error",
       "errorFallback": "Failed to delete vehicle"
-    }
+    },
+    "blockedTitle": "Cannot delete: this vehicle has a current or planned rental.",
+    "blockedReservation": "Reservation #{{id}} — {{start}} to {{end}} ({{status}})",
+    "blockedHint": "Close or cancel the rental first; after that the vehicle can go to the recycle bin."
   },
   "bulkImportDialog": {
     "triggerButton": "Bulk Import",

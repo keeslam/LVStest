@@ -209,8 +209,12 @@ describe("FIX-X — the vehicle recycle bin round trip", () => {
     const customer = await createFixtureCustomer("Restore");
     const other = await createFixtureCustomer("RestoreAnder");
     const vehicle = await createFixtureVehicle();
+    // besluiten B-14 (BUG-022) refuses to delete a vehicle with a *live or
+    // planned* rental, so the snapshotted booking is one that is over but was
+    // never closed — still live for the overlap predicate, which is exactly the
+    // row BUG-108 double-booked.
     const original = await createFixtureReservation({
-      customerId: customer.id, vehicleId: vehicle.id, startDate: day(120), endDate: day(125),
+      customerId: customer.id, vehicleId: vehicle.id, startDate: day(-125), endDate: day(-120),
     });
 
     const deleted = await admin.delete(`/api/vehicles/${vehicle.id}`)
@@ -219,9 +223,18 @@ describe("FIX-X — the vehicle recycle bin round trip", () => {
 
     // BUG-108: the vehicle is in the bin, so booking it is refused outright.
     const ghost = await admin.post("/api/reservations").send({
-      customerId: other.id, vehicleId: vehicle.id, startDate: day(121), endDate: day(123), type: "standard",
+      customerId: other.id, vehicleId: vehicle.id, startDate: day(-124), endDate: day(-122), type: "standard",
     });
     expect(ghost.status).toBe(404);
+
+    // …which is not the only way a row lands on that vehicle id:
+    // `reservations.vehicle_id` carries no foreign key (BUG-039), so an import
+    // or a direct write can still put one there while the car is in the bin.
+    // That is the state the restore has to survive.
+    const [taken] = await db.insert(reservations).values({
+      customerId: other.id, vehicleId: vehicle.id, startDate: day(-124), endDate: day(-122),
+      status: "booked", type: "standard",
+    } as any).returning();
 
     const [record] = await db.select().from(deletedRecords)
       .where(and(eq(deletedRecords.entityType, "vehicle"), eq(deletedRecords.entityId, vehicle.id)));
@@ -231,6 +244,13 @@ describe("FIX-X — the vehicle recycle bin round trip", () => {
 
     const restored = await admin.post(`/api/deleted-records/${record.id}/restore`).send({});
     expect(restored.status).toBe(200);
+
+    // The snapshotted booking came back visible but cancelled, with the reason
+    // on it — never as a second live booking on the same days.
+    const [restoredOriginal] = await db.select().from(reservations).where(eq(reservations.id, original.id));
+    expect(restoredOriginal.status).toBe("cancelled");
+    expect(restoredOriginal.notes ?? "").toContain("[RESTORE]");
+    expect(restoredOriginal.notes ?? "").toContain(`#${taken.id}`);
 
     // No overlapping live pair on that vehicle afterwards.
     const overlapResult: any = await db.execute(sql`
@@ -254,8 +274,11 @@ describe("FIX-X — the vehicle recycle bin round trip", () => {
   it("restores the driver assignment the delete cascaded away (BUG-110)", async () => {
     const customer = await createFixtureCustomer("Roundtrip");
     const vehicle = await createFixtureVehicle();
+    // History, not a live booking — besluiten B-14 refuses to delete a vehicle
+    // that still has a rental running or planned on it.
     const rental = await createFixtureReservation({
-      customerId: customer.id, vehicleId: vehicle.id, startDate: day(150), endDate: day(155),
+      customerId: customer.id, vehicleId: vehicle.id, startDate: day(-155), endDate: day(-150),
+      status: "completed",
     });
     const [assignment] = await db.insert(reservationDriverAssignments).values({
       reservationId: rental.id, driverId: null, assignedFrom: new Date(),
