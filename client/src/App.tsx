@@ -1,5 +1,9 @@
 import { Switch, Route, useLocation } from "wouter";
 import Dashboard from "@/pages/dashboard";
+// OPT-001 — the work-day screen. A *sibling* of the dashboard, not a
+// replacement: a new route plus a prominent entry is the smaller, reversible
+// half of the choice B-17 left open, and no existing widget is removed.
+import TodayPage from "@/pages/today";
 import VehiclesIndex from "@/pages/vehicles/index";
 import CustomersIndex from "@/pages/customers/index";
 import ReservationEdit from "@/pages/reservations/edit/[id]";
@@ -62,6 +66,7 @@ function AppRoutes() {
             <ErrorBoundary resetKey={location}>
             <Switch>
               <ProtectedRoute path="/" component={Dashboard} />
+              <ProtectedRoute path="/vandaag" component={TodayPage} />
               <ProtectedRoute path="/vehicles" component={VehiclesIndex} />
               <ProtectedRoute path="/scan" component={ScanPage} />
               <ProtectedRoute path="/customers" component={CustomersIndex} />

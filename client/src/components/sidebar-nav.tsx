@@ -19,6 +19,9 @@ export function SidebarNav() {
   const isAdmin = user?.role === UserRole.ADMIN;
 
   const navItems: NavItem[] = [
+    // OPT-001 — "Vandaag" is the first thing an employee sees in the menu; the
+    // dashboard keeps its place and its widgets right underneath it.
+    { href: "/vandaag", labelKey: "today", icon: "today", permissions: [UserPermission.VIEW_DASHBOARD, UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS] },
     { href: "/", labelKey: "dashboard", icon: "dashboard", permissions: [UserPermission.VIEW_DASHBOARD] },
     { href: "/vehicles", labelKey: "vehicles", icon: "directions_car", permissions: [UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES] },
     { href: "/scan", labelKey: "scan", icon: "scan", permissions: [UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES] },
@@ -92,6 +95,16 @@ function getNavIcon(iconName: string, isActive: boolean) {
   const className = isActive ? "text-primary-500" : "text-gray-500";
   
   switch (iconName) {
+    case "today":
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`lucide lucide-calendar-check ${className}`}>
+          <path d="M8 2v4" />
+          <path d="M16 2v4" />
+          <rect width="18" height="18" x="3" y="4" rx="2" />
+          <path d="M3 10h18" />
+          <path d="m9 16 2 2 4-4" />
+        </svg>
+      );
     case "dashboard":
       return (
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`lucide lucide-layout-dashboard ${className}`}>

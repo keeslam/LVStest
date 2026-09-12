@@ -144,6 +144,7 @@ import { registerUserRoutes } from "./routes/users";
 import { registerPortalAdminRoutes } from "./routes/portal-admin";
 import { registerFineRoutes } from "./routes/fines";
 import { registerPortalRequestRoutes } from "./routes/portal-requests";
+import { registerTodayRoutes } from "./routes/today";
 import { registerExpenseRoutes } from "./routes/expenses";
 import { registerPdfTemplateRoutes } from "./routes/pdf-templates";
 import { registerCustomNotificationRoutes } from "./routes/custom-notifications";
@@ -420,6 +421,8 @@ export async function registerRoutes(app: Express): Promise<void> {
   registerPortalAdminRoutes(app, routeDeps);
   registerFineRoutes(app, routeDeps);
   registerPortalRequestRoutes(app, routeDeps);
+  // OPT-001 — the one request behind the "Vandaag" work-day screen.
+  registerTodayRoutes(app, routeDeps);
   
   /**
    * besluiten **B-03** — an administrator may force a handover of a vehicle

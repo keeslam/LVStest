@@ -262,5 +262,53 @@
     "expectedReturn": " • Verwachte inlevering: {{date}}",
     "inUse": "In gebruik",
     "viaTransport": "Transport #{{id}}"
+  },
+  "today": {
+    "title": "Vandaag",
+    "refresh": "Vernieuwen",
+    "openItems": "Openstaande punten",
+    "emptyTitle": "Er staat niets open",
+    "emptyDescription": "Geen ophalingen, innames, onderhoud, transporten of portaalaanvragen die vandaag om actie vragen.",
+    "handoversTitle": "Vandaag ophalen en innemen",
+    "pickupsSubtitle_one": "{{count}} voertuig meegeven",
+    "pickupsSubtitle_other": "{{count}} voertuigen meegeven",
+    "returnsSubtitle_one": "{{count}} voertuig terugnemen",
+    "returnsSubtitle_other": "{{count}} voertuigen terugnemen",
+    "startPickup": "Ophalen starten",
+    "startReturn": "Innemen starten",
+    "maintenanceTitle": "Onderhoud en transport vandaag",
+    "maintenanceScheduled": "Ingepland",
+    "maintenanceIn": "In de werkplaats",
+    "openMaintenance": "Onderhoud openen",
+    "openTransport": "Transport openen",
+    "sparesSubtitle_one": "{{count}} vervanger nog toe te wijzen",
+    "sparesSubtitle_other": "{{count}} vervangers nog toe te wijzen",
+    "spareNeedsVehicle": "Nog geen voertuig",
+    "spareTbdBadge": "Nog te bepalen",
+    "spareFor": "Vervanger voor {{plate}}",
+    "assignSpare": "Vervanger toewijzen",
+    "portalTitle": "Nieuwe portaalaanvragen",
+    "reviewRequest": "Beoordelen",
+    "unknownCustomer": "Onbekende klant",
+    "entryTitle": "Vandaag",
+    "entryOpen_one": "{{count}} openstaand punt",
+    "entryOpen_other": "{{count}} openstaande punten",
+    "entryNothing": "Er staat niets open",
+    "entryAction": "Open Vandaag",
+    "transportType": {
+      "swap": "Omruil",
+      "tow": "Sleep",
+      "repossession": "Terughalen",
+      "delivery": "Levering",
+      "other": "Overig"
+    },
+    "requestType": {
+      "extension": "Verlenging",
+      "early_return": "Eerder inleveren",
+      "damage": "Schade",
+      "fine_question": "Vraag over bekeuring",
+      "booking": "Boekingsaanvraag",
+      "other": "Overig"
+    }
   }
 }
