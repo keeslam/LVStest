@@ -6,6 +6,8 @@ import { damageCheckTemplates, vehicleDiagramTemplates } from '../shared/schema'
 import { eq } from 'drizzle-orm';
 import { ObjectStorageService } from './objectStorage';
 import { resolveDocumentFilePath } from './services/document-paths';
+import { sanitizeForWinAnsi, wrapTextToWidth } from './utils/pdf-text';
+import { parseCanvasFields, pageCountFor, MAX_TEMPLATE_PAGES } from '../shared/template-fields';
 
 /**
  * Format a license plate consistently throughout the application
@@ -123,22 +125,10 @@ async function generateDamageCheckPDFFromCanvas(
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  // pdf-lib's standard fonts only support WinAnsi (~Latin-1). Strip or map
-  // characters outside that range so user-typed glyphs like "→" / smart
-  // quotes don't blow up the whole PDF.
-  const sanitizeForWinAnsi = (s: string): string => {
-    if (!s) return s;
-    return s
-      .replace(/→/g, '->')
-      .replace(/←/g, '<-')
-      .replace(/[\u2018\u2019]/g, "'")
-      .replace(/[\u201C\u201D]/g, '"')
-      .replace(/[\u2013\u2014]/g, '-')
-      .replace(/\u2026/g, '...')
-      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
-      // drop anything still outside WinAnsi (basic Latin + Latin-1 Supp)
-      .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, '?');
-  };
+  // BUG-162: the local sanitizer replaced every unmappable character with a
+  // literal "?", so "Şahin" printed as "?ahin" and "Ångström" survived only by
+  // accident. The shared one transliterates to the base letter where WinAnsi
+  // has one and drops the rest with a single warning.
 
   // Parse interactive check JSON blobs once.
   const parseJson = (v: any) => {
@@ -319,8 +309,20 @@ async function generateDamageCheckPDFFromCanvas(
     inspectorName: inspectorName || '',
   };
 
-  const fields: any[] = Array.isArray(template.canvasFields) ? template.canvasFields : [];
-  const maxPage = Math.max(1, ...fields.map(f => Number(f.page) || 1));
+  // BUG-168/BUG-176: `Math.max(1, ...fields.map(f => Number(f.page) || 1))`
+  // took the page count straight from stored jsonb, so one field with
+  // `page: 40000` allocated forty thousand A4 pages and blocked the event loop
+  // for 76 seconds — every request in the process waited behind it. And one
+  // malformed entry anywhere in the array used to throw out of the whole loop,
+  // so a single bad field broke every PDF that template produced.
+  const parsedFields = parseCanvasFields(template.canvasFields);
+  if (parsedFields.rejected.length > 0) {
+    console.warn(
+      `[damage-check] ${parsedFields.rejected.length} field(s) of template "${template?.name ?? '?'}" were rejected and not drawn: ${parsedFields.rejected.join(' | ')}`,
+    );
+  }
+  const fields: any[] = parsedFields.fields;
+  const maxPage = Math.min(pageCountFor(fields), MAX_TEMPLATE_PAGES);
   const pages = Array.from({ length: maxPage }, () => pdfDoc.addPage([595, 842]));
   const PAGE_H = 842;
 
@@ -404,31 +406,39 @@ async function generateDamageCheckPDFFromCanvas(
     const headerImg = isJpeg
       ? await pdfDoc.embedJpg(headerBytes)
       : await pdfDoc.embedPng(headerBytes);
-    const margin = 0;
+    // BUG-177: the header used to be drawn at `595 * (srcH / srcW)` — its
+    // height came from whatever image an admin happened to upload, so a
+    // portrait logo covered a third of the page and sat on top of the template
+    // area the editor positions fields in. The band is now fixed at
+    // HEADER_BAND_H and the image is letterboxed into it, centred, so the
+    // template area below always starts at the same y whatever is uploaded.
+    const HEADER_BAND_H = 70;
     const headerW = 595;
     const srcW = headerImg.width;
     const srcH = headerImg.height;
-    const headerH = headerW * (srcH / srcW);
-    const headerYBottom = PAGE_H - headerH;
+    const fitScale = Math.min(headerW / srcW, HEADER_BAND_H / srcH);
+    const drawW = srcW * fitScale;
+    const drawH = srcH * fitScale;
+    const drawX = (headerW - drawW) / 2;
+    const bandBottom = PAGE_H - HEADER_BAND_H;
+    const drawY = bandBottom + (HEADER_BAND_H - drawH) / 2;
     const dateStr = new Date().toLocaleDateString('en-GB');
     const contractStr = reservationData?.contractNumber || '';
-    // Normalize overlay coords against the actual source image dimensions so
-    // a different aspect ratio still lands the text on the printed lines.
-    const sx = headerW / srcW;
-    const sy = headerH / srcH;
-    const textSize = Math.max(7, Math.round(headerH * 0.12));
-    const datumSrcX = 445, datumSrcY = 28;     // top line in source pixels
-    const contractSrcX = 445, contractSrcY = 80; // bottom line in source pixels
+    // Overlay positions as a fraction of the drawn image, so they follow the
+    // letterboxed image instead of the raw pixel size of whatever was uploaded.
+    const DATE_X_PCT = 0.748, DATE_Y_PCT = 0.20;
+    const CONTRACT_X_PCT = 0.748, CONTRACT_Y_PCT = 0.58;
+    const textSize = Math.max(7, Math.round(drawH * 0.12));
     for (const pg of pages) {
-      pg.drawImage(headerImg, { x: margin, y: headerYBottom, width: headerW, height: headerH });
-      pg.drawText(sanitizeForWinAnsi(dateStr), {
-        x: margin + datumSrcX * sx,
-        y: headerYBottom + headerH - datumSrcY * sy - textSize,
+      pg.drawImage(headerImg, { x: drawX, y: drawY, width: drawW, height: drawH });
+      pg.drawText(sanitizeForWinAnsi(dateStr, 'damage check date'), {
+        x: drawX + DATE_X_PCT * drawW,
+        y: drawY + drawH - DATE_Y_PCT * drawH - textSize,
         size: textSize, font, color: rgb(0, 0, 0),
       });
-      pg.drawText(sanitizeForWinAnsi(contractStr), {
-        x: margin + contractSrcX * sx,
-        y: headerYBottom + headerH - contractSrcY * sy - textSize,
+      pg.drawText(sanitizeForWinAnsi(contractStr, 'damage check contract number'), {
+        x: drawX + CONTRACT_X_PCT * drawW,
+        y: drawY + drawH - CONTRACT_Y_PCT * drawH - textSize,
         size: textSize, font, color: rgb(0, 0, 0),
       });
     }
@@ -437,6 +447,7 @@ async function generateDamageCheckPDFFromCanvas(
   }
 
   for (const f of fields) {
+   try {
     const p = pages[(Number(f.page) || 1) - 1];
     if (!p) continue;
     const x = Number(f.x) || 0;
@@ -689,7 +700,7 @@ async function generateDamageCheckPDFFromCanvas(
         }
       }
     }
-    const sanitized = sanitizeForWinAnsi(textVal);
+    const sanitized = sanitizeForWinAnsi(textVal, `damage check field "${f.name ?? f.id ?? '?'}"`);
     // Mirror the editor's text/dynamic box model exactly:
     //   - padding: 1px top, 4px left+right
     //   - NO explicit width (the editor ignores f.width for text fields), so
@@ -746,6 +757,13 @@ async function generateDamageCheckPDFFromCanvas(
         cursor += seg.length + (i < parts.length - 1 ? 1 : 0); // +1 for "/"
       }
     }
+   } catch (fieldError) {
+     // BUG-176: one unusable field must cost that field, not the document.
+     console.warn(
+       `[damage-check] could not draw field "${(f as any)?.name ?? (f as any)?.id ?? '?'}":`,
+       (fieldError as Error).message,
+     );
+   }
   }
 
   // Ensure at least one page

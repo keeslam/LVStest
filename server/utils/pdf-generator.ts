@@ -8,11 +8,17 @@ import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import * as fs from 'fs';
 import * as path from 'path';
-import { PDFDocument, rgb, StandardFonts, TextAlignment } from 'pdf-lib';
+import { PDFDocument, PDFName, rgb, StandardFonts, TextAlignment } from 'pdf-lib';
 import { formatReservationBarcode } from '../../shared/barcode';
 import { renderBarcodePng } from './barcode-png';
 import { resolveUploadsPath } from '../../shared/paths';
 import { resolveDocumentFilePath } from '../services/document-paths';
+import { sanitizeForWinAnsi, wrapTextToWidth } from './pdf-text';
+import {
+  parseTemplateFields,
+  PAGE_WIDTH,
+  PAGE_HEIGHT,
+} from '../../shared/template-fields';
 
 /**
  * Format a license plate consistently throughout the application
@@ -50,748 +56,318 @@ function formatLicensePlate(licensePlate: string): string {
 }
 
 /**
- * Generates a rental contract PDF using a custom template
- * @param reservation Reservation data
- * @param template Optional PDF template. If not provided, the default template will be used.
+ * Everything a contract field may be filled from. FIX-N (BUG-191): the
+ * renderer used to end its source lookup with
+ *
+ *     else if (field.name) value = field.name;
+ *     else value = source || 'Field';
+ *
+ * so a field whose source no longer resolved printed its own name — "Field",
+ * "customerName", "Naam huurder" — in the box where the customer's name
+ * belongs, and the contract looked filled in. An unknown source now prints
+ * nothing and says so in the log.
  */
-export async function generateRentalContractFromTemplate(reservation: Reservation, template?: PdfTemplate): Promise<Buffer> {
+const CONTRACT_FIELD_SOURCES: Record<string, keyof ContractData> = {
+  contractNumber: "contractNumber",
+  contractDate: "contractDate",
+  licensePlate: "licensePlate",
+  brand: "brand",
+  model: "model",
+  chassisNumber: "chassisNumber",
+  customerName: "customerName",
+  customerAddress: "customerAddress",
+  customerCity: "customerCity",
+  customerPostalCode: "customerPostalCode",
+  customerPhone: "customerPhone",
+  driverLicense: "driverLicense",
+  driverName: "driverName",
+  driverFirstName: "driverFirstName",
+  driverLastName: "driverLastName",
+  driverEmail: "driverEmail",
+  driverPhone: "driverPhone",
+  driverLicenseNumber: "driverLicenseNumber",
+  driverLicenseExpiry: "driverLicenseExpiry",
+  startDate: "startDate",
+  endDate: "endDate",
+  duration: "duration",
+  totalPrice: "totalPrice",
+  // The dotted spellings the template editor writes.
+  "customer.name": "customerName",
+  "customer.address": "customerAddress",
+  "customer.city": "customerCity",
+  "customer.postalCode": "customerPostalCode",
+  "customer.phone": "customerPhone",
+  "customer.driverLicenseNumber": "driverLicense",
+  "vehicle.licensePlate": "licensePlate",
+  "vehicle.brand": "brand",
+  "vehicle.model": "model",
+  "vehicle.chassisNumber": "chassisNumber",
+  "reservation.contractNumber": "contractNumber",
+  "reservation.startDate": "startDate",
+  "reservation.endDate": "endDate",
+  "reservation.duration": "duration",
+  "reservation.totalPrice": "totalPrice",
+  "driver.name": "driverName",
+  "driver.firstName": "driverFirstName",
+  "driver.lastName": "driverLastName",
+  "driver.email": "driverEmail",
+  "driver.phone": "driverPhone",
+  "driver.licenseNumber": "driverLicenseNumber",
+  "driver.licenseExpiry": "driverLicenseExpiry",
+};
+
+type ContractData = ReturnType<typeof prepareContractData>;
+
+function resolveContractFieldValue(source: string | undefined, data: ContractData): string {
+  if (!source) return "";
+  const key = CONTRACT_FIELD_SOURCES[source];
+  if (!key) {
+    console.warn(
+      `[contract] template field source "${source}" is not a known contract value; leaving the field empty.`,
+    );
+    return "";
+  }
+  const value = data[key];
+  return value === null || value === undefined ? "" : String(value);
+}
+
+/** What kind of file these bytes actually are, regardless of the stored name. */
+function sniffBackgroundType(bytes: Buffer): "pdf" | "png" | "jpg" | null {
+  if (bytes.length < 4) return null;
+  if (bytes.slice(0, 5).toString("latin1") === "%PDF-") return "pdf";
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return "png";
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "jpg";
+  return null;
+}
+
+/** Document-level constructs a background must never smuggle into a contract. */
+const ACTIVE_PDF_KEYS = ["/OpenAction", "/JavaScript", "/JS", "/AA", "/Launch", "/EmbeddedFiles"];
+
+/**
+ * True when the PDF carries document-level JavaScript or an auto-action.
+ * FIX-P (BUG-180): the old renderer loaded the *background* document and drew
+ * onto it, so the background's `/OpenAction` JavaScript, its extra pages and
+ * its embedded files were part of every contract that template produced. A
+ * background uploaded once became code in every contract for ever.
+ */
+export function pdfCarriesActiveContent(bytes: Buffer): boolean {
+  const text = bytes.toString("latin1");
+  return ACTIVE_PDF_KEYS.some((key) => text.includes(key));
+}
+
+/**
+ * The thorough version of the check above: object streams are compressed, so
+ * a scan of the raw bytes misses an /OpenAction that pdf-lib itself would
+ * write. Parsing the document and looking at the catalog catches those too.
+ * Returns the offending key, or null when the file is clean.
+ */
+export async function detectActivePdfContent(bytes: Buffer): Promise<string | null> {
+  for (const key of ACTIVE_PDF_KEYS) {
+    if (bytes.toString("latin1").includes(key)) return key;
+  }
   try {
-    // Extract data for the contract
-    const contractData = prepareContractData(reservation);
-    
-    // Check if a template background exists
-    let pdfDoc;
-    let page;
-    
-    // Only use preview mode if explicitly requested (not just when id is 0)
-    const previewMode = false; // Disable preview mode - always use actual data
-    if (previewMode) {
-      console.log('Preview mode enabled - using sample data for fields');
+    const doc = await PDFDocument.load(bytes, { throwOnInvalidObject: false });
+    const catalog = doc.catalog;
+    for (const key of ["OpenAction", "AA", "Names", "EmbeddedFiles"]) {
+      const entry = catalog.get(PDFName.of(key));
+      if (!entry) continue;
+      if (key !== "Names") return `/${key}`;
+      const names = catalog.lookup(PDFName.of("Names"));
+      const serialised = names ? String(names) : "";
+      if (serialised.includes("/JavaScript") || serialised.includes("/EmbeddedFiles")) return "/JavaScript";
     }
-    
-    // Always try to use the template background
-    try {
-      // Use custom background if specified in template, otherwise use default
-      const backgroundPath = template?.backgroundPath || 'uploads/templates/rental_contract_template.pdf';
-      const defaultTemplatePath = resolveUploadsPath('templates', 'rental_contract_template.pdf');
-      
-      console.log('Loading template from path:', backgroundPath);
-      
-      let templateBytes: Buffer;
-      let ext: string;
-      
-      // Check if path is object storage (starts with /) or local filesystem
-      if (backgroundPath.startsWith('/')) {
-        // Object storage path
-        console.log('Loading background from object storage');
-        const { ObjectStorageService } = await import('../objectStorage');
-        const objStorageService = new ObjectStorageService();
-        const file = objStorageService.getFile(backgroundPath);
-        const [fileBuffer] = await file.download();
-        templateBytes = Buffer.from(fileBuffer);
-        ext = path.extname(backgroundPath).toLowerCase();
-        console.log('Successfully loaded background from object storage');
-      } else {
-        // Local filesystem path
-        // FIX-B: a stored background path resolves through the uploads root,
-        // not cwd, and can never point outside it.
-        const templatePath = resolveDocumentFilePath(backgroundPath);
-        if (templatePath) {
-          templateBytes = fs.readFileSync(templatePath);
-          ext = path.extname(templatePath).toLowerCase();
-        } else {
-          throw new Error('Local template file not found');
-        }
-      }
-      
-      // Process the loaded template bytes
-      if (templateBytes) {
-        
-        // Handle PDF files
-        if (ext === '.pdf') {
-          try {
-            // Load the PDF document
-            pdfDoc = await PDFDocument.load(templateBytes);
-            
-            // Get the first page or add one if the PDF is empty
-            if (pdfDoc.getPageCount() > 0) {
-              page = pdfDoc.getPage(0);
-              console.log('Successfully loaded PDF template background');
-            } else {
-              console.log('Template PDF exists but has no pages, falling back to default');
-              throw new Error('PDF has no pages');
-            }
-          } catch (pdfError) {
-            console.error('Error loading PDF template, falling back to default:', pdfError);
-            // Fall back to default template
-            if (fs.existsSync(defaultTemplatePath)) {
-              const defaultBytes = fs.readFileSync(defaultTemplatePath);
-              pdfDoc = await PDFDocument.load(defaultBytes);
-              page = pdfDoc.getPage(0);
-            } else {
-              pdfDoc = await PDFDocument.create();
-              page = pdfDoc.addPage([595, 842]);
-            }
-          }
-        } 
-        // Handle image files (JPG, PNG)
-        else if (ext === '.jpg' || ext === '.jpeg' || ext === '.png') {
-          console.log('Custom background is an image, creating new PDF and embedding image');
-          
-          try {
-            // Create new document for image background
-            pdfDoc = await PDFDocument.create();
-            page = pdfDoc.addPage([595, 842]); // A4 size
-            
-            // Embed the image based on type
-            let image;
-            if (ext === '.png') {
-              image = await pdfDoc.embedPng(templateBytes);
-            } else {
-              image = await pdfDoc.embedJpg(templateBytes);
-            }
-            
-            // Draw the image to fill the page
-            const { width, height } = page.getSize();
-            page.drawImage(image, {
-              x: 0,
-              y: 0,
-              width: width,
-              height: height,
-            });
-            console.log('Successfully embedded image background');
-          } catch (imgError) {
-            console.error('Error embedding image, falling back to default template:', imgError);
-            // Fall back to default template - reload completely
-            if (fs.existsSync(defaultTemplatePath)) {
-              const defaultBytes = fs.readFileSync(defaultTemplatePath);
-              pdfDoc = await PDFDocument.load(defaultBytes);
-              page = pdfDoc.getPage(0);
-              console.log('Successfully loaded default template after image failure');
-            } else {
-              console.error('CRITICAL: Default template not found after image failure');
-              pdfDoc = await PDFDocument.create();
-              page = pdfDoc.addPage([595, 842]);
-            }
-          }
-        } else {
-          console.log('Unsupported file type, falling back to default template');
-          // Fall back to default template
-          if (fs.existsSync(defaultTemplatePath)) {
-            const defaultBytes = fs.readFileSync(defaultTemplatePath);
-            pdfDoc = await PDFDocument.load(defaultBytes);
-            page = pdfDoc.getPage(0);
-          } else {
-            pdfDoc = await PDFDocument.create();
-            page = pdfDoc.addPage([595, 842]);
-          }
-        }
-      } else {
-        console.log('Custom template file not found, falling back to default');
-        // Fall back to default template
-        if (fs.existsSync(defaultTemplatePath)) {
-          const defaultBytes = fs.readFileSync(defaultTemplatePath);
-          pdfDoc = await PDFDocument.load(defaultBytes);
-          page = pdfDoc.getPage(0);
-          console.log('Successfully loaded default template background');
-        } else {
-          console.log('Default template also not found, creating blank document');
-          pdfDoc = await PDFDocument.create();
-          page = pdfDoc.addPage([595, 842]); // A4 size
-        }
-      }
-    } catch (error) {
-      console.error('Error loading template background:', error);
-      // Final fallback - try default template one more time
-      try {
-        const defaultTemplatePath = resolveUploadsPath('templates', 'rental_contract_template.pdf');
-        if (fs.existsSync(defaultTemplatePath)) {
-          const defaultBytes = fs.readFileSync(defaultTemplatePath);
-          pdfDoc = await PDFDocument.load(defaultBytes);
-          page = pdfDoc.getPage(0);
-          console.log('Recovered using default template');
-        } else {
-          pdfDoc = await PDFDocument.create();
-          page = pdfDoc.addPage([595, 842]); // A4 size
-        }
-      } catch (fallbackError) {
-        console.error('Final fallback also failed:', fallbackError);
-        pdfDoc = await PDFDocument.create();
-        page = pdfDoc.addPage([595, 842]); // A4 size
-      }
+  } catch {
+    // Unparseable here means the background is unusable anyway; the caller
+    // finds that out when it tries to draw with it.
+  }
+  return null;
+}
+interface BackgroundSource {
+  bytes: Buffer;
+  /** True when the template names this background; false for the bundled default. */
+  configured: boolean;
+  label: string;
+}
+
+async function loadBackgroundBytes(template?: PdfTemplate | null): Promise<BackgroundSource | null> {
+  const configuredPath = template?.backgroundPath || null;
+  const label = template?.name ? `template "${template.name}"` : "the contract template";
+
+  if (configuredPath) {
+    if (configuredPath.startsWith("/")) {
+      // Object storage path.
+      const { ObjectStorageService } = await import("../objectStorage");
+      const objStorageService = new ObjectStorageService();
+      const file = objStorageService.getFile(configuredPath);
+      const [fileBuffer] = await file.download();
+      return { bytes: Buffer.from(fileBuffer), configured: true, label };
     }
-    
-    // Get fonts
-    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    
-    // Default text color
-    const textColor = rgb(0, 0, 0);
-    
-    // If template is provided, process template fields
-    if (template && template.fields) {
-      console.log('Processing template fields');
-      
-      // Parse fields - they could be in various formats from the database
-      let fields = [];
-      try {
-        console.log(`Template fields type: ${typeof template.fields}`);
-        console.log(`Template fields raw value:`, template.fields);
-        
-        if (template.fields === null || template.fields === undefined) {
-          console.log(`Template fields is null or undefined`);
-          fields = [];
-        } else if (typeof template.fields === 'string') {
-          // Handle various string formats that could come from the database
-          let fieldsString = template.fields;
-          
-          // Detect if it's a double-stringified JSON (common database storage issue)
-          if (fieldsString.startsWith('"[') && fieldsString.endsWith(']"')) {
-            // Remove outer quotes and unescape inner quotes
-            fieldsString = fieldsString.substring(1, fieldsString.length - 1).replace(/\\"/g, '"');
-          }
-          
-          // Now parse the JSON string
-          try {
-            fields = JSON.parse(fieldsString);
-            console.log(`Successfully parsed fields string, found ${fields.length} fields`);
-          } catch (parseError) {
-            console.error('Error parsing fields string:', parseError);
-            console.log('Fields string was:', fieldsString);
-            fields = [];
-          }
-        } else if (Array.isArray(template.fields)) {
-          // Already an array
-          fields = template.fields;
-          console.log(`Fields is already an array with ${fields.length} items`);
-        } else if (typeof template.fields === 'object') {
-          // Try to convert object to array
-          console.log(`Fields is an object, trying to convert`);
-          if (Object.keys(template.fields).length > 0) {
-            // Try to extract as array
-            const fieldsArray = Object.values(template.fields);
-            if (Array.isArray(fieldsArray)) {
-              fields = fieldsArray;
-              console.log(`Converted fields object to array with ${fields.length} items`);
-            }
-          }
-        }
-        
-        console.log(`Found ${fields.length} fields to render:`, fields);
-      } catch (error) {
-        console.error('Error processing template fields:', error);
-        fields = [];
+    const resolved = resolveDocumentFilePath(configuredPath);
+    if (!resolved) {
+      // BUG-179: five nested catches used to turn this into "use the default
+      // layout instead", so a template whose background had been deleted kept
+      // producing contracts that looked like somebody else's.
+      throw new Error(
+        `The background configured for ${label} could not be read (${configuredPath}). ` +
+          `Upload the background again before generating contracts with this template.`,
+      );
+    }
+    return { bytes: fs.readFileSync(resolved), configured: true, label };
+  }
+
+  const defaultPath = resolveUploadsPath("templates", "rental_contract_template.pdf");
+  if (fs.existsSync(defaultPath)) {
+    return { bytes: fs.readFileSync(defaultPath), configured: false, label: "the bundled default background" };
+  }
+  return null;
+}
+
+/**
+ * Builds the page the contract is drawn on.
+ *
+ * The document is always a **fresh** `PDFDocument`; a PDF background is brought
+ * in with `embedPage`, which copies the page's content and resources and
+ * nothing else (BUG-180).
+ */
+async function createContractPage(
+  pdfDoc: PDFDocument,
+  template?: PdfTemplate | null,
+): Promise<any> {
+  const page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+  const source = await loadBackgroundBytes(template);
+  if (!source) return page;
+
+  const kind = sniffBackgroundType(source.bytes);
+  if (!kind) {
+    if (source.configured) {
+      throw new Error(
+        `The background of ${source.label} is not a PDF, PNG or JPEG file, so the contract cannot be drawn on it.`,
+      );
+    }
+    return page;
+  }
+
+  try {
+    if (kind === "pdf") {
+      const backgroundDoc = await PDFDocument.load(source.bytes, { throwOnInvalidObject: false });
+      if (backgroundDoc.getPageCount() === 0) {
+        throw new Error("the background PDF has no pages");
       }
-      
-      // Draw each field
-      for (const field of fields) {
-        try {
-          // Get the field value from the contract data based on the source
-          let value = '';
-          
-          // Use field name or source as placeholder in preview mode
-          if (previewMode) {
-            // For preview mode, use the field name to clearly identify the field position
-            value = field.name || field.source || 'Field';
-          } else {
-            // Parse complex property paths like "customer.name" or "vehicle.brand"
-            const source = field.source || '';
-            
-            console.log(`Processing field ${field.name} with source ${source}`);
-            
-            if (source.includes('.')) {
-              // Handle nested properties like "customer.name" or "vehicle.brand"
-              const [objectName, propertyName] = source.split('.');
-              
-              console.log(`Processing field with source "${source}" - object: ${objectName}, property: ${propertyName}`);
-              
-              if (objectName === 'customer') {
-                if (propertyName === 'name') value = contractData.customerName;
-                else if (propertyName === 'address') value = contractData.customerAddress;
-                else if (propertyName === 'city') value = contractData.customerCity;
-                else if (propertyName === 'postalCode') value = contractData.customerPostalCode;
-                else if (propertyName === 'phone') value = contractData.customerPhone;
-                else if (propertyName === 'driverLicenseNumber') value = contractData.driverLicense;
-              } else if (objectName === 'vehicle') {
-                if (propertyName === 'licensePlate') value = contractData.licensePlate;
-                else if (propertyName === 'brand') value = contractData.brand;
-                else if (propertyName === 'model') value = contractData.model;
-                else if (propertyName === 'chassisNumber') value = contractData.chassisNumber;
-              } else if (objectName === 'reservation') {
-                if (propertyName === 'startDate') value = contractData.startDate;
-                else if (propertyName === 'endDate') value = contractData.endDate;
-                else if (propertyName === 'duration') value = contractData.duration;
-                else if (propertyName === 'totalPrice') value = contractData.totalPrice;
-              } else if (objectName === 'driver') {
-                if (propertyName === 'name') value = contractData.driverName;
-                else if (propertyName === 'firstName') value = contractData.driverFirstName;
-                else if (propertyName === 'lastName') value = contractData.driverLastName;
-                else if (propertyName === 'email') value = contractData.driverEmail;
-                else if (propertyName === 'phone') value = contractData.driverPhone;
-                else if (propertyName === 'licenseNumber') value = contractData.driverLicenseNumber;
-                else if (propertyName === 'licenseExpiry') value = contractData.driverLicenseExpiry;
-              }
-              
-              // If value is still empty, check direct properties as a fallback
-              if (!value) {
-                console.log(`  Field value not found in nested objects, trying direct properties...`);
-                try {
-                  // Safely check if the property exists in contractData
-                  if (source in contractData) {
-                    value = String(contractData[source as keyof typeof contractData]);
-                    console.log(`  Found direct property ${source}`);
-                  } else if (propertyName in contractData) {
-                    value = String(contractData[propertyName as keyof typeof contractData]);
-                    console.log(`  Found direct property ${propertyName}`);
-                  }
-                } catch (error) {
-                  console.error(`Error accessing property ${source}:`, error);
-                }
-              }
-            } else {
-              // Handle direct properties (backward compatibility)
-              if (source === 'customerName') value = contractData.customerName;
-              else if (source === 'customerAddress') value = contractData.customerAddress;
-              else if (source === 'customerCity') value = contractData.customerCity;
-              else if (source === 'customerPostalCode') value = contractData.customerPostalCode;
-              else if (source === 'customerPhone') value = contractData.customerPhone;
-              else if (source === 'driverLicense') value = contractData.driverLicense;
-              else if (source === 'driverName') value = contractData.driverName;
-              else if (source === 'driverFirstName') value = contractData.driverFirstName;
-              else if (source === 'driverLastName') value = contractData.driverLastName;
-              else if (source === 'driverEmail') value = contractData.driverEmail;
-              else if (source === 'driverPhone') value = contractData.driverPhone;
-              else if (source === 'driverLicenseNumber') value = contractData.driverLicenseNumber;
-              else if (source === 'driverLicenseExpiry') value = contractData.driverLicenseExpiry;
-              else if (source === 'contractNumber') value = contractData.contractNumber;
-              else if (source === 'contractDate') value = contractData.contractDate;
-              else if (source === 'licensePlate') value = contractData.licensePlate;
-              else if (source === 'brand') value = contractData.brand;
-              else if (source === 'model') value = contractData.model;
-              else if (source === 'chassisNumber') value = contractData.chassisNumber;
-              else if (source === 'startDate') value = contractData.startDate;
-              else if (source === 'endDate') value = contractData.endDate;
-              else if (source === 'duration') value = contractData.duration;
-              else if (source === 'totalPrice') value = contractData.totalPrice;
-              // Direct access to contract data properties with type safety
-              else if (source in contractData) {
-                value = String(contractData[source as keyof typeof contractData]);
-              }
-              else if (field.name) value = field.name; // Use name as fallback
-              else value = source || 'Field'; // Second fallback
-            }
-          }
-          
-          // Log in preview mode to help with debugging
-          if (previewMode) {
-            console.log(`Rendering preview field at position (${field.x}, ${field.y})`);
-          }
-          
-          // Ensure we have a value to display
-          // If no value, use empty string for cleaner appearance
-          if (!value) {
-            value = '';
-          }
-          
-          // Determine text alignment
-          let textAlignment: TextAlignment = TextAlignment.Left;
-          if (field.textAlign === 'center') textAlignment = TextAlignment.Center;
-          else if (field.textAlign === 'right') textAlignment = TextAlignment.Right;
-          
-          // Draw the text field with proper alignment
-          // Ensure we're using exact coordinates as provided in the template editor
-          // This is crucial as coordinates might be stored in different formats
-          
-          // Parse numerical values strictly to ensure we get the exact positions
-          let x = 0;
-          let y = 0;
-          let fontSize = 12;
-          
-          // Handle string or number coordinates
-          if (typeof field.x === 'string') {
-            x = parseFloat(field.x);
-          } else if (typeof field.x === 'number') {
-            x = field.x;
-          }
-          
-          if (typeof field.y === 'string') {
-            y = parseFloat(field.y);
-          } else if (typeof field.y === 'number') {
-            y = field.y;
-          }
-          
-          if (typeof field.fontSize === 'string') {
-            fontSize = parseFloat(field.fontSize);
-          } else if (typeof field.fontSize === 'number') {
-            fontSize = field.fontSize;
-          }
-          
-          // If we somehow get NaN values, use safe defaults
-          if (isNaN(x)) x = 0;
-          if (isNaN(y)) y = 0;
-          if (isNaN(fontSize) || fontSize <= 0) fontSize = 12;
-          
-          console.log(`Field: ${field.name || field.source} - Original positions: X=${field.x} (${typeof field.x}), Y=${field.y} (${typeof field.y})`);
-          console.log(`Parsed to X=${x}, Y=${y}, fontSize=${fontSize}`);
-          
-          // Get the font for this field
-          const font = field.isBold ? helveticaBold : helveticaFont;
-          
-          // Editor uses padding: 1px vertical, 6px horizontal
-          const paddingX = 6;
-          const paddingY = 1;
-          
-          // Calculate font metrics for proper baseline positioning
-          // The editor positions text from top-left, but PDF uses baseline
-          const fontHeight = font.heightAtSize(fontSize);
-          const ascent = fontHeight * 0.85; // Approximate ascent (distance from baseline to top)
-          
-          // Adjust coordinates to match editor preview:
-          // - Add horizontal padding
-          // - Convert from top-left to baseline positioning
-          // - Account for PDF's bottom-left origin (842 - y)
-          let adjustedX = x + paddingX;
-          let adjustedY = 842 - y - paddingY - ascent;
-          
-          // Handle text alignment (pdf-lib doesn't support alignment natively in drawText)
-          // The editor uses flexbox justifyContent, we need to replicate that behavior
-          const textWidth = font.widthOfTextAtSize(value, fontSize);
-          if (field.textAlign === 'center') {
-            // For center alignment, x is the center point, so subtract half the text width
-            adjustedX = x - (textWidth / 2);
-          } else if (field.textAlign === 'right') {
-            // For right alignment, x is the right edge, so subtract full text width plus padding
-            adjustedX = x - textWidth - paddingX;
-          }
-          
-          // Use adjusted coordinates that match the template editor preview
-          const options: any = {
-            x: adjustedX,
-            y: adjustedY,
-            size: fontSize,
-            font: font,
-            color: previewMode ? rgb(0, 0.4, 0.8) : textColor // Use blue color for preview mode to make fields stand out
-          };
-          
-          // For preview mode, add a visual indicator of field boundaries
-          if (previewMode) {
-            // Draw a light rectangle around the field to make it more visible
-            try {
-              // Calculate text width for preview highlighting
-              const textWidth = font.widthOfTextAtSize(value, fontSize);
-              const textHeight = fontSize * 1.2;
-              
-              // Draw rectangle with slight padding
-              page.drawRectangle({
-                x: options.x - 2,
-                y: options.y - 2,
-                width: textWidth + 4,
-                height: textHeight,
-                borderColor: rgb(0.7, 0.7, 0.9),
-                borderWidth: 0.5,
-                color: rgb(0.95, 0.95, 1),
-                opacity: 0.3
-              });
-            } catch (error) {
-              console.error('Error drawing field highlight:', error);
-            }
-          }
-          
-          console.log(`Drawing field: ${field.label || field.source} at position (${options.x}, ${options.y}), align: ${field.textAlign || 'left'}`);
-          page.drawText(value, options);
-        } catch (error) {
-          console.error(`Error drawing field ${field.label || field.source}:`, error);
-        }
-      }
+      const embedded = await pdfDoc.embedPage(backgroundDoc.getPage(0));
+      page.drawPage(embedded, { x: 0, y: 0, width: PAGE_WIDTH, height: PAGE_HEIGHT });
+    } else if (kind === "png") {
+      const image = await pdfDoc.embedPng(source.bytes);
+      page.drawImage(image, { x: 0, y: 0, width: PAGE_WIDTH, height: PAGE_HEIGHT });
     } else {
-      console.log('No template fields found');
+      const image = await pdfDoc.embedJpg(source.bytes);
+      page.drawImage(image, { x: 0, y: 0, width: PAGE_WIDTH, height: PAGE_HEIGHT });
     }
-
-    // Draw the reservation barcode top-right of page 1 (never fail contract
-    // generation because of the barcode).
-    try {
-      const barcodePng = renderBarcodePng(formatReservationBarcode(reservation.id));
-      const barcodeImage = await pdfDoc.embedPng(barcodePng);
-      const scale = 0.5;
-      const scaledDims = barcodeImage.scale(scale);
-      const { width: pageWidth, height: pageHeight } = page.getSize();
-      page.drawImage(barcodeImage, {
-        x: pageWidth - scaledDims.width - 24,
-        y: pageHeight - scaledDims.height - 20,
-        width: scaledDims.width,
-        height: scaledDims.height,
-      });
-    } catch (e) {
-      console.warn('Contract barcode skipped:', e);
-    }
-
-    // Save the PDF
-    const pdfBytes = await pdfDoc.save();
-
-    // Return the PDF as a buffer
-    return Buffer.from(pdfBytes);
   } catch (error) {
-    console.error('Error generating PDF contract from template:', error);
-    // If there's an error, return a simple text-based contract as a fallback
-    const contractData = prepareContractData(reservation);
-    return generateFallbackContract(contractData);
+    const detail = error instanceof Error ? error.message : String(error);
+    if (source.configured) {
+      throw new Error(`The background of ${source.label} could not be used: ${detail}`);
+    }
+    console.warn(`[contract] the bundled default background could not be used: ${detail}`);
   }
+  return page;
 }
 
 /**
- * Generates a rental contract PDF based on the ELENA AVL ALL contract template
- * Uses the uploaded template PDF and fills in the data according to the form layout
+ * Generates a rental contract PDF using a custom template.
+ *
+ * FIX-N. What changed, and why:
+ *  - every value is sanitised for WinAnsi before it reaches pdf-lib, instead of
+ *    each field sitting in its own try/catch that swallowed the whole field
+ *    when one character was outside cp1252 (BUG-162);
+ *  - values are wrapped (or clipped with an ellipsis) inside the field's box
+ *    instead of running off the right edge of the page (BUG-178);
+ *  - an unresolvable source prints nothing instead of its own name (BUG-191);
+ *  - geometry is validated, so `x: 1e9` can no longer place a value where no
+ *    printer reaches (BUG-191);
+ *  - the output is a fresh document with the background *embedded*, so the
+ *    background's document-level JavaScript never becomes part of a contract
+ *    (BUG-180);
+ *  - a configured background that cannot be read is an error rather than a
+ *    silent fall back to a different layout (BUG-179).
  */
-export async function generateRentalContract(reservation: Reservation): Promise<Buffer> {
+export async function generateRentalContractFromTemplate(
+  reservation: Reservation,
+  template?: PdfTemplate,
+): Promise<Buffer> {
+  const contractData = prepareContractData(reservation);
+  const pdfDoc = await PDFDocument.create();
+  const page = await createContractPage(pdfDoc, template);
+
+  const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const textColor = rgb(0, 0, 0);
+
+  const { fields, rejected } = parseTemplateFields(template?.fields);
+  if (rejected.length > 0) {
+    console.warn(
+      `[contract] ${rejected.length} field(s) of template "${template?.name ?? "?"}" were rejected and not drawn: ${rejected.join(" | ")}`,
+    );
+  }
+
+  // The editor's box model: 1pt vertical, 6pt horizontal padding, text
+  // positioned from the top-left, PDF drawing from the bottom-left baseline.
+  const PADDING_X = 6;
+  const PADDING_Y = 1;
+
+  for (const field of fields) {
+    const raw = resolveContractFieldValue(field.source, contractData);
+    if (raw === "") continue;
+    const value = sanitizeForWinAnsi(raw, `contract field "${field.source}"`);
+    if (value === "") continue;
+
+    const font = field.isBold ? helveticaBold : helveticaFont;
+    const fontSize = field.fontSize;
+    const lineHeight = fontSize * 1.15;
+    const ascent = font.heightAtSize(fontSize) * 0.85;
+
+    const boxWidth =
+      field.width && field.width > PADDING_X * 2
+        ? field.width - PADDING_X * 2
+        : Math.max(20, PAGE_WIDTH - field.x - PADDING_X * 2);
+    const maxLines =
+      field.height && field.height >= lineHeight
+        ? Math.max(1, Math.floor(field.height / lineHeight))
+        : 1;
+    const lines = wrapTextToWidth(value, font, fontSize, boxWidth, maxLines);
+
+    lines.forEach((line, index) => {
+      if (line === "") return;
+      const textWidth = font.widthOfTextAtSize(line, fontSize);
+      let x = field.x + PADDING_X;
+      if (field.textAlign === "center") x = field.x - textWidth / 2;
+      else if (field.textAlign === "right") x = field.x - textWidth - PADDING_X;
+      // Keep the line on the page even when the template's own x is extreme.
+      x = Math.min(Math.max(0, x), Math.max(0, PAGE_WIDTH - textWidth));
+      const y = PAGE_HEIGHT - field.y - PADDING_Y - ascent - index * lineHeight;
+      if (y < 0 || y > PAGE_HEIGHT) return;
+      page.drawText(line, { x, y, size: fontSize, font, color: textColor });
+    });
+  }
+
+  // Draw the reservation barcode top-right of page 1 (never fail contract
+  // generation because of the barcode).
   try {
-    // Extract data for the contract
-    const contractData = prepareContractData(reservation);
-    
-    // Load the template PDF
-    const templatePath = resolveUploadsPath('templates', 'rental_contract_template.pdf');
-    const templateBytes = fs.readFileSync(templatePath);
-    
-    // Load the PDF document
-    const pdfDoc = await PDFDocument.load(templateBytes);
-    
-    // Get the first page
-    const page = pdfDoc.getPage(0);
-    
-    // Get fonts
-    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    
-    // Set drawing parameters
-    const fontSize = 9;
-    const textColor = rgb(0, 0, 0);
-    
-    // Based on the ELENA AVL ALL contract template structure
-    
-    // First section - Gegevens voertuig (Vehicle details)
-    
-    // Merk (Brand)
-    page.drawText(contractData.brand, {
-      x: 55,
-      y: 150,
-      size: fontSize,
-      font: helveticaFont,
-      color: textColor,
+    const barcodePng = renderBarcodePng(formatReservationBarcode(reservation.id));
+    const barcodeImage = await pdfDoc.embedPng(barcodePng);
+    const scaledDims = barcodeImage.scale(0.5);
+    const { width: pageWidth, height: pageHeight } = page.getSize();
+    page.drawImage(barcodeImage, {
+      x: pageWidth - scaledDims.width - 24,
+      y: pageHeight - scaledDims.height - 20,
+      width: scaledDims.width,
+      height: scaledDims.height,
     });
-    
-    // Type (Model)
-    page.drawText(contractData.model, {
-      x: 55,
-      y: 165,
-      size: fontSize,
-      font: helveticaFont,
-      color: textColor,
-    });
-    
-    // Kenteken (License plate)
-    page.drawText(contractData.licensePlate, {
-      x: 55,
-      y: 179,
-      size: fontSize,
-      font: helveticaFont,
-      color: textColor,
-    });
-    
-    // Customer section - Huurder (Renter)
-    
-    // Naam (Name)
-    page.drawText(contractData.customerName, {
-      x: 55,
-      y: 254,
-      size: fontSize,
-      font: helveticaFont,
-      color: textColor,
-    });
-    
-    // Adres (Address)
-    page.drawText(contractData.customerAddress, {
-      x: 55,
-      y: 268,
-      size: fontSize,
-      font: helveticaFont,
-      color: textColor,
-    });
-    
-    // Postcode (Postal code)
-    page.drawText(contractData.customerPostalCode, {
-      x: 55,
-      y: 282,
-      size: fontSize,
-      font: helveticaFont,
-      color: textColor,
-    });
-    
-    // Plaats (City)
-    page.drawText(contractData.customerCity, {
-      x: 55,
-      y: 296,
-      size: fontSize,
-      font: helveticaFont,
-      color: textColor,
-    });
-    
-    // Land (Country)
-    page.drawText("Nederland", {
-      x: 95,
-      y: 313,
-      size: fontSize,
-      font: helveticaFont,
-      color: textColor,
-    });
-    
-    // Telefoon (Phone)
-    page.drawText(contractData.customerPhone, {
-      x: 58,
-      y: 328,
-      size: fontSize,
-      font: helveticaFont,
-      color: textColor,
-    });
-    
-    // Driver's license
-    page.drawText(contractData.driverLicense, {
-      x: 100,
-      y: 358,
-      size: fontSize,
-      font: helveticaFont,
-      color: textColor,
-    });
-    
-    // Right column - Voorwaarden (Terms)
-    
-    // Huurtijd van-tot (Rental period from-to) - van datum
-    page.drawText(contractData.startDate, {
-      x: 405,
-      y: 149,
-      size: fontSize,
-      font: helveticaFont,
-      color: textColor,
-    });
-    
-    // tot datum (to date)
-    page.drawText(contractData.endDate, {
-      x: 545,
-      y: 149,
-      size: fontSize,
-      font: helveticaFont,
-      color: textColor,
-    });
-    
-    // Price section
-    if (reservation.totalPrice) {
-      // Total price
-      page.drawText(contractData.totalPrice, {
-        x: 508,
-        y: 236,
-        size: fontSize,
-        font: helveticaBold,
-        color: textColor,
-      });
-    }
-    
-    // Date at the bottom - Today's date for signature
-    page.drawText(contractData.contractDate, {
-      x: 138,
-      y: 637,
-      size: fontSize,
-      font: helveticaFont,
-      color: textColor,
-    });
-
-    // Draw the reservation barcode top-right of page 1 (never fail contract
-    // generation because of the barcode).
-    try {
-      const barcodePng = renderBarcodePng(formatReservationBarcode(reservation.id));
-      const barcodeImage = await pdfDoc.embedPng(barcodePng);
-      const scale = 0.5;
-      const scaledDims = barcodeImage.scale(scale);
-      const { width: pageWidth, height: pageHeight } = page.getSize();
-      page.drawImage(barcodeImage, {
-        x: pageWidth - scaledDims.width - 24,
-        y: pageHeight - scaledDims.height - 20,
-        width: scaledDims.width,
-        height: scaledDims.height,
-      });
-    } catch (e) {
-      console.warn('Contract barcode skipped:', e);
-    }
-
-    // Save the PDF
-    const pdfBytes = await pdfDoc.save();
-
-    // Return the PDF as a buffer
-    return Buffer.from(pdfBytes);
-  } catch (error) {
-    console.error('Error generating PDF contract:', error);
-    // If there's an error, return a simple text-based contract as a fallback
-    const contractData = prepareContractData(reservation);
-    return generateFallbackContract(contractData);
+  } catch (e) {
+    console.warn('Contract barcode skipped:', e);
   }
-}
 
-/**
- * Generate a fallback text-based contract if PDF generation fails
- */
-function generateFallbackContract(contractData: any): Buffer {
-  const contractTemplate = `
-Auto Lease LAM
-Kerkweg 47a
-3214 VC Zuidland
-Tel. 0181-451040
-Fax 0181-453386
-info@autobedrijflam.nl
-
-- ABN AMRO 428621783
-- RABOBANK 375915605
-- Ook mogelijk met Creditcard, VISA of MASTERCARD te betalen
-
-RENTAL CONTRACT
-
-Contract Number: ${contractData.contractNumber}
-Date: ${contractData.contractDate}
-
-VEHICLE INFORMATION:
-License Plate: ${contractData.licensePlate}
-Brand: ${contractData.brand}
-Model: ${contractData.model}
-Chassis Number: ${contractData.chassisNumber}
-
-CUSTOMER INFORMATION:
-Name: ${contractData.customerName}
-Address: ${contractData.customerAddress}
-City: ${contractData.customerCity} ${contractData.customerPostalCode}
-Phone: ${contractData.customerPhone}
-Driver License: ${contractData.driverLicense}
-
-RENTAL PERIOD:
-Start Date: ${contractData.startDate}
-End Date: ${contractData.endDate}
-Duration: ${contractData.duration}
-
-RENTAL PRICE:
-Total Price: ${contractData.totalPrice}
-
-TERMS AND CONDITIONS:
-1. The vehicle must be returned in the same condition as at the start of the rental period.
-2. The renter is responsible for any damage to the vehicle during the rental period.
-3. The vehicle must not be used for illegal purposes.
-4. The vehicle must not be driven outside of the Netherlands without prior permission.
-5. The vehicle must be returned with the same amount of fuel as at the start of the rental period.
-
-SIGNATURES:
-
-Auto Lease LAM: ___________________
-
-Customer: _________________________
-
-Date: ${contractData.contractDate}
-`;
-
-  return Buffer.from(contractTemplate);
+  const pdfBytes = await pdfDoc.save();
+  return Buffer.from(pdfBytes);
 }
 
 /**
@@ -1385,6 +961,8 @@ export function prepareTransportReportData(transport: VehicleTransport): Record<
 interface TransportReportField {
   x: number;
   y: number;
+  width?: number;
+  height?: number;
   fontSize?: number;
   isBold?: boolean;
   source?: string;
@@ -1403,9 +981,18 @@ async function drawTransportReportPage(
   const data = prepareTransportReportData(transport);
   const textColor = rgb(0, 0, 0);
 
+  // BUG-162: the try/catch below used to be the only protection, and it threw
+  // the whole field away the moment a value contained a character outside
+  // WinAnsi — a driver's name with an accent, a city with a Turkish letter, an
+  // address with an arrow. Sanitising first means the value survives; the
+  // catch stays as a last resort for anything else.
   for (const field of fields) {
     try {
-      const value = field.source ? (data[field.source] ?? '') : '';
+      const raw = field.source ? (data[field.source] ?? '') : '';
+      if (raw === '') continue;
+      const value = sanitizeForWinAnsi(raw, `transport report field "${field.source}"`);
+      if (value === '') continue;
+
       const x = typeof field.x === 'number' && !isNaN(field.x) ? field.x : 0;
       const y = typeof field.y === 'number' && !isNaN(field.y) ? field.y : 0;
       const fontSize = typeof field.fontSize === 'number' && field.fontSize > 0 ? field.fontSize : 12;
@@ -1418,17 +1005,33 @@ async function drawTransportReportPage(
       const paddingY = 1;
       const fontHeight = font.heightAtSize(fontSize);
       const ascent = fontHeight * 0.85;
-      let adjustedX = x + paddingX;
-      const adjustedY = 842 - y - paddingY - ascent;
+      const lineHeight = fontSize * 1.15;
 
-      const textWidth = font.widthOfTextAtSize(value, fontSize);
-      if (field.textAlign === 'center') {
-        adjustedX = x - textWidth / 2;
-      } else if (field.textAlign === 'right') {
-        adjustedX = x - textWidth - paddingX;
-      }
+      // BUG-178: wrap inside the field's box instead of running off the page.
+      const boxWidth =
+        field.width && field.width > paddingX * 2
+          ? field.width - paddingX * 2
+          : Math.max(20, PAGE_WIDTH - x - paddingX * 2);
+      const maxLines =
+        field.height && field.height >= lineHeight
+          ? Math.max(1, Math.floor(field.height / lineHeight))
+          : 1;
+      const lines = wrapTextToWidth(value, font, fontSize, boxWidth, maxLines);
 
-      page.drawText(value, { x: adjustedX, y: adjustedY, size: fontSize, font, color: textColor });
+      lines.forEach((line, index) => {
+        if (line === '') return;
+        const textWidth = font.widthOfTextAtSize(line, fontSize);
+        let adjustedX = x + paddingX;
+        if (field.textAlign === 'center') {
+          adjustedX = x - textWidth / 2;
+        } else if (field.textAlign === 'right') {
+          adjustedX = x - textWidth - paddingX;
+        }
+        adjustedX = Math.min(Math.max(0, adjustedX), Math.max(0, PAGE_WIDTH - textWidth));
+        const adjustedY = PAGE_HEIGHT - y - paddingY - ascent - index * lineHeight;
+        if (adjustedY < 0 || adjustedY > PAGE_HEIGHT) return;
+        page.drawText(line, { x: adjustedX, y: adjustedY, size: fontSize, font, color: textColor });
+      });
     } catch (error) {
       console.error(`Error drawing transport report field ${field.label || field.source}:`, error);
     }
@@ -1436,14 +1039,15 @@ async function drawTransportReportPage(
 }
 
 function parseTransportTemplateFields(template?: TransportReportTemplate | null): TransportReportField[] {
-  if (!template?.fields) return [];
-  if (Array.isArray(template.fields)) return template.fields as TransportReportField[];
-  try {
-    const parsed = typeof template.fields === 'string' ? JSON.parse(template.fields) : template.fields;
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+  // FIX-P: the shared schema, so a stored field with absurd geometry is dropped
+  // with a warning instead of drawing somewhere off the paper (BUG-191).
+  const { fields, rejected } = parseTemplateFields(template?.fields);
+  if (rejected.length > 0) {
+    console.warn(
+      `[transport-report] ${rejected.length} field(s) of template "${template?.name ?? '?'}" were rejected: ${rejected.join(' | ')}`,
+    );
   }
+  return fields as unknown as TransportReportField[];
 }
 
 /**
