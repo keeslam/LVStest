@@ -29,7 +29,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import React, { useEffect, useState } from "react";
 import { Reservation, Vehicle } from "@shared/schema";
-import { Check, RotateCw, Search, CalendarClock } from "lucide-react";
+import { Check, RotateCw, Search, CalendarClock, LogIn, LogOut, ScanLine } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { isTrueValue } from "@/lib/utils";
 import { formatLicensePlate, plateMatches } from "@/lib/format-utils";
@@ -53,6 +53,13 @@ interface ActionIconProps {
 
 function ActionIcon({ name, className = "" }: ActionIconProps) {
   switch (name) {
+    // OPT-002 - the three scan-driven entry points.
+    case "log-out":
+      return <LogOut className={className} />;
+    case "log-in":
+      return <LogIn className={className} />;
+    case "scan-line":
+      return <ScanLine className={className} />;
     case "calendar-clock":
       return (
         <svg
@@ -268,7 +275,32 @@ interface QuickAction {
 
 // The five most-used actions render as large tiles in the top row, in this
 // exact order; everything else lands in the compact second row.
+//
+// OPT-002 - the two most frequent actions at the counter, handing a car over
+// and taking it back (50x/day between them, per the workflow report), had no
+// dashboard entry at all, while "RDW APK-datums scannen" - a nightly batch job
+// - held one of the five primary tiles. The three scan-driven entries now lead;
+// adding a vehicle, adding a customer and the RDW scan moved to the second row,
+// where their frequency puts them.
 const quickActions: QuickAction[] = [
+  {
+    label: "Start Pickup",
+    dialog: "start-pickup",
+    icon: "log-out",
+    primary: true,
+  },
+  {
+    label: "Start Return",
+    dialog: "start-return",
+    icon: "log-in",
+    primary: true,
+  },
+  {
+    label: "Scan",
+    dialog: "scan",
+    icon: "scan-line",
+    primary: true,
+  },
   {
     label: "New Reservation",
     dialog: "new-reservation",
@@ -285,19 +317,19 @@ const quickActions: QuickAction[] = [
     label: "Add Vehicle",
     dialog: "add-vehicle",
     icon: "car",
-    primary: true,
+    primary: false,
   },
   {
     label: "Add Customer",
     dialog: "add-customer",
     icon: "user-plus",
-    primary: true,
+    primary: false,
   },
   {
     label: "Scan RDW APK Dates",
     icon: "refresh-cw",
     dialog: "rdw-apk-scan",
-    primary: true,
+    primary: false,
   },
   {
     label: "Upload Document",
@@ -343,7 +375,7 @@ const PRIMARY_TILE_CLASS =
 const PRIMARY_TILE_ICON_CLASS = "h-8 w-8";
 
 export function QuickActions() {
-  const { openRdwApkChangesDialog } = useGlobalDialog();
+  const { openRdwApkChangesDialog, openScanDialog } = useGlobalDialog();
 
   // State for the vehicle registration dialog
   const [selectedVehicles, setSelectedVehicles] = useState<string[]>([]);
@@ -885,6 +917,29 @@ export function QuickActions() {
               every action keeps its own dialog wiring. */}
           {(() => {
           const renderAction = (action: QuickAction) => {
+            // OPT-002 - the three scan-driven entry points. All three open the
+            // one scan panel; the first two carry the handover they mean, so a
+            // scan that agrees starts it without a second choice.
+            if (action.dialog === "start-pickup" || action.dialog === "start-return" || action.dialog === "scan") {
+              const intent = action.dialog === "start-pickup"
+                ? "pickup"
+                : action.dialog === "start-return"
+                  ? "return"
+                  : null;
+              return (
+                <Button
+                  key={action.label}
+                  variant="outline"
+                  className={PRIMARY_TILE_CLASS}
+                  onClick={() => openScanDialog(intent)}
+                  data-testid={`button-quick-${action.dialog}`}
+                >
+                  <ActionIcon name={action.icon} className={PRIMARY_TILE_ICON_CLASS} />
+                  {t(`quickActions.buttons.${action.dialog}`)}
+                </Button>
+              );
+            }
+
             // For vehicle-based reservation status dialog
             if (action.dialog === "vehicle-reservation-status") {
               return (
@@ -1987,10 +2042,10 @@ export function QuickActions() {
 
           return (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4" data-testid="quick-actions-primary">
                 {quickActions.filter(a => a.primary).map(renderAction)}
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2" data-testid="quick-actions-secondary">
                 {quickActions.filter(a => !a.primary).map(renderAction)}
               </div>
             </>

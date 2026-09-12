@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Camera, Truck, CalendarRange, User, RotateCcw, CalendarPlus, ShieldCheck, FileCheck, LogOut, LogIn, Receipt, Wrench, ChevronDown, ChevronUp, History, Car, FileUp, Undo2, Check, Play, Fuel, Gauge } from "lucide-react";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
+import { chooseHandover, matchesIntent, type HandoverKind } from "@/lib/handover-choice";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { isTrueValue } from "@/lib/utils";
 import { BarcodeSvg } from "@/components/barcodes/barcode-svg";
@@ -67,12 +68,20 @@ interface ScanPanelProps {
   /** Whether this panel instance is the currently-visible one (mounted-but-hidden
    * dialogs/pages should pass false so focus/reset effects don't fight each other). */
   active?: boolean;
+  /**
+   * OPT-002 - the dashboard's "Ophalen starten" / "Innemen starten" tiles open
+   * this panel with the handover they mean. A scan whose vehicle agrees starts
+   * that handover straight away, which is the click the tiles save; a scan that
+   * disagrees falls back to the normal action grid rather than doing the other
+   * thing behind the employee's back.
+   */
+  intent?: HandoverKind | null;
 }
 
 // Shared scan UI + lookup logic used by both the standalone /scan page and the
 // ScanDialog. Keeping this framework-agnostic (no Dialog imports) lets each
 // host wrap it in whatever chrome it needs.
-export function ScanPanel({ active = true }: ScanPanelProps) {
+export function ScanPanel({ active = true, intent = null }: ScanPanelProps) {
   const { t } = useTranslation(["barcodes", "common"]);
   const { openVehicleDialog, openReservationDialog } = useGlobalDialog();
   const { toast } = useToast();
@@ -144,7 +153,17 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
         setError(t("scanPage.lookupError"));
         return;
       }
-      setResult(await response.json());
+      const payload: LookupResult = await response.json();
+      setResult(payload);
+      // OPT-002 - the tile the employee pressed already says what they came to
+      // do; when the scanned vehicle agrees, do it instead of making them pick
+      // the same thing again off the grid.
+      if (payload.type === "vehicle") {
+        const choice = chooseHandover(payload);
+        if (matchesIntent(choice, intent) && choice) {
+          void startHandover(choice.reservationId, choice.kind);
+        }
+      }
     } catch {
       setError(t("scanPage.lookupError"));
     } finally {
@@ -390,43 +409,58 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
             )}
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-3 border-t">
+              {/* OPT-002 - first tile, not last: between two scans the hand is
+                  already on the scanner and this is the tile it comes back to. */}
+              <Button variant="outline" className={ACTION_TILE_CLASS} onClick={() => { setResult(null); inputRef.current?.focus(); }} data-testid="button-scan-again">
+                <RotateCcw />
+                {t("scanPage.scanAgain")}
+              </Button>
               <Button className={ACTION_TILE_CLASS} onClick={() => openVehicleDialog(result.vehicle.id)} data-testid="button-open-vehicle">
                 <Car />
                 {t("scanPage.openVehicleButton")}
               </Button>
               {!result.activeReservation && !result.upcomingReservation && (
-                <ReservationAddDialog initialVehicleId={String(result.vehicle.id)}>
+                <ReservationAddDialog
+                  initialVehicleId={String(result.vehicle.id)}
+                  onSuccess={() => { if (result.vehicle.barcode) lookup(result.vehicle.barcode); }}
+                >
                   <Button variant="outline" className={ACTION_TILE_CLASS} data-testid="button-make-reservation">
                     <CalendarPlus />
                     {t("scanPage.makeReservationButton")}
                   </Button>
                 </ReservationAddDialog>
               )}
-              {result.activeReservation?.status === "picked_up" && (
-                <Button variant="default" className={ACTION_TILE_CLASS} onClick={() => startHandover(result.activeReservation!.id, "return")} data-testid="button-scan-return">
-                  <LogIn />
-                  {t("scanPage.actions.startReturn")}
-                </Button>
-              )}
-              {result.activeReservation && result.activeReservation.status !== "picked_up" && (
-                <Button variant="default" className={ACTION_TILE_CLASS} onClick={() => startHandover(result.activeReservation!.id, "pickup")} data-testid="button-scan-pickup">
-                  <LogOut />
-                  {t("scanPage.actions.startPickup")}
-                </Button>
-              )}
-              {!result.activeReservation && result.upcomingReservation && (
-                <Button variant="default" className={ACTION_TILE_CLASS} onClick={() => startHandover(result.upcomingReservation!.id, "pickup")} data-testid="button-scan-pickup">
-                  <LogOut />
-                  {t("scanPage.actions.startPickup")}
-                </Button>
-              )}
-              <ExpenseAddDialog vehicleId={result.vehicle.id}>
+              {/* OPT-002 - one router (`chooseHandover`) instead of three
+                  sibling conditions that had to agree with each other. */}
+              {(() => {
+                const choice = chooseHandover(result);
+                if (!choice) return null;
+                return choice.kind === "return" ? (
+                  <Button variant="default" className={ACTION_TILE_CLASS} onClick={() => startHandover(choice.reservationId, "return")} data-testid="button-scan-return">
+                    <LogIn />
+                    {t("scanPage.actions.startReturn")}
+                  </Button>
+                ) : (
+                  <Button variant="default" className={ACTION_TILE_CLASS} onClick={() => startHandover(choice.reservationId, "pickup")} data-testid="button-scan-pickup">
+                    <LogOut />
+                    {t("scanPage.actions.startPickup")}
+                  </Button>
+                );
+              })()}
+              <ExpenseAddDialog
+                vehicleId={result.vehicle.id}
+                onSuccess={() => { if (result.vehicle.barcode) lookup(result.vehicle.barcode); }}
+              >
                 <Button variant="outline" className={ACTION_TILE_CLASS} data-testid="button-scan-expense">
                   <Receipt />
                   {t("scanPage.actions.addExpense")}
                 </Button>
               </ExpenseAddDialog>
-              <InlineDocumentUpload vehicleId={result.vehicle.id} reservationId={result.activeReservation?.id}>
+              <InlineDocumentUpload
+                vehicleId={result.vehicle.id}
+                reservationId={result.activeReservation?.id}
+                onSuccess={() => { if (result.vehicle.barcode) lookup(result.vehicle.barcode); }}
+              >
                 <Button variant="outline" className={ACTION_TILE_CLASS} data-testid="button-scan-upload">
                   <FileUp />
                   {t("scanPage.actions.uploadDocument")}
@@ -458,10 +492,6 @@ export function ScanPanel({ active = true }: ScanPanelProps) {
                   {t("scanPage.actions.endMaintenance")}
                 </Button>
               )}
-              <Button variant="outline" className={ACTION_TILE_CLASS} onClick={() => { setResult(null); inputRef.current?.focus(); }}>
-                <RotateCcw />
-                {t("scanPage.scanAgain")}
-              </Button>
             </div>
           </CardContent>
         </Card>

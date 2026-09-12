@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import type { HandoverKind } from '@/lib/handover-choice';
 
 /** Which portal-admin list opens in the shared list dialog (see portal-list-dialog.tsx). */
 export type PortalListKind = 'customers' | 'accounts' | 'requests' | 'fines' | 'vehicles' | 'activity' | 'blacklist';
@@ -19,7 +20,9 @@ interface DialogState {
   expenseVehicle: { open: boolean; vehicleId: number | null };
   expense: { open: boolean; expenseId: number | null; hideVehicleExpensesLink: boolean };
   rdwApkChanges: { open: boolean };
-  scan: { open: boolean };
+  // OPT-002: the dashboard's "Ophalen starten" / "Innemen starten" tiles carry
+  // their intent into the scan panel.
+  scan: { open: boolean; intent?: HandoverKind | null };
 }
 
 interface GlobalDialogContextType {
@@ -54,7 +57,7 @@ interface GlobalDialogContextType {
   closeExpenseDialog: () => void;
   openRdwApkChangesDialog: () => void;
   closeRdwApkChangesDialog: () => void;
-  openScanDialog: () => void;
+  openScanDialog: (intent?: HandoverKind | null) => void;
   closeScanDialog: () => void;
 }
 
@@ -77,7 +80,7 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     expenseVehicle: { open: false, vehicleId: null },
     expense: { open: false, expenseId: null, hideVehicleExpensesLink: false },
     rdwApkChanges: { open: false },
-    scan: { open: false },
+    scan: { open: false, intent: null },
   });
 
   const openReservationDialog = (id: number) => {
@@ -219,17 +222,17 @@ export function GlobalDialogProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  const openScanDialog = () => {
+  const openScanDialog = (intent: HandoverKind | null = null) => {
     setDialogState(prev => ({
       ...prev,
-      scan: { open: true }
+      scan: { open: true, intent }
     }));
   };
 
   const closeScanDialog = () => {
     setDialogState(prev => ({
       ...prev,
-      scan: { open: false }
+      scan: { open: false, intent: null }
     }));
   };
 

@@ -87,6 +87,11 @@
         "in": "In werkplaats",
         "out": "Afgerond"
       }
+    },
+    "intent": {
+      "pickupTitle": "Ophalen starten",
+      "returnTitle": "Innemen starten",
+      "description": "Scan het sleutellabel of typ het kenteken. De juiste handeling wordt meteen geopend."
     }
   },
   "camera": {

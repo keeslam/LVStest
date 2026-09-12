@@ -170,6 +170,7 @@ export function GlobalDialogs() {
       {/* Barcode Scan Dialog */}
       <ScanDialog
         open={dialogState.scan.open}
+        intent={dialogState.scan.intent ?? null}
         onOpenChange={(open) => !open && closeScanDialog()}
       />
     </>

@@ -87,6 +87,11 @@
         "in": "In workshop",
         "out": "Completed"
       }
+    },
+    "intent": {
+      "pickupTitle": "Start pickup",
+      "returnTitle": "Start return",
+      "description": "Scan the key tag or type the license plate. The matching action opens straight away."
     }
   },
   "camera": {

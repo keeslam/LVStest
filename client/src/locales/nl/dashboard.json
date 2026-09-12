@@ -58,7 +58,10 @@
       "interactive-damage-check": "Schadecheck starten",
       "apk-report": "APK-rapport uploaden",
       "apk-notifications": "APK-meldingen versturen",
-      "rdw-apk-scan": "RDW APK-datums scannen"
+      "rdw-apk-scan": "RDW APK-datums scannen",
+      "start-pickup": "Ophalen starten",
+      "start-return": "Innemen starten",
+      "scan": "Scannen"
     },
     "rdwScanInProgress": "Scannen...",
     "rdwScanStartedDescription": "De scan is gestart en loopt op de achtergrond. Je kunt gewoon doorwerken - je krijgt een melding zodra deze klaar is.",
