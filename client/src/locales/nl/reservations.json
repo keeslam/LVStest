@@ -253,7 +253,9 @@
     "previewInProgressTitle": "Voorbeeld actief",
     "previewInProgressDescription": "Rond de reservering af of klik op 'Terug naar bewerken' voordat je sluit.",
     "newReservation": "Nieuwe reservering",
-    "description": "Maak een nieuwe reservering door een voertuig en klant te selecteren"
+    "description": "Maak een nieuwe reservering door een voertuig en klant te selecteren",
+    "unsavedChangesTitle": "Niet opgeslagen wijzigingen",
+    "unsavedChangesDescription": "Gebruik Annuleren of het kruisje om te sluiten; je ingevoerde gegevens blijven anders behouden."
   },
   "documentsDialog": {
     "title": "Reserveringsdocumenten",
@@ -274,7 +276,9 @@
     "description": "Wijzig reserveringsgegevens en sla wijzigingen op",
     "reservationHash": "Reservering #{{id}}",
     "errorTitle": "Fout",
-    "failedToLoad": "Reserveringsgegevens laden mislukt. {{error}}"
+    "failedToLoad": "Reserveringsgegevens laden mislukt. {{error}}",
+    "unsavedChangesTitle": "Niet opgeslagen wijzigingen",
+    "unsavedChangesDescription": "Gebruik Sluiten of het kruisje om te sluiten; je ingevoerde gegevens blijven anders behouden."
   },
   "form": {
     "driverSearch": {

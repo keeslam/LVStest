@@ -68,12 +68,11 @@ export function ReservationAddDialog({
   const keepOpenBecauseDirty = createDirtyCloseGuard({
     isDirty: () => isFormDirtyRef.current,
     onBlocked: () =>
+      // Real keys since wave 10: a missing translation now shows up instead of
+      // hiding behind the inline default.
       toast({
-        title: t('addDialog.unsavedChangesTitle', 'Niet opgeslagen wijzigingen'),
-        description: t(
-          'addDialog.unsavedChangesDescription',
-          'Gebruik Annuleren of het kruisje om te sluiten; je ingevoerde gegevens blijven anders behouden.',
-        ),
+        title: t('addDialog.unsavedChangesTitle'),
+        description: t('addDialog.unsavedChangesDescription'),
       }),
   });
   // Use ref for synchronous access in event handlers (React state updates are async)
