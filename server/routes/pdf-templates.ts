@@ -181,7 +181,14 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
       res.status(400).json({ message: "Template data must be an object" });
       return false;
     }
-    if (!("fields" in body) || body.fields === undefined || body.fields === null) return true;
+    // Absent means "leave it alone"; an explicit null does not — it emptied
+    // the column and every contract from that template came out blank
+    // (BUG-028/BUG-194).
+    if (!("fields" in body) || body.fields === undefined) return true;
+    if (body.fields === null) {
+      res.status(400).json({ message: "fields must be an array of field definitions" });
+      return false;
+    }
     let candidate: unknown = body.fields;
     if (typeof candidate === "string") {
       const parsedArray = coerceFieldArray(candidate);

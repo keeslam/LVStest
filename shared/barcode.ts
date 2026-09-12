@@ -129,3 +129,21 @@ export function resolveBarcodeLabelSource(
     default: return "";
   }
 }
+
+/**
+ * BUG-125 — does this stored barcode actually belong to this vehicle?
+ *
+ * `vehicles.barcode` used to be a free client field, so an employee with
+ * `manage_vehicles` could store *another* car's license plate (or another
+ * car's `VEH-…` code, or a `RES-…` code) in it. Lookups match the stored value
+ * verbatim and do that before the license-plate fallback, so a scan of car A's
+ * plate resolved to car B, the scan panel showed B's rental, and the scan was
+ * logged on B. The write side is closed now (the server assigns the code), but
+ * rows written before that are still in the column, so every lookup checks the
+ * code it found really is the one this vehicle is entitled to.
+ */
+export function isOwnVehicleBarcode(vehicleId: number, barcode: string | null | undefined): boolean {
+  if (!barcode) return false;
+  const parsed = parseBarcode(barcode);
+  return parsed.kind === "vehicle" && parsed.vehicleId === vehicleId;
+}

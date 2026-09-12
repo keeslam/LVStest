@@ -416,16 +416,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createVehicle(vehicleData: InsertVehicle): Promise<Vehicle> {
-    const [vehicle] = await db.insert(vehicles).values(vehicleData).returning();
-    if (!vehicle.barcode) {
-      const [updated] = await db
-        .update(vehicles)
-        .set({ barcode: formatVehicleBarcode(vehicle.id) })
-        .where(eq(vehicles.id, vehicle.id))
-        .returning();
-      return updated;
-    }
-    return vehicle;
+    // BUG-125 — the barcode is server-owned. It used to come straight from
+    // the request body, so a create could claim another vehicle's code (or
+    // its license plate, which lookups match before the plate fallback) and
+    // make that car unscannable. Whatever the body says is dropped here; the
+    // only writers left are this line and regenerateVehicleBarcode().
+    const { barcode: _clientBarcode, ...safeVehicleData } = vehicleData as InsertVehicle & { barcode?: unknown };
+    const [vehicle] = await db.insert(vehicles).values(safeVehicleData as InsertVehicle).returning();
+    const [updated] = await db
+      .update(vehicles)
+      .set({ barcode: formatVehicleBarcode(vehicle.id) })
+      .where(eq(vehicles.id, vehicle.id))
+      .returning();
+    return updated;
   }
 
   async getVehicleByBarcode(barcode: string): Promise<Vehicle | undefined> {
@@ -460,6 +463,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateVehicle(id: number, vehicleData: Partial<InsertVehicle>): Promise<Vehicle | undefined> {
+    // BUG-125 — same rule on the way in: a PATCH may not move a barcode.
+    // Admins regenerate through POST /api/vehicles/:id/barcode/regenerate,
+    // which writes the column directly and is unaffected by this.
+    if (vehicleData && "barcode" in vehicleData) {
+      const { barcode: _clientBarcode, ...rest } = vehicleData as Partial<InsertVehicle> & { barcode?: unknown };
+      vehicleData = rest as Partial<InsertVehicle>;
+    }
     console.log(`Database updateVehicle called for ID ${id} with data:`, JSON.stringify(vehicleData, null, 2));
     try {
       // Explicitly debug the updatedBy value

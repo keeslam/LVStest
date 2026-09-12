@@ -1299,8 +1299,22 @@ export const pdfTemplates = pgTable("pdf_templates", {
   fields: jsonb("fields").default([])
 });
 
+// BUG-194 — `name: ""` was accepted on all three template families, so the
+// picker showed a blank row nobody could tell apart. The column is NOT NULL
+// but says nothing about emptiness, which is what createInsertSchema derives
+// from.
+const templateNameField = z.string().trim().min(1, "Template name is required").max(200);
+
+// BUG-194 — `labelWidthMm: -5` and `labelHeightMm: 0` were stored verbatim
+// and every sheet printed from that template came out empty.
+const labelMillimetreField = z.coerce
+  .number()
+  .int("Label size must be a whole number of millimetres")
+  .min(1, "Label size must be at least 1 mm")
+  .max(1000, "Label size must be at most 1000 mm");
 export const insertPdfTemplateSchema = createInsertSchema(pdfTemplates)
-  .omit({ id: true });
+  .omit({ id: true })
+  .extend({ name: templateNameField });
 
 export type PdfTemplate = typeof pdfTemplates.$inferSelect;
 export type InsertPdfTemplate = z.infer<typeof insertPdfTemplateSchema>;
@@ -1338,7 +1352,8 @@ export const transportReportTemplates = pgTable("transport_report_templates", {
 });
 
 export const insertTransportReportTemplateSchema = createInsertSchema(transportReportTemplates)
-  .omit({ id: true });
+  .omit({ id: true })
+  .extend({ name: templateNameField });
 
 export type TransportReportTemplate = typeof transportReportTemplates.$inferSelect;
 export type InsertTransportReportTemplate = z.infer<typeof insertTransportReportTemplateSchema>;
@@ -1374,7 +1389,12 @@ export const barcodeLabelTemplates = pgTable("barcode_label_templates", {
 });
 
 export const insertBarcodeLabelTemplateSchema = createInsertSchema(barcodeLabelTemplates)
-  .omit({ id: true });
+  .omit({ id: true })
+  .extend({
+    name: templateNameField,
+    labelWidthMm: labelMillimetreField,
+    labelHeightMm: labelMillimetreField,
+  });
 
 export type BarcodeLabelTemplate = typeof barcodeLabelTemplates.$inferSelect;
 export type InsertBarcodeLabelTemplate = z.infer<typeof insertBarcodeLabelTemplateSchema>;

@@ -103,7 +103,7 @@ import { calculateDutchHolidays, mergeHolidaysWithOverrides } from "../shared/ho
 import { geocodeAddress, haversineDistanceKm, nearestNeighborOrder, getRoadRouteDistances } from "./geocoding";
 import { isDamageCheckDocument } from "../shared/document-types";
 import { getUploadsDir } from "../shared/paths";
-import { parseBarcode, normalizeScannedCode } from "../shared/barcode";
+import { parseBarcode, normalizeScannedCode, isOwnVehicleBarcode } from "../shared/barcode";
 import { 
   createSecureMulterFilter, 
   validateAfterUpload,
@@ -141,6 +141,7 @@ import {
 import { BookingConflictError, warningsForVerdict, type BookingRequest, type BookabilityVerdict } from "./services/bookability";
 import { bookingWarningsFor, type BookingWarning } from "../shared/booking-warnings";
 import { reservationIsOld, verifyAdminPassword, authorizeMileageDecrease } from "./services/authorization";
+import { isLatestReturnForVehicle } from "./services/reservation-mileage-sync";
 import { assignDriverToReservation } from "./services/driver-assignments";
 import { getServiceDueVehicles, scanVehiclesForServiceDue } from "./utils/service-due-scanner";
 import { registerUserRoutes } from "./routes/users";
@@ -726,7 +727,15 @@ export async function registerRoutes(app: Express): Promise<void> {
       // stored value is matched verbatim), then license-plate fallback.
       const normalized = normalizeScannedCode(req.params.code);
       if (!vehicle) {
-        vehicle = await storage.getVehicleByBarcode(normalized);
+        const byBarcode = await storage.getVehicleByBarcode(normalized);
+        // BUG-125 — only honour a stored barcode the vehicle is actually
+        // entitled to (VEH-<its own id>[-R<n>]). Rows written before the
+        // column became server-owned may hold another car's plate or code,
+        // and an exact match here runs BEFORE the license-plate fallback —
+        // which is how a scan of car A resolved to car B.
+        if (byBarcode && isOwnVehicleBarcode(byBarcode.id, byBarcode.barcode)) {
+          vehicle = byBarcode;
+        }
       }
       if (!vehicle && parsed.kind === "unknown") {
         const plate = normalized.replace(/[-\s]/g, "");
@@ -915,6 +924,23 @@ export async function registerRoutes(app: Express): Promise<void> {
         });
       }
       
+      // BUG-125 — the barcode is server-owned (createVehicle assigns
+      // VEH-<id> and drops whatever the body said). A body that carries a
+      // code already printed on another car is still worth refusing out
+      // loud rather than quietly ignoring: it means someone is holding the
+      // wrong physical label. 409 with our own field name, never the
+      // database's constraint text (BUG-148).
+      const requestedBarcode = typeof req.body?.barcode === "string" ? req.body.barcode.trim() : "";
+      if (requestedBarcode) {
+        const barcodeOwner = await storage.getVehicleByBarcode(requestedBarcode);
+        if (barcodeOwner) {
+          return res.status(409).json({
+            field: "barcode",
+            message: "This barcode already belongs to another vehicle",
+          });
+        }
+      }
+
       // Create a sanitized copy of the request body
       const sanitizedData = { ...req.body };
       
@@ -4200,6 +4226,41 @@ export async function registerRoutes(app: Express): Promise<void> {
         updatedBy: user ? user.username : null
       };
 
+      // BUG-127, second half — a corrected return reading has to reach the
+      // vehicle. Only the newest return on that vehicle is "where the car
+      // stands now"; editing a rental from two years ago corrects that
+      // rental and nothing else. A correction downwards passes the same gate
+      // as every other mileage writer (BUG-041/BUG-065), and is recorded on
+      // the vehicle the same way.
+      let mileageSync:
+        | { vehicleId: number; newMileage: number; oldMileage: number | null; authorizedBy: string | null }
+        | null = null;
+      if ("returnMileage" in reservationData && mergedReturnMileage != null && effectiveVehicleIdForPatch) {
+        const vehicleForMileage = await storage.getVehicle(effectiveVehicleIdForPatch);
+        if (vehicleForMileage && (await isLatestReturnForVehicle(effectiveVehicleIdForPatch, id))) {
+          const oldMileage = vehicleForMileage.currentMileage ?? null;
+          if (oldMileage !== mergedReturnMileage) {
+            let authorizedBy: string | null = null;
+            if (oldMileage !== null && mergedReturnMileage < oldMileage) {
+              const authorization = await authorizeMileageDecrease(
+                req,
+                (req.body as any)?.mileageOverridePassword,
+                { oldMileage, newMileage: mergedReturnMileage },
+              );
+              if (!authorization.ok) {
+                return res.status(authorization.status).json(authorization.body);
+              }
+              authorizedBy = authorization.authorizedBy;
+            }
+            mileageSync = {
+              vehicleId: effectiveVehicleIdForPatch,
+              newMileage: mergedReturnMileage,
+              oldMileage,
+              authorizedBy,
+            };
+          }
+        }
+      }
       // besluiten B-09 (BUG-013) — an edit that moves a rental over a
       // maintenance block saves, and says so.
       let patchWarnings: BookingWarning[] = [];
@@ -4211,6 +4272,34 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Reservation not found" });
       }
       void onMaintenanceBlockChanged(existingReservationForDiff, reservation);
+
+      // BUG-127 — the vehicle follows the corrected return reading.
+      if (mileageSync) {
+        await storage.updateVehicle(mileageSync.vehicleId, {
+          currentMileage: mileageSync.newMileage,
+          updatedBy: user ? user.username : null,
+          ...(mileageSync.authorizedBy
+            ? {
+                mileageDecreasedBy: mileageSync.authorizedBy,
+                mileageDecreasedAt: new Date(),
+                previousMileage: mileageSync.oldMileage,
+              }
+            : {}),
+        } as any);
+        await AuditLogger.logFromRequest(
+          req,
+          "vehicle.update",
+          "vehicle",
+          mileageSync.vehicleId,
+          {
+            reason: "BUG-127: return mileage corrected on reservation #" + id,
+            reservationId: id,
+            oldMileage: mileageSync.oldMileage,
+            newMileage: mileageSync.newMileage,
+            authorizedBy: mileageSync.authorizedBy,
+          },
+        );
+      }
       // besluiten B-13 (BUG-139) — the rental moved to another car: the block
       // stays with the physical car, its spare and the customer's maintenance
       // notification lapse, and the customer is told. Awaited so the response

@@ -21,7 +21,12 @@ function validateReportTemplateFields(res: Response, body: any): boolean {
     res.status(400).json({ message: "Template data must be an object" });
     return false;
   }
-  if (!("fields" in body) || body.fields === undefined || body.fields === null) return true;
+  // Absent means "leave it alone"; an explicit null does not (BUG-194).
+  if (!("fields" in body) || body.fields === undefined) return true;
+  if (body.fields === null) {
+    res.status(400).json({ message: "fields must be an array of field definitions" });
+    return false;
+  }
   let candidate: unknown = body.fields;
   if (typeof candidate === "string") {
     const parsedArray = coerceFieldArray(candidate);
@@ -239,6 +244,9 @@ export function registerReportAndLabelTemplateRoutes(app: Express, deps: RouteDe
 
   app.post("/api/barcode-label-templates", requireAuth, hasPermission(UserPermission.MANAGE_PDF_TEMPLATES), async (req: Request, res: Response) => {
     try {
+      // BUG-194 — the label template's `fields` is the same jsonb blob as the
+      // other two families and was the one that never got checked.
+      if (!validateReportTemplateFields(res, req.body)) return;
       const templateData = insertBarcodeLabelTemplateSchema.parse(req.body);
       const template = await storage.createBarcodeLabelTemplate(templateData);
       res.status(201).json(template);
@@ -260,6 +268,7 @@ export function registerReportAndLabelTemplateRoutes(app: Express, deps: RouteDe
       const existing = await storage.getBarcodeLabelTemplate(id);
       if (!existing) return res.status(404).json({ message: "Template not found" });
 
+      if (!validateReportTemplateFields(res, req.body)) return;
       const templateData = insertBarcodeLabelTemplateSchema.partial().parse(req.body);
       const updated = await storage.updateBarcodeLabelTemplate(id, templateData);
       if (!updated) return res.status(404).json({ message: "Failed to update template" });
