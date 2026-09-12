@@ -1985,6 +1985,9 @@ export async function registerRoutes(app: Express): Promise<void> {
           license_plate_taken: "A vehicle with the same license plate already exists. Delete or rename it first.",
           // BUG-126: the barcode is unique too, and used to come back as a 500.
           barcode_taken: "Another vehicle already uses the same barcode. Clear it there first.",
+          // besluiten B-15 (BUG-151, BUG-140) — the reservation and transport
+          // halves of the bin.
+          reservation_conflict: "Deze reservering kan niet terug: het voertuig is in de tussentijd geboekt voor die periode.",
         };
         const reason = result?.reason || 'not_found';
         return res.status(reason === 'not_found' ? 404 : 409).json({
@@ -2003,6 +2006,15 @@ export async function registerRoutes(app: Express): Promise<void> {
       );
 
       if (entityType === 'vehicle') realtimeEvents.vehicles.created({ id: result.record?.entityId });
+      // besluiten B-15 — the calendar has to see a restored reservation at once,
+      // otherwise the row is back but the screen still shows the free slot.
+      if (entityType === 'reservation' && result.record?.entityId != null) {
+        const restoredReservation = await storage.getReservation(result.record.entityId);
+        if (restoredReservation) {
+          realtimeEvents.reservations.updated(restoredReservation);
+          await storage.recomputeVehicleAvailability(restoredReservation.vehicleId);
+        }
+      }
 
       res.json({ success: true, message: `Restored ${result.record?.label ?? 'record'}.` });
     } catch (error) {
@@ -7645,7 +7657,12 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (existing?.isBreakdownOrMaintenance && !existing.isExternalVehicle && existing.vehicleId != null) {
         await storage.markVehicleForService(existing.vehicleId, 'ok');
       }
-      const success = await storage.deleteTransport(id);
+      // besluiten B-15 (BUG-140) — snapshotted into the recycle bin first, with
+      // the spare reservation this route just closed.
+      const success = await storage.deleteTransport(id, {
+        username: req.user?.username ?? null,
+        userId: req.user?.id ?? null,
+      });
       if (!success) {
         return res.status(404).json({ message: "Transport not found" });
       }

@@ -779,6 +779,10 @@ export class DatabaseStorage implements IStorage {
     // besluiten B-08 — a customer goes to the recycle bin like a vehicle, and
     // comes back the same way.
     if (record.entityType === 'customer') return this.restoreDeletedCustomer(record, actor);
+    // besluiten B-15 — and so do a reservation (BUG-151) and a transport
+    // (BUG-140), both through the bookability predicate.
+    if (record.entityType === 'reservation') return this.restoreDeletedReservation(record, actor);
+    if (record.entityType === 'transport') return this.restoreDeletedTransport(record, actor);
     if (record.entityType !== 'vehicle') return { restored: false, reason: 'unsupported_type', record };
 
     const payload = record.payload as any;
@@ -927,6 +931,171 @@ export class DatabaseStorage implements IStorage {
    * `booked` reservation simply kept pointing at a customer that no longer
    * existed, with no UI path back (BUG-007).
    */
+  /**
+   * besluiten **B-15** (BUG-151) — the reservation half of the recycle bin.
+   *
+   * The row itself never left the table (the delete is soft), so the restore is
+   * "clear `deleted_at`" — but only after the bookability predicate has said
+   * the period is still free. That is wave 3's BUG-108 rule: the audit's own
+   * manual `update reservations set deleted_at = null` produced a double
+   * booking within seconds, and a restore button must not be able to repeat it.
+   */
+  private async restoreDeletedReservation(
+    record: DeletedRecord,
+    actor?: { username?: string | null }
+  ): Promise<{ restored: boolean; reason?: string; record?: DeletedRecord }> {
+    const payload = record.payload as any;
+    const snapshot = payload?.reservation;
+    if (!snapshot) return { restored: false, reason: 'empty_snapshot', record };
+
+    try {
+      await db.transaction(async (tx) => {
+        const [claimed] = await tx
+          .update(deletedRecords)
+          .set({ restoredAt: new Date(), restoredBy: actor?.username || null })
+          .where(and(eq(deletedRecords.id, record.id), isNull(deletedRecords.restoredAt)))
+          .returning();
+        if (!claimed) throw new RestoreAbort('already_restored');
+
+        const [current] = await tx.select().from(reservations)
+          .where(eq(reservations.id, record.entityId)).for('update');
+        if (!current) throw new RestoreAbort('not_found');
+        if (!current.deletedAt) throw new RestoreAbort('already_restored');
+
+        // BUG-108's rule: a restore may never re-create a double booking.
+        if (current.vehicleId != null) {
+          const verdict = await this.isVehicleBookable({
+            vehicleId: current.vehicleId,
+            startDate: current.startDate,
+            endDate: current.endDate ?? null,
+            startTime: current.startTime ?? null,
+            endTime: current.endTime ?? null,
+            excludeReservationId: current.id,
+            isMaintenanceBlock: current.type === 'maintenance_block',
+          }, tx);
+          if (!verdict.bookable && verdict.reason === 'CONFLICT') {
+            throw new RestoreAbort('reservation_conflict');
+          }
+        }
+
+        // The contract number was blanked by the delete so it could be reused.
+        // Give it back only when it is still free — never at the cost of the
+        // unique index (BUG-038's class of failure).
+        let contractNumber: string | null = null;
+        const snapshotNumber = typeof snapshot.contractNumber === 'string' ? snapshot.contractNumber : null;
+        if (snapshotNumber) {
+          const [taken] = await tx.select({ id: reservations.id }).from(reservations)
+            .where(eq(reservations.contractNumber, snapshotNumber));
+          if (!taken) contractNumber = snapshotNumber;
+        }
+
+        await tx.update(reservations).set({
+          deletedAt: null,
+          deletedBy: null,
+          deletedByUser: null,
+          updatedBy: actor?.username ?? null,
+          updatedAt: new Date(),
+          ...(contractNumber ? { contractNumber } : {}),
+        }).where(eq(reservations.id, record.entityId));
+      });
+    } catch (error) {
+      if (error instanceof RestoreAbort) return { restored: false, reason: error.reason, record };
+      throw error;
+    }
+
+    return { restored: true, record };
+  }
+
+  /**
+   * besluiten **B-15** (BUG-140) — the transport half. `vehicle_transports` has
+   * no soft-delete column, so the row is inserted back from the snapshot under
+   * its original id, and the spare reservation the delete closed is reopened
+   * with it — through the same predicate, so the spare cannot come back onto
+   * days another car was booked for in the meantime.
+   */
+  private async restoreDeletedTransport(
+    record: DeletedRecord,
+    actor?: { username?: string | null }
+  ): Promise<{ restored: boolean; reason?: string; record?: DeletedRecord }> {
+    const payload = record.payload as any;
+    const snapshot = payload?.transport;
+    if (!snapshot) return { restored: false, reason: 'empty_snapshot', record };
+
+    try {
+      await db.transaction(async (tx) => {
+        const [claimed] = await tx
+          .update(deletedRecords)
+          .set({ restoredAt: new Date(), restoredBy: actor?.username || null })
+          .where(and(eq(deletedRecords.id, record.id), isNull(deletedRecords.restoredAt)))
+          .returning();
+        if (!claimed) throw new RestoreAbort('already_restored');
+
+        const [idTaken] = await tx.select({ id: vehicleTransports.id }).from(vehicleTransports)
+          .where(eq(vehicleTransports.id, record.entityId));
+        if (idTaken) throw new RestoreAbort('id_taken');
+
+        // JSON has no date type — the same revival the vehicle restore does.
+        const columns = getTableColumns(vehicleTransports);
+        const dateKeys = Object.entries(columns)
+          .filter(([, column]: [string, any]) => column?.dataType === 'date')
+          .map(([key]) => key);
+        const row: any = { ...snapshot };
+        for (const key of dateKeys) {
+          const value = row[key];
+          if (typeof value === 'string' || typeof value === 'number') row[key] = new Date(value);
+        }
+
+        // The spare reservation may itself have been deleted for good since;
+        // the transport comes back either way, with the link it had.
+        const spare = payload?.spareReservation;
+        if (spare?.id != null) {
+          const [current] = await tx.select().from(reservations)
+            .where(eq(reservations.id, spare.id)).for('update');
+          if (!current) {
+            row.spareReservationId = null;
+          } else if (current.deletedAt) {
+            let bookable = true;
+            if (current.vehicleId != null) {
+              const verdict = await this.isVehicleBookable({
+                vehicleId: current.vehicleId,
+                startDate: current.startDate,
+                endDate: current.endDate ?? null,
+                excludeReservationId: current.id,
+                isMaintenanceBlock: current.type === 'maintenance_block',
+              }, tx);
+              bookable = verdict.bookable || verdict.reason !== 'CONFLICT';
+            }
+            if (bookable) {
+              await tx.update(reservations)
+                .set({ deletedAt: null, deletedBy: null, deletedByUser: null, updatedBy: actor?.username ?? null, updatedAt: new Date() })
+                .where(eq(reservations.id, current.id));
+            } else {
+              // Visible and explained, never a silent second booking.
+              await tx.update(reservations).set({
+                status: 'cancelled',
+                notes: `${current.notes ?? ''}\n[RESTORE] Vervanger niet heropend: de auto was in de tussentijd geboekt.`.trim(),
+                updatedAt: new Date(),
+              }).where(eq(reservations.id, current.id));
+            }
+          }
+        }
+
+        await tx.insert(vehicleTransports).values(row);
+        await tx.execute(sql`
+          SELECT setval(
+            pg_get_serial_sequence('vehicle_transports', 'id'),
+            GREATEST((SELECT COALESCE(MAX(id), 1) FROM "vehicle_transports"), 1)
+          )
+        `);
+      });
+    } catch (error) {
+      if (error instanceof RestoreAbort) return { restored: false, reason: error.reason, record };
+      throw error;
+    }
+
+    return { restored: true, record };
+  }
+
   private async restoreDeletedCustomer(
     record: DeletedRecord,
     actor?: { username?: string | null }
@@ -1793,6 +1962,11 @@ export class DatabaseStorage implements IStorage {
     actor?: { username?: string | null; userId?: number | null },
   ): Promise<Reservation | undefined> {
     return db.transaction(async (tx) => {
+      // besluiten B-15 (BUG-151) — the row as it was, before the delete blanks
+      // the contract number, so the recycle bin can put it back exactly.
+      const [before] = await tx.select().from(reservations)
+        .where(and(eq(reservations.id, id), isNull(reservations.deletedAt)));
+
       const [row] = await tx
         .update(reservations)
         .set({
@@ -1805,6 +1979,21 @@ export class DatabaseStorage implements IStorage {
         .where(and(eq(reservations.id, id), isNull(reservations.deletedAt)))
         .returning();
       if (!row) return undefined;
+
+      // besluiten **B-15** — "ja, allebei herstelbaar". Until this, a
+      // soft-deleted reservation was filtered out everywhere and surfaced
+      // nowhere; the only way back was a hand-written UPDATE, which is exactly
+      // how the audit produced a double booking (BUG-151).
+      const vehicle = row.vehicleId != null ? await this.getVehicle(row.vehicleId) : undefined;
+      await tx.insert(deletedRecords).values({
+        entityType: 'reservation',
+        entityId: id,
+        label: `Reservering #${id}${vehicle ? ` — ${vehicle.licensePlate}` : ''} ${row.startDate}`.trim(),
+        payload: { reservation: before ?? row },
+        relatedCounts: {},
+        deletedBy: actor?.username || null,
+        deletedByUserId: actor?.userId ?? null,
+      });
 
       await tx.update(reservationDriverAssignments)
         .set({ assignedUntil: new Date() })
@@ -2920,9 +3109,42 @@ export class DatabaseStorage implements IStorage {
     return withRelations;
   }
 
-  async deleteTransport(id: number): Promise<boolean> {
-    const result = await db.delete(vehicleTransports).where(eq(vehicleTransports.id, id));
-    return result.rowCount !== null && result.rowCount > 0;
+  /**
+   * besluiten **B-15** (BUG-140) — a transport is snapshotted into the recycle
+   * bin before it goes, together with the spare reservation the delete closed,
+   * so "de vervangingsreservering houdt zijn herkomst" is true again. There is
+   * no `deleted_at` column on `vehicle_transports`; the snapshot is what makes
+   * the delete reversible.
+   */
+  async deleteTransport(
+    id: number,
+    actor?: { username?: string | null; userId?: number | null },
+  ): Promise<boolean> {
+    return db.transaction(async (tx) => {
+      const [transport] = await tx.select().from(vehicleTransports)
+        .where(eq(vehicleTransports.id, id)).for('update');
+      if (!transport) return false;
+
+      const [spareReservation] = transport.spareReservationId != null
+        ? await tx.select().from(reservations).where(eq(reservations.id, transport.spareReservationId))
+        : [undefined];
+
+      const vehicle = transport.vehicleId != null ? await this.getVehicle(transport.vehicleId) : undefined;
+      const plate = vehicle?.licensePlate ?? transport.externalLicensePlate ?? null;
+
+      await tx.insert(deletedRecords).values({
+        entityType: 'transport',
+        entityId: id,
+        label: `Transport #${id}${plate ? ` — ${plate}` : ''} ${transport.scheduledDate ?? ''}`.trim(),
+        payload: { transport, spareReservation: spareReservation ?? null },
+        relatedCounts: { spareReservations: spareReservation ? 1 : 0 },
+        deletedBy: actor?.username || null,
+        deletedByUserId: actor?.userId ?? null,
+      });
+
+      const result = await tx.delete(vehicleTransports).where(eq(vehicleTransports.id, id));
+      return result.rowCount !== null && result.rowCount > 0;
+    });
   }
 
   // Applies any partial transport update, handling the spare/replacement-vehicle

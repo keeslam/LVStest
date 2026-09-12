@@ -217,7 +217,14 @@
       "restoreFailedDescription": "Kon dit record niet terugzetten."
     },
     "search": "Zoeken op kenteken, omschrijving of naam…",
-    "noMatches": "Niets gevonden voor deze zoekterm."
+    "noMatches": "Niets gevonden voor deze zoekterm.",
+    "entityTypes": {
+      "vehicle": "Voertuig",
+      "customer": "Klant",
+      "reservation": "Reservering",
+      "transport": "Transport",
+      "fine": "Boete"
+    }
   },
   "editDialog": {
     "title": "Voertuig bewerken",

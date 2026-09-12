@@ -217,7 +217,14 @@
       "restoreFailedDescription": "Could not restore this record."
     },
     "search": "Search by plate, description or name…",
-    "noMatches": "Nothing matches this search."
+    "noMatches": "Nothing matches this search.",
+    "entityTypes": {
+      "vehicle": "Vehicle",
+      "customer": "Customer",
+      "reservation": "Reservation",
+      "transport": "Transport",
+      "fine": "Fine"
+    }
   },
   "editDialog": {
     "title": "Edit Vehicle",

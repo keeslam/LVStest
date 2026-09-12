@@ -147,7 +147,9 @@ export interface IStorage {
   getTransport(id: number): Promise<VehicleTransport | undefined>;
   createTransport(transport: InsertVehicleTransport): Promise<VehicleTransport>;
   updateTransport(id: number, transportData: Partial<InsertVehicleTransport>): Promise<VehicleTransport | undefined>;
-  deleteTransport(id: number): Promise<boolean>;
+  // besluiten B-15 (BUG-140): snapshotted into the recycle bin first, so the
+  // actor is recorded on the bin entry.
+  deleteTransport(id: number, actor?: { username?: string | null; userId?: number | null }): Promise<boolean>;
   // Spare/replacement-vehicle workflow — see shared/transport-spare-status.ts for the
   // derived status this drives. applyTransportUpdate atomically handles reservation
   // creation/cancellation and original-vehicle maintenance status alongside plain field

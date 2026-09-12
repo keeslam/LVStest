@@ -76,6 +76,10 @@ export function DeletedVehiclesDialog({ open, onOpenChange, onRestored, entityTy
       await invalidateByPrefix("/api/vehicles");
       await invalidateByPrefix("/api/reservations");
       await invalidateByPrefix("/api/fines");
+      // besluiten B-15 — a restored transport has to reappear on the transports
+      // page too, not only in the bin.
+      await invalidateByPrefix("/api/transports");
+      await invalidateByPrefix("/api/customers");
       await refetch();
       onRestored?.();
     },
@@ -123,6 +127,12 @@ export function DeletedVehiclesDialog({ open, onOpenChange, onRestored, entityTy
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
+                    {/* besluiten B-15 — the bin now holds reservations and
+                        transports next to vehicles, customers and fines, so the
+                        list has to say what each row is. */}
+                    <Badge variant="outline" data-testid={`deleted-record-type-${record.id}`}>
+                      {t(`deletedVehiclesDialog.entityTypes.${record.entityType}`, { defaultValue: record.entityType })}
+                    </Badge>
                     <span className="font-medium">{record.label}</span>
                     {record.restoredAt && (
                       <Badge className="bg-green-100 text-green-800">{t('deletedVehiclesDialog.restoredBadge')}</Badge>
