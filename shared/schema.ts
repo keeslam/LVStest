@@ -1204,7 +1204,18 @@ export const documents = pgTable("documents", {
   contentType: text("content_type").notNull(),
   uploadDate: timestamp("upload_date").defaultNow().notNull(),
   notes: text("notes"),
-  
+
+  // B-05 / FIX-O: the version number lives in its own column instead of being
+  // appended to `document_type` ("Contract (Unsigned) 3"), which made every
+  // consumer parse a label with a regex and made "all unsigned contracts for
+  // this reservation" a prefix match.
+  version: integer("version").default(1),
+  // B-05: a document that no longer matches its reservation is kept and
+  // marked "verouderd"; the employee regenerates a new version deliberately.
+  isStale: boolean("is_stale").default(false),
+  staleReason: text("stale_reason"),
+  staleSince: timestamp("stale_since"),
+
   // Tracking
   createdBy: text("created_by"),
   updatedBy: text("updated_by"),

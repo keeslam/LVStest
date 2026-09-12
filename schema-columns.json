@@ -1580,6 +1580,34 @@
         "default": null
       },
       {
+        "name": "version",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": "1"
+      },
+      {
+        "name": "is_stale",
+        "type": "boolean",
+        "notNull": false,
+        "primary": false,
+        "default": "false"
+      },
+      {
+        "name": "stale_reason",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "stale_since",
+        "type": "timestamp",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
         "name": "created_by",
         "type": "text",
         "notNull": false,

@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { storage } from "./storage";
 import { ReportValidationError } from "./database-storage";
 import { fetchVehicleInfoByLicensePlate, RDWNotFoundError, RDWTimeoutError, RDWUpstreamError } from "./utils/rdw-api";
-import { generateRentalContract, generateRentalContractFromTemplate, prepareContractData } from "./utils/pdf-generator";
+import { generateRentalContractFromTemplate, prepareContractData } from "./utils/pdf-generator";
 import { processInvoiceWithAI, generateInvoiceHash, validateParsedInvoice, type ParsedInvoice } from "./utils/invoice-scanner";
 import path from "path";
 import fs from "fs";
@@ -97,6 +97,18 @@ import {
   cleanupSupersededDamageCheckVersions,
   pickBestDamageCheckTemplate,
 } from "./services/reservation-pdf-regeneration";
+import {
+  registerGeneratedDocument,
+  annotateDocumentFileState,
+  annotateDocumentsFileState,
+  contractGenerationRefusal,
+  DOCUMENT_TYPE_CONTRACT_UNSIGNED,
+  DOCUMENT_TYPE_DAMAGE_CHECK_UNSIGNED,
+  DOCUMENT_TYPE_TRANSPORT_REPORT,
+} from "./services/document-registry";
+import { selectContractTemplate } from "./services/pdf-template-selection";
+import { buildDamageCheckReservationData } from "./services/damage-check-data";
+import { regenerateDocument } from "./services/document-regeneration";
 import { BookingConflictError, type BookingRequest } from "./services/bookability";
 import { reservationIsOld, verifyAdminPassword, authorizeMileageDecrease } from "./services/authorization";
 import { assignDriverToReservation } from "./services/driver-assignments";
@@ -4442,68 +4454,40 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       let contractDocument = null;
       try {
-        const { generateRentalContractFromTemplate, generateRentalContract } = await import('./utils/pdf-generator');
+        // FIX-N/FIX-O: the same picker and the same registry as every other
+        // contract endpoint. The legacy fixed-coordinate renderer that used to
+        // be the "built-in default" is gone (BUG-164): it never applied the
+        // 842-y flip, so every value it drew landed in the wrong box.
+        const pickupTemplateId = templateId ? parseInt(String(templateId), 10) : undefined;
+        const pickupSelection = await selectContractTemplate(
+          Number.isInteger(pickupTemplateId as number) && (pickupTemplateId as number) > 0
+            ? (pickupTemplateId as number)
+            : undefined,
+        );
 
-        let template = null;
-        if (templateId) {
-          template = await storage.getPdfTemplate(parseInt(templateId));
-        }
-
-        if (!template) {
-          const allTemplates = await storage.getAllPdfTemplates();
-          template = allTemplates.find(t => t.isDefault) || allTemplates[0];
-        }
-
-        if (!template) {
-          // No custom template configured — fall back to the built-in default
-          // contract layout so a "Contract (Unsigned)" document is still produced
-          // (the pickup dialog always tells the user a contract was generated).
+        if (!pickupSelection.ok) {
           console.warn(
-            `⚠️ No PDF contract template configured for reservation ${reservationId} — using built-in default contract layout. ` +
-            `Add a template under Documents → Contract Templates to customize it.`
+            `No usable contract template for reservation ${reservationId}: ${pickupSelection.message}`,
           );
-        }
-
-        if (updatedReservation.vehicle) {
+        } else if (updatedReservation.vehicle) {
+          const { generateRentalContractFromTemplate } = await import('./utils/pdf-generator');
           console.log(
-            template
-              ? `📝 Generating contract for reservation ${reservationId} using template ${template.id}`
-              : `📝 Generating contract for reservation ${reservationId} using built-in default template`
+            `Generating contract for reservation ${reservationId} using template ${pickupSelection.template.id}`,
           );
-
-          const contractPdf = template
-            ? await generateRentalContractFromTemplate(updatedReservation, template)
-            : await generateRentalContract(updatedReservation);
-
-          const sanitizedPlate = updatedReservation.vehicle.licensePlate.replace(/[^a-zA-Z0-9]/g, '');
-          const uploadsDir = getUploadsDir();
-          const contractsDir = path.join(uploadsDir, sanitizedPlate, 'contracts');
-          
-          if (!fs.existsSync(contractsDir)) {
-            fs.mkdirSync(contractsDir, { recursive: true });
-          }
-          
-          const timestamp = Date.now();
-          const dateString = pickupDate || new Date().toISOString().split('T')[0];
-          const fileName = `${sanitizedPlate}_contract_pickup_${dateString}_${timestamp}.pdf`;
-          const filePath = path.join(contractsDir, fileName);
-          const relativePath = path.relative(uploadsDir, filePath);
-          
-          fs.writeFileSync(filePath, contractPdf);
-          console.log(`✅ Contract saved to ${relativePath}`);
-          
-          contractDocument = await storage.createDocument({
-            vehicleId: updatedReservation.vehicleId,
+          const contractPdf = await generateRentalContractFromTemplate(
+            updatedReservation,
+            pickupSelection.template,
+          );
+          contractDocument = await registerGeneratedDocument({
+            documentType: DOCUMENT_TYPE_CONTRACT_UNSIGNED,
+            bytes: contractPdf,
+            vehicleId: updatedReservation.vehicleId ?? null,
+            vehiclePlate: updatedReservation.vehicle.licensePlate,
             reservationId: updatedReservation.id,
-            documentType: 'Contract (Unsigned)',
-            fileName: fileName,
-            filePath: relativePath,
-            fileSize: contractPdf.length,
-            contentType: 'application/pdf',
-            createdBy: (req as any).user?.username || 'system'
+            createdBy: (req as any).user?.username || 'system',
+            notes: `Contract generated at pickup of reservation #${reservationId}`,
           });
-          
-          console.log(`✅ Contract document registered in database`);
+          console.log(`Contract document registered in database`);
         }
       } catch (pdfError) {
         console.error("Error generating contract PDF:", pdfError);
@@ -4672,23 +4656,13 @@ export async function registerRoutes(app: Express): Promise<void> {
               const customerForCheck = updatedReservation.customerId
                 ? await storage.getCustomer(updatedReservation.customerId)
                 : null;
-              const startD = new Date(updatedReservation.startDate);
-              const endD = updatedReservation.endDate
-                ? new Date(updatedReservation.endDate)
-                : new Date(startD.getTime() + 7 * 24 * 60 * 60 * 1000);
-              damageCheckReservationData = {
-                contractNumber: (updatedReservation as any).contractNumber || '',
-                customerName: customerForCheck
-                  ? `${(customerForCheck as any).firstName || ''} ${(customerForCheck as any).lastName || ''}`.trim() ||
-                    (customerForCheck as any).name || ''
-                  : '',
-                startDate: format(startD, 'dd-MM-yyyy'),
-                endDate: format(endD, 'dd-MM-yyyy'),
-                rentalDays: Math.max(
-                  1,
-                  Math.ceil((endD.getTime() - startD.getTime()) / (1000 * 60 * 60 * 24)),
-                ),
-              };
+              // BUG-166: one builder, and it reads the `name` column first —
+              // this site preferred the two nullable ones and printed
+              // "null null" wherever they were empty.
+              damageCheckReservationData = buildDamageCheckReservationData(
+                updatedReservation as any,
+                customerForCheck as any,
+              );
             } catch (e) {
               console.warn('[return-damage-check] Could not build reservation data:', (e as Error).message);
             }
@@ -4711,34 +4685,15 @@ export async function registerRoutes(app: Express): Promise<void> {
               latestInteractiveCheck,
             );
             
-            const sanitizedPlate = vehicle.licensePlate.replace(/[^a-zA-Z0-9]/g, '');
-            const uploadsDir = getUploadsDir();
-            const damageCheckDir = path.join(uploadsDir, sanitizedPlate, 'damage-checks');
-            
-            if (!fs.existsSync(damageCheckDir)) {
-              fs.mkdirSync(damageCheckDir, { recursive: true });
-            }
-            
-            const timestamp = Date.now();
-            const dateString = returnDate || new Date().toISOString().split('T')[0];
-            const fileName = `${sanitizedPlate}_damage_check_return_${dateString}_${timestamp}.pdf`;
-            const filePath = path.join(damageCheckDir, fileName);
-            const relativePath = path.relative(uploadsDir, filePath);
-            
-            fs.writeFileSync(filePath, damageCheckPdf);
-            console.log(`✅ Damage check saved to ${relativePath}`);
-            
-            damageCheckDocument = await storage.createDocument({
-              vehicleId: updatedReservation.vehicleId,
-              reservationId: updatedReservation.id,
+            damageCheckDocument = await registerGeneratedDocument({
               documentType: 'Damage Check',
-              fileName: fileName,
-              filePath: relativePath,
-              fileSize: damageCheckPdf.length,
-              contentType: 'application/pdf',
-              createdBy: (req as any).user?.username || 'system'
+              bytes: damageCheckPdf,
+              vehicleId: updatedReservation.vehicleId ?? null,
+              vehiclePlate: vehicle.licensePlate,
+              reservationId: updatedReservation.id,
+              createdBy: (req as any).user?.username || 'system',
+              notes: `Damage check recorded at return of reservation #${reservationId}`,
             });
-            
             console.log(`✅ Damage check document registered in database`);
           }
         }
@@ -5296,8 +5251,11 @@ export async function registerRoutes(app: Express): Promise<void> {
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     
+    // BUG-195: a document whose file is gone is still listed — nothing is
+    // hidden or deleted without a decision — but it is now marked so the UI
+    // can say so instead of only failing when somebody clicks download.
     const documents = await storage.getAllDocuments();
-    res.json(documents);
+    res.json(annotateDocumentsFileState(documents));
   });
 
   // Get documents by vehicle
@@ -5308,7 +5266,7 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
 
     const documents = await storage.getDocumentsByVehicle(vehicleId);
-    res.json(documents);
+    res.json(annotateDocumentsFileState(documents));
   });
 
   // Get documents by reservation
@@ -5319,7 +5277,7 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
 
     const documents = await storage.getDocumentsByReservation(reservationId);
-    res.json(documents);
+    res.json(annotateDocumentsFileState(documents));
   });
 
   // Get all damage check documents (must be before :id route)
@@ -5327,7 +5285,7 @@ export async function registerRoutes(app: Express): Promise<void> {
     try {
       const allDocuments = await storage.getAllDocuments();
       const damageChecks = allDocuments.filter(doc => isDamageCheckDocument(doc.documentType));
-      res.json(damageChecks);
+      res.json(annotateDocumentsFileState(damageChecks));
     } catch (error) {
       console.error("Error fetching damage checks:", error);
       res.status(500).json({ message: "Failed to fetch damage checks" });
@@ -5346,7 +5304,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       return res.status(404).json({ message: "Document not found" });
     }
 
-    res.json(document);
+    res.json(annotateDocumentFileState(document));
   });
 
   // Upload document
@@ -5782,6 +5740,29 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  /**
+   * B-05: the deliberate "opnieuw genereren" action. A document that no longer
+   * matches its reservation is marked "verouderd" and kept; this is how the
+   * employee asks for a fresh version. The old row stays in the dossier, the
+   * new one gets the next version number.
+   */
+  app.post("/api/documents/:id/regenerate", hasPermission(UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid document ID" });
+      }
+      const result = await regenerateDocument(id, req.user ? req.user.username : null);
+      if (!result.ok) {
+        return res.status(result.status).json({ message: result.message });
+      }
+      realtimeEvents.documents.created(result.document);
+      res.status(201).json(annotateDocumentFileState(result.document));
+    } catch (error) {
+      sendRouteError(res, error, "Failed to regenerate document");
+    }
+  });
+
   // ==================== CONTRACT GENERATION ====================
   // Generate rental contract PDF
   app.get("/api/contracts/generate/:reservationId", requireAuth, async (req: Request, res: Response) => {
@@ -5805,193 +5786,47 @@ export async function registerRoutes(app: Express): Promise<void> {
         reservation.customer = await storage.getCustomer(reservation.customerId);
       }
 
-      // For now, use the standard template while we debug the custom template implementation
-      let pdfBuffer: Buffer;
-      
-      try {
-        // First, try the custom template implementation
-        const templateId = req.query.templateId ? parseInt(req.query.templateId as string) : undefined;
-        
-        if (templateId) {
-          console.log(`Generating contract with template ID: ${templateId}`);
-          const template = await storage.getPdfTemplate(templateId);
-          
-          if (template) {
-            // Make sure the template fields are properly formatted
-            let fieldsLength = 0;
-            if (template.fields) {
-              if (typeof template.fields === 'string') {
-                try {
-                  const parsedFields = JSON.parse(template.fields);
-                  fieldsLength = parsedFields.length;
-                  // Ensure template has fields property as parsed JSON
-                  template.fields = parsedFields;
-                } catch (e) {
-                  console.error('Error parsing template fields:', e);
-                }
-              } else {
-                fieldsLength = (template.fields as unknown[]).length;
-              }
-            }
-            
-            console.log(`Template has ${fieldsLength} fields`);
-            
-            // Use the imported function from pdf-generator.ts
-            const { generateRentalContractFromTemplate } = await import('./utils/pdf-generator');
-            pdfBuffer = await generateRentalContractFromTemplate(reservation, template);
-            console.log("Successfully generated PDF with custom template");
-          } else {
-            console.log("Template not found, falling back to standard template");
-            pdfBuffer = await generateRentalContract(reservation);
-          }
-        } else {
-          // Try to get the default template first
-          console.log("Attempting to get default template");
-          const defaultTemplate = await storage.getDefaultPdfTemplate();
-          
-          if (defaultTemplate) {
-            console.log(`Using default template: ${defaultTemplate.name} with ID: ${defaultTemplate.id}`);
-            
-            // Make sure the template fields are properly formatted
-            let fieldsLength = 0;
-            if (defaultTemplate.fields) {
-              if (typeof defaultTemplate.fields === 'string') {
-                try {
-                  const parsedFields = JSON.parse(defaultTemplate.fields);
-                  fieldsLength = parsedFields.length;
-                  // Ensure template has fields property as parsed JSON
-                  defaultTemplate.fields = parsedFields;
-                } catch (e) {
-                  console.error('Error parsing template fields:', e);
-                }
-              } else {
-                fieldsLength = (defaultTemplate.fields as unknown[]).length;
-              }
-            }
-            
-            console.log(`Template has ${fieldsLength} fields`);
-            
-            const { generateRentalContractFromTemplate } = await import('./utils/pdf-generator');
-            pdfBuffer = await generateRentalContractFromTemplate(reservation, defaultTemplate);
-          } else {
-            // No default template found
-            console.log("No default template found in database, using standard template");
-            
-            // Check all templates for debugging
-            const allTemplates = await storage.getAllPdfTemplates();
-            console.log(`Found ${allTemplates.length} total templates:`);
-            for (const template of allTemplates) {
-              console.log(`  - Template ID ${template.id}: "${template.name}" (isDefault: ${template.isDefault})`);
-            }
-            
-            pdfBuffer = await generateRentalContract(reservation);
-          }
-        }
-      } catch (error) {
-        console.error("Error using custom template:", error);
-        // Fall back to the old fixed template format
-        pdfBuffer = await generateRentalContract(reservation);
+      // BUG-119: refuse the things that are not a rental before rendering.
+      const refusal = contractGenerationRefusal(reservation as any);
+      if (refusal) {
+        return res.status(400).json({ message: refusal });
       }
-      
-      // Save a copy of the contract PDF to the contracts folder and register it as a document
-      try {
-        // Get vehicle license plate for folder structure
-        if (reservation.vehicle && reservation.vehicle.licensePlate) {
-          // Ensure we remove ALL special characters including dashes for contract folders/filenames
-          const sanitizedPlate = reservation.vehicle.licensePlate.replace(/[^a-zA-Z0-9]/g, '');
-          const contractsBaseDir = path.join(getUploadsDir(), 'contracts');
-          const vehicleContractsDir = path.join(contractsBaseDir, sanitizedPlate);
-          
-          console.log(`Saving contract for vehicle with license plate: ${reservation.vehicle.licensePlate}`);
-          console.log(`Sanitized plate: ${sanitizedPlate}`);
-          console.log(`Contracts base directory: ${contractsBaseDir}`);
-          console.log(`Vehicle contracts directory: ${vehicleContractsDir}`);
-          
-          // Create directories if they don't exist
-          if (!fs.existsSync(contractsBaseDir)) {
-            console.log(`Creating base contracts directory: ${contractsBaseDir}`);
-            fs.mkdirSync(contractsBaseDir, { recursive: true });
-          }
-          
-          if (!fs.existsSync(vehicleContractsDir)) {
-            console.log(`Creating vehicle contracts directory: ${vehicleContractsDir}`);
-            fs.mkdirSync(vehicleContractsDir, { recursive: true });
-          }
-          
-          // Format date for filename
-          const today = new Date();
-          const currentDate = today.getFullYear().toString() + 
-                             (today.getMonth() + 1).toString().padStart(2, '0') + 
-                             today.getDate().toString().padStart(2, '0');
-          
-          const contractNumber = `C-${reservationId}-${currentDate}`;
-          
-          // Create a unique filename based on license plate and date
-          const filename = `${sanitizedPlate}_contract_${currentDate}.pdf`;
-          const filePath = path.join(vehicleContractsDir, filename);
-          
-          console.log(`Saving contract to file: ${filePath}`);
-          
-          // Save the file
-          fs.writeFileSync(filePath, pdfBuffer);
-          console.log(`Contract successfully saved to: ${filePath}`);
-          
-          // Register the contract as a document entry
-          try {
-            // Create document entry for the contract
-            const documentData = {
-              vehicleId: reservation.vehicleId,
-              reservationId: reservationId, // Link to reservation
-              documentType: 'Contract (Unsigned)', // Mark as unsigned
-              fileName: filename,
-              filePath: getRelativePath(filePath),
-              fileSize: pdfBuffer.length,
-              contentType: 'application/pdf',
-              createdBy: req.user ? req.user.username : 'System',
-              notes: `Auto-generated unsigned contract for reservation #${reservationId}`
-            };
-            
-            // Check for existing unsigned contracts for this reservation to determine version number
-            const existingDocs = await storage.getDocumentsByReservation(reservationId);
-            const existingContracts = existingDocs.filter(doc => 
-              doc.documentType?.startsWith('Contract (Unsigned)')
-            );
-            
-            // Determine version number
-            let versionNumber = 1;
-            if (existingContracts.length > 0) {
-              // Extract version numbers from existing contracts
-              const versions = existingContracts.map(doc => {
-                const match = doc.documentType?.match(/Contract \(Unsigned\)(?: (\d+))?/);
-                return match && match[1] ? parseInt(match[1]) : 1;
-              });
-              versionNumber = Math.max(...versions) + 1;
-            }
-            
-            // Update document type with version number if > 1
-            if (versionNumber > 1) {
-              documentData.documentType = `Contract (Unsigned) ${versionNumber}`;
-              documentData.notes = `Auto-generated unsigned contract (version ${versionNumber}) for reservation #${reservationId}`;
-            }
-            
-            const document = await storage.createDocument(documentData);
-            console.log(`✅ Created document entry for unsigned contract (version ${versionNumber}): ID ${document.id}`);
-            
-            // Broadcast real-time update to all connected clients
-            realtimeEvents.documents.created(document);
-          } catch (docError) {
-            console.error('Error registering contract as document:', docError);
-            // Continue even if document registration fails
-          }
-        } else {
-          console.log('Cannot save contract: Vehicle or license plate is missing');
+
+      const rawTemplateId = req.query.templateId;
+      let templateId: number | undefined;
+      if (rawTemplateId !== undefined) {
+        const parsed = parseInt(String(rawTemplateId), 10);
+        if (!Number.isInteger(parsed) || parsed <= 0) {
+          return res.status(400).json({ message: "Invalid template ID" });
         }
-      } catch (error) {
-        console.error('Error saving contract PDF copy:', error);
-        console.error(error); // Print full error
-        // Continue even if saving a copy fails
+        templateId = parsed;
       }
-      
+
+      // FIX-N/FIX-P: one picker for every contract endpoint. An unknown id is a
+      // 404 (BUG-156) and a field-less template is a 409 instead of a blank
+      // contract nobody notices (BUG-028).
+      const selection = await selectContractTemplate(templateId);
+      if (!selection.ok) {
+        return res.status(selection.status).json({ message: selection.message });
+      }
+
+      const { generateRentalContractFromTemplate } = await import('./utils/pdf-generator');
+      const pdfBuffer = await generateRentalContractFromTemplate(reservation, selection.template);
+
+      // FIX-O: one helper owns the folder, the unique filename, the version
+      // column and the row — and is allowed to fail loudly. This block used to
+      // write the file, swallow every registration error and return 200.
+      const document = await registerGeneratedDocument({
+        documentType: DOCUMENT_TYPE_CONTRACT_UNSIGNED,
+        bytes: pdfBuffer,
+        vehicleId: reservation.vehicleId ?? null,
+        vehiclePlate: reservation.vehicle?.licensePlate ?? null,
+        reservationId,
+        createdBy: req.user ? req.user.username : 'System',
+        notes: `Unsigned contract for reservation #${reservationId}`,
+      });
+      realtimeEvents.documents.created(document);
+
       // Set headers for PDF download
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename=rental_contract_${reservationId}.pdf`);
@@ -6136,18 +5971,57 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       const { vehicleId, customerId, driverId, startDate, endDate, notes } = req.body;
-      const templateId = req.query.templateId ? parseInt(req.query.templateId as string) : undefined;
-      
+
+      // BUG-182: this endpoint took a reservation id in the path and then
+      // ignored it completely — it rendered whatever vehicle and customer the
+      // body named and filed the result under that reservation. A contract for
+      // reservation #12 could carry reservation #99's customer. The
+      // reservation must exist, and the vehicle/customer in the body must be
+      // the ones it actually has.
+      const reservation = await storage.getReservation(reservationId);
+      if (!reservation) {
+        return res.status(404).json({ message: "Reservation not found" });
+      }
       if (!vehicleId || !customerId) {
         return res.status(400).json({ message: "Vehicle ID and Customer ID are required" });
       }
+      const bodyVehicleId = parseInt(String(vehicleId), 10);
+      const bodyCustomerId = parseInt(String(customerId), 10);
+      if (!Number.isInteger(bodyVehicleId) || !Number.isInteger(bodyCustomerId)) {
+        return res.status(400).json({ message: "Vehicle ID and Customer ID must be numbers" });
+      }
+      if (reservation.vehicleId !== bodyVehicleId || reservation.customerId !== bodyCustomerId) {
+        return res.status(400).json({
+          message: "The vehicle and customer must match the reservation this contract is filed under.",
+        });
+      }
 
-      // Get vehicle and customer data
-      const vehicle = await storage.getVehicle(vehicleId);
-      const customer = await storage.getCustomer(customerId);
-      
+      const vehicle = await storage.getVehicle(bodyVehicleId);
+      const customer = await storage.getCustomer(bodyCustomerId);
       if (!vehicle || !customer) {
         return res.status(404).json({ message: "Vehicle or customer not found" });
+      }
+      reservation.vehicle = vehicle;
+      reservation.customer = customer;
+
+      // BUG-119: the same refusal as every other contract endpoint.
+      const versionedRefusal = contractGenerationRefusal(reservation as any);
+      if (versionedRefusal) {
+        return res.status(400).json({ message: versionedRefusal });
+      }
+
+      const rawVersionedTemplateId = req.query.templateId;
+      let versionedTemplateId: number | undefined;
+      if (rawVersionedTemplateId !== undefined) {
+        const parsed = parseInt(String(rawVersionedTemplateId), 10);
+        if (!Number.isInteger(parsed) || parsed <= 0) {
+          return res.status(400).json({ message: "Invalid template ID" });
+        }
+        versionedTemplateId = parsed;
+      }
+      const versionedSelection = await selectContractTemplate(versionedTemplateId);
+      if (!versionedSelection.ok) {
+        return res.status(versionedSelection.status).json({ message: versionedSelection.message });
       }
 
       // Get driver data if provided
@@ -6156,126 +6030,37 @@ export async function registerRoutes(app: Express): Promise<void> {
         driver = await storage.getDriver(driverId);
       }
 
-      // Get the specified template or default PDF template
-      let template;
-      if (templateId) {
-        template = await storage.getPdfTemplate(templateId);
-        if (!template) {
-          return res.status(404).json({ message: "Template not found" });
-        }
-      } else {
-        template = await storage.getDefaultPdfTemplate();
-      }
-      
-      if (!template) {
-        return res.status(404).json({ message: "PDF template not found" });
-      }
-
-      // Create contract data with current form values
+      // The reservation, with the form's in-flight values layered on top.
       const contractData = {
-        id: reservationId,
-        vehicleId,
-        customerId,
+        ...reservation,
+        vehicleId: bodyVehicleId,
+        customerId: bodyCustomerId,
         driverId,
-        startDate,
-        endDate,
-        notes: notes || "",
-        status: "pending",
-        totalPrice: 0,
+        startDate: startDate || reservation.startDate,
+        endDate: endDate === undefined ? reservation.endDate : endDate,
+        notes: notes ?? reservation.notes ?? "",
         vehicle,
         customer,
-        driver
+        driver,
       };
 
-      console.log("Generating versioned contract with current form data");
-
-      // Make sure the template fields are properly formatted
-      if (template.fields && typeof template.fields === 'string') {
-        try {
-          const parsedFields = JSON.parse(template.fields);
-          template.fields = parsedFields;
-        } catch (e) {
-          console.error('Error parsing template fields:', e);
-        }
-      }
-
-      // Use the imported function from pdf-generator.ts
       const { generateRentalContractFromTemplate } = await import('./utils/pdf-generator');
-      const pdfBuffer = await generateRentalContractFromTemplate(contractData as unknown as Reservation, template);
-      
-      // Save as versioned document
-      if (vehicle) {
-        try {
-          const sanitizedPlate = vehicle.licensePlate.replace(/[^a-zA-Z0-9]/g, '');
-          const contractsBaseDir = path.join(getUploadsDir(), 'contracts');
-          const vehicleContractsDir = path.join(contractsBaseDir, sanitizedPlate);
-          
-          // Create directories if they don't exist
-          if (!fs.existsSync(contractsBaseDir)) {
-            fs.mkdirSync(contractsBaseDir, { recursive: true });
-          }
-          
-          if (!fs.existsSync(vehicleContractsDir)) {
-            fs.mkdirSync(vehicleContractsDir, { recursive: true });
-          }
-          
-          // Format date for filename
-          const today = new Date();
-          const currentDate = today.getFullYear().toString() + 
-                             (today.getMonth() + 1).toString().padStart(2, '0') + 
-                             today.getDate().toString().padStart(2, '0');
-          
-          // Create a unique filename based on license plate and date
-          const filename = `${sanitizedPlate}_contract_${currentDate}.pdf`;
-          const filePath = path.join(vehicleContractsDir, filename);
-          
-          // Save the file
-          fs.writeFileSync(filePath, pdfBuffer);
-          console.log(`Contract successfully saved to: ${filePath}`);
-          
-          // Check for existing unsigned contracts for this reservation to determine version number
-          const existingDocs = await storage.getDocumentsByReservation(reservationId);
-          const existingContracts = existingDocs.filter(doc => 
-            doc.documentType?.startsWith('Contract (Unsigned)')
-          );
-          
-          // Determine version number
-          let versionNumber = 1;
-          if (existingContracts.length > 0) {
-            // Extract version numbers from existing contracts
-            const versions = existingContracts.map(doc => {
-              const match = doc.documentType?.match(/Contract \(Unsigned\)(?: (\d+))?/);
-              return match && match[1] ? parseInt(match[1]) : 1;
-            });
-            versionNumber = Math.max(...versions) + 1;
-          }
-          
-          // Create document entry for the contract
-          const documentData = {
-            vehicleId: vehicleId,
-            reservationId: reservationId,
-            documentType: versionNumber > 1 ? `Contract (Unsigned) ${versionNumber}` : 'Contract (Unsigned)',
-            fileName: filename,
-            filePath: getRelativePath(filePath),
-            fileSize: pdfBuffer.length,
-            contentType: 'application/pdf',
-            createdBy: req.user ? req.user.username : 'System',
-            notes: versionNumber > 1 
-              ? `Auto-generated unsigned contract (version ${versionNumber}) with current form data for reservation #${reservationId}`
-              : `Auto-generated unsigned contract with current form data for reservation #${reservationId}`
-          };
-          
-          const document = await storage.createDocument(documentData);
-          console.log(`✅ Created document entry for unsigned contract (version ${versionNumber}): ID ${document.id}`);
-          
-          // Broadcast real-time update to all connected clients
-          realtimeEvents.documents.created(document);
-        } catch (docError) {
-          console.error('Error registering contract as document:', docError);
-          // Continue even if document registration fails
-        }
-      }
-      
+      const pdfBuffer = await generateRentalContractFromTemplate(
+        contractData as unknown as Reservation,
+        versionedSelection.template,
+      );
+
+      const versionedDocument = await registerGeneratedDocument({
+        documentType: DOCUMENT_TYPE_CONTRACT_UNSIGNED,
+        bytes: pdfBuffer,
+        vehicleId: bodyVehicleId,
+        vehiclePlate: vehicle.licensePlate,
+        reservationId,
+        createdBy: req.user ? req.user.username : 'System',
+        notes: `Unsigned contract generated from the reservation form for reservation #${reservationId}`,
+      });
+      realtimeEvents.documents.created(versionedDocument);
+
       // Set headers for PDF download
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename=rental_contract_${reservationId}_v${Date.now()}.pdf`);
@@ -6313,85 +6098,34 @@ export async function registerRoutes(app: Express): Promise<void> {
         reservation.customer = await storage.getCustomer(reservation.customerId);
       }
 
-      // Get the default PDF template
-      const defaultTemplate = await storage.getDefaultPdfTemplate();
-      
-      let pdfBuffer: Buffer;
-      
-      if (defaultTemplate) {
-        console.log(`Generating contract with default template: ${defaultTemplate.name} (ID: ${defaultTemplate.id})`);
-        
-        // Make sure the template fields are properly formatted
-        if (defaultTemplate.fields && typeof defaultTemplate.fields === 'string') {
-          try {
-            const parsedFields = JSON.parse(defaultTemplate.fields);
-            defaultTemplate.fields = parsedFields;
-          } catch (e) {
-            console.error('Error parsing default template fields:', e);
-          }
-        }
-        
-        // Use the imported function from pdf-generator.ts
-        const { generateRentalContractFromTemplate } = await import('./utils/pdf-generator');
-        pdfBuffer = await generateRentalContractFromTemplate(reservation, defaultTemplate);
-        console.log("Successfully generated PDF with default template");
-      } else {
-        console.log("No default template found, using standard template");
-        // Fall back to standard template if no default template is available
-        const { generateRentalContract } = await import('./utils/pdf-generator');
-        pdfBuffer = await generateRentalContract(reservation);
+      // BUG-119: refuse a maintenance block / placeholder / customer-less row.
+      const defaultRefusal = contractGenerationRefusal(reservation as any);
+      if (defaultRefusal) {
+        return res.status(400).json({ message: defaultRefusal });
       }
-      
-      // Save the unsigned contract to documents (linked to both reservation and vehicle)
-      if (reservation.vehicleId && reservation.vehicle) {
-        try {
-          const timestamp = Date.now();
-          const dateString = format(new Date(), 'yyyy-MM-dd');
-          // Guard against missing license plate
-          const licensePlate = reservation.vehicle.licensePlate || 'UNKNOWN';
-          const sanitizedPlate = licensePlate.replace(/[^a-zA-Z0-9]/g, '');
-          const documentType = 'Contract (Unsigned)';
-          
-          // Create directory structure for contracts
-          const vehicleDir = path.join(uploadsDir, sanitizedPlate, 'contracts');
-          if (!fs.existsSync(vehicleDir)) {
-            fs.mkdirSync(vehicleDir, { recursive: true });
-          }
-          
-          // Generate filename
-          const fileName = `${sanitizedPlate}_Contract_Unsigned_${dateString}_${timestamp}.pdf`;
-          const filePath = path.join(vehicleDir, fileName);
-          const relativeFilePath = `uploads/${sanitizedPlate}/contracts/${fileName}`;
-          
-          // Write PDF to file system
-          fs.writeFileSync(filePath, pdfBuffer);
-          console.log(`✅ Saved unsigned contract to: ${relativeFilePath}`);
-          
-          // Create document record linked to both reservation and vehicle
-          const documentData = {
-            vehicleId: reservation.vehicleId,
-            reservationId: reservationId,
-            documentType: documentType,
-            fileName: fileName,
-            filePath: relativeFilePath,
-            fileSize: pdfBuffer.length,
-            contentType: 'application/pdf',
-            uploadDate: new Date().toISOString(),
-            notes: 'Auto-generated unsigned contract',
-            createdBy: req.user?.username || 'system'
-          };
-          
-          const savedDocument = await storage.createDocument(documentData);
-          console.log(`✅ Created document record for unsigned contract`);
-          
-          // Broadcast real-time update to all connected clients
-          realtimeEvents.documents.created(savedDocument);
-        } catch (saveError) {
-          // Log the error but don't fail the PDF download
-          console.error('⚠️ Error saving contract to documents (PDF will still download):', saveError);
-        }
+
+      const defaultSelection = await selectContractTemplate();
+      if (!defaultSelection.ok) {
+        return res.status(defaultSelection.status).json({ message: defaultSelection.message });
       }
-      
+
+      const { generateRentalContractFromTemplate } = await import('./utils/pdf-generator');
+      const pdfBuffer = await generateRentalContractFromTemplate(reservation, defaultSelection.template);
+
+      // BUG-165: this used to pass `uploadDate: new Date().toISOString()` — a
+      // string into a timestamp column — so the insert threw on EVERY call,
+      // the catch swallowed it, and the contract was never registered.
+      const savedDocument = await registerGeneratedDocument({
+        documentType: DOCUMENT_TYPE_CONTRACT_UNSIGNED,
+        bytes: pdfBuffer,
+        vehicleId: reservation.vehicleId ?? null,
+        vehiclePlate: reservation.vehicle?.licensePlate ?? null,
+        reservationId,
+        createdBy: req.user?.username || 'system',
+        notes: 'Auto-generated unsigned contract',
+      });
+      realtimeEvents.documents.created(savedDocument);
+
       // Set headers for PDF download
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename=contract_${reservationId}_unsigned.pdf`);
@@ -6505,21 +6239,12 @@ export async function registerRoutes(app: Express): Promise<void> {
         mileage: vehicle.currentMileage || undefined,
       };
 
-      // Prepare reservation data
-      let reservationData;
-      if (reservation.customer) {
-        const startDate = new Date(reservation.startDate);
-        const endDate = reservation.endDate ? new Date(reservation.endDate) : new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-        const rentalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-        
-        reservationData = {
-          contractNumber: `C-${reservationId}-${format(new Date(), 'yyyyMMdd')}`,
-          customerName: `${reservation.customer.firstName} ${reservation.customer.lastName}`,
-          startDate: format(startDate, 'dd-MM-yyyy'),
-          endDate: format(endDate, 'dd-MM-yyyy'),
-          rentalDays
-        };
-      }
+      // BUG-166: one builder, and it reads the `name` column the app actually
+      // fills instead of the two nullable ones it does not — this is where
+      // "null null" was printed on the customer's copy.
+      const reservationData = reservation.customer
+        ? buildDamageCheckReservationData(reservation as any, reservation.customer as any)
+        : undefined;
 
       // Pick up the latest interactive damage check for this reservation so
       // all ticked checkboxes and recorded answers carry through to the PDF.
@@ -6542,76 +6267,20 @@ export async function registerRoutes(app: Express): Promise<void> {
         latestInteractiveCheck,
       );
 
-      // Save the damage check to documents (linked to both reservation and vehicle)
-      if (reservation.vehicleId && reservation.vehicle) {
-        try {
-          const timestamp = Date.now();
-          const dateString = format(new Date(), 'yyyy-MM-dd');
-          const licensePlate = reservation.vehicle.licensePlate || 'UNKNOWN';
-          const sanitizedPlate = licensePlate.replace(/[^a-zA-Z0-9]/g, '');
-          
-          // Create directory structure for damage checks
-          const vehicleDir = path.join(uploadsDir, sanitizedPlate, 'damage-checks');
-          if (!fs.existsSync(vehicleDir)) {
-            fs.mkdirSync(vehicleDir, { recursive: true });
-          }
-          
-          // Check for existing damage checks for this reservation to determine version number
-          const existingDocs = await storage.getDocumentsByReservation(reservationId);
-          const existingDamageChecks = existingDocs.filter(doc => 
-            doc.documentType?.startsWith('Damage Check (Unsigned)')
-          );
-          
-          // Determine version number
-          let versionNumber = 1;
-          if (existingDamageChecks.length > 0) {
-            const versions = existingDamageChecks.map(doc => {
-              const match = doc.documentType?.match(/Damage Check \(Unsigned\)(?: (\d+))?/);
-              return match && match[1] ? parseInt(match[1]) : 1;
-            });
-            versionNumber = Math.max(...versions) + 1;
-          }
-          
-          // Generate filename with version
-          const versionSuffix = versionNumber > 1 ? `_v${versionNumber}` : '';
-          const fileName = `${sanitizedPlate}_DamageCheck_Unsigned_${dateString}${versionSuffix}_${timestamp}.pdf`;
-          const filePath = path.join(vehicleDir, fileName);
-          const relativeFilePath = `uploads/${sanitizedPlate}/damage-checks/${fileName}`;
-          
-          // Write PDF to file system
-          fs.writeFileSync(filePath, pdfBuffer);
-          console.log(`✅ Saved unsigned damage check to: ${relativeFilePath}`);
-          
-          // Create document record linked to both reservation and vehicle
-          const documentType = versionNumber > 1 
-            ? `Damage Check (Unsigned) ${versionNumber}`
-            : 'Damage Check (Unsigned)';
-          
-          const documentData = {
-            vehicleId: reservation.vehicleId,
-            reservationId: reservationId,
-            documentType: documentType,
-            fileName: fileName,
-            filePath: relativeFilePath,
-            fileSize: pdfBuffer.length,
-            contentType: 'application/pdf',
-            uploadDate: new Date().toISOString(),
-            notes: versionNumber > 1 
-              ? `Auto-generated unsigned damage check (version ${versionNumber})`
-              : 'Auto-generated unsigned damage check',
-            createdBy: req.user?.username || 'system'
-          };
-          
-          const savedDocument = await storage.createDocument(documentData);
-          console.log(`✅ Created document record for unsigned damage check (version ${versionNumber})`);
-          
-          // Broadcast real-time update to all connected clients
-          realtimeEvents.documents.created(savedDocument);
-        } catch (saveError) {
-          console.error('⚠️ Error saving damage check to documents (PDF will still download):', saveError);
-        }
-      }
-      
+      // BUG-165: this used to pass `uploadDate` as a string into a timestamp
+      // column, so the row insert threw on every single call and the damage
+      // check never appeared in the dossier. FIX-O owns the write now.
+      const savedDamageCheck = await registerGeneratedDocument({
+        documentType: DOCUMENT_TYPE_DAMAGE_CHECK_UNSIGNED,
+        bytes: pdfBuffer,
+        vehicleId: reservation.vehicleId ?? null,
+        vehiclePlate: reservation.vehicle?.licensePlate ?? null,
+        reservationId,
+        createdBy: req.user?.username || 'system',
+        notes: 'Auto-generated unsigned damage check',
+      });
+      realtimeEvents.documents.created(savedDamageCheck);
+
       // Set headers for PDF download
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename=damage_check_${reservationId}_unsigned.pdf`);
@@ -7047,33 +6716,30 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Import PDF generator - use template-based generator
       const { generateDamageCheckPDFWithTemplate } = await import('./pdf-damage-check-generator');
       
-      // Get current or upcoming reservation for this vehicle (optional)
+      // BUG-183: this used to fall back to `reservations[0]` — an arbitrary,
+      // often long-finished rental — so a blank damage check for a vehicle
+      // printed a previous customer's name, contract number and dates. Only a
+      // rental that is genuinely running today belongs on the form; when there
+      // is none, the rental block stays empty and the crew fills it in by hand.
       let reservationData;
       try {
         const reservations = await storage.getReservationsByVehicle(vehicleId);
-        const currentReservation = reservations.find(r => {
+        const now = new Date();
+        const runningToday = reservations.find(r => {
+          if (r.type === 'maintenance_block') return false;
+          if (r.status === 'cancelled' || r.status === 'completed') return false;
           const start = new Date(r.startDate);
-          const now = new Date();
-          const end = r.endDate ? new Date(r.endDate) : now; // open-ended rental counts as current
-          return start <= now && end >= now;
-        }) || reservations[0];
-        
-        if (currentReservation) {
-          const customer = currentReservation.customerId 
-            ? await storage.getCustomer(currentReservation.customerId)
+          if (Number.isNaN(start.getTime()) || start > now) return false;
+          if (!r.endDate) return true; // open-ended rental that has already started
+          const end = new Date(r.endDate);
+          return !Number.isNaN(end.getTime()) && end >= now;
+        });
+
+        if (runningToday) {
+          const customer = runningToday.customerId
+            ? await storage.getCustomer(runningToday.customerId)
             : null;
-          
-          const startDate = new Date(currentReservation.startDate);
-          const endDate = currentReservation.endDate ? new Date(currentReservation.endDate) : new Date();
-          const rentalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-          
-          reservationData = {
-            contractNumber: `#${currentReservation.id}`,
-            customerName: customer ? `${customer.firstName} ${customer.lastName}` : 'N/A',
-            startDate: format(startDate, 'dd-MM-yyyy'),
-            endDate: format(endDate, 'dd-MM-yyyy'),
-            rentalDays
-          };
+          reservationData = buildDamageCheckReservationData(runningToday as any, customer as any);
         }
       } catch (err) {
         console.warn("Could not fetch reservation data:", err);
@@ -8063,9 +7729,22 @@ export async function registerRoutes(app: Express): Promise<void> {
         });
       }
 
-      const template = templateId
-        ? await storage.getTransportReportTemplate(templateId)
-        : await storage.getDefaultTransportReportTemplate();
+      // BUG-156: an unknown templateId used to leave `template` undefined and
+      // the report was drawn with the default layout, so the operator got a
+      // letter in a layout they had not chosen and no indication of it.
+      let template;
+      if (templateId !== undefined && templateId !== null) {
+        const parsedTemplateId = parseInt(String(templateId), 10);
+        if (!Number.isInteger(parsedTemplateId) || parsedTemplateId <= 0) {
+          return res.status(400).json({ message: "Invalid template ID" });
+        }
+        template = await storage.getTransportReportTemplate(parsedTemplateId);
+        if (!template) {
+          return res.status(404).json({ message: "Transport report template not found" });
+        }
+      } else {
+        template = await storage.getDefaultTransportReportTemplate();
+      }
 
       const { generateTransportReportsPdf } = await import('./utils/pdf-generator');
       const pdfBuffer = await generateTransportReportsPdf(transports, template);
