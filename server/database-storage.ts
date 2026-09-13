@@ -43,6 +43,7 @@ import {
   assertReservationStatusValue,
   normalizeReservationStatus,
   CLOSED_RESERVATION_STATUSES,
+  selectMaintenanceBlocksToClose,
   type AvailabilityReservation,
   type VehicleAvailability,
   type HandoverOverride,
@@ -4789,6 +4790,127 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return updatedReservation || undefined;
+  }
+
+  /**
+   * PHASE 57 / WAVE 13 item 4 — "Terug van onderhoud" as the whole handling.
+   *
+   * `closeReplacementReservation()` above closes the spare and nothing else,
+   * which is exactly what the button did: the original car kept
+   * `maintenance_status = in_service`, stayed `needs_fixing`, and the employee
+   * was told in the manual to go and free it by hand afterwards. Half a
+   * business event, done twice a day.
+   *
+   * This is the event: the spare is handed back, the repair that was running
+   * on the return date is closed, and the car's availability is derived again
+   * by the one owner (`markVehicleForService` → `recomputeVehicleAvailability`
+   * → `deriveVehicleAvailability`). A block planned for a later date is left
+   * standing — `selectMaintenanceBlocksToClose()` is the rule, shared with the
+   * scan screen.
+   *
+   * All writes are in one transaction, like `completeMaintenance()`: a failure
+   * halfway leaves none of them.
+   */
+  async returnVehicleFromService(
+    replacementReservationId: number,
+    returnDate: string,
+    actor?: { username?: string | null },
+  ): Promise<
+    | { ok: false; status: number; message: string }
+    | { ok: true; spare: Reservation; vehicle: Vehicle | null; closedBlocks: Reservation[] }
+  > {
+    const [spare] = await db.select().from(reservations).where(
+      and(eq(reservations.id, replacementReservationId), isNull(reservations.deletedAt)),
+    );
+    if (!spare) {
+      return { ok: false, status: 404, message: 'Deze reservering bestaat niet (meer).' };
+    }
+    if (!spare.replacementForReservationId) {
+      // The guard that used to live in the `where` clause of the UPDATE: the id
+      // of an ordinary rental must never close that rental.
+      return {
+        ok: false,
+        status: 404,
+        message: 'Deze reservering is geen vervangingsreservering, dus er is hier niets terug te nemen van onderhoud.',
+      };
+    }
+
+    const [original] = await db.select().from(reservations).where(
+      and(eq(reservations.id, spare.replacementForReservationId), isNull(reservations.deletedAt)),
+    );
+    const originalVehicleId = original?.vehicleId ?? null;
+
+    // Read outside the transaction: this walks the reservation table and must
+    // not hold the block's row lock while it does.
+    const blocksToClose = originalVehicleId
+      ? selectMaintenanceBlocksToClose(
+          await db.select().from(reservations).where(
+            and(
+              eq(reservations.vehicleId, originalVehicleId),
+              eq(reservations.type, 'maintenance_block'),
+              isNull(reservations.deletedAt),
+            ),
+          ),
+          returnDate,
+        )
+      : [];
+
+    const result = await db.transaction(async (tx) => {
+      const [closedSpare] = await tx
+        .update(reservations)
+        .set({
+          endDate: returnDate,
+          status: 'completed',
+          spareVehicleStatus: 'returned',
+          updatedBy: actor?.username ?? null,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(reservations.id, replacementReservationId), isNull(reservations.deletedAt)))
+        .returning();
+
+      const closedBlocks: Reservation[] = [];
+      for (const block of blocksToClose) {
+        const [row] = await tx
+          .update(reservations)
+          .set({
+            // Same date convention as completeMaintenance(): the completion
+            // date is the end date and the start is never rewritten.
+            endDate: returnDate,
+            maintenanceStatus: 'out',
+            status: 'completed',
+            updatedBy: actor?.username ?? null,
+            updatedAt: new Date(),
+          })
+          .where(and(eq(reservations.id, block.id), isNull(reservations.deletedAt)))
+          .returning();
+        if (row) closedBlocks.push(row);
+      }
+
+      // Closing the job is the one moment B-03's sticky workshop flag may be
+      // cleared, and markVehicleForService() is where that rule lives. It
+      // recomputes availability from deriveVehicleAvailability() — by now the
+      // blocks above are closed inside this same transaction, so the derivation
+      // sees the state that will actually be committed.
+      const vehicle = originalVehicleId
+        ? await this.markVehicleForService(originalVehicleId, 'ok', undefined, tx)
+        : null;
+
+      return { closedSpare, vehicle: vehicle ?? null, closedBlocks };
+    });
+
+    // The spare's own car only became free a moment ago; its derivation runs on
+    // its own connection, outside the transaction, for the same reason
+    // completeMaintenance() does it here.
+    if (result.closedSpare?.vehicleId) {
+      await this.recomputeVehicleAvailability(result.closedSpare.vehicleId);
+    }
+
+    return {
+      ok: true,
+      spare: result.closedSpare,
+      vehicle: result.vehicle,
+      closedBlocks: result.closedBlocks,
+    };
   }
 
   // dbExecutor lets a caller pass an open `tx` (from db.transaction(...)) so this

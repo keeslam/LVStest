@@ -715,8 +715,9 @@
     "submitButton": "Terug van onderhoud",
     "toasts": {
       "successTitle": "Voertuig teruggekeerd van onderhoud",
-      "successDescription": "Het voertuig is succesvol teruggekeerd van onderhoud en de vervanging is beëindigd.",
-      "errorTitle": "Fout"
+      "successDescription": "Het voertuig staat weer op beschikbaar, het onderhoudsblok van vandaag is afgesloten en de vervangende reservering is beëindigd.",
+      "errorTitle": "Terugnemen van onderhoud is niet gelukt",
+      "noReplacement": "Bij deze reservering hoort geen vervangende reservering, dus er is hier niets terug te nemen van onderhoud."
     }
   },
   "viewDialog": {

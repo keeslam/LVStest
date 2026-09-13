@@ -69,21 +69,17 @@ export function ReturnFromServiceDialog({
   const returnFromServiceMutation = useMutation({
     mutationFn: async (data: ReturnFromServiceFormData) => {
       if (!replacementReservation) {
-        throw new Error("No replacement reservation found");
+        // WAVE 13 item 7 — Dutch, and about this dialog rather than about a
+        // request that was never made.
+        throw new Error(t('returnFromServiceDialog.toasts.noReplacement'));
       }
 
-      const response = await apiRequest("POST", `/api/reservations/${replacementReservation.id}/return-from-service`, {
-        body: JSON.stringify(data),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to return vehicle from service");
-      }
-
+      // `apiRequest` already throws on a non-2xx, carrying the server's message.
+      const response = await apiRequest(
+        "POST",
+        `/api/reservations/${replacementReservation.id}/return-from-service`,
+        data,
+      );
       return response.json();
     },
     onSuccess: () => {

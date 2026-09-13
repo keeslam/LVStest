@@ -4594,40 +4594,57 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
-  // Return vehicle from service and close replacement
+  /**
+   * PHASE 57 / WAVE 13 item 4 — "Terug van onderhoud" did half the job.
+   *
+   * It closed the replacement reservation and stopped: the original car stayed
+   * `in_service` / `needs_fixing` and the open block kept blocking the
+   * calendar, so the manual had to tell people to free the car by hand
+   * afterwards. `storage.returnVehicleFromService()` is the whole event, and
+   * the availability that comes out of it is derived by the one owner in
+   * `server/services/lifecycle.ts`.
+   */
   app.post("/api/reservations/:id/return-from-service", hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
     try {
       const replacementReservationId = parseInt(req.params.id);
       if (isNaN(replacementReservationId)) {
-        return res.status(400).json({ message: "Invalid replacement reservation ID" });
+        return res.status(400).json({ message: "Ongeldig reserveringsnummer." });
       }
-      
-      const { returnDate, mileage } = req.body;
-      
+
+      const { returnDate } = req.body;
+
       if (!returnDate) {
-        return res.status(400).json({ message: "returnDate is required" });
+        return res.status(400).json({ message: "Vul een inleverdatum in." });
       }
-      
-      // Close the replacement reservation
-      const updatedReservation = await storage.closeReplacementReservation(
-        replacementReservationId,
-        returnDate
-      );
-      
-      if (!updatedReservation) {
-        return res.status(404).json({ 
-          message: "Replacement reservation not found or invalid" 
+      if (typeof returnDate !== 'string' || !isCalendarDate(returnDate)) {
+        return res.status(400).json({
+          message: "De inleverdatum is geen bestaande datum.",
+          errors: [{ field: "returnDate", message: "Gebruik een echte datum (jjjj-mm-dd)" }],
         });
       }
-      
-      res.json({
-        message: "Vehicle returned from service successfully",
-        reservation: updatedReservation
+
+      const result = await storage.returnVehicleFromService(replacementReservationId, returnDate, {
+        username: (req.user as any)?.username ?? null,
       });
-      
+
+      if (!result.ok) {
+        return res.status(result.status).json({ message: result.message });
+      }
+
+      if (result.vehicle) realtimeEvents.vehicles.updated(result.vehicle);
+      realtimeEvents.reservations.updated(result.spare);
+      for (const block of result.closedBlocks) realtimeEvents.reservations.updated(block);
+
+      res.json({
+        message: "Het voertuig is terug van onderhoud.",
+        reservation: result.spare,
+        vehicle: result.vehicle,
+        closedBlocks: result.closedBlocks,
+      });
+
     } catch (error) {
       console.error("Error returning vehicle from service:", error);
-      res.status(500).json({ message: "Error returning vehicle from service" });
+      res.status(500).json({ message: "Terugnemen van onderhoud is niet gelukt." });
     }
   });
 
@@ -4684,16 +4701,19 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       
       const activeReplacement = await storage.getActiveReplacementByOriginal(originalReservationId);
-      
-      if (!activeReplacement) {
-        return res.status(404).json({ message: "No active replacement found" });
-      }
-      
-      res.json(activeReplacement);
-      
+
+      // PHASE 57 / WAVE 13 items 4 and 7 — "there is no replacement" is an
+      // answer, not a failure. This used to be a 404, and the reservation
+      // dialog asks it for *every* standard rental, so the query cache's
+      // error handler fired the red toast "Could not load the data — No
+      // active replacement found" on opening a perfectly ordinary rental and
+      // again after every unrelated action that invalidated it (Datums
+      // wijzigen, for one). `null` is the honest answer.
+      res.json(activeReplacement ?? null);
+
     } catch (error) {
       console.error("Error getting active replacement:", error);
-      res.status(500).json({ message: "Error getting active replacement" });
+      res.status(500).json({ message: "De vervangende reservering kon niet worden opgehaald." });
     }
   });
 

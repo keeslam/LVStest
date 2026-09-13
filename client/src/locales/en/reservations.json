@@ -715,8 +715,9 @@
     "submitButton": "Return from Service",
     "toasts": {
       "successTitle": "Vehicle returned from service",
-      "successDescription": "The vehicle has been successfully returned from service and the replacement ended.",
-      "errorTitle": "Error"
+      "successDescription": "The vehicle is available again, today's maintenance block is closed and the replacement reservation has ended.",
+      "errorTitle": "Could not return the vehicle from service",
+      "noReplacement": "This reservation has no replacement reservation, so there is nothing to return from service here."
     }
   },
   "viewDialog": {

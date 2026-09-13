@@ -134,6 +134,19 @@ export interface IStorage {
   createReplacementReservation(originalReservationId: number, spareVehicleId: number, startDate: string, endDate?: string): Promise<Reservation>;
   updateLegacyNotesWithVehicleDetails(): Promise<number>;
   closeReplacementReservation(replacementReservationId: number, endDate: string): Promise<Reservation | undefined>;
+  /**
+   * WAVE 13 item 4 — "Terug van onderhoud" as the whole business event: the
+   * spare is handed back, the repair running on `returnDate` is closed, and
+   * the original vehicle's availability is derived again by the one owner.
+   */
+  returnVehicleFromService(
+    replacementReservationId: number,
+    returnDate: string,
+    actor?: { username?: string | null },
+  ): Promise<
+    | { ok: false; status: number; message: string }
+    | { ok: true; spare: Reservation; vehicle: Vehicle | null; closedBlocks: Reservation[] }
+  >;
   markVehicleForService(vehicleId: number, maintenanceStatus: string, maintenanceNote?: string): Promise<Vehicle | undefined>;
   createMaintenanceBlock(vehicleId: number, startDate: string, endDate?: string, customerId?: number | null): Promise<Reservation>;
   // OPT-015 - "de reparatie is klaar" as ONE transactional action.

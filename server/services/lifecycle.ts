@@ -255,6 +255,55 @@ export function isOpenBlockMaintenanceStatus(raw: unknown): boolean {
   return value === "scheduled" || value === "in" || value === "in_service";
 }
 
+/** The shape both "terug uit onderhoud" paths hand to `selectMaintenanceBlocksToClose`. */
+export interface ClosableMaintenanceBlock {
+  id: number;
+  type?: string | null;
+  status?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  maintenanceStatus?: string | null;
+  deletedAt?: Date | string | null;
+}
+
+/**
+ * PHASE 57 / WAVE 13 items 4 and 5 — **the** rule for which maintenance block
+ * "terug uit onderhoud" closes.
+ *
+ * The scan screen's `PATCH /api/vehicles/:id/maintenance-status` used to close
+ * every open block whose end date had not passed. On a car with a repair
+ * running today *and* one planned for October that closed both: the October
+ * block went to `out`, vanished from the maintenance calendar, and nobody was
+ * told. A block that has not started is not finished by handing today's car
+ * back.
+ *
+ * So: only the block that actually covers `onDate` (or, when the caller names
+ * one, exactly that block). An open-ended block counts as covering every day
+ * from its start. Everything else is left alone.
+ */
+export function selectMaintenanceBlocksToClose(
+  blocks: readonly ClosableMaintenanceBlock[],
+  onDate: string,
+  explicitBlockId?: number | null,
+): ClosableMaintenanceBlock[] {
+  const open = blocks.filter(
+    (block) =>
+      (block.type ?? "maintenance_block") === "maintenance_block" &&
+      !block.deletedAt &&
+      !CLOSED_RESERVATION_STATUSES.has(normalizeReservationStatus(block.status) ?? "") &&
+      isOpenBlockMaintenanceStatus(block.maintenanceStatus),
+  );
+
+  if (explicitBlockId != null) {
+    return open.filter((block) => block.id === explicitBlockId);
+  }
+
+  return open.filter((block) => {
+    const end = block.endDate === null || block.endDate === undefined || block.endDate === "" ? null : block.endDate;
+    return block.startDate <= onDate && (end === null || end >= onDate);
+  });
+}
+
 /* ------------------------------------------------------------------ *
  * Transport status  (used by FIX-W; the table lives here so there is
  * exactly one place that knows what a status may become)
