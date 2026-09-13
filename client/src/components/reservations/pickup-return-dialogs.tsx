@@ -14,6 +14,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import type { Reservation, Vehicle } from "@shared/schema";
+import { formatReservationStatus } from "@/lib/format-utils";
 import { formatDutchDate } from "@shared/booking-warnings";
 import { needsRemarkConfirmation, hasRemarks } from "@shared/remark-confirmation";
 import { Car, Fuel, Calendar, FileText, ClipboardCheck, ExternalLink, CheckCircle2, Edit, Trash2, Upload, AlertTriangle } from "lucide-react";
@@ -1132,7 +1133,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
                   {duplicateReservationInfo.customer && (
                     <div><strong>{t('pickupReturn.common.customerLabel')}</strong> {duplicateReservationInfo.customer.name}</div>
                   )}
-                  <div><strong>{t('pickupReturn.common.statusLabel')}</strong> {duplicateReservationInfo.status}</div>
+                  <div><strong>{t('pickupReturn.common.statusLabel')}</strong> {formatReservationStatus(duplicateReservationInfo.status)}</div>
                 </div>
               )}
             </div>

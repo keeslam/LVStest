@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { ExpenseChart, type ExpenseChartData } from "@/components/reports/expense-chart";
 import { UtilizationChart, type UtilizationChartData } from "@/components/reports/utilization-chart";
 import { Vehicle, Expense, Reservation, Customer, VehicleTransport } from "@shared/schema";
-import { formatDate, formatCurrency, formatLicensePlate, sumMoney, plateMatches } from "@/lib/format-utils";
+import { formatDate, formatCurrency, formatLicensePlate, sumMoney, plateMatches, formatExpenseCategory } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { isTrueValue } from "@/lib/utils";
 import { addDays, subMonths, subDays, startOfMonth, endOfMonth, isWithinInterval, differenceInDays, parseISO, startOfDay } from "date-fns";
@@ -518,7 +518,8 @@ export default function ReportsPage() {
   // Prepare expense chart data
   const expenseChartData: ExpenseChartData[] = Object.entries(expensesByCategory)
     .map(([category, amount]) => ({
-      name: category.charAt(0).toUpperCase() + category.slice(1),
+      // WAVE 14 item 4 — the chart legend showed the stored English value.
+      name: formatExpenseCategory(category),
       expenses: amount
     }))
     .sort((a, b) => b.expenses - a.expenses);
@@ -897,7 +898,7 @@ export default function ReportsPage() {
             </div>
             <h1>${t('reportsPage.printReport.reportTitles.expenses')}</h1>
             <div class="report-meta">
-              ${t('reportsPage.printReport.dateRangeLabel', { range: dateRangeString })}${selectedCategory !== 'all' ? t('reportsPage.printReport.categorySuffix', { category: selectedCategory }) : ''}
+              ${t('reportsPage.printReport.dateRangeLabel', { range: dateRangeString })}${selectedCategory !== 'all' ? t('reportsPage.printReport.categorySuffix', { category: formatExpenseCategory(selectedCategory) }) : ''}
               ${selectedVehicle !== 'all' ? t('reportsPage.printReport.vehicleSuffix', { plate: vehicles.find(v => v.id.toString() === selectedVehicle)?.licensePlate || '' }) : ''}
             </div>
 
@@ -937,7 +938,7 @@ export default function ReportsPage() {
                       .sort(([_, a], [__, b]) => b - a)
                       .map(([category, amount]) => `
                         <tr>
-                          <td style="text-transform: capitalize;">${esc(category)}</td>
+                          <td>${esc(formatExpenseCategory(category))}</td>
                           <td>${filteredExpenses.filter(e => e.category === category).length}</td>
                           <td>${formatCurrency(Number(amount))}</td>
                         </tr>
@@ -971,7 +972,7 @@ export default function ReportsPage() {
                             <td>${vehicle
                               ? `${esc(vehicle.brand)} ${esc(vehicle.model)} (${esc(formatLicensePlate(vehicle.licensePlate))})`
                               : t('reportsPage.common.unknownVehicle')}</td>
-                            <td style="text-transform: capitalize;">${esc(expense.category)}</td>
+                            <td>${esc(formatExpenseCategory(expense.category))}</td>
                             <td>${esc(expense.description)}</td>
                             <td>${formatCurrency(Number(expense.amount))}</td>
                           </tr>
@@ -1160,7 +1161,7 @@ export default function ReportsPage() {
                             .sort(([_, a], [__, b]) => b - a)
                             .map(([category, amount]) => `
                               <tr>
-                                <td style="text-transform: capitalize;">${esc(category)}</td>
+                                <td>${esc(formatExpenseCategory(category))}</td>
                                 <td>${formatCurrency(Number(amount))}</td>
                               </tr>
                             `).join('')
@@ -1670,7 +1671,7 @@ export default function ReportsPage() {
                       <div key={category} className="flex justify-between items-center">
                         <div className="flex items-center">
                           <div className="w-3 h-3 rounded-full bg-primary mr-2"></div>
-                          <span className="font-medium capitalize">{category}</span>
+                          <span className="font-medium">{formatExpenseCategory(category)}</span>
                         </div>
                         <div className="flex items-center space-x-4">
                           <span className="text-muted-foreground text-sm">
@@ -1721,7 +1722,7 @@ export default function ReportsPage() {
                                 ? `${vehicle.brand} ${vehicle.model} (${formatLicensePlate(vehicle.licensePlate)})`
                                 : t('reportsPage.common.unknownVehicle')}
                             </TableCell>
-                            <TableCell className="capitalize">{expense.category}</TableCell>
+                            <TableCell>{formatExpenseCategory(expense.category)}</TableCell>
                             <TableCell>{expense.description}</TableCell>
                             <TableCell className="text-right">{<Price value={Number(expense.amount)} />}</TableCell>
                           </TableRow>

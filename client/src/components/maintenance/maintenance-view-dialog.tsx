@@ -38,6 +38,7 @@ import { parseISO } from "date-fns";
 // BUG-223: Dutch dates on a Dutch screen — formatNl is date-fns' format
 // with the nl locale applied, so every call below writes "11 sep 2026".
 import { formatNl as format } from "@/lib/format-date-nl";
+import { formatVehicleType } from "@/lib/format-utils";
 import { useState } from "react";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
@@ -450,7 +451,7 @@ export function MaintenanceViewDialog({
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground">{t('viewDialog.type')}</label>
-                    <div className="font-medium">{vehicle.vehicleType || t('viewDialog.na')}</div>
+                    <div className="font-medium">{formatVehicleType(vehicle.vehicleType) || t('viewDialog.na')}</div>
                   </div>
                 </div>
               </div>

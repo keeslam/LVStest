@@ -16,6 +16,8 @@
       "insurance": "Insurance",
       "registration": "Registration",
       "cleaning": "Cleaning",
+      "parking": "Parking",
+      "toll": "Toll",
       "accessories": "Accessories",
       "other": "Other"
     },

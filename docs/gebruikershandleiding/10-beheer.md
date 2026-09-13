@@ -68,7 +68,7 @@ daaronder een raster met alle rechten. Je vinkt aan wat iemand nodig heeft. De b
 | Vinkje | Wat het toestaat |
 |---|---|
 | Gebruikers beheren | Accounts en rechten wijzigen, en de activiteitenlog bekijken |
-| Voertuigen bekijken / Voertuigen beheren | De vloot inzien / voertuigen toevoegen en wijzigen |
+| Voertuigen bekijken / Voertuigen beheren | Het wagenpark inzien / voertuigen toevoegen en wijzigen |
 | Klanten bekijken / Klanten beheren | Klantgegevens inzien / wijzigen |
 | Reserveringen bekijken / Reserveringen beheren | Huren inzien / boeken, wijzigen, ophalen en innemen |
 | **Documenten bekijken** | Documenten openen, downloaden en afdrukken |

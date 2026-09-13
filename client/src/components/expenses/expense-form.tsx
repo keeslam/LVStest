@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Vehicle } from "@shared/schema";
 import { format } from "date-fns";
-import { formatFileSize } from "@/lib/format-utils";
+import { formatFileSize, formatExpenseCategory, formatVehicleType } from "@/lib/format-utils";
 import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { InvoiceScanner } from "@/components/invoice-scanner";
@@ -53,20 +53,9 @@ const expenseCategories = [
   "Other"
 ];
 
-// Values are stored verbatim in the database, so they stay in English; only the
-// displayed label is translated via this key map.
-const EXPENSE_CATEGORY_KEYS: Record<string, string> = {
-  "Maintenance": "maintenance",
-  "Tires": "tires",
-  "Brakes": "brakes",
-  "Damage": "damage",
-  "Fuel": "fuel",
-  "Insurance": "insurance",
-  "Registration": "registration",
-  "Cleaning": "cleaning",
-  "Accessories": "accessories",
-  "Other": "other",
-};
+// WAVE 14 item 4 — the values are stored verbatim in the database, so they
+// stay in English; the displayed label comes from the one shared helper
+// (formatExpenseCategory) that the cost overview and the reports also use.
 
 // Maximum file size (25 MB) - matching server configuration
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
@@ -150,7 +139,7 @@ export function ExpenseForm({
       value: vehicle.id.toString(),
       label: `${vehicle.licensePlate} - ${vehicle.brand} ${vehicle.model}`,
       description: vehicle.fuel || undefined,
-      group: vehicle.vehicleType || 'Other',
+      group: formatVehicleType(vehicle.vehicleType) || formatVehicleType('Other'),
       tags: vehicle.vehicleType ? [vehicle.vehicleType] : [],
     }));
   }, [vehicles]);
@@ -411,7 +400,7 @@ export function ExpenseForm({
                       <SelectContent>
                         {expenseCategories.map((category) => (
                           <SelectItem key={category} value={category}>
-                            {t(`form.categories.${EXPENSE_CATEGORY_KEYS[category]}`)}
+                            {formatExpenseCategory(category)}
                           </SelectItem>
                         ))}
                       </SelectContent>

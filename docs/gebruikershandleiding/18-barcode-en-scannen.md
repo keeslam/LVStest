@@ -62,8 +62,8 @@ Controleer de verbinding en probeer opnieuw.*
 ### Bij een voertuig
 
 Bovenaan het resultaat staan het merk en model, een statuslabel en het kenteken met de barcode
-eronder. De statuslabels zijn hier: **Beschikbaar**, **Gereserveerd**, **Verhuurd**, **In
-reparatie** en **Niet voor verhuur**.
+eronder. De statuslabels zijn hier dezelfde als in de voertuigenlijst: **Beschikbaar**,
+**Gepland**, **Verhuurd**, **Reparatie nodig** en **Niet voor verhuur**.
 
 Scande je het reservesleutel-label, dan staat er het extra label **Reservesleutel** bij. Zo weet
 je zeker welke sleutel je in handen hebt.
@@ -77,7 +77,7 @@ Daaronder volgen, als ze er zijn, drie blokken:
   plus de knop **Reservering openen**. Is er niets, dan staat er *Geen actieve of aankomende
   reservering*.
 - **Onderhoud** (oranje) — met de werkplaatsstatus (**Onderhoud nodig** of **In onderhoud**) en
-  de stand van het onderhoudsblok (**Gepland**, **In werkplaats** of **Afgerond**), plus de knop
+  de stand van het onderhoudsblok (**Gepland**, **In werkplaats** of **Voltooid**), plus de knop
   **Onderhoudsblok openen**.
 - **Actief transport** — met de route en het label **Gepland** of **Onderweg**.
 

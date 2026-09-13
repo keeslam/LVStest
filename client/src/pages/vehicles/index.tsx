@@ -25,7 +25,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { ColumnDef } from "@tanstack/react-table";
 import { Vehicle, Reservation } from "@shared/schema";
-import { formatDate, formatLicensePlate } from "@/lib/format-utils";
+import { formatDate, formatLicensePlate, formatVehicleType } from "@/lib/format-utils";
 import { displayLicensePlate } from "@/lib/utils";
 import { isTrueValue } from "@/lib/utils";
 import { getDaysUntil } from "@/lib/date-utils";
@@ -362,7 +362,7 @@ export default function VehiclesIndex() {
       header: t('indexPage.typeColumn'),
       cell: ({ row }) => {
         const vehicleType = row.getValue("vehicleType") as string;
-        return vehicleType || t('indexPage.notAvailable');
+        return formatVehicleType(vehicleType) || t('indexPage.notAvailable');
       },
     },
     {

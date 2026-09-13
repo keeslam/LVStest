@@ -2,7 +2,7 @@
   "addDialog": {
     "addExpense": "Kosten toevoegen",
     "title": "Nieuwe kosten toevoegen",
-    "description": "Registreer nieuwe kosten voor je voertuigvloot"
+    "description": "Registreer nieuwe kosten voor je wagenpark"
   },
   "form": {
     "editTitle": "Kosten bewerken",
@@ -16,6 +16,8 @@
       "insurance": "Verzekering",
       "registration": "Registratie",
       "cleaning": "Schoonmaak",
+      "parking": "Parkeren",
+      "toll": "Tol",
       "accessories": "Accessoires",
       "other": "Overig"
     },

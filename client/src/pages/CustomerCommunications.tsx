@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Shield, Wrench, Users, Send, Calendar, Clock, CheckCircle, AlertTriangle, Edit, Trash2, Eye, Copy } from "lucide-react";
 import type { Vehicle, Customer } from "@shared/schema";
-import { formatLicensePlate, plateMatches } from "@/lib/format-utils";
+import { formatLicensePlate, plateMatches, formatVehicleType } from "@/lib/format-utils";
+import { formatDateNl } from "@/lib/format-date-nl";
 
 interface NotificationHistory {
   id: string;
@@ -989,7 +990,7 @@ export default function CustomerCommunications() {
                                  filterInfo.urgencyLevel === 'warning' ? t('customerCommunications.send.apk.apkWarning') : t('customerCommunications.send.apk.apkNotice')}
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                APK: {filterInfo.apkDate}
+                                {t('customerCommunications.send.apk.apkDateLabel', { date: formatDateNl(filterInfo.apkDate, 'short') })}
                                 {filterInfo.daysUntilAPK < 0 ?
                                   ` ${t('customerCommunications.send.apk.apkDaysOverdue', { days: Math.abs(filterInfo.daysUntilAPK) })}` :
                                   ` ${t('customerCommunications.send.apk.apkDaysRemaining', { days: filterInfo.daysUntilAPK })}`
@@ -1008,7 +1009,7 @@ export default function CustomerCommunications() {
                               </div>
                               <div className="text-xs text-muted-foreground">
                                 {filterInfo.lastMaintenanceDate ?
-                                  t('customerCommunications.send.maintenance.lastMaintenance', { date: filterInfo.lastMaintenanceDate, days: filterInfo.daysSinceLastMaintenance }) :
+                                  t('customerCommunications.send.maintenance.lastMaintenance', { date: formatDateNl(filterInfo.lastMaintenanceDate, 'short'), days: filterInfo.daysSinceLastMaintenance }) :
                                   t('customerCommunications.send.maintenance.noMaintenanceRecorded')
                                 }
                               </div>
@@ -1019,7 +1020,7 @@ export default function CustomerCommunications() {
 
                       <div className="flex items-center space-x-2">
                         <Badge variant="outline" className="text-xs">
-                          {vehicle.vehicleType || t('customerCommunications.send.apk.vehicleTypeFallback')}
+                          {formatVehicleType(vehicle.vehicleType) || t('customerCommunications.send.apk.vehicleTypeFallback')}
                         </Badge>
                       </div>
                     </div>
@@ -1158,14 +1159,14 @@ export default function CustomerCommunications() {
                         {filterInfo && (
                           <div className="text-xs text-muted-foreground">
                             {filterInfo.lastMaintenanceDate ?
-                              t('customerCommunications.send.maintenance.lastMaintenance', { date: filterInfo.lastMaintenanceDate, days: filterInfo.daysSinceLastMaintenance }) :
+                              t('customerCommunications.send.maintenance.lastMaintenance', { date: formatDateNl(filterInfo.lastMaintenanceDate, 'short'), days: filterInfo.daysSinceLastMaintenance }) :
                               t('customerCommunications.send.maintenance.noMaintenanceRecorded')
                             }
                           </div>
                         )}
                         <div className="flex items-center space-x-2">
                           <Badge variant="outline" className="text-xs">
-                            {vehicle.vehicleType || t('customerCommunications.send.maintenance.vehicleTypeFallback')}
+                            {formatVehicleType(vehicle.vehicleType) || t('customerCommunications.send.maintenance.vehicleTypeFallback')}
                           </Badge>
                         </div>
                       </div>

@@ -76,7 +76,7 @@ dezelfde vijf tabbladen als het bewerkformulier (4.5). Vul minstens **Kenteken**
 **Model** in en klik onderaan op **Voertuig toevoegen**. De datumvelden mag je leeg laten; een
 leeg datumveld betekent gewoon "geen datum".
 
-Je krijgt **Voertuig succesvol aangemaakt** — *Het voertuig is toegevoegd aan je vloot.* De auto
+Je krijgt **Voertuig succesvol aangemaakt** — *Het voertuig is toegevoegd aan je wagenpark.* De auto
 staat daarna meteen in het **Voertuigenpark**.
 
 Is er iets mis, dan zie je dat: boven de knoppen verschijnt een rood blok **Het formulier is
@@ -172,7 +172,7 @@ Je krijgt ook de melding **Import voltooid** — *<aantal> voertuigen succesvol 
    tabbladen staat weer het kenteken met **Opzoeken** (4.3).
 3. Vul aan wat nodig is en klik onderaan op **Voertuig bijwerken**.
 
-Je krijgt **Voertuig succesvol bijgewerkt** — *Het voertuig in je vloot is bijgewerkt.*
+Je krijgt **Voertuig succesvol bijgewerkt** — *Het voertuig in je wagenpark is bijgewerkt.*
 
 De vijf tabbladen:
 

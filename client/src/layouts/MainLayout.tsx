@@ -15,6 +15,7 @@ import { ShortcutsDialog } from "@/components/shortcuts-dialog";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { Loader2, Car, User, Calendar, X, ClipboardCheck } from "lucide-react";
 import { formatLicensePlate, formatMaintenanceCategory } from "@/lib/format-utils";
+import { formatDateNl } from "@/lib/format-date-nl";
 import { invalidateRelatedQueries } from "@/lib/queryClient";
 import {
   Dialog,
@@ -458,13 +459,15 @@ export default function MainLayout({ children }: MainLayoutProps) {
                                     </div>
                                     <div className="text-xs text-gray-500">
                                       {isMaintenance ? (
-                                        <>{formatMaintenanceCategory(reservation.maintenanceCategory) || t('search.maintenanceBadge')} • {reservation.startDate}</>
+                                        <>{formatMaintenanceCategory(reservation.maintenanceCategory) || t('search.maintenanceBadge')} • {formatDateNl(reservation.startDate, 'short')}</>
                                       ) : (
                                         <>
                                           {reservation.customer?.name || t('search.unknownCustomer')} •{' '}
                                           {t('search.dateRange', {
-                                            from: reservation.startDate,
-                                            to: reservation.endDate || t('search.openEnded'),
+                                            from: formatDateNl(reservation.startDate, 'short'),
+                                            to: reservation.endDate
+                                              ? formatDateNl(reservation.endDate, 'short')
+                                              : t('search.openEnded'),
                                           })}
                                         </>
                                       )}
@@ -594,13 +597,15 @@ export default function MainLayout({ children }: MainLayoutProps) {
                           </div>
                           <div className="text-sm text-gray-500">
                             {isMaintenance ? (
-                              <>{formatMaintenanceCategory(reservation.maintenanceCategory) || t('search.maintenanceBadge')} • {reservation.startDate}</>
+                              <>{formatMaintenanceCategory(reservation.maintenanceCategory) || t('search.maintenanceBadge')} • {formatDateNl(reservation.startDate, 'short')}</>
                             ) : (
                               <>
                                 {reservation.customer?.name || t('search.unknownCustomer')} •{' '}
                                 {t('search.dateRange', {
-                                  from: reservation.startDate,
-                                  to: reservation.endDate || t('search.openEnded'),
+                                  from: formatDateNl(reservation.startDate, 'short'),
+                                  to: reservation.endDate
+                                    ? formatDateNl(reservation.endDate, 'short')
+                                    : t('search.openEnded'),
                                 })}
                               </>
                             )}

@@ -8,6 +8,7 @@ import { apiRequest, invalidateRelatedQueries, invalidateByPrefix } from "@/lib/
 import { useToast } from "@/hooks/use-toast";
 import { Vehicle } from "@shared/schema";
 import { formatLicensePlate } from "@/lib/format-utils";
+import { formatDateNl } from "@/lib/format-date-nl";
 
 import {
   Dialog,
@@ -1267,7 +1268,7 @@ export function ScheduleMaintenanceDialog({
                 </div>
                 {selectedVehicle.apkDate && (
                   <div className="text-sm text-blue-600 mt-1">
-                    {t('scheduleDialog.currentApkDate', { date: selectedVehicle.apkDate })}
+                    {t('scheduleDialog.currentApkDate', { date: formatDateNl(selectedVehicle.apkDate, 'short') })}
                   </div>
                 )}
               </div>
@@ -1329,7 +1330,7 @@ export function ScheduleMaintenanceDialog({
                       {isOpenEnded && <span className="ml-2 text-blue-600 font-medium">{t('scheduleDialog.openEndedRental')}</span>}
                     </h4>
                     <p className="text-sm text-gray-600">
-                      {t('scheduleDialog.reservationRange', { start: reservation.startDate })}{isOpenEnded ? <span className="font-medium text-blue-600">{t('scheduleDialog.noEndDate')}</span> : reservation.endDate}
+                      {t('scheduleDialog.reservationRange', { start: formatDateNl(reservation.startDate, 'short') })}{isOpenEnded ? <span className="font-medium text-blue-600">{t('scheduleDialog.noEndDate')}</span> : formatDateNl(reservation.endDate, 'short')}
                     </p>
                     <p className="text-sm text-gray-500">
                       {t('scheduleDialog.originalVehicle', { brand: reservation.vehicle?.brand, model: reservation.vehicle?.model, plate: formatLicensePlate(reservation.vehicle?.licensePlate) })}

@@ -24,6 +24,7 @@ import {
   Settings,
 } from "lucide-react";
 import DamageCheckTemplateCanvasEditor from "@/pages/settings/damage-check-template-editor";
+import { formatVehicleType } from "@/lib/format-utils";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -312,8 +313,8 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
                             </Badge>
                           )}
                           {template.vehicleType && (
-                            <Badge variant="outline" className="text-xs capitalize">
-                              {template.vehicleType}
+                            <Badge variant="outline" className="text-xs">
+                              {formatVehicleType(template.vehicleType)}
                             </Badge>
                           )}
                         </div>

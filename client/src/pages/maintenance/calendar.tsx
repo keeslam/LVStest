@@ -51,7 +51,7 @@ import { MaintenanceEditDialog } from "@/components/maintenance/maintenance-edit
 import { MaintenanceListDialog } from "@/components/maintenance/maintenance-list-dialog";
 import { VehicleViewDialog } from "@/components/vehicles/vehicle-view-dialog";
 import { MaintenanceViewDialog } from "@/components/maintenance/maintenance-view-dialog";
-import { formatLicensePlate, plateMatches, formatMaintenanceType } from "@/lib/format-utils";
+import { formatLicensePlate, plateMatches, formatMaintenanceType, formatVehicleType } from "@/lib/format-utils";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
 import { ColorCodingDialog } from "@/components/calendar/color-coding-dialog";
@@ -1156,7 +1156,7 @@ export default function MaintenanceCalendar() {
                   <SelectContent>
                     <SelectItem value="all">{t('calendarPage.allTypes')}</SelectItem>
                     {vehicleTypes.map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                      <SelectItem key={type} value={type}>{formatVehicleType(type)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

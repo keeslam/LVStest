@@ -212,6 +212,7 @@
         "apkUrgent": "APK URGENT",
         "apkWarning": "APK WARNING",
         "apkNotice": "APK NOTICE",
+        "apkDateLabel": "APK: {{date}}",
         "apkDaysOverdue": "({{days}} days overdue)",
         "apkDaysRemaining": "({{days}} days remaining)",
         "selectedCount": "{{count}} vehicle(s) selected for notification"

@@ -47,16 +47,16 @@
     },
     "status": {
       "available": "Beschikbaar",
-      "scheduled": "Gereserveerd",
+      "scheduled": "Gepland",
       "rented": "Verhuurd",
-      "needs_fixing": "In reparatie",
+      "needs_fixing": "Reparatie nodig",
       "not_for_rental": "Niet voor verhuur"
     },
     "reservationStatus": {
       "booked": "Geboekt",
       "picked_up": "Opgehaald",
-      "returned": "Geretourneerd",
-      "completed": "Afgerond",
+      "returned": "Ingeleverd",
+      "completed": "Voltooid",
       "cancelled": "Geannuleerd",
       "scheduled": "Gepland",
       "active": "Actief"
@@ -88,7 +88,7 @@
       "blockStatus": {
         "scheduled": "Gepland",
         "in": "In werkplaats",
-        "out": "Afgerond"
+        "out": "Voltooid"
       }
     },
     "intent": {

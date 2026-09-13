@@ -52,7 +52,7 @@ import {
   Trash2,
   Edit3
 } from "lucide-react";
-import { formatCurrency, sumMoney } from "@/lib/format-utils";
+import { formatCurrency, sumMoney, formatExpenseCategory } from "@/lib/format-utils";
 import { displayLicensePlate } from "@/lib/utils";
 import { Vehicle } from "@shared/schema";
 
@@ -94,20 +94,8 @@ const EXPENSE_CATEGORIES = [
   'Other'
 ];
 
-// Values are stored verbatim in the database, so they stay in English; only the
-// displayed label is translated via this key map.
-const EXPENSE_CATEGORY_KEYS: Record<string, string> = {
-  'Maintenance': 'maintenance',
-  'Tires': 'tires',
-  'Brakes': 'brakes',
-  'Damage': 'damage',
-  'Fuel': 'fuel',
-  'Insurance': 'insurance',
-  'Registration': 'registration',
-  'Cleaning': 'cleaning',
-  'Accessories': 'accessories',
-  'Other': 'other',
-};
+// WAVE 14 item 4 — same shared helper as the cost overview and the reports;
+// the stored value stays English, only the label is Dutch.
 
 export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: InvoiceScannerProps) {
   const { t } = useTranslation(["expenses", "common"]);
@@ -686,7 +674,7 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
                                     <SelectContent>
                                       {EXPENSE_CATEGORIES.map(category => (
                                         <SelectItem key={category} value={category}>
-                                          {t(`form.categories.${EXPENSE_CATEGORY_KEYS[category]}`)}
+                                          {formatExpenseCategory(category)}
                                         </SelectItem>
                                       ))}
                                     </SelectContent>

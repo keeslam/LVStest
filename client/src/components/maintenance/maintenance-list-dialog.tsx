@@ -51,7 +51,7 @@ import {
 } from "lucide-react";
 import { Vehicle, Reservation } from "@shared/schema";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { formatLicensePlate } from "@/lib/format-utils";
+import { formatLicensePlate, formatReservationStatus } from "@/lib/format-utils";
 import { MaintenanceEditDialog } from "@/components/maintenance/maintenance-edit-dialog";
 import { ScheduleMaintenanceDialog } from "@/components/maintenance/schedule-maintenance-dialog";
 import { VehicleViewDialog } from "@/components/vehicles/vehicle-view-dialog";
@@ -611,7 +611,7 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                                   </Badge>
                                 ) : (
                                   <Badge variant={reservation.status === "completed" ? "default" : "secondary"}>
-                                    {reservation.status}
+                                    {formatReservationStatus(reservation.status)}
                                   </Badge>
                                 )}
                               </TableCell>

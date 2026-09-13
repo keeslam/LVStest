@@ -34,7 +34,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Expense } from "@shared/schema";
-import { formatDate, formatCurrency, plateMatches } from "@/lib/format-utils";
+import { formatDate, formatCurrency, plateMatches, formatExpenseCategory } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
@@ -165,27 +165,11 @@ export default function ExpensesIndex() {
     }
   };
 
-  // Category values are stored verbatim in the database (and aren't restricted to the
-  // fixed dropdown list - older/seeded data can be lowercase or entirely custom), so
-  // they stay as-is; only recognized categories get a translated display label, looked
-  // up case-insensitively the same way getCategoryIcon() above matches on category.
-  const EXPENSE_CATEGORY_KEYS: Record<string, string> = {
-    "maintenance": "maintenance",
-    "tires": "tires",
-    "brakes": "brakes",
-    "damage": "damage",
-    "fuel": "fuel",
-    "insurance": "insurance",
-    "registration": "registration",
-    "cleaning": "cleaning",
-    "accessories": "accessories",
-    "other": "other",
-  };
-
-  const categoryLabel = (category: string) => {
-    const key = EXPENSE_CATEGORY_KEYS[category.toLowerCase()];
-    return key ? t(`form.categories.${key}`, { defaultValue: category }) : category;
-  };
+  // WAVE 14 item 4 — this screen used to carry its own ten-entry map, which
+  // did not contain `parking` or `toll`, so those two stood lowercase and
+  // English between the Dutch categories. One shared helper now owns the
+  // mapping for this screen, the reports and the two dropdowns.
+  const categoryLabel = (category: string) => formatExpenseCategory(category);
 
   // Filter expenses based on search query and category filter
   const filteredExpenses = expenses?.filter(expense => {
