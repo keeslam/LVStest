@@ -484,7 +484,7 @@ alsnog is opgepakt. Eerlijk: dit is werk dat nog gedaan moet worden, geen lijstj
 
 | Punt | Wat er nog is, en waarom het bleef liggen |
 |---|---|
-| **BUG-134 / besluit B-06** | **Het besluit is genomen en is maar half uitgevoerd.** Een portaalklant krijgt nog steeds géén melding als kantoor zijn datums of voertuig wijzigt, zijn reservering annuleert of verwijdert. Alleen de onderhoudskant is aangesloten. Dit is het grootste openstaande punt in deze lijst. |
+| ~~BUG-134 / besluit B-06~~ | **Verholpen (WAVE 15).** Alle vier de gebeurtenissen van B-06 zijn nu aangesloten: gewijzigde datums of een andere auto, een geannuleerde (of verwijderde) reservering en een nieuw document leveren elk een portaalmelding **plus** een e-mail op, naast het onderhoud dat er al was. Alleen een klant met een portaalaccount krijgt bericht, een dedupe-tag per wijziging voorkomt dubbele meldingen, en niets van dit alles kan een opgeslagen wijziging van een medewerker laten mislukken. |
 | BUG-205 | Lijsten zonder paginering, met de volledige voertuig- én klantrij in elke regel. De reserveringenlijst is nog 7,7 MB voor 1 984 regels. Formeel een besluit van jou (7a), praktisch de grootste resterende winst. |
 | BUG-172 | Twee tabbladen die dezelfde reservering bewerken: de laatste opslag wint stil. De kleine bewerkvensters (OPT-010) maken dit veel kleiner, maar het onderliggende mechanisme is er nog. |
 | BUG-185 | Twee gelijktijdige bulkverzendingen sturen alles dubbel; er is geen idempotentie op mail. |

@@ -165,6 +165,8 @@ import { registerDamageCheckTemplateRoutes } from "./routes/damage-check-templat
 import { registerVehicleDiagramTemplateRoutes } from "./routes/vehicle-diagram-templates";
 import { registerReportAndLabelTemplateRoutes } from "./routes/report-and-label-templates";
 import { onMaintenanceBlockChanged, onReplacementAssigned, onRentalVehicleChanged } from "./services/portal-maintenance-events";
+// besluiten B-06 (BUG-134): the other three events of the decision.
+import { onReservationChangedByStaff } from "./services/portal-reservation-events";
 import type { RouteDeps } from "./routes/deps";
 import { installIdParamValidation, rejectNullBytesInPath } from "./middleware/parseIntParam";
 import { parsePartialUpdate, parseCreateBody, BodyValidationError } from "./middleware/validateBody";
@@ -3755,6 +3757,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       // too, so the same cascade runs here.
       await onRentalVehicleChanged(existingBasic, reservation);
 
+      // besluiten B-06 (BUG-134) — and the customer hears about it.
+      void onReservationChangedByStaff(existingBasic, reservation);
+
       // BUG-133: a driver changed through this route never reached the driver
       // history, so the portal and the fines attribution kept seeing the old
       // driver. PATCH /:id has always done this; /basic did not.
@@ -4069,6 +4074,10 @@ export async function registerRoutes(app: Express): Promise<void> {
         };
       }
 
+      // besluiten B-06 (BUG-134) — this is the route that cancels a rental, and
+      // until now the customer was never told.
+      void onReservationChangedByStaff(existingReservation, reservation);
+
       // FIX-H (BUG-130) — recompute *this* vehicle from the one rule. The old
       // code leaned on the fleet-wide sync, whose reset branch only touched
       // vehicles with no reservation at all, so a car with a booking 10 days out
@@ -4346,6 +4355,10 @@ export async function registerRoutes(app: Express): Promise<void> {
       // notification lapse, and the customer is told. Awaited so the response
       // already reflects the cascade.
       await onRentalVehicleChanged(existingReservationForDiff, reservation);
+
+      // besluiten B-06 (BUG-134) — moved dates, another car, or a cancellation
+      // through this route reaches the portal customer as well.
+      void onReservationChangedByStaff(existingReservationForDiff, reservation);
 
       // Keep the driver assignment history in sync with staff edits so the
       // customer portal (and later the fines attribution) sees every change.
@@ -5570,6 +5583,10 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       {
         if (reservation.type === 'maintenance_block') void onMaintenanceBlockChanged(reservation, null);
+        // besluiten B-06 (BUG-134) — a deleted rental is a cancelled rental as
+        // far as the customer is concerned; the dedupe tag keeps
+        // cancel-then-delete down to one message.
+        void onReservationChangedByStaff(reservation, updatedReservation);
         // If this was a placeholder spare reservation, delete its notification
         if (reservation.placeholderSpare && reservation.type === 'replacement') {
           await storage.deleteNotificationsByTypeAndPattern("spare_assignment", `[placeholder:${id}]`);

@@ -18,6 +18,12 @@ export const PORTAL_TEMPLATE = {
   EMAIL_CHANGE: "portal_email_change",
   NEW_DEVICE: "portal_new_device",
   MAINTENANCE: "portal_maintenance",
+  // besluiten B-06 (BUG-134) — the three events of the decision that were
+  // never built: the office moved the rental, the office cancelled it, and a
+  // new document is waiting in the portal.
+  RESERVATION_CHANGED: "portal_reservation_changed",
+  RESERVATION_CANCELLED: "portal_reservation_cancelled",
+  DOCUMENT_AVAILABLE: "portal_document_available",
 } as const;
 
 // Seeded once; staff edit them afterwards in Communicatie > E-mailsjablonen.
@@ -93,6 +99,36 @@ const DEFAULT_TEMPLATES: Array<{ name: string; subject: string; content: string 
 <p>Datum: {{date}}{{endDate}}</p>
 <p>Adres: {{pickupAddress}}<br>Openingstijden: {{openingHours}}</p>
 <p>In het klantenportaal ziet u de actuele status: <a href="{{link}}">{{link}}</a></p>
+<p>Met vriendelijke groet,<br>Lam Groep</p>`,
+  },
+  {
+    name: PORTAL_TEMPLATE.RESERVATION_CHANGED,
+    subject: "Uw reservering is gewijzigd ({{plate}})",
+    content: `<p>Beste {{name}},</p>
+<p>Lam Groep heeft uw reservering aangepast.</p>
+<p>{{changes}}</p>
+<p>Auto: {{car}}<br>Periode: {{period}}</p>
+<p>In het klantenportaal ziet u de actuele gegevens: <a href="{{link}}">{{link}}</a></p>
+<p>Klopt er iets niet? Neem dan contact op met Lam Groep.</p>
+<p>Met vriendelijke groet,<br>Lam Groep</p>`,
+  },
+  {
+    name: PORTAL_TEMPLATE.RESERVATION_CANCELLED,
+    subject: "Uw reservering is geannuleerd ({{plate}})",
+    content: `<p>Beste {{name}},</p>
+<p>Lam Groep heeft uw reservering geannuleerd.</p>
+<p>Auto: {{car}}<br>Periode: {{period}}</p>
+<p>In het klantenportaal ziet u uw overige reserveringen: <a href="{{link}}">{{link}}</a></p>
+<p>Klopt dit niet? Neem dan contact op met Lam Groep.</p>
+<p>Met vriendelijke groet,<br>Lam Groep</p>`,
+  },
+  {
+    name: PORTAL_TEMPLATE.DOCUMENT_AVAILABLE,
+    subject: "Nieuw document beschikbaar: {{document}}",
+    content: `<p>Beste {{name}},</p>
+<p>Er staat een nieuw document voor u klaar in het klantenportaal: {{document}} ({{fileName}}).</p>
+<p>Auto: {{car}}<br>Periode: {{period}}</p>
+<p>Bekijk en download het document hier: <a href="{{link}}">{{link}}</a></p>
 <p>Met vriendelijke groet,<br>Lam Groep</p>`,
   },
 ];
@@ -238,6 +274,38 @@ export async function sendMaintenanceMail(customerId: number, vars: { plate: str
     endDate: vars.endDate && vars.endDate !== vars.date ? ` tot en met ${vars.endDate}` : "",
     pickupAddress: config.pickupAddress, openingHours: config.openingHours,
     link: `${config.portalBaseUrl.replace(/\/$/, "")}/portaal/voertuigen`,
+  };
+  const html = renderTemplate(template.content, v);
+  return sendEmail({ to, subject: renderTemplateText(template.subject, v), html, text: stripHtml(html) }, "custom");
+}
+
+/**
+ * besluiten **B-06** (BUG-134) — the office changed something and the customer
+ * has to hear it from us, not by opening the portal.
+ *
+ * One sender for the three events the decision names besides maintenance. The
+ * address is the customer's own (`email`), with the invoice and MOT addresses
+ * as the fallbacks the rest of the application also accepts; the portal switch
+ * of that customer still decides whether anything goes out at all. Returns
+ * false — never throws — when there is nothing to send to.
+ */
+export async function sendPortalCustomerMail(
+  customerId: number,
+  templateName: string,
+  vars: Record<string, string>,
+  portalPath: string,
+): Promise<boolean> {
+  const [customer, settings, config] = await Promise.all([
+    storage.getCustomer(customerId), portalStorage.getOrCreateCustomerSettings(customerId), getPortalConfig(),
+  ]);
+  const to = customer?.email || customer?.emailForInvoices || customer?.emailForMOT;
+  if (!customer || !settings.portalEnabled || !to) return false;
+  const template = await getPortalTemplate(templateName);
+  const v = {
+    name: customer.contactPerson || customer.companyName || customer.name,
+    company: customer.companyName || customer.name,
+    ...vars,
+    link: `${config.portalBaseUrl.replace(/\/$/, "")}/portaal${portalPath}`,
   };
   const html = renderTemplate(template.content, v);
   return sendEmail({ to, subject: renderTemplateText(template.subject, v), html, text: stripHtml(html) }, "custom");

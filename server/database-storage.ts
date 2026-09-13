@@ -3650,6 +3650,17 @@ export class DatabaseStorage implements IStorage {
 
   async createDocument(documentData: InsertDocument): Promise<Document> {
     const [document] = await db.insert(documents).values(documentData).returning();
+    // besluiten B-06 (BUG-134), event 4 — "nieuw document beschikbaar". Wired
+    // here rather than at the eight routes that generate or upload a document,
+    // because a ninth generator would otherwise be silent again — which is how
+    // the first three events of B-06 came to be missing.
+    //
+    // Imported lazily: this module is what `server/storage.ts` instantiates, and
+    // the notification service reaches back to that same `storage` singleton. A
+    // static import would be a load-time cycle; a call-time one is not.
+    void import("./services/portal-reservation-events")
+      .then((m) => m.onDocumentAvailable(document))
+      .catch((e) => console.error("document notification failed:", e));
     return document;
   }
 
