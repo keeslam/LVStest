@@ -235,11 +235,6 @@ bij aan.
 Het kan ook vanaf het scanscherm: scan de auto en klik op **Onderhoud inplannen**. Dat opent het
 gewone venster **Onderhoud plannen** met de auto al ingevuld.
 
-> **Beperking:** in het venster **Voertuig markeren voor onderhoud** staat de regel *Markeer ()
-> als onderhoud nodig of momenteel in onderhoud.* — met lege haakjes waar merk, model en kenteken
-> horen te staan. Controleer daarom zelf in de titelbalk van de reservering welke auto je
-> bewerkt.
-
 ### De status weer uitzetten
 
 Er zijn twee knoppen, met een belangrijk verschil.
@@ -301,8 +296,8 @@ bekijken**.
 **Vul de kilometerstand en de werkzaamheden echt in.** Ze bepalen wanneer de volgende beurt aan
 de orde is en ze zijn het enige bewijs van wat er aan de auto gedaan is.
 
-> **Beperking:** in dit venster staat het **Onderhoudstype** in het Engels, bijvoorbeeld
-> *breakdown* in plaats van *Voertuigpech*. Het is dezelfde waarde die je bij het plannen koos.
+In het venster staat het **Onderhoudstype** in het Nederlands, bijvoorbeeld *Pech* — dezelfde
+waarde die je bij het plannen koos.
 
 **Vergeet de auto niet vrij te geven.** Het afronden van het blok zet de werkplaatsstatus van de
 auto niet om. Gebruik daarna **Terug van onderhoud** of **Terug uit onderhoud** (7.5), anders

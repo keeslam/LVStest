@@ -2,6 +2,7 @@ import { QueryCache, QueryClient, QueryFunction } from "@tanstack/react-query";
 import { invokeSessionExpired } from "./session-expiry";
 import { promptForAdminPassword } from "./admin-password-prompt";
 import { toast } from "@/hooks/use-toast";
+import i18n from "@/i18n";
 import {
   fetchWithTimeout,
   shouldForceLogout,
@@ -206,9 +207,13 @@ export const queryClient =
       onError: (error) => {
         const message = error instanceof Error ? error.message : String(error);
         if (/^401:/.test(message)) return;
+        // WAVE 13 item 7 — this title was a hard-coded English string, so the
+        // one toast that fires on *any* screen was the one thing on a Dutch app
+        // that never spoke Dutch. `common:queryError.*` has held the wording
+        // since BUG-212; it just was not used here.
         toast({
-          title: "Could not load the data",
-          description: message || "Try again, or reload the page.",
+          title: i18n.t("common:queryError.title", { defaultValue: "Could not load the data" }),
+          description: message || i18n.t("common:queryError.description", { defaultValue: "Try again, or reload the page." }),
           variant: "destructive",
         });
       },

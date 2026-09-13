@@ -15,7 +15,7 @@ import { ReservationAddDialog } from "@/components/reservations/reservation-add-
 import { ReservationEditDialog } from "@/components/reservations/reservation-edit-dialog";
 import { ExpenseViewDialog } from "@/components/expenses/expense-view-dialog";
 import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
-import { formatDate, formatCurrency, formatLicensePlate, sumMoney } from "@/lib/format-utils";
+import { formatDate, formatCurrency, formatLicensePlate, formatFuelLevel, sumMoney } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { isTrueValue } from "@/lib/utils";
 import { getDaysUntil, getUrgencyColorClass } from "@/lib/date-utils";
@@ -1206,7 +1206,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
           </CardHeader>
           <CardContent className={displayReservation ? 'pb-3' : ''}>
             <p className={`font-semibold capitalize ${displayReservation ? 'text-lg' : 'text-2xl'}`} data-testid="text-current-fuel-level">
-              {vehicle.currentFuelLevel || t('details.general.na')}
+              {formatFuelLevel(vehicle.currentFuelLevel) || t('details.general.na')}
             </p>
           </CardContent>
         </Card>

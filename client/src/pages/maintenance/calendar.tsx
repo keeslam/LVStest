@@ -51,7 +51,7 @@ import { MaintenanceEditDialog } from "@/components/maintenance/maintenance-edit
 import { MaintenanceListDialog } from "@/components/maintenance/maintenance-list-dialog";
 import { VehicleViewDialog } from "@/components/vehicles/vehicle-view-dialog";
 import { MaintenanceViewDialog } from "@/components/maintenance/maintenance-view-dialog";
-import { formatLicensePlate, plateMatches } from "@/lib/format-utils";
+import { formatLicensePlate, plateMatches, formatMaintenanceType } from "@/lib/format-utils";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
 import { ColorCodingDialog } from "@/components/calendar/color-coding-dialog";
@@ -1850,7 +1850,9 @@ export default function MaintenanceCalendar() {
             const vehicle = vehicles?.find(v => v.id === completingReservation.vehicleId);
             if (!vehicle) return null;
 
-            const maintenanceType = completingReservation.notes?.split(':')[0] || t('calendarPage.maintenanceTypeFallback');
+            // WAVE 13 item 7 — this printed the stored token ("breakdown")
+            // where the desk expects "Pech".
+            const maintenanceType = formatMaintenanceType(completingReservation.notes?.split(':')[0]) || t('calendarPage.maintenanceTypeFallback');
 
             return (
               <div className="bg-muted/50 rounded-md p-4 mb-4 space-y-3">
@@ -2144,7 +2146,7 @@ export default function MaintenanceCalendar() {
                   .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
                   .map((maintenance) => {
                     const vehicle = vehicles?.find(v => v.id === maintenance.vehicleId);
-                    const maintenanceType = maintenance.notes?.split(':')[0] || t('calendarPage.maintenanceTypeFallback');
+                    const maintenanceType = formatMaintenanceType(maintenance.notes?.split(':')[0]) || t('calendarPage.maintenanceTypeFallback');
                     const maintenanceDetails = maintenance.notes?.split('\n')?.[1] || '';
                     const categoryBadge = maintenance.maintenanceCategory === 'scheduled_maintenance' ? t('calendarPage.completedHistoryDialog.scheduledBadge') : t('calendarPage.completeMaintenanceDialog.repairOption');
                     const categoryColor = maintenance.maintenanceCategory === 'scheduled_maintenance' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800';

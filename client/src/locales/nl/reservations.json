@@ -696,7 +696,8 @@
       "successTitle": "Voertuig gemarkeerd voor onderhoud",
       "successDescription": "Het voertuig is succesvol gemarkeerd als onderhoud nodig.",
       "errorTitle": "Fout"
-    }
+    },
+    "descriptionNoVehicle": "Markeer het voertuig als onderhoud nodig of momenteel in onderhoud."
   },
   "returnFromServiceDialog": {
     "title": "Voertuig terug van onderhoud",

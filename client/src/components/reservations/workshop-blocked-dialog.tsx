@@ -17,7 +17,7 @@
  * (`IN_WORKSHOP`, `NEEDS_FIXING`, `NOT_FOR_RENTAL`); the server's own English
  * sentence is only the fallback for a code we do not know.
  */
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import {
@@ -31,7 +31,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@/hooks/use-auth";
+import { AuthContext } from "@/hooks/use-auth";
 import { UserRole } from "@shared/schema";
 
 export interface WorkshopRefusal {
@@ -64,7 +64,11 @@ export function WorkshopBlockedDialog({
   overrideError,
 }: WorkshopBlockedDialogProps) {
   const { t } = useTranslation(["reservations", "common"]);
-  const { user } = useAuth();
+  // Deliberately the context rather than useAuth(): that hook throws when no
+  // AuthProvider is mounted, and a handover dialog must never be the thing that
+  // takes the pickup screen down. No provider means no administrator, which is
+  // the safe answer — B-03 fails closed.
+  const user = useContext(AuthContext)?.user ?? null;
   const isAdmin = user?.role === UserRole.ADMIN;
   const [reason, setReason] = useState("");
 

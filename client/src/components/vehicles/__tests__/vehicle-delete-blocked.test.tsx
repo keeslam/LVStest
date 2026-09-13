@@ -59,7 +59,13 @@ describe("B-14 — deleting a vehicle with a live or planned rental", () => {
 
     const blocked = await screen.findByTestId("vehicle-delete-blocked");
     expect(blocked).toHaveTextContent("3344");
-    expect(blocked).toHaveTextContent("2029-07-01");
+    // WAVE 13 item 7 — the period and the status are read by the desk, so they
+    // are in Dutch now instead of the stored `2029-07-01` / `booked`.
+    expect(blocked).toHaveTextContent("01-07-2029");
+    expect(blocked).toHaveTextContent("10-07-2029");
+    expect(blocked).toHaveTextContent("Geboekt");
+    expect(blocked).not.toHaveTextContent("2029-07-01");
+    expect(blocked).not.toHaveTextContent("booked");
 
     // Even with the plate typed back exactly right, the delete stays out of reach.
     await user.type(screen.getByTestId("input-confirm-delete-7"), PLATE);

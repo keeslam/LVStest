@@ -56,7 +56,10 @@
       "booked": "Geboekt",
       "picked_up": "Opgehaald",
       "returned": "Geretourneerd",
-      "completed": "Afgerond"
+      "completed": "Afgerond",
+      "cancelled": "Geannuleerd",
+      "scheduled": "Gepland",
+      "active": "Actief"
     },
     "transport": {
       "heading": "Actief transport",

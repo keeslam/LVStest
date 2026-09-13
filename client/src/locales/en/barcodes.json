@@ -56,7 +56,10 @@
       "booked": "Booked",
       "picked_up": "Picked up",
       "returned": "Returned",
-      "completed": "Completed"
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "scheduled": "Scheduled",
+      "active": "Active"
     },
     "transport": {
       "heading": "Active transport",

@@ -47,7 +47,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Vehicle, Reservation, Customer, CustomNotification } from "@shared/schema";
-import { formatDate, formatLicensePlate } from "@/lib/format-utils";
+import { formatDate, formatLicensePlate, formatMaintenanceCategory } from "@/lib/format-utils";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import {
   Bell,
@@ -620,7 +620,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                             <NotificationCard
                               key={`maint-${m.id}`}
                               icon={<ClipboardCheck className="h-5 w-5 text-purple-500" />}
-                              title={t('centerDialog.maintenanceScheduledTitle', { category: m.maintenanceCategory || t('centerDialog.maintenanceFallback') })}
+                              title={t('centerDialog.maintenanceScheduledTitle', { category: formatMaintenanceCategory(m.maintenanceCategory) || t('centerDialog.maintenanceFallback') })}
                               description={`${vehicle?.brand} ${vehicle?.model} - ${formatLicensePlate(vehicle?.licensePlate || "")}`}
                               date={m.startDate}
                               onView={() => { if (m.vehicleId) openVehicleDialog(m.vehicleId); }}
@@ -729,7 +729,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                       <NotificationCard
                         key={`maint-tab-${m.id}`}
                         icon={<ClipboardCheck className="h-5 w-5 text-purple-500" />}
-                        title={t('centerDialog.maintenanceScheduledTitle', { category: m.maintenanceCategory || t('centerDialog.maintenanceFallback') })}
+                        title={t('centerDialog.maintenanceScheduledTitle', { category: formatMaintenanceCategory(m.maintenanceCategory) || t('centerDialog.maintenanceFallback') })}
                         description={`${vehicle?.brand} ${vehicle?.model} - ${formatLicensePlate(vehicle?.licensePlate || "")}`}
                         date={m.startDate}
                         onView={() => { if (m.vehicleId) openVehicleDialog(m.vehicleId); }}

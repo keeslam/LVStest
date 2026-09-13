@@ -63,10 +63,6 @@ En zes tabbladen:
 | **Onderhoud** | APK, garantie en de volgende onderhoudsbeurt |
 | **Geschiedenis** | Wie wat wanneer aan deze auto heeft gewijzigd |
 
-> **Beperking:** een paar waarden op dit scherm staan in het Engels omdat ze rechtstreeks uit de
-> database komen, bijvoorbeeld het brandstofniveau (*Full* in plaats van *Vol*). De betekenis is
-> dezelfde.
-
 ---
 
 ## 4.3 Een voertuig toevoegen
@@ -412,12 +408,11 @@ terugzetten vanuit de prullenbak.*
 venster:
 
 > *Verwijderen kan niet: dit voertuig heeft een lopende of geplande huur.*
-> *Reservering #3366 — 2026-09-13 t/m 2026-09-25 (picked_up)*
+> *Reservering #3366 — 13-09-2026 t/m 25-09-2026 (Opgehaald)*
 > *Rond de huur af of annuleer hem eerst; daarna kan het voertuig naar de prullenbak.*
 
-De blokkerende huren staan er dus bij, met hun periode. De status achter de periode is Engelse
-technische tekst (*booked*, *picked_up*). De knop blijft grijs tot je die huren hebt afgerond of
-geannuleerd.
+De blokkerende huren staan er dus bij, met hun periode en hun status in het Nederlands. De knop
+blijft grijs tot je die huren hebt afgerond of geannuleerd.
 
 ### De prullenbak
 

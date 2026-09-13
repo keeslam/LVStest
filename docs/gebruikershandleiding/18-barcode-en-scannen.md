@@ -86,10 +86,6 @@ Daaronder volgen, als ze er zijn, drie blokken:
 Scande je een `RES-`-code, dan staat er **Reservering gevonden** met de auto, de klant, de status
 en de periode, en de knoppen **Reservering openen** en **Voertuig openen**.
 
-> **Beperking:** een paar waarden op dit scherm komen onvertaald uit de database, bijvoorbeeld
-> het brandstofniveau (*Full*) en de status van een reservering (*cancelled*). De betekenis is
-> dezelfde als elders in de app.
-
 ---
 
 ## 18.4 Wat je kunt doen zonder het scanscherm te verlaten

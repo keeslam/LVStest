@@ -4978,7 +4978,8 @@ export class DatabaseStorage implements IStorage {
       replacementForReservationId: null,
       placeholderSpare: false,
       totalPrice: undefined,
-      notes: 'Vehicle maintenance block',
+      // WAVE 13 item 7 — this string is shown to the desk on the block itself.
+      notes: 'Onderhoudsblok',
       damageCheckPath: null
     };
 

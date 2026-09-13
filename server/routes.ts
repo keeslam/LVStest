@@ -2154,7 +2154,8 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
       }
 
-      res.json({ success: true, message: `Restored ${result.record?.label ?? 'record'}.` });
+      // WAVE 13 item 7 — the desk reads Dutch (B-18).
+      res.json({ success: true, message: `${result.record?.label ?? 'De regel'} is teruggezet.` });
     } catch (error) {
       console.error("Error restoring deleted record:", error);
       res.status(500).json({

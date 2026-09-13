@@ -696,7 +696,8 @@
       "successTitle": "Vehicle marked for service",
       "successDescription": "The vehicle has been marked as needing service successfully.",
       "errorTitle": "Error"
-    }
+    },
+    "descriptionNoVehicle": "Mark the vehicle as needing service or currently in service."
   },
   "returnFromServiceDialog": {
     "title": "Return Vehicle from Service",

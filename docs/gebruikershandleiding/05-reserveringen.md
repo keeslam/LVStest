@@ -92,10 +92,10 @@ beschikbare voertuigen te zien en boekingsconflicten te voorkomen.* Doe dat ook 
 daarna filtert de app de voertuiglijst.
 
 2. **Startdatum** staat al op vandaag.
-3. **Let op:** het vinkje **Huur zonder einddatum** staat standaard **aan**. Er is dan geen veld
-   **Einddatum** en de duur toont **Open einde**. Weet je de inleverdatum wel, **haal het vinkje
-   dan weg**; er verschijnt een veld **Einddatum** dat alvast drie dagen vooruit is ingevuld.
-4. Vul **Einddatum** in. Onder de velden staat **Duur:** met het aantal dagen.
+3. **Einddatum** staat alvast drie dagen na de startdatum. Het vinkje **Huur zonder einddatum**
+   staat standaard **uit**; zet het alleen aan als de inleverdatum echt nog niet bekend is. Dan
+   verdwijnt het veld **Einddatum** en toont de duur **Open einde**.
+4. Pas **Einddatum** aan. Onder de velden staat **Duur:** met het aantal dagen.
 5. **Ophaaltijd (optioneel)** en **Inlevertijd (optioneel)** vul je alleen in als de auto op
    dezelfde dag wisselt van klant. De app gebruikt de tijden om te zien dat dat geen echt
    conflict is.

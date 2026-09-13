@@ -1046,6 +1046,9 @@ export function ReservationViewDialog({
         open={isServiceDialogOpen}
         onOpenChange={setIsServiceDialogOpen}
         reservationId={reservationId || 0}
+        // WAVE 13 item 7 — without this the dialog said "Markeer () als
+        // onderhoud nodig…", with empty brackets where the car belongs.
+        vehicle={vehicle ?? reservation?.vehicle ?? undefined}
         onSuccess={() => {
           invalidateByPrefix(`/api/vehicles/${reservation?.vehicleId}`);
           invalidateByPrefix(`/api/reservations/${reservationId}`);

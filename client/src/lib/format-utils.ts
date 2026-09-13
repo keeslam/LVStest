@@ -118,6 +118,39 @@ export function formatFuelLevel(level: string | null | undefined): string {
 }
 
 /**
+ * PHASE 57 / WAVE 13 item 7 — the maintenance type as the desk should read it.
+ *
+ * A maintenance block stores its type as the first token of its notes
+ * ("breakdown: ..."), and the "Onderhoud voltooien" window printed that token
+ * verbatim: *breakdown* where *Pech* belongs. The maintenance calendar already
+ * had this mapping inline for the calendar tiles; this is the same mapping, in
+ * the one place both can call.
+ */
+export function formatMaintenanceType(raw: string | null | undefined): string {
+  if (!raw) return "";
+  const key = raw.trim().toLowerCase().replace(/\s+/g, "_");
+  const fallback = raw.trim().replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+  return i18n.t(`maintenance:editDialog.types.${key}`, { defaultValue: fallback });
+}
+
+/**
+ * WAVE 13 item 7 — the maintenance *category* (`scheduled_maintenance`,
+ * `repair`), which the global search and the notification centre printed as the
+ * stored word: *repair* where the rest of the app says *Reparatie*.
+ */
+export function formatMaintenanceCategory(raw: string | null | undefined): string {
+  if (!raw) return "";
+  const key = raw.trim().toLowerCase();
+  if (key === "scheduled_maintenance") {
+    return i18n.t("maintenance:calendarPage.completedHistoryDialog.scheduledBadge", { defaultValue: raw });
+  }
+  if (key === "repair") {
+    return i18n.t("maintenance:calendarPage.completeMaintenanceDialog.repairOption", { defaultValue: raw });
+  }
+  return formatMaintenanceType(raw);
+}
+
+/**
  * Format a file size in bytes to a human-readable format
  */
 export function formatFileSize(bytes: number): string {

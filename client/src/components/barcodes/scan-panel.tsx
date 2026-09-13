@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Camera, Truck, CalendarRange, User, RotateCcw, CalendarPlus, ShieldCheck, FileCheck, LogOut, LogIn, Receipt, Wrench, ChevronDown, ChevronUp, History, Car, FileUp, Undo2, Check, Play, Fuel, Gauge } from "lucide-react";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { chooseHandover, matchesIntent, type HandoverKind } from "@/lib/handover-choice";
-import { formatDate, formatLicensePlate } from "@/lib/format-utils";
+import { formatDate, formatLicensePlate, formatFuelLevel, formatReservationStatus } from "@/lib/format-utils";
 import { isTrueValue } from "@/lib/utils";
 import { BarcodeSvg } from "@/components/barcodes/barcode-svg";
 import { CameraScannerDialog } from "@/components/barcodes/camera-scanner-dialog";
@@ -234,7 +234,7 @@ export function ScanPanel({ active = true, intent = null }: ScanPanelProps) {
       <div className="flex items-center gap-2">
         <User className="h-4 w-4 text-primary" />
         <span>{reservation.customer?.name || "-"}</span>
-        <Badge variant="outline">{t(`scanPage.reservationStatus.${reservation.status}`, { defaultValue: reservation.status })}</Badge>
+        <Badge variant="outline">{t(`scanPage.reservationStatus.${reservation.status}`, { defaultValue: formatReservationStatus(reservation.status) })}</Badge>
       </div>
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <CalendarRange className="h-4 w-4" />
@@ -336,7 +336,7 @@ export function ScanPanel({ active = true, intent = null }: ScanPanelProps) {
                   {t("scanPage.fuelLabel")}
                 </div>
                 <div className="font-medium" data-testid="text-scan-fuel">
-                  {result.vehicle.currentFuelLevel || t("scanPage.notAvailable")}
+                  {formatFuelLevel(result.vehicle.currentFuelLevel) || t("scanPage.notAvailable")}
                 </div>
               </div>
               <div>

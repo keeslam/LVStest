@@ -14,7 +14,7 @@ import { useGlobalShortcuts } from "@/hooks/use-global-shortcuts";
 import { ShortcutsDialog } from "@/components/shortcuts-dialog";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { Loader2, Car, User, Calendar, X, ClipboardCheck } from "lucide-react";
-import { formatLicensePlate } from "@/lib/format-utils";
+import { formatLicensePlate, formatMaintenanceCategory } from "@/lib/format-utils";
 import { invalidateRelatedQueries } from "@/lib/queryClient";
 import {
   Dialog,
@@ -458,7 +458,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                                     </div>
                                     <div className="text-xs text-gray-500">
                                       {isMaintenance ? (
-                                        <>{reservation.maintenanceCategory || t('search.maintenanceBadge')} • {reservation.startDate}</>
+                                        <>{formatMaintenanceCategory(reservation.maintenanceCategory) || t('search.maintenanceBadge')} • {reservation.startDate}</>
                                       ) : (
                                         <>
                                           {reservation.customer?.name || t('search.unknownCustomer')} •{' '}
@@ -594,7 +594,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                           </div>
                           <div className="text-sm text-gray-500">
                             {isMaintenance ? (
-                              <>{reservation.maintenanceCategory || t('search.maintenanceBadge')} • {reservation.startDate}</>
+                              <>{formatMaintenanceCategory(reservation.maintenanceCategory) || t('search.maintenanceBadge')} • {reservation.startDate}</>
                             ) : (
                               <>
                                 {reservation.customer?.name || t('search.unknownCustomer')} •{' '}

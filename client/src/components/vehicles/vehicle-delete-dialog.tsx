@@ -17,7 +17,8 @@ import {
 import { Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
-import { formatLicensePlate } from "@/lib/format-utils";
+import { formatLicensePlate, formatReservationStatus } from "@/lib/format-utils";
+import { formatDutchDate } from "@shared/booking-warnings";
 
 interface VehicleDeleteDialogProps {
   vehicleId: number;
@@ -204,11 +205,14 @@ export function VehicleDeleteDialog({
                 <ul className="list-disc pl-4">
                   {blockingReservations.map((reservation) => (
                     <li key={reservation.id} data-testid={`blocking-reservation-${reservation.id}`}>
+                      {/* WAVE 13 item 7 — this printed the stored status
+                          ("picked_up") and the ISO dates straight from the
+                          column, in a red block the desk has to read. */}
                       {t('deleteDialog.blockedReservation', {
                         id: reservation.id,
-                        start: reservation.startDate,
-                        end: reservation.endDate ?? '—',
-                        status: reservation.status,
+                        start: formatDutchDate(reservation.startDate),
+                        end: reservation.endDate ? formatDutchDate(reservation.endDate) : '—',
+                        status: formatReservationStatus(reservation.status),
                       })}
                     </li>
                   ))}

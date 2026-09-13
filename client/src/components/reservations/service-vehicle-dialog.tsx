@@ -7,6 +7,7 @@ import { z } from "zod";
 import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Vehicle } from "@shared/schema";
+import { formatLicensePlate } from "@/lib/format-utils";
 
 import {
   Dialog,
@@ -133,8 +134,19 @@ export function ServiceVehicleDialog({
             <Wrench className="h-5 w-5" />
             {t('serviceVehicleDialog.title')}
           </DialogTitle>
-          <DialogDescription>
-            {t('serviceVehicleDialog.description', { brand: vehicle?.brand, model: vehicle?.model, plate: vehicle?.licensePlate })}
+          {/* WAVE 13 item 7 — the caller handed over no vehicle at all, so this
+              read "Markeer () als onderhoud nodig of momenteel in onderhoud."
+              with empty brackets where the car belongs. When there genuinely is
+              no vehicle the sentence drops the naming half rather than printing
+              the hole. */}
+          <DialogDescription data-testid="service-vehicle-description">
+            {vehicle
+              ? t('serviceVehicleDialog.description', {
+                  brand: vehicle.brand,
+                  model: vehicle.model,
+                  plate: formatLicensePlate(vehicle.licensePlate),
+                })
+              : t('serviceVehicleDialog.descriptionNoVehicle')}
           </DialogDescription>
         </DialogHeader>
 

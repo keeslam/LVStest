@@ -241,8 +241,19 @@ export function ReservationForm({
   const [selectedStartDate, setSelectedStartDate] = useState<string>(
     initialStartDate || preSelectedStartDate || format(new Date(), "yyyy-MM-dd")
   );
+  /**
+   * PHASE 57 / WAVE 13 item 7 — "Huur zonder einddatum" was on by default in
+   * the new-reservation dialog.
+   *
+   * Nobody chose that: `!initialData?.endDate` is the right question when
+   * *editing* (the API does not return an `isOpenEnded` flag, so it is derived
+   * from the absent end date), but with no `initialData` at all it answers
+   * "true" for every new booking. The normal case is a rental with an end date,
+   * so a new form starts closed-ended and `defaultEndDate` (start + 3 days)
+   * actually reaches the field. Editing keeps deriving it from the row.
+   */
   const [isOpenEnded, setIsOpenEnded] = useState<boolean>(
-    !initialData?.endDate
+    initialData ? !initialData.endDate : false
   );
   const [deliveryRequired, setDeliveryRequired] = useState<boolean>(
     initialData?.deliveryRequired || false
