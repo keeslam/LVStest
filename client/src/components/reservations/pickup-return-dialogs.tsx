@@ -21,6 +21,7 @@ import { MileageOverridePasswordDialog } from "@/components/mileage-override-pas
 import InteractiveDamageCheck from "@/pages/interactive-damage-check";
 import { VehicleRemarksWarningDialog } from "@/components/vehicles/vehicle-remarks-warning-dialog";
 import { HandoverResultDialog, type HandoverDocumentKind } from "@/components/reservations/handover-result-dialog";
+import { WorkshopBlockedDialog, type WorkshopRefusal } from "@/components/reservations/workshop-blocked-dialog";
 import type { Document as StoredDocument } from "@shared/schema";
 
 interface PickupDialogProps {
@@ -48,6 +49,11 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
   // besluiten B-16 (BUG-211) — the question the server asks when the rental has
   // not started yet, and the payload to send again once it is answered.
   const [earlyPickup, setEarlyPickup] = useState<{ startDate: string; today: string } | null>(null);
+  // besluiten B-03 (OPT-007, OPT-023) — the refusal the server has always sent
+  // and the app never showed a way past. The administrator override lives in
+  // WorkshopBlockedDialog; this holds the refusal it is answering.
+  const [workshopBlock, setWorkshopBlock] = useState<WorkshopRefusal | null>(null);
+  const [workshopOverrideError, setWorkshopOverrideError] = useState<string | null>(null);
   const lastPickupPayloadRef = useRef<Record<string, unknown> | null>(null);
   const [contractNumber, setContractNumber] = useState("");
   const [isDuplicateContract, setIsDuplicateContract] = useState(false);
@@ -290,6 +296,9 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       overrideContractNumber?: boolean;
       /** besluiten B-16 — set only after the employee has answered the question. */
       shiftStartDate?: boolean;
+      /** besluiten B-03 — set only by an administrator, and never without a reason. */
+      forceWorkshopOverride?: boolean;
+      forceWorkshopReason?: string;
     }) => {
       // Kept so the B-16 question can send the very same pickup again, with the
       // answer attached, instead of asking the employee to fill it all in twice.
@@ -318,6 +327,9 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       await invalidateByPrefix("/api/vehicles");
       setOverridePassword("");
       setPendingMileage(null);
+      // besluiten B-03 — the block is answered, forced or not.
+      setWorkshopBlock(null);
+      setWorkshopOverrideError(null);
       clearTrackedPaperChecks(); // Clear tracked IDs - documents are now permanent
       
       // Call the success callback first (to reopen view dialog)
@@ -349,6 +361,20 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       // eerder, datum aanpassen?". Nothing was written; the answer decides.
       if (error.code === "PICKUP_BEFORE_START_DATE") {
         setEarlyPickup({ startDate: error.startDate, today: error.today });
+        return;
+      }
+      // besluiten B-03 — also a question rather than a dead end: the workshop
+      // blocks this handover, and an administrator may overrule it with a
+      // reason. Nothing was written.
+      if (error.code === "VEHICLE_IN_WORKSHOP") {
+        setWorkshopOverrideError(null);
+        setWorkshopBlock({ reason: error.reason ?? null, message: error.message ?? null });
+        return;
+      }
+      // A force that the server refused: stay in the same dialog and say why,
+      // instead of dropping a toast behind a window that just closed.
+      if (error.code === "WORKSHOP_OVERRIDE_FORBIDDEN" || error.code === "WORKSHOP_OVERRIDE_REASON_REQUIRED") {
+        setWorkshopOverrideError(error.message || t('pickupReturn.pickup.processPickupFailedFallback'));
         return;
       }
       toast({
@@ -1158,6 +1184,32 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
           if (payload) pickupMutation.mutate({ ...(payload as any), shiftStartDate: true });
         }}
         onCancel={() => setEarlyPickup(null)}
+      />
+
+      {/* besluiten B-03 — the refusal, and for an administrator the way past
+          it that the refusal has always promised. */}
+      <WorkshopBlockedDialog
+        open={workshopBlock !== null}
+        onOpenChange={(next) => {
+          if (!next) {
+            setWorkshopBlock(null);
+            setWorkshopOverrideError(null);
+          }
+        }}
+        refusal={workshopBlock}
+        isForcing={pickupMutation.isPending}
+        overrideError={workshopOverrideError}
+        onForce={(reason) => {
+          const payload = lastPickupPayloadRef.current;
+          if (!payload) return;
+          setWorkshopOverrideError(null);
+          // The very same handover, forced — never a second form.
+          pickupMutation.mutate({
+            ...(payload as any),
+            forceWorkshopOverride: true,
+            forceWorkshopReason: reason,
+          });
+        }}
       />
 
       {/* Mileage Override Dialog */}

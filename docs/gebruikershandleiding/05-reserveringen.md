@@ -324,23 +324,23 @@ als je zeker weet dat je een fout herstelt.
 weet, dan moet iemand met het recht daarvoor zijn **eigen accountwachtwoord** invullen. Zie
 hoofdstuk 4.8.
 
-**5. De auto staat in de werkplaats.** Dan weigert de app het ophalen met **Ophalen mislukt** en
-de Engelse tekst:
+**5. De auto staat in de werkplaats.** Dan opent het venster **Uitgifte geblokkeerd**:
 
-> *This vehicle is in the workshop and cannot be handed over. Close the workshop job first, or
-> have an administrator force the handover with a reason.*
+> *Dit voertuig staat in de werkplaats en kan niet worden uitgegeven. Rond de werkplaatsklus
+> eerst af.*
 
-Er wordt dan **niets** opgeslagen — ook de startdatum schuift niet. Los eerst de werkplaatsstatus
-op met **Terug van onderhoud** of **Terug uit onderhoud** (hoofdstuk 7 en 18), en start het
-ophalen daarna opnieuw.
+Er wordt dan **niets** opgeslagen — ook de startdatum schuift niet.
 
-> **Beperking:** de melding noemt de mogelijkheid dat een beheerder de uitgifte forceert met
-> opgaaf van reden. Die knop bestaat niet in het scherm. De enige weg is de werkplaatsstatus
-> vrijgeven.
+- **Ben je geen beheerder?** Dan staat er alleen *Alleen een beheerder kan de uitgifte forceren.
+  Los de werkplaatsstatus op, of vraag een beheerder.* Gebruik **Terug van onderhoud** of **Terug
+  uit onderhoud** (hoofdstuk 7 en 18) en start het ophalen daarna opnieuw.
+- **Ben je beheerder?** Dan staat er een veld **Reden voor het forceren** en de knop **Toch
+  uitgeven**. Zonder reden blijft die knop uit. De reden komt in de notities van de reservering
+  te staan, bijvoorbeeld *[WORKSHOP OVERRIDE 2026-09-13] IN_WORKSHOP forced by admin: klant staat
+  aan de balie*. Wil je toch niet uitgeven, klik dan **Niet uitgeven**.
 
-Vergelijkbare weigeringen: *This vehicle is marked as needing service and cannot be handed
-over…* (status **Onderhoud nodig**) en *Cannot pickup vehicle that is marked as "not for
-rental".*
+Vergelijkbare weigeringen, in hetzelfde venster: *Dit voertuig staat op "reparatie nodig"…*
+(status **Reparatie nodig**) en *Dit voertuig staat op "niet voor verhuur"…*
 
 ### Het ophalen ongedaan maken
 

@@ -247,9 +247,10 @@ of vanaf het scanscherm met **Onderhoud inplannen** en **Terug uit onderhoud** (
 > nodig** staan, en dan is de auto nog steeds niet te verhuren. Zet die er zelf met **Bewerken**
 > weer op **Beschikbaar**. Zie hoofdstuk 7.7.
 
-> **Beperking:** in het scherm zit géén knop om het ophalen toch te forceren, ook niet als
-> beheerder. De melding noemt die mogelijkheid wel, maar hij bestaat niet in de app. Los de
-> werkplaatsstatus op — dat is de bedoelde weg.
+> **Een beheerder kan de uitgifte forceren.** Weigert de app het ophalen, dan opent het venster
+> **Uitgifte geblokkeerd**. Ben je beheerder, dan staat daar een veld **Reden voor het forceren**
+> en de knop **Toch uitgeven**; de reden komt in de notities van de reservering. Ben je dat niet,
+> dan is de werkplaatsstatus vrijgeven de weg. Zie 5.6.
 
 ### Wat "beschikbaar" precies betekent
 

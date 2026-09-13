@@ -248,6 +248,21 @@
       "processReturnFailedFallback": "Inleveren verwerken mislukt. Probeer het opnieuw.",
       "returnMileageLessThanPickup": "Kilometerstand bij inleveren kan niet lager zijn dan bij ophalen ({{km}} km)."
     },
+    "workshopBlocked": {
+      "title": "Uitgifte geblokkeerd",
+      "reasons": {
+        "IN_WORKSHOP": "Dit voertuig staat in de werkplaats en kan niet worden uitgegeven. Rond de werkplaatsklus eerst af.",
+        "NEEDS_FIXING": "Dit voertuig staat op \"reparatie nodig\" en kan niet worden uitgegeven. Los dat eerst op.",
+        "NOT_FOR_RENTAL": "Dit voertuig staat op \"niet voor verhuur\" en kan niet worden uitgegeven."
+      },
+      "adminHint": "Als beheerder mag je de uitgifte toch doorzetten. Geef op waarom; de reden wordt bij de reservering vastgelegd.",
+      "notAdminHint": "Alleen een beheerder kan de uitgifte forceren. Los de werkplaatsstatus op, of vraag een beheerder.",
+      "reasonLabel": "Reden voor het forceren",
+      "reasonPlaceholder": "Bijvoorbeeld: klant staat aan de balie, APK is morgen",
+      "forceButton": "Toch uitgeven",
+      "forcingButton": "Bezig met uitgeven...",
+      "closeButton": "Niet uitgeven"
+    },
     "handoverResult": {
       "contractReadyTitle": "Contract klaar",
       "contractFailedTitle": "Contract kon niet gemaakt worden",
