@@ -242,10 +242,10 @@ Dat is bewust: een auto die kapot naar binnen ging, mag er niet stilletjes weer 
 zet de vlag om met **Voertuig markeren voor onderhoud** en **Terug van onderhoud** (hoofdstuk 7),
 of vanaf het scanscherm met **Onderhoud inplannen** en **Terug uit onderhoud** (hoofdstuk 18).
 
-> **Let op — dit zijn twee aparte knoppen voor twee aparte statussen.** **Terug uit onderhoud**
-> haalt alleen de werkplaatsvlag eraf. De **Beschikbaarheidsstatus** blijft daarna op **Reparatie
-> nodig** staan, en dan is de auto nog steeds niet te verhuren. Zet die er zelf met **Bewerken**
-> weer op **Beschikbaar**. Zie hoofdstuk 7.7.
+> **Terug uit onderhoud doet het hele rondje.** De werkplaatsvlag gaat eraf, het onderhoudsblok
+> dat vandaag loopt wordt afgesloten en de **Beschikbaarheidsstatus** komt meteen in een
+> verhuurbare staat — dus niet meer op **Reparatie nodig**. Je hoeft er niets meer met de hand
+> achteraan te zetten. Zie hoofdstuk 7.5.
 
 > **Een beheerder kan de uitgifte forceren.** Weigert de app het ophalen, dan opent het venster
 > **Uitgifte geblokkeerd**. Ben je beheerder, dan staat daar een veld **Reden voor het forceren**

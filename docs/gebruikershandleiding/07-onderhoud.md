@@ -245,13 +245,12 @@ gewone venster **Onderhoud plannen** met de auto al ingevuld.
 Er zijn twee knoppen, met een belangrijk verschil.
 
 **A. Terug uit onderhoud (scanscherm).** Scan de auto en klik op **Terug uit onderhoud**. Je
-krijgt **Voertuig is terug uit onderhoud**. De werkplaatsvlag gaat uit en de auto kan weer mee.
+krijgt **Voertuig is terug uit onderhoud**. De werkplaatsvlag gaat uit, het onderhoudsblok dat
+vandaag loopt wordt afgesloten, en de auto komt meteen in een verhuurbare staat — dus niet meer
+op **Reparatie nodig**. Je hoeft de beschikbaarheidsstatus niet meer met de hand terug te zetten.
 
-> **Let op — dit sluit ook onderhoud dat nog moet komen.** Deze knop zet niet alleen de vlag om,
-> hij sluit ook de onderhoudsblokken van deze auto af, inclusief blokken die verderop in de
-> kalender staan. Die verdwijnen dan uit de kalender en komen te staan onder **Voltooide
-> bekijken**. Controleer dus na gebruik of het geplande onderhoud er nog staat, en plan het
-> opnieuw in als dat niet zo is.
+Onderhoud dat verderop in de kalender staat, blijft gewoon staan. Alleen het blok dat vandaag
+loopt gaat dicht.
 
 **B. Terug van onderhoud (bij een vervanger).** Heeft de klant een vervangende auto gekregen, dan
 staat er in de reservering een oranje blok **Vervangend voertuig toegewezen** — *Voertuig wordt

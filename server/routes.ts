@@ -96,6 +96,7 @@ import {
   isoToday,
   assertPickupPeriodStarted,
   PickupBeforeStartError,
+  selectMaintenanceBlocksToClose,
   type HandoverOverride,
 } from "./services/lifecycle";
 import { recalculateTotalPrice } from "../shared/rental-pricing";
@@ -1584,13 +1585,19 @@ export async function registerRoutes(app: Express): Promise<void> {
       // the portal customer was never told the car had gone in. Two sources of
       // truth for "is it in the workshop"; now one, and the same portal hook
       // `PATCH /api/reservations/:id` already fires.
-      const today = new Date().toISOString().split('T')[0];
-      const openBlocks = (await storage.getReservationsByVehicle(id)).filter((r) =>
-        r.type === 'maintenance_block' &&
-        !r.deletedAt &&
-        r.status !== 'cancelled' &&
-        r.status !== 'completed' &&
-        (!r.endDate || r.endDate >= today),
+      //
+      // PHASE 57 / WAVE 13 item 5 — which block, though. The filter here was
+      // "every open block whose end date has not passed", so pressing **Terug
+      // uit onderhoud** on the scan screen also completed a repair planned for
+      // October: it went to `out`, dropped out of the maintenance calendar, and
+      // nobody was told. `selectMaintenanceBlocksToClose()` is the rule now —
+      // only the block that covers today, or exactly the one the caller names.
+      const today = isoToday();
+      const blockId = Number.isInteger(req.body?.blockId) ? Number(req.body.blockId) : null;
+      const openBlocks = selectMaintenanceBlocksToClose(
+        await storage.getReservationsByVehicle(id),
+        today,
+        blockId,
       );
       const targetBlockStatus = BLOCK_TO_VEHICLE_MAINTENANCE[status];
       for (const block of openBlocks) {
@@ -1599,8 +1606,18 @@ export async function registerRoutes(app: Express): Promise<void> {
           maintenanceStatus: targetBlockStatus,
           updatedBy: (req.user as any)?.username ?? null,
         } as any);
-        if (updatedBlock) void onMaintenanceBlockChanged(block, updatedBlock);
+        if (updatedBlock) void onMaintenanceBlockChanged(block as any, updatedBlock);
       }
+
+      // WAVE 13 item 5 — and only now is the derivation right. It ran once
+      // inside markVehicleForService(), *before* the blocks above were closed,
+      // so `deriveVehicleAvailability()` still saw an open block and put the car
+      // straight back on `needs_fixing`: the employee cleared the workshop flag
+      // and the car stayed "Reparatie nodig" anyway. Deriving again, with the
+      // blocks in the state they are actually in, is what makes it rentable.
+      await storage.recomputeVehicleAvailability(id, {
+        clearWorkshopFlag: status === 'ok',
+      });
 
       const vehicle = await storage.getVehicle(id);
 
