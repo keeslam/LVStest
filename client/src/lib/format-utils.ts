@@ -96,7 +96,10 @@ export function isWeekendIso(iso: string): boolean {
 /**
  * Format a reservation status to a human-readable string
  */
-export function formatReservationStatus(status: string): string {
+export function formatReservationStatus(status: string | null | undefined): string {
+  // WAVE 14 item 7 — a row with no status used to throw here, which is why
+  // some screens printed `reservation.status` raw rather than call this.
+  if (!status) return "";
   const key = status.toLowerCase();
   const normalizedKey = key === 'pending' ? 'scheduled' : key === 'confirmed' ? 'active' : key;
   const fallback = status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -148,6 +151,46 @@ export function formatMaintenanceCategory(raw: string | null | undefined): strin
     return i18n.t("maintenance:calendarPage.completeMaintenanceDialog.repairOption", { defaultValue: raw });
   }
   return formatMaintenanceType(raw);
+}
+
+/**
+ * PHASE 57 / WAVE 14 item 4 — the cost category as the desk should read it.
+ *
+ * The category is stored verbatim and lowercase (`parking`, `toll`,
+ * `cleaning`), and three screens each built their own label: the reports
+ * printed the raw value under `text-transform: capitalize` (*Cleaning*,
+ * *Parking*, *Insurance*, *Tires*, *Toll*), the cost overview had a local
+ * ten-entry map that did not contain `parking` or `toll`, so those two stood
+ * lowercase between the Dutch words, and the two dropdowns had a third copy.
+ * One helper, one set of keys in `expenses:form.categories`.
+ *
+ * A value nobody translated yet (an imported or hand-typed category) still
+ * reads as words: `front window` -> *Front Window*, never an empty cell.
+ */
+export function formatExpenseCategory(raw: string | null | undefined): string {
+  if (!raw) return "";
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  const key = trimmed.toLowerCase().replace(/[\s-]+/g, "_");
+  const fallback = trimmed.replace(/[_-]+/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+  return i18n.t(`expenses:form.categories.${key}`, { defaultValue: fallback });
+}
+
+/**
+ * WAVE 14 item 6 — the body style (`Coupe`, `SUV`, `Hatchback`).
+ *
+ * The vehicle form translated it (*Coupé*) through
+ * `vehicles:vehicleForm.vehicleTypes`; every other screen printed the stored
+ * value, so the communication list said *Coupe* about the same car. The stored
+ * values keep their capitals, so the lookup is case-insensitive and a type the
+ * map does not know (`Bestelwagen`) is handed back untouched.
+ */
+export function formatVehicleType(raw: string | null | undefined): string {
+  if (!raw) return "";
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  const key = trimmed.toLowerCase().replace(/[\s-]+/g, "_");
+  return i18n.t(`vehicles:vehicleForm.vehicleTypes.${key}`, { defaultValue: trimmed });
 }
 
 /**

@@ -27,8 +27,8 @@ erbij, via **App-instellingen → Activiteit**. *(Hoofdstuk 10)*
 
 ## Afgerond
 
-Zie **Voltooid**. Op het scanscherm heet die status **Afgerond**; in de reserveringen heet hij
-**Voltooid**. *(Hoofdstuk 5, 18)*
+Geen status. De app noemt een afgesloten verhuring overal **Voltooid**, ook op het scanscherm.
+Zie **Voltooid**. *(Hoofdstuk 5, 18)*
 
 ## APK
 
@@ -142,7 +142,8 @@ Een verhuring waarvan de inleverdatum nog niet bekend is. Je zet dat aan in het 
 
 De handeling waarmee je een auto terugneemt: kilometerstand, brandstof, eventueel een schadecheck,
 en afronden met **Inleveren voltooien & schadecheck genereren**. Daarmee is de huur **direct**
-afgesloten en de auto weer vrij. Een inname kan niet ongedaan worden gemaakt. *(Hoofdstuk 1, 16)*
+afgesloten en de auto weer vrij. Ging het mis, dan draai je de inname terug met **Terugzetten**
+in de lijst achter **Voltooid bekijken (…)**. *(Hoofdstuk 1, 5, 16)*
 
 ## Kilometerstand
 
@@ -315,14 +316,13 @@ dat je moet bevestigen met **Ik bevestig & ga door**. Lees ze echt. *(Hoofdstuk 
 
 Het label in de voertuigenlijst dat zegt wat er met een auto aan de hand is: **Beschikbaar**,
 **Gepland**, **Verhuurd**, **Reparatie nodig**, **Niet voor verhuur**, **Vervangend voertuig**, en
-combinaties daarvan. Het scanscherm gebruikt voor dezelfde standen soms net andere woorden
-(bijvoorbeeld *Gereserveerd* en *In reparatie*). *(Hoofdstuk 2, 4)*
+combinaties daarvan. Het scanscherm gebruikt dezelfde woorden. *(Hoofdstuk 2, 4)*
 
 ## Voltooid
 
 De status van een verhuring die is ingenomen en afgesloten. De auto is daarmee weer vrij. Je
-vindt voltooide verhuringen via **Reserveringen → Voltooid bekijken (…)**. Op het scanscherm
-heet dezelfde status **Afgerond**. *(Hoofdstuk 5)*
+vindt voltooide verhuringen via **Reserveringen → Voltooid bekijken (…)**. Ook het scanscherm
+noemt deze status **Voltooid**. *(Hoofdstuk 5)*
 
 ## Zoekveld
 

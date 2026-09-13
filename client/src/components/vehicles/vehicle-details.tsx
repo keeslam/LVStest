@@ -15,7 +15,8 @@ import { ReservationAddDialog } from "@/components/reservations/reservation-add-
 import { ReservationEditDialog } from "@/components/reservations/reservation-edit-dialog";
 import { ExpenseViewDialog } from "@/components/expenses/expense-view-dialog";
 import { ExpenseAddDialog } from "@/components/expenses/expense-add-dialog";
-import { formatDate, formatCurrency, formatLicensePlate, formatFuelLevel, sumMoney } from "@/lib/format-utils";
+import { formatDate, formatCurrency, formatLicensePlate, formatFuelLevel, sumMoney, formatVehicleType } from "@/lib/format-utils";
+import { formatDateNl } from "@/lib/format-date-nl";
 import { Price } from "@/components/ui/price";
 import { isTrueValue } from "@/lib/utils";
 import { getDaysUntil, getUrgencyColorClass } from "@/lib/date-utils";
@@ -1119,7 +1120,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
             <CardTitle className="text-sm font-medium text-gray-500">{t('details.infoCards.vehicleType')}</CardTitle>
           </CardHeader>
           <CardContent className={displayReservation ? 'pb-3' : ''}>
-            <p className={`font-semibold ${displayReservation ? 'text-lg' : 'text-2xl'}`}>{vehicle.vehicleType || t('details.general.na')}</p>
+            <p className={`font-semibold ${displayReservation ? 'text-lg' : 'text-2xl'}`}>{formatVehicleType(vehicle.vehicleType) || t('details.general.na')}</p>
           </CardContent>
         </Card>
 
@@ -1446,7 +1447,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
 
                   <div>
                     <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.general.basicInfo.vehicleType')}</h4>
-                    <p className="text-base">{vehicle.vehicleType || t('details.general.na')}</p>
+                    <p className="text-base">{formatVehicleType(vehicle.vehicleType) || t('details.general.na')}</p>
                   </div>
 
                   <div>
@@ -2832,15 +2833,32 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                             )}
                                           </div>
                                         </div>
-                                        <div className="mt-2 text-xs text-gray-500">
-                                          {t('details.maintenance.reservationLabel', { start: item.reservation?.startDate, end: item.reservation?.endDate })}
+                                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                                          <Badge variant="secondary" data-testid="apk-current-renter-badge">
+                                            {t('details.maintenance.currentRenterBadge')}
+                                          </Badge>
+                                          {/* WAVE 14 item 5 — this line printed the stored
+                                              `2026-09-22` / `2026-10-20` while the rest of the
+                                              app writes 22-09-2026. */}
+                                          <span>
+                                            {t('details.maintenance.reservationLabel', {
+                                              start: formatDateNl(item.reservation?.startDate, 'short'),
+                                              end: item.reservation?.endDate
+                                                ? formatDateNl(item.reservation.endDate, 'short')
+                                                : t('details.maintenance.reservationOpenEnded'),
+                                            })}
+                                          </span>
                                         </div>
                                       </div>
                                     );
                                   })}
                                 </div>
                               ) : (
-                                <div className="border rounded-lg p-6 text-center text-gray-500">
+                                /* besluiten B-24 — no running or upcoming rental means
+                                   there is nobody to warn, and the server sends the
+                                   office notice instead. Say so, instead of "geen
+                                   klanten gevonden". */
+                                <div className="border rounded-lg p-6 text-center text-gray-500" data-testid="apk-office-only-notice">
                                   <User className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                                   <p>{t('details.maintenance.noCustomersFoundTitle')}</p>
                                   <p className="text-sm">{t('details.maintenance.noCustomersFoundHint')}</p>
@@ -2964,14 +2982,20 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                             })}
                             disabled={
                               sendApkReminderMutation.isPending ||
-                              customersWithReservations.length === 0 ||
-                              Object.keys(editableEmails).length === 0 ||
-                              Object.values(editableEmails).some(email => !email || email.trim() === '')
+                              // besluiten B-24: with no renter the send still has work to
+                              // do — the office notice — so the button stays usable and
+                              // says what it will actually do.
+                              (customersWithReservations.length > 0 && (
+                                Object.keys(editableEmails).length === 0 ||
+                                Object.values(editableEmails).some(email => !email || email.trim() === '')
+                              ))
                             }
                             data-testid="button-send-reminder"
                           >
                             {sendApkReminderMutation.isPending
                               ? t('details.maintenance.sendingButton')
+                              : customersWithReservations.length === 0
+                              ? t('details.maintenance.officeOnlyButton')
                               : Object.keys(editableEmails).length === 0
                               ? t('details.maintenance.selectEmailsButton')
                               : t('details.maintenance.sendToButton', { count: Object.keys(editableEmails).length })}

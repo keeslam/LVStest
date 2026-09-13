@@ -176,7 +176,7 @@ Zie hoofdstuk 9 voor de volledige lijst. In het kort:
 De reden *No valid email configuration for purpose: …* betekent dat de mailinstellingen
 ontbreken. Dat kan alleen een beheerder oplossen.
 
-Gebruik het tabblad **E-maillogboek** onder **Communicatie** hier niet voor — zie 12.13.
+Gebruik het tabblad **E-maillogboek** onder **Communicatie** hier niet voor — zie 12.12.
 
 ---
 
@@ -286,15 +286,13 @@ Dit zijn dingen die op dit moment **niet** werken zoals je zou verwachten. Ze st
 er niet op stukloopt. **Dit is geen werkwijze.** Gebruik de gewone weg uit de vorige
 hoofdstukken; dit is alleen om te weten waar je moet opletten.
 
-### 12.9 Een annulering en een inname zijn definitief
+### 12.9 Een annulering is definitief
 
-Een geannuleerde reservering kan niet terug naar geboekt, en een afgeronde inname kan niet
-ongedaan worden gemaakt. Beide moet je oplossen door een nieuwe reservering aan te maken en dat
-in de notities te zetten. Kijk dus goed voordat je annuleert of inneemt.
+Een geannuleerde reservering kan niet terug naar geboekt. Dat moet je oplossen door een nieuwe
+reservering aan te maken en dat in de notities te zetten. Kijk dus goed voordat je annuleert.
 
-In de lijst achter **Voltooid bekijken (…)** staat bij elke afgesloten verhuring wél een knop
-**Terugzetten**. Die werkt niet: je krijgt **Fout** — *Verhuur terugzetten mislukt*, en er
-verandert niets aan de verhuring. Reken er dus niet op.
+Een **inname** is dat niet: die draai je terug met **Terugzetten** in de lijst achter **Voltooid
+bekijken (…)** (hoofdstuk 5, paragraaf 5.8, en hoofdstuk 11, paragraaf 11.13).
 
 ### 12.10 Bij annuleren beslis je zelf wat er meegaat
 
@@ -315,21 +313,14 @@ portaalaanvraag en rond zijn portaalaccount. De klant krijgt **geen** automatisc
 
 Bel of mail in die gevallen zelf. Een document stuur je met **E-mailen** of **Mail naar klant**.
 
-### 12.12 De schermtekst bij de APK-herinnering klopt niet meer
-
-In het venster **APK-herinnering versturen** staat nog dat de herinnering naar alle klanten gaat
-die het voertuig ooit gehuurd hebben, en je ziet die klanten ook in de lijst staan. Dat is oude
-schermtekst. De app stuurt de mail **alleen naar de huidige huurder**, ongeacht wat je aanvinkt.
-Staat de auto leeg, dan gaat er alleen een melding naar kantoor.
-
-### 12.13 Het tabblad "E-maillogboek" toont voorbeeldgegevens
+### 12.12 Het tabblad "E-maillogboek" toont voorbeeldgegevens
 
 Onder **Communicatie** staat een tabblad **E-maillogboek** met drie regels uit maart 2024. Die
 regels zijn vast ingebouwd en hebben niets met jouw verzendingen te maken. Hetzelfde geldt voor
 het tabblad **Analyse**. Wil je weten of een document verstuurd is, kijk dan in
 **Reserveringsdocumenten** bij het document zelf.
 
-### 12.14 Twee van de drie handmatige downloadknoppen werken niet
+### 12.13 Twee van de drie handmatige downloadknoppen werken niet
 
 Onder **Back-up & Herstel → Handmatige back-up & herstel** staan drie kaarten.
 
@@ -341,13 +332,13 @@ Dit raakt de nachtelijke back-up **niet**: die maakt elke nacht gewoon zowel de 
 geüploade bestanden. Wil je die bestanden op je eigen computer, gebruik dan de knop
 **Downloaden** bij een van de **Bestand-back-ups** in de lijst erboven.
 
-### 12.15 De prullenbak kan niet geleegd worden
+### 12.14 De prullenbak kan niet geleegd worden
 
 Wat in de prullenbak zit, blijft daar staan. Er is geen knop om hem definitief te legen, en de
 lijst toont de honderd meest recente regels. Dat betekent ook dat een verwijderde klant nooit
 echt uit het systeem verdwijnt.
 
-### 12.16 Een deel van de meldingen is Engels
+### 12.15 Een deel van de meldingen is Engels
 
 De vensters en knoppen zijn Nederlands. Maar een melding die rechtstreeks van de server komt, is
 vaak nog Engels: *Reservation conflicts with existing bookings*, *This customer is blacklisted for
@@ -355,16 +346,16 @@ this vehicle and cannot be booked on it.*, *Not authorized. One of these permiss
 en de weigeringen bij het terugzetten van een back-up. In één werkstroom kom je daardoor beide
 talen tegen. De tabel in deel 2 vertaalt de meldingen die je het vaakst ziet.
 
-Ook een paar labels in de schermen zelf zijn nog Engels of half vertaald: de kostencategorieën
-heten in de rapporten *Cleaning*, *Parking*, *Insurance*, *Tires* en *Toll*, en in het
-**Kostenoverzicht** staan *parking* en *toll* met een kleine letter tussen de Nederlandse
-categorieën. Het gaat om dezelfde categorieën.
+De **labels in de schermen** zijn wél overal Nederlands: de kostencategorieën heten in het
+**Kostenoverzicht** en in de rapporten hetzelfde — **Onderhoud**, **Banden**, **Remmen**,
+**Schade**, **Brandstof**, **Verzekering**, **Registratie**, **Schoonmaak**, **Parkeren**,
+**Tol**, **Accessoires** en **Overig**.
 
 Ook de melding **"Te veel verzoeken"** is kale technische tekst: *429: Too many requests, please
 try again later.* Dat betekent dat je binnen een kwartier heel veel handelingen hebt gedaan.
 Wacht een paar minuten en sluit tabbladen die je niet gebruikt.
 
-### 12.17 Twee mensen in hetzelfde scherm
+### 12.16 Twee mensen in hetzelfde scherm
 
 Werken twee collega's tegelijk aan dezelfde reservering, dan wint bij het volledige
 bewerkformulier de laatste die opslaat, zonder waarschuwing. De wijziging van de eerste is dan
@@ -374,12 +365,12 @@ weg. Gebruik daarom liever de kleine vensters **Datums wijzigen**, **Klant wijzi
 Boeken en ophalen hebben dit probleem niet: daar houdt de app gelijktijdige handelingen wel
 tegen.
 
-### 12.18 Het scherm op een tablet
+### 12.17 Het scherm op een tablet
 
 Het reserveringenscherm past niet netjes op een tabletbreedte; je moet er horizontaal in
 scrollen. Op een laptop of een groot scherm is dat niet zo.
 
-### 12.19 Ontbrekende bestanden worden niet zichtbaar gemeld
+### 12.18 Ontbrekende bestanden worden niet zichtbaar gemeld
 
 Als een PDF wel in de lijst staat maar het bestand op de server weg is, merk je dat pas als je op
 **Bekijken** of **Downloaden** klikt. Er staat geen waarschuwing bij de regel. Kun je een

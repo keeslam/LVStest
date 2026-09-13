@@ -5,8 +5,8 @@ Dit hoofdstuk gaat over de fouten die op een drukke dag echt gemaakt worden. Per
 
 Twee dingen vooraf.
 
-**Bijna alles is te herstellen.** Er zijn twee uitzonderingen, en die staan in 11.13 en 11.14.
-Lees die twee, dan weet je waar je moet oppassen.
+**Bijna alles is te herstellen** — ook een inname (11.13). De uitzondering is een annulering:
+die kan niet terug. Lees 11.14, dan weet je waar je moet oppassen.
 
 **Alles wordt vastgelegd.** Bij elke reservering, elk voertuig en elke klant staat onder
 **Geschiedenis** wie wat wanneer wijzigde, met de oude en de nieuwe waarde. Je hoeft dus nooit
@@ -264,8 +264,8 @@ en rijbewijsnummer.
   **E-mail versturen** klikt.
 - Controleer bij **Selecteer documenten** dat je alleen de documenten van deze reservering hebt
   aangevinkt.
-- Een APK-herinnering gaat alleen naar de huidige huurder. Ook als je in het venster meerdere
-  klanten ziet staan, stuurt de app er maar één (hoofdstuk 9).
+- Een APK-herinnering gaat alleen naar de huidige huurder; het venster toont die ene ontvanger
+  (hoofdstuk 9).
 
 **Hoe je het herstelt.** Een verzonden e-mail kun je niet terughalen. Bel de ontvanger, vraag
 hem het bericht te verwijderen, en meld het intern zoals afgesproken. Stuur daarna het document
@@ -340,16 +340,17 @@ afgesloten en de auto weer vrij.
 
 **Hoe je het merkt.** De reservering staat op afgesloten en de auto is weer beschikbaar.
 
-**Hoe je het herstelt.** **In het scherm kan dit niet ongedaan worden gemaakt.** In de lijst
-achter **Voltooid bekijken (…)** staat wel een knop **Terugzetten**, maar die doet het niet: je
-krijgt **Fout** — *Verhuur terugzetten mislukt*, en de verhuring blijft afgesloten (hoofdstuk 12,
-paragraaf 12.9).
+**Hoe je het herstelt.** Open **Reserveringen** → **Voltooid bekijken (…)**, zoek de verhuring
+op en klik op **Terugzetten**. De verhuring gaat terug naar **Opgehaald** en de kilometerstand,
+het brandstofniveau en de inleverdatum van die inname worden gewist; de afgesproken begin- en
+einddatum blijven staan. Je krijgt **Verhuur teruggezet**. Neem daarna de juiste auto in.
 
-Wat je wel kunt doen:
+Let op:
 
-- Ging het om de verkeerde auto of de verkeerde klant, boek dan een nieuwe reservering met de
-  juiste gegevens en zet de correctie in de notities.
-- Klopte alleen de kilometerstand of de datum niet, corrigeer dan die velden op de reservering.
+- Was de auto ondertussen al op **Onderhoud nodig** gezet, dan kan dat blijven staan —
+  terugzetten wordt daar niet door tegengehouden.
+- Klopte alleen de kilometerstand of de datum niet, dan hoef je niets terug te zetten: corrigeer
+  die velden gewoon op de reservering.
 - Twijfel je, roep dan een beheerder. In de **Geschiedenis** staat precies wat er gebeurd is,
   dus het is altijd terug te vinden.
 

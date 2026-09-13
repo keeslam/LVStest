@@ -73,6 +73,7 @@ Zie hoofdstuk 1, paragraaf 1.4, en hoofdstuk 16.
 | De datums wijzigen | Open de reservering → **Datums wijzigen** |
 | Het contractnummer wijzigen | Open de reservering → het potloodje bij **Contractnummer** (**Contractnummer bewerken**) → **Opslaan** |
 | Een ophaling ongedaan maken | Open de reservering → **Terugzetten naar geboekt** → **Ja, terugzetten** |
+| Een inname ongedaan maken | **Reserveringen** → **Voltooid bekijken (…)** → **Terugzetten** |
 | Een boeking annuleren | Zoekveld bovenin → de reservering openen → **Reservering annuleren** → aanvinken wat meegaat |
 | Een oude huur alsnog afsluiten | **Nog buiten** → **Innemen** |
 | De factuurgegevens uitlezen | **Reserveringen** → **Administratie** |
@@ -243,6 +244,7 @@ Zie hoofdstuk 2, paragraaf 2.10.
 | Zien wie iets gewijzigd heeft | Open de reservering, het voertuig of de klant → **Geschiedenis** |
 | Een huur alsnog afsluiten | **Nog buiten** → **Innemen** |
 | Een ophaling terugdraaien | Open de reservering → **Terugzetten naar geboekt** |
+| Een inname terugdraaien | **Reserveringen** → **Voltooid bekijken (…)** → **Terugzetten** |
 | Een verwijderd record terughalen | Vraag een beheerder: **Voertuigen** → **Verwijderde voertuigen** → **Terugzetten** |
 | Een verwijderde bekeuring terughalen | Vraag een beheerder: **Klantenportaal** → **Bekeuringen** → **Prullenbak** |
 | Een contract dat niet meer klopt vervangen | Bij het document → **Opnieuw genereren** |

@@ -90,6 +90,7 @@ import {
   assertVehicleMaintenanceStatus,
   normalizeReservationStatus,
   isReservationTransitionAllowed,
+  RESERVATION_REVERSIONS,
   decideHandover,
   StateTransitionError,
   WorkshopBlockedError,
@@ -99,6 +100,7 @@ import {
   selectMaintenanceBlocksToClose,
   type HandoverOverride,
 } from "./services/lifecycle";
+import { currentRenterReservation } from "./services/vehicle-notification-recipients";
 import { recalculateTotalPrice } from "../shared/rental-pricing";
 import { calculateDutchHolidays, mergeHolidaysWithOverrides } from "../shared/holidays";
 import { geocodeAddress, haversineDistanceKm, nearestNeighborOrder, getRoadRouteDistances } from "./geocoding";
@@ -3856,11 +3858,24 @@ export async function registerRoutes(app: Express): Promise<void> {
       // endpoint, exactly as before.
       const newStatus = assertReservationTransition(currentStatus, status, { allowReversion: true });
 
+      // WAVE 14 item 2 — an undo is not a hand-over.
+      //
+      // `completed -> picked_up` and `returned -> picked_up` are the documented
+      // reversions (RESERVATION_REVERSIONS): the employee is taking back a
+      // mis-clicked return, so the car is where it already was — with the
+      // customer. Running B-03's workshop gate would refuse the correction the
+      // moment somebody had flagged the car for repair after the wrong return,
+      // and running B-16's "does this rental start today?" question would move
+      // a start date that was never in doubt. Neither rule is about undoing.
+      const isReversion = (
+        RESERVATION_REVERSIONS[normalizeReservationStatus(currentStatus) ?? ''] ?? []
+      ).includes(newStatus);
+
       // besluiten B-03 (BUG-109 step 5) — `/status` reached `picked_up` with no
       // vehicle check whatsoever, so it walked straight past the `not_for_rental`
       // guard that `/pickup` did apply, and past the workshop flag that neither
       // applied. Same gate, same override, on both paths.
-      if (newStatus === 'picked_up' && normalizeReservationStatus(currentStatus) !== 'picked_up' && existingReservation.vehicleId) {
+      if (!isReversion && newStatus === 'picked_up' && normalizeReservationStatus(currentStatus) !== 'picked_up' && existingReservation.vehicleId) {
         const vehicleForHandover = await storage.getVehicle(existingReservation.vehicleId);
         decideHandover(vehicleForHandover, workshopOverrideFrom(req));
       }
@@ -3870,7 +3885,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // answered the question, in which case the start date (and the total)
       // move to today.
       const pickupShift: Record<string, any> = { status: newStatus };
-      await applyPickupPeriodRule(existingReservation, pickupShift, req);
+      if (!isReversion) await applyPickupPeriodRule(existingReservation, pickupShift, req);
       
       // If status is "completed", check mileage validation
       if (status === "completed" && existingReservation.vehicleId && req.body.departureMileage) {
@@ -3942,11 +3957,19 @@ export async function registerRoutes(app: Express): Promise<void> {
         dataWithTracking.contractNumber = null;
       }
       
-      // When reverting from "returned" to "picked_up", clear return data.
+      // When reverting to "picked_up", clear return data.
+      //
       // BUG-128b: this also set `endDate = null`, which threw away the planned
       // end and turned the rental open-ended — conflicting with every future
       // booking on that vehicle. The planned end is not return data.
-      if (normalizeReservationStatus(existingReservation.status) === "returned" && newStatus === "picked_up") {
+      //
+      // WAVE 14 item 2: `completed` belongs in this rule too. besluiten B-02
+      // made the return write `completed` straight away, so the row a mistaken
+      // return leaves behind is `completed`, not `returned` — and undoing it
+      // has to drop the same six fields, or the rental goes back to
+      // "picked_up" still carrying the return mileage and fuel level of the
+      // return that never happened.
+      if (["returned", "completed"].includes(normalizeReservationStatus(existingReservation.status) ?? "") && newStatus === "picked_up") {
         dataWithTracking.actualReturnDate = null;
         dataWithTracking.returnMileage = null;
         dataWithTracking.fuelLevelReturn = null;
@@ -5591,56 +5614,54 @@ export async function registerRoutes(app: Express): Promise<void> {
   registerExpenseRoutes(app, routeDeps);
 
   // ==================== VEHICLE-SPECIFIC CUSTOMER ROUTES ====================
-  // Get customers who have rented a specific vehicle (for APK reminders, etc.)
+  /**
+   * Who a reminder about this vehicle actually goes to — besluiten **B-24**.
+   *
+   * PHASE 57 / WAVE 14 item 1. This route used to walk *every* reservation the
+   * plate ever had and hand back one entry per customer, so the "APK-herinnering
+   * versturen" window listed the renter from 2021 next to the one whose rental
+   * starts in 2027, and told the employee the mail went to all of them. It has
+   * not gone to all of them since wave 11: `POST /api/notifications/send`
+   * resolves the recipient with `vehicleNotificationTargets()` — the customer of
+   * the running or next reservation, and nobody else. The window was describing
+   * a behaviour the application no longer has.
+   *
+   * So this route now answers the question the window is really asking: *who
+   * will receive it?* — the same resolver the sender uses, filtered the same
+   * way (a renter with no usable address is not a recipient either; that case
+   * goes to the office). An empty list therefore means exactly one thing:
+   * nobody but the office gets a mail.
+   */
   app.get('/api/vehicles/:vehicleId/customers-with-reservations', requireAuth, hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
     try {
       const vehicleId = parseInt(req.params.vehicleId);
-      
+
       if (isNaN(vehicleId)) {
         return res.status(400).json({ error: 'Invalid vehicle ID' });
       }
-      
-      // Get ALL reservations for this vehicle (past and present)
-      const vehicleReservations = await storage.getReservationsByVehicle(vehicleId);
-      
-      // Get unique customer details with their most recent reservation
-      const customersMap = new Map();
-      
-      for (const reservation of vehicleReservations) {
-        // Skip maintenance blocks (they don't have customers)
-        if (reservation.type === 'maintenance_block' || !reservation.customerId) {
-          continue;
-        }
-        
-        // Get customer details
-        const customer = await storage.getCustomer(reservation.customerId);
-        const vehicle = await storage.getVehicle(vehicleId);
-        
-        if (customer && vehicle) {
-          // Use customer ID as key to avoid duplicates
-          // Keep the most recent reservation for each customer
-          const existingEntry = customersMap.get(customer.id);
-          const reservationDate = new Date(reservation.startDate);
-          
-          if (!existingEntry || new Date(existingEntry.reservation.startDate) < reservationDate) {
-            customersMap.set(customer.id, {
-              vehicle,
-              customer,
-              reservation
-            });
-          }
-        }
-      }
-      
-      // Convert Map to array
-      const customersWithReservations = Array.from(customersMap.values());
 
-      console.log(`Found ${customersWithReservations.length} unique customers who have rented vehicle ${vehicleId}`);
-      
-      res.json(customersWithReservations);
+      const vehicle = await storage.getVehicle(vehicleId);
+      if (!vehicle) {
+        return res.status(404).json({ error: 'Vehicle not found' });
+      }
+
+      const renter = await currentRenterReservation(vehicleId);
+      if (!renter) {
+        return res.json([]);
+      }
+
+      const customer = await storage.getCustomer(renter.customerId);
+      const reachable = customer
+        && (customer.email || customer.emailGeneral || customer.emailForMOT || customer.emailForInvoices);
+      if (!customer || !reachable) {
+        return res.json([]);
+      }
+
+      const reservation = await storage.getReservation(renter.reservationId);
+      res.json([{ vehicle, customer, reservation }]);
     } catch (error) {
-      console.error('Error fetching customers with reservations for vehicle:', error);
-      res.status(500).json({ 
+      console.error('Error fetching the current renter for vehicle:', error);
+      res.status(500).json({
         error: 'Failed to fetch customers with reservations',
         details: error instanceof Error ? error.message : 'Unknown error'
       });

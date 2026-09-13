@@ -58,7 +58,7 @@ import { UserPermission, UserRole } from "@shared/schema";
 import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
 import { ColorCodingDialog } from "@/components/calendar/color-coding-dialog";
 import { CalendarLegend } from "@/components/calendar/calendar-legend";
-import { formatReservationStatus, formatFuelLevel } from "@/lib/format-utils";
+import { formatReservationStatus, formatFuelLevel, formatVehicleType } from "@/lib/format-utils";
 import { formatCurrency } from "@/lib/utils";
 import { getCustomReservationStyle, getCustomReservationStyleObject, getCustomIndicatorStyle, getCustomTBDStyle } from "@/lib/calendar-styling";
 import { Calendar, User, Car, CreditCard, Edit, Eye, ClipboardEdit, Palette, Trash2, Wrench, ClipboardCheck, Mail, Search, FileText, Building, MapPin, Clock, History, AlertTriangle, Phone, RotateCcw, Printer } from "lucide-react";
@@ -1145,7 +1145,7 @@ export default function ReservationCalendarPage() {
                   <SelectContent>
                     <SelectItem value="all">{t('calendarPage.filters.allTypesOption')}</SelectItem>
                     {vehicleTypes.map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                      <SelectItem key={type} value={type}>{formatVehicleType(type)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1883,7 +1883,7 @@ export default function ReservationCalendarPage() {
                     <div className="text-xs text-gray-600">
                       {selectedReservation.placeholderSpare && !selectedReservation.vehicleId
                         ? t('spareVehicleAssignmentDialog.awaitingAssignment')
-                        : `${selectedReservation.vehicle?.vehicleType || t('viewDialog.unknownType')} • ${selectedReservation.vehicle?.fuel || t('viewDialog.unknownFuel')}`
+                        : `${formatVehicleType(selectedReservation.vehicle?.vehicleType) || t('viewDialog.unknownType')} • ${selectedReservation.vehicle?.fuel || t('viewDialog.unknownFuel')}`
                       }
                     </div>
                     {/* Show Mileage Information */}
@@ -3285,12 +3285,20 @@ export default function ReservationCalendarPage() {
                               variant="outline"
                               onClick={async () => {
                                 try {
-                                  await apiRequest('PATCH', `/api/reservations/${rental.id}`, {
+                                  // PHASE 57 / WAVE 14 item 2 — this used to
+                                  // PATCH `/api/reservations/:id`, which runs
+                                  // `assertReservationTransition` *without*
+                                  // `allowReversion`, so `completed ->
+                                  // picked_up` was refused every single time
+                                  // and the button could only ever say
+                                  // "Verhuur terugzetten mislukt". The undo
+                                  // belongs on `/status`, the endpoint that
+                                  // owns the documented reversions — and which
+                                  // clears the return mileage, fuel level and
+                                  // actual return date itself, so they are no
+                                  // longer sent from here.
+                                  await apiRequest('PATCH', `/api/reservations/${rental.id}/status`, {
                                     status: 'picked_up',
-                                    returnMileage: null,
-                                    fuelLevelReturn: null,
-                                    fuelCost: null,
-                                    fuelNotes: null
                                   });
                                   invalidateRelatedQueries('reservations');
                                   refetchCalendarData();

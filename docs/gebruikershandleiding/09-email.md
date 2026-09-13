@@ -51,11 +51,10 @@ Een klant die de auto ooit heeft gehuurd en nu niet meer, krijgt **nooit** een h
 klant van wie de huur pas over een halfjaar begint, krijgt hem alleen als er nu niemand anders
 in rijdt.
 
-> **Let op — de schermtekst klopt niet meer.** Op de voertuigkaart staat bij de knop
-> **APK-herinnering versturen** nog de oude uitleg: *"Verstuur een APK-keuringsherinnering naar
-> klanten die dit voertuig hebben gehuurd."* En je ziet in dat venster nog alle klanten met een
-> reservering op dat kenteken staan. Wie je daar aanvinkt maakt niet uit: de app stuurt de mail
-> hoe dan ook alleen naar de huidige huurder. De lijst is oude schermtekst, niet het gedrag.
+Het venster **APK-herinnering versturen** op de voertuigkaart toont precies die ene ontvanger,
+met het label **Huidige huurder** en de periode van zijn huur erbij. Staat de auto niet
+verhuurd, dan meldt het venster **Dit voertuig is nu niet verhuurd** en heet de knop **Melding
+naar kantoor versturen**.
 
 Heb je geen kantooradres ingesteld, dan meldt de app na het versturen dat er voertuigen zonder
 huurder zijn en dat er geen adres is om dat aan te melden. Dat stel je in bij de instellingen

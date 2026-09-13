@@ -409,8 +409,9 @@ Verder:
 **Een te lage stand wordt geweigerd:** **Ongeldige kilometerstand** — *Kilometerstand bij
 inleveren kan niet lager zijn dan bij ophalen (25000 km).* Lees de teller dan opnieuw af.
 
-> **Let op — innemen kan niet ongedaan gemaakt worden.** Controleer daarom vóór je afrondt het
-> **kenteken** en de **klant**. Ging het toch mis, zie hoofdstuk 11, paragraaf 11.13.
+> **Let op — controleer vóór je afrondt het kenteken en de klant.** Ging het toch mis, dan kun
+> je de inname terugdraaien met **Terugzetten** in de lijst achter **Voltooid bekijken (…)**;
+> zie hoofdstuk 11, paragraaf 11.13.
 
 ### Een afgesloten verhuring terugzoeken
 
@@ -421,10 +422,12 @@ dagen, of het laatste jaar). Per regel staan de auto, de klant, de periode, de k
 de brandstof en het totaalbedrag, met de knoppen **Bekijken**, **Terugzetten** en
 **Verwijderen**.
 
-> **De knop Terugzetten werkt hier niet.** Klik je erop, dan meldt de app **Fout** —
-> *Verhuur terugzetten mislukt*, en er verandert niets. Gebruik deze lijst dus alleen om iets
-> terug te zoeken of te bekijken. Een inname ongedaan maken kan niet; zie hoofdstuk 11,
-> paragraaf 11.13.
+**Terugzetten** draait de inname terug: de verhuring gaat van **Voltooid** terug naar
+**Opgehaald**, en de kilometerstand, het brandstofniveau en de inleverdatum die je bij het
+innemen invulde worden gewist — die inname heeft immers niet plaatsgevonden. De afgesproken
+**begin- en einddatum blijven staan**. Je krijgt **Verhuur teruggezet** — *Verhuur is gemarkeerd
+als opgehaald (retourgegevens gewist)*. Daarna neem je de auto gewoon opnieuw in, met de juiste
+gegevens.
 
 ---
 
@@ -529,9 +532,8 @@ en kun je hem niet opnieuw inplannen.
 | **Voltooid** | De huur is afgesloten, de auto is weer vrij | Door **Inleveren voltooien & schadecheck genereren**; ook met de hand |
 | **Geannuleerd** | De boeking gaat niet door | Door **Reservering annuleren** in het volledige venster (5.9); ook met de hand |
 
-De app gebruikt niet overal hetzelfde woord voor dezelfde stand. **Ingeleverd** heet in sommige
-overzichten **Geretourneerd**, en **Voltooid** heet op het scanscherm **Afgerond**. Het gaat om
-dezelfde status.
+Elke stand heeft één naam, in elk scherm: **Geboekt**, **Opgehaald**, **Ingeleverd**,
+**Voltooid** en **Geannuleerd**. Ook het scanscherm gebruikt deze woorden.
 
 ---
 
