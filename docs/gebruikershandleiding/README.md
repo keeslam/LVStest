@@ -45,39 +45,36 @@ woord ook hier — dan weet je zeker dat je het goede knopje hebt.
 |---|---|---|
 | 1 | [Snel aan de slag](01-snel-aan-de-slag.md) | Inloggen, het hoofdscherm, iets opzoeken, de meest voorkomende taken, uitloggen |
 | 2 | [Navigatie](02-navigatie.md) | Het menu, het scherm **Vandaag**, het dashboard, zoeken, snelle acties, sneltoetsen |
-| 3 | Klanten *(volgt)* | Klanten opzoeken, aanmaken en bijwerken |
-| 4 | Voertuigen *(volgt)* | Het wagenpark, voertuiggegevens, status en labels |
-| 5 | Reserveringen *(volgt)* | Boeken, ophalen, innemen, wijzigen en annuleren |
-| 6 | Transport *(volgt)* | Leveringen, wissels, sleepacties en terughalen |
-| 7 | Onderhoud *(volgt)* | Onderhoud plannen, vervangers en de werkplaats |
-| 8 | [Documenten](08-documenten.md) | Contracten, schadechecks, afdrukken en verouderde documenten |
-| 9 | [E-mail](09-email.md) | Meldingen en e-mails naar klanten |
-| 10 | Administratie *(volgt)* | Factuurgegevens, kosten en rapporten |
-| 11 | Veelgemaakte fouten *(volgt)* | Wat er misgaat en hoe je het voorkomt |
-| 12 | Problemen oplossen *(volgt)* | Meldingen die je kunt tegenkomen en wat je dan doet |
+| 3 | [Klanten](03-klanten.md) | Klanten opzoeken, aanmaken en bijwerken, chauffeurs en portaalaccounts |
+| 4 | [Voertuigen](04-voertuigen.md) | Het wagenpark, voertuiggegevens, statussen, APK, sleutellabels |
+| 5 | [Reserveringen](05-reserveringen.md) | Boeken, ophalen, innemen, wijzigen, annuleren en **Nog buiten** |
+| 6 | [Transport](06-transport.md) | Leveringen, wissels, sleepacties, terughalen en het transportrapport |
+| 7 | [Onderhoud](07-onderhoud.md) | Onderhoud plannen, de werkplaatsstatus en vervangende voertuigen |
+| 8 | [Documenten en afdrukken](08-documenten.md) | Contracten, schadechecks, sjablonen en verouderde documenten |
+| 9 | [E-mail versturen vanuit de app](09-email.md) | Welke mail er uitgaat, naar wie, en wat je doet als het misgaat |
+| 10 | [Beheer](10-beheer.md) | Gebruikers en rechten, instellingen, back-ups, geschiedenis en de prullenbak |
+| 11 | [Veelgemaakte fouten en hoe je ze herstelt](11-veelgemaakte-fouten.md) | Wat er misgaat, hoe je het voorkomt en hoe je het herstelt |
+| 12 | [Problemen oplossen](12-problemen-oplossen.md) | De meest voorkomende problemen, de foutmeldingen en de bekende beperkingen |
 | 13 | [Snel naslagwerk](13-snel-naslagwerk.md) | Elke veelgebruikte taak als één regel klikpad |
-| 14 | Woordenlijst *(volgt)* | De woorden die de app gebruikt, uitgelegd |
+| 14 | [Woordenlijst](14-woordenlijst.md) | De woorden die de app gebruikt, uitgelegd |
 | 15 | [Rollen en rechten](15-rollen-en-rechten.md) | Wie wat mag, en wat je ziet als je een recht mist |
 | 16 | [Dagelijks werk](16-dagelijks-werk.md) | De ochtend, de dag, het einde van de dag |
 | 17 | [Inwerkpad](17-inwerkpad.md) | In welke volgorde je dit leert, met oefeningen |
+| 18 | [Barcode en scannen](18-barcode-en-scannen.md) | Sleutellabels scannen, doorwerken vanaf het scanscherm, de sleutelkast-audit |
 
-*(volgt)* betekent: dat hoofdstuk wordt op dit moment geschreven en staat er nog niet bij.
-
-### Over de nummering
-
-De nummers 3 en 4 zijn gereserveerd voor klanten en voertuigen. Die twee hoofdstukken horen bij
-deze reeks maar zijn nog niet af; hun definitieve titels kunnen nog iets anders worden. De
-hoofdstukken 1, 2, 13, 15, 16 en 17 in deze lijst zijn klaar; 8 en 9 ook.
+Alle achttien hoofdstukken zijn af. De schermafbeeldingen staan in de map `afbeeldingen/` en
+worden vanuit de hoofdstukken zelf getoond.
 
 ---
 
 ## Wat er in versie 1.0 bewust níét staat
 
 - **Het klantenportaal vanaf de kant van de klant.** Wat de klant online ziet, valt buiten deze
-  handleiding. Hoofdstuk 2 legt wel uit wat jij met portaalaanvragen doet.
+  handleiding. Hoofdstuk 2 en 3 leggen wel uit wat jij met portaalaanvragen en portaalaccounts
+  doet.
 - **Installatie en beheer van de server.** Dat is werk voor de beheerder.
-- **Losse schermen die alleen een beheerder ziet**, zoals de gebruikersadministratie, de back-up
-  en de app-instellingen. Hoofdstuk 15 vertelt wel dát ze er zijn en wie erbij kan.
+- **Kosten en rapporten als eigen hoofdstuk.** Die twee schermen staan kort beschreven in
+  hoofdstuk 2, paragraaf 2.10, en hun klikpaden in hoofdstuk 13.
 
 ## Als er iets niet klopt
 

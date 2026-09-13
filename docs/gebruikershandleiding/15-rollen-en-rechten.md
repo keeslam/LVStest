@@ -69,7 +69,7 @@ Een beheerder herken je aan drie dingen:
 | De app-instellingen wijzigen | **App-instellingen** |
 | Iets uit de prullenbak **terugzetten** | **Voertuigen → Verwijderde voertuigen** |
 | Een nieuw beheerdersaccount aanmaken | **Gebruikers** |
-| De uitgifte van een auto uit de werkplaats forceren, met opgaaf van reden | Het ophaalvenster |
+| De uitgifte van een auto uit de werkplaats forceren, met opgaaf van reden | Het venster **Uitgifte geblokkeerd** bij het ophalen |
 
 Let op: die drie beheerschermen zitten aan de **rol** Beheerder vast, niet aan de vinkjes. Vink je
 bij een gewone medewerker **Gebruikers beheren**, **Back-ups beheren** of **Instellingen beheren**

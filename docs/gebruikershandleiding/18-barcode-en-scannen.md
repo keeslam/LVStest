@@ -99,7 +99,7 @@ allemaal tegelijk.
 |---|---|
 | **Opnieuw scannen** | Het veld wordt leeggemaakt voor de volgende sleutel |
 | **Voertuig openen** | De voertuigkaart opent |
-| **Kosten registreren** | Een kostenregel op deze auto boeken (hoofdstuk 10) |
+| **Kosten registreren** | Een kostenregel op deze auto boeken (hoofdstuk 13, paragraaf 13.10) |
 | **Document uploaden** | Een bestand aan deze auto hangen (hoofdstuk 8) |
 | **Tanken** | Het venster **Brandstofstatus bijwerken** |
 | **Km-stand bijwerken** | Het venster **Kilometerstand bijwerken** |
@@ -123,18 +123,19 @@ Van **Onderhoud inplannen** en **Terug uit onderhoud** geldt hetzelfde: ze sluit
 
 Wat elke tegel doet:
 
-- **Ophalen starten** opent het venster **Ophaalproces starten**. Zie hoofdstuk 5.7.
-- **Inleveren starten** opent **Inleverproces starten**. Zie hoofdstuk 5.8.
+- **Ophalen starten** opent het venster **Ophaalproces starten**. Zie hoofdstuk 5, paragraaf 5.7.
+- **Inleveren starten** opent **Inleverproces starten**. Zie hoofdstuk 5, paragraaf 5.8.
 - **Onderhoud inplannen** opent het venster **Onderhoud plannen** met deze auto al ingevuld. Zie
-  hoofdstuk 7.2.
-- **Terug uit onderhoud** zet de werkplaatsvlag meteen om, zonder tussenvenster. Je krijgt
+  hoofdstuk 7, paragraaf 7.2.
+- **Terug uit onderhoud** zet de werkplaatsstatus meteen om, zonder tussenvenster. Je krijgt
   **Voertuig is terug uit onderhoud**.
   > De knop sluit alleen het onderhoudsblok af dat vandaag loopt; onderhoud dat verderop in de
   > kalender staat blijft gewoon staan. De **Beschikbaarheidsstatus** komt meteen in een
-  > verhuurbare staat, dus je hoeft niets meer met de hand terug te zetten. Zie hoofdstuk 7.5.
+  > verhuurbare staat, dus je hoeft niets meer met de hand terug te zetten. Zie hoofdstuk 7,
+  > paragraaf 7.5.
 - **Transport starten** zet het transport op **Onderweg**; je krijgt **Transport gestart**. De
   knop heet daarna **Transport afronden**; die zet hem op voltooid met de melding **Transport
-  afgerond**. Zie hoofdstuk 6.5.
+  afgerond**. Zie hoofdstuk 6, paragraaf 6.5.
 
 Gaat er iets mis, dan meldt de app **Onderhoudsstatus wijzigen mislukt** of **Transportstatus
 wijzigen mislukt**.
@@ -208,7 +209,7 @@ je daarbij door bij te houden welke sleutels je gescand hebt en welke ontbreken.
      merk en model. Dit is de lijst waar je mee aan de slag moet.
    - **Onverwacht aanwezig (voertuig staat als verhuurd)** — sleutels die je wél gescand hebt,
      terwijl de auto volgens de app bij een klant staat. Dat betekent dat de auto terug is en de
-     huur nooit is afgesloten; kijk dan op **Nog buiten** (hoofdstuk 5.11).
+     huur nooit is afgesloten; kijk dan op **Nog buiten** (hoofdstuk 5, paragraaf 5.11).
    - Is alles compleet, dan staat er: *Geen sleutels ontbreken 🎉*
 7. Met **Opnieuw beginnen** wis je de telling en begin je opnieuw. Met **Sluiten** ga je weg.
 

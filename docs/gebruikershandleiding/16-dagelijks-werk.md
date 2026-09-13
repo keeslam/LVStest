@@ -124,8 +124,10 @@ De volledige uitleg staat in hoofdstuk 1, paragraaf 1.4.
 aanpassen?* Antwoord **Ja, startdatum naar vandaag** als de huur vandaag ingaat. Dan kloppen de
 periode en de prijs. Antwoord **Nee, niet ophalen** als de klant de auto nog niet meekrijgt.
 
-**Als de auto in de werkplaats staat,** weigert de app de uitgifte. Los eerst de werkplaatsstatus
-op; zie hieronder en hoofdstuk 11, paragraaf 11.11.
+**Als de auto in de werkplaats staat,** weigert de app de uitgifte met het venster **Uitgifte
+geblokkeerd**. Los eerst de werkplaatsstatus op; zie hieronder en hoofdstuk 11, paragraaf 11.11.
+Kan het echt niet wachten, dan kan alleen een beheerder de uitgifte met opgaaf van reden
+doorzetten.
 
 ### Een auto komt terug
 
@@ -206,10 +208,12 @@ Dit is de werkstroom waarin de volgorde het meest uitmaakt.
 > bepalen' voor alle betrokken reserveringen."* Zet je de status los om, dan is er niets dat je
 > tegenhoudt en ontdek je pas op de dag zelf dat er een klant zonder auto staat.
 
-> **Waarom je afrondt met Terug van onderhoud.** De werkplaatsvlag verdwijnt **niet** vanzelf als
-> je de auto inneemt of een transport afrondt. Dat is met opzet: een auto die kapot naar binnen
-> ging, mag er niet stilletjes weer uitkomen. Je moet hem dus zelf vrijgeven — en dat gaat het
-> makkelijkst met de knop die tegelijk de vervangende reservering afsluit.
+> **Waarom je afrondt met Terug van onderhoud.** De werkplaatsstatus verdwijnt **niet** vanzelf als
+> je de auto inneemt of een transport afrondt, en ook niet als je het onderhoudsblok op
+> **Voltooien** zet. Dat is met opzet: een auto die kapot naar binnen ging, mag er niet stilletjes
+> weer uitkomen. Je moet hem dus zelf vrijgeven — en dat gaat het makkelijkst met de knop die
+> tegelijk de vervangende reservering afsluit, de werkplaatsstatus weghaalt en de auto meteen weer
+> op **Beschikbaar** zet.
 
 ### Er komt een portaalaanvraag binnen
 
@@ -271,9 +275,10 @@ Het rode bolletje achter **Klantenportaal** hoort aan het eind van de dag weg te
 aanvragen die er nog staan moeten op **In behandeling** staan.
 
 **4. Is er iets geannuleerd vandaag?**
-Zo ja: loop na of er nog een transport, een vervangende reservering, een placeholder of een
-chauffeurstoewijzing aan hangt. Die blijven bij een annulering gewoon staan — de app ruimt ze niet
-op en vraagt er ook niet naar (hoofdstuk 11, paragraaf 11.8).
+Zo ja: loop na of alles wat eraan hing ook echt is meegegaan. Het venster **Reservering
+annuleren** vraagt per transport, vervangingsreservering, placeholder en chauffeurstoewijzing of
+het mee moet — maar wat niemand heeft aangevinkt, staat er nog gewoon (hoofdstuk 5, paragraaf
+5.9).
 
 **5. Staat er iets op je eigen lijstje dat je "morgen" doet?**
 Zet dat als melding in het **Meldingencentrum**: klik op het belletje → **Nieuwe melding** met een

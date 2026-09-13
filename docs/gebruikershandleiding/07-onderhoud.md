@@ -41,6 +41,10 @@ Bij een blok kun je labels tegenkomen: **Vervanger nodig**, **Vervangend voertui
 **Verhuur komt eraan** of **Verhuur komt eraan (binnen 3 weken)**. Dat is een waarschuwing dat er
 een klant aan vastzit.
 
+![De onderhoudskalender met de APK-signalen](afbeeldingen/07-onderhoud.png)
+*De **Onderhoudskalender**: per dag de APK-signalen en de ingeplande onderhoudsblokken, met
+labels als **Verhuur komt eraan**.*
+
 **Een dag openen.** Klik op een dagvakje. Je krijgt het venster **Onderhoudsevenementen -
 <datum>** — *Onderhoudsevenementen voor deze dag bekijken en beheren*. Wat je per regel kunt doen,
 hangt af van het soort regel:
@@ -210,13 +214,14 @@ Naast het onderhoudsblok in de kalender heeft elke auto een **werkplaatsstatus**
 standaard op in orde en kan twee andere waarden hebben: **Onderhoud nodig** of **Momenteel in
 onderhoud**.
 
-**Deze status blokkeert de uitgifte.** Staat hij aan, dan weigert de app het ophalen met de
-melding **Ophalen mislukt** en de Engelse tekst:
+**Deze status blokkeert de uitgifte.** Staat hij aan, dan weigert de app het ophalen. Je krijgt
+het venster **Uitgifte geblokkeerd**:
 
-> *This vehicle is in the workshop and cannot be handed over. Close the workshop job first, or
-> have an administrator force the handover with a reason.*
+> *Dit voertuig staat in de werkplaats en kan niet worden uitgegeven. Rond de werkplaatsklus
+> eerst af.*
 
-Er wordt dan niets opgeslagen.
+Er wordt dan niets opgeslagen. Ben je beheerder, dan kun je de uitgifte in datzelfde venster
+alsnog doorzetten met een reden; zie hoofdstuk 5, paragraaf 5.7.
 
 ### De status aanzetten
 
@@ -240,7 +245,7 @@ gewone venster **Onderhoud plannen** met de auto al ingevuld.
 Er zijn twee knoppen, met een belangrijk verschil.
 
 **A. Terug uit onderhoud (scanscherm).** Scan de auto en klik op **Terug uit onderhoud**. Je
-krijgt **Voertuig is terug uit onderhoud**. De werkplaatsvlag gaat uit, het onderhoudsblok dat
+krijgt **Voertuig is terug uit onderhoud**. De werkplaatsstatus gaat eraf, het onderhoudsblok dat
 vandaag loopt wordt afgesloten, en de auto komt meteen in een verhuurbare staat — dus niet meer
 op **Reparatie nodig**. Je hoeft de beschikbaarheidsstatus niet meer met de hand terug te zetten.
 
@@ -262,9 +267,10 @@ vervangende reservering is beëindigd.* Je hoeft de auto daarna niet meer zelf v
 
 Onderhoud dat verderop in de kalender staat, blijft gewoon staan.
 
-> **De werkplaatsvlag verdwijnt nooit vanzelf.** Niet bij het innemen van een huur, en niet bij
-> het afronden van een transport. Dat is met opzet: een auto die kapot naar binnen ging, mag er
-> niet stilletjes weer uitkomen. Je moet hem dus zelf vrijgeven.
+> **De werkplaatsstatus verdwijnt nooit vanzelf.** Niet bij het innemen van een huur, niet bij het
+> afronden van een transport, en ook niet als je het onderhoudsblok op **Voltooien** zet. Dat is
+> met opzet: een auto die kapot naar binnen ging, mag er niet stilletjes weer uitkomen. Je moet
+> hem dus met één van deze twee knoppen zelf vrijgeven.
 
 ---
 
@@ -301,35 +307,39 @@ waarde die je bij het plannen koos.
 
 **Vergeet de auto niet vrij te geven.** Het afronden van het blok zet de werkplaatsstatus van de
 auto niet om. Gebruik daarna **Terug van onderhoud** of **Terug uit onderhoud** (7.5), anders
-blijft het ophalen geweigerd worden.
+blijft het ophalen geweigerd worden. Zie het rijtje in 7.7.
 
 ---
 
 ## 7.7 Terug in dienst — de auto weer verhuurbaar maken
 
-Een auto is pas weer verhuurbaar als **twee** statussen in orde zijn: de werkplaatsvlag én de
-beschikbaarheidsstatus. Het afronden van het onderhoud zet ze geen van beide om. Loop daarom na
-elk onderhoud dit rijtje langs — het kost een halve minuut en voorkomt de fout die het vaakst
-gemaakt wordt: een auto die op het terrein staat maar in geen enkele lijst met vrije auto's
-voorkomt.
+Het afronden van een onderhoudsblok (7.6) geeft de auto **niet** vrij. Dat doet één van de twee
+knoppen uit 7.5. Loop daarom na elk onderhoud dit rijtje langs — het kost een halve minuut en
+voorkomt de fout die het vaakst gemaakt wordt: een auto die op het terrein staat maar in geen
+enkele lijst met vrije auto's voorkomt.
 
-1. **Haal de werkplaatsvlag eraf.** Scan de auto en klik op **Terug uit onderhoud**. Je krijgt
-   **Voertuig is terug uit onderhoud**.
-2. **Zet de beschikbaarheidsstatus terug.** Kijk in de lijst **Voertuigen** naar de kolom
-   **Status**. Staat er nog **Reparatie nodig**, klik dan op het potloodje → tabblad **Algemeen**
-   → **Beschikbaarheidsstatus** → **Beschikbaar** → **Voertuig bijwerken**. Stap 1 doet dit
-   namelijk niet voor je.
-3. **Rond het onderhoudsblok af.** Kijk op de **Onderhoudskalender**. Staat het blok er nog, sluit
-   het dan met **Voltooien** (7.6).
-4. **Kijk of er nog een vervanger loopt.** Kijk op **Nog buiten** en op **Vandaag**. Een
+1. **Geef de auto vrij.** Scan hem en klik op **Terug uit onderhoud**, of gebruik bij een
+   vervanger **Terug van onderhoud** in de reservering. Je krijgt **Voertuig is terug uit
+   onderhoud**, respectievelijk **Voertuig teruggekeerd van onderhoud**. Beide knoppen halen de
+   werkplaatsstatus eraf, sluiten het onderhoudsblok dat op dat moment loopt, en zetten de
+   **Beschikbaarheidsstatus** meteen terug op een verhuurbare waarde. Je hoeft die status dus
+   niet zelf om te zetten.
+2. **Rond een blok af dat nog openstaat.** Kijk op de **Onderhoudskalender**. Staat er nog een
+   blok op een andere dag, sluit het dan met **Voltooien** (7.6). Onderhoud dat verderop in de
+   kalender staat, blijft bewust staan.
+3. **Kijk of er nog een vervanger loopt.** Kijk op **Nog buiten** en op **Vandaag**. Een
    vervangende auto die nog op opgehaald staat terwijl de originele auto allang terug is,
    blokkeert die vervanger voor iedereen. Neem hem in, of annuleer de reservering als de auto
    nooit is meegegaan.
-5. **Controleer de APK-datum.** Is de auto gekeurd, dan moet de nieuwe datum op de voertuigkaart
+4. **Controleer de APK-datum.** Is de auto gekeurd, dan moet de nieuwe datum op de voertuigkaart
    staan.
 
-Controleer stap 1 en 2 door de auto te scannen: pas als er **Beschikbaar** staat en er geen
-oranje blok **Onderhoud** meer is, kun je hem weer meegeven.
+Controleer stap 1 door de auto te scannen: pas als er **Beschikbaar** staat en er geen oranje
+blok **Onderhoud** meer is, kun je hem weer meegeven.
+
+> **Eén uitzondering.** Stond de auto op **Niet voor verhuur**, dan laat de app hem daarop staan.
+> Dat is geen werkplaatsstatus maar een bewuste keuze, en die zet je met de hand terug
+> (hoofdstuk 4, paragraaf 4.6).
 
 ---
 
@@ -427,6 +437,6 @@ vervangend voertuig aan wordt toegewezen.
 | Een TBD-vervanger invullen | **Onderhoud** → **Lijstweergave** → **Vervangers** → **Toewijzen** |
 | Het onderhoud afronden | Dag openen in de kalender → **Voltooien** |
 | De vervangende huur afsluiten | Reservering → **Terug van onderhoud** |
-| De auto weer vrijgeven | **Scannen** → **Terug uit onderhoud**, daarna status op **Beschikbaar** zetten (7.7) |
+| De auto weer vrijgeven | **Scannen** → **Terug uit onderhoud** (zet ook de status terug, 7.7) |
 | Een afgerond onderhoud terugdraaien | **Voltooide bekijken (…)** → **Terugdraaien** |
 | Een portaalaanvraag afhandelen | **Vandaag** → **Beoordelen**, of **Klantenportaal** → **Aanvragen** |

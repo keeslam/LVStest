@@ -27,11 +27,16 @@ staan **Bekijken**, **Nieuwe reservering** en **Verwijderen**. Een leeg veld too
 Staat er onder het e-mailadres een blauw label **Portaal (1)**, dan heeft deze klant zoveel
 portaalaccounts (3.7).
 
-Onderaan staat hoeveel regels je ziet, bijvoorbeeld *1-10 van 325 getoond*, met **Vorige** en
+Onderaan staat hoeveel regels je ziet, bijvoorbeeld *1-10 van 300 getoond*, met **Vorige** en
 **Volgende**.
 
-**Sneller:** het zoekveld bovenin het scherm (hoofdstuk 1.3) doorzoekt klanten, voertuigen en
-reserveringen tegelijk. Zoek je alleen een klant, dan is de klantenlijst overzichtelijker.
+![De klantendatabase met het zoekveld en de filters](afbeeldingen/06-klanten.png)
+*De **Klantendatabase**: zoekveld, sorteerkeuze en **Filters** boven de lijst; achter elke regel
+**Bekijken**, **Nieuwe reservering** en **Verwijderen**.*
+
+**Sneller:** het zoekveld bovenin het scherm (hoofdstuk 1, paragraaf 1.3) doorzoekt klanten,
+voertuigen en reserveringen tegelijk. Zoek je alleen een klant, dan is de klantenlijst
+overzichtelijker.
 
 ---
 
@@ -292,7 +297,7 @@ ook klanten, reserveringen en transporten (zie 4.12).
 **Een dubbele klant opruimen doe je zo:**
 
 1. Zet de reserveringen van de dubbele kaart over met **Klant wijzigen** op de reservering
-   (hoofdstuk 5.5).
+   (hoofdstuk 5, paragraaf 5.5).
 2. Verwijder daarna de lege dubbele kaart.
 
 ---

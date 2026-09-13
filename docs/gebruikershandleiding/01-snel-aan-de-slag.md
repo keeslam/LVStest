@@ -14,6 +14,9 @@ de handelingen doen die je de eerste week het vaakst nodig hebt.
 4. Vul je **Wachtwoord** in.
 5. Klik op **Inloggen**, of druk op Enter.
 
+![Het inlogscherm van Car Rental Manager](afbeeldingen/01-inlogscherm.png)
+*Het inlogscherm: vul je gebruikersnaam en wachtwoord in en klik op **Inloggen**.*
+
 Je komt binnen op het **Dashboard**.
 
 **Let op — vijf pogingen.** Na vijf mislukte inlogpogingen binnen een kwartier blokkeert de app
@@ -91,6 +94,10 @@ sneller dan typen: druk op `S`, of ga naar **Scannen**. Zie 1.4.
 ---
 
 ## 1.4 De taken die je het vaakst doet
+
+![Het scherm Vandaag met de ophalingen en innames van vandaag](afbeeldingen/02-vandaag.png)
+*Het scherm **Vandaag**: per regel het kenteken, de auto en de klant, met de knop die de
+handeling meteen start.*
 
 ### Een auto meegeven (ophalen)
 

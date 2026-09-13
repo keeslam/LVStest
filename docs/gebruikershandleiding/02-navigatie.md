@@ -42,6 +42,10 @@ worden.
 
 Daaronder staan drie blokken.
 
+![Het scherm Vandaag](afbeeldingen/02-vandaag.png)
+*Het scherm **Vandaag**: bovenaan de datum en het aantal **Openstaande punten**, daaronder de
+blokken met de ophalingen, de innames en de vervangers die nog toegewezen moeten worden.*
+
 ### Vandaag ophalen en innemen
 
 Twee lijstjes: *… voertuigen meegeven* en *… voertuigen terugnemen*. Per regel zie je het
@@ -104,6 +108,10 @@ Van boven naar beneden:
 6. **Recente kosten** met de knop **Alles bekijken**.
 7. **Aankomende reserveringen** in een tabel: **Voertuig**, **Klant**, **Periode**, **Acties**.
 8. **Reserveringskalender** — een kleine maandkalender, met **Reservering toevoegen**.
+
+![Het dashboard met de Vandaag-tegel en de snelle acties](afbeeldingen/03-dashboard.png)
+*Het **Dashboard**: bovenaan de tegel **Vandaag** met **Open Vandaag**, daaronder **Snelle
+acties** en de vier signaalblokken.*
 
 ---
 
@@ -193,29 +201,42 @@ verhuringen, de actieve verhuringen en het totaal aantal gereden kilometers, de 
 **Chauffeurs**, **Actieve verhuringen**, **Geschiedenis** en **Portaal**. Onderaan staat
 **Geblokkeerde voertuigen**: auto's die deze klant niet mag huren.
 
-**Verwijderen.** De app weigert een klant te verwijderen zolang er een lopende of toekomstige
-reservering is; je krijgt dan de melding *"Deze klant heeft een lopende of toekomstige
-reservering en kan niet worden verwijderd."* Lukt het verwijderen wel, dan gaat de klant naar de
-prullenbak en kan een beheerder hem terugzetten. **Let op:** de tekst in het bevestigingsvenster
-zegt nog dat het verwijderen niet ongedaan gemaakt kan worden. Dat klopt niet meer — maar
-verwijder een klant alsnog alleen als je zeker weet dat het moet.
+**Verwijderen.** Klik je op **Verwijderen**, dan opent het venster **Klant verwijderen**. Dat
+laat eerst zien wat er aan de klant hangt (*Dit verwijdert ook:*) en vraagt je daarna de naam
+van de klant over te typen. Is er een lopende of toekomstige reservering, dan weigert de app met
+*Verwijderen kan niet: deze klant heeft een lopende of toekomstige reservering.* en noemt die
+reserveringen erbij. Lukt het verwijderen wel, dan gaat de klant naar de prullenbak en kan een
+beheerder hem terugzetten. Uitgebreid in hoofdstuk 3, paragraaf 3.8.
 
 ---
 
 ## 2.7 Klantenportaal
 
 Het scherm heet **Klantenportaal beheren**: *Aanvragen, accounts, bekeuringen en het aanbod voor
-klanten op één plek.*
+klanten op één plek. Klik op een tegel om die lijst te openen.*
 
-Bovenaan staan **Brieven scannen** en **Account uitnodigen**. Daaronder tegels die je aanklikt om
-die lijst te openen:
+Bovenaan staan **Brieven scannen** en **Account uitnodigen**. Daaronder acht tegels die je
+aanklikt om die lijst te openen:
 
 **Aanvragen** (nieuw) · **Onderhoud** (meldingen en placeholders) · **Bekeuringen** (niet
 gekoppeld) · **Klanten** (nu online) · **Accounts** (open · verlopen) · **Voertuigen online**
-(online aangeboden) · **Blacklist** (blokkades)
+(online aangeboden) · **Blacklist** (blokkades) · **Activiteit** (laatste acties in het portaal)
 
-Daaronder drie panelen: **Activiteit** (de laatste acties in het portaal), **Meldingen** (met
-**Alles gelezen**) en **Aankomende reserveringen** (ophalen en inleveren in de komende 14 dagen).
+Daaronder staan vier panelen:
+
+| Paneel | Wat je er ziet |
+|---|---|
+| **Aandacht nodig** | De aanvragen en bekeuringen die om actie vragen, met **Alle aanvragen** en **Alle bekeuringen** |
+| **Meldingen** | Wat er in het portaal gebeurd is, met het aantal ongelezen en de knop **Alles gelezen** |
+| **Aankomende reserveringen** | *Ophalen en inleveren in de komende 14 dagen* |
+| **Klanten** | Per klant hoeveel portaalaccounts er zijn en wanneer er voor het laatst iets gebeurde |
+
+Elk paneel toont alleen de eerste regels; met **Alles bekijken en zoeken** open je de volledige
+lijst.
+
+![Het scherm Klantenportaal beheren met de tegels en panelen](afbeeldingen/12-klantenportaal-beheer.png)
+*Het scherm **Klantenportaal beheren**: de tegels bovenaan zijn ingangen naar een lijst, de
+panelen eronder tonen de laatste regels.*
 
 Nieuwe aanvragen verschijnen ook op **Vandaag**. Als er iets nieuws is, zie je dat bovenin elk
 scherm aan de portaaltegel en aan het rode bolletje achter **Klantenportaal** in het menu.
@@ -283,8 +304,9 @@ maanden)*), met labels als **Vervanger nodig** en **Verhuur komt eraan**. Uitgeb
 hoofdstuk 7.
 
 **Kosten** — het scherm **Kostenbeheer** met **Factuur scannen** en **Kosten registreren**.
-Daaronder het **Kostenoverzicht** per categorie en de **Kostensamenvatting**. Uitgebreid in
-hoofdstuk 10.
+Daaronder het **Kostenoverzicht** per categorie (*Bekijk en beheer alle voertuiggerelateerde
+kosten*) en de **Kostensamenvatting**. Kosten heeft geen eigen hoofdstuk; de klikpaden staan in
+hoofdstuk 13, paragraaf 13.10, en vastleggen met de auto in je hand staat in hoofdstuk 18.
 
 **Documenten** — het scherm **Documentbeheer** met **Document uploaden** en de tabbladen
 **Documentbibliotheek**, **Contractsjablonen**, **Transportrapportsjablonen**, **Barcodelabels**
@@ -300,10 +322,17 @@ tabbladen **Alle transporten**, **Voertuigwissel**, **Slepen**, **Terughalen**, 
 **Sjabloonbouwer**, **E-maillogboek** en **Analyse**. Onder **Meldingen versturen** kies je
 **APK-herinneringen**, **Onderhoud** of **Aangepast bericht**. Uitgebreid in hoofdstuk 9.
 
-**Rapporten** — het scherm **Rapporten** met de tabbladen **APK**, **Garantie**, **Kosten**,
-**Benutting** en **Klanten**, plus **Aangepaste rapportbouwer** en **Analyse onderhoudskosten**.
-Met **Rapportfilters** stel je het datumbereik, het voertuig en de kostencategorie in.
-Uitgebreid in hoofdstuk 10.
+**Rapporten** — het scherm **Rapporten**: *Genereer en analyseer rapporten voor je
+autoverhuurbedrijf.* Rechtsboven staan vijf afdrukknoppen: **APK**, **Garantie**, **Kosten**,
+**Benutting** en **Klanten**. Daaronder de twee ingangen **Aangepaste rapportbouwer** en
+**Analyse onderhoudskosten**, en het blok **Rapportfilters** waarmee je het **Datumbereik**, het
+**Voertuig** en de **Kostencategorie** instelt. De cijfers zelf staan op de tabbladen
+**Operaties**, **Kosten**, **Voertuigen**, **Klanten**, **Transporten** en **Financieel**.
+Rapporten heeft geen eigen hoofdstuk; de klikpaden staan in hoofdstuk 13, paragraaf 13.13.
+
+![Het scherm Rapporten met de filters en de tabbladen](afbeeldingen/11-rapporten.png)
+*Het scherm **Rapporten**: de afdrukknoppen rechtsboven, daaronder **Rapportfilters** en de
+tabbladen met de cijfers.*
 
 ---
 

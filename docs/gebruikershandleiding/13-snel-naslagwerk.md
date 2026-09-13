@@ -33,7 +33,7 @@ Zie hoofdstuk 1.
 | Een sleutellabel scannen | `S` of **Scannen** → scan of typ de code |
 | Zien wat je net gescand hebt | **Scannen** → **Recente scans** |
 
-Zie hoofdstuk 1, paragraaf 1.3, en hoofdstuk 2, paragraaf 2.5.
+Zie hoofdstuk 1, paragraaf 1.3, en hoofdstuk 18.
 
 ---
 
@@ -73,6 +73,8 @@ Zie hoofdstuk 1, paragraaf 1.4, en hoofdstuk 16.
 | De datums wijzigen | Open de reservering → **Datums wijzigen** |
 | Het contractnummer wijzigen | Open de reservering → het potloodje bij **Contractnummer** (**Contractnummer bewerken**) → **Opslaan** |
 | Een ophaling ongedaan maken | Open de reservering → **Terugzetten naar geboekt** → **Ja, terugzetten** |
+| Een boeking annuleren | Zoekveld bovenin → de reservering openen → **Reservering annuleren** → aanvinken wat meegaat |
+| Een oude huur alsnog afsluiten | **Nog buiten** → **Innemen** |
 | De factuurgegevens uitlezen | **Reserveringen** → **Administratie** |
 
 Zie hoofdstuk 5 en hoofdstuk 11.
@@ -127,7 +129,8 @@ Zie hoofdstuk 4.
 | Een auto direct op onderhoud zetten | Open de reservering → **Voertuig markeren voor onderhoud** → **Onderhoud nodig** of **Momenteel in onderhoud** |
 | Een auto op onderhoud zetten via de scanner | **Scannen** → scan → **Onderhoud inplannen** |
 | Een vervanger toewijzen | **Vandaag** → **Vervanger toewijzen**, of **Dashboard** → **Beheer vervangende voertuigen** → **Nog te bepalen** |
-| Onderhoud afronden | Open de reservering → **Terug van onderhoud** → inleverdatum + km |
+| Een onderhoudsblok afsluiten | **Onderhoud** → de dag openen → **Voltooien** |
+| Een vervanging afsluiten en de auto vrijgeven | Open de reservering → **Terug van onderhoud** → inleverdatum + km |
 | Een auto vrijgeven via de scanner | **Scannen** → scan → **Terug uit onderhoud** |
 | De werkplaatskalender openen | **Onderhoud** |
 | Afgerond onderhoud zien | **Onderhoud** → **Voltooide bekijken (…)** |
@@ -180,7 +183,7 @@ Zie hoofdstuk 8.
 | De kosten van één auto zien | **Voertuigen** → **Bekijken** → tabblad **Kosten** |
 | De laatste kosten zien | **Dashboard** → **Recente kosten** → **Alles bekijken** |
 
-Zie hoofdstuk 10.
+Zie hoofdstuk 2, paragraaf 2.10.
 
 ---
 
@@ -223,12 +226,13 @@ Zie hoofdstuk 9.
 
 | Wat je wilt | Klikpad |
 |---|---|
-| Een rapport openen | **Rapporten** → tabblad **APK**, **Garantie**, **Kosten**, **Benutting** of **Klanten** |
+| De cijfers bekijken | **Rapporten** → tabblad **Operaties**, **Kosten**, **Voertuigen**, **Klanten**, **Transporten** of **Financieel** |
+| Een rapport afdrukken | **Rapporten** → rechtsboven **APK**, **Garantie**, **Kosten**, **Benutting** of **Klanten** |
 | De periode of de auto instellen | **Rapporten** → **Rapportfilters** |
 | Een eigen rapport maken | **Rapporten** → **Aangepaste rapportbouwer** |
 | De onderhoudskosten analyseren | **Rapporten** → **Analyse onderhoudskosten** |
 
-Zie hoofdstuk 10.
+Zie hoofdstuk 2, paragraaf 2.10.
 
 ---
 

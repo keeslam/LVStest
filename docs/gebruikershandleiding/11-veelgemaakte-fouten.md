@@ -216,11 +216,12 @@ onderhoud en sluit de vervangende reservering."* — doet beide dingen in één 
 **Hoe je het herstelt.** Neem de vervangende reservering gewoon in, of annuleer hem als de auto
 nooit is meegegaan.
 
-> **Let op — dit is de belangrijkste val in dit hoofdstuk.** Als je een reservering **annuleert**,
-> laat de app het bijbehorende transport, de vervangende reservering, de placeholder en de
-> chauffeurstoewijzing **staan**. Er wordt niet gevraagd of die mee moeten en er gebeurt ook niets
-> automatisch. Loop na een annulering dus altijd zelf na: staat er nog een vervanger geboekt?
-> Staat er nog een transport gepland? Zo ja, handel die apart af.
+> **Let op bij annuleren.** Annuleer je een reservering, dan laat het venster **Reservering
+> annuleren** eerst zien wat eraan hangt — het transport, de vervangingsreservering, de
+> placeholder en de chauffeurstoewijzing — en vink je per onderdeel aan of het mee moet. Wat je
+> **niet** aanvinkt, blijft gewoon staan; dat staat er ook bij. Lees dat lijstje dus echt, want
+> een vervanger die blijft staan houdt die auto bezet en een transport dat blijft staan wordt
+> gewoon gereden. Zie hoofdstuk 5, paragraaf 5.9.
 
 ---
 
@@ -278,29 +279,34 @@ naar de juiste klant.
 **Momenteel in onderhoud**. Of het omgekeerde: de auto is nog in de werkplaats, maar dat is
 nergens aangezet.
 
-**Hoe je het merkt.** De app weigert het ophalen:
+**Hoe je het merkt.** De app weigert het ophalen. Je krijgt het venster **Uitgifte geblokkeerd**:
 
-> *This vehicle is in the workshop and cannot be handed over. Close the workshop job first, or
-> have an administrator force the handover with a reason.*
+> *Dit voertuig staat in de werkplaats en kan niet worden uitgegeven. Rond de werkplaatsklus
+> eerst af.*
 
-Dat is een 409-melding onder de titel **Ophalen mislukt**.
+Er wordt dan niets opgeslagen.
 
 **Hoe je het voorkomt.** Zet de werkplaatsstatus aan én weer uit op het moment dat het gebeurt:
 
 - Naar de werkplaats: **Voertuig markeren voor onderhoud**, met **Onderhoud nodig** of
   **Momenteel in onderhoud** en een servicenotitie.
-- Terug uit de werkplaats: **Terug van onderhoud**, met de inleverdatum en de kilometerstand.
+- Terug uit de werkplaats: **Terug van onderhoud** bij de reservering, met de inleverdatum en de
+  kilometerstand, of **Terug uit onderhoud** op het scanscherm.
 
-**Hoe je het herstelt.** Is de auto klaar maar staat de vlag nog aan, gebruik dan
-**Terug van onderhoud** of zet de onderhoudsstatus terug op in orde. Daarna kan het ophalen
-gewoon door.
+**Hoe je het herstelt.** Is de auto klaar maar staat de vlag nog aan, gebruik dan **Terug van
+onderhoud** of **Terug uit onderhoud**. Die knoppen halen de vlag eraf, sluiten het
+onderhoudsblok van vandaag en zetten de auto meteen weer op een verhuurbare status. Daarna kan
+het ophalen gewoon door.
 
-> **Let op:** de werkplaatsvlag verdwijnt sinds kort **niet** meer vanzelf als je een auto
-> inneemt of een transport afrondt. Dat is bewust: een auto die kapot naar binnen ging, mag er
-> niet stilletjes weer uitkomen. Je moet hem dus zelf vrijgeven.
+> **Let op:** de werkplaatsstatus verdwijnt **niet** vanzelf als je een auto inneemt of een
+> transport afrondt. Dat is bewust: een auto die kapot naar binnen ging, mag er niet stilletjes
+> weer uitkomen. Je moet hem dus zelf vrijgeven.
 >
-> In het scherm zit geen knop om het ophalen toch te forceren. Los de werkplaatsstatus op — dat
-> is de bedoelde weg.
+> **Staat de klant aan de balie en kan het echt niet wachten?** Alleen een beheerder kan de
+> uitgifte toch doorzetten: in het venster **Uitgifte geblokkeerd** vult hij **Reden voor het
+> forceren** in en klikt op **Toch uitgeven**. Die reden komt in de notities van de reservering
+> te staan. Ben je zelf geen beheerder, dan lees je *Alleen een beheerder kan de uitgifte
+> forceren. Los de werkplaatsstatus op, of vraag een beheerder.*
 
 ---
 
@@ -334,8 +340,10 @@ afgesloten en de auto weer vrij.
 
 **Hoe je het merkt.** De reservering staat op afgesloten en de auto is weer beschikbaar.
 
-**Hoe je het herstelt.** **In het scherm kan dit niet ongedaan worden gemaakt.** Er is geen knop
-"inname ongedaan maken".
+**Hoe je het herstelt.** **In het scherm kan dit niet ongedaan worden gemaakt.** In de lijst
+achter **Voltooid bekijken (…)** staat wel een knop **Terugzetten**, maar die doet het niet: je
+krijgt **Fout** — *Verhuur terugzetten mislukt*, en de verhuring blijft afgesloten (hoofdstuk 12,
+paragraaf 12.9).
 
 Wat je wel kunt doen:
 
@@ -366,8 +374,9 @@ Er is geen knop en geen omweg die dit wel doet.
 Wat je moet doen: **maak een nieuwe reservering** met dezelfde gegevens, en zet in de notities
 waarom. De geannuleerde regel blijft staan als spoor van wat er gebeurd is.
 
-**Hoe je het voorkomt.** Kijk bij het annuleren naar het kenteken, de klant en de periode. En
-denk aan 11.8: annuleren laat een vervanger of transport gewoon staan.
+**Hoe je het voorkomt.** Kijk in het venster **Reservering annuleren** naar het nummer van de
+reservering en naar het lijstje **Hieraan hangt nog:** voordat je bevestigt. Twijfel je, klik dan
+op **Niet annuleren**.
 
 ---
 
@@ -384,15 +393,15 @@ denk aan 11.8: annuleren laat een vervanger of transport gewoon staan.
 - Heeft het voertuig een lopende of geplande huur, dan wordt het geweigerd:
   *"Verwijderen kan niet: dit voertuig heeft een lopende of geplande huur."* met
   *"Rond de huur af of annuleer hem eerst; daarna kan het voertuig naar de prullenbak."*
-- Bij een **klant** met een lopende of toekomstige huur geldt hetzelfde: *"Deze klant heeft een
-  lopende of toekomstige reservering en kan niet worden verwijderd."*
+- Bij een **klant** werkt het net zo: je krijgt eerst de lijst met wat eraan hangt (*"Dit
+  verwijdert ook: 5 reserveringen, 1 portaalinstellingen"*), de regel *"Een beheerder kan de
+  klant daarna terugzetten vanuit de prullenbak"*, en je moet de **naam van de klant overtypen**.
+- Heeft die klant een lopende of toekomstige huur, dan wordt het geweigerd: *"Verwijderen kan
+  niet: deze klant heeft een lopende of toekomstige reservering."*, met de blokkerende
+  reserveringen erbij. De knop blijft grijs, ook als je de naam correct overtypt.
 
 **Hoe je het herstelt.** Alles wat je verwijdert gaat naar de **prullenbak** en is terug te
 zetten, met alles wat eraan hing. Zie hoofdstuk 10.
-
-> **Let op:** in het venster om een klant te verwijderen staat nog *"Deze actie kan niet ongedaan
-> worden gemaakt"*. Dat is te streng geformuleerd — ook een klant gaat naar de prullenbak en een
-> beheerder kan hem terugzetten. De waarschuwing is verder terecht: doe het niet zomaar.
 
 Alleen een **beheerder** kan iets terugzetten. Loop dus naar een beheerder in plaats van alles
 opnieuw in te typen.

@@ -37,6 +37,10 @@ Per regel staan de knoppen **Bekijken**, een potlood (bewerken), een prullenbak 
 daarachter **Reserveren** of **Verhuur bekijken**. Bij een auto die op *niet voor verhuur* staat,
 is **Reserveren** grijs met de tekst *Voertuig is niet beschikbaar voor verhuur*.
 
+![Het scherm Voertuigbeheer met het voertuigenpark](afbeeldingen/05-voertuigen.png)
+*Het scherm **Voertuigbeheer**: bovenaan de knoppen, daaronder het **Voertuigenpark** met het
+zoekveld, **Filter functies** en **Sorteren op:**.*
+
 ---
 
 ## 4.2 Een voertuig bekijken
@@ -67,26 +71,30 @@ En zes tabbladen:
 
 ## 4.3 Een voertuig toevoegen
 
-Vul minstens **Kenteken**, **Merk** en **Model** in en klik onderaan op **Voertuig toevoegen**.
-De datumvelden mag je leeg laten; een leeg datumveld betekent gewoon "geen datum".
+Klik rechtsboven op **Voertuig toevoegen**. Het venster **Nieuw voertuig toevoegen** opent, met
+dezelfde vijf tabbladen als het bewerkformulier (4.5). Vul minstens **Kenteken**, **Merk** en
+**Model** in en klik onderaan op **Voertuig toevoegen**. De datumvelden mag je leeg laten; een
+leeg datumveld betekent gewoon "geen datum".
 
-Is er toch iets mis, dan zie je dat: boven de knoppen verschijnt een rood blok **Het formulier is
+Je krijgt **Voertuig succesvol aangemaakt** — *Het voertuig is toegevoegd aan je vloot.* De auto
+staat daarna meteen in het **Voertuigenpark**.
+
+Is er iets mis, dan zie je dat: boven de knoppen verschijnt een rood blok **Het formulier is
 nog niet compleet** met per veld wat eraan mankeert, plus dezelfde melding als tegel rechtsboven.
-De knop doet dus nooit meer "niets".
+De knop doet dus nooit "niets".
 
 > **Tip:** heb je meerdere auto's tegelijk, gebruik dan **Bulk importeren** (4.4). Dat haalt de
 > gegevens meteen bij de RDW op.
 
 Wat je in het formulier wél kunt gebruiken, is het opzoeken bij de RDW:
 
-1. Klik rechtsboven op **Voertuig toevoegen**.
-2. Typ het kenteken in het veld bovenaan.
-3. Klik op **Opzoeken**. Er staat bij: *Voer het kenteken in en klik op "Opzoeken" om
+1. Typ het kenteken in het veld bovenaan het venster.
+2. Klik op **Opzoeken**. Er staat bij: *Voer het kenteken in en klik op "Opzoeken" om
    voertuiggegevens automatisch aan te vullen vanuit de RDW-database.*
-4. Wordt de auto gevonden, dan vult de app merk, model, voertuigtype, brandstof, chassisnummer,
+3. Wordt de auto gevonden, dan vult de app merk, model, voertuigtype, brandstof, chassisnummer,
    APK-datum en bouwdatum zelf in. Je krijgt **Voertuiggegevens gevonden** —
    *Voertuiggegevens succesvol opgehaald uit de RDW-database.*
-5. Wordt de auto niet gevonden, dan staat er **Voertuig niet gevonden** — *Geen voertuig gevonden
+4. Wordt de auto niet gevonden, dan staat er **Voertuig niet gevonden** — *Geen voertuig gevonden
    met dit kenteken in de RDW-database. Controleer het kenteken en probeer het opnieuw.*
    Controleer dan de schrijfwijze van het kenteken.
 
@@ -181,14 +189,14 @@ verplichte velden in: kenteken, merk en model.* Onder het veld zelf staat de Eng
 *License plate is required*, *Brand is required* of *Model is required*.
 
 **De dagprijs telt bij het boeken.** Vul je op het tabblad **Contract** een **Dagprijs (€)** in,
-dan rekent de app bij een nieuwe reservering het totaalbedrag zelf uit (hoofdstuk 5.3). Zonder
-dagprijs blijft het bedrag op nul staan en moet je het handmatig invullen.
+dan rekent de app bij een nieuwe reservering het totaalbedrag zelf uit (hoofdstuk 5, paragraaf
+5.3). Zonder dagprijs blijft het bedrag op nul staan en moet je het zelf invullen.
 
 **Opmerkingen worden aan de balie getoond.** Wat je op het tabblad **Overig** in **Opmerkingen**
 zet, verschijnt bij het ophalen in een apart venster dat de medewerker moet bevestigen
-(hoofdstuk 5.7). Gebruik dat veld dus voor dingen die de klant echt moet weten — een bekende
-kras, een klemmende schuifdeur — en niet voor kantoornotities. Die horen bij **Interne
-afspraken**.
+(hoofdstuk 5, paragraaf 5.7). Gebruik dat veld dus voor dingen die de klant echt moet weten —
+een bekende kras, een klemmende schuifdeur — en niet voor kantoornotities. Die horen bij
+**Interne afspraken**.
 
 ---
 
@@ -218,35 +226,40 @@ Op het scanscherm heten dezelfde statussen net iets anders: **Beschikbaar**, **G
 **Verhuurd**, **In reparatie** en **Niet voor verhuur** (hoofdstuk 18).
 
 De status wijzigen doe je met **Bewerken** → tabblad **Algemeen**, of op de voertuigkaart met de
-knop **Wijzigen** bij het blok **Beschikbaarheidsstatus**. Zet een auto **nooit** met de hand op
-**Verhuurd**: dat doet het ophaalproces voor je, samen met het contractnummer en de
-kilometerstand. De app waarschuwt daar ook voor met **Geen actieve reservering** of
-**Reservering nog niet opgehaald**.
+knop **Wijzigen** bij het blok **Beschikbaarheidsstatus**. In dat lijstje kun je vier waarden
+kiezen: **Beschikbaar**, **Moet gerepareerd worden**, **Niet voor verhuur** en **Verhuurd**.
+**Gepland** staat er niet bij: die status zet de app zelf zodra er een reservering op de auto
+ligt.
 
-### B. De onderhoudsstatus (de werkplaatsvlag)
+Zet een auto **nooit** met de hand op **Verhuurd**: dat doet het ophaalproces voor je, samen met
+het contractnummer en de kilometerstand. De app waarschuwt daar ook voor met **Geen actieve
+reservering** of **Reservering nog niet opgehaald**.
+
+### B. De onderhoudsstatus (de werkplaatsstatus)
 
 Daarnaast heeft de auto een onderhoudsstatus: in orde, **Onderhoud nodig** of **In onderhoud**.
 Die zie je terug op het scanscherm en in het oranje blok **Onderhoud** daar.
 
-**Deze vlag blokkeert de uitgifte.** Staat hij aan, dan weigert de app het ophalen met de
-melding:
+**Deze vlag blokkeert de uitgifte.** Staat hij aan, dan weigert de app het ophalen. Je krijgt het
+venster **Uitgifte geblokkeerd** met de melding:
 
-> *This vehicle is in the workshop and cannot be handed over. Close the workshop job first, or
-> have an administrator force the handover with a reason.*
+> *Dit voertuig staat in de werkplaats en kan niet worden uitgegeven. Rond de werkplaatsklus
+> eerst af.*
 
 Dat is bewust: een auto die kapot naar binnen ging, mag er niet stilletjes weer uitkomen. Je
 zet de vlag om met **Voertuig markeren voor onderhoud** en **Terug van onderhoud** (hoofdstuk 7),
 of vanaf het scanscherm met **Onderhoud inplannen** en **Terug uit onderhoud** (hoofdstuk 18).
 
-> **Terug uit onderhoud doet het hele rondje.** De werkplaatsvlag gaat eraf, het onderhoudsblok
+> **Terug uit onderhoud doet het hele rondje.** De werkplaatsstatus gaat eraf, het onderhoudsblok
 > dat vandaag loopt wordt afgesloten en de **Beschikbaarheidsstatus** komt meteen in een
 > verhuurbare staat — dus niet meer op **Reparatie nodig**. Je hoeft er niets meer met de hand
-> achteraan te zetten. Zie hoofdstuk 7.5.
+> achteraan te zetten. Zie hoofdstuk 7, paragraaf 7.5.
 
-> **Een beheerder kan de uitgifte forceren.** Weigert de app het ophalen, dan opent het venster
-> **Uitgifte geblokkeerd**. Ben je beheerder, dan staat daar een veld **Reden voor het forceren**
-> en de knop **Toch uitgeven**; de reden komt in de notities van de reservering. Ben je dat niet,
-> dan is de werkplaatsstatus vrijgeven de weg. Zie 5.6.
+> **Een beheerder kan de uitgifte forceren.** Ben je beheerder, dan staat in het venster
+> **Uitgifte geblokkeerd** een veld **Reden voor het forceren** en de knop **Toch uitgeven**; de
+> reden komt in de notities van de reservering. Ben je dat niet, dan lees je *Alleen een
+> beheerder kan de uitgifte forceren* en is de werkplaatsstatus vrijgeven de weg. Zie hoofdstuk
+> 5, paragraaf 5.7.
 
 ### Wat "beschikbaar" precies betekent
 
@@ -257,7 +270,7 @@ in de tellingen.
 
 **Eén uitzondering om te kennen:** een auto met een *gepland* onderhoudsblok staat nog steeds in
 de keuzelijst van het boekingsformulier. Je mag hem bewust boeken; je krijgt dan een gele
-waarschuwing met de onderhoudsperiode erbij (hoofdstuk 5.3).
+waarschuwing met de onderhoudsperiode erbij (hoofdstuk 5, paragraaf 5.3).
 
 ---
 

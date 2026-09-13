@@ -11,9 +11,9 @@ Dit hoofdstuk bestaat uit drie delen:
 
 ---
 
-# Deel 1 — De acht problemen die het vaakst voorkomen
+## Deel 1 — De acht problemen die het vaakst voorkomen
 
-## 12.1 Ik kan niet inloggen
+### 12.1 Ik kan niet inloggen
 
 **Eerst het simpele.** Controleer of het Caps Lock-lampje uit staat en of je de juiste
 gebruikersnaam gebruikt. De gebruikersnaam is niet je e-mailadres.
@@ -28,7 +28,7 @@ gebruikersnaam gebruikt. De gebruikersnaam is niet je e-mailadres.
 | *429: Too many login attempts from this IP, please try again after 15 minutes.* | Er zijn vanaf deze werkplek vijf keer achter elkaar foute inloggegevens ingevuld |
 | *429: Account temporarily locked due to too many failed login attempts. Please try again in N minute(s).* | Dit account zelf is tijdelijk op slot |
 
-### De blokkade na vijf mislukte pogingen
+#### De blokkade na vijf mislukte pogingen
 
 Na **vijf** mislukte inlogpogingen binnen een kwartier gaat de deur dicht. Dat is een
 beveiliging tegen wachtwoordraden, geen storing.
@@ -59,7 +59,7 @@ inactiviteit"*. Log gewoon opnieuw in; er gaat niets verloren.
 
 ---
 
-## 12.2 Het voertuig is niet beschikbaar terwijl het er gewoon staat
+### 12.2 Het voertuig is niet beschikbaar terwijl het er gewoon staat
 
 Een auto telt als **beschikbaar** wanneer aan twee voorwaarden is voldaan: hij is vrij in de
 gevraagde periode, **én** zijn status is in orde. Niet beschikbaar is dus altijd één van deze
@@ -68,9 +68,9 @@ vier:
 | Oorzaak | Hoe je het ziet | Wat je doet |
 |---|---|---|
 | Er ligt een reservering overheen | De auto staat op de kalender in die periode | Kies andere datums of een andere auto |
-| De auto staat in de werkplaats | Onderhoudsstatus **Onderhoud nodig** of **Momenteel in onderhoud** | Is hij klaar? Gebruik **Terug van onderhoud** |
+| De auto staat in de werkplaats | Onderhoudsstatus **Onderhoud nodig** of **Momenteel in onderhoud** | Is hij klaar? Gebruik **Terug van onderhoud** of **Terug uit onderhoud** |
 | De auto staat op "niet voor verhuur" | Beschikbaarheidsstatus op de voertuigkaart | Zet de status om als dat klopt |
-| Een oude huur is nooit afgesloten | De auto staat op **Nog buiten** | Neem de huur alsnog in (hoofdstuk 11.6) |
+| Een oude huur is nooit afgesloten | De auto staat op **Nog buiten** | Neem de huur alsnog in (hoofdstuk 11, paragraaf 11.6) |
 
 De laatste is de sluipende. Staat een auto op je terrein maar niet in de lijst met beschikbare
 auto's, kijk dan altijd eerst op **Nog buiten**.
@@ -80,7 +80,7 @@ als beschikbaar, maar je mág hem wel bewust boeken. Zie 12.3.
 
 ---
 
-## 12.3 Ik kan geen reservering aanmaken
+### 12.3 Ik kan geen reservering aanmaken
 
 Loop deze vier langs:
 
@@ -114,7 +114,7 @@ Dit is ook een waarschuwing. Verhuur geen auto met een verlopen APK; laat hem ee
 
 ---
 
-## 12.4 Het PDF klopt niet
+### 12.4 Het PDF klopt niet
 
 **De gegevens op het contract zijn oud.** Kijk of er een oranje label **Verouderd** bij het
 document staat. Zo ja: de reservering is veranderd nadat het contract gemaakt was. Klik op
@@ -136,7 +136,7 @@ als dat kan, en meld het bij een beheerder.
 
 ---
 
-## 12.5 Het maken van een PDF mislukt
+### 12.5 Het maken van een PDF mislukt
 
 Je krijgt **Contract kon niet gemaakt worden** — *"De handeling is vastgelegd, maar het document
 is niet aangemaakt. Probeer het opnieuw of controleer de sjablonen."*
@@ -163,7 +163,7 @@ Stappen:
 
 ---
 
-## 12.6 De e-mail komt niet aan
+### 12.6 De e-mail komt niet aan
 
 Zie hoofdstuk 9 voor de volledige lijst. In het kort:
 
@@ -180,7 +180,7 @@ Gebruik het tabblad **E-maillogboek** onder **Communicatie** hier niet voor — 
 
 ---
 
-## 12.7 Ik heb iets op de verkeerde reservering gedaan
+### 12.7 Ik heb iets op de verkeerde reservering gedaan
 
 Kijk eerst wát je gedaan hebt; het antwoord verschilt per handeling.
 
@@ -198,7 +198,7 @@ Zie hoofdstuk 11 voor elk van deze gevallen.
 
 ---
 
-## 12.8 Er is per ongeluk iets gewijzigd en niemand weet door wie
+### 12.8 Er is per ongeluk iets gewijzigd en niemand weet door wie
 
 Open het record (reservering, voertuig of klant) en kijk onder **Geschiedenis**. Daar staat per
 regel wie het deed, wanneer, welk veld en de oude en nieuwe waarde. Een beheerder ziet alles bij
@@ -210,28 +210,28 @@ verwijderd, en kan een beheerder het terugzetten.
 
 ---
 
-# Deel 2 — Foutmeldingen
+## Deel 2 — Foutmeldingen
 
 Een deel van de meldingen is Nederlands, een deel Engels. Dat is niet erg: gebruik deze tabel om
 te zien wat er bedoeld wordt.
 
-## Bij ophalen en innemen
+### Bij ophalen en innemen
 
 | Melding | Wat het betekent | Wat je controleert | Zelf oplossen? | Beheerder nodig? |
 |---|---|---|---|---|
 | **"De huur start eerder — datum aanpassen?"** met *"Deze huur staat gepland vanaf …, maar het voertuig gaat vandaag mee."* | De auto wordt vóór de afgesproken begindatum meegegeven | Klopt het dat de huur nu ingaat? | **Ja** — kies **Ja, startdatum naar vandaag** | Nee |
-| *This vehicle is in the workshop and cannot be handed over. Close the workshop job first, or have an administrator force the handover with a reason.* | De auto staat op **Momenteel in onderhoud** | Is het onderhoud klaar? | **Ja** — gebruik **Terug van onderhoud** of zet de onderhoudsstatus om | Alleen als je die knoppen niet hebt |
-| *This vehicle is marked as needing service and cannot be handed over…* | De auto staat op **Onderhoud nodig** | Idem | **Ja** | Idem |
-| *Cannot pickup vehicle that is marked as "not for rental".* | De auto is bewust uit de verhuur gehaald | Waarom staat hij zo? | Nee, niet zomaar omzetten | **Ja** — overleg eerst |
-| *A reason is required to force a handover of a blocked vehicle.* | Er wordt geprobeerd het te forceren zonder reden | — | Nee | **Ja** |
-| *Only an administrator may hand over a vehicle that is in the workshop or not for rental.* | Alleen een beheerder mag forceren | — | Nee | **Ja** |
+| **"Uitgifte geblokkeerd"** — *"Dit voertuig staat in de werkplaats en kan niet worden uitgegeven. Rond de werkplaatsklus eerst af."* | De auto staat op **Momenteel in onderhoud** of **Onderhoud nodig** | Is het onderhoud klaar? | **Ja** — gebruik **Terug van onderhoud** of **Terug uit onderhoud** | Alleen om de uitgifte te forceren |
+| **"Uitgifte geblokkeerd"** — *"Dit voertuig staat op \"reparatie nodig\" en kan niet worden uitgegeven. Los dat eerst op."* | De auto staat op **Reparatie nodig** | Wat mankeert eraan? | **Ja** — los de reparatie op of geef de auto vrij | Alleen om te forceren |
+| **"Uitgifte geblokkeerd"** — *"Dit voertuig staat op \"niet voor verhuur\" en kan niet worden uitgegeven."* | De auto is bewust uit de verhuur gehaald | Waarom staat hij zo? | Nee, niet zomaar omzetten | **Ja** — overleg eerst |
+| *"Alleen een beheerder kan de uitgifte forceren. Los de werkplaatsstatus op, of vraag een beheerder."* | Je bent geen beheerder, dus je krijgt geen reden-veld te zien | — | Los de status op | **Ja**, als het echt geforceerd moet |
+| *A reason is required to force a handover of a blocked vehicle.* | Een beheerder klikt op **Toch uitgeven** zonder reden | — | **Ja** — vul een reden in | Nee |
 | **"Dubbel contractnummer"** / *Contract number "…" is already used by reservation #…* | Dit contractnummer zit al op een andere huur | Welke reservering dat is, staat erbij | **Ja** — kies een ander nummer, of neem het bewust over met **Overschrijven & doorgaan** | Nee |
 | **"Opmerkingen niet bevestigd"** — *"Je moet de voertuigopmerkingen bevestigen voordat je verdergaat met ophalen."* | Er staan opmerkingen bij de auto | Lees de opmerkingen | **Ja** — **Ik bevestig & ga door** | Nee |
 | **"Kilometerstand-overschrijving vereist"** | De ingevoerde stand is lager dan de vorige | Heb je goed afgelezen? | **Ja**, als je het recht hebt: vul je eigen wachtwoord in | Als je het recht niet hebt |
 | *"Je hebt geen recht om een verlaging van de kilometerstand te autoriseren."* | Je mist het recht | — | Nee | **Ja** |
 | **"Contractnummer vereist"** | Het veld is leeg | — | **Ja** | Nee |
 
-## Bij boeken en wijzigen
+### Bij boeken en wijzigen
 
 | Melding | Wat het betekent | Wat je controleert | Zelf oplossen? | Beheerder nodig? |
 |---|---|---|---|---|
@@ -242,7 +242,7 @@ te zien wat er bedoeld wordt.
 | *Invalid status transition from 'cancelled' to 'booked'* | Een annulering kan niet terug | — | Nee — maak een nieuwe reservering | Nee |
 | *Vehicle not found* / *Customer not found* | Het voertuig of de klant bestaat niet (meer) | Staat het record in de prullenbak? | Nee | **Ja**, om terug te zetten |
 
-## Bij verwijderen en terugzetten
+### Bij verwijderen en terugzetten
 
 | Melding | Wat het betekent | Wat je controleert | Zelf oplossen? | Beheerder nodig? |
 |---|---|---|---|---|
@@ -253,7 +253,7 @@ te zien wat er bedoeld wordt.
 | **"Deze reservering kan niet terug: het voertuig is in de tussentijd geboekt voor die periode."** | De auto is opnieuw verhuurd in die periode | De nieuwe boeking | **Ja** — boek de huur opnieuw op andere datums | Nee |
 | *Not authorized. Admin access required.* | Alleen een beheerder mag dit | — | Nee | **Ja** |
 
-## Bij documenten
+### Bij documenten
 
 | Melding | Wat het betekent | Wat je controleert | Zelf oplossen? | Beheerder nodig? |
 |---|---|---|---|---|
@@ -265,7 +265,7 @@ te zien wat er bedoeld wordt.
 | *Not authorized. One of these permissions required: manage_documents* | Je mag documenten inzien maar niet maken | — | Nee | **Ja** |
 | **"Je browser heeft afdrukken geblokkeerd. Gebruik de downloadknop en druk handmatig af."** | Browserinstelling | Pop-ups toestaan | **Ja** — downloaden en dan afdrukken | Nee |
 
-## Bij inloggen, rechten en de app zelf
+### Bij inloggen, rechten en de app zelf
 
 | Melding | Wat het betekent | Wat je controleert | Zelf oplossen? | Beheerder nodig? |
 |---|---|---|---|---|
@@ -280,7 +280,7 @@ te zien wat er bedoeld wordt.
 
 ---
 
-# Deel 3 — Bekende beperkingen
+## Deel 3 — Bekende beperkingen
 
 Dit zijn dingen die op dit moment **niet** werken zoals je zou verwachten. Ze staan hier zodat je
 er niet op stukloopt. **Dit is geen werkwijze.** Gebruik de gewone weg uit de vorige
@@ -292,11 +292,17 @@ Een geannuleerde reservering kan niet terug naar geboekt, en een afgeronde innam
 ongedaan worden gemaakt. Beide moet je oplossen door een nieuwe reservering aan te maken en dat
 in de notities te zetten. Kijk dus goed voordat je annuleert of inneemt.
 
-### 12.10 Bij annuleren blijft het bijbehorende staan
+In de lijst achter **Voltooid bekijken (…)** staat bij elke afgesloten verhuring wél een knop
+**Terugzetten**. Die werkt niet: je krijgt **Fout** — *Verhuur terugzetten mislukt*, en er
+verandert niets aan de verhuring. Reken er dus niet op.
 
-Annuleer je een huur of een onderhoudsblok, dan blijven een gekoppeld transport, een vervangende
-reservering, een placeholder en een chauffeurstoewijzing gewoon staan. De app vraagt niet wat
-ermee moet en ruimt niets op. **Loop dat na elke annulering zelf na.**
+### 12.10 Bij annuleren beslis je zelf wat er meegaat
+
+Annuleer je een reservering, dan laat het venster **Reservering annuleren** zien wat eraan hangt
+— een transport, een vervangingsreservering, een placeholder en een chauffeurstoewijzing — en
+vink je per onderdeel aan of het mee moet. Wat je **niet** aanvinkt, blijft staan; de app ruimt
+dat niet later alsnog op. **Lees dat lijstje dus voordat je bevestigt** (hoofdstuk 5, paragraaf
+5.9).
 
 ### 12.11 De klant krijgt niet overal bericht van
 
@@ -343,9 +349,16 @@ echt uit het systeem verdwijnt.
 
 ### 12.16 Een deel van de meldingen is Engels
 
-Alles wat recent is gebouwd spreekt Nederlands; de oudere meldingen eromheen niet. In één
-werkstroom kom je daardoor beide talen tegen. De tabel in deel 2 vertaalt de meldingen die je het
-vaakst ziet.
+De vensters en knoppen zijn Nederlands. Maar een melding die rechtstreeks van de server komt, is
+vaak nog Engels: *Reservation conflicts with existing bookings*, *This customer is blacklisted for
+this vehicle and cannot be booked on it.*, *Not authorized. One of these permissions required: …*
+en de weigeringen bij het terugzetten van een back-up. In één werkstroom kom je daardoor beide
+talen tegen. De tabel in deel 2 vertaalt de meldingen die je het vaakst ziet.
+
+Ook een paar labels in de schermen zelf zijn nog Engels of half vertaald: de kostencategorieën
+heten in de rapporten *Cleaning*, *Parking*, *Insurance*, *Tires* en *Toll*, en in het
+**Kostenoverzicht** staan *parking* en *toll* met een kleine letter tussen de Nederlandse
+categorieën. Het gaat om dezelfde categorieën.
 
 Ook de melding **"Te veel verzoeken"** is kale technische tekst: *429: Too many requests, please
 try again later.* Dat betekent dat je binnen een kwartier heel veel handelingen hebt gedaan.

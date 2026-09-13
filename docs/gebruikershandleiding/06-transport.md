@@ -37,6 +37,10 @@ De kolommen zijn: **Voertuig**, **Vervangend voertuig**, **Type**, **Route**, **
 - **Status** is **Gepland**, **Bezig**, **Voltooid** of **Geannuleerd**.
 - Een auto die niet van ons is, krijgt het label **Extern**.
 
+![Het transportdashboard met de tellers en de tabbladen](afbeeldingen/08-transporten.png)
+*Het **Transportdashboard**: bovenaan **Aankomend transport**, **Laatste transport** en de vier
+tellers, daaronder de tabbladen per soort en de tabel **Voertuigtransporten**.*
+
 **De knoppen achter een regel** (het zijn icoontjes; de tekst zie je als je erop stilstaat):
 
 | Knop | Waarvoor |
@@ -202,8 +206,8 @@ Rond je een transport af waar een vervangend voertuig aan hangt, dan vraagt de a
 
 Kies **Nu markeren als opgehaald** als de klant de vervanger echt heeft meegekregen; je krijgt
 dan het gewone ophaalvenster met contractnummer, kilometerstand, brandstof en schadecheck
-(hoofdstuk 5.7). Kies **Later** als dat nog moet gebeuren; je kunt het dan op het dashboard
-alsnog doen met de knop **Vervangend voertuig markeren als opgehaald**.
+(hoofdstuk 5, paragraaf 5.7). Kies **Later** als dat nog moet gebeuren; je kunt het dan op het
+dashboard alsnog doen met de knop **Vervangend voertuig markeren als opgehaald**.
 
 Komt de vervanger terug, dan gebruik je **Vervangend voertuig markeren als teruggebracht**. Ook
 daar vraagt de app eerst: **Vervangend voertuig markeren als teruggebracht?** — *… staat nog uit

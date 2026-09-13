@@ -49,6 +49,11 @@ de klant het portaal in het Engels gebruikt. Heeft een huur geen einddatum, dan 
 
 Er zijn drie plekken, met dezelfde documenten erin.
 
+![Het scherm Documentbeheer met de vijf tabbladen](afbeeldingen/09-documenten.png)
+*Het scherm **Documentbeheer**: rechtsboven **Document uploaden**, daaronder de tabbladen
+**Documentbibliotheek**, **Contractsjablonen**, **Transportrapportsjablonen**, **Barcodelabels**
+en **Schadecheck-sjablonen**.*
+
 **Documenten → Documentbibliotheek**
 Het volledige overzicht, gegroepeerd per voertuig. Bovenaan zie je het aantal voertuigen, het
 aantal documenten en het aantal documenttypen. Je filtert met **Alle voertuigen** en
@@ -142,14 +147,13 @@ Krijg je die melding, dan is er niets mis met de reservering. Er is een leeg sja
 geselecteerd. Kies een ander sjabloon, of laat een collega met het recht **PDF-sjablonen
 beheren** de velden in het sjabloon plaatsen.
 
-> **Let op:** de tekst van deze melding verwijst naar "Settings". Dat klopt niet meer — de
-> sjablonen staan onder **Documenten → Contractsjablonen**.
-
 Twee andere meldingen uit dezelfde hoek:
 
 - *Template not found* — het gekozen sjabloon bestaat niet meer. Kies een ander sjabloon.
-- *No contract template has been configured.* — er is helemaal geen contractsjabloon. Er moet er
-  eerst één gemaakt worden.
+- *No contract template has been configured. Create one under Settings → PDF templates before
+  generating a contract.* — er is helemaal geen contractsjabloon. Er moet er eerst één gemaakt
+  worden. Die melding wijst naar "Settings"; in de app vind je de sjablonen onder **Documenten →
+  Contractsjablonen**.
 
 Staat er geen sjabloon als standaard ingesteld, dan pakt de app zelf het eerste sjabloon uit de
 lijst. Dat kan een verkeerd sjabloon zijn. Zorg dus dat er altijd bewust één sjabloon op

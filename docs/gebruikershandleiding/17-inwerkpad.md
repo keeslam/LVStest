@@ -29,7 +29,7 @@ eerste week als de belangrijkste.
 | 7 | Week 2 | 7, 6 | Onderhoud, vervangers en transport |
 | 8 | Week 2 | 11, 12 | Fouten herstellen en meldingen lezen |
 | 9 | Week 3 | 15, 10 | Rollen, rechten en beheer |
-| 10 | Week 3 | 16, 18 | Een hele dag zelfstandig |
+| 10 | Week 3 | 16, 18 | Een hele dag zelfstandig, en scannen als vaste gewoonte |
 
 ---
 
@@ -252,8 +252,8 @@ stellen in plaats van te melden dat "het niet werkt".
 
 ## 17.12 Stap 10 — Week 3: een hele dag zelf
 
-**Lezen:** hoofdstuk 16 (Dagelijks werk) nog één keer, helemaal. En hoofdstuk 18, het laatste
-hoofdstuk van deze handleiding.
+**Lezen:** hoofdstuk 16 (Dagelijks werk) nog één keer, helemaal. En hoofdstuk 18 (Barcode en
+scannen), het laatste hoofdstuk van deze handleiding.
 
 **Doen:**
 
@@ -262,6 +262,9 @@ hoofdstuk van deze handleiding.
 2. Laat je begeleider die dag meekijken zonder in te grijpen, en bespreek hem aan het eind na.
 3. Handel die dag ook minstens één portaalaanvraag af, van **Beoordelen** tot en met het antwoord
    aan de klant.
+4. Doe die dag elke ophaling en inname via **Scannen** in plaats van via de lijst, zodat het
+   scannen een gewoonte wordt. Loop daarna één keer met je begeleider de **Sleutelkast-audit**
+   door (hoofdstuk 18, paragraaf 18.8).
 
 **Na deze stap ben je ingewerkt.**
 
