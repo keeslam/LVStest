@@ -475,7 +475,7 @@ B-17 al beantwoord en het scherm is gebouwd. Er resteren dus zes vragen.)*
 | **8 auto's in de werkplaats zonder onderhoudsblok** | Geteld door `scripts/data-hygiene-report.ts` (telt alleen, schrijft nooit). Die auto's zijn onverhuurbaar zonder dat er iets gepland staat. |
 | **De kentekennormalisatie (B-10)** | Op de productievormige kloon (499 voertuigen): **0 kentekens die na normalisatie veranderen, 0 botsingen**. Dat is het antwoord op de vraag die B-10 vooraf stelde. In productie nog één keer meten, en daarna opschonen plus de unieke index plaatsen. |
 | **Het kantooradres voor meldingen** | Een APK-herinnering voor een auto die leegstaat gaat naar kantoor, naar het adres in de instelling `notification_office_email`. Die instelling wordt gelezen, maar er is **geen veld in enig beheerscherm** om hem te zetten; zonder waarde valt de app terug op het afzenderadres. Wat moet het kantooradres zijn, en wil je er een veld voor? |
-| **Het bonnetjesveld (B-20)** | Je besluit is genomen — een lokaal of netwerkpad weigeren, alleen een echte link of een geüpload bestand — maar het is **niet gebouwd**. Wil je dit alsnog? |
+| ~~Het bonnetjesveld (B-20)~~ | **Gebouwd (WAVE 15).** Een lokaal pad (`C:\scans\bon.pdf`) en een netwerkpad (`\\server\share\bon.pdf`) worden geweigerd met de uitleg *"Een lokaal pad of netwerkpad werkt niet voor uw collega's. Plak een link die met http:// of https:// begint, of upload het bonnetje als bestand."* Een http(s)-link, een mailto-/tel-link en een pad binnen de app blijven gewoon geldig. De regel zit op het opslagpad, dus de API weigert het net zo goed als het formulier. Bestaande rijen zijn niet aangeraakt. |
 
 ### 7b. Technisch werk dat nog kan
 

@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm";
 import { z } from "zod";
 // FIX-R (BUG-072): one definition of "a link we are willing to open", shared
 // by the client sink guard and this schema.
-import { isSafeHttpUrl, SAFE_URL_MESSAGE } from "./safe-url";
+import { isSafeHttpUrl, SAFE_URL_MESSAGE, isLocalOrNetworkPath, LOCAL_PATH_MESSAGE } from "./safe-url";
 
 // User Roles enum
 export const UserRole = {
@@ -1228,10 +1228,30 @@ export const insertExpenseSchema = createInsertSchema(expenses).omit({
   // later opens with window.open(). `javascript:alert(1)` stored here executed
   // in the application's own origin. The client refuses to open an unsafe one;
   // this refuses to store it.
+  //
+  // besluiten B-20: and a local or network path is refused in its own right,
+  // with its own Dutch sentence. FIX-R's rule already turned `C:\scans\bon.pdf`
+  // away, but with a message about allowed schemes — which does not tell the
+  // employee that the problem is that their D-drive is not the office's.
+  // Checked first, so the more specific answer wins.
+  //
+  // This lives on the write schema, which is what both the expense form and
+  // every /api/expenses route parse, so the API refuses it too. Rows that
+  // already carry such a path are not touched: the rule is about what may be
+  // stored from now on.
   receiptUrl: z
     .string()
     .max(2048)
-    .refine((value) => value === "" || isSafeHttpUrl(value), { message: SAFE_URL_MESSAGE })
+    .superRefine((value, ctx) => {
+      if (value === "") return;
+      if (isLocalOrNetworkPath(value)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: LOCAL_PATH_MESSAGE });
+        return;
+      }
+      if (!isSafeHttpUrl(value)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: SAFE_URL_MESSAGE });
+      }
+    })
     .nullable()
     .optional(),
 });
