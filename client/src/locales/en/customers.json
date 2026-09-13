@@ -10,12 +10,28 @@
   },
   "deleteDialog": {
     "title": "Delete Customer",
-    "description": "Are you sure you want to delete <1>{{name}}</1>? This action cannot be undone and will remove all customer data and associated reservations.",
+    "description": "You are about to delete <1>{{name}}</1>.",
     "deletedTitle": "Customer deleted",
     "deletedDescription": "{{name}} has been successfully deleted.",
     "deleting": "Deleting...",
     "deleteCustomer": "Delete Customer",
-    "deleteFailed": "Failed to delete customer"
+    "deleteFailed": "Failed to delete customer",
+    "checkingImpact": "Checking what is attached to this customer...",
+    "alsoDeletes": "This also deletes:",
+    "nothingAttached": "Nothing else is attached to this customer.",
+    "restoreHint": "An administrator can restore the customer from the recycle bin afterwards.",
+    "typeToConfirm": "Type <1>{{name}}</1> to confirm",
+    "blockedTitle": "Cannot delete: this customer has a current or future reservation.",
+    "blockedReservation": "Reservation #{{id}} — {{start}} to {{end}} ({{status}})",
+    "blockedHint": "Finish or cancel that reservation first; then the customer can go to the recycle bin.",
+    "countLabels": {
+      "reservations": "reservations",
+      "drivers": "drivers",
+      "documents": "documents",
+      "portalSettings": "portal settings",
+      "portalUsers": "portal accounts",
+      "blacklist": "blacklist entries"
+    }
   },
   "driverView": {
     "title": "Driver Details",

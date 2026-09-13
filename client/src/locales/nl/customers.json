@@ -10,12 +10,28 @@
   },
   "deleteDialog": {
     "title": "Klant verwijderen",
-    "description": "Weet je zeker dat je <1>{{name}}</1> wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt en verwijdert alle klantgegevens en bijbehorende reserveringen.",
+    "description": "Je staat op het punt om <1>{{name}}</1> te verwijderen.",
     "deletedTitle": "Klant verwijderd",
     "deletedDescription": "{{name}} is succesvol verwijderd.",
     "deleting": "Bezig met verwijderen...",
     "deleteCustomer": "Klant verwijderen",
-    "deleteFailed": "Kon klant niet verwijderen"
+    "deleteFailed": "Kon klant niet verwijderen",
+    "checkingImpact": "Controleren wat aan deze klant gekoppeld is...",
+    "alsoDeletes": "Dit verwijdert ook:",
+    "nothingAttached": "Er is niets anders aan deze klant gekoppeld.",
+    "restoreHint": "Een beheerder kan de klant daarna terugzetten vanuit de prullenbak.",
+    "typeToConfirm": "Typ <1>{{name}}</1> om te bevestigen",
+    "blockedTitle": "Verwijderen kan niet: deze klant heeft een lopende of toekomstige reservering.",
+    "blockedReservation": "Reservering #{{id}} — {{start}} t/m {{end}} ({{status}})",
+    "blockedHint": "Rond die reservering af of annuleer hem eerst; daarna kan de klant naar de prullenbak.",
+    "countLabels": {
+      "reservations": "reserveringen",
+      "drivers": "chauffeurs",
+      "documents": "documenten",
+      "portalSettings": "portaalinstellingen",
+      "portalUsers": "portaalaccounts",
+      "blacklist": "zwarte-lijstitems"
+    }
   },
   "driverView": {
     "title": "Chauffeurgegevens",
