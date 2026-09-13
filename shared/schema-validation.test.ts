@@ -80,6 +80,31 @@ describe("FIX-Z — dates (BUG-042)", () => {
       expect(vehicleResult({ [field]: "not-a-date" }).success, field).toBe(false);
     }
   });
+
+  /**
+   * PHASE 57 / WAVE 13 item 1 — an untouched date input sends `""`, not
+   * `null`. Refusing it made "Voertuig toevoegen" impossible from the form
+   * (four of these columns have no input at all) while editing an existing
+   * vehicle, whose row carries `null`, worked. `""` means "no date".
+   */
+  it("reads an empty date field as 'no date' and still refuses a fake one", () => {
+    const parsed = insertVehicleSchema.parse({
+      ...baseVehicle,
+      dateIn: "",
+      dateOut: "",
+      damageCheckDate: "",
+      damageCheckAttachmentDate: "",
+      apkDate: "   ",
+    });
+    expect(parsed.dateIn).toBeNull();
+    expect(parsed.dateOut).toBeNull();
+    expect(parsed.damageCheckDate).toBeNull();
+    expect(parsed.damageCheckAttachmentDate).toBeNull();
+    expect(parsed.apkDate).toBeNull();
+    // The blank is the only thing that became "no date".
+    expect(vehicleResult({ dateIn: "2026-02-30" }).success).toBe(false);
+    expect(vehicleResult({ dateIn: "gisteren" }).success).toBe(false);
+  });
 });
 
 describe("FIX-Z — service intervals (BUG-149)", () => {

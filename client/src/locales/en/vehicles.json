@@ -880,6 +880,8 @@
     "updateButton": "Update Vehicle",
     "addButton": "Add Vehicle",
     "savingButton": "Saving...",
+    "invalidTitle": "The form is not complete yet",
+    "invalidUnknown": "Check the fields marked in red.",
     "gpsActivationDialog": {
       "imeiRequiredTitle": "IMEI Required",
       "imeiRequiredDescription": "Please enter an IMEI number before requesting activation.",

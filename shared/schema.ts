@@ -365,8 +365,22 @@ const mileageField = z.coerce
   .nullable()
   .optional();
 
-/** A yyyy-MM-dd date column that may be empty. BUG-042. */
-const optionalYmd = ymdDateSchema.nullable().optional();
+/**
+ * A yyyy-MM-dd date column that may be empty. BUG-042.
+ *
+ * PHASE 57 / WAVE 13 item 1 — "empty" has two spellings. A row read back from
+ * the database carries `null`, but an HTML date input that was never filled in
+ * carries `""`, and so does every one of the fourteen ymd defaults in the
+ * add-vehicle form. `""` is not a date and never was one: it means "no date",
+ * exactly like `null`. Rejecting it made `POST /api/vehicles` impossible from
+ * the form while `PATCH` on an existing vehicle sailed through, which is the
+ * whole of the "Voertuig toevoegen doet niets" report. An impossible date such
+ * as "2026-02-30" is still refused — only the blank is normalised.
+ */
+const optionalYmd = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() === "" ? null : value),
+  ymdDateSchema.nullable().optional(),
+);
 
 /** A service interval: whole, positive, or absent. BUG-149. */
 const serviceIntervalField = z.coerce

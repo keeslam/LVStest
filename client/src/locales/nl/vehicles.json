@@ -880,6 +880,8 @@
     "updateButton": "Voertuig bijwerken",
     "addButton": "Voertuig toevoegen",
     "savingButton": "Opslaan...",
+    "invalidTitle": "Het formulier is nog niet compleet",
+    "invalidUnknown": "Controleer de velden met een rode melding.",
     "gpsActivationDialog": {
       "imeiRequiredTitle": "IMEI vereist",
       "imeiRequiredDescription": "Voer een IMEI-nummer in voordat je activatie aanvraagt.",

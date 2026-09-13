@@ -37,7 +37,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Mail } from "lucide-react";
+import { Mail, AlertTriangle } from "lucide-react";
 import { useLocation } from "wouter";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { formatLicensePlate, capitalizeWords } from "@/lib/format-utils";
@@ -235,6 +235,9 @@ export function VehicleForm({
   const { t } = useTranslation("vehicles");
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [isGpsDialogOpen, setIsGpsDialogOpen] = useState(false);
+  // WAVE 13 item 1 — what zod refused, in the form itself rather than only in
+  // the browser console.
+  const [invalidFields, setInvalidFields] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [_, navigate] = useLocation();
@@ -570,7 +573,35 @@ export function VehicleForm({
     }
   });
   
+  /**
+   * PHASE 57 / WAVE 13 item 1 — a refused save must say so.
+   *
+   * The submit button used to run `form.trigger()` and, on `false`, `return`
+   * without a word: no toast, no scroll, no red field, nothing but a
+   * `console.log` nobody at the desk ever sees. Whatever zod refuses is named
+   * here, in the dialog itself as well as in a toast, so a failure is never
+   * again indistinguishable from a dead button.
+   */
+  const describeInvalid = (errors: Record<string, any>): string[] =>
+    Object.entries(errors)
+      .filter(([, error]) => error && (error as any).message)
+      .map(([field, error]) => {
+        const label = t(`vehicleForm.${field}Label`, { defaultValue: field });
+        return `${label}: ${(error as any).message}`;
+      });
+
+  const handleInvalid = (errors: Record<string, any>) => {
+    const lines = describeInvalid(errors);
+    setInvalidFields(lines.length > 0 ? lines : [t('vehicleForm.invalidUnknown')]);
+    toast({
+      variant: "destructive",
+      title: t('vehicleForm.invalidTitle'),
+      description: lines.slice(0, 4).join(" · ") || t('vehicleForm.invalidUnknown'),
+    });
+  };
+
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    setInvalidFields([]);
     // Process the form data before submission
     const formattedData: any = { ...data };
     
@@ -885,7 +916,7 @@ export function VehicleForm({
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit, handleInvalid)} className="space-y-6">
             <div className="flex flex-col md:flex-row gap-4 mb-4">
               <div className="flex-1">
                 <FormField
@@ -899,6 +930,7 @@ export function VehicleForm({
                           <Input
                             placeholder={t('vehicleForm.licensePlatePlaceholder')}
                             {...field}
+                            data-testid="input-vehicle-license-plate"
                             onChange={(e) => {
                               const formatted = formatLicensePlate(e.target.value);
                               field.onChange(formatted);
@@ -957,6 +989,7 @@ export function VehicleForm({
                           <Input
                             placeholder={t('vehicleForm.brandPlaceholder')}
                             {...field}
+                            data-testid="input-vehicle-brand"
                             onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
                           />
                         </FormControl>
@@ -976,6 +1009,7 @@ export function VehicleForm({
                           <Input
                             placeholder={t('vehicleForm.modelPlaceholder')}
                             {...field}
+                            data-testid="input-vehicle-model"
                             onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
                           />
                         </FormControl>
@@ -2002,6 +2036,26 @@ export function VehicleForm({
               </TabsContent>
             </Tabs>
 
+            {invalidFields.length > 0 && (
+              <div
+                className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900"
+                role="alert"
+                data-testid="vehicle-form-invalid"
+              >
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <div className="space-y-1">
+                    <p className="font-medium">{t('vehicleForm.invalidTitle')}</p>
+                    <ul className="list-disc pl-4">
+                      {invalidFields.map((line) => (
+                        <li key={line}>{line}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end space-x-2">
               {customCancelButton ? (
                 customCancelButton
@@ -2015,26 +2069,14 @@ export function VehicleForm({
                 </Button>
               )}
               <Button
-                type="button" 
+                type="button"
                 disabled={createVehicleMutation.isPending}
-                onClick={async () => {
-                  // Debug: Log form state before submission
-                  console.log("🚗 Update Vehicle button clicked");
-                  console.log("🔍 Form values:", form.getValues());
-                  console.log("🔍 Form errors before validation:", form.formState.errors);
-                  
-                  // Trigger form validation first
-                  const isValid = await form.trigger();
-                  console.log("🔍 Form is valid:", isValid);
-                  
-                  if (!isValid) {
-                    console.log("❌ Form validation failed:", form.formState.errors);
-                    return;
-                  }
-                  
-                  // Form is valid, trigger submission
-                  form.handleSubmit(onSubmit)();
-                }}
+                data-testid="button-submit-vehicle"
+                // WAVE 13 item 1 — one path in and one path out. The old
+                // `trigger()` + `if (!isValid) return` swallowed the verdict;
+                // `handleSubmit(onSubmit, handleInvalid)` always ends in one of
+                // the two, and both of them talk.
+                onClick={() => { void form.handleSubmit(onSubmit, handleInvalid)(); }}
               >
                 {createVehicleMutation.isPending ? (
                   <span className="flex items-center">
