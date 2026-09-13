@@ -499,7 +499,16 @@
       "deleteConfigDialogDescription": "Weet je zeker dat je deze e-mailconfiguratie wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
       "fromDisplayLabel": "Van:",
       "apiKeyDisplayLabel": "API-sleutel:",
-      "smtpDisplayLabel": "SMTP:"
+      "smtpDisplayLabel": "SMTP:",
+      "officeEmailTitle": "Kantooradres voor meldingen",
+      "officeEmailDescription": "Het adres waar meldingen binnenkomen die niet naar een klant gaan",
+      "officeEmailLabel": "Kantooradres voor meldingen",
+      "officeEmailHelp": "Hier komt de melding binnen over voertuigen waarvoor geen huurder is om te waarschuwen, bijvoorbeeld een APK die verloopt terwijl de auto niet verhuurd is.",
+      "officeEmailFallback": "Zolang dit veld leeg is, valt de app terug op het afzenderadres {{sender}}.",
+      "officeEmailNoSender": "Zolang dit veld leeg is, valt de app terug op het afzenderadres — en er is nog geen afzenderadres ingesteld.",
+      "officeEmailSaveButton": "Kantooradres opslaan",
+      "officeEmailSavedDescription": "Het kantooradres voor meldingen is opgeslagen",
+      "officeEmailInvalid": "Dat is geen e-mailadres"
     },
     "gps": {
       "activationSettingsTitle": "GPS-activatie-instellingen",

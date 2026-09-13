@@ -499,7 +499,16 @@
       "deleteConfigDialogDescription": "Are you sure you want to delete this email configuration? This action cannot be undone.",
       "fromDisplayLabel": "From:",
       "apiKeyDisplayLabel": "API Key:",
-      "smtpDisplayLabel": "SMTP:"
+      "smtpDisplayLabel": "SMTP:",
+      "officeEmailTitle": "Office address for notifications",
+      "officeEmailDescription": "The address that receives notices which do not go to a customer",
+      "officeEmailLabel": "Office address for notifications",
+      "officeEmailHelp": "This is where the notice arrives about vehicles that have no renter to warn, for example an MOT expiring while the car is not rented out.",
+      "officeEmailFallback": "While this field is empty the app falls back to the sender address {{sender}}.",
+      "officeEmailNoSender": "While this field is empty the app falls back to the sender address — and no sender address has been configured yet.",
+      "officeEmailSaveButton": "Save office address",
+      "officeEmailSavedDescription": "The office address for notifications has been saved",
+      "officeEmailInvalid": "That is not an e-mail address"
     },
     "gps": {
       "activationSettingsTitle": "GPS Activation Settings",

@@ -56,9 +56,10 @@ met het label **Huidige huurder** en de periode van zijn huur erbij. Staat de au
 verhuurd, dan meldt het venster **Dit voertuig is nu niet verhuurd** en heet de knop **Melding
 naar kantoor versturen**.
 
-Heb je geen kantooradres ingesteld, dan meldt de app na het versturen dat er voertuigen zonder
-huurder zijn en dat er geen adres is om dat aan te melden. Dat stel je in bij de instellingen
-(hoofdstuk 10).
+Het kantooradres stel je in bij **App-instellingen → E-mail & GPS**, in het kader
+**Kantooradres voor meldingen** onder de mailservers. Vul het adres in en kies **Kantooradres
+opslaan**. Laat je het leeg, dan gaat de kantoormelding naar het afzenderadres van de app — het
+scherm noemt dat adres erbij, zodat je ziet waar hij dan terechtkomt.
 
 ---
 

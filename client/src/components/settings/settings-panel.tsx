@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PortalConfigForm } from "@/components/portal-admin/portal-config-form";
 import { CjibConfigForm } from "@/components/fines/cjib-config-form";
 import { ActivityLogPanel } from "@/components/settings/activity-log-panel";
+// WAVE 15 item 3 — besluit B-24's office address finally has a field.
+import { OfficeNotificationEmail } from "@/components/settings/office-notification-email";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -96,7 +98,16 @@ export function SettingsPanel() {
   const [smtpPassword, setSmtpPassword] = useState("");
   const [purpose, setPurpose] = useState<'apk' | 'maintenance' | 'gps' | 'documents' | 'custom' | 'default'>('default');
   const [smtpTestResult, setSmtpTestResult] = useState<{ success: boolean; userMessage: string; suggestion?: string } | null>(null);
-  
+
+  /**
+   * WAVE 15 item 3 — the office address for notices that have no customer
+   * (besluiten B-24). The server has read `notification_office_email` since
+   * WAVE 11; until now nothing could write it.
+   */
+  const OFFICE_EMAIL_KEY = 'notification_office_email';
+  const [officeEmail, setOfficeEmail] = useState("");
+  const [officeEmailLoaded, setOfficeEmailLoaded] = useState(false);
+
   // GPS settings state
   const [gpsRecipientEmail, setGpsRecipientEmail] = useState("");
   const [gpsActivationSubject, setGpsActivationSubject] = useState("");
@@ -234,7 +245,63 @@ export function SettingsPanel() {
   const { data: emailSettings, isLoading: loadingEmail } = useQuery<EmailSetting[]>({
     queryKey: ['/api/app-settings/email'],
   });
-  
+
+  /**
+   * WAVE 15 item 3 — the address the office notice falls back to when the field
+   * below is empty: the same configuration the server picks for a mail without
+   * a purpose (`email_config`, else `email_default`, else the first one there
+   * is).
+   */
+  const senderEmail =
+    emailSettings?.find((s) => s.key === 'email_config' || s.key === 'email_default')?.value?.fromEmail
+    || emailSettings?.find((s) => s.value?.fromEmail)?.value?.fromEmail
+    || "";
+
+  // Load the stored office address once, then leave the field to the employee.
+  useEffect(() => {
+    if (officeEmailLoaded || !appSettings) return;
+    const stored = appSettings.find((s) => s.key === OFFICE_EMAIL_KEY)?.value;
+    const value = typeof stored === 'string' ? stored : stored?.email;
+    setOfficeEmail(typeof value === 'string' ? value : "");
+    setOfficeEmailLoaded(true);
+  }, [appSettings, officeEmailLoaded]);
+
+  const saveOfficeEmail = useMutation({
+    mutationFn: async () => {
+      await apiRequest('POST', '/api/app-settings', {
+        key: OFFICE_EMAIL_KEY,
+        // The server accepts a bare string or `{ email }`; the object form keeps
+        // room for a second field without another migration of the value shape.
+        value: { email: officeEmail.trim() },
+        // Deliberately not category `email`: that category is the list of SMTP
+        // configurations on this very tab, and this row is not one of those.
+        category: 'notifications',
+        description: 'Kantooradres voor meldingen die niet naar een klant gaan (B-24)',
+      });
+    },
+    onSuccess: () => {
+      invalidateByPrefix('/api/app-settings');
+      toast({
+        title: t('common:status.success'),
+        description: t('settingsPage.email.officeEmailSavedDescription'),
+      });
+    },
+  });
+
+  const handleSaveOfficeEmail = () => {
+    const value = officeEmail.trim();
+    // Empty is a valid answer — it means "fall back to the sender address".
+    if (value !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      toast({
+        title: t('common:status.error'),
+        description: t('settingsPage.email.officeEmailInvalid'),
+        variant: 'destructive',
+      });
+      return;
+    }
+    saveOfficeEmail.mutate();
+  };
+
   // Fetch system settings (for maintenance calendar display settings)
   const { data: systemSettings } = useQuery<{
     maintenanceExcludedStatuses?: string[];
@@ -2150,6 +2217,19 @@ export function SettingsPanel() {
               )}
             </CardContent>
           </Card>
+
+          {/*
+            WAVE 15 item 3 — the office address for notices that have no
+            customer (besluiten B-24). Next to the SMTP configurations, because
+            that is where an employee looks for "where does our mail go".
+          */}
+          <OfficeNotificationEmail
+            value={officeEmail}
+            senderEmail={senderEmail}
+            onChange={setOfficeEmail}
+            onSave={handleSaveOfficeEmail}
+            saving={saveOfficeEmail.isPending}
+          />
 
           {/* GPS Settings Card */}
           <Card>
