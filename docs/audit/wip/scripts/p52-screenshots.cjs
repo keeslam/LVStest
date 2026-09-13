@@ -29,19 +29,19 @@ const HEIGHT = 900;
 
 /** Screens the manual points at. `wait` is extra settling time for heavy pages. */
 const SHOTS = [
-  { file: '01-inlogscherm.png', url: '/', anonymous: true, wait: 1500 },
-  { file: '02-vandaag.png', url: '/vandaag', wait: 2500 },
-  { file: '03-dashboard.png', url: '/', wait: 3000 },
-  { file: '04-reserveringskalender.png', url: '/reservations', wait: 4000 },
-  { file: '05-voertuigen.png', url: '/vehicles', wait: 3000 },
-  { file: '06-klanten.png', url: '/customers', wait: 2500 },
-  { file: '07-onderhoud.png', url: '/maintenance', wait: 3000 },
-  { file: '08-transporten.png', url: '/delivery', wait: 2500 },
-  { file: '09-documenten.png', url: '/documents', wait: 2500 },
-  { file: '10-scannen.png', url: '/scan', wait: 2000 },
-  { file: '11-rapporten.png', url: '/reports', wait: 3000 },
-  { file: '12-klantenportaal-beheer.png', url: '/portal-admin', wait: 2500 },
-  { file: '13-nog-buiten.png', url: '/reservations/nog-buiten', wait: 2500 },
+  { file: '01-inlogscherm.png', url: '/', anonymous: true, wait: 3000 },
+  { file: '02-vandaag.png', url: '/vandaag', wait: 5000 },
+  { file: '03-dashboard.png', url: '/', wait: 6000 },
+  { file: '04-reserveringskalender.png', url: '/reservations', wait: 7000 },
+  { file: '05-voertuigen.png', url: '/vehicles', wait: 6000 },
+  { file: '06-klanten.png', url: '/customers', wait: 5000 },
+  { file: '07-onderhoud.png', url: '/maintenance', wait: 6000 },
+  { file: '08-transporten.png', url: '/delivery', wait: 5000 },
+  { file: '09-documenten.png', url: '/documents', wait: 5000 },
+  { file: '10-scannen.png', url: '/scan', wait: 6000 },
+  { file: '11-rapporten.png', url: '/reports', wait: 6000 },
+  { file: '12-klantenportaal-beheer.png', url: '/portal-admin', wait: 5000 },
+  { file: '13-nog-buiten.png', url: '/reservations/nog-buiten', wait: 5000 },
 ];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

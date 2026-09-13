@@ -24,6 +24,8 @@ de code handmatig.*
 Op het scherm staan een invoerveld, de knop **Zoeken**, een cameraknopje en onderaan het blok
 **Recente scans**.
 
+![Het scanscherm met het invoerveld, de knop Zoeken en het blok Recente scans](afbeeldingen/10-scannen.png)
+
 **Met een USB-scanner.** Een barcodescanner gedraagt zich als een toetsenbord: hij typt de code
 en drukt zelf op Enter. Zorg dat de cursor in het invoerveld staat (klik er één keer in) en scan.
 Je hoeft verder niets te doen.
