@@ -552,6 +552,36 @@
       "statusUpdatedDescription": "De reserveringsstatus is succesvol bijgewerkt."
     }
   },
+  "cancelDialog": {
+    "title": "Reservering annuleren",
+    "description": "Reservering #{{id}} wordt geannuleerd. Kies hieronder wat er met het gekoppelde moet gebeuren.",
+    "checkingImpact": "Bezig met kijken wat er aan deze reservering hangt...",
+    "attachedTitle": "Hieraan hangt nog:",
+    "nothingAttached": "Er hangt niets anders aan deze reservering.",
+    "keepHint": "Wat je niet aanvinkt, blijft gewoon staan.",
+    "openEnded": "geen einddatum",
+    "lines": {
+      "transport": "Transport #{{id}} — gepland op {{date}}",
+      "spare": "Vervangingsreservering #{{id}} — {{start}} t/m {{end}}",
+      "placeholder": "Placeholder-reservering #{{id}} — {{start}} t/m {{end}}",
+      "driver": "Chauffeurstoewijzing (chauffeur #{{id}}) — vanaf {{from}}"
+    },
+    "cascadeLabels": {
+      "transports": "Transport meeannuleren",
+      "spares": "Vervangingsreservering meeannuleren",
+      "placeholders": "Placeholder-reservering meeannuleren",
+      "drivers": "Chauffeurstoewijzing meeannuleren"
+    },
+    "abortButton": "Niet annuleren",
+    "confirmButton": "Reservering annuleren",
+    "cancellingButton": "Annuleren...",
+    "toasts": {
+      "cancelledTitle": "Reservering geannuleerd",
+      "cancelledDescription": "Reservering #{{id}} staat nu op Geannuleerd.",
+      "failedTitle": "Annuleren is niet gelukt",
+      "failedDescription": "Probeer het opnieuw, of herlaad de pagina."
+    }
+  },
   "statusChangeDialog": {
     "title": "Reservering terugzetten naar geboekt",
     "description": "Dit maakt het ophalen ongedaan en zet de reservering terug naar de status Geboekt.",

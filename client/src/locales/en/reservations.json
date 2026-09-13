@@ -552,6 +552,36 @@
       "statusUpdatedDescription": "Reservation status has been updated successfully."
     }
   },
+  "cancelDialog": {
+    "title": "Cancel reservation",
+    "description": "Reservation #{{id}} will be cancelled. Choose below what should happen to everything linked to it.",
+    "checkingImpact": "Checking what is attached to this reservation...",
+    "attachedTitle": "Still attached:",
+    "nothingAttached": "Nothing else is attached to this reservation.",
+    "keepHint": "Anything you leave unticked stays as it is.",
+    "openEnded": "no end date",
+    "lines": {
+      "transport": "Transport #{{id}} — scheduled for {{date}}",
+      "spare": "Replacement reservation #{{id}} — {{start}} to {{end}}",
+      "placeholder": "Placeholder reservation #{{id}} — {{start}} to {{end}}",
+      "driver": "Driver assignment (driver #{{id}}) — from {{from}}"
+    },
+    "cascadeLabels": {
+      "transports": "Cancel the transport as well",
+      "spares": "Cancel the replacement reservation as well",
+      "placeholders": "Cancel the placeholder reservation as well",
+      "drivers": "Close the driver assignment as well"
+    },
+    "abortButton": "Do not cancel",
+    "confirmButton": "Cancel reservation",
+    "cancellingButton": "Cancelling...",
+    "toasts": {
+      "cancelledTitle": "Reservation cancelled",
+      "cancelledDescription": "Reservation #{{id}} is now cancelled.",
+      "failedTitle": "Could not cancel",
+      "failedDescription": "Try again, or reload the page."
+    }
+  },
   "statusChangeDialog": {
     "title": "Revert Reservation to Booked",
     "description": "This will undo the pickup and put the reservation back to the Booked state.",

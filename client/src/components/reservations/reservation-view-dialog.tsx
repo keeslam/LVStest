@@ -18,7 +18,7 @@ import { Reservation, Vehicle, Customer, Driver, Document } from "@shared/schema
 import { BarcodeSvg } from "@/components/barcodes/barcode-svg";
 import { formatReservationBarcode } from "@shared/barcode";
 import { differenceInDays, parseISO } from "date-fns";
-import { Wrench, Car, ArrowRightLeft, Trash2, Edit, FileText, Upload, FileCheck, X, Camera, AlertCircle, Calendar as CalendarIcon } from "lucide-react";
+import { Wrench, Car, ArrowRightLeft, Trash2, Edit, FileText, Upload, FileCheck, X, Camera, AlertCircle, Calendar as CalendarIcon, XCircle } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { 
   AlertDialog,
@@ -37,6 +37,7 @@ import { UploadContractButton } from "@/components/documents/contract-upload-but
 import { SpareVehicleDialog } from "@/components/reservations/spare-vehicle-dialog";
 import { ServiceVehicleDialog } from "@/components/reservations/service-vehicle-dialog";
 import { ReturnFromServiceDialog } from "@/components/reservations/return-from-service-dialog";
+import { CancelReservationDialog } from "@/components/reservations/cancel-reservation-dialog";
 import { RecordHistory } from "@/components/audit/record-history";
 import {
   EditDatesDialog,
@@ -72,6 +73,8 @@ export function ReservationViewDialog({
   const { toast } = useToast();
   const { openVehicleDialog, openCustomerDialog } = useGlobalDialog();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  // besluiten B-04 — the cancel action the app never had.
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   // OPT-010 — which micro edit is open, if any.
   const [quickEdit, setQuickEdit] = useState<'dates' | 'customer' | 'vehicle' | null>(null);
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
@@ -970,6 +973,21 @@ export function ReservationViewDialog({
               {t('viewDialog.editButton')}
             </Button>
 
+            {/* besluiten B-04 — a real cancel action. Until now the only way
+                to cancel was to pick "Geannuleerd" from the status list in the
+                edit form, which cascaded into nothing at all. */}
+            {reservation && reservation.status !== 'cancelled' && reservation.status !== 'completed' && (
+              <Button
+                variant="outline"
+                className="text-red-600 border-red-300 hover:bg-red-50"
+                onClick={() => setIsCancelDialogOpen(true)}
+                data-testid="button-cancel-reservation"
+              >
+                <XCircle className="mr-2 h-4 w-4" />
+                {t('cancelDialog.title')}
+              </Button>
+            )}
+
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" data-testid="button-delete-reservation">
@@ -1043,6 +1061,18 @@ export function ReservationViewDialog({
           invalidateByPrefix(`/api/reservations`);
         }}
       />
+
+      {reservationId ? (
+        <CancelReservationDialog
+          open={isCancelDialogOpen}
+          onOpenChange={setIsCancelDialogOpen}
+          reservationId={reservationId}
+          onSuccess={() => {
+            invalidateByPrefix(`/api/reservations/${reservationId}`);
+            invalidateByPrefix(`/api/vehicles/${reservation?.vehicleId}`);
+          }}
+        />
+      ) : null}
 
       <ReturnFromServiceDialog
         open={isReturnDialogOpen}
