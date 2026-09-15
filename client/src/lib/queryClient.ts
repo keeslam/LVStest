@@ -11,6 +11,7 @@ import {
 } from "./request-policy";
 
 import { queryKeyUrl } from "./query-key-url";
+import { readJsonBody } from "./read-json-body";
 
 export { fetchWithTimeout, shouldForceLogout, REQUEST_TIMEOUT_MS, RequestTimeoutError };
 export { queryKeyUrl };
@@ -159,10 +160,8 @@ export async function apiRequest(
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
-export const getQueryFn: <T>(options: {
-  on401: UnauthorizedBehavior;
-}) => QueryFunction<T> =
-  ({ on401: unauthorizedBehavior }) =>
+export const getQueryFn =
+  <T>({ on401: unauthorizedBehavior }: { on401: UnauthorizedBehavior }): QueryFunction<T> =>
   async ({ queryKey }) => {
     // BUG-204: the key-to-URL rule lives in one place now, so a test can walk a
     // page's query keys and prove no two of them fetch the same URL.
@@ -176,7 +175,7 @@ export const getQueryFn: <T>(options: {
     console.debug(`[query] GET ${url} -> ${res.status} in ${Date.now() - startedAt}ms`);
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+      return null as T;
     }
     if (shouldForceLogout(url, res.status)) {
       queryClient.clear();
@@ -184,7 +183,11 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
-    return await res.json();
+    // A 200 with an empty body reads as null instead of throwing
+    // "Unexpected end of JSON input" — see client/src/lib/read-json-body.ts.
+    // The cast is the same shape as the `return null` above: this function has
+    // always been able to answer null and the callers treat it as "no data".
+    return (await readJsonBody<T>(res)) as T;
   };
 
 // Store the QueryClient on globalThis so there is exactly ONE cache instance,

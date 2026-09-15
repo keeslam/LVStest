@@ -110,6 +110,23 @@ describe("FIX-S — reservation bucketing (BUG-228)", () => {
  * are asserted here: the language and the order.
  */
 describe("BUG-223 — the screens that formatted their own dates", () => {
+  it("formatNl valt niet om op een onleesbare datum", async () => {
+    // Reported from the running application: the maintenance calendar showed a
+    // white screen with "RangeError: Invalid time value". `formatNl` guarded
+    // against null and undefined but handed an Invalid Date straight to
+    // date-fns, which throws. One unreadable date must never take a screen
+    // down — it renders as a dash, exactly like an absent one.
+    const { formatNl, EMPTY_DATE } = await import("../format-date-nl");
+
+    expect(formatNl(new Date("niet-een-datum"), "d MMM yyyy")).toBe(EMPTY_DATE);
+    expect(formatNl(new Date(NaN), "dd-MM-yyyy")).toBe(EMPTY_DATE);
+    expect(formatNl(NaN, "dd-MM-yyyy")).toBe(EMPTY_DATE);
+    expect(formatNl("2099-13-45", "dd-MM-yyyy")).toBe(EMPTY_DATE);
+    expect(formatNl("", "dd-MM-yyyy")).toBe(EMPTY_DATE);
+    // and a good date still formats
+    expect(formatNl(new Date(2026, 8, 11), "dd-MM-yyyy")).toBe("11-09-2026");
+  });
+
   it("formatNl writes Dutch month names for a caller that passes its own pattern", async () => {
     const { formatNl } = await import("../format-date-nl");
 

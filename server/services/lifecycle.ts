@@ -407,8 +407,30 @@ export interface AvailabilityInput {
   clearWorkshopFlag?: boolean;
 }
 
+/**
+ * Today's date on the office calendar (Europe/Amsterdam).
+ *
+ * This used to be `new Date().toISOString().split("T")[0]`, which is the date
+ * in UTC. The office runs on Amsterdam time and the container runs on UTC, so
+ * between midnight and 01:00 or 02:00 the application believed it was still
+ * yesterday: a rental starting today was refused at handover with "de huur
+ * start later", and every other "is it today" question answered for the wrong
+ * day. Reading the date in the office's own zone removes that hour-of-day
+ * dependency wherever the server asks what day it is.
+ */
 export function isoToday(): string {
-  return new Date().toISOString().split("T")[0];
+  return officeDate(new Date());
+}
+
+/** The Europe/Amsterdam calendar date of an instant, as `yyyy-MM-dd`. */
+export function officeDate(instant: Date): string {
+  // `en-CA` renders as yyyy-MM-dd, which is exactly the shape the API stores.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Amsterdam",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(instant);
 }
 
 /* ------------------------------------------------------------------ *

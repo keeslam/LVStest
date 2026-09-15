@@ -25,36 +25,11 @@ import {
 } from "./portal-helpers";
 import { storage } from "../storage";
 import { UserPermission, reservations } from "../../shared/schema";
+import { day, weekday, pastWeekday, weekdayRun } from "./helpers/dates";
 import { getUploadsDir } from "../../shared/paths";
 
 const deps = { uploadsDir: getUploadsDir(), requireAuth: (_r: any, _s: any, n: any) => n() } as any;
 const manager = buildStaffTestApp([UserPermission.MANAGE_PORTAL], (app) => registerPortalRequestRoutes(app, deps));
-
-function day(offset: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  return d.toISOString().split("T")[0];
-}
-
-/** The next weekday at or after `offset` days from today — the workshop is shut at weekends. */
-function weekday(offset: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
-  return d.toISOString().split("T")[0];
-}
-
-/**
- * The nearest weekday at or before `offset` days from today. The past-date and the weekend check
- * both live in the same guard, so a past date that happens to fall on a Saturday would prove the
- * wrong one — which is exactly what happened when the suite first ran on a Saturday.
- */
-function pastWeekday(offset: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1);
-  return d.toISOString().split("T")[0];
-}
 
 async function liveReplacements(rentalId: number) {
   return db.select().from(reservations).where(and(
@@ -126,7 +101,7 @@ describe("FIX-V — portal maintenance approval", () => {
       payload: { issue: "Grote beurt", needsReplacement: true }, message: "Inplannen graag",
     })).id;
     const planned = await request(manager).post(`/api/portal-requests/${planId}/approve`)
-      .send({ startDate: weekday(10), durationDays: 2 });
+      .send({ startDate: weekdayRun(10, 2), durationDays: 2 });
     expect(planned.status).toBe(200);
     const blockId = planned.body.block.id;
 
@@ -137,7 +112,7 @@ describe("FIX-V — portal maintenance approval", () => {
     expect(assigned).toBeDefined();
 
     // The customer asks to move it; the office confirms a new date.
-    const newStart = weekday(20);
+    const newStart = weekdayRun(20, 2);
     const changeId = (await requestsStorage.createRequest({
       customerId, portalUserId: userId, type: "maintenance_change", reservationId: blockId,
       payload: { newDate: newStart, needsReplacement: true }, message: "Kan het later?",

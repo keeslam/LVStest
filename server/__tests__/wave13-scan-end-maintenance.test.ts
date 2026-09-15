@@ -16,6 +16,7 @@
  * whatever zone — nothing is pinned to a calendar day or a weekday.
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { isoDay } from "./helpers/dates";
 import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { reservations, vehicles, type Vehicle } from "../../shared/schema";
@@ -30,7 +31,7 @@ let admin: TestAgent;
 function shiftDays(day: string, days: number): string {
   const d = new Date(`${day}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().split("T")[0];
+  return isoDay(d);
 }
 
 beforeAll(async () => {

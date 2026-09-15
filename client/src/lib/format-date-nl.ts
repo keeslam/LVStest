@@ -93,11 +93,21 @@ export function formatDateRangeNl(
  * locale can still pass one.
  */
 export function formatNl(
-  value: Date | number | string,
+  value: Date | number | string | null | undefined,
   pattern: string,
   options?: Parameters<typeof format>[2],
 ): string {
-  const date = typeof value === "string" ? toDate(value) : value;
-  if (date === null || date === undefined) return EMPTY_DATE;
-  return format(date, pattern, { locale: nl, ...(options ?? {}) });
+  // Every kind of value goes through `toDate`, including a Date and a number.
+  // An Invalid Date used to be passed straight to date-fns, which throws
+  // "Invalid time value" — and since this runs during render, one unreadable
+  // date took the whole maintenance calendar down. A date that cannot be read
+  // renders as a dash, exactly like an absent one.
+  const date = toDate(value);
+  if (!date) return EMPTY_DATE;
+  try {
+    return format(date, pattern, { locale: nl, ...(options ?? {}) });
+  } catch {
+    // A pattern the caller got wrong must not be fatal either.
+    return EMPTY_DATE;
+  }
 }

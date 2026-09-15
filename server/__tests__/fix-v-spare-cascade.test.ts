@@ -21,6 +21,7 @@
  *   BUG-154 — `maintenance-status` does not touch the linked block.
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { isoDay } from "./helpers/dates";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "../db";
 import { reservations, vehicles as vehiclesTable, vehicleTransports } from "../../shared/schema";
@@ -53,7 +54,7 @@ afterAll(async () => {
 function day(offset: number): string {
   const d = new Date();
   d.setDate(d.getDate() + offset);
-  return d.toISOString().split("T")[0];
+  return isoDay(d);
 }
 
 async function rowOf(id: number) {

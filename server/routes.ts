@@ -752,7 +752,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "No vehicle found for this barcode" });
       }
 
-      const today = new Date().toISOString().split("T")[0];
+      // The office calendar, not UTC: a scan just after midnight used to show
+      // yesterday's rental as the active one (see isoToday in lifecycle.ts).
+      const today = isoToday();
       // Mirror the vehicle-details page's reservation logic (vehicle-details.tsx)
       // so a scanned barcode shows the same active/upcoming rental as the vehicle
       // dialog: only standard rentals count, and "upcoming" is any future

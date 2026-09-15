@@ -297,7 +297,12 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
         return;
       }
       
-      res.json(setting);
+      // `setting` is undefined when the key was never stored, and
+      // `res.json(undefined)` sends 200 with zero bytes — which the client then
+      // fails to parse ("Unexpected end of JSON input"). Both calendars read
+      // `calendar_settings` on every load, so an absent row broke both screens.
+      // A literal null says "no such setting" in a body that parses.
+      res.json(setting ?? null);
     } catch (error) {
       console.error("Error fetching app setting by key:", error);
       res.status(500).json({ message: "Error fetching app setting" });

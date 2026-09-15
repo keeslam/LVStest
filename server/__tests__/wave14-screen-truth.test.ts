@@ -26,6 +26,7 @@
  * back, which previously only happened for the legacy `returned` status.
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { isoDay } from "./helpers/dates";
 import { eq } from "drizzle-orm";
 
 import { db } from "../db";
@@ -49,7 +50,7 @@ afterAll(async () => {
 function day(offset: number): string {
   const d = new Date();
   d.setDate(d.getDate() + offset);
-  return d.toISOString().split("T")[0];
+  return isoDay(d);
 }
 
 async function rowOf(id: number) {
