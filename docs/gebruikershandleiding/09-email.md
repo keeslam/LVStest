@@ -14,6 +14,7 @@ wie hem krijgt, waar je ziet of hij aangekomen is, en wat je doet als het misgaa
 | **Portaaluitnodiging en wachtwoord-reset** | Jij, vanuit het klantenportaalscherm | De portaalgebruiker |
 | **Bevestiging nieuw e-mailadres / nieuwe aanmelding** | De klant zelf, in het portaal | De portaalgebruiker |
 | **Onderhoudsmelding** | De app, zodra onderhoud gepland, verzet of afgerond wordt | De klant van de huur waar dat onderhoud bij hoort |
+| **Reservering gewijzigd, geannuleerd of nieuw document** | De app, zodra kantoor dat doet | De klant van die reservering — zie 9.8 |
 | **Bekeuring gekoppeld** | De app, zodra een bekeuring aan een klant wordt gekoppeld | Die klant |
 | **Reactie op een portaalaanvraag** | Jij, als je een aanvraag beantwoordt | De klant die de aanvraag deed |
 | **APK-herinnering** | Jij, met **APK-meldingen versturen** of de knop op de voertuigkaart | De huidige huurder — zie 9.2 |
@@ -226,17 +227,27 @@ reservering en de klant.
 
 ---
 
-## 9.8 Wat de app (nog) niet mailt
+## 9.8 Wat de klant hoort bij een wijziging van kantoor
 
-Dit hoort in dit hoofdstuk omdat je er anders op rekent:
+Pas je iets aan een reservering aan, dan hoeft de klant dat niet zelf te ontdekken. De app stuurt
+bij deze drie gebeurtenissen automatisch een melding in het portaal **en** een e-mail:
 
-- **Een gewijzigde reservering** — als je de datums of het voertuig van een huur aanpast, gaat er
-  **geen** bericht naar de klant en komt er ook geen melding in het portaal. Bel of mail de klant
-  zelf.
-- **Een geannuleerde reservering** — hetzelfde: geen automatisch bericht.
-- **Een nieuw document** — als je een contract genereert of opnieuw genereert, krijgt de klant
-  daar geen bericht van. Wil je dat hij het heeft, gebruik dan **E-mailen** of
-  **Mail naar klant**.
+| Wat je doet | Onderwerp van de mail |
+|---|---|
+| De datums of het voertuig van een huur wijzigen | **Uw reservering is gewijzigd** |
+| Een reservering annuleren of verwijderen | **Uw reservering is geannuleerd** |
+| Een document genereren dat voor de klant bestemd is | **Nieuw document beschikbaar** |
+
+Daarnaast bestaat de onderhoudsmail uit paragraaf 9.1, met zijn eigen zeven onderwerpen.
+
+Drie dingen om te weten:
+
+- Alleen een klant **met een portaalaccount** krijgt bericht. Heeft de klant geen account, dan blijft
+  bellen of zelf mailen nodig.
+- Wijzig je twee keer kort achter elkaar hetzelfde, dan krijgt de klant daar niet twee losse
+  berichten over.
+- Gaat het versturen mis, dan mislukt jouw wijziging daar niet door. De wijziging staat gewoon
+  opgeslagen; controleer in dat geval het verzendoverzicht uit paragraaf 9.6.
 
 Wat wél vanzelf gaat, staat in de tabel in 9.1: onderhoud, bekeuringen, portaalaccounts en
 reacties op portaalaanvragen.
