@@ -1,6 +1,7 @@
 import { db } from "../db";
 import { reservations, reservationDriverAssignments, drivers, type ReservationDriverAssignment } from "../../shared/schema";
 import { and, asc, eq, isNull } from "drizzle-orm";
+import { syncUsagePeriodSafely } from "./fiscal/usage-periods";
 
 export interface AssignDriverInput {
   reservationId: number;
@@ -20,6 +21,13 @@ export interface AssignDriverInput {
  */
 export async function assignDriverToReservation(input: AssignDriverInput): Promise<ReservationDriverAssignment> {
   const at = input.at ?? new Date();
+  const assignment = await assignInTransaction(input, at);
+  // Fiscal mobility check: the driver count of the usage period follows every change (docs/fiscaal §4.3).
+  await syncUsagePeriodSafely(input.reservationId);
+  return assignment;
+}
+
+async function assignInTransaction(input: AssignDriverInput, at: Date): Promise<ReservationDriverAssignment> {
   return db.transaction(async (tx) => {
     const [current] = await tx.select().from(reservationDriverAssignments)
       .where(and(eq(reservationDriverAssignments.reservationId, input.reservationId), isNull(reservationDriverAssignments.assignedUntil)));

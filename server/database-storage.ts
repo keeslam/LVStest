@@ -103,6 +103,7 @@ import { IStorage, type CompleteMaintenanceResult } from "./storage";
 import { formatVehicleBarcode, parseBarcode, normalizeScannedCode } from "../shared/barcode";
 // besluiten B-16 + B-07: one day count and one total, shared with the form.
 import { recalculateTotalPrice } from "../shared/rental-pricing";
+import { syncUsagePeriodSafely } from "./services/fiscal/usage-periods";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -1021,6 +1022,8 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
 
+    // Fiscal mobility check: a restored rental reopens its usage period (docs/fiscaal §4.3).
+    await syncUsagePeriodSafely(record.entityId);
     return { restored: true, record };
   }
 
@@ -1759,6 +1762,8 @@ export class DatabaseStorage implements IStorage {
 
     const [reservation] = await db.insert(reservations).values(dataToInsert).returning();
     await this.syncDeliveryTransport(reservation);
+    // Fiscal mobility check: the reservation's usage period follows every write (docs/fiscaal §4.3).
+    await syncUsagePeriodSafely(reservation.id);
 
     // Handle null vehicleId for placeholder spare reservations
     let vehicle: Vehicle | undefined = undefined;
@@ -1880,6 +1885,8 @@ export class DatabaseStorage implements IStorage {
     const c = updatedReservation.customerId !== null
       ? (await db.select().from(customers).where(eq(customers.id, updatedReservation.customerId)))[0]
       : undefined;
+
+    await syncUsagePeriodSafely(updatedReservation.id);
 
     return {
       ...updatedReservation,
@@ -2055,6 +2062,9 @@ export class DatabaseStorage implements IStorage {
         ));
 
       return row as Reservation;
+    }).then(async (row) => {
+      if (row) await syncUsagePeriodSafely(id);
+      return row;
     });
   }
 

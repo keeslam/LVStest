@@ -33,44 +33,8 @@ import { auditValueText, recordFiscalEvent, type Actor, type Executor } from "./
 import { clearFiscalResolveCache } from "./resolve";
 import { isoToday } from "../lifecycle";
 
-// ---- errors ------------------------------------------------------------------------------
-
-/** A transition the state machine refuses (409). */
-export class FiscalStateError extends Error {
-  readonly status = 409;
-  constructor(message: string) {
-    super(message);
-    this.name = "FiscalStateError";
-  }
-  toBody() {
-    return { message: this.message };
-  }
-}
-
-/** Input that does not fit (400), with every problem listed. */
-export class FiscalValidationError extends Error {
-  readonly status = 400;
-  readonly issues: ParameterValidationIssue[];
-  constructor(message: string, issues: ParameterValidationIssue[]) {
-    super(message);
-    this.name = "FiscalValidationError";
-    this.issues = issues;
-  }
-  toBody() {
-    return { message: this.message, errors: this.issues.map((i) => ({ field: i.key, message: i.message })) };
-  }
-}
-
-export class FiscalNotFoundError extends Error {
-  readonly status = 404;
-  constructor(message = "Regelversie niet gevonden") {
-    super(message);
-    this.name = "FiscalNotFoundError";
-  }
-  toBody() {
-    return { message: this.message };
-  }
-}
+export { FiscalStateError, FiscalValidationError, FiscalNotFoundError } from "./errors";
+import { FiscalStateError, FiscalValidationError, FiscalNotFoundError } from "./errors";
 
 // ---- value rows ------------------------------------------------------------------------------
 
