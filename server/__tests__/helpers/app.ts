@@ -17,6 +17,7 @@ import { setupAuth, hashPassword } from "../../auth";
 import { mountUploads } from "../../middleware/uploads-mount";
 import { mountBodyParsers } from "../../middleware/body-limits";
 import { registerRoutes } from "../../routes";
+import { mountApiNotFound } from "../../middleware/api-not-found";
 import notificationRoutes from "../../routes/notifications";
 import { hasPermission } from "../../middleware/permissions";
 import { UserPermission } from "../../../shared/schema";
@@ -57,6 +58,8 @@ export async function makeApp(): Promise<Express> {
     notificationRoutes,
   );
   await registerRoutes(app);
+  // Mirrors server/index.ts: an /api request nothing claimed is a JSON 404.
+  mountApiNotFound(app);
   // Terminal error handler, mirroring server/index.ts. Without it Express'
   // default handler answers with an HTML stack trace, which would make the
   // async-error assertions pass for the wrong reason.

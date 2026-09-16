@@ -6976,6 +6976,20 @@ export async function registerRoutes(app: Express): Promise<void> {
   }));
   
   // Get all drivers for a specific customer
+  // All drivers. The customers page has queried this since August to count each
+  // customer's drivers and to power the "Met chauffeurs" filter, but the route
+  // never existed: the request fell through to index.html, the parse error was
+  // swallowed, and every customer silently showed zero drivers. Same permission
+  // as the per-customer list below.
+  app.get("/api/drivers", hasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS), async (_req, res) => {
+    try {
+      res.json(await storage.getAllDrivers());
+    } catch (error) {
+      console.error("Error fetching drivers:", error);
+      res.status(500).json({ error: "Failed to fetch drivers" });
+    }
+  });
+
   app.get("/api/customers/:customerId/drivers", hasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS), async (req, res) => {
     try {
       const customerId = parseInt(req.params.customerId);

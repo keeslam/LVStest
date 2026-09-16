@@ -8,6 +8,7 @@ import express, { Request, Response, NextFunction } from "express";
 import { Server as SocketIOServer } from 'socket.io';
 import { setSocketInstance } from "./realtime-events";
 import { registerRoutes } from "./routes";
+import { mountApiNotFound } from "./middleware/api-not-found";
 import { setupAuth } from "./auth";
 import { setupPortalAuth } from "./portal-auth";
 import { ensurePortalEmailTemplates } from "./services/portal-mail";
@@ -410,6 +411,10 @@ app.use('/api/email-templates', requireAuth, hasPermission(UserPermission.MANAGE
 app.use('/api/email-logs', requireAuth, hasPermission(UserPermission.MANAGE_EMAIL_TEMPLATES), emailLogsRoutes);
 app.use('/api/apk-date-changes', requireAuth, hasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES), apkDateChangesRoutes);
 await registerRoutes(app);
+
+// Any /api request no route claimed gets a JSON 404 here, before the static
+// files and the Vite dev server can answer it with index.html and a 200.
+mountApiNotFound(app);
 
 // Serve frontend in production
 if (process.env.NODE_ENV === "production") {
