@@ -158,7 +158,7 @@ Indexen: uniek `(reservation_id)`, `(customer_id, vehicle_id, start_date)`, `(ve
 | `review_reasons` | jsonb NN default `[]` | |
 | `inputs` | jsonb NN | snapshot van profiel, periode, bestuurders, klanttype, eerdere kortstondige perioden |
 | `parameters` | jsonb NN | `[{ key, value, unit, legalStatus, sourceUrl }]` |
-| `input_hash` | text NN | sha256 over `inputs` + `parameters` + `rule_version_id`; gelijk = geen nieuwe rij |
+| `input_hash` | text NN | sha256 over de feiten van de periode en het voertuig, de parameters, de regelversie en de uitkomst (status, maanden, bedrag, ontbrekende gegevens); **niet** over de beoordelingsdatum, de horizon of het versievenster, zodat een nachtelijke beoordeling van een ongewijzigde periode niets schrijft. Gelijk = geen nieuwe rij |
 | `sequence` | integer NN default 1 | herberekeningsvolgnummer per periode |
 | `supersedes_id` | integer → fiscal_assessments | |
 | `trigger` | text NN | `nightly` · `manual` · `recalculation` · `event` · `backfill` |
@@ -274,9 +274,19 @@ draft ──submit──▶ in_review ──approve──▶ approved ──publ
 - Cache: de opgeloste versie per datum wordt 60 s in het geheugen gehouden (patroon `portal-config.ts`)
   en bij elke publicatie geleegd.
 
-Keuze op datum (`resolveRuleVersion(ruleKey, date)`): `status = published` en `effective_from ≤ date`
-en (`effective_until` leeg of `≥ date`). Nul rijen → `RULE_NOT_AVAILABLE`; meer dan één →
-`CONFIGURATION_INVALID` (hoort door de publicatiecontrole onmogelijk te zijn, wordt toch afgevangen).
+Keuze op datum (`resolveForDate(ruleKey, date)`): `status` in (`published`, `superseded`) en
+`effective_from ≤ date` en (`effective_until` leeg of `≥ date`). Nul rijen → `RULE_NOT_AVAILABLE`; meer
+dan één → `CONFIGURATION_INVALID` (hoort door de publicatiecontrole onmogelijk te zijn, wordt toch
+afgevangen). Een vervangen versie telt mee voor datums binnen haar gesloten venster: dat is de versie
+die toen gold.
+
+**Verfijning tijdens de bouw (stap 3).** Een beoordeling kiest de versie niet op de beoordelingsdatum
+maar op de **datums van de periode** (`resolveForPeriod(ruleKey, start, einde)`): de vroegste
+gepubliceerde versie waarvan het venster de periode raakt. Zo wordt een huur in maart 2027 die vandaag
+(2026) wordt beoordeeld onder de versie van 2027 beoordeeld, en een periode die vóór de ingangsdatum
+begint en erin doorloopt onder die versie met de eerdere dagen als "vóór de regel". Niets wordt te
+vroeg toegepast: een versie geldt uitsluitend voor dagen binnen haar eigen venster. De
+beoordelingsdatum blijft vastgelegd in de beoordeling en bepaalt de horizon van een open periode.
 
 ---
 

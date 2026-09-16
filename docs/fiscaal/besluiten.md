@@ -50,6 +50,13 @@ ziet in dat geval "gegevens ontbreken".
 **Besluit:** optioneel veld bij het reserveren; verplicht op het moment dat iemand het gebruik van de
 periode bevestigt. Bij vervangingen van een auto van Lam wordt de reden voorgevuld uit het onderhoudsblok.
 
+### F-11 — Schema en dataflow (STOP POINT 2)
+**Besluit:** `03-schema-en-dataflow.md` is goedgekeurd ("akkord"), inclusief de zeven punten S2-1 t/m
+S2-7: het systeem sluit bij publicatie de open voorganger; werkelijke ophaal-/innamedatum gaat vóór de
+geplande datums; echte `date`-kolommen; klantbevestiging in dezelfde tabel als kantoor; Engelse codes
+in de database met Nederlandse labels; één open beoordelingszaak per periode met automatische sluiting;
+nachtelijk venster van 45 dagen terug tot 31 dagen vooruit.
+
 ### F-10 — Startdatum afleiding (Q10)
 **Besluit:** gebruiksperioden worden afgeleid uit reserveringen met een startdatum **vanaf 1 januari
 2027**. Eerdere reserveringen worden alleen gelezen om "al vóór 2027 ter beschikking gesteld" voor te

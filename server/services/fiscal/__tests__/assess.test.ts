@@ -109,18 +109,41 @@ describe("beoordeling — vastleggen", () => {
 });
 
 describe("beoordeling — historie en versies", () => {
-  it("publishing a later version leaves earlier assessments untouched and is used for later dates", async () => {
+  it("publishing a later version leaves earlier assessments untouched; a period is governed by the version of its own dates", async () => {
     const v1 = await publishFixtureVersion("v1", "2027-01-01");
-    const { period } = await readyPeriod();
+    const { period, customer, vehicle } = await readyPeriod();
     const before = (await assessUsagePeriod(period.id, { trigger: "nightly", calculationDate: "2027-03-15" })).assessment;
     const v2 = await publishFixtureVersion("v2", "2028-01-01", { PSEUDO_ENDHEFFING_RATE: 15 });
     const [stillThere] = await db.select().from(fiscalAssessments).where(eq(fiscalAssessments.id, before.id));
     expect(stillThere).toEqual(before);
     expect(stillThere.ruleVersionId).toBe(v1.id);
-    // Same period, assessed on a 2028 date: the 2028 version applies (the months of 2027 lie in v1's window and are marked as such).
-    const later = (await assessUsagePeriod(period.id, { trigger: "manual", calculationDate: "2028-02-01" })).assessment;
-    expect(later.ruleVersionId).toBe(v2.id);
-    expect(later.sequence).toBe(2);
+
+    // The same March 2027 period looked at again in 2028: still v1, and since
+    // neither the facts nor the outcome changed, no new row.
+    const later = await assessUsagePeriod(period.id, { trigger: "manual", calculationDate: "2028-02-01" });
+    expect(later.created).toBe(false);
+    expect(later.assessment.ruleVersionId).toBe(v1.id);
+
+    // A period in 2028 is governed by v2 (15 %: 36 000 × 15 % / 12 = 450).
+    const r2 = await createFixtureReservation({ customerId: customer.id, vehicleId: vehicle.id, startDate: "2028-02-01", endDate: "2028-02-28" });
+    const p2 = (await syncUsagePeriodForReservation(r2.id))!;
+    await confirmUsage(r2.id, { privateUse: "yes", commuting: "no", providedBeforeCutoff: "no", usageType: "business_private" }, { kind: "staff", actor: FIXTURE_ACTOR });
+    const in2028 = (await assessUsagePeriod(p2.id, { trigger: "manual", calculationDate: "2028-02-10" })).assessment;
+    expect(in2028.ruleVersionId).toBe(v2.id);
+    expect(in2028.amount).toBe("450.00");
+  });
+
+  it("a period that begins before the first version and runs into it is assessed under that version", async () => {
+    const v1 = await publishFixtureVersion("v1", "2027-01-01");
+    const { customer, vehicle } = await readyPeriod();
+    // Starts 2027-01-01 (derivation start) but the version window is checked on the dates, not on today.
+    const r = await createFixtureReservation({ customerId: customer.id, vehicleId: vehicle.id, startDate: "2027-01-01", endDate: "2027-01-20" });
+    const p = (await syncUsagePeriodForReservation(r.id))!;
+    await confirmUsage(r.id, { privateUse: "yes", commuting: "no", providedBeforeCutoff: "no", usageType: "business_private" }, { kind: "staff", actor: FIXTURE_ACTOR });
+    // Assessed "today" (2026): the rule of 2027 governs the 2027 days.
+    const a = (await assessUsagePeriod(p.id, { trigger: "nightly" })).assessment;
+    expect(a.ruleVersionId).toBe(v1.id);
+    expect(a.status).toBe("APPLICABLE");
   });
 
   it("records a rule-not-available result when no version is published", async () => {

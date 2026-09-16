@@ -12,6 +12,8 @@ import { mountApiNotFound } from "./middleware/api-not-found";
 import { setupAuth } from "./auth";
 import { setupPortalAuth } from "./portal-auth";
 import { ensurePortalEmailTemplates } from "./services/portal-mail";
+import { ensureFiscalDraftVersion } from "./services/fiscal/seed";
+import { backfillUsagePeriods } from "./services/fiscal/usage-periods";
 import { startCjibScheduler } from "./services/cjib/poller";
 import { registerPortalRoutes } from "./routes/portal";
 import { getUploadsDir as getPortalUploadsDir } from "../shared/paths";
@@ -511,6 +513,11 @@ portalAlertScheduler.start();
 // Seed the portal e-mail templates once (staff edit them afterwards).
 startCjibScheduler().catch((e) => console.error("CJIB scheduler failed to start:", e));
   ensurePortalEmailTemplates().catch((e) => console.error("portal e-mail templates:", e));
+  // Fiscal mobility check: the first rule version as a draft, and the usage periods of existing reservations (docs/fiscaal).
+  ensureFiscalDraftVersion()
+    .then(() => backfillUsagePeriods())
+    .then((r) => { if (!r.skipped) console.log(`📐 Gebruiksperioden afgeleid uit ${r.scanned} reservering(en)`); })
+    .catch((e) => console.error("fiscal start-up:", e));
 
 // Initialize session cleanup scheduler (runs every hour)
 const sessionCleanupScheduler = startSessionCleanupScheduler(60);

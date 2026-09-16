@@ -50,6 +50,47 @@ export async function resolveParameters(version: FiscalRuleVersion): Promise<Par
   return ParameterSet.fromValues(definitionsForRule(version.ruleKey as FiscalRuleKey), values, sources);
 }
 
+/**
+ * The version that governs a period: the earliest published (or superseded)
+ * version whose window intersects [start, end]. A period that begins before
+ * any version and runs into one is assessed under that one, with the earlier
+ * days marked "before the rule" by the calculation module. Nothing is used
+ * early: a version only ever applies to days inside its own window.
+ */
+export async function resolveForPeriod(ruleKey: FiscalRuleKey, start: string, end: string): Promise<Resolution> {
+  const key = `${ruleKey}|${start}|${end}`;
+  const hit = cache.get(key);
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.value;
+
+  const versions = await db
+    .select()
+    .from(fiscalRuleVersions)
+    .where(
+      and(
+        eq(fiscalRuleVersions.ruleKey, ruleKey),
+        inArray(fiscalRuleVersions.status, ["published", "superseded"]),
+        lte(fiscalRuleVersions.effectiveFrom, end),
+        or(isNull(fiscalRuleVersions.effectiveUntil), gte(fiscalRuleVersions.effectiveUntil, start)),
+      ),
+    )
+    .orderBy(fiscalRuleVersions.effectiveFrom);
+
+  let value: Resolution;
+  if (versions.length === 0) {
+    value = { status: "RULE_NOT_AVAILABLE" };
+  } else {
+    const version = versions[0];
+    try {
+      value = { status: "ok", version, params: await resolveParameters(version) };
+    } catch (error) {
+      if (error instanceof FiscalConfigurationError) value = { status: "CONFIGURATION_INVALID", issues: error.issues, version };
+      else throw error;
+    }
+  }
+  cache.set(key, { at: Date.now(), value });
+  return value;
+}
+
 export async function resolveForDate(ruleKey: FiscalRuleKey, date: string): Promise<Resolution> {
   const key = `${ruleKey}|${date}`;
   const hit = cache.get(key);

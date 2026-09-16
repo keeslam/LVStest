@@ -240,7 +240,7 @@ export const FISCAL_AUDIT_ACTIONS = [
 ] as const;
 export type FiscalAuditAction = (typeof FISCAL_AUDIT_ACTIONS)[number];
 
-export const FISCAL_AUDIT_ENTITY_TYPES = ["rule_version", "parameter", "assessment", "review_case", "usage_period", "fiscal_profile"] as const;
+export const FISCAL_AUDIT_ENTITY_TYPES = ["rule_version", "parameter", "assessment", "review_case", "usage_period", "fiscal_profile", "route"] as const;
 export type FiscalAuditEntityType = (typeof FISCAL_AUDIT_ENTITY_TYPES)[number];
 
 /** The one scope this implementation supports (00-audit-en-voorstel.md, hoofdstuk 12 of the brief). */

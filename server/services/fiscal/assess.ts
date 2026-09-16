@@ -10,7 +10,7 @@
  * open case per period, closed by the system as soon as the data is complete.
  */
 import { createHash } from "crypto";
-import { and, desc, eq, inArray, isNull, lt, ne } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lt, ne, sql } from "drizzle-orm";
 import { db } from "../../db";
 import {
   customers,
@@ -21,11 +21,11 @@ import {
   type FiscalAssessment,
   type VehicleUsagePeriod,
 } from "../../../shared/schema";
-import type { AssessmentTrigger, FiscalAssessmentStatus, FiscalRuleKey } from "../../../shared/fiscal-types";
+import { FISCAL_ASSESSMENT_STATUSES, type AssessmentTrigger, type FiscalAssessmentStatus, type FiscalRuleKey } from "../../../shared/fiscal-types";
 import { addDays, compareIso } from "./calendar";
 import { evaluatePseudoEindheffing, type FiscalInput, type PriorPeriodRef, type Verdict } from "./rules/pseudo-eindheffing";
 import { explainVerdict } from "./explain";
-import { resolveForDate } from "./resolve";
+import { resolveForPeriod } from "./resolve";
 import { ensureProfile } from "./profiles";
 import { getUsagePeriod } from "./usage-periods";
 import { FiscalNotFoundError, FiscalValidationError } from "./errors";
@@ -127,8 +127,18 @@ function unavailableVerdict(status: Extract<FiscalAssessmentStatus, "RULE_NOT_AV
   };
 }
 
-function hashOf(input: FiscalInput, parameters: Verdict["parametersUsed"], ruleVersionId: number | null): string {
-  return createHash("sha256").update(JSON.stringify({ input, parameters, ruleVersionId })).digest("hex");
+/**
+ * What makes an assessment "the same": the facts (not the day they were
+ * looked at), the parameters, the version, and the outcome. A nightly run
+ * over an unchanged period therefore writes nothing, day after day.
+ */
+function hashOf(input: FiscalInput, verdict: Verdict, ruleVersionId: number | null): string {
+  // The version's window is not a fact of the period: an open predecessor
+  // that gets closed by a successor must not re-assess every period it governs.
+  const { calculationDate: _date, ruleVersion: _window, period, ...facts } = input;
+  const { endDateEffective: _horizon, ...periodFacts } = period;
+  const outcome = { status: verdict.status, months: verdict.months, amount: verdict.amount, missingData: verdict.missingData, reviewReasons: verdict.reviewReasons };
+  return createHash("sha256").update(JSON.stringify({ facts, period: periodFacts, parameters: verdict.parametersUsed, ruleVersionId, outcome })).digest("hex");
 }
 
 /** Opens, updates or closes the period's review case to match the new assessment. */
@@ -193,7 +203,10 @@ export async function assessUsagePeriod(periodId: number, options: AssessOptions
   }
   const calculationDate = options.calculationDate ?? isoToday();
 
-  const resolution = await resolveForDate(RULE, calculationDate);
+  // The version is chosen on the period's own dates. An open-ended period is
+  // at least assessed up to the calculation date.
+  const provisionalEnd = period.endDate ?? (compareIso(calculationDate, period.startDate) < 0 ? period.startDate : calculationDate);
+  const resolution = await resolveForPeriod(RULE, period.startDate, provisionalEnd);
   let input: FiscalInput;
   let verdict: Verdict;
   let explanation: string;
@@ -214,7 +227,7 @@ export async function assessUsagePeriod(periodId: number, options: AssessOptions
     }
   }
 
-  const inputHash = hashOf(input, verdict.parametersUsed, ruleVersionId);
+  const inputHash = hashOf(input, verdict, ruleVersionId);
   const latest = await latestAssessmentForPeriod(period.id);
   if (latest && latest.inputHash === inputHash && options.trigger !== "recalculation") {
     return { assessment: latest, created: false };
@@ -280,4 +293,63 @@ export async function assessMany(filter: { customerId?: number; vehicleId?: numb
     if (result.created) created += 1;
   }
   return { assessed: rows.length, created };
+}
+
+// ---- reads for the API -----------------------------------------------------------------------------
+
+export interface AssessmentFilter {
+  customerId?: number;
+  vehicleId?: number;
+  usagePeriodId?: number;
+  status?: string;
+  latestOnly?: boolean;
+  limit?: number;
+}
+
+export async function getAssessment(id: number): Promise<FiscalAssessment | null> {
+  const [row] = await db.select().from(fiscalAssessments).where(eq(fiscalAssessments.id, id));
+  return row ?? null;
+}
+
+export async function listAssessments(filter: AssessmentFilter = {}): Promise<FiscalAssessment[]> {
+  const conditions = [];
+  if (filter.customerId !== undefined) conditions.push(eq(fiscalAssessments.customerId, filter.customerId));
+  if (filter.vehicleId !== undefined) conditions.push(eq(fiscalAssessments.vehicleId, filter.vehicleId));
+  if (filter.usagePeriodId !== undefined) conditions.push(eq(fiscalAssessments.usagePeriodId, filter.usagePeriodId));
+  if (filter.status) conditions.push(eq(fiscalAssessments.status, filter.status));
+  if (filter.latestOnly) {
+    // The row with the highest sequence per period: no later row exists for the same period.
+    conditions.push(
+      sql`not exists (select 1 from ${fiscalAssessments} later where later.usage_period_id = ${fiscalAssessments.usagePeriodId} and later.sequence > ${fiscalAssessments.sequence})`,
+    );
+  }
+  return db
+    .select()
+    .from(fiscalAssessments)
+    .where(conditions.length ? and(...conditions) : undefined)
+    .orderBy(desc(fiscalAssessments.createdAt), desc(fiscalAssessments.id))
+    .limit(Math.min(filter.limit ?? 200, 1000));
+}
+
+/** Counts of the latest assessment per open period, per status. */
+export async function fiscalOverview(): Promise<{ byStatus: Record<FiscalAssessmentStatus, number>; openPeriods: number; unassessedPeriods: number }> {
+  const rows = await db
+    .select({ status: fiscalAssessments.status, count: sql<number>`count(*)` })
+    .from(fiscalAssessments)
+    .innerJoin(vehicleUsagePeriods, eq(vehicleUsagePeriods.id, fiscalAssessments.usagePeriodId))
+    .where(
+      and(
+        isNull(vehicleUsagePeriods.closedAt),
+        sql`not exists (select 1 from ${fiscalAssessments} later where later.usage_period_id = ${fiscalAssessments.usagePeriodId} and later.sequence > ${fiscalAssessments.sequence})`,
+      ),
+    )
+    .groupBy(fiscalAssessments.status);
+  const byStatus = Object.fromEntries(FISCAL_ASSESSMENT_STATUSES.map((s) => [s, 0])) as Record<FiscalAssessmentStatus, number>;
+  for (const r of rows) byStatus[r.status as FiscalAssessmentStatus] = Number(r.count);
+  const [{ open }] = await db.select({ open: sql<number>`count(*)` }).from(vehicleUsagePeriods).where(isNull(vehicleUsagePeriods.closedAt));
+  const [{ unassessed }] = await db
+    .select({ unassessed: sql<number>`count(*)` })
+    .from(vehicleUsagePeriods)
+    .where(and(isNull(vehicleUsagePeriods.closedAt), sql`not exists (select 1 from ${fiscalAssessments} a where a.usage_period_id = ${vehicleUsagePeriods.id})`));
+  return { byStatus, openPeriods: Number(open), unassessedPeriods: Number(unassessed) };
 }

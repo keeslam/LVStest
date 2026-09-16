@@ -149,6 +149,7 @@ import { assignDriverToReservation } from "./services/driver-assignments";
 import { getServiceDueVehicles, scanVehiclesForServiceDue } from "./utils/service-due-scanner";
 import { registerUserRoutes } from "./routes/users";
 import { registerPortalAdminRoutes } from "./routes/portal-admin";
+import { registerFiscalRoutes } from "./routes/fiscal";
 import { registerFineRoutes } from "./routes/fines";
 import { registerPortalRequestRoutes } from "./routes/portal-requests";
 import { registerTodayRoutes } from "./routes/today";
@@ -430,6 +431,8 @@ export async function registerRoutes(app: Express): Promise<void> {
   // management: it exposes every user's actions.
   registerUserRoutes(app, routeDeps);
   registerPortalAdminRoutes(app, routeDeps);
+  // Fiscal mobility check (docs/fiscaal): configuration, assessments, review cases.
+  registerFiscalRoutes(app, routeDeps);
   registerFineRoutes(app, routeDeps);
   registerPortalRequestRoutes(app, routeDeps);
   // OPT-001 — the one request behind the "Vandaag" work-day screen.
