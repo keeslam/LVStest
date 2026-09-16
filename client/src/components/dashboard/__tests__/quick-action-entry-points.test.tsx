@@ -93,4 +93,16 @@ describe("OPT-002 — de balie-ingangen op het dashboard", () => {
     expect(primaryRow.textContent).toContain("Nieuwe reservering");
     expect(primaryRow.textContent).toContain("Schadecheck starten");
   });
+
+  // OPT-002 moved these three to the second row but left them styled as
+  // full-width tiles, so on desktop they stacked as three wide bars.
+  it("the actions moved to the second row are compact buttons, not full-width tiles", () => {
+    renderQuickActions();
+    const secondaryRow = screen.getByTestId("quick-actions-secondary");
+    for (const label of ["Voertuig toevoegen", "Klant toevoegen", "RDW APK-datums scannen"]) {
+      const button = Array.from(secondaryRow.querySelectorAll("button")).find((b) => b.textContent?.includes(label));
+      expect(button, label).toBeDefined();
+      expect(button!.className, label).not.toContain("w-full");
+    }
+  });
 });
