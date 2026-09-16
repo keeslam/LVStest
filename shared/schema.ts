@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, numeric, jsonb, index, varchar, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, numeric, jsonb, index, varchar, uniqueIndex, date, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
@@ -125,7 +125,17 @@ export const UserPermission = {
   // Traffic fines (entry, attribution, charging)
   MANAGE_FINES: 'manage_fines',
   VIEW_FINES: 'view_fines',
-  
+
+  // Fiscal mobility check (docs/fiscaal). Configuration is global and
+  // versioned; preparing, approving and publishing a version are separate
+  // rights so they can be split across people later (besluit F-04: not yet).
+  VIEW_FISCAL: 'view_fiscal',
+  MANAGE_FISCAL_REVIEW: 'manage_fiscal_review',
+  MANAGE_FISCAL_CONFIGURATION: 'manage_fiscal_configuration',
+  APPROVE_FISCAL_CONFIGURATION: 'approve_fiscal_configuration',
+  PUBLISH_FISCAL_CONFIGURATION: 'publish_fiscal_configuration',
+  VIEW_FISCAL_AUDIT_LOG: 'view_fiscal_audit_log',
+
   // General
   VIEW_DASHBOARD: 'view_dashboard',
 } as const;
@@ -649,6 +659,15 @@ export const portalCustomerSettings = pgTable("portal_customer_settings", {
   canViewContracts: boolean("can_view_contracts").notNull().default(true),
   showPrices: boolean("show_prices").notNull().default(false),
   canReturn: boolean("can_return").notNull().default(true),
+  // Fiscal mobility check (docs/fiscaal/03-schema-en-dataflow.md §1.8). These
+  // switch visibility and notifications for the customer; they never change a
+  // fiscal parameter, and switching one off deletes nothing.
+  fiscalMobilityEnabled: boolean("fiscal_mobility_enabled").notNull().default(false),
+  pseudoEindheffingEnabled: boolean("pseudo_eindheffing_enabled").notNull().default(false),
+  fiscalDashboardEnabled: boolean("fiscal_dashboard_enabled").notNull().default(false),
+  fiscalWarningsEnabled: boolean("fiscal_warnings_enabled").notNull().default(false),
+  fiscalReportsEnabled: boolean("fiscal_reports_enabled").notNull().default(false),
+  driverFiscalVisibilityEnabled: boolean("driver_fiscal_visibility_enabled").notNull().default(false),
   internalNotes: text("internal_notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -2367,3 +2386,259 @@ export const session = pgTable("session", {
   sess: jsonb("sess").notNull(),
   expire: timestamp("expire", { withTimezone: true }).notNull(),
 });
+
+// ==================== FISCALE MOBILITEITSCHECK ====================
+// docs/fiscaal/03-schema-en-dataflow.md — seven additive tables. Statuses and
+// codes are text columns validated against shared/fiscal-types.ts (no pgEnum,
+// like the rest of this schema). Periods and reference dates are real `date`
+// columns because the rules engine compares day and month boundaries; the API
+// still exchanges them as yyyy-MM-dd. Foreign keys and indexes are created by
+// the explicit step in startup-migration.js, since the manifest sync does not.
+
+/** One version of one fiscal rule. Published rows are immutable (rule-versions.ts enforces it). */
+export const fiscalRuleVersions = pgTable("fiscal_rule_versions", {
+  id: serial("id").primaryKey(),
+  ruleKey: text("rule_key").notNull(),
+  versionNumber: integer("version_number").notNull(),
+  status: text("status").notNull().default("draft"),
+  title: text("title").notNull(),
+  effectiveFrom: date("effective_from"),
+  effectiveUntil: date("effective_until"),
+  reasonCategory: text("reason_category").notNull(),
+  reasonText: text("reason_text").notNull(),
+  sourceOrganisation: text("source_organisation"),
+  sourceUrl: text("source_url"),
+  legalReference: text("legal_reference"),
+  sourceVerifiedAt: timestamp("source_verified_at", { withTimezone: true }),
+  sourceVerifiedByName: text("source_verified_by_name"),
+  assumptions: text("assumptions"),
+  createdBy: integer("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdByName: text("created_by_name").notNull(),
+  submittedBy: integer("submitted_by").references(() => users.id, { onDelete: "set null" }),
+  submittedByName: text("submitted_by_name"),
+  submittedAt: timestamp("submitted_at", { withTimezone: true }),
+  approvedBy: integer("approved_by").references(() => users.id, { onDelete: "set null" }),
+  approvedByName: text("approved_by_name"),
+  approvedAt: timestamp("approved_at", { withTimezone: true }),
+  publishedBy: integer("published_by").references(() => users.id, { onDelete: "set null" }),
+  publishedByName: text("published_by_name"),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  rejectedBy: integer("rejected_by").references(() => users.id, { onDelete: "set null" }),
+  rejectedByName: text("rejected_by_name"),
+  rejectedAt: timestamp("rejected_at", { withTimezone: true }),
+  rejectionReason: text("rejection_reason"),
+  supersededById: integer("superseded_by_id").references((): AnyPgColumn => fiscalRuleVersions.id, { onDelete: "set null" }),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  archivedByName: text("archived_by_name"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  ruleVersionUnique: uniqueIndex("fiscal_rule_versions_rule_version_idx").on(table.ruleKey, table.versionNumber),
+  ruleStatusIdx: index("fiscal_rule_versions_rule_status_idx").on(table.ruleKey, table.status),
+  ruleFromIdx: index("fiscal_rule_versions_rule_from_idx").on(table.ruleKey, table.effectiveFrom),
+}));
+export type FiscalRuleVersion = typeof fiscalRuleVersions.$inferSelect;
+
+/** One parameter value of one rule version. Exactly one value column is filled, matching the definition's data type. */
+export const fiscalParameterValues = pgTable("fiscal_parameter_values", {
+  id: serial("id").primaryKey(),
+  ruleVersionId: integer("rule_version_id").notNull().references(() => fiscalRuleVersions.id, { onDelete: "cascade" }),
+  parameterKey: text("parameter_key").notNull(),
+  valueDecimal: numeric("value_decimal", { precision: 14, scale: 4 }),
+  valueInteger: integer("value_integer"),
+  valueBoolean: boolean("value_boolean"),
+  valueDate: date("value_date"),
+  valueText: text("value_text"),
+  valueList: jsonb("value_list").$type<string[]>(),
+  unit: text("unit").notNull(),
+  legalStatus: text("legal_status").notNull(),
+  sourceUrl: text("source_url"),
+  sourceReference: text("source_reference"),
+  sourceVerifiedAt: timestamp("source_verified_at", { withTimezone: true }),
+  sourceVerifiedByName: text("source_verified_by_name"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  versionKeyUnique: uniqueIndex("fiscal_parameter_values_version_key_idx").on(table.ruleVersionId, table.parameterKey),
+}));
+export type FiscalParameterValue = typeof fiscalParameterValues.$inferSelect;
+
+/** Fiscally relevant vehicle facts with their provenance. The vehicles table itself stays untouched. */
+export const vehicleFiscalProfiles = pgTable("vehicle_fiscal_profiles", {
+  id: serial("id").primaryKey(),
+  vehicleId: integer("vehicle_id").notNull().unique().references(() => vehicles.id, { onDelete: "cascade" }),
+  catalogValue: numeric("catalog_value", { precision: 12, scale: 2 }),
+  catalogValueSource: text("catalog_value_source").notNull().default("unknown"),
+  catalogValueRetrievedAt: timestamp("catalog_value_retrieved_at", { withTimezone: true }),
+  catalogValueVerifiedAt: timestamp("catalog_value_verified_at", { withTimezone: true }),
+  catalogValueVerifiedByName: text("catalog_value_verified_by_name"),
+  marketValue: numeric("market_value", { precision: 12, scale: 2 }),
+  marketValueNote: text("market_value_note"),
+  marketValueVerifiedAt: timestamp("market_value_verified_at", { withTimezone: true }),
+  marketValueVerifiedByName: text("market_value_verified_by_name"),
+  firstAdmissionDate: date("first_admission_date"),
+  firstAdmissionSource: text("first_admission_source").notNull().default("unknown"),
+  fuelCategory: text("fuel_category").notNull().default("unknown"),
+  fuelDescriptions: jsonb("fuel_descriptions").$type<string[]>(),
+  hybridClass: text("hybrid_class"),
+  co2GKm: integer("co2_g_km"),
+  co2SourceField: text("co2_source_field"),
+  europeanCategory: text("european_category"),
+  europeanCategoryAddition: text("european_category_addition"),
+  vehicleKind: text("vehicle_kind"),
+  bodyType: text("body_type"),
+  isDrivingSchoolManual: boolean("is_driving_school_manual").notNull().default(false),
+  rdwRaw: jsonb("rdw_raw").$type<Record<string, unknown>>(),
+  rdwRetrievedAt: timestamp("rdw_retrieved_at", { withTimezone: true }),
+  rdwError: text("rdw_error"),
+  rdwVerifiedAt: timestamp("rdw_verified_at", { withTimezone: true }),
+  rdwVerifiedByName: text("rdw_verified_by_name"),
+  manualOverride: jsonb("manual_override").$type<Record<string, { value: unknown; byName: string; at: string; reason: string }>>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  fuelIdx: index("vehicle_fiscal_profiles_fuel_idx").on(table.fuelCategory),
+  categoryIdx: index("vehicle_fiscal_profiles_category_idx").on(table.europeanCategory),
+}));
+export type VehicleFiscalProfile = typeof vehicleFiscalProfiles.$inferSelect;
+
+/** A "terbeschikkingstellingsperiode": derived from a reservation, enriched with what only people know. Never deleted. */
+export const vehicleUsagePeriods = pgTable("vehicle_usage_periods", {
+  id: serial("id").primaryKey(),
+  reservationId: integer("reservation_id").notNull().unique().references(() => reservations.id, { onDelete: "cascade" }),
+  vehicleId: integer("vehicle_id").references(() => vehicles.id, { onDelete: "set null" }),
+  customerId: integer("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }),
+  primaryDriverId: integer("primary_driver_id").references(() => drivers.id, { onDelete: "set null" }),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date"),
+  dateBasis: text("date_basis").notNull().default("planned"),
+  usageType: text("usage_type").notNull().default("unknown"),
+  privateUse: text("private_use").notNull().default("unknown"),
+  commuting: text("commuting").notNull().default("unknown"),
+  isPool: boolean("is_pool").notNull().default(false),
+  driverCount: integer("driver_count").notNull().default(0),
+  isReplacement: boolean("is_replacement").notNull().default(false),
+  replacementReason: text("replacement_reason").notNull().default("unknown"),
+  replacedReservationId: integer("replaced_reservation_id").references(() => reservations.id, { onDelete: "set null" }),
+  replacedVehicleText: text("replaced_vehicle_text"),
+  providedBeforeCutoff: text("provided_before_cutoff").notNull().default("unknown"),
+  providedBeforeCutoffHint: boolean("provided_before_cutoff_hint").notNull().default(false),
+  source: text("source").notNull().default("derived"),
+  derivedAt: timestamp("derived_at", { withTimezone: true }),
+  confirmedByKind: text("confirmed_by_kind").notNull().default("none"),
+  confirmedById: integer("confirmed_by_id"),
+  confirmedByName: text("confirmed_by_name"),
+  confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+  reconfirmRequired: boolean("reconfirm_required").notNull().default(false),
+  closedAt: timestamp("closed_at", { withTimezone: true }),
+  closedReason: text("closed_reason"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  customerVehicleStartIdx: index("vehicle_usage_periods_customer_vehicle_start_idx").on(table.customerId, table.vehicleId, table.startDate),
+  vehicleStartIdx: index("vehicle_usage_periods_vehicle_start_idx").on(table.vehicleId, table.startDate),
+}));
+export type VehicleUsagePeriod = typeof vehicleUsagePeriods.$inferSelect;
+
+/** One completed assessment. Immutable: a recalculation inserts a new row with sequence + 1. */
+export const fiscalAssessments = pgTable("fiscal_assessments", {
+  id: serial("id").primaryKey(),
+  usagePeriodId: integer("usage_period_id").notNull().references(() => vehicleUsagePeriods.id, { onDelete: "cascade" }),
+  customerId: integer("customer_id").notNull(),
+  vehicleId: integer("vehicle_id"),
+  reservationId: integer("reservation_id"),
+  periodStart: date("period_start").notNull(),
+  periodEnd: date("period_end"),
+  periodEndEffective: date("period_end_effective").notNull(),
+  calculationDate: date("calculation_date").notNull(),
+  ruleKey: text("rule_key").notNull(),
+  ruleVersionId: integer("rule_version_id").references(() => fiscalRuleVersions.id, { onDelete: "set null" }),
+  status: text("status").notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }),
+  monthsCharged: integer("months_charged").notNull().default(0),
+  months: jsonb("months").$type<Array<{ month: string; days: number; charged: boolean; reason: string; amount: string | null }>>().notNull(),
+  dataQuality: text("data_quality").notNull(),
+  explanation: text("explanation").notNull(),
+  missingData: jsonb("missing_data").$type<string[]>().notNull().default([]),
+  reviewReasons: jsonb("review_reasons").$type<string[]>().notNull().default([]),
+  inputs: jsonb("inputs").$type<Record<string, unknown>>().notNull(),
+  parameters: jsonb("parameters").$type<Array<Record<string, unknown>>>().notNull(),
+  inputHash: text("input_hash").notNull(),
+  sequence: integer("sequence").notNull().default(1),
+  supersedesId: integer("supersedes_id").references((): AnyPgColumn => fiscalAssessments.id, { onDelete: "set null" }),
+  trigger: text("trigger").notNull(),
+  requestedById: integer("requested_by_id"),
+  requestedByName: text("requested_by_name"),
+  requestReason: text("request_reason"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  periodSequenceIdx: index("fiscal_assessments_period_sequence_idx").on(table.usagePeriodId, table.sequence),
+  customerVehicleStartIdx: index("fiscal_assessments_customer_vehicle_start_idx").on(table.customerId, table.vehicleId, table.periodStart),
+  ruleVersionIdx: index("fiscal_assessments_rule_version_idx").on(table.ruleVersionId),
+  statusIdx: index("fiscal_assessments_status_idx").on(table.status),
+  createdAtIdx: index("fiscal_assessments_created_at_idx").on(table.createdAt),
+}));
+export type FiscalAssessment = typeof fiscalAssessments.$inferSelect;
+
+/** A case for a human: opened when an assessment cannot decide on its own. One open case per period. */
+export const fiscalReviewCases = pgTable("fiscal_review_cases", {
+  id: serial("id").primaryKey(),
+  usagePeriodId: integer("usage_period_id").notNull().references(() => vehicleUsagePeriods.id, { onDelete: "cascade" }),
+  assessmentId: integer("assessment_id").references(() => fiscalAssessments.id, { onDelete: "set null" }),
+  customerId: integer("customer_id").notNull(),
+  vehicleId: integer("vehicle_id"),
+  reasons: jsonb("reasons").$type<string[]>().notNull().default([]),
+  status: text("status").notNull().default("open"),
+  assignedToId: integer("assigned_to_id").references(() => users.id, { onDelete: "set null" }),
+  assignedToName: text("assigned_to_name"),
+  resolution: text("resolution"),
+  resolutionNote: text("resolution_note"),
+  resolvedById: integer("resolved_by_id"),
+  resolvedByName: text("resolved_by_name"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  statusIdx: index("fiscal_review_cases_status_idx").on(table.status),
+  customerIdx: index("fiscal_review_cases_customer_idx").on(table.customerId),
+  openPeriodUnique: uniqueIndex("fiscal_review_cases_open_period_idx").on(table.usagePeriodId).where(sql`status in ('open', 'in_progress')`),
+}));
+export type FiscalReviewCase = typeof fiscalReviewCases.$inferSelect;
+
+/** Append-only. No route updates or deletes a row; the service only inserts. */
+export const fiscalAuditEvents = pgTable("fiscal_audit_events", {
+  id: serial("id").primaryKey(),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).defaultNow().notNull(),
+  userId: integer("user_id"),
+  username: text("username").notNull(),
+  role: text("role"),
+  permissionUsed: text("permission_used"),
+  action: text("action").notNull(),
+  entityType: text("entity_type").notNull(),
+  entityId: integer("entity_id"),
+  ruleKey: text("rule_key"),
+  ruleVersionId: integer("rule_version_id"),
+  parameterKey: text("parameter_key"),
+  oldValue: text("old_value"),
+  newValue: text("new_value"),
+  unit: text("unit"),
+  scope: text("scope").notNull().default("GLOBAL"),
+  effectiveFrom: date("effective_from"),
+  effectiveUntil: date("effective_until"),
+  reasonCategory: text("reason_category"),
+  reasonText: text("reason_text"),
+  sourceUrl: text("source_url"),
+  customerId: integer("customer_id"),
+  vehicleId: integer("vehicle_id"),
+  validationResult: jsonb("validation_result").$type<Record<string, unknown>>(),
+  ipAddress: text("ip_address"),
+  details: jsonb("details").$type<Record<string, unknown>>(),
+}, (table) => ({
+  occurredAtIdx: index("fiscal_audit_events_occurred_at_idx").on(table.occurredAt),
+  ruleVersionIdx: index("fiscal_audit_events_rule_version_idx").on(table.ruleVersionId),
+  entityIdx: index("fiscal_audit_events_entity_idx").on(table.entityType, table.entityId),
+  customerIdx: index("fiscal_audit_events_customer_idx").on(table.customerId),
+}));
+export type FiscalAuditEvent = typeof fiscalAuditEvents.$inferSelect;

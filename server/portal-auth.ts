@@ -56,6 +56,13 @@ export function settingsFlags(s: PortalCustomerSettings, user?: Pick<PortalUser,
     canSubmitRequests: allow("canSubmitRequests", s.canSubmitRequests), canViewFines: allow("canViewFines", s.canViewFines),
     canViewContracts: allow("canViewContracts", s.canViewContracts), showPrices: allow("showPrices", s.showPrices),
     canReturn: allow("canReturn", s.canReturn),
+    // Fiscal: the customer's main switch is the ceiling of the account key; the
+    // other four are customer-level only (they refine what a viewer sees).
+    canViewFiscal: allow("canViewFiscal", s.fiscalMobilityEnabled),
+    fiscalDashboardEnabled: s.fiscalDashboardEnabled,
+    fiscalWarningsEnabled: s.fiscalWarningsEnabled,
+    fiscalReportsEnabled: s.fiscalReportsEnabled,
+    driverFiscalVisibilityEnabled: s.driverFiscalVisibilityEnabled,
   };
 }
 

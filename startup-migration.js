@@ -1385,6 +1385,252 @@ async function runMigrations() {
     await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS portal_document_acks_document_idx ON portal_document_acks (document_id)`);
     console.log('✅ Fines and portal request tables ready');
 
+    // ==================== FISCALE MOBILITEITSCHECK ====================
+    // docs/fiscaal/03-schema-en-dataflow.md §7. Seven additive tables plus six
+    // switches on portal_customer_settings. Written out here (not left to the
+    // manifest sync) because this step carries the foreign keys and indexes.
+    await createTableIfNotExists('fiscal_rule_versions', `
+      CREATE TABLE fiscal_rule_versions (
+        id SERIAL PRIMARY KEY,
+        rule_key TEXT NOT NULL,
+        version_number INTEGER NOT NULL,
+        status TEXT NOT NULL DEFAULT 'draft',
+        title TEXT NOT NULL,
+        effective_from DATE,
+        effective_until DATE,
+        reason_category TEXT NOT NULL,
+        reason_text TEXT NOT NULL,
+        source_organisation TEXT,
+        source_url TEXT,
+        legal_reference TEXT,
+        source_verified_at TIMESTAMPTZ,
+        source_verified_by_name TEXT,
+        assumptions TEXT,
+        created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_by_name TEXT NOT NULL,
+        submitted_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        submitted_by_name TEXT,
+        submitted_at TIMESTAMPTZ,
+        approved_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        approved_by_name TEXT,
+        approved_at TIMESTAMPTZ,
+        published_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        published_by_name TEXT,
+        published_at TIMESTAMPTZ,
+        rejected_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        rejected_by_name TEXT,
+        rejected_at TIMESTAMPTZ,
+        rejection_reason TEXT,
+        superseded_by_id INTEGER REFERENCES fiscal_rule_versions(id) ON DELETE SET NULL,
+        archived_at TIMESTAMPTZ,
+        archived_by_name TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`);
+    await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS fiscal_rule_versions_rule_version_idx ON fiscal_rule_versions (rule_key, version_number)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS fiscal_rule_versions_rule_status_idx ON fiscal_rule_versions (rule_key, status)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS fiscal_rule_versions_rule_from_idx ON fiscal_rule_versions (rule_key, effective_from)`);
+
+    await createTableIfNotExists('fiscal_parameter_values', `
+      CREATE TABLE fiscal_parameter_values (
+        id SERIAL PRIMARY KEY,
+        rule_version_id INTEGER NOT NULL REFERENCES fiscal_rule_versions(id) ON DELETE CASCADE,
+        parameter_key TEXT NOT NULL,
+        value_decimal NUMERIC(14, 4),
+        value_integer INTEGER,
+        value_boolean BOOLEAN,
+        value_date DATE,
+        value_text TEXT,
+        value_list JSONB,
+        unit TEXT NOT NULL,
+        legal_status TEXT NOT NULL,
+        source_url TEXT,
+        source_reference TEXT,
+        source_verified_at TIMESTAMPTZ,
+        source_verified_by_name TEXT,
+        notes TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`);
+    await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS fiscal_parameter_values_version_key_idx ON fiscal_parameter_values (rule_version_id, parameter_key)`);
+
+    await createTableIfNotExists('vehicle_fiscal_profiles', `
+      CREATE TABLE vehicle_fiscal_profiles (
+        id SERIAL PRIMARY KEY,
+        vehicle_id INTEGER NOT NULL UNIQUE REFERENCES vehicles(id) ON DELETE CASCADE,
+        catalog_value NUMERIC(12, 2),
+        catalog_value_source TEXT NOT NULL DEFAULT 'unknown',
+        catalog_value_retrieved_at TIMESTAMPTZ,
+        catalog_value_verified_at TIMESTAMPTZ,
+        catalog_value_verified_by_name TEXT,
+        market_value NUMERIC(12, 2),
+        market_value_note TEXT,
+        market_value_verified_at TIMESTAMPTZ,
+        market_value_verified_by_name TEXT,
+        first_admission_date DATE,
+        first_admission_source TEXT NOT NULL DEFAULT 'unknown',
+        fuel_category TEXT NOT NULL DEFAULT 'unknown',
+        fuel_descriptions JSONB,
+        hybrid_class TEXT,
+        co2_g_km INTEGER,
+        co2_source_field TEXT,
+        european_category TEXT,
+        european_category_addition TEXT,
+        vehicle_kind TEXT,
+        body_type TEXT,
+        is_driving_school_manual BOOLEAN NOT NULL DEFAULT false,
+        rdw_raw JSONB,
+        rdw_retrieved_at TIMESTAMPTZ,
+        rdw_error TEXT,
+        rdw_verified_at TIMESTAMPTZ,
+        rdw_verified_by_name TEXT,
+        manual_override JSONB,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS vehicle_fiscal_profiles_fuel_idx ON vehicle_fiscal_profiles (fuel_category)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS vehicle_fiscal_profiles_category_idx ON vehicle_fiscal_profiles (european_category)`);
+
+    await createTableIfNotExists('vehicle_usage_periods', `
+      CREATE TABLE vehicle_usage_periods (
+        id SERIAL PRIMARY KEY,
+        reservation_id INTEGER NOT NULL UNIQUE REFERENCES reservations(id) ON DELETE CASCADE,
+        vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE SET NULL,
+        customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+        primary_driver_id INTEGER REFERENCES drivers(id) ON DELETE SET NULL,
+        start_date DATE NOT NULL,
+        end_date DATE,
+        date_basis TEXT NOT NULL DEFAULT 'planned',
+        usage_type TEXT NOT NULL DEFAULT 'unknown',
+        private_use TEXT NOT NULL DEFAULT 'unknown',
+        commuting TEXT NOT NULL DEFAULT 'unknown',
+        is_pool BOOLEAN NOT NULL DEFAULT false,
+        driver_count INTEGER NOT NULL DEFAULT 0,
+        is_replacement BOOLEAN NOT NULL DEFAULT false,
+        replacement_reason TEXT NOT NULL DEFAULT 'unknown',
+        replaced_reservation_id INTEGER REFERENCES reservations(id) ON DELETE SET NULL,
+        replaced_vehicle_text TEXT,
+        provided_before_cutoff TEXT NOT NULL DEFAULT 'unknown',
+        provided_before_cutoff_hint BOOLEAN NOT NULL DEFAULT false,
+        source TEXT NOT NULL DEFAULT 'derived',
+        derived_at TIMESTAMPTZ,
+        confirmed_by_kind TEXT NOT NULL DEFAULT 'none',
+        confirmed_by_id INTEGER,
+        confirmed_by_name TEXT,
+        confirmed_at TIMESTAMPTZ,
+        reconfirm_required BOOLEAN NOT NULL DEFAULT false,
+        closed_at TIMESTAMPTZ,
+        closed_reason TEXT,
+        notes TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS vehicle_usage_periods_customer_vehicle_start_idx ON vehicle_usage_periods (customer_id, vehicle_id, start_date)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS vehicle_usage_periods_vehicle_start_idx ON vehicle_usage_periods (vehicle_id, start_date)`);
+
+    await createTableIfNotExists('fiscal_assessments', `
+      CREATE TABLE fiscal_assessments (
+        id SERIAL PRIMARY KEY,
+        usage_period_id INTEGER NOT NULL REFERENCES vehicle_usage_periods(id) ON DELETE CASCADE,
+        customer_id INTEGER NOT NULL,
+        vehicle_id INTEGER,
+        reservation_id INTEGER,
+        period_start DATE NOT NULL,
+        period_end DATE,
+        period_end_effective DATE NOT NULL,
+        calculation_date DATE NOT NULL,
+        rule_key TEXT NOT NULL,
+        rule_version_id INTEGER REFERENCES fiscal_rule_versions(id) ON DELETE SET NULL,
+        status TEXT NOT NULL,
+        amount NUMERIC(12, 2),
+        months_charged INTEGER NOT NULL DEFAULT 0,
+        months JSONB NOT NULL,
+        data_quality TEXT NOT NULL,
+        explanation TEXT NOT NULL,
+        missing_data JSONB NOT NULL DEFAULT '[]'::jsonb,
+        review_reasons JSONB NOT NULL DEFAULT '[]'::jsonb,
+        inputs JSONB NOT NULL,
+        parameters JSONB NOT NULL,
+        input_hash TEXT NOT NULL,
+        sequence INTEGER NOT NULL DEFAULT 1,
+        supersedes_id INTEGER REFERENCES fiscal_assessments(id) ON DELETE SET NULL,
+        trigger TEXT NOT NULL,
+        requested_by_id INTEGER,
+        requested_by_name TEXT,
+        request_reason TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS fiscal_assessments_period_sequence_idx ON fiscal_assessments (usage_period_id, sequence)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS fiscal_assessments_customer_vehicle_start_idx ON fiscal_assessments (customer_id, vehicle_id, period_start)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS fiscal_assessments_rule_version_idx ON fiscal_assessments (rule_version_id)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS fiscal_assessments_status_idx ON fiscal_assessments (status)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS fiscal_assessments_created_at_idx ON fiscal_assessments (created_at)`);
+
+    await createTableIfNotExists('fiscal_review_cases', `
+      CREATE TABLE fiscal_review_cases (
+        id SERIAL PRIMARY KEY,
+        usage_period_id INTEGER NOT NULL REFERENCES vehicle_usage_periods(id) ON DELETE CASCADE,
+        assessment_id INTEGER REFERENCES fiscal_assessments(id) ON DELETE SET NULL,
+        customer_id INTEGER NOT NULL,
+        vehicle_id INTEGER,
+        reasons JSONB NOT NULL DEFAULT '[]'::jsonb,
+        status TEXT NOT NULL DEFAULT 'open',
+        assigned_to_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        assigned_to_name TEXT,
+        resolution TEXT,
+        resolution_note TEXT,
+        resolved_by_id INTEGER,
+        resolved_by_name TEXT,
+        resolved_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS fiscal_review_cases_status_idx ON fiscal_review_cases (status)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS fiscal_review_cases_customer_idx ON fiscal_review_cases (customer_id)`);
+    await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS fiscal_review_cases_open_period_idx ON fiscal_review_cases (usage_period_id) WHERE status IN ('open', 'in_progress')`);
+
+    await createTableIfNotExists('fiscal_audit_events', `
+      CREATE TABLE fiscal_audit_events (
+        id SERIAL PRIMARY KEY,
+        occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        user_id INTEGER,
+        username TEXT NOT NULL,
+        role TEXT,
+        permission_used TEXT,
+        action TEXT NOT NULL,
+        entity_type TEXT NOT NULL,
+        entity_id INTEGER,
+        rule_key TEXT,
+        rule_version_id INTEGER,
+        parameter_key TEXT,
+        old_value TEXT,
+        new_value TEXT,
+        unit TEXT,
+        scope TEXT NOT NULL DEFAULT 'GLOBAL',
+        effective_from DATE,
+        effective_until DATE,
+        reason_category TEXT,
+        reason_text TEXT,
+        source_url TEXT,
+        customer_id INTEGER,
+        vehicle_id INTEGER,
+        validation_result JSONB,
+        ip_address TEXT,
+        details JSONB
+      )`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS fiscal_audit_events_occurred_at_idx ON fiscal_audit_events (occurred_at)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS fiscal_audit_events_rule_version_idx ON fiscal_audit_events (rule_version_id)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS fiscal_audit_events_entity_idx ON fiscal_audit_events (entity_type, entity_id)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS fiscal_audit_events_customer_idx ON fiscal_audit_events (customer_id)`);
+
+    for (const column of [
+      'fiscal_mobility_enabled', 'pseudo_eindheffing_enabled', 'fiscal_dashboard_enabled',
+      'fiscal_warnings_enabled', 'fiscal_reports_enabled', 'driver_fiscal_visibility_enabled',
+    ]) {
+      await addColumnIfNotExists('portal_customer_settings', column, 'BOOLEAN NOT NULL DEFAULT false');
+    }
+    console.log('✅ Fiscal mobility check tables ready');
+
     // ==================== ADDITIVE SCHEMA SYNC ====================
     // Runs last: catches any table/column declared in shared/schema.ts
     // that isn't covered by one of the explicit steps above (which only

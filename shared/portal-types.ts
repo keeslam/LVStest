@@ -37,10 +37,16 @@ export interface PortalSettingsFlags {
   showPrices: boolean;
   /** May ask to return a vehicle early ("terugbrengen"). */
   canReturn: boolean;
+  /** Fiscal mobility check (docs/fiscaal). `canViewFiscal` is the per-account key; its ceiling is `fiscalMobilityEnabled`. */
+  canViewFiscal: boolean;
+  fiscalDashboardEnabled: boolean;
+  fiscalWarningsEnabled: boolean;
+  fiscalReportsEnabled: boolean;
+  driverFiscalVisibilityEnabled: boolean;
 }
 
 /** Features that can be switched per customer and, on top of that, restricted per account. */
-export const PORTAL_FEATURE_KEYS = ['canBook', 'canManageDrivers', 'canSubmitRequests', 'canViewFines', 'canViewContracts', 'showPrices', 'canReturn'] as const;
+export const PORTAL_FEATURE_KEYS = ['canBook', 'canManageDrivers', 'canSubmitRequests', 'canViewFines', 'canViewContracts', 'showPrices', 'canReturn', 'canViewFiscal'] as const;
 export type PortalFeatureKey = typeof PORTAL_FEATURE_KEYS[number];
 /** Per-account overrides: a key set to false takes the feature away; absent or true = follow the customer. */
 export type PortalAccountPermissions = Partial<Record<PortalFeatureKey, boolean>>;

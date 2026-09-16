@@ -422,7 +422,14 @@
       "showPrices": "Ziet prijzen",
       "internalNotes": "Interne notities (wat heeft deze klant nodig?)",
       "saved": "Instellingen opgeslagen.",
-      "canReturn": "Mag eerder inleveren (terugbrengen) aanvragen"
+      "canReturn": "Mag eerder inleveren (terugbrengen) aanvragen",
+      "canViewFiscal": "Mag de fiscale check zien",
+      "fiscalMobilityEnabled": "Fiscale check actief",
+      "pseudoEindheffingEnabled": "Pseudo-eindheffing beoordelen",
+      "fiscalDashboardEnabled": "Ziet fiscale bedragen (schatting)",
+      "fiscalWarningsEnabled": "Ontvangt fiscale waarschuwingen",
+      "fiscalReportsEnabled": "Ziet fiscale rapporten",
+      "driverFiscalVisibilityEnabled": "Bestuurders zien hun eigen fiscale status"
     },
     "activity": {
       "title": "Activiteit in het portaal",

@@ -48,6 +48,13 @@ export const PERMISSION_LABELS: Record<string, string> = {
   [UserPermission.MANAGE_FINES]: "Boetes beheren",
   [UserPermission.VIEW_FINES]: "Boetes bekijken",
 
+  [UserPermission.VIEW_FISCAL]: "Fiscaal bekijken",
+  [UserPermission.MANAGE_FISCAL_REVIEW]: "Fiscale beoordelingen en gegevens beheren",
+  [UserPermission.MANAGE_FISCAL_CONFIGURATION]: "Fiscale configuratie voorbereiden",
+  [UserPermission.APPROVE_FISCAL_CONFIGURATION]: "Fiscale configuratie goedkeuren",
+  [UserPermission.PUBLISH_FISCAL_CONFIGURATION]: "Fiscale configuratie publiceren",
+  [UserPermission.VIEW_FISCAL_AUDIT_LOG]: "Fiscale auditlog bekijken",
+
   [UserPermission.VIEW_DASHBOARD]: "Dashboard bekijken",
 };
 

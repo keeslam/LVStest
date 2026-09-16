@@ -2389,6 +2389,899 @@
     ]
   },
   {
+    "name": "fiscal_assessments",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "usage_period_id",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "customer_id",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "vehicle_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "reservation_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "period_start",
+        "type": "date",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "period_end",
+        "type": "date",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "period_end_effective",
+        "type": "date",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "calculation_date",
+        "type": "date",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "rule_key",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "rule_version_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "amount",
+        "type": "numeric(12, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "months_charged",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": "0"
+      },
+      {
+        "name": "months",
+        "type": "jsonb",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "data_quality",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "explanation",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "missing_data",
+        "type": "jsonb",
+        "notNull": true,
+        "primary": false,
+        "default": "'[]'::jsonb"
+      },
+      {
+        "name": "review_reasons",
+        "type": "jsonb",
+        "notNull": true,
+        "primary": false,
+        "default": "'[]'::jsonb"
+      },
+      {
+        "name": "inputs",
+        "type": "jsonb",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "parameters",
+        "type": "jsonb",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "input_hash",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "sequence",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": "1"
+      },
+      {
+        "name": "supersedes_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "trigger",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "requested_by_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "requested_by_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "request_reason",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": "now()"
+      }
+    ]
+  },
+  {
+    "name": "fiscal_audit_events",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "occurred_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": "now()"
+      },
+      {
+        "name": "user_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "username",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "role",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "permission_used",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "action",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "entity_type",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "entity_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "rule_key",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "rule_version_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "parameter_key",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "old_value",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "new_value",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "unit",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "scope",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": "'GLOBAL'"
+      },
+      {
+        "name": "effective_from",
+        "type": "date",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "effective_until",
+        "type": "date",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "reason_category",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "reason_text",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "source_url",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "customer_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "vehicle_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "validation_result",
+        "type": "jsonb",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "ip_address",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "details",
+        "type": "jsonb",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      }
+    ]
+  },
+  {
+    "name": "fiscal_parameter_values",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "rule_version_id",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "parameter_key",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "value_decimal",
+        "type": "numeric(14, 4)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "value_integer",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "value_boolean",
+        "type": "boolean",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "value_date",
+        "type": "date",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "value_text",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "value_list",
+        "type": "jsonb",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "unit",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "legal_status",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "source_url",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "source_reference",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "source_verified_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "source_verified_by_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "notes",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": "now()"
+      }
+    ]
+  },
+  {
+    "name": "fiscal_review_cases",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "usage_period_id",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "assessment_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "customer_id",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "vehicle_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "reasons",
+        "type": "jsonb",
+        "notNull": true,
+        "primary": false,
+        "default": "'[]'::jsonb"
+      },
+      {
+        "name": "status",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": "'open'"
+      },
+      {
+        "name": "assigned_to_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "assigned_to_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "resolution",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "resolution_note",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "resolved_by_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "resolved_by_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "resolved_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": "now()"
+      }
+    ]
+  },
+  {
+    "name": "fiscal_rule_versions",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "rule_key",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "version_number",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": "'draft'"
+      },
+      {
+        "name": "title",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "effective_from",
+        "type": "date",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "effective_until",
+        "type": "date",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "reason_category",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "reason_text",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "source_organisation",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "source_url",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "legal_reference",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "source_verified_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "source_verified_by_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "assumptions",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "created_by",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "created_by_name",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "submitted_by",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "submitted_by_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "submitted_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "approved_by",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "approved_by_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "approved_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "published_by",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "published_by_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "published_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "rejected_by",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "rejected_by_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "rejected_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "rejection_reason",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "superseded_by_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "archived_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "archived_by_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": "now()"
+      }
+    ]
+  },
+  {
     "name": "interactive_damage_checks",
     "columns": [
       {
@@ -2828,6 +3721,48 @@
         "notNull": true,
         "primary": false,
         "default": "true"
+      },
+      {
+        "name": "fiscal_mobility_enabled",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "false"
+      },
+      {
+        "name": "pseudo_eindheffing_enabled",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "false"
+      },
+      {
+        "name": "fiscal_dashboard_enabled",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "false"
+      },
+      {
+        "name": "fiscal_warnings_enabled",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "false"
+      },
+      {
+        "name": "fiscal_reports_enabled",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "false"
+      },
+      {
+        "name": "driver_fiscal_visibility_enabled",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "false"
       },
       {
         "name": "internal_notes",
@@ -4672,6 +5607,228 @@
     ]
   },
   {
+    "name": "vehicle_fiscal_profiles",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "vehicle_id",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "catalog_value",
+        "type": "numeric(12, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "catalog_value_source",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": "'unknown'"
+      },
+      {
+        "name": "catalog_value_retrieved_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "catalog_value_verified_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "catalog_value_verified_by_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "market_value",
+        "type": "numeric(12, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "market_value_note",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "market_value_verified_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "market_value_verified_by_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "first_admission_date",
+        "type": "date",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "first_admission_source",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": "'unknown'"
+      },
+      {
+        "name": "fuel_category",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": "'unknown'"
+      },
+      {
+        "name": "fuel_descriptions",
+        "type": "jsonb",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "hybrid_class",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "co2_g_km",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "co2_source_field",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "european_category",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "european_category_addition",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "vehicle_kind",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "body_type",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "is_driving_school_manual",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "false"
+      },
+      {
+        "name": "rdw_raw",
+        "type": "jsonb",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "rdw_retrieved_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "rdw_error",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "rdw_verified_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "rdw_verified_by_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "manual_override",
+        "type": "jsonb",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": "now()"
+      }
+    ]
+  },
+  {
     "name": "vehicle_transports",
     "columns": [
       {
@@ -4939,6 +6096,228 @@
         "notNull": false,
         "primary": false,
         "default": null
+      }
+    ]
+  },
+  {
+    "name": "vehicle_usage_periods",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "reservation_id",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "vehicle_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "customer_id",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "primary_driver_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "start_date",
+        "type": "date",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "end_date",
+        "type": "date",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "date_basis",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": "'planned'"
+      },
+      {
+        "name": "usage_type",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": "'unknown'"
+      },
+      {
+        "name": "private_use",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": "'unknown'"
+      },
+      {
+        "name": "commuting",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": "'unknown'"
+      },
+      {
+        "name": "is_pool",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "false"
+      },
+      {
+        "name": "driver_count",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": "0"
+      },
+      {
+        "name": "is_replacement",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "false"
+      },
+      {
+        "name": "replacement_reason",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": "'unknown'"
+      },
+      {
+        "name": "replaced_reservation_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "replaced_vehicle_text",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "provided_before_cutoff",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": "'unknown'"
+      },
+      {
+        "name": "provided_before_cutoff_hint",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "false"
+      },
+      {
+        "name": "source",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": "'derived'"
+      },
+      {
+        "name": "derived_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "confirmed_by_kind",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": "'none'"
+      },
+      {
+        "name": "confirmed_by_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "confirmed_by_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "confirmed_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "reconfirm_required",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "false"
+      },
+      {
+        "name": "closed_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "closed_reason",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "notes",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": "now()"
+      },
+      {
+        "name": "updated_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": "now()"
       }
     ]
   },

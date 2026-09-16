@@ -422,7 +422,14 @@
       "showPrices": "Sees prices",
       "internalNotes": "Internal notes (what does this customer need?)",
       "saved": "Settings saved.",
-      "canReturn": "May request an early return"
+      "canReturn": "May request an early return",
+      "canViewFiscal": "May see the fiscal check",
+      "fiscalMobilityEnabled": "Fiscal check enabled",
+      "pseudoEindheffingEnabled": "Assess pseudo-eindheffing",
+      "fiscalDashboardEnabled": "Sees fiscal amounts (estimate)",
+      "fiscalWarningsEnabled": "Receives fiscal warnings",
+      "fiscalReportsEnabled": "Sees fiscal reports",
+      "driverFiscalVisibilityEnabled": "Drivers see their own fiscal status"
     },
     "activity": {
       "title": "Activity in the portal",
