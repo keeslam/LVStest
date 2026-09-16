@@ -186,8 +186,8 @@ toegewezen.*
 bepalen)**, dan maakt de app een placeholder. Die herken je aan:
 
 - **TBD** in plaats van een kenteken op de reserveringskalender;
-- *… vervangers nog toe te wijzen* met **Nog geen voertuig** en de knop **Vervanger toewijzen**
-  op het scherm **Vandaag**;
+- op het **Dashboard** in het blok **Beheer vervangende voertuigen**, tabblad **Nog te bepalen**,
+  met *Vervangend voertuig (nog te bepalen)* en de knop **Voertuig toewijzen**;
 - het tabblad **Vervangers (…)** in het **Onderhoudsoverzicht**, met per regel **Toewijzing
   nodig** en de knop **Toewijzen**.
 
@@ -327,7 +327,8 @@ enkele lijst met vrije auto's voorkomt.
 2. **Rond een blok af dat nog openstaat.** Kijk op de **Onderhoudskalender**. Staat er nog een
    blok op een andere dag, sluit het dan met **Voltooien** (7.6). Onderhoud dat verderop in de
    kalender staat, blijft bewust staan.
-3. **Kijk of er nog een vervanger loopt.** Kijk op **Nog buiten** en op **Vandaag**. Een
+3. **Kijk of er nog een vervanger loopt.** Kijk op het **Dashboard** onder **Beheer vervangende
+   voertuigen** → tabblad **Actief**, en op **Reserveringen** achter **… achterstallig**. Een
    vervangende auto die nog op opgehaald staat terwijl de originele auto allang terug is,
    blokkeert die vervanger voor iedereen. Neem hem in, of annuleer de reservering als de auto
    nooit is meegegaan.
@@ -377,7 +378,6 @@ Die aanvragen komen bij jou terecht.
 
 **Waar je ze ziet**
 
-- Op **Vandaag**, onder **Nieuwe portaalaanvragen**, met de knop **Beoordelen**.
 - Op **Klantenportaal**, op de tegel **Aanvragen** en op de tegel **Onderhoud** (*meldingen en
   placeholders*).
 - Aan de portaaltegel bovenin het scherm en het rode bolletje achter **Klantenportaal** in het
@@ -433,10 +433,10 @@ vervangend voertuig aan wordt toegewezen.
 | Een beurt of reparatie inplannen | **Onderhoud** → **Onderhoud plannen** |
 | Een APK inplannen | Voertuigkaart → **Onderhoud** → **APK-keuring plannen**, of het signaal in de kalender → **Onderhoud plannen** |
 | De auto echt op slot zetten | Reservering → **Voertuig markeren voor onderhoud** |
-| Een vervanger aanwijzen | **Vervangend voertuig toewijzen**, of **Vandaag** → **Vervanger toewijzen** |
+| Een vervanger aanwijzen | **Vervangend voertuig toewijzen**, of **Dashboard** → **Beheer vervangende voertuigen** → **Nog te bepalen** → **Voertuig toewijzen** |
 | Een TBD-vervanger invullen | **Onderhoud** → **Lijstweergave** → **Vervangers** → **Toewijzen** |
 | Het onderhoud afronden | Dag openen in de kalender → **Voltooien** |
 | De vervangende huur afsluiten | Reservering → **Terug van onderhoud** |
 | De auto weer vrijgeven | **Scannen** → **Terug uit onderhoud** (zet ook de status terug, 7.7) |
 | Een afgerond onderhoud terugdraaien | **Voltooide bekijken (…)** → **Terugdraaien** |
-| Een portaalaanvraag afhandelen | **Vandaag** → **Beoordelen**, of **Klantenportaal** → **Aanvragen** |
+| Een portaalaanvraag afhandelen | **Klantenportaal** → tegel **Aanvragen** → klik op de aanvraag |

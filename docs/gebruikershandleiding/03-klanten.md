@@ -257,8 +257,8 @@ gevraagd), **Bekeuringen** en **Activiteit in het portaal**. Ze tonen alleen de 
 met **Alles bekijken en zoeken** ga je naar het volledige overzicht op het scherm
 **Klantenportaal**.
 
-Het afhandelen van aanvragen doe je niet hier, maar op het scherm **Klantenportaal** of op
-**Vandaag**. Een onderhoudsaanvraag staat in hoofdstuk 7.
+Het afhandelen van aanvragen doe je niet hier, maar op het scherm **Klantenportaal**, via de
+tegel **Aanvragen**. Een onderhoudsaanvraag staat in hoofdstuk 7.
 
 ---
 

@@ -54,7 +54,7 @@ beheerder in één oogopslag ziet wat voor account het is.
 
 Een beheerder herken je aan drie dingen:
 
-1. In het menu links staan **alle veertien** items.
+1. In het menu links staan **alle twaalf** items.
 2. Rechtsboven, onder je eigen naam, staat het kopje **Beheer** met **Gebruikers**,
    **Back-upbeheer** en **App-instellingen**.
 3. Op het scherm **Voertuigen** staat de knop **Verwijderde voertuigen** — de prullenbak.
@@ -95,8 +95,8 @@ vinkje wat het opent.
 | **Voertuigen beheren** | Alles hierboven, plus toevoegen, wijzigen, verwijderen, kilometerstand en brandstof bijwerken, bulkimport, de zwarte lijst | **Voertuigen**, **Scannen** |
 | **Klanten bekijken** | De klantendatabase en klantkaarten inzien | **Klanten** |
 | **Klanten beheren** | Alles hierboven, plus klanten en chauffeurs aanmaken, wijzigen en verwijderen | **Klanten** |
-| **Reserveringen bekijken** | De kalender, de lijst en de details van een verhuring lezen | **Vandaag**, **Reserveringen**, **Nog buiten**, **Transporten** |
-| **Reserveringen beheren** | Alles hierboven, plus boeken, wijzigen, annuleren, **ophalen** en **innemen** | **Vandaag**, **Reserveringen**, **Nog buiten**, **Transporten** |
+| **Reserveringen bekijken** | De kalender, de lijst en de details van een verhuring lezen | **Reserveringen**, **Transporten** |
+| **Reserveringen beheren** | Alles hierboven, plus boeken, wijzigen, annuleren, **ophalen** en **innemen** | **Reserveringen**, **Transporten** |
 | **Kilometerverlaging goedkeuren** | Een kilometerstand invoeren die lager is dan de vorige, met je eigen wachtwoord | — |
 
 ### Werkplaats, kosten en rapporten
@@ -133,7 +133,7 @@ vinkje wat het opent.
 
 | Vinkje | Wat het toestaat | Menu-item |
 |---|---|---|
-| **Dashboard bekijken** | Het **Dashboard** en het scherm **Vandaag** | **Dashboard**, **Vandaag** |
+| **Dashboard bekijken** | Het **Dashboard** met de snelle acties en de signaalblokken | **Dashboard** |
 | **Gebruikers beheren** | Accounts en rechten wijzigen en het activiteitenlog lezen — **maar alleen als de rol Beheerder is** | — |
 | **Instellingen beheren** | De app-instellingen opslaan — idem | — |
 | **Back-ups beheren** | Back-ups maken en terugzetten — idem | — |
@@ -203,16 +203,18 @@ de beheerder die een nieuw account inricht.
 **Vinkjes:** Dashboard bekijken · Voertuigen bekijken · Klanten bekijken · Reserveringen beheren ·
 Documenten bekijken · Klantportaal bekijken.
 
-**Zijn dag:** begint op **Vandaag**, geeft auto's mee en neemt ze terug, beantwoordt telefoon,
-zoekt reserveringen op contractnummer, drukt het contract af dat bij het ophalen is gemaakt.
+**Zijn dag:** begint op het **Dashboard** en de **Reserveringskalender**, geeft auto's mee en
+neemt ze terug, beantwoordt telefoon, zoekt reserveringen op contractnummer, drukt het contract
+af dat bij het ophalen is gemaakt.
 
-**Wat hij ziet:** **Vandaag**, **Dashboard**, **Voertuigen**, **Scannen**, **Klanten**,
-**Klantenportaal**, **Reserveringen**, **Nog buiten**, **Documenten**, **Transporten**.
+**Wat hij ziet:** **Dashboard**, **Voertuigen**, **Scannen**, **Klanten**, **Klantenportaal**,
+**Reserveringen**, **Documenten**, **Transporten**.
 
 **Wat hij niet mag:** een auto of klant wijzigen of aanmaken, kosten registreren, onderhoud
 plannen, rapporten openen, een document genereren of mailen, een portaalaanvraag afhandelen.
 
-**Hoort bij:** de werkstromen ophalen, innemen en **Nog buiten** (hoofdstuk 16).
+**Hoort bij:** de werkstromen ophalen, innemen en achterstallige verhuringen nalopen (hoofdstuk
+16).
 
 ### Verhuurmedewerker (het volledige kantoorwerk)
 
@@ -238,8 +240,8 @@ en iets uit de prullenbak halen.
 waar een auto is.
 
 **Wat hij niet mag:** letterlijk niets veranderen. Geen boeking maken, geen auto meegeven, geen
-kosten, geen documenten. De knoppen **Ophalen starten** en **Innemen starten** op **Vandaag**
-lopen bij hem stuk op een rechtenmelding.
+kosten, geen documenten. De knoppen **Ophalen starten** en **Innemen starten** bij de **Snelle
+acties** op het **Dashboard** lopen bij hem stuk op een rechtenmelding.
 
 ### Werkplaats
 
@@ -250,8 +252,8 @@ afronden, reparatiekosten vastleggen.
 
 **Wat hij ziet:** **Voertuigen**, **Scannen**, **Onderhoud**, **Kosten**.
 
-**Wat hij niet ziet:** **Vandaag** en **Dashboard** (daar is **Dashboard bekijken** voor nodig),
-**Klanten**, **Reserveringen**, **Nog buiten** en **Transporten**.
+**Wat hij niet ziet:** **Dashboard** (daar is **Dashboard bekijken** voor nodig), **Klanten**,
+**Reserveringen** en **Transporten**.
 
 **Let op:** zonder **Reserveringen bekijken** ziet hij bij een onderhoudsblok niet welke verhuring
 eronder ligt, en staat **Transporten** niet in zijn menu. Wil je dat hij zelf kan zien of er een
@@ -266,8 +268,8 @@ bekijken** aan.
 
 **Wat hij ziet:** **Voertuigen**, **Scannen**, **Kosten**, **Rapporten**.
 
-**Wat hij niet ziet:** **Vandaag**, **Dashboard**, **Klanten**, **Reserveringen**, **Nog buiten**,
-**Documenten**, **Transporten**, **Klantenportaal**.
+**Wat hij niet ziet:** **Dashboard**, **Klanten**, **Reserveringen**, **Documenten**,
+**Transporten**, **Klantenportaal**.
 
 **Let op:** het scherm *Administratie - Factuurgegevens* zit achter de knop **Administratie** op
 het scherm **Reserveringen**. Wie de facturatiegegevens moet kunnen uitlezen, heeft dus ook

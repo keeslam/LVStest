@@ -41,10 +41,11 @@ Zie hoofdstuk 1, paragraaf 1.3, en hoofdstuk 18.
 
 | Wat je wilt | Klikpad |
 |---|---|
-| Een auto meegeven | **Vandaag** → *voertuigen meegeven* → **Ophalen starten** → km + brandstof → **Ophalen voltooien & contract genereren** |
+| Een auto meegeven | **Dashboard** → **Snelle acties** → **Ophalen starten** → scan of typ het kenteken → km + brandstof → **Ophalen voltooien & contract genereren** |
 | Een auto meegeven vanaf het scanscherm | **Scannen** → scan → **Ophalen starten** |
-| Een auto terugnemen | **Vandaag** → *voertuigen terugnemen* → **Innemen starten** → km + brandstof → **Inleveren voltooien & schadecheck genereren** |
-| Een auto terugnemen die al te laat is | **Nog buiten** → **Innemen** |
+| Een auto terugnemen | **Dashboard** → **Snelle acties** → **Innemen starten** → scan of typ het kenteken → km + brandstof → **Inleveren voltooien & schadecheck genereren** |
+| Een auto terugnemen die al te laat is | **Reserveringen** → **… achterstallig** → **Details bekijken** → **Inleveren starten** |
+| Zien wat er vandaag meegaat en terugkomt | **Reserveringen** → het vakje van vandaag: **uit** en **in** |
 | De huur laat vandaag ingaan | Bij de vraag *De huur start eerder* → **Ja, startdatum naar vandaag** |
 | Een schadecheck maken bij het ophalen | In het ophaalvenster → **Ophaal-schadecheck aanmaken** |
 | Een papieren check toevoegen | In het ophaal- of inleververster → **Papieren check uploaden** |
@@ -75,7 +76,7 @@ Zie hoofdstuk 1, paragraaf 1.4, en hoofdstuk 16.
 | Een ophaling ongedaan maken | Open de reservering → **Terugzetten naar geboekt** → **Ja, terugzetten** |
 | Een inname ongedaan maken | **Reserveringen** → **Voltooid bekijken (…)** → **Terugzetten** |
 | Een boeking annuleren | Zoekveld bovenin → de reservering openen → **Reservering annuleren** → aanvinken wat meegaat |
-| Een oude huur alsnog afsluiten | **Nog buiten** → **Innemen** |
+| Een oude huur alsnog afsluiten | **Reserveringen** → **… achterstallig** → **Details bekijken** → **Inleveren starten** |
 | De factuurgegevens uitlezen | **Reserveringen** → **Administratie** |
 
 Zie hoofdstuk 5 en hoofdstuk 11.
@@ -129,7 +130,7 @@ Zie hoofdstuk 4.
 | Onderhoud inplannen | **Onderhoud** → **Onderhoud plannen** → voertuig + datum + type → vervangers toewijzen → **Onderhoud plannen** |
 | Een auto direct op onderhoud zetten | Open de reservering → **Voertuig markeren voor onderhoud** → **Onderhoud nodig** of **Momenteel in onderhoud** |
 | Een auto op onderhoud zetten via de scanner | **Scannen** → scan → **Onderhoud inplannen** |
-| Een vervanger toewijzen | **Vandaag** → **Vervanger toewijzen**, of **Dashboard** → **Beheer vervangende voertuigen** → **Nog te bepalen** |
+| Een vervanger toewijzen | **Dashboard** → **Beheer vervangende voertuigen** → **Nog te bepalen** → **Voertuig toewijzen**, of **Onderhoud** → **Lijstweergave** → **Vervangers** → **Toewijzen** |
 | Een onderhoudsblok afsluiten | **Onderhoud** → de dag openen → **Voltooien** |
 | Een vervanging afsluiten en de auto vrijgeven | Open de reservering → **Terug van onderhoud** → inleverdatum + km |
 | Een auto vrijgeven via de scanner | **Scannen** → scan → **Terug uit onderhoud** |
@@ -149,7 +150,6 @@ Zie hoofdstuk 7 en hoofdstuk 16.
 | Op soort filteren | **Transporten** → tabblad **Voertuigwissel**, **Slepen**, **Terughalen**, **Levering** of **Overig** |
 | Transportbrieven afdrukken | **Transporten** → regels aanvinken → **Afdrukken** |
 | Transporten afronden | **Transporten** → regels aanvinken → **Markeer voltooid** |
-| Een transport openen vanaf Vandaag | **Vandaag** → **Transport openen** |
 
 Zie hoofdstuk 6.
 
@@ -184,7 +184,7 @@ Zie hoofdstuk 8.
 | De kosten van één auto zien | **Voertuigen** → **Bekijken** → tabblad **Kosten** |
 | De laatste kosten zien | **Dashboard** → **Recente kosten** → **Alles bekijken** |
 
-Zie hoofdstuk 2, paragraaf 2.10.
+Zie hoofdstuk 2, paragraaf 2.8.
 
 ---
 
@@ -193,7 +193,7 @@ Zie hoofdstuk 2, paragraaf 2.10.
 | Wat je wilt | Klikpad |
 |---|---|
 | Het portaalbeheer openen | **Klantenportaal** |
-| Een aanvraag afhandelen | **Vandaag** → **Beoordelen**, of **Klantenportaal** → tegel **Aanvragen** |
+| Een aanvraag afhandelen | **Klantenportaal** → tegel **Aanvragen** → klik op de aanvraag, of **Klantenportaal** → paneel **Aandacht nodig** → klik op de aanvraag |
 | Een aanvraag oppakken zonder hem af te ronden | In het aanvraagvenster → **In behandeling nemen** |
 | Een verlenging goedkeuren | In het aanvraagvenster → **Goedkeuren (past reservering aan)** |
 | Van een huuraanvraag een boeking maken | In het aanvraagvenster → **Goedkeuren: reservering aanmaken** |
@@ -204,7 +204,7 @@ Zie hoofdstuk 2, paragraaf 2.10.
 | Een klant voor een auto blokkeren | **Klantenportaal** → tegel **Blacklist** → **Blokkade toevoegen** |
 | Meldingen op gelezen zetten | **Klantenportaal** → **Meldingen** → **Alles gelezen** |
 
-Zie hoofdstuk 2, paragraaf 2.7, en hoofdstuk 16.
+Zie hoofdstuk 2, paragraaf 2.6, en hoofdstuk 16.
 
 ---
 
@@ -233,7 +233,7 @@ Zie hoofdstuk 9.
 | Een eigen rapport maken | **Rapporten** → **Aangepaste rapportbouwer** |
 | De onderhoudskosten analyseren | **Rapporten** → **Analyse onderhoudskosten** |
 
-Zie hoofdstuk 2, paragraaf 2.10.
+Zie hoofdstuk 2, paragraaf 2.8.
 
 ---
 
@@ -242,7 +242,7 @@ Zie hoofdstuk 2, paragraaf 2.10.
 | Wat je wilt | Klikpad |
 |---|---|
 | Zien wie iets gewijzigd heeft | Open de reservering, het voertuig of de klant → **Geschiedenis** |
-| Een huur alsnog afsluiten | **Nog buiten** → **Innemen** |
+| Een huur alsnog afsluiten | **Reserveringen** → **… achterstallig** → **Details bekijken** → **Inleveren starten** |
 | Een ophaling terugdraaien | Open de reservering → **Terugzetten naar geboekt** |
 | Een inname terugdraaien | **Reserveringen** → **Voltooid bekijken (…)** → **Terugzetten** |
 | Een verwijderd record terughalen | Vraag een beheerder: **Voertuigen** → **Verwijderde voertuigen** → **Terugzetten** |
@@ -265,7 +265,7 @@ Zie hoofdstuk 11 en hoofdstuk 12.
 | `Enter` | Het formulier versturen |
 
 `N`, `S` en `?` werken niet terwijl je in een invoerveld of in het scanveld typt. `Ctrl+K` werkt
-overal. Zie hoofdstuk 2, paragraaf 2.13.
+overal. Zie hoofdstuk 2, paragraaf 2.11.
 
 ---
 

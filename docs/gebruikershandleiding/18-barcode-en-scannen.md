@@ -211,7 +211,9 @@ je daarbij door bij te houden welke sleutels je gescand hebt en welke ontbreken.
      merk en model. Dit is de lijst waar je mee aan de slag moet.
    - **Onverwacht aanwezig (voertuig staat als verhuurd)** — sleutels die je wél gescand hebt,
      terwijl de auto volgens de app bij een klant staat. Dat betekent dat de auto terug is en de
-     huur nooit is afgesloten; kijk dan op **Nog buiten** (hoofdstuk 5, paragraaf 5.11).
+     huur nooit is afgesloten. Scan de sleutel daarna op **Scannen** en neem de auto in met
+     **Inleveren starten**. Is de einddatum al voorbij, dan staat de huur ook bij
+     **Reserveringen** achter **… achterstallig** (hoofdstuk 5, paragraaf 5.11).
    - Is alles compleet, dan staat er: *Geen sleutels ontbreken 🎉*
 7. Met **Opnieuw beginnen** wis je de telling en begin je opnieuw. Met **Sluiten** ga je weg.
 

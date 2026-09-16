@@ -56,9 +56,10 @@ eerste week meteen dat een ontbrekende knop geen storing is.
 
 1. Log in. Kijk waar je binnenkomt en welke menu-items je links hebt staan.
 2. Wijzig je wachtwoord: je naam rechtsboven → **Profiel** → tabblad **Wachtwoord**.
-3. Open **Vandaag** en lees de drie blokken. Tel de **Openstaande punten**. Klik nog nergens op.
-4. Open **Dashboard** en zoek de vier signaalblokken op. Kijk of de back-upbalk bovenaan iets
-   meldt.
+3. Lees het **Dashboard**: zoek de **Snelle acties** en de vier signaalblokken op, en kijk of de
+   back-upbalk bovenaan iets meldt. Klik nog nergens op.
+4. Open **Reserveringen** en zoek het vakje van vandaag. Tel hoeveel regels er **uit** en hoeveel
+   er **in** hebben: zoveel auto's gaan er vandaag mee en komen er terug.
 5. Zoek drie dingen op met het zoekveld bovenaan: een kenteken, een klantnaam en een
    contractnummer dat je van je begeleider krijgt.
 6. Druk op `?` en lees het overzicht **Sneltoetsen**. Probeer `Ctrl+K`, `N` en `S`, en sluit elk
@@ -80,7 +81,7 @@ menu benoemen, iets terugvinden op kenteken, naam of contractnummer, en een auto
 **Doen:**
 
 1. Zoek in de app vijf woorden op die je net gelezen hebt en wijs aan waar ze op het scherm staan:
-   **Achterstallig**, **Nog te bepalen**, **Verouderd**, **Openstaande punten** en **Nog buiten**.
+   **Achterstallig**, **Nog te bepalen**, **Verouderd**, **Opgehaald** en **Voltooid**.
 2. Leg aan je begeleider in je eigen woorden uit wat *beschikbaar* betekent, en waarom een auto in
    onderhoud niet beschikbaar is.
 
@@ -148,13 +149,13 @@ Dit is de kern van het werk. Neem er de tijd voor.
 
 1. **Kijk eerst mee.** Laat je begeleider twee ophalingen en twee innames doen terwijl je meeleest
    in de handleiding. Stel je vragen tijdens het venster, niet erna.
-2. **Doe daarna zelf een ophaling onder begeleiding**, van begin tot eind: **Vandaag** → **Ophalen
-   starten** → controleren → kilometerstand → brandstof → **Ophalen voltooien & contract
-   genereren**.
+2. **Doe daarna zelf een ophaling onder begeleiding**, van begin tot eind: **Dashboard** →
+   **Snelle acties** → **Ophalen starten** → sleutellabel scannen → controleren → kilometerstand
+   → brandstof → **Ophalen voltooien & contract genereren**.
 3. **Doe zelf een inname onder begeleiding.** Let erop dat de huur meteen is afgesloten en de auto
    weer vrij staat.
-4. Open **Nog buiten** en loop de lijst met je begeleider door. Bespreek per regel: staat die auto
-   er echt nog?
+4. Open **Reserveringen** → **… achterstallig** en loop de lijst **Te late verhuren** met je
+   begeleider door. Bespreek per regel: staat die auto er echt nog?
 5. Bespreek met je begeleider de drie vragen die de app bij een ophaling kan stellen: de eerdere
    startdatum, het dubbele contractnummer en de kilometerstand-overschrijving. Wat antwoord je
    waarom?
@@ -197,8 +198,8 @@ de werkplaats in hoofdstuk 16, paragraaf 16.3.
    **Vervanger nodig** en **Verhuur komt eraan**.
 2. Loop met je begeleider één keer het venster **Onderhoud plannen** door, zonder op te slaan. Kijk
    wat de app laat zien aan verhuringen die in die periode op die auto staan.
-3. Zoek op **Vandaag** of op het **Dashboard** een vervanger die nog **Nog te bepalen** is en wijs
-   hem samen toe.
+3. Zoek op het **Dashboard**, in **Beheer vervangende voertuigen** → tabblad **Nog te bepalen**,
+   een vervanger die nog geen auto heeft en wijs hem samen toe met **Voertuig toewijzen**.
 4. Bespreek hardop waarom je een auto **eerst** op onderhoud zet en **daarna** pas de vervanger
    regelt. Als je dat kunt uitleggen, snap je de belangrijkste val in dit systeem.
 5. Open **Transporten** en bekijk de tabbladen en de tellers. Zoek een transport waarbij het
@@ -257,14 +258,16 @@ scannen), het laatste hoofdstuk van deze handleiding.
 
 **Doen:**
 
-1. Draai één volledige dag volgens hoofdstuk 16: de ochtendronde over **Vandaag**, **Nog buiten**
-   en het **Dashboard**, de handelingen tussendoor, en aan het eind de vijf controlepunten.
+1. Draai één volledige dag volgens hoofdstuk 16: de ochtendronde over het **Dashboard**,
+   **Reserveringen** (met **… achterstallig**), **Onderhoud**, **Transporten** en
+   **Klantenportaal**, de handelingen tussendoor, en aan het eind de vijf controlepunten.
 2. Laat je begeleider die dag meekijken zonder in te grijpen, en bespreek hem aan het eind na.
-3. Handel die dag ook minstens één portaalaanvraag af, van **Beoordelen** tot en met het antwoord
-   aan de klant.
-4. Doe die dag elke ophaling en inname via **Scannen** in plaats van via de lijst, zodat het
-   scannen een gewoonte wordt. Loop daarna één keer met je begeleider de **Sleutelkast-audit**
-   door (hoofdstuk 18, paragraaf 18.8).
+3. Handel die dag ook minstens één portaalaanvraag af, van het openen van de aanvraag tot en met
+   het antwoord aan de klant.
+4. Doe die dag elke ophaling en inname door het sleutellabel te scannen — via **Scannen** of via
+   de tegels bij **Snelle acties** — in plaats van de reservering in de kalender op te zoeken,
+   zodat het scannen een gewoonte wordt. Loop daarna één keer met je begeleider de
+   **Sleutelkast-audit** door (hoofdstuk 18, paragraaf 18.8).
 
 **Na deze stap ben je ingewerkt.**
 

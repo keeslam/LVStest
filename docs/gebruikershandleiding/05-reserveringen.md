@@ -272,7 +272,9 @@ Vul het in en klik op **Bevestigen**, of haal er een beheerder bij.
 
 Je kunt het ophalen op drie manieren starten. Ze openen allemaal precies hetzelfde venster:
 
-- **Vandaag** → bij de juiste regel op **Ophalen starten** (het snelst aan de balie);
+- **Dashboard** → **Snelle acties** → **Ophalen starten** → het sleutellabel scannen of het
+  kenteken typen; het venster opent dan meteen (het snelst aan de balie, hoofdstuk 18,
+  paragraaf 18.7);
 - **Scannen** → het sleutellabel scannen → **Ophalen starten** (het veiligst, hoofdstuk 18);
 - de reservering openen → **Ophalen starten**.
 
@@ -373,8 +375,8 @@ dat document zelf, of markeer voor jezelf dat het niet geldig is.
 
 ## 5.8 Innemen: de auto terugnemen
 
-Ook hier drie startpunten: **Vandaag** → **Innemen starten**, **Scannen** → **Inleveren
-starten**, of de reservering openen → **Inleveren starten**. Ze openen allemaal het venster
+Ook hier drie startpunten: **Dashboard** → **Snelle acties** → **Innemen starten** → scannen,
+**Scannen** → **Inleveren starten**, of de reservering openen → **Inleveren starten**. Ze openen allemaal het venster
 **Inleverproces starten** — *Voer de huidige kilometerstand en het brandstofniveau van het
 voertuig bij inleveren in. Er wordt automatisch een schadecheck gegenereerd.*
 
@@ -489,36 +491,31 @@ periode.*
 
 ---
 
-## 5.11 De werklijst "Nog buiten"
+## 5.11 Achterstallige verhuringen nalopen
 
-Klik links op **Nog buiten**. Je leest bovenaan:
+Een verhuring is **achterstallig** als ze als opgehaald staat en de afgesproken einddatum voorbij
+is. De app sluit zo'n verhuring bewust niet automatisch af: alleen jij kunt weten of de auto
+werkelijk nog bij de klant staat of dat iemand vergeten is hem in te nemen.
 
-> *Verhuringen die als opgehaald staan en waarvan de einddatum voorbij is. Deze worden bewust
-> niet automatisch afgesloten — loop ze na en neem in of corrigeer per regel.*
+Je vindt ze op drie plekken:
 
-Waarom niet automatisch: alleen jij kunt weten of de auto werkelijk nog buiten staat of dat
-iemand vergeten is hem in te nemen.
+- **Reserveringen** → de rode knop **… achterstallig** rechtsboven. Die staat er alleen als er
+  iets achterstallig is. Het venster **Te late verhuren** toont per regel het merk en model, het
+  kenteken, de klant met het telefoonnummer, *Had ingeleverd moeten zijn: <datum>*, een rood
+  label **… dag(en) te laat** en de knop **Details bekijken**.
+- **Reserveringen** → **Lijstweergave** → tabblad **Achterstallig (…)**, met een zoekveld (5.2).
+  Klik op een regel om de reservering te openen.
+- **Dashboard** → het blok **Achterstallige verhuringen**; met het oogje open je de reservering.
 
-Per regel zie je een waarschuwingsdriehoekje, het kenteken met merk en model, een rood label
-**… dagen open**, het label **Contract <nummer>** als dat er is, en op de tweede regel de klant,
-de afgesproken periode en — als die bekend is — de werkelijke ophaaldatum.
+**Zo loop je ze na.** Vraag je per regel af: staat die auto werkelijk nog bij de klant?
 
-Je hebt twee knoppen:
+- **Staat hij er nog** — laat de regel staan en bel eventueel de klant.
+- **Is hij al terug** — klik op **Details bekijken** en daarna op **Inleveren starten**. Je
+  krijgt hetzelfde venster als in 5.8, en daarmee is de huur afgesloten.
+- **Klopt er iets anders niet** — open de reservering en corrigeer haar (5.4 en 5.5).
 
-- **Innemen** — de auto is terug: neem hem hier meteen in. Je krijgt hetzelfde venster als in
-  5.8, en daarmee is de huur afgesloten.
-- **Openen** — de reservering openen om iets te corrigeren.
-
-Met **Vernieuwen** haal je de lijst opnieuw op. Is alles afgehandeld, dan staat er *Er staat geen
-enkele verhuring meer open. De werklijst is leeg.*
-
-![Het scherm Nog buiten met de na te lopen verhuringen](afbeeldingen/13-nog-buiten.png)
-*Het scherm **Nog buiten**, met het kaartje **Na te lopen verhuringen**: per regel het kenteken,
-het aantal dagen dat de huur al openstaat, het contractnummer en de knoppen **Innemen** en
-**Openen**.*
-
-**Loop deze lijst regelmatig na.** Zolang een oude regel openstaat, geldt die auto als verhuurd
-en kun je hem niet opnieuw inplannen.
+**Loop deze verhuringen regelmatig na.** Zolang een oude verhuring openstaat, geldt die auto als
+verhuurd en kun je hem niet opnieuw inplannen.
 
 ---
 
@@ -547,9 +544,9 @@ Elke stand heeft één naam, in elk scherm: **Geboekt**, **Opgehaald**, **Ingele
 | Alleen de datums corrigeren | **Datums wijzigen** |
 | Alleen de klant corrigeren | **Klant wijzigen** |
 | Alleen de auto corrigeren | **Voertuig wijzigen** |
-| De auto meegeven | **Vandaag** of **Scannen** → **Ophalen starten** |
-| De auto terugnemen | **Vandaag** of **Scannen** → **Innemen starten** |
+| De auto meegeven | **Dashboard** → **Snelle acties** → **Ophalen starten**, of **Scannen** → **Ophalen starten** |
+| De auto terugnemen | **Dashboard** → **Snelle acties** → **Innemen starten**, of **Scannen** → **Inleveren starten** |
 | Het ophalen ongedaan maken | **Terugzetten** → **Ja, terugzetten** |
 | Een boeking annuleren | Zoekveld bovenin → de reservering openen → **Reservering annuleren** (vraagt per gekoppeld record wat er mee moet) |
-| Een oude huur alsnog afsluiten | **Nog buiten** → **Innemen** |
+| Een oude huur alsnog afsluiten | **Reserveringen** → **… achterstallig** → **Details bekijken** → **Inleveren starten** |
 | Een verwijderde reservering terughalen | Beheerder: **Voertuigen** → **Verwijderde voertuigen** |

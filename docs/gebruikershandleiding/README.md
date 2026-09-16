@@ -44,10 +44,10 @@ woord ook hier — dan weet je zeker dat je het goede knopje hebt.
 | # | Hoofdstuk | Waarover |
 |---|---|---|
 | 1 | [Snel aan de slag](01-snel-aan-de-slag.md) | Inloggen, het hoofdscherm, iets opzoeken, de meest voorkomende taken, uitloggen |
-| 2 | [Navigatie](02-navigatie.md) | Het menu, het scherm **Vandaag**, het dashboard, zoeken, snelle acties, sneltoetsen |
+| 2 | [Navigatie](02-navigatie.md) | Het menu, het dashboard, zoeken, snelle acties, sneltoetsen |
 | 3 | [Klanten](03-klanten.md) | Klanten opzoeken, aanmaken en bijwerken, chauffeurs en portaalaccounts |
 | 4 | [Voertuigen](04-voertuigen.md) | Het wagenpark, voertuiggegevens, statussen, APK, sleutellabels |
-| 5 | [Reserveringen](05-reserveringen.md) | Boeken, ophalen, innemen, wijzigen, annuleren en **Nog buiten** |
+| 5 | [Reserveringen](05-reserveringen.md) | Boeken, ophalen, innemen, wijzigen, annuleren en achterstallige verhuringen nalopen |
 | 6 | [Transport](06-transport.md) | Leveringen, wissels, sleepacties, terughalen en het transportrapport |
 | 7 | [Onderhoud](07-onderhoud.md) | Onderhoud plannen, de werkplaatsstatus en vervangende voertuigen |
 | 8 | [Documenten en afdrukken](08-documenten.md) | Contracten, schadechecks, sjablonen en verouderde documenten |
@@ -74,7 +74,7 @@ worden vanuit de hoofdstukken zelf getoond.
   doet.
 - **Installatie en beheer van de server.** Dat is werk voor de beheerder.
 - **Kosten en rapporten als eigen hoofdstuk.** Die twee schermen staan kort beschreven in
-  hoofdstuk 2, paragraaf 2.10, en hun klikpaden in hoofdstuk 13.
+  hoofdstuk 2, paragraaf 2.8, en hun klikpaden in hoofdstuk 13.
 
 ## Als er iets niet klopt
 

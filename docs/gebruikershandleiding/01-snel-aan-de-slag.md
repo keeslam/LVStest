@@ -36,10 +36,10 @@ in en klik op **Wachtwoord wijzigen**. Een wachtwoord moet minimaal 6 tekens heb
 Elk scherm heeft dezelfde opbouw.
 
 **Links: het menu.** Bovenaan staat **Auto Lease LAM**, daaronder de menu-items. Hoeveel items je
-ziet, hangt af van je rechten (hoofdstuk 15). Een beheerder ziet ze alle veertien:
+ziet, hangt af van je rechten (hoofdstuk 15). Een beheerder ziet ze alle twaalf:
 
-**Vandaag · Dashboard · Voertuigen · Scannen · Klanten · Klantenportaal · Reserveringen ·
-Nog buiten · Onderhoud · Kosten · Documenten · Transporten · Communicatie · Rapporten**
+**Dashboard · Voertuigen · Scannen · Klanten · Klantenportaal · Reserveringen · Onderhoud ·
+Kosten · Documenten · Transporten · Communicatie · Rapporten**
 
 Staat er een rood bolletje met een getal achter **Klantenportaal**, dan zijn er zoveel
 ongelezen portaalmeldingen.
@@ -48,7 +48,7 @@ ongelezen portaalmeldingen.
 
 | Onderdeel | Waarvoor |
 |---|---|
-| De naam van het scherm | Waar je bent, bijvoorbeeld *Vandaag* |
+| De naam van het scherm | Waar je bent, bijvoorbeeld *Reserveringen* |
 | De portaaltegel, bijvoorbeeld *2 nieuwe aanvragen · 7 meldingen · **Klantenportaal*** | Eén klik naar het klantenportaal; verschijnt alleen als er iets openstaat |
 | Het zoekveld **Zoeken...** | Zoeken door het hele systeem, zie 1.3 |
 | Het belletje met een getal | Het **Meldingencentrum** |
@@ -95,16 +95,18 @@ sneller dan typen: druk op `S`, of ga naar **Scannen**. Zie 1.4.
 
 ## 1.4 De taken die je het vaakst doet
 
-![Het scherm Vandaag met de ophalingen en innames van vandaag](afbeeldingen/02-vandaag.png)
-*Het scherm **Vandaag**: per regel het kenteken, de auto en de klant, met de knop die de
-handeling meteen start.*
+**Wat er vandaag meegaat en terugkomt,** zie je in de kalender onder **Reserveringen**: in het
+vakje van vandaag staat per auto het kenteken met **uit** (gaat vandaag mee) of **in** (komt
+vandaag terug), en de klant. Zie hoofdstuk 5, paragraaf 5.1.
 
 ### Een auto meegeven (ophalen)
 
-1. Klik links op **Vandaag**.
-2. Zoek onder **Vandaag ophalen en innemen**, bij *voertuigen meegeven*, de juiste regel op
-   kenteken en klantnaam.
-3. Klik op **Ophalen starten**. Het venster **Ophaalproces starten** opent.
+1. Klik op het **Dashboard** onder **Snelle acties** op **Ophalen starten**.
+2. Scan het sleutellabel of typ het kenteken. Hoort er bij die auto een ophaling, dan opent
+   meteen het venster **Ophaalproces starten**. (Zonder sleutel in je hand kan het ook zo: open
+   de reservering in de kalender en klik op **Ophalen starten**.)
+3. Opent het venster niet, dan staat er voor deze auto geen ophaling klaar en zie je alleen de
+   gegevens van de auto. Controleer dan het kenteken en de reservering.
 4. Controleer bovenin **Kenteken**, **Voertuig** en **Klant**. Is dit niet de juiste regel,
    klik dan op **Annuleren**.
 5. **Contractnummer** is al ingevuld. Laat het staan, tenzij er een reden is om het te wijzigen.
@@ -135,9 +137,12 @@ Je krijgt de melding *Ophalen voltooid — Voertuig succesvol opgehaald. Contrac
 
 ### Een auto terugnemen (innemen)
 
-1. Klik links op **Vandaag**.
-2. Zoek onder *voertuigen terugnemen* de juiste regel.
-3. Klik op **Innemen starten**. Het venster heet **Inleverproces starten**.
+1. Klik op het **Dashboard** onder **Snelle acties** op **Innemen starten**.
+2. Scan het sleutellabel of typ het kenteken. Staat de auto als opgehaald, dan opent meteen het
+   venster **Inleverproces starten**. (Of: open de reservering in de kalender en klik op
+   **Inleveren starten**.)
+3. Opent het venster niet, dan staat deze auto niet als opgehaald en zie je alleen de gegevens
+   van de auto. Controleer dan het kenteken en de reservering.
 4. Vul **Kilometerstand bij inleveren** in. Die mag niet lager zijn dan bij het ophalen. Is hij
    dat wel, dan weigert de app met *"Kilometerstand bij inleveren kan niet lager zijn dan bij
    ophalen (… km)."* Lees de teller dan opnieuw af.

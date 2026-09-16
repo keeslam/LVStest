@@ -140,7 +140,7 @@ Met het kruisje achter een gekozen auto (*Wissen (terug naar TBD)*) zet je hem w
 
 ### Later een echte auto toewijzen
 
-Er zijn drie plekken waar dat kan:
+Er zijn twee plekken waar dat kan:
 
 **1. Vanaf het transportdashboard.** Klik in de kolom **Vervangend voertuig** op **Vervangend
 voertuig selecteren**. Het venster **Transport bewerken** opent bij het veld **Vervangend
@@ -149,9 +149,6 @@ voertuig**. Kies de auto en klik op **Wijzigingen opslaan**. Je krijgt **Transpo
 
 **2. Vanuit het onderhoud.** Zie hoofdstuk 7: **Onderhoud** → **Lijstweergave** → tabblad
 **Vervangers (…)** → **Toewijzen**.
-
-**3. Vanaf het scherm Vandaag.** Onder **Onderhoud en transport vandaag** staat *… vervangers nog
-toe te wijzen* met de knop **Vervanger toewijzen**.
 
 > **Zonder toegewezen auto kun je geen rapport maken.** De knop **Afdrukken / rapport genereren**
 > is dan grijs met de tekst: *Voor dit transport is een vervangend voertuig vereist, maar er is

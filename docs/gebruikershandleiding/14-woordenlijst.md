@@ -11,8 +11,9 @@ Achter de meeste woorden staat het hoofdstuk waar het uitgebreid behandeld wordt
 
 Een verhuring waarvan de afgesproken einddatum voorbij is terwijl de auto nog als opgehaald in het
 systeem staat. Je vindt ze op het **Dashboard** onder **Achterstallige verhuringen**, op
-**Reserveringen** achter de knop **… achterstallig**, en als werklijst op **Nog buiten**.
-*(Hoofdstuk 2, 16)*
+**Reserveringen** achter de knop **… achterstallig** en op het tabblad **Achterstallig** van de
+**Lijstweergave**. De app sluit ze bewust niet zelf af: alleen jij kunt weten of de auto echt nog
+bij de klant staat. *(Hoofdstuk 2, 5, 16)*
 
 ## Actief / Inactief
 
@@ -102,8 +103,8 @@ zoekveld bovenaan op zoeken. Een nummer dat al in gebruik is, wordt geweigerd. *
 ## Dashboard
 
 Het overzichtsscherm waar je binnenkomt na het inloggen: beschikbare auto's, APK-signalen,
-achterstallige verhuringen, snelle acties. Het is bedoeld om te signaleren, niet om uit te werken —
-daarvoor is **Vandaag**. *(Hoofdstuk 2, 16)*
+achterstallige verhuringen, vervangers die nog toegewezen moeten worden, en de **Snelle acties**
+waarmee je ophalen, innemen en scannen start. *(Hoofdstuk 2, 16)*
 
 ## Debiteurnummer
 
@@ -174,12 +175,6 @@ De werkplaatsstatus voor een auto die er nu staat. Zolang die aan staat, weigert
 te geven aan een klant. Alleen een beheerder kan de uitgifte met opgaaf van reden forceren.
 *(Hoofdstuk 7, 11)*
 
-## Nog buiten
-
-Het werkscherm met de verhuringen die als opgehaald staan en waarvan de einddatum voorbij is. De
-app sluit die bewust niet zelf af: alleen jij kunt weten of de auto echt nog bij de klant staat.
-Loop de lijst regelmatig na. *(Hoofdstuk 2, 16)*
-
 ## Nog te bepalen
 
 Het label voor een vervanger die nog niet is toegewezen: er is wel afgesproken dát de klant een
@@ -197,11 +192,6 @@ De periode in de kalender waarin een auto voor de werkplaats is gereserveerd. Ee
 het boeken niet — de app waarschuwt wel dat er onderhoud gepland staat — maar zolang een blok
 loopt, telt de auto niet mee als beschikbaar en lukt meegeven niet. Het blok blijft bij de
 fysieke auto, ook als de huur naar een andere auto verhuist. *(Hoofdstuk 7)*
-
-## Openstaande punten
-
-De teller bovenaan het scherm **Vandaag**: het aantal dingen dat vandaag nog om actie vraagt.
-*(Hoofdstuk 2, 16)*
 
 ## Ophalen
 
@@ -222,8 +212,8 @@ afspraak vast zonder een auto te bezetten, tot jij een echte auto toewijst. *(Ho
 
 Iets wat een klant zelf online heeft ingediend. De soorten zijn **Verlenging**, **Eerder
 inleveren**, **Schademelding**, **Vraag over bekeuring**, **Huuraanvraag**, **Onderhoud/storing**,
-**Onderhoud wijzigen**, **Kilometerstand** en **Overig**. Ze verschijnen op **Vandaag** en in het
-portaalbeheer; je handelt ze af met **Beoordelen**. *(Hoofdstuk 2, 16)*
+**Onderhoud wijzigen**, **Kilometerstand** en **Overig**. Ze verschijnen op het scherm
+**Klantenportaal**; je handelt ze af door de aanvraag aan te klikken. *(Hoofdstuk 2, 16)*
 
 ## Prijzen verbergen
 
@@ -286,13 +276,6 @@ opleveren. Ook wel: de barcode. *(Hoofdstuk 2, 4)*
 
 Elke beweging van een auto die jij regelt: een **Levering**, een **Voertuigwissel**, **Slepen**,
 **Terughalen** of **Overig**. Je beheert ze op het **Transportdashboard**. *(Hoofdstuk 6)*
-
-## Vandaag
-
-Het werkdagscherm: wat er vandaag opgehaald en ingenomen moet worden, het onderhoud en transport
-van vandaag inclusief de vervangers die nog toegewezen moeten worden, en de nieuwe
-portaalaanvragen. Hier begin je je dag. Er staat bewust géén lijst "te laat terug" op; daarvoor is
-**Nog buiten**. *(Hoofdstuk 2, 16)*
 
 ## Verouderd
 

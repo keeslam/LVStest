@@ -70,10 +70,10 @@ vier:
 | Er ligt een reservering overheen | De auto staat op de kalender in die periode | Kies andere datums of een andere auto |
 | De auto staat in de werkplaats | Onderhoudsstatus **Onderhoud nodig** of **Momenteel in onderhoud** | Is hij klaar? Gebruik **Terug van onderhoud** of **Terug uit onderhoud** |
 | De auto staat op "niet voor verhuur" | Beschikbaarheidsstatus op de voertuigkaart | Zet de status om als dat klopt |
-| Een oude huur is nooit afgesloten | De auto staat op **Nog buiten** | Neem de huur alsnog in (hoofdstuk 11, paragraaf 11.6) |
+| Een oude huur is nooit afgesloten | De auto staat bij **Reserveringen** achter **… achterstallig** | Neem de huur alsnog in (hoofdstuk 11, paragraaf 11.6) |
 
 De laatste is de sluipende. Staat een auto op je terrein maar niet in de lijst met beschikbare
-auto's, kijk dan altijd eerst op **Nog buiten**.
+auto's, kijk dan altijd eerst bij **Reserveringen** achter **… achterstallig**.
 
 Een auto met een **onderhoudsblok** in de gevraagde periode is een apart geval: die telt niet mee
 als beschikbaar, maar je mág hem wel bewust boeken. Zie 12.3.

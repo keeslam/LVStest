@@ -13,14 +13,12 @@ Het menu staat links en blijft altijd staan. Je ziet alleen de items waar je rec
 
 | Menu-item | Waarvoor | Recht dat je nodig hebt |
 |---|---|---|
-| **Vandaag** | Het werkdagscherm: wat er vandaag moet gebeuren | Dashboard bekijken, óf Reserveringen bekijken of beheren |
 | **Dashboard** | Overzicht, snelle acties en signaleringen | Dashboard bekijken |
 | **Voertuigen** | Het wagenpark | Voertuigen bekijken of beheren |
 | **Scannen** | Een sleutellabel scannen en meteen doorwerken | Voertuigen bekijken of beheren |
 | **Klanten** | De klantendatabase | Klanten bekijken of beheren |
 | **Klantenportaal** | Alles wat klanten online doen | Klantportaal bekijken of beheren |
 | **Reserveringen** | De verhuurkalender | Reserveringen bekijken of beheren |
-| **Nog buiten** | Werklijst met verhuringen die nog niet terug zijn | Reserveringen bekijken of beheren |
 | **Onderhoud** | De werkplaatskalender | Onderhoud beheren |
 | **Kosten** | Kosten per voertuig | Kosten beheren |
 | **Documenten** | Alle documenten en de sjablonen | Documenten bekijken, of Documenten bewerken en genereren |
@@ -29,93 +27,44 @@ Het menu staat links en blijft altijd staan. Je ziet alleen de items waar je rec
 | **Rapporten** | Cijfers en overzichten | Rapporten bekijken of beheren |
 
 **Instellingen, gebruikers en back-up staan níét in dit menu.** Ze zitten rechtsboven achter je
-eigen naam en alleen een beheerder ziet ze. Zie 2.12.
+eigen naam en alleen een beheerder ziet ze. Zie 2.10.
 
 ---
 
-## 2.2 Vandaag — het werkdagscherm
+## 2.2 Dashboard
 
-**Vandaag** is het scherm waarmee je de dag begint. Het toont alleen wat vandaag om actie vraagt.
-Bovenaan staan de dag in het Nederlands (*zondag 13 september 2026*), de knop **Vernieuwen** en
-de kop **Openstaande punten** met een getal — dat getal is het aantal dingen dat nog gedaan moet
-worden.
-
-Daaronder staan drie blokken.
-
-![Het scherm Vandaag](afbeeldingen/02-vandaag.png)
-*Het scherm **Vandaag**: bovenaan de datum en het aantal **Openstaande punten**, daaronder de
-blokken met de ophalingen, de innames en de vervangers die nog toegewezen moeten worden.*
-
-### Vandaag ophalen en innemen
-
-Twee lijstjes: *… voertuigen meegeven* en *… voertuigen terugnemen*. Per regel zie je het
-kenteken, het merk en model, en de klant. Bij een inname staat er ook het contractnummer bij.
-
-- Klik op **Ophalen starten** om de auto mee te geven. Zie 1.4.
-- Klik op **Innemen starten** om de auto terug te nemen. Zie 1.4.
-
-Je hoeft dus niet eerst de reservering op te zoeken: de knop opent hetzelfde venster dat je
-vanuit de kalender of het scanscherm zou openen.
-
-### Onderhoud en transport vandaag
-
-Alles wat de werkplaats en het transport vandaag raakt. Per regel staat een label:
-**Ingepland** (de auto wordt vandaag verwacht) of **In de werkplaats** (de auto staat er al).
-Klik op **Onderhoud openen** of **Transport openen** om verder te werken.
-
-Onderaan dit blok staat *… vervangers nog toe te wijzen*: klanten die een vervangende auto
-krijgen, maar waarvoor nog geen auto is aangewezen. Er staat dan **Nog geen voertuig** bij.
-Klik op **Vervanger toewijzen** en kies een auto.
-
-### Nieuwe portaalaanvragen
-
-Aanvragen die klanten zelf online hebben gedaan: een verlenging, eerder inleveren, schade, een
-vraag over een bekeuring, een boekingsaanvraag of iets anders. Per regel zie je de klant, het
-soort aanvraag en de tekst van de klant. Klik op **Beoordelen** om de aanvraag af te handelen.
-
-### Als er niets openstaat
-
-Dan zie je *Er staat niets open* met de toelichting dat er geen ophalingen, innames, onderhoud,
-transporten of portaalaanvragen zijn die vandaag om actie vragen.
-
-### Wat hier bewust níét staat
-
-Er is géén lijst "te laat terug" op **Vandaag**. Daar is een apart scherm voor: **Nog buiten**
-(2.9). Dat is een bewuste keuze, zodat **Vandaag** alleen het werk van vandaag toont.
-
----
-
-## 2.3 Dashboard
-
-Het **Dashboard** is het scherm waar je binnenkomt na het inloggen. Het is een overzicht, geen
-werklijst: gebruik het om te signaleren, en **Vandaag** om te werken.
+Het **Dashboard** is het scherm waar je binnenkomt na het inloggen. Het is je vertrekpunt: de
+**Snelle acties** bovenaan starten de handelingen die je het vaakst doet, en de blokken eronder
+laten zien waar aandacht nodig is. Het echte werk doe je daarna in de vensters die die knoppen
+openen, en op de schermen **Reserveringen**, **Onderhoud**, **Transporten** en
+**Klantenportaal**.
 
 Van boven naar beneden:
 
 1. **De back-upbalk.** Staat er *Geen geverifieerde back-up bekend* of *Geen geverifieerde
    back-up in … uur*, meld dat dan bij de beheerder. Zelf oplossen hoeft niet.
-2. **De Vandaag-tegel** met het aantal openstaande punten en de knop **Open Vandaag**.
-3. **Snelle acties** — zie 2.11.
-4. **Vier signaalblokken:**
+2. **Snelle acties** — zie 2.9.
+3. **Vier signaalblokken:**
    - **Beschikbare voertuigen** — auto's die nu klaarstaan om te verhuren, met daaronder de
      kentekens.
    - **APK verloopt binnenkort** — auto's met een APK die binnen twee maanden verloopt, met het
      aantal dagen of *… d te laat*.
-   - **Achterstallige verhuringen** — auto's die niet op tijd zijn ingeleverd.
+   - **Achterstallige verhuringen** — auto's die niet op tijd zijn ingeleverd. Met het oogje
+     achter een regel open je de reservering.
    - **Garantie verloopt binnenkort**.
-5. **Beheer vervangende voertuigen** met de tabbladen **Nog te bepalen**, **Aankomend** en
-   **Actief**.
-6. **Recente kosten** met de knop **Alles bekijken**.
-7. **Aankomende reserveringen** in een tabel: **Voertuig**, **Klant**, **Periode**, **Acties**.
-8. **Reserveringskalender** — een kleine maandkalender, met **Reservering toevoegen**.
+4. **Beheer vervangende voertuigen** met de tabbladen **Nog te bepalen**, **Aankomend** en
+   **Actief**. Op **Nog te bepalen** staan de vervangers waarvoor nog geen auto is aangewezen,
+   met de knop **Voertuig toewijzen**.
+5. **Recente kosten** met de knop **Alles bekijken**.
+6. **Aankomende reserveringen** in een tabel: **Voertuig**, **Klant**, **Periode**, **Acties**.
+7. **Reserveringskalender** — een kleine maandkalender, met **Reservering toevoegen**.
 
-![Het dashboard met de Vandaag-tegel en de snelle acties](afbeeldingen/03-dashboard.png)
-*Het **Dashboard**: bovenaan de tegel **Vandaag** met **Open Vandaag**, daaronder **Snelle
-acties** en de vier signaalblokken.*
+![Het dashboard met de snelle acties en de signaalblokken](afbeeldingen/03-dashboard.png)
+*Het **Dashboard**: bovenaan **Snelle acties**, daaronder de vier signaalblokken.*
 
 ---
 
-## 2.4 Voertuigen
+## 2.3 Voertuigen
 
 Het scherm heet **Voertuigbeheer**. Hier staat het hele wagenpark.
 
@@ -161,7 +110,7 @@ beheerder ziet deze knop.
 
 ---
 
-## 2.5 Scannen
+## 2.4 Scannen
 
 Het scherm heet **Barcode scannen**: *Scan een sleutellabel met een barcodescanner of camera, of
 typ de code handmatig.*
@@ -183,7 +132,7 @@ niet, gebruik dan de USB-scanner of typ de code.
 
 ---
 
-## 2.6 Klanten
+## 2.5 Klanten
 
 Het scherm heet **Klanten**, met daaronder de **Klantendatabase**.
 
@@ -210,7 +159,7 @@ beheerder hem terugzetten. Uitgebreid in hoofdstuk 3, paragraaf 3.8.
 
 ---
 
-## 2.7 Klantenportaal
+## 2.6 Klantenportaal
 
 Het scherm heet **Klantenportaal beheren**: *Aanvragen, accounts, bekeuringen en het aanbod voor
 klanten op één plek. Klik op een tegel om die lijst te openen.*
@@ -238,12 +187,13 @@ lijst.
 *Het scherm **Klantenportaal beheren**: de tegels bovenaan zijn ingangen naar een lijst, de
 panelen eronder tonen de laatste regels.*
 
-Nieuwe aanvragen verschijnen ook op **Vandaag**. Als er iets nieuws is, zie je dat bovenin elk
-scherm aan de portaaltegel en aan het rode bolletje achter **Klantenportaal** in het menu.
+Nieuwe aanvragen handel je hier af, via de tegel **Aanvragen** of het paneel **Aandacht nodig**.
+Als er iets nieuws is, zie je dat bovenin elk scherm aan de portaaltegel en aan het rode bolletje
+achter **Klantenportaal** in het menu.
 
 ---
 
-## 2.8 Reserveringen
+## 2.7 Reserveringen
 
 Het scherm heet **Reserveringskalender**. Standaard zie je een maand.
 
@@ -278,24 +228,7 @@ gegevens waarmee elders gefactureerd wordt.
 
 ---
 
-## 2.9 Nog buiten
-
-Een werklijst met één doel: *Verhuringen die als opgehaald staan en waarvan de einddatum voorbij
-is.* De app sluit deze bewust niet automatisch af, want alleen jij kunt weten of de auto
-werkelijk nog buiten staat.
-
-Per regel zie je het kenteken, hoeveel dagen de verhuring al openstaat, het contractnummer, de
-klant, de afgesproken periode en de werkelijke ophaaldatum. Je hebt twee knoppen:
-
-- **Innemen** — de auto is terug: neem hem hier meteen in. Daarmee is de huur afgesloten.
-- **Openen** — de reservering openen om iets te corrigeren.
-
-Loop deze lijst regelmatig na. Zolang een oude regel openstaat, geldt die auto als verhuurd en
-kun je hem niet opnieuw inplannen.
-
----
-
-## 2.10 Onderhoud, Kosten, Documenten, Transporten, Communicatie en Rapporten
+## 2.8 Onderhoud, Kosten, Documenten, Transporten, Communicatie en Rapporten
 
 **Onderhoud** — het scherm **Onderhoudskalender** met de **Onderhoudsplanning**. Rechtsboven
 **Lijstweergave**, **Voltooide bekijken (…)** en **Onderhoud plannen**. In de kalender staan de
@@ -336,7 +269,7 @@ tabbladen met de cijfers.*
 
 ---
 
-## 2.11 Snelle acties
+## 2.9 Snelle acties
 
 Op het **Dashboard** staat het blok **Snelle acties**. Het scheelt je het zoeken naar het juiste
 scherm. Vijf grote tegels bovenaan:
@@ -357,7 +290,7 @@ Twee dingen om te weten:
 
 ---
 
-## 2.12 De balk bovenin
+## 2.10 De balk bovenin
 
 **Zoeken.** Zie 1.3.
 
@@ -377,7 +310,7 @@ aanmaken met een titel, omschrijving, datum en prioriteit (**Hoog**, **Normaal**
 
 ---
 
-## 2.13 Sneltoetsen
+## 2.11 Sneltoetsen
 
 Er is één kleine, vaste set sneltoetsen. Druk op **?** voor het overzicht **Sneltoetsen**.
 

@@ -149,7 +149,7 @@ Een klant met een lopende of toekomstige huur kun je niet verwijderen — zet ee
 blijft "verhuurd" en kan niet opnieuw geboekt worden.
 
 **Hoe je het merkt.** De auto komt niet meer voor als beschikbaar, terwijl hij gewoon op het
-terrein staat. En hij staat op het scherm **Nog buiten**.
+terrein staat. En hij staat bij **Reserveringen** achter de rode knop **… achterstallig**.
 
 **Hoe je het voorkomt.** Neem de auto in via de app, niet alleen op papier. Zodra je het innemen
 afrondt, sluit de reservering **direct** af en is de auto meteen weer vrij. Er zit geen
@@ -157,15 +157,16 @@ tussenstap meer tussen.
 
 **Hoe je het herstelt.**
 
-1. Ga naar **Nog buiten** in het menu. Daar staan de verhuringen waarvan de einddatum voorbij is
-   en die nog op opgehaald staan — *"Deze worden bewust niet automatisch afgesloten — loop ze na
-   en neem in of corrigeer per regel."*
-2. Per regel zie je het kenteken, de klant, de afgesproken periode, de werkelijke ophaaldatum en
-   een rood label **… dagen open**.
-3. Klik op **Innemen** om de huur alsnog af te sluiten, of op **Openen** om de reservering te
-   corrigeren.
+1. Ga naar **Reserveringen** en klik rechtsboven op **… achterstallig**. Het venster **Te late
+   verhuren** toont de verhuringen waarvan de einddatum voorbij is en die nog op opgehaald staan.
+   De app sluit die bewust niet automatisch af.
+2. Per regel zie je het merk en model, het kenteken, de klant, *Had ingeleverd moeten zijn:
+   <datum>* en een rood label **… dag(en) te laat**.
+3. Klik op **Details bekijken** en daarna op **Inleveren starten** om de huur alsnog af te
+   sluiten. Moet er iets anders gecorrigeerd worden, zoek de reservering dan op via het zoekveld
+   bovenin (hoofdstuk 5, paragraaf 5.4).
 
-Loop dit scherm één keer per week na. Zolang er iets in staat, kloppen de
+Loop deze lijst één keer per week na. Zolang er iets in staat, kloppen de
 beschikbaarheidscijfers niet.
 
 ---
@@ -203,11 +204,11 @@ soms geboekt staan. Die auto is dan onterecht bezet.
 
 **Hoe je het merkt.**
 
-- Op het scherm **Vandaag** staat onder **Onderhoud en transport vandaag** hoeveel vervangers er
-  nog toegewezen moeten worden, met het label **Nog te bepalen** en de knop
-  **Vervanger toewijzen**.
-- Een vervanger die nog op "opgehaald" staat terwijl de originele auto allang terug is, zie je op
-  **Nog buiten**.
+- Op het **Dashboard** staat in het blok **Beheer vervangende voertuigen**, tabblad **Nog te
+  bepalen**, welke vervangers er nog toegewezen moeten worden, met de knop **Voertuig
+  toewijzen**. Op het tabblad **Actief** staan de vervangers die nog bij een klant zijn.
+- Een vervanger die nog op "opgehaald" staat terwijl zijn einddatum voorbij is, zie je bij
+  **Reserveringen** achter **… achterstallig**.
 
 **Hoe je het voorkomt.** Rond onderhoud af met de knop **Terug van onderhoud** in plaats van de
 statussen los aan te passen. Dat venster — *"Markeer het originele voertuig als teruggekeerd van
@@ -461,7 +462,7 @@ staat in de geschiedenis van het voertuig.
 | Verkeerde datums | Ja | **Datums wijzigen** |
 | Dubbele reservering | Wordt tegengehouden | — |
 | Dubbele klant | Waarschuwing vooraf | **Openen** in de waarschuwing |
-| Huur niet afgesloten | Ja | **Nog buiten** → **Innemen** |
+| Huur niet afgesloten | Ja | **Reserveringen** → **… achterstallig** → **Details bekijken** → **Inleveren starten** |
 | Te vroeg opgehaald | Vraag vooraf | **Ja, startdatum naar vandaag** |
 | Per ongeluk opgehaald | Ja | **Terugzetten naar geboekt** |
 | Per ongeluk ingenomen | **Nee** | Nieuwe reservering + notitie |
