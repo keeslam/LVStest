@@ -31,7 +31,7 @@ ontwikkeldatabase, met de eindcode en de startmigratie uitgevoerd).
 | `/api/today`, reserveringen, voertuigen, klanten, transporten, kalenderbereik, werklijst "Nog buiten", onderhoudskostenrapport, documenten, kosten | alle **200**, geen enkele 5xx |
 | Compressie (besluit B-19) | **aan**: de reserveringslijst gaat als **255 kB** over de lijn in plaats van 7,7 MB |
 | Realtime-verbinding | ingelogde sessie krijgt verbinding; verbinding zonder cookie wordt geweigerd met `unauthorized` |
-| Scherm "Vandaag" | 6 openstaande punten, met de juiste knoppen per regel |
+| Scherm "Vandaag" | 6 openstaande punten — *op 16 september op verzoek weer uit de app gehaald* |
 | Reserveringskalender | laadt, Nederlandse maand- en dagnamen |
 | Startmigratie | voegt alle nieuwe kolommen toe op een verse kloon en meldt de nog niet uitgevoerde tijdzonemigratie |
 

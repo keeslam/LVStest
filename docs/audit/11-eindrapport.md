@@ -38,10 +38,9 @@ seconde. De schadecheck die de app maakt is van 3,5 megabyte naar 5,6 kilobyte g
 vangnet eronder is meegegroeid: er waren 126 automatische controles, er zijn er nu 1 048, en ze
 zijn allemaal groen.
 
-**Wat er beter is geworden aan het werk zelf.** Er is een startscherm "Vandaag" dat in één
-oogopslag laat zien wat er die dag opgehaald, ingenomen, onderhouden en beoordeeld moet worden —
-in plaats van vijf pagina's die de medewerker elke ochtend zelf langsging. Ophalen, innemen en
-scannen staan nu vooraan op het dashboard. Het contract kan meteen vanuit het ophaalvenster
+**Wat er beter is geworden aan het werk zelf.** Ophalen, innemen en
+scannen staan nu vooraan op het dashboard. (Het startscherm "Vandaag" en de werklijst "Nog buiten"
+zijn gebouwd, maar op 16 september op jouw verzoek weer uit de app gehaald; zie het addendum onderaan.) Het contract kan meteen vanuit het ophaalvenster
 worden afgedrukt of gemaild. Een datum of een klant wijzigen kan in een klein venster in plaats
 van het hele formulier. De zoekbalk vindt een contractnummer — het nummer dat de klant aan de
 telefoon voorleest. En bij elke reservering, auto en klant staat nu een tabblad met de
@@ -419,7 +418,7 @@ regel staat wat de audit uit de code heeft geteld.
 
 | Wat | Voor | Na |
 |---|---|---|
-| **Het werkdagscherm "Vandaag"** (OPT-001) — wat vandaag opgehaald en ingenomen moet worden mét de knop die het doet, onderhoud en transport van vandaag inclusief nog toe te wijzen vervangers, en nieuwe portaalaanvragen | 5 pagina's, ≈5 klikken, **9 verzoeken / 56 databasevragen / 9,6 MB** | **1 verzoek / 9 databasevragen / 1 536 bytes**; 0 klikken om het dagbeeld te zien, 1 klik per handeling |
+| ~~**Het werkdagscherm "Vandaag"** (OPT-001)~~ | Gebouwd en gemeten (1 verzoek / 9 databasevragen / 1 536 bytes tegen 9 / 56 / 9,6 MB) | **Op 16 september op verzoek weer verwijderd**, samen met "Nog buiten". De navigatie is terug zoals hij was. |
 | **Ophalen, innemen en scannen als primaire ingang** (OPT-002) — de twee meest uitgevoerde handelingen stonden niet op het dashboard, terwijl de nachtelijke RDW-scan er wél een primaire tegel had | een ophaling starten kon niet vanaf het dashboard; via het reserveringenscherm ≈22 klikken | 1 tegel + 1 scan, waarna het ophaalvenster zichzelf opent |
 | **Het contract direct uit het ophaalvenster** (OPT-005) — met "Afdrukken" en "Mail naar klant", en bij een mislukking de echte reden plus "Opnieuw proberen" | 4 klikken navigatie (sluiten, heropenen, scrollen, uitklappen) — en controleren óf het contract er was kon niet | **1 klik** vanuit hetzelfde venster; en of het contract er is wordt gezegd |
 | **Kleine bewerkvensters** (OPT-010) — "Datums wijzigen", "Klant wijzigen", "Voertuig wijzigen" op de reservering zelf | 7 klikken door het volledige formulier van 23 velden, dat bij openen 9 vragen afvuurde | **4 klikken** plus het veld, vanaf het record dat al op het scherm staat |
@@ -540,7 +539,8 @@ Kort en op volgorde. Stap 1 tot en met 4 kun je doen vóór je iets uitrolt.
    openstaan (dat is verwacht — die migratie draait bewust niet mee).
 7. **Log in en verander onmiddellijk het wachtwoord van `admin`.**
 8. **Controleer in vijf minuten of het werkt:**
-   - Open **Vandaag**. Er staat een dagbeeld, geen foutmelding.
+   - Open het **Dashboard**. Er staan de snelle acties en de panelen, geen foutmelding.
+   - Open **Klanten**. De kolom met het aantal chauffeurs toont echte aantallen, niet overal 0.
    - Open de **kalender in maandweergave**. Die hoort merkbaar sneller te openen dan je gewend
      bent.
    - Open een **reservering** en klik **Bewerken**, wijzig één veld en sla op. Dit is het formulier
@@ -605,3 +605,24 @@ Kort en op volgorde. Stap 1 tot en met 4 kun je doen vóór je iets uitrolt.
    Dat is het niet meer: het venster noemt sinds de laatste ronde de werkelijke ontvanger. Wat wél
    openstaat is het kantooradres voor meldingen (`notification_office_email`), waarvoor geen veld
    in het beheerscherm bestaat. Zo staat het in 7a.
+
+---
+
+## Addendum — na de eindcontrole (15 en 16 september 2026)
+
+Toen Kees de app zelf ging gebruiken, kwamen er nog fouten boven die geen test en geen controleronde
+had gezien. Allemaal gerepareerd, elk met een regressietest.
+
+| Wat Kees zag | Oorzaak | Wat er gedaan is |
+|---|---|---|
+| JSON-fouten in beide kalenders | De auditserver draaide 3,5 dag oude code en de auditdatabase miste de nieuwe kolommen | Server herstart, migratie gedraaid. Geen codefout, wel een les: elke draaiende server moet mee als er een kolom bijkomt |
+| "Unexpected end of JSON input" in beide kalenders | `calendar_settings` gaf 200 met een leeg antwoord als de instelling nooit was opgeslagen | Route geeft nu `null`; de client leest een leeg antwoord voortaan als "geen gegevens" |
+| Onderhoudskalender wit scherm, "Invalid time value" | De Nederlandse datumhulp controleerde op een lege datum maar niet op een onleesbare | Een onleesbare datum toont nu een streepje |
+| (gevonden tijdens het repareren) | **De server bepaalde "vandaag" in UTC**, dus tussen middernacht en 02:00 dacht de app dat het gisteren was. Een huur die vandaag begint werd in die uren bij uitgifte geweigerd | "Vandaag" komt nu uit de kantooragenda (Europe/Amsterdam). **Zat ook in productie** |
+| "Failed to fetch overdue reservations" na inloggen | Kees' eigen dev-database miste de nieuwe kolommen | Migratie gedraaid op de dev-database |
+| Vandaag en Nog buiten "niet nice" | — | Beide schermen op verzoek verwijderd, navigatie terug zoals hij was, handleiding bijgewerkt |
+| "Antwoord van de server is geen JSON" op de klantenpagina | **De route `/api/drivers` heeft nooit bestaan.** De klantenpagina vraagt hem sinds 20 augustus op; de fout werd stil ingeslikt, dus elke klant toonde 0 chauffeurs en het filter "Met chauffeurs" was altijd leeg. **Zat ook in productie** | Route toegevoegd. Een onbekend `/api`-adres geeft nu een JSON-404 plus een regel in de serverlog, zodat zoiets direct zichtbaar is. Alle twaalf schermen nagelopen: geen andere ontbrekende routes |
+
+**Stand na het addendum:** 1 082 tests groen, typecontrole en bouw schoon. De handleiding is ook als
+PDF beschikbaar: `docs/gebruikershandleiding/Gebruikershandleiding-Car-Rental-Manager-v1.0.pdf`
+(149 pagina's), opnieuw te bouwen met `node scripts/build-manual-pdf.cjs`.
