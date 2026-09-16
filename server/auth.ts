@@ -6,6 +6,7 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
+import { DatabaseStorage } from "./database-storage";
 import { User, UserRole, insertUserSchema } from "../shared/schema";
 import { pool } from "./db";
 import connectPg from "connect-pg-simple";
@@ -147,9 +148,23 @@ function createSessionStore(useDatabase: boolean) {
   }
 }
 
+/**
+ * Whether sessions can live in Postgres, decided on what the storage *is*.
+ *
+ * This used to be `storage.constructor.name === 'DatabaseStorage'`. A bundler is
+ * free to rename a class, and esbuild does exactly that as soon as the class
+ * refers to itself by name (it emits `class _DatabaseStorage`). The production
+ * build then failed the check and quietly kept every staff session in process
+ * memory, so each deploy or restart would log everyone out. `instanceof` does
+ * not depend on the name.
+ */
+export function usesDatabaseStorage(candidate: unknown): boolean {
+  return candidate instanceof DatabaseStorage;
+}
+
 export function setupAuth(app: Express) {
   // Determine storage type based on storage implementation
-  const useDatabase = storage.constructor.name === 'DatabaseStorage';
+  const useDatabase = usesDatabaseStorage(storage);
   
   const sessionSettings: session.SessionOptions = {
     secret: resolveSessionSecret(),
