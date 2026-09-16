@@ -18,6 +18,12 @@ export interface PortalAccountRow {
   permissions?: PortalAccountPermissions;
 }
 
+// One shared empty list. A fresh `[]` default on every render changed the
+// prefill effect's dependencies each time; with the effect setting state, the
+// open dialog re-rendered without end and swallowed every click.
+const NO_CUSTOMERS: Customer[] = [];
+const NO_DRIVERS: Driver[] = [];
+
 /**
  * Create (invite) or edit a portal account. Without a `customerId` the dialog
  * starts with a searchable customer picker, so staff can invite from the
@@ -48,8 +54,8 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
   }, [open, account]);
 
   const needsPicker = fixedCustomerId === undefined && !account;
-  const { data: customers = [] } = useQuery<Customer[]>({ queryKey: ["/api/customers"], enabled: open && needsPicker });
-  const { data: drivers = [] } = useQuery<Driver[]>({ queryKey: [`/api/customers/${customerId}/drivers`], enabled: open && customerId !== null });
+  const { data: customers = NO_CUSTOMERS } = useQuery<Customer[]>({ queryKey: ["/api/customers"], enabled: open && needsPicker });
+  const { data: drivers = NO_DRIVERS } = useQuery<Driver[]>({ queryKey: [`/api/customers/${customerId}/drivers`], enabled: open && customerId !== null });
   const { data: customer } = useQuery<Customer>({ queryKey: [`/api/customers/${customerId}`], enabled: open && !account && customerId !== null });
 
   // Suggest the address and name: from the driver for a driver account, else from the customer.
@@ -111,6 +117,9 @@ export function AccountDialog({ customerId: fixedCustomerId, account, children, 
               <Input id="pa-customer-search" placeholder={t("admin.dialog.customerSearch")} value={customerSearch} onChange={(e) => setCustomerSearch(e.target.value)} />
               <select id="pa-customer" className="w-full rounded-md border px-3 py-2 text-sm" size={6} value={customerId ?? ""}
                 onChange={(e) => { setCustomerId(e.target.value ? Number(e.target.value) : null); setDriverId(""); }} data-testid="select-portal-customer">
+                {/* Holds the "no customer yet" value. Without it React marks the first customer as chosen,
+                    and clicking that customer changes nothing. */}
+                <option value="" hidden />
                 {customerOptions.map((c) => <option key={c.id} value={c.id}>{c.companyName || c.name}{c.debtorNumber ? ` (${c.debtorNumber})` : ""}</option>)}
               </select>
             </div>
