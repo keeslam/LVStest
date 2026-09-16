@@ -7,7 +7,6 @@ import { UpcomingReservations } from "@/components/dashboard/upcoming-reservatio
 import { RecentExpenses } from "@/components/dashboard/recent-expenses";
 import { ReservationCalendar } from "@/components/dashboard/reservation-calendar";
 import { QuickActions } from "@/components/dashboard/quick-actions";
-import { TodayEntry } from "@/components/dashboard/today-entry";
 import { BackupStalenessBanner } from "@/components/backup/backup-staleness-banner";
 
 export default function Dashboard() {
@@ -17,7 +16,6 @@ export default function Dashboard() {
       <BackupStalenessBanner />
 
       {/* OPT-001 - the entry to the work-day screen, above everything else. */}
-      <TodayEntry />
 
       {/* Quick Actions */}
       <QuickActions />

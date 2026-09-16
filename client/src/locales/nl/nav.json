@@ -1,11 +1,9 @@
 {
   "dashboard": "Dashboard",
-  "today": "Vandaag",
   "vehicles": "Voertuigen",
   "scan": "Scannen",
   "customers": "Klanten",
   "reservations": "Reserveringen",
-  "stillOut": "Nog buiten",
   "maintenance": "Onderhoud",
   "expenses": "Kosten",
   "documents": "Documenten",

@@ -686,7 +686,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
 function getPageTitle(location: string, t: TFunction): string {
   if (location === "/") return t("dashboard");
-  if (location.startsWith("/vandaag")) return t("today");
   if (location.startsWith("/vehicles")) return t("vehicles");
   if (location.startsWith("/customers")) return t("customers");
   if (location.startsWith("/reservations")) return t("reservations");
