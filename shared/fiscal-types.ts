@@ -250,3 +250,56 @@ export const FISCAL_SCOPE_GLOBAL = "GLOBAL";
 export const FISCAL_DISCLAIMER =
   "Berekening op basis van de geconfigureerde fiscale regels en de beschikbare gegevens. " +
   "Dit is geen fiscaal advies en geen aangifte; bij twijfel is handmatige beoordeling nodig.";
+
+// ---- customer portal DTOs (docs/fiscaal §4.6) --------------------------------------------------------
+
+export interface PortalFiscalPeriodDto {
+  reservationId: number;
+  usagePeriodId: number;
+  vehicleId: number | null;
+  licensePlate: string | null;
+  startDate: string;
+  endDate: string | null;
+  isReplacement: boolean;
+  replacementReason: string;
+  replacedVehicleText: string | null;
+  usageType: string;
+  privateUse: string;
+  commuting: string;
+  providedBeforeCutoff: string;
+  providedBeforeCutoffHint: boolean;
+  isPool: boolean;
+  confirmedByKind: string;
+  confirmedAt: string | null;
+  reconfirmRequired: boolean;
+  /** `null` until the first assessment. */
+  status: FiscalAssessmentStatus | null;
+  statusLabel: string;
+  /** Only present when the customer's dashboard switch is on (besluit F-05). */
+  amount?: string | null;
+  explanation: string | null;
+  missingData: string[];
+  reviewReasons: string[];
+  ruleVersionTitle: string | null;
+  assessedAt: string | null;
+  /** The customer can still improve the outcome by answering the usage questions. */
+  needsInput: boolean;
+}
+
+export interface PortalFiscalVehicleDto {
+  vehicleId: number;
+  licensePlate: string;
+  brand: string;
+  model: string;
+  periods: PortalFiscalPeriodDto[];
+}
+
+export interface PortalFiscalSummaryDto {
+  periods: number;
+  needsInput: number;
+  unassessed: number;
+  byStatus: Record<FiscalAssessmentStatus, number>;
+  dashboardEnabled: boolean;
+  warningsEnabled: boolean;
+  reportsEnabled: boolean;
+}

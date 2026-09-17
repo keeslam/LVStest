@@ -27,7 +27,7 @@ import {
 import { listFiscalAuditEvents, recordFiscalEvent, type Actor } from "../services/fiscal/audit";
 import { assessMany, assessUsagePeriod, fiscalOverview, getAssessment, latestAssessmentForPeriod, listAssessments } from "../services/fiscal/assess";
 import { getReviewCase, listReviewCases, updateReviewCase, countOpenReviewCases } from "../services/fiscal/review-cases";
-import { applyManualOverride, ensureProfile, getProfile, MANUAL_PROFILE_FIELDS } from "../services/fiscal/profiles";
+import { applyManualOverride, ensureProfile, getProfile, refreshFromRdw, MANUAL_PROFILE_FIELDS } from "../services/fiscal/profiles";
 import { confirmUsage, getUsagePeriodByReservation, syncUsagePeriodForReservation } from "../services/fiscal/usage-periods";
 import { resolveForDate } from "../services/fiscal/resolve";
 import { getImpactState, startImpactPreview } from "../services/fiscal/impact";
@@ -496,6 +496,21 @@ export function registerFiscalRoutes(app: Express, _deps: RouteDeps): void {
       res.json(profile);
     } catch (error) {
       fail(res, error, "Fiscaal profiel kon niet worden bijgewerkt");
+    }
+  });
+
+  app.post("/api/vehicles/:id/fiscal-profile/refresh", REVIEW, async (req, res) => {
+    const id = intParam(req, res, "id");
+    if (id === null) return;
+    try {
+      const actor = actorFromRequest(req);
+      const result = await refreshFromRdw(id, actor);
+      if (result.ok) {
+        await assessMany({ vehicleId: id }, { trigger: "event", actor }).catch((e) => console.error("[fiscal] herbeoordeling na RDW-verversing mislukt:", e));
+      }
+      res.json({ ...result.profile, refresh: { ok: result.ok, error: result.error, changed: result.changed } });
+    } catch (error) {
+      fail(res, error, "RDW-gegevens konden niet worden opgehaald");
     }
   });
 

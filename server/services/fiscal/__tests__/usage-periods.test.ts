@@ -9,7 +9,7 @@ import { db } from "../../../db";
 import { reservations, reservationDriverAssignments, vehicleUsagePeriods, drivers } from "../../../../shared/schema";
 import { eq } from "drizzle-orm";
 import { storage } from "../../../storage";
-import { syncUsagePeriodForReservation, confirmUsage, getUsagePeriodByReservation } from "../usage-periods";
+import { syncUsagePeriodForReservation, confirmUsage, getUsagePeriodByReservation, reconcileUsagePeriods } from "../usage-periods";
 import { assignDriverToReservation } from "../../driver-assignments";
 import { createFixtureCustomer, createFixtureVehicle, createFixtureReservation, cleanupFixtures } from "../../../__tests__/helpers/fixtures";
 import { cleanupFiscalFixtures, FIXTURE_ACTOR } from "../../../__tests__/helpers/fiscal";
@@ -158,5 +158,48 @@ describe("gebruiksperioden — via de reserveringsopslag", () => {
     await storage.deleteReservation(created.id);
     expect(await periodOf(created.id)).toBeNull();
     expect(await getUsagePeriodByReservation(created.id)).toBeNull();
+  });
+});
+
+describe("gebruiksperioden — elke schrijfroute van de opslag", () => {
+  it("the checked create and update, the handover, and the replacement keep the period in step", async () => {
+    const customer = await createFixtureCustomer();
+    const vehicle = await createFixtureVehicle();
+    const created = await storage.createReservationChecked({ customerId: customer.id, vehicleId: vehicle.id, startDate: "2027-10-01", endDate: "2027-10-10", status: "booked", type: "standard" } as any);
+    expect(await periodOf(created.id)).toMatchObject({ startDate: "2027-10-01", endDate: "2027-10-10" });
+
+    await storage.updateReservationChecked(created.id, { endDate: "2027-10-12" } as any, null);
+    expect(await periodOf(created.id)).toMatchObject({ endDate: "2027-10-12" });
+
+    await storage.pickupReservation(created.id, { contractNumber: "FIXT-C1", pickupMileage: 100, fuelLevelPickup: "1/2", pickupDate: "2027-10-02" });
+    expect(await periodOf(created.id)).toMatchObject({ startDate: "2027-10-02", dateBasis: "actual" });
+
+    const spare = await createFixtureVehicle();
+    const replacement = await storage.createReplacementReservation(created.id, spare.id, "2027-10-03", "2027-10-05");
+    expect(await periodOf(replacement.id)).toMatchObject({ isReplacement: true, startDate: "2027-10-03", endDate: "2027-10-05" });
+    await storage.closeReplacementReservation(replacement.id, "2027-10-04");
+    expect(await periodOf(replacement.id)).toMatchObject({ endDate: "2027-10-04" });
+
+    await storage.returnReservation(created.id, { returnMileage: 200, fuelLevelReturn: "1/2", returnDate: "2027-10-08" });
+    expect(await periodOf(created.id)).toMatchObject({ endDate: "2027-10-08" });
+  });
+
+  it("reconcileUsagePeriods catches reservations that were written past the storage layer", async () => {
+    const customer = await createFixtureCustomer();
+    const vehicle = await createFixtureVehicle();
+    const r = await createFixtureReservation({ customerId: customer.id, vehicleId: vehicle.id, startDate: "2027-12-01", endDate: "2027-12-10" });
+    expect(await periodOf(r.id)).toBeNull();
+    expect((await reconcileUsagePeriods()).synced).toBeGreaterThanOrEqual(1);
+    expect(await periodOf(r.id)).toMatchObject({ startDate: "2027-12-01", endDate: "2027-12-10" });
+
+    await db.update(reservations).set({ endDate: "2027-12-12", updatedAt: new Date() }).where(eq(reservations.id, r.id));
+    await reconcileUsagePeriods();
+    expect(await periodOf(r.id)).toMatchObject({ endDate: "2027-12-12" });
+
+    await db.update(reservations).set({ deletedAt: new Date(), updatedAt: new Date() }).where(eq(reservations.id, r.id));
+    await reconcileUsagePeriods();
+    expect(await periodOf(r.id)).toMatchObject({ closedReason: "deleted" });
+    // A second pass has nothing left to do.
+    expect((await reconcileUsagePeriods()).synced).toBe(0);
   });
 });

@@ -11,7 +11,7 @@
  * derived facts move after a confirmation, the row is flagged for
  * reconfirmation. A period is never deleted: it is closed, with a reason.
  */
-import { and, eq, inArray, isNull, ne, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, isNull, ne, or, sql } from "drizzle-orm";
 import { db } from "../../db";
 import {
   appSettings,
@@ -151,7 +151,7 @@ async function closePeriod(period: VehicleUsagePeriod, reason: "cancelled" | "de
   if (period.closedReason === reason) return period;
   const [row] = await db
     .update(vehicleUsagePeriods)
-    .set({ closedAt: period.closedAt ?? new Date(), closedReason: reason, updatedAt: new Date() })
+    .set({ closedAt: period.closedAt ?? new Date(), closedReason: reason, derivedAt: new Date(), updatedAt: new Date() })
     .where(eq(vehicleUsagePeriods.id, period.id))
     .returning();
   return row;
@@ -330,4 +330,48 @@ export async function backfillUsagePeriods(): Promise<{ scanned: number; skipped
     })
     .onConflictDoNothing();
   return { scanned: rows.length, skipped: false };
+}
+
+/**
+ * The safety net under the storage hooks: every reservation that was written
+ * without `syncUsagePeriodSafely` — a path that forgot the hook, a direct
+ * database edit, an older build — is derived again here. Runs at start-up and
+ * in the nightly run, so a missed period is never silent for more than a night.
+ *
+ * Picks up: eligible reservations without a period; periods whose reservation
+ * changed after the last derivation; open periods of a cancelled or deleted
+ * reservation. `synced` counts the reservations that ended up with a period
+ * (created, updated or closed), `scanned` everything examined.
+ */
+export async function reconcileUsagePeriods(options: { limit?: number } = {}): Promise<{ scanned: number; synced: number }> {
+  const limit = options.limit ?? 5000;
+  const rows = await db
+    .select({ id: reservations.id })
+    .from(reservations)
+    .leftJoin(vehicleUsagePeriods, eq(vehicleUsagePeriods.reservationId, reservations.id))
+    .where(
+      or(
+        and(
+          isNull(vehicleUsagePeriods.id),
+          isNull(reservations.deletedAt),
+          ne(reservations.status, "cancelled"),
+          isNotNull(reservations.customerId),
+          inArray(reservations.type, DERIVED_TYPES),
+          or(gte(reservations.startDate, USAGE_PERIOD_DERIVATION_START), gte(reservations.actualPickupDate, USAGE_PERIOD_DERIVATION_START)),
+        ),
+        and(isNotNull(vehicleUsagePeriods.id), sql`${reservations.updatedAt} > ${vehicleUsagePeriods.derivedAt}`),
+        and(isNotNull(vehicleUsagePeriods.id), isNull(vehicleUsagePeriods.closedAt), or(isNotNull(reservations.deletedAt), eq(reservations.status, "cancelled"))),
+      ),
+    )
+    .orderBy(reservations.id)
+    .limit(limit);
+  let synced = 0;
+  for (const { id } of rows) {
+    try {
+      if (await syncUsagePeriodForReservation(id)) synced += 1;
+    } catch (error) {
+      console.error(`[fiscal] herstelronde: gebruiksperiode van reservering ${id} kon niet worden afgeleid:`, error);
+    }
+  }
+  return { scanned: rows.length, synced };
 }

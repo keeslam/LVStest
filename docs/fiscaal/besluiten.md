@@ -68,7 +68,32 @@ beoordelingswachtrij en de fiscale auditlog staan in de **app-instellingen, onde
 Het **overzicht** (tegels per status, open zaken, geldende versie) verschijnt als **dialoog** achter een
 knop op de pagina Klantenportaal.
 
+### F-14 — Stap 4 (STOP POINT 4), 17 september 2026
+**Besluit:** `05-stap4-rapport.md` is goedgekeurd ("ja akkoord") inclusief de plaatsing volgens F-13.
+Stap 5 (RDW-profiel, nachtelijke beoordeling, portaalpagina en -routes, meldingen) mag worden gebouwd.
+
 ### F-10 — Startdatum afleiding (Q10)
 **Besluit:** gebruiksperioden worden afgeleid uit reserveringen met een startdatum **vanaf 1 januari
 2027**. Eerdere reserveringen worden alleen gelezen om "al vóór 2027 ter beschikking gesteld" voor te
 vullen (aaneengesloten eerdere huur van dezelfde auto bij dezelfde klant).
+
+### F-15 — Open einde: per maand en per jaar, eindberekening bij afsluiten, 17 september 2026
+**Besluit (Kees, tijdens stap 5):** "als er een open eind is dan moet het gewoon per maand / jaar
+berekend worden, en dan als de reservering wordt afgesloten een eindberekening".
+
+**Uitwerking (stap 6):**
+- Een periode zonder einddatum wordt niet langer alleen "tot de beoordelingshorizon" beoordeeld. Elke
+  afgesloten kalendermaand wordt bij de nachtelijke run vastgelegd als een eigen, onveranderlijke
+  maandbeoordeling (bedrag per maand, opgeteld per kalenderjaar). De dedupe-hash krijgt daarvoor de
+  laatst afgesloten maand als onderdeel, zodat iedere nieuwe maand een nieuwe beoordeling oplevert en
+  een ongewijzigde maand niets schrijft.
+- De lopende maand blijft **voorlopig**; het jaartotaal in overzicht en rapport telt de vastgelegde
+  maanden plus de lopende maand als voorlopig bedrag, expliciet zo gelabeld.
+- Zodra de reservering wordt afgesloten (werkelijke innamedatum bekend, de periode krijgt een
+  einddatum) volgt automatisch een **eindberekening** over de hele periode (trigger `final`). Die
+  vervangt in overzicht en portaal de voorlopige maandbeoordelingen; de historie blijft bewaard, want
+  elke beoordeling is een snapshot.
+- Kantoor en portaal tonen het onderscheid "voorlopig, per maand" en "eindberekening" altijd
+  expliciet; de disclaimer blijft staan.
+- De vooruitkijkdagen blijven alleen bestaan voor waarschuwingen (vrijstellingsgrens, maandgrens);
+  ze bepalen niet meer tot waar een open periode wordt beoordeeld.

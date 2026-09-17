@@ -1,7 +1,7 @@
 import { db } from "../db";
 import {
   customers, vehicles, drivers, reservations, documents,
-  portalUsers, portalCustomerSettings, portalActivityLog, reservationDriverAssignments, fines, fineImportFiles, portalRequests,
+  portalUsers, portalCustomerSettings, portalActivityLog, reservationDriverAssignments, fines, fineImportFiles, portalRequests, fiscalAuditEvents,
   type Customer, type Vehicle, type Driver, type Reservation, type Document, type Fine,
 } from "../../shared/schema";
 import { like, inArray } from "drizzle-orm";
@@ -79,6 +79,8 @@ export async function createTestDocument(input: { reservationId: number; vehicle
  * 258 of those had accumulated in the shared dev database.
  */
 export async function cleanupPortalTestData(): Promise<void> {
+  // A portal administrator who confirmed usage left fiscal audit events under its e-mail address.
+  await db.delete(fiscalAuditEvents).where(like(fiscalAuditEvents.username, `%@${TEST_EMAIL_DOMAIN}`));
   const testVehicles = await db.select({ id: vehicles.id }).from(vehicles).where(like(vehicles.licensePlate, "PT%"));
   const vehicleIds = testVehicles.map((v) => v.id);
   if (vehicleIds.length) {

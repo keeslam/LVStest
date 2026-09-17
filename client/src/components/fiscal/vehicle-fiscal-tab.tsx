@@ -29,6 +29,16 @@ export function VehicleFiscalTab({ vehicleId }: { vehicleId: number }) {
   const [reason, setReason] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
+  const refresh = useMutation({
+    mutationFn: async () => (await apiRequest("POST", `/api/vehicles/${vehicleId}/fiscal-profile/refresh`)).json() as Promise<FiscalProfileResponse & { refresh: { ok: boolean; error: string | null; changed: string[] } }>,
+    onSuccess: (row) => {
+      queryClient.invalidateQueries({ queryKey: key });
+      queryClient.invalidateQueries({ queryKey: ["/api/fiscal/overview"] });
+      toast(row.refresh.ok ? { title: t("vehicle.refreshed", { count: row.refresh.changed.length }) } : { title: t("vehicle.refreshFailed", { message: row.refresh.error ?? "" }), variant: "destructive" });
+    },
+    onError: (e: Error) => toast({ title: e.message.replace(/^\d{3}:\s*/, ""), variant: "destructive" }),
+  });
+
   const save = useMutation({
     mutationFn: async () => {
       const field = editing!;
@@ -142,10 +152,17 @@ export function VehicleFiscalTab({ vehicleId }: { vehicleId: number }) {
             </div>
           )}
 
-          <p className="text-xs text-muted-foreground">
-            {t("vehicle.rdw")}: {data.rdwRetrievedAt ? t("vehicle.rdwAt", { at: new Date(data.rdwRetrievedAt).toLocaleString("nl-NL") }) : t("vehicle.rdwNever")}
-            {data.rdwError ? ` — ${t("vehicle.rdwError", { message: data.rdwError })}` : ""}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              {t("vehicle.rdw")}: {data.rdwRetrievedAt ? t("vehicle.rdwAt", { at: new Date(data.rdwRetrievedAt).toLocaleString("nl-NL") }) : t("vehicle.rdwNever")}
+              {data.rdwError ? ` — ${t("vehicle.rdwError", { message: data.rdwError })}` : ""}
+            </p>
+            {canReview && (
+              <Button size="sm" variant="outline" disabled={refresh.isPending} onClick={() => refresh.mutate()} data-testid="button-profile-refresh">
+                {t("vehicle.refresh")}
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 

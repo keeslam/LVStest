@@ -126,6 +126,49 @@ function formatDate(dateStr: string | undefined): string | undefined {
 }
 
 
+// ---- fiscal facts (docs/fiscaal) ---------------------------------------------------------------
+
+/** The two open-data sets the fiscal profile reads, kept raw next to the normalised values. */
+export interface RdwFiscalData {
+  vehicle: Record<string, unknown> | null;
+  fuels: Array<Record<string, unknown>>;
+  retrievedAt: string;
+}
+
+async function getRdwJson(url: string, fetchImpl: typeof fetch): Promise<unknown[]> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetchImpl(url, { signal: controller.signal, headers: { Accept: 'application/json' } });
+    if (!response.ok) throw new RDWUpstreamError(response.status, response.statusText);
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') throw new RDWTimeoutError();
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * Vehicle registration (m9d7-ebf2: catalogusprijs, Europese voertuigcategorie,
+ * voertuigsoort, inrichting, datum eerste toelating) plus every fuel row
+ * (8ys7-d773: brandstof, CO2, hybride-klasse). `fetchImpl` is injectable so
+ * tests never touch the network.
+ */
+export async function fetchRdwFiscalData(licensePlate: string, fetchImpl: typeof fetch = fetch): Promise<RdwFiscalData> {
+  const normalized = licensePlate.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  const vehicleRows = await getRdwJson(`https://opendata.rdw.nl/resource/m9d7-ebf2.json?kenteken=${normalized}`, fetchImpl);
+  if (vehicleRows.length === 0) throw new RDWNotFoundError(licensePlate);
+  const fuelRows = await getRdwJson(`https://opendata.rdw.nl/resource/8ys7-d773.json?kenteken=${normalized}`, fetchImpl);
+  return {
+    vehicle: vehicleRows[0] as Record<string, unknown>,
+    fuels: fuelRows as Array<Record<string, unknown>>,
+    retrievedAt: new Date().toISOString(),
+  };
+}
+
 /**
  * Fetches vehicle information from the RDW API based on license plate
  * Uses the new API endpoint: https://opendata.rdw.nl/resource/m9d7-ebf2.json?kenteken=XX9999

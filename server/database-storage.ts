@@ -1993,6 +1993,7 @@ export class DatabaseStorage implements IStorage {
     for (const vehicleId of Array.from(new Set(freedVehicleIds))) {
       await this.recomputeVehicleAvailability(vehicleId);
     }
+    await syncUsagePeriodSafely(id);
     return { impact, applied };
   }
 
@@ -2561,6 +2562,7 @@ export class DatabaseStorage implements IStorage {
     });
 
     await this.syncDeliveryTransport(inserted);
+    await syncUsagePeriodSafely(inserted.id);
     return this.attachReservationRelations(inserted);
   }
 
@@ -2593,6 +2595,7 @@ export class DatabaseStorage implements IStorage {
 
     if (!updated) return undefined;
     await this.syncDeliveryTransport(updated);
+    await syncUsagePeriodSafely(updated.id);
     return this.attachReservationRelations(updated);
   }
 
@@ -2888,6 +2891,7 @@ export class DatabaseStorage implements IStorage {
       await this.recomputeVehicleAvailability(vehicleId, { executor: tx });
     });
 
+    await syncUsagePeriodSafely(reservationId);
     return this.getReservation(reservationId);
   }
 
@@ -2975,6 +2979,7 @@ export class DatabaseStorage implements IStorage {
       await this.recomputeVehicleAvailability(vehicleId, { executor: tx });
     });
 
+    await syncUsagePeriodSafely(reservationId);
     return this.getReservation(reservationId);
   }
 
@@ -4469,6 +4474,7 @@ export class DatabaseStorage implements IStorage {
       userId: null // System-wide notification
     });
 
+    await syncUsagePeriodSafely(placeholder.id);
     return placeholder;
   }
 
@@ -4594,6 +4600,7 @@ export class DatabaseStorage implements IStorage {
     // Delete the spare assignment notification when vehicle is assigned
     await this.deleteNotificationsByTypeAndPattern("spare_assignment", `[placeholder:${reservationId}]`);
 
+    if (updatedReservation) await syncUsagePeriodSafely(updatedReservation.id);
     return updatedReservation || undefined;
   }
 
@@ -4782,6 +4789,7 @@ export class DatabaseStorage implements IStorage {
     for (const vehicleId of Array.from(new Set(freed))) {
       await this.recomputeVehicleAvailability(vehicleId);
     }
+    await syncUsagePeriodSafely(created.id);
     return created;
   }
 
@@ -4810,6 +4818,7 @@ export class DatabaseStorage implements IStorage {
       )
       .returning();
 
+    if (updatedReservation) await syncUsagePeriodSafely(updatedReservation.id);
     return updatedReservation || undefined;
   }
 

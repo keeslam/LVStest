@@ -271,7 +271,10 @@
     "amount": "Bedrag",
     "months": "Maanden",
     "yes": "Ja",
-    "no": "Nee"
+    "no": "Nee",
+    "refresh": "RDW opnieuw ophalen",
+    "refreshed": "RDW-gegevens opgehaald; {{count}} feit(en) bijgewerkt. Open perioden worden opnieuw beoordeeld.",
+    "refreshFailed": "RDW-ophaling mislukt: {{message}}"
   },
   "common": {
     "loading": "Laden…",

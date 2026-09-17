@@ -271,7 +271,10 @@
     "amount": "Amount",
     "months": "Months",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "refresh": "Refresh from RDW",
+    "refreshed": "RDW data retrieved; {{count}} fact(s) updated. Open periods are being reassessed.",
+    "refreshFailed": "RDW retrieval failed: {{message}}"
   },
   "common": {
     "loading": "Loading…",

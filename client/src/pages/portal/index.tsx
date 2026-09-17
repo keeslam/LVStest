@@ -7,6 +7,7 @@ import PortalConfirmEmailPage from "./confirm-email";
 import PortalOverviewPage from "./overview";
 import PortalReservationsPage from "./reservations";
 import PortalVehiclesPage from "./vehicles";
+import PortalFiscalPage from "@/pages/portal/fiscal";
 import PortalDocumentsPage from "./documents";
 import PortalDriversPage from "./drivers";
 import PortalFinesPage from "./fines";
@@ -26,6 +27,7 @@ export default function PortalApp() {
           <Route path="/reserveringen/:id" component={PortalReservationsPage} />
           <Route path="/reserveringen" component={PortalReservationsPage} />
           <Route path="/voertuigen" component={PortalVehiclesPage} />
+          <Route path="/fiscaal" component={PortalFiscalPage} />
           <Route path="/documenten" component={PortalDocumentsPage} />
           <Route path="/bestuurders" component={PortalDriversPage} />
           <Route path="/account" component={PortalOverviewPage} />

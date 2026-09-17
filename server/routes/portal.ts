@@ -7,6 +7,7 @@ import path from "path";
 import fs from "fs";
 import multer from "multer";
 import { z } from "zod";
+import { registerPortalFiscalRoutes } from "./portal-fiscal";
 import { portalStorage, type PortalReservation } from "../services/portal-storage";
 import { overlaps, isWeekend } from "../services/booking-period";
 import { customerNotifications } from "../services/portal-customer-notifications";
@@ -96,6 +97,8 @@ export function registerPortalRoutes(app: Express, deps: PortalRouteDeps): void 
   installAsyncErrorHandling();
   const { requirePortalUser, uploadsDir } = deps;
   const ctxOf = (req: Request) => req.portalUser!;
+  // Fiscal mobility check (docs/fiscaal): the customer side, in this same realm.
+  registerPortalFiscalRoutes(app, { requirePortalUser });
 
   // ---- reservations ---------------------------------------------------------
   app.get("/api/portal/reservations", requirePortalUser, async (req, res) => {

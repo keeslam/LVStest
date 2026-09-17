@@ -13,7 +13,7 @@ import { setupAuth } from "./auth";
 import { setupPortalAuth } from "./portal-auth";
 import { ensurePortalEmailTemplates } from "./services/portal-mail";
 import { ensureFiscalDraftVersion } from "./services/fiscal/seed";
-import { backfillUsagePeriods } from "./services/fiscal/usage-periods";
+import { backfillUsagePeriods, reconcileUsagePeriods } from "./services/fiscal/usage-periods";
 import { startCjibScheduler } from "./services/cjib/poller";
 import { registerPortalRoutes } from "./routes/portal";
 import { getUploadsDir as getPortalUploadsDir } from "../shared/paths";
@@ -23,6 +23,7 @@ import { mountBodyParsers } from "./middleware/body-limits";
 import { ApkScanScheduler } from "./apkScanScheduler";
 import { ServiceDueScheduler } from "./serviceDueScheduler";
 import { PortalAlertScheduler } from "./portalAlertScheduler";
+import { FiscalScheduler } from "./fiscalScheduler";
 import { initializeDefaultAdmin, displayDeploymentInfo } from "./initAdmin";
 import notificationRoutes from "./routes/notifications.js";
 import vehiclesWithReservationsRoutes from "./routes/vehicles-with-reservations.js";
@@ -49,6 +50,7 @@ let backupScheduler: any = null;
 let apkScanScheduler: any = null;
 let serviceDueScheduler: any = null;
 let portalAlertScheduler: any = null;
+let fiscalScheduler: any = null;
 let isShuttingDown = false;
 
 async function gracefulShutdown(signal: string) {
@@ -104,6 +106,7 @@ async function gracefulShutdown(signal: string) {
 
     // Stop service-due scan scheduler
     if (portalAlertScheduler) portalAlertScheduler.stop();
+    if (fiscalScheduler) fiscalScheduler.stop();
     if (serviceDueScheduler) {
       serviceDueScheduler.stop();
       console.log('✅ Service-due scheduler stopped');
@@ -502,6 +505,9 @@ backupScheduler.start();
 
 // Initialize RDW APK-date scan scheduler
 apkScanScheduler = new ApkScanScheduler();
+// Fiscal mobility check (docs/fiscaal): nightly assessment and notifications at 03:30.
+fiscalScheduler = new FiscalScheduler();
+fiscalScheduler.start();
 apkScanScheduler.start();
 
 // Initialize regular-service due scan scheduler (notifications)
@@ -517,6 +523,8 @@ startCjibScheduler().catch((e) => console.error("CJIB scheduler failed to start:
   ensureFiscalDraftVersion()
     .then(() => backfillUsagePeriods())
     .then((r) => { if (!r.skipped) console.log(`📐 Gebruiksperioden afgeleid uit ${r.scanned} reservering(en)`); })
+    .then(() => reconcileUsagePeriods())
+    .then((r) => { if (r.synced) console.log(`📐 Herstelronde: ${r.synced} gebruiksperiode(n) bijgewerkt`); })
     .catch((e) => console.error("fiscal start-up:", e));
 
 // Initialize session cleanup scheduler (runs every hour)
