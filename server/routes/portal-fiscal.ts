@@ -10,7 +10,9 @@ import { z } from "zod";
 import { settingsFlags, requireFeature, requirePortalRole, portalError } from "../portal-auth";
 import { PORTAL_ERROR } from "../../shared/portal-types";
 import { TRI_STATES, USAGE_TYPES, REPLACEMENT_REASONS } from "../../shared/fiscal-types";
-import { fiscalSummaryForCustomer, getFiscalReservationForCustomer, listFiscalVehiclesForCustomer } from "../services/fiscal/portal-storage";
+import { fiscalSummaryForCustomer, getFiscalAssessmentForCustomer, getFiscalReservationForCustomer, listFiscalVehiclesForCustomer } from "../services/fiscal/portal-storage";
+import { monthlyReport, reportToCsv } from "../services/fiscal/reports";
+import { assessmentPdfContext, renderAssessmentPdf } from "../services/fiscal/assessment-pdf";
 import { confirmUsage, getUsagePeriodByReservation } from "../services/fiscal/usage-periods";
 import { assessUsagePeriod } from "../services/fiscal/assess";
 import { FiscalValidationError } from "../services/fiscal/errors";
@@ -74,6 +76,34 @@ export function registerPortalFiscalRoutes(app: Express, deps: PortalFiscalRoute
     const dto = await getFiscalReservationForCustomer(id, ctx.customerId, ctx.scope, { withAmounts: withAmounts(req) });
     if (!dto) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "Reservation not found");
     res.json(dto);
+  });
+
+  // One assessment as a sheet; amounts only with the dashboard switch (besluit F-05).
+  app.get("/api/portal/fiscal/reservations/:id/pdf", ...guards, async (req, res) => {
+    const id = idParam(req, res);
+    if (id === null) return;
+    const ctx = ctxOf(req);
+    const found = await getFiscalAssessmentForCustomer(id, ctx.customerId, ctx.scope);
+    if (!found) return portalError(res, 404, PORTAL_ERROR.NOT_FOUND, "No assessment for this reservation");
+    const pdf = await renderAssessmentPdf(found.assessment, await assessmentPdfContext(found.assessment, withAmounts(req)));
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="fiscale-beoordeling-${found.assessment.id}.pdf"`);
+    res.send(pdf);
+  });
+
+  // The year as CSV, only for customers with the reports switch; amounts only with the dashboard switch.
+  app.get("/api/portal/fiscal/report.csv", ...guards, async (req, res) => {
+    const ctx = ctxOf(req);
+    if (!ctx.settings.fiscalReportsEnabled) {
+      return portalError(res, 403, PORTAL_ERROR.FEATURE_DISABLED, "Fiscal reports are not enabled for this customer");
+    }
+    const parsed = z.object({ year: z.coerce.number().int().min(2000).max(2100).optional() }).safeParse(req.query);
+    if (!parsed.success) return portalError(res, 400, PORTAL_ERROR.VALIDATION, "Invalid year");
+    const year = parsed.data.year ?? new Date().getFullYear();
+    const report = await monthlyReport({ year, customerId: ctx.customerId, scope: ctx.scope }, { withAmounts: withAmounts(req) });
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="fiscaal-${year}.csv"`);
+    res.send(reportToCsv(report));
   });
 
   // besluit F-02: the customer administrator answers the usage questions; audited as portal_admin.

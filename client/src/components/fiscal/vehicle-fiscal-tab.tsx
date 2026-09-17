@@ -188,10 +188,21 @@ export function VehicleFiscalTab({ vehicleId }: { vehicleId: number }) {
                   <tr key={a.id} className="border-t" data-testid={`assessment-row-${a.id}`}>
                     <td className="py-1 pr-2">
                       {dateLabelNl(a.periodStart)} t/m {a.periodEnd ? dateLabelNl(a.periodEnd) : "…"}
+                      <a href={`/api/fiscal/assessments/${a.id}/pdf`} target="_blank" rel="noreferrer" className="ml-2 text-xs underline" data-testid={`assessment-pdf-${a.id}`}>
+                        {t("common.pdf")}
+                      </a>
                     </td>
                     <td className="py-1 pr-2">{FISCAL_STATUS_LABELS[a.status] ?? a.status}</td>
                     <td className="py-1 pr-2">{a.monthsCharged}</td>
-                    <td className="py-1">{a.amount ? formatEuro(a.amount) : "—"}</td>
+                    <td className="py-1">
+                      {a.amount ? formatEuro(a.amount) : "—"}
+                      {a.isFinal && <span className="ml-2 rounded bg-emerald-100 px-1.5 py-0.5 text-xs text-emerald-900" data-testid={`assessment-final-${a.id}`}>{t("common.final")}</span>}
+                      {!a.isFinal && a.amount && a.provisionalAmount && a.provisionalAmount !== "0.00" && (
+                        <span className="ml-2 text-xs text-muted-foreground" data-testid={`assessment-provisional-${a.id}`}>
+                          {t("common.settledPart", { amount: formatEuro(a.settledAmount ?? "0.00") })} · {t("common.provisionalPart", { amount: formatEuro(a.provisionalAmount) })}
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

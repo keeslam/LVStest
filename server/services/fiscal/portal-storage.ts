@@ -27,7 +27,7 @@ export interface FiscalScope {
 export type { PortalFiscalPeriodDto, PortalFiscalVehicleDto } from "../../../shared/fiscal-types";
 import type { PortalFiscalPeriodDto, PortalFiscalVehicleDto } from "../../../shared/fiscal-types";
 
-function scopeCondition(scope: FiscalScope) {
+export function scopeCondition(scope: FiscalScope) {
   if (!scope.driverId) return undefined;
   const driven = db
     .select({ id: reservationDriverAssignments.id })
@@ -37,7 +37,7 @@ function scopeCondition(scope: FiscalScope) {
 }
 
 /** Lines with an amount are left out when the customer's dashboard switch is off. */
-function explanationFor(assessment: FiscalAssessment, withAmounts: boolean): string {
+export function explanationFor(assessment: FiscalAssessment, withAmounts: boolean): string {
   if (withAmounts) return assessment.explanation;
   return assessment.explanation
     .split("\n")
@@ -87,6 +87,8 @@ function toDto(period: VehicleUsagePeriod, plate: string | null, latest: (Fiscal
     reconfirmRequired: period.reconfirmRequired,
     status,
     statusLabel: status ? FISCAL_STATUS_LABELS[status] : "Nog niet beoordeeld",
+    isFinal: latest?.isFinal ?? false,
+    assessedThrough: latest?.periodEndEffective ?? null,
     explanation: latest ? explanationFor(latest, withAmounts) : null,
     missingData: latest?.missingData ?? [],
     reviewReasons: latest?.reviewReasons ?? [],
@@ -94,7 +96,11 @@ function toDto(period: VehicleUsagePeriod, plate: string | null, latest: (Fiscal
     assessedAt: latest ? latest.createdAt.toISOString() : null,
     needsInput,
   };
-  if (withAmounts) dto.amount = latest?.amount ?? null;
+  if (withAmounts) {
+    dto.amount = latest?.amount ?? null;
+    dto.settledAmount = latest?.settledAmount ?? null;
+    dto.provisionalAmount = latest?.provisionalAmount ?? null;
+  }
   return dto;
 }
 
@@ -128,6 +134,24 @@ export async function getFiscalReservationForCustomer(reservationId: number, cus
   if (!row) return null;
   const latest = await latestFor([row.period.id]);
   return toDto(row.period, row.vehicle?.licensePlate ?? null, latest.get(row.period.id), options.withAmounts);
+}
+
+/** The latest assessment of one of the customer's reservations, for the PDF; null when outside the customer's scope or not yet assessed. */
+export async function getFiscalAssessmentForCustomer(
+  reservationId: number,
+  customerId: number,
+  scope: FiscalScope,
+): Promise<{ assessment: FiscalAssessment; licensePlate: string | null; vehicle: string | null } | null> {
+  const [row] = await openPeriods(customerId, scope, reservationId);
+  if (!row) return null;
+  const latest = (await latestFor([row.period.id])).get(row.period.id);
+  if (!latest) return null;
+  const { ruleVersionTitle: _title, ...assessment } = latest;
+  return {
+    assessment,
+    licensePlate: row.vehicle?.licensePlate ?? null,
+    vehicle: row.vehicle ? [row.vehicle.brand, row.vehicle.model].filter(Boolean).join(" ") || null : null,
+  };
 }
 
 export async function fiscalSummaryForCustomer(customerId: number, scope: FiscalScope): Promise<{ periods: number; needsInput: number; byStatus: Record<FiscalAssessmentStatus, number>; unassessed: number }> {

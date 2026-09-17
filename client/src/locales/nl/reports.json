@@ -213,7 +213,8 @@
       "vehicles": "Voertuigen",
       "customers": "Klanten",
       "transports": "Transporten",
-      "financial": "Financieel"
+      "financial": "Financieel",
+      "fiscal": "Fiscaal"
     },
     "common": {
       "vehicle": "Voertuig",

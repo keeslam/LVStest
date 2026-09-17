@@ -73,7 +73,6 @@ export async function runImpactPreview(versionId: number, actor: Actor): Promise
   const params = ParameterSet.fromValues(definitionsForRule(ruleKey), version.values, version.sources);
   const windowFrom = version.effectiveFrom!;
   const windowTo = version.effectiveUntil ?? addDays(windowFrom, 365);
-  const draftLookahead = params.integer("ASSESSMENT_LOOKAHEAD_DAYS");
   const today = isoToday();
 
   const rows = await db
@@ -101,7 +100,7 @@ export async function runImpactPreview(versionId: number, actor: Actor): Promise
     customers.add(period.customerId);
     if (period.vehicleId !== null) vehicles.add(period.vehicleId);
 
-    const draftInput = await buildInput(period, today, draftLookahead, { effectiveFrom: windowFrom, effectiveUntil: version.effectiveUntil });
+    const draftInput = await buildInput(period, today, { effectiveFrom: windowFrom, effectiveUntil: version.effectiveUntil });
     const draftVerdict = evaluatePseudoEindheffing(draftInput, params);
     byStatus[draftVerdict.status] += 1;
     if (draftVerdict.status === "MANUAL_REVIEW_REQUIRED") manualReview += 1;
@@ -111,7 +110,7 @@ export async function runImpactPreview(versionId: number, actor: Actor): Promise
     const provisionalEnd = period.endDate ?? (compareIso(today, period.startDate) < 0 ? period.startDate : today);
     const current = await resolveForPeriod(ruleKey, period.startDate, provisionalEnd);
     if (current.status === "ok") {
-      const input = await buildInput(period, today, current.params.integer("ASSESSMENT_LOOKAHEAD_DAYS"), {
+      const input = await buildInput(period, today, {
         effectiveFrom: current.version.effectiveFrom!,
         effectiveUntil: current.version.effectiveUntil,
       });

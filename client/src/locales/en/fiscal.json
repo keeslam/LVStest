@@ -186,7 +186,7 @@
   "usage": {
     "title": "Fiscal usage",
     "description": "What the application derives from the reservation and what only people know. Confirmed answers decide the fiscal assessment.",
-    "noPeriod": "No usage period: this reservation starts before 1 January 2027, is not a rental, or has no customer.",
+    "noPeriod": "No usage period: this reservation starts before {{date}}, is not a rental, or has no customer.",
     "period": "Period",
     "dateBasis": {
       "planned": "planned dates",
@@ -194,11 +194,11 @@
     },
     "replacement": "Replacement vehicle",
     "drivers": "Drivers: {{count}}",
-    "hint": "The application found a contiguous earlier rental of this car at this customer before 2027; the transition rule may apply.",
+    "hint": "The application found a contiguous earlier rental of this car at this customer before {{year}}; the transition rule may apply.",
     "reconfirm": "The facts of the reservation changed after the confirmation. Check the answers again.",
     "privateUse": "Private use by the driver?",
     "commuting": "Commuting?",
-    "providedBeforeCutoff": "Already provided to this employer before 1 January 2027?",
+    "providedBeforeCutoff": "Already provided to this employer before {{date}}?",
     "usageType": "Usage type",
     "isPool": "Pool car (no fixed driver)",
     "replacementReason": "Reason for replacement",
@@ -277,9 +277,14 @@
     "refreshFailed": "RDW retrieval failed: {{message}}"
   },
   "common": {
+    "final": "Final calculation",
+    "provisional": "Provisional",
+    "settledPart": "settled {{amount}}",
+    "provisionalPart": "provisional {{amount}}",
     "loading": "Loading…",
     "error": "Something went wrong: {{message}}",
-    "disclaimer": "Calculated from the configured fiscal rules and the available data. This is not tax advice and not a return; when in doubt, manual review is required."
+    "disclaimer": "Calculated from the configured fiscal rules and the available data. This is not tax advice and not a return; when in doubt, manual review is required.",
+    "pdf": "PDF"
   },
   "settings": {
     "title": "Fiscal mobility check",
@@ -289,5 +294,42 @@
     "button": "Fiscal check",
     "title": "Fiscal check: overview",
     "hint": "Latest assessment per open period. The configuration, the review queue and the audit log are in the app settings under Customer portal."
+  },
+  "report": {
+    "title": "Fiscal check per month",
+    "intro": "Per customer, car and calendar month: the latest assessment of every running period. Each month is settled, provisional or part of a final calculation. This is not tax advice.",
+    "year": "Year",
+    "customer": "Customer",
+    "allCustomers": "All customers",
+    "csv": "Download CSV",
+    "columns": {
+      "customer": "Customer",
+      "plate": "Plate",
+      "period": "Period",
+      "month": "Month",
+      "days": "Days",
+      "reason": "Reason",
+      "amount": "Amount",
+      "state": "State",
+      "status": "Status"
+    },
+    "state": {
+      "final": "Final calculation",
+      "settled": "Settled",
+      "provisional": "Provisional"
+    },
+    "totals": {
+      "title": "Totals {{year}}",
+      "amount": "Total",
+      "settled": "Of which settled",
+      "provisional": "Of which provisional",
+      "chargedMonths": "Charged months",
+      "periods": "Periods",
+      "unassessed": "Not assessed yet"
+    },
+    "byCustomer": "Per customer",
+    "empty": "No assessed periods in this year.",
+    "open": "open",
+    "pdf": "PDF"
   }
 }

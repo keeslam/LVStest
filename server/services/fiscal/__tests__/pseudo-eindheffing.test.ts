@@ -79,6 +79,7 @@ function input(overrides: Deep<FiscalInput> = {}): FiscalInput {
       replacementReason: "unknown",
       providedBeforeCutoff: "no",
       closedReason: null,
+      ended: false,
     },
     priorPeriods: { samePlate: [], sameCustomer: [], sameDriver: [] },
   };
@@ -99,7 +100,7 @@ describe("pseudo-eindheffing — scope of the rule", () => {
     expect(v.status).toBe("APPLICABLE");
     expect(v.amount).toBe("360.00");
     expect(v.monthsCharged).toBe(1);
-    expect(v.months).toEqual([{ month: "2027-03", days: 31, charged: true, reason: "charged", amount: "360.00" }]);
+    expect(v.months).toEqual([{ month: "2027-03", days: 31, charged: true, reason: "charged", amount: "360.00", settled: false }]);
     expect(v.dataQuality).toBe("complete");
     expect(v.missingData).toEqual([]);
     expect(v.reviewReasons).toEqual([]);
@@ -420,5 +421,46 @@ describe("pseudo-eindheffing — base value and amount", () => {
     const v = evaluatePseudoEindheffing(input(), params());
     const rate = v.parametersUsed.find((p) => p.key === "PSEUDO_ENDHEFFING_RATE");
     expect(rate).toMatchObject({ value: 12, unit: "percent_per_year", legalStatus: "legal" });
+  });
+});
+
+describe("pseudo-eindheffing — open einde, maandsnapshots en eindberekening (F-15)", () => {
+  it("an open-ended period is assessed through the end of the calculation month: past months settled, the current month provisional", () => {
+    const v = evaluatePseudoEindheffing(input({ calculationDate: "2027-03-15", period: { startDate: "2027-01-10", endDate: null, endDateEffective: "2027-03-31", ended: false } }), params());
+    expect(v.status).toBe("APPLICABLE");
+    expect(v.months.map((m) => [m.month, m.settled, m.amount])).toEqual([["2027-01", true, "360.00"], ["2027-02", true, "360.00"], ["2027-03", false, "360.00"]]);
+    expect(v.amount).toBe("1080.00");
+    expect(v.settledAmount).toBe("720.00");
+    expect(v.provisionalAmount).toBe("360.00");
+    expect(v.facts.final).toBe(false);
+    expect(v.facts.assessedThrough).toBe("2027-03-31");
+    expect(v.dataQuality).toBe("partial");
+  });
+
+  it("a planned end in the future: the months from the calculation month on are provisional too", () => {
+    const v = evaluatePseudoEindheffing(input({ calculationDate: "2027-03-15", period: { startDate: "2027-01-10", endDate: "2027-06-30", endDateEffective: "2027-06-30", ended: false } }), params());
+    expect(v.months.map((m) => m.settled)).toEqual([true, true, false, false, false, false]);
+    expect(v.settledAmount).toBe("720.00");
+    expect(v.provisionalAmount).toBe("1440.00");
+    expect(v.amount).toBe("2160.00");
+  });
+
+  it("once the car is returned, the final calculation settles every month, including the current one", () => {
+    const v = evaluatePseudoEindheffing(input({ calculationDate: "2027-03-15", period: { startDate: "2027-01-10", endDate: "2027-03-10", endDateEffective: "2027-03-10", ended: true } }), params());
+    expect(v.facts.final).toBe(true);
+    expect(v.months.every((m) => m.settled)).toBe(true);
+    expect(v.settledAmount).toBe("1080.00");
+    expect(v.provisionalAmount).toBe("0.00");
+    expect(v.dataQuality).toBe("complete");
+  });
+
+  it("without an amount both sums stay empty", () => {
+    const short = evaluatePseudoEindheffing(input({ calculationDate: "2027-03-15", period: { startDate: "2027-03-01", endDate: "2027-03-05", endDateEffective: "2027-03-05", ended: true } }), params());
+    expect(short.status).toBe("NOT_APPLICABLE");
+    expect(short.settledAmount).toBeNull();
+    expect(short.provisionalAmount).toBeNull();
+    const missing = evaluatePseudoEindheffing(input({ vehicle: { catalogValue: null } }), params());
+    expect(missing.status).toBe("DATA_INSUFFICIENT");
+    expect(missing.settledAmount).toBeNull();
   });
 });

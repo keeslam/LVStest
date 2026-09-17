@@ -2483,6 +2483,27 @@
         "default": null
       },
       {
+        "name": "settled_amount",
+        "type": "numeric(12, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "provisional_amount",
+        "type": "numeric(12, 2)",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "is_final",
+        "type": "boolean",
+        "notNull": true,
+        "primary": false,
+        "default": "false"
+      },
+      {
         "name": "months_charged",
         "type": "integer",
         "notNull": true,
@@ -6157,6 +6178,13 @@
         "notNull": true,
         "primary": false,
         "default": "'planned'"
+      },
+      {
+        "name": "end_basis",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
       },
       {
         "name": "usage_type",

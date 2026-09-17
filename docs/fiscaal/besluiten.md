@@ -97,3 +97,10 @@ berekend worden, en dan als de reservering wordt afgesloten een eindberekening".
   expliciet; de disclaimer blijft staan.
 - De vooruitkijkdagen blijven alleen bestaan voor waarschuwingen (vrijstellingsgrens, maandgrens);
   ze bepalen niet meer tot waar een open periode wordt beoordeeld.
+
+### F-16 — Stap 5 (STOP POINT 5), 17 september 2026
+**Besluit:** `06-stap5-rapport.md` is goedgekeurd ("ja akkoord"), inclusief de hook op alle
+schrijfroutes met herstelronde en het besluit F-15. Stap 6 (volledige berekeningen: open einde per
+maand en per jaar met eindberekening, rapporten en CSV, PDF per beoordeling, randgevallen over maand-
+en jaargrenzen, documentatie, eindaudit, regressie en de productie-vormige migratietest) mag worden
+gebouwd.

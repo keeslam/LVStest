@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { dateLabelNl, formatEuro } from "@shared/fiscal-format";
-import { FISCAL_STATUS_LABELS, MISSING_DATA_LABELS, REVIEW_REASON_LABELS, REPLACEMENT_REASONS, REPLACEMENT_REASON_LABELS, USAGE_TYPES, type MissingDataCode, type ReviewReasonCode, type ReplacementReason, type FiscalAssessmentStatus } from "@shared/fiscal-types";
+import { FISCAL_STATUS_LABELS, MISSING_DATA_LABELS, REVIEW_REASON_LABELS, REPLACEMENT_REASONS, REPLACEMENT_REASON_LABELS, USAGE_PERIOD_DERIVATION_START, USAGE_TYPES, type MissingDataCode, type ReviewReasonCode, type ReplacementReason, type FiscalAssessmentStatus } from "@shared/fiscal-types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,7 +83,7 @@ export function UsagePeriodCard({ reservationId }: { reservationId: number }) {
   if (isLoading) return <p className="text-sm text-muted-foreground">{t("common.loading")}</p>;
   if (error || !data) {
     const message = (error as Error | null)?.message ?? "";
-    return <p className="text-sm text-muted-foreground">{message.startsWith("404") ? t("usage.noPeriod") : t("common.error", { message })}</p>;
+    return <p className="text-sm text-muted-foreground">{message.startsWith("404") ? t("usage.noPeriod", { date: dateLabelNl(USAGE_PERIOD_DERIVATION_START) }) : t("common.error", { message })}</p>;
   }
 
   const readOnly = !canReview;
@@ -115,7 +115,7 @@ export function UsagePeriodCard({ reservationId }: { reservationId: number }) {
         </div>
         {data.providedBeforeCutoffHint && (
           <Alert>
-            <AlertDescription>{t("usage.hint")}</AlertDescription>
+            <AlertDescription>{t("usage.hint", { year: USAGE_PERIOD_DERIVATION_START.slice(0, 4) })}</AlertDescription>
           </Alert>
         )}
         {data.reconfirmRequired && (
@@ -127,7 +127,7 @@ export function UsagePeriodCard({ reservationId }: { reservationId: number }) {
         <div className="grid gap-3 sm:grid-cols-2">
           <TriRadio name="privateUse" value={privateUse} onChange={setPrivateUse} disabled={readOnly} label={t("usage.privateUse")} t={t} />
           <TriRadio name="commuting" value={commuting} onChange={setCommuting} disabled={readOnly} label={t("usage.commuting")} t={t} />
-          <TriRadio name="providedBeforeCutoff" value={providedBeforeCutoff} onChange={setProvidedBeforeCutoff} disabled={readOnly} label={t("usage.providedBeforeCutoff")} t={t} />
+          <TriRadio name="providedBeforeCutoff" value={providedBeforeCutoff} onChange={setProvidedBeforeCutoff} disabled={readOnly} label={t("usage.providedBeforeCutoff", { date: dateLabelNl(USAGE_PERIOD_DERIVATION_START) })} t={t} />
           <div className="space-y-1">
             <Label htmlFor="usage-usageType">{t("usage.usageType")}</Label>
             <select id="usage-usageType" className="w-full rounded-md border px-3 py-2 text-sm" value={usageType} disabled={readOnly} onChange={(e) => setUsageType(e.target.value)} data-testid="select-usage-usageType">
@@ -180,6 +180,15 @@ export function UsagePeriodCard({ reservationId }: { reservationId: number }) {
               <p>
                 <span className="font-medium" data-testid="usage-assessment-status">{FISCAL_STATUS_LABELS[assessment.status as FiscalAssessmentStatus] ?? assessment.status}</span>
                 {assessment.amount && <span> · {formatEuro(assessment.amount)}</span>}
+                {assessment.isFinal && <span className="ml-2 rounded bg-emerald-100 px-1.5 py-0.5 text-xs text-emerald-900">{t("common.final")}</span>}
+                <a href={`/api/fiscal/assessments/${assessment.id}/pdf`} target="_blank" rel="noreferrer" className="ml-2 text-xs underline" data-testid="usage-assessment-pdf">
+                  {t("common.pdf")}
+                </a>
+                {!assessment.isFinal && assessment.amount && assessment.provisionalAmount && assessment.provisionalAmount !== "0.00" && (
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    ({t("common.settledPart", { amount: formatEuro(assessment.settledAmount ?? "0.00") })} · {t("common.provisionalPart", { amount: formatEuro(assessment.provisionalAmount) })})
+                  </span>
+                )}
               </p>
               {assessment.missingData.length > 0 && (
                 <ul className="list-disc pl-5 text-muted-foreground">

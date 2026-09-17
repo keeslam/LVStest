@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { db } from "../../../db";
-import { fiscalAssessments, fiscalReviewCases, fiscalAuditEvents } from "../../../../shared/schema";
+import { fiscalAssessments, fiscalReviewCases, fiscalAuditEvents, reservations } from "../../../../shared/schema";
 import { and, eq } from "drizzle-orm";
 import { assessUsagePeriod, latestAssessmentForPeriod } from "../assess";
 import { syncUsagePeriodForReservation, confirmUsage } from "../usage-periods";
@@ -118,11 +118,16 @@ describe("beoordeling — historie en versies", () => {
     expect(stillThere).toEqual(before);
     expect(stillThere.ruleVersionId).toBe(v1.id);
 
-    // The same March 2027 period looked at again in 2028: still v1, and since
-    // neither the facts nor the outcome changed, no new row.
+    // The same March 2027 period looked at again in 2028: still v1. In March
+    // the month was provisional; now it is over, so one new row fixes it
+    // (besluit F-15), and a further look changes nothing.
+    expect(before.months[0].settled).toBe(false);
     const later = await assessUsagePeriod(period.id, { trigger: "manual", calculationDate: "2028-02-01" });
-    expect(later.created).toBe(false);
+    expect(later.created).toBe(true);
     expect(later.assessment.ruleVersionId).toBe(v1.id);
+    expect(later.assessment.months[0].settled).toBe(true);
+    expect(later.assessment.amount).toBe(before.amount);
+    expect((await assessUsagePeriod(period.id, { trigger: "manual", calculationDate: "2028-03-01" })).created).toBe(false);
 
     // A period in 2028 is governed by v2 (15 %: 36 000 × 15 % / 12 = 450).
     const r2 = await createFixtureReservation({ customerId: customer.id, vehicleId: vehicle.id, startDate: "2028-02-01", endDate: "2028-02-28" });
@@ -155,14 +160,53 @@ describe("beoordeling — historie en versies", () => {
     expect(assessment.explanation).toContain("Geen regelversie beschikbaar");
   });
 
-  it("assesses an open-ended period up to the configured horizon", async () => {
+  it("assesses an open-ended period through the end of the calculation month; a new month writes a new snapshot, a later day in the same month writes nothing", async () => {
     await publishFixtureVersion("wet", "2027-01-01");
     const { period } = await readyPeriod({ endDate: null });
-    const { assessment } = await assessUsagePeriod(period.id, { trigger: "nightly", calculationDate: "2027-03-15" });
-    expect(assessment.periodEnd).toBeNull();
-    expect(assessment.periodEndEffective).toBe("2027-04-15");
-    expect(assessment.dataQuality).toBe("partial");
-    expect(assessment.status).toBe("APPLICABLE");
+    const first = await assessUsagePeriod(period.id, { trigger: "nightly", calculationDate: "2027-03-15" });
+    expect(first.assessment.periodEnd).toBeNull();
+    expect(first.assessment.periodEndEffective).toBe("2027-03-31");
+    expect(first.assessment.dataQuality).toBe("partial");
+    expect(first.assessment.status).toBe("APPLICABLE");
+    expect(first.assessment.isFinal).toBe(false);
+    expect(first.assessment.months.map((m) => [m.month, m.settled])).toEqual([["2027-03", false]]);
+    expect(first.assessment.provisionalAmount).toBe("360.00");
+    expect(first.assessment.settledAmount).toBe("0.00");
+
+    const sameMonth = await assessUsagePeriod(period.id, { trigger: "nightly", calculationDate: "2027-03-28" });
+    expect(sameMonth.created).toBe(false);
+
+    const nextMonth = await assessUsagePeriod(period.id, { trigger: "nightly", calculationDate: "2027-04-01" });
+    expect(nextMonth.created).toBe(true);
+    expect(nextMonth.assessment.periodEndEffective).toBe("2027-04-30");
+    expect(nextMonth.assessment.months.map((m) => [m.month, m.settled])).toEqual([["2027-03", true], ["2027-04", false]]);
+    expect(nextMonth.assessment.settledAmount).toBe("360.00");
+    expect(nextMonth.assessment.provisionalAmount).toBe("360.00");
+    expect(nextMonth.assessment.amount).toBe("720.00");
+    expect(nextMonth.assessment.supersedesId).toBe(first.assessment.id);
+  });
+
+  it("the return of the car makes the final calculation, by itself, over the actual dates", async () => {
+    await publishFixtureVersion("wet", "2027-01-01");
+    const { reservation, period } = await readyPeriod({ endDate: "2027-04-30" });
+    const planned = await assessUsagePeriod(period.id, { trigger: "nightly", calculationDate: "2027-03-15" });
+    expect(planned.assessment.isFinal).toBe(false);
+    expect(planned.assessment.months).toHaveLength(2);
+
+    await db.update(reservations).set({ actualReturnDate: "2027-03-20", status: "returned", updatedAt: new Date() }).where(eq(reservations.id, reservation.id));
+    const synced = (await syncUsagePeriodForReservation(reservation.id))!;
+    expect(synced.endDate).toBe("2027-03-20");
+    expect(synced.endBasis).toBe("actual");
+
+    const latest = (await latestAssessmentForPeriod(period.id))!;
+    expect(latest.id).not.toBe(planned.assessment.id);
+    expect(latest.trigger).toBe("final");
+    expect(latest.isFinal).toBe(true);
+    expect(latest.periodEnd).toBe("2027-03-20");
+    expect(latest.months.map((m) => [m.month, m.settled])).toEqual([["2027-03", true]]);
+    expect(latest.settledAmount).toBe("360.00");
+    expect(latest.provisionalAmount).toBe("0.00");
+    expect(latest.explanation).toContain("Eindberekening");
   });
 });
 

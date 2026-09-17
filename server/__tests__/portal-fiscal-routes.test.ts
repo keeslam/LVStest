@@ -62,7 +62,7 @@ describe("portal fiscal routes", () => {
     c = (await createTestCustomer("FC")).id;
     await db.insert(portalCustomerSettings).values([
       { customerId: a, fiscalMobilityEnabled: true, fiscalDashboardEnabled: false, driverFiscalVisibilityEnabled: false },
-      { customerId: b, fiscalMobilityEnabled: true, fiscalDashboardEnabled: true },
+      { customerId: b, fiscalMobilityEnabled: true, fiscalDashboardEnabled: true, fiscalReportsEnabled: true },
       { customerId: c, fiscalMobilityEnabled: false },
     ]);
     driverA = (await createTestDriver(a, "Driver FA")).id;
@@ -160,5 +160,27 @@ describe("portal fiscal routes", () => {
     expect(res.body.periods).toBe(1);
     expect(res.body.byStatus.APPLICABLE).toBe(1);
     expect(res.body.dashboardEnabled).toBe(true);
+  });
+
+  it("serves the year as CSV to customers with the reports switch, and one assessment as PDF within the customer's scope", async () => {
+    const adminB = await loginAs(app, emailB);
+    const csv = await adminB.agent.get("/api/portal/fiscal/report.csv?year=2027");
+    expect(csv.status).toBe(200);
+    expect(csv.headers["content-type"]).toContain("text/csv");
+    expect(csv.text).toContain("Klant;Kenteken");
+    expect(csv.text).toContain("Bedrag");
+    expect(csv.text).toContain("2027-05");
+
+    const adminA = await loginAs(app, emailA);
+    expect((await adminA.agent.get("/api/portal/fiscal/report.csv?year=2027")).status).toBe(403);
+    expect((await adminB.agent.get("/api/portal/fiscal/report.csv?year=abc")).status).toBe(400);
+
+    const pdf = await adminA.agent.get(`/api/portal/fiscal/reservations/${rA1}/pdf`).buffer(true).parse((res, cb) => { const chunks: Buffer[] = []; res.on("data", (c: Buffer) => chunks.push(c)); res.on("end", () => cb(null, Buffer.concat(chunks))); });
+    expect(pdf.status).toBe(200);
+    expect(pdf.headers["content-type"]).toContain("application/pdf");
+    expect((pdf.body as Buffer).subarray(0, 5).toString()).toBe("%PDF-");
+    expect((await adminA.agent.get(`/api/portal/fiscal/reservations/${rB}/pdf`)).status).toBe(404);
+    const driver = await loginAs(app, emailDriverA);
+    expect((await driver.agent.get(`/api/portal/fiscal/reservations/${rA1}/pdf`)).status).toBe(403);
   });
 });

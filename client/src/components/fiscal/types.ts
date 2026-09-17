@@ -185,8 +185,12 @@ export interface AssessmentRow {
   ruleVersionId: number | null;
   status: FiscalAssessmentStatus;
   amount: string | null;
+  /** Besluit F-15: the settled and the provisional part of `amount`; the final calculation once the car is back. */
+  settledAmount: string | null;
+  provisionalAmount: string | null;
+  isFinal: boolean;
   monthsCharged: number;
-  months: Array<{ month: string; days: number; charged: boolean; reason: string; amount: string | null }>;
+  months: Array<{ month: string; days: number; charged: boolean; reason: string; amount: string | null; settled: boolean }>;
   dataQuality: string;
   explanation: string;
   missingData: string[];
@@ -194,6 +198,40 @@ export interface AssessmentRow {
   sequence: number;
   trigger: string;
   createdAt: string;
+}
+
+/** One period-month of the monthly report (server/services/fiscal/reports.ts). */
+export interface FiscalReportRow {
+  customerId: number;
+  customerName: string;
+  vehicleId: number | null;
+  licensePlate: string | null;
+  vehicle: string | null;
+  usagePeriodId: number;
+  reservationId: number;
+  periodStart: string;
+  periodEnd: string | null;
+  assessmentId: number;
+  status: FiscalAssessmentStatus;
+  statusLabel: string;
+  month: string;
+  days: number;
+  charged: boolean;
+  reason: string;
+  reasonLabel: string;
+  amount: string | null;
+  state: "final" | "settled" | "provisional";
+  ruleVersionTitle: string | null;
+  assessedAt: string;
+}
+
+export interface FiscalReport {
+  year: number;
+  withAmounts: boolean;
+  rows: FiscalReportRow[];
+  totals: { amount: string | null; settled: string | null; provisional: string | null; chargedMonths: number; periods: number; unassessedPeriods: number };
+  byCustomer: Array<{ customerId: number; customerName: string; periods: number; chargedMonths: number; amount: string | null; settled: string | null; provisional: string | null }>;
+  byMonth: Array<{ month: string; chargedMonths: number; amount: string | null; settled: string | null; provisional: string | null }>;
 }
 
 export interface UsagePeriodResponse {
@@ -221,7 +259,7 @@ export interface UsagePeriodResponse {
   closedAt: string | null;
   closedReason: string | null;
   notes: string | null;
-  latestAssessment: Pick<AssessmentRow, "id" | "status" | "amount" | "explanation" | "missingData" | "reviewReasons"> | null;
+  latestAssessment: Pick<AssessmentRow, "id" | "status" | "amount" | "settledAmount" | "provisionalAmount" | "isFinal" | "explanation" | "missingData" | "reviewReasons"> | null;
 }
 
 export interface FiscalProfileResponse {

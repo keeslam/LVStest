@@ -1025,13 +1025,17 @@
   "fiscal": {
     "title": "Fiscal check",
     "intro": "For every car you rent from Lam Groep you see here whether the pseudo-eindheffing on fossil passenger cars is likely to apply, based on the configured rules and the available data. This is not tax advice.",
-    "none": "No rental periods from 2027 to assess.",
+    "none": "No rental periods from {{year}} to assess.",
     "periods": "{{count}} period(s)",
     "needsInput": "{{count}} waiting for your answer",
     "period": "Period",
     "status": "Status",
     "amount": "Amount (estimate)",
     "replacement": "Replacement vehicle",
+    "final": "Final calculation",
+    "provisionalThrough": "Provisional, assessed through {{date}}",
+    "settledAmount": "Settled: {{amount}}",
+    "provisionalAmount": "Provisional: {{amount}}",
     "notAssessed": "Not assessed yet",
     "assessedAt": "Assessed on {{date}}",
     "ruleVersion": "Rule version: {{title}}",
@@ -1044,7 +1048,7 @@
     "questionsHint": "Only you know how the car is used. Your answers decide the assessment and are recorded.",
     "privateUse": "Is the car also used privately?",
     "commuting": "Is the car used for commuting?",
-    "providedBeforeCutoff": "Did this employee already have this car before 1 January 2027?",
+    "providedBeforeCutoff": "Did this employee already have this car before {{date}}?",
     "usageType": "Usage",
     "replacementReason": "Why a replacement car?",
     "replacedVehicleText": "Which car does it replace? (plate or description)",
@@ -1056,7 +1060,7 @@
     "confirmedByLam": "Recorded by Lam Groep on {{date}}",
     "notConfirmed": "Not answered yet",
     "reconfirm": "The rental changed after your answers; check them again.",
-    "hint": "This car was already in use with you before 2027; the transition rule may apply.",
+    "hint": "This car was already in use with you before {{year}}; the transition rule may apply.",
     "adminOnly": "Only the administrator of your account can save the answers.",
     "saved": "Answers saved.",
     "usageTypes": {
@@ -1072,6 +1076,8 @@
       "manual_review": "Manual review",
       "other": "Other"
     },
-    "disclaimer": "Calculated from the configured fiscal rules and the available data. This is not tax advice and not a return; your own adviser or the tax authority prevails."
+    "disclaimer": "Calculated from the configured fiscal rules and the available data. This is not tax advice and not a return; your own adviser or the tax authority prevails.",
+    "pdf": "PDF",
+    "csv": "Download this year as CSV"
   }
 }

@@ -11,6 +11,7 @@ import { makeApp, agentFor, anonAgent, cleanupFixtureUsers, type TestAgent } fro
 import { createFixtureCustomer, createFixtureVehicle, createFixtureReservation, cleanupFixtures, FIXTURE_PREFIX } from "./helpers/fixtures";
 import { cleanupFiscalFixtures, FIXTURE_ACTOR, FIXTURE_PARAMETER_VALUES } from "./helpers/fiscal";
 import { syncUsagePeriodForReservation, confirmUsage } from "../services/fiscal/usage-periods";
+import { assessUsagePeriod } from "../services/fiscal/assess";
 import { ensureProfile, applyManualOverride } from "../services/fiscal/profiles";
 import { clearFiscalResolveCache } from "../services/fiscal/resolve";
 
@@ -224,5 +225,47 @@ describe("fiscale API — beoordelingen en gegevens", () => {
     expect(resolved.status).toBe(200);
     expect(resolved.body).toMatchObject({ status: "dismissed", resolvedByName: reviewer.username });
     expect((await reviewer.get(`/api/fiscal/review-cases/${open.id}`)).body.resolutionNote).toContain("eigenaar");
+  });
+});
+
+describe("fiscale API — rapporten en PDF (stap 6)", () => {
+  const binary = (res: any, cb: (err: Error | null, body: Buffer) => void) => {
+    const chunks: Buffer[] = [];
+    res.on("data", (c: Buffer) => chunks.push(c));
+    res.on("end", () => cb(null, Buffer.concat(chunks)));
+  };
+
+  it("serves the monthly report as JSON and CSV to a viewer, and one assessment as PDF; validates the year and the id", async () => {
+    const customer = await createFixtureCustomer();
+    const vehicle = await createFixtureVehicle({ fuel: "Gasoline", productionDate: "2024-05-01" });
+    await ensureProfile(vehicle.id);
+    await applyManualOverride(vehicle.id, { field: "europeanCategory", value: "M1", reason: "kentekenbewijs" }, FIXTURE_ACTOR);
+    await applyManualOverride(vehicle.id, { field: "catalogValue", value: "36000.00", reason: "factuur" }, FIXTURE_ACTOR);
+    const r = await createFixtureReservation({ customerId: customer.id, vehicleId: vehicle.id, startDate: "2027-06-01", endDate: "2027-06-30" });
+    const period = (await syncUsagePeriodForReservation(r.id))!;
+    await confirmUsage(r.id, { privateUse: "yes", commuting: "no", providedBeforeCutoff: "no", usageType: "business_private" }, { kind: "staff", actor: FIXTURE_ACTOR });
+    const { assessment } = await assessUsagePeriod(period.id, { trigger: "manual", calculationDate: "2027-07-02", actor: FIXTURE_ACTOR });
+
+    const json = await viewer.get(`/api/fiscal/reports/monthly?year=2027&customerId=${customer.id}`);
+    expect(json.status).toBe(200);
+    expect(json.body.rows.map((row: any) => [row.month, row.usagePeriodId])).toEqual([["2027-06", period.id]]);
+    expect(json.body.totals.periods).toBe(1);
+    expect((await viewer.get("/api/fiscal/reports/monthly?year=abc")).status).toBe(400);
+    expect((await nobody.get("/api/fiscal/reports/monthly?year=2027")).status).toBe(403);
+
+    const csv = await viewer.get(`/api/fiscal/reports/monthly.csv?year=2027&customerId=${customer.id}`);
+    expect(csv.status).toBe(200);
+    expect(csv.headers["content-type"]).toContain("text/csv");
+    expect(csv.headers["content-disposition"]).toContain("fiscaal-2027.csv");
+    expect(csv.text).toContain("Klant;Kenteken");
+    expect(csv.text).toContain(vehicle.licensePlate);
+
+    const pdf = await viewer.get(`/api/fiscal/assessments/${assessment.id}/pdf`).buffer(true).parse(binary);
+    expect(pdf.status).toBe(200);
+    expect(pdf.headers["content-type"]).toContain("application/pdf");
+    expect((pdf.body as Buffer).subarray(0, 5).toString()).toBe("%PDF-");
+    expect((await viewer.get("/api/fiscal/assessments/999999999/pdf")).status).toBe(404);
+    expect((await viewer.get("/api/fiscal/assessments/abc/pdf")).status).toBe(400);
+    expect((await nobody.get(`/api/fiscal/assessments/${assessment.id}/pdf`)).status).toBe(403);
   });
 });

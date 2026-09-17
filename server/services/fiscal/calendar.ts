@@ -81,6 +81,12 @@ export function monthStart(iso: string): string {
   return `${monthKey(iso)}-01`;
 }
 
+/** The last day of the month the date falls in. */
+export function monthEnd(iso: string): string {
+  const [y, m] = parts(iso);
+  return `${monthKey(iso)}-${pad(daysInMonth(y, m))}`;
+}
+
 export function yearStart(iso: string): string {
   return `${yearOf(iso)}-01-01`;
 }

@@ -22,7 +22,7 @@ import {
   type VehicleUsagePeriod,
 } from "../../../shared/schema";
 import { FISCAL_ASSESSMENT_STATUSES, type AssessmentTrigger, type FiscalAssessmentStatus, type FiscalRuleKey } from "../../../shared/fiscal-types";
-import { addDays, compareIso } from "./calendar";
+import { compareIso, monthEnd } from "./calendar";
 import { evaluatePseudoEindheffing, type FiscalInput, type PriorPeriodRef, type Verdict } from "./rules/pseudo-eindheffing";
 import { explainVerdict } from "./explain";
 import { resolveForPeriod } from "./resolve";
@@ -62,7 +62,7 @@ async function priorPeriods(period: VehicleUsagePeriod): Promise<FiscalInput["pr
   };
 }
 
-export async function buildInput(period: VehicleUsagePeriod, calculationDate: string, lookaheadDays: number, ruleVersion: FiscalInput["ruleVersion"]): Promise<FiscalInput> {
+export async function buildInput(period: VehicleUsagePeriod, calculationDate: string, ruleVersion: FiscalInput["ruleVersion"]): Promise<FiscalInput> {
   const [customer] = await db.select({ id: customers.id, customerType: customers.customerType }).from(customers).where(eq(customers.id, period.customerId));
   if (!customer) throw new FiscalNotFoundError("Klant van de gebruiksperiode niet gevonden");
 
@@ -86,8 +86,11 @@ export async function buildInput(period: VehicleUsagePeriod, calculationDate: st
     }
   }
 
-  const horizon = addDays(calculationDate, lookaheadDays);
-  const endDateEffective = period.endDate ?? (compareIso(horizon, period.startDate) < 0 ? period.startDate : horizon);
+  // Besluit F-15: an open-ended period is assessed through the end of the
+  // calculation month — the months before it are settled, the current one is
+  // provisional — and gets its final calculation once the car is back.
+  const throughMonth = monthEnd(calculationDate);
+  const endDateEffective = period.endDate ?? (compareIso(throughMonth, period.startDate) < 0 ? period.startDate : throughMonth);
 
   return {
     calculationDate,
@@ -108,6 +111,7 @@ export async function buildInput(period: VehicleUsagePeriod, calculationDate: st
       replacementReason: period.replacementReason as FiscalInput["period"]["replacementReason"],
       providedBeforeCutoff: period.providedBeforeCutoff as FiscalInput["period"]["providedBeforeCutoff"],
       closedReason: period.closedReason,
+      ended: period.endBasis === "actual",
     },
     priorPeriods: await priorPeriods(period),
   };
@@ -119,10 +123,12 @@ function unavailableVerdict(status: Extract<FiscalAssessmentStatus, "RULE_NOT_AV
     months: [],
     monthsCharged: 0,
     amount: null,
+    settledAmount: null,
+    provisionalAmount: null,
     dataQuality: "insufficient",
     missingData: [],
     reviewReasons: [],
-    facts: { openEnded: input.period.endDate === null, calendarDays: 0 },
+    facts: { openEnded: input.period.endDate === null, final: input.period.ended, assessedThrough: input.period.endDateEffective, calendarDays: 0 },
     parametersUsed: [],
   };
 }
@@ -137,7 +143,7 @@ function hashOf(input: FiscalInput, verdict: Verdict, ruleVersionId: number | nu
   // that gets closed by a successor must not re-assess every period it governs.
   const { calculationDate: _date, ruleVersion: _window, period, ...facts } = input;
   const { endDateEffective: _horizon, ...periodFacts } = period;
-  const outcome = { status: verdict.status, months: verdict.months, amount: verdict.amount, missingData: verdict.missingData, reviewReasons: verdict.reviewReasons };
+  const outcome = { status: verdict.status, months: verdict.months, amount: verdict.amount, final: verdict.facts.final, missingData: verdict.missingData, reviewReasons: verdict.reviewReasons };
   return createHash("sha256").update(JSON.stringify({ facts, period: periodFacts, parameters: verdict.parametersUsed, ruleVersionId, outcome })).digest("hex");
 }
 
@@ -214,11 +220,11 @@ export async function assessUsagePeriod(periodId: number, options: AssessOptions
   if (resolution.status === "ok") {
     const { version, params } = resolution;
     ruleVersionId = version.id;
-    input = await buildInput(period, calculationDate, params.integer("ASSESSMENT_LOOKAHEAD_DAYS"), { effectiveFrom: version.effectiveFrom!, effectiveUntil: version.effectiveUntil });
+    input = await buildInput(period, calculationDate, { effectiveFrom: version.effectiveFrom!, effectiveUntil: version.effectiveUntil });
     verdict = evaluatePseudoEindheffing(input, params);
     explanation = explainVerdict(verdict, { title: version.title, versionNumber: version.versionNumber, effectiveFrom: version.effectiveFrom, effectiveUntil: version.effectiveUntil });
   } else {
-    input = await buildInput(period, calculationDate, 0, { effectiveFrom: calculationDate, effectiveUntil: null });
+    input = await buildInput(period, calculationDate, { effectiveFrom: calculationDate, effectiveUntil: null });
     verdict = unavailableVerdict(resolution.status, input);
     explanation = explainVerdict(verdict, null);
     if (resolution.status === "CONFIGURATION_INVALID") {
@@ -249,6 +255,9 @@ export async function assessUsagePeriod(periodId: number, options: AssessOptions
         ruleVersionId,
         status: verdict.status,
         amount: verdict.amount,
+        settledAmount: verdict.settledAmount,
+        provisionalAmount: verdict.provisionalAmount,
+        isFinal: verdict.facts.final,
         monthsCharged: verdict.monthsCharged,
         months: verdict.months,
         dataQuality: verdict.dataQuality,

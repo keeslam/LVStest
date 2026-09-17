@@ -203,3 +203,16 @@ describe("gebruiksperioden — elke schrijfroute van de opslag", () => {
     expect((await reconcileUsagePeriods()).synced).toBe(0);
   });
 });
+
+describe("gebruiksperioden — einde gepland, werkelijk of open", () => {
+  it("knows whether the end is planned, actual, or still open", async () => {
+    const customer = await createFixtureCustomer();
+    const vehicle = await createFixtureVehicle();
+    const open = await createFixtureReservation({ customerId: customer.id, vehicleId: vehicle.id, startDate: "2028-05-01", endDate: null });
+    expect((await syncUsagePeriodForReservation(open.id))!.endBasis).toBeNull();
+    const planned = await createFixtureReservation({ customerId: customer.id, vehicleId: vehicle.id, startDate: "2028-06-01", endDate: "2028-06-10" });
+    expect((await syncUsagePeriodForReservation(planned.id))!.endBasis).toBe("planned");
+    await db.update(reservations).set({ actualReturnDate: "2028-06-08" }).where(eq(reservations.id, planned.id));
+    expect(await syncUsagePeriodForReservation(planned.id)).toMatchObject({ endDate: "2028-06-08", endBasis: "actual", dateBasis: "actual" });
+  });
+});

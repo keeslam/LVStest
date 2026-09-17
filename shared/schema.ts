@@ -2513,6 +2513,8 @@ export const vehicleUsagePeriods = pgTable("vehicle_usage_periods", {
   startDate: date("start_date").notNull(),
   endDate: date("end_date"),
   dateBasis: text("date_basis").notNull().default("planned"),
+  /** 'planned' (from the booking), 'actual' (the car is back: the final calculation applies), null while open (besluit F-15). */
+  endBasis: text("end_basis"),
   usageType: text("usage_type").notNull().default("unknown"),
   privateUse: text("private_use").notNull().default("unknown"),
   commuting: text("commuting").notNull().default("unknown"),
@@ -2557,8 +2559,13 @@ export const fiscalAssessments = pgTable("fiscal_assessments", {
   ruleVersionId: integer("rule_version_id").references(() => fiscalRuleVersions.id, { onDelete: "set null" }),
   status: text("status").notNull(),
   amount: numeric("amount", { precision: 12, scale: 2 }),
+  /** Besluit F-15: the part of `amount` in months that are over, and the part in the current and later months. */
+  settledAmount: numeric("settled_amount", { precision: 12, scale: 2 }),
+  provisionalAmount: numeric("provisional_amount", { precision: 12, scale: 2 }),
+  /** The final calculation: the period has an actual end date, every month is settled. */
+  isFinal: boolean("is_final").notNull().default(false),
   monthsCharged: integer("months_charged").notNull().default(0),
-  months: jsonb("months").$type<Array<{ month: string; days: number; charged: boolean; reason: string; amount: string | null }>>().notNull(),
+  months: jsonb("months").$type<Array<{ month: string; days: number; charged: boolean; reason: string; amount: string | null; settled: boolean }>>().notNull(),
   dataQuality: text("data_quality").notNull(),
   explanation: text("explanation").notNull(),
   missingData: jsonb("missing_data").$type<string[]>().notNull().default([]),

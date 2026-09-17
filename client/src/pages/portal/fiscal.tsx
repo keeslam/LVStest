@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Calculator } from "lucide-react";
 import type { PortalFiscalPeriodDto, PortalFiscalVehicleDto } from "@shared/fiscal-types";
-import { MISSING_DATA_LABELS, REPLACEMENT_REASONS, REPLACEMENT_REASON_LABELS, USAGE_TYPES, type MissingDataCode, type ReplacementReason } from "@shared/fiscal-types";
+import { MISSING_DATA_LABELS, REPLACEMENT_REASONS, REPLACEMENT_REASON_LABELS, USAGE_PERIOD_DERIVATION_START, USAGE_TYPES, type MissingDataCode, type ReplacementReason } from "@shared/fiscal-types";
 import { dateLabelNl, formatEuro } from "@shared/fiscal-format";
 import { portalFetch, portalQueryFn } from "@/lib/portal-api";
 import { usePortalAuth } from "@/hooks/use-portal-auth";
@@ -89,12 +89,12 @@ function UsageQuestions({ period, isAdmin }: { period: PortalFiscalPeriodDto; is
     <div className="rounded-md border border-[#e2e8f0] bg-white p-3" data-testid={`usage-form-${period.reservationId}`}>
       <h4 className="font-medium">{t("fiscal.questions")}</h4>
       <p className="mb-2 text-xs text-muted-foreground">{t("fiscal.questionsHint")}</p>
-      {period.providedBeforeCutoffHint && <p className="mb-2 rounded bg-blue-50 p-2 text-xs text-blue-900">{t("fiscal.hint")}</p>}
+      {period.providedBeforeCutoffHint && <p className="mb-2 rounded bg-blue-50 p-2 text-xs text-blue-900">{t("fiscal.hint", { year: USAGE_PERIOD_DERIVATION_START.slice(0, 4) })}</p>}
       {period.reconfirmRequired && <p className="mb-2 rounded bg-amber-50 p-2 text-xs text-amber-900">{t("fiscal.reconfirm")}</p>}
       <div className="grid gap-3 sm:grid-cols-2">
         <TriQuestion id={`${prefix}-privateUse`} label={t("fiscal.privateUse")} value={privateUse} onChange={setPrivateUse} disabled={!isAdmin} t={t} />
         <TriQuestion id={`${prefix}-commuting`} label={t("fiscal.commuting")} value={commuting} onChange={setCommuting} disabled={!isAdmin} t={t} />
-        <TriQuestion id={`${prefix}-providedBeforeCutoff`} label={t("fiscal.providedBeforeCutoff")} value={providedBeforeCutoff} onChange={setProvidedBeforeCutoff} disabled={!isAdmin} t={t} />
+        <TriQuestion id={`${prefix}-providedBeforeCutoff`} label={t("fiscal.providedBeforeCutoff", { date: dateLabelNl(USAGE_PERIOD_DERIVATION_START) })} value={providedBeforeCutoff} onChange={setProvidedBeforeCutoff} disabled={!isAdmin} t={t} />
         <div className="space-y-1">
           <label htmlFor={`${prefix}-usageType`} className="text-sm font-medium">{t("fiscal.usageType")}</label>
           <select id={`${prefix}-usageType`} className="w-full rounded-md border px-3 py-2 text-sm" value={usageType} disabled={!isAdmin} onChange={(e) => setUsageType(e.target.value)}>
@@ -148,6 +148,23 @@ function PeriodCard({ period, isAdmin }: { period: PortalFiscalPeriodDto; isAdmi
           {period.amount !== undefined && period.amount !== null && <span className="text-sm font-semibold" data-testid={`fiscal-amount-${period.reservationId}`}>{formatEuro(period.amount)}</span>}
         </div>
       </div>
+      {period.status && (
+        <p className="text-xs text-muted-foreground" data-testid={`fiscal-stand-${period.reservationId}`}>
+          <a href={`/api/portal/fiscal/reservations/${period.reservationId}/pdf`} target="_blank" rel="noreferrer" className="mr-2 underline" data-testid={`fiscal-pdf-${period.reservationId}`}>
+            {t("fiscal.pdf")}
+          </a>
+          {period.isFinal ? (
+            <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-emerald-900">{t("fiscal.final")}</span>
+          ) : (
+            period.assessedThrough && <span>{t("fiscal.provisionalThrough", { date: dateLabelNl(period.assessedThrough) })}</span>
+          )}
+          {!period.isFinal && period.settledAmount !== undefined && period.provisionalAmount && period.provisionalAmount !== "0.00" && (
+            <span className="ml-2">
+              {t("fiscal.settledAmount", { amount: formatEuro(period.settledAmount ?? "0.00") })} · {t("fiscal.provisionalAmount", { amount: formatEuro(period.provisionalAmount) })}
+            </span>
+          )}
+        </p>
+      )}
       {period.needsInput && period.status !== "MANUAL_REVIEW_REQUIRED" && <p className="text-xs text-amber-800">{t("fiscal.needsInput", { count: 1 }).replace(/^1 /, "")}</p>}
       {period.status === "MANUAL_REVIEW_REQUIRED" && <p className="text-xs text-amber-900">{t("fiscal.reviewByLam")}</p>}
       {period.missingData.length > 0 && (
@@ -186,9 +203,14 @@ export default function PortalFiscalPage() {
         <p className="text-sm text-muted-foreground">
           {t("fiscal.periods", { count: periods })}
           {needsInput > 0 && <> · {t("fiscal.needsInput", { count: needsInput })}</>}
+          {me?.settings?.fiscalReportsEnabled && (
+            <a href={`/api/portal/fiscal/report.csv?year=${Math.max(new Date().getFullYear(), Number(USAGE_PERIOD_DERIVATION_START.slice(0, 4)))}`} className="ml-3 underline" data-testid="fiscal-csv">
+              {t("fiscal.csv")}
+            </a>
+          )}
         </p>
       )}
-      {!isLoading && vehicles.length === 0 && <EmptyState icon={<Calculator className="h-6 w-6" />} text={t("fiscal.none")} />}
+      {!isLoading && vehicles.length === 0 && <EmptyState icon={<Calculator className="h-6 w-6" />} text={t("fiscal.none", { year: USAGE_PERIOD_DERIVATION_START.slice(0, 4) })} />}
       {vehicles.map((v) => (
         <Section key={v.vehicleId} title={`${v.brand} ${v.model}`} count={v.periods.length}>
           <div className="mb-2"><Plate value={v.licensePlate} /></div>

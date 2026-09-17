@@ -1025,13 +1025,17 @@
   "fiscal": {
     "title": "Fiscale check",
     "intro": "Voor elke auto die u van Lam Groep huurt ziet u hier of de pseudo-eindheffing voor fossiele personenauto’s waarschijnlijk speelt, op basis van de geconfigureerde regels en de beschikbare gegevens. Dit is geen fiscaal advies.",
-    "none": "Geen huurperioden vanaf 2027 om te beoordelen.",
+    "none": "Geen huurperioden vanaf {{year}} om te beoordelen.",
     "periods": "{{count}} periode(n)",
     "needsInput": "{{count}} wacht(en) op uw antwoord",
     "period": "Periode",
     "status": "Status",
     "amount": "Bedrag (schatting)",
     "replacement": "Vervangend voertuig",
+    "final": "Eindberekening",
+    "provisionalThrough": "Voorlopig, beoordeeld t/m {{date}}",
+    "settledAmount": "Vastgelegd: {{amount}}",
+    "provisionalAmount": "Voorlopig: {{amount}}",
     "notAssessed": "Nog niet beoordeeld",
     "assessedAt": "Beoordeeld op {{date}}",
     "ruleVersion": "Regelversie: {{title}}",
@@ -1044,7 +1048,7 @@
     "questionsHint": "Alleen u weet hoe de auto wordt gebruikt. Uw antwoorden bepalen de beoordeling en worden vastgelegd.",
     "privateUse": "Wordt de auto ook privé gebruikt?",
     "commuting": "Wordt de auto voor woon-werkverkeer gebruikt?",
-    "providedBeforeCutoff": "Had deze werknemer deze auto al vóór 1 januari 2027 tot zijn beschikking?",
+    "providedBeforeCutoff": "Had deze werknemer deze auto al vóór {{date}} tot zijn beschikking?",
     "usageType": "Gebruik",
     "replacementReason": "Waarom een vervangende auto?",
     "replacedVehicleText": "Welke auto vervangt hij? (kenteken of omschrijving)",
@@ -1056,7 +1060,7 @@
     "confirmedByLam": "Vastgelegd door Lam Groep op {{date}}",
     "notConfirmed": "Nog niet beantwoord",
     "reconfirm": "De huur is gewijzigd na uw antwoorden; controleer ze opnieuw.",
-    "hint": "Deze auto was al vóór 2027 bij u in gebruik; mogelijk geldt het overgangsrecht.",
+    "hint": "Deze auto was al vóór {{year}} bij u in gebruik; mogelijk geldt het overgangsrecht.",
     "adminOnly": "Alleen de beheerder van uw account kan de antwoorden opslaan.",
     "saved": "Antwoorden opgeslagen.",
     "usageTypes": {
@@ -1072,6 +1076,8 @@
       "manual_review": "Handmatige beoordeling",
       "other": "Anders"
     },
-    "disclaimer": "Berekening op basis van de geconfigureerde fiscale regels en de beschikbare gegevens. Dit is geen fiscaal advies en geen aangifte; uw eigen adviseur of de Belastingdienst is leidend."
+    "disclaimer": "Berekening op basis van de geconfigureerde fiscale regels en de beschikbare gegevens. Dit is geen fiscaal advies en geen aangifte; uw eigen adviseur of de Belastingdienst is leidend.",
+    "pdf": "PDF",
+    "csv": "CSV van dit jaar downloaden"
   }
 }

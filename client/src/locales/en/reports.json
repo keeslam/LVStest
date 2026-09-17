@@ -213,7 +213,8 @@
       "vehicles": "Vehicles",
       "customers": "Customers",
       "transports": "Transports",
-      "financial": "Financial"
+      "financial": "Financial",
+      "fiscal": "Fiscal"
     },
     "common": {
       "vehicle": "Vehicle",

@@ -28,7 +28,7 @@ import { addDays, subMonths, subDays, startOfMonth, endOfMonth, isWithinInterval
 // with the nl locale applied, so every call below writes "11 sep 2026".
 import { formatNl as format } from "@/lib/format-date-nl";
 import { 
-  Calendar, Download, FileText, TrendingUp, Car, Settings, User, 
+  Calendar, Download, FileText, TrendingUp, Car, Settings, User, Calculator,
   DollarSign, AlertTriangle, Printer, Search, ExternalLink, Database, LineChart, X
 } from "lucide-react";
 import { Link } from "wouter";
@@ -37,6 +37,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import ReportBuilderPage from "@/pages/reports/report-builder";
 import MaintenanceCostsPage from "@/pages/reports/maintenance-costs";
 import { FinancialTab } from "@/pages/reports/financial-tab";
+import { FiscalReportTab } from "@/components/fiscal/fiscal-report-tab";
+import { useFiscalPermissions } from "@/components/fiscal/use-fiscal-permissions";
 
 /**
  * Reports Page - Generate and display reports for the car rental business
@@ -47,6 +49,7 @@ export default function ReportsPage() {
 
   // Tab state - default to operations tab
   const [activeTab, setActiveTab] = useState("operations");
+  const { canView: canViewFiscal } = useFiscalPermissions();
   
   // Dialog states
   const [reportBuilderOpen, setReportBuilderOpen] = useState(false);
@@ -1455,7 +1458,7 @@ export default function ReportsPage() {
       
       {/* Report Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className={`grid w-full ${canViewFiscal ? "grid-cols-7" : "grid-cols-6"}`}>
           <TabsTrigger value="operations">
             <Settings className="h-4 w-4 mr-2" />
             {t('reportsPage.tabs.operations')}
@@ -1480,7 +1483,20 @@ export default function ReportsPage() {
             <TrendingUp className="h-4 w-4 mr-2" />
             {t('reportsPage.tabs.financial')}
           </TabsTrigger>
+          {canViewFiscal && (
+            <TabsTrigger value="fiscal" data-testid="tab-report-fiscal">
+              <Calculator className="h-4 w-4 mr-2" />
+              {t('reportsPage.tabs.fiscal')}
+            </TabsTrigger>
+          )}
         </TabsList>
+
+        {/* Fiscal tab: the fiscal check per customer, car and month (docs/fiscaal, stap 6) */}
+        {canViewFiscal && (
+          <TabsContent value="fiscal" className="space-y-6">
+            <FiscalReportTab />
+          </TabsContent>
+        )}
 
         {/* Financial Tab: revenue vs expenses per vehicle, km per month */}
         <TabsContent value="financial" className="space-y-6">

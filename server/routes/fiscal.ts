@@ -31,6 +31,8 @@ import { applyManualOverride, ensureProfile, getProfile, refreshFromRdw, MANUAL_
 import { confirmUsage, getUsagePeriodByReservation, syncUsagePeriodForReservation } from "../services/fiscal/usage-periods";
 import { resolveForDate } from "../services/fiscal/resolve";
 import { getImpactState, startImpactPreview } from "../services/fiscal/impact";
+import { monthlyReport, reportToCsv } from "../services/fiscal/reports";
+import { assessmentPdfContext, renderAssessmentPdf } from "../services/fiscal/assessment-pdf";
 import { FiscalConfigurationError } from "../services/fiscal/parameters";
 import { firstUntrustedAddress } from "../middleware/security/rateLimiter";
 import { sendRouteError } from "../utils/route-errors";
@@ -446,6 +448,49 @@ export function registerFiscalRoutes(app: Express, _deps: RouteDeps): void {
       res.json(row);
     } catch (error) {
       fail(res, error, "Beoordeling kon niet worden gelezen");
+    }
+  });
+
+  // One assessment as a filed sheet (stap 6).
+  app.get("/api/fiscal/assessments/:id/pdf", VIEW, async (req, res) => {
+    const id = intParam(req, res, "id");
+    if (id === null) return;
+    try {
+      const row = await getAssessment(id);
+      if (!row) return res.status(404).json({ message: "Beoordeling niet gevonden" });
+      const pdf = await renderAssessmentPdf(row, await assessmentPdfContext(row, true));
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename="fiscale-beoordeling-${row.id}.pdf"`);
+      res.send(pdf);
+    } catch (error) {
+      fail(res, error, "PDF kon niet worden gemaakt");
+    }
+  });
+
+  // ---- reports (stap 6) --------------------------------------------------------------------------------
+  const reportQuery = z.object({
+    year: z.coerce.number().int().min(2000).max(2100),
+    customerId: z.coerce.number().int().positive().optional(),
+    vehicleId: z.coerce.number().int().positive().optional(),
+  });
+
+  app.get("/api/fiscal/reports/monthly", VIEW, async (req, res) => {
+    try {
+      res.json(await monthlyReport(reportQuery.parse(req.query)));
+    } catch (error) {
+      fail(res, error, "Rapport kon niet worden gemaakt");
+    }
+  });
+
+  app.get("/api/fiscal/reports/monthly.csv", VIEW, async (req, res) => {
+    try {
+      const query = reportQuery.parse(req.query);
+      const csv = reportToCsv(await monthlyReport(query));
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", `attachment; filename="fiscaal-${query.year}.csv"`);
+      res.send(csv);
+    } catch (error) {
+      fail(res, error, "CSV kon niet worden gemaakt");
     }
   });
 

@@ -7,6 +7,7 @@ import {
   FISCAL_DISCLAIMER,
   FISCAL_STATUS_LABELS,
   MISSING_DATA_LABELS,
+  MONTH_REASON_LABELS,
   REVIEW_REASON_LABELS,
   type MonthReason,
   type NotApplicableReason,
@@ -24,14 +25,7 @@ export interface ExplainedVersion {
 import { formatEuro, monthLabelNl, dateLabelNl, decimalNl } from "../../../shared/fiscal-format";
 export { formatEuro, monthLabelNl, dateLabelNl };
 
-const MONTH_REASON_NL: Record<MonthReason, string> = {
-  charged: "geheven",
-  replacement_exempt: "vrijgesteld (vervangend voertuig)",
-  short_term_exempt: "vrijgesteld (kortstondige terbeschikkingstelling)",
-  transition_exempt: "vrijgesteld (overgangsrecht)",
-  before_rule: "vóór de ingangsdatum van de regel",
-  after_rule: "buiten de geldigheid van deze regelversie",
-};
+const MONTH_REASON_NL: Record<MonthReason, string> = MONTH_REASON_LABELS;
 
 const NOT_APPLICABLE_NL: Record<NotApplicableReason, string> = {
   customer_type_not_business: "De klant is geen zakelijke klant en dus geen werkgever in de zin van deze regel.",
@@ -51,7 +45,48 @@ function param(entries: ParameterSnapshotEntry[], key: string): ParameterSnapsho
 
 function monthLine(m: MonthLine): string {
   const amount = m.amount ? `, ${formatEuro(m.amount)}` : "";
-  return `- ${monthLabelNl(m.month)}: ${m.days} ${m.days === 1 ? "dag" : "dagen"}, ${MONTH_REASON_NL[m.reason]}${amount}`;
+  const provisional = m.settled ? "" : " (voorlopig)";
+  return `- ${monthLabelNl(m.month)}: ${m.days} ${m.days === 1 ? "dag" : "dagen"}, ${MONTH_REASON_NL[m.reason]}${amount}${provisional}`;
+}
+
+function centsOf(amount: string): number {
+  return Math.round(Number(amount) * 100);
+}
+
+function euroFromCents(cents: number): string {
+  return formatEuro(`${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, "0")}`);
+}
+
+/**
+ * Besluit F-15: what is fixed and what is still provisional, and the sum per
+ * calendar year. Only written when there is an amount.
+ */
+function amountLines(v: Verdict): string[] {
+  if (!v.amount) return [];
+  const lines: string[] = [];
+  const charged = v.months.filter((m) => m.amount !== null);
+  const settled = charged.filter((m) => m.settled);
+  const provisional = charged.filter((m) => !m.settled);
+  if (provisional.length > 0) {
+    if (settled.length > 0) lines.push(`Vastgelegd tot en met ${monthLabelNl(settled[settled.length - 1].month)}: ${formatEuro(v.settledAmount ?? "0.00")}`);
+    else lines.push("Vastgelegd: nog geen afgesloten maand.");
+    lines.push(`Voorlopig (${provisional.length === 1 ? "lopende maand" : "lopende en volgende maanden"}): ${formatEuro(v.provisionalAmount ?? "0.00")}`);
+  }
+  const years = new Map<string, { cents: number; provisional: boolean }>();
+  for (const m of charged) {
+    const year = m.month.slice(0, 4);
+    const entry = years.get(year) ?? { cents: 0, provisional: false };
+    entry.cents += centsOf(m.amount!);
+    if (!m.settled) entry.provisional = true;
+    years.set(year, entry);
+  }
+  if (years.size > 0) {
+    lines.push("Per kalenderjaar:");
+    for (const [year, entry] of [...years.entries()].sort()) {
+      lines.push(`- ${year}: ${euroFromCents(entry.cents)}${entry.provisional ? " (voorlopig)" : ""}`);
+    }
+  }
+  return lines;
 }
 
 function why(v: Verdict): string {
@@ -123,7 +158,12 @@ export function explainVerdict(v: Verdict, version: ExplainedVersion | null): st
 
   if (v.months.length) {
     lines.push("Beoordelingsperiode:", ...v.months.map(monthLine));
-    if (v.facts.openEnded) lines.push("(De einddatum is nog niet bekend; beoordeeld tot de beoordelingshorizon.)");
+    if (v.facts.final) {
+      lines.push(`Eindberekening: de auto is ingeleverd; de periode is afgesloten en beoordeeld tot en met ${dateLabelNl(v.facts.assessedThrough)}. Alle maanden zijn vastgelegd.`);
+    } else if (v.facts.openEnded) {
+      lines.push(`(De einddatum is nog niet bekend; beoordeeld tot en met ${dateLabelNl(v.facts.assessedThrough)}. De lopende maand is voorlopig; bij het inleveren volgt de eindberekening.)`);
+    }
+    lines.push(...amountLines(v));
     if (v.amount) {
       const indicative = v.status === "POSSIBLY_APPLICABLE" || v.status === "MANUAL_REVIEW_REQUIRED" ? " (indicatie)" : "";
       lines.push(`Totaal: ${formatEuro(v.amount)}${indicative}`);

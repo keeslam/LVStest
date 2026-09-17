@@ -23,6 +23,7 @@ import {
 } from "../../../shared/schema";
 import {
   REPLACEMENT_REASONS,
+  USAGE_PERIOD_DERIVATION_START,
   TRI_STATES,
   USAGE_TYPES,
   type ConfirmedByKind,
@@ -39,7 +40,7 @@ import { recordFiscalEvent, type Actor } from "./audit";
  * this day. Earlier reservations are only read to hint at the transition rule.
  * A business decision about the data, not a fiscal parameter.
  */
-export const USAGE_PERIOD_DERIVATION_START = "2027-01-01";
+export { USAGE_PERIOD_DERIVATION_START };
 
 const DERIVED_TYPES = ["standard", "replacement"];
 const BACKFILL_MARKER = "migration:fiscal_usage_periods_v1";
@@ -61,6 +62,8 @@ interface DerivedFacts {
   startDate: string;
   endDate: string | null;
   dateBasis: "planned" | "actual";
+  /** Besluit F-15: 'actual' once the car is back — the final calculation applies. */
+  endBasis: "planned" | "actual" | null;
   driverCount: number;
   isReplacement: boolean;
   derivedReplacementReason: ReplacementReason | null;
@@ -88,6 +91,7 @@ async function deriveFacts(r: Reservation): Promise<Eligibility> {
   if (compareIso(startDate, USAGE_PERIOD_DERIVATION_START) < 0) return { eligible: false, closedReason: "out_of_scope" };
   const endDate = periodEndOf(r);
   const dateBasis: "planned" | "actual" = pickup || isValidIsoDate(r.actualReturnDate) ? "actual" : "planned";
+  const endBasis: "planned" | "actual" | null = isValidIsoDate(r.actualReturnDate) ? "actual" : endDate !== null ? "planned" : null;
 
   const assignments = await db
     .select({ driverId: reservationDriverAssignments.driverId })
@@ -138,6 +142,7 @@ async function deriveFacts(r: Reservation): Promise<Eligibility> {
       startDate,
       endDate,
       dateBasis,
+      endBasis,
       driverCount: driverIds.size,
       isReplacement: r.type === "replacement",
       derivedReplacementReason,
@@ -179,6 +184,7 @@ export async function syncUsagePeriodForReservation(reservationId: number): Prom
         startDate: f.startDate,
         endDate: f.endDate,
         dateBasis: f.dateBasis,
+        endBasis: f.endBasis,
         usageType: f.isReplacement ? "replacement" : "unknown",
         driverCount: f.driverCount,
         isReplacement: f.isReplacement,
@@ -189,6 +195,7 @@ export async function syncUsagePeriodForReservation(reservationId: number): Prom
         derivedAt: now,
       })
       .returning();
+    if (f.endBasis === "actual") await finalAssessmentSafely(created.id);
     return created;
   }
 
@@ -204,6 +211,7 @@ export async function syncUsagePeriodForReservation(reservationId: number): Prom
     startDate: f.startDate,
     endDate: f.endDate,
     dateBasis: f.dateBasis,
+    endBasis: f.endBasis,
     driverCount: f.driverCount,
     isReplacement: f.isReplacement,
     replacedReservationId: f.replacedReservationId,
@@ -218,7 +226,19 @@ export async function syncUsagePeriodForReservation(reservationId: number): Prom
   if (existing.confirmedByKind !== "none" && moved) patch.reconfirmRequired = true;
 
   const [updated] = await db.update(vehicleUsagePeriods).set(patch).where(eq(vehicleUsagePeriods.id, existing.id)).returning();
+  // Besluit F-15: the car came back — the period gets its final calculation at once.
+  if (existing.endBasis !== "actual" && f.endBasis === "actual") await finalAssessmentSafely(updated.id);
   return updated;
+}
+
+/** The final calculation after a return. Imported lazily: assess.ts imports this module. Never throws. */
+async function finalAssessmentSafely(periodId: number): Promise<void> {
+  try {
+    const { assessUsagePeriod } = await import("./assess");
+    await assessUsagePeriod(periodId, { trigger: "final" });
+  } catch (error) {
+    console.error(`[fiscal] eindberekening van gebruiksperiode ${periodId} mislukt:`, error);
+  }
 }
 
 /** The storage layer's hook: a failure here must never break the reservation write. */
@@ -360,6 +380,8 @@ export async function reconcileUsagePeriods(options: { limit?: number } = {}): P
           or(gte(reservations.startDate, USAGE_PERIOD_DERIVATION_START), gte(reservations.actualPickupDate, USAGE_PERIOD_DERIVATION_START)),
         ),
         and(isNotNull(vehicleUsagePeriods.id), sql`${reservations.updatedAt} > ${vehicleUsagePeriods.derivedAt}`),
+        // Rows derived before besluit F-15 do not know yet whether their end is planned or actual.
+        and(isNotNull(vehicleUsagePeriods.id), isNotNull(vehicleUsagePeriods.endDate), isNull(vehicleUsagePeriods.endBasis)),
         and(isNotNull(vehicleUsagePeriods.id), isNull(vehicleUsagePeriods.closedAt), or(isNotNull(reservations.deletedAt), eq(reservations.status, "cancelled"))),
       ),
     )

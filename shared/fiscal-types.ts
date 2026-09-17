@@ -203,9 +203,28 @@ export const MONTH_REASONS = [
   "after_rule",
 ] as const;
 export type MonthReason = (typeof MONTH_REASONS)[number];
+export const MONTH_REASON_LABELS: Record<MonthReason, string> = {
+  charged: "geheven",
+  replacement_exempt: "vrijgesteld (vervangend voertuig)",
+  short_term_exempt: "vrijgesteld (kortstondige terbeschikkingstelling)",
+  transition_exempt: "vrijgesteld (overgangsrecht)",
+  before_rule: "vóór de ingangsdatum van de regel",
+  after_rule: "buiten de geldigheid van deze regelversie",
+};
 
-export const ASSESSMENT_TRIGGERS = ["nightly", "manual", "recalculation", "event", "backfill"] as const;
+/** Besluit F-10: usage periods are derived from reservations that start on or after this date. */
+export const USAGE_PERIOD_DERIVATION_START = "2027-01-01";
+
+export const ASSESSMENT_TRIGGERS = ["nightly", "manual", "recalculation", "event", "backfill", "final"] as const;
 export type AssessmentTrigger = (typeof ASSESSMENT_TRIGGERS)[number];
+export const ASSESSMENT_TRIGGER_LABELS: Record<AssessmentTrigger, string> = {
+  nightly: "nachtelijke run",
+  manual: "op verzoek",
+  recalculation: "herberekening",
+  event: "na een wijziging",
+  backfill: "eerste afleiding",
+  final: "eindberekening bij afsluiten",
+};
 
 // ---- review cases ----------------------------------------------------------------
 
@@ -277,6 +296,11 @@ export interface PortalFiscalPeriodDto {
   statusLabel: string;
   /** Only present when the customer's dashboard switch is on (besluit F-05). */
   amount?: string | null;
+  settledAmount?: string | null;
+  provisionalAmount?: string | null;
+  /** Besluit F-15: the final calculation after the return, or the last day assessed so far. */
+  isFinal: boolean;
+  assessedThrough: string | null;
   explanation: string | null;
   missingData: string[];
   reviewReasons: string[];

@@ -186,7 +186,7 @@
   "usage": {
     "title": "Fiscaal gebruik",
     "description": "Wat de applicatie afleidt uit de reservering en wat alleen mensen weten. Bevestigde antwoorden bepalen de fiscale beoordeling.",
-    "noPeriod": "Geen gebruiksperiode: deze reservering begint vóór 1 januari 2027, is geen huur, of heeft geen klant.",
+    "noPeriod": "Geen gebruiksperiode: deze reservering begint vóór {{date}}, is geen huur, of heeft geen klant.",
     "period": "Periode",
     "dateBasis": {
       "planned": "geplande datums",
@@ -194,11 +194,11 @@
     },
     "replacement": "Vervangend voertuig",
     "drivers": "Bestuurders: {{count}}",
-    "hint": "De applicatie vond een aaneengesloten eerdere huur van deze auto bij deze klant vóór 2027; mogelijk geldt het overgangsrecht.",
+    "hint": "De applicatie vond een aaneengesloten eerdere huur van deze auto bij deze klant vóór {{year}}; mogelijk geldt het overgangsrecht.",
     "reconfirm": "De feiten van de reservering zijn veranderd na de bevestiging. Controleer de antwoorden opnieuw.",
     "privateUse": "Privégebruik door de bestuurder?",
     "commuting": "Woon-werkverkeer?",
-    "providedBeforeCutoff": "Al vóór 1 januari 2027 aan deze werkgever ter beschikking gesteld?",
+    "providedBeforeCutoff": "Al vóór {{date}} aan deze werkgever ter beschikking gesteld?",
     "usageType": "Gebruikstype",
     "isPool": "Poolauto (geen vaste bestuurder)",
     "replacementReason": "Reden van vervanging",
@@ -277,9 +277,14 @@
     "refreshFailed": "RDW-ophaling mislukt: {{message}}"
   },
   "common": {
+    "final": "Eindberekening",
+    "provisional": "Voorlopig",
+    "settledPart": "vastgelegd {{amount}}",
+    "provisionalPart": "voorlopig {{amount}}",
     "loading": "Laden…",
     "error": "Er ging iets mis: {{message}}",
-    "disclaimer": "Berekening op basis van de geconfigureerde fiscale regels en de beschikbare gegevens. Dit is geen fiscaal advies en geen aangifte; bij twijfel is handmatige beoordeling nodig."
+    "disclaimer": "Berekening op basis van de geconfigureerde fiscale regels en de beschikbare gegevens. Dit is geen fiscaal advies en geen aangifte; bij twijfel is handmatige beoordeling nodig.",
+    "pdf": "PDF"
   },
   "settings": {
     "title": "Fiscale mobiliteitscheck",
@@ -289,5 +294,42 @@
     "button": "Fiscale check",
     "title": "Fiscale check: overzicht",
     "hint": "Laatste beoordeling per open periode. De configuratie, de beoordelingswachtrij en de auditlog staan in de app-instellingen onder Klantenportaal."
+  },
+  "report": {
+    "title": "Fiscale check per maand",
+    "intro": "Per klant, auto en kalendermaand: de laatste beoordeling van elke lopende periode. Elke maand is vastgelegd, voorlopig of onderdeel van een eindberekening. Dit is geen fiscaal advies.",
+    "year": "Jaar",
+    "customer": "Klant",
+    "allCustomers": "Alle klanten",
+    "csv": "CSV downloaden",
+    "columns": {
+      "customer": "Klant",
+      "plate": "Kenteken",
+      "period": "Periode",
+      "month": "Maand",
+      "days": "Dagen",
+      "reason": "Reden",
+      "amount": "Bedrag",
+      "state": "Stand",
+      "status": "Status"
+    },
+    "state": {
+      "final": "Eindberekening",
+      "settled": "Vastgelegd",
+      "provisional": "Voorlopig"
+    },
+    "totals": {
+      "title": "Totalen {{year}}",
+      "amount": "Totaal",
+      "settled": "Waarvan vastgelegd",
+      "provisional": "Waarvan voorlopig",
+      "chargedMonths": "Geheven maanden",
+      "periods": "Perioden",
+      "unassessed": "Nog niet beoordeeld"
+    },
+    "byCustomer": "Per klant",
+    "empty": "Geen beoordeelde perioden in dit jaar.",
+    "open": "open",
+    "pdf": "PDF"
   }
 }

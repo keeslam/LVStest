@@ -34,6 +34,7 @@ import {
   compareIso,
   daysInYear,
   isValidIsoDate,
+  monthKey,
   monthStart,
   monthsTouched,
   yearOf,
@@ -79,6 +80,8 @@ export interface FiscalInput {
     replacementReason: ReplacementReason;
     providedBeforeCutoff: TriState;
     closedReason: string | null;
+    /** True once the car is back (the end date is actual): the final calculation, every month settled (besluit F-15). */
+    ended: boolean;
   };
   /** Earlier periods that may have used up a per-year exemption, per scope. */
   priorPeriods: {
@@ -94,6 +97,8 @@ export interface MonthLine {
   charged: boolean;
   reason: MonthReason;
   amount: string | null;
+  /** Fixed: the period has ended, or the month lies before the calculation month. Otherwise provisional. */
+  settled: boolean;
 }
 
 export interface VerdictFacts {
@@ -107,6 +112,10 @@ export interface VerdictFacts {
   transitionApplied?: boolean;
   privateUseKnown?: "yes" | "no" | "unknown";
   openEnded: boolean;
+  /** The final calculation: the period has an actual end date. */
+  final: boolean;
+  /** The last day that was assessed (the end date, or the end of the calculation month while open). */
+  assessedThrough: string;
   calendarDays: number;
 }
 
@@ -115,6 +124,9 @@ export interface Verdict {
   months: MonthLine[];
   monthsCharged: number;
   amount: string | null;
+  /** The parts of `amount` in settled and in provisional months; null whenever `amount` is null. */
+  settledAmount: string | null;
+  provisionalAmount: string | null;
   dataQuality: DataQuality;
   missingData: MissingDataCode[];
   reviewReasons: ReviewReasonCode[];
@@ -173,17 +185,29 @@ function dominantReason(counts: Map<DayClass, number>): MonthReason {
 export function evaluatePseudoEindheffing(input: FiscalInput, params: ParameterSet): Verdict {
   const missing = new Set<MissingDataCode>();
   const review = new Set<ReviewReasonCode>();
-  const facts: VerdictFacts = { openEnded: input.period.endDate === null, calendarDays: 0 };
+  const facts: VerdictFacts = { openEnded: input.period.endDate === null, final: input.period.ended, assessedThrough: input.period.endDateEffective, calendarDays: 0 };
   const { period, vehicle, customer } = input;
+  // A month is settled once it lies before the calculation month, or once the period has ended.
+  const calculationMonth = monthKey(input.calculationDate);
+  const isSettled = (month: string): boolean => period.ended || month < calculationMonth;
 
   const build = (status: FiscalAssessmentStatus, months: MonthLine[], amount: string | null): Verdict => {
     const hard = [...missing].some((m) => HARD_MISSING.has(m));
-    const dataQuality: DataQuality = hard ? "insufficient" : missing.size > 0 || facts.openEnded ? "partial" : "complete";
+    const dataQuality: DataQuality = hard ? "insufficient" : missing.size > 0 || (facts.openEnded && !facts.final) ? "partial" : "complete";
+    let settledAmount: string | null = null;
+    let provisionalAmount: string | null = null;
+    if (amount !== null) {
+      const sum = (settled: boolean) => months.filter((m) => m.settled === settled && m.amount !== null).reduce((cents, m) => cents + numericToCents(m.amount!), 0);
+      settledAmount = centsToString(sum(true));
+      provisionalAmount = centsToString(sum(false));
+    }
     return {
       status,
       months,
       monthsCharged: months.filter((m) => m.charged).length,
       amount,
+      settledAmount,
+      provisionalAmount,
       dataQuality,
       missingData: [...missing],
       reviewReasons: [...review],
@@ -356,6 +380,7 @@ export function evaluatePseudoEindheffing(input: FiscalInput, params: ParameterS
       charged: chargeable > 0,
       reason: chargeable > 0 ? "charged" : dominantReason(counts),
       amount: null,
+      settled: isSettled(span.month),
     });
   }
   if (sawAfterRule && months.some((m) => m.charged)) review.add("period_spans_rule_versions");
