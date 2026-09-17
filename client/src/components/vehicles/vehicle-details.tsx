@@ -93,6 +93,8 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { format, addDays, parseISO } from "date-fns";
 import { useMemo } from "react";
 
+import { VehicleFiscalTab } from "@/components/fiscal/vehicle-fiscal-tab";
+
 interface VehicleDetailsProps {
   vehicleId: number;
   inDialogContext?: boolean;
@@ -1405,14 +1407,20 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
 
       {/* Tabs */}
       <Tabs defaultValue="general" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-6 w-full">
+        <TabsList className="grid grid-cols-7 w-full">
           <TabsTrigger value="general">{t('details.tabs.general')}</TabsTrigger>
           <TabsTrigger value="expenses">{t('details.tabs.expenses')}</TabsTrigger>
           <TabsTrigger value="documents">{t('details.tabs.documents')}</TabsTrigger>
           <TabsTrigger value="reservations">{t('details.tabs.reservations')}</TabsTrigger>
           <TabsTrigger value="maintenance">{t('details.tabs.maintenance')}</TabsTrigger>
           <TabsTrigger value="history">{t('details.tabs.history')}</TabsTrigger>
+          <TabsTrigger value="fiscal">{t('details.tabs.fiscal')}</TabsTrigger>
         </TabsList>
+
+        {/* Fiscal mobility check (docs/fiscaal): profile with provenance, manual corrections, assessments. */}
+        <TabsContent value="fiscal" className="mt-6">
+          <VehicleFiscalTab vehicleId={vehicleId} />
+        </TabsContent>
         
         {/* General Information Tab */}
         <TabsContent value="general" className="mt-6">

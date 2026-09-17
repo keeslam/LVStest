@@ -30,6 +30,7 @@ import { getReviewCase, listReviewCases, updateReviewCase, countOpenReviewCases 
 import { applyManualOverride, ensureProfile, getProfile, MANUAL_PROFILE_FIELDS } from "../services/fiscal/profiles";
 import { confirmUsage, getUsagePeriodByReservation, syncUsagePeriodForReservation } from "../services/fiscal/usage-periods";
 import { resolveForDate } from "../services/fiscal/resolve";
+import { getImpactState, startImpactPreview } from "../services/fiscal/impact";
 import { FiscalConfigurationError } from "../services/fiscal/parameters";
 import { firstUntrustedAddress } from "../middleware/security/rateLimiter";
 import { sendRouteError } from "../utils/route-errors";
@@ -325,6 +326,31 @@ export function registerFiscalRoutes(app: Express, _deps: RouteDeps): void {
       res.json(await archiveVersion(id, actorFromRequest(req)));
     } catch (error) {
       fail(res, error, "Archiveren mislukt");
+    }
+  });
+
+  // ---- impact preview (fire-and-forget + status, like the APK scan) ---------------------------
+  app.post("/api/fiscal/rule-versions/:id/impact", CONFIGURE, async (req, res) => {
+    const id = intParam(req, res, "id");
+    if (id === null) return;
+    try {
+      if (!(await getVersion(id))) return res.status(404).json({ message: "Regelversie niet gevonden" });
+      const { started } = startImpactPreview(id, actorFromRequest(req));
+      if (!started) return res.status(409).json({ message: "Er loopt al een impactvoorbeeld voor deze versie" });
+      res.status(202).json(getImpactState(id));
+    } catch (error) {
+      fail(res, error, "Impactvoorbeeld kon niet worden gestart");
+    }
+  });
+
+  app.get("/api/fiscal/rule-versions/:id/impact", VIEW, async (req, res) => {
+    const id = intParam(req, res, "id");
+    if (id === null) return;
+    try {
+      if (!(await getVersion(id))) return res.status(404).json({ message: "Regelversie niet gevonden" });
+      res.json(getImpactState(id) ?? { running: false, startedAt: null, finishedAt: null, error: null, result: null });
+    } catch (error) {
+      fail(res, error, "Impactvoorbeeld kon niet worden gelezen");
     }
   });
 

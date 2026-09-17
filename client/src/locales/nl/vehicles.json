@@ -287,7 +287,8 @@
       "documents": "Documenten",
       "reservations": "Reserveringen",
       "maintenance": "Onderhoud",
-      "history": "Geschiedenis"
+      "history": "Geschiedenis",
+      "fiscal": "Fiscaal"
     },
     "general": {
       "title": "Voertuiggegevens",

@@ -429,7 +429,8 @@
       "fiscalDashboardEnabled": "Ziet fiscale bedragen (schatting)",
       "fiscalWarningsEnabled": "Ontvangt fiscale waarschuwingen",
       "fiscalReportsEnabled": "Ziet fiscale rapporten",
-      "driverFiscalVisibilityEnabled": "Bestuurders zien hun eigen fiscale status"
+      "driverFiscalVisibilityEnabled": "Bestuurders zien hun eigen fiscale status",
+      "fiscalTitle": "Fiscale check (wat de klant ziet)"
     },
     "activity": {
       "title": "Activiteit in het portaal",

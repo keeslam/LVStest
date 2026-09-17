@@ -34,7 +34,9 @@ export function SidebarNav() {
     { href: "/documents", labelKey: "documents", icon: "description", permissions: [UserPermission.VIEW_DOCUMENTS, UserPermission.MANAGE_DOCUMENTS] },
     { href: "/delivery", labelKey: "transports", icon: "delivery", permissions: [UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS] },
     { href: "/communications", labelKey: "communications", icon: "email", permissions: [UserPermission.MANAGE_EMAIL_TEMPLATES, UserPermission.MANAGE_NOTIFICATIONS] },
-    { href: "/reports", labelKey: "reports", icon: "assessment", permissions: [UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS] }
+    { href: "/reports", labelKey: "reports", icon: "assessment", permissions: [UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS] },
+    // Fiscal mobility check (docs/fiscaal, besluit F-07): under Rapporten.
+    { href: "/fiscaal", labelKey: "fiscal", icon: "euro", permissions: [UserPermission.VIEW_FISCAL, UserPermission.MANAGE_FISCAL_REVIEW, UserPermission.MANAGE_FISCAL_CONFIGURATION, UserPermission.APPROVE_FISCAL_CONFIGURATION, UserPermission.PUBLISH_FISCAL_CONFIGURATION, UserPermission.VIEW_FISCAL_AUDIT_LOG] }
   ];
 
   const hasPermission = (item: NavItem): boolean => {

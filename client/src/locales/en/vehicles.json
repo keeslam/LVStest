@@ -287,7 +287,8 @@
       "documents": "Documents",
       "reservations": "Reservations",
       "maintenance": "Maintenance",
-      "history": "History"
+      "history": "History",
+      "fiscal": "Fiscal"
     },
     "general": {
       "title": "Vehicle Details",

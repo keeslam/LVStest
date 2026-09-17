@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 const FLAGS = ["portalEnabled", "canBook", "canManageDrivers", "canSubmitRequests", "canReturn", "canViewFines", "canViewContracts", "showPrices"] as const;
+// Fiscal mobility check (docs/fiscaal §1.8): visibility and notifications for this customer; never a fiscal parameter.
+const FISCAL_FLAGS = ["fiscalMobilityEnabled", "pseudoEindheffingEnabled", "fiscalDashboardEnabled", "fiscalWarningsEnabled", "fiscalReportsEnabled", "driverFiscalVisibilityEnabled"] as const;
 
 export function CustomerPortalSettingsForm({ customerId, readOnly }: { customerId: number; readOnly?: boolean }) {
   const { t } = useTranslation("portal");
@@ -38,6 +40,15 @@ export function CustomerPortalSettingsForm({ customerId, readOnly }: { customerI
           <div key={flag} className="flex items-center justify-between rounded-md border p-3">
             <Label htmlFor={`ps-${flag}`} className="text-sm">{t(`admin.settings.${flag}`)}</Label>
             <Switch id={`ps-${flag}`} checked={data[flag]} disabled={readOnly || save.isPending} onCheckedChange={(v) => save.mutate({ [flag]: v })} />
+          </div>
+        ))}
+      </div>
+      <h4 className="text-sm font-medium">{t("admin.settings.fiscalTitle")}</h4>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {FISCAL_FLAGS.map((flag) => (
+          <div key={flag} className="flex items-center justify-between rounded-md border p-3">
+            <Label htmlFor={`ps-${flag}`} className="text-sm">{t(`admin.settings.${flag}`)}</Label>
+            <Switch id={`ps-${flag}`} checked={data[flag]} disabled={readOnly || save.isPending} onCheckedChange={(v) => save.mutate({ [flag]: v })} data-testid={`switch-${flag}`} />
           </div>
         ))}
       </div>

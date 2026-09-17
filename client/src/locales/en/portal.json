@@ -429,7 +429,8 @@
       "fiscalDashboardEnabled": "Sees fiscal amounts (estimate)",
       "fiscalWarningsEnabled": "Receives fiscal warnings",
       "fiscalReportsEnabled": "Sees fiscal reports",
-      "driverFiscalVisibilityEnabled": "Drivers see their own fiscal status"
+      "driverFiscalVisibilityEnabled": "Drivers see their own fiscal status",
+      "fiscalTitle": "Fiscal check (what the customer sees)"
     },
     "activity": {
       "title": "Activity in the portal",

@@ -21,7 +21,8 @@ export interface ExplainedVersion {
   effectiveUntil: string | null;
 }
 
-const MONTHS_NL = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"];
+import { formatEuro, monthLabelNl, dateLabelNl, decimalNl } from "../../../shared/fiscal-format";
+export { formatEuro, monthLabelNl, dateLabelNl };
 
 const MONTH_REASON_NL: Record<MonthReason, string> = {
   charged: "geheven",
@@ -43,35 +44,10 @@ const NOT_APPLICABLE_NL: Record<NotApplicableReason, string> = {
   fully_exempt: "Alle dagen van de periode vallen onder een vrijstelling.",
 };
 
-/** `€ 36.000,00` with an ordinary space, from a numeric string such as `36000.00`. */
-export function formatEuro(value: string | number): string {
-  const n = typeof value === "number" ? value : Number(value);
-  const cents = Math.round(Math.abs(n) * 100);
-  const euros = Math.floor(cents / 100);
-  const rest = cents % 100;
-  const grouped = euros.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return `${n < 0 ? "-" : ""}€ ${grouped},${rest < 10 ? "0" : ""}${rest}`;
-}
-
-/** `maart 2027` from `2027-03`. */
-export function monthLabelNl(month: string): string {
-  const [y, m] = month.split("-");
-  return `${MONTHS_NL[Number(m) - 1]} ${y}`;
-}
-
-/** `17 september 2030` from `2030-09-17`. */
-export function dateLabelNl(iso: string): string {
-  const [y, m, d] = iso.split("-");
-  return `${Number(d)} ${MONTHS_NL[Number(m) - 1]} ${y}`;
-}
-
 function param(entries: ParameterSnapshotEntry[], key: string): ParameterSnapshotEntry | undefined {
   return entries.find((e) => e.key === key);
 }
 
-function decimalNl(n: number): string {
-  return String(n).replace(".", ",");
-}
 
 function monthLine(m: MonthLine): string {
   const amount = m.amount ? `, ${formatEuro(m.amount)}` : "";

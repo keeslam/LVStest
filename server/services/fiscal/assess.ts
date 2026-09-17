@@ -62,7 +62,7 @@ async function priorPeriods(period: VehicleUsagePeriod): Promise<FiscalInput["pr
   };
 }
 
-async function buildInput(period: VehicleUsagePeriod, calculationDate: string, lookaheadDays: number, ruleVersion: FiscalInput["ruleVersion"]): Promise<FiscalInput> {
+export async function buildInput(period: VehicleUsagePeriod, calculationDate: string, lookaheadDays: number, ruleVersion: FiscalInput["ruleVersion"]): Promise<FiscalInput> {
   const [customer] = await db.select({ id: customers.id, customerType: customers.customerType }).from(customers).where(eq(customers.id, period.customerId));
   if (!customer) throw new FiscalNotFoundError("Klant van de gebruiksperiode niet gevonden");
 

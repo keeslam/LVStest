@@ -35,5 +35,6 @@
     "appSettings": "App-instellingen",
     "logout": "Uitloggen",
     "noEmailSet": "Geen e-mailadres ingesteld"
-  }
+  },
+  "fiscal": "Fiscaal"
 }

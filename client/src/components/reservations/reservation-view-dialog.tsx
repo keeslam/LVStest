@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { UsagePeriodCard } from "@/components/fiscal/usage-period-card";
 import { Link } from "wouter";
 import {
   Dialog,
@@ -537,6 +538,9 @@ export function ReservationViewDialog({
                   </div>
                 </div>
               )}
+
+              {/* Fiscal mobility check (docs/fiscaal): derived facts, confirmation, latest assessment. */}
+              {reservationId && <UsagePeriodCard reservationId={reservationId} />}
 
               {/* Documents Section */}
               <div>

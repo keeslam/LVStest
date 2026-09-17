@@ -57,6 +57,11 @@ geplande datums; echte `date`-kolommen; klantbevestiging in dezelfde tabel als k
 in de database met Nederlandse labels; één open beoordelingszaak per periode met automatische sluiting;
 nachtelijk venster van 45 dagen terug tot 31 dagen vooruit.
 
+### F-12 — Stap 3 (STOP POINT 3), 17 september 2026
+**Besluit:** `04-stap3-rapport.md` is goedgekeurd ("ja verder met de volgende stap"), inclusief de twee
+verfijningen (regelversie op de datums van de periode; dedupe-hash zonder beoordelingsdatum). Stap 4
+(kantoorschermen, impactvoorbeeld, publicatiedialoog, beveiligingstests) mag worden gebouwd.
+
 ### F-10 — Startdatum afleiding (Q10)
 **Besluit:** gebruiksperioden worden afgeleid uit reserveringen met een startdatum **vanaf 1 januari
 2027**. Eerdere reserveringen worden alleen gelezen om "al vóór 2027 ter beschikking gesteld" voor te
