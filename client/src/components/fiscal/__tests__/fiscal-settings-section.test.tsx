@@ -1,6 +1,8 @@
 /**
- * The staff page "Fiscaal": which tabs a user sees follows their rights, and
- * the configuration tab shows every version with its status and validation.
+ * The fiscal section of the app settings (under Klantenportaal, besluit
+ * F-13): which tabs a user sees follows their rights, and the configuration
+ * lists every version with its status and validation. The overview lives in
+ * its own dialog on the Klantenportaal page.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -14,7 +16,8 @@ vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "tester", role, permissions, hidePrices: false }, isLoading: false }),
 }));
 
-import FiscalPage from "@/pages/fiscal";
+import { FiscalSettingsSection } from "@/components/fiscal/fiscal-settings-section";
+import { FiscalOverviewDialog } from "@/components/fiscal/fiscal-overview-dialog";
 
 const draft = {
   id: 7,
@@ -52,13 +55,9 @@ const responses: Record<string, unknown> = {
   "/api/fiscal/audit": [],
 };
 
-function renderPage() {
+function withClient(node: React.ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0, queryFn: getQueryFn({ on401: "throw" }) } } });
-  return render(
-    <QueryClientProvider client={client}>
-      <FiscalPage />
-    </QueryClientProvider>,
-  );
+  return render(<QueryClientProvider client={client}>{node}</QueryClientProvider>);
 }
 
 beforeEach(() => {
@@ -70,40 +69,38 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
-describe("pagina Fiscaal", () => {
-  it("a viewer sees the overview and the configuration, read-only, and no queue or audit log", async () => {
+describe("fiscale sectie in de instellingen", () => {
+  it("a viewer sees the configuration read-only, and no queue or audit log", async () => {
     permissions = ["view_fiscal"];
     role = "manager";
-    renderPage();
-    expect(await screen.findByRole("tab", { name: "Overzicht" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Configuratie" })).toBeInTheDocument();
+    withClient(<FiscalSettingsSection />);
+    expect(await screen.findByRole("tab", { name: "Configuratie" })).toBeInTheDocument();
     expect(screen.queryByRole("tab", { name: "Beoordelingen" })).toBeNull();
     expect(screen.queryByRole("tab", { name: "Auditlog" })).toBeNull();
+    expect(await screen.findByTestId("version-row-7")).toBeInTheDocument();
     expect(screen.queryByTestId("button-new-draft")).toBeNull();
+  });
+
+  it("renders nothing for someone without any fiscal right", () => {
+    permissions = [];
+    role = "manager";
+    withClient(<FiscalSettingsSection />);
+    expect(screen.queryByTestId("fiscal-settings-section")).toBeNull();
   });
 
   it("an administrator sees every tab and can start a draft", async () => {
     permissions = [];
     role = "admin";
-    renderPage();
+    withClient(<FiscalSettingsSection />);
     expect(await screen.findByRole("tab", { name: "Beoordelingen" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Auditlog" })).toBeInTheDocument();
-  });
-
-  it("the overview shows the counts in Dutch", async () => {
-    permissions = ["view_fiscal"];
-    role = "manager";
-    renderPage();
-    await waitFor(() => expect(screen.getByTestId("tile-APPLICABLE")).toHaveTextContent("5"));
-    expect(screen.getByTestId("tile-APPLICABLE")).toHaveTextContent("Van toepassing");
-    expect(screen.getByTestId("tile-open-cases")).toHaveTextContent("4");
-    expect(screen.getByTestId("overview-no-version")).toHaveTextContent(/Geen regelversie beschikbaar/);
+    expect(await screen.findByTestId("button-new-draft")).toBeInTheDocument();
   });
 
   it("the configuration lists the draft with its status label and validation", async () => {
     permissions = ["view_fiscal", "manage_fiscal_configuration"];
     role = "manager";
-    renderPage();
+    withClient(<FiscalSettingsSection />);
     await userEvent.setup().click(await screen.findByRole("tab", { name: "Configuratie" }));
     const row = await screen.findByTestId("version-row-7");
     expect(row).toHaveTextContent("Belastingplan 2026 (wet)");
@@ -111,6 +108,18 @@ describe("pagina Fiscaal", () => {
     expect(row).toHaveTextContent("versie 1");
     expect(row).toHaveTextContent("1 januari 2027");
     expect(row).toHaveTextContent("Volledig");
-    expect(screen.getByTestId("button-new-draft")).toBeInTheDocument();
+  });
+});
+
+describe("overzichtsdialoog op de pagina Klantenportaal", () => {
+  it("shows the counts in Dutch and the no-version warning", async () => {
+    permissions = ["view_fiscal"];
+    role = "manager";
+    withClient(<FiscalOverviewDialog open onOpenChange={() => {}} />);
+    await waitFor(() => expect(screen.getByTestId("tile-APPLICABLE")).toHaveTextContent("5"));
+    expect(screen.getByTestId("tile-APPLICABLE")).toHaveTextContent("Van toepassing");
+    expect(screen.getByTestId("tile-open-cases")).toHaveTextContent("4");
+    expect(screen.getByTestId("overview-no-version")).toHaveTextContent(/Geen regelversie beschikbaar/);
+    expect(screen.getByText(/app-instellingen/)).toBeInTheDocument();
   });
 });

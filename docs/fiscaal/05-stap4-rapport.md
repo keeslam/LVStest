@@ -8,8 +8,8 @@ Alles is test-first gebouwd.
 | Onderdeel | Waar | Wat het doet |
 |---|---|---|
 | Impactvoorbeeld | `server/services/fiscal/impact.ts`, routes `POST/GET /api/fiscal/rule-versions/:id/impact` | Rekent het concept door over alle open perioden van klanten met de fiscale check aan, naast wat vandaag geldt. Klanten, auto's, perioden, huidig totaal, concepttotaal, verschil, jaar- en maandimpact, aantal handmatige beoordelingen en gevallen met ontbrekende gegevens. Draait op de achtergrond met een status om te pollen; geaudit; wordt nooit als beoordeling opgeslagen; gelabeld als schatting. |
-| Pagina **Fiscaal** | `client/src/pages/fiscal/index.tsx`, zijbalkitem onder Rapporten (besluit F-07), titel in de balk | Tabbladen Overzicht, Configuratie, Beoordelingen (recht `manage_fiscal_review`) en Auditlog (recht `view_fiscal_audit_log`). |
-| Overzicht | `components/fiscal/overview-panel.tsx` | Tegels per status (laatste beoordeling per open periode), open perioden, nog niet beoordeeld, open zaken, geldende versie; waarschuwing als er geen versie geldt. |
+| Plaats in de app (besluit F-13) | `components/fiscal/fiscal-settings-section.tsx` in de app-instellingen onder **Klantenportaal**; `fiscal-overview-dialog.tsx` achter de knop **Fiscale check** op de pagina Klantenportaal | Geen hoofdmenu-item. In de instellingen: tabbladen Configuratie, Beoordelingen (recht `manage_fiscal_review`) en Auditlog (recht `view_fiscal_audit_log`). Het overzicht als dialoog. |
+| Overzicht (dialoog) | `components/fiscal/overview-panel.tsx` | Tegels per status (laatste beoordeling per open periode), open perioden, nog niet beoordeeld, open zaken, geldende versie; waarschuwing als er geen versie geldt. |
 | Configuratie | `configuration-panel.tsx` | Per regel: geldend nu, toekomstig, concepten en beoordeling, verlopen, gearchiveerd. Elke versie met status, validatie (volledig/onvolledig), geldigheid en wie. "Nieuw concept" (leeg of kopie) met recht `manage_fiscal_configuration`. Bereik ALLE KLANTEN staat er letterlijk. |
 | Versiedialoog | `version-dialog.tsx` | Versiegegevens (ingangsdatum, einddatum, reden, bron, wettelijke referentie, aannames) en alle parameters, gegroepeerd per categorie en opgebouwd uit de definities: naam, uitleg, eenheid, wettelijk/intern, invoer per type, bron per wettelijke parameter. Validatie-uitkomst. Acties per status en recht: opslaan, indienen, goedkeuren, afwijzen (met reden), publiceren, archiveren, impact tonen. Geschiedenis van de versie. Alleen een concept is bewerkbaar. |
 | Publicatiedialoog | `publish-dialog.tsx` | Parameter, was en wordt met eenheid; geldigheid; bereik ALLE KLANTEN; geraakte klanten en auto's uit het impactvoorbeeld; bron; reden; de vaste waarschuwing; een uitdrukkelijk vinkje vóór de knop; verzendt `confirm: true`. |
@@ -47,14 +47,14 @@ Alles is test-first gebouwd.
 | Productiemodus op :5004 | pagina Fiscaal, tabbladen, configuratie met het concept van versie 1 en de versiedialoog laden; geen fouten in de serverlog |
 
 Nieuwe tests: `impact.test.ts` (vergelijking met de geldende versie, telling van zaken, weigering van
-een onvolledig concept, achtergrondstatus via de API, geen dubbele start), `fiscal-page.test.tsx`
-(tabbladen per recht, tegels, configuratielijst), `publish-dialog.test.tsx` (inhoud en bevestiging),
+een onvolledig concept, achtergrondstatus via de API, geen dubbele start), `fiscal-settings-section.test.tsx`
+(tabbladen per recht, configuratielijst, overzichtsdialoog), `publish-dialog.test.tsx` (inhoud en bevestiging),
 `usage-period-card.test.tsx` (feiten, serverfout bij ontbrekende reden, verzending, alleen-lezen),
 `vehicle-fiscal-tab.test.tsx` (herkomst per feit, correctie met reden).
 
 ## 4. Wat je zelf kunt doen op :5004
 
-1. Zijbalk → **Fiscaal** → tabblad **Configuratie** → **Bekijken** bij versie 1 (concept).
+1. Gebruikersmenu → **App-instellingen** → tabblad **Klantenportaal** → **Fiscale mobiliteitscheck** → **Bekijken** bij versie 1 (concept). Het overzicht: pagina **Klantenportaal** → knop **Fiscale check**.
 2. Loop de parameters na; pas eventueel een waarde aan en klik **Opslaan**; de validatie meldt wat
    nog ontbreekt.
 3. **Impact tonen** laat het voorbeeld zien (in de kloon staan nog geen perioden vanaf 2027, dus nul).

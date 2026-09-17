@@ -62,6 +62,12 @@ nachtelijk venster van 45 dagen terug tot 31 dagen vooruit.
 verfijningen (regelversie op de datums van de periode; dedupe-hash zonder beoordelingsdatum). Stap 4
 (kantoorschermen, impactvoorbeeld, publicatiedialoog, beveiligingstests) mag worden gebouwd.
 
+### F-13 — Plaats in de applicatie (vervangt F-07), 17 september 2026
+**Besluit:** geen pagina "Fiscaal" in het hoofdmenu. De configuratie (regelversies, publiceren), de
+beoordelingswachtrij en de fiscale auditlog staan in de **app-instellingen, onder Klantenportaal**.
+Het **overzicht** (tegels per status, open zaken, geldende versie) verschijnt als **dialoog** achter een
+knop op de pagina Klantenportaal.
+
 ### F-10 — Startdatum afleiding (Q10)
 **Besluit:** gebruiksperioden worden afgeleid uit reserveringen met een startdatum **vanaf 1 januari
 2027**. Eerdere reserveringen worden alleen gelezen om "al vóór 2027 ter beschikking gesteld" voor te

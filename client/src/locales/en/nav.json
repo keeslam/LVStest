@@ -35,6 +35,5 @@
     "appSettings": "App Settings",
     "logout": "Logout",
     "noEmailSet": "No email set"
-  },
-  "fiscal": "Fiscal"
+  }
 }

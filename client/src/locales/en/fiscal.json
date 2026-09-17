@@ -1,8 +1,4 @@
 {
-  "page": {
-    "title": "Fiscal",
-    "subtitle": "Fiscal mobility check: pseudo-eindheffing on fossil passenger cars. Calculated from the configured rules and the available data; not tax advice."
-  },
   "tabs": {
     "overview": "Overview",
     "configuration": "Configuration",
@@ -281,5 +277,14 @@
     "loading": "Loading…",
     "error": "Something went wrong: {{message}}",
     "disclaimer": "Calculated from the configured fiscal rules and the available data. This is not tax advice and not a return; when in doubt, manual review is required."
+  },
+  "settings": {
+    "title": "Fiscal mobility check",
+    "description": "Pseudo-eindheffing on fossil passenger cars: one official configuration for all customers, versioned and audited. What a customer sees is set per customer in that customer’s portal settings."
+  },
+  "overviewDialog": {
+    "button": "Fiscal check",
+    "title": "Fiscal check: overview",
+    "hint": "Latest assessment per open period. The configuration, the review queue and the audit log are in the app settings under Customer portal."
   }
 }

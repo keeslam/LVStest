@@ -6,7 +6,6 @@ import Dashboard from "@/pages/dashboard";
 import VehiclesIndex from "@/pages/vehicles/index";
 import CustomersIndex from "@/pages/customers/index";
 import ReservationEdit from "@/pages/reservations/edit/[id]";
-import FiscalPage from "@/pages/fiscal";
 import ReservationCalendar from "@/pages/reservations/calendar";
 import ExpensesIndex from "@/pages/expenses/index";
 import ExpenseAdd from "@/pages/expenses/add";
@@ -77,7 +76,6 @@ function AppRoutes() {
               <ProtectedRoute path="/expenses/add" component={ExpenseAdd} />
               <ProtectedRoute path="/documents" component={DocumentsIndex} />
               <ProtectedRoute path="/reports" component={ReportsPage} />
-              <ProtectedRoute path="/fiscaal" component={FiscalPage} />
               <ProtectedRoute path="/delivery" component={DeliveryDashboard} />
               <ProtectedRoute path="/communications" component={CustomerCommunications} />
               <ProtectedRoute path="/portal-admin" component={PortalAdminPage} />

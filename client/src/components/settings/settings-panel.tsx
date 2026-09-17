@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PortalConfigForm } from "@/components/portal-admin/portal-config-form";
+import { FiscalSettingsSection } from "@/components/fiscal/fiscal-settings-section";
 import { CjibConfigForm } from "@/components/fines/cjib-config-form";
 import { ActivityLogPanel } from "@/components/settings/activity-log-panel";
 // WAVE 15 item 3 — besluit B-24's office address finally has a field.
@@ -869,6 +870,8 @@ export function SettingsPanel() {
         {/* Customer portal Tab */}
         <TabsContent value="portal" className="space-y-6">
           <PortalConfigForm />
+          {/* Fiscal mobility check (docs/fiscaal, besluit F-13): configuration, review queue, audit log. */}
+          <FiscalSettingsSection />
           <CjibConfigForm />
         </TabsContent>
 

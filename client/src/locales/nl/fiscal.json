@@ -1,8 +1,4 @@
 {
-  "page": {
-    "title": "Fiscaal",
-    "subtitle": "Fiscale mobiliteitscheck: pseudo-eindheffing fossiele personenauto's. Berekening op basis van de geconfigureerde regels en de beschikbare gegevens; geen fiscaal advies."
-  },
   "tabs": {
     "overview": "Overzicht",
     "configuration": "Configuratie",
@@ -192,7 +188,10 @@
     "description": "Wat de applicatie afleidt uit de reservering en wat alleen mensen weten. Bevestigde antwoorden bepalen de fiscale beoordeling.",
     "noPeriod": "Geen gebruiksperiode: deze reservering begint vóór 1 januari 2027, is geen huur, of heeft geen klant.",
     "period": "Periode",
-    "dateBasis": { "planned": "geplande datums", "actual": "werkelijke ophaal- en innamedatum" },
+    "dateBasis": {
+      "planned": "geplande datums",
+      "actual": "werkelijke ophaal- en innamedatum"
+    },
     "replacement": "Vervangend voertuig",
     "drivers": "Bestuurders: {{count}}",
     "hint": "De applicatie vond een aaneengesloten eerdere huur van deze auto bij deze klant vóór 2027; mogelijk geldt het overgangsrecht.",
@@ -278,5 +277,14 @@
     "loading": "Laden…",
     "error": "Er ging iets mis: {{message}}",
     "disclaimer": "Berekening op basis van de geconfigureerde fiscale regels en de beschikbare gegevens. Dit is geen fiscaal advies en geen aangifte; bij twijfel is handmatige beoordeling nodig."
+  },
+  "settings": {
+    "title": "Fiscale mobiliteitscheck",
+    "description": "Pseudo-eindheffing fossiele personenauto’s: één officiële configuratie voor alle klanten, versiebeheerd en geaudit. Wat een klant ziet, stel je per klant in bij de portaalinstellingen van die klant."
+  },
+  "overviewDialog": {
+    "button": "Fiscale check",
+    "title": "Fiscale check: overzicht",
+    "hint": "Laatste beoordeling per open periode. De configuratie, de beoordelingswachtrij en de auditlog staan in de app-instellingen onder Klantenportaal."
   }
 }
