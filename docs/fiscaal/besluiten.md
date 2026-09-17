@@ -104,3 +104,9 @@ schrijfroutes met herstelronde en het besluit F-15. Stap 6 (volledige berekening
 maand en per jaar met eindberekening, rapporten en CSV, PDF per beoordeling, randgevallen over maand-
 en jaargrenzen, documentatie, eindaudit, regressie en de productie-vormige migratietest) mag worden
 gebouwd.
+
+### F-17 — Stap 6 (STOP POINT 6), 17 september 2026
+**Besluit:** `09-stap6-rapport.md` is goedgekeurd ("ja akkoord"), inclusief de uitwerking van F-15
+(maandsnapshots, eindberekening), rapporten, CSV, PDF, handleidingen en eindaudit. Stap 7
+(eindregressie, oplevering en deploy-draaiboek) mag worden uitgevoerd. Samenvoegen naar `main` en de
+productie-deploy blijven een uitdrukkelijke opdracht van Kees.
