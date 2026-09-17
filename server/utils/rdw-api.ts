@@ -51,9 +51,20 @@ function formatLicensePlate(normalized: string): string {
 /**
  * Map the RDW vehicle type to our application's vehicle type
  */
-function mapVehicleType(rdwType: string | undefined): string | null {
+function mapVehicleType(rdwType: string | undefined, bodyType?: string | undefined): string | null {
   if (!rdwType) return null;
-  
+
+  // A passenger car gets its body type from the RDW "inrichting" when it is known.
+  if (rdwType === "Personenauto") {
+    const body = (bodyType ?? "").toLowerCase();
+    if (body.includes("hatchback")) return "Hatchback";
+    if (body.includes("stationwagen")) return "Stationwagen";
+    if (body.includes("coup")) return "Coupe";
+    if (body.includes("mpv") || body.includes("terrein") || body.includes("suv")) return "SUV";
+    if (body.includes("cabriolet")) return "Other";
+    return "Sedan";
+  }
+
   // Map RDW vehicle types to our vehicle types
   const typeMap: Record<string, string> = {
     "Personenauto": "Sedan",
@@ -87,13 +98,30 @@ function mapFuelType(rdwFuel: string | undefined): string | null {
 }
 
 /**
+ * The fuel of a car from its RDW fuel rows (8ys7-d773): one row per fuel, a
+ * hybrid carries electricity next to a combustion fuel or a hybrid class.
+ */
+function fuelFromRdwFuelRows(rows: Array<Record<string, unknown>>): string | null {
+  const names = rows.map((r) => String(r.brandstof_omschrijving ?? "")).filter(Boolean);
+  if (names.length === 0) return null;
+  const electric = names.includes("Elektriciteit");
+  const hybridClass = rows.some((r) => String(r.klasse_hybride_elektrisch_voertuig ?? "").trim() !== "");
+  if (hybridClass || (electric && names.length > 1)) return "Hybrid";
+  if (electric) return "Electric";
+  if (names.includes("Waterstof")) return "Hydrogen";
+  if (names.includes("LPG")) return "LPG";
+  if (names.includes("CNG")) return "CNG";
+  return mapFuelType(names[0]);
+}
+
+/**
  * Map the RDW euro zone classification to our application's euro zone
  */
 function mapEuroZone(rdwZone: string | undefined): string | null {
   if (!rdwZone) return null;
   
-  // If the RDW zone contains a Euro classification, use it
-  if (rdwZone.includes("Euro")) {
+  // If the RDW zone contains a Euro classification, use it ("Euro 6", "EURO 6 EA")
+  if (/euro/i.test(rdwZone)) {
     return rdwZone;
   }
   
@@ -213,7 +241,17 @@ export async function fetchVehicleInfoByLicensePlate(licensePlate: string): Prom
     
     // Extract the vehicle data from the API response
     const rdwVehicle = data[0];
-    
+
+    // Fuel and emission class live in the fuel data set, not in the registration
+    // row; a failure there leaves those two fields empty rather than failing the lookup.
+    let fuelRows: Array<Record<string, unknown>> = [];
+    try {
+      fuelRows = (await getRdwJson(`https://opendata.rdw.nl/resource/8ys7-d773.json?kenteken=${normalized}`, fetch)) as Array<Record<string, unknown>>;
+    } catch {
+      fuelRows = [];
+    }
+    const emissionClass = String(fuelRows[0]?.uitlaatemissieniveau ?? rdwVehicle.emissiecode_omschrijving ?? "") || undefined;
+
     // Check if vehicle is registered to a person using datum_tenaamstelling
     const registrationDate = formatDate(rdwVehicle.datum_tenaamstelling);
     const isRegisteredToPerson = !!registrationDate;
@@ -229,10 +267,10 @@ export async function fetchVehicleInfoByLicensePlate(licensePlate: string): Prom
       licensePlate: formatLicensePlate(normalized),
       brand: rdwVehicle.merk || null,
       model: rdwVehicle.handelsbenaming || null,
-      vehicleType: rdwVehicle.voertuigsoort ? mapVehicleType(rdwVehicle.voertuigsoort) : null,
+      vehicleType: rdwVehicle.voertuigsoort ? mapVehicleType(rdwVehicle.voertuigsoort, rdwVehicle.inrichting) : null,
       chassisNumber: rdwVehicle.chassis || null,
-      fuel: rdwVehicle.brandstof_omschrijving ? mapFuelType(rdwVehicle.brandstof_omschrijving) : null,
-      euroZone: rdwVehicle.emissiecode_omschrijving ? mapEuroZone(rdwVehicle.emissiecode_omschrijving) : null,
+      fuel: fuelFromRdwFuelRows(fuelRows) ?? (rdwVehicle.brandstof_omschrijving ? mapFuelType(rdwVehicle.brandstof_omschrijving) : null),
+      euroZone: mapEuroZone(emissionClass),
       apkDate: formatDate(rdwVehicle.vervaldatum_apk) || null,
       productionDate: formatDate(rdwVehicle.datum_eerste_toelating) || null,
       // Automatically detect registration status from RDW data
