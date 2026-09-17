@@ -168,7 +168,12 @@ export function VersionDialog({ versionId, onOpenChange, definitions, current }:
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto" data-testid="dialog-version">
-        {!detail && <p className="text-sm text-muted-foreground">{t("common.loading")}</p>}
+        {!detail && (
+          <DialogHeader>
+            <DialogTitle>{t("common.loading")}</DialogTitle>
+            <DialogDescription>{t("version.metadata")}</DialogDescription>
+          </DialogHeader>
+        )}
         {detail && (
           <>
             <DialogHeader>
