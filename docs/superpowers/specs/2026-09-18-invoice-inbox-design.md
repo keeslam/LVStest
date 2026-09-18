@@ -33,7 +33,11 @@ reading the mail body as the invoice.
 ## Configuration
 
 One JSON app setting `invoice_inbox_config` (same pattern as `cjib_config`),
-exposed on `GET/PUT /api/expenses/inbox/config` (`manage_settings`):
+stored with category **`expenses`**, exposed on `GET/PUT
+/api/expenses/inbox/config` (`manage_settings`). The category must not be
+`email`: `server/utils/email-service.ts` loads every `email`-category setting
+and falls back to "first available", so an inbox row there could be picked
+up as an SMTP configuration.
 
 ```ts
 interface InvoiceInboxConfig {
@@ -82,15 +86,16 @@ migrations are additive only):
 | attachment_path | text | relative path under `uploads/invoice-inbox/` |
 | attachment_hash | text unique | sha256 of the attachment bytes; an attachment is processed once |
 | attachment_content_type | text | `application/pdf`, `image/jpeg`, `image/png` |
-| invoice_hash | text | sha256 of `vendor|invoiceNumber|invoiceDate|totalAmount` (normalised); index |
+| invoice_hash | text | sha256 of `vendor|invoiceNumber|invoiceDate|totalAmount` (vendor reduced to letters and digits, number without whitespace, total in cents); index. **Null when the invoice has no number**: vendor + date + total alone would call two fuel receipts of one day duplicates, so such invoices are never flagged |
 | parsed | jsonb | full `ParsedInvoice` from the scanner, plus `plates: string[]` found |
-| status | text | `booked`, `review`, `failed`, `dismissed` |
+| status | text | `booked`, `review`, `dismissed`. There is no `failed`: whatever goes wrong ends as `review` with a reason, so staff always see it |
+| note | text | what staff typed when dismissing |
 | review_reason | text | see below; null when `booked` |
 | vehicle_id | integer | references vehicles(id) on delete set null; set on booking |
 | expense_ids | integer[] | expenses created from this item |
 | error_message | text | scanner or booking error |
 | received_at | timestamptz | default now() |
-| processed_at | timestamptz | set on book / dismiss / failed |
+| processed_at | timestamptz | set on book / dismiss |
 | created_by | text | `scheduler` or the staff username that booked/dismissed |
 | updated_by | text | |
 
@@ -100,12 +105,12 @@ Review reasons (`review_reason`), in the order they are checked:
 | --- | --- |
 | `no_attachment` | mail has no PDF/JPG/PNG attachment, or all attachments were skipped (over 15 MB, wrong type) |
 | `parse_failed` | the scanner threw on every model, or validation of the parsed invoice failed |
-| `unknown_sender` | `from_address` matches no entry in `allowedSenders` |
+| `unknown_sender` | `from_address` matches no entry in `allowedSenders`, **or** the receiving mail server's `Authentication-Results` header says `dmarc=fail` or `spf=fail`. A From address is trivial to forge; a hard fail from our own mail server takes the trust away. Only a fail counts, so a forged "pass" line gains nothing |
 | `duplicate` | an item with the same `invoice_hash` already exists with status `booked` or `review` |
 | `no_plate` | no license plate found on the invoice |
 | `multiple_plates` | more than one distinct plate found |
 | `plate_unknown` | exactly one plate, but it is not in the fleet |
-| `total_mismatch` | `|sum(lineItems) - totalAmount| > totalTolerance`, or `invoiceDate` is in the future |
+| `total_mismatch` | the line sum is not within `totalTolerance` of any of: the total incl. VAT, the stated subtotal excl. VAT, or total minus VAT (garage invoices list lines excl. VAT and the total incl. VAT, so comparing with the total alone would queue nearly every invoice); or `invoiceDate` is unreadable or in the future |
 
 `expenses` gets one nullable column `inbox_item_id integer references
 invoice_inbox_items(id) on delete set null`. Existing rows stay null. The
@@ -118,16 +123,25 @@ duplicate check covers both entry points.
 
 `server/services/invoice-inbox/imap-client.ts` — thin wrapper over
 `imapflow` (new dependency, MIT, maintained by the nodemailer author):
-`withClient(config, fn)`, `listUnseen(config)` (uids + envelope),
-`fetchMessage(config, uid)` (raw source), `moveToProcessed(config, uid)`
-(IMAP MOVE, falls back to COPY + flag `\Deleted` + EXPUNGE when the server
-lacks MOVE), `markSeen(config, uid)`. TLS certificate validation on.
-Tests swap the client for a fake through `setInvoiceImapClient()`.
+one connection per run, behind a session interface:
+`withSession(config, fn)` opens the mailbox and hands `fn` a session with
+`listUnseen()` (uid + envelope), `fetchRaw(uid)` (raw source, fetched with
+`BODY.PEEK` so a mail that fails to import stays unseen) and
+`markProcessed(uid)` (IMAP MOVE to `processedFolder`, which imapflow turns
+into COPY + delete on servers without MOVE; marks `\Seen` instead when no
+folder is configured or the move fails). TLS certificate validation on. An
+`error` listener is attached to the connection, because an unhandled
+`error` event would take the server process down. Tests swap the client for
+a fake through `setInvoiceImapClient()`. The wrapper itself has no unit
+test, like `cjib/ftps-client.ts`; the "Verbinding testen" button is its
+test.
 
 Attachments are extracted with `mailparser` (new dependency, MIT). Accepted:
-`application/pdf`, `image/jpeg`, `image/png`, at most 15 MB each, at most
-10 per mail. Inline images under 20 KB (signatures, logos) are ignored. A
-file name is sanitised with the existing `sanitizeFilename`; the stored
+`application/pdf`, `image/jpeg`, `image/png` (also when sent as
+`application/octet-stream` with a matching extension), **verified by magic
+bytes**, at most 15 MB each, at most 10 per mail. Images under 20 KB
+(signatures, logos) are ignored. A file name is reduced to its base name
+and a conservative character set (the CJIB importer's rule); the stored
 name is `<timestamp>_<hash8>_<safe name>` under `uploads/invoice-inbox/`.
 
 ## Scanning and booking
@@ -142,19 +156,30 @@ uid, config, createdBy })`:
    as `skipped`, nothing written). Save the file.
 3. Run `processInvoiceWithAI(path, mimeType)` (existing; gets an optional
    second parameter, default `application/pdf`, so JPG/PNG attachments are
-   sent with their own mime type; the manual scan route is unchanged). Then
-   `validateParsedInvoice`. Failure → item `review`, reason `parse_failed`,
-   `error_message` set.
-4. Collect plates: `parsed.vehicleInfo.licensePlate` plus every Dutch plate
-   pattern found in line-item descriptions, normalised (upper-case, no
-   dashes or spaces). Match against the fleet with the same normalisation.
+   sent with their own mime type; the manual scan route is unchanged). The
+   scanner's prompt and response schema are extended with `subtotalAmount`
+   (excl. VAT), `vatAmount` and `vehicleInfo.licensePlates` (every plate on
+   the invoice), all optional. Then `validateParsedInvoice`. Failure → item
+   `review`, reason `parse_failed`, `error_message` set, and whatever was
+   read is kept in `parsed`.
+4. Collect plates: `vehicleInfo.licensePlate`, every entry of
+   `vehicleInfo.licensePlates`, plus every dashed Dutch plate found in
+   line-item descriptions (six characters, at least one letter and one
+   digit, so dates and article numbers do not count), normalised
+   (upper-case, no dashes or spaces). Match against the fleet with the same
+   normalisation applied in SQL, because plates are stored both with and
+   without dashes.
 5. Decide with `decideInvoiceBooking()` (pure function in
    `server/services/invoice-inbox/decide.ts`): returns
    `{ action: 'book', vehicleId }` or `{ action: 'review', reason }`.
 6. `book`: call the shared helper `bookInvoiceAsExpenses()` (below) with
    the line items grouped per category (the scanner's default grouping),
    then write the item as `booked` with `vehicle_id` and `expense_ids`.
-   A booking error → item `review`, reason `parse_failed`, error stored.
+   The item is first written as `review` (the expenses need its id) and
+   upgraded afterwards. No expense at all → it stays `review` with reason
+   `parse_failed` and the error. Some lines refused → `booked`, with the
+   refused lines named in `error_message` (re-opening it for review would
+   invite booking the good lines twice).
 7. `review`: write the item with the reason and the parsed invoice.
 8. Notify staff through `notifyStaffOfPortalEvent`-style helper
    `notifyInvoiceInbox()` (in-app `custom_notifications` row of type
@@ -169,11 +194,16 @@ line (`category`, `amount`, `date = invoiceDate`, `description =
 "{description} (Factuur {invoiceNumber}, {vendor})"`, receipt file fields
 from the stored attachment, `inboxItemId`), and returns the created
 expenses. The existing `POST /api/expenses/from-invoice` route calls this
-helper too and refuses with 409 when the invoice hash is already `booked`
-(the client shows "Deze factuur is al geboekt" with a link to the item).
+helper too and refuses with 409 when the same file or the same invoice hash
+is already `booked` ("Deze factuur is al geboekt.") or waiting as `review`
+("… staat al bij Ontvangen facturen ter controle. Boek hem daar."). The
+scanner dialog already shows the server's message in its error toast. The
+`filePath` that route receives comes from the client, so it only counts when
+it resolves inside `uploads/invoices/` or `uploads/invoice-inbox/` (BUG-060).
 
-The manual scan keeps its current UI; the only visible change is the real
-duplicate check.
+The manual scan keeps its current UI. Visible changes: the real duplicate
+check, the Dutch description format, and the scanned PDF is now really
+attached to the expenses (today Zod strips `receiptFilePath`, so it is lost).
 
 ## Poller
 
@@ -186,8 +216,11 @@ is retried next run. Returns `{ startedAt, finishedAt, trigger, mails,
 attachments, booked, review, skipped, failed, errors[] }`. A mutex shares
 one run between overlapping calls. `startInvoiceInboxScheduler()` (called
 from `server/index.ts`, stopped on shutdown like the other schedulers)
-reads the config and, when `enabled`, schedules `*/<pollMinutes> * * * *`
-with node-cron; `PUT` of the config restarts it. A connection error writes
+reads the config and, when `enabled`, schedules with node-cron the way the
+CJIB poller does (`*/<m> * * * *` under an hour, `0 */<h> * * *` above,
+`0 0 * * *` for a day); `PUT` of the config restarts it. One run handles at
+most 25 mails, because every mail can cost a Gemini call; the rest waits for
+the next run. A connection error writes
 no item; it is kept in memory as `lastRun` and, after three consecutive
 failed runs, one in-app notification "Postvak facturen onbereikbaar" is
 written (reset when a run succeeds).
@@ -203,10 +236,10 @@ Permission `manage_expenses` unless stated.
 | `POST /config/test` (`manage_settings`) | connect, return `{ ok, unseen }` |
 | `POST /run` | run now; returns the run summary |
 | `GET /status` | `{ running, lastRun, scheduledMinutes, reviewCount }` |
-| `GET /items?status=review\|booked\|dismissed\|failed&limit=&offset=` | list, newest first, with vehicle plate when linked |
+| `GET /items?status=review\|booked\|dismissed&limit=&offset=` | list, newest first, with vehicle plate when linked |
 | `GET /items/:id` | one item with `parsed` |
 | `GET /items/:id/file` | the attachment (same path resolution and content-type checks as the receipt route) |
-| `POST /items/:id/book` | body `{ vehicleId, lineItems }`; books through the helper, sets `booked`, records `created_by`; 409 if not `review` |
+| `POST /items/:id/book` | body `{ vehicleId, invoice: { vendor, invoiceNumber, invoiceDate }, lineItems, groupByCategory = true }`; the header fields let staff correct or fill in what the scan got wrong; books through the helper (grouped per category on the server unless switched off), saves the corrections on the item, sets `booked`, records `updated_by`; 409 if not `review` |
 | `POST /items/:id/dismiss` | body `{ note? }`; sets `dismissed`; 409 if not `review` |
 
 Registered from `server/routes.ts` next to the expense routes. Item ids are
@@ -230,8 +263,10 @@ facturen" above the expenses table, new component
   `invoice-line-items-table.tsx` so both use it), a `VehicleSelector`
   pre-filled with the matched or single found plate, and buttons "Boeken"
   and "Afwijzen". Booking invalidates the expenses queries and closes.
-- "Geboekt" rows link to the vehicle's expenses; "Afgewezen" rows show the
-  note.
+- "Geboekt" rows show the vehicle plate; "Afgewezen" rows show the note.
+  "Bekijken" opens the same dialog read-only (attachment, header, lines).
+  There is no per-vehicle expenses page to link to; the expenses table
+  below the card is searchable by plate.
 
 Settings: a new block "Facturen per e-mail (inkomend)" in the settings
 panel (`client/src/components/settings/settings-panel.tsx`), in the existing
@@ -243,8 +278,13 @@ mail setting, outgoing and incoming, is in one place. Not in the
 from the config, a textarea for the sender list (one per line) and a
 "Verbinding testen" button that shows "Verbonden, {n} ongelezen".
 
-All labels through i18next in the `expenses` and `settings` namespaces
-(Dutch primary, English secondary), following the existing keys.
+All labels through i18next in the `expenses` namespace, key group
+`invoiceInbox` (the settings card included, the way the CJIB card lives in
+the `portal` namespace), in both `nl` and `en`.
+
+A live toast: the server broadcasts entity type `invoice-inbox` on every
+notification; `client/src/hooks/use-socket.tsx` shows it and refreshes the
+`/api/expenses…` queries and the bell.
 
 ## Error handling summary
 
@@ -254,7 +294,8 @@ All labels through i18next in the `expenses` and `settings` namespaces
 | scanner fails on all models | item `review`, `parse_failed`; mail moved (the file is stored, staff fill in by hand) |
 | attachment too big / wrong type | skipped; mail gets `no_attachment` only when nothing else was usable |
 | move to `processedFolder` fails | item already stored by hash, so the next run skips it; never booked twice |
-| booking throws halfway | expenses already created stay (each is valid on its own); item `review` with the error and the created ids, so staff see what exists |
+| some lines refused while booking | the accepted lines are booked; item `booked`, refused lines named in `error_message` and shown in the dialog |
+| no line could be booked | item stays `review`, reason `parse_failed`, with the error |
 | `GEMINI_API_KEY` missing | every attachment becomes `parse_failed`; the settings block shows a warning when the key is absent |
 
 ## Tests (vitest, `server/__tests__/`)
@@ -263,7 +304,15 @@ All labels through i18next in the `expenses` and `settings` namespaces
   book path; tolerance boundary (exactly 1.00 passes, 1.01 fails); future
   date.
 - `invoice-inbox-senders.test.ts`: plain address, `@domain`, upper-case,
-  `Name <address>`, subdomain not matching a bare domain.
+  `Name <address>`, subdomain and look-alike domains not matching a bare
+  domain.
+- `invoice-inbox-config.test.ts`: category `expenses`, masked password kept
+  on re-save, port pair, sender entry format, private host refused.
+- `invoice-inbox-storage.test.ts`: unique attachment hash, active-duplicate
+  lookup ignores dismissed items, list per status with plate, fleet lookup
+  by normalised plate.
+- `invoice-scanner-mime.test.ts` (mocked Gemini): mime type passed through,
+  VAT split and plate list requested and returned.
 - `invoice-inbox-plates.test.ts`: dashes, spaces, lower-case, plate only in
   a line description, two different plates, same plate written twice.
 - `invoice-inbox-importer.test.ts` (fake scanner and fake fleet): duplicate
@@ -276,8 +325,11 @@ All labels through i18next in the `expenses` and `settings` namespaces
   expression per interval.
 - `expense-inbox-routes.test.ts` (supertest): permissions, masked password
   on GET, book/dismiss state guard (409), file route path containment.
-- Client: `invoice-inbox-card.test.tsx` renders the reason labels and the
-  review dialog opens with the pre-filled vehicle.
+- Client: `invoice-inbox-card.test.tsx` (reason labels, badge, review
+  dialog pre-filled, booking sends only the ticked lines),
+  `invoice-inbox-config-form.test.tsx` (Dutch labels, senders one per line,
+  connection test), `invoice-line-items-table.test.tsx` (edit, remove keeps
+  the selection aligned, select all).
 
 ## Dependencies
 
