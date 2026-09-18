@@ -7,7 +7,7 @@ import { db } from "../db";
 import { expenses } from "../../shared/schema";
 import { getUploadsDir } from "../../shared/paths";
 import { DEFAULT_INVOICE_INBOX_CONFIG, type InboxParsedInvoice, type InvoiceInboxConfig } from "../../shared/invoice-inbox";
-import { importInvoiceMail, setInvoiceScanner, recordOversizeMail } from "../services/invoice-inbox/importer";
+import { importInvoiceMail, setInvoiceScanner, recordOversizeMail, recordFailedMail } from "../services/invoice-inbox/importer";
 import { inboxStorage } from "../services/invoice-inbox/inbox-storage";
 import { sha256 } from "../services/invoice-inbox/hash";
 import { resolveDocumentFilePath } from "../services/document-paths";
@@ -258,5 +258,19 @@ describe("invoice inbox importer", () => {
     expect(item.errorMessage).toContain("30 MB");
 
     expect(await recordOversizeMail(ref, INBOX_TEST_ACTOR)).toBe("skipped");
+  });
+
+  it("records a mail the poller gave up on once, with the reason and the error", async () => {
+    const ref = {
+      uid: 4, messageId: `<${unique()}@garage-test.invalid>`,
+      from: "Garage <facturen@garage-test.invalid>", subject: `${TEST_PREFIX}Kapot`, size: 1000,
+    };
+    expect(await recordFailedMail(ref, "invalid byte sequence for encoding UTF8: 0x00", INBOX_TEST_ACTOR)).toBe("review");
+    const item = (await inboxStorage.getByAttachmentHash(sha256(`mail:${ref.messageId}`)))!;
+    expect(item).toMatchObject({ status: "review", reviewReason: "parse_failed", fromAddress: "facturen@garage-test.invalid", attachmentPath: null });
+    expect(item.errorMessage).toContain("drie keer");
+    expect(item.errorMessage).toContain("0x00");
+
+    expect(await recordFailedMail(ref, "nog steeds stuk", INBOX_TEST_ACTOR)).toBe("skipped");
   });
 });

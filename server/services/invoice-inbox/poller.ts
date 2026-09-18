@@ -1,13 +1,15 @@
 import cron, { type ScheduledTask } from "node-cron";
 import type { InvoiceInboxConfig, InvoiceInboxRunSummary } from "../../../shared/invoice-inbox";
 import { getInvoiceInboxConfig } from "./config";
-import { imapClient, type InvoiceImapClient } from "./imap-client";
-import { importInvoiceMail, recordOversizeMail, MAX_MAIL_BYTES } from "./importer";
+import { imapClient, type InboxMessageRef, type InvoiceImapClient } from "./imap-client";
+import { importInvoiceMail, recordFailedMail, recordOversizeMail, MAX_MAIL_BYTES } from "./importer";
 import { notifyInvoiceInbox } from "./notify";
 
 /** Bounds one run: every mail can cost a Gemini call. The rest waits for the next run. */
 export const MAX_MAILS_PER_RUN = 25;
 const FAILURES_BEFORE_WARNING = 3;
+/** I1: after this many failed attempts a mail is recorded and taken out of the inbox. */
+const ATTEMPTS_BEFORE_GIVING_UP = 3;
 
 let client: InvoiceImapClient = imapClient;
 /** Tests swap the IMAP client for a fake; null restores the real one. */
@@ -19,13 +21,22 @@ let lastRun: InvoiceInboxRunSummary | null = null;
 let task: ScheduledTask | null = null;
 let scheduledMinutes: number | null = null;
 let consecutiveFailures = 0;
+/**
+ * I1 — how often each mail's import has thrown. A mail that keeps failing (a
+ * NUL in its subject makes every write throw) would otherwise stay unseen for
+ * ever: fetched, rescanned and re-billed every run, with the queue behind it
+ * standing still.
+ */
+const failedAttempts = new Map<string, number>();
+
+const mailKey = (ref: InboxMessageRef): string => ref.messageId ?? `uid:${ref.uid}`;
 
 export function getInvoiceInboxRunState(): { running: boolean; lastRun: InvoiceInboxRunSummary | null; scheduledMinutes: number | null } {
   return { running: running !== null, lastRun, scheduledMinutes };
 }
 
 export function resetInvoiceInboxPollerForTests(): void {
-  running = null; lastRun = null; consecutiveFailures = 0;
+  running = null; lastRun = null; consecutiveFailures = 0; failedAttempts.clear();
 }
 
 /**
@@ -64,10 +75,29 @@ export function runInvoiceInboxImport(
             summary.booked += result.booked;
             summary.review += result.review;
             summary.skipped += result.skipped;
+            failedAttempts.delete(mailKey(ref));
             await session.markProcessed(ref.uid);
           } catch (error) {
             summary.failed += 1;
-            summary.errors.push(`${ref.subject ?? `bericht ${ref.uid}`}: ${(error as Error).message}`);
+            const message = (error as Error).message;
+            summary.errors.push(`${ref.subject ?? `bericht ${ref.uid}`}: ${message}`);
+
+            // I1: retried twice, then recorded and taken out of the inbox, so
+            // one crafted mail cannot block the queue for ever.
+            const key = mailKey(ref);
+            const attempts = (failedAttempts.get(key) ?? 0) + 1;
+            failedAttempts.set(key, attempts);
+            if (attempts >= ATTEMPTS_BEFORE_GIVING_UP) {
+              try {
+                summary[await recordFailedMail(ref, message, createdBy)] += 1;
+              } catch (recordError) {
+                // The mail is still marked processed: leaving it unseen is what
+                // caused the endless retry loop in the first place.
+                console.error(`Factuurmail ${ref.uid} kon niet worden vastgelegd na ${attempts} mislukte pogingen:`, recordError);
+              }
+              failedAttempts.delete(key);
+              await session.markProcessed(ref.uid);
+            }
           }
         }
       });

@@ -154,6 +154,25 @@ async function notifyReview(reason: ReviewReason, vendor: string | undefined, me
  * attachment, so a mail that keeps coming back oversize is not queued twice.
  */
 export async function recordOversizeMail(ref: InboxMessageRef, createdBy: string): Promise<"review" | "skipped"> {
+  return recordUnprocessableMail(ref, createdBy, "no_attachment",
+    "De mail is groter dan 30 MB en is niet opgehaald. Vraag de factuur opnieuw op of boek hem met de hand.");
+}
+
+/**
+ * I1 — a mail whose import throws on every attempt used to stay unseen for
+ * ever: the queue stopped moving and every run paid for a fresh scan. The
+ * poller counts the attempts and, on the third, hands the mail here: one review
+ * item so staff still see it, then the mail is marked processed.
+ */
+export async function recordFailedMail(ref: InboxMessageRef, errorMessage: string, createdBy: string): Promise<"review" | "skipped"> {
+  return recordUnprocessableMail(ref, createdBy, "parse_failed",
+    `De mail kon drie keer niet worden verwerkt: ${errorMessage}`);
+}
+
+/** One review item for a mail that was never opened, keyed by the same "mail:<id>" hash. */
+async function recordUnprocessableMail(
+  ref: InboxMessageRef, createdBy: string, reason: ReviewReason, errorMessage: string,
+): Promise<"review" | "skipped"> {
   const attachmentHash = sha256(`mail:${ref.messageId ?? `uid:${ref.uid}`}`);
   if (await inboxStorage.getByAttachmentHash(attachmentHash)) return "skipped";
 
@@ -162,11 +181,10 @@ export async function recordOversizeMail(ref: InboxMessageRef, createdBy: string
     subject: (ref.subject ?? "").slice(0, 500) || null, mailDate: null,
   };
   await inboxStorage.create({
-    ...meta, attachmentHash, status: "review", reviewReason: "no_attachment",
-    errorMessage: "De mail is groter dan 30 MB en is niet opgehaald. Vraag de factuur opnieuw op of boek hem met de hand.",
-    createdBy,
+    ...meta, attachmentHash, status: "review", reviewReason: reason,
+    errorMessage: errorMessage.slice(0, 2000), createdBy,
   });
-  await notifyReview("no_attachment", undefined, meta);
+  await notifyReview(reason, undefined, meta);
   return "review";
 }
 

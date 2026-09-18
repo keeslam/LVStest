@@ -1,12 +1,13 @@
 import { describe, it, expect, beforeEach, afterAll, vi } from "vitest";
 
-const { importInvoiceMail, notifyInvoiceInbox, recordOversizeMail } = vi.hoisted(() => ({
+const { importInvoiceMail, notifyInvoiceInbox, recordOversizeMail, recordFailedMail } = vi.hoisted(() => ({
   importInvoiceMail: vi.fn(),
   notifyInvoiceInbox: vi.fn(async () => {}),
   recordOversizeMail: vi.fn(),
+  recordFailedMail: vi.fn(),
 }));
 vi.mock("../services/invoice-inbox/importer", () => ({
-  importInvoiceMail, recordOversizeMail, MAX_MAIL_BYTES: 30 * 1024 * 1024,
+  importInvoiceMail, recordOversizeMail, recordFailedMail, MAX_MAIL_BYTES: 30 * 1024 * 1024,
 }));
 vi.mock("../services/invoice-inbox/notify", () => ({ notifyInvoiceInbox }));
 
@@ -47,6 +48,7 @@ describe("invoice inbox poller", () => {
     importInvoiceMail.mockReset();
     notifyInvoiceInbox.mockClear();
     recordOversizeMail.mockReset();
+    recordFailedMail.mockReset();
     resetInvoiceInboxPollerForTests();
   });
   afterAll(() => setInvoiceImapClient(null));
@@ -76,6 +78,64 @@ describe("invoice inbox poller", () => {
     expect(summary).toMatchObject({ mails: 3, booked: 1, review: 1, failed: 1 });
     expect(summary.errors).toEqual(["Factuur 2: database weg"]);
     expect(mailbox.processed).toEqual([1, 3]);
+  });
+
+  /**
+   * I1: one crafted mail (a NUL in the subject) failed on every write, stayed
+   * unseen and was fetched and rescanned every run — blocking the queue and
+   * re-billing Gemini for ever. It is retried twice and then recorded.
+   */
+  it("gives up on a mail that keeps failing: two retries, then one item and the mail is processed", async () => {
+    const mailbox = fakeMailbox([1]);
+    setInvoiceImapClient(mailbox.client);
+    importInvoiceMail.mockRejectedValue(new Error("invalid byte sequence 0x00"));
+    recordFailedMail.mockResolvedValue("review");
+
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      const summary = await runInvoiceInboxImport("scheduler", "scheduler", config);
+      expect(summary.failed, `attempt ${attempt}`).toBe(1);
+      expect(recordFailedMail, `attempt ${attempt}`).not.toHaveBeenCalled();
+      expect(mailbox.processed, `attempt ${attempt}`).toEqual([]);
+    }
+
+    const third = await runInvoiceInboxImport("scheduler", "scheduler", config);
+    expect(recordFailedMail).toHaveBeenCalledTimes(1);
+    expect(recordFailedMail.mock.calls[0][0]).toMatchObject({ uid: 1, messageId: "<1@test>" });
+    expect(recordFailedMail.mock.calls[0][1]).toContain("invalid byte sequence 0x00");
+    expect(recordFailedMail.mock.calls[0][2]).toBe("scheduler");
+    expect(mailbox.processed).toEqual([1]);
+    expect(third).toMatchObject({ failed: 1, review: 1 });
+
+    // Counted per mail, and only once: a fourth run has nothing left to do.
+    const fourth = await runInvoiceInboxImport("scheduler", "scheduler", config);
+    expect(fourth.mails).toBe(0);
+    expect(recordFailedMail).toHaveBeenCalledTimes(1);
+  });
+
+  it("marks a mail processed even when recording the failure itself throws", async () => {
+    const mailbox = fakeMailbox([1]);
+    setInvoiceImapClient(mailbox.client);
+    importInvoiceMail.mockRejectedValue(new Error("stuk"));
+    recordFailedMail.mockRejectedValue(new Error("database weg"));
+    for (let i = 0; i < 3; i += 1) await runInvoiceInboxImport("scheduler", "scheduler", config);
+    expect(mailbox.processed).toEqual([1]);
+  });
+
+  it("forgets the failure count of a mail that imports successfully later on", async () => {
+    const mailbox = fakeMailbox([1]);
+    setInvoiceImapClient(mailbox.client);
+    importInvoiceMail.mockRejectedValueOnce(new Error("even niet"));
+    await runInvoiceInboxImport("scheduler", "scheduler", config);
+    importInvoiceMail.mockResolvedValue({ attachments: 1, booked: 1, review: 0, skipped: 0 });
+    await runInvoiceInboxImport("scheduler", "scheduler", config);
+
+    // The counter is back to zero: two fresh failures are not enough to give up.
+    const mailboxAgain = fakeMailbox([1]);
+    setInvoiceImapClient(mailboxAgain.client);
+    importInvoiceMail.mockRejectedValue(new Error("weer stuk"));
+    await runInvoiceInboxImport("scheduler", "scheduler", config);
+    await runInvoiceInboxImport("scheduler", "scheduler", config);
+    expect(recordFailedMail).not.toHaveBeenCalled();
   });
 
   it("shares one run between overlapping calls", async () => {
