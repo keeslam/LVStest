@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { eq, sql } from "drizzle-orm";
+import { db } from "../db";
+import { expenses, invoiceInboxItems } from "../../shared/schema";
 import { inboxStorage } from "../services/invoice-inbox/inbox-storage";
 import { createTestVehicle, cleanupPortalTestData } from "./portal-helpers";
 import { cleanupInboxTestData, INBOX_TEST_ACTOR } from "./invoice-inbox-helpers";
@@ -59,5 +62,25 @@ describe("invoice inbox storage", () => {
     const found = await inboxStorage.findVehiclesByPlates(["PTIB01", "PTIB02", "ZZ999Z"]);
     expect(found.map((v) => v.licensePlate).sort()).toEqual(["PT-IB-01", "PTIB02"]);
     expect(await inboxStorage.findVehiclesByPlates([])).toEqual([]);
+  });
+
+  it("has the named foreign key from expenses.inbox_item_id to invoice_inbox_items, which sets it null when the item is deleted", async () => {
+    const constraint = await db.execute(sql`SELECT 1 FROM pg_constraint WHERE conname = 'expenses_inbox_item_id_invoice_inbox_items_id_fk'`);
+    expect(constraint.rows).toHaveLength(1);
+
+    const item = await inboxStorage.create({ attachmentHash: `hash-${unique()}`, status: "review", createdBy: INBOX_TEST_ACTOR });
+    const [expense] = await db.insert(expenses).values({
+      vehicleId,
+      category: "fuel",
+      amount: "10.00",
+      date: "2026-09-18",
+      inboxItemId: item.id,
+    }).returning();
+    expect(expense.inboxItemId).toBe(item.id);
+
+    await db.delete(invoiceInboxItems).where(eq(invoiceInboxItems.id, item.id));
+
+    const [after] = await db.select().from(expenses).where(eq(expenses.id, expense.id));
+    expect(after.inboxItemId).toBeNull();
   });
 });

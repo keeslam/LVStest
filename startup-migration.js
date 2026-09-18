@@ -1350,7 +1350,20 @@ async function runMigrations() {
     await db.execute(sql`CREATE INDEX IF NOT EXISTS invoice_inbox_items_message_id_idx ON invoice_inbox_items (message_id)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS invoice_inbox_items_invoice_hash_idx ON invoice_inbox_items (invoice_hash)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS invoice_inbox_items_status_idx ON invoice_inbox_items (status, received_at)`);
-    await addColumnIfNotExists('expenses', 'inbox_item_id', 'INTEGER REFERENCES invoice_inbox_items(id) ON DELETE SET NULL');
+    await addColumnIfNotExists('expenses', 'inbox_item_id', 'INTEGER');
+    // The early manifest sync (above) already added the column on existing
+    // databases, as a plain INTEGER - so the foreign key is added on its own,
+    // by name, and only when it is not there yet.
+    await db.execute(sql`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'expenses_inbox_item_id_invoice_inbox_items_id_fk'
+        ) THEN
+          ALTER TABLE expenses ADD CONSTRAINT expenses_inbox_item_id_invoice_inbox_items_id_fk
+            FOREIGN KEY (inbox_item_id) REFERENCES invoice_inbox_items(id) ON DELETE SET NULL;
+        END IF;
+      END $$;
+    `);
 
     await addColumnIfNotExists('reservations', 'portal_request_id', 'INTEGER');
 
