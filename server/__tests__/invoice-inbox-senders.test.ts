@@ -59,6 +59,40 @@ describe("senderAuthVerdict", () => {
       expect(verdict(line("mx.host.nl; spf=pass smtp.mailfrom=notgarage.nl"))).toBe("fail");
     });
 
+    /**
+     * A receiving server PREPENDS its own header, so its verdict is the
+     * top-most line carrying its name. A sender can write anything below it —
+     * including a second line with our own authserv-id on it.
+     */
+    it("reads only the top-most line of our own server, so a forged one below it is worthless", () => {
+      expect(verdict(
+        line("mx.host.nl; dmarc=fail header.from=garage.nl"),
+        line("mx.host.nl; dmarc=pass header.from=garage.nl"),
+      )).toBe("fail");
+      // The genuine verdict on top still counts when rubbish follows it.
+      expect(verdict(
+        line("mx.host.nl; dmarc=pass header.from=garage.nl"),
+        line("mx.host.nl; dmarc=fail header.from=garage.nl"),
+      )).toBe("pass");
+      // Lines of other servers above ours do not hide it.
+      expect(verdict(
+        line("spamfilter.example; dmarc=pass"),
+        line("mx.host.nl; dmarc=pass header.from=garage.nl"),
+        line("mx.host.nl; dmarc=fail"),
+      )).toBe("pass");
+    });
+
+    it("lets a DMARC fail in that line beat any pass beside it", () => {
+      expect(verdict(line("mx.host.nl; spf=pass smtp.mailfrom=garage.nl; dmarc=fail header.from=garage.nl"))).toBe("fail");
+      expect(verdict(line("mx.host.nl; dkim=pass header.d=garage.nl; dmarc=fail"))).toBe("fail");
+    });
+
+    it("only accepts a DMARC pass that is about the From domain", () => {
+      expect(verdict(line("mx.host.nl; dmarc=pass header.from=evil.example"))).toBe("fail");
+      // No header.from at all: DMARC is evaluated on the From domain by definition.
+      expect(verdict(line("mx.host.nl; dmarc=pass"))).toBe("pass");
+    });
+
     it("ignores a pass line the sender stamped under another authserv-id", () => {
       expect(verdict(line("evil.example; dmarc=pass header.from=garage.nl"))).toBe("fail");
       expect(verdict(

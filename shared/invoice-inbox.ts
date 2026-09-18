@@ -176,10 +176,14 @@ const domainOf = (value: string): string => {
  * What the receiving mail server said about this mail — the only thing that can
  * contradict a From address, which anyone may type.
  *
- * With `authservId` filled in (strict), only lines that server wrote are read,
- * and the mail has to earn its pass: DMARC pass, or SPF/DKIM pass aligned with
- * the From domain. Anything else, a pass stamped under another authserv-id
- * included, is a `fail`.
+ * With `authservId` filled in (strict), only the **top-most** line carrying that
+ * name is read. A receiving server prepends its own header, so that line is the
+ * one it wrote; everything below it was already in the message and may have been
+ * typed by the sender, our authserv-id included. The mail then has to earn its
+ * pass in that single line: a DMARC pass about the From domain, or an SPF/DKIM
+ * pass aligned with it — and a DMARC fail in the same line beats any of them,
+ * because DMARC is the verdict that weighs alignment. No such line, or no pass
+ * in it: `fail`.
  *
  * With `authservId` empty (lenient, the default, because many hosts stamp
  * nothing) every line is read but only a hard fail — or an SPF softfail —
@@ -198,14 +202,20 @@ export function senderAuthVerdict(headerLines: string[], fromDomain: string, aut
     return failed ? 'fail' : 'none';
   }
 
-  const ours = parsed.filter((p) => p.authserv === wanted);
-  const passed = ours.some(({ results }) => results.some((r) => {
+  // `headerLines` arrive in message order, so the first match is the top-most one.
+  const ours = parsed.find((p) => p.authserv === wanted);
+  if (!ours) return 'fail';
+
+  if (ours.results.some((r) => r.method === 'dmarc' && r.result === 'fail')) return 'fail';
+  const passed = ours.results.some((r) => {
     if (r.result !== 'pass') return false;
-    if (r.method === 'dmarc') return true;
+    // DMARC is evaluated against the From domain by definition; a line that
+    // names another domain is not about this mail's sender.
+    if (r.method === 'dmarc') return !r.props['header.from'] || domainOf(r.props['header.from']) === domain;
     if (r.method === 'spf') return Boolean(r.props['smtp.mailfrom']) && domainOf(r.props['smtp.mailfrom']) === domain;
     if (r.method === 'dkim') return Boolean(r.props['header.d']) && domainOf(r.props['header.d']) === domain;
     return false;
-  }));
+  });
   return passed ? 'pass' : 'fail';
 }
 

@@ -88,12 +88,15 @@ pure function `senderAuthVerdict(headerLines, fromDomain, authservId)` in
 `shared/invoice-inbox.ts` reads the receiving mail server's
 `Authentication-Results` headers and answers `pass`, `fail` or `none`:
 
-- **`authservId` filled in (strict)** — only lines whose authserv-id (the token
-  before the first `;`, past an optional version number) equals it are read.
-  `pass` for `dmarc=pass`, or `spf=pass` whose `smtp.mailfrom` domain equals the
-  From domain, or `dkim=pass` whose `header.d` equals it. Everything else, "no
-  such header" included, is `fail`. A `dmarc=pass` line the sender wrote himself
-  carries a different authserv-id and is therefore ignored.
+- **`authservId` filled in (strict)** — only the **top-most** line whose
+  authserv-id (the token before the first `;`, past an optional version number)
+  equals it is read. A receiving server prepends its own header, so that is the
+  line it wrote; everything below it arrived with the message and may have been
+  typed by the sender, our own authserv-id included. In that one line a
+  `dmarc=fail` beats every pass beside it; otherwise `pass` for `dmarc=pass`
+  whose `header.from` is the From domain (or absent), or `spf=pass` whose
+  `smtp.mailfrom` domain equals it, or `dkim=pass` whose `header.d` equals it.
+  Everything else, "no such header" included, is `fail`.
 - **`authservId` empty (lenient, the default)** — every A-R line counts, but
   only `dmarc=fail`, `spf=fail` and `spf=softfail` mean `fail`; anything else is
   `none`. A forged pass gains nothing here either, because a pass is not what
