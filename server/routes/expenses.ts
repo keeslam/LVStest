@@ -8,6 +8,7 @@ import { storage } from "../storage";
 import { processInvoiceWithAI, generateInvoiceHash, validateParsedInvoice } from "../utils/invoice-scanner";
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
 import { z } from "zod";
 import { insertExpenseSchema, UserPermission } from "../../shared/schema";
 import { realtimeEvents } from "../realtime-events";
@@ -15,6 +16,10 @@ import { hasPermission } from "../middleware/permissions.js";
 import { getUploadsDir } from "../../shared/paths";
 import { validateAfterUpload, sanitizeFilename, createSecureMulterFilter } from "../utils/security/fileUploadSecurity";
 import { getRelativePath, resolveDocumentFilePath } from "../services/document-paths";
+import { bookInvoiceAsExpenses, receiptFromStoredPath, resolveInvoiceFile } from "../services/expenses/book-invoice";
+import { inboxStorage } from "../services/invoice-inbox/inbox-storage";
+import { computeInvoiceHash, sha256 } from "../services/invoice-inbox/hash";
+import type { InboxParsedInvoice } from "../../shared/invoice-inbox";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
 
@@ -560,67 +565,93 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
 
 
   // Create expenses from scanned invoice
+  const fromInvoiceSchema = z.object({
+    invoice: z.object({
+      vendor: z.string().max(300).optional().default(""),
+      invoiceNumber: z.string().max(200).optional().default(""),
+      invoiceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      totalAmount: z.coerce.number().min(0).optional().default(0),
+    }).passthrough(),
+    vehicleId: z.coerce.number().int().positive(),
+    filePath: z.string().max(1000).nullable().optional(),
+    lineItems: z.array(z.object({
+      description: z.string().trim().min(1).max(1000),
+      amount: z.coerce.number().positive().max(1000000),
+      category: z.string().trim().min(1).max(100),
+    })).min(1).max(200),
+  });
+
   app.post("/api/expenses/from-invoice", hasPermission(UserPermission.MANAGE_EXPENSES), async (req: Request, res: Response) => {
     try {
-      const { invoice, vehicleId, filePath, invoiceHash, lineItems } = req.body;
-
-      // Validate required fields
-      if (!invoice || !vehicleId || !lineItems || !Array.isArray(lineItems)) {
+      const parsedBody = fromInvoiceSchema.safeParse(req.body ?? {});
+      if (!parsedBody.success) {
         return res.status(400).json({ message: "Missing required fields" });
       }
+      const { invoice, vehicleId, filePath, lineItems } = parsedBody.data;
+      const invoiceDate = invoice.invoiceDate ?? new Date().toISOString().split('T')[0];
 
-      // Validate vehicle exists
-      const vehicle = await storage.getVehicle(parseInt(vehicleId));
+      const vehicle = await storage.getVehicle(vehicleId);
       if (!vehicle) {
         return res.status(404).json({ message: "Vehicle not found" });
       }
 
-      // Check for duplicates using invoice hash
-      if (invoiceHash) {
-        // This is a simple check - in production you might want to store invoice hashes in the database
-        console.log('Invoice hash for duplicate check:', invoiceHash);
+      // The path comes from the client: only a file inside the invoice folders counts (BUG-060).
+      const receipt = receiptFromStoredPath(filePath);
+      const receiptAbsolute = receipt ? resolveInvoiceFile(filePath) : null;
+      const attachmentHash = receiptAbsolute ? sha256(fs.readFileSync(receiptAbsolute)) : sha256(`manual:${crypto.randomUUID()}`);
+      const invoiceHash = computeInvoiceHash({ ...invoice, invoiceDate });
+
+      // Same file, or same invoice in another file, already booked or waiting for review?
+      const sameFile = await inboxStorage.getByAttachmentHash(attachmentHash);
+      const sameInvoice = invoiceHash ? await inboxStorage.findActiveByInvoiceHash(invoiceHash) : undefined;
+      const clash = [sameFile, sameInvoice].find((i) => i && (i.status === "booked" || i.status === "review"));
+      if (clash) {
+        return res.status(409).json({
+          message: clash.status === "booked"
+            ? "Deze factuur is al geboekt."
+            : "Deze factuur staat al bij Ontvangen facturen ter controle. Boek hem daar.",
+          inboxItemId: clash.id,
+          status: clash.status,
+        });
       }
 
-      const createdExpenses = [];
       const currentUser = (req as any).user?.username || 'system';
+      const parsedForItem = { ...invoice, invoiceDate, currency: (invoice as any).currency ?? "EUR", lineItems } as unknown as InboxParsedInvoice;
+      const itemData = {
+        attachmentName: receipt?.fileName ?? null, attachmentPath: receipt?.relativePath ?? null,
+        attachmentContentType: receipt?.contentType ?? null, invoiceHash, parsed: parsedForItem,
+        status: "review", reviewReason: null, vehicleId, errorMessage: null, updatedBy: currentUser,
+      };
+      // A dismissed item for the same file is taken over instead of violating the unique hash.
+      const item = sameFile
+        ? (await inboxStorage.update(sameFile.id, itemData))!
+        : await inboxStorage.create({ ...itemData, attachmentHash, createdBy: currentUser });
 
-      // Create expenses from line items
-      for (const lineItem of lineItems) {
-        try {
-          const expenseData = {
-            vehicleId: parseInt(vehicleId),
-            category: lineItem.category || 'Other',
-            amount: lineItem.amount?.toString() || '0',
-            date: invoice.invoiceDate || new Date().toISOString().split('T')[0],
-            description: `${lineItem.description} (Invoice: ${invoice.invoiceNumber || 'N/A'} - ${invoice.vendor || 'Unknown'})`,
-            receiptFilePath: filePath || null,
-            createdBy: currentUser,
-            updatedBy: null
-          };
+      const booked = await bookInvoiceAsExpenses({
+        invoice: { vendor: invoice.vendor, invoiceNumber: invoice.invoiceNumber, invoiceDate },
+        vehicleId, lineItems, receipt, inboxItemId: item.id, createdBy: currentUser,
+      });
 
-          // Validate expense data
-          const validatedData = insertExpenseSchema.parse(expenseData);
-          const expense = await storage.createExpense(validatedData);
-          createdExpenses.push(expense);
-
-        } catch (itemError) {
-          console.error('Error creating expense for line item:', lineItem, itemError);
-          // Continue with other items even if one fails
-        }
-      }
-
-      if (createdExpenses.length === 0) {
+      if (booked.expenses.length === 0) {
+        await inboxStorage.update(item.id, { reviewReason: "parse_failed", errorMessage: booked.errors.join("; ").slice(0, 2000) || "Boeken mislukt" });
         return res.status(400).json({ message: "No expenses could be created" });
       }
 
+      await inboxStorage.update(item.id, {
+        status: "booked", reviewReason: null, expenseIds: booked.expenses.map((e) => e.id),
+        errorMessage: booked.errors.length ? booked.errors.join("; ").slice(0, 2000) : null,
+        processedAt: new Date(), updatedBy: currentUser,
+      });
+
       res.json({
         success: true,
-        message: `Successfully created ${createdExpenses.length} expense(s)`,
-        expenses: createdExpenses,
+        message: `Successfully created ${booked.expenses.length} expense(s)`,
+        expenses: booked.expenses,
+        inboxItemId: item.id,
         invoice: {
           vendor: invoice.vendor,
           invoiceNumber: invoice.invoiceNumber,
-          invoiceDate: invoice.invoiceDate,
+          invoiceDate,
           totalAmount: invoice.totalAmount
         }
       });

@@ -1,5 +1,5 @@
 import fs from "fs";
-import { inArray, like } from "drizzle-orm";
+import { eq, inArray, like, or } from "drizzle-orm";
 import { db } from "../db";
 import { expenses, invoiceInboxItems, vehicles } from "../../shared/schema";
 import { resolveDocumentFilePath } from "../services/document-paths";
@@ -8,6 +8,9 @@ import { TEST_PREFIX } from "./portal-helpers";
 
 /** `created_by` of every inbox item a test writes, so cleanup can find them. */
 export const INBOX_TEST_ACTOR = `${TEST_PREFIX}inbox`;
+
+/** Items written by the test actor, or through a route by buildStaffTestApp's fixed user. */
+const writtenByTests = or(like(invoiceInboxItems.createdBy, `${INBOX_TEST_ACTOR}%`), eq(invoiceInboxItems.createdBy, "staff-test"));
 
 /**
  * Removes what the inbox tests leave behind: items written by the test actor,
@@ -21,12 +24,12 @@ export async function cleanupInboxTestData(): Promise<void> {
   const vehicleIds = testVehicles.map((v) => v.id);
   if (vehicleIds.length) await db.delete(expenses).where(inArray(expenses.vehicleId, vehicleIds));
 
-  const items = await db.select().from(invoiceInboxItems).where(like(invoiceInboxItems.createdBy, `${INBOX_TEST_ACTOR}%`));
+  const items = await db.select().from(invoiceInboxItems).where(writtenByTests);
   for (const item of items) {
     const abs = item.attachmentPath ? resolveDocumentFilePath(item.attachmentPath) : null;
     if (abs) fs.rmSync(abs, { force: true });
   }
-  await db.delete(invoiceInboxItems).where(like(invoiceInboxItems.createdBy, `${INBOX_TEST_ACTOR}%`));
+  await db.delete(invoiceInboxItems).where(writtenByTests);
 
   const notes = await storage.getCustomNotificationsByType("invoice_inbox");
   for (const n of notes) {
