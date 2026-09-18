@@ -144,8 +144,14 @@ describe("app settings redaction", () => {
       expect(row.value.smtpPassword).toBe("");
 
       // Saving the blanked value back must not wipe the working configuration.
-      await request(admin).put(`/api/app-settings/${created.id}`).send({ key, category: "email", value: row.value });
+      const written = await request(admin).put(`/api/app-settings/${created.id}`).send({ key, category: "email", value: row.value });
       expect(((await storage.getAppSetting(created.id))!.value as any).smtpPassword).toBe("smtp-geheim");
+      // …and the answer must not hand the merged password straight back.
+      expect(JSON.stringify(written.body)).not.toContain("smtp-geheim");
+      expect(written.body.value.smtpPassword).toBe("");
+
+      const upserted = await request(admin).post("/api/app-settings").send({ key, category: "email", value: row.value });
+      expect(JSON.stringify(upserted.body)).not.toContain("smtp-geheim");
 
       // A password the admin really typed still replaces it.
       await request(admin).put(`/api/app-settings/${created.id}`).send({ key, category: "email", value: { ...row.value, smtpPassword: "nieuw" } });

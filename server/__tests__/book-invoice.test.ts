@@ -227,6 +227,19 @@ describe("booking invoices as expenses", () => {
       expect(res.headers["x-content-type-options"]).toBe("nosniff");
     });
 
+    /**
+     * The app's own upload filter accepts `image/jpg`
+     * (server/utils/security/fileUploadSecurity.ts), so staff receipts carry
+     * that spelling. It is the same thing as image/jpeg and must stay inline.
+     */
+    it("treats the image/jpg spelling multer accepts as image/jpeg", async () => {
+      const expense = await receiptExpense(".jpg", "image/jpg");
+      const res = await request(app).get(`/api/expenses/${expense.id}/receipt`);
+      expect(res.status).toBe(200);
+      expect(res.headers["content-type"]).toContain("image/jpeg");
+      expect(res.headers["content-disposition"]).toContain("inline");
+    });
+
     it("falls back to the file extension for an older receipt without a stored type", async () => {
       const known = await receiptExpense(".pdf", null);
       const good = await request(app).get(`/api/expenses/${known.id}/receipt`);

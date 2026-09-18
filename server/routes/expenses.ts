@@ -41,7 +41,11 @@ const RECEIPT_TYPE_BY_EXTENSION: Record<string, string> = {
  * for the four types above.
  */
 export function servableReceiptType(storedType: string | null | undefined, filePath: string): string | null {
-  const declared = String(storedType ?? "").toLowerCase().trim().split(";")[0].trim();
+  const raw = String(storedType ?? "").toLowerCase().trim().split(";")[0].trim();
+  // The app's own upload filter accepts the "image/jpg" spelling as well as
+  // "image/jpeg" (utils/security/fileUploadSecurity.ts), so staff receipts carry
+  // both — they are the same thing and both belong in the preview.
+  const declared = raw === "image/jpg" ? "image/jpeg" : raw;
   if (declared) return SERVABLE_RECEIPT_TYPES.includes(declared) ? declared : null;
   return RECEIPT_TYPE_BY_EXTENSION[path.extname(filePath).toLowerCase()] ?? null;
 }

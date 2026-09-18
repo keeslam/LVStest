@@ -60,7 +60,8 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
    * stored one" — the same rule the two mailbox screens apply to their mask.
    * A non-empty password still replaces it.
    */
-  function keepStoredSmtpPassword(value: any, existing: { value?: any } | undefined): any {
+  function keepStoredSmtpPassword(category: unknown, value: any, existing: { value?: any } | undefined): any {
+    if (category !== "email") return value;
     if (!value || typeof value !== "object" || Array.isArray(value)) return value;
     const stored = existing?.value;
     if (!stored || typeof stored !== "object" || Array.isArray(stored)) return value;
@@ -446,7 +447,7 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
       if (existing) {
         // Update existing setting
         const updated = await storage.updateAppSetting(existing.id, {
-          value: keepStoredSmtpPassword(value, existing),
+          value: keepStoredSmtpPassword(category, value, existing),
           category,
           description,
           updatedBy: user ? user.username : null,
@@ -454,7 +455,9 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
         if (updated?.category === 'email') {
           clearEmailConfigCache();
         }
-        res.json(updated);
+        // C1: the merged value may carry the stored SMTP password again — the
+        // answer goes through the same redaction as every read.
+        res.json(redactAppSetting(updated));
       } else {
         // Create new setting
         const created = await storage.createAppSetting({
@@ -468,7 +471,7 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
         if (created.category === 'email') {
           clearEmailConfigCache();
         }
-        res.json(created);
+        res.json(redactAppSetting(created));
       }
     } catch (error) {
       console.error("Error creating/updating app setting:", error);
@@ -491,7 +494,7 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
 
       const updated = await storage.updateAppSetting(id, {
         key,
-        value: keepStoredSmtpPassword(value, await storage.getAppSetting(id)),
+        value: keepStoredSmtpPassword(category, value, await storage.getAppSetting(id)),
         category,
         description,
         updatedBy: user ? user.username : null,
@@ -505,7 +508,7 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
         clearEmailConfigCache();
       }
 
-      res.json(updated);
+      res.json(redactAppSetting(updated));
     } catch (error) {
       console.error("Error updating app setting:", error);
       res.status(500).json({ message: "Error updating app setting" });
