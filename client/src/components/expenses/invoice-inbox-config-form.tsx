@@ -30,6 +30,9 @@ export function InvoiceInboxConfigForm() {
   const { data: status } = useQuery<{ geminiConfigured: boolean }>({
     queryKey: STATUS_QUERY_KEY,
     queryFn: async () => (await apiRequest("GET", STATUS_QUERY_KEY[0])).json(),
+    // A refused status is "unknown", not something to hammer: whoever manages
+    // settings without manage_expenses still sees the form, just without this.
+    retry: false,
   });
   const [form, setForm] = useState<InvoiceInboxConfig | null>(null);
   const [sendersText, setSendersText] = useState("");

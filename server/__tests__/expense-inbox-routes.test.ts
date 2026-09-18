@@ -47,6 +47,7 @@ describe("expense inbox routes", () => {
   const admin = buildStaffTestApp([UserPermission.MANAGE_EXPENSES, UserPermission.MANAGE_SETTINGS], registerExpenseInboxRoutes);
   const bookkeeper = buildStaffTestApp([UserPermission.MANAGE_EXPENSES], registerExpenseInboxRoutes);
   const outsider = buildStaffTestApp([], registerExpenseInboxRoutes);
+  const settingsOnly = buildStaffTestApp([UserPermission.MANAGE_SETTINGS], registerExpenseInboxRoutes);
   const inboxDir = path.join(getUploadsDir(), "invoice-inbox");
   let previousConfig: unknown;
   let vehicleId: number;
@@ -91,6 +92,18 @@ describe("expense inbox routes", () => {
     expect((await request(bookkeeper).post("/api/expenses/inbox/config/test").send({})).status).toBe(403);
     expect((await request(outsider).get("/api/expenses/inbox/items")).status).toBe(403);
     expect((await request(outsider).post("/api/expenses/inbox/run")).status).toBe(403);
+  });
+
+  it("lets whoever manages the settings see the status and try a run, and nothing else", async () => {
+    await saveInvoiceInboxConfig({ enabled: false, host: "imap.example.test", username: "u", password: "geheim", allowedSenders: ["@garage-test.invalid"] }, "test");
+    setInvoiceImapClient(mailboxWith([]));
+
+    expect((await request(settingsOnly).get("/api/expenses/inbox/status")).status).toBe(200);
+    expect((await request(settingsOnly).post("/api/expenses/inbox/run")).status).toBe(200);
+
+    expect((await request(settingsOnly).get("/api/expenses/inbox/items")).status).toBe(403);
+    expect((await request(settingsOnly).post("/api/expenses/inbox/items/1/book").send({})).status).toBe(403);
+    expect((await request(settingsOnly).post("/api/expenses/inbox/items/1/dismiss").send({})).status).toBe(403);
   });
 
   it("stores the config with a masked password and keeps it on re-save", async () => {

@@ -17,6 +17,8 @@ import { bookInvoiceAsExpenses, groupLinesByCategory, receiptFromStoredPath, res
 
 const canManageSettings = hasPermission(UserPermission.MANAGE_SETTINGS);
 const canManageExpenses = hasPermission(UserPermission.MANAGE_EXPENSES);
+// Whoever configures the mailbox must also be able to see its state and try it.
+const canRunOrSeeStatus = hasPermission(UserPermission.MANAGE_EXPENSES, UserPermission.MANAGE_SETTINGS);
 
 const SERVABLE_TYPES = ["application/pdf", "image/jpeg", "image/png"];
 
@@ -83,13 +85,13 @@ export function registerExpenseInboxRoutes(app: Express): void {
   });
 
   // ---- run and status ---------------------------------------------------------
-  app.post("/api/expenses/inbox/run", canManageExpenses, async (req, res) => {
+  app.post("/api/expenses/inbox/run", canRunOrSeeStatus, async (req, res) => {
     const summary = await runInvoiceInboxImport("manual", actor(req));
     await AuditLogger.logFromRequest(req, "expense.inbox.run", "invoice_inbox", 0, summary as unknown as Record<string, unknown>);
     res.json(summary);
   });
 
-  app.get("/api/expenses/inbox/status", canManageExpenses, async (_req, res) => {
+  app.get("/api/expenses/inbox/status", canRunOrSeeStatus, async (_req, res) => {
     const config = await getInvoiceInboxConfig();
     res.json({
       enabled: config.enabled && Boolean(config.host),

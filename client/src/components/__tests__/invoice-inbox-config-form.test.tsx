@@ -62,4 +62,22 @@ describe("InvoiceInboxConfigForm", () => {
     await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
     expect(calls.find((c) => c.method === "PUT")!.body.allowedSenders).toEqual(["@garage.nl", "Facturen@Banden.nl"]);
   });
+
+  it("still renders with its values when the status check is refused, and does not hammer it", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = (init?.method ?? "GET").toUpperCase();
+      calls.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
+      if (url.endsWith("/api/expenses/inbox/status")) return json({ message: "Not authorized" }, { status: 403 });
+      if (url.endsWith("/api/expenses/inbox/config/test")) return json({ ok: true, unseen: 2 });
+      if (url.endsWith("/api/expenses/inbox/config")) return json(method === "PUT" ? { ...JSON.parse(String(init!.body)), password: "********" } : config);
+      return json({}, { status: 404 });
+    }));
+
+    mount();
+    expect(await screen.findByLabelText("IMAP-server")).toHaveValue("imap.voorbeeld.nl");
+    await waitFor(() => expect(calls.some((c) => c.url.endsWith("/api/expenses/inbox/status"))).toBe(true));
+    expect(screen.queryByText(/GEMINI_API_KEY is niet ingesteld/)).not.toBeInTheDocument();
+    expect(calls.filter((c) => c.url.endsWith("/api/expenses/inbox/status")).length).toBe(1);
+  });
 });

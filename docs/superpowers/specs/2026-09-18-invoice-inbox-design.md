@@ -234,8 +234,8 @@ Permission `manage_expenses` unless stated.
 | `GET /config` (`manage_settings`) | masked config |
 | `PUT /config` (`manage_settings`) | validate, save, restart scheduler |
 | `POST /config/test` (`manage_settings`) | connect, return `{ ok, unseen }` |
-| `POST /run` | run now; returns the run summary |
-| `GET /status` | `{ running, lastRun, scheduledMinutes, reviewCount }` |
+| `POST /run` (`manage_expenses` or `manage_settings`) | run now; returns the run summary |
+| `GET /status` (`manage_expenses` or `manage_settings`) | `{ running, lastRun, scheduledMinutes, reviewCount }` |
 | `GET /items?status=review\|booked\|dismissed&limit=&offset=` | list, newest first, with vehicle plate when linked |
 | `GET /items/:id` | one item with `parsed` |
 | `GET /items/:id/file` | the attachment (same path resolution and content-type checks as the receipt route) |
