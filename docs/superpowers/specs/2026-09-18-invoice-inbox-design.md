@@ -233,9 +233,11 @@ facturen" above the expenses table, new component
 - "Geboekt" rows link to the vehicle's expenses; "Afgewezen" rows show the
   note.
 
-Settings: a new block "Facturen per e-mail" in the settings panel
-(`client/src/components/settings/settings-panel.tsx`), next to the CJIB
-block, as its own component
+Settings: a new block "Facturen per e-mail (inkomend)" in the settings
+panel (`client/src/components/settings/settings-panel.tsx`), in the existing
+"E-mail" tab (`TabsContent value="email"`) below the SMTP cards, so every
+mail setting, outgoing and incoming, is in one place. Not in the
+"Klantenportaal" tab where the CJIB block lives. Its own component
 `client/src/components/expenses/invoice-inbox-config-form.tsx` (modelled on
 `fines/cjib-config-form.tsx`), with the fields
 from the config, a textarea for the sender list (one per line) and a
