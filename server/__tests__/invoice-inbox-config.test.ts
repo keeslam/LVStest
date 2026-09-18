@@ -50,4 +50,30 @@ describe("invoice inbox config", () => {
     await expect(assertAllowedImapTarget("imap.example.test", 6379)).rejects.toBeInstanceOf(OutboundBlockedError);
     await expect(assertAllowedImapTarget("127.0.0.1", 993)).rejects.toBeInstanceOf(OutboundBlockedError);
   });
+
+  it("returns a deep copy of defaults, not the shared constant, so mutations do not corrupt it", async () => {
+    const row = await storage.getAppSettingByKey(INVOICE_INBOX_CONFIG_KEY);
+    if (row) {
+      // Make the stored value unparsable so safeParse fails
+      await storage.updateAppSetting(row.id, { value: { port: 25 } });
+    }
+
+    // First call: getInvoiceInboxConfig should return defaults because parsing fails
+    const config1 = await getInvoiceInboxConfig();
+    expect(config1).toEqual(DEFAULT_INVOICE_INBOX_CONFIG);
+
+    // Mutate the returned config
+    config1.enabled = true;
+    config1.allowedSenders.push("mutated@example.nl");
+
+    // Second call: should still return pristine defaults
+    const config2 = await getInvoiceInboxConfig();
+    expect(config2).toEqual(DEFAULT_INVOICE_INBOX_CONFIG);
+    expect(config2.enabled).toBe(false);
+    expect(config2.allowedSenders).toEqual([]);
+
+    // Verify the shared constant itself is unchanged
+    expect(DEFAULT_INVOICE_INBOX_CONFIG.enabled).toBe(false);
+    expect(DEFAULT_INVOICE_INBOX_CONFIG.allowedSenders).toEqual([]);
+  });
 });

@@ -11,6 +11,11 @@ export const IMAP_ALLOWED_PORTS = [993, 143];
 
 const SENDER_PATTERN = /^(@[a-z0-9-]+(\.[a-z0-9-]+)+|[^\s@<>]+@[a-z0-9-]+(\.[a-z0-9-]+)+)$/;
 
+/** Returns a deep copy of the default config to prevent mutations from corrupting the shared constant. */
+function defaultConfig(): InvoiceInboxConfig {
+  return { ...DEFAULT_INVOICE_INBOX_CONFIG, allowedSenders: [...DEFAULT_INVOICE_INBOX_CONFIG.allowedSenders] };
+}
+
 export const invoiceInboxConfigSchema = z.object({
   enabled: z.boolean().default(false),
   host: z.string().trim().max(200).default(""),
@@ -34,10 +39,10 @@ export async function getInvoiceInboxConfig(): Promise<InvoiceInboxConfig> {
   try {
     const row = await storage.getAppSettingByKey(INVOICE_INBOX_CONFIG_KEY);
     const parsed = invoiceInboxConfigSchema.safeParse(row?.value ?? {});
-    return parsed.success ? { ...DEFAULT_INVOICE_INBOX_CONFIG, ...parsed.data } : DEFAULT_INVOICE_INBOX_CONFIG;
+    return parsed.success ? { ...DEFAULT_INVOICE_INBOX_CONFIG, ...parsed.data } : defaultConfig();
   } catch (error) {
     console.warn("invoice_inbox_config could not be read, using defaults:", error);
-    return DEFAULT_INVOICE_INBOX_CONFIG;
+    return defaultConfig();
   }
 }
 
