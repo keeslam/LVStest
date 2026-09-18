@@ -1,14 +1,18 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from "vitest";
 import request from "supertest";
 import multer from "multer";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { eq } from "drizzle-orm";
+import { db } from "../db";
 import { registerExpenseRoutes } from "../routes/expenses";
 import { bookInvoiceAsExpenses, groupLinesByCategory, invoiceExpenseDescription, resolveInvoiceFile, receiptFromStoredPath } from "../services/expenses/book-invoice";
 import { inboxStorage } from "../services/invoice-inbox/inbox-storage";
+import { sha256, computeInvoiceHash } from "../services/invoice-inbox/hash";
 import { getUploadsDir } from "../../shared/paths";
-import { UserPermission } from "../../shared/schema";
+import { UserPermission, expenses as expensesTable } from "../../shared/schema";
+import { storage } from "../storage";
 import { buildStaffTestApp, createTestVehicle, cleanupPortalTestData, TEST_PREFIX } from "./portal-helpers";
 import { cleanupInboxTestData, INBOX_TEST_ACTOR } from "./invoice-inbox-helpers";
 
@@ -66,6 +70,9 @@ describe("booking invoices as expenses", () => {
     await cleanupInboxTestData();
     await cleanupPortalTestData();
     for (const f of files) fs.rmSync(f, { force: true });
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("creates one expense per line with the receipt and the inbox item attached", async () => {
@@ -133,5 +140,47 @@ describe("booking invoices as expenses", () => {
       lineItems: [{ description: "x", amount: 1, category: "Other" }],
     });
     expect(unknownVehicle.status).toBe(404);
+  });
+
+  it("manual scan: a failure after the expenses were written still leaves the item booked", async () => {
+    const filePath = storedPdf();
+    const abs = path.join(getUploadsDir(), filePath);
+    const body = {
+      invoice: { vendor: `${TEST_PREFIX}Garage`, invoiceNumber: `M-${unique()}`, invoiceDate: "2026-09-10", totalAmount: 100 },
+      vehicleId, filePath, lineItems: [{ description: "Beurt", amount: 100, category: "Maintenance" }],
+    };
+
+    const original = inboxStorage.update.bind(inboxStorage);
+    let failed = false;
+    vi.spyOn(inboxStorage, "update").mockImplementation(async (id, patch) => {
+      if (!failed && patch.status === "booked") {
+        failed = true;
+        throw new Error("database weg");
+      }
+      return original(id, patch);
+    });
+
+    const res = await request(app).post("/api/expenses/from-invoice").send(body);
+    expect(res.status).toBe(500);
+
+    const hash = sha256(fs.readFileSync(abs));
+    const item = await inboxStorage.getByAttachmentHash(hash);
+    expect(item).toMatchObject({ status: "booked", reviewReason: null });
+    expect(item!.expenseIds).toHaveLength(1);
+    const [expense] = await db.select().from(expensesTable).where(eq(expensesTable.id, item!.expenseIds[0]));
+    expect(expense.inboxItemId).toBe(item!.id);
+  });
+
+  it("manual scan: a failure before any expense was written gives the item a reason", async () => {
+    vi.spyOn(storage, "createExpense").mockRejectedValue(new Error("database weg"));
+    const invoice = { vendor: `${TEST_PREFIX}Garage`, invoiceNumber: `M-${unique()}`, invoiceDate: "2026-09-10", totalAmount: 10 };
+    const res = await request(app).post("/api/expenses/from-invoice").send({
+      invoice, vehicleId, lineItems: [{ description: "Los", amount: 10, category: "Other" }],
+    });
+    expect(res.status).toBe(400);
+
+    const invoiceHash = computeInvoiceHash(invoice);
+    const item = await inboxStorage.findActiveByInvoiceHash(invoiceHash!);
+    expect(item).toMatchObject({ status: "review", reviewReason: "parse_failed" });
   });
 });

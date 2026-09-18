@@ -7,6 +7,14 @@ export const INVOICE_INBOX_CONFIG_KEY = 'invoice_inbox_config';
 /** Shown instead of the stored password; coming back on save it means "keep what is stored". */
 export const INVOICE_INBOX_PASSWORD_MASK = '********';
 
+/**
+ * Shown on an inbox item whose booking was interrupted between creating the
+ * item and marking it "booked" — used by both the mail importer and the
+ * manual scan route when they compensate for that gap.
+ */
+export const INTERRUPTED_BOOKING_MESSAGE =
+  'Het boeken is onderbroken voordat er kosten waren aangemaakt. Controleer de factuur en boek hem hier.';
+
 export interface InvoiceInboxConfig {
   /** Scheduler on/off. */
   enabled: boolean;

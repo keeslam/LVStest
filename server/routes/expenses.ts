@@ -16,10 +16,10 @@ import { hasPermission } from "../middleware/permissions.js";
 import { getUploadsDir } from "../../shared/paths";
 import { validateAfterUpload, sanitizeFilename, createSecureMulterFilter } from "../utils/security/fileUploadSecurity";
 import { getRelativePath, resolveDocumentFilePath } from "../services/document-paths";
-import { bookInvoiceAsExpenses, receiptFromStoredPath, resolveInvoiceFile } from "../services/expenses/book-invoice";
+import { bookInvoiceAsExpenses, receiptFromStoredPath, resolveInvoiceFile, type BookInvoiceResult } from "../services/expenses/book-invoice";
 import { inboxStorage } from "../services/invoice-inbox/inbox-storage";
 import { computeInvoiceHash, sha256 } from "../services/invoice-inbox/hash";
-import type { InboxParsedInvoice } from "../../shared/invoice-inbox";
+import { INTERRUPTED_BOOKING_MESSAGE, type InboxParsedInvoice } from "../../shared/invoice-inbox";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
 
@@ -627,21 +627,42 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
         ? (await inboxStorage.update(sameFile.id, itemData))!
         : await inboxStorage.create({ ...itemData, attachmentHash, createdBy: currentUser });
 
-      const booked = await bookInvoiceAsExpenses({
-        invoice: { vendor: invoice.vendor, invoiceNumber: invoice.invoiceNumber, invoiceDate },
-        vehicleId, lineItems, receipt, inboxItemId: item.id, createdBy: currentUser,
-      });
+      // From here the inbox item exists (created or taken over above); if
+      // anything below throws, the item must not be left as "review" with no
+      // reason — that state means "importer was interrupted mid-booking" and
+      // would otherwise wait forever for a mail that will never arrive.
+      let booked: BookInvoiceResult;
+      try {
+        booked = await bookInvoiceAsExpenses({
+          invoice: { vendor: invoice.vendor, invoiceNumber: invoice.invoiceNumber, invoiceDate },
+          vehicleId, lineItems, receipt, inboxItemId: item.id, createdBy: currentUser,
+        });
 
-      if (booked.expenses.length === 0) {
-        await inboxStorage.update(item.id, { reviewReason: "parse_failed", errorMessage: booked.errors.join("; ").slice(0, 2000) || "Boeken mislukt" });
-        return res.status(400).json({ message: "No expenses could be created" });
+        if (booked.expenses.length === 0) {
+          await inboxStorage.update(item.id, { reviewReason: "parse_failed", errorMessage: booked.errors.join("; ").slice(0, 2000) || "Boeken mislukt" });
+          return res.status(400).json({ message: "No expenses could be created" });
+        }
+
+        await inboxStorage.update(item.id, {
+          status: "booked", reviewReason: null, expenseIds: booked.expenses.map((e) => e.id),
+          errorMessage: booked.errors.length ? booked.errors.join("; ").slice(0, 2000) : null,
+          processedAt: new Date(), updatedBy: currentUser,
+        });
+      } catch (error) {
+        try {
+          const expenseIds = await inboxStorage.expenseIdsFor(item.id);
+          if (expenseIds.length > 0) {
+            await inboxStorage.update(item.id, {
+              status: "booked", reviewReason: null, expenseIds, processedAt: new Date(), updatedBy: currentUser,
+            });
+          } else {
+            await inboxStorage.update(item.id, { reviewReason: "parse_failed", errorMessage: INTERRUPTED_BOOKING_MESSAGE });
+          }
+        } catch (compensationError) {
+          console.error("Failed to update inbox item after a booking error:", compensationError);
+        }
+        throw error;
       }
-
-      await inboxStorage.update(item.id, {
-        status: "booked", reviewReason: null, expenseIds: booked.expenses.map((e) => e.id),
-        errorMessage: booked.errors.length ? booked.errors.join("; ").slice(0, 2000) : null,
-        processedAt: new Date(), updatedBy: currentUser,
-      });
 
       res.json({
         success: true,

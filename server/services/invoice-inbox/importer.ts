@@ -4,7 +4,7 @@ import { simpleParser, type ParsedMail } from "mailparser";
 import { getUploadsDir } from "../../../shared/paths";
 import type { InvoiceInboxItem } from "../../../shared/schema";
 import {
-  REVIEW_REASON_LABELS_NL, isAllowedSender, normalizeSender,
+  INTERRUPTED_BOOKING_MESSAGE, REVIEW_REASON_LABELS_NL, isAllowedSender, normalizeSender,
   type InboxParsedInvoice, type InvoiceInboxConfig, type ReviewReason,
 } from "../../../shared/invoice-inbox";
 import { processInvoiceWithAI, validateParsedInvoice } from "../../utils/invoice-scanner";
@@ -119,10 +119,12 @@ async function notifyReview(reason: ReviewReason, vendor: string | undefined, me
 }
 
 /**
- * A retry of an attachment whose bookkeeping was cut short: `bookInvoiceAsExpenses`
- * ran (so the expenses may already exist) but the final `update()` that marks
- * the item "booked" never landed. Only an item stuck exactly there — "review"
- * with no reason, every deliberately queued item has one — is healed here.
+ * Both writers of `invoice_inbox_items` — this importer, and the manual scan
+ * route's `/api/expenses/from-invoice` — create the item as "review" with no
+ * reason and only upgrade it to "booked" afterwards. Whichever of the two was
+ * interrupted between those two steps, a later mail with the same attachment
+ * bytes lands here and finishes the bookkeeping: an item deliberately queued
+ * for review always carries a reason, so "review" with none is unambiguous.
  */
 async function finishInterruptedBooking(item: InvoiceInboxItem): Promise<"booked" | "review" | null> {
   if (item.status !== "review" || item.reviewReason !== null) return null;
@@ -131,7 +133,7 @@ async function finishInterruptedBooking(item: InvoiceInboxItem): Promise<"booked
   if (expenseIds.length === 0) {
     await inboxStorage.update(item.id, {
       reviewReason: "parse_failed",
-      errorMessage: "Het boeken is onderbroken voordat er kosten waren aangemaakt. Controleer de factuur en boek hem hier.",
+      errorMessage: INTERRUPTED_BOOKING_MESSAGE,
     });
     return "review";
   }
