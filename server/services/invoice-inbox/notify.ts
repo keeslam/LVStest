@@ -25,9 +25,10 @@ export async function notifyInvoiceInbox(event: InvoiceInboxEvent): Promise<void
       priority: event.priority ?? "normal",
       isRead: false,
     });
-    broadcastDataUpdate("invoice-inbox", "created", {
-      notificationId: notification.id, title: event.title, description: event.description, link: "/expenses?inbox=1",
-    });
+    // I5: the socket reaches every open staff session, and the title repeats
+    // words a stranger chose. Only the id goes out; the client shows its own
+    // translated sentence and refetches the list.
+    broadcastDataUpdate("invoice-inbox", "created", { id: notification.id });
   } catch (error) {
     console.error("invoice inbox notification failed:", error);
   }

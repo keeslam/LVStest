@@ -231,6 +231,7 @@
     "neverRun": "Not fetched since the app started",
     "runDone": "{{mails}} mail(s) fetched: {{booked}} booked, {{review}} for review",
     "runFailed": "Fetching failed",
+    "toastTitle": "An invoice arrived by e-mail",
     "manualScan": "manual scan",
     "reviewButton": "Review",
     "viewButton": "View",

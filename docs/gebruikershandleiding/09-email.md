@@ -303,7 +303,15 @@ staat onder **Te controleren**, met de reden erbij:
 Klik op **Controleren**. Links staat de factuur, rechts wat de app heeft gelezen. Pas aan
 wat niet klopt, kies het voertuig en klik op **Boeken**. Hoort de factuur niet in de app,
 klik dan op **Afwijzen** (met eventueel een korte notitie). Afgewezen en geboekte facturen
-blijven terug te vinden in de andere twee tabbladen.
+blijven terug te vinden in de andere twee tabbladen. Wijs je iets af met de reden
+**Onbekende afzender** of **Geen bruikbare bijlage**, dan gooit de app het bestand meteen
+weg: dat is meestal reclame of spam en hoeft niet bewaard te blijven. Bij alle andere
+redenen blijft de bijlage staan.
+
+Iedereen kan naar dit adres mailen. Van onbekende afzenders leest de app hooguit twintig
+bijlagen per dag uit; wat daarna binnenkomt, komt wél in de lijst maar wordt niet gelezen
+("Niet uitgelezen: de daglimiet voor onbekende afzenders is bereikt"). Ruim de map
+**Verwerkt** in de webmail af en toe leeg, dan blijft het postvak overzichtelijk.
 
 Een melding in de bel — "Factuur van ... wacht op controle" — opent dit venster meteen.
 

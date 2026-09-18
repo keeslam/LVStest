@@ -1,10 +1,11 @@
 import type { Express, Request, Response } from "express";
+import fs from "fs";
 import { z } from "zod";
 import { hasPermission } from "../middleware/permissions.js";
 import { UserPermission } from "../../shared/schema";
 import {
   EXPENSE_CATEGORIES, INBOX_STATUSES, INVOICE_INBOX_PASSWORD_MASK,
-  type InboxParsedInvoice, type InboxStatus,
+  type InboxParsedInvoice, type InboxStatus, type ReviewReason,
 } from "../../shared/invoice-inbox";
 import { storage } from "../storage";
 import { AuditLogger } from "../utils/security/auditLogger";
@@ -21,6 +22,8 @@ const canManageExpenses = hasPermission(UserPermission.MANAGE_EXPENSES);
 const canRunOrSeeStatus = hasPermission(UserPermission.MANAGE_EXPENSES, UserPermission.MANAGE_SETTINGS);
 
 const SERVABLE_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+/** I6: dismissing one of these throws the stored attachment away with it. */
+const DISMISS_DELETES_FILE: ReviewReason[] = ["unknown_sender", "no_attachment"];
 
 function idParam(req: Request, res: Response): number | null {
   const id = Number(req.params.id);
@@ -192,8 +195,21 @@ export function registerExpenseInboxRoutes(app: Express): void {
     const item = await inboxStorage.get(id);
     if (!item) return res.status(404).json({ message: "Not found" });
     if (item.status !== "review") return res.status(409).json({ message: "Deze factuur is al afgehandeld." });
+
+    // I6: anyone can mail this address, so the folder fills up with whatever
+    // strangers attached. Dismissing one of those throws the file away; a real
+    // invoice that is dismissed keeps its attachment, because staff may need it.
+    const dropFile = DISMISS_DELETES_FILE.includes(item.reviewReason as ReviewReason);
+    if (dropFile) {
+      const abs = resolveInvoiceFile(item.attachmentPath);
+      if (abs) {
+        try { fs.rmSync(abs, { force: true }); } catch (e) { console.warn(`Bijlage van factuur ${item.id} kon niet worden verwijderd:`, e); }
+      }
+    }
+
     const updated = await inboxStorage.update(item.id, {
       status: "dismissed", note: body.data.note || null, processedAt: new Date(), updatedBy: actor(req),
+      ...(dropFile ? { attachmentPath: null } : {}),
     });
     await AuditLogger.logFromRequest(req, "expense.inbox.dismiss", "invoice_inbox_item", item.id, { note: body.data.note ?? null });
     res.json({ item: updated });

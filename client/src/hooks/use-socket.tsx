@@ -2,6 +2,9 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { io, Socket } from 'socket.io-client';
 import { queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+// The app's i18n instance, the way format-utils.ts uses it: this hook lives
+// outside any component that could carry a useTranslation().
+import i18n from '@/i18n';
 import { 
   invalidateVehicleData, 
   invalidateReservationData,
@@ -81,10 +84,12 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
         return;
       }
 
-      // An invoice arrived by e-mail (server/services/invoice-inbox/notify.ts):
-      // say so right away and refresh the costs, the inbox card and the bell.
+      // An invoice arrived by e-mail (server/services/invoice-inbox/notify.ts).
+      // I5: the payload carries no title any more — anyone can mail that address,
+      // so a stranger's subject line must not become a toast in every session.
+      // One translated sentence; what it says is in the list and in the bell.
       if (entityType === 'invoice-inbox') {
-        toast({ title: data?.title ?? 'Ontvangen facturen', description: data?.description });
+        toast({ title: i18n.t('expenses:invoiceInbox.toastTitle') });
         queryClient.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('/api/expenses') });
         queryClient.invalidateQueries({ queryKey: ['/api/custom-notifications/unread'] });
         return;

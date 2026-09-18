@@ -27,7 +27,11 @@ export function setInvoiceScanner(replacement: InvoiceScanner | null): void {
 }
 
 export interface ImportMailInput { raw: Buffer; config: InvoiceInboxConfig; createdBy: string }
-export interface ImportMailResult { attachments: number; booked: number; review: number; skipped: number }
+export interface ImportMailResult {
+  attachments: number; booked: number; review: number; skipped: number;
+  /** I6: how many times the scanner was really called — what a mail costs. */
+  scans: number;
+}
 
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
 const MAX_ATTACHMENTS_PER_MAIL = 10;
@@ -35,6 +39,18 @@ const MAX_ATTACHMENTS_PER_MAIL = 10;
 export const MAX_MAIL_BYTES = 30 * 1024 * 1024;
 /** Smaller images are signatures and logos, not invoices. */
 const MIN_IMAGE_BYTES = 20 * 1024;
+/**
+ * I6 — anyone can mail this address and every attachment costs a Gemini call,
+ * so what strangers send is capped per day. Past the cap the file is still
+ * stored and still queued for review; it is only not read.
+ */
+export const UNTRUSTED_SCANS_PER_DAY = 20;
+let untrustedScans = { date: "", used: 0 };
+
+/** Tests start with a full budget. */
+export function resetUntrustedScanBudgetForTests(): void {
+  untrustedScans = { date: "", used: 0 };
+}
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const PDF_SIGNATURE = Buffer.from("%PDF-", "latin1");
@@ -170,7 +186,23 @@ async function isDuplicateInvoice(invoice: InboxParsedInvoice, invoiceHash: stri
 }
 const euro = (amount: number) => new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(amount);
 
-async function notifyReview(reason: ReviewReason, vendor: string | undefined, meta: MailMeta): Promise<void> {
+/** Today in Amsterdam, resetting the budget when the day turned. */
+function claimUntrustedScan(): boolean {
+  const today = amsterdamToday();
+  if (untrustedScans.date !== today) untrustedScans = { date: today, used: 0 };
+  if (untrustedScans.used >= UNTRUSTED_SCANS_PER_DAY) return false;
+  untrustedScans.used += 1;
+  return true;
+}
+
+/**
+ * I5 — a notification repeats words a stranger chose, in the bell of every
+ * member of staff, once per mail. For a sender the app does not trust there is
+ * no notification at all; the badge on the "Ontvangen facturen" button already
+ * says how many invoices are waiting. Trusted senders keep theirs.
+ */
+async function notifyReview(reason: ReviewReason, vendor: string | undefined, meta: MailMeta, senderTrusted = true): Promise<void> {
+  if (!senderTrusted) return;
   const who = vendor?.trim() || meta.fromAddress || "onbekende afzender";
   await notifyInvoiceInbox({
     title: `Factuur van ${who} wacht op controle`,
@@ -249,18 +281,31 @@ async function finishInterruptedBooking(item: InvoiceInboxItem): Promise<"booked
   return "booked";
 }
 
+type AttachmentOutcome = { outcome: "booked" | "review" | "skipped"; scans: number };
+
 async function importAttachment(
   attachment: UsableAttachment, meta: MailMeta, senderAllowed: boolean, config: InvoiceInboxConfig, createdBy: string,
-): Promise<"booked" | "review" | "skipped"> {
+): Promise<AttachmentOutcome> {
   const attachmentHash = sha256(attachment.content);
   const existing = await inboxStorage.getByAttachmentHash(attachmentHash);
-  if (existing) return (await finishInterruptedBooking(existing)) ?? "skipped";
+  if (existing) return { outcome: (await finishInterruptedBooking(existing)) ?? "skipped", scans: 0 };
 
   const stored = storeAttachment(attachment, attachmentHash);
   const base = {
     ...meta, attachmentName: attachment.name, attachmentPath: stored.relativePath, attachmentHash,
     attachmentContentType: attachment.contentType, createdBy,
   };
+
+  // I6: what a stranger sent is only read while the day's budget lasts. The
+  // invoice is kept and queued either way, so nothing is lost — it just costs
+  // nothing more today.
+  if (!senderAllowed && !claimUntrustedScan()) {
+    await createItemOrDiscardFile({
+      ...base, parsed: null, status: "review", reviewReason: "unknown_sender",
+      errorMessage: "Niet uitgelezen: de daglimiet voor onbekende afzenders is bereikt.",
+    }, stored.absolutePath);
+    return { outcome: "review", scans: 0 };
+  }
 
   let parsed: InboxParsedInvoice | null = null;
   let scanError: string | null = null;
@@ -276,8 +321,8 @@ async function importAttachment(
   }
   if (scanError || !parsed) {
     await createItemOrDiscardFile({ ...base, parsed, status: "review", reviewReason: "parse_failed", errorMessage: (scanError ?? "Uitlezen mislukt").slice(0, 2000) }, stored.absolutePath);
-    await notifyReview("parse_failed", parsed?.vendor, meta);
-    return "review";
+    await notifyReview("parse_failed", parsed?.vendor, meta, senderAllowed);
+    return { outcome: "review", scans: 1 };
   }
 
   const plates = extractPlates(parsed);
@@ -297,8 +342,8 @@ async function importAttachment(
     vehicleId: fleetMatches.length === 1 ? fleetMatches[0].id : null,
   }, stored.absolutePath);
   if (decision.action === "review") {
-    await notifyReview(decision.reason, parsed.vendor, meta);
-    return "review";
+    await notifyReview(decision.reason, parsed.vendor, meta, senderAllowed);
+    return { outcome: "review", scans: 1 };
   }
 
   const booked = await bookInvoiceAsExpenses({
@@ -308,8 +353,8 @@ async function importAttachment(
   });
   if (booked.expenses.length === 0) {
     await inboxStorage.update(item.id, { reviewReason: "parse_failed", errorMessage: (booked.errors.join("; ") || "Boeken mislukt").slice(0, 2000) });
-    await notifyReview("parse_failed", parsed.vendor, meta);
-    return "review";
+    await notifyReview("parse_failed", parsed.vendor, meta, senderAllowed);
+    return { outcome: "review", scans: 1 };
   }
 
   await inboxStorage.update(item.id, {
@@ -321,7 +366,7 @@ async function importAttachment(
     title: `Factuur van ${parsed.vendor} geboekt op ${fleetMatches[0].licensePlate}`,
     description: `${booked.expenses.length} kostenregel(s), samen ${euro(total)} (factuur ${parsed.invoiceNumber || "zonder nummer"})`,
   });
-  return "booked";
+  return { outcome: "booked", scans: 1 };
 }
 
 /**
@@ -340,22 +385,23 @@ export async function importInvoiceMail(input: ImportMailInput): Promise<ImportM
     subject: (mail.subject ?? "").slice(0, 500) || null,
     mailDate: mail.date ?? null,
   };
-  const result: ImportMailResult = { attachments: 0, booked: 0, review: 0, skipped: 0 };
+  const result: ImportMailResult = { attachments: 0, booked: 0, review: 0, skipped: 0, scans: 0 };
 
   const attachments = usableAttachments(mail);
   if (attachments.length === 0) {
     const attachmentHash = sha256(`mail:${mail.messageId ?? sha256(input.raw)}`);
     if (await inboxStorage.getByAttachmentHash(attachmentHash)) { result.skipped += 1; return result; }
     await inboxStorage.create({ ...meta, attachmentHash, status: "review", reviewReason: "no_attachment", createdBy: input.createdBy });
-    await notifyReview("no_attachment", undefined, meta);
+    await notifyReview("no_attachment", undefined, meta, senderAllowed);
     result.review += 1;
     return result;
   }
 
   for (const attachment of attachments) {
-    const outcome = await importAttachment(attachment, meta, senderAllowed, input.config, input.createdBy);
+    const { outcome, scans } = await importAttachment(attachment, meta, senderAllowed, input.config, input.createdBy);
     result.attachments += 1;
     result[outcome] += 1;
+    result.scans += scans;
   }
   return result;
 }

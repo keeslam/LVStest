@@ -15,7 +15,7 @@ import { DEFAULT_INVOICE_INBOX_CONFIG, type InvoiceInboxConfig } from "../../sha
 import type { InvoiceImapClient } from "../services/invoice-inbox/imap-client";
 import {
   runInvoiceInboxImport, setInvoiceImapClient, getInvoiceInboxRunState, cronExpressionFor,
-  resetInvoiceInboxPollerForTests, MAX_MAILS_PER_RUN,
+  resetInvoiceInboxPollerForTests, MAX_MAILS_PER_RUN, MAX_SCANS_PER_RUN,
 } from "../services/invoice-inbox/poller";
 
 const config: InvoiceInboxConfig = { ...DEFAULT_INVOICE_INBOX_CONFIG, enabled: true, host: "imap.example.test", username: "u", password: "p" };
@@ -156,6 +156,34 @@ describe("invoice inbox poller", () => {
     const summary = await runInvoiceInboxImport("scheduler", "scheduler", config);
     expect(summary.mails).toBe(MAX_MAILS_PER_RUN);
     expect(mailbox.processed).toHaveLength(MAX_MAILS_PER_RUN);
+  });
+
+  /**
+   * I6: the mail cap alone bounds nothing — one mail may carry ten attachments,
+   * and every attachment is a Gemini call. The scans of a run are capped too.
+   */
+  it("stops taking mails once the run has spent its scan budget", async () => {
+    const mailbox = fakeMailbox(Array.from({ length: 20 }, (_, i) => i + 1));
+    setInvoiceImapClient(mailbox.client);
+    importInvoiceMail.mockResolvedValue({ attachments: 4, booked: 4, review: 0, skipped: 0, scans: 4 });
+
+    const summary = await runInvoiceInboxImport("scheduler", "scheduler", config);
+    const expected = Math.ceil(MAX_SCANS_PER_RUN / 4);
+    expect(summary.mails).toBe(expected);
+    expect(importInvoiceMail).toHaveBeenCalledTimes(expected);
+    expect(mailbox.processed).toHaveLength(expected);
+
+    // The rest simply waits for the next run.
+    const next = await runInvoiceInboxImport("scheduler", "scheduler", config);
+    expect(next.mails).toBe(expected);
+  });
+
+  it("does not stop early for mails that cost no scan at all", async () => {
+    const mailbox = fakeMailbox([1, 2, 3]);
+    setInvoiceImapClient(mailbox.client);
+    importInvoiceMail.mockResolvedValue({ attachments: 1, booked: 0, review: 0, skipped: 1, scans: 0 });
+    const summary = await runInvoiceInboxImport("scheduler", "scheduler", config);
+    expect(summary.mails).toBe(3);
   });
 
   it("reports a connection error in the summary and warns staff once, after three failures in a row", async () => {

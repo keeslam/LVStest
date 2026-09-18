@@ -231,6 +231,7 @@
     "neverRun": "Nog niet opgehaald sinds de app is gestart",
     "runDone": "{{mails}} mail(s) opgehaald: {{booked}} geboekt, {{review}} ter controle",
     "runFailed": "Ophalen mislukt",
+    "toastTitle": "Er is een factuur per e-mail binnengekomen",
     "manualScan": "handmatige scan",
     "reviewButton": "Controleren",
     "viewButton": "Bekijken",

@@ -256,6 +256,31 @@ describe("expense inbox routes", () => {
     expect(res.body.expenses).toHaveLength(2);
   });
 
+  /**
+   * I6: anyone can mail this address, so the folder filled up with whatever
+   * strangers attached. Dismissing one of those throws the file away; a real
+   * invoice that is dismissed keeps its attachment, because staff may need it.
+   */
+  it("throws the file away when a stranger's invoice is dismissed, and keeps a real one", async () => {
+    for (const reason of ["unknown_sender", "no_attachment"]) {
+      const item = await reviewItem({ reviewReason: reason });
+      const abs = path.join(getUploadsDir(), item.attachmentPath!);
+      expect(fs.existsSync(abs), reason).toBe(true);
+
+      const res = await request(bookkeeper).post(`/api/expenses/inbox/items/${item.id}/dismiss`).send({ note: "spam" });
+      expect(res.status, reason).toBe(200);
+      expect(res.body.item.attachmentPath, reason).toBeNull();
+      expect(fs.existsSync(abs), reason).toBe(false);
+    }
+
+    const real = await reviewItem({ reviewReason: "no_plate" });
+    const realAbs = path.join(getUploadsDir(), real.attachmentPath!);
+    const kept = await request(bookkeeper).post(`/api/expenses/inbox/items/${real.id}/dismiss`).send({});
+    expect(kept.status).toBe(200);
+    expect(kept.body.item.attachmentPath).toBe(real.attachmentPath);
+    expect(fs.existsSync(realAbs)).toBe(true);
+  });
+
   it("dismisses an invoice with a note and creates nothing", async () => {
     const item = await reviewItem();
     const res = await request(bookkeeper).post(`/api/expenses/inbox/items/${item.id}/dismiss`).send({ note: "Niet van ons" });

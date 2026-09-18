@@ -7,7 +7,10 @@ import { db } from "../db";
 import { expenses } from "../../shared/schema";
 import { getUploadsDir } from "../../shared/paths";
 import { DEFAULT_INVOICE_INBOX_CONFIG, type InboxParsedInvoice, type InvoiceInboxConfig } from "../../shared/invoice-inbox";
-import { importInvoiceMail, setInvoiceScanner, recordOversizeMail, recordFailedMail } from "../services/invoice-inbox/importer";
+import {
+  importInvoiceMail, setInvoiceScanner, recordOversizeMail, recordFailedMail,
+  resetUntrustedScanBudgetForTests, UNTRUSTED_SCANS_PER_DAY,
+} from "../services/invoice-inbox/importer";
 import { inboxStorage } from "../services/invoice-inbox/inbox-storage";
 import { sha256 } from "../services/invoice-inbox/hash";
 import { resolveDocumentFilePath } from "../services/document-paths";
@@ -48,7 +51,10 @@ describe("invoice inbox importer", () => {
   let vehicleId: number;
   let scanned: InboxParsedInvoice;
   let scannerCalls: Array<{ filePath: string; mimeType: string }>;
-  const notifications = async () => (await storage.getCustomNotificationsByType("invoice_inbox")).filter((n) => n.title.includes(TEST_PREFIX));
+  // Same net as cleanupInboxTestData(): a notification about a test mail can
+  // carry the prefix in its title (the vendor) or in its description (the subject).
+  const notifications = async () => (await storage.getCustomNotificationsByType("invoice_inbox"))
+    .filter((n) => n.title.includes(TEST_PREFIX) || n.description.includes(TEST_PREFIX));
 
   beforeAll(async () => {
     await cleanupInboxTestData();
@@ -64,6 +70,7 @@ describe("invoice inbox importer", () => {
   beforeEach(() => {
     scanned = invoice();
     scannerCalls = [];
+    resetUntrustedScanBudgetForTests();
     setInvoiceScanner(async (filePath, mimeType) => { scannerCalls.push({ filePath, mimeType }); return scanned; });
   });
   afterEach(() => {
@@ -74,7 +81,7 @@ describe("invoice inbox importer", () => {
     const before = (await notifications()).length;
     const attachment = pdf("boek");
     const result = await importInvoiceMail({ raw: await buildMail({ attachments: [{ filename: "Factuur 2026.pdf", content: attachment, contentType: "application/pdf" }] }), config, createdBy: INBOX_TEST_ACTOR });
-    expect(result).toEqual({ attachments: 1, booked: 1, review: 0, skipped: 0 });
+    expect(result).toEqual({ attachments: 1, booked: 1, review: 0, skipped: 0, scans: 1 });
 
     const item = (await inboxStorage.getByAttachmentHash(sha256(attachment)))!;
     expect(item).toMatchObject({ status: "booked", reviewReason: null, vehicleId, fromAddress: "facturen@garage-test.invalid", attachmentContentType: "application/pdf" });
@@ -100,7 +107,7 @@ describe("invoice inbox importer", () => {
     await importInvoiceMail({ raw, config, createdBy: INBOX_TEST_ACTOR });
     const calls = scannerCalls.length;
     const again = await importInvoiceMail({ raw, config, createdBy: INBOX_TEST_ACTOR });
-    expect(again).toEqual({ attachments: 1, booked: 0, review: 0, skipped: 1 });
+    expect(again).toEqual({ attachments: 1, booked: 0, review: 0, skipped: 1, scans: 0 });
     expect(scannerCalls.length).toBe(calls);
   });
 
@@ -118,6 +125,60 @@ describe("invoice inbox importer", () => {
     const result = await importInvoiceMail({ raw: await buildMail({ from: "iemand@elders.invalid", attachments: [{ filename: "f.pdf", content: attachment, contentType: "application/pdf" }] }), config, createdBy: INBOX_TEST_ACTOR });
     expect(result).toMatchObject({ booked: 0, review: 1 });
     expect(await inboxStorage.getByAttachmentHash(sha256(attachment))).toMatchObject({ status: "review", reviewReason: "unknown_sender", vehicleId, expenseIds: [] });
+  });
+
+  /**
+   * I5: anyone can mail this address, and the notification used to repeat the
+   * stranger's own words in the bell of every member of staff, once per mail.
+   * The badge on the button is enough for a sender the app does not trust.
+   */
+  it("writes no notification for a sender it does not trust, in any of the silent cases", async () => {
+    const before = (await notifications()).length;
+    const spam = pdf("stil");
+    await importInvoiceMail({ raw: await buildMail({ from: "iemand@elders.invalid", attachments: [{ filename: "f.pdf", content: spam, contentType: "application/pdf" }] }), config, createdBy: INBOX_TEST_ACTOR });
+    expect((await inboxStorage.getByAttachmentHash(sha256(spam)))?.reviewReason).toBe("unknown_sender");
+
+    // A mail from a stranger without a usable attachment is silent too.
+    await importInvoiceMail({ raw: await buildMail({ from: "iemand@elders.invalid", attachments: [{ filename: "brief.txt", content: Buffer.from("hoi"), contentType: "text/plain" }] }), config, createdBy: INBOX_TEST_ACTOR });
+
+    expect((await notifications()).length).toBe(before);
+  });
+
+  it("still notifies about an invoice from a trusted sender that needs checking", async () => {
+    const before = (await notifications()).length;
+    scanned = invoice({ vehicleInfo: undefined, invoiceNumber: `NOTIF-${unique()}` });
+    const attachment = pdf("wel-melden");
+    await importInvoiceMail({ raw: await buildMail({ attachments: [{ filename: "f.pdf", content: attachment, contentType: "application/pdf" }] }), config, createdBy: INBOX_TEST_ACTOR });
+    expect((await inboxStorage.getByAttachmentHash(sha256(attachment)))?.reviewReason).toBe("no_plate");
+    expect((await notifications()).length).toBe(before + 1);
+  });
+
+  /**
+   * I6: every attachment from a stranger costs a Gemini call. Past the daily
+   * budget the file is still kept and still queued — it is only not read.
+   */
+  it("stops scanning for unknown senders once the daily budget is spent", async () => {
+    const untrusted = (content: Buffer) => buildMail({ from: "iemand@elders.invalid", attachments: [{ filename: "f.pdf", content, contentType: "application/pdf" }] });
+    for (let i = 0; i < UNTRUSTED_SCANS_PER_DAY; i += 1) {
+      await importInvoiceMail({ raw: await untrusted(pdf(`budget-${i}`)), config, createdBy: INBOX_TEST_ACTOR });
+    }
+    const spent = scannerCalls.length;
+    expect(spent).toBe(UNTRUSTED_SCANS_PER_DAY);
+
+    const attachment = pdf("over-de-limiet");
+    const result = await importInvoiceMail({ raw: await untrusted(attachment), config, createdBy: INBOX_TEST_ACTOR });
+    expect(result).toMatchObject({ attachments: 1, review: 1, scans: 0 });
+    expect(scannerCalls.length).toBe(spent);
+
+    const item = (await inboxStorage.getByAttachmentHash(sha256(attachment)))!;
+    expect(item).toMatchObject({ status: "review", reviewReason: "unknown_sender", parsed: null });
+    expect(item.errorMessage).toBe("Niet uitgelezen: de daglimiet voor onbekende afzenders is bereikt.");
+    expect(resolveDocumentFilePath(item.attachmentPath!)).not.toBeNull();
+
+    // A trusted sender is never held up by what strangers sent.
+    const mine = pdf("vertrouwd-na-limiet");
+    await importInvoiceMail({ raw: await buildMail({ attachments: [{ filename: "f.pdf", content: mine, contentType: "application/pdf" }] }), config, createdBy: INBOX_TEST_ACTOR });
+    expect(scannerCalls.length).toBe(spent + 1);
   });
 
   it("does not trust an allowed sender whose mail failed DMARC or SPF", async () => {
@@ -258,9 +319,9 @@ describe("invoice inbox importer", () => {
       { filename: "logo.png", content: Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(100)]), contentType: "image/png" },
       { filename: "offerte.docx", content: Buffer.from("PK"), contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
     ] });
-    expect(await importInvoiceMail({ raw, config, createdBy: INBOX_TEST_ACTOR })).toEqual({ attachments: 0, booked: 0, review: 1, skipped: 0 });
+    expect(await importInvoiceMail({ raw, config, createdBy: INBOX_TEST_ACTOR })).toEqual({ attachments: 0, booked: 0, review: 1, skipped: 0, scans: 0 });
     expect(await inboxStorage.getByAttachmentHash(sha256(`mail:${messageId}`))).toMatchObject({ status: "review", reviewReason: "no_attachment", attachmentPath: null });
-    expect(await importInvoiceMail({ raw, config, createdBy: INBOX_TEST_ACTOR })).toEqual({ attachments: 0, booked: 0, review: 0, skipped: 1 });
+    expect(await importInvoiceMail({ raw, config, createdBy: INBOX_TEST_ACTOR })).toEqual({ attachments: 0, booked: 0, review: 0, skipped: 1, scans: 0 });
     expect(scannerCalls).toHaveLength(0);
   });
 
@@ -304,7 +365,8 @@ describe("invoice inbox importer", () => {
 
     const callsAfterFirst = scannerCalls.length;
     const result = await importInvoiceMail({ raw, config, createdBy: INBOX_TEST_ACTOR });
-    expect(result).toEqual({ attachments: 1, booked: 1, review: 0, skipped: 0 });
+    // The bookkeeping is finished from what is already stored: no second scan.
+    expect(result).toEqual({ attachments: 1, booked: 1, review: 0, skipped: 0, scans: 0 });
     expect(scannerCalls.length).toBe(callsAfterFirst);
 
     const healed = await inboxStorage.getByAttachmentHash(hash);
@@ -318,7 +380,7 @@ describe("invoice inbox importer", () => {
     const attachment = pdf("gestrand");
     await inboxStorage.create({ attachmentHash: sha256(attachment), status: "review", reviewReason: null, createdBy: INBOX_TEST_ACTOR });
     const result = await importInvoiceMail({ raw: await buildMail({ attachments: [{ filename: "f.pdf", content: attachment, contentType: "application/pdf" }] }), config, createdBy: INBOX_TEST_ACTOR });
-    expect(result).toEqual({ attachments: 1, booked: 0, review: 1, skipped: 0 });
+    expect(result).toEqual({ attachments: 1, booked: 0, review: 1, skipped: 0, scans: 0 });
     const item = await inboxStorage.getByAttachmentHash(sha256(attachment));
     expect(item?.reviewReason).toBe("parse_failed");
     expect(item?.errorMessage).toContain("onderbroken");

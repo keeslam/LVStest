@@ -7,6 +7,12 @@ import { notifyInvoiceInbox } from "./notify";
 
 /** Bounds one run: every mail can cost a Gemini call. The rest waits for the next run. */
 export const MAX_MAILS_PER_RUN = 25;
+/**
+ * I6 — the mail cap alone bounds nothing: one mail may carry ten attachments,
+ * and every attachment is a Gemini call. Once a run has spent this many scans
+ * it stops taking mails; the rest simply waits for the next run.
+ */
+export const MAX_SCANS_PER_RUN = 30;
 const FAILURES_BEFORE_WARNING = 3;
 /** I1: after this many failed attempts a mail is recorded and taken out of the inbox. */
 const ATTEMPTS_BEFORE_GIVING_UP = 3;
@@ -60,7 +66,11 @@ export function runInvoiceInboxImport(
       await client.withSession(config, async (session) => {
         connected = true;
         const refs = (await session.listUnseen()).slice(0, MAX_MAILS_PER_RUN);
+        let scans = 0;
         for (const ref of refs) {
+          // I6: stop before opening the next mail once this run has spent its
+          // scan budget, so one busy hour cannot run up an unbounded bill.
+          if (scans >= MAX_SCANS_PER_RUN) break;
           summary.mails += 1;
           try {
             if ((ref.size ?? 0) > MAX_MAIL_BYTES) {
@@ -75,6 +85,7 @@ export function runInvoiceInboxImport(
             summary.booked += result.booked;
             summary.review += result.review;
             summary.skipped += result.skipped;
+            scans += result.scans ?? 0;
             failedAttempts.delete(mailKey(ref));
             await session.markProcessed(ref.uid);
           } catch (error) {

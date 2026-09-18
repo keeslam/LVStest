@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { differenceInDays } from "date-fns";
@@ -73,6 +74,21 @@ interface NotificationCenterDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+/**
+ * I5 — a custom notification carries a link (an invoice that arrived by e-mail
+ * points at `/expenses?inbox=1`), and the bell rendered no way to follow it.
+ *
+ * The value comes out of a database row, so only a plain same-origin path earns
+ * a button: `//host` and `/\host` are read by browsers as another site, and
+ * anything with a scheme does not start with a single slash at all.
+ */
+export function sameOriginNotificationLink(link: unknown): string | null {
+  const value = typeof link === "string" ? link.trim() : "";
+  if (!value.startsWith("/")) return null;
+  if (value.startsWith("//") || value.startsWith("/\\")) return null;
+  return value;
+}
+
 const notificationSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters" }),
   description: z.string().min(5, { message: "Description must be at least 5 characters" }),
@@ -85,6 +101,7 @@ type NotificationFormData = z.infer<typeof notificationSchema>;
 export function NotificationCenterDialog({ open, onOpenChange }: NotificationCenterDialogProps) {
   const { t } = useTranslation(["notifications", "common"]);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { openReservationDialog, openVehicleDialog, openAPKDialog, openSpareAssignmentDialog } = useGlobalDialog();
   const [activeTab, setActiveTab] = useState<string>("all");
@@ -362,7 +379,9 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
     };
   };
 
-  const CustomNotificationCard = ({ notification }: { notification: CustomNotification }) => (
+  const CustomNotificationCard = ({ notification }: { notification: CustomNotification }) => {
+    const link = sameOriginNotificationLink(notification.link);
+    return (
     <div className="flex items-start gap-3 p-3 border-b hover:bg-muted/50 transition-colors group">
       <div className="mt-0.5">
         <Bell className={notification.isRead ? "h-5 w-5 text-muted-foreground" : "h-5 w-5 text-primary"} />
@@ -378,6 +397,18 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
         <p className="text-xs text-muted-foreground mt-1">{notification.description}</p>
         <p className="text-xs text-muted-foreground mt-1">{formatDate(notification.date)}</p>
         <div className="flex gap-2 mt-2">
+          {link && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => { setLocation(link); onOpenChange(false); }}
+              data-testid={`button-view-notification-${notification.id}`}
+            >
+              <ExternalLink className="h-3 w-3 mr-1" />
+              {t('centerDialog.view')}
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -421,7 +452,8 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   const EmptyState = ({ icon, title, description }: { icon: ReactNode; title: string; description: string }) => (
     <div className="flex flex-col items-center justify-center h-[200px] text-center p-4">
