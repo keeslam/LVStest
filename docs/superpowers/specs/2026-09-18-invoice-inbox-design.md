@@ -329,8 +329,9 @@ notification; `client/src/hooks/use-socket.tsx` shows it and refreshes the
   expression per interval.
 - `expense-inbox-routes.test.ts` (supertest): permissions, masked password
   on GET, book/dismiss state guard (409), file route path containment.
-- Client: `invoice-inbox-card.test.tsx` (reason labels, badge, review
-  dialog pre-filled, booking sends only the ticked lines),
+- Client: `invoice-inbox-dialog.test.tsx` (reason labels, badge, review
+  dialog pre-filled, booking sends only the ticked lines, the button, the
+  `?inbox=1` opening and the error toast),
   `invoice-inbox-config-form.test.tsx` (Dutch labels, senders one per line,
   connection test), `invoice-line-items-table.test.tsx` (edit, remove keeps
   the selection aligned, select all).

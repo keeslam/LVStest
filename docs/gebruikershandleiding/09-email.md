@@ -251,3 +251,88 @@ Drie dingen om te weten:
 
 Wat wél vanzelf gaat, staat in de tabel in 9.1: onderhoud, bekeuringen, portaalaccounts en
 reacties op portaalaanvragen.
+
+---
+
+## 9.9 Facturen per e-mail ontvangen
+
+De app heeft een eigen postvak: **fakturenapp@lamgroep.nl**. Elke factuur die daar
+binnenkomt, leest de app zelf uit en boekt hij als kosten op het juiste voertuig.
+Vraag het onderhoudsbedrijf om dit adres als extra ontvanger (CC) op elke factuur te
+zetten. Zelf een factuur doorsturen vanaf een `@lamgroep.nl`-adres werkt hetzelfde.
+
+### Wanneer boekt de app automatisch?
+
+Alleen als alles klopt:
+
+- de afzender staat in de lijst **Vertrouwde afzenders**;
+- er staat precies één kenteken op de factuur, en dat kenteken zit in de vloot;
+- de factuur is niet eerder binnengekomen;
+- de regels tellen op tot het totaal (excl. of incl. btw), op hooguit 1 euro na;
+- de factuurdatum ligt niet in de toekomst.
+
+Dan maakt de app één kostenregel per categorie (bijvoorbeeld Onderhoud en Remmen), hangt
+de factuur als bon aan elke regel en zet een melding in de bel:
+"Factuur van Garage Jansen geboekt op V-123-XB".
+
+### Wat als de app twijfelt?
+
+Dan wordt er **niets geboekt**. Op de pagina **Kosten** staat naast **Factuur scannen** de
+knop **Ontvangen facturen**, met een getal erop zolang er facturen wachten. Klik erop voor
+het venster met de tabbladen **Te controleren**, **Geboekt** en **Afgewezen**. De factuur
+staat onder **Te controleren**, met de reden erbij:
+
+| Reden | Wat je doet |
+| --- | --- |
+| Onbekende afzender | Controleer of de factuur echt is. Zo ja: boeken, en zet de afzender in de lijst. |
+| Geen kenteken gevonden | Kies zelf het voertuig. |
+| Meerdere kentekens | Kies het voertuig waar de kosten op horen. Splitsen over voertuigen kan niet; boek dan met de hand. |
+| Kenteken niet in de vloot | Verkeerd gelezen of niet van ons. Kies het voertuig of wijs af. |
+| Mogelijk dubbel | Dezelfde factuur is al geboekt of wacht al. Meestal: afwijzen. |
+| Bedragen kloppen niet | Kijk de regels na naast de factuur en verbeter ze. |
+| Uitlezen mislukt | Vul leverancier, datum en regels zelf in; de factuur staat ernaast. |
+| Geen bruikbare bijlage | De mail had geen PDF of foto. Vraag de factuur opnieuw op of wijs af. |
+
+Klik op **Controleren**. Links staat de factuur, rechts wat de app heeft gelezen. Pas aan
+wat niet klopt, kies het voertuig en klik op **Boeken**. Hoort de factuur niet in de app,
+klik dan op **Afwijzen** (met eventueel een korte notitie). Afgewezen en geboekte facturen
+blijven terug te vinden in de andere twee tabbladen.
+
+Een melding in de bel — "Factuur van ... wacht op controle" — opent dit venster meteen.
+
+### Instellen
+
+**Instellingen, tabblad E-mail, kaart "Facturen per e-mail (inkomend)".** Hiervoor is het
+recht *instellingen beheren* nodig.
+
+1. Vul de IMAP-server, de gebruikersnaam en het wachtwoord van het postvak in. Deze
+   gegevens staan in het beheerpaneel van de webhosting. Verbinding: TLS (poort 993).
+2. **Map na verwerking**: `Verwerkt`. De app verplaatst elke afgehandelde mail daarheen,
+   zodat het postvak leeg blijft. Werkt dat bij jullie provider niet, probeer dan
+   `INBOX.Verwerkt`. Leeg laten mag ook: de mail blijft dan staan als gelezen.
+3. **Vertrouwde afzenders**: één per regel. Een adres (`facturen@garage.nl`) of een heel
+   domein (`@garage.nl`). Zet er ook `@lamgroep.nl` in als je zelf facturen wilt doorsturen.
+4. Klik op **Verbinding testen**. Je ziet "Verbonden, 3 ongelezen" of de foutmelding van
+   de mailserver.
+5. Zet **Postvak automatisch uitlezen** aan en klik op **Opslaan**. De app kijkt daarna
+   elke 15 minuten (instelbaar). Met **Nu ophalen** hoef je daar niet op te wachten.
+
+Wie de instellingen mag beheren, mag ook op **Nu ophalen** klikken en de status hier zien.
+Voor het boeken en afwijzen van facturen is het recht *kosten beheren* nodig.
+
+### Als het niet werkt
+
+- **"Ophalen mislukt" bij de knop, of de melding "Postvak facturen onbereikbaar"**: het
+  wachtwoord is gewijzigd of de mailserver is onbereikbaar. Test de verbinding bij de
+  instellingen.
+- **Alles komt ter controle met "Uitlezen mislukt"**: de sleutel voor de AI-dienst
+  (`GEMINI_API_KEY`) ontbreekt op de server. De instellingenkaart waarschuwt hiervoor.
+- **Een factuur is op het verkeerde voertuig geboekt**: verwijder de kostenregels bij dat
+  voertuig en voer ze met de hand opnieuw in bij het juiste voertuig (Kosten, knop
+  **Kosten vastleggen**). Opnieuw scannen kan niet: de app kent de factuur al en weigert
+  hem als dubbel.
+- **Handmatig scannen zegt "Deze factuur is al geboekt"**: dat klopt dan ook. Dezelfde
+  factuur is al via de mail of een eerdere scan verwerkt. Kijk in het tabblad **Geboekt**.
+- **Een mail groter dan 30 MB**: die haalt de app niet op. Hij komt onder **Te controleren**
+  met de reden "Geen bruikbare bijlage" en een melding die dat zegt. Vraag de factuur
+  opnieuw op, of boek hem met de hand.
