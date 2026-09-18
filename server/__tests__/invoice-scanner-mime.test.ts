@@ -66,4 +66,17 @@ describe("invoice scanner: mime type, VAT and plates", () => {
     expect(parsed.vatAmount).toBeUndefined();
     expect(parsed.vehicleInfo).toBeUndefined();
   });
+
+  it("reads amounts written the Dutch or the English way, and trims plates", async () => {
+    generateContent.mockResolvedValue(reply({ ...base, subtotalAmount: "1.234,56", vatAmount: "€ 259,26", vehicleInfo: { licensePlate: "V-123-XB", licensePlates: [" V-123-XB ", "GH-456-K"] } }));
+    const parsed = await processInvoiceWithAI(file);
+    expect(parsed.subtotalAmount).toBe(1234.56);
+    expect(parsed.vatAmount).toBe(259.26);
+    expect(parsed.vehicleInfo?.licensePlates).toEqual(["V-123-XB", "GH-456-K"]);
+
+    generateContent.mockResolvedValue(reply({ ...base, subtotalAmount: "1,234.56", vatAmount: "1.234" }));
+    const parsed2 = await processInvoiceWithAI(file);
+    expect(parsed2.subtotalAmount).toBe(1234.56);
+    expect(parsed2.vatAmount).toBe(1234);
+  });
 });

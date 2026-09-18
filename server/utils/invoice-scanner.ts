@@ -311,11 +311,35 @@ Please respond ONLY with the JSON object, no additional text.
     
     // Validate and clean up the result
     const optionalAmount = (value: unknown): number | undefined => {
-      const n = typeof value === "string" ? parseFloat(value.replace(/[€\s]/g, "").replace(",", ".")) : Number(value);
+      if (typeof value !== "string") {
+        const n = Number(value);
+        return Number.isFinite(n) && n > 0 ? n : undefined;
+      }
+
+      // Keep only digits, dots, commas and a minus sign
+      const cleaned = value.replace(/[^\d.,-]/g, "");
+
+      // If the last comma comes after the last dot, the comma is the decimal mark
+      const lastDot = cleaned.lastIndexOf(".");
+      const lastComma = cleaned.lastIndexOf(",");
+
+      let normalized: string;
+      if (lastComma > lastDot) {
+        // Dutch format: 1.234,56 -> 1234.56
+        normalized = cleaned.replace(/\./g, "").replace(",", ".");
+      } else if (/^\d{1,3}(\.\d{3})+$/.test(cleaned)) {
+        // Thousands separators with dots (no decimal): 1.234 -> 1234
+        normalized = cleaned.replace(/\./g, "");
+      } else {
+        // English format or just dots as decimals: remove commas
+        normalized = cleaned.replace(/,/g, "");
+      }
+
+      const n = parseFloat(normalized);
       return Number.isFinite(n) && n > 0 ? n : undefined;
     };
     const listedPlates: string[] = Array.isArray(result.vehicleInfo?.licensePlates)
-      ? result.vehicleInfo.licensePlates.filter((p: unknown): p is string => typeof p === "string" && p.trim() !== "")
+      ? result.vehicleInfo.licensePlates.filter((p: unknown): p is string => typeof p === "string" && p.trim() !== "").map((p: string) => p.trim())
       : [];
     const parsedInvoice: ParsedInvoice = {
       vendor: result.vendor || 'Unknown Vendor',
