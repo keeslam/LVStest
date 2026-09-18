@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { InvoiceInboxCard } from "@/components/expenses/invoice-inbox-card";
+import { Toaster } from "@/components/ui/toaster";
+import { InvoiceInboxButton } from "@/components/expenses/invoice-inbox-dialog";
 
 const item = (over: Record<string, unknown> = {}) => ({
   id: 12, messageId: "<a@b>", fromAddress: "facturen@garage.nl", subject: "Factuur 2026-0412", mailDate: "2026-09-10T08:00:00.000Z",
@@ -18,7 +19,7 @@ const item = (over: Record<string, unknown> = {}) => ({
 const vehicles = [{ id: 7, licensePlate: "V-123-XB", brand: "Volkswagen", model: "Crafter" }];
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
-describe("InvoiceInboxCard", () => {
+describe("InvoiceInboxButton", () => {
   let reviewItems: unknown[];
   let calls: Array<{ url: string; method: string; body: any }>;
 
@@ -37,17 +38,33 @@ describe("InvoiceInboxCard", () => {
       return json({}, 404);
     }));
   });
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.history.pushState({}, "", "/expenses");
+  });
 
   const mount = () => render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      <InvoiceInboxCard />
+      <InvoiceInboxButton />
+      <Toaster />
     </QueryClientProvider>,
   );
 
+  const openInboxDialog = async () => {
+    await userEvent.click(await screen.findByRole("button", { name: /Ontvangen facturen/ }));
+  };
+
+  it("shows a button with the number of invoices waiting, and nothing of the list until it is opened", async () => {
+    mount();
+    const button = await screen.findByRole("button", { name: /Ontvangen facturen/ });
+    expect(await within(button).findByTestId("badge-invoice-inbox-review")).toHaveTextContent("1");
+    expect(screen.queryByText("Garage Jansen")).not.toBeInTheDocument();
+    expect(calls.some((c) => c.url.includes("/api/expenses/inbox/items"))).toBe(false);
+  });
+
   it("lists what waits for review, with the reason in Dutch and the count in the badge", async () => {
     mount();
-    expect(await screen.findByText("Ontvangen facturen")).toBeInTheDocument();
+    await openInboxDialog();
     const row = (await screen.findByText("Garage Jansen")).closest("tr")!;
     expect(within(row).getByText("Geen kenteken gevonden")).toBeInTheDocument();
     expect(within(row).getByText("facturen@garage.nl")).toBeInTheDocument();
@@ -57,8 +74,9 @@ describe("InvoiceInboxCard", () => {
 
   it("opens the review dialog pre-filled, and will not book without a vehicle", async () => {
     mount();
+    await openInboxDialog();
     await userEvent.click(await screen.findByRole("button", { name: "Controleren" }));
-    const dialog = await screen.findByRole("dialog");
+    const dialog = (await screen.findByText("Factuur controleren")).closest('[role="dialog"]') as HTMLElement;
     expect(within(dialog).getByText("Factuur controleren")).toBeInTheDocument();
     expect(within(dialog).getByLabelText("Leverancier")).toHaveValue("Garage Jansen");
     expect(within(dialog).getByLabelText("Factuurnummer")).toHaveValue("2026-0412");
@@ -70,8 +88,9 @@ describe("InvoiceInboxCard", () => {
   it("books the ticked lines on the pre-filled vehicle", async () => {
     reviewItems = [item({ vehicleId: 7, reviewReason: "unknown_sender" })];
     mount();
+    await openInboxDialog();
     await userEvent.click(await screen.findByRole("button", { name: "Controleren" }));
-    const dialog = await screen.findByRole("dialog");
+    const dialog = (await screen.findByText("Factuur controleren")).closest('[role="dialog"]') as HTMLElement;
     await userEvent.click(within(dialog).getByTestId("checkbox-item-1"));
     const book = within(dialog).getByRole("button", { name: "Boeken" });
     await waitFor(() => expect(book).toBeEnabled());
@@ -83,5 +102,35 @@ describe("InvoiceInboxCard", () => {
       lineItems: [{ description: "Grote beurt", amount: 100, category: "Maintenance" }],
       groupByCategory: true,
     });
+  });
+
+  it("opens by itself when the page was reached through a notification", async () => {
+    window.history.pushState({}, "", "/expenses?inbox=1");
+    mount();
+    expect(await screen.findByText("Garage Jansen")).toBeInTheDocument();
+  });
+
+  it("shows a translated toast, not the raw HTTP error, when booking fails", async () => {
+    reviewItems = [item({ vehicleId: 7, reviewReason: "unknown_sender" })];
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = (init?.method ?? "GET").toUpperCase();
+      calls.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
+      if (url.includes("/api/expenses/inbox/status")) return json({ enabled: true, running: false, lastRun: null, scheduledMinutes: 15, reviewCount: reviewItems.length, geminiConfigured: true });
+      if (url.includes("/api/expenses/inbox/items?status=review")) return json(reviewItems);
+      if (url.includes("/api/expenses/inbox/items?status=")) return json([]);
+      if (url.endsWith("/book")) return json({ message: "Deze factuur is al afgehandeld." }, 409);
+      if (url.includes("/api/vehicles")) return json(vehicles);
+      return json({}, 404);
+    }));
+    mount();
+    await openInboxDialog();
+    await userEvent.click(await screen.findByRole("button", { name: "Controleren" }));
+    const dialog = (await screen.findByText("Factuur controleren")).closest('[role="dialog"]') as HTMLElement;
+    await userEvent.click(within(dialog).getByTestId("checkbox-item-1"));
+    const book = within(dialog).getByRole("button", { name: "Boeken" });
+    await waitFor(() => expect(book).toBeEnabled());
+    await userEvent.click(book);
+    expect(await screen.findByText("Boeken mislukt")).toBeInTheDocument();
   });
 });

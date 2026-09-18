@@ -248,12 +248,16 @@ validated as integers; the file route refuses paths outside
 
 ## Staff UI
 
-Expenses page (`client/src/pages/expenses/index.tsx`): a card "Ontvangen
-facturen" above the expenses table, new component
-`client/src/components/expenses/invoice-inbox-card.tsx`:
+Expenses page (`client/src/pages/expenses/index.tsx`): a button "Ontvangen
+facturen" with a badge (number of items to review) in the header of the
+Kosten page, next to the scan button, opens a dialog
+(`client/src/components/expenses/invoice-inbox-dialog.tsx`, export
+`InvoiceInboxButton`) with the "Nu ophalen" button, the last-run text, the
+tabs and the list; changed on 2026-09-18 at the user's request ("maak daar
+een knop van met een dialoog"), in line with the repo's dialogs-first
+convention; notifications link to `/expenses?inbox=1`, which opens the
+dialog.
 
-- Header: badge with the number of items to review, "Nu ophalen" button,
-  text "Laatst opgehaald {time}: {n} nieuw" or the last error in red.
 - Tabs "Te controleren" (default), "Geboekt", "Afgewezen". Rows: received
   date, sender, vendor, invoice number, total, reason (Dutch label),
   vehicle plate when linked, action buttons.
@@ -266,7 +270,7 @@ facturen" above the expenses table, new component
 - "Geboekt" rows show the vehicle plate; "Afgewezen" rows show the note.
   "Bekijken" opens the same dialog read-only (attachment, header, lines).
   There is no per-vehicle expenses page to link to; the expenses table
-  below the card is searchable by plate.
+  below the dialog is searchable by plate.
 
 Settings: a new block "Facturen per e-mail (inkomend)" in the settings
 panel (`client/src/components/settings/settings-panel.tsx`), in the existing

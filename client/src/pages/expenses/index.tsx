@@ -14,7 +14,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { InvoiceScanner } from "@/components/invoice-scanner";
-import { InvoiceInboxCard } from "@/components/expenses/invoice-inbox-card";
+import { InvoiceInboxButton } from "@/components/expenses/invoice-inbox-dialog";
 import {
   Table,
   TableBody,
@@ -208,6 +208,7 @@ export default function ExpensesIndex() {
       <div className="flex flex-wrap justify-between items-center gap-2">
         <h1 className="text-2xl font-bold">{t('indexPage.pageTitle')}</h1>
         <div className="flex flex-wrap gap-2">
+          <InvoiceInboxButton />
           <InvoiceScanner
             onExpensesCreated={(expenses) => {
               console.log('Expenses created from invoice:', expenses);
@@ -226,8 +227,6 @@ export default function ExpensesIndex() {
           </Link>
         </div>
       </div>
-      
-      <InvoiceInboxCard />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="md:col-span-3">

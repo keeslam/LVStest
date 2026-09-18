@@ -20,13 +20,13 @@ export async function notifyInvoiceInbox(event: InvoiceInboxEvent): Promise<void
       description: event.description,
       date: new Date().toISOString().slice(0, 10),
       type: "invoice_inbox",
-      link: "/expenses",
+      link: "/expenses?inbox=1",
       icon: "Receipt",
       priority: event.priority ?? "normal",
       isRead: false,
     });
     broadcastDataUpdate("invoice-inbox", "created", {
-      notificationId: notification.id, title: event.title, description: event.description, link: "/expenses",
+      notificationId: notification.id, title: event.title, description: event.description, link: "/expenses?inbox=1",
     });
   } catch (error) {
     console.error("invoice inbox notification failed:", error);

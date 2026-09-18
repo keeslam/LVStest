@@ -68,12 +68,12 @@ export function InvoiceReviewDialog({ item, vehicles, onClose }: Props) {
       groupByCategory,
     })).json(),
     onSuccess: (r: { expenses: unknown[] }) => done(t("invoiceInbox.dialog.bookedToast", { count: r.expenses.length })),
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: t("invoiceInbox.dialog.bookFailed"), description: e.message, variant: "destructive" }),
   });
   const dismiss = useMutation({
     mutationFn: async () => (await apiRequest("POST", `/api/expenses/inbox/items/${item!.id}/dismiss`, { note: note.trim() || undefined })).json(),
     onSuccess: () => done(t("invoiceInbox.dialog.dismissedToast")),
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: t("invoiceInbox.dialog.dismissFailed"), description: e.message, variant: "destructive" }),
   });
 
   if (!item) return null;
