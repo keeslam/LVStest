@@ -3,6 +3,7 @@ import { storage } from "../storage";
 import { UserPermission } from "../../shared/schema";
 import { hasPermission } from "../middleware/permissions.js";
 import { clearEmailConfigCache } from "../utils/email-service";
+import { isManagedSettingKey, MANAGED_SETTING_MESSAGE, redactAppSetting, redactAppSettings } from "../utils/security/redactAppSetting";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
 
@@ -12,22 +13,28 @@ export function registerSettingsRoutes(app: Express, deps: RouteDeps): void {
 
   /**
    * BUG-010: these routes returned app_settings rows verbatim, so the
-   * email_config row handed out the plaintext SMTP password. Same redaction as
-   * server/routes/app-settings.ts, which had it right all along.
+   * email_config row handed out the plaintext SMTP password. C1: the redaction
+   * is shared with server/routes/app-settings.ts now (one helper, no drift) and
+   * also masks the two mailbox passwords.
+   *
+   * C1: a row with its own settings screen (invoice_inbox_config,
+   * cjib_config) may not be written through these generic routes.
    */
-  function redactAppSetting<T extends { value?: any } | undefined>(setting: T): T {
-    if (!setting?.value || typeof setting.value !== "object" || !("smtpPassword" in setting.value)) {
-      return setting;
+  async function refuseManagedSetting(req: Request, res: Response, id?: number): Promise<boolean> {
+    let key: unknown = (req.body as any)?.key;
+    if (!isManagedSettingKey(key) && id !== undefined && Number.isInteger(id)) {
+      key = (await storage.getAppSetting(id))?.key;
     }
-    return { ...setting, value: { ...setting.value, smtpPassword: "" } };
+    if (!isManagedSettingKey(key)) return false;
+    res.status(403).json({ error: MANAGED_SETTING_MESSAGE });
+    return true;
   }
-
 
   // App Settings Routes
   app.get("/api/settings", hasPermission(UserPermission.MANAGE_SETTINGS), async (req, res) => {
     try {
       const settings = await storage.getAllAppSettings();
-      res.json(settings.map(redactAppSetting));
+      res.json(redactAppSettings(settings));
     } catch (error) {
       console.error("Error fetching app settings:", error);
       res.status(500).json({ error: "Failed to fetch settings" });
@@ -38,7 +45,7 @@ export function registerSettingsRoutes(app: Express, deps: RouteDeps): void {
     try {
       const { category } = req.params;
       const settings = await storage.getAppSettingsByCategory(category);
-      res.json(settings.map(redactAppSetting));
+      res.json(redactAppSettings(settings));
     } catch (error) {
       console.error(`Error fetching settings for category ${req.params.category}:`, error);
       res.status(500).json({ error: "Failed to fetch settings" });
@@ -178,6 +185,7 @@ export function registerSettingsRoutes(app: Express, deps: RouteDeps): void {
 
   app.post("/api/settings", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
     try {
+      if (await refuseManagedSetting(req, res)) return;
       const username = req.user?.username || 'Unknown';
       const settingData = {
         ...req.body,
@@ -202,6 +210,7 @@ export function registerSettingsRoutes(app: Express, deps: RouteDeps): void {
   app.patch("/api/settings/:id", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      if (await refuseManagedSetting(req, res, id)) return;
       const username = req.user?.username || 'Unknown';
       const updateData = {
         ...req.body,
@@ -229,7 +238,8 @@ export function registerSettingsRoutes(app: Express, deps: RouteDeps): void {
   app.delete("/api/settings/:id", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      
+      if (await refuseManagedSetting(req, res, id)) return;
+
       // Get setting before deleting to check if it's an email setting
       const setting = await storage.getAppSetting(id);
       const isEmailSetting = setting?.category === 'email';

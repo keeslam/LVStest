@@ -16,6 +16,7 @@ import { clearEmailConfigCache, testSmtpConnection, isSafeHeaderValue } from "..
 import { assertPublicHost, OutboundBlockedError, OUTBOUND_BLOCKED_MESSAGE } from "../utils/security/outboundGuard";
 import { mergeHolidaysWithOverrides } from "../../shared/holidays";
 import { createSecureMulterFilter, sanitizeFilename } from "../utils/security/fileUploadSecurity";
+import { isManagedSettingKey, MANAGED_SETTING_MESSAGE, redactAppSetting, redactAppSettings } from "../utils/security/redactAppSetting";
 import { getRelativePath, resolveDocumentFilePath, resolveStoredPathForWrite } from "../services/document-paths";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
@@ -29,22 +30,51 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
   // APP SETTINGS ROUTES
   // ============================================
 
-  // Strip SMTP credentials out of a setting before it goes to a general-purpose
-  // endpoint that any authenticated user (not just admins) can call. The admin-only
-  // /api/app-settings/:category route below is the one place the real password is
-  // still returned, since the Settings UI needs it to pre-fill the edit dialog.
-  function redactAppSetting<T extends { value?: any } | undefined>(setting: T): T {
-    if (!setting?.value || typeof setting.value !== 'object' || !('smtpPassword' in setting.value)) {
-      return setting;
+  // C1: the redaction lives in server/utils/security/redactAppSetting.ts now,
+  // so this file and routes/settings.ts cannot drift apart again — it blanks the
+  // SMTP password as before and masks the mailbox passwords of
+  // invoice_inbox_config and cjib_config, which used to be readable here by any
+  // logged-in account.
+
+  /**
+   * C1: a row that has its own settings screen may not be written (or deleted)
+   * through the generic routes — that would bypass its validation, its
+   * "keep the stored password" rule and its audit line. Answers the 403 and
+   * returns true when the request was refused.
+   */
+  async function refuseManagedSetting(req: Request, res: Response, id?: number): Promise<boolean> {
+    let key: unknown = (req.body as any)?.key;
+    if (!isManagedSettingKey(key) && id !== undefined && Number.isInteger(id)) {
+      key = (await storage.getAppSetting(id))?.key;
     }
-    return { ...setting, value: { ...setting.value, smtpPassword: '' } };
+    if (!isManagedSettingKey(key)) return false;
+    res.status(403).json({ error: MANAGED_SETTING_MESSAGE });
+    return true;
+  }
+
+  /**
+   * C1, counterpart of the redaction: `GET /api/app-settings/:category` now
+   * blanks `smtpPassword` like every other read, so the Settings dialog
+   * pre-fills an empty password field. Saving that back unchanged would wipe a
+   * working SMTP configuration, so an empty incoming password means "keep the
+   * stored one" — the same rule the two mailbox screens apply to their mask.
+   * A non-empty password still replaces it.
+   */
+  function keepStoredSmtpPassword(value: any, existing: { value?: any } | undefined): any {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+    const stored = existing?.value;
+    if (!stored || typeof stored !== "object" || Array.isArray(stored)) return value;
+    if (stored.smtpPassword && !value.smtpPassword && "smtpPassword" in value) {
+      return { ...value, smtpPassword: stored.smtpPassword };
+    }
+    return value;
   }
 
   // Get all app settings
   app.get("/api/app-settings", requireAuth, async (req: Request, res: Response) => {
     try {
       const settings = await storage.getAllAppSettings();
-      res.json(settings.map(redactAppSetting));
+      res.json(redactAppSettings(settings));
     } catch (error) {
       console.error("Error fetching app settings:", error);
       res.status(500).json({ message: "Error fetching app settings" });
@@ -347,7 +377,7 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
     try {
       const { category } = req.params;
       const settings = await storage.getAppSettingsByCategory(category);
-      res.json(settings);
+      res.json(redactAppSettings(settings));
     } catch (error) {
       console.error("Error fetching app settings by category:", error);
       res.status(500).json({ message: "Error fetching app settings" });
@@ -401,6 +431,8 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
       const user = req.user;
       const { key, value, category, description } = req.body;
 
+      if (await refuseManagedSetting(req, res)) return;
+
       // BUG-100: an e-mail configuration is validated before it is stored — a
       // fromName carrying `\r\nBcc: …`, a host with a line break or a port
       // outside 1-65535 is refused here rather than surfacing as an injected
@@ -414,7 +446,7 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
       if (existing) {
         // Update existing setting
         const updated = await storage.updateAppSetting(existing.id, {
-          value,
+          value: keepStoredSmtpPassword(value, existing),
           category,
           description,
           updatedBy: user ? user.username : null,
@@ -451,13 +483,15 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
       const id = parseInt(req.params.id);
       const { key, value, category, description } = req.body;
 
+      if (await refuseManagedSetting(req, res, id)) return;
+
       // BUG-100: same validation as the upsert above.
       const emailProblem = validateEmailSetting(category, value);
       if (emailProblem) return res.status(400).json(emailProblem);
 
       const updated = await storage.updateAppSetting(id, {
         key,
-        value,
+        value: keepStoredSmtpPassword(value, await storage.getAppSetting(id)),
         category,
         description,
         updatedBy: user ? user.username : null,
@@ -482,6 +516,7 @@ export function registerAppSettingsRoutes(app: Express, deps: RouteDeps): void {
   app.delete("/api/app-settings/:id", hasPermission(UserPermission.MANAGE_SETTINGS), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      if (await refuseManagedSetting(req, res, id)) return;
       const existing = await storage.getAppSetting(id);
       const success = await storage.deleteAppSetting(id);
 
