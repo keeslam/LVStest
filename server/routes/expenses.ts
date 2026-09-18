@@ -23,6 +23,29 @@ import { INTERRUPTED_BOOKING_MESSAGE, type InboxParsedInvoice } from "../../shar
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
 
+/**
+ * C2 — the only content types a receipt may be served with inline. Everything
+ * else (including a row with no stored type and an unfamiliar extension) goes
+ * out as `application/octet-stream` with `Content-Disposition: attachment`.
+ */
+const SERVABLE_RECEIPT_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
+const RECEIPT_TYPE_BY_EXTENSION: Record<string, string> = {
+  ".pdf": "application/pdf", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+  ".png": "image/png", ".webp": "image/webp",
+};
+
+/**
+ * The type a receipt may be served with, or null for "hand it over as a
+ * download". Receipts uploaded by staff carry the content type multer read;
+ * rows written before that field existed fall back to their extension, and only
+ * for the four types above.
+ */
+export function servableReceiptType(storedType: string | null | undefined, filePath: string): string | null {
+  const declared = String(storedType ?? "").toLowerCase().trim().split(";")[0].trim();
+  if (declared) return SERVABLE_RECEIPT_TYPES.includes(declared) ? declared : null;
+  return RECEIPT_TYPE_BY_EXTENSION[path.extname(filePath).toLowerCase()] ?? null;
+}
+
 // Moved verbatim out of server/routes.ts (registerRoutes) - see git history for context.
 export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
   const { upload } = deps;
@@ -184,11 +207,22 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
         return res.status(404).json({ error: "Receipt file not found on disk" });
       }
 
+      // C2: res.sendFile() derived the Content-Type from the file name, and a
+      // mailed invoice used to be stored under the name its sender chose — so a
+      // `.html` "invoice" was served as text/html on the app's own origin. The
+      // type comes from an allowlist applied to the stored content type now;
+      // anything else is a download, and nothing is ever sniffed.
+      const type = servableReceiptType(expense.receiptContentType, filePath);
+      const fileName = path.basename(expense.receiptFile || filePath).replace(/[^A-Za-z0-9._-]/g, "_");
+      res.setHeader("Content-Type", type ?? "application/octet-stream");
+      res.setHeader("Content-Disposition", `${type ? "inline" : "attachment"}; filename="${fileName}"`);
+      res.setHeader("X-Content-Type-Options", "nosniff");
+
       // Serve the file
       res.sendFile(filePath, (err) => {
         if (err) {
           console.error("Error serving receipt file:", err);
-          res.status(500).json({ error: "Failed to serve receipt file" });
+          if (!res.headersSent) res.status(500).json({ error: "Failed to serve receipt file" });
         }
       });
     } catch (error) {

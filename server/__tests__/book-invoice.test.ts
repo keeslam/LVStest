@@ -171,6 +171,58 @@ describe("booking invoices as expenses", () => {
     expect(expense.inboxItemId).toBe(item!.id);
   });
 
+  /**
+   * C2: the file name is chosen by whoever mailed the invoice, and res.sendFile
+   * derived the Content-Type from it — so a stored `.html` was served as
+   * text/html on the app's own origin. The type comes from an allowlist applied
+   * to the stored content type now, with nosniff on every answer.
+   */
+  describe("receipt route", () => {
+    const receiptExpense = async (fileSuffix: string, receiptContentType: string | null) => {
+      fs.mkdirSync(invoicesDir, { recursive: true });
+      const abs = path.join(invoicesDir, `${TEST_PREFIX}${unique()}${fileSuffix}`);
+      fs.writeFileSync(abs, `%PDF-1.4\n% ${unique()}\n%%EOF`);
+      files.push(abs);
+      const [row] = await db.insert(expensesTable).values({
+        vehicleId, category: "Maintenance", amount: "10.00", date: "2026-09-10",
+        receiptFile: path.basename(abs),
+        receiptFilePath: path.relative(getUploadsDir(), abs).split(path.sep).join("/"),
+        receiptContentType,
+      }).returning();
+      return row;
+    };
+
+    it("serves a PDF stored under an .html name as application/pdf, with nosniff", async () => {
+      const expense = await receiptExpense(".html", "application/pdf");
+      const res = await request(app).get(`/api/expenses/${expense.id}/receipt`);
+      expect(res.status).toBe(200);
+      expect(res.headers["content-type"]).toContain("application/pdf");
+      expect(res.headers["x-content-type-options"]).toBe("nosniff");
+      expect(res.headers["content-disposition"]).toContain("inline");
+    });
+
+    it("sends anything outside the allowlist as a download, never inline", async () => {
+      const expense = await receiptExpense(".html", "text/html");
+      const res = await request(app).get(`/api/expenses/${expense.id}/receipt`);
+      expect(res.status).toBe(200);
+      expect(res.headers["content-type"]).toContain("application/octet-stream");
+      expect(res.headers["content-disposition"]).toContain("attachment");
+      expect(res.headers["x-content-type-options"]).toBe("nosniff");
+    });
+
+    it("falls back to the file extension for an older receipt without a stored type", async () => {
+      const known = await receiptExpense(".pdf", null);
+      const good = await request(app).get(`/api/expenses/${known.id}/receipt`);
+      expect(good.headers["content-type"]).toContain("application/pdf");
+      expect(good.headers["content-disposition"]).toContain("inline");
+
+      const unknown = await receiptExpense(".html", null);
+      const bad = await request(app).get(`/api/expenses/${unknown.id}/receipt`);
+      expect(bad.headers["content-type"]).toContain("application/octet-stream");
+      expect(bad.headers["content-disposition"]).toContain("attachment");
+    });
+  });
+
   it("manual scan: a failure before any expense was written gives the item a reason", async () => {
     vi.spyOn(storage, "createExpense").mockRejectedValue(new Error("database weg"));
     const invoice = { vendor: `${TEST_PREFIX}Garage`, invoiceNumber: `M-${unique()}`, invoiceDate: "2026-09-10", totalAmount: 10 };

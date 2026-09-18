@@ -176,6 +176,24 @@ describe("invoice inbox importer", () => {
     expect(scannerCalls).toHaveLength(0);
   });
 
+  it("gives the stored file the extension of the type it really is, not the one the sender typed", async () => {
+    const attachment = pdf("html-naam");
+    await importInvoiceMail({ raw: await buildMail({ attachments: [{ filename: "factuur.html", content: attachment, contentType: "application/pdf" }] }), config, createdBy: INBOX_TEST_ACTOR });
+    const item = (await inboxStorage.getByAttachmentHash(sha256(attachment)))!;
+    expect(item.attachmentName).toBe("factuur.pdf");
+    expect(item.attachmentPath).toMatch(/\/\d+_[0-9a-f]{8}_factuur\.pdf$/);
+  });
+
+  it("refuses a file that only carries %PDF- somewhere inside it", async () => {
+    const messageId = `<${unique()}@garage-test.invalid>`;
+    const smuggled = Buffer.from(`<html><!-- %PDF-1.4 ${unique()} --><script>alert(1)</script></html>`);
+    const result = await importInvoiceMail({ raw: await buildMail({ messageId, attachments: [{ filename: "factuur.pdf", content: smuggled, contentType: "application/pdf" }] }), config, createdBy: INBOX_TEST_ACTOR });
+    expect(result).toMatchObject({ attachments: 0, booked: 0, review: 1, skipped: 0 });
+    expect(await inboxStorage.getByAttachmentHash(sha256(smuggled))).toBeUndefined();
+    expect((await inboxStorage.getByAttachmentHash(sha256(`mail:${messageId}`)))?.reviewReason).toBe("no_attachment");
+    expect(scannerCalls).toHaveLength(0);
+  });
+
   it("scans a photo of an invoice with its own mime type, also when it is sent as octet-stream", async () => {
     const photo = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.from(unique()), Buffer.alloc(25 * 1024)]);
     await importInvoiceMail({ raw: await buildMail({ attachments: [{ filename: "bon.JPG", content: photo, contentType: "application/octet-stream" }] }), config, createdBy: INBOX_TEST_ACTOR });

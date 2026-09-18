@@ -36,8 +36,21 @@ export const MAX_MAIL_BYTES = 30 * 1024 * 1024;
 const MIN_IMAGE_BYTES = 20 * 1024;
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const PDF_SIGNATURE = Buffer.from("%PDF-", "latin1");
+const UTF8_BOM = Buffer.from([0xef, 0xbb, 0xbf]);
+
+/**
+ * C2: `%PDF-` has to be at offset 0 (a UTF-8 BOM in front of it is the only
+ * thing allowed). It used to be enough for the bytes to appear anywhere in the
+ * first kilobyte, so an HTML page or a JavaScript file with `<!-- %PDF- -->`
+ * near the top passed as a PDF.
+ */
+const startsWithPdf = (b: Buffer): boolean =>
+  b.subarray(0, PDF_SIGNATURE.length).equals(PDF_SIGNATURE)
+  || (b.subarray(0, 3).equals(UTF8_BOM) && b.subarray(3, 3 + PDF_SIGNATURE.length).equals(PDF_SIGNATURE));
+
 const ACCEPTED: Record<string, { extension: string; matches: (b: Buffer) => boolean }> = {
-  "application/pdf": { extension: "pdf", matches: (b) => b.subarray(0, 1024).includes("%PDF-") },
+  "application/pdf": { extension: "pdf", matches: startsWithPdf },
   "image/jpeg": { extension: "jpg", matches: (b) => b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
   "image/png": { extension: "png", matches: (b) => b.subarray(0, 8).equals(PNG_SIGNATURE) },
 };
@@ -45,8 +58,21 @@ const ACCEPTED: Record<string, { extension: string; matches: (b: Buffer) => bool
 interface UsableAttachment { name: string; content: Buffer; contentType: string }
 interface MailMeta { messageId: string | null; fromAddress: string | null; subject: string | null; mailDate: Date | null }
 
-/** Same rule as the CJIB importer: base name only, conservative character set. */
-const safeName = (name: string) => path.basename(name).replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 120);
+/**
+ * C2: the sender no longer chooses the extension. Only the base name survives,
+ * without its extension and without any dot, and the server appends the
+ * extension of the type the bytes actually are. `factuur.html` declared as a
+ * PDF is stored — and named — `factuur.pdf`, so the routes that serve stored
+ * files by name cannot be talked into serving HTML from the app's own origin.
+ */
+function safeAttachmentName(rawName: string, contentType: string): string {
+  const base = path.basename(String(rawName ?? ""))
+    .replace(/\.[^.]*$/, "")
+    .replace(/[^A-Za-z0-9_-]/g, "_")
+    .slice(0, 100)
+    .replace(/^_+$/, "");
+  return `${base || "factuur"}.${ACCEPTED[contentType].extension}`;
+}
 
 /** The declared type, or the file extension for octet-stream — and in both cases the bytes have to agree. */
 function detectType(declared: string, fileName: string, content: Buffer): string | null {
@@ -71,7 +97,7 @@ function usableAttachments(mail: ParsedMail): UsableAttachment[] {
     const contentType = detectType(attachment.contentType ?? "", attachment.filename ?? "", content);
     if (!contentType) continue;
     if (contentType !== "application/pdf" && content.length < MIN_IMAGE_BYTES) continue;
-    usable.push({ name: safeName(attachment.filename || `factuur.${ACCEPTED[contentType].extension}`), content, contentType });
+    usable.push({ name: safeAttachmentName(attachment.filename || "factuur", contentType), content, contentType });
   }
   return usable;
 }
