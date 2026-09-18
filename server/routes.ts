@@ -155,6 +155,7 @@ import { registerPortalRequestRoutes } from "./routes/portal-requests";
 import { registerTodayRoutes } from "./routes/today";
 import { registerReservationWorklistRoutes } from "./routes/reservation-worklist";
 import { registerExpenseRoutes } from "./routes/expenses";
+import { registerExpenseInboxRoutes } from "./routes/expense-inbox";
 import { registerPdfTemplateRoutes } from "./routes/pdf-templates";
 import { storedPathGuard, TEMPLATE_ROUTE_PREFIXES } from "./middleware/stored-path-guard";
 import { registerCustomNotificationRoutes } from "./routes/custom-notifications";
@@ -5633,6 +5634,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       sendRouteError(res, error, "Failed to delete reservation");
     }
   });
+  registerExpenseInboxRoutes(app);
   registerExpenseRoutes(app, routeDeps);
 
   // ==================== VEHICLE-SPECIFIC CUSTOMER ROUTES ====================
