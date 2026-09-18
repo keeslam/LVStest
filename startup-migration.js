@@ -1350,7 +1350,14 @@ async function runMigrations() {
     await db.execute(sql`CREATE INDEX IF NOT EXISTS invoice_inbox_items_message_id_idx ON invoice_inbox_items (message_id)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS invoice_inbox_items_invoice_hash_idx ON invoice_inbox_items (invoice_hash)`);
     await db.execute(sql`CREATE INDEX IF NOT EXISTS invoice_inbox_items_status_idx ON invoice_inbox_items (status, received_at)`);
+    // M6: a database bootstrapped from schema-columns.json gets the column but
+    // not the UNIQUE that makes "one attachment is processed once" hold — two
+    // runs of the same mail would then both book it.
+    await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS invoice_inbox_items_attachment_hash_uidx ON invoice_inbox_items (attachment_hash)`);
     await addColumnIfNotExists('expenses', 'inbox_item_id', 'INTEGER');
+    // M5: expenseIdsFor() and the cascade on delete both look expenses up by
+    // this column, which had no index of its own.
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS expenses_inbox_item_id_idx ON expenses (inbox_item_id)`);
     // The early manifest sync (above) already added the column on existing
     // databases, as a plain INTEGER - so the foreign key is added on its own,
     // by name, and only when it is not there yet.

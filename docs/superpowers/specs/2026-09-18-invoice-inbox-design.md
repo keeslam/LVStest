@@ -120,12 +120,12 @@ migrations are additive only):
 | message_id | text | RFC 5322 Message-ID; index, not unique (one mail can carry several invoices) |
 | from_address | text | bare address, lower-cased |
 | subject | text | |
-| mail_date | timestamptz | Date header; falls back to received_at |
+| mail_date | timestamptz | Date header, or **null** when the mail carries none — there is no fallback to received_at (which the row has anyway) |
 | attachment_name | text | original file name, sanitised |
 | attachment_path | text | relative path under `uploads/invoice-inbox/` |
-| attachment_hash | text unique | sha256 of the attachment bytes; an attachment is processed once |
+| attachment_hash | text unique | sha256 of the attachment bytes; an attachment is processed once. The UNIQUE index is created by `startup-migration.js` (`invoice_inbox_items_attachment_hash_uidx`) as well as by the table DDL, because the manifest that bootstraps a fresh database carries columns, not indexes |
 | attachment_content_type | text | `application/pdf`, `image/jpeg`, `image/png` |
-| invoice_hash | text | sha256 of `vendor|invoiceNumber|invoiceDate|totalAmount` (vendor reduced to letters and digits, number without whitespace, total in cents); index. **Null when the invoice has no number**: vendor + date + total alone would call two fuel receipts of one day duplicates, so such invoices are never flagged |
+| invoice_hash | text | sha256 of `vendor\|invoiceNumber\|invoiceDate\|totalAmount` (vendor reduced to letters and digits, number without whitespace and upper-cased, total as a string with two decimals); index. **Null when the invoice has no number**: vendor + date + total alone would call two fuel receipts of one day duplicates, so such invoices are never flagged |
 | parsed | jsonb | full `ParsedInvoice` from the scanner, plus `plates: string[]` found |
 | status | text | `booked`, `review`, `dismissed`. There is no `failed`: whatever goes wrong ends as `review` with a reason, so staff always see it |
 | note | text | what staff typed when dismissing |
@@ -180,9 +180,19 @@ Attachments are extracted with `mailparser` (new dependency, MIT). Accepted:
 `application/pdf`, `image/jpeg`, `image/png` (also when sent as
 `application/octet-stream` with a matching extension), **verified by magic
 bytes**, at most 15 MB each, at most 10 per mail. Images under 20 KB
-(signatures, logos) are ignored. A file name is reduced to its base name
-and a conservative character set (the CJIB importer's rule); the stored
-name is `<timestamp>_<hash8>_<safe name>` under `uploads/invoice-inbox/`.
+(signatures, logos) are ignored. `%PDF-` has to be at offset 0 (only a UTF-8 BOM
+may precede it), like the JPEG and PNG signatures, so a file that merely
+mentions those bytes somewhere is not a PDF.
+
+**The server chooses the extension.** The stored name is
+`<timestamp>_<hash8>_<base>.<ext>` under `uploads/invoice-inbox/`, where `<ext>`
+belongs to the type the bytes really are and `<base>` is the sender's base name
+*without* its extension and without any dot (`[^A-Za-z0-9_-]` → `_`, at most 100
+characters, falling back to `factuur`). `attachment_name` follows the same rule.
+Otherwise the sender picks the name a stored file is later served under, and
+`/api/expenses/:id/receipt` — which serves by stored content type from a
+four-entry allowlist, with `nosniff`, and everything else as a download — would
+have been handed HTML on the app's own origin.
 
 ## Scanning and booking
 
@@ -285,7 +295,7 @@ Permission `manage_expenses` unless stated.
 | `PUT /config` (`manage_settings`) | validate, save, restart scheduler |
 | `POST /config/test` (`manage_settings`) | connect, return `{ ok, unseen }` |
 | `POST /run` (`manage_expenses` or `manage_settings`) | run now; returns the run summary |
-| `GET /status` (`manage_expenses` or `manage_settings`) | `{ running, lastRun, scheduledMinutes, reviewCount }` |
+| `GET /status` (`manage_expenses` or `manage_settings`) | `{ enabled, running, lastRun, scheduledMinutes, reviewCount, geminiConfigured }` — `reviewCount` feeds the badge on the button, `geminiConfigured` the warning on the settings card |
 | `GET /items?status=review\|booked\|dismissed&limit=&offset=` | list, newest first, with vehicle plate when linked |
 | `GET /items/:id` | one item with `parsed` |
 | `GET /items/:id/file` | the attachment (same path resolution and content-type checks as the receipt route) |

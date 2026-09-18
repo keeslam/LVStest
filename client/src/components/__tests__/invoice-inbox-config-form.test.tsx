@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
 import { InvoiceInboxConfigForm } from "@/components/expenses/invoice-inbox-config-form";
 
 const config = {
@@ -33,6 +34,7 @@ describe("InvoiceInboxConfigForm", () => {
   const mount = () => render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <InvoiceInboxConfigForm />
+      <Toaster />
     </QueryClientProvider>,
   );
 
@@ -81,6 +83,31 @@ describe("InvoiceInboxConfigForm", () => {
     await userEvent.click(screen.getByRole("button", { name: "Opslaan" }));
     await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
     expect(calls.find((c) => c.method === "PUT")!.body.authservId).toBe("mx.host.nl");
+  });
+
+  /** M10: the toast used to put the raw server message where the title belongs. */
+  it("shows a translated title with the server's message underneath when saving fails", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = (init?.method ?? "GET").toUpperCase();
+      calls.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
+      if (url.endsWith("/api/expenses/inbox/status")) return json(status);
+      if (url.endsWith("/api/expenses/inbox/run")) return json({ message: "Postvak onbereikbaar" }, { status: 502 });
+      if (url.endsWith("/api/expenses/inbox/config")) {
+        if (method === "PUT") return json({ message: "Alleen poort 993 (TLS) of 143 (STARTTLS) is toegestaan" }, { status: 400 });
+        return json(config);
+      }
+      return json({}, { status: 404 });
+    }));
+
+    mount();
+    await userEvent.click(await screen.findByRole("button", { name: "Opslaan" }));
+    expect(await screen.findByText("Opslaan mislukt")).toBeInTheDocument();
+    expect(await screen.findByText(/Alleen poort 993/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Nu ophalen" }));
+    expect(await screen.findByText("Ophalen mislukt")).toBeInTheDocument();
+    expect(await screen.findByText(/Postvak onbereikbaar/)).toBeInTheDocument();
   });
 
   it("still renders with its values when the status check is refused, and does not hammer it", async () => {

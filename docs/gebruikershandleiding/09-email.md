@@ -281,6 +281,14 @@ Dan maakt de app één kostenregel per categorie (bijvoorbeeld Onderhoud en Remm
 de factuur als bon aan elke regel en zet een melding in de bel:
 "Factuur van Garage Jansen geboekt op V-123-XB".
 
+De bedragen worden geboekt zoals ze op de factuur staan — op garagefacturen is dat
+meestal **exclusief btw**, want de regels staan er excl. btw en het totaal incl. btw. De
+app rekent niets om.
+
+> **Open het postvak niet met de hand.** De app haalt alleen ongelezen mail op. Lees je
+> een factuurmail in de webmail of in Outlook, dan is hij gelezen en ziet de app hem niet
+> meer. Moet je toch kijken, zet de mail dan daarna weer op ongelezen.
+
 ### Wat als de app twijfelt?
 
 Dan wordt er **niets geboekt**. Op de pagina **Kosten** staat naast **Factuur scannen** de

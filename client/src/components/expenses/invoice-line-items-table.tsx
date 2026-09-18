@@ -92,7 +92,8 @@ export function InvoiceLineItemsTable({ items, selected, onItemsChange, onSelect
                   </Select>
                 </TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="sm" onClick={() => remove(index)} data-testid={`button-remove-${index}`}>
+                  {/* M9: an icon with no text reads as "button" to a screen reader. */}
+                  <Button variant="ghost" size="sm" onClick={() => remove(index)} aria-label={t("invoiceScanner.removeLine")} data-testid={`button-remove-${index}`}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </TableCell>

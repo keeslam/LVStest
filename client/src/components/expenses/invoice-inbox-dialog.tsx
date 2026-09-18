@@ -25,6 +25,14 @@ interface InboxStatusResponse {
 }
 
 const TABS: InboxStatus[] = ["review", "booked", "dismissed"];
+
+/**
+ * M7 — the status poll runs for as long as the Kosten page is open, also for an
+ * account the route refuses. A fixed interval kept asking every minute for the
+ * whole session; once it has errored it stops until something invalidates it.
+ */
+export const inboxStatusRefetchInterval = (query: { state: { status: string } }): number | false =>
+  (query.state.status === "error" ? false : 60_000);
 const dateTime = (iso: string) => new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
 
 /**
@@ -45,7 +53,7 @@ export function InvoiceInboxButton() {
   const { data: status } = useQuery<InboxStatusResponse>({
     queryKey: ["/api/expenses/inbox/status"],
     queryFn: async () => (await apiRequest("GET", "/api/expenses/inbox/status")).json(),
-    refetchInterval: 60_000,
+    refetchInterval: inboxStatusRefetchInterval,
   });
   const { data: items = [] } = useQuery<InboxListItem[]>({
     queryKey: ["/api/expenses/inbox/items", tab],

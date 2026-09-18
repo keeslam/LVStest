@@ -126,8 +126,13 @@ export function InvoiceReviewDialog({ item, vehicles, onClose }: Props) {
             </div>
 
             <div>
-              <Label>{t("invoiceInbox.dialog.vehicle")}</Label>
-              <VehicleSelector vehicles={vehicles} value={vehicleId} onChange={setVehicleId} placeholder={t("invoiceInbox.dialog.vehiclePlaceholder")} disabled={readOnly} className="w-full" />
+              {/* M9: the trigger is a button, so the label is tied to it by id. */}
+              <Label id="inbox-vehicle-label">{t("invoiceInbox.dialog.vehicle")}</Label>
+              <VehicleSelector
+                vehicles={vehicles} value={vehicleId} onChange={setVehicleId}
+                placeholder={t("invoiceInbox.dialog.vehiclePlaceholder")} disabled={readOnly} className="w-full"
+                ariaLabelledBy="inbox-vehicle-label" data-testid="select-inbox-vehicle"
+              />
               {(item.parsed?.plates?.length ?? 0) > 0 && (
                 <p className="mt-1 text-xs text-muted-foreground">{t("invoiceInbox.dialog.platesFound", { plates: item.parsed!.plates!.join(", ") })}</p>
               )}

@@ -57,7 +57,9 @@ export function InvoiceInboxConfigForm() {
       invalidateByPrefix("/api/expenses/inbox");
       toast({ title: t("invoiceInbox.config.saved") });
     },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+    // M10: the raw server message belongs under a title that says what failed,
+    // not in the place of one.
+    onError: (e: Error) => toast({ title: t("invoiceInbox.config.saveFailed"), description: e.message, variant: "destructive" }),
   });
   const test = useMutation({
     mutationFn: async () => (await apiRequest("POST", "/api/expenses/inbox/config/test", payload())).json(),
@@ -74,7 +76,7 @@ export function InvoiceInboxConfigForm() {
         variant: s.errors.length ? "destructive" : "default",
       });
     },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: t("invoiceInbox.runFailed"), description: e.message, variant: "destructive" }),
   });
 
   if (!form) return null;

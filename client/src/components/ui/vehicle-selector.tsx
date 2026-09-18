@@ -28,6 +28,13 @@ interface VehicleSelectorProps {
   disabled?: boolean;
   className?: string;
   recentVehicleIds?: string[];
+  /**
+   * The id of the <Label> above the selector. The trigger is a button, not an
+   * <input>, so `htmlFor` does not reach it — without this a screen reader
+   * announces the placeholder and never the field's name.
+   */
+  ariaLabelledBy?: string;
+  "data-testid"?: string;
 }
 
 export function VehicleSelector({
@@ -38,6 +45,8 @@ export function VehicleSelector({
   disabled = false,
   className,
   recentVehicleIds = [],
+  ariaLabelledBy,
+  "data-testid": dataTestId,
 }: VehicleSelectorProps) {
   const { t } = useTranslation("vehicles");
   const finalPlaceholder = placeholder ?? t('vehicleSelector.defaultPlaceholder');
@@ -111,6 +120,8 @@ export function VehicleSelector({
               className
             )}
             disabled={disabled}
+            aria-labelledby={ariaLabelledBy}
+            data-testid={dataTestId}
           >
             <div className="flex items-center truncate">
               {selectedVehicle ? (

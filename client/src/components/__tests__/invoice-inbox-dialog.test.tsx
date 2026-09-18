@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { InvoiceInboxButton } from "@/components/expenses/invoice-inbox-dialog";
+import { InvoiceInboxButton, inboxStatusRefetchInterval } from "@/components/expenses/invoice-inbox-dialog";
 
 const item = (over: Record<string, unknown> = {}) => ({
   id: 12, messageId: "<a@b>", fromAddress: "facturen@garage.nl", subject: "Factuur 2026-0412", mailDate: "2026-09-10T08:00:00.000Z",
@@ -70,6 +70,22 @@ describe("InvoiceInboxButton", () => {
     expect(within(row).getByText("facturen@garage.nl")).toBeInTheDocument();
     expect(within(row).getByText("2026-0412")).toBeInTheDocument();
     expect(screen.getByTestId("badge-invoice-inbox-review")).toHaveTextContent("1");
+  });
+
+  /** M7: the status poll used to keep hammering a route that answers 403. */
+  it("stops polling the status once it has errored", () => {
+    expect(inboxStatusRefetchInterval({ state: { status: "success" } } as any)).toBe(60_000);
+    expect(inboxStatusRefetchInterval({ state: { status: "pending" } } as any)).toBe(60_000);
+    expect(inboxStatusRefetchInterval({ state: { status: "error" } } as any)).toBe(false);
+  });
+
+  /** M9: the label above the selector was not tied to it for a screen reader. */
+  it("names the vehicle selector in the review dialog", async () => {
+    mount();
+    await openInboxDialog();
+    await userEvent.click(await screen.findByRole("button", { name: "Controleren" }));
+    const dialog = (await screen.findByText("Factuur controleren")).closest('[role="dialog"]') as HTMLElement;
+    expect(within(dialog).getByTestId("select-inbox-vehicle")).toHaveAccessibleName(/Voertuig/);
   });
 
   it("opens the review dialog pre-filled, and will not book without a vehicle", async () => {

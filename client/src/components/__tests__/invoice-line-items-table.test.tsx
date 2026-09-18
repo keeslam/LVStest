@@ -46,6 +46,12 @@ describe("InvoiceLineItemsTable", () => {
     expect(state().selected).toEqual([0, 1]);
   });
 
+  /** M9: the remove button is an icon only, so a screen reader read "button". */
+  it("names the icon-only remove button", () => {
+    render(<Harness initialSelected={[]} />);
+    expect(screen.getByTestId("button-remove-1")).toHaveAccessibleName("Regel verwijderen");
+  });
+
   it("toggles one line and all lines", async () => {
     render(<Harness initialSelected={[]} />);
     await userEvent.click(screen.getByTestId("checkbox-item-2"));

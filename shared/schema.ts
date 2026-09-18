@@ -1221,6 +1221,9 @@ export const expenses = pgTable("expenses", {
   vehicleIdIdx: index("expenses_vehicle_id_idx").on(table.vehicleId),
   createdAtIdx: index("expenses_created_at_idx").on(table.createdAt),
   dateIdx: index("expenses_date_idx").on(table.date),
+  // M5: the invoice inbox looks its expenses up by this column on every heal
+  // and on every "already booked?" check.
+  inboxItemIdIdx: index("expenses_inbox_item_id_idx").on(table.inboxItemId),
 }));
 
 export const insertExpenseSchema = createInsertSchema(expenses).omit({
