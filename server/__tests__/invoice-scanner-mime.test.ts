@@ -67,6 +67,40 @@ describe("invoice scanner: mime type, VAT and plates", () => {
     expect(parsed.vehicleInfo).toBeUndefined();
   });
 
+  /**
+   * I4: the scanner used to fill in today's date and invent a single line equal
+   * to the total, so the automatic path could not tell a read invoice from a
+   * guessed one. It now says what it did not read.
+   */
+  it("leaves the date empty instead of substituting today", async () => {
+    generateContent.mockResolvedValue(reply({ ...base, invoiceDate: undefined }));
+    expect((await processInvoiceWithAI(file)).invoiceDate).toBe("");
+  });
+
+  it("marks a line it made up out of the total", async () => {
+    generateContent.mockResolvedValue(reply({ ...base, lineItems: [] }));
+    const parsed = await processInvoiceWithAI(file);
+    expect(parsed.lineItems).toHaveLength(1);
+    expect(parsed.lineItems[0].amount).toBe(121);
+    expect(parsed.lineItemsFromTotal).toBe(true);
+
+    generateContent.mockResolvedValue(reply(base));
+    expect((await processInvoiceWithAI(file)).lineItemsFromTotal).toBeUndefined();
+  });
+
+  it("asks what kind of document it is, and returns it", async () => {
+    generateContent.mockResolvedValue(reply({ ...base, documentType: "quote" }));
+    const parsed = await processInvoiceWithAI(file);
+    expect(parsed.documentType).toBe("quote");
+
+    const request = generateContent.mock.calls[0][0];
+    expect(request.config.responseSchema.properties.documentType.enum)
+      .toEqual(["invoice", "credit_note", "quote", "reminder", "other"]);
+    expect(request.config.responseSchema.properties.lineItems.items.properties.category.enum)
+      .toContain("Maintenance");
+    expect(String(request.contents[1])).toContain("documentType");
+  });
+
   it("reads amounts written the Dutch or the English way, and trims plates", async () => {
     generateContent.mockResolvedValue(reply({ ...base, subtotalAmount: "1.234,56", vatAmount: "€ 259,26", vehicleInfo: { licensePlate: "V-123-XB", licensePlates: [" V-123-XB ", "GH-456-K"] } }));
     const parsed = await processInvoiceWithAI(file);

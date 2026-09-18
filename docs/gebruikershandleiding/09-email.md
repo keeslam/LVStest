@@ -267,10 +267,15 @@ Alleen als alles klopt:
 
 - de afzender staat in de lijst **Vertrouwde afzenders**, en de mail is volgens jullie
   eigen mailserver ook echt van dat adres (zie **Instellen**, punt 4);
+- het is echt een factuur — een offerte, herinnering of creditnota wordt nooit vanzelf
+  geboekt;
 - er staat precies één kenteken op de factuur, en dat kenteken zit in de vloot;
-- de factuur is niet eerder binnengekomen;
-- de regels tellen op tot het totaal (excl. of incl. btw), op hooguit 1 euro na;
-- de factuurdatum ligt niet in de toekomst.
+- de factuur is niet eerder binnengekomen (ook niet met een ander factuurnummer geschreven
+  of een andere schrijfwijze van de leverancier: hetzelfde factuurnummer met hetzelfde
+  totaalbedrag telt als dubbel);
+- de regels zijn echt van de factuur gelezen en tellen op tot het totaal (excl. of incl.
+  btw), op hooguit 1 euro na;
+- de factuurdatum is echt gelezen, ligt niet in de toekomst en is niet ouder dan 400 dagen.
 
 Dan maakt de app één kostenregel per categorie (bijvoorbeeld Onderhoud en Remmen), hangt
 de factuur als bon aan elke regel en zet een melding in de bel:
@@ -290,7 +295,8 @@ staat onder **Te controleren**, met de reden erbij:
 | Meerdere kentekens | Kies het voertuig waar de kosten op horen. Splitsen over voertuigen kan niet; boek dan met de hand. |
 | Kenteken niet in de vloot | Verkeerd gelezen of niet van ons. Kies het voertuig of wijs af. |
 | Mogelijk dubbel | Dezelfde factuur is al geboekt of wacht al. Meestal: afwijzen. |
-| Bedragen kloppen niet | Kijk de regels na naast de factuur en verbeter ze. |
+| Geen factuur (offerte, herinnering of creditnota) | De app las geen factuur maar iets anders. Klopt dat, wijs dan af. Is het tóch een factuur, controleer de regels en boek hem hier. |
+| Bedragen of datum kloppen niet | Kijk de regels en de factuurdatum na naast de factuur en verbeter ze. |
 | Uitlezen mislukt | Vul leverancier, datum en regels zelf in; de factuur staat ernaast. |
 | Geen bruikbare bijlage | De mail had geen PDF of foto. Vraag de factuur opnieuw op of wijs af. |
 

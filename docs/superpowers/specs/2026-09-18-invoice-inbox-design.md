@@ -145,11 +145,12 @@ Review reasons (`review_reason`), in the order they are checked:
 | `no_attachment` | mail has no PDF/JPG/PNG attachment, or all attachments were skipped (over 15 MB, wrong type) |
 | `parse_failed` | the scanner threw on every model, or validation of the parsed invoice failed |
 | `unknown_sender` | `from_address` matches no entry in `allowedSenders`, **or** `senderAuthVerdict()` (see "Is the sender really the sender?") did not clear the mail: with `authservId` set it has to be a `pass` from that server, without it anything that is not `dmarc=fail`, `spf=fail` or `spf=softfail` is accepted |
-| `duplicate` | an item with the same `invoice_hash` already exists with status `booked` or `review` |
+| `duplicate` | an active item (`booked` or `review`) has the same `invoice_hash`, **or** the same normalised `invoiceNumber` together with the same total in cents. The second check exists because the hash includes the vendor as the model spelled it, so "Jansen" and "Jansen B.V." hash differently; both checks only apply to invoices that carry a number |
+| `not_invoice` | the scanner read a `documentType` and it is not `invoice` — a quote, a reminder or a credit note is not a request to pay for work that was done |
 | `no_plate` | no license plate found on the invoice |
 | `multiple_plates` | more than one distinct plate found |
 | `plate_unknown` | exactly one plate, but it is not in the fleet |
-| `total_mismatch` | the line sum is not within `totalTolerance` of any of: the total incl. VAT, the stated subtotal excl. VAT, or total minus VAT (garage invoices list lines excl. VAT and the total incl. VAT, so comparing with the total alone would queue nearly every invoice); or `invoiceDate` is unreadable or in the future |
+| `total_mismatch` | the line sum is not within `totalTolerance` of any of: the total incl. VAT, the stated subtotal excl. VAT, or total minus VAT (garage invoices list lines excl. VAT and the total incl. VAT, so comparing with the total alone would queue nearly every invoice); **or** the scanner read no lines at all and made one up out of the total (`lineItemsFromTotal`), so the sum would match by construction; **or** `invoiceDate` is empty, does not survive a round trip through `Date` ("2026-02-31" silently becomes 3 March), lies in the future, or is more than 400 days old |
 
 `expenses` gets one nullable column `inbox_item_id integer references
 invoice_inbox_items(id) on delete set null`. Existing rows stay null. The
@@ -197,10 +198,18 @@ uid, config, createdBy })`:
    second parameter, default `application/pdf`, so JPG/PNG attachments are
    sent with their own mime type; the manual scan route is unchanged). The
    scanner's prompt and response schema are extended with `subtotalAmount`
-   (excl. VAT), `vatAmount` and `vehicleInfo.licensePlates` (every plate on
-   the invoice), all optional. Then `validateParsedInvoice`. Failure → item
-   `review`, reason `parse_failed`, `error_message` set, and whatever was
-   read is kept in `parsed`.
+   (excl. VAT), `vatAmount`, `vehicleInfo.licensePlates` (every plate on
+   the invoice) and `documentType` (enum `invoice | credit_note | quote |
+   reminder | other`), all optional; the line `category` is an enum of
+   `EXPENSE_CATEGORIES`. The scanner says what it did *not* read rather than
+   filling gaps in: `invoiceDate` stays `""` when the model gave no date, and
+   `lineItemsFromTotal: true` marks the single line it makes up out of the
+   total. Then `validateParsedInvoice(parsed, { requireDate: false })` — an
+   unreadable date is a reason for staff to look (`total_mismatch`), not a
+   reason to discard the rest as `parse_failed`. `POST /api/expenses/scan`
+   substitutes today's date itself, *before* it validates, so the manual flow
+   is unchanged. Failure → item `review`, reason `parse_failed`,
+   `error_message` set, and whatever was read is kept in `parsed`.
 4. Collect plates: `vehicleInfo.licensePlate`, every entry of
    `vehicleInfo.licensePlates`, plus every dashed Dutch plate found in
    line-item descriptions (six characters, at least one letter and one
@@ -212,7 +221,9 @@ uid, config, createdBy })`:
    `server/services/invoice-inbox/decide.ts`): returns
    `{ action: 'book', vehicleId }` or `{ action: 'review', reason }`.
 6. `book`: call the shared helper `bookInvoiceAsExpenses()` (below) with
-   the line items grouped per category (the scanner's default grouping),
+   the line items grouped per category (the scanner's default grouping;
+   a category outside `EXPENSE_CATEGORIES` becomes `Other` first, so a label
+   the model invented never lands on a booked expense),
    then write the item as `booked` with `vehicle_id` and `expense_ids`.
    The item is first written as `review` (the expenses need its id) and
    upgraded afterwards. No expense at all → it stays `review` with reason

@@ -245,10 +245,11 @@
       "parse_failed": "Uitlezen mislukt",
       "unknown_sender": "Onbekende afzender",
       "duplicate": "Mogelijk dubbel",
+      "not_invoice": "Geen factuur (offerte, herinnering of creditnota)",
       "no_plate": "Geen kenteken gevonden",
       "multiple_plates": "Meerdere kentekens",
       "plate_unknown": "Kenteken niet in de vloot",
-      "total_mismatch": "Bedragen kloppen niet"
+      "total_mismatch": "Bedragen of datum kloppen niet"
     },
     "dialog": {
       "title": "Factuur controleren",

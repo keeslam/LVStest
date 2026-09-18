@@ -40,6 +40,42 @@ describe("decideInvoiceBooking", () => {
   it("queues an invoice whose date is unreadable", () => {
     expect(decideInvoiceBooking(input({ invoice: invoice({ invoiceDate: "10 september" }) }))).toEqual({ action: "review", reason: "total_mismatch" });
   });
+
+  /**
+   * I4: the automatic path used to book whatever the scanner returned. A quote,
+   * a reminder, a made-up line equal to the total or a date that only looks like
+   * one are not something to book behind a person's back.
+   */
+  it("never books anything that is not an invoice, right after the duplicate check", () => {
+    for (const documentType of ["quote", "reminder", "credit_note", "other"]) {
+      expect(decideInvoiceBooking(input({ invoice: invoice({ documentType }) }))).toEqual({ action: "review", reason: "not_invoice" });
+    }
+    expect(decideInvoiceBooking(input({ invoice: invoice({ documentType: "invoice" }) })).action).toBe("book");
+    // Not read at all: the rule cannot fire, the rest still decides.
+    expect(decideInvoiceBooking(input({ invoice: invoice({ documentType: undefined }) })).action).toBe("book");
+    // Checked before the plates, so "quote" is what staff are told.
+    expect(decideInvoiceBooking(input({ plates: [], fleetMatches: [], invoice: invoice({ documentType: "quote" }) })))
+      .toEqual({ action: "review", reason: "not_invoice" });
+    // And after the duplicate check, which still wins.
+    expect(decideInvoiceBooking(input({ duplicate: true, invoice: invoice({ documentType: "quote" }) })))
+      .toEqual({ action: "review", reason: "duplicate" });
+  });
+
+  it("refuses to book a line the scanner made up out of the total", () => {
+    expect(decideInvoiceBooking(input({ invoice: invoice({ lineItemsFromTotal: true }) })))
+      .toEqual({ action: "review", reason: "total_mismatch" });
+  });
+
+  it("insists on a date that is real, recent and not in the future", () => {
+    const withDate = (invoiceDate: string) => decideInvoiceBooking(input({ invoice: invoice({ invoiceDate }) }));
+    expect(withDate("")).toEqual({ action: "review", reason: "total_mismatch" });
+    // Looks like a date, is not one: 31 February rolls over to 3 March.
+    expect(withDate("2026-02-31")).toEqual({ action: "review", reason: "total_mismatch" });
+    expect(withDate("2026-13-01")).toEqual({ action: "review", reason: "total_mismatch" });
+    // 400 days before "today" is the last one that still books.
+    expect(withDate("2025-08-14").action).toBe("book");
+    expect(withDate("2025-08-13")).toEqual({ action: "review", reason: "total_mismatch" });
+  });
 });
 
 describe("totalsMatch", () => {

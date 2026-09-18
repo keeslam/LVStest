@@ -124,6 +124,23 @@ describe("booking invoices as expenses", () => {
     expect(again.body.message).toMatch(/al geboekt/);
   });
 
+  /** I7: the same invoice number and total, with the vendor spelled differently. */
+  it("manual scan: refuses an invoice whose number and total are already booked", async () => {
+    const number = `M-${unique()}`;
+    const first = await request(app).post("/api/expenses/from-invoice").send({
+      invoice: { vendor: `${TEST_PREFIX}Garage B.V.`, invoiceNumber: number, invoiceDate: "2026-09-10", totalAmount: 121 },
+      vehicleId, filePath: storedPdf(), lineItems: [{ description: "Beurt", amount: 100, category: "Maintenance" }],
+    });
+    expect(first.status).toBe(200);
+
+    const again = await request(app).post("/api/expenses/from-invoice").send({
+      invoice: { vendor: `${TEST_PREFIX}Garage`, invoiceNumber: ` ${number.toLowerCase()} `, invoiceDate: "2026-09-11", totalAmount: 121 },
+      vehicleId, filePath: storedPdf(), lineItems: [{ description: "Beurt", amount: 100, category: "Maintenance" }],
+    });
+    expect(again.status).toBe(409);
+    expect(again.body).toMatchObject({ inboxItemId: first.body.inboxItemId, status: "booked" });
+  });
+
   it("manual scan: a path outside the invoice folders is ignored, never stored", async () => {
     const res = await request(app).post("/api/expenses/from-invoice").send({
       invoice: { vendor: `${TEST_PREFIX}Garage`, invoiceNumber: `M-${unique()}`, invoiceDate: "2026-09-10", totalAmount: 10 },

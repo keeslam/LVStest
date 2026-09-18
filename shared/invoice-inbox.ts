@@ -54,7 +54,7 @@ export type InboxStatus = typeof INBOX_STATUSES[number];
 
 /** In the order they are checked. */
 export const REVIEW_REASONS = [
-  'no_attachment', 'parse_failed', 'unknown_sender', 'duplicate',
+  'no_attachment', 'parse_failed', 'unknown_sender', 'duplicate', 'not_invoice',
   'no_plate', 'multiple_plates', 'plate_unknown', 'total_mismatch',
 ] as const;
 export type ReviewReason = typeof REVIEW_REASONS[number];
@@ -65,10 +65,11 @@ export const REVIEW_REASON_LABELS_NL: Record<ReviewReason, string> = {
   parse_failed: 'uitlezen mislukt',
   unknown_sender: 'onbekende afzender',
   duplicate: 'mogelijk dubbel',
+  not_invoice: 'geen factuur (offerte, herinnering of creditnota)',
   no_plate: 'geen kenteken gevonden',
   multiple_plates: 'meerdere kentekens',
   plate_unknown: 'kenteken niet in de vloot',
-  total_mismatch: 'bedragen kloppen niet',
+  total_mismatch: 'bedragen of datum kloppen niet',
 };
 
 /** Stored values stay English; only labels are translated. */
@@ -94,6 +95,13 @@ export interface InboxParsedInvoice {
   subtotalAmount?: number;
   vatAmount?: number;
   lineItems: InboxLineItem[];
+  /** What the scanner thinks it is: invoice | credit_note | quote | reminder | other. */
+  documentType?: string;
+  /**
+   * The scanner read no line items and made one up equal to the total, so the
+   * lines were never verified against anything — never booked automatically.
+   */
+  lineItemsFromTotal?: boolean;
   vehicleInfo?: {
     licensePlate?: string;
     chassisNumber?: string;

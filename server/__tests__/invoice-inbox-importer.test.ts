@@ -180,6 +180,57 @@ describe("invoice inbox importer", () => {
     }
   });
 
+  /** I7: same number and total, another spelling of the vendor — still the same invoice. */
+  it("queues an invoice whose number and total were already seen, whatever the vendor was called", async () => {
+    const number = `DUP-${unique()}`;
+    scanned = invoice({ vendor: `${VENDOR} B.V.`, invoiceNumber: number });
+    await importInvoiceMail({ raw: await buildMail({ attachments: [{ filename: "a.pdf", content: pdf("bv"), contentType: "application/pdf" }] }), config, createdBy: INBOX_TEST_ACTOR });
+
+    scanned = invoice({ vendor: VENDOR, invoiceNumber: ` ${number.toLowerCase()} ` });
+    const copy = pdf("zonder-bv");
+    await importInvoiceMail({ raw: await buildMail({ attachments: [{ filename: "b.pdf", content: copy, contentType: "application/pdf" }] }), config, createdBy: INBOX_TEST_ACTOR });
+    expect((await inboxStorage.getByAttachmentHash(sha256(copy)))?.reviewReason).toBe("duplicate");
+
+    // A different total is a different invoice.
+    scanned = invoice({ vendor: VENDOR, invoiceNumber: number, totalAmount: 200, subtotalAmount: undefined, vatAmount: undefined, lineItems: [{ description: "Beurt", amount: 200, category: "Maintenance" }] });
+    const other = pdf("ander-bedrag");
+    await importInvoiceMail({ raw: await buildMail({ attachments: [{ filename: "c.pdf", content: other, contentType: "application/pdf" }] }), config, createdBy: INBOX_TEST_ACTOR });
+    expect((await inboxStorage.getByAttachmentHash(sha256(other)))?.reviewReason).not.toBe("duplicate");
+  });
+
+  /** I4: only a real invoice, with lines and a date that were really read, is booked. */
+  it("queues a quote, a made-up line and a missing date instead of booking them", async () => {
+    const cases: Array<[Partial<InboxParsedInvoice>, string]> = [
+      [{ documentType: "quote" }, "not_invoice"],
+      [{ lineItemsFromTotal: true }, "total_mismatch"],
+      [{ invoiceDate: "" }, "total_mismatch"],
+      [{ invoiceDate: "2026-02-31" }, "total_mismatch"],
+    ];
+    for (const [over, reason] of cases) {
+      scanned = invoice({ invoiceNumber: `IV-${unique()}`, ...over });
+      const attachment = pdf(`i4-${reason}-${unique()}`);
+      await importInvoiceMail({ raw: await buildMail({ attachments: [{ filename: "f.pdf", content: attachment, contentType: "application/pdf" }] }), config, createdBy: INBOX_TEST_ACTOR });
+      const item = (await inboxStorage.getByAttachmentHash(sha256(attachment)))!;
+      expect(item.reviewReason, JSON.stringify(over)).toBe(reason);
+      // An invoice without a readable date is still kept with what was read.
+      expect(item.parsed?.vendor, JSON.stringify(over)).toBe(VENDOR);
+    }
+  });
+
+  it("books a category the scanner invented as Other, never as itself", async () => {
+    scanned = invoice({
+      invoiceNumber: `CAT-${unique()}`,
+      lineItems: [{ description: "Koffie", amount: 150, category: "Snoep" }],
+      totalAmount: 150, subtotalAmount: undefined, vatAmount: undefined,
+    });
+    const attachment = pdf("categorie");
+    await importInvoiceMail({ raw: await buildMail({ attachments: [{ filename: "f.pdf", content: attachment, contentType: "application/pdf" }] }), config, createdBy: INBOX_TEST_ACTOR });
+    const item = (await inboxStorage.getByAttachmentHash(sha256(attachment)))!;
+    expect(item.status).toBe("booked");
+    const booked = await db.select().from(expenses).where(eq(expenses.inboxItemId, item.id));
+    expect(booked.map((e) => e.category)).toEqual(["Other"]);
+  });
+
   it("records a scanner failure instead of throwing, and keeps the file for manual entry", async () => {
     setInvoiceScanner(async () => { throw new Error("Failed to process invoice with all available AI models."); });
     const attachment = pdf("kapot");

@@ -245,10 +245,11 @@
       "parse_failed": "Reading failed",
       "unknown_sender": "Unknown sender",
       "duplicate": "Possible duplicate",
+      "not_invoice": "Not an invoice (quote, reminder or credit note)",
       "no_plate": "No license plate found",
       "multiple_plates": "Several license plates",
       "plate_unknown": "License plate not in the fleet",
-      "total_mismatch": "Amounts do not add up"
+      "total_mismatch": "Amounts or date do not add up"
     },
     "dialog": {
       "title": "Review invoice",

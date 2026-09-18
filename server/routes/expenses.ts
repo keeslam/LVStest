@@ -18,7 +18,7 @@ import { validateAfterUpload, sanitizeFilename, createSecureMulterFilter } from 
 import { getRelativePath, resolveDocumentFilePath } from "../services/document-paths";
 import { bookInvoiceAsExpenses, receiptFromStoredPath, resolveInvoiceFile, type BookInvoiceResult } from "../services/expenses/book-invoice";
 import { inboxStorage } from "../services/invoice-inbox/inbox-storage";
-import { computeInvoiceHash, sha256 } from "../services/invoice-inbox/hash";
+import { computeInvoiceHash, invoiceTotalCents, normalizeInvoiceNumber, sha256 } from "../services/invoice-inbox/hash";
 import { INTERRUPTED_BOOKING_MESSAGE, type InboxParsedInvoice } from "../../shared/invoice-inbox";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
@@ -542,6 +542,14 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
         console.log('Processing invoice:', file.originalname);
         const parsedInvoice = await processInvoiceWithAI(file.path);
 
+        // I4: the scanner leaves the date empty when it read none, so that the
+        // automatic mail path can tell a read date from a guessed one. This
+        // route fills today in before validating, exactly as it did before, and
+        // the person doing the scan sees and corrects it in the dialog.
+        if (!parsedInvoice.invoiceDate) {
+          parsedInvoice.invoiceDate = new Date().toISOString().split('T')[0];
+        }
+
         // Validate the parsed result
         const validation = validateParsedInvoice(parsedInvoice);
         if (!validation.valid) {
@@ -636,9 +644,14 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
       const invoiceHash = computeInvoiceHash({ ...invoice, invoiceDate });
 
       // Same file, or same invoice in another file, already booked or waiting for review?
+      // I7: the number plus the total counts as the same invoice too, so a
+      // vendor the model spelled differently the second time is still caught.
       const sameFile = await inboxStorage.getByAttachmentHash(attachmentHash);
       const sameInvoice = invoiceHash ? await inboxStorage.findActiveByInvoiceHash(invoiceHash) : undefined;
-      const clash = [sameFile, sameInvoice].find((i) => i && (i.status === "booked" || i.status === "review"));
+      const number = normalizeInvoiceNumber(invoice.invoiceNumber);
+      const cents = invoiceTotalCents(invoice.totalAmount);
+      const sameNumber = number && cents !== null ? await inboxStorage.findActiveByNumberAndTotal(number, cents) : undefined;
+      const clash = [sameFile, sameInvoice, sameNumber].find((i) => i && (i.status === "booked" || i.status === "review"));
       if (clash) {
         return res.status(409).json({
           message: clash.status === "booked"

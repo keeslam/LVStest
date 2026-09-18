@@ -4,14 +4,15 @@ import { simpleParser, type ParsedMail } from "mailparser";
 import { getUploadsDir } from "../../../shared/paths";
 import type { InvoiceInboxItem } from "../../../shared/schema";
 import {
-  INTERRUPTED_BOOKING_MESSAGE, REVIEW_REASON_LABELS_NL, isAllowedSender, normalizeSender, senderAuthVerdict,
-  type InboxParsedInvoice, type InvoiceInboxConfig, type ReviewReason,
+  EXPENSE_CATEGORIES, INTERRUPTED_BOOKING_MESSAGE, REVIEW_REASON_LABELS_NL,
+  isAllowedSender, normalizeSender, senderAuthVerdict,
+  type InboxLineItem, type InboxParsedInvoice, type InvoiceInboxConfig, type ReviewReason,
 } from "../../../shared/invoice-inbox";
 import { processInvoiceWithAI, validateParsedInvoice } from "../../utils/invoice-scanner";
 import { getRelativePath } from "../document-paths";
 import { bookInvoiceAsExpenses, groupLinesByCategory } from "../expenses/book-invoice";
 import { inboxStorage } from "./inbox-storage";
-import { computeInvoiceHash, sha256 } from "./hash";
+import { computeInvoiceHash, invoiceTotalCents, normalizeInvoiceNumber, sha256 } from "./hash";
 import { extractPlates } from "./plates";
 import { decideInvoiceBooking } from "./decide";
 import { notifyInvoiceInbox } from "./notify";
@@ -144,6 +145,29 @@ async function createItemOrDiscardFile(
 }
 
 const amsterdamToday = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Amsterdam" }).format(new Date());
+
+/**
+ * I4 — the model is asked for one of EXPENSE_CATEGORIES but is not bound by it.
+ * A category the cost overview does not know would end up as a stray label on a
+ * booked expense; "Other" is what staff can find and correct.
+ */
+const knownCategory = (line: InboxLineItem): InboxLineItem =>
+  ((EXPENSE_CATEGORIES as readonly string[]).includes(line.category) ? line : { ...line, category: "Other" });
+
+/**
+ * I7 — two ways the same invoice can already be here: the exact hash (vendor,
+ * number, date and total), or the invoice number plus the total, which survives
+ * the model spelling the vendor differently the second time. Only invoices that
+ * carry a number are checked at all; vendor + date + total alone would call two
+ * fuel receipts of one day duplicates.
+ */
+async function isDuplicateInvoice(invoice: InboxParsedInvoice, invoiceHash: string | null): Promise<boolean> {
+  if (invoiceHash && await inboxStorage.findActiveByInvoiceHash(invoiceHash)) return true;
+  const number = normalizeInvoiceNumber(invoice.invoiceNumber);
+  const cents = invoiceTotalCents(invoice.totalAmount);
+  if (!number || cents === null) return false;
+  return Boolean(await inboxStorage.findActiveByNumberAndTotal(number, cents));
+}
 const euro = (amount: number) => new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(amount);
 
 async function notifyReview(reason: ReviewReason, vendor: string | undefined, meta: MailMeta): Promise<void> {
@@ -242,7 +266,10 @@ async function importAttachment(
   let scanError: string | null = null;
   try {
     parsed = await scanner(stored.absolutePath, attachment.contentType);
-    const validation = validateParsedInvoice(parsed);
+    // I4: an unreadable date is a reason for staff to look (decideInvoiceBooking
+    // answers `total_mismatch`), not a reason to throw away everything else the
+    // scan did read as "parse_failed".
+    const validation = validateParsedInvoice(parsed, { requireDate: false });
     if (!validation.valid) scanError = validation.errors.join("; ");
   } catch (error) {
     scanError = (error as Error).message;
@@ -256,7 +283,7 @@ async function importAttachment(
   const plates = extractPlates(parsed);
   parsed = { ...parsed, plates };
   const invoiceHash = computeInvoiceHash(parsed);
-  const duplicate = invoiceHash ? Boolean(await inboxStorage.findActiveByInvoiceHash(invoiceHash)) : false;
+  const duplicate = await isDuplicateInvoice(parsed, invoiceHash);
   const fleetMatches = await inboxStorage.findVehiclesByPlates(plates);
   const decision = decideInvoiceBooking({
     senderAllowed, duplicate, plates, fleetMatches, invoice: parsed, tolerance: config.totalTolerance, today: amsterdamToday(),
@@ -275,7 +302,7 @@ async function importAttachment(
   }
 
   const booked = await bookInvoiceAsExpenses({
-    invoice: parsed, vehicleId: decision.vehicleId, lineItems: groupLinesByCategory(parsed.lineItems),
+    invoice: parsed, vehicleId: decision.vehicleId, lineItems: groupLinesByCategory(parsed.lineItems.map(knownCategory)),
     receipt: { relativePath: stored.relativePath, fileName: attachment.name, size: attachment.content.length, contentType: attachment.contentType },
     inboxItemId: item.id, createdBy,
   });

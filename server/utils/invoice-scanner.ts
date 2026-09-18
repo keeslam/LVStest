@@ -7,6 +7,7 @@ import { GoogleGenAI } from "@google/genai";
 import fs from "fs";
 import path from "path";
 import { PDFDocument } from 'pdf-lib';
+import { EXPENSE_CATEGORIES } from "../../shared/invoice-inbox";
 
 // Using Google Gemini for invoice processing - javascript_gemini integration
 // The newest Gemini model series is "gemini-2.5-flash" or "gemini-2.5-pro"
@@ -19,12 +20,20 @@ export interface ParsedInvoiceLineItem {
   subcategory?: string;
 }
 
+/** What the model is allowed to call a document (I4). */
+export const INVOICE_DOCUMENT_TYPES = ["invoice", "credit_note", "quote", "reminder", "other"] as const;
+
 export interface ParsedInvoice {
   vendor: string;
   invoiceNumber: string;
+  /** Empty when the model read no date: the automatic path must not guess one. */
   invoiceDate: string;
   currency: string;
   totalAmount: number;
+  /** One of INVOICE_DOCUMENT_TYPES, when the model said so. */
+  documentType?: string;
+  /** True when the single line below was made up out of the total, not read. */
+  lineItemsFromTotal?: boolean;
   /** Excl. VAT, when the invoice states it. */
   subtotalAmount?: number;
   /** Total VAT, when the invoice states it. */
@@ -219,6 +228,7 @@ You are an expert invoice processor for a car rental company. Analyze this PDF i
   "vendor": "Company name",
   "invoiceNumber": "Invoice/order number",
   "invoiceDate": "YYYY-MM-DD format",
+  "documentType": "One of: invoice, credit_note, quote, reminder, other",
   "currency": "EUR or other currency code",
   "totalAmount": 123.45,
   "subtotalAmount": 102.02,
@@ -242,7 +252,8 @@ IMPORTANT INSTRUCTIONS:
 - For Dutch invoices, understand terms like: onderhoud (maintenance), banden (tires), schade (damage), brandstof (fuel), verzekering (insurance)
 - For amounts, use numbers only (no currency symbols)
 - If vehicle info is not clearly stated, set those fields to null
-- Be precise with dates - convert to YYYY-MM-DD format
+- Be precise with dates - convert to YYYY-MM-DD format. If the document states no date at all, leave invoiceDate empty; never guess one
+- documentType says what this document is: invoice = a request to pay for delivered goods or services. A credit_note reverses an earlier invoice, a quote (offerte) is a price proposal for work that has not been done, a reminder (herinnering/aanmaning) repeats an earlier invoice. Anything else is other
 - Categorize each line item appropriately based on automotive expense categories
 - If unsure about a category, use "Other"
 - totalAmount is the amount to pay INCLUDING VAT (btw); subtotalAmount is the amount EXCLUDING VAT; vatAmount is the VAT itself. Leave subtotalAmount and vatAmount out when the invoice does not state them
@@ -263,6 +274,7 @@ Please respond ONLY with the JSON object, no additional text.
             vendor: { type: "string" },
             invoiceNumber: { type: "string" },
             invoiceDate: { type: "string" },
+            documentType: { type: "string", enum: [...INVOICE_DOCUMENT_TYPES] },
             currency: { type: "string" },
             totalAmount: { type: "number" },
             subtotalAmount: { type: "number" },
@@ -274,7 +286,7 @@ Please respond ONLY with the JSON object, no additional text.
                 properties: {
                   description: { type: "string" },
                   amount: { type: "number" },
-                  category: { type: "string" },
+                  category: { type: "string", enum: [...EXPENSE_CATEGORIES] },
                   subcategory: { type: "string" }
                 },
                 required: ["description", "amount", "category"]
@@ -344,7 +356,12 @@ Please respond ONLY with the JSON object, no additional text.
     const parsedInvoice: ParsedInvoice = {
       vendor: result.vendor || 'Unknown Vendor',
       invoiceNumber: result.invoiceNumber || '',
-      invoiceDate: result.invoiceDate || new Date().toISOString().split('T')[0],
+      // I4: empty when the model read no date. Substituting today here made
+      // every invoice look dated and current, so the automatic path could not
+      // tell a read date from an invented one. The manual scan route fills
+      // today in itself, before it validates, so that flow is unchanged.
+      invoiceDate: typeof result.invoiceDate === 'string' ? result.invoiceDate.trim() : '',
+      documentType: typeof result.documentType === 'string' && result.documentType.trim() ? result.documentType.trim().toLowerCase() : undefined,
       currency: result.currency || 'EUR',
       totalAmount: Number(result.totalAmount) || 0,
       subtotalAmount: optionalAmount(result.subtotalAmount),
@@ -374,13 +391,16 @@ Please respond ONLY with the JSON object, no additional text.
       } : undefined
     };
     
-    // If no line items were extracted, create one from the total
+    // If no line items were extracted, create one from the total. I4: say so —
+    // such a line was never read off the invoice, so "the lines add up to the
+    // total" would be true by construction and proves nothing.
     if (parsedInvoice.lineItems.length === 0 && parsedInvoice.totalAmount > 0) {
       parsedInvoice.lineItems.push({
         description: `Invoice from ${parsedInvoice.vendor}`,
         amount: parsedInvoice.totalAmount,
         category: 'Other'
       });
+      parsedInvoice.lineItemsFromTotal = true;
     }
     
     return parsedInvoice;
@@ -457,19 +477,27 @@ export function generateInvoiceHash(invoice: ParsedInvoice): string {
 }
 
 /**
- * Validate parsed invoice data
+ * Validate parsed invoice data.
+ *
+ * I4: the mail importer passes `requireDate: false`. An unreadable date is a
+ * reason to let staff look at the invoice (`total_mismatch`), not a reason to
+ * throw away everything else the scan read as "parse_failed".
  */
-export function validateParsedInvoice(invoice: ParsedInvoice): { valid: boolean; errors: string[] } {
+export function validateParsedInvoice(
+  invoice: ParsedInvoice,
+  options: { requireDate?: boolean } = {},
+): { valid: boolean; errors: string[] } {
+  const { requireDate = true } = options;
   const errors: string[] = [];
-  
+
   if (!invoice.vendor || invoice.vendor.trim() === '') {
     errors.push('Vendor name is required');
   }
-  
-  if (!invoice.invoiceDate || isNaN(new Date(invoice.invoiceDate).getTime())) {
+
+  if (requireDate && (!invoice.invoiceDate || isNaN(new Date(invoice.invoiceDate).getTime()))) {
     errors.push('Valid invoice date is required');
   }
-  
+
   if (!invoice.totalAmount || invoice.totalAmount <= 0) {
     errors.push('Total amount must be greater than 0');
   }
