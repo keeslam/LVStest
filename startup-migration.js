@@ -1352,8 +1352,34 @@ async function runMigrations() {
     await db.execute(sql`CREATE INDEX IF NOT EXISTS invoice_inbox_items_status_idx ON invoice_inbox_items (status, received_at)`);
     // M6: a database bootstrapped from schema-columns.json gets the column but
     // not the UNIQUE that makes "one attachment is processed once" hold — two
-    // runs of the same mail would then both book it.
-    await db.execute(sql`CREATE UNIQUE INDEX IF NOT EXISTS invoice_inbox_items_attachment_hash_uidx ON invoice_inbox_items (attachment_hash)`);
+    // runs of the same mail would then both book it. Where the table came from
+    // the DDL above it already has that UNIQUE (as the constraint-backed index
+    // invoice_inbox_items_attachment_hash_key), so an unconditional CREATE built
+    // a second, identical index; that copy is dropped again here.
+    await db.execute(sql`
+      DO $$
+      DECLARE has_unique boolean;
+      BEGIN
+        IF to_regclass('public.invoice_inbox_items') IS NULL THEN RETURN; END IF;
+
+        IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'invoice_inbox_items_attachment_hash_key' AND relkind = 'i') THEN
+          DROP INDEX IF EXISTS invoice_inbox_items_attachment_hash_uidx;
+        END IF;
+
+        SELECT EXISTS (
+          SELECT 1
+          FROM pg_index i
+          JOIN pg_class t ON t.oid = i.indrelid
+          JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = i.indkey[0]
+          WHERE t.relname = 'invoice_inbox_items'
+            AND i.indisunique AND i.indnatts = 1 AND a.attname = 'attachment_hash'
+        ) INTO has_unique;
+
+        IF NOT has_unique THEN
+          CREATE UNIQUE INDEX invoice_inbox_items_attachment_hash_uidx ON invoice_inbox_items (attachment_hash);
+        END IF;
+      END $$;
+    `);
     await addColumnIfNotExists('expenses', 'inbox_item_id', 'INTEGER');
     // M5: expenseIdsFor() and the cascade on delete both look expenses up by
     // this column, which had no index of its own.

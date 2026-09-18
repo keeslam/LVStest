@@ -1,5 +1,5 @@
 import cron, { type ScheduledTask } from "node-cron";
-import type { InvoiceInboxConfig, InvoiceInboxRunSummary } from "../../../shared/invoice-inbox";
+import { isAllowedSender, type InvoiceInboxConfig, type InvoiceInboxRunSummary } from "../../../shared/invoice-inbox";
 import { getInvoiceInboxConfig } from "./config";
 import { imapClient, type InboxMessageRef, type InvoiceImapClient } from "./imap-client";
 import { importInvoiceMail, recordFailedMail, recordOversizeMail, MAX_MAIL_BYTES } from "./importer";
@@ -36,6 +36,15 @@ let consecutiveFailures = 0;
 const failedAttempts = new Map<string, number>();
 
 const mailKey = (ref: InboxMessageRef): string => ref.messageId ?? `uid:${ref.uid}`;
+
+/**
+ * Whether a mail that was never opened may be announced in the bell. Only the
+ * envelope is known here — no headers, so no Authentication-Results — which is
+ * why this is the allowlist alone; that is enough to keep a stranger's mail out
+ * of everyone's notifications.
+ */
+const senderTrusted = (ref: InboxMessageRef, config: InvoiceInboxConfig): boolean =>
+  isAllowedSender(ref.from ?? "", config.allowedSenders);
 
 export function getInvoiceInboxRunState(): { running: boolean; lastRun: InvoiceInboxRunSummary | null; scheduledMinutes: number | null } {
   return { running: running !== null, lastRun, scheduledMinutes };
@@ -74,7 +83,7 @@ export function runInvoiceInboxImport(
           summary.mails += 1;
           try {
             if ((ref.size ?? 0) > MAX_MAIL_BYTES) {
-              const outcome = await recordOversizeMail(ref, createdBy);
+              const outcome = await recordOversizeMail(ref, createdBy, senderTrusted(ref, config));
               summary[outcome] += 1;
               await session.markProcessed(ref.uid);
               continue;
@@ -100,7 +109,7 @@ export function runInvoiceInboxImport(
             failedAttempts.set(key, attempts);
             if (attempts >= ATTEMPTS_BEFORE_GIVING_UP) {
               try {
-                summary[await recordFailedMail(ref, message, createdBy)] += 1;
+                summary[await recordFailedMail(ref, message, createdBy, senderTrusted(ref, config))] += 1;
               } catch (recordError) {
                 // The mail is still marked processed: leaving it unseen is what
                 // caused the endless retry loop in the first place.

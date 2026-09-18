@@ -216,9 +216,9 @@ async function notifyReview(reason: ReviewReason, vendor: string | undefined, me
  * the same "mail:<message id>" hash scheme as a mail without a usable
  * attachment, so a mail that keeps coming back oversize is not queued twice.
  */
-export async function recordOversizeMail(ref: InboxMessageRef, createdBy: string): Promise<"review" | "skipped"> {
+export async function recordOversizeMail(ref: InboxMessageRef, createdBy: string, notify: boolean): Promise<"review" | "skipped"> {
   return recordUnprocessableMail(ref, createdBy, "no_attachment",
-    "De mail is groter dan 30 MB en is niet opgehaald. Vraag de factuur opnieuw op of boek hem met de hand.");
+    "De mail is groter dan 30 MB en is niet opgehaald. Vraag de factuur opnieuw op of boek hem met de hand.", notify);
 }
 
 /**
@@ -227,14 +227,19 @@ export async function recordOversizeMail(ref: InboxMessageRef, createdBy: string
  * poller counts the attempts and, on the third, hands the mail here: one review
  * item so staff still see it, then the mail is marked processed.
  */
-export async function recordFailedMail(ref: InboxMessageRef, errorMessage: string, createdBy: string): Promise<"review" | "skipped"> {
+export async function recordFailedMail(ref: InboxMessageRef, errorMessage: string, createdBy: string, notify: boolean): Promise<"review" | "skipped"> {
   return recordUnprocessableMail(ref, createdBy, "parse_failed",
-    `De mail kon drie keer niet worden verwerkt: ${errorMessage}`);
+    `De mail kon drie keer niet worden verwerkt: ${errorMessage}`, notify);
 }
 
-/** One review item for a mail that was never opened, keyed by the same "mail:<id>" hash. */
+/**
+ * One review item for a mail that was never opened, keyed by the same
+ * "mail:<id>" hash. `notify` follows the same rule as everywhere else in this
+ * file: a mail from a sender the app does not trust is recorded, not announced.
+ * The poller decides, because it is the one holding the config and the envelope.
+ */
 async function recordUnprocessableMail(
-  ref: InboxMessageRef, createdBy: string, reason: ReviewReason, errorMessage: string,
+  ref: InboxMessageRef, createdBy: string, reason: ReviewReason, errorMessage: string, notify: boolean,
 ): Promise<"review" | "skipped"> {
   const attachmentHash = sha256(`mail:${ref.messageId ?? `uid:${ref.uid}`}`);
   if (await inboxStorage.getByAttachmentHash(attachmentHash)) return "skipped";
@@ -247,7 +252,7 @@ async function recordUnprocessableMail(
     ...meta, attachmentHash, status: "review", reviewReason: reason,
     errorMessage: errorMessage.slice(0, 2000), createdBy,
   });
-  await notifyReview(reason, undefined, meta);
+  await notifyReview(reason, undefined, meta, notify);
   return "review";
 }
 

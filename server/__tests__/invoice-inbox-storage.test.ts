@@ -145,14 +145,21 @@ describe("invoice inbox storage", () => {
    * indexes, so both of these have to come from startup-migration.js. Without
    * the UNIQUE one, "an attachment is processed once" silently stops holding.
    */
-  it("has the index on expenses.inbox_item_id and the unique index on attachment_hash", async () => {
-    const indexes = await db.execute(sql`
-      SELECT indexname, indexdef FROM pg_indexes
-      WHERE indexname IN ('expenses_inbox_item_id_idx', 'invoice_inbox_items_attachment_hash_uidx')
+  it("has the index on expenses.inbox_item_id and exactly one unique index on attachment_hash", async () => {
+    const expensesIndex = await db.execute(sql`SELECT 1 FROM pg_indexes WHERE indexname = 'expenses_inbox_item_id_idx'`);
+    expect(expensesIndex.rows).toHaveLength(1);
+
+    // Exactly one: the table DDL already gives attachment_hash a UNIQUE
+    // constraint, so the migration's own index must not be a second copy of it.
+    const unique = await db.execute(sql`
+      SELECT c.relname AS indexname
+      FROM pg_index i
+      JOIN pg_class c ON c.oid = i.indexrelid
+      JOIN pg_class t ON t.oid = i.indrelid
+      JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = i.indkey[0]
+      WHERE t.relname = 'invoice_inbox_items' AND i.indisunique AND i.indnatts = 1 AND a.attname = 'attachment_hash'
     `);
-    const byName = new Map(indexes.rows.map((r: any) => [r.indexname, String(r.indexdef)]));
-    expect(byName.has("expenses_inbox_item_id_idx")).toBe(true);
-    expect(byName.get("invoice_inbox_items_attachment_hash_uidx")).toContain("UNIQUE");
+    expect(unique.rows).toHaveLength(1);
   });
 
   it("has the named foreign key from expenses.inbox_item_id to invoice_inbox_items, which sets it null when the item is deleted", async () => {

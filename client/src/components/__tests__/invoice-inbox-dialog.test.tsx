@@ -79,13 +79,20 @@ describe("InvoiceInboxButton", () => {
     expect(inboxStatusRefetchInterval({ state: { status: "error" } } as any)).toBe(false);
   });
 
-  /** M9: the label above the selector was not tied to it for a screen reader. */
-  it("names the vehicle selector in the review dialog", async () => {
+  /**
+   * M9: the label above the selector was not tied to it for a screen reader.
+   * It must name the field *and* still say which vehicle is chosen — pointing
+   * aria-labelledby at the label alone would have replaced the plate.
+   */
+  it("names the vehicle selector in the review dialog, without losing the chosen plate", async () => {
+    reviewItems = [item({ vehicleId: 7 })];
     mount();
     await openInboxDialog();
     await userEvent.click(await screen.findByRole("button", { name: "Controleren" }));
     const dialog = (await screen.findByText("Factuur controleren")).closest('[role="dialog"]') as HTMLElement;
-    expect(within(dialog).getByTestId("select-inbox-vehicle")).toHaveAccessibleName(/Voertuig/);
+    const trigger = within(dialog).getByTestId("select-inbox-vehicle");
+    expect(trigger).toHaveAccessibleName(/Voertuig/);
+    expect(trigger).toHaveAccessibleName(/V-123-XB/);
   });
 
   it("opens the review dialog pre-filled, and will not book without a vehicle", async () => {

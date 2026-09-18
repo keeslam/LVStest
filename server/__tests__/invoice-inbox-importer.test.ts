@@ -401,13 +401,30 @@ describe("invoice inbox importer", () => {
       uid: 1, messageId: `<${unique()}@garage-test.invalid>`,
       from: "Garage <facturen@garage-test.invalid>", subject: `${TEST_PREFIX}Groot`, size: 40 * 1024 * 1024,
     };
-    const outcome = await recordOversizeMail(ref, INBOX_TEST_ACTOR);
+    const outcome = await recordOversizeMail(ref, INBOX_TEST_ACTOR, true);
     expect(outcome).toBe("review");
     const item = (await inboxStorage.getByAttachmentHash(sha256(`mail:${ref.messageId}`)))!;
     expect(item).toMatchObject({ reviewReason: "no_attachment", fromAddress: "facturen@garage-test.invalid", attachmentPath: null });
     expect(item.errorMessage).toContain("30 MB");
 
-    expect(await recordOversizeMail(ref, INBOX_TEST_ACTOR)).toBe("skipped");
+    expect(await recordOversizeMail(ref, INBOX_TEST_ACTOR, true)).toBe("skipped");
+  });
+
+  /** Same rule as the attachments: a stranger's mail is recorded, not announced. */
+  it("records an oversize or failed mail from an unknown sender without notifying", async () => {
+    const before = (await notifications()).length;
+    const oversize = {
+      uid: 8, messageId: `<${unique()}@elders.invalid>`,
+      from: "iemand@elders.invalid", subject: `${TEST_PREFIX}Groot en vreemd`, size: 40 * 1024 * 1024,
+    };
+    expect(await recordOversizeMail(oversize, INBOX_TEST_ACTOR, false)).toBe("review");
+    expect(await inboxStorage.getByAttachmentHash(sha256(`mail:${oversize.messageId}`))).toMatchObject({ reviewReason: "no_attachment" });
+
+    const broken = { ...oversize, uid: 9, messageId: `<${unique()}@elders.invalid>`, size: 1000 };
+    expect(await recordFailedMail(broken, "stuk", INBOX_TEST_ACTOR, false)).toBe("review");
+    expect(await inboxStorage.getByAttachmentHash(sha256(`mail:${broken.messageId}`))).toMatchObject({ reviewReason: "parse_failed" });
+
+    expect((await notifications()).length).toBe(before);
   });
 
   it("records a mail the poller gave up on once, with the reason and the error", async () => {
@@ -415,12 +432,12 @@ describe("invoice inbox importer", () => {
       uid: 4, messageId: `<${unique()}@garage-test.invalid>`,
       from: "Garage <facturen@garage-test.invalid>", subject: `${TEST_PREFIX}Kapot`, size: 1000,
     };
-    expect(await recordFailedMail(ref, "invalid byte sequence for encoding UTF8: 0x00", INBOX_TEST_ACTOR)).toBe("review");
+    expect(await recordFailedMail(ref, "invalid byte sequence for encoding UTF8: 0x00", INBOX_TEST_ACTOR, true)).toBe("review");
     const item = (await inboxStorage.getByAttachmentHash(sha256(`mail:${ref.messageId}`)))!;
     expect(item).toMatchObject({ status: "review", reviewReason: "parse_failed", fromAddress: "facturen@garage-test.invalid", attachmentPath: null });
     expect(item.errorMessage).toContain("drie keer");
     expect(item.errorMessage).toContain("0x00");
 
-    expect(await recordFailedMail(ref, "nog steeds stuk", INBOX_TEST_ACTOR)).toBe("skipped");
+    expect(await recordFailedMail(ref, "nog steeds stuk", INBOX_TEST_ACTOR, true)).toBe("skipped");
   });
 });

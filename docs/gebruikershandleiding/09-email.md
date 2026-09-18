@@ -346,6 +346,11 @@ recht *instellingen beheren* nodig.
    Wat daar direct achter staat, tot aan de eerste puntkomma, is de naam — bijvoorbeeld
    `mx.voorbeeld.nl`. Die vul je hier in. Staat die regel er helemaal niet, vraag dan de
    hostingpartij of de mailserver DMARC- en SPF-controle stempelt.
+
+   Let op: zodra deze naam is ingevuld, wordt een vertrouwde afzender die zijn post via
+   een ander (sub)domein verstuurt dan het domein in zijn afzenderadres, mogelijk niet
+   meer automatisch geboekt. Zulke facturen komen dan onder **Te controleren** te staan
+   met de reden "Onbekende afzender"; je boekt ze daar met één klik.
 5. Klik op **Verbinding testen**. Je ziet "Verbonden, 3 ongelezen" of de foutmelding van
    de mailserver. Test je een ándere server dan de opgeslagen, vul dan het wachtwoord
    opnieuw in: het opgeslagen wachtwoord wordt alleen voor de opgeslagen server gebruikt.

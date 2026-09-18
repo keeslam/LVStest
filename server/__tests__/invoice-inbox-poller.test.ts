@@ -18,9 +18,12 @@ import {
   resetInvoiceInboxPollerForTests, MAX_MAILS_PER_RUN, MAX_SCANS_PER_RUN,
 } from "../services/invoice-inbox/poller";
 
-const config: InvoiceInboxConfig = { ...DEFAULT_INVOICE_INBOX_CONFIG, enabled: true, host: "imap.example.test", username: "u", password: "p" };
+const config: InvoiceInboxConfig = {
+  ...DEFAULT_INVOICE_INBOX_CONFIG, enabled: true, host: "imap.example.test", username: "u", password: "p",
+  allowedSenders: ["@garage-test.invalid"],
+};
 
-function fakeMailbox(uids: number[], options: { failConnect?: boolean; sizes?: Record<number, number> } = {}) {
+function fakeMailbox(uids: number[], options: { failConnect?: boolean; sizes?: Record<number, number>; from?: string } = {}) {
   const processed: number[] = [];
   const fetched: number[] = [];
   let sessions = 0;
@@ -31,7 +34,7 @@ function fakeMailbox(uids: number[], options: { failConnect?: boolean; sizes?: R
       return fn({
         async listUnseen() {
           return uids.filter((uid) => !processed.includes(uid)).map((uid) => ({
-            uid, messageId: `<${uid}@test>`, from: "a@b.nl", subject: `Factuur ${uid}`,
+            uid, messageId: `<${uid}@test>`, from: options.from ?? "a@b.nl", subject: `Factuur ${uid}`,
             size: options.sizes?.[uid] ?? 1000,
           }));
         },
@@ -103,6 +106,8 @@ describe("invoice inbox poller", () => {
     expect(recordFailedMail.mock.calls[0][0]).toMatchObject({ uid: 1, messageId: "<1@test>" });
     expect(recordFailedMail.mock.calls[0][1]).toContain("invalid byte sequence 0x00");
     expect(recordFailedMail.mock.calls[0][2]).toBe("scheduler");
+    // The sender is not on the allowlist, so it is recorded without a notification.
+    expect(recordFailedMail.mock.calls[0][3]).toBe(false);
     expect(mailbox.processed).toEqual([1]);
     expect(third).toMatchObject({ failed: 1, review: 1 });
 
@@ -223,6 +228,16 @@ describe("invoice inbox poller", () => {
     expect(mailbox.fetched).toEqual([1]);
     expect(importInvoiceMail).toHaveBeenCalledTimes(1);
     expect(mailbox.processed).toEqual([1, 2]);
+    expect(recordOversizeMail.mock.calls[0][2]).toBe(false);
+  });
+
+  /** Whether the mail is announced follows the same allowlist as everything else. */
+  it("tells the recorders whether the sender is one the app trusts", async () => {
+    const mailbox = fakeMailbox([1], { sizes: { 1: 40 * 1024 * 1024 }, from: "facturen@garage-test.invalid" });
+    setInvoiceImapClient(mailbox.client);
+    recordOversizeMail.mockResolvedValueOnce("review");
+    await runInvoiceInboxImport("scheduler", "scheduler", config);
+    expect(recordOversizeMail.mock.calls[0][2]).toBe(true);
   });
 
   it("turns the interval into a cron expression, clamped to 5..1440 minutes", () => {

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, ChevronsUpDown, Search, CarFront } from "lucide-react";
 import { cn, isTrueValue } from "@/lib/utils";
@@ -31,7 +31,9 @@ interface VehicleSelectorProps {
   /**
    * The id of the <Label> above the selector. The trigger is a button, not an
    * <input>, so `htmlFor` does not reach it — without this a screen reader
-   * announces the placeholder and never the field's name.
+   * announces the placeholder and never the field's name. The trigger's own id
+   * is added behind it, so the chosen vehicle is still read out: pointing
+   * `aria-labelledby` at the label alone would replace the button's own text.
    */
   ariaLabelledBy?: string;
   "data-testid"?: string;
@@ -49,6 +51,7 @@ export function VehicleSelector({
   "data-testid": dataTestId,
 }: VehicleSelectorProps) {
   const { t } = useTranslation("vehicles");
+  const triggerId = useId();
   const finalPlaceholder = placeholder ?? t('vehicleSelector.defaultPlaceholder');
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -120,7 +123,8 @@ export function VehicleSelector({
               className
             )}
             disabled={disabled}
-            aria-labelledby={ariaLabelledBy}
+            id={triggerId}
+            aria-labelledby={ariaLabelledBy ? `${ariaLabelledBy} ${triggerId}` : undefined}
             data-testid={dataTestId}
           >
             <div className="flex items-center truncate">
