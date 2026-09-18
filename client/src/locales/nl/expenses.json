@@ -219,5 +219,33 @@
     "noExpenseDataAvailable": "Geen kostengegevens beschikbaar",
     "itemCount_one": "({{count}} item)",
     "itemCount_other": "({{count}} items)"
+  },
+  "invoiceInbox": {
+    "config": {
+      "title": "Facturen per e-mail (inkomend)",
+      "description": "De app leest dit postvak uit. Facturen van vertrouwde afzenders met één herkend kenteken worden automatisch als kosten geboekt; de rest wacht bij Kosten op controle.",
+      "enabled": "Postvak automatisch uitlezen",
+      "host": "IMAP-server",
+      "connection": "Verbinding",
+      "connectionTls": "TLS (poort 993)",
+      "connectionStartTls": "STARTTLS (poort 143)",
+      "username": "Gebruikersnaam",
+      "password": "Wachtwoord",
+      "inboxFolder": "Map om te lezen",
+      "processedFolder": "Map na verwerking",
+      "processedFolderHint": "Leeg laten: de mail blijft staan en wordt als gelezen gemarkeerd.",
+      "pollMinutes": "Elke hoeveel minuten ophalen",
+      "totalTolerance": "Toegestaan verschil regels en totaal (euro)",
+      "allowedSenders": "Vertrouwde afzenders",
+      "allowedSendersHint": "Eén per regel: een adres (facturen@garage.nl) of een heel domein (@garage.nl). Alleen hun facturen worden automatisch geboekt.",
+      "save": "Opslaan",
+      "saved": "Instellingen voor facturen per e-mail opgeslagen",
+      "test": "Verbinding testen",
+      "testOk": "Verbonden, {{count}} ongelezen",
+      "testFailed": "Verbinden mislukt",
+      "runNow": "Nu ophalen",
+      "runDone": "{{mails}} mail(s) opgehaald: {{booked}} geboekt, {{review}} ter controle",
+      "geminiMissing": "Let op: GEMINI_API_KEY is niet ingesteld op de server. Facturen kunnen dan niet worden uitgelezen en komen allemaal ter controle."
+    }
   }
 }

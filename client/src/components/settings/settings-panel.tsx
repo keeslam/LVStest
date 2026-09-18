@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PortalConfigForm } from "@/components/portal-admin/portal-config-form";
 import { FiscalSettingsSection } from "@/components/fiscal/fiscal-settings-section";
 import { CjibConfigForm } from "@/components/fines/cjib-config-form";
+import { InvoiceInboxConfigForm } from "@/components/expenses/invoice-inbox-config-form";
 import { ActivityLogPanel } from "@/components/settings/activity-log-panel";
 // WAVE 15 item 3 — besluit B-24's office address finally has a field.
 import { OfficeNotificationEmail } from "@/components/settings/office-notification-email";
@@ -2369,6 +2370,9 @@ export function SettingsPanel() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Incoming mail: the mailbox invoices are sent to (docs/superpowers/specs/2026-09-18-invoice-inbox-design.md) */}
+          <InvoiceInboxConfigForm />
         </TabsContent>
 
         {/* Activity Log Tab */}

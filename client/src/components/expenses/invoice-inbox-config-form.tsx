@@ -1,0 +1,156 @@
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { Inbox, Loader2 } from "lucide-react";
+import type { InvoiceInboxConfig, InvoiceInboxRunSummary } from "@shared/invoice-inbox";
+import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+
+export const INVOICE_INBOX_CONFIG_QUERY_KEY = ["/api/expenses/inbox/config"];
+const STATUS_QUERY_KEY = ["/api/expenses/inbox/status"];
+
+type TextField = "host" | "username" | "password" | "inboxFolder" | "processedFolder";
+type NumberField = "pollMinutes" | "totalTolerance";
+
+/** Settings card in the E-mail tab: the IMAP mailbox the app reads invoices from. */
+export function InvoiceInboxConfigForm() {
+  const { t } = useTranslation("expenses");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { data } = useQuery<InvoiceInboxConfig>({
+    queryKey: INVOICE_INBOX_CONFIG_QUERY_KEY,
+    queryFn: async () => (await apiRequest("GET", INVOICE_INBOX_CONFIG_QUERY_KEY[0])).json(),
+  });
+  const { data: status } = useQuery<{ geminiConfigured: boolean }>({
+    queryKey: STATUS_QUERY_KEY,
+    queryFn: async () => (await apiRequest("GET", STATUS_QUERY_KEY[0])).json(),
+  });
+  const [form, setForm] = useState<InvoiceInboxConfig | null>(null);
+  const [sendersText, setSendersText] = useState("");
+  const [testResult, setTestResult] = useState<{ ok: boolean; unseen?: number; message?: string } | null>(null);
+
+  useEffect(() => {
+    if (!data) return;
+    setForm(data);
+    setSendersText(data.allowedSenders.join("\n"));
+  }, [data]);
+
+  /** The form as the API expects it: the textarea split into one entry per non-empty line. */
+  const payload = (): InvoiceInboxConfig => ({
+    ...form!,
+    allowedSenders: sendersText.split(/\r?\n/).map((line) => line.trim()).filter(Boolean),
+  });
+
+  const save = useMutation({
+    mutationFn: async () => (await apiRequest("PUT", INVOICE_INBOX_CONFIG_QUERY_KEY[0], payload())).json(),
+    onSuccess: (saved: InvoiceInboxConfig) => {
+      queryClient.setQueryData(INVOICE_INBOX_CONFIG_QUERY_KEY, saved);
+      invalidateByPrefix("/api/expenses/inbox");
+      toast({ title: t("invoiceInbox.config.saved") });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+  });
+  const test = useMutation({
+    mutationFn: async () => (await apiRequest("POST", "/api/expenses/inbox/config/test", payload())).json(),
+    onSuccess: (r: { ok: boolean; unseen: number }) => setTestResult(r),
+    onError: (e: Error) => setTestResult({ ok: false, message: e.message }),
+  });
+  const run = useMutation({
+    mutationFn: async () => (await apiRequest("POST", "/api/expenses/inbox/run")).json(),
+    onSuccess: (s: InvoiceInboxRunSummary) => {
+      invalidateByPrefix("/api/expenses");
+      toast({
+        title: t("invoiceInbox.config.runDone", { mails: s.mails, booked: s.booked, review: s.review }),
+        description: s.errors.join("\n") || undefined,
+        variant: s.errors.length ? "destructive" : "default",
+      });
+    },
+    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+  });
+
+  if (!form) return null;
+
+  const textField = (key: TextField, label: string, extra: Record<string, unknown> = {}) => (
+    <div>
+      <Label htmlFor={`invoice-inbox-${key}`}>{label}</Label>
+      <Input id={`invoice-inbox-${key}`} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} data-testid={`input-invoice-inbox-${key}`} {...extra} />
+    </div>
+  );
+  const numberField = (key: NumberField, label: string, extra: Record<string, unknown> = {}) => (
+    <div>
+      <Label htmlFor={`invoice-inbox-${key}`}>{label}</Label>
+      <Input id={`invoice-inbox-${key}`} type="number" value={String(form[key])} onChange={(e) => setForm({ ...form, [key]: Number(e.target.value) })} data-testid={`input-invoice-inbox-${key}`} {...extra} />
+    </div>
+  );
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Inbox className="h-5 w-5" />{t("invoiceInbox.config.title")}</CardTitle>
+        <CardDescription>{t("invoiceInbox.config.description")}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {status && !status.geminiConfigured && (
+          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm" data-testid="invoice-inbox-gemini-warning">
+            {t("invoiceInbox.config.geminiMissing")}
+          </div>
+        )}
+        <div className="flex items-center gap-3">
+          <Switch checked={form.enabled} onCheckedChange={(v) => setForm({ ...form, enabled: v })} id="invoice-inbox-enabled" data-testid="switch-invoice-inbox-enabled" />
+          <Label htmlFor="invoice-inbox-enabled">{t("invoiceInbox.config.enabled")}</Label>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          {textField("host", t("invoiceInbox.config.host"), { placeholder: "imap.voorbeeld.nl" })}
+          <div>
+            <Label htmlFor="invoice-inbox-connection">{t("invoiceInbox.config.connection")}</Label>
+            <select
+              id="invoice-inbox-connection"
+              className="flex h-10 w-full rounded-md border px-3 py-2 text-sm"
+              value={form.secure ? "tls" : "starttls"}
+              onChange={(e) => setForm({ ...form, secure: e.target.value === "tls", port: e.target.value === "tls" ? 993 : 143 })}
+            >
+              <option value="tls">{t("invoiceInbox.config.connectionTls")}</option>
+              <option value="starttls">{t("invoiceInbox.config.connectionStartTls")}</option>
+            </select>
+          </div>
+          {textField("username", t("invoiceInbox.config.username"), { autoComplete: "off", placeholder: "fakturenapp@lamgroep.nl" })}
+          {textField("password", t("invoiceInbox.config.password"), { type: "password", autoComplete: "new-password" })}
+          {textField("inboxFolder", t("invoiceInbox.config.inboxFolder"), { placeholder: "INBOX" })}
+          <div>
+            {textField("processedFolder", t("invoiceInbox.config.processedFolder"), { placeholder: "Verwerkt" })}
+            <p className="mt-1 text-xs text-muted-foreground">{t("invoiceInbox.config.processedFolderHint")}</p>
+          </div>
+          {numberField("pollMinutes", t("invoiceInbox.config.pollMinutes"), { min: 5, max: 1440 })}
+          {numberField("totalTolerance", t("invoiceInbox.config.totalTolerance"), { min: 0, max: 100, step: "0.01" })}
+        </div>
+        <div>
+          <Label htmlFor="invoice-inbox-senders">{t("invoiceInbox.config.allowedSenders")}</Label>
+          <Textarea id="invoice-inbox-senders" rows={4} value={sendersText} onChange={(e) => setSendersText(e.target.value)} placeholder={"@garage.nl\n@lamgroep.nl"} data-testid="textarea-invoice-inbox-senders" />
+          <p className="mt-1 text-xs text-muted-foreground">{t("invoiceInbox.config.allowedSendersHint")}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button onClick={() => save.mutate()} disabled={save.isPending} data-testid="button-save-invoice-inbox">{t("invoiceInbox.config.save")}</Button>
+          <Button variant="outline" onClick={() => { setTestResult(null); test.mutate(); }} disabled={test.isPending || !form.host} data-testid="button-test-invoice-inbox">
+            {test.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}{t("invoiceInbox.config.test")}
+          </Button>
+          <Button variant="outline" onClick={() => run.mutate()} disabled={run.isPending || !form.host} data-testid="button-run-invoice-inbox">
+            {run.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}{t("invoiceInbox.config.runNow")}
+          </Button>
+        </div>
+        {testResult && (
+          <div className={`rounded-md border p-3 text-sm ${testResult.ok ? "border-green-300 bg-green-50" : "border-red-300 bg-red-50"}`} data-testid="invoice-inbox-test-result">
+            {testResult.ok
+              ? t("invoiceInbox.config.testOk", { count: testResult.unseen ?? 0 })
+              : <>{t("invoiceInbox.config.testFailed")}: {testResult.message}</>}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

@@ -219,5 +219,33 @@
     "noExpenseDataAvailable": "No expense data available",
     "itemCount_one": "({{count}} item)",
     "itemCount_other": "({{count}} items)"
+  },
+  "invoiceInbox": {
+    "config": {
+      "title": "Invoices by e-mail (incoming)",
+      "description": "The app reads this mailbox. Invoices from trusted senders with one recognised license plate are booked as expenses automatically; the rest waits for review under Expenses.",
+      "enabled": "Read the mailbox automatically",
+      "host": "IMAP server",
+      "connection": "Connection",
+      "connectionTls": "TLS (port 993)",
+      "connectionStartTls": "STARTTLS (port 143)",
+      "username": "Username",
+      "password": "Password",
+      "inboxFolder": "Folder to read",
+      "processedFolder": "Folder after processing",
+      "processedFolderHint": "Leave empty: the mail stays in place and is marked as read.",
+      "pollMinutes": "Fetch every (minutes)",
+      "totalTolerance": "Allowed difference between lines and total (euro)",
+      "allowedSenders": "Trusted senders",
+      "allowedSendersHint": "One per line: an address (invoices@garage.nl) or a whole domain (@garage.nl). Only their invoices are booked automatically.",
+      "save": "Save",
+      "saved": "Settings for invoices by e-mail saved",
+      "test": "Test connection",
+      "testOk": "Connected, {{count}} unread",
+      "testFailed": "Connection failed",
+      "runNow": "Fetch now",
+      "runDone": "{{mails}} mail(s) fetched: {{booked}} booked, {{review}} for review",
+      "geminiMissing": "Note: GEMINI_API_KEY is not set on the server. Invoices cannot be read then and will all wait for review."
+    }
   }
 }
