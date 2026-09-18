@@ -1321,6 +1321,37 @@ async function runMigrations() {
       )`);
     await addColumnIfNotExists('fines', 'source', 'TEXT');
     await addColumnIfNotExists('fines', 'import_file_id', 'INTEGER REFERENCES fine_import_files(id) ON DELETE SET NULL');
+
+    // ==================== INVOICE INBOX (facturen per e-mail) ====================
+    await createTableIfNotExists('invoice_inbox_items', `
+      CREATE TABLE invoice_inbox_items (
+        id SERIAL PRIMARY KEY,
+        message_id TEXT,
+        from_address TEXT,
+        subject TEXT,
+        mail_date TIMESTAMPTZ,
+        attachment_name TEXT,
+        attachment_path TEXT,
+        attachment_hash TEXT NOT NULL UNIQUE,
+        attachment_content_type TEXT,
+        invoice_hash TEXT,
+        parsed JSONB,
+        status TEXT NOT NULL DEFAULT 'review',
+        review_reason TEXT,
+        vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE SET NULL,
+        expense_ids INTEGER[] NOT NULL DEFAULT '{}'::integer[],
+        error_message TEXT,
+        note TEXT,
+        received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        processed_at TIMESTAMPTZ,
+        created_by TEXT,
+        updated_by TEXT
+      )`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS invoice_inbox_items_message_id_idx ON invoice_inbox_items (message_id)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS invoice_inbox_items_invoice_hash_idx ON invoice_inbox_items (invoice_hash)`);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS invoice_inbox_items_status_idx ON invoice_inbox_items (status, received_at)`);
+    await addColumnIfNotExists('expenses', 'inbox_item_id', 'INTEGER REFERENCES invoice_inbox_items(id) ON DELETE SET NULL');
+
     await addColumnIfNotExists('reservations', 'portal_request_id', 'INTEGER');
 
     await createTableIfNotExists('portal_requests', `

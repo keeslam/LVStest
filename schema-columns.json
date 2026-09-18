@@ -2027,6 +2027,13 @@
         "default": null
       },
       {
+        "name": "inbox_item_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
         "name": "created_at",
         "type": "timestamp with time zone",
         "notNull": true,
@@ -3430,6 +3437,158 @@
         "notNull": true,
         "primary": false,
         "default": "now()"
+      },
+      {
+        "name": "created_by",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "updated_by",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      }
+    ]
+  },
+  {
+    "name": "invoice_inbox_items",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "message_id",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "from_address",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "subject",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "mail_date",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "attachment_name",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "attachment_path",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "attachment_hash",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "attachment_content_type",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "invoice_hash",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "parsed",
+        "type": "jsonb",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "status",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": "'review'"
+      },
+      {
+        "name": "review_reason",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "vehicle_id",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "expense_ids",
+        "type": "integer[]",
+        "notNull": true,
+        "primary": false,
+        "default": "'{}'::integer[]"
+      },
+      {
+        "name": "error_message",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "note",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "received_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": "now()"
+      },
+      {
+        "name": "processed_at",
+        "type": "timestamp with time zone",
+        "notNull": false,
+        "primary": false,
+        "default": null
       },
       {
         "name": "created_by",

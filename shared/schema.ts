@@ -5,6 +5,7 @@ import { z } from "zod";
 // FIX-R (BUG-072): one definition of "a link we are willing to open", shared
 // by the client sink guard and this schema.
 import { isSafeHttpUrl, SAFE_URL_MESSAGE, isLocalOrNetworkPath, LOCAL_PATH_MESSAGE } from "./safe-url";
+import type { InboxParsedInvoice } from "./invoice-inbox";
 
 // User Roles enum
 export const UserRole = {
@@ -1205,7 +1206,10 @@ export const expenses = pgTable("expenses", {
   receiptFilePath: text("receipt_file_path"), // Stores the path to the file
   receiptFileSize: integer("receipt_file_size"), // Stores the file size
   receiptContentType: text("receipt_content_type"), // Stores the file content type
-  
+  // Invoices by e-mail: the inbox item this expense was booked from. Set by
+  // the server only (see the omit list below); null for hand-typed expenses.
+  inboxItemId: integer("inbox_item_id").references((): AnyPgColumn => invoiceInboxItems.id, { onDelete: "set null" }),
+
   // Tracking
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -1235,6 +1239,9 @@ export const insertExpenseSchema = createInsertSchema(expenses).omit({
   receiptFilePath: true,
   receiptFileSize: true,
   receiptContentType: true,
+  // Server-set, like the receipt fields: a request body may not attach an
+  // expense to an inbox item of its choosing.
+  inboxItemId: true,
 }).extend({
   amount: z.union([
     z.number(),
@@ -1274,6 +1281,39 @@ export const insertExpenseSchema = createInsertSchema(expenses).omit({
     .nullable()
     .optional(),
 });
+
+// Invoices by e-mail (docs/superpowers/specs/2026-09-18-invoice-inbox-design.md):
+// one row per attachment the inbox has seen, or per manual scan that was booked.
+export const invoiceInboxItems = pgTable("invoice_inbox_items", {
+  id: serial("id").primaryKey(),
+  messageId: text("message_id"),
+  fromAddress: text("from_address"),
+  subject: text("subject"),
+  mailDate: timestamp("mail_date", { withTimezone: true }),
+  attachmentName: text("attachment_name"),
+  attachmentPath: text("attachment_path"),
+  // sha256 of the attachment bytes: an attachment is processed once.
+  attachmentHash: text("attachment_hash").notNull().unique(),
+  attachmentContentType: text("attachment_content_type"),
+  // sha256 of vendor|number|date|total; null when the invoice has no number.
+  invoiceHash: text("invoice_hash"),
+  parsed: jsonb("parsed").$type<InboxParsedInvoice | null>(),
+  status: text("status").notNull().default("review"), // 'booked' | 'review' | 'dismissed'
+  reviewReason: text("review_reason"),
+  vehicleId: integer("vehicle_id").references(() => vehicles.id, { onDelete: "set null" }),
+  expenseIds: integer("expense_ids").array().notNull().default(sql`'{}'::integer[]`),
+  errorMessage: text("error_message"),
+  note: text("note"),
+  receivedAt: timestamp("received_at", { withTimezone: true }).defaultNow().notNull(),
+  processedAt: timestamp("processed_at", { withTimezone: true }),
+  createdBy: text("created_by"),
+  updatedBy: text("updated_by"),
+}, (table) => ({
+  messageIdIdx: index("invoice_inbox_items_message_id_idx").on(table.messageId),
+  invoiceHashIdx: index("invoice_inbox_items_invoice_hash_idx").on(table.invoiceHash),
+  statusIdx: index("invoice_inbox_items_status_idx").on(table.status, table.receivedAt),
+}));
+export type InvoiceInboxItem = typeof invoiceInboxItems.$inferSelect;
 
 // Documents table
 export const documents = pgTable("documents", {
