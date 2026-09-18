@@ -211,7 +211,9 @@ describe("WAVE 14 item 7 — geen scherm bouwt zijn eigen label meer", () => {
       "client/src/pages/expenses/index.tsx",
       "client/src/pages/reports/index.tsx",
       "client/src/components/expenses/expense-form.tsx",
-      "client/src/components/invoice-scanner.tsx",
+      // The scanner's line table moved here (invoice inbox, 2026-09-18); the
+      // scanner itself no longer renders a category label.
+      "client/src/components/expenses/invoice-line-items-table.tsx",
     ]) {
       const s = await source(file);
       expect(s, file).toContain("formatExpenseCategory");

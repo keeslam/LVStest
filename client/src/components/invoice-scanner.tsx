@@ -25,36 +25,20 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { 
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { 
-  Upload, 
-  FileText, 
-  Eye, 
-  CheckCircle, 
+import {
+  Upload,
+  FileText,
+  Eye,
+  CheckCircle,
   AlertCircle,
   Loader2,
-  Trash2,
   Edit3
 } from "lucide-react";
-import { formatCurrency, sumMoney, formatExpenseCategory } from "@/lib/format-utils";
+import { formatCurrency, sumMoney } from "@/lib/format-utils";
 import { displayLicensePlate } from "@/lib/utils";
 import { Vehicle } from "@shared/schema";
+import { InvoiceLineItemsTable } from "@/components/expenses/invoice-line-items-table";
 
 interface ParsedInvoiceLineItem {
   description: string;
@@ -80,22 +64,6 @@ interface InvoiceScannerProps {
   selectedVehicleId?: number;
   onExpensesCreated?: (expenses: any[]) => void;
 }
-
-const EXPENSE_CATEGORIES = [
-  'Maintenance',
-  'Tires',
-  'Brakes',
-  'Damage',
-  'Fuel',
-  'Insurance',
-  'Registration',
-  'Cleaning',
-  'Accessories',
-  'Other'
-];
-
-// WAVE 14 item 4 — same shared helper as the cost overview and the reports;
-// the stored value stays English, only the label is Dutch.
 
 export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: InvoiceScannerProps) {
   const { t } = useTranslation(["expenses", "common"]);
@@ -381,38 +349,6 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
     setSelectedItems(new Set());
   };
 
-  const updateLineItem = (index: number, field: keyof ParsedInvoiceLineItem, value: string | number) => {
-    const updated = [...editableLineItems];
-    updated[index] = { ...updated[index], [field]: value };
-    setEditableLineItems(updated);
-  };
-
-  const toggleItemSelection = (index: number) => {
-    const newSelected = new Set(selectedItems);
-    if (newSelected.has(index)) {
-      newSelected.delete(index);
-    } else {
-      newSelected.add(index);
-    }
-    setSelectedItems(newSelected);
-  };
-
-  const removeLineItem = (index: number) => {
-    const updated = editableLineItems.filter((_, i) => i !== index);
-    setEditableLineItems(updated);
-    
-    // Update selected items indices
-    const newSelected = new Set<number>();
-    selectedItems.forEach(selectedIndex => {
-      if (selectedIndex < index) {
-        newSelected.add(selectedIndex);
-      } else if (selectedIndex > index) {
-        newSelected.add(selectedIndex - 1);
-      }
-    });
-    setSelectedItems(newSelected);
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -607,94 +543,12 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
                 <CardContent>
                   {editableLineItems.length > 0 ? (
                     <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="select-all"
-                          checked={selectedItems.size === editableLineItems.length}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedItems(new Set(editableLineItems.map((_, i) => i)));
-                            } else {
-                              setSelectedItems(new Set());
-                            }
-                          }}
-                        />
-                        <Label htmlFor="select-all" className="text-sm font-medium">
-                          {t('invoiceScanner.selectAll', { selected: selectedItems.size, total: editableLineItems.length })}
-                        </Label>
-                      </div>
-
-                      <div className="border rounded-lg overflow-hidden">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-12"></TableHead>
-                              <TableHead>{t('invoiceScanner.descriptionCol')}</TableHead>
-                              <TableHead>{t('invoiceScanner.amountCol')}</TableHead>
-                              <TableHead>{t('invoiceScanner.categoryCol')}</TableHead>
-                              <TableHead className="w-12"></TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {editableLineItems.map((item, index) => (
-                              <TableRow key={index}>
-                                <TableCell>
-                                  <Checkbox
-                                    checked={selectedItems.has(index)}
-                                    onCheckedChange={() => toggleItemSelection(index)}
-                                    data-testid={`checkbox-item-${index}`}
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  <Input
-                                    value={item.description}
-                                    onChange={(e) => updateLineItem(index, 'description', e.target.value)}
-                                    className="min-w-[200px]"
-                                    data-testid={`input-description-${index}`}
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={item.amount}
-                                    onChange={(e) => updateLineItem(index, 'amount', parseFloat(e.target.value) || 0)}
-                                    className="w-24"
-                                    data-testid={`input-amount-${index}`}
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  <Select
-                                    value={item.category}
-                                    onValueChange={(value) => updateLineItem(index, 'category', value)}
-                                  >
-                                    <SelectTrigger className="w-32" data-testid={`select-category-${index}`}>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {EXPENSE_CATEGORIES.map(category => (
-                                        <SelectItem key={category} value={category}>
-                                          {formatExpenseCategory(category)}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </TableCell>
-                                <TableCell>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeLineItem(index)}
-                                    data-testid={`button-remove-${index}`}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
+                      <InvoiceLineItemsTable
+                        items={editableLineItems}
+                        selected={selectedItems}
+                        onItemsChange={setEditableLineItems}
+                        onSelectedChange={setSelectedItems}
+                      />
 
                       <div className="flex justify-between items-center pt-4 border-t">
                         <div className="text-sm text-muted-foreground">
