@@ -128,6 +128,43 @@ describe("invoice inbox importer", () => {
     }
   });
 
+  /**
+   * I2: with the name of our own mail server filled in, only that server's
+   * verdict counts — a "dmarc=pass" the sender wrote himself is worth nothing.
+   */
+  it("in strict mode books only when our own mail server stamped a pass", async () => {
+    const strict = { ...config, authservId: "mx.lamgroep.nl" };
+    const attach = (content: Buffer) => [{ filename: "f.pdf", content, contentType: "application/pdf" }];
+
+    const silent = pdf("strikt-geen-header");
+    await importInvoiceMail({ raw: await buildMail({ attachments: attach(silent) }), config: strict, createdBy: INBOX_TEST_ACTOR });
+    expect((await inboxStorage.getByAttachmentHash(sha256(silent)))?.reviewReason).toBe("unknown_sender");
+
+    const forged = pdf("strikt-vervalst");
+    await importInvoiceMail({
+      raw: await buildMail({ headers: { "Authentication-Results": "evil.example; dmarc=pass header.from=garage-test.invalid" }, attachments: attach(forged) }),
+      config: strict, createdBy: INBOX_TEST_ACTOR,
+    });
+    expect((await inboxStorage.getByAttachmentHash(sha256(forged)))?.reviewReason).toBe("unknown_sender");
+
+    const trusted = pdf("strikt-pass");
+    scanned = invoice({ invoiceNumber: `STRIKT-${unique()}` });
+    await importInvoiceMail({
+      raw: await buildMail({ headers: { "Authentication-Results": "mx.lamgroep.nl; dmarc=pass header.from=garage-test.invalid" }, attachments: attach(trusted) }),
+      config: strict, createdBy: INBOX_TEST_ACTOR,
+    });
+    expect((await inboxStorage.getByAttachmentHash(sha256(trusted)))?.status).toBe("booked");
+  });
+
+  it("in lenient mode a softfail is already enough to distrust an allowed sender", async () => {
+    const attachment = pdf("softfail");
+    await importInvoiceMail({
+      raw: await buildMail({ headers: { "Authentication-Results": "mx.lamgroep.nl; spf=softfail smtp.mailfrom=garage-test.invalid" }, attachments: [{ filename: "f.pdf", content: attachment, contentType: "application/pdf" }] }),
+      config, createdBy: INBOX_TEST_ACTOR,
+    });
+    expect((await inboxStorage.getByAttachmentHash(sha256(attachment)))?.reviewReason).toBe("unknown_sender");
+  });
+
   it("queues the plate and amount problems with their own reasons", async () => {
     const cases: Array<[Partial<InboxParsedInvoice>, string]> = [
       [{ vehicleInfo: undefined }, "no_plate"],

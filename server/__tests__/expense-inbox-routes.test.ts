@@ -139,6 +139,25 @@ describe("expense inbox routes", () => {
     expect(refused.body).toEqual({ ok: false, message: "Invalid credentials" });
   });
 
+  /** M3: the mask means "keep what is stored" only for the server it was stored for. */
+  it("refuses to test another server with the stored password behind the mask", async () => {
+    await saveInvoiceInboxConfig({ enabled: false, host: "imap.example.test", username: "u", password: "geheim", allowedSenders: ["@garage-test.invalid"] }, "test");
+    let connected = false;
+    setInvoiceImapClient({ async withSession(config, fn) { connected = true; return mailboxWith([]).withSession(config, fn); } });
+
+    const otherHost = await request(admin).post("/api/expenses/inbox/config/test").send({ host: "imap.anders.test", username: "u", password: INVOICE_INBOX_PASSWORD_MASK });
+    expect(otherHost.status).toBe(400);
+    expect(otherHost.body).toEqual({ ok: false, message: "Vul het wachtwoord in om een andere server te testen." });
+
+    const otherUser = await request(admin).post("/api/expenses/inbox/config/test").send({ host: "imap.example.test", username: "iemand-anders", password: "" });
+    expect(otherUser.status).toBe(400);
+    expect(connected).toBe(false);
+
+    // A password that was really typed is fine for any server.
+    const typed = await request(admin).post("/api/expenses/inbox/config/test").send({ host: "imap.anders.test", username: "u", password: "eigen-wachtwoord" });
+    expect(typed.status).toBe(200);
+  });
+
   it("runs the import on request and reports it in the status", async () => {
     await saveInvoiceInboxConfig({ enabled: false, host: "imap.example.test", username: "u", password: "geheim", allowedSenders: ["@garage-test.invalid"] }, "test");
     const attachment = Buffer.from(`%PDF-1.4\n% run ${unique()}\n%%EOF`);

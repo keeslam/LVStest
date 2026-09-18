@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 export const INVOICE_INBOX_CONFIG_QUERY_KEY = ["/api/expenses/inbox/config"];
 const STATUS_QUERY_KEY = ["/api/expenses/inbox/status"];
 
-type TextField = "host" | "username" | "password" | "inboxFolder" | "processedFolder";
+type TextField = "host" | "username" | "password" | "inboxFolder" | "processedFolder" | "authservId";
 type NumberField = "pollMinutes" | "totalTolerance";
 
 /** Settings card in the E-mail tab: the IMAP mailbox the app reads invoices from. */
@@ -131,6 +131,21 @@ export function InvoiceInboxConfigForm() {
           </div>
           {numberField("pollMinutes", t("invoiceInbox.config.pollMinutes"), { min: 5, max: 1440 })}
           {numberField("totalTolerance", t("invoiceInbox.config.totalTolerance"), { min: 0, max: 100, step: "0.01" })}
+        </div>
+        {/*
+          I2: the app can only tell a real sender from a forged one when it
+          knows which name its own mail server writes in Authentication-Results.
+          Empty means lenient: a mail that merely claims to come from a trusted
+          address is booked. Say that out loud rather than hide it.
+        */}
+        <div>
+          {textField("authservId", t("invoiceInbox.config.authservId"), { placeholder: "mx.voorbeeld.nl" })}
+          <p className="mt-1 text-xs text-muted-foreground">{t("invoiceInbox.config.authservIdHint")}</p>
+          {!form.authservId.trim() && (
+            <div className="mt-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm" data-testid="invoice-inbox-authserv-warning">
+              {t("invoiceInbox.config.authservIdWarning")}
+            </div>
+          )}
         </div>
         <div>
           <Label htmlFor="invoice-inbox-senders">{t("invoiceInbox.config.allowedSenders")}</Label>

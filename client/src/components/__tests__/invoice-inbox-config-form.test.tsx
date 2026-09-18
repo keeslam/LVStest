@@ -6,7 +6,8 @@ import { InvoiceInboxConfigForm } from "@/components/expenses/invoice-inbox-conf
 
 const config = {
   enabled: false, host: "imap.voorbeeld.nl", port: 993, secure: true, username: "fakturenapp@lamgroep.nl", password: "********",
-  inboxFolder: "INBOX", processedFolder: "Verwerkt", pollMinutes: 15, allowedSenders: ["@garage.nl", "kees@lamgroep.nl"], totalTolerance: 1,
+  inboxFolder: "INBOX", processedFolder: "Verwerkt", pollMinutes: 15, allowedSenders: ["@garage.nl", "kees@lamgroep.nl"],
+  authservId: "", totalTolerance: 1,
 };
 const status = { enabled: false, running: false, lastRun: null, scheduledMinutes: null, reviewCount: 0, geminiConfigured: false };
 
@@ -61,6 +62,25 @@ describe("InvoiceInboxConfigForm", () => {
     await userEvent.click(screen.getByRole("button", { name: "Opslaan" }));
     await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
     expect(calls.find((c) => c.method === "PUT")!.body.allowedSenders).toEqual(["@garage.nl", "Facturen@Banden.nl"]);
+  });
+
+  /**
+   * I2: without the name of our own mail server the app cannot tell a real
+   * sender from a forged one, and a mail claiming to be from a trusted address
+   * is booked automatically. The card says so, in amber, until it is filled in.
+   */
+  it("asks for the name of our own mail server and warns while it is empty", async () => {
+    mount();
+    const field = await screen.findByLabelText("Naam van jullie mailserver (Authentication-Results)");
+    expect(field).toHaveValue("");
+    expect(screen.getByTestId("invoice-inbox-authserv-warning")).toHaveTextContent(/Een vervalst afzenderadres/);
+
+    await userEvent.type(field, "mx.host.nl");
+    expect(screen.queryByTestId("invoice-inbox-authserv-warning")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Opslaan" }));
+    await waitFor(() => expect(calls.some((c) => c.method === "PUT")).toBe(true));
+    expect(calls.find((c) => c.method === "PUT")!.body.authservId).toBe("mx.host.nl");
   });
 
   it("still renders with its values when the status check is refused, and does not hammer it", async () => {

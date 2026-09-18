@@ -63,13 +63,15 @@ function openSession(client: ImapFlow, config: InvoiceInboxConfig): InvoiceImapS
 export async function runImapSession<T>(
   config: InvoiceInboxConfig,
   fn: (session: InvoiceImapSession) => Promise<T>,
-  createClient: (config: InvoiceInboxConfig) => ImapFlow,
+  createClient: (config: InvoiceInboxConfig, addresses: string[]) => ImapFlow,
 ): Promise<T> {
   if (!config.host) throw new Error("IMAP-host is niet ingesteld");
   // Every connection — the poller's and the admin's "test connection" — passes
-  // the port pair and the private-range check first (cf. BUG-071).
-  await assertAllowedImapTarget(config.host, config.port);
-  const client = createClient(config);
+  // the port pair and the private-range check first (cf. BUG-071). M2: the
+  // addresses it resolved are handed on, so the socket goes to one of the
+  // addresses that were checked rather than to whatever a second lookup says.
+  const addresses = (await assertAllowedImapTarget(config.host, config.port)) ?? [];
+  const client = createClient(config, addresses);
   // An ImapFlow instance is an EventEmitter: an unhandled "error" event would
   // take the whole server process down.
   client.on("error", (error: Error) => console.error("IMAP connection error:", error.message));
@@ -79,6 +81,10 @@ export async function runImapSession<T>(
     // A rejected login leaves the socket open inside imapflow; without this
     // every poll with a wrong password would leak one connection.
     client.close();
+    // M4: "Invalid credentials" tells staff nothing about what to do.
+    if ((error as { authenticationFailed?: boolean }).authenticationFailed) {
+      throw new Error("Inloggen geweigerd: controleer gebruikersnaam en wachtwoord.");
+    }
     throw error;
   }
   try {
@@ -93,13 +99,35 @@ export async function runImapSession<T>(
   }
 }
 
+/**
+ * What imapflow is told to connect with.
+ *
+ * I3: with `secure: false` and no `doSTARTTLS`, imapflow logs in over plaintext
+ * on a server that does not advertise STARTTLS — the upgrade was merely
+ * opportunistic. On port 143 it is demanded now.
+ *
+ * M2: `addresses` are the ones `assertAllowedImapTarget` resolved and approved.
+ * Connecting to the address rather than to the name closes the gap between the
+ * check and the connection (DNS rebinding); the name is kept as the TLS
+ * `servername`, so the certificate is still validated against the host the
+ * administrator typed. Empty (the private-outbound override, development only)
+ * means "connect by name", as before.
+ */
+export function imapOptions(config: InvoiceInboxConfig, addresses: string[] = []): ConstructorParameters<typeof ImapFlow>[0] {
+  const pinned = addresses[0];
+  return {
+    host: pinned ?? config.host,
+    port: config.port,
+    secure: config.secure,
+    ...(config.secure ? {} : { doSTARTTLS: true }),
+    auth: { user: config.username, pass: config.password },
+    tls: { rejectUnauthorized: true, ...(pinned ? { servername: config.host } : {}) },
+    logger: false,
+  };
+}
+
 export const imapClient: InvoiceImapClient = {
   withSession(config, fn) {
-    return runImapSession(config, fn, (c) => new ImapFlow({
-      host: c.host, port: c.port, secure: c.secure,
-      auth: { user: c.username, pass: c.password },
-      tls: { rejectUnauthorized: true },
-      logger: false,
-    }));
+    return runImapSession(config, fn, (c, addresses) => new ImapFlow(imapOptions(c, addresses)));
   },
 };

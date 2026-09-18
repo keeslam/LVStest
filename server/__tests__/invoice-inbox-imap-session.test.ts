@@ -9,7 +9,7 @@ vi.mock("../services/invoice-inbox/config", async (importOriginal) => {
 });
 
 import { DEFAULT_INVOICE_INBOX_CONFIG, type InvoiceInboxConfig } from "../../shared/invoice-inbox";
-import { runImapSession } from "../services/invoice-inbox/imap-client";
+import { imapOptions, runImapSession } from "../services/invoice-inbox/imap-client";
 
 const config: InvoiceInboxConfig = { ...DEFAULT_INVOICE_INBOX_CONFIG, host: "imap.example.test", username: "u", password: "p" };
 
@@ -76,5 +76,50 @@ describe("invoice inbox IMAP session lifecycle", () => {
     const factory = vi.fn();
     await expect(runImapSession({ ...config, host: "" }, async () => "x", factory)).rejects.toThrow("IMAP-host is niet ingesteld");
     expect(factory).not.toHaveBeenCalled();
+  });
+
+  /** M4: imapflow marks a refused login; "Invalid credentials" says nothing to staff. */
+  it("says in plain Dutch that the login was refused", async () => {
+    const client = fakeClient();
+    const refused = Object.assign(new Error("Invalid credentials"), { authenticationFailed: true });
+    client.connect.mockRejectedValueOnce(refused);
+    await expect(runImapSession(config, async () => "ok", () => asImap(client)))
+      .rejects.toThrow("Inloggen geweigerd: controleer gebruikersnaam en wachtwoord.");
+    expect(client.close).toHaveBeenCalledTimes(1);
+  });
+
+  it("hands the addresses the outbound guard resolved to the client factory", async () => {
+    const client = fakeClient();
+    client.getMailboxLock.mockResolvedValue({ release: vi.fn() });
+    const factory = vi.fn(() => asImap(client));
+    await runImapSession(config, async () => "ok", factory);
+    expect(factory).toHaveBeenCalledTimes(1);
+    // The mocked guard resolves nothing, so the host name is used as before.
+    expect(factory.mock.calls[0][1]).toEqual([]);
+  });
+});
+
+/** I3 + M2: what the real client is actually told to connect with. */
+describe("imapOptions", () => {
+  it("forces STARTTLS on port 143, where it used to be opportunistic", () => {
+    const options = imapOptions({ ...config, port: 143, secure: false });
+    expect(options).toMatchObject({ host: "imap.example.test", port: 143, secure: false, doSTARTTLS: true });
+    expect(options.tls).toMatchObject({ rejectUnauthorized: true });
+  });
+
+  it("does not ask for STARTTLS on an implicit-TLS connection", () => {
+    expect(imapOptions({ ...config, port: 993, secure: true }).doSTARTTLS).toBeUndefined();
+  });
+
+  it("pins the connection to the address the guard resolved, keeping the name for TLS", () => {
+    const options = imapOptions(config, ["198.51.100.7"]);
+    expect(options.host).toBe("198.51.100.7");
+    expect(options.tls).toMatchObject({ rejectUnauthorized: true, servername: "imap.example.test" });
+  });
+
+  it("falls back to the host name when the guard resolved nothing", () => {
+    const options = imapOptions(config, []);
+    expect(options.host).toBe("imap.example.test");
+    expect((options.tls as Record<string, unknown>).servername).toBeUndefined();
   });
 });

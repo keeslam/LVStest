@@ -73,7 +73,15 @@ export function registerExpenseInboxRoutes(app: Express): void {
     const parsed = invoiceInboxConfigSchema.safeParse(req.body ?? {});
     if (!parsed.success) return res.status(400).json({ ok: false, message: parsed.error.errors[0]?.message ?? "Invalid input" });
     const stored = await getInvoiceInboxConfig();
-    const password = parsed.data.password === INVOICE_INBOX_PASSWORD_MASK || !parsed.data.password ? stored.password : parsed.data.password;
+    // M3: the mask (or an empty field) means "keep what is stored", and that
+    // only holds for the server it was stored for — otherwise this button would
+    // try the mailbox password against any host an administrator types.
+    const reuseStored = parsed.data.password === INVOICE_INBOX_PASSWORD_MASK || !parsed.data.password;
+    const sameTarget = parsed.data.host === stored.host && parsed.data.username === stored.username;
+    if (reuseStored && !sameTarget) {
+      return res.status(400).json({ ok: false, message: "Vul het wachtwoord in om een andere server te testen." });
+    }
+    const password = reuseStored ? stored.password : parsed.data.password;
     try {
       const unseen = await getInvoiceImapClient().withSession({ ...parsed.data, password }, async (session) => (await session.listUnseen()).length);
       res.json({ ok: true, unseen });

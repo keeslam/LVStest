@@ -43,27 +43,66 @@ up as an SMTP configuration.
 interface InvoiceInboxConfig {
   enabled: boolean;               // scheduler on/off
   host: string; port: number;     // default 993
-  secure: boolean;                // implicit TLS (993) or STARTTLS (143); default true
+  secure: boolean;                // derived from the port by the schema: 993 -> true, 143 -> false
   username: string; password: string; // password stored like the SMTP password, masked in GET
   inboxFolder: string;            // default "INBOX"
   processedFolder: string;        // default "Verwerkt"; "" = leave in place, mark \Seen only
   pollMinutes: number;            // 5..1440, default 15
   allowedSenders: string[];       // "naam@garage.nl" or "@garage.nl"; case-insensitive
+  authservId: string;             // name our own mail server writes in Authentication-Results; "" = lenient
   totalTolerance: number;         // allowed |sum(lines) - total| in euro, default 1.00
 }
 ```
+
+`secure` is not a field the form sets: the schema derives it from the port, so
+the two can never disagree and a connection on 143 always demands STARTTLS
+(`doSTARTTLS: true`) instead of upgrading only when the server happens to
+advertise it.
 
 `GET` returns the password as `"********"`; `PUT` keeps the stored password
 when the mask comes back, and restarts the scheduler. `POST
 /api/expenses/inbox/config/test` connects with the given (or stored)
 settings and returns `{ ok, unseen }` (count of unseen messages in
-`inboxFolder`); nothing is downloaded.
+`inboxFolder`); nothing is downloaded. The stored password is only reused
+for the stored host and username; testing a different server with an empty or
+masked password is a 400 ("Vul het wachtwoord in om een andere server te
+testen."), so the button cannot try the mailbox password against a host
+somebody types. A login imapflow marks as refused is reported as "Inloggen
+geweigerd: controleer gebruikersnaam en wachtwoord."
 
 Outbound guard (same reason as CJIB FIX-U): the host must pass
 `assertPublicHost` from `server/utils/security/outboundGuard.ts`, and the
 port must be 993 or 143. Otherwise the test button is a port scanner for
-whatever the container can reach. Deployments on a private mail host set
-the existing private-outbound override.
+whatever the container can reach. The guard returns the addresses it resolved
+and the client connects to the first of them, with the host name kept as the
+TLS `servername`, so a second lookup cannot answer with a private address after
+the check passed. The private-outbound override exists for local development
+only — `allowsPrivateOutbound()` is ignored when `NODE_ENV=production`, so a
+deployment on a private mail host cannot use it; there the mailbox has to be
+reachable at a public address.
+
+### Is the sender really the sender?
+
+A `From` address is free to type, so the allowlist alone proves nothing. The
+pure function `senderAuthVerdict(headerLines, fromDomain, authservId)` in
+`shared/invoice-inbox.ts` reads the receiving mail server's
+`Authentication-Results` headers and answers `pass`, `fail` or `none`:
+
+- **`authservId` filled in (strict)** — only lines whose authserv-id (the token
+  before the first `;`, past an optional version number) equals it are read.
+  `pass` for `dmarc=pass`, or `spf=pass` whose `smtp.mailfrom` domain equals the
+  From domain, or `dkim=pass` whose `header.d` equals it. Everything else, "no
+  such header" included, is `fail`. A `dmarc=pass` line the sender wrote himself
+  carries a different authserv-id and is therefore ignored.
+- **`authservId` empty (lenient, the default)** — every A-R line counts, but
+  only `dmarc=fail`, `spf=fail` and `spf=softfail` mean `fail`; anything else is
+  `none`. A forged pass gains nothing here either, because a pass is not what
+  grants trust in this mode.
+
+Trust = the sender is on the allowlist **and** the verdict is `pass` (strict) or
+not `fail` (lenient). The default is lenient because a host that stamps no A-R
+header at all would otherwise make the feature useless; the settings card warns
+in amber for as long as the field is empty.
 
 Shared types and defaults live in `shared/invoice-inbox.ts`
 (`INVOICE_INBOX_CONFIG_KEY`, `DEFAULT_INVOICE_INBOX_CONFIG`,
@@ -105,7 +144,7 @@ Review reasons (`review_reason`), in the order they are checked:
 | --- | --- |
 | `no_attachment` | mail has no PDF/JPG/PNG attachment, or all attachments were skipped (over 15 MB, wrong type) |
 | `parse_failed` | the scanner threw on every model, or validation of the parsed invoice failed |
-| `unknown_sender` | `from_address` matches no entry in `allowedSenders`, **or** the receiving mail server's `Authentication-Results` header says `dmarc=fail` or `spf=fail`. A From address is trivial to forge; a hard fail from our own mail server takes the trust away. Only a fail counts, so a forged "pass" line gains nothing |
+| `unknown_sender` | `from_address` matches no entry in `allowedSenders`, **or** `senderAuthVerdict()` (see "Is the sender really the sender?") did not clear the mail: with `authservId` set it has to be a `pass` from that server, without it anything that is not `dmarc=fail`, `spf=fail` or `spf=softfail` is accepted |
 | `duplicate` | an item with the same `invoice_hash` already exists with status `booked` or `review` |
 | `no_plate` | no license plate found on the invoice |
 | `multiple_plates` | more than one distinct plate found |

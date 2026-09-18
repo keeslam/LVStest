@@ -265,7 +265,8 @@ zetten. Zelf een factuur doorsturen vanaf een `@lamgroep.nl`-adres werkt hetzelf
 
 Alleen als alles klopt:
 
-- de afzender staat in de lijst **Vertrouwde afzenders**;
+- de afzender staat in de lijst **Vertrouwde afzenders**, en de mail is volgens jullie
+  eigen mailserver ook echt van dat adres (zie **Instellen**, punt 4);
 - er staat precies één kenteken op de factuur, en dat kenteken zit in de vloot;
 - de factuur is niet eerder binnengekomen;
 - de regels tellen op tot het totaal (excl. of incl. btw), op hooguit 1 euro na;
@@ -312,9 +313,21 @@ recht *instellingen beheren* nodig.
    `INBOX.Verwerkt`. Leeg laten mag ook: de mail blijft dan staan als gelezen.
 3. **Vertrouwde afzenders**: één per regel. Een adres (`facturen@garage.nl`) of een heel
    domein (`@garage.nl`). Zet er ook `@lamgroep.nl` in als je zelf facturen wilt doorsturen.
-4. Klik op **Verbinding testen**. Je ziet "Verbonden, 3 ongelezen" of de foutmelding van
-   de mailserver.
-5. Zet **Postvak automatisch uitlezen** aan en klik op **Opslaan**. De app kijkt daarna
+4. **Naam van jullie mailserver (Authentication-Results)**: vul dit in vóór je de app
+   aanzet. Zonder die naam kan de app niet controleren of een mail écht van de afzender
+   komt, en wordt een mail die alleen maar zegt dat hij van een vertrouwde afzender komt
+   gewoon geboekt. De kaart waarschuwt daar in het geel voor zolang het veld leeg is.
+
+   Zo vind je de naam: stuur jezelf een testmail naar `fakturenapp@lamgroep.nl`, open
+   die mail in de webmail van de hosting en laat de kopregels (headers, "originele
+   bericht", "broncode") zien. Zoek de regel die begint met `Authentication-Results:`.
+   Wat daar direct achter staat, tot aan de eerste puntkomma, is de naam — bijvoorbeeld
+   `mx.voorbeeld.nl`. Die vul je hier in. Staat die regel er helemaal niet, vraag dan de
+   hostingpartij of de mailserver DMARC- en SPF-controle stempelt.
+5. Klik op **Verbinding testen**. Je ziet "Verbonden, 3 ongelezen" of de foutmelding van
+   de mailserver. Test je een ándere server dan de opgeslagen, vul dan het wachtwoord
+   opnieuw in: het opgeslagen wachtwoord wordt alleen voor de opgeslagen server gebruikt.
+6. Zet **Postvak automatisch uitlezen** aan en klik op **Opslaan**. De app kijkt daarna
    elke 15 minuten (instelbaar). Met **Nu ophalen** hoef je daar niet op te wachten.
 
 Wie de instellingen mag beheren, mag ook op **Nu ophalen** klikken en de status hier zien.

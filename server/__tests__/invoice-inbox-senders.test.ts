@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeSender, isAllowedSender } from "../../shared/invoice-inbox";
+import { normalizeSender, isAllowedSender, senderAuthVerdict } from "../../shared/invoice-inbox";
 
 describe("invoice inbox sender allowlist", () => {
   it("reduces a From header to a bare lower-case address", () => {
@@ -27,5 +27,74 @@ describe("invoice inbox sender allowlist", () => {
   it("refuses everything when the list is empty or the sender is unreadable", () => {
     expect(isAllowedSender("a@b.nl", [])).toBe(false);
     expect(isAllowedSender("", ["@b.nl"])).toBe(false);
+  });
+});
+
+/**
+ * I2 — a From address is free to type. Only the receiving mail server's own
+ * `Authentication-Results` line says anything, and only when we know that
+ * server's name: anyone can add a line saying `dmarc=pass`.
+ */
+describe("senderAuthVerdict", () => {
+  const line = (text: string) => `Authentication-Results: ${text}`;
+
+  describe("with the name of our own mail server (strict)", () => {
+    const verdict = (...lines: string[]) => senderAuthVerdict(lines, "garage.nl", "mx.host.nl");
+
+    it("passes on DMARC, on aligned SPF and on aligned DKIM", () => {
+      expect(verdict(line("mx.host.nl; dmarc=pass header.from=garage.nl"))).toBe("pass");
+      expect(verdict(line("mx.host.nl; spf=pass smtp.mailfrom=facturen@garage.nl"))).toBe("pass");
+      expect(verdict(line("mx.host.nl; spf=pass smtp.mailfrom=garage.nl"))).toBe("pass");
+      expect(verdict(line("mx.host.nl; dkim=pass header.d=garage.nl"))).toBe("pass");
+    });
+
+    it("reads the header whatever its casing, and past a version number", () => {
+      expect(senderAuthVerdict(["AUTHENTICATION-RESULTS: MX.Host.NL 1; DMARC=PASS"], "garage.nl", "  MX.HOST.NL "))
+        .toBe("pass");
+    });
+
+    it("refuses a pass that belongs to someone else's domain", () => {
+      expect(verdict(line("mx.host.nl; spf=pass smtp.mailfrom=bounce.evil.example"))).toBe("fail");
+      expect(verdict(line("mx.host.nl; dkim=pass header.d=evil.example"))).toBe("fail");
+      expect(verdict(line("mx.host.nl; spf=pass smtp.mailfrom=notgarage.nl"))).toBe("fail");
+    });
+
+    it("ignores a pass line the sender stamped under another authserv-id", () => {
+      expect(verdict(line("evil.example; dmarc=pass header.from=garage.nl"))).toBe("fail");
+      expect(verdict(
+        line("evil.example; dmarc=pass header.from=garage.nl"),
+        line("mx.host.nl; dmarc=fail header.from=garage.nl"),
+      )).toBe("fail");
+      // Our own server's pass still counts when a forged line sits next to it.
+      expect(verdict(
+        line("evil.example; dmarc=fail"),
+        line("mx.host.nl; dmarc=pass header.from=garage.nl"),
+      )).toBe("pass");
+    });
+
+    it("refuses a mail our server said nothing about", () => {
+      expect(verdict()).toBe("fail");
+      expect(verdict(line("mx.host.nl; dmarc=none header.from=garage.nl"))).toBe("fail");
+      expect(verdict(line("mx.host.nl; dmarc=permerror"))).toBe("fail");
+      expect(verdict("Received: from somewhere")).toBe("fail");
+    });
+  });
+
+  describe("without that name (lenient, the default)", () => {
+    const verdict = (...lines: string[]) => senderAuthVerdict(lines, "garage.nl", "");
+
+    it("only a hard fail — or a softfail — takes the trust away", () => {
+      expect(verdict(line("mx.host.nl; dmarc=fail header.from=garage.nl"))).toBe("fail");
+      expect(verdict(line("mx.host.nl; spf=fail smtp.mailfrom=garage.nl"))).toBe("fail");
+      expect(verdict(line("mx.host.nl; spf=softfail smtp.mailfrom=garage.nl"))).toBe("fail");
+      expect(verdict(line("anything.example; spf=softfail"))).toBe("fail");
+    });
+
+    it("says 'none' when nothing failed, so a forged pass gains nothing either", () => {
+      expect(verdict()).toBe("none");
+      expect(verdict(line("mx.host.nl; dmarc=none"))).toBe("none");
+      expect(verdict(line("mx.host.nl; spf=permerror"))).toBe("none");
+      expect(verdict(line("evil.example; dmarc=pass"))).toBe("none");
+    });
   });
 });

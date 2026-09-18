@@ -32,6 +32,13 @@ export interface InvoiceInboxConfig {
   pollMinutes: number;
   /** "naam@garage.nl" or "@garage.nl", lower-case. */
   allowedSenders: string[];
+  /**
+   * The name our own receiving mail server writes at the start of its
+   * `Authentication-Results` header, e.g. "mx.host.nl". Empty = lenient mode:
+   * only a hard fail takes trust away, because a host that stamps nothing would
+   * otherwise make the feature useless. See `senderAuthVerdict`.
+   */
+  authservId: string;
   /** Allowed difference in euro between the sum of the lines and the invoice total. */
   totalTolerance: number;
 }
@@ -39,7 +46,7 @@ export interface InvoiceInboxConfig {
 export const DEFAULT_INVOICE_INBOX_CONFIG: InvoiceInboxConfig = {
   enabled: false, host: '', port: 993, secure: true, username: '', password: '',
   inboxFolder: 'INBOX', processedFolder: 'Verwerkt', pollMinutes: 15,
-  allowedSenders: [], totalTolerance: 1,
+  allowedSenders: [], authservId: '', totalTolerance: 1,
 };
 
 export const INBOX_STATUSES = ['booked', 'review', 'dismissed'] as const;
@@ -116,6 +123,82 @@ export function normalizeSender(raw: string): string {
   const close = text.lastIndexOf('>');
   const address = (open !== -1 && close > open ? text.slice(open + 1, close) : text).trim().toLowerCase();
   return address.includes('@') && !/\s/.test(address) ? address : '';
+}
+
+// ---- Authentication-Results (I2) --------------------------------------------
+
+interface AuthResult { method: string; result: string; props: Record<string, string> }
+
+/**
+ * One `Authentication-Results` header: the name of the server that wrote it,
+ * and its verdicts. Returns null for a line that is not one.
+ */
+function parseAuthResults(rawLine: string): { authserv: string; results: AuthResult[] } | null {
+  let value = String(rawLine ?? '').trim();
+  const colon = value.indexOf(':');
+  const headerName = colon === -1 ? '' : value.slice(0, colon).trim().toLowerCase();
+  if (headerName === 'authentication-results') value = value.slice(colon + 1);
+  // Any other header (a Received line, say) says nothing about authentication.
+  else if (/^[A-Za-z][A-Za-z0-9-]*:/.test(value)) return null;
+
+  const segments = value.split(';');
+  // "mx.host.nl 1" — the optional version number is not part of the name.
+  const authserv = (segments.shift() ?? '').trim().split(/\s+/)[0].toLowerCase();
+
+  const results: AuthResult[] = [];
+  for (const segment of segments) {
+    const pairs = Array.from(segment.matchAll(/([A-Za-z][A-Za-z0-9_.-]*)\s*=\s*("[^"]*"|[^\s;]+)/g));
+    if (pairs.length === 0) continue;
+    const [method, rawResult] = [pairs[0][1].toLowerCase(), pairs[0][2].replace(/^"|"$/g, '').toLowerCase()];
+    const props: Record<string, string> = {};
+    for (const pair of pairs.slice(1)) props[pair[1].toLowerCase()] = pair[2].replace(/^"|"$/g, '').toLowerCase();
+    results.push({ method, result: rawResult, props });
+  }
+  return { authserv, results };
+}
+
+/** "user@garage.nl" and "garage.nl" both belong to garage.nl. */
+const domainOf = (value: string): string => {
+  const text = String(value ?? '').trim().toLowerCase().replace(/^<|>$/g, '');
+  const at = text.lastIndexOf('@');
+  return at === -1 ? text : text.slice(at + 1);
+};
+
+/**
+ * What the receiving mail server said about this mail — the only thing that can
+ * contradict a From address, which anyone may type.
+ *
+ * With `authservId` filled in (strict), only lines that server wrote are read,
+ * and the mail has to earn its pass: DMARC pass, or SPF/DKIM pass aligned with
+ * the From domain. Anything else, a pass stamped under another authserv-id
+ * included, is a `fail`.
+ *
+ * With `authservId` empty (lenient, the default, because many hosts stamp
+ * nothing) every line is read but only a hard fail — or an SPF softfail —
+ * counts; a forged "pass" still gains an attacker nothing, since a pass is
+ * never what grants trust here.
+ */
+export function senderAuthVerdict(headerLines: string[], fromDomain: string, authservId: string): 'pass' | 'fail' | 'none' {
+  const parsed = (headerLines ?? []).map(parseAuthResults).filter((p): p is { authserv: string; results: AuthResult[] } => p !== null);
+  const domain = domainOf(fromDomain);
+  const wanted = String(authservId ?? '').trim().toLowerCase();
+
+  if (!wanted) {
+    const failed = parsed.some(({ results }) => results.some((r) =>
+      (r.method === 'dmarc' && r.result === 'fail')
+      || (r.method === 'spf' && (r.result === 'fail' || r.result === 'softfail'))));
+    return failed ? 'fail' : 'none';
+  }
+
+  const ours = parsed.filter((p) => p.authserv === wanted);
+  const passed = ours.some(({ results }) => results.some((r) => {
+    if (r.result !== 'pass') return false;
+    if (r.method === 'dmarc') return true;
+    if (r.method === 'spf') return Boolean(r.props['smtp.mailfrom']) && domainOf(r.props['smtp.mailfrom']) === domain;
+    if (r.method === 'dkim') return Boolean(r.props['header.d']) && domainOf(r.props['header.d']) === domain;
+    return false;
+  }));
+  return passed ? 'pass' : 'fail';
 }
 
 /** An entry is a full address, or "@domain" for every address at exactly that domain. */

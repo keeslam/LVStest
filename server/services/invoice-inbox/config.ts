@@ -23,6 +23,8 @@ export const invoiceInboxConfigSchema = z.object({
     .refine((p) => IMAP_ALLOWED_PORTS.includes(p), "Alleen poort 993 (TLS) of 143 (STARTTLS) is toegestaan")
     .default(993),
   secure: z.boolean().default(true),
+  /** I2: the name our own mail server writes in its Authentication-Results header. */
+  authservId: z.string().trim().max(200).default(""),
   username: z.string().trim().max(320).default(""),
   password: z.string().max(500).default(""),
   inboxFolder: z.string().trim().min(1).max(200).default("INBOX"),
@@ -33,7 +35,10 @@ export const invoiceInboxConfigSchema = z.object({
       .regex(SENDER_PATTERN, "Ongeldige afzender: gebruik naam@domein.nl of @domein.nl"),
   ).max(200).default([]).transform((list) => Array.from(new Set(list))),
   totalTolerance: z.coerce.number().min(0).max(100).default(1),
-});
+  // I3: the port decides the connection type, so a form (or an old stored row)
+  // can never leave 143 paired with "implicit TLS" — which would have meant a
+  // plaintext login on a server that does not advertise STARTTLS.
+}).transform((config) => ({ ...config, secure: config.port === 993 }));
 
 export async function getInvoiceInboxConfig(): Promise<InvoiceInboxConfig> {
   try {
@@ -69,8 +74,14 @@ export async function saveInvoiceInboxConfig(input: unknown, updatedBy: string):
   return value;
 }
 
-/** Throws OutboundBlockedError — one generic message, no oracle — when refused. */
-export async function assertAllowedImapTarget(host: string, port: number): Promise<void> {
+/**
+ * Throws OutboundBlockedError — one generic message, no oracle — when refused.
+ * M2: returns the addresses the guard resolved, so the connection can be pinned
+ * to one of them and a second DNS lookup cannot answer with a private address
+ * after the check passed. Empty with the private-outbound override, which
+ * resolves nothing (and is ignored in production).
+ */
+export async function assertAllowedImapTarget(host: string, port: number): Promise<string[]> {
   if (!IMAP_ALLOWED_PORTS.includes(Number(port))) throw new OutboundBlockedError();
-  await assertPublicHost(String(host ?? "").trim());
+  return assertPublicHost(String(host ?? "").trim());
 }

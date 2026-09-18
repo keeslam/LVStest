@@ -4,7 +4,7 @@ import { simpleParser, type ParsedMail } from "mailparser";
 import { getUploadsDir } from "../../../shared/paths";
 import type { InvoiceInboxItem } from "../../../shared/schema";
 import {
-  INTERRUPTED_BOOKING_MESSAGE, REVIEW_REASON_LABELS_NL, isAllowedSender, normalizeSender,
+  INTERRUPTED_BOOKING_MESSAGE, REVIEW_REASON_LABELS_NL, isAllowedSender, normalizeSender, senderAuthVerdict,
   type InboxParsedInvoice, type InvoiceInboxConfig, type ReviewReason,
 } from "../../../shared/invoice-inbox";
 import { processInvoiceWithAI, validateParsedInvoice } from "../../utils/invoice-scanner";
@@ -103,13 +103,20 @@ function usableAttachments(mail: ParsedMail): UsableAttachment[] {
 }
 
 /**
- * The receiving mail server's verdict. Only a hard fail counts, and only
- * against the sender: a forged "pass" line gains an attacker nothing here.
+ * I2 — is this mail really from the address it says it is?
+ *
+ * With the name of our own mail server configured (`authservId`) the mail has
+ * to carry that server's pass; without it — a host that stamps nothing would
+ * otherwise make the feature useless — everything that is not a hard fail or an
+ * SPF softfail is let through. Either way a forged "pass" gains nothing: in
+ * strict mode it is stamped under the wrong authserv-id, in lenient mode a pass
+ * is not what grants trust.
  */
-function senderAuthFailed(mail: ParsedMail): boolean {
-  const results = (mail.headerLines ?? [])
-    .filter((h) => h.key === "authentication-results").map((h) => h.line).join(" ").toLowerCase();
-  return /\bdmarc=fail\b/.test(results) || /\bspf=fail\b/.test(results);
+function senderIsTrusted(mail: ParsedMail, fromAddress: string, config: InvoiceInboxConfig): boolean {
+  if (!isAllowedSender(fromAddress, config.allowedSenders)) return false;
+  const lines = (mail.headerLines ?? []).filter((h) => h.key === "authentication-results").map((h) => h.line);
+  const verdict = senderAuthVerdict(lines, fromAddress, config.authservId);
+  return config.authservId.trim() ? verdict === "pass" : verdict !== "fail";
 }
 
 function storeAttachment(attachment: UsableAttachment, hash: string): { absolutePath: string; relativePath: string } {
@@ -299,7 +306,7 @@ async function importAttachment(
 export async function importInvoiceMail(input: ImportMailInput): Promise<ImportMailResult> {
   const mail = await simpleParser(input.raw);
   const fromAddress = normalizeSender(mail.from?.value?.[0]?.address ?? mail.from?.text ?? "");
-  const senderAllowed = isAllowedSender(fromAddress, input.config.allowedSenders) && !senderAuthFailed(mail);
+  const senderAllowed = senderIsTrusted(mail, fromAddress, input.config);
   const meta: MailMeta = {
     messageId: mail.messageId ?? null,
     fromAddress: fromAddress || null,

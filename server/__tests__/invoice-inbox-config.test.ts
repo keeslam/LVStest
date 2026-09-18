@@ -37,6 +37,20 @@ describe("invoice inbox config", () => {
     expect(maskInvoiceInboxConfig({ ...after, password: "" }).password).toBe("");
   });
 
+  /** I3: the two could disagree, and a 143 connection with secure=true never came up. */
+  it("derives the connection type from the port, so the two cannot disagree", () => {
+    expect(invoiceInboxConfigSchema.parse({ port: 143, secure: true }).secure).toBe(false);
+    expect(invoiceInboxConfigSchema.parse({ port: 993, secure: false }).secure).toBe(true);
+    expect(invoiceInboxConfigSchema.parse({}).secure).toBe(true);
+  });
+
+  /** I2: the name our own mail server writes in Authentication-Results. */
+  it("keeps the mail server name, trimmed, and defaults it to empty", () => {
+    expect(invoiceInboxConfigSchema.parse({}).authservId).toBe("");
+    expect(invoiceInboxConfigSchema.parse({ authservId: "  mx.host.nl  " }).authservId).toBe("mx.host.nl");
+    expect(invoiceInboxConfigSchema.safeParse({ authservId: "x".repeat(201) }).success).toBe(false);
+  });
+
   it("refuses other ports, bad sender entries and out-of-range intervals", () => {
     expect(invoiceInboxConfigSchema.safeParse({ port: 25 }).success).toBe(false);
     expect(invoiceInboxConfigSchema.safeParse({ port: 143, secure: false }).success).toBe(true);
