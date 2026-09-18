@@ -1,8 +1,11 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
+import fs from "fs";
+import path from "path";
 import MailComposer from "nodemailer/lib/mail-composer";
 import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { expenses } from "../../shared/schema";
+import { getUploadsDir } from "../../shared/paths";
 import { DEFAULT_INVOICE_INBOX_CONFIG, type InboxParsedInvoice, type InvoiceInboxConfig } from "../../shared/invoice-inbox";
 import { importInvoiceMail, setInvoiceScanner } from "../services/invoice-inbox/importer";
 import { inboxStorage } from "../services/invoice-inbox/inbox-storage";
@@ -62,6 +65,9 @@ describe("invoice inbox importer", () => {
     scanned = invoice();
     scannerCalls = [];
     setInvoiceScanner(async (filePath, mimeType) => { scannerCalls.push({ filePath, mimeType }); return scanned; });
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("books a trusted invoice with one fleet plate: grouped expenses, stored attachment, notification", async () => {
@@ -175,5 +181,50 @@ describe("invoice inbox importer", () => {
     await importInvoiceMail({ raw: await buildMail({ attachments: [{ filename: "bon.JPG", content: photo, contentType: "application/octet-stream" }] }), config, createdBy: INBOX_TEST_ACTOR });
     expect(scannerCalls[0].mimeType).toBe("image/jpeg");
     expect((await inboxStorage.getByAttachmentHash(sha256(photo)))?.attachmentContentType).toBe("image/jpeg");
+  });
+
+  it("finishes a booking whose final status update failed, when the mail is retried", async () => {
+    const attachment = pdf("onderbroken");
+    const raw = await buildMail({ attachments: [{ filename: "f.pdf", content: attachment, contentType: "application/pdf" }] });
+    const hash = sha256(attachment);
+
+    vi.spyOn(inboxStorage, "update").mockRejectedValueOnce(new Error("database weg"));
+    await expect(importInvoiceMail({ raw, config, createdBy: INBOX_TEST_ACTOR })).rejects.toThrow("database weg");
+
+    const stuck = (await inboxStorage.getByAttachmentHash(hash))!;
+    expect(stuck).toMatchObject({ status: "review", reviewReason: null, expenseIds: [] });
+    const boekt = await db.select().from(expenses).where(eq(expenses.inboxItemId, stuck.id));
+    expect(boekt).toHaveLength(2);
+
+    const callsAfterFirst = scannerCalls.length;
+    const result = await importInvoiceMail({ raw, config, createdBy: INBOX_TEST_ACTOR });
+    expect(result).toEqual({ attachments: 1, booked: 1, review: 0, skipped: 0 });
+    expect(scannerCalls.length).toBe(callsAfterFirst);
+
+    const healed = await inboxStorage.getByAttachmentHash(hash);
+    expect(healed).toMatchObject({ status: "booked" });
+    expect(healed!.expenseIds.slice().sort((a, b) => a - b)).toEqual(boekt.map((e) => e.id).sort((a, b) => a - b));
+    const after = await db.select().from(expenses).where(eq(expenses.inboxItemId, stuck.id));
+    expect(after).toHaveLength(2);
+  });
+
+  it("gives an interrupted item without expenses a reason", async () => {
+    const attachment = pdf("gestrand");
+    await inboxStorage.create({ attachmentHash: sha256(attachment), status: "review", reviewReason: null, createdBy: INBOX_TEST_ACTOR });
+    const result = await importInvoiceMail({ raw: await buildMail({ attachments: [{ filename: "f.pdf", content: attachment, contentType: "application/pdf" }] }), config, createdBy: INBOX_TEST_ACTOR });
+    expect(result).toEqual({ attachments: 1, booked: 0, review: 1, skipped: 0 });
+    const item = await inboxStorage.getByAttachmentHash(sha256(attachment));
+    expect(item?.reviewReason).toBe("parse_failed");
+    expect(item?.errorMessage).toContain("onderbroken");
+  });
+
+  it("removes the stored file when the item cannot be written", async () => {
+    const dir = path.join(getUploadsDir(), "invoice-inbox");
+    const before = fs.existsSync(dir) ? fs.readdirSync(dir).length : 0;
+    vi.spyOn(inboxStorage, "create").mockRejectedValueOnce(new Error("database weg"));
+    const attachment = pdf("weggegooid");
+    await expect(importInvoiceMail({ raw: await buildMail({ attachments: [{ filename: "f.pdf", content: attachment, contentType: "application/pdf" }] }), config, createdBy: INBOX_TEST_ACTOR })).rejects.toThrow("database weg");
+    const after = fs.existsSync(dir) ? fs.readdirSync(dir).length : 0;
+    expect(after).toBe(before);
   });
 });

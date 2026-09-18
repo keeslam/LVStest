@@ -64,6 +64,14 @@ describe("invoice inbox storage", () => {
     expect(await inboxStorage.findVehiclesByPlates([])).toEqual([]);
   });
 
+  it("lists the expense ids booked from an item, in order; none for an item without expenses", async () => {
+    const item = await inboxStorage.create({ attachmentHash: `hash-${unique()}`, status: "review", createdBy: INBOX_TEST_ACTOR });
+    expect(await inboxStorage.expenseIdsFor(item.id)).toEqual([]);
+    const [e1] = await db.insert(expenses).values({ vehicleId, category: "Maintenance", amount: "10.00", date: "2026-09-18", inboxItemId: item.id }).returning();
+    const [e2] = await db.insert(expenses).values({ vehicleId, category: "Brakes", amount: "20.00", date: "2026-09-18", inboxItemId: item.id }).returning();
+    expect(await inboxStorage.expenseIdsFor(item.id)).toEqual([e1.id, e2.id]);
+  });
+
   it("has the named foreign key from expenses.inbox_item_id to invoice_inbox_items, which sets it null when the item is deleted", async () => {
     const constraint = await db.execute(sql`SELECT 1 FROM pg_constraint WHERE conname = 'expenses_inbox_item_id_invoice_inbox_items_id_fk'`);
     expect(constraint.rows).toHaveLength(1);

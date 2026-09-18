@@ -1,6 +1,6 @@
 import { and, count, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { db } from "../../db";
-import { invoiceInboxItems, vehicles, type InvoiceInboxItem } from "../../../shared/schema";
+import { expenses, invoiceInboxItems, vehicles, type InvoiceInboxItem } from "../../../shared/schema";
 import type { InboxStatus } from "../../../shared/invoice-inbox";
 
 export type InboxItemWithVehicle = InvoiceInboxItem & { vehiclePlate: string | null };
@@ -45,6 +45,11 @@ export const inboxStorage = {
   async update(id: number, patch: Partial<typeof invoiceInboxItems.$inferInsert>): Promise<InvoiceInboxItem | undefined> {
     const [row] = await db.update(invoiceInboxItems).set(patch).where(eq(invoiceInboxItems.id, id)).returning();
     return row;
+  },
+  /** Expenses already booked from this item, in creation order. */
+  async expenseIdsFor(itemId: number): Promise<number[]> {
+    const rows = await db.select({ id: expenses.id }).from(expenses).where(eq(expenses.inboxItemId, itemId)).orderBy(expenses.id);
+    return rows.map((r) => r.id);
   },
   /** Plates are stored with and without dashes across the fleet, so both sides are normalised in SQL. */
   async findVehiclesByPlates(plates: string[]): Promise<Array<{ id: number; licensePlate: string; brand: string; model: string }>> {

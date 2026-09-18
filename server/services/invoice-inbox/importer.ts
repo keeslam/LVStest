@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { simpleParser, type ParsedMail } from "mailparser";
 import { getUploadsDir } from "../../../shared/paths";
+import type { InvoiceInboxItem } from "../../../shared/schema";
 import {
   REVIEW_REASON_LABELS_NL, isAllowedSender, normalizeSender,
   type InboxParsedInvoice, type InvoiceInboxConfig, type ReviewReason,
@@ -90,6 +91,22 @@ function storeAttachment(attachment: UsableAttachment, hash: string): { absolute
   return { absolutePath, relativePath: getRelativePath(absolutePath) };
 }
 
+/**
+ * The file is already on disk by the time this is called. If the row cannot
+ * be written, the file must not linger as an orphan — remove it and rethrow
+ * so the mail is retried.
+ */
+async function createItemOrDiscardFile(
+  data: Parameters<typeof inboxStorage.create>[0], absolutePath: string,
+): Promise<InvoiceInboxItem> {
+  try {
+    return await inboxStorage.create(data);
+  } catch (error) {
+    fs.rmSync(absolutePath, { force: true });
+    throw error;
+  }
+}
+
 const amsterdamToday = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Amsterdam" }).format(new Date());
 const euro = (amount: number) => new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(amount);
 
@@ -101,11 +118,40 @@ async function notifyReview(reason: ReviewReason, vendor: string | undefined, me
   });
 }
 
+/**
+ * A retry of an attachment whose bookkeeping was cut short: `bookInvoiceAsExpenses`
+ * ran (so the expenses may already exist) but the final `update()` that marks
+ * the item "booked" never landed. Only an item stuck exactly there — "review"
+ * with no reason, every deliberately queued item has one — is healed here.
+ */
+async function finishInterruptedBooking(item: InvoiceInboxItem): Promise<"booked" | "review" | null> {
+  if (item.status !== "review" || item.reviewReason !== null) return null;
+
+  const expenseIds = await inboxStorage.expenseIdsFor(item.id);
+  if (expenseIds.length === 0) {
+    await inboxStorage.update(item.id, {
+      reviewReason: "parse_failed",
+      errorMessage: "Het boeken is onderbroken voordat er kosten waren aangemaakt. Controleer de factuur en boek hem hier.",
+    });
+    return "review";
+  }
+
+  await inboxStorage.update(item.id, {
+    status: "booked", expenseIds, processedAt: new Date(), updatedBy: item.createdBy,
+  });
+  await notifyInvoiceInbox({
+    title: `Factuur van ${item.parsed?.vendor?.trim() || item.fromAddress || "onbekende afzender"} geboekt`,
+    description: `${expenseIds.length} kostenregel(s) (factuur ${item.parsed?.invoiceNumber || "zonder nummer"})`,
+  });
+  return "booked";
+}
+
 async function importAttachment(
   attachment: UsableAttachment, meta: MailMeta, senderAllowed: boolean, config: InvoiceInboxConfig, createdBy: string,
 ): Promise<"booked" | "review" | "skipped"> {
   const attachmentHash = sha256(attachment.content);
-  if (await inboxStorage.getByAttachmentHash(attachmentHash)) return "skipped";
+  const existing = await inboxStorage.getByAttachmentHash(attachmentHash);
+  if (existing) return (await finishInterruptedBooking(existing)) ?? "skipped";
 
   const stored = storeAttachment(attachment, attachmentHash);
   const base = {
@@ -123,7 +169,7 @@ async function importAttachment(
     scanError = (error as Error).message;
   }
   if (scanError || !parsed) {
-    await inboxStorage.create({ ...base, parsed, status: "review", reviewReason: "parse_failed", errorMessage: (scanError ?? "Uitlezen mislukt").slice(0, 2000) });
+    await createItemOrDiscardFile({ ...base, parsed, status: "review", reviewReason: "parse_failed", errorMessage: (scanError ?? "Uitlezen mislukt").slice(0, 2000) }, stored.absolutePath);
     await notifyReview("parse_failed", parsed?.vendor, meta);
     return "review";
   }
@@ -139,11 +185,11 @@ async function importAttachment(
 
   // Written as "review" first: the expenses need the item id, and an item that
   // is never upgraded to "booked" is still visible to staff.
-  const item = await inboxStorage.create({
+  const item = await createItemOrDiscardFile({
     ...base, invoiceHash, parsed, status: "review",
     reviewReason: decision.action === "review" ? decision.reason : null,
     vehicleId: fleetMatches.length === 1 ? fleetMatches[0].id : null,
-  });
+  }, stored.absolutePath);
   if (decision.action === "review") {
     await notifyReview(decision.reason, parsed.vendor, meta);
     return "review";
