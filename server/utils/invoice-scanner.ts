@@ -25,10 +25,16 @@ export interface ParsedInvoice {
   invoiceDate: string;
   currency: string;
   totalAmount: number;
+  /** Excl. VAT, when the invoice states it. */
+  subtotalAmount?: number;
+  /** Total VAT, when the invoice states it. */
+  vatAmount?: number;
   lineItems: ParsedInvoiceLineItem[];
   vehicleInfo?: {
     licensePlate?: string;
     chassisNumber?: string;
+    /** Every license plate that appears anywhere on the invoice. */
+    licensePlates?: string[];
   };
 }
 
@@ -180,7 +186,7 @@ const GEMINI_MODELS = [
 /**
  * Process invoice with Google Gemini Vision API using model fallback strategy
  */
-export async function processInvoiceWithAI(pdfPath: string): Promise<ParsedInvoice> {
+export async function processInvoiceWithAI(pdfPath: string, mimeType: string = "application/pdf"): Promise<ParsedInvoice> {
   const modelRetryDelay = 500; // 500ms delay between model attempts (optimized for speed)
   const startTime = Date.now();
   
@@ -213,8 +219,10 @@ You are an expert invoice processor for a car rental company. Analyze this PDF i
   "vendor": "Company name",
   "invoiceNumber": "Invoice/order number",
   "invoiceDate": "YYYY-MM-DD format",
-  "currency": "EUR or other currency code", 
+  "currency": "EUR or other currency code",
   "totalAmount": 123.45,
+  "subtotalAmount": 102.02,
+  "vatAmount": 21.43,
   "lineItems": [
     {
       "description": "Service or item description",
@@ -224,7 +232,8 @@ You are an expert invoice processor for a car rental company. Analyze this PDF i
   ],
   "vehicleInfo": {
     "licensePlate": "License plate if mentioned (Dutch format like XX-123-YZ)",
-    "chassisNumber": "VIN/chassis number if mentioned"
+    "chassisNumber": "VIN/chassis number if mentioned",
+    "licensePlates": ["EVERY license plate that appears anywhere on the invoice, each one once"]
   }
 }
 
@@ -236,6 +245,9 @@ IMPORTANT INSTRUCTIONS:
 - Be precise with dates - convert to YYYY-MM-DD format
 - Categorize each line item appropriately based on automotive expense categories
 - If unsure about a category, use "Other"
+- totalAmount is the amount to pay INCLUDING VAT (btw); subtotalAmount is the amount EXCLUDING VAT; vatAmount is the VAT itself. Leave subtotalAmount and vatAmount out when the invoice does not state them
+- Line item amounts are the amounts as printed on the line (usually excluding VAT)
+- licensePlates lists every license plate on the invoice, also when it covers several vehicles; licensePlate is the main one
 
 Please respond ONLY with the JSON object, no additional text.
 `;
@@ -253,6 +265,8 @@ Please respond ONLY with the JSON object, no additional text.
             invoiceDate: { type: "string" },
             currency: { type: "string" },
             totalAmount: { type: "number" },
+            subtotalAmount: { type: "number" },
+            vatAmount: { type: "number" },
             lineItems: {
               type: "array",
               items: {
@@ -270,7 +284,8 @@ Please respond ONLY with the JSON object, no additional text.
               type: "object",
               properties: {
                 licensePlate: { type: "string" },
-                chassisNumber: { type: "string" }
+                chassisNumber: { type: "string" },
+                licensePlates: { type: "array", items: { type: "string" } }
               }
             }
           },
@@ -281,7 +296,7 @@ Please respond ONLY with the JSON object, no additional text.
         {
           inlineData: {
             data: base64Pdf,
-            mimeType: "application/pdf",
+            mimeType,
           },
         },
         prompt
@@ -295,12 +310,21 @@ Please respond ONLY with the JSON object, no additional text.
     console.log(`📊 Extracted: ${result.lineItems?.length || 0} line items from ${result.vendor || 'Unknown Vendor'}`);
     
     // Validate and clean up the result
+    const optionalAmount = (value: unknown): number | undefined => {
+      const n = typeof value === "string" ? parseFloat(value.replace(/[€\s]/g, "").replace(",", ".")) : Number(value);
+      return Number.isFinite(n) && n > 0 ? n : undefined;
+    };
+    const listedPlates: string[] = Array.isArray(result.vehicleInfo?.licensePlates)
+      ? result.vehicleInfo.licensePlates.filter((p: unknown): p is string => typeof p === "string" && p.trim() !== "")
+      : [];
     const parsedInvoice: ParsedInvoice = {
       vendor: result.vendor || 'Unknown Vendor',
       invoiceNumber: result.invoiceNumber || '',
       invoiceDate: result.invoiceDate || new Date().toISOString().split('T')[0],
       currency: result.currency || 'EUR',
       totalAmount: Number(result.totalAmount) || 0,
+      subtotalAmount: optionalAmount(result.subtotalAmount),
+      vatAmount: optionalAmount(result.vatAmount),
       lineItems: (result.lineItems || []).map((item: any) => {
         // Parse amount more carefully, handling different formats
         let amount = 0;
@@ -311,7 +335,7 @@ Please respond ONLY with the JSON object, no additional text.
           const cleanAmount = item.amount.replace(/[€$£,\s]/g, '').replace(',', '.');
           amount = parseFloat(cleanAmount) || 0;
         }
-        
+
         return {
           description: item.description || '',
           amount: Math.abs(amount), // Ensure positive amounts
@@ -321,7 +345,8 @@ Please respond ONLY with the JSON object, no additional text.
       }).filter((item: any) => item.amount > 0), // Filter out zero amounts
       vehicleInfo: result.vehicleInfo ? {
         licensePlate: result.vehicleInfo.licensePlate || undefined,
-        chassisNumber: result.vehicleInfo.chassisNumber || undefined
+        chassisNumber: result.vehicleInfo.chassisNumber || undefined,
+        licensePlates: listedPlates.length ? listedPlates : undefined
       } : undefined
     };
     
