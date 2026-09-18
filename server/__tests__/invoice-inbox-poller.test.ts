@@ -1,0 +1,148 @@
+import { describe, it, expect, beforeEach, afterAll, vi } from "vitest";
+
+const { importInvoiceMail, notifyInvoiceInbox, recordOversizeMail } = vi.hoisted(() => ({
+  importInvoiceMail: vi.fn(),
+  notifyInvoiceInbox: vi.fn(async () => {}),
+  recordOversizeMail: vi.fn(),
+}));
+vi.mock("../services/invoice-inbox/importer", () => ({
+  importInvoiceMail, recordOversizeMail, MAX_MAIL_BYTES: 30 * 1024 * 1024,
+}));
+vi.mock("../services/invoice-inbox/notify", () => ({ notifyInvoiceInbox }));
+
+import { DEFAULT_INVOICE_INBOX_CONFIG, type InvoiceInboxConfig } from "../../shared/invoice-inbox";
+import type { InvoiceImapClient } from "../services/invoice-inbox/imap-client";
+import {
+  runInvoiceInboxImport, setInvoiceImapClient, getInvoiceInboxRunState, cronExpressionFor,
+  resetInvoiceInboxPollerForTests, MAX_MAILS_PER_RUN,
+} from "../services/invoice-inbox/poller";
+
+const config: InvoiceInboxConfig = { ...DEFAULT_INVOICE_INBOX_CONFIG, enabled: true, host: "imap.example.test", username: "u", password: "p" };
+
+function fakeMailbox(uids: number[], options: { failConnect?: boolean; sizes?: Record<number, number> } = {}) {
+  const processed: number[] = [];
+  const fetched: number[] = [];
+  let sessions = 0;
+  const client: InvoiceImapClient = {
+    async withSession(_config, fn) {
+      if (options.failConnect) throw new Error("connect ECONNREFUSED");
+      sessions += 1;
+      return fn({
+        async listUnseen() {
+          return uids.filter((uid) => !processed.includes(uid)).map((uid) => ({
+            uid, messageId: `<${uid}@test>`, from: "a@b.nl", subject: `Factuur ${uid}`,
+            size: options.sizes?.[uid] ?? 1000,
+          }));
+        },
+        async fetchRaw(uid) { fetched.push(uid); return Buffer.from(`raw-${uid}`); },
+        async markProcessed(uid) { processed.push(uid); },
+      });
+    },
+  };
+  return { client, processed, fetched, sessions: () => sessions };
+}
+
+describe("invoice inbox poller", () => {
+  beforeEach(() => {
+    importInvoiceMail.mockReset();
+    notifyInvoiceInbox.mockClear();
+    recordOversizeMail.mockReset();
+    resetInvoiceInboxPollerForTests();
+  });
+  afterAll(() => setInvoiceImapClient(null));
+
+  it("imports every unseen mail and adds up what the importer reports", async () => {
+    const mailbox = fakeMailbox([1, 2]);
+    setInvoiceImapClient(mailbox.client);
+    importInvoiceMail
+      .mockResolvedValueOnce({ attachments: 1, booked: 1, review: 0, skipped: 0 })
+      .mockResolvedValueOnce({ attachments: 2, booked: 0, review: 1, skipped: 1 });
+    const summary = await runInvoiceInboxImport("manual", "kees", config);
+    expect(summary).toMatchObject({ trigger: "manual", mails: 2, attachments: 3, booked: 1, review: 1, skipped: 1, failed: 0, errors: [] });
+    expect(importInvoiceMail.mock.calls[0][0]).toMatchObject({ createdBy: "kees", config });
+    expect(importInvoiceMail.mock.calls[0][0].raw.toString()).toBe("raw-1");
+    expect(mailbox.processed).toEqual([1, 2]);
+    expect(getInvoiceInboxRunState().lastRun).toEqual(summary);
+  });
+
+  it("leaves a mail whose import threw in the inbox for the next run, and carries on with the rest", async () => {
+    const mailbox = fakeMailbox([1, 2, 3]);
+    setInvoiceImapClient(mailbox.client);
+    importInvoiceMail
+      .mockResolvedValueOnce({ attachments: 1, booked: 1, review: 0, skipped: 0 })
+      .mockRejectedValueOnce(new Error("database weg"))
+      .mockResolvedValueOnce({ attachments: 1, booked: 0, review: 1, skipped: 0 });
+    const summary = await runInvoiceInboxImport("scheduler", "scheduler", config);
+    expect(summary).toMatchObject({ mails: 3, booked: 1, review: 1, failed: 1 });
+    expect(summary.errors).toEqual(["Factuur 2: database weg"]);
+    expect(mailbox.processed).toEqual([1, 3]);
+  });
+
+  it("shares one run between overlapping calls", async () => {
+    const mailbox = fakeMailbox([1]);
+    setInvoiceImapClient(mailbox.client);
+    importInvoiceMail.mockImplementation(async () => { await new Promise((r) => setTimeout(r, 30)); return { attachments: 1, booked: 1, review: 0, skipped: 0 }; });
+    const [a, b] = await Promise.all([runInvoiceInboxImport("manual", "a", config), runInvoiceInboxImport("manual", "b", config)]);
+    expect(a).toBe(b);
+    expect(mailbox.sessions()).toBe(1);
+    expect(importInvoiceMail).toHaveBeenCalledTimes(1);
+    expect(getInvoiceInboxRunState().running).toBe(false);
+  });
+
+  it("handles at most MAX_MAILS_PER_RUN mails in one run", async () => {
+    const mailbox = fakeMailbox(Array.from({ length: MAX_MAILS_PER_RUN + 5 }, (_, i) => i + 1));
+    setInvoiceImapClient(mailbox.client);
+    importInvoiceMail.mockResolvedValue({ attachments: 1, booked: 1, review: 0, skipped: 0 });
+    const summary = await runInvoiceInboxImport("scheduler", "scheduler", config);
+    expect(summary.mails).toBe(MAX_MAILS_PER_RUN);
+    expect(mailbox.processed).toHaveLength(MAX_MAILS_PER_RUN);
+  });
+
+  it("reports a connection error in the summary and warns staff once, after three failures in a row", async () => {
+    setInvoiceImapClient(fakeMailbox([], { failConnect: true }).client);
+    for (let i = 0; i < 2; i += 1) {
+      const summary = await runInvoiceInboxImport("scheduler", "scheduler", config);
+      expect(summary.errors).toEqual(["connect ECONNREFUSED"]);
+    }
+    expect(notifyInvoiceInbox).not.toHaveBeenCalled();
+    await runInvoiceInboxImport("scheduler", "scheduler", config);
+    await runInvoiceInboxImport("scheduler", "scheduler", config);
+    expect(notifyInvoiceInbox).toHaveBeenCalledTimes(1);
+    expect(notifyInvoiceInbox.mock.calls[0][0].title).toBe("Postvak facturen onbereikbaar");
+
+    // A good run resets the count: three new failures warn again.
+    setInvoiceImapClient(fakeMailbox([]).client);
+    await runInvoiceInboxImport("scheduler", "scheduler", config);
+    setInvoiceImapClient(fakeMailbox([], { failConnect: true }).client);
+    for (let i = 0; i < 3; i += 1) await runInvoiceInboxImport("scheduler", "scheduler", config);
+    expect(notifyInvoiceInbox).toHaveBeenCalledTimes(2);
+  });
+
+  it("refuses to run without a host", async () => {
+    setInvoiceImapClient(fakeMailbox([1]).client);
+    const summary = await runInvoiceInboxImport("manual", "kees", { ...config, host: "" });
+    expect(summary.errors).toEqual(["IMAP-host is niet ingesteld"]);
+    expect(importInvoiceMail).not.toHaveBeenCalled();
+  });
+
+  it("does not download a mail above the size cap: records it, marks it processed", async () => {
+    const mailbox = fakeMailbox([1, 2], { sizes: { 2: 40 * 1024 * 1024 } });
+    setInvoiceImapClient(mailbox.client);
+    importInvoiceMail.mockResolvedValueOnce({ attachments: 1, booked: 1, review: 0, skipped: 0 });
+    recordOversizeMail.mockResolvedValueOnce("review");
+    const summary = await runInvoiceInboxImport("manual", "kees", config);
+    expect(summary).toMatchObject({ mails: 2, booked: 1, review: 1 });
+    expect(mailbox.fetched).toEqual([1]);
+    expect(importInvoiceMail).toHaveBeenCalledTimes(1);
+    expect(mailbox.processed).toEqual([1, 2]);
+  });
+
+  it("turns the interval into a cron expression, clamped to 5..1440 minutes", () => {
+    expect(cronExpressionFor(15)).toBe("*/15 * * * *");
+    expect(cronExpressionFor(1)).toBe("*/5 * * * *");
+    expect(cronExpressionFor(60)).toBe("0 */1 * * *");
+    expect(cronExpressionFor(180)).toBe("0 */3 * * *");
+    expect(cronExpressionFor(1440)).toBe("0 0 * * *");
+    expect(cronExpressionFor(99999)).toBe("0 0 * * *");
+  });
+});

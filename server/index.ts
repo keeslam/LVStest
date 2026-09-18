@@ -15,6 +15,7 @@ import { ensurePortalEmailTemplates } from "./services/portal-mail";
 import { ensureFiscalDraftVersion } from "./services/fiscal/seed";
 import { backfillUsagePeriods, reconcileUsagePeriods } from "./services/fiscal/usage-periods";
 import { startCjibScheduler } from "./services/cjib/poller";
+import { startInvoiceInboxScheduler, stopInvoiceInboxScheduler } from "./services/invoice-inbox/poller";
 import { registerPortalRoutes } from "./routes/portal";
 import { getUploadsDir as getPortalUploadsDir } from "../shared/paths";
 import { mountUploads } from "./middleware/uploads-mount";
@@ -107,6 +108,7 @@ async function gracefulShutdown(signal: string) {
     // Stop service-due scan scheduler
     if (portalAlertScheduler) portalAlertScheduler.stop();
     if (fiscalScheduler) fiscalScheduler.stop();
+    stopInvoiceInboxScheduler();
     if (serviceDueScheduler) {
       serviceDueScheduler.stop();
       console.log('✅ Service-due scheduler stopped');
@@ -518,6 +520,7 @@ portalAlertScheduler.start();
 
 // Seed the portal e-mail templates once (staff edit them afterwards).
 startCjibScheduler().catch((e) => console.error("CJIB scheduler failed to start:", e));
+startInvoiceInboxScheduler().catch((e) => console.error("Invoice inbox scheduler failed to start:", e));
   ensurePortalEmailTemplates().catch((e) => console.error("portal e-mail templates:", e));
   // Fiscal mobility check: the first rule version as a draft, and the usage periods of existing reservations (docs/fiscaal).
   ensureFiscalDraftVersion()

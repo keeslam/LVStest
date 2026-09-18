@@ -7,7 +7,7 @@ import { db } from "../db";
 import { expenses } from "../../shared/schema";
 import { getUploadsDir } from "../../shared/paths";
 import { DEFAULT_INVOICE_INBOX_CONFIG, type InboxParsedInvoice, type InvoiceInboxConfig } from "../../shared/invoice-inbox";
-import { importInvoiceMail, setInvoiceScanner } from "../services/invoice-inbox/importer";
+import { importInvoiceMail, setInvoiceScanner, recordOversizeMail } from "../services/invoice-inbox/importer";
 import { inboxStorage } from "../services/invoice-inbox/inbox-storage";
 import { sha256 } from "../services/invoice-inbox/hash";
 import { resolveDocumentFilePath } from "../services/document-paths";
@@ -226,5 +226,19 @@ describe("invoice inbox importer", () => {
     await expect(importInvoiceMail({ raw: await buildMail({ attachments: [{ filename: "f.pdf", content: attachment, contentType: "application/pdf" }] }), config, createdBy: INBOX_TEST_ACTOR })).rejects.toThrow("database weg");
     const after = fs.existsSync(dir) ? fs.readdirSync(dir).length : 0;
     expect(after).toBe(before);
+  });
+
+  it("records an oversize mail once, with a reason and a message", async () => {
+    const ref = {
+      uid: 1, messageId: `<${unique()}@garage-test.invalid>`,
+      from: "Garage <facturen@garage-test.invalid>", subject: `${TEST_PREFIX}Groot`, size: 40 * 1024 * 1024,
+    };
+    const outcome = await recordOversizeMail(ref, INBOX_TEST_ACTOR);
+    expect(outcome).toBe("review");
+    const item = (await inboxStorage.getByAttachmentHash(sha256(`mail:${ref.messageId}`)))!;
+    expect(item).toMatchObject({ reviewReason: "no_attachment", fromAddress: "facturen@garage-test.invalid", attachmentPath: null });
+    expect(item.errorMessage).toContain("30 MB");
+
+    expect(await recordOversizeMail(ref, INBOX_TEST_ACTOR)).toBe("skipped");
   });
 });

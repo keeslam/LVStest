@@ -29,6 +29,8 @@ export interface ImportMailResult { attachments: number; booked: number; review:
 
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
 const MAX_ATTACHMENTS_PER_MAIL = 10;
+/** The mail parser buffers a whole mail in memory before any attachment cap applies. */
+export const MAX_MAIL_BYTES = 30 * 1024 * 1024;
 /** Smaller images are signatures and logos, not invoices. */
 const MIN_IMAGE_BYTES = 20 * 1024;
 
@@ -116,6 +118,32 @@ async function notifyReview(reason: ReviewReason, vendor: string | undefined, me
     title: `Factuur van ${who} wacht op controle`,
     description: `Reden: ${REVIEW_REASON_LABELS_NL[reason]}. Onderwerp: ${meta.subject ?? "(geen onderwerp)"}`,
   });
+}
+
+/**
+ * A mail whose declared size exceeds MAX_MAIL_BYTES is never downloaded — the
+ * poller calls this instead of fetching and importing it. Recorded once, by
+ * the same "mail:<message id>" hash scheme as a mail without a usable
+ * attachment, so a mail that keeps coming back oversize is not queued twice.
+ */
+export async function recordOversizeMail(
+  ref: { uid: number; messageId: string | null; from: string | null; subject: string | null; size: number | null },
+  createdBy: string,
+): Promise<"review" | "skipped"> {
+  const attachmentHash = sha256(`mail:${ref.messageId ?? `uid:${ref.uid}`}`);
+  if (await inboxStorage.getByAttachmentHash(attachmentHash)) return "skipped";
+
+  const meta: MailMeta = {
+    messageId: ref.messageId, fromAddress: normalizeSender(ref.from ?? "") || null,
+    subject: (ref.subject ?? "").slice(0, 500) || null, mailDate: null,
+  };
+  await inboxStorage.create({
+    ...meta, attachmentHash, status: "review", reviewReason: "no_attachment",
+    errorMessage: "De mail is groter dan 30 MB en is niet opgehaald. Vraag de factuur opnieuw op of boek hem met de hand.",
+    createdBy,
+  });
+  await notifyReview("no_attachment", undefined, meta);
+  return "review";
 }
 
 /**
