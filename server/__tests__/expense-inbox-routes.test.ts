@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
 import request from "supertest";
 import fs from "fs";
 import path from "path";
@@ -11,6 +11,7 @@ import { setInvoiceImapClient, resetInvoiceInboxPollerForTests } from "../servic
 import { setInvoiceScanner } from "../services/invoice-inbox/importer";
 import type { InvoiceImapClient } from "../services/invoice-inbox/imap-client";
 import { OutboundBlockedError, OUTBOUND_BLOCKED_MESSAGE } from "../utils/security/outboundGuard";
+import { AuditLogger } from "../utils/security/auditLogger";
 import { storage } from "../storage";
 import { db } from "../db";
 import { getUploadsDir } from "../../shared/paths";
@@ -195,6 +196,7 @@ describe("expense inbox routes", () => {
       vehicleId, category: "Maintenance", amount: "100", date: "2026-09-10", inboxItemId: item.id,
     }).returning();
 
+    const audit = vi.spyOn(AuditLogger, "logFromRequest");
     const body = {
       vehicleId, invoice: { vendor: VENDOR, invoiceNumber: "L-2", invoiceDate: "2026-09-10" },
       lineItems: [{ description: "Beurt", amount: 80, category: "Maintenance" }, { description: "Olie", amount: 20, category: "Maintenance" }],
@@ -203,6 +205,8 @@ describe("expense inbox routes", () => {
     expect(res.status).toBe(409);
     expect(res.body.message).toBe("Deze factuur was al geboekt; de boeking is nu afgerond.");
     expect(res.body.item).toMatchObject({ status: "booked", expenseIds: [existingExpense.id] });
+    expect(audit).toHaveBeenCalledWith(expect.anything(), "expense.inbox.book.healed", "invoice_inbox_item", item.id, { expenseIds: [existingExpense.id] });
+    audit.mockRestore();
 
     const rows = await db.select().from(expenses).where(eq(expenses.inboxItemId, item.id));
     expect(rows).toHaveLength(1);
