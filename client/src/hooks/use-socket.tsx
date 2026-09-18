@@ -81,6 +81,15 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
         return;
       }
 
+      // An invoice arrived by e-mail (server/services/invoice-inbox/notify.ts):
+      // say so right away and refresh the costs, the inbox card and the bell.
+      if (entityType === 'invoice-inbox') {
+        toast({ title: data?.title ?? 'Ontvangen facturen', description: data?.description });
+        queryClient.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith('/api/expenses') });
+        queryClient.invalidateQueries({ queryKey: ['/api/custom-notifications/unread'] });
+        return;
+      }
+
       // Invalidate React Query cache for real-time updates
       // This will automatically refetch active queries and update the UI
       invalidateQueries(entityType, action, data);

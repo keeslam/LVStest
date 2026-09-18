@@ -14,6 +14,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { InvoiceScanner } from "@/components/invoice-scanner";
+import { InvoiceInboxCard } from "@/components/expenses/invoice-inbox-card";
 import {
   Table,
   TableBody,
@@ -226,6 +227,8 @@ export default function ExpensesIndex() {
         </div>
       </div>
       
+      <InvoiceInboxCard />
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="md:col-span-3">
           <CardHeader>
