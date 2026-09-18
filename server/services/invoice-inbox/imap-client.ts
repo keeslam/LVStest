@@ -55,31 +55,51 @@ function openSession(client: ImapFlow, config: InvoiceInboxConfig): InvoiceImapS
   };
 }
 
+/**
+ * The session lifecycle, with the real network client swapped out: this is
+ * what makes the connect-failure path testable without a mail server (this
+ * file otherwise has no unit test, like cjib/ftps-client.ts).
+ */
+export async function runImapSession<T>(
+  config: InvoiceInboxConfig,
+  fn: (session: InvoiceImapSession) => Promise<T>,
+  createClient: (config: InvoiceInboxConfig) => ImapFlow,
+): Promise<T> {
+  if (!config.host) throw new Error("IMAP-host is niet ingesteld");
+  // Every connection — the poller's and the admin's "test connection" — passes
+  // the port pair and the private-range check first (cf. BUG-071).
+  await assertAllowedImapTarget(config.host, config.port);
+  const client = createClient(config);
+  // An ImapFlow instance is an EventEmitter: an unhandled "error" event would
+  // take the whole server process down.
+  client.on("error", (error: Error) => console.error("IMAP connection error:", error.message));
+  try {
+    await client.connect();
+  } catch (error) {
+    // A rejected login leaves the socket open inside imapflow; without this
+    // every poll with a wrong password would leak one connection.
+    client.close();
+    throw error;
+  }
+  try {
+    const lock = await client.getMailboxLock(config.inboxFolder || "INBOX");
+    try {
+      return await fn(openSession(client, config));
+    } finally {
+      lock.release();
+    }
+  } finally {
+    try { await client.logout(); } catch { client.close(); }
+  }
+}
+
 export const imapClient: InvoiceImapClient = {
-  async withSession(config, fn) {
-    if (!config.host) throw new Error("IMAP-host is niet ingesteld");
-    // Every connection — the poller's and the admin's "test connection" — passes
-    // the port pair and the private-range check first (cf. BUG-071).
-    await assertAllowedImapTarget(config.host, config.port);
-    const client = new ImapFlow({
-      host: config.host, port: config.port, secure: config.secure,
-      auth: { user: config.username, pass: config.password },
+  withSession(config, fn) {
+    return runImapSession(config, fn, (c) => new ImapFlow({
+      host: c.host, port: c.port, secure: c.secure,
+      auth: { user: c.username, pass: c.password },
       tls: { rejectUnauthorized: true },
       logger: false,
-    });
-    // An ImapFlow instance is an EventEmitter: an unhandled "error" event would
-    // take the whole server process down.
-    client.on("error", (error: Error) => console.error("IMAP connection error:", error.message));
-    await client.connect();
-    try {
-      const lock = await client.getMailboxLock(config.inboxFolder || "INBOX");
-      try {
-        return await fn(openSession(client, config));
-      } finally {
-        lock.release();
-      }
-    } finally {
-      try { await client.logout(); } catch { client.close(); }
-    }
+    }));
   },
 };

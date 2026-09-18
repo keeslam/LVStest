@@ -15,6 +15,7 @@ import { computeInvoiceHash, sha256 } from "./hash";
 import { extractPlates } from "./plates";
 import { decideInvoiceBooking } from "./decide";
 import { notifyInvoiceInbox } from "./notify";
+import type { InboxMessageRef } from "./imap-client";
 
 export type InvoiceScanner = (filePath: string, mimeType: string) => Promise<InboxParsedInvoice>;
 
@@ -126,10 +127,7 @@ async function notifyReview(reason: ReviewReason, vendor: string | undefined, me
  * the same "mail:<message id>" hash scheme as a mail without a usable
  * attachment, so a mail that keeps coming back oversize is not queued twice.
  */
-export async function recordOversizeMail(
-  ref: { uid: number; messageId: string | null; from: string | null; subject: string | null; size: number | null },
-  createdBy: string,
-): Promise<"review" | "skipped"> {
+export async function recordOversizeMail(ref: InboxMessageRef, createdBy: string): Promise<"review" | "skipped"> {
   const attachmentHash = sha256(`mail:${ref.messageId ?? `uid:${ref.uid}`}`);
   if (await inboxStorage.getByAttachmentHash(attachmentHash)) return "skipped";
 
