@@ -126,7 +126,7 @@ migrations are additive only):
 | mail_date | timestamptz | Date header, or **null** when the mail carries none — there is no fallback to received_at (which the row has anyway) |
 | attachment_name | text | original file name, sanitised |
 | attachment_path | text | relative path under `uploads/invoice-inbox/` |
-| attachment_hash | text unique | sha256 of the attachment bytes; an attachment is processed once. The UNIQUE index is created by `startup-migration.js` (`invoice_inbox_items_attachment_hash_uidx`) as well as by the table DDL, because the manifest that bootstraps a fresh database carries columns, not indexes |
+| attachment_hash | text unique | sha256 of the attachment bytes; an attachment is processed once. The table DDL carries the UNIQUE constraint. `startup-migration.js` adds its own unique index (`invoice_inbox_items_attachment_hash_uidx`) only when the column has no unique index yet — the case of a fresh database bootstrapped from the manifest, which carries columns, not indexes — and drops that named index again when the constraint-backed one exists, so there is always exactly one |
 | attachment_content_type | text | `application/pdf`, `image/jpeg`, `image/png` |
 | invoice_hash | text | sha256 of `vendor\|invoiceNumber\|invoiceDate\|totalAmount` (vendor reduced to letters and digits, number without whitespace and upper-cased, total as a string with two decimals); index. **Null when the invoice has no number**: vendor + date + total alone would call two fuel receipts of one day duplicates, so such invoices are never flagged |
 | parsed | jsonb | full `ParsedInvoice` from the scanner, plus `plates: string[]` found |
