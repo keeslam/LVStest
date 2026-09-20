@@ -72,8 +72,16 @@ export const DIALOGS: DialogEntry[] = [
   { page: "/delivery", opener: "button-route-optimization", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], source: "client/src/components/delivery/route-optimization-dialog.tsx", name: "routeoptimalisatie" },
 
   // --- /reports --------------------------------------------------------------
-  { page: "/reports", opener: "card-report-builder", anyOf: [P.VIEW_REPORTS, P.MANAGE_REPORTS], source: "client/src/pages/reports/report-builder.tsx", name: "rapportenbouwer" },
-  { page: "/reports", opener: "card-maintenance-costs", anyOf: [P.VIEW_REPORTS, P.MANAGE_REPORTS], source: "client/src/pages/reports/maintenance-costs.tsx", name: "onderhoudskosten" },
+  // Both dialog roots (the <Dialog open={reportBuilderOpen}>/<Dialog
+  // open={maintenanceCostsOpen}> wrapping <ReportBuilderPage />/
+  // <MaintenanceCostsPage /> as content) are inline in reports/index.tsx
+  // itself, around lines 2556 and 2578 — NOT in report-builder.tsx or
+  // maintenance-costs.tsx (fix round 1: those two were wrongly credited;
+  // maintenance-costs.tsx has no dialog root at all, and report-builder.tsx's
+  // own two other roots, save-report and results, were never opened by any
+  // test).
+  { page: "/reports", opener: "card-report-builder", anyOf: [P.VIEW_REPORTS, P.MANAGE_REPORTS], source: "client/src/pages/reports/index.tsx", name: "rapportenbouwer" },
+  { page: "/reports", opener: "card-maintenance-costs", anyOf: [P.VIEW_REPORTS, P.MANAGE_REPORTS], source: "client/src/pages/reports/index.tsx", name: "onderhoudskosten" },
 
   // --- /customers --------------------------------------------------------
   { page: "/customers", opener: "button-add-customer", anyOf: [P.VIEW_CUSTOMERS, P.MANAGE_CUSTOMERS], source: "client/src/components/customers/customer-add-dialog.tsx", name: "klant toevoegen" },
