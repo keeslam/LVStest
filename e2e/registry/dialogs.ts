@@ -97,5 +97,12 @@ export const DIALOGS: DialogEntry[] = [
   { page: "/expenses", opener: "button-invoice-inbox", anyOf: [P.MANAGE_EXPENSES], source: "client/src/components/expenses/invoice-inbox-dialog.tsx", name: "ontvangen facturen" },
 ];
 
-/** Dialogs that need a record in a certain state; a Layer B story opens them. */
-export const LAYER_B_SOURCES: string[] = [];
+/**
+ * Dialogs that need a record in a certain state; a Layer B story opens them.
+ * (Task 8: the desk story picks up and returns a seeded/newly-created
+ * reservation, and dismisses the "handover" dialog both hand back.)
+ */
+export const LAYER_B_SOURCES: string[] = [
+  "client/src/components/reservations/pickup-return-dialogs.tsx",
+  "client/src/components/reservations/handover-result-dialog.tsx",
+];
