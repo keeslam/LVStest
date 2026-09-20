@@ -24,7 +24,7 @@ describe("InvoiceInboxConfigForm", () => {
       const method = (init?.method ?? "GET").toUpperCase();
       calls.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
       if (url.endsWith("/api/expenses/inbox/status")) return json(status);
-      if (url.endsWith("/api/expenses/inbox/config/test")) return json({ ok: true, unseen: 2, folders: [
+      if (url.endsWith("/api/expenses/inbox/config/test")) return json({ ok: true, unseen: 2, diagnostics: { server: "Dovecot", exists: 5, searchUnseen: 0 }, folders: [
         { path: "INBOX", messages: 5, unseen: 2, specialUse: "\Inbox" },
         { path: "Junk", messages: 1, unseen: 1, specialUse: "\Junk" },
       ] });
@@ -57,7 +57,10 @@ describe("InvoiceInboxConfigForm", () => {
     // Where a mail that is NOT picked up sits: every folder with its counts.
     expect(screen.getByText("INBOX: 5 berichten, 2 ongelezen")).toBeInTheDocument();
     expect(screen.getByText("Junk: 1 berichten, 1 ongelezen")).toBeInTheDocument();
-    expect(screen.getByText(/alleen ongelezen mail uit de map INBOX/)).toBeInTheDocument();
+    expect(screen.getByText(/ongelezen mail uit de map INBOX/)).toBeInTheDocument();
+    // The server's own search misses the unread mail (the STRATO case): say so, and say it is handled.
+    expect(screen.getByText(/zoekfunctie van deze mailserver vindt ongelezen mail niet/)).toBeInTheDocument();
+    expect(screen.getByText("Technisch: Dovecot; de map telt 5 berichten; de zoekopdracht van de server vond 0 ongelezen.")).toBeInTheDocument();
     // Which mailbox was actually opened: a second mailbox on another domain is an easy mix-up.
     expect(screen.getByText("Ingelogd als fakturenapp@lamgroep.nl op imap.voorbeeld.nl")).toBeInTheDocument();
     const call = calls.find((c) => c.url.endsWith("/config/test"))!;
@@ -125,7 +128,7 @@ describe("InvoiceInboxConfigForm", () => {
       const method = (init?.method ?? "GET").toUpperCase();
       calls.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
       if (url.endsWith("/api/expenses/inbox/status")) return json({ message: "Not authorized" }, { status: 403 });
-      if (url.endsWith("/api/expenses/inbox/config/test")) return json({ ok: true, unseen: 2, folders: [
+      if (url.endsWith("/api/expenses/inbox/config/test")) return json({ ok: true, unseen: 2, diagnostics: { server: "Dovecot", exists: 5, searchUnseen: 0 }, folders: [
         { path: "INBOX", messages: 5, unseen: 2, specialUse: "\Inbox" },
         { path: "Junk", messages: 1, unseen: 1, specialUse: "\Junk" },
       ] });

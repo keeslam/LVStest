@@ -125,6 +125,16 @@ export interface InboxFolderInfo {
   specialUse: string | null;
 }
 
+/** What the connection test learned about the inbox folder, beyond the list of unread mail. */
+export interface InboxDiagnostics {
+  /** Vendor, name and version the server reports about itself, when it does. */
+  server: string | null;
+  /** Messages in the inbox folder according to SELECT. */
+  exists: number;
+  /** Unread messages according to the server's own SEARCH; null when the search failed. */
+  searchUnseen: number | null;
+}
+
 export interface InvoiceInboxRunSummary {
   startedAt: string;
   finishedAt: string;

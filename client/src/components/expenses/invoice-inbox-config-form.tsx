@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Inbox, Loader2 } from "lucide-react";
-import type { InboxFolderInfo, InvoiceInboxConfig, InvoiceInboxRunSummary } from "@shared/invoice-inbox";
+import type { InboxDiagnostics, InboxFolderInfo, InvoiceInboxConfig, InvoiceInboxRunSummary } from "@shared/invoice-inbox";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -36,7 +36,7 @@ export function InvoiceInboxConfigForm() {
   });
   const [form, setForm] = useState<InvoiceInboxConfig | null>(null);
   const [sendersText, setSendersText] = useState("");
-  const [testResult, setTestResult] = useState<{ ok: boolean; unseen?: number; folders?: InboxFolderInfo[]; message?: string } | null>(null);
+  const [testResult, setTestResult] = useState<{ ok: boolean; unseen?: number; folders?: InboxFolderInfo[]; diagnostics?: InboxDiagnostics; message?: string } | null>(null);
 
   useEffect(() => {
     if (!data) return;
@@ -179,6 +179,21 @@ export function InvoiceInboxConfigForm() {
                       </li>
                     ))}
                   </ul>
+                )}
+                {testResult.diagnostics && (
+                  <>
+                    {/* The server's own SEARCH disagrees with the message flags (seen on STRATO): the app reads the flags. */}
+                    {testResult.diagnostics.searchUnseen !== null && testResult.diagnostics.searchUnseen < (testResult.unseen ?? 0) && (
+                      <p className="mt-2">{t("invoiceInbox.config.testSearchMismatch")}</p>
+                    )}
+                    <p className="mt-2 text-xs text-muted-foreground" data-testid="invoice-inbox-test-technical">
+                      {t("invoiceInbox.config.testTechnical", {
+                        server: testResult.diagnostics.server ?? t("invoiceInbox.config.testServerUnknown"),
+                        exists: testResult.diagnostics.exists,
+                        search: testResult.diagnostics.searchUnseen ?? "?",
+                      })}
+                    </p>
+                  </>
                 )}
               </>
             ) : <>{t("invoiceInbox.config.testFailed")}: {testResult.message}</>}

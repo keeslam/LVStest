@@ -1,5 +1,5 @@
 import { ImapFlow } from "imapflow";
-import type { InboxFolderInfo, InvoiceInboxConfig } from "../../../shared/invoice-inbox";
+import type { InboxDiagnostics, InboxFolderInfo, InvoiceInboxConfig } from "../../../shared/invoice-inbox";
 import { assertAllowedImapTarget } from "./config";
 
 export interface InboxMessageRef { uid: number; messageId: string | null; from: string | null; subject: string | null; size: number | null }
@@ -9,6 +9,8 @@ export interface InvoiceImapSession {
   listUnseen(): Promise<InboxMessageRef[]>;
   /** Every selectable folder with its message and unread counts; for the connection test only. */
   folderOverview(): Promise<InboxFolderInfo[]>;
+  /** Server identity and what its own SEARCH says; for the connection test only. */
+  diagnostics(): Promise<InboxDiagnostics>;
   fetchRaw(uid: number): Promise<Buffer>;
   /** Move to the processed folder, or mark read when none is configured or the move fails. */
   markProcessed(uid: number): Promise<void>;
@@ -21,9 +23,25 @@ export interface InvoiceImapClient {
 function openSession(client: ImapFlow, config: InvoiceInboxConfig): InvoiceImapSession {
   return {
     async listUnseen() {
+      // Unread = a message whose FLAGS lack \Seen. Deliberately NOT `SEARCH
+      // UNSEEN`: on STRATO (imap.strato.com, 2026-09-20) STATUS reported one
+      // unread message in INBOX while the search-driven fetch returned nothing,
+      // so the app never picked the invoice up. FETCH FLAGS is the operation
+      // every mail client depends on; `diagnostics()` below still runs the
+      // search, so the connection test shows when the two disagree.
+      if (!client.mailbox || !client.mailbox.exists) return [];
+      const unseenUids: number[] = [];
+      // No other command may run while a fetch generator is open (imapflow deadlocks).
+      for await (const message of client.fetch("1:*", { uid: true, flags: true })) {
+        // \Deleted: a message already moved away by COPY + delete, waiting for expunge.
+        if (message.flags?.has("\\Seen") || message.flags?.has("\\Deleted")) continue;
+        unseenUids.push(message.uid);
+      }
+      if (unseenUids.length === 0) return [];
+      // The poller takes 25 per run; 200 keeps the command line short on a neglected mailbox.
+      const wanted = unseenUids.sort((a, b) => a - b).slice(0, 200);
       const refs: InboxMessageRef[] = [];
-      // No other command may run while this generator is open (imapflow deadlocks).
-      for await (const message of client.fetch({ seen: false }, { uid: true, envelope: true, size: true })) {
+      for await (const message of client.fetch(wanted.join(","), { uid: true, envelope: true, size: true }, { uid: true })) {
         refs.push({
           uid: message.uid,
           messageId: message.envelope?.messageId ?? null,
@@ -39,7 +57,7 @@ function openSession(client: ImapFlow, config: InvoiceInboxConfig): InvoiceImapS
       // per folder otherwise. Read-only; nothing is selected or flagged.
       const folders = await client.list({ statusQuery: { messages: true, unseen: true } });
       return folders
-        .filter((folder) => !folder.flags?.has("\Noselect"))
+        .filter((folder) => !folder.flags?.has("\\Noselect"))
         .map((folder) => ({
           path: folder.path,
           messages: folder.status?.messages ?? 0,
@@ -47,6 +65,25 @@ function openSession(client: ImapFlow, config: InvoiceInboxConfig): InvoiceImapS
           specialUse: folder.specialUse ?? null,
         }))
         .slice(0, 50);
+    },
+    async diagnostics() {
+      // Three independent observations of the same folder; they should agree.
+      // When `searchUnseen` and the flag-based listing differ, the server's
+      // SEARCH is the odd one out (seen on STRATO).
+      let searchUnseen: number | null = null;
+      try {
+        const found = await client.search({ seen: false }, { uid: true });
+        searchUnseen = Array.isArray(found) ? found.length : null;
+      } catch {
+        searchUnseen = null;
+      }
+      const info = client.serverInfo;
+      const server = info ? [info.vendor, info.name, info.version].filter((part) => typeof part === "string" && part).join(" ") : "";
+      return {
+        server: server || null,
+        exists: client.mailbox ? client.mailbox.exists : 0,
+        searchUnseen,
+      };
     },
     async fetchRaw(uid) {
       // `source` is fetched with BODY.PEEK, so a mail that fails to import stays unseen.

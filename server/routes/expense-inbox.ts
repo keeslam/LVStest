@@ -92,6 +92,7 @@ export function registerExpenseInboxRoutes(app: Express): void {
       const result = await getInvoiceImapClient().withSession({ ...parsed.data, password }, async (session) => ({
         unseen: (await session.listUnseen()).length,
         folders: await session.folderOverview(),
+        diagnostics: await session.diagnostics(),
       }));
       res.json({ ok: true, ...result });
     } catch (e) {

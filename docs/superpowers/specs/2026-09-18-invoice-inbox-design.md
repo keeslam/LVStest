@@ -168,7 +168,7 @@ duplicate check covers both entry points.
 `imapflow` (new dependency, MIT, maintained by the nodemailer author):
 one connection per run, behind a session interface:
 `withSession(config, fn)` opens the mailbox and hands `fn` a session with
-`listUnseen()` (uid + envelope), `fetchRaw(uid)` (raw source, fetched with
+`listUnseen()` (uid + envelope + size; unread is decided from each message's FLAGS — no `Seen`, no `Deleted` — and deliberately not with `SEARCH UNSEEN`: on STRATO, 2026-09-20, STATUS reported one unread message while the search-driven fetch returned none, so the first real invoice was never picked up), `folderOverview()` and `diagnostics()` (per-folder message and unread counts, the server's identity and what its own SEARCH finds; shown by the connection test so an administrator can see where a mail sits and whether the server's search disagrees with the flags), `fetchRaw(uid)` (raw source, fetched with
 `BODY.PEEK` so a mail that fails to import stays unseen) and
 `markProcessed(uid)` (IMAP MOVE to `processedFolder`, which imapflow turns
 into COPY + delete on servers without MOVE; marks `\Seen` instead when no

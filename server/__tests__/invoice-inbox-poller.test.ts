@@ -33,6 +33,7 @@ function fakeMailbox(uids: number[], options: { failConnect?: boolean; sizes?: R
       sessions += 1;
       return fn({
         async folderOverview() { return []; },
+        async diagnostics() { return { server: null, exists: 0, searchUnseen: null }; },
         async listUnseen() {
           return uids.filter((uid) => !processed.includes(uid)).map((uid) => ({
             uid, messageId: `<${uid}@test>`, from: options.from ?? "a@b.nl", subject: `Factuur ${uid}`,

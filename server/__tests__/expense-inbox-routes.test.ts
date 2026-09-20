@@ -39,6 +39,7 @@ function mailboxWith(raws: Buffer[], error?: Error): InvoiceImapClient {
         async fetchRaw(uid) { return raws[uid - 1]; },
         async markProcessed(uid) { processed.push(uid); },
         // One unread mail sits in the spam folder: exactly what the connection test must make visible.
+        async diagnostics() { return { server: "Test IMAP 1.0", exists: raws.length + 3, searchUnseen: 0 }; },
         async folderOverview() {
           return [
             { path: "INBOX", messages: raws.length + 3, unseen: raws.length, specialUse: "\Inbox" },
@@ -135,6 +136,8 @@ describe("expense inbox routes", () => {
     expect(ok.body).toEqual({
       ok: true,
       unseen: 2,
+      // The server's own SEARCH found nothing while two mails are unread: the STRATO case.
+      diagnostics: { server: "Test IMAP 1.0", exists: 5, searchUnseen: 0 },
       // Where the mail is: per folder the number of messages and how many are unread.
       folders: [
         { path: "INBOX", messages: 5, unseen: 2, specialUse: "\Inbox" },
