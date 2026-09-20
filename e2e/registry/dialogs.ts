@@ -47,6 +47,17 @@ export const DIALOGS: DialogEntry[] = [
   { page: "/vehicles", opener: "button-add-vehicle", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/vehicles/vehicle-add-dialog.tsx", name: "voertuig toevoegen" },
   { page: "/vehicles", opener: "button-bulk-import", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/vehicles/vehicle-bulk-import-dialog.tsx", name: "voertuigen bulk-importeren" },
 
+  // --- /customers --------------------------------------------------------
+  { page: "/customers", opener: "button-add-customer", anyOf: [P.VIEW_CUSTOMERS, P.MANAGE_CUSTOMERS], source: "client/src/components/customers/customer-add-dialog.tsx", name: "klant toevoegen" },
+
+  // --- /portal-admin -------------------------------------------------------
+  // Only admin/manager hold VIEW_PORTAL/MANAGE_PORTAL among the seven E2E
+  // profiles, so both roles that ever reach this page also satisfy each
+  // button's own narrower gate (MANAGE_PORTAL, MANAGE_FINES, VIEW_FISCAL).
+  { page: "/portal-admin", opener: "button-invite-portal-account", anyOf: [P.VIEW_PORTAL, P.MANAGE_PORTAL], source: "client/src/components/portal-admin/account-dialog.tsx", name: "portalaccount uitnodigen" },
+  { page: "/portal-admin", opener: "button-fiscal-overview", anyOf: [P.VIEW_PORTAL, P.MANAGE_PORTAL], source: "client/src/components/fiscal/fiscal-overview-dialog.tsx", name: "fiscaal overzicht" },
+  { page: "/portal-admin", opener: "button-import-fines", anyOf: [P.VIEW_PORTAL, P.MANAGE_PORTAL], source: "client/src/components/fines/fine-import-dialog.tsx", name: "boetes importeren" },
+
   { page: "/expenses", opener: "button-invoice-inbox", anyOf: [P.MANAGE_EXPENSES], source: "client/src/components/expenses/invoice-inbox-dialog.tsx", name: "ontvangen facturen" },
 ];
 
