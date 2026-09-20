@@ -54,6 +54,11 @@ export const DIALOGS: DialogEntry[] = [
   { page: "/reservations", opener: "button-view-completed", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], source: "client/src/pages/reservations/calendar.tsx", name: "afgeronde verhuringen" },
   { page: "/reservations", opener: "button-administration", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], source: "client/src/pages/reservations/calendar.tsx", name: "administratie" },
 
+  // --- /maintenance --------------------------------------------------------
+  { page: "/maintenance", opener: "button-maintenance-list-view", anyOf: [P.MANAGE_MAINTENANCE], source: "client/src/components/maintenance/maintenance-list-dialog.tsx", name: "onderhoud als lijst" },
+  { page: "/maintenance", opener: "button-view-completed", anyOf: [P.MANAGE_MAINTENANCE], source: "client/src/pages/maintenance/calendar.tsx", name: "afgerond onderhoud" },
+  { page: "/maintenance", opener: "button-schedule-maintenance", anyOf: [P.MANAGE_MAINTENANCE], source: "client/src/components/maintenance/schedule-maintenance-dialog.tsx", name: "onderhoud inplannen" },
+
   // --- /customers --------------------------------------------------------
   { page: "/customers", opener: "button-add-customer", anyOf: [P.VIEW_CUSTOMERS, P.MANAGE_CUSTOMERS], source: "client/src/components/customers/customer-add-dialog.tsx", name: "klant toevoegen" },
 

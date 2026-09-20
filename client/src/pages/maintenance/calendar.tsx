@@ -1100,10 +1100,13 @@ export default function MaintenanceCalendar() {
             </svg>
             {t('calendarPage.viewCompletedButton', { count: completedMaintenanceBlocks.length })}
           </Button>
-          <Button onClick={() => {
-            setSelectedScheduleDate(null); // No pre-selected date from header button
-            setIsScheduleDialogOpen(true);
-          }}>
+          <Button
+            onClick={() => {
+              setSelectedScheduleDate(null); // No pre-selected date from header button
+              setIsScheduleDialogOpen(true);
+            }}
+            data-testid="button-schedule-maintenance"
+          >
             <Plus className="mr-2 h-4 w-4" />
             {t('maintenance:scheduleDialog.scheduleMaintenanceButton')}
           </Button>
