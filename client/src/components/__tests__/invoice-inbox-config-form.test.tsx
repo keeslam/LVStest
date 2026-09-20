@@ -3,6 +3,11 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+// The card carries the "Logboek" button, which reads the user to decide whether
+// it may offer a PDF; outside the app there is no AuthProvider to read it from.
+vi.mock("@/hooks/use-auth", () => ({
+  useAuth: () => ({ user: { id: 1, username: "tester", role: "admin", permissions: [] } }),
+}));
 import { InvoiceInboxConfigForm } from "@/components/expenses/invoice-inbox-config-form";
 
 const config = {
