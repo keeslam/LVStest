@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Inbox, Loader2 } from "lucide-react";
-import type { InvoiceInboxConfig, InvoiceInboxRunSummary } from "@shared/invoice-inbox";
+import type { InboxFolderInfo, InvoiceInboxConfig, InvoiceInboxRunSummary } from "@shared/invoice-inbox";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -36,7 +36,7 @@ export function InvoiceInboxConfigForm() {
   });
   const [form, setForm] = useState<InvoiceInboxConfig | null>(null);
   const [sendersText, setSendersText] = useState("");
-  const [testResult, setTestResult] = useState<{ ok: boolean; unseen?: number; message?: string } | null>(null);
+  const [testResult, setTestResult] = useState<{ ok: boolean; unseen?: number; folders?: InboxFolderInfo[]; message?: string } | null>(null);
 
   useEffect(() => {
     if (!data) return;
@@ -165,9 +165,23 @@ export function InvoiceInboxConfigForm() {
         </div>
         {testResult && (
           <div className={`rounded-md border p-3 text-sm ${testResult.ok ? "border-green-300 bg-green-50" : "border-red-300 bg-red-50"}`} data-testid="invoice-inbox-test-result">
-            {testResult.ok
-              ? t("invoiceInbox.config.testOk", { count: testResult.unseen ?? 0 })
-              : <>{t("invoiceInbox.config.testFailed")}: {testResult.message}</>}
+            {testResult.ok ? (
+              <>
+                <div className="font-medium">{t("invoiceInbox.config.testOk", { count: testResult.unseen ?? 0 })}</div>
+                <div>{t("invoiceInbox.config.testAccount", { username: form.username, host: form.host })}</div>
+                {/* Where a mail that is NOT picked up sits: the spam folder, or the inbox but already read. */}
+                <p className="mt-1 text-muted-foreground">{t("invoiceInbox.config.testHint", { folder: form.inboxFolder || "INBOX" })}</p>
+                {(testResult.folders?.length ?? 0) > 0 && (
+                  <ul className="mt-2 space-y-0.5" data-testid="invoice-inbox-test-folders">
+                    {testResult.folders!.map((folder) => (
+                      <li key={folder.path} className={folder.path === (form.inboxFolder || "INBOX") ? "font-medium" : ""}>
+                        {t("invoiceInbox.config.testFolderLine", { path: folder.path, messages: folder.messages, unseen: folder.unseen })}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            ) : <>{t("invoiceInbox.config.testFailed")}: {testResult.message}</>}
           </div>
         )}
       </CardContent>

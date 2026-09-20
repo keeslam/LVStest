@@ -86,8 +86,14 @@ export function registerExpenseInboxRoutes(app: Express): void {
     }
     const password = reuseStored ? stored.password : parsed.data.password;
     try {
-      const unseen = await getInvoiceImapClient().withSession({ ...parsed.data, password }, async (session) => (await session.listUnseen()).length);
-      res.json({ ok: true, unseen });
+      // The unread count of the inbox folder is what the app will pick up; the
+      // folder overview shows where a mail that is NOT picked up sits (spam
+      // folder, or the inbox but already read).
+      const result = await getInvoiceImapClient().withSession({ ...parsed.data, password }, async (session) => ({
+        unseen: (await session.listUnseen()).length,
+        folders: await session.folderOverview(),
+      }));
+      res.json({ ok: true, ...result });
     } catch (e) {
       // One answer for every refused destination: the route is not a port scanner (cf. BUG-071).
       if (e instanceof OutboundBlockedError) return res.status(400).json({ ok: false, message: OUTBOUND_BLOCKED_MESSAGE });

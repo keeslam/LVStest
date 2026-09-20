@@ -111,6 +111,20 @@ export interface InboxParsedInvoice {
   plates?: string[];
 }
 
+/**
+ * One folder of the mailbox, as the connection test reports it. The app only
+ * reads UNREAD mail from the configured inbox folder; a mail that the host
+ * filed under spam, or that someone already opened, is invisible to it — this
+ * overview is how an administrator sees that without IMAP tooling.
+ */
+export interface InboxFolderInfo {
+  path: string;
+  messages: number;
+  unseen: number;
+  /** \Inbox, \Junk, \Trash, ... when the server (or its name) says so. */
+  specialUse: string | null;
+}
+
 export interface InvoiceInboxRunSummary {
   startedAt: string;
   finishedAt: string;

@@ -38,6 +38,13 @@ function mailboxWith(raws: Buffer[], error?: Error): InvoiceImapClient {
         async listUnseen() { return raws.map((_, i) => i + 1).filter((uid) => !processed.includes(uid)).map((uid) => ({ uid, messageId: null, from: null, subject: `Factuur ${uid}`, size: null })); },
         async fetchRaw(uid) { return raws[uid - 1]; },
         async markProcessed(uid) { processed.push(uid); },
+        // One unread mail sits in the spam folder: exactly what the connection test must make visible.
+        async folderOverview() {
+          return [
+            { path: "INBOX", messages: raws.length + 3, unseen: raws.length, specialUse: "\Inbox" },
+            { path: "Junk", messages: 1, unseen: 1, specialUse: "\Junk" },
+          ];
+        },
       });
     },
   };
@@ -125,7 +132,15 @@ describe("expense inbox routes", () => {
     let seenPassword = "";
     setInvoiceImapClient({ async withSession(config, fn) { seenPassword = config.password; return mailboxWith([Buffer.from("a"), Buffer.from("b")]).withSession(config, fn); } });
     const ok = await request(admin).post("/api/expenses/inbox/config/test").send({ host: "imap.example.test", username: "u", password: INVOICE_INBOX_PASSWORD_MASK });
-    expect(ok.body).toEqual({ ok: true, unseen: 2 });
+    expect(ok.body).toEqual({
+      ok: true,
+      unseen: 2,
+      // Where the mail is: per folder the number of messages and how many are unread.
+      folders: [
+        { path: "INBOX", messages: 5, unseen: 2, specialUse: "\Inbox" },
+        { path: "Junk", messages: 1, unseen: 1, specialUse: "\Junk" },
+      ],
+    });
     expect(seenPassword).toBe("geheim");
 
     setInvoiceImapClient(mailboxWith([], new OutboundBlockedError()));

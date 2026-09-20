@@ -236,12 +236,26 @@
     "manualScan": "handmatige scan",
     "reviewButton": "Controleren",
     "viewButton": "Bekijken",
-    "tabs": { "review": "Te controleren", "booked": "Geboekt", "dismissed": "Afgewezen" },
-    "columns": {
-      "received": "Ontvangen", "sender": "Afzender", "vendor": "Leverancier", "invoiceNumber": "Factuurnummer",
-      "total": "Totaal", "reason": "Reden", "vehicle": "Voertuig", "note": "Notitie"
+    "tabs": {
+      "review": "Te controleren",
+      "booked": "Geboekt",
+      "dismissed": "Afgewezen"
     },
-    "empty": { "review": "Niets te controleren.", "booked": "Nog geen geboekte facturen.", "dismissed": "Geen afgewezen facturen." },
+    "columns": {
+      "received": "Ontvangen",
+      "sender": "Afzender",
+      "vendor": "Leverancier",
+      "invoiceNumber": "Factuurnummer",
+      "total": "Totaal",
+      "reason": "Reden",
+      "vehicle": "Voertuig",
+      "note": "Notitie"
+    },
+    "empty": {
+      "review": "Niets te controleren.",
+      "booked": "Nog geen geboekte facturen.",
+      "dismissed": "Geen afgewezen facturen."
+    },
     "reasons": {
       "no_attachment": "Geen bruikbare bijlage",
       "parse_failed": "Uitlezen mislukt",
@@ -301,6 +315,9 @@
       "saveFailed": "Opslaan mislukt",
       "test": "Verbinding testen",
       "testOk": "Verbonden, {{count}} ongelezen",
+      "testAccount": "Ingelogd als {{username}} op {{host}}",
+      "testHint": "De app haalt alleen ongelezen mail uit de map {{folder}} op. Staat je mail in een andere map, bijvoorbeeld Spam, of is hij al geopend, dan ziet de app hem niet.",
+      "testFolderLine": "{{path}}: {{messages}} berichten, {{unseen}} ongelezen",
       "testFailed": "Verbinden mislukt",
       "runNow": "Nu ophalen",
       "runDone": "{{mails}} mail(s) opgehaald: {{booked}} geboekt, {{review}} ter controle",

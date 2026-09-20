@@ -32,6 +32,7 @@ function fakeMailbox(uids: number[], options: { failConnect?: boolean; sizes?: R
       if (options.failConnect) throw new Error("connect ECONNREFUSED");
       sessions += 1;
       return fn({
+        async folderOverview() { return []; },
         async listUnseen() {
           return uids.filter((uid) => !processed.includes(uid)).map((uid) => ({
             uid, messageId: `<${uid}@test>`, from: options.from ?? "a@b.nl", subject: `Factuur ${uid}`,

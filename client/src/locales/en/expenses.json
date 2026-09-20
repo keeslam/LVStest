@@ -236,12 +236,26 @@
     "manualScan": "manual scan",
     "reviewButton": "Review",
     "viewButton": "View",
-    "tabs": { "review": "To review", "booked": "Booked", "dismissed": "Dismissed" },
-    "columns": {
-      "received": "Received", "sender": "Sender", "vendor": "Vendor", "invoiceNumber": "Invoice number",
-      "total": "Total", "reason": "Reason", "vehicle": "Vehicle", "note": "Note"
+    "tabs": {
+      "review": "To review",
+      "booked": "Booked",
+      "dismissed": "Dismissed"
     },
-    "empty": { "review": "Nothing to review.", "booked": "No booked invoices yet.", "dismissed": "No dismissed invoices." },
+    "columns": {
+      "received": "Received",
+      "sender": "Sender",
+      "vendor": "Vendor",
+      "invoiceNumber": "Invoice number",
+      "total": "Total",
+      "reason": "Reason",
+      "vehicle": "Vehicle",
+      "note": "Note"
+    },
+    "empty": {
+      "review": "Nothing to review.",
+      "booked": "No booked invoices yet.",
+      "dismissed": "No dismissed invoices."
+    },
     "reasons": {
       "no_attachment": "No usable attachment",
       "parse_failed": "Reading failed",
@@ -301,6 +315,9 @@
       "saveFailed": "Saving failed",
       "test": "Test connection",
       "testOk": "Connected, {{count}} unread",
+      "testAccount": "Logged in as {{username}} on {{host}}",
+      "testHint": "The app only fetches unread mail from the folder {{folder}}. A mail in another folder, for example Spam, or one that was already opened, is invisible to it.",
+      "testFolderLine": "{{path}}: {{messages}} messages, {{unseen}} unread",
       "testFailed": "Connection failed",
       "runNow": "Fetch now",
       "runDone": "{{mails}} mail(s) fetched: {{booked}} booked, {{review}} for review",

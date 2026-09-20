@@ -1,5 +1,5 @@
 import { ImapFlow } from "imapflow";
-import type { InvoiceInboxConfig } from "../../../shared/invoice-inbox";
+import type { InboxFolderInfo, InvoiceInboxConfig } from "../../../shared/invoice-inbox";
 import { assertAllowedImapTarget } from "./config";
 
 export interface InboxMessageRef { uid: number; messageId: string | null; from: string | null; subject: string | null; size: number | null }
@@ -7,6 +7,8 @@ export interface InboxMessageRef { uid: number; messageId: string | null; from: 
 /** What the poller needs from one open mailbox; swapped for a fake in tests. */
 export interface InvoiceImapSession {
   listUnseen(): Promise<InboxMessageRef[]>;
+  /** Every selectable folder with its message and unread counts; for the connection test only. */
+  folderOverview(): Promise<InboxFolderInfo[]>;
   fetchRaw(uid: number): Promise<Buffer>;
   /** Move to the processed folder, or mark read when none is configured or the move fails. */
   markProcessed(uid: number): Promise<void>;
@@ -31,6 +33,20 @@ function openSession(client: ImapFlow, config: InvoiceInboxConfig): InvoiceImapS
         });
       }
       return refs.sort((a, b) => a.uid - b.uid);
+    },
+    async folderOverview() {
+      // LIST with STATUS: one round trip on servers with LIST-STATUS, one STATUS
+      // per folder otherwise. Read-only; nothing is selected or flagged.
+      const folders = await client.list({ statusQuery: { messages: true, unseen: true } });
+      return folders
+        .filter((folder) => !folder.flags?.has("\Noselect"))
+        .map((folder) => ({
+          path: folder.path,
+          messages: folder.status?.messages ?? 0,
+          unseen: folder.status?.unseen ?? 0,
+          specialUse: folder.specialUse ?? null,
+        }))
+        .slice(0, 50);
     },
     async fetchRaw(uid) {
       // `source` is fetched with BODY.PEEK, so a mail that fails to import stays unseen.

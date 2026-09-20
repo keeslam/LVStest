@@ -24,7 +24,10 @@ describe("InvoiceInboxConfigForm", () => {
       const method = (init?.method ?? "GET").toUpperCase();
       calls.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
       if (url.endsWith("/api/expenses/inbox/status")) return json(status);
-      if (url.endsWith("/api/expenses/inbox/config/test")) return json({ ok: true, unseen: 2 });
+      if (url.endsWith("/api/expenses/inbox/config/test")) return json({ ok: true, unseen: 2, folders: [
+        { path: "INBOX", messages: 5, unseen: 2, specialUse: "\Inbox" },
+        { path: "Junk", messages: 1, unseen: 1, specialUse: "\Junk" },
+      ] });
       if (url.endsWith("/api/expenses/inbox/config")) return json(method === "PUT" ? { ...JSON.parse(String(init!.body)), password: "********" } : config);
       return json({}, { status: 404 });
     }));
@@ -51,6 +54,12 @@ describe("InvoiceInboxConfigForm", () => {
     await screen.findByLabelText("IMAP-server");
     await userEvent.click(screen.getByRole("button", { name: "Verbinding testen" }));
     expect(await screen.findByText("Verbonden, 2 ongelezen")).toBeInTheDocument();
+    // Where a mail that is NOT picked up sits: every folder with its counts.
+    expect(screen.getByText("INBOX: 5 berichten, 2 ongelezen")).toBeInTheDocument();
+    expect(screen.getByText("Junk: 1 berichten, 1 ongelezen")).toBeInTheDocument();
+    expect(screen.getByText(/alleen ongelezen mail uit de map INBOX/)).toBeInTheDocument();
+    // Which mailbox was actually opened: a second mailbox on another domain is an easy mix-up.
+    expect(screen.getByText("Ingelogd als fakturenapp@lamgroep.nl op imap.voorbeeld.nl")).toBeInTheDocument();
     const call = calls.find((c) => c.url.endsWith("/config/test"))!;
     expect(call.method).toBe("POST");
     expect(call.body).toMatchObject({ host: "imap.voorbeeld.nl", password: "********" });
@@ -116,7 +125,10 @@ describe("InvoiceInboxConfigForm", () => {
       const method = (init?.method ?? "GET").toUpperCase();
       calls.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
       if (url.endsWith("/api/expenses/inbox/status")) return json({ message: "Not authorized" }, { status: 403 });
-      if (url.endsWith("/api/expenses/inbox/config/test")) return json({ ok: true, unseen: 2 });
+      if (url.endsWith("/api/expenses/inbox/config/test")) return json({ ok: true, unseen: 2, folders: [
+        { path: "INBOX", messages: 5, unseen: 2, specialUse: "\Inbox" },
+        { path: "Junk", messages: 1, unseen: 1, specialUse: "\Junk" },
+      ] });
       if (url.endsWith("/api/expenses/inbox/config")) return json(method === "PUT" ? { ...JSON.parse(String(init!.body)), password: "********" } : config);
       return json({}, { status: 404 });
     }));
