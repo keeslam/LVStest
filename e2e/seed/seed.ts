@@ -19,4 +19,20 @@ export async function runSeed(): Promise<void> {
     permissions: PROFILES[role],
     active: true,
   })));
+
+  const { vehicles, customers, reservations, expenses } = await import("../../shared/schema");
+  const { SEED, officeDay } = await import("./data");
+  const vehicleRows = await db.insert(vehicles).values(SEED.vehicles.map((v) => ({ ...v }))).returning({ id: vehicles.id });
+  const customerRows = await db.insert(customers).values(SEED.customers.map((c) => ({ ...c }))).returning({ id: customers.id });
+  await db.insert(reservations).values(SEED.reservations.map(({ label, vehicle, customer, ...rest }) => ({
+    ...rest,
+    vehicleId: vehicleRows[vehicle].id,
+    customerId: customerRows[customer].id,
+    notes: `e2e:${label}`,
+    type: "standard",
+  })));
+  await db.insert(expenses).values([
+    { vehicleId: vehicleRows[0].id, category: "maintenance", amount: "245.50", date: officeDay(-5), description: "E2E kleine beurt" },
+    { vehicleId: vehicleRows[1].id, category: "tires", amount: "612.00", date: officeDay(-12), description: "E2E banden" },
+  ]);
 }

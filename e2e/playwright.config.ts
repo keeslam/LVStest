@@ -26,7 +26,8 @@ export default defineConfig({
     stderr: "pipe",
   },
   projects: [
-    { name: "setup", testMatch: /setup[\\/].*\.setup\.ts/ },
+    { name: "auth", testMatch: /setup[\\/](database|auth)\.setup\.ts/ },
+    { name: "setup", testMatch: /setup[\\/]seed\.setup\.ts/, dependencies: ["auth"] },
     { name: "layer-a", testMatch: /layer-a[\\/].*\.spec\.ts/, dependencies: ["setup"], fullyParallel: true },
     { name: "layer-b", testMatch: /layer-b[\\/].*\.spec\.ts/, dependencies: ["setup"] },
   ],
