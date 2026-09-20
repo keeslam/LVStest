@@ -1,0 +1,84 @@
+import { count, desc, gt, lt, or, sql, type SQL } from "drizzle-orm";
+import { db } from "../../db";
+import { invoiceInboxRuns, type InvoiceInboxRun } from "../../../shared/schema";
+import type { InboxRunRow, InvoiceInboxRunSummary } from "../../../shared/invoice-inbox";
+import { CONTROL_CHARACTERS } from "./inbox-storage";
+
+/** At the default of one run per 15 minutes that stays under 9 000 rows. */
+export const RUN_LOG_RETENTION_DAYS = 90;
+const RETENTION_MS = RUN_LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+
+/** The errors carry mail subjects and server messages: neither is bounded. */
+const MAX_ERRORS = 20;
+const MAX_ERROR_LENGTH = 500;
+
+/**
+ * A quarter of an hour in which nothing arrived says nothing; the default view
+ * of the log leaves those out.
+ */
+const ACTIVE: SQL = or(
+  gt(invoiceInboxRuns.mails, 0),
+  gt(invoiceInboxRuns.failed, 0),
+  sql`${invoiceInboxRuns.errors} <> '[]'::jsonb`,
+)!;
+
+const toRunRow = (row: InvoiceInboxRun): InboxRunRow => ({
+  id: row.id,
+  startedAt: row.startedAt.toISOString(),
+  finishedAt: row.finishedAt.toISOString(),
+  trigger: row.trigger === "manual" ? "manual" : "scheduler",
+  triggeredBy: row.triggeredBy,
+  mails: row.mails,
+  attachments: row.attachments,
+  booked: row.booked,
+  review: row.review,
+  skipped: row.skipped,
+  failed: row.failed,
+  errors: Array.isArray(row.errors) ? row.errors : [],
+});
+
+export const inboxRunLog = {
+  /**
+   * Stores one finished run and prunes what fell outside the retention. The log
+   * is an extra: a run must never fail or stall because its row could not be
+   * written, so everything that goes wrong here is logged and swallowed.
+   */
+  async record(summary: InvoiceInboxRunSummary, triggeredBy: string | null): Promise<void> {
+    try {
+      await db.insert(invoiceInboxRuns).values({
+        startedAt: new Date(summary.startedAt),
+        finishedAt: new Date(summary.finishedAt),
+        trigger: summary.trigger,
+        triggeredBy,
+        mails: summary.mails,
+        attachments: summary.attachments,
+        booked: summary.booked,
+        review: summary.review,
+        skipped: summary.skipped,
+        failed: summary.failed,
+        // I1: an error string is built from the mail's subject, and PostgreSQL
+        // refuses a control character in jsonb — a crafted subject would
+        // otherwise cost the run its log row.
+        errors: summary.errors
+          .slice(0, MAX_ERRORS)
+          .map((error) => String(error).replace(CONTROL_CHARACTERS, "").slice(0, MAX_ERROR_LENGTH)),
+      });
+      await db.delete(invoiceInboxRuns).where(lt(invoiceInboxRuns.startedAt, new Date(Date.now() - RETENTION_MS)));
+    } catch (error) {
+      console.error("Invoice inbox run could not be logged:", error);
+    }
+  },
+
+  async list(opts: { activeOnly: boolean; limit?: number; offset?: number }): Promise<{ runs: InboxRunRow[]; total: number }> {
+    const where = opts.activeOnly ? ACTIVE : undefined;
+    const rows = await db
+      .select()
+      .from(invoiceInboxRuns)
+      .where(where)
+      .orderBy(desc(invoiceInboxRuns.startedAt), desc(invoiceInboxRuns.id))
+      .limit(Math.min(Math.max(opts.limit ?? 50, 1), 200))
+      .offset(Math.max(opts.offset ?? 0, 0));
+    const [total] = await db.select({ n: count() }).from(invoiceInboxRuns).where(where);
+    return { runs: rows.map(toRunRow), total: Number(total?.n ?? 0) };
+  },
+};

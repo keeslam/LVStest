@@ -14,6 +14,7 @@ import { getInvoiceInboxConfig, invoiceInboxConfigSchema, maskInvoiceInboxConfig
 import { inboxStorage } from "../services/invoice-inbox/inbox-storage";
 import { computeInvoiceHash } from "../services/invoice-inbox/hash";
 import { getInvoiceImapClient, getInvoiceInboxRunState, runInvoiceInboxImport, startInvoiceInboxScheduler } from "../services/invoice-inbox/poller";
+import { inboxRunLog } from "../services/invoice-inbox/run-log";
 import { bookInvoiceAsExpenses, groupLinesByCategory, receiptFromStoredPath, resolveInvoiceFile } from "../services/expenses/book-invoice";
 
 const canManageSettings = hasPermission(UserPermission.MANAGE_SETTINGS);
@@ -24,6 +25,13 @@ const canRunOrSeeStatus = hasPermission(UserPermission.MANAGE_EXPENSES, UserPerm
 const SERVABLE_TYPES = ["application/pdf", "image/jpeg", "image/png"];
 /** I6: dismissing one of these throws the stored attachment away with it. */
 const DISMISS_DELETES_FILE: ReviewReason[] = ["unknown_sender", "no_attachment"];
+const LOG_KINDS = ["invoices", "other"] as const;
+
+/** A missing or unreadable number falls back; the storage layer clamps the rest. */
+function numberParam(raw: unknown, fallback: number): number {
+  const value = Number(raw ?? fallback);
+  return Number.isFinite(value) ? value : fallback;
+}
 
 function idParam(req: Request, res: Response): number | null {
   const id = Number(req.params.id);
@@ -117,6 +125,33 @@ export function registerExpenseInboxRoutes(app: Express): void {
       reviewCount: await inboxStorage.countByStatus("review"),
       geminiConfigured: Boolean(process.env.GEMINI_API_KEY?.trim()),
     });
+  });
+
+  // ---- log --------------------------------------------------------------------
+  // Read-only, and behind the same guard as the status: the button that opens it
+  // sits on the settings card. Opening a PDF keeps its own stricter guard.
+  app.get("/api/expenses/inbox/log", canRunOrSeeStatus, async (req, res) => {
+    const kind = String(req.query.kind ?? "").trim() || "invoices";
+    if (!(LOG_KINDS as readonly string[]).includes(kind)) return res.status(400).json({ message: "Unknown kind" });
+    // An empty status is "everything", the way the dialog's first option means it.
+    const status = String(req.query.status ?? "").trim() || undefined;
+    if (status && !(INBOX_STATUSES as readonly string[]).includes(status)) return res.status(400).json({ message: "Unknown status" });
+
+    res.json(await inboxStorage.searchLog({
+      kind: kind as typeof LOG_KINDS[number],
+      q: typeof req.query.q === "string" ? req.query.q : undefined,
+      status: status as InboxStatus | undefined,
+      limit: numberParam(req.query.limit, 50),
+      offset: numberParam(req.query.offset, 0),
+    }));
+  });
+
+  app.get("/api/expenses/inbox/runs", canRunOrSeeStatus, async (req, res) => {
+    res.json(await inboxRunLog.list({
+      activeOnly: String(req.query.activeOnly ?? "true") !== "false",
+      limit: numberParam(req.query.limit, 50),
+      offset: numberParam(req.query.offset, 0),
+    }));
   });
 
   // ---- items ------------------------------------------------------------------

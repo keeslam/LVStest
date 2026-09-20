@@ -162,6 +162,20 @@ describe("invoice inbox storage", () => {
     expect(unique.rows).toHaveLength(1);
   });
 
+  /**
+   * The manifest that bootstraps a fresh database only adds columns to tables
+   * that are already there, so the run log's table comes from the explicit
+   * block in startup-migration.js — index included, and exactly once however
+   * often the migration runs.
+   */
+  it("has the table and the single started_at index of the run log", async () => {
+    const table = await db.execute(sql`SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'invoice_inbox_runs'`);
+    expect(table.rows).toHaveLength(1);
+
+    const index = await db.execute(sql`SELECT 1 FROM pg_indexes WHERE tablename = 'invoice_inbox_runs' AND indexname = 'invoice_inbox_runs_started_at_idx'`);
+    expect(index.rows).toHaveLength(1);
+  });
+
   it("has the named foreign key from expenses.inbox_item_id to invoice_inbox_items, which sets it null when the item is deleted", async () => {
     const constraint = await db.execute(sql`SELECT 1 FROM pg_constraint WHERE conname = 'expenses_inbox_item_id_invoice_inbox_items_id_fk'`);
     expect(constraint.rows).toHaveLength(1);

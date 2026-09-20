@@ -1398,6 +1398,26 @@ async function runMigrations() {
       END $$;
     `);
 
+    // The log of fetch runs. The manifest sync above only adds columns to
+    // tables that already exist, so a new table has to be created right here.
+    await createTableIfNotExists('invoice_inbox_runs', `
+      CREATE TABLE invoice_inbox_runs (
+        id SERIAL PRIMARY KEY,
+        started_at TIMESTAMPTZ NOT NULL,
+        finished_at TIMESTAMPTZ NOT NULL,
+        trigger TEXT NOT NULL,
+        triggered_by TEXT,
+        mails INTEGER NOT NULL DEFAULT 0,
+        attachments INTEGER NOT NULL DEFAULT 0,
+        booked INTEGER NOT NULL DEFAULT 0,
+        review INTEGER NOT NULL DEFAULT 0,
+        skipped INTEGER NOT NULL DEFAULT 0,
+        failed INTEGER NOT NULL DEFAULT 0,
+        errors JSONB NOT NULL DEFAULT '[]'::jsonb
+      )`);
+    // The log is always read newest first.
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS invoice_inbox_runs_started_at_idx ON invoice_inbox_runs (started_at DESC)`);
+
     await addColumnIfNotExists('reservations', 'portal_request_id', 'INTEGER');
 
     await createTableIfNotExists('portal_requests', `

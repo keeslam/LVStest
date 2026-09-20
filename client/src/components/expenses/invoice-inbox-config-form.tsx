@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { InvoiceInboxLogButton } from "./invoice-inbox-log-dialog";
 
 export const INVOICE_INBOX_CONFIG_QUERY_KEY = ["/api/expenses/inbox/config"];
 const STATUS_QUERY_KEY = ["/api/expenses/inbox/status"];
@@ -162,6 +163,7 @@ export function InvoiceInboxConfigForm() {
           <Button variant="outline" onClick={() => run.mutate()} disabled={run.isPending || !form.host} data-testid="button-run-invoice-inbox">
             {run.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}{t("invoiceInbox.config.runNow")}
           </Button>
+          <InvoiceInboxLogButton />
         </div>
         {testResult && (
           <div className={`rounded-md border p-3 text-sm ${testResult.ok ? "border-green-300 bg-green-50" : "border-red-300 bg-red-50"}`} data-testid="invoice-inbox-test-result">

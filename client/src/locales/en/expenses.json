@@ -325,6 +325,47 @@
       "runNow": "Fetch now",
       "runDone": "{{mails}} mail(s) fetched: {{booked}} booked, {{review}} for review",
       "geminiMissing": "Note: GEMINI_API_KEY is not set on the server. Invoices cannot be read then and will all wait for review."
+    },
+    "log": {
+      "title": "Log",
+      "description": "What the app fetched from the invoice mailbox. Read-only: nothing here changes the invoices themselves.",
+      "tabs": {
+        "invoices": "Invoices",
+        "other": "Other mail",
+        "runs": "Fetch runs"
+      },
+      "searchLabel": "Search the log",
+      "searchPlaceholder": "Search by sender, subject, file, supplier, invoice number or licence plate",
+      "statusLabel": "Result",
+      "statusAll": "All",
+      "activeOnly": "Only runs with mail or errors",
+      "loading": "Loading…",
+      "loadMore": "Load more",
+      "shown": "{{shown}} of {{total}} shown",
+      "openFile": "Open PDF",
+      "toReview": "Go to review",
+      "triggerScheduler": "Automatic",
+      "triggerManual": "Manually by {{user}}",
+      "columns": {
+        "subject": "Subject",
+        "attachment": "Attachment",
+        "result": "Result",
+        "invoiceNumber": "Invoice no.",
+        "status": "Status",
+        "startedAt": "Started",
+        "duration": "Duration",
+        "trigger": "Kind",
+        "mails": "Mails",
+        "attachments": "Attachments",
+        "skipped": "Skipped",
+        "failed": "Failed",
+        "errors": "Errors"
+      },
+      "empty": {
+        "invoices": "No invoices found.",
+        "other": "No other mail found.",
+        "runs": "No fetch runs stored yet."
+      }
     }
   }
 }

@@ -360,6 +360,29 @@ recht *instellingen beheren* nodig.
 Wie de instellingen mag beheren, mag ook op **Nu ophalen** klikken en de status hier zien.
 Voor het boeken en afwijzen van facturen is het recht *kosten beheren* nodig.
 
+### Het logboek
+
+Op dezelfde kaart staat naast **Nu ophalen** de knop **Logboek**. Die opent een venster met
+drie tabbladen dat laat zien wat de app uit het postvak heeft gehaald. Je verandert er
+niets mee; het is alleen om terug te kijken.
+
+- **Facturen** — elke bijlage die de app als factuur heeft behandeld, met het resultaat
+  erbij (geboekt, te controleren met de reden, of afgewezen) en zo nodig de foutmelding.
+  Heb je het recht *kosten beheren*, dan kun je de PDF openen of doorklikken naar de lijst
+  **Te controleren**.
+- **Overige mail** — mail waar geen factuur in zat, bijvoorbeeld zonder bijlage of met een
+  offerte of herinnering. Die mail blijft gewoon staan waar hij stond; er verandert niets
+  aan hoe je hem afhandelt.
+- **Ophaalrondes** — elke keer dat de app het postvak heeft uitgelezen, met hoe lang het
+  duurde, of het automatisch ging of dat iemand op **Nu ophalen** klikte, en wat het
+  opleverde. De schakelaar **Alleen rondes met mail of fouten** staat aan, zodat de
+  kwartieren waarin niets binnenkwam je niet in de weg zitten.
+
+Het zoekveld in de eerste twee tabbladen zoekt op de server, dus ook in oude mail. Je kunt
+zoeken op afzender, onderwerp, bestandsnaam, leverancier, factuurnummer, kenteken en
+foutmelding. Een kenteken mag je met of zonder streepjes typen. Ophaalrondes worden 90
+dagen bewaard en daarna vanzelf opgeruimd; rondes van vóór deze functie bestaan niet.
+
 ### Als het niet werkt
 
 - **"Ophalen mislukt" bij de knop, of de melding "Postvak facturen onbereikbaar"**: het

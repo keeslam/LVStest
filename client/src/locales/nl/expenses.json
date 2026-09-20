@@ -325,6 +325,47 @@
       "runNow": "Nu ophalen",
       "runDone": "{{mails}} mail(s) opgehaald: {{booked}} geboekt, {{review}} ter controle",
       "geminiMissing": "Let op: GEMINI_API_KEY is niet ingesteld op de server. Facturen kunnen dan niet worden uitgelezen en komen allemaal ter controle."
+    },
+    "log": {
+      "title": "Logboek",
+      "description": "Wat de app uit het factuurpostvak heeft opgehaald. Alleen lezen: hier verandert niets aan de facturen zelf.",
+      "tabs": {
+        "invoices": "Facturen",
+        "other": "Overige mail",
+        "runs": "Ophaalrondes"
+      },
+      "searchLabel": "Zoeken in het logboek",
+      "searchPlaceholder": "Zoek op afzender, onderwerp, bestand, leverancier, factuurnummer of kenteken",
+      "statusLabel": "Resultaat",
+      "statusAll": "Alles",
+      "activeOnly": "Alleen rondes met mail of fouten",
+      "loading": "Bezig met laden…",
+      "loadMore": "Meer laden",
+      "shown": "{{shown}} van {{total}} getoond",
+      "openFile": "PDF openen",
+      "toReview": "Naar controleren",
+      "triggerScheduler": "Automatisch",
+      "triggerManual": "Handmatig door {{user}}",
+      "columns": {
+        "subject": "Onderwerp",
+        "attachment": "Bijlage",
+        "result": "Resultaat",
+        "invoiceNumber": "Factuurnr.",
+        "status": "Status",
+        "startedAt": "Gestart",
+        "duration": "Duur",
+        "trigger": "Soort",
+        "mails": "Mails",
+        "attachments": "Bijlagen",
+        "skipped": "Overgeslagen",
+        "failed": "Mislukt",
+        "errors": "Fouten"
+      },
+      "empty": {
+        "invoices": "Geen facturen gevonden.",
+        "other": "Geen overige mail gevonden.",
+        "runs": "Nog geen ophaalrondes bewaard."
+      }
     }
   }
 }

@@ -1318,6 +1318,27 @@ export const invoiceInboxItems = pgTable("invoice_inbox_items", {
 }));
 export type InvoiceInboxItem = typeof invoiceInboxItems.$inferSelect;
 
+// One row per finished fetch run of the invoice mailbox, so staff can see what
+// the app did and when (docs/superpowers/specs/2026-09-20-invoice-inbox-log-design.md).
+// Kept for RUN_LOG_RETENTION_DAYS; the columns mirror InvoiceInboxRunSummary.
+export const invoiceInboxRuns = pgTable("invoice_inbox_runs", {
+  id: serial("id").primaryKey(),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }).notNull(),
+  trigger: text("trigger").notNull(), // 'scheduler' | 'manual'
+  triggeredBy: text("triggered_by"), // username of whoever pressed "Nu ophalen"
+  mails: integer("mails").notNull().default(0),
+  attachments: integer("attachments").notNull().default(0),
+  booked: integer("booked").notNull().default(0),
+  review: integer("review").notNull().default(0),
+  skipped: integer("skipped").notNull().default(0),
+  failed: integer("failed").notNull().default(0),
+  errors: jsonb("errors").$type<string[]>().notNull().default([]),
+}, (table) => ({
+  startedAtIdx: index("invoice_inbox_runs_started_at_idx").on(table.startedAt),
+}));
+export type InvoiceInboxRun = typeof invoiceInboxRuns.$inferSelect;
+
 // Documents table
 export const documents = pgTable("documents", {
   id: serial("id").primaryKey(),
