@@ -59,6 +59,14 @@ export const DIALOGS: DialogEntry[] = [
   { page: "/maintenance", opener: "button-view-completed", anyOf: [P.MANAGE_MAINTENANCE], source: "client/src/pages/maintenance/calendar.tsx", name: "afgerond onderhoud" },
   { page: "/maintenance", opener: "button-schedule-maintenance", anyOf: [P.MANAGE_MAINTENANCE], source: "client/src/components/maintenance/schedule-maintenance-dialog.tsx", name: "onderhoud inplannen" },
 
+  // --- /documents ----------------------------------------------------------
+  // All four dialog roots are inline in documents/index.tsx itself, each
+  // behind its own tab (default tab is "library"), so each needs `via`.
+  { page: "/documents", opener: "button-open-template-editor", via: "tab-contract-templates", anyOf: [P.VIEW_DOCUMENTS, P.MANAGE_DOCUMENTS], source: "client/src/pages/documents/index.tsx", name: "contractsjabloon-editor" },
+  { page: "/documents", opener: "button-open-transport-template-editor", via: "tab-transport-templates", anyOf: [P.VIEW_DOCUMENTS, P.MANAGE_DOCUMENTS], source: "client/src/pages/documents/index.tsx", name: "transportrapport-sjabloon-editor" },
+  { page: "/documents", opener: "button-open-barcode-label-editor", via: "tab-barcode-labels", anyOf: [P.VIEW_DOCUMENTS, P.MANAGE_DOCUMENTS], source: "client/src/pages/documents/index.tsx", name: "barcode-labelsjabloon-editor" },
+  { page: "/documents", opener: "button-open-damage-check-studio", via: "tab-damage-check-templates", anyOf: [P.VIEW_DOCUMENTS, P.MANAGE_DOCUMENTS], source: "client/src/pages/documents/index.tsx", name: "schadecontrole-sjablonen-studio" },
+
   // --- /customers --------------------------------------------------------
   { page: "/customers", opener: "button-add-customer", anyOf: [P.VIEW_CUSTOMERS, P.MANAGE_CUSTOMERS], source: "client/src/components/customers/customer-add-dialog.tsx", name: "klant toevoegen" },
 

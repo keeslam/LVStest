@@ -510,10 +510,10 @@ export default function DocumentsIndex() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
           <TabsTrigger value="library">{t('indexPage.tabLibrary')}</TabsTrigger>
-          <TabsTrigger value="template-editor">{t('indexPage.tabContractTemplates')}</TabsTrigger>
+          <TabsTrigger value="template-editor" data-testid="tab-contract-templates">{t('indexPage.tabContractTemplates')}</TabsTrigger>
           <TabsTrigger value="transport-templates" data-testid="tab-transport-templates">{t('indexPage.tabTransportTemplates')}</TabsTrigger>
           <TabsTrigger value="barcode-labels" data-testid="tab-barcode-labels">{t('indexPage.tabBarcodeLabels')}</TabsTrigger>
-          <TabsTrigger value="damage-check">{t('indexPage.tabDamageCheckTemplates')}</TabsTrigger>
+          <TabsTrigger value="damage-check" data-testid="tab-damage-check-templates">{t('indexPage.tabDamageCheckTemplates')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="library">
