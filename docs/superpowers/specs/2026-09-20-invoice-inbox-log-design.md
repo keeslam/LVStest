@@ -93,7 +93,7 @@ own guard (`manage_expenses`).
 |---|---|
 | `kind` | `invoices` (default) or `other` |
 | `q` | optional search text, trimmed, at most 100 characters |
-| `status` | optional, `booked` \| `review` \| `dismissed`; only with `kind=invoices` |
+| `status` | optional, `booked` \| `review` \| `dismissed`; empty means no filter. The server honours it for both kinds; the dialog only sends it on the tab Facturen |
 | `limit` | default 50, 1–200 |
 | `offset` | default 0 |
 
