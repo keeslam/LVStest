@@ -59,7 +59,8 @@ import {
 import { SearchableCombobox } from "@/components/ui/searchable-combobox";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
-import { format, addDays, parseISO, differenceInDays } from "date-fns";
+import { format, parseISO, differenceInDays } from "date-fns";
+import { suggestEndDate } from "@/lib/suggest-end-date";
 import { Customer, Vehicle, Reservation, Document, Driver, type InteractiveDamageCheck } from "@shared/schema";
 import { PlusCircle, FileCheck, Upload, Check, X, Edit, FileText, Eye, ClipboardCheck, AlertTriangle } from "lucide-react";
 import { ReadonlyVehicleDisplay } from "@/components/ui/readonly-vehicle-display";
@@ -401,8 +402,11 @@ export function ReservationForm({
   
   // Get today's date in YYYY-MM-DD format
   const today = format(new Date(), "yyyy-MM-dd");
-  // Default end date is 3 days from start date (unless open-ended)
-  const defaultEndDate = !isOpenEnded ? format(addDays(parseISO(selectedStartDate), 3), "yyyy-MM-dd") : "";
+  // Default end date is 3 days from start date (unless open-ended).
+  // This runs on every render, and `selectedStartDate` is "" the moment someone
+  // empties the date field — `suggestEndDate` answers "" for that instead of
+  // throwing "Invalid time value" and taking the reservations page down.
+  const defaultEndDate = !isOpenEnded ? suggestEndDate(selectedStartDate) : "";
   
   // Setup form with react-hook-form and zod validation
   // When editing (initialData exists), compute isOpenEnded from endDate since API doesn't return it
@@ -690,27 +694,22 @@ export function ReservationForm({
     } else if (!form.getValues("endDate") || wasOpenEnded === true) {
       // Switching FROM open-ended to dated, or no end date set
       // Smart auto-populate: consider current date and start date
+      const startValue = startDateWatch || selectedStartDate;
+      // Default: 3 days from start. "" means the start date was emptied or is
+      // half-typed — nothing to suggest yet, and nothing to format (a bare
+      // `format()` on it threw "Invalid time value" and took the page down).
+      const threeDaysFromStart = suggestEndDate(startValue);
+      if (!threeDaysFromStart) return;
+
+      // Converting an active open-ended rental to dated: suggest today when the
+      // rental already started, otherwise 3 days from start like a new one.
       const today = new Date();
-      const startDate = parseISO(startDateWatch || selectedStartDate);
-      
-      let suggestedEndDate: Date;
-      
-      if (editMode && wasOpenEnded === true) {
-        // User is converting an active open-ended rental to dated
-        // Suggest today if rental already started, otherwise 3 days from start
-        if (startDate <= today) {
-          // Rental already started - suggest today as end date
-          suggestedEndDate = today;
-        } else {
-          // Future rental - suggest 3 days from start
-          suggestedEndDate = addDays(startDate, 3);
-        }
-      } else {
-        // New reservation or initializing - default 3 days from start
-        suggestedEndDate = addDays(startDate, 3);
-      }
-      
-      form.setValue("endDate", format(suggestedEndDate, "yyyy-MM-dd"));
+      const rentalAlreadyStarted = parseISO(startValue) <= today;
+      const suggestedEndDate = editMode && wasOpenEnded === true && rentalAlreadyStarted
+        ? format(today, "yyyy-MM-dd")
+        : threeDaysFromStart;
+
+      form.setValue("endDate", suggestedEndDate);
     }
   }, [isOpenEndedWatch, form, startDateWatch, selectedStartDate, editMode]);
   
