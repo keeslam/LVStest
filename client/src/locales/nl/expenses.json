@@ -348,6 +348,7 @@
       "triggerManual": "Handmatig door {{user}}",
       "columns": {
         "subject": "Onderwerp",
+        "senderSubject": "Afzender / Onderwerp",
         "attachment": "Bijlage",
         "result": "Resultaat",
         "invoiceNumber": "Factuurnr.",

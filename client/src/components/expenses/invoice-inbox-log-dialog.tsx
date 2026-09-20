@@ -2,13 +2,13 @@ import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
-import { FileText, ScrollText } from "lucide-react";
+import { ArrowRight, FileText, ScrollText } from "lucide-react";
 import { UserPermission, UserRole } from "@shared/schema";
 import type { InboxLogRow, InboxRunRow, InboxStatus, ReviewReason } from "@shared/invoice-inbox";
 import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
-import { displayLicensePlate } from "@/lib/utils";
+import { cn, displayLicensePlate } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Badge } from "@/components/ui/badge";
@@ -46,11 +46,21 @@ const RESULT_BADGE: Record<InboxStatus, { variant: "success" | "secondary" | "ou
   dismissed: { variant: "secondary" },
 };
 
-/** Long subjects and file names may not stretch the dialog; the full text is in the tooltip. */
-function Truncated({ text }: { text: string | null }) {
+/**
+ * One line that may not stretch its column; the full text sits in the
+ * tooltip. `className` sets its own max-width (and any text styling) per call
+ * site, since the dialog packs several of these into narrow, fixed-width
+ * columns (see the 2026-09-20 layout fix: the table used to spill past the
+ * dialog at 1280-1440px, hiding whole columns and actions off-screen).
+ */
+function Truncated({ text, className }: { text: string | null; className?: string }) {
   if (!text) return <>-</>;
-  return <span className="block max-w-[18rem] truncate" title={text}>{text}</span>;
+  return <span className={cn("block truncate", className ?? "max-w-[18rem]")} title={text}>{text}</span>;
 }
+
+/** Compact header/cell padding for this dense table (default shadcn padding alone did not fit at 1280px). */
+const HEAD_CLS = "h-9 px-3 py-2";
+const CELL_CLS = "px-3 py-2 align-top";
 
 export function InvoiceInboxLogButton() {
   const { t } = useTranslation("expenses");
@@ -116,9 +126,9 @@ export function InvoiceInboxLogButton() {
     />
   );
 
-  /** "Meer laden", the empty and loading states, and "x van y getoond". */
+  /** "Meer laden", the empty and loading states, and "x van y getoond". Stays pinned under the scrolling table. */
   const footer = (shown: number, total: number, query: typeof logQuery | typeof runsQuery, testId: string) => (
-    <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+    <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-2 pt-2">
       <span className="text-xs text-muted-foreground">{t("invoiceInbox.log.shown", { shown, total })}</span>
       {query.hasNextPage && (
         <Button variant="outline" size="sm" onClick={() => query.fetchNextPage()} disabled={query.isFetchingNextPage} data-testid={testId}>
@@ -128,38 +138,53 @@ export function InvoiceInboxLogButton() {
     </div>
   );
 
+  /** "Resultaat": badge on top, the review reason and any error message stacked underneath it, not beside it. */
   const resultBadge = (row: InboxLogRow) => (
-    <>
+    <div className="max-w-[152px]">
       <Badge variant={RESULT_BADGE[row.status]?.variant ?? "secondary"} className={RESULT_BADGE[row.status]?.className}>
         {t(`invoiceInbox.tabs.${row.status as InboxStatus}`)}
       </Badge>
       {row.status === "review" && row.reviewReason && (
-        <span className="ml-1.5 text-xs text-muted-foreground">{t(`invoiceInbox.reasons.${row.reviewReason as ReviewReason}`)}</span>
+        <Truncated text={t(`invoiceInbox.reasons.${row.reviewReason as ReviewReason}`)} className="mt-1 max-w-full text-xs text-muted-foreground" />
       )}
-      {row.errorMessage && <div className="text-xs text-red-600"><Truncated text={row.errorMessage} /></div>}
-    </>
+      {row.errorMessage && <Truncated text={row.errorMessage} className="mt-1 max-w-full text-xs text-red-600" />}
+    </div>
   );
 
+  /** Icon-only so two actions still fit a narrow column; the label survives as a tooltip and for screen readers. */
   const rowActions = (row: InboxLogRow) => (
-    <div className="flex justify-end gap-1.5">
+    <div className="flex justify-end gap-1">
       {row.hasFile && canManageExpenses && (
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="icon" className="h-8 w-8" title={t("invoiceInbox.log.openFile")}>
           <a href={`/api/expenses/inbox/items/${row.id}/file`} target="_blank" rel="noreferrer" data-testid={`link-invoice-inbox-log-file-${row.id}`}>
-            <FileText className="mr-1.5 h-4 w-4" />{t("invoiceInbox.log.openFile")}
+            <FileText className="h-4 w-4" />
+            <span className="sr-only">{t("invoiceInbox.log.openFile")}</span>
           </a>
         </Button>
       )}
       {row.status === "review" && canManageExpenses && (
-        <Button asChild variant="ghost" size="sm">
-          <Link href="/expenses?inbox=1" data-testid={`link-invoice-inbox-log-review-${row.id}`}>{t("invoiceInbox.log.toReview")}</Link>
+        <Button asChild variant="ghost" size="icon" className="h-8 w-8" title={t("invoiceInbox.log.toReview")}>
+          <Link href="/expenses?inbox=1" data-testid={`link-invoice-inbox-log-review-${row.id}`}>
+            <ArrowRight className="h-4 w-4" />
+            <span className="sr-only">{t("invoiceInbox.log.toReview")}</span>
+          </Link>
         </Button>
       )}
     </div>
   );
 
+  /** Sender over subject, the attachment name (if any) below that in small muted text — one column instead of three. */
+  const senderSubjectCell = (row: InboxLogRow) => (
+    <div className="max-w-[280px] space-y-0.5">
+      <Truncated text={row.fromAddress ?? t("invoiceInbox.manualScan")} className="max-w-full text-xs text-muted-foreground" />
+      <Truncated text={row.subject} className="max-w-full text-sm font-medium text-foreground" />
+      {row.attachmentName && <Truncated text={row.attachmentName} className="max-w-full text-xs text-muted-foreground" />}
+    </div>
+  );
+
   const logPanel = (forKind: LogKind) => (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-end gap-2">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <div className="flex flex-shrink-0 flex-wrap items-end gap-2">
         {searchField}
         {forKind === "invoices" && (
           <div>
@@ -179,31 +204,29 @@ export function InvoiceInboxLogButton() {
         )}
       </div>
 
-      {logQuery.isPending ? (
-        <p className="py-4 text-center text-sm text-muted-foreground">{t("invoiceInbox.log.loading")}</p>
-      ) : rows.length === 0 ? (
-        <p className="py-4 text-center text-sm text-muted-foreground">{t(`invoiceInbox.log.empty.${forKind}`)}</p>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border">
+      <div className="min-h-0 flex-1 overflow-auto rounded-lg border" data-testid="invoice-inbox-log-table-scroll">
+        {logQuery.isPending ? (
+          <p className="py-4 text-center text-sm text-muted-foreground">{t("invoiceInbox.log.loading")}</p>
+        ) : rows.length === 0 ? (
+          <p className="py-4 text-center text-sm text-muted-foreground">{t(`invoiceInbox.log.empty.${forKind}`)}</p>
+        ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t("invoiceInbox.columns.received")}</TableHead>
-                <TableHead>{t("invoiceInbox.columns.sender")}</TableHead>
-                <TableHead>{t("invoiceInbox.log.columns.subject")}</TableHead>
-                <TableHead>{t("invoiceInbox.log.columns.attachment")}</TableHead>
+                <TableHead className={cn(HEAD_CLS, "w-[128px]")}>{t("invoiceInbox.columns.received")}</TableHead>
+                <TableHead className={HEAD_CLS}>{t("invoiceInbox.log.columns.senderSubject")}</TableHead>
                 {forKind === "invoices" ? (
                   <>
-                    <TableHead>{t("invoiceInbox.log.columns.result")}</TableHead>
-                    <TableHead>{t("invoiceInbox.columns.vehicle")}</TableHead>
-                    <TableHead>{t("invoiceInbox.log.columns.invoiceNumber")}</TableHead>
-                    <TableHead className="text-right">{t("invoiceInbox.columns.total")}</TableHead>
-                    <TableHead className="w-44"></TableHead>
+                    <TableHead className={cn(HEAD_CLS, "w-[168px]")}>{t("invoiceInbox.log.columns.result")}</TableHead>
+                    <TableHead className={cn(HEAD_CLS, "w-[100px]")}>{t("invoiceInbox.columns.vehicle")}</TableHead>
+                    <TableHead className={cn(HEAD_CLS, "w-[112px]")}>{t("invoiceInbox.log.columns.invoiceNumber")}</TableHead>
+                    <TableHead className={cn(HEAD_CLS, "w-[100px] text-right")}>{t("invoiceInbox.columns.total")}</TableHead>
+                    <TableHead className={cn(HEAD_CLS, "w-[76px]")}></TableHead>
                   </>
                 ) : (
                   <>
-                    <TableHead>{t("invoiceInbox.columns.reason")}</TableHead>
-                    <TableHead>{t("invoiceInbox.log.columns.status")}</TableHead>
+                    <TableHead className={cn(HEAD_CLS, "w-[152px]")}>{t("invoiceInbox.columns.reason")}</TableHead>
+                    <TableHead className={cn(HEAD_CLS, "w-[108px]")}>{t("invoiceInbox.log.columns.status")}</TableHead>
                   </>
                 )}
               </TableRow>
@@ -211,30 +234,30 @@ export function InvoiceInboxLogButton() {
             <TableBody>
               {rows.map((row) => (
                 <TableRow key={row.id} data-testid={`row-invoice-inbox-log-${row.id}`}>
-                  <TableCell className="whitespace-nowrap">{dateTime(row.receivedAt)}</TableCell>
-                  <TableCell><Truncated text={row.fromAddress ?? t("invoiceInbox.manualScan")} /></TableCell>
-                  <TableCell><Truncated text={row.subject} /></TableCell>
-                  <TableCell><Truncated text={row.attachmentName} /></TableCell>
+                  <TableCell className={cn(CELL_CLS, "whitespace-nowrap")}>{dateTime(row.receivedAt)}</TableCell>
+                  <TableCell className={CELL_CLS}>{senderSubjectCell(row)}</TableCell>
                   {forKind === "invoices" ? (
                     <>
-                      <TableCell>{resultBadge(row)}</TableCell>
-                      <TableCell className="whitespace-nowrap">{row.vehiclePlate ? displayLicensePlate(row.vehiclePlate) : "-"}</TableCell>
-                      <TableCell>{row.invoiceNumber || "-"}</TableCell>
-                      <TableCell className="text-right">{row.totalAmount === null ? "-" : formatCurrency(row.totalAmount)}</TableCell>
-                      <TableCell>{rowActions(row)}</TableCell>
+                      <TableCell className={CELL_CLS}>{resultBadge(row)}</TableCell>
+                      <TableCell className={cn(CELL_CLS, "whitespace-nowrap")}>{row.vehiclePlate ? displayLicensePlate(row.vehiclePlate) : "-"}</TableCell>
+                      <TableCell className={CELL_CLS}><Truncated text={row.invoiceNumber} className="max-w-[96px]" /></TableCell>
+                      <TableCell className={cn(CELL_CLS, "whitespace-nowrap text-right")}>{row.totalAmount === null ? "-" : formatCurrency(row.totalAmount)}</TableCell>
+                      <TableCell className={CELL_CLS}>{rowActions(row)}</TableCell>
                     </>
                   ) : (
                     <>
-                      <TableCell>{row.reviewReason ? t(`invoiceInbox.reasons.${row.reviewReason as ReviewReason}`) : "-"}</TableCell>
-                      <TableCell>{t(`invoiceInbox.tabs.${row.status as InboxStatus}`)}</TableCell>
+                      <TableCell className={CELL_CLS}>
+                        {row.reviewReason ? <Truncated text={t(`invoiceInbox.reasons.${row.reviewReason as ReviewReason}`)} className="max-w-[140px]" /> : "-"}
+                      </TableCell>
+                      <TableCell className={CELL_CLS}>{t(`invoiceInbox.tabs.${row.status as InboxStatus}`)}</TableCell>
                     </>
                   )}
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </div>
-      )}
+        )}
+      </div>
 
       {footer(rows.length, logQuery.data?.pages.at(-1)?.total ?? rows.length, logQuery, "button-invoice-inbox-log-more")}
     </div>
@@ -248,75 +271,109 @@ export function InvoiceInboxLogButton() {
           <ScrollText className="mr-1.5 h-4 w-4" />{t("invoiceInbox.log.title")}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] max-w-6xl overflow-y-auto">
-        <DialogHeader>
+      {/*
+        2026-09-20 layout fix: this used to be `max-w-6xl overflow-y-auto`,
+        which both (a) capped the dialog well under 1280px so the nine-column
+        Facturen table spilled off-screen (Kenteken/Factuurnr./Bedrag/actions
+        were never visible without scrolling — reported in
+        .superpowers/sdd/2026-09-20-invoice-inbox-log/e2e-report.md), and
+        (b) scrolled the whole dialog as one block, so the tabs and search bar
+        scrolled away with the rows. Now: as wide as the viewport reasonably
+        allows (capped at 1400px so it doesn't stretch absurdly on a huge
+        monitor), and a flex column so only the table area scrolls
+        (`min-h-0 flex-1 overflow-auto` below) while the header, tabs and
+        search/filter row stay put. Pattern matches other wide-table dialogs,
+        e.g. client/src/components/fines/fine-import-dialog.tsx.
+      */}
+      <DialogContent className="flex h-[85vh] max-h-[85vh] w-[min(96vw,1400px)] max-w-[min(96vw,1400px)] flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>{t("invoiceInbox.log.title")}</DialogTitle>
           <DialogDescription>{t("invoiceInbox.log.description")}</DialogDescription>
         </DialogHeader>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as LogTab)}>
-          <TabsList>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as LogTab)} className="flex min-h-0 flex-1 flex-col">
+          <TabsList className="flex-shrink-0">
             <TabsTrigger value="invoices" data-testid="tab-invoice-inbox-log-invoices">{t("invoiceInbox.log.tabs.invoices")}</TabsTrigger>
             <TabsTrigger value="other" data-testid="tab-invoice-inbox-log-other">{t("invoiceInbox.log.tabs.other")}</TabsTrigger>
             <TabsTrigger value="runs" data-testid="tab-invoice-inbox-log-runs">{t("invoiceInbox.log.tabs.runs")}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="invoices" className="mt-4">{logPanel("invoices")}</TabsContent>
-          <TabsContent value="other" className="mt-4">{logPanel("other")}</TabsContent>
+          {/*
+            Radix keeps every TabsContent mounted and merely toggles the native
+            `hidden` attribute on the inactive ones (display: none from the UA
+            stylesheet) — it does not unmount them. An unconditional `flex`
+            class here is an author-origin style that beats that UA default
+            regardless of `hidden`, so all three panels used to render at once,
+            each an equal (empty, content-less) flex-1 sibling — the active one
+            was squeezed into a third of the available height, which is why
+            the table only ever showed one clipped row. `data-[state=active]:flex`
+            only turns display:flex on for the panel Radix has actually made
+            active, leaving `hidden`'s own display:none in charge of the rest.
+          */}
+          <TabsContent value="invoices" className="mt-4 min-h-0 flex-1 flex-col data-[state=active]:flex">{logPanel("invoices")}</TabsContent>
+          <TabsContent value="other" className="mt-4 min-h-0 flex-1 flex-col data-[state=active]:flex">{logPanel("other")}</TabsContent>
 
-          <TabsContent value="runs" className="mt-4">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
+          <TabsContent value="runs" className="mt-4 min-h-0 flex-1 flex-col data-[state=active]:flex">
+            <div className="flex min-h-0 flex-1 flex-col gap-3">
+              <div className="flex flex-shrink-0 items-center gap-2">
                 <Switch id="invoice-inbox-log-active" checked={activeOnly} onCheckedChange={setActiveOnly} data-testid="switch-invoice-inbox-log-active" />
                 <Label htmlFor="invoice-inbox-log-active" className="text-sm">{t("invoiceInbox.log.activeOnly")}</Label>
               </div>
 
-              {runsQuery.isPending ? (
-                <p className="py-4 text-center text-sm text-muted-foreground">{t("invoiceInbox.log.loading")}</p>
-              ) : runs.length === 0 ? (
-                <p className="py-4 text-center text-sm text-muted-foreground">{t("invoiceInbox.log.empty.runs")}</p>
-              ) : (
-                <div className="overflow-x-auto rounded-lg border">
+              <div className="min-h-0 flex-1 overflow-auto rounded-lg border" data-testid="invoice-inbox-log-table-scroll">
+                {runsQuery.isPending ? (
+                  <p className="py-4 text-center text-sm text-muted-foreground">{t("invoiceInbox.log.loading")}</p>
+                ) : runs.length === 0 ? (
+                  <p className="py-4 text-center text-sm text-muted-foreground">{t("invoiceInbox.log.empty.runs")}</p>
+                ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>{t("invoiceInbox.log.columns.startedAt")}</TableHead>
-                        <TableHead>{t("invoiceInbox.log.columns.duration")}</TableHead>
-                        <TableHead>{t("invoiceInbox.log.columns.trigger")}</TableHead>
-                        <TableHead className="text-right">{t("invoiceInbox.log.columns.mails")}</TableHead>
-                        <TableHead className="text-right">{t("invoiceInbox.log.columns.attachments")}</TableHead>
-                        <TableHead className="text-right">{t("invoiceInbox.tabs.booked")}</TableHead>
-                        <TableHead className="text-right">{t("invoiceInbox.tabs.review")}</TableHead>
-                        <TableHead className="text-right">{t("invoiceInbox.log.columns.skipped")}</TableHead>
-                        <TableHead className="text-right">{t("invoiceInbox.log.columns.failed")}</TableHead>
-                        <TableHead>{t("invoiceInbox.log.columns.errors")}</TableHead>
+                        <TableHead className={cn(HEAD_CLS, "w-[128px]")}>{t("invoiceInbox.log.columns.startedAt")}</TableHead>
+                        <TableHead className={cn(HEAD_CLS, "w-[64px]")}>{t("invoiceInbox.log.columns.duration")}</TableHead>
+                        <TableHead className={cn(HEAD_CLS, "w-[220px]")}>{t("invoiceInbox.log.columns.trigger")}</TableHead>
+                        <TableHead className={cn(HEAD_CLS, "w-[60px] text-right")} title={t("invoiceInbox.log.columns.mails")}>{t("invoiceInbox.log.columns.mails")}</TableHead>
+                        <TableHead className={cn(HEAD_CLS, "w-[76px] text-right")} title={t("invoiceInbox.log.columns.attachments")}>{t("invoiceInbox.log.columns.attachments")}</TableHead>
+                        <TableHead className={cn(HEAD_CLS, "w-[74px] text-right")} title={t("invoiceInbox.tabs.booked")}>{t("invoiceInbox.tabs.booked")}</TableHead>
+                        <TableHead className={cn(HEAD_CLS, "w-[112px] text-right")} title={t("invoiceInbox.tabs.review")}>{t("invoiceInbox.tabs.review")}</TableHead>
+                        <TableHead className={cn(HEAD_CLS, "w-[102px] text-right")} title={t("invoiceInbox.log.columns.skipped")}>{t("invoiceInbox.log.columns.skipped")}</TableHead>
+                        <TableHead className={cn(HEAD_CLS, "w-[72px] text-right")} title={t("invoiceInbox.log.columns.failed")}>{t("invoiceInbox.log.columns.failed")}</TableHead>
+                        <TableHead className={HEAD_CLS}>{t("invoiceInbox.log.columns.errors")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {runs.map((run) => (
                         <TableRow key={run.id} data-testid={`row-invoice-inbox-log-run-${run.id}`}>
-                          <TableCell className="whitespace-nowrap">{dateTime(run.startedAt)}</TableCell>
-                          <TableCell className="whitespace-nowrap">{duration(run)}</TableCell>
-                          <TableCell>
-                            {run.trigger === "manual"
-                              ? t("invoiceInbox.log.triggerManual", { user: run.triggeredBy ?? "-" })
-                              : t("invoiceInbox.log.triggerScheduler")}
+                          <TableCell className={cn(CELL_CLS, "whitespace-nowrap")}>{dateTime(run.startedAt)}</TableCell>
+                          <TableCell className={cn(CELL_CLS, "whitespace-nowrap")}>{duration(run)}</TableCell>
+                          <TableCell className={CELL_CLS}>
+                            <Truncated
+                              text={run.trigger === "manual" ? t("invoiceInbox.log.triggerManual", { user: run.triggeredBy ?? "-" }) : t("invoiceInbox.log.triggerScheduler")}
+                              className="max-w-[208px]"
+                            />
                           </TableCell>
-                          <TableCell className="text-right">{run.mails}</TableCell>
-                          <TableCell className="text-right">{run.attachments}</TableCell>
-                          <TableCell className="text-right">{run.booked}</TableCell>
-                          <TableCell className="text-right">{run.review}</TableCell>
-                          <TableCell className="text-right">{run.skipped}</TableCell>
-                          <TableCell className="text-right">{run.failed}</TableCell>
-                          <TableCell className="text-xs text-red-600">
-                            {run.errors.length === 0 ? <span className="text-muted-foreground">-</span> : <Truncated text={run.errors.join(" | ")} />}
+                          <TableCell className={cn(CELL_CLS, "text-right")}>{run.mails}</TableCell>
+                          <TableCell className={cn(CELL_CLS, "text-right")}>{run.attachments}</TableCell>
+                          <TableCell className={cn(CELL_CLS, "text-right")}>{run.booked}</TableCell>
+                          <TableCell className={cn(CELL_CLS, "text-right")}>{run.review}</TableCell>
+                          <TableCell className={cn(CELL_CLS, "text-right")}>{run.skipped}</TableCell>
+                          <TableCell className={cn(CELL_CLS, "text-right")}>{run.failed}</TableCell>
+                          <TableCell className={cn(CELL_CLS, "text-xs text-red-600")}>
+                            {run.errors.length === 0 ? (
+                              <span className="text-muted-foreground">-</span>
+                            ) : (
+                              // Wraps instead of truncating: unlike the single-line fields
+                              // above, an operator reading a failed run wants the error
+                              // text itself, not just a tooltip promising it.
+                              <div className="max-w-[240px] whitespace-normal break-words">{run.errors.join(" | ")}</div>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
-                </div>
-              )}
+                )}
+              </div>
 
               {footer(runs.length, runsQuery.data?.pages.at(-1)?.total ?? runs.length, runsQuery, "button-invoice-inbox-log-runs-more")}
             </div>
