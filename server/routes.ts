@@ -171,7 +171,7 @@ import { onMaintenanceBlockChanged, onReplacementAssigned, onRentalVehicleChange
 import { onReservationChangedByStaff } from "./services/portal-reservation-events";
 import type { RouteDeps } from "./routes/deps";
 import { installIdParamValidation, rejectNullBytesInPath } from "./middleware/parseIntParam";
-import { parsePartialUpdate, parseCreateBody, BodyValidationError } from "./middleware/validateBody";
+import { parsePartialUpdate, parseCreateBody, BodyValidationError, coerceTimestampValue } from "./middleware/validateBody";
 import { sendRouteError, HttpError } from "./utils/route-errors";
 import { UploadRejectedError } from "./utils/security/fileUploadSecurity";
 import { db } from "./db";
@@ -7688,10 +7688,18 @@ export async function registerRoutes(app: Express): Promise<void> {
       
       // Exclude timestamp fields from the request body to avoid date conversion issues
       const { createdAt, updatedAt, ...bodyData } = req.body;
-      const checkData = {
-        ...bodyData,
-        checkDate: req.body.checkDate ? new Date(req.body.checkDate) : undefined,
-      };
+      // Same rule as the create path (middleware/validateBody.ts): a bare
+      // `yyyy-MM-dd` is that calendar day in the office's timezone, and a string
+      // that is not a date is a 400 rather than the `Invalid Date` that
+      // `new Date(...)` used to hand straight to a NOT NULL column.
+      const checkDate = req.body.checkDate == null ? undefined : coerceTimestampValue(req.body.checkDate);
+      if (req.body.checkDate != null && !checkDate) {
+        return res.status(400).json({
+          message: "Invalid damage check data",
+          errors: [{ field: "checkDate", message: "Expected date" }],
+        });
+      }
+      const checkData = { ...bodyData, checkDate };
       const updated = await storage.updateInteractiveDamageCheck(id, checkData, user?.username);
       
       if (!updated) {

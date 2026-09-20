@@ -113,6 +113,58 @@ function isEmptyMarker(value: unknown): boolean {
   return value === "" || value === "null" || value === "undefined";
 }
 
+/** `yyyy-MM-dd`, what a `<input type="date">` and `toISOString().split('T')[0]` produce. */
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+/** A full ISO-8601 date-time, with or without seconds, fraction and offset. */
+const ISO_DATE_TIME = /^(\d{4}-\d{2}-\d{2})[T ]\d{2}:\d{2}(:\d{2}(\.\d{1,9})?)?(Z|[+-]\d{2}:?\d{2})?$/;
+
+/**
+ * `new Date("2026-02-30T12:00:00Z")` is 2 March, not an error, and
+ * `"2026-09-31"` is 1 October — a `Number.isNaN(getTime())` check alone would
+ * let both through and store a day nobody typed. Only a month of 13+ is
+ * rejected by the parser itself, so the day has to be read back and compared.
+ */
+function isRealCalendarDay(datePart: string): boolean {
+  const [year, month, day] = datePart.split("-").map(Number);
+  const probe = new Date(Date.UTC(year, month - 1, day));
+  return (
+    probe.getUTCFullYear() === year && probe.getUTCMonth() === month - 1 && probe.getUTCDate() === day
+  );
+}
+
+/**
+ * The `Date` a timestamp column should receive for `value`, or `null` when the
+ * string is not a date this module is willing to guess at.
+ *
+ * A bare `yyyy-MM-dd` becomes **noon UTC** of that day, deliberately not
+ * midnight. The office works in Europe/Amsterdam and the container runs in UTC,
+ * and the same instant is read back through `officeDate()`
+ * (services/lifecycle.ts, Amsterdam) in one place and `toISOString()` (UTC) in
+ * another. 12:00Z is 13:00 CET in winter and 14:00 CEST in summer, and still
+ * the same date in UTC, so both readers report the day the user typed. Midnight
+ * UTC survives Amsterdam but is a day early for every reader west of Greenwich,
+ * which is a trap the next timezone question would spring.
+ */
+export function coerceTimestampValue(value: unknown): Date | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+
+  let candidate: string;
+  if (ISO_DATE.test(trimmed)) {
+    if (!isRealCalendarDay(trimmed)) return null;
+    candidate = `${trimmed}T12:00:00.000Z`;
+  } else {
+    const match = ISO_DATE_TIME.exec(trimmed);
+    if (!match || !isRealCalendarDay(match[1])) return null;
+    // Normalise the Postgres-style space separator: without the `T`, V8 falls
+    // back to its implementation-defined parser rather than the ISO one.
+    candidate = trimmed.replace(" ", "T");
+  }
+
+  const date = new Date(candidate);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 /**
  * Step 1. Coerces a raw request body (which for multipart is all strings) into
  * the shapes the column types expect. Only keys that exist as columns are
@@ -152,6 +204,20 @@ export function coerceBodyForTable(table: Table, body: Record<string, unknown>):
       const lowered = value.trim().toLowerCase();
       if (lowered === "true" || lowered === "on" || lowered === "1") out[key] = true;
       else if (lowered === "false" || lowered === "off" || lowered === "0") out[key] = false;
+      continue;
+    }
+
+    // drizzle-zod types a `timestamp` column as `z.date()`, and JSON has no Date
+    // type — a browser can only ever send a string. BUG-104: from the day this
+    // module shipped, every interactive damage check answered
+    // "Expected date, received string", because the screen sends
+    // `checkDate: "2026-09-21"`. A well-formed date becomes a Date here; a typo
+    // stays a string so the schema still answers 400 with the field name
+    // instead of an `Invalid Date` reaching the column. TEXT date columns (most
+    // `*_date` columns in this schema) have dataType `string` and are untouched.
+    if (column.dataType === "date" && typeof value === "string") {
+      const parsed = coerceTimestampValue(value);
+      if (parsed) out[key] = parsed;
       continue;
     }
 
