@@ -10,6 +10,7 @@
 import fs from "fs";
 import path from "path";
 import pg from "pg";
+import type { Locator, Page } from "@playwright/test";
 import { test, expect, settle, watchPage } from "../../support/guards";
 import { authFile } from "../../support/roles";
 import { E2E } from "../../support/env";
@@ -44,8 +45,51 @@ let runSchedulerWithMailId: number;
 let runSchedulerEmptyId: number;
 let runManualFailedId: number;
 
+/**
+ * Opens Settings -> tab E-mail -> Logboek, and returns the Logboek dialog's
+ * own locator (matched by its DialogTitle, not DOM position, since the
+ * Settings dialog underneath stays mounted and open the whole time). Shared by
+ * both viewport describes below so the two only differ in what they assert
+ * once the dialog is open.
+ */
+async function openInvoiceInboxLog(page: Page): Promise<Locator> {
+  await page.goto("/");
+  await settle(page);
+  await page.getByTestId("user-menu-button").click();
+  await page.getByTestId("menu-settings").click();
+  const settingsDialog = page.locator('[role="dialog"], [role="alertdialog"]').last();
+  await expect(settingsDialog).toBeVisible();
+  // The trigger has no data-testid of its own (settings-panel.tsx); "E-mail &
+  // GPS" is the full label shown at these viewport widths ("hidden
+  // sm:inline"), unique among the tab strip's labels.
+  await settingsDialog.getByRole("tab", { name: "E-mail & GPS", exact: true }).click();
+  await settle(page);
+
+  // InvoiceInboxConfigForm renders null until its config query resolves, and
+  // the button sits at the bottom of the E-mail tab's card list.
+  const openButton = page.getByTestId("button-invoice-inbox-log");
+  await openButton.scrollIntoViewIfNeeded();
+  await openButton.click();
+
+  const logDialog = page.getByRole("dialog", { name: "Logboek" });
+  await expect(logDialog).toBeVisible();
+  await settle(page);
+  return logDialog;
+}
+
+/** Filters out the one already-documented console violation so real ones still fail the test. */
+function assertHealthy(watcher: Awaited<ReturnType<typeof watchPage>>) {
+  const unexpected = watcher.violations.filter(
+    (violation) => !(violation.kind === "console" && violation.detail === KNOWN_SETTINGS_DIALOG_TITLE_WARNING),
+  );
+  expect(
+    unexpected,
+    "page health, excluding the known Settings-dialog DialogTitle warning (task-7-report.md finding 1)",
+  ).toEqual([]);
+}
+
 test.describe("Instellingen: Logboek van het factuurpostvak", () => {
-  test.use({ storageState: authFile("admin"), viewport: { width: 1440, height: 900 } });
+  test.use({ storageState: authFile("admin") });
 
   test.beforeAll(async () => {
     // Guard what this spec ever writes to / deletes from, independent of the
@@ -204,120 +248,164 @@ test.describe("Instellingen: Logboek van het factuurpostvak", () => {
     await client.end();
   });
 
-  test("toont facturen, overige mail en ophaalrondes; zoeken en filters werken", async ({ page }) => {
-    // watchPage(), not the `health` fixture: the Settings dialog's known,
-    // already-documented DialogTitle warning (see the constant above) would
-    // otherwise unconditionally fail `health`'s own teardown assertion.
-    const watcher = await watchPage(page);
+  test.describe("op 1440x900", () => {
+    test.use({ viewport: { width: 1440, height: 900 } });
 
-    const shotsDir = path.join(E2E.tmp, "shots");
-    fs.mkdirSync(shotsDir, { recursive: true });
+    test("toont facturen, overige mail en ophaalrondes; zoeken en filters werken", async ({ page }) => {
+      // watchPage(), not the `health` fixture: the Settings dialog's known,
+      // already-documented DialogTitle warning (see the constant above) would
+      // otherwise unconditionally fail `health`'s own teardown assertion.
+      const watcher = await watchPage(page);
 
-    await test.step("Instellingen openen op tabblad E-mail", async () => {
-      await page.goto("/");
-      await settle(page);
-      await page.getByTestId("user-menu-button").click();
-      await page.getByTestId("menu-settings").click();
-      const settingsDialog = page.locator('[role="dialog"], [role="alertdialog"]').last();
-      await expect(settingsDialog).toBeVisible();
-      // The trigger has no data-testid of its own (settings-panel.tsx); "E-mail
-      // & GPS" is the full label shown at this viewport width ("hidden
-      // sm:inline"), unique among the tab strip's labels.
-      await settingsDialog.getByRole("tab", { name: "E-mail & GPS", exact: true }).click();
-      await settle(page);
+      const shotsDir = path.join(E2E.tmp, "shots");
+      fs.mkdirSync(shotsDir, { recursive: true });
+
+      const logDialog = await test.step("Logboek openen: tabblad Facturen toont de drie factuurregels, niet de twee overige-mailregels", async () => {
+        const dialog = await openInvoiceInboxLog(page);
+
+        await expect(dialog.getByTestId("tab-invoice-inbox-log-invoices")).toHaveAttribute("data-state", "active");
+        await expect(dialog.locator("tbody tr")).toHaveCount(3);
+        await expect(dialog.getByTestId(`row-invoice-inbox-log-${bookedId}`)).toBeVisible();
+        await expect(dialog.getByTestId(`row-invoice-inbox-log-${reviewPlateUnknownId}`)).toBeVisible();
+        await expect(dialog.getByTestId(`row-invoice-inbox-log-${reviewParseFailedId}`)).toBeVisible();
+        await expect(dialog.getByTestId(`row-invoice-inbox-log-${otherNoAttachmentId}`)).toHaveCount(0);
+        await expect(dialog.getByTestId(`row-invoice-inbox-log-${otherNotInvoiceId}`)).toHaveCount(0);
+
+        await page.screenshot({ path: path.join(shotsDir, "logboek-facturen.png") });
+        return dialog;
+      });
+
+      await test.step("Zoeken op factuurnummer laat alleen de Bandenhuis-regel over", async () => {
+        await logDialog.getByTestId("input-invoice-inbox-log-search").fill("f-88213");
+        await settle(page);
+        await expect(logDialog.locator("tbody tr")).toHaveCount(1);
+        await expect(logDialog.getByTestId(`row-invoice-inbox-log-${reviewPlateUnknownId}`)).toBeVisible();
+      });
+
+      await test.step("Zoeken op kenteken zonder streepjes laat alleen de Garage Jansen-regel over", async () => {
+        await logDialog.getByTestId("input-invoice-inbox-log-search").fill("e2e01a");
+        await settle(page);
+        await expect(logDialog.locator("tbody tr")).toHaveCount(1);
+        await expect(logDialog.getByTestId(`row-invoice-inbox-log-${bookedId}`)).toBeVisible();
+      });
+
+      await test.step("Zoekterm wissen + status 'Te controleren' laat de twee 'te controleren'-regels over", async () => {
+        await logDialog.getByTestId("input-invoice-inbox-log-search").fill("");
+        await settle(page);
+        await logDialog.getByTestId("select-invoice-inbox-log-status").click();
+        await page.getByRole("option", { name: "Te controleren", exact: true }).click();
+        await settle(page);
+        await expect(logDialog.locator("tbody tr")).toHaveCount(2);
+        await expect(logDialog.getByTestId(`row-invoice-inbox-log-${reviewPlateUnknownId}`)).toBeVisible();
+        await expect(logDialog.getByTestId(`row-invoice-inbox-log-${reviewParseFailedId}`)).toBeVisible();
+        await expect(logDialog.getByTestId(`row-invoice-inbox-log-${bookedId}`)).toHaveCount(0);
+      });
+
+      await test.step("Tabblad Overige mail toont exact de twee overige-mailregels", async () => {
+        await logDialog.getByTestId("tab-invoice-inbox-log-other").click();
+        await settle(page);
+        await expect(logDialog.locator("tbody tr")).toHaveCount(2);
+        await expect(logDialog.getByTestId(`row-invoice-inbox-log-${otherNoAttachmentId}`)).toBeVisible();
+        await expect(logDialog.getByTestId(`row-invoice-inbox-log-${otherNotInvoiceId}`)).toBeVisible();
+
+        await page.screenshot({ path: path.join(shotsDir, "logboek-overige-mail.png") });
+      });
+
+      await test.step("Tabblad Ophaalrondes: schakelaar aan toont 2 rondes, uit toont 3; de handmatige ronde toont wie en de foutmelding", async () => {
+        await logDialog.getByTestId("tab-invoice-inbox-log-runs").click();
+        await settle(page);
+
+        const activeSwitch = logDialog.getByTestId("switch-invoice-inbox-log-active");
+        await expect(activeSwitch).toBeChecked();
+        await expect(logDialog.locator("tbody tr")).toHaveCount(2);
+        await expect(logDialog.getByTestId(`row-invoice-inbox-log-run-${runSchedulerEmptyId}`)).toHaveCount(0);
+
+        const manualRow = logDialog.getByTestId(`row-invoice-inbox-log-run-${runManualFailedId}`);
+        await expect(manualRow).toBeVisible();
+        await expect(manualRow).toContainText("Handmatig door e2e-admin");
+        await expect(manualRow).toContainText("ECONNREFUSED");
+
+        await activeSwitch.click();
+        await expect(activeSwitch).not.toBeChecked();
+        await settle(page);
+        await expect(logDialog.locator("tbody tr")).toHaveCount(3);
+        await expect(logDialog.getByTestId(`row-invoice-inbox-log-run-${runSchedulerEmptyId}`)).toBeVisible();
+
+        await page.screenshot({ path: path.join(shotsDir, "logboek-ophaalrondes.png") });
+      });
+
+      await watcher.check();
+      assertHealthy(watcher);
     });
+  });
 
-    // InvoiceInboxLogButton renders its own nested Dialog (invoice-inbox-log-dialog.tsx);
-    // matched by its DialogTitle ("Logboek") rather than DOM position, since the
-    // Settings dialog underneath stays mounted and open the whole time.
-    const logDialog = page.getByRole("dialog", { name: "Logboek" });
+  test.describe("op 1280x800", () => {
+    test.use({ viewport: { width: 1280, height: 800 } });
 
-    await test.step("Logboek openen: tabblad Facturen toont de drie factuurregels, niet de twee overige-mailregels", async () => {
-      // InvoiceInboxConfigForm renders null until its config query resolves, and
-      // the button sits at the bottom of the E-mail tab's card list.
-      const openButton = page.getByTestId("button-invoice-inbox-log");
-      await openButton.scrollIntoViewIfNeeded();
-      await openButton.click();
-      await expect(logDialog).toBeVisible();
-      await settle(page);
+    test("elke kolom en actie blijft binnen de dialoog: geen horizontale scroll op geen van de drie tabbladen", async ({ page }) => {
+      const watcher = await watchPage(page);
+      const shotsDir = path.join(E2E.tmp, "shots");
+      fs.mkdirSync(shotsDir, { recursive: true });
 
-      await expect(logDialog.getByTestId("tab-invoice-inbox-log-invoices")).toHaveAttribute("data-state", "active");
-      await expect(logDialog.locator("tbody tr")).toHaveCount(3);
-      await expect(logDialog.getByTestId(`row-invoice-inbox-log-${bookedId}`)).toBeVisible();
-      await expect(logDialog.getByTestId(`row-invoice-inbox-log-${reviewPlateUnknownId}`)).toBeVisible();
-      await expect(logDialog.getByTestId(`row-invoice-inbox-log-${reviewParseFailedId}`)).toBeVisible();
-      await expect(logDialog.getByTestId(`row-invoice-inbox-log-${otherNoAttachmentId}`)).toHaveCount(0);
-      await expect(logDialog.getByTestId(`row-invoice-inbox-log-${otherNotInvoiceId}`)).toHaveCount(0);
+      const logDialog = await openInvoiceInboxLog(page);
 
-      await page.screenshot({ path: path.join(shotsDir, "logboek-facturen.png") });
+      /** The table's own horizontal-scroll wrapper must not need to scroll. */
+      const assertNoHorizontalOverflow = async (label: string) => {
+        const scrollBox = logDialog.getByTestId("invoice-inbox-log-table-scroll");
+        const { scrollWidth, clientWidth } = await scrollBox.evaluate((el) => ({
+          scrollWidth: el.scrollWidth,
+          clientWidth: el.clientWidth,
+        }));
+        expect(
+          scrollWidth,
+          `${label}: de tabel scrolt horizontaal (scrollWidth ${scrollWidth} > clientWidth ${clientWidth})`,
+        ).toBeLessThanOrEqual(clientWidth);
+      };
+
+      /** The element's whole bounding box must sit inside the dialog's own bounding box. */
+      const assertWithinDialog = async (target: Locator, label: string) => {
+        const targetBox = await target.boundingBox();
+        const dialogBox = await logDialog.boundingBox();
+        expect(targetBox, `${label}: bounding box ontbreekt`).not.toBeNull();
+        expect(dialogBox, "Logboek dialoog: bounding box ontbreekt").not.toBeNull();
+        if (targetBox && dialogBox) {
+          expect(targetBox.x, `${label}: linkerkant valt buiten de dialoog`).toBeGreaterThanOrEqual(dialogBox.x - 1);
+          expect(
+            targetBox.x + targetBox.width,
+            `${label}: rechterkant valt buiten de dialoog`,
+          ).toBeLessThanOrEqual(dialogBox.x + dialogBox.width + 1);
+        }
+      };
+
+      await test.step("Facturen: geen horizontale scroll; laatste kolomkop en de actie 'Naar controleren' blijven binnen de dialoog", async () => {
+        await expect(logDialog.getByTestId("tab-invoice-inbox-log-invoices")).toHaveAttribute("data-state", "active");
+        await assertNoHorizontalOverflow("Facturen");
+        await assertWithinDialog(logDialog.locator("thead th").last(), "Facturen: laatste kolomkop");
+        await assertWithinDialog(
+          logDialog.getByTestId(`link-invoice-inbox-log-review-${reviewPlateUnknownId}`),
+          "Facturen: actie 'Naar controleren'",
+        );
+        await page.screenshot({ path: path.join(shotsDir, "logboek-facturen-1280.png") });
+      });
+
+      await test.step("Overige mail: geen horizontale scroll; laatste kolomkop blijft binnen de dialoog", async () => {
+        await logDialog.getByTestId("tab-invoice-inbox-log-other").click();
+        await settle(page);
+        await assertNoHorizontalOverflow("Overige mail");
+        await assertWithinDialog(logDialog.locator("thead th").last(), "Overige mail: laatste kolomkop");
+        await page.screenshot({ path: path.join(shotsDir, "logboek-overige-mail-1280.png") });
+      });
+
+      await test.step("Ophaalrondes: geen horizontale scroll; laatste kolomkop blijft binnen de dialoog", async () => {
+        await logDialog.getByTestId("tab-invoice-inbox-log-runs").click();
+        await settle(page);
+        await assertNoHorizontalOverflow("Ophaalrondes");
+        await assertWithinDialog(logDialog.locator("thead th").last(), "Ophaalrondes: laatste kolomkop");
+        await page.screenshot({ path: path.join(shotsDir, "logboek-ophaalrondes-1280.png") });
+      });
+
+      await watcher.check();
+      assertHealthy(watcher);
     });
-
-    await test.step("Zoeken op factuurnummer laat alleen de Bandenhuis-regel over", async () => {
-      await logDialog.getByTestId("input-invoice-inbox-log-search").fill("f-88213");
-      await settle(page);
-      await expect(logDialog.locator("tbody tr")).toHaveCount(1);
-      await expect(logDialog.getByTestId(`row-invoice-inbox-log-${reviewPlateUnknownId}`)).toBeVisible();
-    });
-
-    await test.step("Zoeken op kenteken zonder streepjes laat alleen de Garage Jansen-regel over", async () => {
-      await logDialog.getByTestId("input-invoice-inbox-log-search").fill("e2e01a");
-      await settle(page);
-      await expect(logDialog.locator("tbody tr")).toHaveCount(1);
-      await expect(logDialog.getByTestId(`row-invoice-inbox-log-${bookedId}`)).toBeVisible();
-    });
-
-    await test.step("Zoekterm wissen + status 'Te controleren' laat de twee 'te controleren'-regels over", async () => {
-      await logDialog.getByTestId("input-invoice-inbox-log-search").fill("");
-      await settle(page);
-      await logDialog.getByTestId("select-invoice-inbox-log-status").click();
-      await page.getByRole("option", { name: "Te controleren", exact: true }).click();
-      await settle(page);
-      await expect(logDialog.locator("tbody tr")).toHaveCount(2);
-      await expect(logDialog.getByTestId(`row-invoice-inbox-log-${reviewPlateUnknownId}`)).toBeVisible();
-      await expect(logDialog.getByTestId(`row-invoice-inbox-log-${reviewParseFailedId}`)).toBeVisible();
-      await expect(logDialog.getByTestId(`row-invoice-inbox-log-${bookedId}`)).toHaveCount(0);
-    });
-
-    await test.step("Tabblad Overige mail toont exact de twee overige-mailregels", async () => {
-      await logDialog.getByTestId("tab-invoice-inbox-log-other").click();
-      await settle(page);
-      await expect(logDialog.locator("tbody tr")).toHaveCount(2);
-      await expect(logDialog.getByTestId(`row-invoice-inbox-log-${otherNoAttachmentId}`)).toBeVisible();
-      await expect(logDialog.getByTestId(`row-invoice-inbox-log-${otherNotInvoiceId}`)).toBeVisible();
-
-      await page.screenshot({ path: path.join(shotsDir, "logboek-overige-mail.png") });
-    });
-
-    await test.step("Tabblad Ophaalrondes: schakelaar aan toont 2 rondes, uit toont 3; de handmatige ronde toont wie en de foutmelding", async () => {
-      await logDialog.getByTestId("tab-invoice-inbox-log-runs").click();
-      await settle(page);
-
-      const activeSwitch = logDialog.getByTestId("switch-invoice-inbox-log-active");
-      await expect(activeSwitch).toBeChecked();
-      await expect(logDialog.locator("tbody tr")).toHaveCount(2);
-      await expect(logDialog.getByTestId(`row-invoice-inbox-log-run-${runSchedulerEmptyId}`)).toHaveCount(0);
-
-      const manualRow = logDialog.getByTestId(`row-invoice-inbox-log-run-${runManualFailedId}`);
-      await expect(manualRow).toBeVisible();
-      await expect(manualRow).toContainText("Handmatig door e2e-admin");
-      await expect(manualRow).toContainText("ECONNREFUSED");
-
-      await activeSwitch.click();
-      await expect(activeSwitch).not.toBeChecked();
-      await settle(page);
-      await expect(logDialog.locator("tbody tr")).toHaveCount(3);
-      await expect(logDialog.getByTestId(`row-invoice-inbox-log-run-${runSchedulerEmptyId}`)).toBeVisible();
-
-      await page.screenshot({ path: path.join(shotsDir, "logboek-ophaalrondes.png") });
-    });
-
-    await watcher.check();
-    const unexpected = watcher.violations.filter(
-      (violation) => !(violation.kind === "console" && violation.detail === KNOWN_SETTINGS_DIALOG_TITLE_WARNING),
-    );
-    expect(
-      unexpected,
-      "page health, excluding the known Settings-dialog DialogTitle warning (task-7-report.md finding 1)",
-    ).toEqual([]);
   });
 });
