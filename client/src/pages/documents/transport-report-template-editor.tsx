@@ -37,6 +37,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { UserPermission } from "@shared/schema";
+import { useHasPermission } from "@/hooks/use-has-permission";
 
 interface TemplateField {
   id: string;
@@ -146,9 +148,15 @@ const TransportReportTemplateEditor = ({ onClose }: TransportReportTemplateEdito
   const backgroundInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  // Same reasoning as PDFTemplateEditor (template-editor.tsx): reachable via
+  // VIEW_DOCUMENTS/MANAGE_DOCUMENTS, but the route requires the narrower
+  // MANAGE_PDF_TEMPLATES (task-7-report.md).
+  const canManageTemplates = useHasPermission(UserPermission.MANAGE_PDF_TEMPLATES);
+
   const { data: templateData, isLoading: isTemplateLoading } = useQuery({
     queryKey: ['/api/transport-report-templates'],
     queryFn: getQueryFn({ on401: "throw" }),
+    enabled: canManageTemplates,
   });
 
   const saveTemplateMutation = useMutation({

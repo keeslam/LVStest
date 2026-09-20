@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import DamageCheckTemplateCanvasEditor from "@/pages/settings/damage-check-template-editor";
 import { formatVehicleType } from "@/lib/format-utils";
+import { UserPermission } from "@shared/schema";
+import { useHasPermission } from "@/hooks/use-has-permission";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -65,8 +67,14 @@ export default function DamageCheckTemplates({ embedded = false }: { embedded?: 
   const [clonePickerOpen, setClonePickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Reachable from /documents' "schadecontrole-sjablonen" tab, which only
+  // needs VIEW_DOCUMENTS/MANAGE_DOCUMENTS; the route below requires the
+  // narrower VIEW_DAMAGE_CHECKS/MANAGE_DAMAGE_CHECKS (task-7-report.md).
+  const canViewDamageChecks = useHasPermission(UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS);
+
   const { data: templates = [], isLoading } = useQuery<DamageCheckTemplate[]>({
     queryKey: ["/api/damage-check-templates"],
+    enabled: canViewDamageChecks,
   });
 
   const handleCreateNew = () => {

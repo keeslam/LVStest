@@ -38,6 +38,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { UserPermission } from "@shared/schema";
+import { useHasPermission } from "@/hooks/use-has-permission";
 
 interface TemplateField {
   id: string;
@@ -145,9 +147,16 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
   const backgroundInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  // This dialog is reachable by anyone who can see /documents
+  // (VIEW_DOCUMENTS/MANAGE_DOCUMENTS), but the route below requires
+  // MANAGE_PDF_TEMPLATES — narrower, and not held by every profile that
+  // holds VIEW_DOCUMENTS (task-7-report.md).
+  const canManageTemplates = useHasPermission(UserPermission.MANAGE_PDF_TEMPLATES);
+
   const { data: templateData, isLoading: isTemplateLoading } = useQuery({
     queryKey: ['/api/pdf-templates'],
     queryFn: getQueryFn({ on401: "throw" }),
+    enabled: canManageTemplates,
   });
 
   const { data: reservationsData, isLoading: isReservationsLoading } = useQuery({
