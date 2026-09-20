@@ -131,15 +131,23 @@ test.describe("Instellingen: Logboek van het factuurpostvak", () => {
     );
     bookedId = booked.rows[0].id;
 
+    // This is the one row with a stored attachment (attachment_path), so it is
+    // also the one row whose "Acties" cell shows BOTH icon buttons at once
+    // ("PDF openen" + "Naar controleren") — the layout-fix test below needs
+    // that combination to check the actions column is actually wide enough.
+    // The file need not exist on disk: `hasFile` in
+    // server/services/invoice-inbox/inbox-storage.ts (toLogRow) is just
+    // `Boolean(item.attachmentPath)`, and this test never clicks the link.
     const reviewPlateUnknown = await client.query<{ id: number }>(
       `INSERT INTO invoice_inbox_items
-         (from_address, subject, attachment_name, attachment_hash, attachment_content_type, parsed, status, review_reason, received_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         (from_address, subject, attachment_name, attachment_path, attachment_hash, attachment_content_type, parsed, status, review_reason, received_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING id`,
       [
         "info@bandenhuisnoord.e2e.invalid",
         `${SUBJECT_PREFIX} Bandenhuis Noord factuur F-88213`,
         "bandenhuis-noord-f-88213.pdf",
+        "invoice-inbox/2026/09/bandenhuis-noord-f-88213.pdf",
         "e2e-log-hash-plate-unknown",
         "application/pdf",
         JSON.stringify({ vendor: "Bandenhuis Noord", invoiceNumber: "F-88213", invoiceDate: "2026-09-16", currency: "EUR", totalAmount: 1249, lineItems: [] }),
@@ -241,10 +249,21 @@ test.describe("Instellingen: Logboek van het factuurpostvak", () => {
   });
 
   test.afterAll(async () => {
+    if (!client) return; // beforeAll threw before the client connected — nothing to clean up.
     await client.query(`DELETE FROM invoice_inbox_items WHERE subject LIKE $1`, [`${SUBJECT_PREFIX}%`]);
-    await client.query(`DELETE FROM invoice_inbox_runs WHERE id = ANY($1::int[])`, [
-      [runSchedulerWithMailId, runSchedulerEmptyId, runManualFailedId],
-    ]);
+    // Filtered, not asserted: a beforeAll that threw partway through (e.g. the
+    // vehicle lookup) can leave a later run id as `undefined`, and
+    // `= ANY($1::int[])` with a NULL element in the array matches nothing for
+    // that element rather than deleting extra rows — but passing `undefined`
+    // itself makes node-pg send SQL NULL, which is a wasted round trip at
+    // best. Filtering first keeps this cleanup working for however far
+    // beforeAll actually got, instead of throwing on top of its own failure.
+    const runIds = [runSchedulerWithMailId, runSchedulerEmptyId, runManualFailedId].filter(
+      (id): id is number => typeof id === "number",
+    );
+    if (runIds.length > 0) {
+      await client.query(`DELETE FROM invoice_inbox_runs WHERE id = ANY($1::int[])`, [runIds]);
+    }
     await client.end();
   });
 
@@ -270,6 +289,10 @@ test.describe("Instellingen: Logboek van het factuurpostvak", () => {
         await expect(dialog.getByTestId(`row-invoice-inbox-log-${reviewParseFailedId}`)).toBeVisible();
         await expect(dialog.getByTestId(`row-invoice-inbox-log-${otherNoAttachmentId}`)).toHaveCount(0);
         await expect(dialog.getByTestId(`row-invoice-inbox-log-${otherNotInvoiceId}`)).toHaveCount(0);
+        // The booked row has no stored attachment (attachment_path is null),
+        // so it must show no "PDF openen" action at all — only the Bandenhuis
+        // row (below) has a file.
+        await expect(dialog.getByTestId(`link-invoice-inbox-log-file-${bookedId}`)).toHaveCount(0);
 
         await page.screenshot({ path: path.join(shotsDir, "logboek-facturen.png") });
         return dialog;
@@ -377,10 +400,18 @@ test.describe("Instellingen: Logboek van het factuurpostvak", () => {
         }
       };
 
-      await test.step("Facturen: geen horizontale scroll; laatste kolomkop en de actie 'Naar controleren' blijven binnen de dialoog", async () => {
+      await test.step("Facturen: geen horizontale scroll; laatste kolomkop en bij de Bandenhuis-regel BEIDE acties blijven binnen de dialoog", async () => {
         await expect(logDialog.getByTestId("tab-invoice-inbox-log-invoices")).toHaveAttribute("data-state", "active");
         await assertNoHorizontalOverflow("Facturen");
         await assertWithinDialog(logDialog.locator("thead th").last(), "Facturen: laatste kolomkop");
+        // The Bandenhuis row (reviewPlateUnknownId) is the one seeded row with
+        // both a stored attachment and status "review", so its Acties cell is
+        // the only one that ever renders both icon buttons side by side — the
+        // exact case that needs the column to actually be wide enough.
+        await assertWithinDialog(
+          logDialog.getByTestId(`link-invoice-inbox-log-file-${reviewPlateUnknownId}`),
+          "Facturen: actie 'PDF openen'",
+        );
         await assertWithinDialog(
           logDialog.getByTestId(`link-invoice-inbox-log-review-${reviewPlateUnknownId}`),
           "Facturen: actie 'Naar controleren'",
