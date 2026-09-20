@@ -6,6 +6,13 @@ import { InsertVehicle } from "../../shared/schema";
 import { format } from 'date-fns';
 
 /**
+ * Where the RDW open data lives. Only the deployment can change it (an
+ * environment variable, never user input); the browser test suite points it at
+ * a local stub so a test run never leaves the machine.
+ */
+const RDW_BASE_URL = (process.env.RDW_BASE_URL || "https://opendata.rdw.nl").replace(/\/+$/, "");
+
+/**
  * Custom error classes for RDW API failures
  */
 export class RDWNotFoundError extends Error {
@@ -187,9 +194,9 @@ async function getRdwJson(url: string, fetchImpl: typeof fetch): Promise<unknown
  */
 export async function fetchRdwFiscalData(licensePlate: string, fetchImpl: typeof fetch = fetch): Promise<RdwFiscalData> {
   const normalized = licensePlate.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-  const vehicleRows = await getRdwJson(`https://opendata.rdw.nl/resource/m9d7-ebf2.json?kenteken=${normalized}`, fetchImpl);
+  const vehicleRows = await getRdwJson(`${RDW_BASE_URL}/resource/m9d7-ebf2.json?kenteken=${normalized}`, fetchImpl);
   if (vehicleRows.length === 0) throw new RDWNotFoundError(licensePlate);
-  const fuelRows = await getRdwJson(`https://opendata.rdw.nl/resource/8ys7-d773.json?kenteken=${normalized}`, fetchImpl);
+  const fuelRows = await getRdwJson(`${RDW_BASE_URL}/resource/8ys7-d773.json?kenteken=${normalized}`, fetchImpl);
   return {
     vehicle: vehicleRows[0] as Record<string, unknown>,
     fuels: fuelRows as Array<Record<string, unknown>>,
@@ -208,7 +215,7 @@ export async function fetchVehicleInfoByLicensePlate(licensePlate: string): Prom
   const normalized = licensePlate.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
   
   // Define the base API URL
-  const apiUrl = `https://opendata.rdw.nl/resource/m9d7-ebf2.json?kenteken=${normalized}`;
+  const apiUrl = `${RDW_BASE_URL}/resource/m9d7-ebf2.json?kenteken=${normalized}`;
   
   // Attempt to fetch with a timeout
   const controller = new AbortController();
@@ -246,7 +253,7 @@ export async function fetchVehicleInfoByLicensePlate(licensePlate: string): Prom
     // row; a failure there leaves those two fields empty rather than failing the lookup.
     let fuelRows: Array<Record<string, unknown>> = [];
     try {
-      fuelRows = (await getRdwJson(`https://opendata.rdw.nl/resource/8ys7-d773.json?kenteken=${normalized}`, fetch)) as Array<Record<string, unknown>>;
+      fuelRows = (await getRdwJson(`${RDW_BASE_URL}/resource/8ys7-d773.json?kenteken=${normalized}`, fetch)) as Array<Record<string, unknown>>;
     } catch {
       fuelRows = [];
     }
