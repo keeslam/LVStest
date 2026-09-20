@@ -15,7 +15,7 @@
     "docker:start": "npm start",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "playwright test -c e2e/playwright.config.ts",
+    "e2e": "playwright test -c e2e/playwright.config.ts && tsx scripts/e2e-dialog-coverage.ts",
     "e2e:a": "playwright test -c e2e/playwright.config.ts --project=layer-a",
     "e2e:b": "playwright test -c e2e/playwright.config.ts --project=layer-b"
   },
