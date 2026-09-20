@@ -24,3 +24,6 @@ yarn-error.log*
 # Runtime backup/dump data - not source
 backups/
 temp/
+
+# Playwright e2e runtime output (traces, results, auth state)
+e2e/.tmp/

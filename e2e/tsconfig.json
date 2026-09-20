@@ -1,0 +1,6 @@
+{
+  "extends": "../tsconfig.json",
+  "include": ["./**/*.ts", "../scripts/e2e-dialog-coverage.ts"],
+  "exclude": [".tmp"],
+  "compilerOptions": { "noEmit": true, "incremental": false, "types": ["node"] }
+}
