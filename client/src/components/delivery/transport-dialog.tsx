@@ -6,7 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest, invalidateByPrefix, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Customer, Reservation, Settings, Vehicle, VehicleTransport } from "@shared/schema";
+import { Customer, Reservation, Settings, Vehicle, VehicleTransport, UserPermission } from "@shared/schema";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import {
   Dialog,
   DialogContent,
@@ -102,10 +103,16 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEditMode = !!editingTransport;
+  // Reachable via VIEW_RESERVATIONS/MANAGE_RESERVATIONS (the /delivery page's
+  // own gate); cleaner and maintenance hold neither VIEW_CUSTOMERS nor
+  // MANAGE_CUSTOMERS, which the route below requires — same class of bug as
+  // delivery/dashboard.tsx's own /api/customers query (task-6b-report.md),
+  // reproduced a second time inside this dialog (task-7-report.md).
+  const canViewCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
 
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
-    enabled: open,
+    enabled: open && canViewCustomers,
   });
 
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
