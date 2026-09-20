@@ -64,16 +64,18 @@ which is where both faults of 2026-09-20 sat.
 
 ```
 e2e/
-  playwright.config.ts      projects: setup, layer-a, layer-b
-  global-setup.ts           database, migration, seed, build check
+  playwright.config.ts      projects: auth, setup, layer-a, layer-b; webServer
   seed/
     seed.ts                 deterministic data, no real customer data
-    users.ts                one user per role, fixed names
+    users.ts                one permission profile per role
+    data.ts                 vehicles, customers, reservations
   support/
-    app.ts                  start/stop the application under test
+    serve.ts                webServer entry: database, seed, RDW stub, server
+    database.ts             lvs_e2e from nothing: push, then the migration
+    build.ts                reuse dist/ when it is fresh
     guards.ts               page-health guard (see Layer A)
     steps.ts                step counter (see Layer B)
-    login.ts                one login per role, session reused
+  setup/                    schema proof, one login per role, seed proof
   registry/
     pages.ts                every route, which roles may open it
     dialogs.ts              per page: the openers of its dialogs
@@ -83,8 +85,8 @@ e2e/
     forbidden.spec.ts
   layer-b/
     desk/…                  round 1
-  scripts/
-    dialog-coverage.ts      dialogs in the source that no registry entry opens
+scripts/
+  e2e-dialog-coverage.ts    dialogs in the source that no registry entry opens
 docs/e2e/
   README.md                 how to run, how to read a failure (Dutch)
   werkstromen/
@@ -127,15 +129,21 @@ where possible, so the seed cannot drift from the schema. Fixed content:
 
 - Seven users, one per role (`admin`, `manager`, `user`, `cleaner`, `viewer`,
   `accountant`, `maintenance`), password from an environment variable with a
-  documented local default that exists only in the E2E database.
+  documented local default that exists only in the E2E database. In this
+  application a role is a label: only `admin` implies rights
+  (`server/middleware/permissions.ts`), every other user has an explicit list
+  of permissions. The seed therefore defines one permission profile per role
+  in `e2e/seed/users.ts`. The profiles are an assumption about how the owner
+  sets up staff; they are shown to him in the round 1 review and corrected to
+  match production.
 - Eight vehicles with invented plates in valid Dutch formats, covering:
   available, rented, in workshop, not for rental, APK due within 30 days,
   warranty ending.
 - Six customers (private and business, one with a second driver).
 - Reservations in every status: booked for today, booked for next week, picked
-  up, returned, completed, cancelled; one open-ended rental; one placeholder
-  spare.
-- A few expenses, one maintenance block, one transport, one portal user.
+  up, returned, completed, cancelled; one open-ended rental.
+- A few expenses. Maintenance blocks, transports, portal users and a
+  placeholder spare are added in the round that needs them.
 
 Dates are relative to the run date (office date, Europe/Amsterdam), so the
 suite never rots.
@@ -157,8 +165,13 @@ For each role the suite logs in once, then for each page:
    500 or higher on `/api/`, an uncaught exception, or a `console.error`. A
    short allowlist with a written reason per entry covers known harmless noise.
 
-For a page a role may not open, the suite checks the refusal (redirect or the
-"geen toegang" state) and that the page's API calls return 403, not data.
+For a page a role may not open, the suite checks that the sidebar does not
+offer it and that the page's API calls return 403, never data. The client has
+no page-level refusal today: `ProtectedRoute` only checks that someone is
+logged in, so a typed address renders the page shell with failed requests.
+The suite asserts that this does not crash (no error boundary); what staff
+should see instead is a proposal for the round 1 review, not something this
+project changes on its own.
 
 Openers are explicit on purpose. A crawler that clicks every button would also
 press "Verwijderen". The gap this leaves is made visible instead of hidden:
