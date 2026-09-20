@@ -308,10 +308,11 @@ export function ReservationCalendar() {
         <CardTitle className="text-base font-medium text-gray-800">{t('reservationCalendar.title')}</CardTitle>
         <div className="flex space-x-2">
           <ReservationAddDialog>
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               variant="outline"
               className="h-8 text-xs"
+              data-testid="button-dashboard-new-reservation"
             >
               <PlusCircle className="mr-1 h-3 w-3" />
               New Reservation

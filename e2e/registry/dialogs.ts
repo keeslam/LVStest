@@ -17,10 +17,36 @@ export interface DialogEntry {
 }
 
 export const DIALOGS: DialogEntry[] = [
+  // --- Global (header/sidebar), registered once on "/" ---------------------
+  // Rendered by MainLayout on every authenticated page; VIEW_DASHBOARD is the
+  // permission every one of the seven E2E profiles holds, so this stands in
+  // for "any signed-in user".
+  { page: "/", opener: "button-notification-center", anyOf: [P.VIEW_DASHBOARD], source: "client/src/components/notifications/notification-center-dialog.tsx", name: "meldingencentrum" },
+  { page: "/", opener: "menu-profile", via: "user-menu-button", anyOf: [P.VIEW_DASHBOARD], source: "client/src/components/dialogs/profile-dialog.tsx", name: "eigen profiel" },
+  // users/backup/settings menu items only render for user.role === admin
+  // (user-menu.tsx), not for a permission — anyOf: [] so can() only passes
+  // for admin, matching the real gate.
+  { page: "/", opener: "menu-users", via: "user-menu-button", anyOf: [], source: "client/src/components/dialogs/users-dialog.tsx", name: "gebruikersbeheer" },
+  { page: "/", opener: "menu-backup", via: "user-menu-button", anyOf: [], source: "client/src/components/dialogs/backup-dialog.tsx", name: "back-upbeheer" },
+  { page: "/", opener: "menu-settings", via: "user-menu-button", anyOf: [], source: "client/src/components/settings/settings-dialog.tsx", name: "app-instellingen (heeft tabbladen, eenmalig geregistreerd)" },
+  // Dashboard "snelle acties": QuickActions renders every tile for anyone who
+  // can see "/", with no per-action permission check of its own (see Findings
+  // for the owner) — anyOf: [VIEW_DASHBOARD] reflects that reality.
+  { page: "/", opener: "button-quick-add-vehicle", anyOf: [P.VIEW_DASHBOARD], source: "client/src/components/dashboard/quick-actions.tsx", name: "snelle actie: voertuig toevoegen" },
+  { page: "/", opener: "button-quick-add-customer", anyOf: [P.VIEW_DASHBOARD], source: "client/src/components/dashboard/quick-actions.tsx", name: "snelle actie: klant toevoegen" },
+  { page: "/", opener: "button-quick-log-expense", anyOf: [P.VIEW_DASHBOARD], source: "client/src/components/dashboard/quick-actions.tsx", name: "snelle actie: uitgave registreren" },
+  { page: "/", opener: "button-dashboard-new-reservation", anyOf: [P.VIEW_DASHBOARD], source: "client/src/components/dashboard/reservation-calendar.tsx", name: "dashboard: nieuwe reservering" },
+
+  // --- /vehicles -------------------------------------------------------------
   // isAdmin-gated in vehicles/index.tsx (role === UserRole.ADMIN), not
   // MANAGE_VEHICLES (manager and maintenance also hold that permission but do
   // not see this button) — anyOf: [] so can() only passes for admin.
   { page: "/vehicles", opener: "button-open-recycle-bin", anyOf: [], source: "client/src/components/vehicles/deleted-vehicles-dialog.tsx", name: "prullenbak voertuigen" },
+  { page: "/vehicles", opener: "button-open-barcode-book", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/barcodes/barcode-book-dialog.tsx", name: "barcodeboek" },
+  { page: "/vehicles", opener: "button-key-audit", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/barcodes/key-audit-dialog.tsx", name: "sleutelcontrole (hoofdsleutels)" },
+  { page: "/vehicles", opener: "button-add-vehicle", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/vehicles/vehicle-add-dialog.tsx", name: "voertuig toevoegen" },
+  { page: "/vehicles", opener: "button-bulk-import", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/vehicles/vehicle-bulk-import-dialog.tsx", name: "voertuigen bulk-importeren" },
+
   { page: "/expenses", opener: "button-invoice-inbox", anyOf: [P.MANAGE_EXPENSES], source: "client/src/components/expenses/invoice-inbox-dialog.tsx", name: "ontvangen facturen" },
 ];
 

@@ -1003,7 +1003,7 @@ export function QuickActions() {
               return (
                 <Dialog key={action.label} open={vehicleDialogOpen} onOpenChange={setVehicleDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className={actionStyle(action).className} size={actionStyle(action).size}>
+                    <Button variant="outline" className={actionStyle(action).className} size={actionStyle(action).size} data-testid="button-quick-add-vehicle">
                       <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
                       {t(`quickActions.buttons.${action.dialog}`)}
                     </Button>
@@ -1034,7 +1034,7 @@ export function QuickActions() {
               return (
                 <Dialog key={action.label} open={customerDialogOpen} onOpenChange={setCustomerDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className={actionStyle(action).className} size={actionStyle(action).size}>
+                    <Button variant="outline" className={actionStyle(action).className} size={actionStyle(action).size} data-testid="button-quick-add-customer">
                       <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
                       {t(`quickActions.buttons.${action.dialog}`)}
                     </Button>
@@ -1069,6 +1069,7 @@ export function QuickActions() {
                       variant="outline"
                       className="bg-primary-50 text-primary-600 hover:bg-primary-100"
                       size="sm"
+                      data-testid="button-quick-log-expense"
                     >
                       <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
                       {t(`quickActions.buttons.${action.dialog}`)}
