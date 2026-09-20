@@ -16,6 +16,15 @@ export default defineConfig({
     screenshot: "only-on-failure",
     video: "retain-on-failure",
   },
+  webServer: {
+    command: "npx tsx e2e/support/serve.ts",
+    cwd: "..",
+    url: `${E2E.baseUrl}/api/user`, // 401 when nobody is logged in: that counts as "up"
+    timeout: 600_000,
+    reuseExistingServer: false,
+    stdout: "pipe",
+    stderr: "pipe",
+  },
   projects: [
     { name: "setup", testMatch: /setup[\\/].*\.setup\.ts/ },
     { name: "layer-a", testMatch: /layer-a[\\/].*\.spec\.ts/, dependencies: ["setup"], fullyParallel: true },

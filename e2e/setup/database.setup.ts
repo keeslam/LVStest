@@ -1,14 +1,9 @@
 import { test, expect } from "@playwright/test";
 import pg from "pg";
 import { E2E } from "../support/env";
-import { prepareDatabase } from "../support/database";
 
-// Temporary: this call moves into serve.ts in Task 3, once a webServer
-// fixture owns the database lifecycle for the whole run.
-test.beforeAll(async () => {
-  test.setTimeout(300_000);
-  await prepareDatabase();
-});
+// The database is built once by the webServer fixture (e2e/support/serve.ts)
+// before any project depending on "setup" runs; this test only inspects it.
 
 // The dashboard of 2026-09-20 failed on a database that had missed a migration
 // (column expenses.inbox_item_id). This proves the database under test was
