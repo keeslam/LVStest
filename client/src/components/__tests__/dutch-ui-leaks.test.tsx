@@ -29,6 +29,13 @@ vi.mock("@/components/reservations/pickup-return-dialogs", () => ({
   PickupDialog: () => null,
   ReturnDialog: () => null,
 }));
+// ReservationForm now reads useHasPermission() -> useAuth() to gate its
+// customers query (task-7-report.md); this test predates that and never
+// wrapped its render in an AuthProvider, so it needs the same mock the
+// other component tests use.
+vi.mock("@/hooks/use-auth", () => ({
+  useAuth: () => ({ user: { id: 1, username: "tester", role: "admin", permissions: [], hidePrices: false }, isLoading: false }),
+}));
 
 import { GlobalDialogProvider } from "@/contexts/GlobalDialogContext";
 import { ScanPanel } from "@/components/barcodes/scan-panel";

@@ -61,7 +61,8 @@ import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { suggestEndDate } from "@/lib/suggest-end-date";
-import { Customer, Vehicle, Reservation, Document, Driver, type InteractiveDamageCheck } from "@shared/schema";
+import { Customer, Vehicle, Reservation, Document, Driver, UserPermission, type InteractiveDamageCheck } from "@shared/schema";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { PlusCircle, FileCheck, Upload, Check, X, Edit, FileText, Eye, ClipboardCheck, AlertTriangle } from "lucide-react";
 import { ReadonlyVehicleDisplay } from "@/components/ui/readonly-vehicle-display";
 import { DriverDialog } from "@/components/customers/driver-dialog";
@@ -231,6 +232,11 @@ export function ReservationForm({
   const { openReservationDialog } = useGlobalDialog();
   const queryClient = useQueryClient();
   const [_, navigate] = useLocation();
+  // Every role that may open this form (VIEW_RESERVATIONS/MANAGE_RESERVATIONS)
+  // also gets offered the reservation dialog on the dashboard, but not every
+  // such role holds VIEW_CUSTOMERS/MANAGE_CUSTOMERS (cleaner, maintenance) —
+  // the customers query below must not fire for them (see task-7-report.md).
+  const canViewCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
   
   // Extract URL parameters
   const urlParams = new URLSearchParams(window.location.search);
@@ -353,6 +359,7 @@ export function ReservationForm({
   // Fetch customers for select field
   const { data: customers, isLoading: isLoadingCustomers } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
+    enabled: canViewCustomers,
   });
   
   // Fetch vehicles for select field
