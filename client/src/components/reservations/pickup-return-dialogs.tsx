@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import type { Reservation, Vehicle } from "@shared/schema";
 import { formatReservationStatus } from "@/lib/format-utils";
+import { officeToday } from "@/lib/office-date";
 import { formatDutchDate } from "@shared/booking-warnings";
 import { needsRemarkConfirmation, hasRemarks } from "@shared/remark-confirmation";
 import { Car, Fuel, Calendar, FileText, ClipboardCheck, ExternalLink, CheckCircle2, Edit, Trash2, Upload, AlertTriangle } from "lucide-react";
@@ -44,7 +45,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
     reservation.vehicle?.currentFuelLevel || "Full"
   );
   const [pickupDate, setPickupDate] = useState(
-    new Date().toISOString().split('T')[0]
+    officeToday()
   );
   const [pickupNotes, setPickupNotes] = useState("");
   // besluiten B-16 (BUG-211) — the question the server asks when the rental has
@@ -169,7 +170,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
         setSelectedVehicleId(null);
         setPickupMileage(reservation.vehicle?.currentMileage?.toString() || "");
         setFuelLevelPickup(reservation.vehicle?.currentFuelLevel || "Full");
-        setPickupDate(new Date().toISOString().split('T')[0]);
+        setPickupDate(officeToday());
         setPickupNotes("");
         setIsDuplicateContract(false);
         setIsHighContractNumber(false);
@@ -1359,7 +1360,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
   );
   const [fuelLevelReturn, setFuelLevelReturn] = useState("Full");
   const [returnDate, setReturnDate] = useState(
-    new Date().toISOString().split('T')[0]
+    officeToday()
   );
   const [returnNotes, setReturnNotes] = useState("");
   // OPT-005: what the return produced, shown after the dialog closes.
@@ -1449,7 +1450,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
         reservation.pickupMileage?.toString() || reservation.vehicle?.currentMileage?.toString() || ""
       );
       setFuelLevelReturn("Full");
-      setReturnDate(new Date().toISOString().split('T')[0]);
+      setReturnDate(officeToday());
       setReturnNotes("");
     }
   }, [open, reservation]);
