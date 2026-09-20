@@ -53,21 +53,30 @@ function trackRequests(page: Page): Map<string, number> {
     if (count <= 1) open!.delete(k);
     else open!.set(k, count - 1);
   };
-  page.on("request", (request) => start(request.url()));
+  page.on("request", (request) => {
+    // A full navigation (page.goto() to a different route, or a real link
+    // click that reloads the document) tears down the current document;
+    // Chromium does not reliably emit requestfinished or requestfailed for a
+    // request that document started but that navigation superseded before it
+    // completed. Left alone, that entry sits in `open` forever and wedges
+    // every later settle() call on this same page (seen when a spec calls
+    // page.goto() twice on one page, e.g. layer-a/forbidden.spec.ts visiting
+    // "/" and then the page under test). The navigation *request* itself
+    // (request.isNavigationRequest()) marks the moment the new document
+    // starts loading; anything still open at that point belonged to the
+    // document being replaced, so it is safe to drop.
+    //
+    // This must NOT fire for a same-document, client-side route change
+    // (wouter's <Link>/pushState, e.g. clicking a sidebar link) — that never
+    // tears down the page, so a genuinely stuck request from the page the
+    // user is still on would otherwise go undetected. `framenavigated` was
+    // tried first and rejected: it also fires for pushState navigation, so
+    // it cleared state a same-document navigation should not have touched.
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame()) open!.clear();
+    start(request.url());
+  });
   page.on("requestfinished", (request) => finish(request.url()));
   page.on("requestfailed", (request) => finish(request.url()));
-  // A full navigation (page.goto() to a different route) tears down the
-  // current document; Chromium does not reliably emit requestfinished or
-  // requestfailed for a request that document started but that navigation
-  // superseded before it completed. Left alone, that entry sits in `open`
-  // forever and wedges every later settle() call on this same page (seen when
-  // a spec calls page.goto() twice on one page, e.g. layer-a/forbidden.spec.ts
-  // visiting "/" and then the page under test). Once the main frame commits a
-  // new document, anything still open belonged to the document that just went
-  // away, so it is safe to drop.
-  page.on("framenavigated", (frame) => {
-    if (frame === page.mainFrame()) open!.clear();
-  });
   return open;
 }
 

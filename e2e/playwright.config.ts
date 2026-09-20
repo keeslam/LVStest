@@ -14,8 +14,9 @@ export default defineConfig({
   // pool and connect-pg-simple's session-store queries on top of it, so
   // layer-a's ~90 fully-parallel tests reliably produced "Connection
   // terminated due to connection timeout" and stuck-request test failures
-  // before this cap was added.
-  workers: 4,
+  // before this cap was added. Overridable (e.g. a weaker or stronger
+  // machine) via E2E_WORKERS.
+  workers: Number(process.env.E2E_WORKERS) || 4,
   reporter: [["list"], ["html", { outputFolder: ".tmp/report", open: "never" }]],
   use: {
     baseURL: E2E.baseUrl,
