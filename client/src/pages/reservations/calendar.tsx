@@ -80,6 +80,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { SpareVehicleDialog } from "@/components/reservations/spare-vehicle-dialog";
 import { ScheduleMaintenanceDialog } from "@/components/maintenance/schedule-maintenance-dialog";
 import { ReturnFromServiceDialog } from "@/components/reservations/return-from-service-dialog";
+import { officeToday } from "@/lib/office-date";
 
 // Holiday names for display
 const DUTCH_HOLIDAY_NAMES: Record<string, string> = {
@@ -2608,7 +2609,7 @@ export default function ReservationCalendarPage() {
             open={isServiceDialogOpen}
             onOpenChange={setIsServiceDialogOpen}
             initialVehicleId={selectedReservation.vehicleId || undefined}
-            initialDate={new Date().toISOString().split('T')[0]}
+            initialDate={officeToday()}
             onSuccess={() => {
               invalidateRelatedQueries('reservations');
               invalidateRelatedQueries('vehicles', { id: selectedReservation?.vehicleId });

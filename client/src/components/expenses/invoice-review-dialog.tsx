@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { useToast } from "@/hooks/use-toast";
 import { InvoiceLineItemsTable } from "./invoice-line-items-table";
+import { officeToday } from "@/lib/office-date";
 
 /** What the API sends: timestamps arrive as strings, and the list adds the plate. */
 export type InboxListItem = Omit<InvoiceInboxItem, "receivedAt" | "processedAt" | "mailDate"> & {
@@ -26,7 +27,6 @@ interface Props {
   onClose: () => void;
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
 
 /** Attachment on the left; what the app read, editable, on the right. Read-only for handled items. */
 export function InvoiceReviewDialog({ item, vehicles, onClose }: Props) {
@@ -46,7 +46,7 @@ export function InvoiceReviewDialog({ item, vehicles, onClose }: Props) {
     const parsedLines = item.parsed?.lineItems ?? [];
     setVendor(item.parsed?.vendor ?? "");
     setInvoiceNumber(item.parsed?.invoiceNumber ?? "");
-    setInvoiceDate(/^\d{4}-\d{2}-\d{2}$/.test(item.parsed?.invoiceDate ?? "") ? item.parsed!.invoiceDate : today());
+    setInvoiceDate(/^\d{4}-\d{2}-\d{2}$/.test(item.parsed?.invoiceDate ?? "") ? item.parsed!.invoiceDate : officeToday());
     setVehicleId(item.vehicleId ? String(item.vehicleId) : "");
     setLines(parsedLines);
     setSelected(new Set(parsedLines.map((_, i) => i)));

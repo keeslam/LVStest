@@ -11,6 +11,18 @@ export function officeToday(): string {
   return officeDate(new Date());
 }
 
+/**
+ * The day after the office's today, as `yyyy-MM-dd`.
+ *
+ * Counted on the calendar, from the office date string: adding a day to a
+ * `Date` and reading it back in UTC makes "tomorrow" today just after midnight.
+ */
+export function officeTomorrow(): string {
+  const [year, month, day] = officeToday().split("-").map(Number);
+  // Noon UTC is the same calendar day in Amsterdam, whatever the clocks do.
+  return officeDate(new Date(Date.UTC(year, month - 1, day + 1, 12)));
+}
+
 /** The Europe/Amsterdam calendar date of an instant, as `yyyy-MM-dd`. */
 export function officeDate(instant: Date): string {
   // `en-CA` renders as yyyy-MM-dd, which is exactly the shape the API stores.

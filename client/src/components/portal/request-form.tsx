@@ -15,8 +15,7 @@ import { btnPrimary } from "./ui";
 import { PeriodPicker, TimeSelect } from "./period-picker";
 import { ReservationPicker } from "./reservation-picker";
 import { formatPortalDate } from "./reservation-card";
-
-const tomorrowIso = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); };
+import { officeToday, officeTomorrow } from "@/lib/office-date";
 
 export function RequestForm({ initialType, reservationId: initialReservation, fineId: initialFine, vehicleId: initialVehicle, startDate: initialStart, endDate: initialEnd, blockId, blockDate, onSubmitted }: { initialType?: PortalRequestTypeValue; reservationId?: number; fineId?: number; vehicleId?: number; startDate?: string; endDate?: string; blockId?: number; blockDate?: string; onSubmitted: (id: number) => void }) {
   const { t } = useTranslation("portal");
@@ -28,7 +27,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
   const [fineId, setFineId] = useState(initialFine ? String(initialFine) : "");
   const [payload, setPayload] = useState<Record<string, string>>({
     ...(initialVehicle ? { vehicleId: String(initialVehicle) } : {}),
-    ...(initialType === "booking" ? { startDate: initialStart ?? new Date().toISOString().slice(0, 10), endDate: initialEnd ?? "" } : {}),
+    ...(initialType === "booking" ? { startDate: initialStart ?? officeToday(), endDate: initialEnd ?? "" } : {}),
   });
   const [message, setMessage] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -155,7 +154,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={payload.needsReplacement === "true"} onChange={(e) => setPayload({ ...payload, needsReplacement: e.target.checked ? "true" : "" })} data-testid="checkbox-needs-replacement" />{t("requests.form.needsReplacement")}</label>
           <div>
             <Label htmlFor="rq-pref">{t("requests.form.preferredDate")}</Label>
-            <PeriodPicker id="rq-pref" start={payload.preferredDate ?? ""} end="" single disableWeekends minDate={tomorrowIso()} onChange={(s) => setPayload({ ...payload, preferredDate: s })} testId="request-preferred-date" />
+            <PeriodPicker id="rq-pref" start={payload.preferredDate ?? ""} end="" single disableWeekends minDate={officeTomorrow()} onChange={(s) => setPayload({ ...payload, preferredDate: s })} testId="request-preferred-date" />
             <p className="mt-1 text-xs text-[#64748b]">{t("requests.form.weekdaysOnly")}</p>
           </div>
           <p className="text-xs text-[#64748b]">{t("requests.form.maintenanceHint")}</p>
@@ -165,7 +164,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
         <div className="space-y-2">
           <div>
             <Label htmlFor="rq-newdate">{t("requests.form.newDate")}</Label>
-            <PeriodPicker id="rq-newdate" start={payload.newDate ?? ""} end="" single disableWeekends minDate={tomorrowIso()} onChange={(s) => setPayload({ ...payload, newDate: s })} testId="request-new-date" />
+            <PeriodPicker id="rq-newdate" start={payload.newDate ?? ""} end="" single disableWeekends minDate={officeTomorrow()} onChange={(s) => setPayload({ ...payload, newDate: s })} testId="request-new-date" />
             <p className="mt-1 text-xs text-[#64748b]">{t("requests.form.weekdaysOnly")}</p>
           </div>
           <div><Label htmlFor="rq-reason">{t("requests.form.reason")}</Label><Input id="rq-reason" value={payload.reason ?? ""} onChange={setP("reason")} required data-testid="input-change-reason" /></div>

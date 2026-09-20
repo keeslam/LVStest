@@ -68,6 +68,7 @@ import {
   ExternalLink,
   Search,
 } from "lucide-react";
+import { officeToday } from "@/lib/office-date";
 
 interface NotificationCenterDialogProps {
   open: boolean;
@@ -151,7 +152,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
     defaultValues: {
       title: "",
       description: "",
-      date: new Date().toISOString().split("T")[0],
+      date: officeToday(),
       priority: "normal",
     },
   });

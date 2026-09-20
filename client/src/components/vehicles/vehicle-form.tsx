@@ -42,6 +42,7 @@ import { useLocation } from "wouter";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { formatLicensePlate, capitalizeWords } from "@/lib/format-utils";
 import { OIL_GRADES } from "@/constants/oil-grades";
+import { officeToday } from "@/lib/office-date";
 
 // Utility function to handle null values for form inputs
 const handleFieldValue = (value: any): string => {
@@ -643,12 +644,12 @@ export function VehicleForm({
     // For NEW vehicles only: ensure date fields are set when booleans are true
     if (!editMode) {
       if (formattedData.registeredTo === true && (!formattedData.registeredToDate || formattedData.registeredToDate === '')) {
-        const todayDate = new Date().toISOString().split('T')[0];
+        const todayDate = officeToday();
         formattedData.registeredToDate = todayDate;
         console.log(`🔧 Auto-set registeredToDate to ${todayDate} for new vehicle with registeredTo=true`);
       }
       if (formattedData.company === true && (!formattedData.companyDate || formattedData.companyDate === '')) {
-        const todayDate = new Date().toISOString().split('T')[0];
+        const todayDate = officeToday();
         formattedData.companyDate = todayDate;
         console.log(`🔧 Auto-set companyDate to ${todayDate} for new vehicle with company=true`);
       }
@@ -1724,7 +1725,7 @@ export function VehicleForm({
                                 const currentRegistrationDate = form.getValues('registeredToDate');
                                 if (!currentRegistrationDate) {
                                   // Only set today's date if no RDW date is available
-                                  form.setValue('registeredToDate', new Date().toISOString().split('T')[0]);
+                                  form.setValue('registeredToDate', officeToday());
                                 }
                                 // If currentRegistrationDate exists (from RDW), keep it as is
                               }
@@ -1779,7 +1780,7 @@ export function VehicleForm({
                                 form.setValue('registeredTo', false);
                                 // Clear registration date and set company date to today
                                 form.setValue('registeredToDate', '');
-                                form.setValue('companyDate', new Date().toISOString().split('T')[0]);
+                                form.setValue('companyDate', officeToday());
                               }
                             }}
                           />

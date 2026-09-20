@@ -58,6 +58,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { formatDate } from "@/lib/format-utils";
+import { officeToday } from "@/lib/office-date";
 
 const notificationSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters" }),
@@ -238,7 +239,7 @@ export function CustomNotificationsPanel({ onBack }: CustomNotificationsPanelPro
     defaultValues: {
       title: "",
       description: "",
-      date: new Date().toISOString().split("T")[0],
+      date: officeToday(),
       type: "custom",
       icon: "Bell",
       link: "/notifications/custom",
@@ -251,7 +252,7 @@ export function CustomNotificationsPanel({ onBack }: CustomNotificationsPanelPro
     defaultValues: {
       title: "",
       description: "",
-      date: new Date().toISOString().split("T")[0],
+      date: officeToday(),
       type: "custom",
       icon: "Bell",
       link: "/notifications/custom",

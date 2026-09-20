@@ -45,6 +45,7 @@ import { ExpenseForm } from "@/components/expenses/expense-form";
 import InteractiveDamageCheck from "@/pages/interactive-damage-check";
 import { DamageCheckScanDialog } from "@/components/barcodes/damage-check-scan-dialog";
 import { FuelStatusUpdateDialog } from "@/components/vehicles/fuel-status-update-dialog";
+import { officeToday } from "@/lib/office-date";
 
 interface ActionIconProps {
   name: string;
@@ -850,7 +851,7 @@ export function QuickActions() {
             ...vehicleData, // Include all existing data
             apkDate: apkDate, // Then override with our updates
             apkAttachment: document.id.toString(),
-            apkAttachmentDate: new Date().toISOString().split('T')[0]
+            apkAttachmentDate: officeToday()
           })
         });
         

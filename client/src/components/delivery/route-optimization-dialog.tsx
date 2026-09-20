@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Navigation, Loader2, AlertTriangle, ExternalLink } from "lucide-react";
 import { formatDate } from "@/lib/format-utils";
+import { officeToday } from "@/lib/office-date";
 
 interface RouteStop {
   id: string;
@@ -65,7 +66,7 @@ export function RouteOptimizationDialog({
 }: RouteOptimizationDialogProps) {
   const { t } = useTranslation("delivery");
   const { toast } = useToast();
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [selectedDate, setSelectedDate] = useState(() => officeToday());
   const [result, setResult] = useState<OptimizeRouteResult | null>(null);
 
   const getVehicleLabel = (vehicleId: number | null) => {

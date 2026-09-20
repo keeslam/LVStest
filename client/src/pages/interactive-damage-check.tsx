@@ -15,6 +15,7 @@ import { apiRequest, queryClient, invalidateRelatedQueries, invalidateByPrefix }
 import { X, Save, Trash2, Plus, Pencil, Eraser, Download, ClipboardCheck, Printer } from "lucide-react";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { ReservationSelector } from "@/components/ui/reservation-selector";
+import { officeToday } from "@/lib/office-date";
 
 interface DamageMarker {
   id: string;
@@ -995,7 +996,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
         vehicleId: selectedVehicleId,
         reservationId: selectedReservationId,
         checkType,
-        checkDate: new Date().toISOString().split('T')[0], // Format as YYYY-MM-DD
+        checkDate: officeToday(), // Format as YYYY-MM-DD
         diagramTemplateId: diagramTemplate.id,
         damageMarkers: JSON.stringify(markers),
         drawingPaths: JSON.stringify(drawingPaths),

@@ -37,6 +37,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Loader2, Wrench } from "lucide-react";
+import { officeToday } from "@/lib/office-date";
 
 const serviceVehicleSchema = z.object({
   maintenanceStatus: z.enum(["needs_service", "in_service"], {
@@ -76,7 +77,7 @@ export function ServiceVehicleDialog({
       // Default to today so a maintenance_block is always created on the
       // maintenance calendar — leaving the date empty silently skipped the
       // block and the service visit went untracked.
-      serviceStartDate: new Date().toISOString().split("T")[0],
+      serviceStartDate: officeToday(),
       serviceEndDate: "",
     },
   });
