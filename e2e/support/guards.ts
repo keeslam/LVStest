@@ -11,9 +11,16 @@ export interface WatchOptions {
 /** Known harmless console noise. Every entry needs a reason. */
 export const CONSOLE_ALLOWLIST: Array<{ pattern: RegExp; reason: string }> = [];
 
-const inflight = new WeakMap<Page, Set<string>>();
+const inflight = new WeakMap<Page, Map<string, number>>();
 
-/** Waits until no /api/ request has been in flight for 400 ms. (networkidle never settles with socket.io polling.) */
+/**
+ * Waits until no /api/ request has been in flight for 400 ms. (networkidle never settles with socket.io polling.)
+ *
+ * Precondition: request tracking for a page only starts once `watchPage()` or
+ * `settle()` has run for it at least once — that first call is what installs
+ * the `request`/`requestfinished`/`requestfailed` listeners. Call `watchPage()`
+ * (or request the `health` fixture) before the first `page.goto()`, not after.
+ */
 export async function settle(page: Page, quietMs = 400, timeoutMs = 20_000): Promise<void> {
   await page.waitForLoadState("load");
   const open = trackRequests(page);
@@ -24,25 +31,114 @@ export async function settle(page: Page, quietMs = 400, timeoutMs = 20_000): Pro
     if (Date.now() - quietSince >= quietMs) return;
     await page.waitForTimeout(50);
   }
-  throw new Error(`Page did not settle within ${timeoutMs} ms; still loading: ${[...open].join(", ")}`);
+  throw new Error(`Page did not settle within ${timeoutMs} ms; still loading: ${[...open.keys()].join(", ")}`);
 }
 
-function trackRequests(page: Page): Set<string> {
+/** Counts in-flight /api/ requests per URL (not just a Set), so two concurrent identical requests don't cancel each other's "in flight" state out. */
+function trackRequests(page: Page): Map<string, number> {
   let open = inflight.get(page);
   if (open) return open;
-  open = new Set<string>();
+  open = new Map<string, number>();
   inflight.set(page, open);
   const key = (url: string) => url.replace(/^https?:\/\/[^/]+/, "");
-  page.on("request", (request) => { if (request.url().includes("/api/")) open!.add(key(request.url())); });
-  const done = (url: string) => open!.delete(key(url));
-  page.on("requestfinished", (request) => done(request.url()));
-  page.on("requestfailed", (request) => done(request.url()));
+  const start = (url: string) => {
+    if (!url.includes("/api/")) return;
+    const k = key(url);
+    open!.set(k, (open!.get(k) ?? 0) + 1);
+  };
+  const finish = (url: string) => {
+    const k = key(url);
+    const count = open!.get(k);
+    if (count === undefined) return;
+    if (count <= 1) open!.delete(k);
+    else open!.set(k, count - 1);
+  };
+  page.on("request", (request) => start(request.url()));
+  page.on("requestfinished", (request) => finish(request.url()));
+  page.on("requestfailed", (request) => finish(request.url()));
   return open;
 }
 
-export function watchPage(page: Page, options: WatchOptions = {}) {
+const TOAST_BINDING = "__guardReportToast";
+const toastBound = new WeakSet<Page>();
+const toastSinks = new WeakMap<Page, (text: string) => void>();
+
+/**
+ * Runs in the browser (via addInitScript/evaluate, not closed over any Node
+ * variable). Reports every `li.destructive` the moment it is added, or its
+ * class/data-state changes, by text — through the exposed `__guardReportToast`
+ * binding. Guards itself against being installed twice on the same document.
+ */
+function observeDestructiveToasts() {
+  const w = window as unknown as {
+    __guardReportToast?: (text: string) => void;
+    __guardToastObserverInstalled?: boolean;
+  };
+  if (w.__guardToastObserverInstalled) return;
+  w.__guardToastObserverInstalled = true;
+  const scan = () => {
+    document.querySelectorAll("li.destructive").forEach((element) => {
+      // innerText (not textContent): must produce the same string check()'s
+      // fallback reads via Playwright's .innerText(), or the same toast seen
+      // through both paths dedupes as two different strings instead of one.
+      const text = ((element as HTMLElement).innerText || "").replace(/\s+/g, " ").trim();
+      if (text) w.__guardReportToast?.(text);
+    });
+  };
+  const start = () => {
+    new MutationObserver(scan).observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class", "data-state"],
+    });
+    scan();
+  };
+  if (document.documentElement) start();
+  else document.addEventListener("DOMContentLoaded", start, { once: true });
+}
+
+/**
+ * Wires up live capture of destructive toasts for this page. `check()`'s old
+ * one-shot `[data-state="open"]` read is too late by itself: ToastProvider
+ * auto-closes after 2500 ms (client/src/components/ui/toaster.tsx) and
+ * TOAST_LIMIT=1 (client/src/hooks/use-toast.ts) can let a later toast replace
+ * an earlier one before a test gets around to reading the DOM. A
+ * MutationObserver — injected via addInitScript so it re-runs on every
+ * navigation — reports each occurrence through an exposed Node binding
+ * instead, the moment it happens.
+ */
+async function ensureLiveToastCapture(page: Page, onToast: (text: string) => void): Promise<void> {
+  // The binding must survive re-registration attempts (e.g. watchPage() called
+  // more than once for the same page) without throwing, so only expose it
+  // once; the sink it forwards to is still updated to the latest caller.
+  toastSinks.set(page, onToast);
+  if (toastBound.has(page)) return;
+  toastBound.add(page);
+  await page.exposeFunction(TOAST_BINDING, (text: string) => toastSinks.get(page)?.(text));
+  await page.addInitScript(observeDestructiveToasts);
+  // watchPage() is normally called before the first page.goto(), but if the
+  // page already has a document loaded, addInitScript alone would miss it —
+  // install the same observer script once on the current document too.
+  await page.evaluate(observeDestructiveToasts).catch(() => {
+    // No usable document yet (e.g. a navigation is already in flight);
+    // addInitScript above still covers the document that is about to load.
+  });
+}
+
+export async function watchPage(page: Page, options: WatchOptions = {}) {
   const violations: Violation[] = [];
+  const seenToasts = new Set<string>();
+  const reportToast = (rawText: string) => {
+    const text = rawText.replace(/\s+/g, " ").trim();
+    if (!text || seenToasts.has(text)) return;
+    seenToasts.add(text);
+    violations.push({ kind: "toast", detail: text });
+  };
+
   trackRequests(page);
+  await ensureLiveToastCapture(page, reportToast);
+
   page.on("response", (response) => {
     const url = response.url();
     if (!url.includes("/api/")) return;
@@ -55,27 +151,40 @@ export function watchPage(page: Page, options: WatchOptions = {}) {
       if (message.type() !== "error") return;
       const text = message.text();
       if (CONSOLE_ALLOWLIST.some((entry) => entry.pattern.test(text))) return;
+      // Chrome logs every response >= 400 as its own console error, regardless
+      // of what the page does with it — "Failed to load resource: the server
+      // responded with a status of 403 ()". Suppress that line ONLY when it
+      // belongs to a response `allow` already excused (matched by the failing
+      // request's URL and status); anything else still counts, including an
+      // unexpected 4xx on a page this role may use.
+      const resourceError = /Failed to load resource: the server responded with a status of (\d+)/.exec(text);
+      if (resourceError) {
+        const status = Number(resourceError[1]);
+        const url = message.location().url;
+        if (options.allow?.some((entry) => entry.status === status && entry.url.test(url))) return;
+      }
       violations.push({ kind: "console", detail: text });
     });
   }
   page.on("pageerror", (error) => violations.push({ kind: "pageerror", detail: error.message }));
+
   return {
     violations,
-    /** Looks at what is on screen now; call after the page settled. */
+    /** Looks at what is on screen now; call after the page settled. Belt-and-braces on top of the live capture above — no `[data-state="open"]` filter, still deduped by text. */
     async check() {
       if (await page.getByText("Er ging iets mis op dit scherm").count()) violations.push({ kind: "boundary", detail: page.url() });
-      const toasts = page.locator('li.destructive[data-state="open"]');
+      const toasts = page.locator("li.destructive");
       for (let index = 0; index < await toasts.count(); index++) {
-        violations.push({ kind: "toast", detail: (await toasts.nth(index).innerText()).replace(/\s+/g, " ").trim() });
+        reportToast(await toasts.nth(index).innerText());
       }
     },
   };
 }
 
 /** `health` fails the test afterwards when anything went wrong on the page. */
-export const test = base.extend<{ health: ReturnType<typeof watchPage> }>({
+export const test = base.extend<{ health: Awaited<ReturnType<typeof watchPage>> }>({
   health: async ({ page }, use) => {
-    const watcher = watchPage(page);
+    const watcher = await watchPage(page);
     await use(watcher);
     await watcher.check();
     expect(watcher.violations.map((v) => `${v.kind}: ${v.detail}`), "page health").toEqual([]);
