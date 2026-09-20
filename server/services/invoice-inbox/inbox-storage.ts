@@ -50,8 +50,11 @@ function toLogRow(item: InvoiceInboxItem, vehiclePlate: string | null): InboxLog
  * run, with 25 of them enough to stop the feature. C0 control characters are
  * stripped here, in the one place every writer passes through; tab, newline and
  * carriage return are what a person types, so they stay.
+ *
+ * Exported because the run log writes mail subjects too, and has the same
+ * problem for the same reason.
  */
-const CONTROL_CHARACTERS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g;
+export const CONTROL_CHARACTERS =/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g;
 
 function sanitize<T>(value: T): T {
   if (typeof value === "string") return value.replace(CONTROL_CHARACTERS, "") as unknown as T;
