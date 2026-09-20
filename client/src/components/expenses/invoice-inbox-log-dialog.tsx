@@ -299,15 +299,19 @@ export function InvoiceInboxLogButton() {
           </TabsList>
 
           {/*
-            Radix keeps every TabsContent mounted and merely toggles the native
-            `hidden` attribute on the inactive ones (display: none from the UA
-            stylesheet) — it does not unmount them. An unconditional `flex`
-            class here is an author-origin style that beats that UA default
-            regardless of `hidden`, so all three panels used to render at once,
-            each an equal (empty, content-less) flex-1 sibling — the active one
-            was squeezed into a third of the available height, which is why
-            the table only ever showed one clipped row. `data-[state=active]:flex`
-            only turns display:flex on for the panel Radix has actually made
+            Radix's TabsContent wrapper div itself stays mounted for every tab
+            (only its CHILDREN unmount while inactive) and is hidden purely via
+            the native `hidden` attribute (display: none from the UA
+            stylesheet) — that empty wrapper is exactly why the same
+            data-testid="invoice-inbox-log-table-scroll" is safe to reuse on
+            all three tabs below: only one non-empty instance is ever mounted
+            at a time. An unconditional `flex` class on this wrapper is an
+            author-origin style that beats that UA default regardless of
+            `hidden`, so all three (two empty, one with content) used to
+            render as equal flex-1 siblings — the one with content was
+            squeezed into a third of the available height, which is why the
+            table only ever showed one clipped row. `data-[state=active]:flex`
+            only turns display:flex on for the wrapper Radix has actually made
             active, leaving `hidden`'s own display:none in charge of the rest.
           */}
           <TabsContent value="invoices" className="mt-4 min-h-0 flex-1 flex-col data-[state=active]:flex">{logPanel("invoices")}</TabsContent>

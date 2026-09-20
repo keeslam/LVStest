@@ -347,9 +347,7 @@
       "triggerScheduler": "Automatic",
       "triggerManual": "Manually by {{user}}",
       "columns": {
-        "subject": "Subject",
         "senderSubject": "Sender / subject",
-        "attachment": "Attachment",
         "result": "Result",
         "invoiceNumber": "Invoice no.",
         "status": "Status",
