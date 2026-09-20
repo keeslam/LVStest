@@ -35,7 +35,9 @@ export const DIALOGS: DialogEntry[] = [
   { page: "/", opener: "button-quick-add-vehicle", anyOf: [P.VIEW_DASHBOARD], source: "client/src/components/dashboard/quick-actions.tsx", name: "snelle actie: voertuig toevoegen" },
   { page: "/", opener: "button-quick-add-customer", anyOf: [P.VIEW_DASHBOARD], source: "client/src/components/dashboard/quick-actions.tsx", name: "snelle actie: klant toevoegen" },
   { page: "/", opener: "button-quick-log-expense", anyOf: [P.VIEW_DASHBOARD], source: "client/src/components/dashboard/quick-actions.tsx", name: "snelle actie: uitgave registreren" },
-  { page: "/", opener: "button-dashboard-new-reservation", anyOf: [P.VIEW_DASHBOARD], source: "client/src/components/dashboard/reservation-calendar.tsx", name: "dashboard: nieuwe reservering" },
+  // The dialog root itself lives in reservation-add-dialog.tsx; the widget
+  // file only supplies a custom trigger button as `children`.
+  { page: "/", opener: "button-dashboard-new-reservation", anyOf: [P.VIEW_DASHBOARD], source: "client/src/components/reservations/reservation-add-dialog.tsx", name: "dashboard: nieuwe reservering" },
 
   // --- /vehicles -------------------------------------------------------------
   // isAdmin-gated in vehicles/index.tsx (role === UserRole.ADMIN), not
@@ -46,6 +48,11 @@ export const DIALOGS: DialogEntry[] = [
   { page: "/vehicles", opener: "button-key-audit", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/barcodes/key-audit-dialog.tsx", name: "sleutelcontrole (hoofdsleutels)" },
   { page: "/vehicles", opener: "button-add-vehicle", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/vehicles/vehicle-add-dialog.tsx", name: "voertuig toevoegen" },
   { page: "/vehicles", opener: "button-bulk-import", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/vehicles/vehicle-bulk-import-dialog.tsx", name: "voertuigen bulk-importeren" },
+
+  // --- /reservations -------------------------------------------------------
+  { page: "/reservations", opener: "button-list-view", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], source: "client/src/components/reservations/reservation-list-dialog.tsx", name: "reserveringen als lijst" },
+  { page: "/reservations", opener: "button-view-completed", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], source: "client/src/pages/reservations/calendar.tsx", name: "afgeronde verhuringen" },
+  { page: "/reservations", opener: "button-administration", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], source: "client/src/pages/reservations/calendar.tsx", name: "administratie" },
 
   // --- /customers --------------------------------------------------------
   { page: "/customers", opener: "button-add-customer", anyOf: [P.VIEW_CUSTOMERS, P.MANAGE_CUSTOMERS], source: "client/src/components/customers/customer-add-dialog.tsx", name: "klant toevoegen" },
