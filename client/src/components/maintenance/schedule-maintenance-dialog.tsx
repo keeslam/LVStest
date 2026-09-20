@@ -6,9 +6,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest, invalidateRelatedQueries, invalidateByPrefix } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Vehicle } from "@shared/schema";
+import { Vehicle, UserPermission } from "@shared/schema";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
+import { useHasPermission } from "@/hooks/use-has-permission";
 
 import {
   Dialog,
@@ -115,6 +116,11 @@ export function ScheduleMaintenanceDialog({
   // State for tracking active customer from reservation
   const [activeCustomer, setActiveCustomer] = useState<any>(null);
 
+  // MANAGE_MAINTENANCE does not imply VIEW_CUSTOMERS/MANAGE_CUSTOMERS (the
+  // maintenance profile holds neither) — the optional customer selection
+  // below must not fire for a role the server refuses (task-7-report.md).
+  const canViewCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
+
   const form = useForm<ScheduleMaintenanceFormData>({
     resolver: zodResolver(scheduleMaintenanceSchema),
     defaultValues: {
@@ -208,7 +214,7 @@ export function ScheduleMaintenanceDialog({
   // Fetch customers for optional selection
   const { data: customers = [] } = useQuery<any[]>({
     queryKey: ['/api/customers'],
-    enabled: open,
+    enabled: open && canViewCustomers,
   });
 
   // Fetch all reservations to filter out vehicles with maintenance (if filter is enabled)
