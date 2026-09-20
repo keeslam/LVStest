@@ -31,6 +31,17 @@ export async function runSeed(): Promise<void> {
     notes: `e2e:${label}`,
     type: "standard",
   })));
+
+  // A raw insert never runs deriveVehicleAvailability (server/services/lifecycle.ts),
+  // so vehicles.availabilityStatus would otherwise still say "available" for
+  // rows that already have a live/upcoming reservation. Running the app's own
+  // sync — the same one server/routes.ts calls after every reservation write —
+  // instead of hand-computing "rented"/"scheduled" here keeps the seed correct
+  // if that rule ever changes, and leaves the manual statuses
+  // ("needs_fixing", "not_for_rental") exactly as the app itself would.
+  const { storage } = await import("../../server/storage");
+  await storage.syncVehicleAvailabilityWithReservations();
+
   await db.insert(expenses).values([
     { vehicleId: vehicleRows[0].id, category: "maintenance", amount: "245.50", date: officeDay(-5), description: "E2E kleine beurt" },
     { vehicleId: vehicleRows[1].id, category: "tires", amount: "612.00", date: officeDay(-12), description: "E2E banden" },
