@@ -56,6 +56,18 @@ function trackRequests(page: Page): Map<string, number> {
   page.on("request", (request) => start(request.url()));
   page.on("requestfinished", (request) => finish(request.url()));
   page.on("requestfailed", (request) => finish(request.url()));
+  // A full navigation (page.goto() to a different route) tears down the
+  // current document; Chromium does not reliably emit requestfinished or
+  // requestfailed for a request that document started but that navigation
+  // superseded before it completed. Left alone, that entry sits in `open`
+  // forever and wedges every later settle() call on this same page (seen when
+  // a spec calls page.goto() twice on one page, e.g. layer-a/forbidden.spec.ts
+  // visiting "/" and then the page under test). Once the main frame commits a
+  // new document, anything still open belonged to the document that just went
+  // away, so it is safe to drop.
+  page.on("framenavigated", (frame) => {
+    if (frame === page.mainFrame()) open!.clear();
+  });
   return open;
 }
 
@@ -173,10 +185,14 @@ export async function watchPage(page: Page, options: WatchOptions = {}) {
     /** Looks at what is on screen now; call after the page settled. Belt-and-braces on top of the live capture above — no `[data-state="open"]` filter, still deduped by text. */
     async check() {
       if (await page.getByText("Er ging iets mis op dit scherm").count()) violations.push({ kind: "boundary", detail: page.url() });
-      const toasts = page.locator("li.destructive");
-      for (let index = 0; index < await toasts.count(); index++) {
-        reportToast(await toasts.nth(index).innerText());
-      }
+      // allInnerTexts() reads every current match in one pass. A per-index
+      // `.nth(i).innerText()` loop re-queries the DOM live on each iteration;
+      // ToastProvider auto-closes after 2500 ms and TOAST_LIMIT=1 can remove
+      // an earlier toast between iterations, so a later index stops matching
+      // anything and Playwright's auto-wait hangs until the test timeout
+      // waiting for an element that will never (re)appear.
+      const texts = await page.locator("li.destructive").allInnerTexts();
+      for (const text of texts) reportToast(text);
     },
   };
 }
