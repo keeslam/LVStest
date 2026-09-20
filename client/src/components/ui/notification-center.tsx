@@ -4,12 +4,17 @@ import { differenceInDays } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bell } from "lucide-react";
-import { Vehicle, Reservation, CustomNotification } from "@shared/schema";
+import { Vehicle, Reservation, CustomNotification, UserPermission } from "@shared/schema";
 import { NotificationCenterDialog } from "@/components/notifications/notification-center-dialog";
+import { useHasPermission } from "@/hooks/use-has-permission";
 
 export function NotificationCenter() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const today = new Date();
+  // Finding 1 (task-6-report.md): the server guards this route with
+  // MANAGE_NOTIFICATIONS alone, narrower than "any authenticated user", which
+  // is what this component used to assume by firing unconditionally.
+  const canViewNotifications = useHasPermission(UserPermission.MANAGE_NOTIFICATIONS);
 
   const { data: apkExpiringVehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles/apk-expiring"],
@@ -29,6 +34,7 @@ export function NotificationCenter() {
 
   const { data: customNotifications = [] } = useQuery<CustomNotification[]>({
     queryKey: ["/api/custom-notifications/unread"],
+    enabled: canViewNotifications,
   });
 
   const { data: placeholderReservations = [] } = useQuery<Reservation[]>({

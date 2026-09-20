@@ -36,7 +36,8 @@ import BarcodeLabelTemplateEditor from "./barcode-label-template-editor";
 import { FileEdit, Star, Trash2, Printer, Eye, ChevronDown, ChevronRight, Image, Plus, X, Edit, Settings as SettingsIcon, Truck, Barcode } from "lucide-react";
 import DamageCheckTemplateStudio from "@/pages/settings/damage-check-template-studio";
 import { useAuth } from "@/hooks/use-auth";
-import { UserRole } from "@shared/schema";
+import { UserPermission, UserRole } from "@shared/schema";
+import { useHasPermission } from "@/hooks/use-has-permission";
 
 export default function DocumentsIndex() {
   const { t } = useTranslation("documents");
@@ -67,25 +68,31 @@ export default function DocumentsIndex() {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+  // Finding 3 (task-6-report.md): both routes are guarded by
+  // MANAGE_PDF_TEMPLATES alone, narrower than the sidebar's
+  // VIEW_DOCUMENTS/MANAGE_DOCUMENTS that decides who can open this page.
+  const canManagePdfTemplates = useHasPermission(UserPermission.MANAGE_PDF_TEMPLATES);
+
   // Fetch documents
   const { data: documents, isLoading: isLoadingDocuments } = useQuery<Document[]>({
     queryKey: ["/api/documents"],
   });
-  
+
   // Fetch vehicles for filter
   const { data: vehicles } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
   });
-  
+
   // Fetch templates
   const { data: templates, isLoading: isLoadingTemplates } = useQuery({
     queryKey: ['/api/pdf-templates'],
+    enabled: canManagePdfTemplates,
   });
 
   // Fetch transport report templates
   const { data: transportTemplates, isLoading: isLoadingTransportTemplates } = useQuery<any[]>({
     queryKey: ['/api/transport-report-templates'],
+    enabled: canManagePdfTemplates,
   });
 
   // Fetch barcode label templates

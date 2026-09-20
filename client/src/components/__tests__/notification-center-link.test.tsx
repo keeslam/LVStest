@@ -13,6 +13,14 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GlobalDialogProvider } from "@/contexts/GlobalDialogContext";
+
+// Task 6b: NotificationCenterDialog now gates its /api/custom-notifications
+// and /api/customers queries by permission (task-6b-report.md). Not what
+// this test is about - role admin keeps both enabled, same as before.
+vi.mock("@/hooks/use-auth", () => ({
+  useAuth: () => ({ user: { id: 1, username: "tester", role: "admin", permissions: [], hidePrices: false }, isLoading: false }),
+}));
+
 import { NotificationCenterDialog } from "@/components/notifications/notification-center-dialog";
 
 const notification = (id: number, link: string | null) => ({

@@ -1,13 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { useAuth } from "@/hooks/use-auth";
-import { UserPermission, UserRole } from "@shared/schema";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { UserPermission } from "@shared/schema";
 import type { PortalAccountRow } from "@/components/portal-admin/account-dialog";
 
 export function useCanViewPortal(): boolean {
-  const { user } = useAuth();
-  const perms = (user?.permissions as string[] | undefined) ?? [];
-  return user?.role === UserRole.ADMIN || perms.includes(UserPermission.VIEW_PORTAL) || perms.includes(UserPermission.MANAGE_PORTAL);
+  return useHasPermission(UserPermission.VIEW_PORTAL, UserPermission.MANAGE_PORTAL);
 }
 
 /**

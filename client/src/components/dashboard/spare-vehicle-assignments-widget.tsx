@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarDays, Car, Clock, CheckCircle, Truck, AlertCircle, User, ArrowRight } from "lucide-react";
-import { Reservation, VehicleTransport } from "@shared/schema";
+import { Reservation, VehicleTransport, UserPermission } from "@shared/schema";
 import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { useState, useEffect } from "react";
 import { SpareVehicleAssignmentDialog } from "@/components/reservations/spare-vehicle-assignment-dialog";
 import { PickupDialog } from "@/components/reservations/pickup-return-dialogs";
 import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useHasPermission } from "@/hooks/use-has-permission";
 
 type ParentReservationInfo = { parentRes: any; customer: any; vehicle: any } | null;
 type ParentTransportInfo = { transport: VehicleTransport; vehicle: any } | null;
@@ -66,6 +67,11 @@ export function SpareVehicleAssignmentsWidget() {
   const [selectedSpareForPickup, setSelectedSpareForPickup] = useState<Reservation | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  // Finding 2b (task-6-report.md): the server guards /api/customers with
+  // VIEW_CUSTOMERS/MANAGE_CUSTOMERS, narrower than "any authenticated user".
+  // The widget is not useless without it - it just falls back to showing no
+  // customer name next to a spare, same as today when the request fails.
+  const canViewCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
 
   // Get TBD spare vehicles (placeholder reservations needing assignment)
   // Using 30 days lookahead to show all upcoming placeholders
@@ -86,6 +92,7 @@ export function SpareVehicleAssignmentsWidget() {
   // Get all customers for displaying customer info
   const { data: allCustomers } = useQuery<any[]>({
     queryKey: ["/api/customers"],
+    enabled: canViewCustomers,
   });
 
   // Get all transports — a spare reservation created from a standalone Transport

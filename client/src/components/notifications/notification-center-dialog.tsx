@@ -47,9 +47,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Vehicle, Reservation, Customer, CustomNotification } from "@shared/schema";
+import { Vehicle, Reservation, Customer, CustomNotification, UserPermission } from "@shared/schema";
 import { formatDate, formatLicensePlate, formatMaintenanceCategory } from "@/lib/format-utils";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import {
   Bell,
   Calendar,
@@ -113,6 +114,13 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
   const [searchQuery, setSearchQuery] = useState("");
   const { isDismissed, dismiss } = useDismissedNotifications();
   const today = new Date();
+  // Additional fault surfaced by task 6b (task-6b-report.md): this dialog is
+  // always mounted by NotificationCenter - only its own <Dialog open> decides
+  // visibility, so every one of these queries still runs on every page
+  // regardless of `open`. These two repeat findings 1 and 2b's class of bug
+  // (task-6-report.md): guarded by a permission not every role holds.
+  const canViewNotifications = useHasPermission(UserPermission.MANAGE_NOTIFICATIONS);
+  const canViewCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
 
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
@@ -120,6 +128,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
 
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
+    enabled: canViewCustomers,
   });
 
   const { data: apkExpiringVehicles = [] } = useQuery<Vehicle[]>({
@@ -140,6 +149,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
 
   const { data: customNotifications = [] } = useQuery<CustomNotification[]>({
     queryKey: ["/api/custom-notifications"],
+    enabled: canViewNotifications,
   });
 
   const { data: placeholderReservations = [] } = useQuery<Reservation[]>({

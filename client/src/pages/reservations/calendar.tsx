@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
 import { Vehicle, Reservation, Document, Driver, VehicleTransport } from "@shared/schema";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { displayLicensePlate } from "@/lib/utils";
 import { formatLicensePlate, plateMatches } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
@@ -710,9 +711,15 @@ export default function ReservationCalendarPage() {
   });
 
   // Fetch all damage checks for admin history view
+  // Finding 4 (task-6-report.md): guarded by VIEW_DAMAGE_CHECKS/
+  // MANAGE_DAMAGE_CHECKS, narrower than the sidebar's VIEW_RESERVATIONS/
+  // MANAGE_RESERVATIONS that decides who can open this page. The
+  // "Administratie" button that opens this dialog carries no permission
+  // check of its own, so cleaner/accountant could reach it and get refused.
+  const canViewDamageChecks = useHasPermission(UserPermission.VIEW_DAMAGE_CHECKS, UserPermission.MANAGE_DAMAGE_CHECKS);
   const { data: allDamageChecks = [] } = useQuery<any[]>({
     queryKey: ['/api/interactive-damage-checks'],
-    enabled: adminDialogOpen
+    enabled: adminDialogOpen && canViewDamageChecks
   });
 
   // Fetch calendar settings for holiday/blocked date display

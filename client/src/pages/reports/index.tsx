@@ -19,7 +19,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { ExpenseChart, type ExpenseChartData } from "@/components/reports/expense-chart";
 import { UtilizationChart, type UtilizationChartData } from "@/components/reports/utilization-chart";
-import { Vehicle, Expense, Reservation, Customer, VehicleTransport } from "@shared/schema";
+import { Vehicle, Expense, Reservation, Customer, VehicleTransport, UserPermission } from "@shared/schema";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { formatDate, formatCurrency, formatLicensePlate, sumMoney, plateMatches, formatExpenseCategory } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { isTrueValue } from "@/lib/utils";
@@ -50,6 +51,11 @@ export default function ReportsPage() {
   // Tab state - default to operations tab
   const [activeTab, setActiveTab] = useState("operations");
   const { canView: canViewFiscal } = useFiscalPermissions();
+  // Additional fault surfaced by task 6b (task-6b-report.md): guarded by
+  // MANAGE_EXPENSES alone, narrower than the sidebar's VIEW_REPORTS/
+  // MANAGE_REPORTS that decides who can open this page - same class of bug
+  // as finding 2a (task-6-report.md).
+  const canViewExpenses = useHasPermission(UserPermission.MANAGE_EXPENSES);
   
   // Dialog states
   const [reportBuilderOpen, setReportBuilderOpen] = useState(false);
@@ -126,6 +132,7 @@ export default function ReportsPage() {
   // Fetch expenses with date filtering
   const { data: expenses = [] } = useQuery<Expense[]>({
     queryKey: ["/api/expenses"],
+    enabled: canViewExpenses,
   });
   
   // Fetch reservations with date filtering

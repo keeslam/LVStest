@@ -28,7 +28,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { formatDate, formatCurrency, sumMoney } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
-import { Reservation, Customer, Vehicle, VehicleTransport } from "@shared/schema";
+import { Reservation, Customer, Vehicle, VehicleTransport, UserPermission } from "@shared/schema";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { getTransportSpareStatus } from "@shared/transport-spare-status";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -45,6 +46,12 @@ export default function DeliveryDashboard() {
   const { t } = useTranslation("delivery");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  // Additional fault surfaced by task 6b (task-6b-report.md): guarded by
+  // VIEW_CUSTOMERS/MANAGE_CUSTOMERS, narrower than the sidebar's
+  // VIEW_RESERVATIONS/MANAGE_RESERVATIONS that decides who can open this
+  // page - same class of bug, same permission pair, as finding 2b
+  // (task-6-report.md).
+  const canViewCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
 
   const TRANSPORT_TYPE_LABELS: Record<string, string> = {
     swap: t('transportDialog.typeLabels.swap'),
@@ -61,6 +68,7 @@ export default function DeliveryDashboard() {
 
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
+    enabled: canViewCustomers,
   });
 
   const { data: vehicles = [] } = useQuery<Vehicle[]>({

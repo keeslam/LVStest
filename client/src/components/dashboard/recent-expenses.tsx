@@ -19,9 +19,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatDate, formatCurrency, formatLicensePlate, sumMoney } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
-import { Expense } from "@shared/schema";
+import { Expense, UserPermission } from "@shared/schema";
 import { MoreVertical, Eye, Pencil, Printer, Calendar, FileCheck } from "lucide-react";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
+import { useHasPermission } from "@/hooks/use-has-permission";
 
 // Function to get expense icon based on category
 function getExpenseIcon(category: string) {
@@ -87,9 +88,13 @@ export function RecentExpenses() {
   const [selectedGroup, setSelectedGroup] = useState<GroupedExpense | null>(null);
   const queryClient = useQueryClient();
   const { openExpenseDialog } = useGlobalDialog();
-  
+  // Finding 2a (task-6-report.md): the server guards this route with
+  // MANAGE_EXPENSES alone, narrower than "any authenticated user".
+  const canViewExpenses = useHasPermission(UserPermission.MANAGE_EXPENSES);
+
   const { data: expenses, isLoading } = useQuery<Expense[]>({
     queryKey: ["/api/expenses/recent", { limit: 10 }],
+    enabled: canViewExpenses,
   });
 
   // Group expenses by invoice number or vehicle+date
@@ -128,6 +133,12 @@ export function RecentExpenses() {
     setSelectedGroup(group);
     setGroupDialogOpen(true);
   };
+
+  // Without MANAGE_EXPENSES the server refuses this data outright; an empty
+  // "no recent expenses" card would misrepresent that as "there are none", so
+  // the whole card is hidden instead (brief: a card that can only ever show
+  // data the user may not see is not rendered).
+  if (!canViewExpenses) return null;
 
   return (
     <Card>
