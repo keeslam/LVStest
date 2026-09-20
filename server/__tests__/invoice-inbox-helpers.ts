@@ -1,7 +1,7 @@
 import fs from "fs";
 import { eq, inArray, like, or } from "drizzle-orm";
 import { db } from "../db";
-import { expenses, invoiceInboxItems, vehicles } from "../../shared/schema";
+import { expenses, invoiceInboxItems, invoiceInboxRuns, vehicles } from "../../shared/schema";
 import { resolveDocumentFilePath } from "../services/document-paths";
 import { storage } from "../storage";
 import { TEST_PREFIX } from "./portal-helpers";
@@ -30,6 +30,9 @@ export async function cleanupInboxTestData(): Promise<void> {
     if (abs) fs.rmSync(abs, { force: true });
   }
   await db.delete(invoiceInboxItems).where(writtenByTests);
+
+  // A test that runs the import through the route leaves a row in the run log.
+  await db.delete(invoiceInboxRuns).where(eq(invoiceInboxRuns.triggeredBy, "staff-test"));
 
   const notes = await storage.getCustomNotificationsByType("invoice_inbox");
   for (const n of notes) {

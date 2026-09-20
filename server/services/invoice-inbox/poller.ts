@@ -4,6 +4,7 @@ import { getInvoiceInboxConfig } from "./config";
 import { imapClient, type InboxMessageRef, type InvoiceImapClient } from "./imap-client";
 import { importInvoiceMail, recordFailedMail, recordOversizeMail, MAX_MAIL_BYTES } from "./importer";
 import { notifyInvoiceInbox } from "./notify";
+import { inboxRunLog } from "./run-log";
 
 /** Bounds one run: every mail can cost a Gemini call. The rest waits for the next run. */
 export const MAX_MAILS_PER_RUN = 25;
@@ -69,9 +70,12 @@ export function runInvoiceInboxImport(
       mails: 0, attachments: 0, booked: 0, review: 0, skipped: 0, failed: 0, errors: [],
     };
     let connected = false;
+    /** Whether the mailbox was reached for at all — see the run log below. */
+    let attempted = false;
     try {
       const config = configOverride ?? await getInvoiceInboxConfig();
       if (!config.host) throw new Error("IMAP-host is niet ingesteld");
+      attempted = true;
       await client.withSession(config, async (session) => {
         connected = true;
         const refs = (await session.listUnseen()).slice(0, MAX_MAILS_PER_RUN);
@@ -139,6 +143,11 @@ export function runInvoiceInboxImport(
 
     summary.finishedAt = new Date().toISOString();
     lastRun = summary;
+    // A run that never reached the mailbox (no host configured) is not a run and
+    // leaves no trace; one that did is logged, a connection error included.
+    // Deliberately not awaited: the log may never delay a run, and record()
+    // swallows whatever goes wrong writing it.
+    if (attempted) void inboxRunLog.record(summary, trigger === "manual" ? createdBy : null);
     if (summary.errors.length) console.error("Invoice inbox run finished with errors:", summary.errors);
     else console.log(`Invoice inbox: ${summary.mails} mail(s), ${summary.booked} booked, ${summary.review} for review, ${summary.skipped} skipped`);
     return summary;

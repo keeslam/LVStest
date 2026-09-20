@@ -148,6 +148,47 @@ export interface InvoiceInboxRunSummary {
   errors: string[];
 }
 
+/** One stored fetch run, as the log shows it. */
+export interface InboxRunRow {
+  id: number;
+  startedAt: string;
+  finishedAt: string;
+  trigger: 'scheduler' | 'manual';
+  /** Only a manual run has one. */
+  triggeredBy: string | null;
+  mails: number;
+  attachments: number;
+  booked: number;
+  review: number;
+  skipped: number;
+  failed: number;
+  errors: string[];
+}
+
+/**
+ * One fetched mail, as the log shows it. The log is a read-only overview, so
+ * the row deliberately leaves out `parsed` as a whole, the stored path of the
+ * attachment and both hashes.
+ */
+export interface InboxLogRow {
+  id: number;
+  receivedAt: string;
+  mailDate: string | null;
+  fromAddress: string | null;
+  subject: string | null;
+  attachmentName: string | null;
+  status: InboxStatus;
+  reviewReason: ReviewReason | null;
+  errorMessage: string | null;
+  vehiclePlate: string | null;
+  vendor: string | null;
+  invoiceNumber: string | null;
+  totalAmount: number | null;
+  /** An attachment is stored, so it can be opened. */
+  hasFile: boolean;
+  expenseIds: number[];
+}
+
 /** "Naam <A@B.nl>" -> "a@b.nl"; anything without an @ -> "". */
 export function normalizeSender(raw: string): string {
   const text = String(raw ?? '');

@@ -1,15 +1,19 @@
 import { describe, it, expect, beforeEach, afterAll, vi } from "vitest";
 
-const { importInvoiceMail, notifyInvoiceInbox, recordOversizeMail, recordFailedMail } = vi.hoisted(() => ({
+const { importInvoiceMail, notifyInvoiceInbox, recordOversizeMail, recordFailedMail, recordRun } = vi.hoisted(() => ({
   importInvoiceMail: vi.fn(),
   notifyInvoiceInbox: vi.fn(async () => {}),
   recordOversizeMail: vi.fn(),
   recordFailedMail: vi.fn(),
+  recordRun: vi.fn(async () => {}),
 }));
 vi.mock("../services/invoice-inbox/importer", () => ({
   importInvoiceMail, recordOversizeMail, recordFailedMail, MAX_MAIL_BYTES: 30 * 1024 * 1024,
 }));
 vi.mock("../services/invoice-inbox/notify", () => ({ notifyInvoiceInbox }));
+// What the log does with a run is invoice-inbox-run-log.test.ts's business,
+// against the real database; here it is only about which runs reach it.
+vi.mock("../services/invoice-inbox/run-log", () => ({ inboxRunLog: { record: recordRun, list: vi.fn() } }));
 
 import { DEFAULT_INVOICE_INBOX_CONFIG, type InvoiceInboxConfig } from "../../shared/invoice-inbox";
 import type { InvoiceImapClient } from "../services/invoice-inbox/imap-client";
@@ -54,6 +58,7 @@ describe("invoice inbox poller", () => {
     notifyInvoiceInbox.mockClear();
     recordOversizeMail.mockReset();
     recordFailedMail.mockReset();
+    recordRun.mockClear();
     resetInvoiceInboxPollerForTests();
   });
   afterAll(() => setInvoiceImapClient(null));
@@ -240,6 +245,42 @@ describe("invoice inbox poller", () => {
     recordOversizeMail.mockResolvedValueOnce("review");
     await runInvoiceInboxImport("scheduler", "scheduler", config);
     expect(recordOversizeMail.mock.calls[0][2]).toBe(true);
+  });
+
+  it("logs a finished run with its numbers and the person who started it", async () => {
+    setInvoiceImapClient(fakeMailbox([1]).client);
+    importInvoiceMail.mockResolvedValue({ attachments: 1, booked: 1, review: 0, skipped: 0 });
+
+    const summary = await runInvoiceInboxImport("manual", "kees", config);
+    expect(recordRun).toHaveBeenCalledTimes(1);
+    expect(recordRun.mock.calls[0][0]).toEqual(summary);
+    expect(recordRun.mock.calls[0][1]).toBe("kees");
+  });
+
+  /** "scheduler" is the default caller, not a person: the run has no username. */
+  it("logs a scheduled run without a username", async () => {
+    setInvoiceImapClient(fakeMailbox([]).client);
+    await runInvoiceInboxImport("scheduler", "scheduler", config);
+    expect(recordRun).toHaveBeenCalledTimes(1);
+    expect(recordRun.mock.calls[0][1]).toBeNull();
+  });
+
+  it("logs a run that could not reach the mailbox, with the reason", async () => {
+    setInvoiceImapClient(fakeMailbox([], { failConnect: true }).client);
+    await runInvoiceInboxImport("scheduler", "scheduler", config);
+    expect(recordRun).toHaveBeenCalledTimes(1);
+    expect(recordRun.mock.calls[0][0]).toMatchObject({ mails: 0, errors: ["connect ECONNREFUSED"] });
+    expect(recordRun.mock.calls[0][0].finishedAt).not.toBe("");
+  });
+
+  it("logs nothing for a run that never started, and once for a run that is shared", async () => {
+    setInvoiceImapClient(fakeMailbox([1]).client);
+    await runInvoiceInboxImport("manual", "kees", { ...config, host: "" });
+    expect(recordRun).not.toHaveBeenCalled();
+
+    importInvoiceMail.mockImplementation(async () => { await new Promise((r) => setTimeout(r, 30)); return { attachments: 1, booked: 1, review: 0, skipped: 0 }; });
+    await Promise.all([runInvoiceInboxImport("manual", "a", config), runInvoiceInboxImport("manual", "b", config)]);
+    expect(recordRun).toHaveBeenCalledTimes(1);
   });
 
   it("turns the interval into a cron expression, clamped to 5..1440 minutes", () => {

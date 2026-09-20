@@ -3607,6 +3607,95 @@
     ]
   },
   {
+    "name": "invoice_inbox_runs",
+    "columns": [
+      {
+        "name": "id",
+        "type": "serial",
+        "notNull": true,
+        "primary": true,
+        "default": null
+      },
+      {
+        "name": "started_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "finished_at",
+        "type": "timestamp with time zone",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "trigger",
+        "type": "text",
+        "notNull": true,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "triggered_by",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "mails",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": "0"
+      },
+      {
+        "name": "attachments",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": "0"
+      },
+      {
+        "name": "booked",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": "0"
+      },
+      {
+        "name": "review",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": "0"
+      },
+      {
+        "name": "skipped",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": "0"
+      },
+      {
+        "name": "failed",
+        "type": "integer",
+        "notNull": true,
+        "primary": false,
+        "default": "0"
+      },
+      {
+        "name": "errors",
+        "type": "jsonb",
+        "notNull": true,
+        "primary": false,
+        "default": "'[]'::jsonb"
+      }
+    ]
+  },
+  {
     "name": "login_attempts",
     "columns": [
       {
