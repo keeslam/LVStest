@@ -289,7 +289,7 @@ const TransportReportTemplateEditor = ({ onClose }: TransportReportTemplateEdito
   const { data: backgroundLibrary = [], refetch: refetchBackgrounds } = useQuery<TemplateBackground[]>({
     queryKey: ['/api/transport-report-templates/backgrounds/all'],
     queryFn: getQueryFn({ on401: "throw" }),
-    enabled: isBackgroundLibraryOpen,
+    enabled: isBackgroundLibraryOpen && canManageTemplates,
   });
 
   const addBackgroundToLibraryMutation = useMutation({

@@ -299,7 +299,7 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
   const { data: backgroundLibrary = [], refetch: refetchBackgrounds } = useQuery<TemplateBackground[]>({
     queryKey: ['/api/pdf-templates/backgrounds/all'],
     queryFn: getQueryFn({ on401: "throw" }),
-    enabled: isBackgroundLibraryOpen,
+    enabled: isBackgroundLibraryOpen && canManageTemplates,
   });
 
   const addBackgroundToLibraryMutation = useMutation({

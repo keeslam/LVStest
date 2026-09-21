@@ -3,14 +3,14 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
 import { ArrowRight, FileText, ScrollText } from "lucide-react";
-import { UserPermission, UserRole } from "@shared/schema";
+import { UserPermission } from "@shared/schema";
 import type { InboxLogRow, InboxRunRow, InboxStatus, ReviewReason } from "@shared/invoice-inbox";
 import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
 import { cn, displayLicensePlate } from "@/lib/utils";
-import { useAuth } from "@/hooks/use-auth";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -64,7 +64,6 @@ const CELL_CLS = "px-3 py-2 align-top";
 
 export function InvoiceInboxLogButton() {
   const { t } = useTranslation("expenses");
-  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<LogTab>("invoices");
   const [search, setSearch] = useState("");
@@ -73,8 +72,7 @@ export function InvoiceInboxLogButton() {
   const q = useDebouncedValue(search);
 
   // The server decides; this only hides what a click would be refused for.
-  const canManageExpenses = user?.role === UserRole.ADMIN
-    || ((user?.permissions as string[] | null | undefined) ?? []).includes(UserPermission.MANAGE_EXPENSES);
+  const canManageExpenses = useHasPermission(UserPermission.MANAGE_EXPENSES);
 
   const kind: LogKind = tab === "other" ? "other" : "invoices";
   // The "Overige mail" tab has no status select, so it carries no status either.
