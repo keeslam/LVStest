@@ -51,37 +51,62 @@ export const PAGE_ACCESS: readonly PageAccess[] = [
   { path: "/expenses/add", anyOf: [P.MANAGE_EXPENSES] },
 ];
 
-/** Escapes a literal path segment for use inside a RegExp. */
-function escapeRegExp(segment: string): string {
-  return segment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/**
+ * Normalises an address the way wouter matches it. Wouter's `<Route>`
+ * matches via `regexparam` (node_modules/regexparam/dist/index.mjs), which
+ * builds each route's pattern as `RegExp('^' + pattern + '\/?$', 'i')`: a
+ * single trailing slash is optional and matching is case-insensitive. Its
+ * browser location hook (node_modules/wouter/esm/use-browser-location.js,
+ * `usePathname`) reads `location.pathname`, which never includes a query
+ * string or hash in the first place — but a caller of this module (the E2E
+ * suite, a raw `<a href>`) may still pass one through, so it is stripped
+ * here too, before wouter would ever see it.
+ */
+function normalize(path: string): string {
+  const withoutQueryOrHash = path.split("?")[0].split("#")[0];
+  if (withoutQueryOrHash.length > 1 && withoutQueryOrHash.endsWith("/")) {
+    return withoutQueryOrHash.slice(0, -1);
+  }
+  return withoutQueryOrHash;
 }
 
-/** True when the pattern's segment count matches and every static segment matches literally. */
+/**
+ * True when the pattern's segment count matches and every static segment
+ * matches case-insensitively (a `:param` segment matches any non-empty
+ * segment, case never applies to it either way).
+ */
 function matchesPattern(pattern: string, path: string): boolean {
   const patternSegments = pattern.split("/");
   const pathSegments = path.split("/");
   if (patternSegments.length !== pathSegments.length) return false;
   return patternSegments.every((segment, index) =>
-    segment.startsWith(":") ? pathSegments[index].length > 0 : segment === pathSegments[index]
+    segment.startsWith(":")
+      ? pathSegments[index].length > 0
+      : segment.toLowerCase() === pathSegments[index].toLowerCase()
   );
 }
 
 /**
- * Matches a concrete path (e.g. "/reservations/edit/12") to its table row,
- * static or parameterised. Strips a query string or hash first so callers
- * can pass a raw `location.pathname`-like value either way.
+ * Matches a concrete address (e.g. "/reservations/edit/12", "/Expenses/",
+ * "/expenses?inbox=1") to its table row, static or parameterised.
  */
 export function pageAccessFor(path: string): PageAccess | undefined {
-  const clean = path.split("?")[0].split("#")[0];
+  const clean = normalize(path);
   return PAGE_ACCESS.find((entry) => matchesPattern(entry.path, clean));
 }
 
 /**
  * Client-side mirror of the server's rule: role `admin` bypasses every
- * check; everyone else needs at least one of the row's permissions. A path
- * with no row in the table is not gated here (true) — it is either handled
- * elsewhere (login-only pages) or not a real route, in which case wouter
- * renders the not-found page regardless.
+ * check; everyone else needs at least one of the row's permissions.
+ *
+ * A path with no row in the table is intentionally left open (true) here:
+ * it is either a route this table was never meant to cover (e.g. a
+ * login-only page) or a genuinely unknown address, which wouter's own
+ * `<Switch>` already renders as the not-found page regardless of what this
+ * function answers. The "no known path shape falls through" test in
+ * page-access.test.ts pins that every real row — trailing slash, query
+ * string, hash or case variations included — still resolves to its row
+ * rather than landing here by accident.
  */
 export function canOpenPage(
   user: { role: string; permissions?: string[] | null } | null | undefined,

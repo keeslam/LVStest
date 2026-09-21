@@ -13,8 +13,10 @@ type NavItem = {
 
 // Labels and icons stay here; which permission opens which screen comes from
 // the shared table (shared/page-access.ts) so the menu, the route guard and
-// the E2E registry can never drift apart again.
-const NAV_ITEMS: NavItem[] = [
+// the E2E registry can never drift apart again. Exported so
+// client/src/components/__tests__/sidebar-nav-page-access.test.tsx can check
+// it against the real thing instead of a hand-copied list.
+export const NAV_ITEMS: NavItem[] = [
   // OPT-001 — "Vandaag" is the first thing an employee sees in the menu; the
   // dashboard keeps its place and its widgets right underneath it.
   { href: "/", labelKey: "dashboard", icon: "dashboard" },
