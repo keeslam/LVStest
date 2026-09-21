@@ -123,6 +123,11 @@
     "or": "of",
     "wayOutButton": "Ga naar een scherm dat u wel mag gebruiken"
   },
+  "requiresPermission": {
+    "reason": "Hiervoor heeft u het recht {{permissions}} nodig.",
+    "or": "of",
+    "and": "en"
+  },
   "searchPage": {
     "toasts": {
       "errorTitle": "Fout",

@@ -12,6 +12,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { UserRole } from "@shared/schema";
 
 const openScanDialog = vi.fn();
 
@@ -28,6 +29,15 @@ vi.mock("@/contexts/GlobalDialogContext", async () => {
     }),
   };
 });
+
+// Task 3 (docs/superpowers/specs/2026-09-21-toegang-design.md, §4) wrapped
+// every tile in RequiresPermission, which reads the signed-in user via
+// useAuth() — this test is about tile order/labels/click wiring, not
+// permissions, so it renders as admin (bypasses every check) to keep every
+// tile enabled, same as before RequiresPermission existed.
+vi.mock("@/hooks/use-auth", () => ({
+  useAuth: () => ({ user: { id: 1, username: "tester", role: UserRole.ADMIN, permissions: [] }, isLoading: false }),
+}));
 
 import { QuickActions } from "@/components/dashboard/quick-actions";
 

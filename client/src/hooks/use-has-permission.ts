@@ -21,6 +21,23 @@ export function useHasPermission(...anyOf: string[]): boolean {
 }
 
 /**
+ * AND counterpart to `useHasPermission`'s OR logic — Task 3
+ * (docs/superpowers/specs/2026-09-21-toegang-design.md, §4):
+ * `RequiresPermission`'s `allOf` prop, for a control whose action needs
+ * several rights together server-side (e.g. the dashboard's
+ * APK-report-upload tile: `POST /api/documents` needs MANAGE_DOCUMENTS,
+ * the `PATCH /api/vehicles/:id` that follows it needs MANAGE_VEHICLES — both
+ * are required, not either). Role `admin` still bypasses every check; an
+ * empty list is trivially satisfied (nothing to require).
+ */
+export function useHasAllPermissions(...allOf: string[]): boolean {
+  const { user } = useAuth();
+  if (user?.role === UserRole.ADMIN) return true;
+  const perms = (user?.permissions as string[] | undefined) ?? [];
+  return allOf.every((permission) => perms.includes(permission));
+}
+
+/**
  * Task 2 fix round 1 (docs/superpowers/specs/2026-09-21-toegang-design.md,
  * §2) — `client/src/components/ui/notification-center.tsx` and
  * `client/src/components/notifications/notification-center-dialog.tsx` are

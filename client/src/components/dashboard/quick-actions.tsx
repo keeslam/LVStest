@@ -3,6 +3,7 @@ import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
 import {
@@ -28,7 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import React, { useEffect, useState } from "react";
-import { Reservation, Vehicle } from "@shared/schema";
+import { Reservation, UserPermission, Vehicle } from "@shared/schema";
 import { Check, RotateCw, Search, CalendarClock, LogIn, LogOut, ScanLine } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { isTrueValue } from "@/lib/utils";
@@ -936,17 +937,18 @@ export function QuickActions() {
                   ? "return"
                   : null;
               return (
-                <Button
-                  key={action.label}
-                  variant="outline"
-                  className={actionStyle(action).className}
-                  size={actionStyle(action).size}
-                  onClick={() => openScanDialog(intent)}
-                  data-testid={`button-quick-${action.dialog}`}
-                >
-                  <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
-                  {t(`quickActions.buttons.${action.dialog}`)}
-                </Button>
+                <RequiresPermission key={action.label} anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                  <Button
+                    variant="outline"
+                    className={actionStyle(action).className}
+                    size={actionStyle(action).size}
+                    onClick={() => openScanDialog(intent)}
+                    data-testid={`button-quick-${action.dialog}`}
+                  >
+                    <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
+                    {t(`quickActions.buttons.${action.dialog}`)}
+                  </Button>
+                </RequiresPermission>
               );
             }
 
@@ -971,10 +973,17 @@ export function QuickActions() {
               return (
                 <Dialog key={action.label} open={reservationDialogOpen} onOpenChange={setReservationDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className={actionStyle(action).className} size={actionStyle(action).size}>
-                      <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
-                      {t(`quickActions.buttons.${action.dialog}`)}
-                    </Button>
+                    <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                      <Button
+                        variant="outline"
+                        className={actionStyle(action).className}
+                        size={actionStyle(action).size}
+                        data-testid="button-quick-new-reservation"
+                      >
+                        <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
+                        {t(`quickActions.buttons.${action.dialog}`)}
+                      </Button>
+                    </RequiresPermission>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
@@ -1003,10 +1012,12 @@ export function QuickActions() {
               return (
                 <Dialog key={action.label} open={vehicleDialogOpen} onOpenChange={setVehicleDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className={actionStyle(action).className} size={actionStyle(action).size} data-testid="button-quick-add-vehicle">
-                      <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
-                      {t(`quickActions.buttons.${action.dialog}`)}
-                    </Button>
+                    <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+                      <Button variant="outline" className={actionStyle(action).className} size={actionStyle(action).size} data-testid="button-quick-add-vehicle">
+                        <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
+                        {t(`quickActions.buttons.${action.dialog}`)}
+                      </Button>
+                    </RequiresPermission>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
@@ -1034,10 +1045,12 @@ export function QuickActions() {
               return (
                 <Dialog key={action.label} open={customerDialogOpen} onOpenChange={setCustomerDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className={actionStyle(action).className} size={actionStyle(action).size} data-testid="button-quick-add-customer">
-                      <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
-                      {t(`quickActions.buttons.${action.dialog}`)}
-                    </Button>
+                    <RequiresPermission anyOf={[UserPermission.MANAGE_CUSTOMERS]}>
+                      <Button variant="outline" className={actionStyle(action).className} size={actionStyle(action).size} data-testid="button-quick-add-customer">
+                        <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
+                        {t(`quickActions.buttons.${action.dialog}`)}
+                      </Button>
+                    </RequiresPermission>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
@@ -1065,15 +1078,17 @@ export function QuickActions() {
               return (
                 <Dialog key={action.label} open={expenseDialogOpen} onOpenChange={setExpenseDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="bg-primary-50 text-primary-600 hover:bg-primary-100"
-                      size="sm"
-                      data-testid="button-quick-log-expense"
-                    >
-                      <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
-                      {t(`quickActions.buttons.${action.dialog}`)}
-                    </Button>
+                    <RequiresPermission anyOf={[UserPermission.MANAGE_EXPENSES]}>
+                      <Button
+                        variant="outline"
+                        className="bg-primary-50 text-primary-600 hover:bg-primary-100"
+                        size="sm"
+                        data-testid="button-quick-log-expense"
+                      >
+                        <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
+                        {t(`quickActions.buttons.${action.dialog}`)}
+                      </Button>
+                    </RequiresPermission>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
@@ -1103,14 +1118,17 @@ export function QuickActions() {
               return (
                 <Dialog key={action.label}>
                   <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="bg-primary-50 text-primary-600 hover:bg-primary-100"
-                      size="sm"
-                    >
-                      <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
-                      {t(`quickActions.buttons.${action.dialog}`)}
-                    </Button>
+                    <RequiresPermission anyOf={[UserPermission.MANAGE_DOCUMENTS]}>
+                      <Button
+                        variant="outline"
+                        className="bg-primary-50 text-primary-600 hover:bg-primary-100"
+                        size="sm"
+                        data-testid="button-quick-document-upload"
+                      >
+                        <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
+                        {t(`quickActions.buttons.${action.dialog}`)}
+                      </Button>
+                    </RequiresPermission>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
@@ -1276,14 +1294,17 @@ export function QuickActions() {
               return (
                 <Dialog key={action.label} open={apkNotificationsDialogOpen} onOpenChange={setApkNotificationsDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="bg-primary-50 text-primary-600 hover:bg-primary-100"
-                      size="sm"
-                    >
-                      <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
-                      {t(`quickActions.buttons.${action.dialog}`)}
-                    </Button>
+                    <RequiresPermission anyOf={[UserPermission.MANAGE_NOTIFICATIONS]}>
+                      <Button
+                        variant="outline"
+                        className="bg-primary-50 text-primary-600 hover:bg-primary-100"
+                        size="sm"
+                        data-testid="button-quick-apk-notifications"
+                      >
+                        <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
+                        {t(`quickActions.buttons.${action.dialog}`)}
+                      </Button>
+                    </RequiresPermission>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col">
                     <DialogHeader>
@@ -1504,14 +1525,17 @@ export function QuickActions() {
               return (
                 <Dialog key={action.label}>
                   <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="bg-primary-50 text-primary-600 hover:bg-primary-100"
-                      size="sm"
-                    >
-                      <ActionIcon name={action.icon || "upload"} className="mr-1 h-4 w-4" />
-                      {t(`quickActions.buttons.${action.dialog}`)}
-                    </Button>
+                    <RequiresPermission allOf={[UserPermission.MANAGE_DOCUMENTS, UserPermission.MANAGE_VEHICLES]}>
+                      <Button
+                        variant="outline"
+                        className="bg-primary-50 text-primary-600 hover:bg-primary-100"
+                        size="sm"
+                        data-testid="button-quick-apk-report"
+                      >
+                        <ActionIcon name={action.icon || "upload"} className="mr-1 h-4 w-4" />
+                        {t(`quickActions.buttons.${action.dialog}`)}
+                      </Button>
+                    </RequiresPermission>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
@@ -1682,14 +1706,17 @@ export function QuickActions() {
               return (
                 <Dialog key={action.label}>
                   <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="bg-primary-50 text-primary-600 hover:bg-primary-100"
-                      size="sm"
-                    >
-                      <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
-                      {t(`quickActions.buttons.${action.dialog}`)}
-                    </Button>
+                    <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+                      <Button
+                        variant="outline"
+                        className="bg-primary-50 text-primary-600 hover:bg-primary-100"
+                        size="sm"
+                        data-testid="button-quick-registration"
+                      >
+                        <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
+                        {t(`quickActions.buttons.${action.dialog}`)}
+                      </Button>
+                    </RequiresPermission>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
@@ -1883,14 +1910,17 @@ export function QuickActions() {
                 <React.Fragment key={action.label}>
                   <Dialog open={fuelStatusDialogOpen} onOpenChange={setFuelStatusDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="bg-primary-50 text-primary-600 hover:bg-primary-100"
-                        size="sm"
-                      >
-                        <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
-                        {t(`quickActions.buttons.${action.dialog}`)}
-                      </Button>
+                      <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+                        <Button
+                          variant="outline"
+                          className="bg-primary-50 text-primary-600 hover:bg-primary-100"
+                          size="sm"
+                          data-testid="button-quick-fuel-status"
+                        >
+                          <ActionIcon name={action.icon} className="mr-1 h-4 w-4" />
+                          {t(`quickActions.buttons.${action.dialog}`)}
+                        </Button>
+                      </RequiresPermission>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
@@ -1982,16 +2012,18 @@ export function QuickActions() {
             // For interactive damage check dialog - just render the trigger button
             if (action.dialog === "interactive-damage-check") {
               return (
-                <Button
-                  key={action.label}
-                  variant="outline"
-                  className={actionStyle(action).className}
-                  size={actionStyle(action).size}
-                  onClick={() => setDamageCheckScanOpen(true)}
-                >
-                  <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
-                  {t(`quickActions.buttons.${action.dialog}`)}
-                </Button>
+                <RequiresPermission key={action.label} anyOf={[UserPermission.MANAGE_DAMAGE_CHECKS]}>
+                  <Button
+                    variant="outline"
+                    className={actionStyle(action).className}
+                    size={actionStyle(action).size}
+                    onClick={() => setDamageCheckScanOpen(true)}
+                    data-testid="button-quick-interactive-damage-check"
+                  >
+                    <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
+                    {t(`quickActions.buttons.${action.dialog}`)}
+                  </Button>
+                </RequiresPermission>
               );
             }
 
@@ -2000,24 +2032,25 @@ export function QuickActions() {
             if (action.dialog === "rdw-apk-scan") {
               const isBusy = startRdwScanMutation.isPending || isRdwScanRunning;
               return (
-                <Button
-                  key={action.label}
-                  variant="outline"
-                  className={actionStyle(action).className}
-                  size={actionStyle(action).size}
-                  onClick={() => startRdwScanMutation.mutate()}
-                  disabled={isBusy}
-                  data-testid="button-scan-rdw-apk-dates"
-                >
-                  {isBusy ? (
-                    <RotateCw className={`${actionStyle(action).iconClassName} animate-spin`} />
-                  ) : (
-                    <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
-                  )}
-                  {isBusy
-                    ? t("quickActions.rdwScanInProgress")
-                    : t(`quickActions.buttons.${action.dialog}`)}
-                </Button>
+                <RequiresPermission key={action.label} anyOf={[UserPermission.MANAGE_VEHICLES]}>
+                  <Button
+                    variant="outline"
+                    className={actionStyle(action).className}
+                    size={actionStyle(action).size}
+                    onClick={() => startRdwScanMutation.mutate()}
+                    disabled={isBusy}
+                    data-testid="button-scan-rdw-apk-dates"
+                  >
+                    {isBusy ? (
+                      <RotateCw className={`${actionStyle(action).iconClassName} animate-spin`} />
+                    ) : (
+                      <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
+                    )}
+                    {isBusy
+                      ? t("quickActions.rdwScanInProgress")
+                      : t(`quickActions.buttons.${action.dialog}`)}
+                  </Button>
+                </RequiresPermission>
               );
             }
 

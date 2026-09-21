@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
@@ -39,7 +40,7 @@ import {
   getDay,
   formatISO
 } from "date-fns";
-import { Vehicle, Reservation, Customer, Driver } from "@shared/schema";
+import { Vehicle, Reservation, Customer, Driver, UserPermission } from "@shared/schema";
 import { formatCurrency } from "@/lib/utils";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { formatReservationStatus } from "@/lib/format-utils";
@@ -308,15 +309,17 @@ export function ReservationCalendar() {
         <CardTitle className="text-base font-medium text-gray-800">{t('reservationCalendar.title')}</CardTitle>
         <div className="flex space-x-2">
           <ReservationAddDialog>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 text-xs"
-              data-testid="button-dashboard-new-reservation"
-            >
-              <PlusCircle className="mr-1 h-3 w-3" />
-              New Reservation
-            </Button>
+            <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs"
+                data-testid="button-dashboard-new-reservation"
+              >
+                <PlusCircle className="mr-1 h-3 w-3" />
+                New Reservation
+              </Button>
+            </RequiresPermission>
           </ReservationAddDialog>
           <Link href="/reservations/calendar">
             <Button variant="link" className="text-primary-600 hover:text-primary-700 text-sm font-medium h-8 px-0">

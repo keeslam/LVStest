@@ -14,6 +14,7 @@ import { VehicleRemarksWarningDialog } from "@/components/vehicles/vehicle-remar
 import { BarcodeBookDialog } from "@/components/barcodes/barcode-book-dialog";
 import { KeyAuditDialog } from "@/components/barcodes/key-audit-dialog";
 import { Button } from "@/components/ui/button";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +32,7 @@ import { isTrueValue } from "@/lib/utils";
 import { getDaysUntil } from "@/lib/date-utils";
 import { Search, SlidersHorizontal, Edit, Trash2, Archive, BookOpen, KeyRound } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { UserRole } from "@shared/schema";
+import { UserPermission, UserRole } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
 // Feature-based filter options. Each maps a user-facing label to the boolean
@@ -248,23 +249,27 @@ export default function VehiclesIndex() {
             >
               {t('indexPage.viewButton')}
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setEditVehicleId(vehicle.id)}
-              data-testid={`button-edit-vehicle-${vehicle.id}`}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-red-500"
-              onClick={() => setDeleteVehicleTarget(vehicle)}
-              data-testid={`button-delete-vehicle-${vehicle.id}`}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditVehicleId(vehicle.id)}
+                data-testid={`button-edit-vehicle-${vehicle.id}`}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            </RequiresPermission>
+            <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-red-500"
+                onClick={() => setDeleteVehicleTarget(vehicle)}
+                data-testid={`button-delete-vehicle-${vehicle.id}`}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </RequiresPermission>
             {(() => {
               const isRented = vehicle.availabilityStatus === 'rented';
               const isNotForRental = vehicle.availabilityStatus === 'not_for_rental';
@@ -322,14 +327,16 @@ export default function VehiclesIndex() {
               // For available vehicles, show Reserve button. The actual dialog lives at
               // the page level (see below) so it isn't unmounted when the table refetches.
               return (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  data-testid={`button-reserve-vehicle-${vehicle.id}`}
-                  onClick={() => setReserveDialogVehicleId(vehicle.id.toString())}
-                >
-                  {t('indexPage.reserveButton')}
-                </Button>
+                <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    data-testid={`button-reserve-vehicle-${vehicle.id}`}
+                    onClick={() => setReserveDialogVehicleId(vehicle.id.toString())}
+                  >
+                    {t('indexPage.reserveButton')}
+                  </Button>
+                </RequiresPermission>
               );
             })()}
           </div>
@@ -828,20 +835,26 @@ export default function VehiclesIndex() {
                         <Button variant="outline" size="sm" onClick={() => handleViewClick(vehicle)} data-testid={`card-view-vehicle-${vehicle.id}`}>
                           {t('indexPage.viewButton')}
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setEditVehicleId(vehicle.id)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-red-500" onClick={() => setDeleteVehicleTarget(vehicle)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+                          <Button variant="ghost" size="sm" onClick={() => setEditVehicleId(vehicle.id)} data-testid={`card-edit-vehicle-${vehicle.id}`}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </RequiresPermission>
+                        <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+                          <Button variant="ghost" size="sm" className="text-red-500" onClick={() => setDeleteVehicleTarget(vehicle)} data-testid={`card-delete-vehicle-${vehicle.id}`}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </RequiresPermission>
                         {activeReservation ? (
                           <Button variant="secondary" size="sm" onClick={() => { setSelectedReservationId(activeReservation.id); setReservationViewDialogOpen(true); }}>
                             {t('indexPage.viewRentalButton')}
                           </Button>
                         ) : status !== 'not_for_rental' && status !== 'rented' ? (
-                          <Button variant="outline" size="sm" onClick={() => setReserveDialogVehicleId(vehicle.id.toString())}>
-                            {t('indexPage.reserveButton')}
-                          </Button>
+                          <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                            <Button variant="outline" size="sm" onClick={() => setReserveDialogVehicleId(vehicle.id.toString())} data-testid={`card-reserve-vehicle-${vehicle.id}`}>
+                              {t('indexPage.reserveButton')}
+                            </Button>
+                          </RequiresPermission>
                         ) : null}
                       </div>
                     </div>

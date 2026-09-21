@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
+import { UserPermission } from "@shared/schema";
 import { VehicleQuickForm } from "./vehicle-quick-form";
 
 interface VehicleAddDialogProps {
@@ -32,12 +34,16 @@ export function VehicleAddDialog({ children, onSuccess }: VehicleAddDialogProps)
     setOpen(false);
   };
 
-  // Custom trigger or default "Add Vehicle" button
+  // Custom trigger or default "Add Vehicle" button — the default is the one
+  // gated here (Task 3: dashboard/vehicles pages); a caller-supplied trigger
+  // is that caller's own control to gate.
   const trigger = children || (
-    <Button data-testid="button-add-vehicle">
-      <Plus className="mr-2 h-4 w-4" />
-      {t('addDialog.addVehicleButton')}
-    </Button>
+    <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+      <Button data-testid="button-add-vehicle">
+        <Plus className="mr-2 h-4 w-4" />
+        {t('addDialog.addVehicleButton')}
+      </Button>
+    </RequiresPermission>
   );
 
   return (

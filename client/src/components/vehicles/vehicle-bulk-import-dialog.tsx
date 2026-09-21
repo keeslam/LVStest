@@ -2,6 +2,8 @@ import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { RequiresPermission } from "@/components/ui/requires-permission";
+import { UserPermission } from "@shared/schema";
 import {
   Dialog,
   DialogContent,
@@ -730,12 +732,16 @@ export function VehicleBulkImportDialog({ children, onSuccess }: VehicleBulkImpo
     setSelectedFile(null);
   };
 
-  // Custom trigger or default bulk import button
+  // Custom trigger or default bulk import button — the default is the one
+  // gated here (Task 3: dashboard/vehicles pages); a caller-supplied trigger
+  // is that caller's own control to gate.
   const trigger = children || (
-    <Button variant="outline" data-testid="button-bulk-import">
-      <Download className="mr-2 h-4 w-4" />
-      {t('bulkImportDialog.triggerButton')}
-    </Button>
+    <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+      <Button variant="outline" data-testid="button-bulk-import">
+        <Download className="mr-2 h-4 w-4" />
+        {t('bulkImportDialog.triggerButton')}
+      </Button>
+    </RequiresPermission>
   );
 
   return (

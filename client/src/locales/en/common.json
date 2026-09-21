@@ -123,6 +123,11 @@
     "or": "or",
     "wayOutButton": "Go to a screen you can use"
   },
+  "requiresPermission": {
+    "reason": "This requires the {{permissions}} right.",
+    "or": "or",
+    "and": "and"
+  },
   "searchPage": {
     "toasts": {
       "errorTitle": "Error",
