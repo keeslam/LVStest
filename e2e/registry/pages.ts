@@ -1,60 +1,79 @@
-import { UserPermission as P } from "../../shared/schema";
+import { PAGE_ACCESS } from "../../shared/page-access";
 
 export interface PageEntry {
   path: string;
-  anyOf: string[];
+  anyOf: readonly string[];
   /**
    * One GET the page depends on, used by layer-a/forbidden.spec.ts to prove a
    * role this page's sidebar entry refuses also gets a 403 from the server.
    * `null` when no such route exists (every GET route the page depends on is
-   * guarded by permissions wider than the sidebar's `anyOf` — see
+   * guarded by permissions wider than the table's `anyOf` — see
    * .superpowers/sdd/2026-09-20-e2e-browser-tests/task-6-report.md, "Findings
-   * for the owner"). forbidden.spec.ts then skips only the 403 assertion for
-   * that page and keeps the other two.
+   * for the owner") or, for `/reservations/edit/:id`, because the path is
+   * parameterised and is not iterated by layer-a at all (see below).
+   * forbidden.spec.ts then skips only the 403 assertion for that page and
+   * keeps the other two.
    */
   api: string | null;
 }
 
-// Permissions copied from client/src/components/sidebar-nav.tsx (lines 24-37).
-export const PAGES: PageEntry[] = [
-  { path: "/", anyOf: [P.VIEW_DASHBOARD], api: "/api/vehicles" },
-  { path: "/vehicles", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], api: "/api/vehicles" },
+// `path` and `anyOf` come from shared/page-access.ts (also consumed by
+// client/src/components/sidebar-nav.tsx and, from Task 2, the route guard) so
+// this registry can never drift from the menu again. Only `api` — which GET
+// proves a 403 for E2E — stays local to the E2E suite.
+const API_BY_PATH: Record<string, string | null> = {
+  "/": "/api/vehicles",
+  "/vehicles": "/api/vehicles",
   // ScanPage renders ScanPanel, which loads ["/api/scan-events"] on mount
   // (client/src/components/barcodes/scan-panel.tsx) — guarded the same as
   // /vehicles (VIEW_VEHICLES, MANAGE_VEHICLES).
-  { path: "/scan", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], api: "/api/scan-events" },
-  { path: "/customers", anyOf: [P.VIEW_CUSTOMERS, P.MANAGE_CUSTOMERS], api: "/api/customers" },
+  "/scan": "/api/scan-events",
+  "/customers": "/api/customers",
   // portal-admin/index.tsx fetches DASHBOARD_KEY = ["/api/portal-admin/dashboard"]
   // on mount (client/src/components/portal-admin/dashboard-panels.tsx); the
   // brief's guessed "/api/portal-admin/users" route does not exist.
-  { path: "/portal-admin", anyOf: [P.VIEW_PORTAL, P.MANAGE_PORTAL], api: "/api/portal-admin/dashboard" },
-  { path: "/reservations", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], api: "/api/reservations" },
+  "/portal-admin": "/api/portal-admin/dashboard",
+  "/reservations": "/api/reservations",
   // Finding: every GET the maintenance calendar depends on (/api/vehicles/*,
   // /api/reservations, /api/app-settings, /api/system-settings) is guarded by
   // VIEW_VEHICLES/MANAGE_VEHICLES or VIEW_RESERVATIONS/MANAGE_RESERVATIONS —
   // permissions every one of the seven E2E profiles holds — never by
-  // MANAGE_MAINTENANCE, which is what the sidebar actually requires. No GET
-  // route refuses a role the sidebar refuses, so there is nothing to assert
+  // MANAGE_MAINTENANCE, which is what the table actually requires. No GET
+  // route refuses a role the table refuses, so there is nothing to assert
   // a 403 against.
-  { path: "/maintenance", anyOf: [P.MANAGE_MAINTENANCE], api: null },
-  { path: "/expenses", anyOf: [P.MANAGE_EXPENSES], api: "/api/expenses" },
-  { path: "/expenses/add", anyOf: [P.MANAGE_EXPENSES], api: "/api/expenses" },
-  { path: "/documents", anyOf: [P.VIEW_DOCUMENTS, P.MANAGE_DOCUMENTS], api: "/api/documents" },
-  // Finding: GET /api/transports (server/routes.ts) is guarded by
-  // VIEW_VEHICLES/MANAGE_VEHICLES/VIEW_RESERVATIONS/MANAGE_RESERVATIONS — wider
-  // than the sidebar's VIEW_RESERVATIONS/MANAGE_RESERVATIONS. Harmless today
-  // only because every profile already holds VIEW_RESERVATIONS.
-  { path: "/delivery", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], api: "/api/transports" },
-  // Finding: GET /api/email-templates (mounted in server/index.ts) is guarded
-  // by MANAGE_EMAIL_TEMPLATES only — narrower than the sidebar's
-  // MANAGE_EMAIL_TEMPLATES/MANAGE_NOTIFICATIONS. Harmless today only because
-  // no profile holds MANAGE_NOTIFICATIONS without also holding
-  // MANAGE_EMAIL_TEMPLATES.
-  { path: "/communications", anyOf: [P.MANAGE_EMAIL_TEMPLATES, P.MANAGE_NOTIFICATIONS], api: "/api/email-templates" },
+  "/maintenance": null,
+  "/expenses": "/api/expenses",
+  "/expenses/add": "/api/expenses",
+  "/documents": "/api/documents",
+  // B-29 widened this row to VIEW_RESERVATIONS/MANAGE_RESERVATIONS/
+  // VIEW_VEHICLES/MANAGE_VEHICLES (shared/page-access.ts), which now matches
+  // GET /api/transports' guard (server/routes.ts) exactly — the mismatch a
+  // previous version of this file reported here is resolved by that change.
+  "/delivery": "/api/transports",
+  // B-29 narrowed this row to MANAGE_EMAIL_TEMPLATES only
+  // (shared/page-access.ts), which now matches GET /api/email-templates'
+  // guard (server/index.ts) exactly — the mismatch a previous version of
+  // this file reported here is resolved by that change.
+  "/communications": "/api/email-templates",
   // Finding: reports/index.tsx (client/src/pages/reports/index.tsx, about
   // lines 145 and 150) fetches /api/customers and /api/transports with no
   // `enabled` gate of their own. Harmless for the seven E2E profiles (everyone
   // who reaches /reports also holds VIEW_CUSTOMERS), latent for a hand-built
   // profile with VIEW_REPORTS but without VIEW_CUSTOMERS.
-  { path: "/reports", anyOf: [P.VIEW_REPORTS, P.MANAGE_REPORTS], api: "/api/reports/saved" },
-];
+  "/reports": "/api/reports/saved",
+  // No api: this path is parameterised ("/reservations/edit/:id") and is
+  // deliberately excluded from both layer-a/pages.spec.ts and
+  // layer-a/forbidden.spec.ts (they filter out any path containing ":" — see
+  // the comment there). Resolving a real seeded reservation id for every
+  // role, and proving a 403 against a route (GET /api/reservations/:id) that
+  // is guarded more widely — VIEW_RESERVATIONS/MANAGE_RESERVATIONS — than
+  // this page's own MANAGE_RESERVATIONS-only row, is left to the route
+  // guard's own test in Task 2.
+  "/reservations/edit/:id": null,
+};
+
+export const PAGES: PageEntry[] = PAGE_ACCESS.map((entry) => ({
+  path: entry.path,
+  anyOf: entry.anyOf,
+  api: API_BY_PATH[entry.path] ?? null,
+}));
