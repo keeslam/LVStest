@@ -10,15 +10,17 @@ daadwerkelijk heeft uitgevoerd.
 ## 1. Samenvatting
 
 - De hele baliestroom — nieuwe klant, reservering, ophalen, schadecheck, inleveren —
-  kost vandaag **23 handelingen**: 7 + 6 + 4 + 3 + 3. Kiest de medewerker het voertuig
-  rechtstreeks uit de lijst in plaats van eerst op kenteken te zoeken, dan zijn het er
-  **21** (zie 2.2).
+  kost in de gemeten run **23 handelingen**: 7 + 6 + 4 + 3 + 3. Twee daarvan hoeft een
+  medewerker in het normale geval niet te doen: het voertuig kan direct uit de lijst
+  worden gekozen in plaats van eerst te zoeken (zie 2.2), en het contractnummer staat al
+  voorgesteld (zie 2.3). In de praktijk komt de stroom dus eerder op **20** uit.
 - Een nieuw voertuig via kentekenopzoeking aanmaken kost daarbovenop **5 handelingen**
   (aparte stroom, ander soort medewerker).
-- De drie voorstellen die het meeste schelen: **OPT-034** (contractnummer zelf
-  voorstellen, 1 van de 4 handelingen bij élke ophaling), **OPT-035** (onthoud of je de
-  agenda of de lijst gebruikt, 1 handeling bij élke inname die via de lijst loopt),
-  **OPT-036** (telefoon en e-mail bij de naam zetten, 1 van de 7 bij elke nieuwe klant).
+- De drie voorstellen die het meeste schelen: **OPT-035** (onthoud of je de agenda of de
+  lijst gebruikt, 1 handeling bij élke inname die via de lijst loopt), **OPT-036**
+  (telefoon en e-mail bij de naam zetten, 1 van de 7 bij elke nieuwe klant) en
+  **OPT-037** (na het opslaan meteen naar de reservering, 1 handeling plus zoekwerk).
+  **OPT-034 is vervallen** — zie hoofdstuk 3.
 - De fout die je moet weten: **sinds de auditwijzigingen live gingen, kon niemand meer
   een schadecheck opslaan.** Elke poging gaf een foutmelding. De reparatie is gemaakt en
   getest, maar staat op de werkbranch — **nog niet in productie** (BUG-231).
@@ -93,7 +95,7 @@ er goed gaat.
 - *Technisch:* `client/src/components/reservations/reservation-form.tsx`,
   `client/src/components/ui/vehicle-selector.tsx`.
 
-### 2.3 Ophalen — 4 handelingen
+### 2.3 Ophalen — 4 gemeten handelingen, in de praktijk 3
 
 ```
 1. klik: reservering openen
@@ -102,18 +104,19 @@ er goed gaat.
 4. klik: Ophalen voltooien & contract genereren
 ```
 
+Stap 3 staat er omdat de test er zelf een nummer intypte. Dat hoeft niet: het veld is
+bij het openen al ingevuld (zie hieronder). Een medewerker die het voorgestelde nummer
+gewoon laat staan, doet er **3**.
+
 **Wat het scherm zelf al goed doet (niet meegeteld)**
 
 - De ophaaldatum staat op vandaag, de kilometerstand op de huidige stand van het
-  voertuig en het brandstofniveau op "Vol". Alle drie geverifieerd.
-
-**Wat opvalt**
-
-- Het veld voor het contractnummer zegt in de grijze hulptekst "Automatisch gegenereerd
-  (bewerkbaar)", maar het veld is leeg en wordt nooit gevuld. De medewerker moet zelf
-  een nummer weten en intypen. De applicatie herkent tijdens het typen wél meteen een
-  dubbel of ongebruikelijk hoog nummer — ze weet dus genoeg om zelf een nummer voor te
-  stellen, maar doet dat niet. → voorstel OPT-034.
+  voertuig en het brandstofniveau op "Vol". Alle drie in de test nagekeken.
+- **Het contractnummer staat er ook al in.** Bij het openen haalt het scherm het
+  eerstvolgende vrije nummer op; had de reservering al een nummer, dan komt dat te
+  staan. De grijze hulptekst "Automatisch gegenereerd (bewerkbaar)" klopt dus gewoon.
+  Dit is uit de code opgemaakt, niet in de test nagekeken — de test typte er zonder
+  kijken een eigen nummer overheen, dus wat er stond is nooit vastgelegd.
 - Na het voltooien verschijnt vanzelf een bevestigingsvenster ("Contract klaar", met
   afdrukken en mailen). Dat venster is een eerder goedgekeurde verbetering (OPT-005) en
   blijft dus. Het probleem is dat het reserveringsscherm op hetzelfde moment opnieuw
@@ -218,30 +221,28 @@ onderhoudsmedewerker wel.
 
 Genummerd verder op de audit (die eindigde bij OPT-033). Ze staan op volgorde van wat
 ze de medewerker opleveren. Elk voorstel staat op zichzelf: je kunt er één goedkeuren
-en de rest niet.
+en de rest niet. Het eerste is bij nader onderzoek vervallen; het blijft staan met zijn
+nummer, zodat verwijzingen elders blijven kloppen.
 
-### OPT-034 — Laat de applicatie het contractnummer zelf voorstellen
+### OPT-034 — Laat de applicatie het contractnummer zelf voorstellen — **VERVALT**
 
-**Nu.** Het veld zegt "Automatisch gegenereerd (bewerkbaar)" maar begint leeg. De
-medewerker typt bij elke ophaling zelf een nummer in, terwijl de applicatie tijdens het
-typen al meldt of dat nummer dubbel of ongebruikelijk is.
+**Hier hoef je niets over te beslissen.** Dit voorstel berustte op een verkeerde
+lezing: het ophaalvenster zou het contractnummerveld leeg laten. Dat klopt niet. Het
+venster haalt bij het openen het eerstvolgende vrije nummer op en zet dat in het veld;
+had de reservering al een nummer, dan komt dat erin. Dat zit er sinds 20 augustus 2026
+in. De browsertest typte zonder te kijken een eigen nummer over het veld heen, en uit
+die handeling is ten onrechte geconcludeerd dat het veld leeg was.
 
-**Voorstel.** Het veld staat bij het openen al ingevuld met het eerstvolgende vrije
-nummer. De medewerker kan het gewoon overschrijven als hij een ander nummer wil.
+Wat er dus al is, is precies wat dit voorstel vroeg. Het enige dat overblijft is de
+waarschuwing die er los van staat: zolang "0100" en "100" naast elkaar mogen bestaan
+(BUG-157, drie botsende paren in de audit), kan een voorgesteld nummer botsen met een
+bestaand nummer dat er alleen in voorloopnullen van verschilt. Dat is een bestaand
+auditpunt en verandert niet door dit vervallen voorstel.
 
-**Scheelt.** 1 van de 4 handelingen bij élke ophaling, en het voorkomt dubbele of
-vertypte contractnummers.
-
-**Grootte.** Klein.
-
-**Risico.** Eerst moet vastliggen hoe een nummer eruitziet: met of zonder voorloopnul.
-Vandaag bestaan "0100" en "100" naast elkaar — de audit telde drie botsende paren
-(BUG-157). Zolang dat niet is opgeruimd, kan een automatisch voorgesteld nummer botsen
-met een bestaand nummer dat er alleen in voorloopnullen van verschilt.
-
-*Technisch:* `client/src/components/reservations/pickup-return-dialogs.tsx`. De
-serverkant bestaat al: `getNextContractNumber` in `server/database-storage.ts` wordt al
-gebruikt door de instellingenschermen, alleen niet door het ophaalvenster.
+*Technisch:* `client/src/components/reservations/pickup-return-dialogs.tsx` regels
+199-218 haalt `/api/settings/next-contract-number` op;
+`server/routes/settings.ts` regel 72 geeft `getNextContractNumber()`
+(`server/database-storage.ts` regel 5449) terug.
 
 ### OPT-035 — Onthoud of je de agenda of de lijst gebruikt
 
@@ -539,9 +540,13 @@ bouwen, en de regel gaat dicht. Bij een vraag mag het antwoord ook een zin zijn.
 een regel leeg is, verandert er niets. Wat je hier invult, wordt daarna overgenomen in
 `docs/audit/besluiten.md` vanaf B-25.
 
+De eerste regel is al ingevuld: dat voorstel is vervallen omdat het al blijkt te
+bestaan. Daar hoef je niets mee. De nummers van de andere voorstellen zijn expres niet
+opgeschoven, zodat verwijzingen elders blijven kloppen.
+
 | Voorstel of vraag | Besluit | Datum |
 |---|---|---|
-| OPT-034 — contractnummer zelf voorstellen | | |
+| ~~OPT-034 — contractnummer zelf voorstellen~~ | **vervalt** (bestaat al) | 21-09-2026 |
 | OPT-035 — onthoud agenda- of lijstweergave | | |
 | OPT-036 — telefoon en e-mail bij de naam | | |
 | OPT-037 — na opslaan meteen naar de reservering | | |
@@ -567,6 +572,15 @@ een regel leeg is, verandert er niets. Wat je hier invult, wordt daarna overgeno
 
 - Alle stappen en aantallen komen uit de gemeten runs van 20 en 21 september 2026
   (`e2e/layer-b/desk/rental-story.spec.ts`, `e2e/layer-b/desk/edge-cases.spec.ts`).
+- **Eén voorstel is achteraf ingetrokken, en dat zegt iets over de methode.** OPT-034
+  ging ervan uit dat het contractnummerveld leeg blijft. Die conclusie kwam niet uit een
+  meting maar uit het lezen van één regel code, waarbij het stuk dat het veld wél vult
+  over het hoofd is gezien. De test kon het niet tegenspreken, want die typte er meteen
+  een eigen nummer overheen zonder eerst te kijken wat er stond. Wat er in de test alleen
+  maar *gebeurt*, is dus geen bewijs van hoe het scherm zich gedraagt; alleen wat de test
+  echt nakijkt, is dat. De ophaaldatum, de kilometerstand en het brandstofniveau worden
+  wél nagekeken; het contractnummer niet. Dat is een gat dat in een volgende ronde te
+  dichten is.
 - **Elke handeling loopt echt door de teller.** Dat is mechanisch gecontroleerd: er zit
   geen enkele klik of invulactie in deze twee testbestanden die buiten de teller om
   gaat. De aantallen zijn dus volledig, niet een selectie.
