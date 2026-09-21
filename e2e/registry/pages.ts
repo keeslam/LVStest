@@ -64,16 +64,29 @@ const API_BY_PATH: Record<string, string | null> = {
   // No api: this path is parameterised ("/reservations/edit/:id") and is
   // deliberately excluded from both layer-a/pages.spec.ts and
   // layer-a/forbidden.spec.ts (they filter out any path containing ":" — see
-  // the comment there). Resolving a real seeded reservation id for every
-  // role, and proving a 403 against a route (GET /api/reservations/:id) that
-  // is guarded more widely — VIEW_RESERVATIONS/MANAGE_RESERVATIONS — than
-  // this page's own MANAGE_RESERVATIONS-only row, is left to the route
-  // guard's own test in Task 2.
+  // the comment there). Proving a 403 against a route (GET
+  // /api/reservations/:id) that is guarded more widely —
+  // VIEW_RESERVATIONS/MANAGE_RESERVATIONS — than this page's own
+  // MANAGE_RESERVATIONS-only row, with a seeded reservation id, is left to
+  // the route guard's own test in Task 2.
   "/reservations/edit/:id": null,
 };
+
+// A row present in shared/page-access.ts but missing here would silently
+// fall back to `api: null` — losing forbidden.spec.ts's 403 assertion for
+// that page without anyone noticing (fix round 1 of Task 1's review). Fail
+// loudly instead: every PAGE_ACCESS path must be an explicit key of
+// API_BY_PATH, `null` included, with its reason in a comment above.
+for (const entry of PAGE_ACCESS) {
+  if (!Object.prototype.hasOwnProperty.call(API_BY_PATH, entry.path)) {
+    throw new Error(
+      `e2e/registry/pages.ts: no API_BY_PATH entry for "${entry.path}" (add one, "null" with a reason in a comment if there really is no api to assert a 403 against).`
+    );
+  }
+}
 
 export const PAGES: PageEntry[] = PAGE_ACCESS.map((entry) => ({
   path: entry.path,
   anyOf: entry.anyOf,
-  api: API_BY_PATH[entry.path] ?? null,
+  api: API_BY_PATH[entry.path],
 }));

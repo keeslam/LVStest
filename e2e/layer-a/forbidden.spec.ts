@@ -9,7 +9,8 @@ for (const role of ROLES.filter((candidate) => candidate !== "admin")) {
     // A parameterised path (currently only "/reservations/edit/:id") needs a
     // real id to navigate to; resolving one for every role complicated this
     // spec more than the page was worth here. Task 2's route-guard test
-    // covers that page directly (see e2e/registry/pages.ts).
+    // covers that page directly, with a seeded reservation id (see
+    // e2e/registry/pages.ts).
     for (const entry of PAGES.filter((candidate) => !can(role, candidate.anyOf) && !candidate.path.includes(":"))) {
       base(`${entry.path}: not offered, data refused, no crash`, async ({ page, request }) => {
         // entry.api is null when no GET route this page depends on is guarded

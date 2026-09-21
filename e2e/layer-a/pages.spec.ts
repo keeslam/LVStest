@@ -8,7 +8,8 @@ for (const role of ROLES) {
     // A parameterised path (currently only "/reservations/edit/:id") needs a
     // real id to navigate to; resolving one for every role complicated this
     // spec more than the page was worth here. Task 2's route-guard test
-    // covers that page directly (see e2e/registry/pages.ts).
+    // covers that page directly, with a seeded reservation id (see
+    // e2e/registry/pages.ts).
     for (const entry of PAGES.filter((candidate) => can(role, candidate.anyOf) && !candidate.path.includes(":"))) {
       test(`${entry.path} opens without a fault`, async ({ page, health }) => {
         await page.goto(entry.path);
