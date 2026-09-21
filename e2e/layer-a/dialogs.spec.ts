@@ -1,44 +1,100 @@
 import { test, expect, settle } from "../support/guards";
 import { ROLES, authFile, can } from "../support/roles";
 import { DIALOGS } from "../registry/dialogs";
+import { permissionLabel } from "../../shared/permission-labels";
+
+/**
+ * Task 3 (docs/superpowers/specs/2026-09-21-toegang-design.md, §4) only
+ * wired `RequiresPermission` into the dashboard ("/") and "/vehicles" —
+ * every other page still renders its openers unconditionally for anyone who
+ * can see the page (today's pre-B-27 house style), so a role without the
+ * opener's own `anyOf` right sees it ENABLED there, not disabled. Asserting
+ * "disabled" for those pages would fail for the wrong reason until Task 4
+ * gates them too. Remove a page from this list (and eventually the list
+ * itself) exactly when Task 4 wraps that page's controls in
+ * RequiresPermission.
+ */
+const NOT_YET_GATED_PAGES = new Set([
+  "/reservations",
+  "/maintenance",
+  "/expenses",
+  "/documents",
+  "/delivery",
+  "/reports",
+  "/customers",
+  "/portal-admin",
+]);
 
 for (const role of ROLES) {
   test.describe(`dialogs as ${role}`, () => {
     test.use({ storageState: authFile(role) });
-    for (const entry of DIALOGS.filter((candidate) => can(role, candidate.anyOf))) {
-      test(`${entry.page}: ${entry.name}`, async ({ page, health }) => {
-        // Finding for the owner (task-7-report.md): SettingsDialog's
-        // DialogContent has no DialogTitle (only admin can ever reach this
-        // dialog, so there is exactly one role x dialog instance to mark).
-        test.fixme(entry.opener === "menu-settings", "SettingsDialog has no DialogTitle — Radix a11y console warning on every open, see task-7-report.md");
-        await page.goto(entry.page);
-        await settle(page);
-        // Some openers live inside a dropdown menu (a menu button, then a menu
-        // item); `via` is the data-testid of that menu trigger. Every `via`
-        // and `opener` testid in the registry renders exactly once on its
-        // page (checked against each source file), so a plain click is a
-        // precise locator here — no `.first()` needed.
-        if (entry.via) await page.getByTestId(entry.via).click();
-        await page.getByTestId(entry.opener).click();
-        const dialog = page.locator('[role="dialog"], [role="alertdialog"]').last();
-        await expect(dialog).toBeVisible();
-        // `.first()`: some dialogs (e.g. profile-dialog.tsx "eigen profiel",
-        // key-audit-dialog.tsx) render their own `<h3>`/`<h4>` section
-        // sub-headings inside DialogContent alongside DialogTitle, so more
-        // than one role="heading" element can exist; DialogTitle is always
-        // first in DOM order, which is the one this assertion means to check.
-        await expect(dialog.getByRole("heading").first()).toBeVisible();
-        await settle(page);
-        // Some dialogs block Escape on purpose (a form guarding against losing
-        // input); `close` names the dialog's own close/cancel control instead.
-        if (entry.close) {
-          await page.getByTestId(entry.close).click();
-        } else {
-          await page.keyboard.press("Escape");
-        }
-        await expect(dialog).toBeHidden();
-        expect(health.violations).toEqual([]);
-      });
+    for (const entry of DIALOGS) {
+      const allowed = can(role, entry.anyOf);
+      // Hidden-on-purpose openers (admin-only today, B-27 keeps them hidden
+      // rather than disabled) and pages Task 4 has not gated yet keep the old
+      // skip: there is nothing meaningful to assert for this role here.
+      if (!allowed && (entry.hiddenWithoutRight || NOT_YET_GATED_PAGES.has(entry.page))) continue;
+
+      if (allowed) {
+        test(`${entry.page}: ${entry.name}`, async ({ page, health }) => {
+          // Finding for the owner (task-7-report.md): SettingsDialog's
+          // DialogContent has no DialogTitle (only admin can ever reach this
+          // dialog, so there is exactly one role x dialog instance to mark).
+          test.fixme(entry.opener === "menu-settings", "SettingsDialog has no DialogTitle — Radix a11y console warning on every open, see task-7-report.md");
+          await page.goto(entry.page);
+          await settle(page);
+          // Some openers live inside a dropdown menu (a menu button, then a menu
+          // item); `via` is the data-testid of that menu trigger. Every `via`
+          // and `opener` testid in the registry renders exactly once on its
+          // page (checked against each source file), so a plain click is a
+          // precise locator here — no `.first()` needed.
+          if (entry.via) await page.getByTestId(entry.via).click();
+          await page.getByTestId(entry.opener).click();
+          const dialog = page.locator('[role="dialog"], [role="alertdialog"]').last();
+          await expect(dialog).toBeVisible();
+          // `.first()`: some dialogs (e.g. profile-dialog.tsx "eigen profiel",
+          // key-audit-dialog.tsx) render their own `<h3>`/`<h4>` section
+          // sub-headings inside DialogContent alongside DialogTitle, so more
+          // than one role="heading" element can exist; DialogTitle is always
+          // first in DOM order, which is the one this assertion means to check.
+          await expect(dialog.getByRole("heading").first()).toBeVisible();
+          await settle(page);
+          // Some dialogs block Escape on purpose (a form guarding against losing
+          // input); `close` names the dialog's own close/cancel control instead.
+          if (entry.close) {
+            await page.getByTestId(entry.close).click();
+          } else {
+            await page.keyboard.press("Escape");
+          }
+          await expect(dialog).toBeHidden();
+          expect(health.violations).toEqual([]);
+        });
+      } else {
+        test(`${entry.page}: ${entry.name} (zonder recht: zichtbaar, uitgeschakeld, legt uit)`, async ({ page, health }) => {
+          await page.goto(entry.page);
+          await settle(page);
+          if (entry.via) await page.getByTestId(entry.via).click();
+          const opener = page.getByTestId(entry.opener);
+          await expect(opener).toBeVisible();
+          await expect(opener).toHaveAttribute("aria-disabled", "true");
+          // A disabled control swallows pointer events, so RequiresPermission
+          // puts the tooltip and the tab stop on the wrapping <span> around
+          // it, not on the control itself (client/src/components/ui/requires-permission.tsx).
+          const wrapper = opener.locator("xpath=..");
+          await wrapper.focus();
+          const tooltip = page.getByRole("tooltip");
+          await expect(tooltip).toBeVisible();
+          for (const permission of entry.anyOf) {
+            await expect(tooltip).toContainText(permissionLabel(permission));
+          }
+          // Clicking the (still-visible) control must not open anything —
+          // `{ force: true }` bypasses Playwright's own actionability check,
+          // which would otherwise refuse to click a disabled element.
+          await opener.click({ force: true });
+          await expect(page.locator('[role="dialog"], [role="alertdialog"]')).toHaveCount(0);
+          expect(health.violations).toEqual([]);
+        });
+      }
     }
   });
 }

@@ -5,8 +5,23 @@ export interface DialogEntry {
   page: string;
   /** data-testid of the control that opens the dialog. */
   opener: string;
-  /** Permissions that show the opener; roles without them are skipped. An empty array means the opener is gated by role (admin only) rather than a permission — `can()`'s admin bypass then decides it. */
+  /**
+   * Permissions the opener's own action needs (Task 3+: exactly the
+   * permission(s) its `RequiresPermission` wrapper uses, which are exactly
+   * the permission(s) the server route its action finally calls accepts). A
+   * role without them either sees the opener visible-but-disabled (the B-27
+   * house style — dialogs.spec.ts asserts that), or, if `hiddenWithoutRight`
+   * is set, does not see it at all.
+   */
   anyOf: string[];
+  /**
+   * True when the opener is hidden on purpose for a role without the right
+   * (admin-only today: `menu-users`, `menu-backup`, `menu-settings`,
+   * `button-open-recycle-bin`) rather than shown disabled — B-27 keeps these
+   * exactly as they are. `anyOf: []` on such an entry means `can()` only
+   * passes for admin (its own bypass), matching the real `isAdmin`/role gate.
+   */
+  hiddenWithoutRight?: boolean;
   /** Source file that renders the dialog root; this is what the coverage report counts. */
   source: string;
   name: string;
@@ -25,29 +40,36 @@ export const DIALOGS: DialogEntry[] = [
   { page: "/", opener: "menu-profile", via: "user-menu-button", anyOf: [P.VIEW_DASHBOARD], source: "client/src/components/dialogs/profile-dialog.tsx", name: "eigen profiel" },
   // users/backup/settings menu items only render for user.role === admin
   // (user-menu.tsx), not for a permission — anyOf: [] so can() only passes
-  // for admin, matching the real gate.
-  { page: "/", opener: "menu-users", via: "user-menu-button", anyOf: [], source: "client/src/components/dialogs/users-dialog.tsx", name: "gebruikersbeheer" },
-  { page: "/", opener: "menu-backup", via: "user-menu-button", anyOf: [], source: "client/src/components/dialogs/backup-dialog.tsx", name: "back-upbeheer" },
-  { page: "/", opener: "menu-settings", via: "user-menu-button", anyOf: [], source: "client/src/components/settings/settings-dialog.tsx", name: "app-instellingen (heeft tabbladen, eenmalig geregistreerd)" },
-  // Dashboard "snelle acties": QuickActions renders every tile for anyone who
-  // can see "/", with no per-action permission check of its own (see Findings
-  // for the owner) — anyOf: [VIEW_DASHBOARD] reflects that reality.
-  { page: "/", opener: "button-quick-add-vehicle", anyOf: [P.VIEW_DASHBOARD], source: "client/src/components/dashboard/quick-actions.tsx", name: "snelle actie: voertuig toevoegen" },
-  { page: "/", opener: "button-quick-add-customer", anyOf: [P.VIEW_DASHBOARD], source: "client/src/components/dashboard/quick-actions.tsx", name: "snelle actie: klant toevoegen" },
-  { page: "/", opener: "button-quick-log-expense", anyOf: [P.VIEW_DASHBOARD], source: "client/src/components/dashboard/quick-actions.tsx", name: "snelle actie: uitgave registreren" },
+  // for admin, matching the real gate; hiddenWithoutRight since B-27 keeps
+  // admin-only controls hidden rather than showing them disabled.
+  { page: "/", opener: "menu-users", via: "user-menu-button", anyOf: [], hiddenWithoutRight: true, source: "client/src/components/dialogs/users-dialog.tsx", name: "gebruikersbeheer" },
+  { page: "/", opener: "menu-backup", via: "user-menu-button", anyOf: [], hiddenWithoutRight: true, source: "client/src/components/dialogs/backup-dialog.tsx", name: "back-upbeheer" },
+  { page: "/", opener: "menu-settings", via: "user-menu-button", anyOf: [], hiddenWithoutRight: true, source: "client/src/components/settings/settings-dialog.tsx", name: "app-instellingen (heeft tabbladen, eenmalig geregistreerd)" },
+  // Task 3 (docs/superpowers/specs/2026-09-21-toegang-design.md, §4): each
+  // dashboard quick-action tile is now wrapped in RequiresPermission with
+  // exactly the permission its own mutation route needs — anyOf here matches
+  // that wrapper, not the page's own VIEW_DASHBOARD gate any more.
+  { page: "/", opener: "button-quick-add-vehicle", anyOf: [P.MANAGE_VEHICLES], source: "client/src/components/dashboard/quick-actions.tsx", name: "snelle actie: voertuig toevoegen" },
+  { page: "/", opener: "button-quick-add-customer", anyOf: [P.MANAGE_CUSTOMERS], source: "client/src/components/dashboard/quick-actions.tsx", name: "snelle actie: klant toevoegen" },
+  { page: "/", opener: "button-quick-log-expense", anyOf: [P.MANAGE_EXPENSES], source: "client/src/components/dashboard/quick-actions.tsx", name: "snelle actie: uitgave registreren" },
   // The dialog root itself lives in reservation-add-dialog.tsx; the widget
-  // file only supplies a custom trigger button as `children`.
-  { page: "/", opener: "button-dashboard-new-reservation", anyOf: [P.VIEW_DASHBOARD], source: "client/src/components/reservations/reservation-add-dialog.tsx", name: "dashboard: nieuwe reservering" },
+  // file only supplies a custom trigger button as `children`, now wrapped in
+  // RequiresPermission there too.
+  { page: "/", opener: "button-dashboard-new-reservation", anyOf: [P.MANAGE_RESERVATIONS], source: "client/src/components/reservations/reservation-add-dialog.tsx", name: "dashboard: nieuwe reservering" },
 
   // --- /vehicles -------------------------------------------------------------
   // isAdmin-gated in vehicles/index.tsx (role === UserRole.ADMIN), not
   // MANAGE_VEHICLES (manager and maintenance also hold that permission but do
-  // not see this button) — anyOf: [] so can() only passes for admin.
-  { page: "/vehicles", opener: "button-open-recycle-bin", anyOf: [], source: "client/src/components/vehicles/deleted-vehicles-dialog.tsx", name: "prullenbak voertuigen" },
+  // not see this button) — anyOf: [] so can() only passes for admin;
+  // hiddenWithoutRight since B-27 keeps this hidden, not disabled.
+  { page: "/vehicles", opener: "button-open-recycle-bin", anyOf: [], hiddenWithoutRight: true, source: "client/src/components/vehicles/deleted-vehicles-dialog.tsx", name: "prullenbak voertuigen" },
   { page: "/vehicles", opener: "button-open-barcode-book", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/barcodes/barcode-book-dialog.tsx", name: "barcodeboek" },
   { page: "/vehicles", opener: "button-key-audit", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/barcodes/key-audit-dialog.tsx", name: "sleutelcontrole (hoofdsleutels)" },
-  { page: "/vehicles", opener: "button-add-vehicle", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/vehicles/vehicle-add-dialog.tsx", name: "voertuig toevoegen" },
-  { page: "/vehicles", opener: "button-bulk-import", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/vehicles/vehicle-bulk-import-dialog.tsx", name: "voertuigen bulk-importeren" },
+  // Task 3: both wrapped in RequiresPermission anyOf={[MANAGE_VEHICLES]} —
+  // narrower than the page's own VIEW_VEHICLES/MANAGE_VEHICLES gate, matching
+  // their POST /api/vehicles* mutation routes.
+  { page: "/vehicles", opener: "button-add-vehicle", anyOf: [P.MANAGE_VEHICLES], source: "client/src/components/vehicles/vehicle-add-dialog.tsx", name: "voertuig toevoegen" },
+  { page: "/vehicles", opener: "button-bulk-import", anyOf: [P.MANAGE_VEHICLES], source: "client/src/components/vehicles/vehicle-bulk-import-dialog.tsx", name: "voertuigen bulk-importeren" },
 
   // --- /reservations -------------------------------------------------------
   { page: "/reservations", opener: "button-list-view", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], source: "client/src/components/reservations/reservation-list-dialog.tsx", name: "reserveringen als lijst" },
