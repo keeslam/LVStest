@@ -117,6 +117,12 @@
     "title": "404 Page Not Found",
     "description": "This page does not exist. Use the menu, or go back to the previous screen."
   },
+  "noAccessPage": {
+    "title": "You do not have access to this screen",
+    "missingPermissionMessage": "This requires the {{permissions}} right. Ask an administrator to enable it.",
+    "or": "or",
+    "wayOutButton": "Go to a screen you can use"
+  },
   "searchPage": {
     "toasts": {
       "errorTitle": "Error",

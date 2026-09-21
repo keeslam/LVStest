@@ -16,20 +16,41 @@ export function NotificationCenter() {
   // is what this component used to assume by firing unconditionally.
   const canViewNotifications = useHasPermission(UserPermission.MANAGE_NOTIFICATIONS);
 
+  // Task 2 (docs/superpowers/specs/2026-09-21-toegang-design.md, §2; fact
+  // sheet, "Global (every page, via MainLayout)"): this widget mounts on
+  // every staff page regardless of that page's own permission, so each of
+  // its remaining five queries is gated with exactly the permission(s) its
+  // own server route accepts (verified directly against server/routes.ts,
+  // not just the fact sheet, since its line numbers may have drifted).
+  const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
+  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
+  // GET /api/reservations/upcoming-maintenance additionally accepts
+  // MANAGE_MAINTENANCE (routes.ts:2659) — wider than the other two
+  // reservation-guarded queries below.
+  const canViewUpcomingMaintenance = useHasPermission(
+    UserPermission.VIEW_RESERVATIONS,
+    UserPermission.MANAGE_RESERVATIONS,
+    UserPermission.MANAGE_MAINTENANCE,
+  );
+
   const { data: apkExpiringVehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles/apk-expiring"],
+    enabled: canViewVehicles,
   });
 
   const { data: warrantyExpiringVehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles/warranty-expiring"],
+    enabled: canViewVehicles,
   });
 
   const { data: upcomingReservations = [] } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations/upcoming"],
+    enabled: canViewReservations,
   });
 
   const { data: upcomingMaintenanceReservations = [] } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations/upcoming-maintenance"],
+    enabled: canViewUpcomingMaintenance,
   });
 
   const { data: customNotifications = [] } = useQuery<CustomNotification[]>({
@@ -39,6 +60,7 @@ export function NotificationCenter() {
 
   const { data: placeholderReservations = [] } = useQuery<Reservation[]>({
     queryKey: ["/api/placeholder-reservations/needing-assignment"],
+    enabled: canViewReservations,
   });
 
   const isDismissed = (key: string): boolean => {

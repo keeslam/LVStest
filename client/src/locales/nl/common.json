@@ -117,6 +117,12 @@
     "title": "404 Pagina niet gevonden",
     "description": "Deze pagina bestaat niet (meer). Gebruik het menu of ga terug naar het vorige scherm."
   },
+  "noAccessPage": {
+    "title": "U heeft geen toegang tot dit scherm",
+    "missingPermissionMessage": "Hiervoor is het recht {{permissions}} nodig. Vraag een beheerder om het aan te zetten.",
+    "or": "of",
+    "wayOutButton": "Ga naar een scherm dat u wel mag gebruiken"
+  },
   "searchPage": {
     "toasts": {
       "errorTitle": "Fout",

@@ -121,9 +121,29 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
   // (task-6-report.md): guarded by a permission not every role holds.
   const canViewNotifications = useHasPermission(UserPermission.MANAGE_NOTIFICATIONS);
   const canViewCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
+  // Task 2 (docs/superpowers/specs/2026-09-21-toegang-design.md, §2): the
+  // remaining six queries below were still unconditional (one of them,
+  // /api/vehicles, was even this file's own "always allowed" test sentinel
+  // until now - see notification-center-dialog-permissions.test.tsx). Same
+  // fix, same file, same reasoning as the two above: this dialog is part of
+  // the header widget MainLayout mounts on every page
+  // (MainLayout -> NotificationCenter -> NotificationCenterDialog), gated
+  // with exactly the permissions each route accepts (server/routes.ts,
+  // verified directly).
+  const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
+  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
+  // GET /api/reservations/upcoming-maintenance additionally accepts
+  // MANAGE_MAINTENANCE (routes.ts:2659) — wider than the other two
+  // reservation-guarded queries below.
+  const canViewUpcomingMaintenance = useHasPermission(
+    UserPermission.VIEW_RESERVATIONS,
+    UserPermission.MANAGE_RESERVATIONS,
+    UserPermission.MANAGE_MAINTENANCE,
+  );
 
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
+    enabled: canViewVehicles,
   });
 
   const { data: customers = [] } = useQuery<Customer[]>({
@@ -133,18 +153,22 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
 
   const { data: apkExpiringVehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles/apk-expiring"],
+    enabled: canViewVehicles,
   });
 
   const { data: warrantyExpiringVehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles/warranty-expiring"],
+    enabled: canViewVehicles,
   });
 
   const { data: upcomingReservations = [] } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations/upcoming"],
+    enabled: canViewReservations,
   });
 
   const { data: upcomingMaintenanceReservations = [] } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations/upcoming-maintenance"],
+    enabled: canViewUpcomingMaintenance,
   });
 
   const { data: customNotifications = [] } = useQuery<CustomNotification[]>({
@@ -154,6 +178,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
 
   const { data: placeholderReservations = [] } = useQuery<Reservation[]>({
     queryKey: ["/api/placeholder-reservations/needing-assignment"],
+    enabled: canViewReservations,
   });
 
   const form = useForm<NotificationFormData>({
