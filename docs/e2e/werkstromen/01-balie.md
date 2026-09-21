@@ -234,12 +234,14 @@ vertypte contractnummers.
 
 **Grootte.** Klein.
 
-**Risico.** Eerst moet vastliggen hoe een nummer eruitziet — met of zonder voorloopnul.
-De audit vond daar al drie botsende groepen (BUG-153/BUG-157). Zonder die afspraak maakt
-dit voorstel het probleem groter in plaats van kleiner.
+**Risico.** Eerst moet vastliggen hoe een nummer eruitziet: met of zonder voorloopnul.
+Vandaag bestaan "0100" en "100" naast elkaar — de audit telde drie botsende paren
+(BUG-157). Zolang dat niet is opgeruimd, kan een automatisch voorgesteld nummer botsen
+met een bestaand nummer dat er alleen in voorloopnullen van verschilt.
 
-*Technisch:* `client/src/components/reservations/pickup-return-dialogs.tsx`, plus één
-serverkant die het hoogste bestaande nummer teruggeeft.
+*Technisch:* `client/src/components/reservations/pickup-return-dialogs.tsx`. De
+serverkant bestaat al: `getNextContractNumber` in `server/database-storage.ts` wordt al
+gebruikt door de instellingenschermen, alleen niet door het ophaalvenster.
 
 ### OPT-035 — Onthoud of je de agenda of de lijst gebruikt
 
@@ -522,7 +524,11 @@ vullen, maar er ontstaat nooit een vervolgreservering.
 
 **Niet hier gevraagd.** OPT-009 (mag de applicatie zelf een vervanger voorstellen) en
 OPT-032 (wat de sleutelkastaudit moet vastleggen) horen bij de ronde onderhoud en
-transport en komen daar terug.
+transport en komen daar terug. Twee andere punten uit dezelfde lijst in het
+auditeindrapport horen helemaal niet bij de balie en staan hier daarom niet: BUG-024
+(mag een nieuw wachtwoord gelijk zijn aan het oude) gaat over accountbeheer, en BUG-205
+(mogen de lijsten in stukken worden opgehaald) gaat over snelheid. Ze blijven gewoon
+openstaan; ze komen alleen ergens anders terug.
 
 ---
 

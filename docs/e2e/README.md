@@ -10,6 +10,15 @@ begin tot eind na — de baliestroom van telefoontje tot ingeleverde bus — en 
 daarbij hoeveel handelingen dat kost, zodat een latere wijziging die er een klik bij
 doet meteen opvalt.
 
+**Wat laag A niet bewijst.** De rechten worden nagelopen voor zeven aangenomen
+profielen (beheerder, manager, balie, schoonmaak, meekijker, boekhouding, onderhoud).
+Een groene run zegt dus dat die zeven combinaties kloppen — niet dat élke denkbare
+combinatie van vinkjes klopt. In deze applicatie is een rol maar een etiket en staan de
+rechten per persoon aangevinkt, dus een medewerker met een ongebruikelijke mix kan nog
+steeds op een scherm stuiten dat gegevens opvraagt die hij niet mag zien. Of die zeven
+profielen overeenkomen met de echte accounts, is een vraag die in
+`docs/e2e/werkstromen/01-balie.md` aan de eigenaar is voorgelegd.
+
 ## Draaien
 
 | Commando | Wat het doet |
@@ -25,10 +34,11 @@ Voorwaarden:
 - De eerste keer bouwt de applicatie zichzelf. Dat duurt een paar minuten. Daarna wordt
   die bouw hergebruikt zolang er geen bronbestand nieuwer is.
 
-Let op: het ontwerp noemt ook `npm run e2e:coverage` als snelkoppeling voor het
-dekkingsoverzicht. Die snelkoppeling staat vandaag **niet** in `package.json`; gebruik
-zolang dat zo is het commando uit de tabel hierboven. Bij `npm run e2e` draait het
-dekkingsoverzicht sowieso automatisch aan het eind.
+Let op: het ontwerp noemt ook een kortere vorm, `npm run e2e:coverage`. Die stond op
+21 september nog niet in `package.json`. Werkt hij bij jou ("Missing script"), gebruik
+dan het langere commando uit de tabel hierboven — dat doet precies hetzelfde. Bij
+`npm run e2e` draait het dekkingsoverzicht sowieso automatisch aan het eind, dus
+meestal hoef je het los helemaal niet te draaien.
 
 ## Hoe lang het duurt
 
@@ -39,16 +49,22 @@ Gemeten op deze machine op 21 september 2026, één volledige `npm run e2e`:
 Vensters: 119 bestanden met een venster, 28 bereikt door een test, 91 nog niet
 ```
 
-Het dekkingsoverzicht is geslaagd: 91 niet-bereikte vensters is precies de vastgelegde
+Het dekkingsoverzicht is geslaagd: 91 niet-bereikte vensters was precies de vastgelegde
 grens, dus er is niets achteruitgegaan. Van begin tot eind, inclusief die laatste stap,
 duurde de run 6 minuten en 4 seconden.
 
-**Dat is meer dan de afgesproken vijf minuten.** Het langzaamste deel is met afstand
-`e2e/layer-a/dialogs.spec.ts`: 163 van de 283 tests en samen 783 seconden testtijd —
-meer dan twee derde van het totaal. Die tests draaien met vier tegelijk, dus in
-werkelijke tijd is het ongeveer drie en een halve minuut. De rest: de schermen per rol
-(226 s), de schermen zonder rechten (158 s), de bewakingstests (42 s) en alle
-werkstromen samen (58 s).
+*(Stand 21-09. Kort na deze meting is er één venster bij gekomen dat wél door een test
+wordt geopend — dat van het logboek — waarmee de telling op 29 bereikt en 90 nog niet
+komt, en de vastgelegde grens op 90. Dat is nagerekend met het dekkingscommando zelf.
+De looptijd en de testaantallen hierboven zijn van de gemeten run en veranderen daar
+niet door.)*
+
+**Dat is meer dan de streefwaarde van vijf minuten.** Het langzaamste deel is met
+afstand `e2e/layer-a/dialogs.spec.ts`: 163 van de 283 tests en samen 783 seconden
+testtijd, ruim drie vijfde van de 1278 seconden die alle tests bij elkaar kosten. Die
+tests draaien met vier tegelijk, dus in werkelijke tijd is het ongeveer drie en een
+halve minuut. De rest: de schermen per rol (226 s), de schermen zonder rechten (158 s),
+de bewakingstests (42 s) en alle werkstromen samen (58 s).
 
 De vier-tegelijk-grens is bewust gekozen: de applicatie zelf houdt maximaal tien
 databaseverbindingen open, en meer tests tegelijk lopen daar tegenaan. Wie het op een
@@ -114,7 +130,8 @@ groene run staat er dus niets.
   `LAYER_B_SOURCES` genoemd.
 
 **Het dekkingsgetal mag alleen omlaag.** In `e2e/registry/coverage-baseline.json` staat
-hoeveel bestanden met een venster nog niet door een test worden geopend (vandaag: 91).
+hoeveel bestanden met een venster nog niet door een test worden geopend. Kijk daar voor
+het getal van vandaag; bij het schrijven van deze handleiding ging het van 91 naar 90.
 Wordt dat getal hoger, dan stopt `npm run e2e` met een fout. Bereik je een venster meer,
 dan zet je het getal één lager. Andersom nooit.
 
