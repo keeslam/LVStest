@@ -4,34 +4,23 @@ import { differenceInDays } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bell } from "lucide-react";
-import { Vehicle, Reservation, CustomNotification, UserPermission } from "@shared/schema";
+import { Vehicle, Reservation, CustomNotification } from "@shared/schema";
 import { NotificationCenterDialog } from "@/components/notifications/notification-center-dialog";
-import { useHasPermission } from "@/hooks/use-has-permission";
+import { useNotificationDataPermissions } from "@/hooks/use-has-permission";
 
 export function NotificationCenter() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const today = new Date();
-  // Finding 1 (task-6-report.md): the server guards this route with
-  // MANAGE_NOTIFICATIONS alone, narrower than "any authenticated user", which
-  // is what this component used to assume by firing unconditionally.
-  const canViewNotifications = useHasPermission(UserPermission.MANAGE_NOTIFICATIONS);
-
   // Task 2 (docs/superpowers/specs/2026-09-21-toegang-design.md, §2; fact
   // sheet, "Global (every page, via MainLayout)"): this widget mounts on
   // every staff page regardless of that page's own permission, so each of
-  // its remaining five queries is gated with exactly the permission(s) its
-  // own server route accepts (verified directly against server/routes.ts,
-  // not just the fact sheet, since its line numbers may have drifted).
-  const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
-  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
-  // GET /api/reservations/upcoming-maintenance additionally accepts
-  // MANAGE_MAINTENANCE (routes.ts:2659) — wider than the other two
-  // reservation-guarded queries below.
-  const canViewUpcomingMaintenance = useHasPermission(
-    UserPermission.VIEW_RESERVATIONS,
-    UserPermission.MANAGE_RESERVATIONS,
-    UserPermission.MANAGE_MAINTENANCE,
-  );
+  // its queries is gated with exactly the permission(s) its own server route
+  // accepts (verified directly against server/routes.ts, not just the fact
+  // sheet, since its line numbers may have drifted). Fix round 1: shared
+  // with notification-center-dialog.tsx, the other half of this same
+  // widget, via one hook so the two files can't drift apart.
+  const { canViewVehicles, canViewReservations, canViewUpcomingMaintenance, canViewNotifications } =
+    useNotificationDataPermissions();
 
   const { data: apkExpiringVehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles/apk-expiring"],

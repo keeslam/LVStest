@@ -50,7 +50,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Vehicle, Reservation, Customer, CustomNotification, UserPermission } from "@shared/schema";
 import { formatDate, formatLicensePlate, formatMaintenanceCategory } from "@/lib/format-utils";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
-import { useHasPermission } from "@/hooks/use-has-permission";
+import { useHasPermission, useNotificationDataPermissions } from "@/hooks/use-has-permission";
 import {
   Bell,
   Calendar,
@@ -117,29 +117,18 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
   // Additional fault surfaced by task 6b (task-6b-report.md): this dialog is
   // always mounted by NotificationCenter - only its own <Dialog open> decides
   // visibility, so every one of these queries still runs on every page
-  // regardless of `open`. These two repeat findings 1 and 2b's class of bug
-  // (task-6-report.md): guarded by a permission not every role holds.
-  const canViewNotifications = useHasPermission(UserPermission.MANAGE_NOTIFICATIONS);
+  // regardless of `open`. Task 2 (docs/superpowers/specs/2026-09-21-toegang-
+  // design.md, §2): this dialog is part of the same always-mounted header
+  // widget as notification-center.tsx (MainLayout -> NotificationCenter ->
+  // NotificationCenterDialog) and fires an otherwise-identical set of
+  // queries, so the four gates below come from the same shared hook (fix
+  // round 1) rather than four more local `useHasPermission(...)` calls that
+  // could drift from the sibling file's copy.
+  const { canViewVehicles, canViewReservations, canViewUpcomingMaintenance, canViewNotifications } =
+    useNotificationDataPermissions();
+  // /api/customers is NOT duplicated in notification-center.tsx, so this one
+  // stays a local gate.
   const canViewCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
-  // Task 2 (docs/superpowers/specs/2026-09-21-toegang-design.md, §2): the
-  // remaining six queries below were still unconditional (one of them,
-  // /api/vehicles, was even this file's own "always allowed" test sentinel
-  // until now - see notification-center-dialog-permissions.test.tsx). Same
-  // fix, same file, same reasoning as the two above: this dialog is part of
-  // the header widget MainLayout mounts on every page
-  // (MainLayout -> NotificationCenter -> NotificationCenterDialog), gated
-  // with exactly the permissions each route accepts (server/routes.ts,
-  // verified directly).
-  const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
-  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
-  // GET /api/reservations/upcoming-maintenance additionally accepts
-  // MANAGE_MAINTENANCE (routes.ts:2659) — wider than the other two
-  // reservation-guarded queries below.
-  const canViewUpcomingMaintenance = useHasPermission(
-    UserPermission.VIEW_RESERVATIONS,
-    UserPermission.MANAGE_RESERVATIONS,
-    UserPermission.MANAGE_MAINTENANCE,
-  );
 
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],

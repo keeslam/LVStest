@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
-import { UserRole } from "@shared/schema";
+import { UserPermission, UserRole } from "@shared/schema";
 
 /**
  * Client-side mirror of the server's `hasPermission(...)` OR logic
@@ -18,4 +18,37 @@ export function useHasPermission(...anyOf: string[]): boolean {
   if (user?.role === UserRole.ADMIN) return true;
   const perms = (user?.permissions as string[] | undefined) ?? [];
   return anyOf.some((permission) => perms.includes(permission));
+}
+
+/**
+ * Task 2 fix round 1 (docs/superpowers/specs/2026-09-21-toegang-design.md,
+ * §2) — `client/src/components/ui/notification-center.tsx` and
+ * `client/src/components/notifications/notification-center-dialog.tsx` are
+ * two halves of the same always-mounted header widget
+ * (MainLayout -> NotificationCenter -> NotificationCenterDialog) that fire
+ * an otherwise-identical set of unconditional queries. Both files declared
+ * the same four `useHasPermission(...)` gates side by side; extracted here
+ * once so they can never drift apart on which permissions gate which query.
+ *
+ * `notification-center-dialog.tsx` additionally gates its own `/api/customers`
+ * query (VIEW_CUSTOMERS/MANAGE_CUSTOMERS) - that one is NOT duplicated
+ * (`notification-center.tsx` has no customers query), so it stays a local
+ * `useHasPermission(...)` call in that file rather than joining this hook.
+ */
+export function useNotificationDataPermissions() {
+  const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
+  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
+  // GET /api/reservations/upcoming-maintenance additionally accepts
+  // MANAGE_MAINTENANCE (server/routes.ts:2659) — wider than the other two
+  // reservation-guarded queries.
+  const canViewUpcomingMaintenance = useHasPermission(
+    UserPermission.VIEW_RESERVATIONS,
+    UserPermission.MANAGE_RESERVATIONS,
+    UserPermission.MANAGE_MAINTENANCE,
+  );
+  // Finding 1 (task-6-report.md): the server guards /api/custom-notifications*
+  // with MANAGE_NOTIFICATIONS alone.
+  const canViewNotifications = useHasPermission(UserPermission.MANAGE_NOTIFICATIONS);
+
+  return { canViewVehicles, canViewReservations, canViewUpcomingMaintenance, canViewNotifications };
 }
