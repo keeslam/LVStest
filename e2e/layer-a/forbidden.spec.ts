@@ -68,12 +68,41 @@ function isHeaderAllowed(url: string): boolean {
   return HEADER_ALLOWED_PATHS.includes(path);
 }
 
-/** Asserts the no-access page is showing, names every permission the address needs, and fired nothing but the header's own allowed requests. */
-async function expectNoAccess(page: import("@playwright/test").Page, anyOf: readonly string[]) {
+/**
+ * Starts collecting every /api/ request this page makes from this point
+ * forward. Playwright's `request` listener is forward-only — it only sees
+ * requests that fire AFTER it is registered — so this MUST be called before
+ * the navigation it is meant to watch, never after `page.goto()`/`settle()`
+ * (fix round 1: the previous version registered the listener after
+ * `settle()` had already waited for every request to finish, so it observed
+ * nothing and the assertion below could never fail).
+ */
+function watchApiRequests(page: import("@playwright/test").Page): string[] {
   const apiRequests: string[] = [];
   page.on("request", (req) => {
     if (req.url().includes("/api/")) apiRequests.push(req.url());
   });
+  return apiRequests;
+}
+
+/** Fails if any collected request falls outside the header's own allowed URLs. */
+function assertNoStrayRequests(apiRequests: readonly string[]): void {
+  const unexpected = apiRequests.filter((url) => !isHeaderAllowed(url));
+  expect(unexpected, "no /api/ request beyond the header's allowed ones").toEqual([]);
+}
+
+/**
+ * Navigates to `path` and asserts the no-access page is showing, names every
+ * permission the address needs, and that the navigation fired nothing but
+ * the header's own allowed requests. Starts watching BEFORE the navigation
+ * (see `watchApiRequests`) so the "no stray request" check actually has
+ * something to look at.
+ */
+async function expectNoAccess(page: import("@playwright/test").Page, path: string, anyOf: readonly string[]) {
+  const apiRequests = watchApiRequests(page);
+
+  await page.goto(path);
+  await settle(page);
 
   const noAccess = page.getByTestId("no-access-page");
   await expect(noAccess).toBeVisible();
@@ -82,8 +111,7 @@ async function expectNoAccess(page: import("@playwright/test").Page, anyOf: read
     await expect(noAccess).toContainText(`'${permissionLabel(permission)}'`);
   }
 
-  const unexpected = apiRequests.filter((url) => !isHeaderAllowed(url));
-  expect(unexpected, "no /api/ request beyond the header's allowed ones").toEqual([]);
+  assertNoStrayRequests(apiRequests);
 }
 
 for (const role of ROLES.filter((candidate) => candidate !== "admin")) {
@@ -111,10 +139,7 @@ for (const role of ROLES.filter((candidate) => candidate !== "admin")) {
         // The typed address: ProtectedRoute now shows the no-access page
         // instead of mounting the page component, so this fires nothing of
         // its own — the strict `health` fixture (no allowlist) judges it.
-        await page.goto(entry.path);
-        await settle(page);
-
-        await expectNoAccess(page, entry.anyOf);
+        await expectNoAccess(page, entry.path, entry.anyOf);
       });
     }
   });
@@ -146,10 +171,7 @@ test.describe("/reservations/edit/:id (covered directly, per Task 1's ruling)", 
     test.use({ storageState: authFile("cleaner") });
 
     test("gets no-access-page and fires no /api/reservations/:id request", async ({ page, health }) => {
-      await page.goto(`/reservations/edit/${reservationId}`);
-      await settle(page);
-
-      await expectNoAccess(page, EDIT_ANY_OF);
+      await expectNoAccess(page, `/reservations/edit/${reservationId}`, EDIT_ANY_OF);
     });
   });
 
