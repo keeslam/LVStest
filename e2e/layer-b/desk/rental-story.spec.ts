@@ -8,11 +8,20 @@
  * besluiten.md B-02 (return auto-completes the rental) and B-16 (pickup
  * before the start date asks first) are exercised in edge-cases.spec.ts, not
  * here — this file only measures the flow that does not hit either edge.
+ *
+ * Fix round 1 (task-8-report.md): server commit e19e786f fixed Finding A
+ * (interactive damage checks always failing with 400 "Invalid damage check
+ * data" — a JSON date string reaching a column that required a real `Date`).
+ * That was the only thing blocking stage 4, so the story is one continuous
+ * test again, as the brief intended — stages 1-6 in one `test`, one `page`,
+ * carried straight through. Nothing about this fix touches the dialog-
+ * stacking fault noted in stage 3 (the reopened reservation view can end up
+ * stacked on top of the automatic handover dialog); that is unrelated to
+ * Finding A and still applies at both pickup and return.
  */
 import fs from "fs";
 import path from "path";
 import pg from "pg";
-import type { APIRequestContext } from "@playwright/test";
 import { test, expect, settle } from "../../support/guards";
 import { authFile } from "../../support/roles";
 import { Story } from "../../support/steps";
@@ -21,28 +30,10 @@ import { E2E } from "../../support/env";
 
 const CUSTOMER_NAME = "E2E Story Klant";
 
-// Budgets are today's measured counts (Task 8 Step 3); Task 9 proposes lower ones.
-const BUDGET = { customer: 7, reservation: 4, pickup: 4, damage: 3, return: 3 };
+// Budgets are today's measured counts (Task 8 Step 3, re-measured in fix round 1
+// now that stage 4 actually runs); Task 9 proposes lower ones.
+const BUDGET = { customer: 7, reservation: 6, pickup: 4, damage: 3, return: 3 };
 const VEHICLE_BUDGET = 5;
-
-/**
- * Finds this story's reservation via the API, in a way that survives the
- * capitalizeName() finding above (the stored customer name is "E2e Story
- * Klant", not "E2E Story Klant" — a case-sensitive `===` on the name would
- * silently find nothing). E2E-08-H's only *other* reservation is the seeded
- * one already in status "returned"/"completed" (see e2e/seed/data.ts), so
- * filtering by vehicle plate and an active status is unambiguous.
- */
-async function findStoryReservation(request: APIRequestContext): Promise<{ id: number; status: string }> {
-  const vehicles = await (await request.get("/api/vehicles")).json();
-  const van = vehicles.find((v: { licensePlate: string }) => v.licensePlate === "E2E-08-H");
-  const reservations = await (await request.get("/api/reservations")).json();
-  const target = reservations.find(
-    (r: { vehicleId: number; status: string }) => r.vehicleId === van.id && (r.status === "booked" || r.status === "picked_up"),
-  );
-  expect(target, "this story's reservation on E2E-08-H").toBeTruthy();
-  return target;
-}
 
 /**
  * A fresh `lvs_e2e` has zero rows in `vehicle_diagram_templates` (the
@@ -61,8 +52,8 @@ async function findStoryReservation(request: APIRequestContext): Promise<{ id: n
  * a single damage check until someone does that upload; nothing in the UI
  * says so (see task-8-report.md).
  */
-let diagramClient: pg.Client;
-let diagramTemplateId: number;
+let diagramClient: pg.Client | undefined;
+let diagramTemplateId: number | undefined;
 
 test.beforeAll(async () => {
   if (!E2E.databaseUrl.endsWith("/lvs_e2e")) {
@@ -88,18 +79,44 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
-  await diagramClient.query(`DELETE FROM vehicle_diagram_templates WHERE id = $1`, [diagramTemplateId]);
+  // Mirrors e2e/layer-b/settings/invoice-inbox-log.spec.ts: a beforeAll that
+  // threw before `diagramClient` connected (or before the insert returned an
+  // id) must not throw again on top of its own failure while cleaning up.
+  if (!diagramClient) return;
+  if (diagramTemplateId !== undefined) {
+    // Stage 4 now actually saves a damage check, which references this
+    // template by a real foreign key — clear that reference first (the
+    // check row itself is the story's own artifact, not this seed's, so it
+    // is left alone) or the delete below fails with "violates foreign key
+    // constraint interactive_damage_checks_diagram_template_id_...".
+    await diagramClient.query(
+      `UPDATE interactive_damage_checks SET diagram_template_id = NULL WHERE diagram_template_id = $1`,
+      [diagramTemplateId],
+    );
+    await diagramClient.query(`DELETE FROM vehicle_diagram_templates WHERE id = $1`, [diagramTemplateId]);
+  }
   await diagramClient.end();
   // The image file lives under e2e/.tmp/, which is git-ignored and rebuilt
   // (via database.setup.ts's "from nothing" rebuild) on every full run.
 });
 
 test.describe("Balie: van telefoontje tot ingeleverde bus", () => {
-  test.describe.configure({ mode: "serial" });
-  test.use({ storageState: authFile("user") });
+  // Taller than Playwright's 720px default: the vehicle popover
+  // (vehicle-selector.tsx) opens with `avoidCollisions={false}`, so Radix
+  // never flips it above its trigger, and it is positioned `fixed` to the
+  // viewport — scrolling the dialog cannot bring a clipped popover into view
+  // (fix round 1: this made stage 2's vehicle pick flaky at the default
+  // height, "element is outside of the viewport" even after Playwright's own
+  // scroll). More vertical room is the honest fix; staff's own monitor is
+  // whatever height it is, so this is a known gap between the test and them.
+  test.use({ storageState: authFile("user"), viewport: { width: 1280, height: 1400 } });
 
-  test("1-3. desk: van telefoontje tot opgehaald", async ({ page, health, request }) => {
+  test("desk: from phone call to returned van", async ({ page, health, request }) => {
     test.setTimeout(180_000);
+    // Captured once (stage 2, via the API — not by name: capitalizeName()
+    // mangles it, see the finding below) and reused for the API-based
+    // end-of-stage checks in stages 4 and 6.
+    let reservationId: number;
 
     // The one free navigation (constraints.md): staff signs in and lands on
     // the dashboard. Every later move is a click through the app itself.
@@ -159,15 +176,24 @@ test.describe("Balie: van telefoontje tot ingeleverde bus", () => {
       await expect(dialog.getByLabel("Startdatum", { exact: true })).toHaveValue(officeDay(0));
       await expect(dialog.getByLabel("Einddatum", { exact: true })).toHaveValue(officeDay(3));
 
-      const openVehicle = dialog.getByRole("button", { name: /Zoek en selecteer een voertuig/ });
+      // Searched, not picked straight from the open list (fix round 1): the
+      // "available vehicles" list this popover shows is whatever else is
+      // true in the shared database at that instant, including vehicles
+      // other tests are creating concurrently — with `avoidCollisions={false}`
+      // on this Popover (vehicle-selector.tsx), an unsearched list long
+      // enough to push E2E-08-H below the fold can render partly outside the
+      // viewport instead of repositioning, which made this flaky. Typing the
+      // plate keeps this to one, always-visible card regardless of how many
+      // other vehicles exist at that moment.
+      await story.click(dialog.getByRole("button", { name: /Zoek en selecteer een voertuig/ }), "voertuig zoeken openen");
       // Not scoped to `dialog`: Radix Popover portals its content straight
       // onto <body>, as a sibling of the dialog rather than a descendant.
+      await story.fill(page.getByPlaceholder("Zoek op kenteken, merk of model..."), "E2E-08-H", "zoek E2E-08-H");
       // `.rounded-md.border` (not just `.cursor-pointer`): the calendar month
       // grid behind this dialog also uses `cursor-pointer` for its own day
       // cells and reservation bars, which would otherwise also match once a
       // reservation for this plate exists on screen.
-      const vehicleOption = page.locator("div.rounded-md.border.cursor-pointer", { hasText: "E2E08H" });
-      await story.choose(openVehicle, vehicleOption, "voertuig E2E-08-H (Toyota Proace)");
+      await story.click(page.locator("div.rounded-md.border.cursor-pointer", { hasText: "E2E08H" }), "voertuig E2E-08-H (Toyota Proace)");
 
       await story.click(dialog.getByTestId("button-submit-reservation"), "Reservering aanmaken");
       await settle(page);
@@ -185,6 +211,21 @@ test.describe("Balie: van telefoontje tot ingeleverde bus", () => {
       // `.first()` is enough to prove it is on the calendar.
       const block = page.locator('[data-testid^="reservation-item-"]', { hasText: CUSTOMER_NAME }).first();
       await expect(block).toBeVisible();
+
+      // Not counted (an API read, not a click): the reservation's id, for the
+      // API-based end-of-stage checks later. E2E-08-H's only *other*
+      // reservation is the seeded one already in status "returned"/
+      // "completed" (e2e/seed/data.ts), so vehicle + an active status is
+      // unambiguous — a name lookup is not, see the capitalizeName() finding
+      // in stage 1.
+      const vehicles = await (await request.get("/api/vehicles")).json();
+      const van = vehicles.find((v: { licensePlate: string }) => v.licensePlate === "E2E-08-H");
+      const reservations = await (await request.get("/api/reservations")).json();
+      const ours = reservations.find(
+        (r: { vehicleId: number; status: string }) => r.vehicleId === van.id && r.status === "booked",
+      );
+      expect(ours, "this story's reservation on E2E-08-H").toBeTruthy();
+      reservationId = ours.id;
       story.finish();
     });
 
@@ -200,9 +241,11 @@ test.describe("Balie: van telefoontje tot ingeleverde bus", () => {
       const pickupDialog = page.getByRole("dialog", { name: "Ophaalproces starten" });
       await expect(pickupDialog).toBeVisible();
       // Pre-fills staff rely on, not counted: pickup date defaults to today,
-      // mileage to the vehicle's current mileage (5000 for E2E-08-H).
+      // mileage to the vehicle's current mileage (5000 for E2E-08-H), and
+      // fuel level defaults to "Vol".
       await expect(pickupDialog.locator("#pickupDate")).toHaveValue(officeDay(0));
       await expect(pickupDialog.getByTestId("input-pickup-mileage")).toHaveValue("5000");
+      await expect(pickupDialog.getByTestId("select-fuel-level-pickup")).toHaveText("Vol");
 
       // OBSERVATION (kind: a default was wrong) — the placeholder literally
       // says "Automatisch gegenereerd (bewerkbaar)" ("auto-generated,
@@ -237,38 +280,13 @@ test.describe("Balie: van telefoontje tot ingeleverde bus", () => {
       story.finish();
     });
 
-    expect(health.violations).toEqual([]);
-  });
-
-  // FAULT — stops the story here. FINDING FOR THE OWNER: saving ANY
-  // interactive damage check always fails with 400 "Invalid damage check
-  // data" / field checkDate: "Expected date, received string". Reproduce: on
-  // any reservation, pickup or return, click "+ Schadecheck aanmaken" (or the
-  // pickup/return dialog's own "Ophaal-schadecheck aanmaken"), fill nothing
-  // else, click "Schadecheck opslaan" -> red toast "Fout: Invalid damage
-  // check data", browser console "Failed to load resource: the server
-  // responded with a status of 400". Root cause: interactive-damage-check.tsx
-  // handleSave() sends `checkDate: new Date().toISOString().split('T')[0]`,
-  // a plain "yyyy-MM-dd" string (JSON has no Date type); shared/schema.ts's
-  // insertInteractiveDamageCheckSchema is drizzle-zod's default over a
-  // `timestamp` column, which requires an actual JS `Date`; and
-  // server/middleware/validateBody.ts's coerceBodyForTable only coerces
-  // number/boolean/PgNumeric columns, never a date/timestamp one. This
-  // reproduces for every vehicle, every reservation, every check type — not
-  // specific to this story's data. Left in place, not fixed (constraints.md);
-  // the body below is what the story would do once this is fixed.
-  test.fixme(
-    "4. desk: schadecheck bij ophalen (geen schade) — geblokkeerd door een 400 op elke poging",
-    async ({ page, health, request }) => {
-      const target = await findStoryReservation(request);
-
-      await page.goto("/");
-      await settle(page);
-      await page.getByRole("link", { name: "Reserveringen" }).click();
-      await settle(page);
-      await page.getByTestId("button-list-view").click();
-      await page.getByTestId(`view-btn-${target.id}`).click();
-
+    // Fix round 1: server commit e19e786f fixed Finding A (interactive
+    // damage checks always 400ing — a JSON date string reaching a column
+    // that required a real `Date`), so this stage runs for real now and the
+    // story is one continuous test again. The reservation view dialog from
+    // stage 3 is still open on top (see the stacking fault noted there), so
+    // no navigation is needed to reach "Schadecheck aanmaken".
+    await test.step("4. damage check at pickup (no damage)", async () => {
       const story = new Story("Schadecheck bij ophalen", BUDGET.damage);
       const viewDialog = page.getByRole("dialog", { name: "Reserveringsdetails" });
       await expect(viewDialog).toBeVisible();
@@ -276,36 +294,36 @@ test.describe("Balie: van telefoontje tot ingeleverde bus", () => {
 
       const checkDialog = page.getByRole("dialog", { name: "Schadecheck" });
       await expect(checkDialog).toBeVisible();
+      // Pre-fills staff rely on, not counted: vehicle, reservation and check
+      // type (pickup) are already set from context; mileage and fuel level
+      // are copied straight from the pickup just recorded.
       await expect(checkDialog.getByTestId("input-mileage")).toHaveValue("5000");
+      await expect(checkDialog.getByTestId("select-fuel-level")).toHaveText("Vol");
 
+      // "No damage" is the minimum the application requires to save: no
+      // marker, no drawing and no signature is mandatory (handleSave only
+      // requires a selected vehicle and a matched diagram template).
       await story.click(checkDialog.getByTestId("button-save-check"), "Schadecheck opslaan");
-      await expect(page.getByText("Schadecheck succesvol opgeslagen")).toBeVisible();
+      // .first(): the toast text is duplicated into an aria-live announcer
+      // region for screen readers, so an unscoped match is ambiguous.
+      await expect(page.getByText("Schadecheck succesvol opgeslagen").first()).toBeVisible();
+      // The dialog does not close itself after saving (by design, so staff
+      // can still print) — it has to be left deliberately via Close.
       await story.click(checkDialog.getByTestId("button-close"), "Sluiten");
       story.finish();
 
-      expect(health.violations).toEqual([]);
-    },
-  );
-
-  // Continues from "1-3" above via the API (not via `page`, which a fresh
-  // test does not carry over) rather than depending on the damage check that
-  // "4." could not create — the return flow needs none.
-  test("5-6. desk: inleveren en eindstatus", async ({ page, health, request }) => {
-    const target = await findStoryReservation(request);
-    expect(target.status).toBe("picked_up");
-
-    await page.goto("/");
-    await settle(page);
-    await page.getByRole("link", { name: "Reserveringen" }).click();
-    await settle(page);
-    // No click path was offered back to this specific reservation from the
-    // dashboard (kind: the logical next action was not offered) — staff has
-    // to know to open the list view and search/scroll for it, same as
-    // anyone locating a reservation days after picking it up.
-    await page.getByTestId("button-list-view").click();
-    const listDialog = page.getByTestId("dialog-reservation-list");
-    await expect(listDialog).toBeVisible();
-    await listDialog.getByTestId(`view-btn-${target.id}`).click();
+      // End state via the API, not the screen: the check was actually
+      // stored, for this reservation, dated today (office calendar, not
+      // UTC) — the exact thing Finding A used to make impossible.
+      const checks = await (await request.get(`/api/interactive-damage-checks/reservation/${reservationId}`)).json();
+      const saved = checks.find((c: { checkType: string }) => c.checkType === "pickup");
+      expect(saved, "stored pickup damage check for this reservation").toBeTruthy();
+      expect(saved.mileage).toBe(5000);
+      // checkDate now reads back as a real timestamp (server commit
+      // e19e786f reads a bare day as 12:00 UTC), so slicing the ISO string
+      // straight gives the office calendar day without a timezone dance.
+      expect(new Date(saved.checkDate).toISOString().slice(0, 10)).toBe(officeDay(0));
+    });
 
     await test.step("5. return", async () => {
       const story = new Story("Inleveren", BUDGET.return);
@@ -321,6 +339,7 @@ test.describe("Balie: van telefoontje tot ingeleverde bus", () => {
       // touched below.
       await expect(returnDialog.locator("#returnDate")).toHaveValue(officeDay(0));
       await expect(returnDialog.getByTestId("input-return-mileage")).toHaveValue("5000");
+      await expect(returnDialog.getByTestId("select-fuel-level-return")).toHaveText("Vol");
 
       await story.fill(returnDialog.getByTestId("input-return-mileage"), "5350", "Kilometerstand bij inleveren");
       await story.click(returnDialog.getByTestId("button-confirm-return"), "Inleveren voltooien & schadecheck genereren");
@@ -348,7 +367,7 @@ test.describe("Balie: van telefoontje tot ingeleverde bus", () => {
       // "mark completed" step for staff to remember.
       expect(van.availabilityStatus).toBe("available");
 
-      const after = await (await request.get(`/api/reservations/${target.id}`)).json();
+      const after = await (await request.get(`/api/reservations/${reservationId}`)).json();
       expect(after.status).toBe("completed");
       expect(after.returnMileage).toBe(5350);
     });

@@ -16,7 +16,12 @@ import { test, expect, settle, type Violation } from "../../support/guards";
 import { authFile } from "../../support/roles";
 import { Story } from "../../support/steps";
 
-test.use({ storageState: authFile("user") });
+// Taller than Playwright's 720px default: the vehicle popover
+// (vehicle-selector.tsx, opened by the "dubbele boeking" test below) has
+// `avoidCollisions={false}` and is positioned `fixed` to the viewport, so a
+// clipped popover cannot be scrolled into view — see the longer comment in
+// rental-story.spec.ts, where the same popover made stage 2 flaky.
+test.use({ storageState: authFile("user"), viewport: { width: 1280, height: 1400 } });
 
 function consumeExpected(health: { violations: Violation[] }, kind: Violation["kind"], pattern: RegExp) {
   const index = health.violations.findIndex((v) => v.kind === kind && pattern.test(v.detail));
@@ -34,12 +39,35 @@ test("lege startdatum: het scherm blijft staan, maar de duurweergave liegt door 
 
   const dialog = page.getByRole("dialog", { name: "Nieuwe reservering" });
   await expect(dialog).toBeVisible();
-  await story.fill(dialog.getByLabel("Startdatum"), "", "Startdatum wissen");
+  const endDateField = dialog.getByLabel("Einddatum", { exact: true });
+  // Pre-fill, not counted: a fresh dialog already proposes today+3 before
+  // anything is touched — this is the value the brief calls "the end date
+  // suggestion", checked again below after the start date is cleared.
+  const endDateBefore = await endDateField.inputValue();
+  expect(endDateBefore).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+
+  await story.fill(dialog.getByLabel("Startdatum", { exact: true }), "", "Startdatum wissen");
   await settle(page);
 
   // No error boundary: this used to throw "Invalid time value" and take the
   // whole reservations page down (see client/src/lib/suggest-end-date.ts).
   await expect(page.getByText("Er ging iets mis op dit scherm")).toHaveCount(0);
+
+  // task-8-brief.md's own words: "the end date suggestion is empty". It is
+  // not — asserted here as what the brief expects, immediately followed by
+  // what the field actually holds, so this fails loudly instead of passing
+  // silently if a future fix changes only one of the two.
+  //
+  // OBSERVATION (kind: a default was wrong) — reservation-form.tsx only
+  // recomputes `endDate` when the field is currently empty or the rental was
+  // just switched from open-ended (the "Update end date when open-ended
+  // status changes" effect); merely clearing the start date satisfies
+  // neither condition, so the End Date field is left holding its original
+  // suggestion (today+3) even though the row it was suggested for no longer
+  // has a start date. Verified directly on the field's own value, not just
+  // the read-only summary below.
+  await expect(endDateField).not.toHaveValue("");
+  await expect(endDateField).toHaveValue(endDateBefore);
 
   // The inline duration badge right under the date fields correctly
   // disappears — it is gated on the start date being present
