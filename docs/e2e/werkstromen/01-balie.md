@@ -117,6 +117,9 @@ gewoon laat staan, doet er **3**.
   staan. De grijze hulptekst "Automatisch gegenereerd (bewerkbaar)" klopt dus gewoon.
   Dit is uit de code opgemaakt, niet in de test nagekeken — de test typte er zonder
   kijken een eigen nummer overheen, dus wat er stond is nooit vastgelegd.
+
+**Wat opvalt**
+
 - Na het voltooien verschijnt vanzelf een bevestigingsvenster ("Contract klaar", met
   afdrukken en mailen). Dat venster is een eerder goedgekeurde verbetering (OPT-005) en
   blijft dus. Het probleem is dat het reserveringsscherm op hetzelfde moment opnieuw
