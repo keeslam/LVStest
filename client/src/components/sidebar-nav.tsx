@@ -1,7 +1,7 @@
 import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
-import { UserRole, UserPermission } from "@shared/schema";
+import { canOpenPage, pageAccessFor } from "@shared/page-access";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -9,42 +9,43 @@ type NavItem = {
   href: string;
   labelKey: string;
   icon: string;
-  permissions?: string[];
 };
+
+// Labels and icons stay here; which permission opens which screen comes from
+// the shared table (shared/page-access.ts) so the menu, the route guard and
+// the E2E registry can never drift apart again.
+const NAV_ITEMS: NavItem[] = [
+  // OPT-001 — "Vandaag" is the first thing an employee sees in the menu; the
+  // dashboard keeps its place and its widgets right underneath it.
+  { href: "/", labelKey: "dashboard", icon: "dashboard" },
+  { href: "/vehicles", labelKey: "vehicles", icon: "directions_car" },
+  { href: "/scan", labelKey: "scan", icon: "scan" },
+  { href: "/customers", labelKey: "customers", icon: "people" },
+  { href: "/portal-admin", labelKey: "portalAdmin", icon: "people" },
+  { href: "/reservations", labelKey: "reservations", icon: "event" },
+  // B-21 — de werklijst met verhuringen die nog buiten staan; besluit B-21
+  // verbiedt uitdrukkelijk dat een script die afsluit.
+  { href: "/maintenance", labelKey: "maintenance", icon: "maintenance" },
+  { href: "/expenses", labelKey: "expenses", icon: "euro" },
+  { href: "/documents", labelKey: "documents", icon: "description" },
+  { href: "/delivery", labelKey: "transports", icon: "delivery" },
+  { href: "/communications", labelKey: "communications", icon: "email" },
+  { href: "/reports", labelKey: "reports", icon: "assessment" },
+];
 
 export function SidebarNav() {
   const [location] = useLocation();
   const { user } = useAuth();
   const { t } = useTranslation("nav");
-  const isAdmin = user?.role === UserRole.ADMIN;
 
-  const navItems: NavItem[] = [
-    // OPT-001 — "Vandaag" is the first thing an employee sees in the menu; the
-    // dashboard keeps its place and its widgets right underneath it.
-    { href: "/", labelKey: "dashboard", icon: "dashboard", permissions: [UserPermission.VIEW_DASHBOARD] },
-    { href: "/vehicles", labelKey: "vehicles", icon: "directions_car", permissions: [UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES] },
-    { href: "/scan", labelKey: "scan", icon: "scan", permissions: [UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES] },
-    { href: "/customers", labelKey: "customers", icon: "people", permissions: [UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS] },
-    { href: "/portal-admin", labelKey: "portalAdmin", icon: "people", permissions: [UserPermission.VIEW_PORTAL, UserPermission.MANAGE_PORTAL] },
-    { href: "/reservations", labelKey: "reservations", icon: "event", permissions: [UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS] },
-    // B-21 — de werklijst met verhuringen die nog buiten staan; besluit B-21
-    // verbiedt uitdrukkelijk dat een script die afsluit.
-    { href: "/maintenance", labelKey: "maintenance", icon: "maintenance", permissions: [UserPermission.MANAGE_MAINTENANCE] },
-    { href: "/expenses", labelKey: "expenses", icon: "euro", permissions: [UserPermission.MANAGE_EXPENSES] },
-    { href: "/documents", labelKey: "documents", icon: "description", permissions: [UserPermission.VIEW_DOCUMENTS, UserPermission.MANAGE_DOCUMENTS] },
-    { href: "/delivery", labelKey: "transports", icon: "delivery", permissions: [UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS] },
-    { href: "/communications", labelKey: "communications", icon: "email", permissions: [UserPermission.MANAGE_EMAIL_TEMPLATES, UserPermission.MANAGE_NOTIFICATIONS] },
-    { href: "/reports", labelKey: "reports", icon: "assessment", permissions: [UserPermission.VIEW_REPORTS, UserPermission.MANAGE_REPORTS] }
-  ];
-
-  const hasPermission = (item: NavItem): boolean => {
-    if (!item.permissions || item.permissions.length === 0) return true;
-    if (isAdmin) return true;
-    const userPermissions = (user?.permissions as string[]) || [];
-    return item.permissions.some(perm => userPermissions.includes(perm));
-  };
-
-  const filteredNavItems = navItems.filter(hasPermission);
+  const filteredNavItems = NAV_ITEMS.filter((item) => {
+    // A nav item without a row in the shared table would be a programming
+    // error (every menu href must have one, enforced by
+    // shared/page-access.test.ts) — treat it as "not gated" rather than
+    // hiding the item, same default as canOpenPage() itself.
+    if (!pageAccessFor(item.href)) return true;
+    return canOpenPage(user, item.href);
+  });
 
   // Unread "a customer did something in the portal" notifications, shown as a
   // badge on the Klantenportaal item. Refreshed live via the socket.
