@@ -26,7 +26,7 @@ profielen overeenkomen met de echte accounts, is een vraag die in
 | `npm run e2e` | alles: laag A, laag B en daarna het dekkingsoverzicht van de vensters |
 | `npm run e2e:a` | alleen laag A (schermen en vensters per rol) |
 | `npm run e2e:b` | alleen laag B (de werkstromen) |
-| `npx tsx scripts/e2e-dialog-coverage.ts` | alleen het dekkingsoverzicht van de vensters |
+| `npm run e2e:coverage` | alleen het dekkingsoverzicht van de vensters |
 
 Voorwaarden:
 
@@ -34,37 +34,38 @@ Voorwaarden:
 - De eerste keer bouwt de applicatie zichzelf. Dat duurt een paar minuten. Daarna wordt
   die bouw hergebruikt zolang er geen bronbestand nieuwer is.
 
-Let op: het ontwerp noemt ook een kortere vorm, `npm run e2e:coverage`. Die stond op
-21 september nog niet in `package.json`. Werkt hij bij jou ("Missing script"), gebruik
-dan het langere commando uit de tabel hierboven — dat doet precies hetzelfde. Bij
-`npm run e2e` draait het dekkingsoverzicht sowieso automatisch aan het eind, dus
-meestal hoef je het los helemaal niet te draaien.
+Het dekkingsoverzicht hoef je meestal niet apart te draaien: bij `npm run e2e` gebeurt
+dat automatisch aan het eind.
 
 ## Hoe lang het duurt
 
-Gemeten op deze machine op 21 september 2026, één volledige `npm run e2e`:
+Op deze machine, 21 september 2026, één volledige `npm run e2e`:
 
 ```
-282 geslaagd, 1 bewust overgeslagen, 0 mislukt   (6,0 minuten)
-Vensters: 119 bestanden met een venster, 28 bereikt door een test, 91 nog niet
+282 geslaagd, 1 bewust overgeslagen, 0 mislukt   (6 minuten en 4 seconden)
 ```
 
-Het dekkingsoverzicht is geslaagd: 91 niet-bereikte vensters was precies de vastgelegde
-grens, dus er is niets achteruitgegaan. Van begin tot eind, inclusief die laatste stap,
-duurde de run 6 minuten en 4 seconden.
+Een tweede volledige run later diezelfde dag, na een reparatieronde, kwam uit op 6,2
+minuten met dezelfde aantallen. Reken dus op **ruim zes minuten**, niet op één exact
+getal: het scheelt of de applicatie opnieuw gebouwd moet worden en wat de machine verder
+te doen heeft.
 
-*(Stand 21-09. Kort na deze meting is er één venster bij gekomen dat wél door een test
-wordt geopend — dat van het logboek — waarmee de telling op 29 bereikt en 90 nog niet
-komt, en de vastgelegde grens op 90. Dat is nagerekend met het dekkingscommando zelf.
-De looptijd en de testaantallen hierboven zijn van de gemeten run en veranderen daar
-niet door.)*
+Het dekkingsoverzicht van de vensters (`npm run e2e:coverage`, draait ook automatisch
+aan het eind van `npm run e2e`):
 
-**Dat is meer dan de streefwaarde van vijf minuten.** Het langzaamste deel is met
-afstand `e2e/layer-a/dialogs.spec.ts`: 163 van de 283 tests en samen 783 seconden
-testtijd, ruim drie vijfde van de 1278 seconden die alle tests bij elkaar kosten. Die
-tests draaien met vier tegelijk, dus in werkelijke tijd is het ongeveer drie en een
-halve minuut. De rest: de schermen per rol (226 s), de schermen zonder rechten (158 s),
-de bewakingstests (42 s) en alle werkstromen samen (58 s).
+```
+Vensters: 119 bestanden met een venster, 29 bereikt door een test, 90 nog niet
+```
+
+Dat is precies de vastgelegde grens, dus er is niets achteruitgegaan.
+
+**Ruim zes minuten is meer dan de streefwaarde van vijf.** Het langzaamste deel is met
+afstand `e2e/layer-a/dialogs.spec.ts`: in de hierboven gemeten run 163 van de 283 tests
+en samen 783 seconden testtijd, ruim drie vijfde van de 1278 seconden die alle tests bij
+elkaar kosten. Die tests draaien met vier tegelijk, dus in werkelijke tijd is het
+ongeveer drie en een halve minuut. De rest van diezelfde run: de schermen per rol
+(226 s), de schermen zonder rechten (158 s), de bewakingstests (42 s) en alle
+werkstromen samen (58 s).
 
 De vier-tegelijk-grens is bewust gekozen: de applicatie zelf houdt maximaal tien
 databaseverbindingen open, en meer tests tegelijk lopen daar tegenaan. Wie het op een
@@ -130,8 +131,8 @@ groene run staat er dus niets.
   `LAYER_B_SOURCES` genoemd.
 
 **Het dekkingsgetal mag alleen omlaag.** In `e2e/registry/coverage-baseline.json` staat
-hoeveel bestanden met een venster nog niet door een test worden geopend. Kijk daar voor
-het getal van vandaag; bij het schrijven van deze handleiding ging het van 91 naar 90.
+hoeveel bestanden met een venster nog niet door een test worden geopend (nu 90). Kijk
+daar voor het getal van vandaag, want het hoort langzaam te dalen.
 Wordt dat getal hoger, dan stopt `npm run e2e` met een fout. Bereik je een venster meer,
 dan zet je het getal één lager. Andersom nooit.
 
