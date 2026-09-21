@@ -551,23 +551,41 @@ opgeschoven, zodat verwijzingen elders blijven kloppen.
 |---|---|---|
 | ~~OPT-034 — contractnummer zelf voorstellen~~ | **vervalt** (bestaat al) | 21-09-2026 |
 | OPT-035 — onthoud agenda- of lijstweergave | | |
-| OPT-036 — telefoon en e-mail bij de naam | | |
-| OPT-037 — na opslaan meteen naar de reservering | | |
+| OPT-036 — telefoon en e-mail bij de naam | **nee** | 21-09-2026 |
+| OPT-037 — na opslaan meteen naar de reservering | **nee** | 21-09-2026 |
 | OPT-038 — zeggen wat er aan sjablonen ontbreekt | | |
 | V-1 — kloppen de zeven rechtenprofielen met productie? | | |
-| V-2 — wie moet meldingen krijgen? | | |
-| V-3 — knoppen verbergen die iemand niet mag gebruiken? | | |
-| V-4 — wat ziet iemand die een adres intypt zonder rechten? | | |
-| V-5 — menu en server gelijktrekken? | | |
-| V-6 (OPT-017) — welke statusomkeringen mogen, en door wie? | | |
+| V-2 — wie moet meldingen krijgen? | Meldingen worden getoond aan de mensen die de melding aangaat en die er ook toegang toe hebben. | 21-09-2026 |
+| V-3 — knoppen verbergen die iemand niet mag gebruiken? | Laten staan, maar grijs maken en de functie uitschakelen. | 21-09-2026 |
+| V-4 — wat ziet iemand die een adres intypt zonder rechten? | Een duidelijke melding "u heeft geen toegang" weergeven. | 21-09-2026 |
+| V-5 — menu en server gelijktrekken? | Gelijktrekken. | 21-09-2026 |
+| V-6 (OPT-017) — welke statusomkeringen mogen, en door wie? | Manager en admin, met een toggle om andere accounts er eventueel ook toegang toe te geven via de instellingen van de accounts. | 21-09-2026 |
 | V-7 (OPT-025) — welke velden verplicht voor verhuur en contract? | | |
 | V-8 (OPT-026) — BV naar Opnaam: vooraf vragen of achteraf melden? | | |
-| V-9 (OPT-029) — pechomruil: wat met de oorspronkelijke huur? | | |
-| V-10 (BUG-040) — reservering in het verleden toestaan? | | |
-| V-11 (BUG-132) — opgehaalde verhuring annuleren of verwijderen? | | |
-| V-12 (BUG-163) — mag contractgeneratie hard mislukken? | | |
-| V-13 (BUG-045) — debiteurnummer uniek? | | |
+| V-9 (OPT-029) — pechomruil: wat met de oorspronkelijke huur? | Die blijft op "verhuurd" staan, met "in werkplaats" erbij, zodat we weten dat de originele auto in de werkplaats is en dit tijdelijk is — "mits er op een later moment wordt besloten dat de auto niet meer terug gaat". | 21-09-2026 |
+| V-10 (BUG-040) — reservering in het verleden toestaan? | Ja, maar de auto staat dan alleen op "verhuurd" als de huurperiode nog loopt, niet als die al is afgesloten. | 21-09-2026 |
+| V-11 (BUG-132) — opgehaalde verhuring annuleren of verwijderen? | Mag door admin en manager, met een extra vinkje bij de instellingen om het voor andere accounts te regelen, en met een waarschuwing dat de huur al is opgehaald. | 21-09-2026 |
+| V-12 (BUG-163) — mag contractgeneratie hard mislukken? | Een duidelijke fout. | 21-09-2026 |
+| V-13 (BUG-045) — debiteurnummer uniek? | Indien ingevuld moet het uniek zijn. | 21-09-2026 |
 | V-14 (BUG-056) — wat moet een terugkerende reservering doen? | | |
+
+**Nog open.** Deze regels zijn nog niet beantwoord en blijven open staan: OPT-035
+(onthoud agenda- of lijstweergave), OPT-038 (zeggen wat er aan sjablonen ontbreekt),
+V-1 (kloppen de zeven rechtenprofielen met productie), V-7 (welke velden verplicht zijn
+voor verhuur en contract), V-8 (BV naar Opnaam) en V-14 (terugkerende reservering).
+
+**Nog uit te werken of te bevestigen.** Dit staat er nadrukkelijk *niet* als besluit; het
+is wat er bij het uitwerken nog voorgelegd moet worden:
+
+- **V-9** — het woord "mits" is gelezen als "tenzij": de oorspronkelijke huur blijft
+  lopen met de aanduiding "in werkplaats", tenzij later wordt besloten dat die auto niet
+  terugkomt. Wat er op dát moment met de oorspronkelijke huur moet gebeuren, is niet
+  gezegd en moet nog gevraagd worden.
+- **V-2** — de regel is "wie het aangaat en er toegang toe heeft". Welke soort melding
+  bij welk recht hoort, moet nog worden uitgewerkt en voorgelegd.
+- **V-6 en V-11** — "toggle" en "vinkje bij de instellingen van de accounts" zijn gelezen
+  als één nieuw recht per gebruiker, standaard alleen aan bij admin en manager. Dat moet
+  bevestigd worden voordat het gebouwd wordt.
 
 ---
 

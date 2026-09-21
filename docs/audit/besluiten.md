@@ -148,12 +148,116 @@ reserveringenrecht.
 reservering op dat voertuig. Staat de auto leeg, dan gaat er alleen een melding naar kantoor. Nooit
 meer naar iedereen die ooit op dat kenteken heeft gehuurd.
 
+## Vastgelegd 2026-09-21
+
+Antwoorden op de doorlichting van de baliewerkstroom (`docs/e2e/werkstromen/01-balie.md`,
+hoofdstuk 7). De nummers V-1 t/m V-14 verwijzen naar de vragenlijst in dat document.
+
+### B-25 — Twee verbetervoorstellen voor de balie afgewezen (OPT-036, OPT-037)
+**Besluit:** allebei niet bouwen.
+- OPT-036 wilde telefoonnummer en e-mailadres naast de naam op het eerste tabblad van het
+  klantformulier zetten. Het formulier blijft zoals het is, inclusief de tabbladwissel
+  halverwege.
+- OPT-037 wilde na het opslaan van een reservering een knop die meteen naar die
+  reservering gaat. Die komt er niet.
+Beide zijn gemeten en beschreven; ze zijn afgewezen, niet over het hoofd gezien. Wie ze
+opnieuw wil voorstellen, vraagt eerst een nieuw besluit.
+Raakt: OPT-036, OPT-037.
+
+### B-26 — Wie een melding te zien krijgt (V-2)
+**Besluit (letterlijk van Kees):** "meldingen moeten weergegeven worden aan de mensen wie de
+melding aan gaat en ook betrekking / toegang heeft."
+Dus: een melding gaat naar wie hem aangaat én er toegang toe heeft. Niet naar iedereen, en
+niet uitsluitend naar wie het recht "meldingen beheren" draagt.
+Nog uit te werken en voor te leggen: welke soort melding bij welk recht hoort.
+Raakt: V-2, BUG-233 (de rode foutmelding op elk scherm), het meldingenklokje in de kop.
+
+### B-27 — Knoppen die een medewerker niet mag gebruiken (V-3)
+**Besluit:** laten staan, maar grijs maken en de functie uitschakelen. Dus niet verbergen:
+de medewerker ziet dat de knop bestaat, maar kan hem niet indrukken.
+Raakt: V-3, de snelle acties op het dashboard en de knoppen op het voertuigenscherm.
+
+### B-28 — Een scherm openen waar je geen rechten voor hebt (V-4)
+**Besluit:** een duidelijke melding "u heeft geen toegang" tonen. Vandaag laadt het lege
+scherm gewoon en blijven de gegevens leeg.
+Raakt: V-4.
+
+### B-29 — Menu en server gelijktrekken (V-5)
+**Besluit:** gelijktrekken. Het recht dat het menu vraagt en het recht dat de server
+controleert horen hetzelfde te zijn.
+Raakt: V-5, de drie bekende verschillen bij onderhoud, transport en communicatie.
+
+### B-30 — Statusomkeringen: wie ze mag doen (V-6, OPT-017)
+**Besluit (letterlijk van Kees):** "manager en admin. met toggel om andere eventueel ook
+toegang te geven via de instellingen van de accounts."
+Dus: terugdraaien mag door manager en admin; via de accountinstellingen kan het eventueel
+ook voor andere accounts worden aangezet.
+Gelezen als één nieuw recht per gebruiker, standaard alleen aan bij admin en manager — nog
+te bevestigen. Nog open: **welke** omkeringen precies toegestaan zijn (een ophaling, een
+inname of een annulering terugdraaien) is met dit antwoord niet beantwoord; OPT-017 stelde
+die vraag ook.
+Raakt: OPT-017, V-6, CQ-005, BUG-019, BUG-159.
+
+### B-31 — Pechomruil: wat er met de oorspronkelijke huur gebeurt (V-9, OPT-029)
+**Besluit (letterlijk van Kees):** "die blijft op verhuurd staan maar met in werkplaats er
+bij. zodat we weten dat de originele auto in de werkplaats is en dit tijdelijk is. mits er
+op een later moment wordt besloten dat de auto niet meer terug gaat."
+Dus: de oorspronkelijke huur blijft lopen op "verhuurd", met de aanduiding "in werkplaats"
+erbij, zodat zichtbaar is dat de eigen auto er tijdelijk uit is.
+Nog open: "mits" is gelezen als "tenzij" — de huur blijft zo staan tenzij later wordt
+besloten dat die auto niet terugkomt. Wat er op dat moment met de oorspronkelijke huur moet
+gebeuren, is niet gezegd en moet nog gevraagd worden.
+Raakt: OPT-029, V-9, BUG-114, BUG-115.
+
+### B-32 — Een reservering in het verleden aanmaken (V-10, BUG-040)
+**Besluit:** mag. Maar de auto staat dan alleen op "verhuurd" als de huurperiode nog loopt,
+niet als die al is afgesloten.
+Raakt: BUG-040, V-10 — dit is de reden waarom zo'n reservering nu elke toekomstige boeking
+op dat voertuig blokkeert.
+
+### B-33 — Een al opgehaalde verhuring annuleren of verwijderen (V-11, BUG-132)
+**Besluit (letterlijk van Kees):** "dat mag door de admin en manager met een extra vinkje bij
+de instellingen om het te regelen voor andere accounts, met een waarschuwing dat die al
+opgehaald is."
+Dus: toegestaan voor admin en manager; via een extra vinkje in de instellingen kan het voor
+andere accounts geregeld worden; en er komt een waarschuwing dat de huur al opgehaald is.
+Gelezen als hetzelfde soort recht per gebruiker als in B-30 — nog te bevestigen.
+Raakt: BUG-132, V-11.
+
+### B-34 — Een contract dat niet gemaakt kan worden (V-12, BUG-163)
+**Besluit:** een duidelijke fout. Liever hard mislukken met een begrijpelijke melding dan een
+onbruikbaar bestand afleveren.
+Raakt: BUG-163, V-12.
+
+### B-35 — Uniciteit van het debiteurnummer (V-13, BUG-045)
+**Besluit:** het veld mag leeg blijven, maar is het ingevuld, dan moet het uniek zijn.
+Raakt: BUG-045, V-13.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - (beslist, zie B-17) OPT-001 — wat telt als "openstaand punt" op het werkdagscherm.
 - OPT-009 — mag de app zelf een vervanger voorstellen/toewijzen, en op welke criteria.
-- OPT-017 — welke statusomkeringen mogen, en door wie.
+- (deels beslist, zie B-30) OPT-017 — wie statusomkeringen mag doen is beantwoord; welke
+  omkeringen precies toegestaan zijn, nog niet.
 - OPT-025 — welke velden verplicht zijn voordat een voertuig verhuurd mag worden.
+  (Op 21-09 opnieuw gesteld als V-7; niet beantwoord.)
 - OPT-026 — BV → Opnaam: vooraf vragen of achteraf melden.
-- OPT-029 — pechomruil: wat gebeurt er met de oorspronkelijke huur.
+  (Op 21-09 opnieuw gesteld als V-8; niet beantwoord.)
+- (beslist, zie B-31) OPT-029 — pechomruil: wat gebeurt er met de oorspronkelijke huur.
 - OPT-032 — wat de sleutelkastaudit moet vastleggen en afdrukken.
+
+Uit de baliedoorlichting van 21-09, niet beantwoord:
+
+- OPT-035 — mag het reserveringenscherm onthouden of je de agenda of de lijst gebruikte.
+- OPT-038 — moet het scherm zeggen welk sjabloon ontbreekt, en krijgt het contract dezelfde
+  terugval als het schadeformulier.
+- V-1 — kloppen de zeven rechtenprofielen uit de testsuite met de accounts in productie.
+- V-14 (BUG-056) — wat een terugkerende reservering moet doen.
+
+Deelvragen die bij het uitwerken van de besluiten van 21-09 nog voorgelegd moeten worden:
+
+- Bij B-26: welke soort melding bij welk recht hoort.
+- Bij B-30 en B-33: of "toggle"/"vinkje bij de instellingen van de accounts" inderdaad één
+  nieuw recht per gebruiker is, standaard alleen aan bij admin en manager.
+- Bij B-31: wat er met de oorspronkelijke huur gebeurt zodra besloten wordt dat de auto niet
+  terugkomt.
