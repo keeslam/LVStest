@@ -201,9 +201,11 @@ terugdraaien. De voertuigstatus en de kilometerstand gaan mee terug. Werd bij de
 teruggedraaide stap een hogere kilometerstand ingevuld dan de stand daarvoor, dan moet daar
 uitdrukkelijk een bevestiging voor worden ingevuld.
 Daarmee is dit besluit compleet: zowel wie het mag als welke omkeringen.
-Die laatste zin is gelezen als: terugdraaien verlaagt in dat geval de kilometerstand, en
-juist dat verlagen moet bevestigd worden (de applicatie kent daar al een aparte toestemming
-voor). Bij het ontwerp nog te bevestigen.
+**Bevestigd door Kees op 21-09-2026 ("ja"):** het gaat om het **verlagen** van de
+kilometerstand. Stond er vóór de ophaling 45.000 en is bij het ophalen 45.350 ingevuld, dan
+zakt de stand door het terugdraaien terug naar 45.000, en juist dat zakken moet uitdrukkelijk
+bevestigd worden — aansluitend op de toestemming die de applicatie al vraagt voor het
+verlagen van een kilometerstand.
 Raakt: OPT-017, V-6, CQ-005, BUG-019, BUG-159.
 
 ### B-31 — Pechomruil: wat er met de oorspronkelijke huur gebeurt (V-9, OPT-029)
@@ -273,8 +275,6 @@ velden verplicht voor verhuur en contract), OPT-026 / V-8 (BV → Opnaam) en V-1
 Deelvragen die bij het uitwerken van de besluiten van 21-09 nog voorgelegd moeten worden:
 
 - Bij B-26: welke soort melding bij welk recht hoort.
-- Bij B-30: of de zin over de kilometerstand goed gelezen is — dat het verlagen van een
-  eerder ingevulde stand degene is die bevestigd moet worden. Bij het ontwerp bevestigen.
 - Bij B-33: wie de prullenbak mag legen, en of dat per soort gaat of in één keer.
 - Bij B-30 en B-33: of "toggle"/"vinkje bij de instellingen van de accounts" inderdaad één
   nieuw recht per gebruiker is, standaard alleen aan bij admin en manager.

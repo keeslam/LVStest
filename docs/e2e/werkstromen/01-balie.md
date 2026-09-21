@@ -578,9 +578,6 @@ is wat er bij het uitwerken nog voorgelegd moet worden:
 
 - **V-2** — de regel is "wie het aangaat en er toegang toe heeft". Welke soort melding
   bij welk recht hoort, moet nog worden uitgewerkt en voorgelegd.
-- **V-6** — de zin over de kilometerstand is gelezen als: door het terugdraaien gaat een
-  eerder ingevulde stand omlaag, en juist dat verlagen moet bevestigd worden. Bij het
-  ontwerp nog te bevestigen.
 - **V-11** — wie de prullenbak mag legen, en of dat per soort gaat of in één keer, is
   niet gezegd.
 - **V-6 en V-11** — "toggle" en "vinkje bij de instellingen van de accounts" zijn gelezen
