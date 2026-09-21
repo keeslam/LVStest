@@ -41,6 +41,15 @@ async function storedCheckDate(id: number): Promise<Date | null> {
   return row ? row.checkDate : null;
 }
 
+/** How many checks exist on one vehicle — for "the refused request stored nothing". */
+async function countChecksForVehicle(vehicleId: number): Promise<number> {
+  const rows = await db
+    .select({ id: interactiveDamageChecks.id })
+    .from(interactiveDamageChecks)
+    .where(eq(interactiveDamageChecks.vehicleId, vehicleId));
+  return rows.length;
+}
+
 describe("BUG-104 — timestamp columns accept the strings a JSON client can send", () => {
   let staff: TestAgent;
   let vehicleId: number;
@@ -99,6 +108,35 @@ describe("BUG-104 — timestamp columns accept the strings a JSON client can sen
       const out = coerceBodyForTable(interactiveDamageChecks, { checkDate: "2026-09-21T08:30:00.000Z" });
       expect(out.checkDate).toBeInstanceOf(Date);
       expect((out.checkDate as Date).toISOString()).toBe("2026-09-21T08:30:00.000Z");
+    });
+
+    it("refuses a date-time without a zone, which JS reads as host-local time", () => {
+      // `new Date("2026-09-21T08:30:00")` is 08:30 *where the process runs*: the
+      // production container (UTC) and a laptop in Europe/Amsterdam store
+      // instants one to two hours apart for the same string. Left untouched so
+      // the schema answers 400, rather than the stored instant depending on
+      // which machine handled the request.
+      for (const zoneless of ["2026-09-21T08:30:00", "2026-09-21T08:30", "2026-09-21 08:30:00"]) {
+        const out = coerceBodyForTable(interactiveDamageChecks, { checkDate: zoneless });
+        expect(out.checkDate, `input ${JSON.stringify(zoneless)}`).toBe(zoneless);
+      }
+    });
+
+    it("takes every spelling of an explicit zone", () => {
+      // Asserted as an instant, so the expectation holds whatever timezone this
+      // test itself runs in.
+      const cases: Array<[string, string]> = [
+        ["2026-09-21T08:30:00Z", "2026-09-21T08:30:00.000Z"],
+        ["2026-09-21T08:30Z", "2026-09-21T08:30:00.000Z"],
+        ["2026-09-21T08:30:00+02:00", "2026-09-21T06:30:00.000Z"],
+        ["2026-09-21T08:30:00+0200", "2026-09-21T06:30:00.000Z"],
+        ["2026-09-21T08:30:00-05:00", "2026-09-21T13:30:00.000Z"],
+      ];
+      for (const [input, expected] of cases) {
+        const out = coerceBodyForTable(interactiveDamageChecks, { checkDate: input });
+        expect(out.checkDate, `input ${input}`).toBeInstanceOf(Date);
+        expect((out.checkDate as Date).toISOString(), `input ${input}`).toBe(expected);
+      }
     });
 
     it("leaves a malformed string alone so the schema answers 400", () => {
@@ -163,6 +201,14 @@ describe("BUG-104 — timestamp columns accept the strings a JSON client can sen
     it("refuses a number with a 400, not a 500", async () => {
       const res = await createCheck({ checkType: "junk-number", checkDate: 12345 });
       expect(res.status, bodyText(res.body)).toBe(400);
+    }, 30_000);
+
+    it("refuses a date-time without a zone with a 400, storing nothing", async () => {
+      const before = await countChecksForVehicle(vehicleId);
+      const res = await createCheck({ checkType: "junk-zoneless", checkDate: "2026-09-21T08:30:00" });
+      expect(res.status, bodyText(res.body)).toBe(400);
+      expect(bodyText(res.body)).toMatch(/checkDate/);
+      expect(await countChecksForVehicle(vehicleId)).toBe(before);
     }, 30_000);
 
     it("refuses an impossible calendar day rather than rolling it over", async () => {

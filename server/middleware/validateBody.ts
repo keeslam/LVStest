@@ -115,8 +115,21 @@ function isEmptyMarker(value: unknown): boolean {
 
 /** `yyyy-MM-dd`, what a `<input type="date">` and `toISOString().split('T')[0]` produce. */
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-/** A full ISO-8601 date-time, with or without seconds, fraction and offset. */
-const ISO_DATE_TIME = /^(\d{4}-\d{2}-\d{2})[T ]\d{2}:\d{2}(:\d{2}(\.\d{1,9})?)?(Z|[+-]\d{2}:?\d{2})?$/;
+/**
+ * A full ISO-8601 date-time, with or without seconds and fraction, but the zone
+ * designator (`Z` or an offset) is **required**.
+ *
+ * Without one, `new Date("2026-09-21T08:30:00")` is 08:30 *in whatever timezone
+ * the process happens to run in*: the production container (UTC) and a
+ * developer machine (Europe/Amsterdam) would store instants one to two hours
+ * apart for the very same request, and nothing in the request says which was
+ * meant. No screen sends a zone-less date-time today, so such a string is left
+ * untouched for the schema to reject with a 400 rather than silently guessed
+ * at. If a `datetime-local` form field is ever added, it needs an explicit
+ * office-time rule here (interpret in Europe/Amsterdam, DST included) before
+ * this regex is relaxed — do not simply make the zone optional again.
+ */
+const ISO_DATE_TIME = /^(\d{4}-\d{2}-\d{2})[T ]\d{2}:\d{2}(:\d{2}(\.\d{1,9})?)?(Z|[+-]\d{2}:?\d{2})$/;
 
 /**
  * `new Date("2026-02-30T12:00:00Z")` is 2 March, not an error, and
