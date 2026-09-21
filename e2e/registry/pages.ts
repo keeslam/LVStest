@@ -51,5 +51,10 @@ export const PAGES: PageEntry[] = [
   // no profile holds MANAGE_NOTIFICATIONS without also holding
   // MANAGE_EMAIL_TEMPLATES.
   { path: "/communications", anyOf: [P.MANAGE_EMAIL_TEMPLATES, P.MANAGE_NOTIFICATIONS], api: "/api/email-templates" },
+  // Finding: reports/index.tsx (client/src/pages/reports/index.tsx, about
+  // lines 145 and 150) fetches /api/customers and /api/transports with no
+  // `enabled` gate of their own. Harmless for the seven E2E profiles (everyone
+  // who reaches /reports also holds VIEW_CUSTOMERS), latent for a hand-built
+  // profile with VIEW_REPORTS but without VIEW_CUSTOMERS.
   { path: "/reports", anyOf: [P.VIEW_REPORTS, P.MANAGE_REPORTS], api: "/api/reports/saved" },
 ];

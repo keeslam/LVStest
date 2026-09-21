@@ -105,4 +105,6 @@ export const DIALOGS: DialogEntry[] = [
 export const LAYER_B_SOURCES: string[] = [
   "client/src/components/reservations/pickup-return-dialogs.tsx",
   "client/src/components/reservations/handover-result-dialog.tsx",
+  // Opened by e2e/layer-b/settings/invoice-inbox-log.spec.ts.
+  "client/src/components/expenses/invoice-inbox-log-dialog.tsx",
 ];

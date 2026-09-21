@@ -17,7 +17,8 @@
     "test:watch": "vitest",
     "e2e": "playwright test -c e2e/playwright.config.ts && tsx scripts/e2e-dialog-coverage.ts",
     "e2e:a": "playwright test -c e2e/playwright.config.ts --project=layer-a",
-    "e2e:b": "playwright test -c e2e/playwright.config.ts --project=layer-b"
+    "e2e:b": "playwright test -c e2e/playwright.config.ts --project=layer-b",
+    "e2e:coverage": "tsx scripts/e2e-dialog-coverage.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

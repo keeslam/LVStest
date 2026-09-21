@@ -27,3 +27,6 @@ temp/
 
 # Playwright e2e runtime output (traces, results, auth state)
 e2e/.tmp/
+
+# graphify tool output (not source)
+graphify-out/
