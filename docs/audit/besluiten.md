@@ -193,9 +193,17 @@ toegang te geven via de instellingen van de accounts."
 Dus: terugdraaien mag door manager en admin; via de accountinstellingen kan het eventueel
 ook voor andere accounts worden aangezet.
 Gelezen als één nieuw recht per gebruiker, standaard alleen aan bij admin en manager — nog
-te bevestigen. Nog open: **welke** omkeringen precies toegestaan zijn (een ophaling, een
-inname of een annulering terugdraaien) is met dit antwoord niet beantwoord; OPT-017 stelde
-die vraag ook.
+te bevestigen.
+**Aanvulling, letterlijk van Kees:** "ja alles gaat dan terug. als er een km stand is
+ingevuld die hoger is dan die daarvoor moet er wel een bevestiging voor ingevuld worden."
+Dus: alle drie de omkeringen mogen — een ophaling, een inname en een annulering
+terugdraaien. De voertuigstatus en de kilometerstand gaan mee terug. Werd bij de
+teruggedraaide stap een hogere kilometerstand ingevuld dan de stand daarvoor, dan moet daar
+uitdrukkelijk een bevestiging voor worden ingevuld.
+Daarmee is dit besluit compleet: zowel wie het mag als welke omkeringen.
+Die laatste zin is gelezen als: terugdraaien verlaagt in dat geval de kilometerstand, en
+juist dat verlagen moet bevestigd worden (de applicatie kent daar al een aparte toestemming
+voor). Bij het ontwerp nog te bevestigen.
 Raakt: OPT-017, V-6, CQ-005, BUG-019, BUG-159.
 
 ### B-31 — Pechomruil: wat er met de oorspronkelijke huur gebeurt (V-9, OPT-029)
@@ -204,9 +212,13 @@ bij. zodat we weten dat de originele auto in de werkplaats is en dit tijdelijk i
 op een later moment wordt besloten dat de auto niet meer terug gaat."
 Dus: de oorspronkelijke huur blijft lopen op "verhuurd", met de aanduiding "in werkplaats"
 erbij, zodat zichtbaar is dat de eigen auto er tijdelijk uit is.
-Nog open: "mits" is gelezen als "tenzij" — de huur blijft zo staan tenzij later wordt
-besloten dat die auto niet terugkomt. Wat er op dat moment met de oorspronkelijke huur moet
-gebeuren, is niet gezegd en moet nog gevraagd worden.
+"Mits" is daarbij gelezen als "tenzij": de huur blijft zo staan tenzij later wordt besloten
+dat die auto niet terugkomt.
+**Aanvulling, letterlijk van Kees:** "overzetten naar vervangende auto maar dat moet wel
+bevestigd worden!"
+Dus: wordt later besloten dat de oorspronkelijke auto niet terugkomt, dan gaat de huur over
+naar de vervangende auto. Dat gebeurt nooit vanzelf — iemand moet het bevestigen. Daarmee
+is de openstaande deelvraag uit de eerste ronde beantwoord.
 Raakt: OPT-029, V-9, BUG-114, BUG-115.
 
 ### B-32 — Een reservering in het verleden aanmaken (V-10, BUG-040)
@@ -222,7 +234,14 @@ opgehaald is."
 Dus: toegestaan voor admin en manager; via een extra vinkje in de instellingen kan het voor
 andere accounts geregeld worden; en er komt een waarschuwing dat de huur al opgehaald is.
 Gelezen als hetzelfde soort recht per gebruiker als in B-30 — nog te bevestigen.
-Raakt: BUG-132, V-11.
+**Aanvulling, letterlijk van Kees:** "die moet dan ook gebruikt worden. we moeten ook wel
+rekening houden dat we de prullenbak kunnen legen!"
+Dus: annuleren én verwijderen mogen allebei. Verwijderen gaat via de bestaande prullenbak
+van B-15, die dus ook echt gebruikt wordt. En nieuw: die prullenbak moet geleegd kunnen
+worden.
+Nog open: wie de prullenbak mag legen, en of dat per soort gaat of in één keer.
+Raakt: BUG-132, V-11, B-15, BUG-150 (de prullenbak kan vandaag niet definitief geleegd
+worden).
 
 ### B-34 — Een contract dat niet gemaakt kan worden (V-12, BUG-163)
 **Besluit:** een duidelijke fout. Liever hard mislukken met een begrijpelijke melding dan een
@@ -237,27 +256,25 @@ Raakt: BUG-045, V-13.
 
 - (beslist, zie B-17) OPT-001 — wat telt als "openstaand punt" op het werkdagscherm.
 - OPT-009 — mag de app zelf een vervanger voorstellen/toewijzen, en op welke criteria.
-- (deels beslist, zie B-30) OPT-017 — wie statusomkeringen mag doen is beantwoord; welke
-  omkeringen precies toegestaan zijn, nog niet.
-- OPT-025 — welke velden verplicht zijn voordat een voertuig verhuurd mag worden.
-  (Op 21-09 opnieuw gesteld als V-7; niet beantwoord.)
-- OPT-026 — BV → Opnaam: vooraf vragen of achteraf melden.
-  (Op 21-09 opnieuw gesteld als V-8; niet beantwoord.)
+- (beslist, zie B-30) OPT-017 — welke statusomkeringen mogen, en door wie.
+- (geparkeerd, zie hieronder) OPT-025 — welke velden verplicht zijn voordat een voertuig
+  verhuurd mag worden.
+- (geparkeerd, zie hieronder) OPT-026 — BV → Opnaam: vooraf vragen of achteraf melden.
 - (beslist, zie B-31) OPT-029 — pechomruil: wat gebeurt er met de oorspronkelijke huur.
 - OPT-032 — wat de sleutelkastaudit moet vastleggen en afdrukken.
 
-Uit de baliedoorlichting van 21-09, niet beantwoord:
-
-- OPT-035 — mag het reserveringenscherm onthouden of je de agenda of de lijst gebruikte.
-- OPT-038 — moet het scherm zeggen welk sjabloon ontbreekt, en krijgt het contract dezelfde
-  terugval als het schadeformulier.
-- V-1 — kloppen de zeven rechtenprofielen uit de testsuite met de accounts in productie.
-- V-14 (BUG-056) — wat een terugkerende reservering moet doen.
+**Geparkeerd op verzoek van Kees (21-09-2026, letterlijk: "moeten genegeerd worden voor
+nu").** Hier niet opnieuw naar vragen totdat hij er zelf over begint of het werk erom
+vraagt: OPT-035 (onthoud agenda- of lijstweergave), OPT-038 (zeggen welk sjabloon
+ontbreekt), V-1 (kloppen de zeven rechtenprofielen met productie), OPT-025 / V-7 (welke
+velden verplicht voor verhuur en contract), OPT-026 / V-8 (BV → Opnaam) en V-14 / BUG-056
+(terugkerende reservering).
 
 Deelvragen die bij het uitwerken van de besluiten van 21-09 nog voorgelegd moeten worden:
 
 - Bij B-26: welke soort melding bij welk recht hoort.
+- Bij B-30: of de zin over de kilometerstand goed gelezen is — dat het verlagen van een
+  eerder ingevulde stand degene is die bevestigd moet worden. Bij het ontwerp bevestigen.
+- Bij B-33: wie de prullenbak mag legen, en of dat per soort gaat of in één keer.
 - Bij B-30 en B-33: of "toggle"/"vinkje bij de instellingen van de accounts" inderdaad één
   nieuw recht per gebruiker is, standaard alleen aan bij admin en manager.
-- Bij B-31: wat er met de oorspronkelijke huur gebeurt zodra besloten wordt dat de auto niet
-  terugkomt.
