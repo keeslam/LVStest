@@ -587,9 +587,19 @@ export default function ReservationCalendarPage() {
     return { start, end, days, rangeText };
   }, [currentDate]);
   
+  // The page's own permission is VIEW_RESERVATIONS/MANAGE_RESERVATIONS; this
+  // query needs the vehicle family instead (GET /api/vehicles,
+  // routes.ts:646). It only feeds the vehicle search/type/availability
+  // filter above the calendar (fact sheet row 6) - with no filter applied
+  // (the default) the day cells' own matchesFilter short-circuits true
+  // regardless of this data, so the calendar itself still shows every
+  // reservation - a denied user just gets an empty filter dropdown, left
+  // out silently, no NoDataAccess.
+  const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
   // Fetch vehicles
   const { data: vehicles, isLoading: isLoadingVehicles } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
+    enabled: canViewVehicles,
   });
 
   // A transport-linked spare reservation for an external vehicle has no
