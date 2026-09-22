@@ -324,7 +324,9 @@
       "testFailed": "Connection failed",
       "runNow": "Fetch now",
       "runDone": "{{mails}} mail(s) fetched: {{booked}} booked, {{review}} for review",
-      "geminiMissing": "Note: GEMINI_API_KEY is not set on the server. Invoices cannot be read then and will all wait for review."
+      "geminiMissing": "Note: GEMINI_API_KEY is not set on the server. Invoices cannot be read then and will all wait for review.",
+      "loadFailed": "The settings for invoices by e-mail could not be loaded",
+      "retry": "Try again"
     },
     "log": {
       "title": "Log",

@@ -24,7 +24,7 @@ export function InvoiceInboxConfigForm() {
   const { t } = useTranslation("expenses");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data } = useQuery<InvoiceInboxConfig>({
+  const { data, isError, error, refetch, isFetching } = useQuery<InvoiceInboxConfig>({
     queryKey: INVOICE_INBOX_CONFIG_QUERY_KEY,
     queryFn: async () => (await apiRequest("GET", INVOICE_INBOX_CONFIG_QUERY_KEY[0])).json(),
   });
@@ -79,6 +79,33 @@ export function InvoiceInboxConfigForm() {
     },
     onError: (e: Error) => toast({ title: t("invoiceInbox.runFailed"), description: e.message, variant: "destructive" }),
   });
+
+  // The config GET has its own client-side deadline (REQUEST_TIMEOUT_MS,
+  // client/src/lib/request-policy.ts) and the query client's global default
+  // is `retry: false` (client/src/lib/queryClient.ts) — so a slow answer
+  // (a loaded server, a flaky connection) settles into a permanent error,
+  // not "still loading". Without this branch the card — including the
+  // unrelated "Logboek" button below — stayed blank forever with no way to
+  // recover short of a full page reload; found while diagnosing a flaky e2e
+  // test (task-6-report.md, part A).
+  if (isError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Inbox className="h-5 w-5" />{t("invoiceInbox.config.title")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border border-red-300 bg-red-50 p-3 text-sm" data-testid="invoice-inbox-config-error">
+            {t("invoiceInbox.config.loadFailed")}
+            {error instanceof Error && error.message ? `: ${error.message}` : null}
+          </div>
+          <Button variant="outline" className="mt-3" onClick={() => refetch()} disabled={isFetching} data-testid="button-retry-invoice-inbox-config">
+            {isFetching && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}{t("invoiceInbox.config.retry")}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!form) return null;
 

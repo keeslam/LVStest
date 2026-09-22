@@ -324,7 +324,9 @@
       "testFailed": "Verbinden mislukt",
       "runNow": "Nu ophalen",
       "runDone": "{{mails}} mail(s) opgehaald: {{booked}} geboekt, {{review}} ter controle",
-      "geminiMissing": "Let op: GEMINI_API_KEY is niet ingesteld op de server. Facturen kunnen dan niet worden uitgelezen en komen allemaal ter controle."
+      "geminiMissing": "Let op: GEMINI_API_KEY is niet ingesteld op de server. Facturen kunnen dan niet worden uitgelezen en komen allemaal ter controle.",
+      "loadFailed": "De instellingen voor facturen per e-mail konden niet worden geladen",
+      "retry": "Opnieuw proberen"
     },
     "log": {
       "title": "Logboek",

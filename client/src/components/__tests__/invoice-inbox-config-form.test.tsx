@@ -127,6 +127,45 @@ describe("InvoiceInboxConfigForm", () => {
     expect(await screen.findByText(/Postvak onbereikbaar/)).toBeInTheDocument();
   });
 
+  /**
+   * Found while diagnosing a flaky e2e test (task-6-report.md, part A): the
+   * config GET has its own client-side 30 s deadline
+   * (`REQUEST_TIMEOUT_MS`, client/src/lib/request-policy.ts) and the global
+   * query client default is `retry: false` — so under real network/DB
+   * slowness this query settles into a permanent error, not "still loading".
+   * Before this fix, `if (!form) return null` never distinguished the two:
+   * the whole card, including the unrelated "Logboek" button, stayed blank
+   * forever with no way to recover short of a full page reload.
+   */
+  it("shows a retry card instead of staying blank forever when the config request fails, and recovers once retried", async () => {
+    let configCalls = 0;
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = (init?.method ?? "GET").toUpperCase();
+      calls.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
+      if (url.endsWith("/api/expenses/inbox/status")) return json(status);
+      if (url.endsWith("/api/expenses/inbox/config")) {
+        configCalls += 1;
+        if (configCalls === 1) return json({ message: "The server did not answer in time." }, { status: 504 });
+        return json(config);
+      }
+      return json({}, { status: 404 });
+    }));
+
+    mount();
+    expect(await screen.findByTestId("invoice-inbox-config-error")).toHaveTextContent(
+      "De instellingen voor facturen per e-mail konden niet worden geladen",
+    );
+    // The card never silently stays blank: no form field renders, but the
+    // error text and a way out both do.
+    expect(screen.queryByLabelText("IMAP-server")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Opnieuw proberen" }));
+    expect(await screen.findByLabelText("IMAP-server")).toHaveValue("imap.voorbeeld.nl");
+    expect(screen.queryByTestId("invoice-inbox-config-error")).not.toBeInTheDocument();
+    expect(configCalls).toBe(2);
+  });
+
   it("still renders with its values when the status check is refused, and does not hammer it", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
