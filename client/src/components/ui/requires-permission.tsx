@@ -62,6 +62,24 @@ export interface RequiresPermissionProps extends React.HTMLAttributes<HTMLElemen
  * same job. The span's className now also carries the child's own
  * className (tailwind-merge resolves any overlap, child wins), so it takes
  * the same box a Slot-forwarded allowed child would have taken.
+ *
+ * Fix round 2 (reviewer), CLASS defect: stripping the child's own `onClick`
+ * only breaks the `asChild`/`rest`-forwarding channel (an ancestor like
+ * `DialogTrigger` cloning ITS OWN onClick onto this component). It does
+ * nothing about plain DOM event bubbling: `InlineDocumentUpload` (and every
+ * other site that wraps a gated trigger in its own `<div onClick={...}>`)
+ * has a real click handler on an ANCESTOR of this span. A disabled
+ * `<button>`'s `pointer-events: none` makes the browser's hit-test resolve
+ * the click to this wrapping `<span>` — which, having no handler of its own,
+ * let the event keep bubbling past it and past the button, straight into
+ * that ancestor's handler, defeating "even when clicked through the
+ * wrapper" for every such composition. The span now swallows activation
+ * itself (click, double-click, pointerdown, mousedown, and Enter/Space on
+ * keydown) with `preventDefault`/`stopPropagation`, so no ancestor's own
+ * click handler is ever reached from here, regardless of how it is wired.
+ * Radix's `TooltipTrigger` (composed via `asChild` onto this same span)
+ * listens for pointer enter/leave and focus/blur, not click/keydown, so
+ * swallowing those does not affect the tooltip's own show/hide logic.
  */
 export const RequiresPermission = React.forwardRef<HTMLElement, RequiresPermissionProps>(
   ({ anyOf = [], allOf = [], children, ...rest }, ref) => {
@@ -91,11 +109,35 @@ export const RequiresPermission = React.forwardRef<HTMLElement, RequiresPermissi
       onClick: undefined,
     });
 
+    // Fix round 2: swallow activation on the span itself, so a click or a
+    // keyboard Enter/Space that lands here (because the disabled child
+    // swallows pointer events, or because this span is what actually has
+    // focus) never bubbles into a clickable ANCESTOR — e.g.
+    // InlineDocumentUpload's own `<div onClick={() => setIsOpen(true)}>`
+    // that wraps the gated trigger from the outside.
+    const swallowActivation = (event: React.SyntheticEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    const swallowActivationKeys = (event: React.KeyboardEvent) => {
+      if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+        swallowActivation(event);
+      }
+    };
+
     return (
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <span tabIndex={0} className={cn("inline-flex", children.props.className)}>
+            <span
+              tabIndex={0}
+              className={cn("inline-flex", children.props.className)}
+              onClick={swallowActivation}
+              onDoubleClick={swallowActivation}
+              onPointerDown={swallowActivation}
+              onMouseDown={swallowActivation}
+              onKeyDown={swallowActivationKeys}
+            >
               {disabledChild}
             </span>
           </TooltipTrigger>

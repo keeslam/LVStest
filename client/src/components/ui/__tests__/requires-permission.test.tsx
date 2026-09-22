@@ -83,6 +83,20 @@ describe("RequiresPermission", () => {
       expect(screen.getByTestId("button-add-vehicle")).not.toBeDisabled();
     });
 
+    it("fix round 2 — an allowed control still lets a click reach a clickable ancestor (e.g. InlineDocumentUpload's own trigger div)", async () => {
+      setUser(UserRole.USER, [UserPermission.MANAGE_DOCUMENTS]);
+      const ancestorClick = vi.fn();
+      render(
+        <div onClick={ancestorClick}>
+          <RequiresPermission anyOf={[UserPermission.MANAGE_DOCUMENTS]}>
+            <Button data-testid="button-scan-upload">Document uploaden</Button>
+          </RequiresPermission>
+        </div>,
+      );
+      await userEvent.click(screen.getByTestId("button-scan-upload"));
+      expect(ancestorClick).toHaveBeenCalledTimes(1);
+    });
+
     it("with allOf, is allowed only once every listed permission is held", () => {
       setUser(UserRole.USER, [UserPermission.MANAGE_DOCUMENTS, UserPermission.MANAGE_VEHICLES]);
       render(
@@ -188,6 +202,70 @@ describe("RequiresPermission", () => {
       // (rendered without this wrapper via Slot) would take.
       expect(span.className).toContain("w-full");
       expect(span.className).toContain("flex-col");
+    });
+
+    it("fix round 2 — a click on the denied control never reaches a clickable ANCESTOR either", async () => {
+      // Reproduces the real bug: InlineDocumentUpload wraps its children in
+      // its own <div onClick={() => setIsOpen(true)}> (via DialogTrigger
+      // asChild). The disabled button's `disabled:pointer-events-none` lets
+      // the hit-test pass through to the wrapping <span> — but the span had
+      // no handler of its own, so the click event kept bubbling past it,
+      // past the button, and reached this ancestor div, opening the dialog
+      // for a user without the permission.
+      setUser(UserRole.USER, []);
+      const ancestorClick = vi.fn();
+      render(
+        <div onClick={ancestorClick}>
+          <RequiresPermission anyOf={[UserPermission.MANAGE_DOCUMENTS]}>
+            <Button data-testid="button-scan-upload">Document uploaden</Button>
+          </RequiresPermission>
+        </div>,
+      );
+      const button = screen.getByTestId("button-scan-upload");
+      // Click the (pointer-events:none) button directly — the browser would
+      // deliver this to the span underneath, same as `force`-clicking in e2e.
+      await userEvent.click(button, { pointerEventsCheck: 0 });
+      expect(ancestorClick).not.toHaveBeenCalled();
+
+      // Click the wrapping span itself (the actual hit-test target).
+      const span = button.parentElement as HTMLElement;
+      await userEvent.click(span);
+      expect(ancestorClick).not.toHaveBeenCalled();
+    });
+
+    it("fix round 2 — Enter/Space on the focused span do not activate a clickable ancestor", async () => {
+      setUser(UserRole.USER, []);
+      const ancestorClick = vi.fn();
+      const ancestorKeyDown = vi.fn();
+      render(
+        <div onClick={ancestorClick} onKeyDown={ancestorKeyDown}>
+          <RequiresPermission anyOf={[UserPermission.MANAGE_DOCUMENTS]}>
+            <Button data-testid="button-scan-upload">Document uploaden</Button>
+          </RequiresPermission>
+        </div>,
+      );
+      const button = screen.getByTestId("button-scan-upload");
+      const span = button.parentElement as HTMLElement;
+      span.focus();
+      await userEvent.keyboard("{Enter}");
+      await userEvent.keyboard(" ");
+      expect(ancestorClick).not.toHaveBeenCalled();
+      expect(ancestorKeyDown).not.toHaveBeenCalled();
+    });
+
+    it("fix round 2 — the tooltip still shows on focus and hover once the span swallows activation", async () => {
+      setUser(UserRole.USER, []);
+      render(
+        <div onClick={vi.fn()}>
+          <RequiresPermission anyOf={[UserPermission.MANAGE_DOCUMENTS]}>
+            <Button data-testid="button-scan-upload">Document uploaden</Button>
+          </RequiresPermission>
+        </div>,
+      );
+      await userEvent.tab();
+      await waitFor(() => {
+        expect(screen.getByRole("tooltip")).toHaveTextContent("Documenten bewerken en genereren");
+      });
     });
 
     it("works for a DropdownMenuItem child, disabling it via Radix's own disabled prop", async () => {
