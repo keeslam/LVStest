@@ -38,6 +38,7 @@ import DamageCheckTemplateStudio from "@/pages/settings/damage-check-template-st
 import { useAuth } from "@/hooks/use-auth";
 import { UserPermission, UserRole } from "@shared/schema";
 import { useHasPermission } from "@/hooks/use-has-permission";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 
 export default function DocumentsIndex() {
   const { t } = useTranslation("documents");
@@ -898,10 +899,12 @@ export default function DocumentsIndex() {
             <CardContent>
               <div className="mb-6">
                 <p className="mb-4">{t('indexPage.openTemplateEditorIntro')}</p>
-                <Button onClick={() => setTemplateEditorDialogOpen(true)} data-testid="button-open-template-editor">
-                  <FileEdit className="mr-2 h-4 w-4" />
-                  {t('indexPage.openTemplateEditorButton')}
-                </Button>
+                <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
+                  <Button onClick={() => setTemplateEditorDialogOpen(true)} data-testid="button-open-template-editor">
+                    <FileEdit className="mr-2 h-4 w-4" />
+                    {t('indexPage.openTemplateEditorButton')}
+                  </Button>
+                </RequiresPermission>
               </div>
 
               {isLoadingTemplates ? (
@@ -1022,10 +1025,12 @@ export default function DocumentsIndex() {
             <CardContent>
               <div className="mb-6">
                 <p className="mb-4">{t('indexPage.openTransportTemplateEditorIntro')}</p>
-                <Button onClick={() => setTransportTemplateEditorDialogOpen(true)} data-testid="button-open-transport-template-editor">
-                  <FileEdit className="mr-2 h-4 w-4" />
-                  {t('indexPage.openTemplateEditorButton')}
-                </Button>
+                <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
+                  <Button onClick={() => setTransportTemplateEditorDialogOpen(true)} data-testid="button-open-transport-template-editor">
+                    <FileEdit className="mr-2 h-4 w-4" />
+                    {t('indexPage.openTemplateEditorButton')}
+                  </Button>
+                </RequiresPermission>
               </div>
 
               {isLoadingTransportTemplates ? (
@@ -1098,10 +1103,12 @@ export default function DocumentsIndex() {
             <CardContent>
               <div className="mb-6">
                 <p className="mb-4">{t('indexPage.openBarcodeLabelEditorIntro')}</p>
+                <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
                 <Button onClick={() => setBarcodeLabelEditorDialogOpen(true)} data-testid="button-open-barcode-label-editor">
                   <FileEdit className="mr-2 h-4 w-4" />
                   {t('indexPage.openBarcodeLabelEditorButton')}
                 </Button>
+                </RequiresPermission>
               </div>
 
               {isLoadingBarcodeLabelTemplates ? (
@@ -1135,15 +1142,18 @@ export default function DocumentsIndex() {
                           <p className="text-xs text-muted-foreground">
                             {template.labelWidthMm} × {template.labelHeightMm} mm
                           </p>
+                          <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
                           <Button
                             variant="outline"
                             size="sm"
                             className="mt-3 w-full"
                             onClick={() => setBarcodeLabelEditorDialogOpen(true)}
+                            data-testid={`button-edit-barcode-label-${template.id}`}
                           >
                             <FileEdit className="h-3 w-3 mr-1" />
                             {t('indexPage.editButton')}
                           </Button>
+                          </RequiresPermission>
                         </CardContent>
                       </Card>
                     ))}
@@ -1399,14 +1409,16 @@ function DamageCheckManager() {
               {t('indexPage.damageCheck.cardDescription')}
             </CardDescription>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => setStudioOpen(true)}
-            data-testid="button-open-damage-check-studio"
-          >
-            <SettingsIcon className="mr-2 h-4 w-4" />
-            {t('indexPage.damageCheck.openStudioButton')}
-          </Button>
+          <RequiresPermission anyOf={[UserPermission.MANAGE_DAMAGE_CHECKS]}>
+            <Button
+              variant="outline"
+              onClick={() => setStudioOpen(true)}
+              data-testid="button-open-damage-check-studio"
+            >
+              <SettingsIcon className="mr-2 h-4 w-4" />
+              {t('indexPage.damageCheck.openStudioButton')}
+            </Button>
+          </RequiresPermission>
         </div>
       </CardHeader>
 
@@ -1622,10 +1634,12 @@ function DiagramTemplateManager() {
               {t('indexPage.diagramTemplates.cardDescription')}
             </CardDescription>
           </div>
-          <Button onClick={() => setUploadDialogOpen(true)} data-testid="button-upload-diagram-template">
-            <Plus className="h-4 w-4 mr-2" />
-            {t('indexPage.diagramTemplates.addButton')}
-          </Button>
+          <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+            <Button onClick={() => setUploadDialogOpen(true)} data-testid="button-upload-diagram-template">
+              <Plus className="h-4 w-4 mr-2" />
+              {t('indexPage.diagramTemplates.addButton')}
+            </Button>
+          </RequiresPermission>
         </div>
       </CardHeader>
       <CardContent>
@@ -1660,26 +1674,30 @@ function DiagramTemplateManager() {
                     {t('indexPage.diagramTemplates.addedLabel', { date: formatDate(template.createdAt) })}
                   </p>
                   <div className="flex gap-2 mt-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => handleEdit(template)}
-                      data-testid={`button-edit-diagram-template-${template.id}`}
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      {t('indexPage.diagramTemplates.editButton')}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => handleDelete(template)}
-                      data-testid={`button-delete-diagram-template-${template.id}`}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      {t('indexPage.diagramTemplates.deleteButton')}
-                    </Button>
+                    <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleEdit(template)}
+                        data-testid={`button-edit-diagram-template-${template.id}`}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        {t('indexPage.diagramTemplates.editButton')}
+                      </Button>
+                    </RequiresPermission>
+                    <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleDelete(template)}
+                        data-testid={`button-delete-diagram-template-${template.id}`}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        {t('indexPage.diagramTemplates.deleteButton')}
+                      </Button>
+                    </RequiresPermission>
                   </div>
                 </div>
               </Card>

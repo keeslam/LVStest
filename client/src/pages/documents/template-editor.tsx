@@ -40,6 +40,7 @@ import { Separator } from "@/components/ui/separator";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { UserPermission } from "@shared/schema";
 import { useHasPermission } from "@/hooks/use-has-permission";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 
 interface TemplateField {
   id: string;
@@ -1234,14 +1235,16 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
             </div>
           </CardContent>
           <CardFooter>
-            <Button onClick={handleCreateTemplate} disabled={saveTemplateMutation.isPending}>
-              {saveTemplateMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Plus className="mr-2 h-4 w-4" />
-              )}
-              {t('templateEditor.createTemplateButton')}
-            </Button>
+            <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
+              <Button onClick={handleCreateTemplate} disabled={saveTemplateMutation.isPending} data-testid="button-create-first-template">
+                {saveTemplateMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="mr-2 h-4 w-4" />
+                )}
+                {t('templateEditor.createTemplateButton')}
+              </Button>
+            </RequiresPermission>
           </CardFooter>
         </Card>
       </div>
@@ -1299,18 +1302,22 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                   <FileText className="mr-2 h-4 w-4" />
                   {t('templateEditor.backgroundLibraryButton')}
                 </Button>
-                <Button variant="outline" onClick={handleDeleteTemplate} disabled={saveTemplateMutation.isPending || deleteTemplateMutation.isPending}>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {t('templateEditor.deleteButton')}
-                </Button>
-                <Button onClick={handleSaveTemplate} disabled={saveTemplateMutation.isPending}>
-                  {saveTemplateMutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-2 h-4 w-4" />
-                  )}
-                  {t('templateEditor.saveButton')}
-                </Button>
+                <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
+                  <Button variant="outline" onClick={handleDeleteTemplate} disabled={saveTemplateMutation.isPending || deleteTemplateMutation.isPending} data-testid="button-delete-template">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {t('templateEditor.deleteButton')}
+                  </Button>
+                </RequiresPermission>
+                <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
+                  <Button onClick={handleSaveTemplate} disabled={saveTemplateMutation.isPending} data-testid="button-save-template">
+                    {saveTemplateMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    {t('templateEditor.saveButton')}
+                  </Button>
+                </RequiresPermission>
               </div>
             </div>
           </CardHeader>
@@ -1320,12 +1327,16 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                 <div className="flex h-6 items-center justify-between">
                   <Label>{t('templateEditor.selectTemplateLabel')}</Label>
                   <div className="flex gap-1">
+                    <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
                     <Button variant="ghost" size="sm" className="h-6 px-2" title={t('templateEditor.newTemplateButton')} onClick={() => { setNewTemplateName(''); setIsCreateDialogOpen(true); }} data-testid="button-new-template">
                       <Plus className="h-4 w-4" />
                     </Button>
+                    </RequiresPermission>
+                    <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
                     <Button variant="ghost" size="sm" className="h-6 px-2" title={t('templateEditor.renameTemplateButton')} disabled={!currentTemplate} onClick={() => { setRenameValue(currentTemplate?.name || ''); setIsRenameDialogOpen(true); }} data-testid="button-rename-template">
                       <Pencil className="h-4 w-4" />
                     </Button>
+                    </RequiresPermission>
                   </div>
                 </div>
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -1339,10 +1350,12 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                     </div>
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>{t('common:actions.cancel')}</Button>
-                      <Button onClick={handleCreateTemplate} disabled={saveTemplateMutation.isPending} data-testid="button-create-template-confirm">
-                        <Plus className="mr-2 h-4 w-4" />
-                        {t('templateEditor.createTemplateButton')}
-                      </Button>
+                      <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
+                        <Button onClick={handleCreateTemplate} disabled={saveTemplateMutation.isPending} data-testid="button-create-template-confirm">
+                          <Plus className="mr-2 h-4 w-4" />
+                          {t('templateEditor.createTemplateButton')}
+                        </Button>
+                      </RequiresPermission>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
@@ -1357,10 +1370,12 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                     </div>
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>{t('common:actions.cancel')}</Button>
-                      <Button onClick={handleRenameTemplate} disabled={saveTemplateMutation.isPending} data-testid="button-rename-template-confirm">
-                        <Save className="mr-2 h-4 w-4" />
-                        {t('templateEditor.saveButton')}
-                      </Button>
+                      <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
+                        <Button onClick={handleRenameTemplate} disabled={saveTemplateMutation.isPending} data-testid="button-rename-template-confirm">
+                          <Save className="mr-2 h-4 w-4" />
+                          {t('templateEditor.saveButton')}
+                        </Button>
+                      </RequiresPermission>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
