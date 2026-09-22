@@ -265,6 +265,37 @@ Klanten, Reserveringen, Onderhoud (eigen label), Transporten, Boetes (heeft al e
 venster). Wordt gebouwd in deelproject C, samen met het legen (B-33).
 Raakt: B-15, B-33, BUG-140, BUG-151.
 
+### B-29a — Aanvulling op B-29: Communicatie voor wie meldingen mag beheren (22-09-2026)
+**Wat Kees zei, letterlijk:** op de vraag of er een account bestaat met "meldingen beheren"
+zonder "e-mailsjablonen beheren": "ja sjablonen zijn alleen toegankelijk voor de admin en
+manager."
+**Uitwerking:** het scherm Communicatie opent voor wie "meldingen beheren" óf
+"e-mailsjablonen beheren" heeft. Sjabloonbeheer (aanmaken, bewerken, verwijderen, het
+e-maillogboek) alleen met "e-mailsjablonen beheren"; voor anderen grijs of "geen toegang tot
+deze gegevens". Versturen alleen met "meldingen beheren". Zo verliest geen bestaand account
+het versturen van meldingen, en blijven sjablonen bij admin en manager.
+Raakt: B-29, B-27, V-5.
+
+### B-37 — Onderhoud afronden met APK en kilometerstand (22-09-2026)
+**Besluit (letterlijk):** "nee deze mag ingevuld worden want dat is nodig om het onderhoud af
+te sluiten."
+**Uitwerking:** wie onderhoud mag afronden, kan daarbij de APK-datum, het APK-document en de
+kilometerstand invullen, ook zonder "voertuigen beheren" of "documenten beheren". Vandaag
+doet het scherm drie losse aanroepen met drie verschillende rechten, zodat een account met
+alleen "onderhoud beheren" halverwege vastloopt. De afrondroute neemt die gegevens zelf mee,
+in één handeling. Wordt gebouwd in deelproject C.
+Raakt: B-27, B-29, handleiding §15.11.
+
+### B-38 — Prullenbak legen, en wie de prullenbakken ziet (22-09-2026)
+**Besluit (letterlijk):** "per stuk en de mogelijkheid om meerdere tegelijk/ alles te
+verwijderen. mag alleen door admin / manager." En over deelproject C: "c moet ook zichtbaar
+zijn voor manager."
+**Uitwerking:** in elke prullenbak (B-36) kan een beheerder of manager één record definitief
+verwijderen, een selectie tegelijk, of alles, telkens met een bevestiging. De prullenbakken
+zelf zijn zichtbaar voor admin en manager (vandaag alleen admin). Volgorde van bouwen: eerst
+deelproject B, direct daarna C.
+Raakt: B-15, B-33, B-36, BUG-150.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - (beslist, zie B-17) OPT-001 — wat telt als "openstaand punt" op het werkdagscherm.
@@ -286,6 +317,6 @@ velden verplicht voor verhuur en contract), OPT-026 / V-8 (BV → Opnaam) en V-1
 Deelvragen die bij het uitwerken van de besluiten van 21-09 nog voorgelegd moeten worden:
 
 - Bij B-26: welke soort melding bij welk recht hoort.
-- Bij B-33: wie de prullenbak mag legen, en of dat per soort gaat of in één keer.
+- (beslist, zie B-38) Bij B-33: wie de prullenbak mag legen, en of dat per soort gaat of in één keer.
 - Bij B-30 en B-33: of "toggle"/"vinkje bij de instellingen van de accounts" inderdaad één
   nieuw recht per gebruiker is, standaard alleen aan bij admin en manager.
