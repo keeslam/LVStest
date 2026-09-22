@@ -317,7 +317,11 @@ snelkoppeling, een collega die het adres doorstuurt — dan opent niet een leeg 
 pagina met de kop **"U heeft geen toegang tot dit scherm"** en een zin die het ontbrekende recht
 met naam noemt, bijvoorbeeld: *"Hiervoor is het recht 'Onderhoud beheren' nodig. Vraag een
 beheerder om het aan te zetten."* Er staat een knop naar het eerste scherm dat je wél mag openen.
-Het scherm zelf vraagt in dit geval helemaal niets bij de server op.
+Het scherm zelf vraagt in dit geval helemaal niets bij de server op. Dat geldt ook voor een oude
+bladwijzer of gedeelde link naar bijvoorbeeld **Onderhoud** (`/maintenance`), de bewerkpagina van
+een reservering (`/reservations/edit/…`) of het toevoegen van een kostenpost (`/expenses/add`): mis
+je het recht daarvoor, dan zie je voortaan diezelfde schermmelding in plaats van een leeg of kapot
+scherm.
 
 **Een knop die je niet mag gebruiken, blijft zichtbaar maar staat uit.** Op steeds meer schermen
 zie je nu een knop die er wel gewoon staat maar **grijs** is. Wijs je hem aan, of spring je er met
@@ -374,6 +378,11 @@ boeking, en die vraagt **Reserveringen beheren**.
 nieuw onderhoud inplannen, geen blok bewerken of verwijderen, en geen afgeronde registratie
 terugzetten — daar is ook **Reserveringen beheren** voor nodig. Wil je dat de werkplaats zelf
 onderhoud kan inplannen, geef dat account dan ook **Reserveringen beheren**.
+
+Eén uitzondering: vanaf het scanscherm (**Voertuigen → Scannen**) kan iemand met alléén
+**Onderhoud beheren** een bestaand onderhoudsblok van het gescande voertuig wél bewerken via de
+knop "Onderhoud openen" — die ene route accepteert sinds deze doorlichting **Onderhoud beheren**
+naast **Reserveringen beheren**, omdat hij nergens anders vandaan te bereiken is.
 
 ## 15.12 Etiketsjablonen: bekijken kan iedereen, wijzigen niet
 
