@@ -15,6 +15,8 @@ import { Mail, Shield, Wrench, Users, Send, Calendar, Clock, CheckCircle, AlertT
 import type { Vehicle, Customer } from "@shared/schema";
 import { UserPermission } from "@shared/schema";
 import { RequiresPermission } from "@/components/ui/requires-permission";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { NoDataAccess } from "@/components/ui/no-data-access";
 import { formatLicensePlate, plateMatches, formatVehicleType } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
 
@@ -69,6 +71,25 @@ export default function CustomerCommunications() {
   
   // Vehicle filter is now based on communication mode
   const vehicleFilter = communicationMode === 'custom' ? 'all' : communicationMode;
+
+  // The page's own permission is MANAGE_EMAIL_TEMPLATES (B-29 narrowed it,
+  // shared/page-access.ts); none of these three recipient-list queries
+  // accept it (fact sheet row 12, "server narrower than menu, severely").
+  // The send buttons themselves already require MANAGE_NOTIFICATIONS
+  // separately (RequiresPermission, above) - this is about whether the
+  // recipient lists that feed those buttons can load at all.
+  const canViewCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
+  // vehicleFilter === "all" hits GET /api/vehicles/with-reservations
+  // (server/index.ts:415, a 4-way OR incl. reservation rights); any other
+  // value hits GET /api/vehicles/filtered (server/index.ts:416, vehicle
+  // rights only) - the enabled condition below matches whichever endpoint
+  // the query function is about to call.
+  const canViewVehiclesFiltered = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
+  const canViewVehiclesWithReservations = useHasPermission(
+    UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES,
+    UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS,
+  );
+  const canViewVehiclesForCommunications = vehicleFilter === 'all' ? canViewVehiclesWithReservations : canViewVehiclesFiltered;
   
   // Template builder state
   const [templateName, setTemplateName] = useState<string>("");
@@ -105,18 +126,20 @@ export default function CustomerCommunications() {
   const { data: vehiclesWithReservations = [] } = useQuery({
     queryKey: ['/api/vehicles', vehicleFilter === 'all' ? 'with-reservations' : 'filtered', vehicleFilter],
     queryFn: async () => {
-      const endpoint = vehicleFilter === 'all' 
+      const endpoint = vehicleFilter === 'all'
         ? '/api/vehicles/with-reservations'
         : `/api/vehicles/filtered?filterType=${vehicleFilter}`;
       const response = await fetch(endpoint);
       if (!response.ok) throw new Error('Failed to fetch vehicles');
       return response.json();
-    }
+    },
+    enabled: canViewVehiclesForCommunications,
   });
 
-  // Fetch customers 
+  // Fetch customers
   const { data: customers = [] } = useQuery<Customer[]>({
-    queryKey: ['/api/customers']
+    queryKey: ['/api/customers'],
+    enabled: canViewCustomers,
   });
 
   // Fetch customers with reservation status for custom messages
@@ -129,22 +152,23 @@ export default function CustomerCommunications() {
         const customersResponse = await fetch('/api/customers');
         if (!customersResponse.ok) throw new Error('Failed to fetch customers');
         const allCustomers = await customersResponse.json();
-        
+
         // Get reservations to determine which customers have active reservations
         const reservationsResponse = await fetch('/api/reservations');
         const reservations = reservationsResponse.ok ? await reservationsResponse.json() : [];
-        
+
         return allCustomers.map((customer: any) => ({
           ...customer,
-          hasActiveReservation: reservations.some((res: any) => 
-            res.customerId === customer.id && 
-            new Date(res.startDate) <= new Date() && 
+          hasActiveReservation: reservations.some((res: any) =>
+            res.customerId === customer.id &&
+            new Date(res.startDate) <= new Date() &&
             new Date(res.endDate) >= new Date()
           )
         }));
       }
       return response.json();
-    }
+    },
+    enabled: canViewCustomers,
   });
 
   // Fetch email logs
@@ -938,12 +962,14 @@ export default function CustomerCommunications() {
 
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
-                {filteredVehicles.slice(0, 50).map((item: any) => {
+                {!canViewVehiclesForCommunications ? (
+                  <NoDataAccess permission={UserPermission.VIEW_VEHICLES} className="md:col-span-2 lg:col-span-3" />
+                ) : filteredVehicles.slice(0, 50).map((item: any) => {
                   const vehicle = item.vehicle;
                   const customer = item.customer;
                   const filterInfo = item.filterInfo;
                   const isSelected = selectedVehicles.some(v => v.id === vehicle.id);
-                  
+
                   // Determine urgency color
                   const getUrgencyColor = (urgency: string) => {
                     switch (urgency) {
@@ -1126,12 +1152,14 @@ export default function CustomerCommunications() {
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
-                {filteredVehicles.slice(0, 50).map((item: any) => {
+                {!canViewVehiclesForCommunications ? (
+                  <NoDataAccess permission={UserPermission.VIEW_VEHICLES} className="md:col-span-2 lg:col-span-3" />
+                ) : filteredVehicles.slice(0, 50).map((item: any) => {
                   const vehicle = item.vehicle;
                   const customer = item.customer;
                   const filterInfo = item.filterInfo;
                   const isSelected = selectedVehicles.some(v => v.id === vehicle.id);
-                  
+
                   return (
                     <div
                       key={vehicle.id}
@@ -1291,9 +1319,11 @@ export default function CustomerCommunications() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-2 max-h-96 overflow-y-auto">
-                  {filteredCustomers.slice(0, 50).map((customer: any) => {
+                  {!canViewCustomers ? (
+                    <NoDataAccess permission={UserPermission.VIEW_CUSTOMERS} />
+                  ) : filteredCustomers.slice(0, 50).map((customer: any) => {
                     const isSelected = selectedCustomers.some(c => c.id === customer.id);
-                    
+
                     return (
                       <div
                         key={customer.id}
@@ -1352,11 +1382,13 @@ export default function CustomerCommunications() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-2 max-h-96 overflow-y-auto">
-                  {filteredVehicles.slice(0, 50).map((item: any) => {
+                  {!canViewVehiclesForCommunications ? (
+                    <NoDataAccess permission={UserPermission.VIEW_VEHICLES} />
+                  ) : filteredVehicles.slice(0, 50).map((item: any) => {
                     const vehicle = item.vehicle;
                     const customer = item.customer;
                     const isSelected = selectedVehicles.some(v => v.id === vehicle.id);
-                    
+
                     return (
                       <div
                         key={vehicle.id}
