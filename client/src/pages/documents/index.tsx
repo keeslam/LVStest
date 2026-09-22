@@ -79,9 +79,18 @@ export default function DocumentsIndex() {
     queryKey: ["/api/documents"],
   });
 
+  // The page's own permission is VIEW_DOCUMENTS/MANAGE_DOCUMENTS; this query
+  // needs the vehicle family instead (GET /api/vehicles, routes.ts:646).
+  // Only enriches: the vehicle filter dropdown, the upload dialog's
+  // selector, and the group header's vehicle name (falls back to
+  // "Vehicle #<id>" already, a name next to an id) - the document list
+  // itself comes from /api/documents above and stays intact, so a denied
+  // user just loses those niceties, left out silently, no NoDataAccess.
+  const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
   // Fetch vehicles for filter
   const { data: vehicles } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
+    enabled: canViewVehicles,
   });
 
   // Fetch templates
