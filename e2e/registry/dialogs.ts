@@ -72,22 +72,40 @@ export const DIALOGS: DialogEntry[] = [
   { page: "/vehicles", opener: "button-bulk-import", anyOf: [P.MANAGE_VEHICLES], source: "client/src/components/vehicles/vehicle-bulk-import-dialog.tsx", name: "voertuigen bulk-importeren" },
 
   // --- /reservations -------------------------------------------------------
+  // Read-only openers (list/history/search-and-sort table, no mutation of
+  // their own) — anyOf stays the page's own VIEW_RESERVATIONS/MANAGE_RESERVATIONS
+  // gate, per §4 "a control whose dialog only READS is not disabled".
   { page: "/reservations", opener: "button-list-view", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], source: "client/src/components/reservations/reservation-list-dialog.tsx", name: "reserveringen als lijst" },
   { page: "/reservations", opener: "button-view-completed", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], source: "client/src/pages/reservations/calendar.tsx", name: "afgeronde verhuringen" },
   { page: "/reservations", opener: "button-administration", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], source: "client/src/pages/reservations/calendar.tsx", name: "administratie" },
+  // Task 4: wrapped in RequiresPermission anyOf={[MANAGE_RESERVATIONS]},
+  // narrower than the page's own gate, matching POST /api/reservations
+  // (routes.ts:2966, MANAGE_RESERVATIONS).
+  { page: "/reservations", opener: "button-new-reservation", anyOf: [P.MANAGE_RESERVATIONS], source: "client/src/components/reservations/reservation-add-dialog.tsx", name: "nieuwe reservering" },
 
   // --- /maintenance --------------------------------------------------------
+  // list-view and view-completed only open a read-only list/history — not
+  // wrapped in RequiresPermission (§4: a control whose dialog only reads is
+  // not disabled), anyOf stays the page's own MANAGE_MAINTENANCE gate.
   { page: "/maintenance", opener: "button-maintenance-list-view", anyOf: [P.MANAGE_MAINTENANCE], source: "client/src/components/maintenance/maintenance-list-dialog.tsx", name: "onderhoud als lijst" },
   { page: "/maintenance", opener: "button-view-completed", anyOf: [P.MANAGE_MAINTENANCE], source: "client/src/pages/maintenance/calendar.tsx", name: "afgerond onderhoud" },
-  { page: "/maintenance", opener: "button-schedule-maintenance", anyOf: [P.MANAGE_MAINTENANCE], source: "client/src/components/maintenance/schedule-maintenance-dialog.tsx", name: "onderhoud inplannen" },
+  // Task 4 finding (docs/superpowers/specs/2026-09-21-toegang-design.md, §5):
+  // ScheduleMaintenanceDialog's create-mode submit is POST /api/reservations
+  // (MANAGE_RESERVATIONS only) — not MANAGE_MAINTENANCE, this page's own
+  // access permission. Reported to the owner (task-4-report.md); the route is
+  // not maintenance-exclusive, so it is not widened.
+  { page: "/maintenance", opener: "button-schedule-maintenance", anyOf: [P.MANAGE_RESERVATIONS], source: "client/src/components/maintenance/schedule-maintenance-dialog.tsx", name: "onderhoud inplannen" },
 
   // --- /documents ----------------------------------------------------------
   // All four dialog roots are inline in documents/index.tsx itself, each
   // behind its own tab (default tab is "library"), so each needs `via`.
-  { page: "/documents", opener: "button-open-template-editor", via: "tab-contract-templates", anyOf: [P.VIEW_DOCUMENTS, P.MANAGE_DOCUMENTS], source: "client/src/pages/documents/index.tsx", name: "contractsjabloon-editor" },
-  { page: "/documents", opener: "button-open-transport-template-editor", via: "tab-transport-templates", anyOf: [P.VIEW_DOCUMENTS, P.MANAGE_DOCUMENTS], source: "client/src/pages/documents/index.tsx", name: "transportrapport-sjabloon-editor" },
-  { page: "/documents", opener: "button-open-barcode-label-editor", via: "tab-barcode-labels", anyOf: [P.VIEW_DOCUMENTS, P.MANAGE_DOCUMENTS], source: "client/src/pages/documents/index.tsx", name: "barcode-labelsjabloon-editor" },
-  { page: "/documents", opener: "button-open-damage-check-studio", via: "tab-damage-check-templates", anyOf: [P.VIEW_DOCUMENTS, P.MANAGE_DOCUMENTS], source: "client/src/pages/documents/index.tsx", name: "schadecontrole-sjablonen-studio" },
+  // Task 4: each wrapped in RequiresPermission with exactly the permission
+  // its editor's own save/delete routes need — narrower than the page's own
+  // VIEW_DOCUMENTS/MANAGE_DOCUMENTS gate.
+  { page: "/documents", opener: "button-open-template-editor", via: "tab-contract-templates", anyOf: [P.MANAGE_PDF_TEMPLATES], source: "client/src/pages/documents/index.tsx", name: "contractsjabloon-editor" },
+  { page: "/documents", opener: "button-open-transport-template-editor", via: "tab-transport-templates", anyOf: [P.MANAGE_PDF_TEMPLATES], source: "client/src/pages/documents/index.tsx", name: "transportrapport-sjabloon-editor" },
+  { page: "/documents", opener: "button-open-barcode-label-editor", via: "tab-barcode-labels", anyOf: [P.MANAGE_PDF_TEMPLATES], source: "client/src/pages/documents/index.tsx", name: "barcode-labelsjabloon-editor" },
+  { page: "/documents", opener: "button-open-damage-check-studio", via: "tab-damage-check-templates", anyOf: [P.MANAGE_DAMAGE_CHECKS], source: "client/src/pages/documents/index.tsx", name: "schadecontrole-sjablonen-studio" },
 
   // --- /delivery -------------------------------------------------------------
   { page: "/delivery", opener: "button-new-transport", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], source: "client/src/components/delivery/transport-dialog.tsx", name: "nieuw transport" },

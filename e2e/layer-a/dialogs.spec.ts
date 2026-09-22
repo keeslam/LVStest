@@ -2,6 +2,7 @@ import { test, expect, settle } from "../support/guards";
 import { ROLES, authFile, can } from "../support/roles";
 import { DIALOGS } from "../registry/dialogs";
 import { permissionLabel } from "../../shared/permission-labels";
+import { pageAccessFor } from "../../shared/page-access";
 
 /**
  * Task 3 (docs/superpowers/specs/2026-09-21-toegang-design.md, §4) only
@@ -15,15 +16,25 @@ import { permissionLabel } from "../../shared/permission-labels";
  * RequiresPermission.
  */
 const NOT_YET_GATED_PAGES = new Set([
-  "/reservations",
-  "/maintenance",
-  "/expenses",
-  "/documents",
   "/delivery",
   "/reports",
   "/customers",
-  "/portal-admin",
 ]);
+
+/**
+ * Whether `role` can open `page` at all, per the same table `ProtectedRoute`
+ * uses (shared/page-access.ts, Task 2). A role that cannot open the page gets
+ * the no-access page instead of the page component — the opener never
+ * mounts, so there is nothing for the "visible, disabled, explains itself"
+ * branch below to find. That combination is `forbidden.spec.ts`'s job, not
+ * this spec's; a page with no row in the table (none today) is open to any
+ * logged-in role, matching `canOpenPage`'s own contract.
+ */
+function roleCanOpenPage(role: (typeof ROLES)[number], page: string): boolean {
+  const access = pageAccessFor(page);
+  if (!access) return true;
+  return can(role, access.anyOf);
+}
 
 for (const role of ROLES) {
   test.describe(`dialogs as ${role}`, () => {
@@ -31,9 +42,11 @@ for (const role of ROLES) {
     for (const entry of DIALOGS) {
       const allowed = can(role, entry.anyOf);
       // Hidden-on-purpose openers (admin-only today, B-27 keeps them hidden
-      // rather than disabled) and pages Task 4 has not gated yet keep the old
-      // skip: there is nothing meaningful to assert for this role here.
-      if (!allowed && (entry.hiddenWithoutRight || NOT_YET_GATED_PAGES.has(entry.page))) continue;
+      // rather than disabled), pages Task 4 has not gated yet, and a role
+      // that cannot even open the page (forbidden.spec.ts's job, not this
+      // spec's) keep the old skip: there is nothing meaningful to assert for
+      // this role here.
+      if (!allowed && (entry.hiddenWithoutRight || NOT_YET_GATED_PAGES.has(entry.page) || !roleCanOpenPage(role, entry.page))) continue;
 
       if (allowed) {
         test(`${entry.page}: ${entry.name}`, async ({ page, health }) => {
