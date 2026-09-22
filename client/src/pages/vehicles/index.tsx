@@ -34,6 +34,7 @@ import { Search, SlidersHorizontal, Edit, Trash2, Archive, BookOpen, KeyRound } 
 import { useAuth } from "@/hooks/use-auth";
 import { UserPermission, UserRole } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useHasPermission } from "@/hooks/use-has-permission";
 
 // Feature-based filter options. Each maps a user-facing label to the boolean
 // column on the vehicle record. A vehicle "has" the feature when isTrueValue()
@@ -99,9 +100,17 @@ export default function VehiclesIndex() {
     queryKey: ["/api/vehicles"],
   });
   
+  // The page's own permission is VIEW_VEHICLES/MANAGE_VEHICLES; this query
+  // needs the reservation family instead (GET /api/reservations,
+  // routes.ts:2829). It only enriches each row (a rented/spare badge,
+  // fact sheet row 2) - the vehicle list itself comes from /api/vehicles
+  // above and stays intact - so a denied user just sees rows without that
+  // badge, left out silently, no NoDataAccess.
+  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
   // Fetch reservations to check for spare vehicle assignments
   const { data: reservations } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations"],
+    enabled: canViewReservations,
   });
   
   // Dialog handlers
