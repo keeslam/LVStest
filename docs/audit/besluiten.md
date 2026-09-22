@@ -254,6 +254,17 @@ Raakt: BUG-163, V-12.
 **Besluit:** het veld mag leeg blijven, maar is het ingevuld, dan moet het uniek zijn.
 Raakt: BUG-045, V-13.
 
+### B-36 — Aparte prullenbakken per soort (aanvulling op B-15 en B-33)
+**Besluit (22-09-2026, letterlijk):** "het moeten wel aparte prullenbakken zijn dat houd het
+een stuk overzichtelijker, dus er komt een prullenbak op alle paginas die ook de prullenbak
+gebruiken op de voertuigenpagina."
+Vandaag is er één gedeeld venster onder Voertuigen (knop "Verwijderde voertuigen") met alle
+soorten door elkaar; een verwijderd onderhoudsblok staat daar met het label "Reservering".
+Uitwerking: elk scherm krijgt zijn eigen prullenbak met alleen zijn eigen soort — Voertuigen,
+Klanten, Reserveringen, Onderhoud (eigen label), Transporten, Boetes (heeft al een gefilterd
+venster). Wordt gebouwd in deelproject C, samen met het legen (B-33).
+Raakt: B-15, B-33, BUG-140, BUG-151.
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
 - (beslist, zie B-17) OPT-001 — wat telt als "openstaand punt" op het werkdagscherm.
