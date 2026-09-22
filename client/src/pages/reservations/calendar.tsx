@@ -56,6 +56,7 @@ import { StatusChangeDialog } from "@/components/reservations/status-change-dial
 import { EditContractNumberDialog } from "@/components/reservations/edit-contract-number-dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { UserPermission, UserRole } from "@shared/schema";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
 import { ColorCodingDialog } from "@/components/calendar/color-coding-dialog";
 import { CalendarLegend } from "@/components/calendar/calendar-legend";
@@ -1069,6 +1070,12 @@ export default function ReservationCalendarPage() {
               {t('calendarPage.overdueButton', { count: overdueReservations.length })}
             </Button>
           )}
+          {/* Task 4: the Administration dialog is a read-only searchable/sortable
+              table of current + past rentals (verified by reading its full
+              content) — no mutation of its own, per §4 "a control whose
+              dialog only READS is not disabled". Row clicks open the same
+              reservation-detail dialog whose own action buttons are gated
+              below individually. */}
           <Button variant="outline" onClick={() => setAdminDialogOpen(true)} data-testid="button-administration">
             <FileText className="h-4 w-4 mr-2" />
             {t('calendarPage.administrationButton')}
@@ -1093,13 +1100,15 @@ export default function ReservationCalendarPage() {
               }
             }}
           >
-            <Button>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus mr-2">
-                <line x1="12" x2="12" y1="5" y2="19" />
-                <line x1="5" x2="19" y1="12" y2="12" />
-              </svg>
-              {t('addDialog.newReservation')}
-            </Button>
+            <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+              <Button data-testid="button-new-reservation">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus mr-2">
+                  <line x1="12" x2="12" y1="5" y2="19" />
+                  <line x1="5" x2="19" y1="12" y2="12" />
+                </svg>
+                {t('addDialog.newReservation')}
+              </Button>
+            </RequiresPermission>
           </ReservationAddDialog>
         </div>
       </div>
@@ -2187,10 +2196,11 @@ export default function ReservationCalendarPage() {
                       { type: 'Fuel Receipt', labelKey: 'calendarPage.quickUploadTypes.fuelReceipt', accept: 'image/*,.pdf' },
                       { type: 'Other', labelKey: 'form.docTypes.other', accept: '.pdf,.jpg,.jpeg,.png,.doc,.docx' }
                     ].map(({ type, labelKey, accept }) => (
+                      <RequiresPermission key={type} anyOf={[UserPermission.MANAGE_DOCUMENTS]}>
                       <Button
-                        key={type}
                         variant="outline"
                         size="sm"
+                        data-testid={`button-upload-${type.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`}
                         onClick={() => {
                           const input = document.createElement('input');
                           input.type = 'file';
@@ -2241,6 +2251,7 @@ export default function ReservationCalendarPage() {
                       >
                         + {t(labelKey)}
                       </Button>
+                      </RequiresPermission>
                     ))}
                   </div>
 
@@ -2249,16 +2260,18 @@ export default function ReservationCalendarPage() {
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="text-[10px] font-semibold text-gray-700">{t('calendarPage.uploadedColonLabel')}</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEmailDialogOpen(true)}
-                          className="h-6 text-[10px] gap-1"
-                          data-testid="button-email-documents"
-                        >
-                          <Mail className="h-3 w-3" />
-                          {t('calendarPage.emailToCustomerButton')}
-                        </Button>
+                        <RequiresPermission anyOf={[UserPermission.MANAGE_DOCUMENTS]}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEmailDialogOpen(true)}
+                            className="h-6 text-[10px] gap-1"
+                            data-testid="button-email-documents"
+                          >
+                            <Mail className="h-3 w-3" />
+                            {t('calendarPage.emailToCustomerButton')}
+                          </Button>
+                        </RequiresPermission>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {/* Group documents by type */}
@@ -2347,20 +2360,23 @@ export default function ReservationCalendarPage() {
                               </div>
                             </div>
                           </Button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDocumentToDelete(doc);
-                              setDeleteDocDialogOpen(true);
-                            }}
-                            className="absolute top-1 right-1 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-opacity"
-                            title={t('viewDialog.deleteDocumentTooltip')}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <line x1="18" y1="6" x2="6" y2="18"></line>
-                              <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                          </button>
+                          <RequiresPermission anyOf={[UserPermission.MANAGE_DOCUMENTS]}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDocumentToDelete(doc);
+                                setDeleteDocDialogOpen(true);
+                              }}
+                              className="absolute top-1 right-1 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-opacity"
+                              title={t('viewDialog.deleteDocumentTooltip')}
+                              data-testid={`button-delete-document-${doc.id}`}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                              </svg>
+                            </button>
+                          </RequiresPermission>
                         </div>
                       );
                     })}
@@ -2381,30 +2397,34 @@ export default function ReservationCalendarPage() {
                     <div className="flex gap-2">
                       {/* Show Create Return Check button if there's a pickup check */}
                       {reservationDamageChecks && reservationDamageChecks.some(c => c.checkType === 'pickup') && (
+                        <RequiresPermission anyOf={[UserPermission.MANAGE_DAMAGE_CHECKS]}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const pickupCheck = reservationDamageChecks.find(c => c.checkType === 'pickup');
+                              if (pickupCheck) {
+                                handleOpenDamageCheckDialog(null, pickupCheck.id);
+                              }
+                            }}
+                            className="h-7 text-xs bg-green-50 hover:bg-green-100 border-green-300 text-green-700"
+                            data-testid="button-create-return-check"
+                          >
+                            {t('calendarPage.createReturnCheckButton')}
+                          </Button>
+                        </RequiresPermission>
+                      )}
+                      <RequiresPermission anyOf={[UserPermission.MANAGE_DAMAGE_CHECKS]}>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
-                            const pickupCheck = reservationDamageChecks.find(c => c.checkType === 'pickup');
-                            if (pickupCheck) {
-                              handleOpenDamageCheckDialog(null, pickupCheck.id);
-                            }
-                          }}
-                          className="h-7 text-xs bg-green-50 hover:bg-green-100 border-green-300 text-green-700"
-                          data-testid="button-create-return-check"
+                          onClick={() => handleOpenDamageCheckDialog(null, null)}
+                          className="h-7 text-xs"
+                          data-testid="button-create-damage-check"
                         >
-                          {t('calendarPage.createReturnCheckButton')}
+                          {t('calendarPage.createDamageCheckButton')}
                         </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenDamageCheckDialog(null, null)}
-                        className="h-7 text-xs"
-                        data-testid="button-create-damage-check"
-                      >
-                        {t('calendarPage.createDamageCheckButton')}
-                      </Button>
+                      </RequiresPermission>
                     </div>
                   </div>
 
@@ -2427,15 +2447,17 @@ export default function ReservationCalendarPage() {
                               )}
                             </div>
                             <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleOpenDamageCheckDialog(check.id)}
-                                className="h-6 px-2 text-xs"
-                                data-testid={`button-edit-damage-check-${check.id}`}
-                              >
-                                {t('common:actions.edit')}
-                              </Button>
+                              <RequiresPermission anyOf={[UserPermission.MANAGE_DAMAGE_CHECKS]}>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleOpenDamageCheckDialog(check.id)}
+                                  className="h-6 px-2 text-xs"
+                                  data-testid={`button-edit-damage-check-${check.id}`}
+                                >
+                                  {t('common:actions.edit')}
+                                </Button>
+                              </RequiresPermission>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -2445,15 +2467,17 @@ export default function ReservationCalendarPage() {
                               >
                                 {t('detailsPage.viewPdfButton')}
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteDamageCheck(check.id)}
-                                className="h-6 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                                data-testid={`button-delete-damage-check-${check.id}`}
-                              >
-                                {t('common:actions.delete')}
-                              </Button>
+                              <RequiresPermission anyOf={[UserPermission.MANAGE_DAMAGE_CHECKS]}>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteDamageCheck(check.id)}
+                                  className="h-6 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  data-testid={`button-delete-damage-check-${check.id}`}
+                                >
+                                  {t('common:actions.delete')}
+                                </Button>
+                              </RequiresPermission>
                             </div>
                           </div>
                         ))}
@@ -2507,87 +2531,105 @@ export default function ReservationCalendarPage() {
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4 border-t">
                 {selectedReservation.status === 'booked' && (
-                  <Button 
-                    className="flex-1"
-                    onClick={() => {
-                      setPickupDialogOpen(true);
-                    }}
-                    data-testid="button-start-pickup-calendar"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                      <circle cx="12" cy="10" r="3"></circle>
-                    </svg>
-                    {t('viewDialog.startPickupButton')}
-                  </Button>
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                    <Button
+                      className="flex-1"
+                      onClick={() => {
+                        setPickupDialogOpen(true);
+                      }}
+                      data-testid="button-start-pickup-calendar"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                      </svg>
+                      {t('viewDialog.startPickupButton')}
+                    </Button>
+                  </RequiresPermission>
                 )}
 
                 {selectedReservation.status === 'picked_up' && (
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                    <Button
+                      className="flex-1"
+                      onClick={() => {
+                        setReturnDialogOpen(true);
+                      }}
+                      data-testid="button-start-return-calendar"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                        <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"></path>
+                        <path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9"></path>
+                        <path d="M12 3v6"></path>
+                      </svg>
+                      {t('viewDialog.startReturnButton')}
+                    </Button>
+                  </RequiresPermission>
+                )}
+
+                <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
                   <Button
                     className="flex-1"
                     onClick={() => {
-                      setReturnDialogOpen(true);
+                      handleEditReservation(selectedReservation);
                     }}
-                    data-testid="button-start-return-calendar"
+                    data-testid="button-edit-reservation-dialog"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                      <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"></path>
-                      <path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9"></path>
-                      <path d="M12 3v6"></path>
-                    </svg>
-                    {t('viewDialog.startReturnButton')}
+                    <Edit className="mr-2 h-4 w-4" />
+                    {t('common:actions.edit')}
                   </Button>
-                )}
-
-                <Button
-                  className="flex-1"
-                  onClick={() => {
-                    handleEditReservation(selectedReservation);
-                  }}
-                  data-testid="button-edit-reservation-dialog"
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  {t('common:actions.edit')}
-                </Button>
+                </RequiresPermission>
                 {selectedReservation.status === 'picked_up' && (
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        handleStatusChange(selectedReservation);
+                      }}
+                      data-testid="button-change-status-dialog"
+                      title={t('quickStatusButton.revertToBooked')}
+                    >
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      {t('calendarPage.hoverCard.revertButton')}
+                    </Button>
+                  </RequiresPermission>
+                )}
+                {selectedReservation.status === 'picked_up' && (
+                  // Task 4 finding (docs/superpowers/specs/2026-09-21-toegang-design.md,
+                  // §5): this opens ScheduleMaintenanceDialog with no
+                  // editingReservation (create mode) — its submit is POST
+                  // /api/reservations, MANAGE_RESERVATIONS only, not "OR
+                  // MANAGE_MAINTENANCE" (see maintenance/calendar.tsx's
+                  // button-schedule-maintenance for the same finding).
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsServiceDialogOpen(true)}
+                      data-testid="button-send-to-service"
+                    >
+                      <Wrench className="mr-2 h-4 w-4" />
+                      {t('calendarPage.serviceButton')}
+                    </Button>
+                  </RequiresPermission>
+                )}
+                <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
                   <Button
-                    variant="outline"
+                    variant="destructive"
                     onClick={() => {
-                      handleStatusChange(selectedReservation);
+                      setViewDialogOpen(false);
+                      setSelectedReservation(null);
+                      // Return to list if opened from there
+                      if (openedFromListView) {
+                        setListDialogOpen(true);
+                        setOpenedFromListView(false);
+                      }
+                      handleDeleteReservation(selectedReservation);
                     }}
-                    data-testid="button-change-status-dialog"
-                    title={t('quickStatusButton.revertToBooked')}
+                    data-testid="button-delete-reservation-dialog"
                   >
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    {t('calendarPage.hoverCard.revertButton')}
+                    <Trash2 className="mr-2 h-4 w-4" />
                   </Button>
-                )}
-                {selectedReservation.status === 'picked_up' && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsServiceDialogOpen(true)}
-                    data-testid="button-send-to-service"
-                  >
-                    <Wrench className="mr-2 h-4 w-4" />
-                    {t('calendarPage.serviceButton')}
-                  </Button>
-                )}
-                <Button 
-                  variant="destructive"
-                  onClick={() => {
-                    setViewDialogOpen(false);
-                    setSelectedReservation(null);
-                    // Return to list if opened from there
-                    if (openedFromListView) {
-                      setListDialogOpen(true);
-                      setOpenedFromListView(false);
-                    }
-                    handleDeleteReservation(selectedReservation);
-                  }}
-                  data-testid="button-delete-reservation-dialog"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                </Button>
+                </RequiresPermission>
                 <Button 
                   variant="outline"
                   onClick={() => {
