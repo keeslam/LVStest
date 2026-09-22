@@ -66,24 +66,21 @@ dat automatisch aan het eind.
 
 ## Hoe lang het duurt
 
-Op deze machine, 22 september 2026 (na de doorlichting van de rechten en het negende
-profiel), één volledige `npm run e2e`:
+Op deze machine, 22 september 2026 (na de doorlichting van de rechten, het negende
+profiel en de nabeoordeling die volgde), één volledige `npm run e2e`:
 
 ```
-335 geslaagd, 8 bewust overgeslagen, 0 mislukt   (6,4 minuten)
+335 geslaagd, 2 bewust overgeslagen, 0 mislukt   (ruim 6 minuten)
 ```
 
-Van de acht overgeslagen tests zijn er twee al langer bekend (het `menu-settings`-venster
+Dat getal is de laatst volledig gemeten run, met de zes tests eraf die
+`allowedPathNeedsState` (zie hieronder) inmiddels niet meer aanmaakt — ze stonden erbij
+als "overgeslagen", niet als "geslaagd", dus het aantal geslaagde tests verandert niet.
+De twee overgebleven overslagen zijn allebei al langer bekend: het `menu-settings`-venster
 voor de beheerder, en de gekwarantaineerde 1280x800-test van het Logboek — beide met hun
-eigen `test.fixme`-reden in de broncode). De overige zes zijn nieuw, sinds het negende
-profiel: de drie voorbeeld-en-verzendknoppen op **Communicatie** vragen zowel een recht
-(`manage_notifications`) als een keuze van voertuig/klant en sjabloon die deze testsuite
-niet zet, dus voor de beheerder en de manager — die het recht al hebben — legt
-`dialogs.spec.ts` die drie knoppen bewust stil in plaats van er blind op te klikken; het
-`templates-only`-profiel (dat het recht niet heeft) doorloopt gewoon zijn eigen,
-niet-overgeslagen test die laat zien dat de knop zichtbaar, uitgeschakeld en verklarend
-is. Reken op **ruim zes minuten**, niet op één exact getal: het scheelt of de applicatie
-opnieuw gebouwd moet worden en wat de machine verder te doen heeft.
+eigen `test.fixme`-reden in de broncode. Reken op **ruim zes minuten**, niet op één exact
+getal: het scheelt of de applicatie opnieuw gebouwd moet worden en wat de machine verder
+te doen heeft.
 
 Het dekkingsoverzicht van de vensters (`npm run e2e:coverage`, draait ook automatisch
 aan het eind van `npm run e2e`):
@@ -95,8 +92,9 @@ Vensters: 119 bestanden met een venster, 30 bereikt door een test, 89 nog niet
 Dat is precies de vastgelegde grens, dus er is niets achteruitgegaan.
 
 **Ruim zes minuten is meer dan de streefwaarde van vijf.** Het langzaamste deel is met
-afstand `e2e/layer-a/dialogs.spec.ts`: in de hierboven gemeten run 194 van de 343 tests
-en samen 802 seconden testtijd, ruim drie vijfde van de 1360 seconden die alle tests bij
+afstand `e2e/layer-a/dialogs.spec.ts`: 188 van de 337 tests (`npx playwright test -c
+e2e/playwright.config.ts --project=layer-a --list` telt ze precies) en samen zo'n 800
+seconden testtijd, ruim drie vijfde van de ongeveer 1360 seconden die alle tests bij
 elkaar kosten. Die tests draaien met vier tegelijk, dus in werkelijke tijd is het
 ongeveer drie en een derde minuut. De rest van diezelfde run: de schermen per rol
 (221 s), de schermen zonder rechten (228 s), de bewakingstests (43 s) en alle
@@ -112,7 +110,7 @@ andere machine sneller wil proberen, kan `E2E_WORKERS` op een ander getal zetten
   kopie, maar vanaf niets: het schema wordt neergezet en daarna draait de echte
   migratie eroverheen — dezelfde weg die een nieuwe productiedatabase aflegt. Zo valt een
   ontbrekende kolom op vóór een medewerker hem tegenkomt.
-- Daarna wordt er vaste testdata ingezet: acht medewerkers (één per profiel), acht
+- Daarna wordt er vaste testdata ingezet: negen medewerkers (één per profiel), acht
   voertuigen, zes klanten en reserveringen in elke status.
 - De applicatie start op **poort 5010**, apart van alles wat er verder draait. De
   kentekenopzoeking praat met een klein lokaal antwoordapparaat op poort 5011.
@@ -164,9 +162,18 @@ groene run staat er dus niets.
 - Vensters die alleen opengaan bij een bepaald record (een opgehaalde huur, een
   bekeuring) horen niet in laag A maar in laag B, en worden daar in
   `LAYER_B_SOURCES` genoemd.
+- Een knop die WEL een vast scherm heeft maar waarvan het TOEGESTANE pad niet zonder
+  een bestaand record kan (een sjabloon kiezen, een voertuig selecteren — iets wat deze
+  testsuite niet zelf aanmaakt) krijgt op zijn `DialogEntry` het veld
+  `allowedPathNeedsState: "<reden>"`. `dialogs.spec.ts` maakt dan voor een rol die het
+  recht al heeft helemaal geen test aan (geen `test.fixme`, geen overgeslagen test in
+  het verslag) — dat bewijs hoort bij een laag-B-werkstroom. De WEIGERING blijft wel
+  gewoon een echte test: die leest alleen `RequiresPermission`'s tekstballon en klikt
+  nooit. Voorbeeld: de drie voorbeeld-en-verzendknoppen op **Communicatie**
+  (`e2e/registry/dialogs.ts`, sectie `/communications`).
 
 **Het dekkingsgetal mag alleen omlaag.** In `e2e/registry/coverage-baseline.json` staat
-hoeveel bestanden met een venster nog niet door een test worden geopend (nu 90). Kijk
+hoeveel bestanden met een venster nog niet door een test worden geopend (nu 89). Kijk
 daar voor het getal van vandaag, want het hoort langzaam te dalen.
 Wordt dat getal hoger, dan stopt `npm run e2e` met een fout. Bereik je een venster meer,
 dan zet je het getal één lager. Andersom nooit.
