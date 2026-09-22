@@ -11,13 +11,18 @@ import { UserPermission as P, UserRole } from "./schema";
  * client (like `shared/schema.ts` already is, e.g. in the sidebar) as well as
  * imported by the server and by the E2E suite.
  *
- * Rows are the sidebar's current entries with the two changes the owner
- * decided (B-29) plus the two screens reachable without a menu entry:
+ * Rows are the sidebar's current entries with the changes the owner
+ * decided (B-29, B-29a) plus the two screens reachable without a menu entry:
  * - `/delivery`: widened from reservations-only to reservations OR vehicles
  *   (matches the `GET /api/transports` guard already in place).
- * - `/communications`: narrowed to `manage_email_templates` only (the send
- *   controls stay gated by `manage_notifications` separately, on the
- *   controls themselves, not on opening the screen).
+ * - `/communications`: opens for `manage_notifications` OR
+ *   `manage_email_templates` (B-29a — an account that may only send
+ *   notifications must not lose the screen because template management
+ *   needs the other permission). Template MANAGEMENT (create, edit,
+ *   delete, the e-mail log) stays behind `manage_email_templates` alone,
+ *   and sending stays behind `manage_notifications` alone, both gated on
+ *   the controls themselves (RequiresPermission), not on opening the
+ *   screen.
  * - `/reservations/edit/:id` and `/expenses/add` have no sidebar entry but
  *   are real screens with their own access rule.
  */
@@ -40,10 +45,11 @@ export const PAGE_ACCESS: readonly PageAccess[] = [
   { path: "/documents", anyOf: [P.VIEW_DOCUMENTS, P.MANAGE_DOCUMENTS] },
   // B-29: everyone who may see reservations OR vehicles gets the menu item.
   { path: "/delivery", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS, P.VIEW_VEHICLES, P.MANAGE_VEHICLES] },
-  // B-29: opening the screen needs "e-mailsjablonen beheren" only; the send
-  // buttons additionally need "meldingen beheren" (RequiresPermission, §4 —
-  // not built in this task).
-  { path: "/communications", anyOf: [P.MANAGE_EMAIL_TEMPLATES] },
+  // B-29a: opening the screen accepts "meldingen beheren" OR "e-mailsjablonen
+  // beheren"; template management additionally needs "e-mailsjablonen
+  // beheren" and sending additionally needs "meldingen beheren"
+  // (RequiresPermission, §4, on the controls themselves).
+  { path: "/communications", anyOf: [P.MANAGE_NOTIFICATIONS, P.MANAGE_EMAIL_TEMPLATES] },
   { path: "/reports", anyOf: [P.VIEW_REPORTS, P.MANAGE_REPORTS] },
   // Screens without a menu entry, listed after the 12 above so
   // firstOpenablePage() only ever offers a menu screen as the way out.

@@ -345,10 +345,14 @@ foutmelding en geen scherm dat blijft laden.
 scherm toont de overbrengingen die bij een verhuring of een voertuig horen, dus wie een van de
 twee al mag zien, moet dat ook hier kunnen volgen.
 
-**Communicatie** vraagt het recht **E-mailsjablonen beheren** om het scherm te mogen openen. Sta
-je erop, maar wil je ook echt een herinnering versturen (APK, garantie, onderhoud, of een eigen
-bericht), dan heb je daarnaast **Meldingen beheren** nodig. Zonder dat recht staan de
-verstuurknoppen er wel, maar grijs — zie 15.9.
+**Communicatie** vraagt **Meldingen beheren** ÓF **E-mailsjablonen beheren** om het scherm te
+mogen openen — wie meldingen mag versturen, verliest het scherm niet omdat sjablonen apart
+staan. Sjabloonbeheer (een sjabloon aanmaken, bewerken, verwijderen, en het e-maillogboek)
+blijft voorbehouden aan **E-mailsjablonen beheren** (met opzet alleen voor admin en manager);
+zonder dat recht staan die knoppen er wel, maar grijs, of toont het scherm "geen toegang tot
+deze gegevens" — zie 15.9. Een herinnering of eigen bericht versturen (APK, garantie,
+onderhoud) vraagt **Meldingen beheren**; zonder dat recht staan de verstuurknoppen er ook wel,
+maar grijs.
 
 **Onderhoud** vraagt het recht **Onderhoud beheren** om het scherm te mogen openen. Wat dat recht
 daar concreet wel en niet dekt, staat in 15.11.

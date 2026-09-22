@@ -14,11 +14,12 @@ describe("page-access", () => {
     expect(canOpenPage({ role: UserRole.USER, permissions: [P.VIEW_VEHICLES] }, "/delivery")).toBe(true);
   });
 
-  it("/communications does not accept manage_notifications alone (B-29: templates only)", () => {
+  it("/communications accepts either manage_notifications or manage_email_templates (B-29a)", () => {
     const entry = pageAccessFor("/communications");
-    expect(entry?.anyOf).toEqual([P.MANAGE_EMAIL_TEMPLATES]);
-    expect(canOpenPage({ role: UserRole.USER, permissions: [P.MANAGE_NOTIFICATIONS] }, "/communications")).toBe(false);
+    expect(entry?.anyOf).toEqual([P.MANAGE_NOTIFICATIONS, P.MANAGE_EMAIL_TEMPLATES]);
+    expect(canOpenPage({ role: UserRole.USER, permissions: [P.MANAGE_NOTIFICATIONS] }, "/communications")).toBe(true);
     expect(canOpenPage({ role: UserRole.USER, permissions: [P.MANAGE_EMAIL_TEMPLATES] }, "/communications")).toBe(true);
+    expect(canOpenPage({ role: UserRole.USER, permissions: [] }, "/communications")).toBe(false);
   });
 
   it("resolves the two menu-less screens", () => {

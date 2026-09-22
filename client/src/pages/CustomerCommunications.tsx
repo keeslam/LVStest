@@ -72,12 +72,13 @@ export default function CustomerCommunications() {
   // Vehicle filter is now based on communication mode
   const vehicleFilter = communicationMode === 'custom' ? 'all' : communicationMode;
 
-  // The page's own permission is MANAGE_EMAIL_TEMPLATES (B-29 narrowed it,
-  // shared/page-access.ts); none of these three recipient-list queries
-  // accept it (fact sheet row 12, "server narrower than menu, severely").
-  // The send buttons themselves already require MANAGE_NOTIFICATIONS
-  // separately (RequiresPermission, above) - this is about whether the
-  // recipient lists that feed those buttons can load at all.
+  // The page's own permission is MANAGE_NOTIFICATIONS OR MANAGE_EMAIL_TEMPLATES
+  // (B-29a, shared/page-access.ts) - none of these three recipient-list
+  // queries accept either one on its own (fact sheet row 12, "server
+  // narrower than menu, severely"). The send buttons themselves already
+  // require MANAGE_NOTIFICATIONS separately (RequiresPermission, above) -
+  // this is about whether the recipient lists that feed those buttons can
+  // load at all.
   const canViewCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
   // vehicleFilter === "all" hits GET /api/vehicles/with-reservations
   // (server/index.ts:415, a 4-way OR incl. reservation rights); any other
@@ -90,7 +91,14 @@ export default function CustomerCommunications() {
     UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS,
   );
   const canViewVehiclesForCommunications = vehicleFilter === 'all' ? canViewVehiclesWithReservations : canViewVehiclesFiltered;
-  
+
+  // B-29a: template MANAGEMENT (create, edit, delete, the e-mail log) stays
+  // behind MANAGE_EMAIL_TEMPLATES alone - GET/POST/PUT/DELETE /api/email-templates
+  // and GET /api/email-logs all accept exactly that one permission
+  // (server/index.ts:417/418), nothing wider. Gates the two queries below and
+  // every control that creates, edits, deletes or otherwise mutates a template.
+  const canManageEmailTemplates = useHasPermission(UserPermission.MANAGE_EMAIL_TEMPLATES);
+
   // Template builder state
   const [templateName, setTemplateName] = useState<string>("");
   const [templateSubject, setTemplateSubject] = useState<string>("");
@@ -112,7 +120,9 @@ export default function CustomerCommunications() {
 
   const { toast } = useToast();
 
-  // Fetch saved email templates
+  // Fetch saved email templates - B-29a: GET /api/email-templates accepts
+  // MANAGE_EMAIL_TEMPLATES only (server/index.ts:417), narrower than the
+  // page's own MANAGE_NOTIFICATIONS-OR-MANAGE_EMAIL_TEMPLATES gate.
   const { data: savedTemplates = [] } = useQuery({
     queryKey: ['/api/email-templates'],
     queryFn: async () => {
@@ -120,6 +130,7 @@ export default function CustomerCommunications() {
       if (!response.ok) throw new Error('Failed to fetch templates');
       return response.json();
     },
+    enabled: canManageEmailTemplates,
   });
 
   // Fetch vehicles with active reservations (filtered or all)
@@ -171,14 +182,16 @@ export default function CustomerCommunications() {
     enabled: canViewCustomers,
   });
 
-  // Fetch email logs
+  // Fetch email logs - B-29a: GET /api/email-logs also accepts
+  // MANAGE_EMAIL_TEMPLATES only (server/index.ts:418).
   const { data: emailLogs = [] } = useQuery({
     queryKey: ['/api/email-logs'],
     queryFn: async () => {
       const response = await fetch('/api/email-logs');
       if (!response.ok) throw new Error('Failed to fetch email logs');
       return response.json();
-    }
+    },
+    enabled: canManageEmailTemplates,
   });
 
   // Mock notification history for now - will be replaced with real data
@@ -1653,18 +1666,21 @@ export default function CustomerCommunications() {
               <h3 className="text-lg font-medium">{t('customerCommunications.templates.sectionTitle')}</h3>
               <p className="text-sm text-muted-foreground">{t('customerCommunications.templates.sectionDescription')}</p>
             </div>
-            <Button
-              onClick={() => {
-                setEditingTemplate(null);
-                setTemplateName("");
-                setTemplateSubject("");
-                setTemplateContent("");
-              }}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <Mail className="h-4 w-4 mr-2" />
-              {t('customerCommunications.templates.newTemplateButton')}
-            </Button>
+            <RequiresPermission anyOf={[UserPermission.MANAGE_EMAIL_TEMPLATES]}>
+              <Button
+                onClick={() => {
+                  setEditingTemplate(null);
+                  setTemplateName("");
+                  setTemplateSubject("");
+                  setTemplateContent("");
+                }}
+                className="bg-green-600 hover:bg-green-700"
+                data-testid="button-new-template"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                {t('customerCommunications.templates.newTemplateButton')}
+              </Button>
+            </RequiresPermission>
           </div>
 
           <div className="space-y-6">
@@ -1772,7 +1788,9 @@ export default function CustomerCommunications() {
 
 
                 <div className="flex space-x-2">
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_EMAIL_TEMPLATES]}>
                   <Button
+                    data-testid="button-save-template"
                     onClick={async () => {
                       if (!templateName.trim() || !templateSubject.trim() || !templateContent.trim()) {
                         toast({
@@ -1840,6 +1858,7 @@ export default function CustomerCommunications() {
                   >
                     {isLoadingTemplates ? t('customerCommunications.templates.savingButton') : (editingTemplate ? t('customerCommunications.templates.updateTemplateButton') : t('customerCommunications.templates.saveTemplateButton'))}
                   </Button>
+                  </RequiresPermission>
 
                   {editingTemplate && (
                     <Button
@@ -1947,26 +1966,35 @@ export default function CustomerCommunications() {
                 </div>
               </CardHeader>
               <CardContent>
-                {savedTemplates.length === 0 ? (
+                {!canManageEmailTemplates ? (
+                  // B-29a §3: the list itself is a query gated outside the
+                  // page's own permission family (MANAGE_EMAIL_TEMPLATES,
+                  // not MANAGE_NOTIFICATIONS) - a visible hole, not a
+                  // genuine "zero templates" state.
+                  <NoDataAccess permission={UserPermission.MANAGE_EMAIL_TEMPLATES} />
+                ) : savedTemplates.length === 0 ? (
                   <div className="text-center py-8">
                     <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-medium mb-2">{t('customerCommunications.templates.noTemplatesYetTitle')}</h3>
                     <p className="text-muted-foreground mb-4">
                       {t('customerCommunications.templates.noTemplatesYetDescription')}
                     </p>
-                    <Button
-                      onClick={() => {
-                        setEditingTemplate(null);
-                        setTemplateName("");
-                        setTemplateSubject("");
-                        setTemplateContent("");
-                        setTemplateCategory("custom");
-                      }}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <Mail className="h-4 w-4 mr-2" />
-                      {t('customerCommunications.templates.createTemplateButton')}
-                    </Button>
+                    <RequiresPermission anyOf={[UserPermission.MANAGE_EMAIL_TEMPLATES]}>
+                      <Button
+                        onClick={() => {
+                          setEditingTemplate(null);
+                          setTemplateName("");
+                          setTemplateSubject("");
+                          setTemplateContent("");
+                          setTemplateCategory("custom");
+                        }}
+                        className="bg-green-600 hover:bg-green-700"
+                        data-testid="button-create-first-template"
+                      >
+                        <Mail className="h-4 w-4 mr-2" />
+                        {t('customerCommunications.templates.createTemplateButton')}
+                      </Button>
+                    </RequiresPermission>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -2004,45 +2032,51 @@ export default function CustomerCommunications() {
                               <Eye className="h-3 w-3 mr-1" />
                               {t('customerCommunications.templates.previewButton')}
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => duplicateTemplate(template)}
-                              data-testid={`button-duplicate-${template.id}`}
-                              title={t('customerCommunications.templates.duplicateTitle')}
-                              className="h-8 px-2 text-xs"
-                            >
-                              <Copy className="h-3 w-3 mr-1" />
-                              {t('customerCommunications.templates.copyButton')}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setEditingTemplate(template.id);
-                                setTemplateName(template.name);
-                                setTemplateSubject(template.subject);
-                                setTemplateContent(template.content);
-                                setTemplateCategory(template.category || "custom");
-                              }}
-                              data-testid={`button-edit-${template.id}`}
-                              title={t('customerCommunications.templates.editTitle')}
-                              className="h-8 px-2 text-xs"
-                            >
-                              <Edit className="h-3 w-3 mr-1" />
-                              {t('customerCommunications.templates.editButton')}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-red-600 hover:text-red-700 h-8 px-2 text-xs"
-                              onClick={() => handleDeleteTemplate(template)}
-                              data-testid={`button-delete-${template.id}`}
-                              title={t('customerCommunications.templates.deleteTitle')}
-                            >
-                              <Trash2 className="h-3 w-3 mr-1" />
-                              {t('customerCommunications.templates.deleteButton')}
-                            </Button>
+                            <RequiresPermission anyOf={[UserPermission.MANAGE_EMAIL_TEMPLATES]}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => duplicateTemplate(template)}
+                                data-testid={`button-duplicate-${template.id}`}
+                                title={t('customerCommunications.templates.duplicateTitle')}
+                                className="h-8 px-2 text-xs"
+                              >
+                                <Copy className="h-3 w-3 mr-1" />
+                                {t('customerCommunications.templates.copyButton')}
+                              </Button>
+                            </RequiresPermission>
+                            <RequiresPermission anyOf={[UserPermission.MANAGE_EMAIL_TEMPLATES]}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingTemplate(template.id);
+                                  setTemplateName(template.name);
+                                  setTemplateSubject(template.subject);
+                                  setTemplateContent(template.content);
+                                  setTemplateCategory(template.category || "custom");
+                                }}
+                                data-testid={`button-edit-${template.id}`}
+                                title={t('customerCommunications.templates.editTitle')}
+                                className="h-8 px-2 text-xs"
+                              >
+                                <Edit className="h-3 w-3 mr-1" />
+                                {t('customerCommunications.templates.editButton')}
+                              </Button>
+                            </RequiresPermission>
+                            <RequiresPermission anyOf={[UserPermission.MANAGE_EMAIL_TEMPLATES]}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-red-600 hover:text-red-700 h-8 px-2 text-xs"
+                                onClick={() => handleDeleteTemplate(template)}
+                                data-testid={`button-delete-${template.id}`}
+                                title={t('customerCommunications.templates.deleteTitle')}
+                              >
+                                <Trash2 className="h-3 w-3 mr-1" />
+                                {t('customerCommunications.templates.deleteButton')}
+                              </Button>
+                            </RequiresPermission>
                           </div>
                         </div>
                       </div>
@@ -2221,17 +2255,22 @@ export default function CustomerCommunications() {
               {t('customerCommunications.dialogs.templatePreview.closeButton')}
             </Button>
             {selectedTemplateForPreview && (
-              <Button onClick={() => {
-                setTemplatePreviewDialog(false);
-                setEditingTemplate(selectedTemplateForPreview.id);
-                setTemplateName(selectedTemplateForPreview.name);
-                setTemplateSubject(selectedTemplateForPreview.subject);
-                setTemplateContent(selectedTemplateForPreview.content);
-                setTemplateCategory(selectedTemplateForPreview.category || "custom");
-              }}>
-                <Edit className="mr-2 h-4 w-4" />
-                {t('customerCommunications.dialogs.templatePreview.editTemplateButton')}
-              </Button>
+              <RequiresPermission anyOf={[UserPermission.MANAGE_EMAIL_TEMPLATES]}>
+                <Button
+                  data-testid="button-edit-template-from-preview"
+                  onClick={() => {
+                    setTemplatePreviewDialog(false);
+                    setEditingTemplate(selectedTemplateForPreview.id);
+                    setTemplateName(selectedTemplateForPreview.name);
+                    setTemplateSubject(selectedTemplateForPreview.subject);
+                    setTemplateContent(selectedTemplateForPreview.content);
+                    setTemplateCategory(selectedTemplateForPreview.category || "custom");
+                  }}
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  {t('customerCommunications.dialogs.templatePreview.editTemplateButton')}
+                </Button>
+              </RequiresPermission>
             )}
           </DialogFooter>
         </DialogContent>
@@ -2250,12 +2289,15 @@ export default function CustomerCommunications() {
             <Button variant="outline" onClick={() => setTemplateToDelete(null)}>
               {t('customerCommunications.dialogs.deleteTemplate.cancelButton')}
             </Button>
+            <RequiresPermission anyOf={[UserPermission.MANAGE_EMAIL_TEMPLATES]}>
             <Button
+              data-testid="button-confirm-delete-template"
               onClick={confirmDeleteTemplate}
               className="bg-red-600 hover:bg-red-700"
             >
               {t('customerCommunications.dialogs.deleteTemplate.deleteButton')}
             </Button>
+            </RequiresPermission>
           </DialogFooter>
         </DialogContent>
       </Dialog>
