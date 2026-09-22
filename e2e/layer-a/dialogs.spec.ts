@@ -19,20 +19,6 @@ function roleCanOpenPage(role: (typeof ROLES)[number], page: string): boolean {
   return can(role, access.anyOf);
 }
 
-/**
- * The three CustomerCommunications.tsx "preview & send" openers (2026-09-21
- * review, item 6) are disabled by component state — no vehicle/customer and
- * no template chosen yet — independent of MANAGE_NOTIFICATIONS, the
- * permission this registry proves. For a role that HOLDS the permission (the
- * `allowed` branch below), that leaves nothing for a bare click to open: this
- * suite has no step that fills in a vehicle/template pick first. The `templates-only`
- * profile this item adds never reaches this branch for these openers (it lacks
- * MANAGE_NOTIFICATIONS, so it takes the `else`/denied branch, which only reads
- * the RequiresPermission tooltip and never clicks) — that denied-path
- * assertion is what proves the owner's B-29 decision end-to-end.
- */
-const STATE_GATED_OPENERS = ["button-preview-apk", "button-preview-maintenance", "button-preview-custom"];
-
 for (const role of ROLES) {
   test.describe(`dialogs as ${role}`, () => {
     test.use({ storageState: authFile(role) });
@@ -52,6 +38,15 @@ for (const role of ROLES) {
       // rather than disabled) keep the old skip: there is nothing meaningful
       // to assert for this role here.
       if (!allowed && entry.hiddenWithoutRight) continue;
+      // Entries whose ALLOWED path needs record state this suite cannot set
+      // up (see `allowedPathNeedsState` on `DialogEntry`, e2e/registry/dialogs.ts)
+      // generate no test at all for that branch — not a skip, since a role
+      // that already holds the permission proves nothing new by being told
+      // "can't click a button no test here can ever enable". That proof
+      // belongs to a Layer B story that seeds the state first. The DENIED
+      // branch below is unaffected and still runs: it only reads
+      // RequiresPermission's tooltip, never clicks.
+      if (allowed && entry.allowedPathNeedsState) continue;
 
       if (allowed) {
         test(`${entry.page}: ${entry.name}`, async ({ page, health }) => {
@@ -59,7 +54,6 @@ for (const role of ROLES) {
           // DialogContent has no DialogTitle (only admin can ever reach this
           // dialog, so there is exactly one role x dialog instance to mark).
           test.fixme(entry.opener === "menu-settings", "SettingsDialog has no DialogTitle — Radix a11y console warning on every open, see task-7-report.md");
-          test.fixme(STATE_GATED_OPENERS.includes(entry.opener), "Disabled by component state (no vehicle/template picked), not by permission — see the note above STATE_GATED_OPENERS.");
           await page.goto(entry.page);
           await settle(page);
           // Some openers live inside a dropdown menu (a menu button, then a menu

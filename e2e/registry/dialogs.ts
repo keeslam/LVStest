@@ -29,6 +29,20 @@ export interface DialogEntry {
   via?: string;
   /** data-testid of a close/cancel control, when the dialog blocks Escape on purpose (a form guarding against losing input). */
   close?: string;
+  /**
+   * Set when the opener's OWN component state (a chosen vehicle/customer, a
+   * chosen template, …) — not the permission `anyOf` proves — keeps it
+   * disabled on a fresh page load, so a bare click can never open the dialog
+   * for a role that DOES hold the permission. `dialogs.spec.ts` then skips
+   * generating the allowed-branch test for this entry entirely (no test, no
+   * skip in the report) and leaves that proof to a Layer B story that seeds
+   * the record state first — the same division `LAYER_B_SOURCES` already
+   * uses for dialogs that need a record in a certain state, just per-opener
+   * instead of per-file, because the DENIED branch (RequiresPermission's own
+   * tooltip, never a click) stays valid and worth keeping in this registry.
+   * The value is the reason, so it lives in the registry, not only in a spec.
+   */
+  allowedPathNeedsState?: string;
 }
 
 export const DIALOGS: DialogEntry[] = [
@@ -150,14 +164,31 @@ export const DIALOGS: DialogEntry[] = [
   // MANAGE_NOTIFICATIONS. The "send" outer tab and its "apk" sub-tab are both
   // the default, so button-preview-apk needs no `via`; the other two sub-tabs
   // do. Each Button is ALSO disabled by component state (no vehicle/customer
-  // and no template chosen yet) independent of the permission this registry
-  // proves — dialogs.spec.ts fixmes the "allowed" (admin/manager) case for
-  // exactly these three openers for that reason; the denied case (this task's
-  // own templates-only profile) is unaffected, since RequiresPermission's own
-  // tooltip is what it asserts, not a click.
-  { page: "/communications", opener: "button-preview-apk", anyOf: [P.MANAGE_NOTIFICATIONS], source: "client/src/pages/CustomerCommunications.tsx", name: "e-mailvoorbeeld en verzenden: APK" },
-  { page: "/communications", opener: "button-preview-maintenance", via: "tab-maintenance", anyOf: [P.MANAGE_NOTIFICATIONS], source: "client/src/pages/CustomerCommunications.tsx", name: "e-mailvoorbeeld en verzenden: onderhoud" },
-  { page: "/communications", opener: "button-preview-custom", via: "tab-custom", anyOf: [P.MANAGE_NOTIFICATIONS], source: "client/src/pages/CustomerCommunications.tsx", name: "e-mailvoorbeeld en verzenden: aangepast bericht" },
+  // and no template chosen yet), independent of the permission this registry
+  // proves — the DENIED branch (templates-only, the profile added for this
+  // item) is unaffected by that, since RequiresPermission's own tooltip is
+  // what it asserts, never a click. `allowedPathNeedsState` below is what
+  // keeps the ALLOWED branch (a role that already holds the permission —
+  // today admin/manager) out of this registry's own test: the e2e seed
+  // creates no email_templates rows (the template Select has zero options)
+  // and the vehicle-picker row carries no data-testid, so there is no way to
+  // satisfy that state from Layer A. A Layer B story that seeds a template
+  // and picks a vehicle first is where that proof belongs.
+  {
+    page: "/communications", opener: "button-preview-apk", anyOf: [P.MANAGE_NOTIFICATIONS],
+    source: "client/src/pages/CustomerCommunications.tsx", name: "e-mailvoorbeeld en verzenden: APK",
+    allowedPathNeedsState: "needs a saved email template (none seeded) and a chosen vehicle (picker row has no data-testid) before the button leaves its own disabled state",
+  },
+  {
+    page: "/communications", opener: "button-preview-maintenance", via: "tab-maintenance", anyOf: [P.MANAGE_NOTIFICATIONS],
+    source: "client/src/pages/CustomerCommunications.tsx", name: "e-mailvoorbeeld en verzenden: onderhoud",
+    allowedPathNeedsState: "needs a saved email template (none seeded) and a chosen vehicle (picker row has no data-testid) before the button leaves its own disabled state",
+  },
+  {
+    page: "/communications", opener: "button-preview-custom", via: "tab-custom", anyOf: [P.MANAGE_NOTIFICATIONS],
+    source: "client/src/pages/CustomerCommunications.tsx", name: "e-mailvoorbeeld en verzenden: aangepast bericht",
+    allowedPathNeedsState: "needs a saved email template (none seeded) and a chosen customer/vehicle (picker row has no data-testid) before the button leaves its own disabled state",
+  },
 ];
 
 /**

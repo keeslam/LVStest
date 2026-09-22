@@ -9,6 +9,16 @@ import { fileURLToPath } from "url";
 // deliberate (matches the brief's own DialogFile.roots-but-unreached-by-file
 // design) — it is not a promise that every dialog in a reached file is
 // exercised, only that the file is not silently skipped entirely.
+//
+// Sharper case of the same limit: a `DIALOGS` entry with `allowedPathNeedsState`
+// set (e2e/registry/dialogs.ts) marks its `source` reached here too, even
+// though `dialogs.spec.ts` deliberately never opens that dialog at all — the
+// allowed-branch click is skipped for exactly the roles that could do it, and
+// the denied branch only reads a tooltip. `client/src/pages/CustomerCommunications.tsx`
+// is the current instance: it counts as "reached" via its three
+// `button-preview-*` entries, but no test in this suite has ever actually
+// opened its email-preview Dialog. Left as a known overstatement rather than
+// a reason to change the count logic — see those entries' own comment for why.
 
 export interface SourceFile { path: string; text: string }
 export interface DialogFile { path: string; roots: number }
