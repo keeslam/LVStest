@@ -30,6 +30,7 @@ import { formatDate, formatCurrency, sumMoney } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { Reservation, Customer, Vehicle, VehicleTransport, UserPermission } from "@shared/schema";
 import { useHasPermission } from "@/hooks/use-has-permission";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 import { getTransportSpareStatus } from "@shared/transport-spare-status";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -659,38 +660,44 @@ export default function DeliveryDashboard() {
                     <SelectItem value="cancelled">{t('transportDialog.statusCancelled')}</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button
-                  onClick={() => { setEditingTransport(null); setTransportDialogOpen(true); }}
-                  data-testid="button-new-transport"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t('dashboardPage.newTransportButton')}
-                </Button>
+                <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS]}>
+                  <Button
+                    onClick={() => { setEditingTransport(null); setTransportDialogOpen(true); }}
+                    data-testid="button-new-transport"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {t('dashboardPage.newTransportButton')}
+                  </Button>
+                </RequiresPermission>
               </div>
             </div>
             {selectedRowKeys.length > 0 && (
               <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 text-sm mt-2">
                 <span className="text-muted-foreground">{t('dashboardPage.selectedCount', { count: selectedRowKeys.length })}</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleBulkPrint}
-                  disabled={selectedTransportRows.length === 0 || generateReportMutation.isPending}
-                  data-testid="button-bulk-print"
-                >
-                  {generateReportMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Printer className="h-4 w-4 mr-1" />}
-                  {t('dashboardPage.bulkPrintButton')}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleBulkComplete}
-                  disabled={selectedTransportRows.length === 0 || bulkCompleteTransportMutation.isPending}
-                  data-testid="button-bulk-complete"
-                >
-                  {bulkCompleteTransportMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
-                  {t('dashboardPage.bulkCompleteButton')}
-                </Button>
+                <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS]}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleBulkPrint}
+                    disabled={selectedTransportRows.length === 0 || generateReportMutation.isPending}
+                    data-testid="button-bulk-print"
+                  >
+                    {generateReportMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Printer className="h-4 w-4 mr-1" />}
+                    {t('dashboardPage.bulkPrintButton')}
+                  </Button>
+                </RequiresPermission>
+                <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS]}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleBulkComplete}
+                    disabled={selectedTransportRows.length === 0 || bulkCompleteTransportMutation.isPending}
+                    data-testid="button-bulk-complete"
+                  >
+                    {bulkCompleteTransportMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
+                    {t('dashboardPage.bulkCompleteButton')}
+                  </Button>
+                </RequiresPermission>
                 <Button size="sm" variant="ghost" onClick={() => setSelectedRowKeys([])} data-testid="button-clear-selection">
                   {t('dashboardPage.clearSelectionButton')}
                 </Button>
@@ -873,79 +880,100 @@ export default function DeliveryDashboard() {
                             {(() => {
                               const canComplete = transport.status !== "completed" && transport.status !== "cancelled";
                               return (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={() => handleCompleteTransportClick(transport)}
-                                  disabled={!canComplete || completeTransportMutation.isPending}
-                                  title={canComplete ? t('dashboardPage.markAsCompletedTitle') : t('dashboardPage.alreadyFinalizedTitle')}
-                                  data-testid={`button-complete-transport-${transport.id}`}
-                                >
-                                  <CheckCircle className={`h-4 w-4 ${canComplete ? 'text-green-600' : ''}`} />
-                                </Button>
+                                <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS]}>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => handleCompleteTransportClick(transport)}
+                                    disabled={!canComplete || completeTransportMutation.isPending}
+                                    title={canComplete ? t('dashboardPage.markAsCompletedTitle') : t('dashboardPage.alreadyFinalizedTitle')}
+                                    data-testid={`button-complete-transport-${transport.id}`}
+                                  >
+                                    <CheckCircle className={`h-4 w-4 ${canComplete ? 'text-green-600' : ''}`} />
+                                  </Button>
+                                </RequiresPermission>
                               );
                             })()}
                             {(() => {
                               const canMarkPickedUp = getTransportSpareStatus(transport) === 'assigned';
                               return (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={() => { setPickupPromptMode('pickup'); setPickupPromptTransport(transport); }}
-                                  disabled={!canMarkPickedUp}
-                                  title={canMarkPickedUp ? t('dashboardPage.markSparePickedUpTitle') : t('dashboardPage.spareNotAssignedTitle')}
-                                  data-testid={`button-mark-spare-pickup-${transport.id}`}
-                                >
-                                  <PackageCheck className={`h-4 w-4 ${canMarkPickedUp ? 'text-blue-600' : ''}`} />
-                                </Button>
+                                // Task 4 finding (docs/superpowers/specs/2026-09-21-toegang-design.md,
+                                // §4): this opens SparePickupPromptDialog, whose only
+                                // real action ("Now") hands off to PickupDialog — POST
+                                // /api/reservations/:id/pickup, MANAGE_RESERVATIONS
+                                // only ("Later" makes no API call at all). Narrower
+                                // than the transports-PATCH permission the fact sheet
+                                // assumed for this row.
+                                <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => { setPickupPromptMode('pickup'); setPickupPromptTransport(transport); }}
+                                    disabled={!canMarkPickedUp}
+                                    title={canMarkPickedUp ? t('dashboardPage.markSparePickedUpTitle') : t('dashboardPage.spareNotAssignedTitle')}
+                                    data-testid={`button-mark-spare-pickup-${transport.id}`}
+                                  >
+                                    <PackageCheck className={`h-4 w-4 ${canMarkPickedUp ? 'text-blue-600' : ''}`} />
+                                  </Button>
+                                </RequiresPermission>
                               );
                             })()}
                             {(() => {
                               const canMarkReturned = getTransportSpareStatus(transport) === 'picked_up';
                               return (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={() => { setPickupPromptMode('return'); setPickupPromptTransport(transport); }}
-                                  disabled={!canMarkReturned}
-                                  title={canMarkReturned ? t('dashboardPage.markSpareReturnedTitle') : t('dashboardPage.spareNotPickedUpTitle')}
-                                  data-testid={`button-mark-spare-return-${transport.id}`}
-                                >
-                                  <Undo2 className={`h-4 w-4 ${canMarkReturned ? 'text-orange-600' : ''}`} />
-                                </Button>
+                                // Same finding as mark-spare-pickup above: "Now" hands
+                                // off to ReturnDialog — MANAGE_RESERVATIONS only.
+                                <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => { setPickupPromptMode('return'); setPickupPromptTransport(transport); }}
+                                    disabled={!canMarkReturned}
+                                    title={canMarkReturned ? t('dashboardPage.markSpareReturnedTitle') : t('dashboardPage.spareNotPickedUpTitle')}
+                                    data-testid={`button-mark-spare-return-${transport.id}`}
+                                  >
+                                    <Undo2 className={`h-4 w-4 ${canMarkReturned ? 'text-orange-600' : ''}`} />
+                                  </Button>
+                                </RequiresPermission>
                               );
                             })()}
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handlePrintTransportClick(transport)}
-                              disabled={generateReportMutation.isPending || getTransportSpareStatus(transport) === 'tbd'}
-                              title={getTransportSpareStatus(transport) === 'tbd' ? t('dashboardPage.replacementVehicleRequiredForPrint') : t('dashboardPage.printGenerateReportTitle')}
-                              data-testid={`button-print-transport-${transport.id}`}
-                            >
-                              {generateReportMutation.isPending ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Printer className="h-4 w-4" />
-                              )}
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => { setEditingTransport(transport); setTransportDialogOpen(true); }}
-                              title={t('dashboardPage.editButtonTitle')}
-                              data-testid={`button-edit-transport-${transport.id}`}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => setDeletingTransport(transport)}
-                              data-testid={`button-delete-transport-${transport.id}`}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
+                            <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS]}>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handlePrintTransportClick(transport)}
+                                disabled={generateReportMutation.isPending || getTransportSpareStatus(transport) === 'tbd'}
+                                title={getTransportSpareStatus(transport) === 'tbd' ? t('dashboardPage.replacementVehicleRequiredForPrint') : t('dashboardPage.printGenerateReportTitle')}
+                                data-testid={`button-print-transport-${transport.id}`}
+                              >
+                                {generateReportMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Printer className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </RequiresPermission>
+                            <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS]}>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => { setEditingTransport(transport); setTransportDialogOpen(true); }}
+                                title={t('dashboardPage.editButtonTitle')}
+                                data-testid={`button-edit-transport-${transport.id}`}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </RequiresPermission>
+                            <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS]}>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => setDeletingTransport(transport)}
+                                data-testid={`button-delete-transport-${transport.id}`}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </RequiresPermission>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -996,13 +1024,15 @@ export default function DeliveryDashboard() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deletingTransport && deleteTransportMutation.mutate(deletingTransport.id)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              data-testid="button-confirm-delete-transport"
-            >
-              {t('common:actions.delete')}
-            </AlertDialogAction>
+            <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS]}>
+              <AlertDialogAction
+                onClick={() => deletingTransport && deleteTransportMutation.mutate(deletingTransport.id)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                data-testid="button-confirm-delete-transport"
+              >
+                {t('common:actions.delete')}
+              </AlertDialogAction>
+            </RequiresPermission>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
