@@ -14,6 +14,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { UserRole } from "@shared/schema";
 import { GlobalDialogProvider } from "@/contexts/GlobalDialogContext";
 import { ReturnFromServiceDialog } from "@/components/reservations/return-from-service-dialog";
 import { ServiceVehicleDialog } from "@/components/reservations/service-vehicle-dialog";
@@ -25,6 +26,19 @@ import { MaintenanceApproval } from "@/components/portal-admin/maintenance-appro
 import { ScheduleMaintenanceDialog } from "@/components/maintenance/schedule-maintenance-dialog";
 import { TransportDialog } from "@/components/delivery/transport-dialog";
 import { RouteOptimizationDialog } from "@/components/delivery/route-optimization-dialog";
+
+// This file's own house pattern (see notification-center-dialog-permissions.test.tsx,
+// quick-action-entry-points.test.tsx): a merge effect, not this file's own
+// doing — it came from a branch based on 61c10948, before
+// ScheduleMaintenanceDialog, TransportDialog and NotificationCenterDialog
+// gained their useHasPermission(VIEW_CUSTOMERS, MANAGE_CUSTOMERS) gates on
+// this branch. Every dialog here needs to render exactly as it did when this
+// file was written, so an admin user (bypasses every permission check) is
+// the least intrusive fix — nothing under test here is about permissions,
+// only about which day a form pre-fills.
+vi.mock("@/hooks/use-auth", () => ({
+  useAuth: () => ({ user: { id: 1, username: "tester", role: UserRole.ADMIN, permissions: [], hidePrices: false }, isLoading: false }),
+}));
 
 const OFFICE_TODAY = "2026-09-21";
 const OFFICE_TOMORROW = "2026-09-22";
