@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/format-utils";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
-import { Vehicle } from "@shared/schema";
+import { Vehicle, UserPermission } from "@shared/schema";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { NoDataAccess } from "@/components/ui/no-data-access";
 
 // Function to get days until a date
 function getDaysUntil(dateStr: string): number {
@@ -31,8 +33,12 @@ export function WarrantyExpirationWidget() {
   const { t } = useTranslation("dashboard");
   const { openVehicleDialog } = useGlobalDialog();
   const queryClient = useQueryClient();
+  // The dashboard's own permission is VIEW_DASHBOARD; this card's data needs
+  // the vehicle family instead (GET /api/vehicles/warranty-expiring, routes.ts:505).
+  const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
   const { data: vehicles, isLoading } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles/warranty-expiring"],
+    enabled: canViewVehicles,
   });
   
   // Add daysUntilExpiration to each vehicle
@@ -60,6 +66,10 @@ export function WarrantyExpirationWidget() {
         </svg>
       </CardHeader>
       <CardContent className="p-4">
+        {!canViewVehicles ? (
+          <NoDataAccess permission={UserPermission.VIEW_VEHICLES} />
+        ) : (
+        <>
         <div className="mb-3">
           <div className="text-xl font-semibold">{isLoading ? "-" : vehiclesWithDays?.length || 0}</div>
           <p className="text-xs text-gray-500">{t('warrantyWidget.subtitle')}</p>
@@ -110,6 +120,8 @@ export function WarrantyExpirationWidget() {
             ))
           )}
         </div>
+        </>
+        )}
       </CardContent>
     </Card>
   );

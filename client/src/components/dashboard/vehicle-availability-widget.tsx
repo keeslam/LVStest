@@ -6,12 +6,18 @@ import { Badge } from "@/components/ui/badge";
 import { Car, Calendar } from "lucide-react";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
-import { Vehicle } from "@shared/schema";
+import { Vehicle, UserPermission } from "@shared/schema";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { NoDataAccess } from "@/components/ui/no-data-access";
 
 export function VehicleAvailabilityWidget() {
   const { t } = useTranslation("dashboard");
+  // The dashboard's own permission is VIEW_DASHBOARD; this card's data needs
+  // the vehicle family instead (GET /api/vehicles/available, routes.ts:463).
+  const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
   const { data: vehicles, isLoading } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles/available"],
+    enabled: canViewVehicles,
   });
 
   return (
@@ -21,7 +27,9 @@ export function VehicleAvailabilityWidget() {
         <Car className="w-5 h-5 text-gray-900" />
       </CardHeader>
       <CardContent className="p-4">
-        {isLoading ? (
+        {!canViewVehicles ? (
+          <NoDataAccess permission={UserPermission.VIEW_VEHICLES} />
+        ) : isLoading ? (
           <div className="flex justify-center p-8">
             <svg className="animate-spin h-8 w-8 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

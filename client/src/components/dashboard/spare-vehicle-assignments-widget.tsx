@@ -14,6 +14,7 @@ import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { RequiresPermission } from "@/components/ui/requires-permission";
+import { NoDataAccess } from "@/components/ui/no-data-access";
 
 type ParentReservationInfo = { parentRes: any; customer: any; vehicle: any } | null;
 type ParentTransportInfo = { transport: VehicleTransport; vehicle: any } | null;
@@ -73,21 +74,40 @@ export function SpareVehicleAssignmentsWidget() {
   // The widget is not useless without it - it just falls back to showing no
   // customer name next to a spare, same as today when the request fails.
   const canViewCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
+  // The dashboard's own permission is VIEW_DASHBOARD; the widget's actual
+  // data (the three tabs' spare-reservation lists) needs the reservation
+  // family instead (GET /api/placeholder-reservations/needing-assignment,
+  // routes.ts:5446; GET /api/reservations, routes.ts:2829).
+  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
+  // Vehicle/transport data here only enriches a row (vehicle name/plate next
+  // to a spare, an external owner's name on a transport-linked spare) - the
+  // widget already falls back gracefully when it is missing (the `?? {}"`
+  // maps below, `spareWidget.spareVehicleWithId` for an unmapped vehicle id),
+  // same pattern as the customers gate above.
+  const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
+  // GET /api/transports (routes.ts:8089) accepts either family.
+  const canViewTransports = useHasPermission(
+    UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES,
+    UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS,
+  );
 
   // Get TBD spare vehicles (placeholder reservations needing assignment)
   // Using 30 days lookahead to show all upcoming placeholders
   const { data: pendingAssignments, isLoading: isLoadingPending } = useQuery<Reservation[]>({
     queryKey: ["/api/placeholder-reservations/needing-assignment?daysAhead=30"],
+    enabled: canViewReservations,
   });
 
   // Get all reservations to filter for assigned spare vehicles
   const { data: allReservations, isLoading: isLoadingAssigned } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations"],
+    enabled: canViewReservations,
   });
 
   // Get all vehicles for displaying vehicle details
   const { data: allVehicles } = useQuery<any[]>({
     queryKey: ["/api/vehicles"],
+    enabled: canViewVehicles,
   });
 
   // Get all customers for displaying customer info
@@ -101,6 +121,7 @@ export function SpareVehicleAssignmentsWidget() {
   // customer-rental-oriented replacementForReservationId.
   const { data: allTransports } = useQuery<VehicleTransport[]>({
     queryKey: ["/api/transports"],
+    enabled: canViewTransports,
   });
 
   // Create a map of vehicles by ID for easy lookup
@@ -314,6 +335,9 @@ export function SpareVehicleAssignmentsWidget() {
           <Car className="w-5 h-5 text-gray-900" />
         </CardHeader>
         <CardContent className="p-0">
+          {!canViewReservations ? (
+            <NoDataAccess permission={UserPermission.VIEW_RESERVATIONS} className="p-4" />
+          ) : (
           <Tabs defaultValue="pending" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="pending" className="relative text-xs px-2">
@@ -570,6 +594,7 @@ export function SpareVehicleAssignmentsWidget() {
               </div>
             </TabsContent>
           </Tabs>
+          )}
         </CardContent>
       </Card>
 

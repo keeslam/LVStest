@@ -7,6 +7,9 @@ import { Eye } from "lucide-react";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { differenceInDays, parseISO } from "date-fns";
 import { ReservationViewDialog } from "@/components/reservations/reservation-view-dialog";
+import { UserPermission } from "@shared/schema";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { NoDataAccess } from "@/components/ui/no-data-access";
 
 interface OverdueReservation {
   id: number;
@@ -27,9 +30,13 @@ export function OverdueReservationsWidget() {
   const { t } = useTranslation("dashboard");
   const [selectedReservationId, setSelectedReservationId] = useState<number | null>(null);
   
+  // The dashboard's own permission is VIEW_DASHBOARD; this card's data needs
+  // the reservation family instead (GET /api/reservations/overdue, routes.ts:2680).
+  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
   // Note: No refetchInterval - real-time updates come via WebSocket to prevent dialog closures
   const { data: overdueReservations = [], isLoading, error } = useQuery<OverdueReservation[]>({
     queryKey: ['/api/reservations/overdue'],
+    enabled: canViewReservations,
   });
 
   const today = new Date();
@@ -52,6 +59,10 @@ export function OverdueReservationsWidget() {
         </svg>
       </CardHeader>
       <CardContent className="p-4">
+        {!canViewReservations ? (
+          <NoDataAccess permission={UserPermission.VIEW_RESERVATIONS} />
+        ) : (
+        <>
         <div className="mb-3">
           <div className="text-xl font-semibold">{isLoading ? "-" : reservationsWithDays?.length || 0}</div>
           <p className="text-xs text-gray-500">{t('overdueWidget.subtitle')}</p>
@@ -101,8 +112,10 @@ export function OverdueReservationsWidget() {
             ))
           )}
         </div>
+        </>
+        )}
       </CardContent>
-      
+
       {selectedReservationId && (
         <ReservationViewDialog
           reservationId={selectedReservationId}

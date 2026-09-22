@@ -24,6 +24,8 @@ import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { UserPermission } from "@shared/schema";
 
 type DirectionFilter = "all" | "later" | "earlier";
 
@@ -81,9 +83,17 @@ export function ApkDateChangesDialog() {
   const [searchQuery, setSearchQuery] = useState("");
   const [directionFilter, setDirectionFilter] = useState<DirectionFilter>("all");
 
+  // Task 2 finding, fixed here (Task 5): this dialog is mounted in App.tsx
+  // for every logged-in user, NOT inside MainLayout (client/src/App.tsx,
+  // `{user && <ApkDateChangesDialog />}` alongside ProtectedRoute, not nested
+  // under it) — so it fires regardless of which page/permission-gate is
+  // showing. Its whole router mounts behind VIEW_VEHICLES/MANAGE_VEHICLES
+  // (server/index.ts:419), matched here.
+  const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
   const { data: pendingChanges = [] } = useQuery<PendingApkChange[]>({
     queryKey: ["/api/apk-date-changes"],
     staleTime: 1000 * 60,
+    enabled: canViewVehicles,
   });
 
   // Open once per login as soon as the first batch of pending changes

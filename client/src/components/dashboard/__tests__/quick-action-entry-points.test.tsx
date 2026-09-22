@@ -240,3 +240,66 @@ describe("Kantoordatum bij APK-rapport uploaden (fix round 1)", () => {
     });
   });
 });
+
+/**
+ * Task 5 (docs/superpowers/specs/2026-09-21-toegang-design.md, §3) — the
+ * dashboard's own permission is VIEW_DASHBOARD; this file's own /api/vehicles
+ * and /api/reservations/upcoming queries need the vehicle/reservation
+ * families instead. Both only feed vehicle-select lists and lookups inside
+ * dialogs this file already gates behind a matching or narrower permission
+ * (MANAGE_VEHICLES/MANAGE_RESERVATIONS via RequiresPermission), so a denied
+ * user never reaches a dialog that would have shown the missing data -
+ * left out silently, no NoDataAccess.
+ */
+describe("Task 5 — /api/vehicles and /api/reservations/upcoming follow their own families, not VIEW_DASHBOARD", () => {
+  function trackRequests() {
+    const urls: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      urls.push(url);
+      return new Response(JSON.stringify([]), { status: 200, headers: { "Content-Type": "application/json" } });
+    }));
+    return urls;
+  }
+
+  it("fires neither query for a role with no vehicle or reservation permission", async () => {
+    mockRole = UserRole.USER;
+    mockPermissions = [];
+    const urls = trackRequests();
+    renderQuickActions();
+
+    // Proof the component still mounted correctly.
+    expect(screen.getByTestId("button-quick-scan")).toBeInTheDocument();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(urls.some((u) => u.includes("/api/vehicles") && !u.includes("apk-date-changes"))).toBe(false);
+    expect(urls.some((u) => u.includes("/api/reservations/upcoming"))).toBe(false);
+  });
+
+  it("fires /api/vehicles with view_vehicles or manage_vehicles", async () => {
+    mockRole = UserRole.USER;
+    mockPermissions = [UserPermission.MANAGE_VEHICLES];
+    const urls = trackRequests();
+    renderQuickActions();
+
+    await waitFor(() => expect(urls.some((u) => u === "/api/vehicles")).toBe(true));
+  });
+
+  it("fires /api/reservations/upcoming with view_reservations or manage_reservations", async () => {
+    mockRole = UserRole.USER;
+    mockPermissions = [UserPermission.VIEW_RESERVATIONS];
+    const urls = trackRequests();
+    renderQuickActions();
+
+    await waitFor(() => expect(urls.some((u) => u === "/api/reservations/upcoming")).toBe(true));
+  });
+
+  it("admin gets both queries regardless of the permissions array", async () => {
+    mockRole = UserRole.ADMIN;
+    mockPermissions = [];
+    const urls = trackRequests();
+    renderQuickActions();
+
+    await waitFor(() => expect(urls.some((u) => u === "/api/vehicles")).toBe(true));
+    await waitFor(() => expect(urls.some((u) => u === "/api/reservations/upcoming")).toBe(true));
+  });
+});

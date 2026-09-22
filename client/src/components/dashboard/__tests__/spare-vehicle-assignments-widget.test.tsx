@@ -62,7 +62,10 @@ afterEach(() => {
 describe("finding 2b — /api/customers follows VIEW_CUSTOMERS/MANAGE_CUSTOMERS", () => {
   it("never asks for customers without VIEW_CUSTOMERS or MANAGE_CUSTOMERS, but keeps the widget", async () => {
     role = UserRole.CLEANER;
-    permissions = [];
+    // Task 5: the widget's own data now needs VIEW_RESERVATIONS/
+    // MANAGE_RESERVATIONS (its own gate, added below) - held here so this
+    // test still exercises the customers-only gate it is named after.
+    permissions = [UserPermission.VIEW_RESERVATIONS];
     withClient(<SpareVehicleAssignmentsWidget />);
 
     // The widget's other, always-allowed queries still settle.
@@ -86,6 +89,49 @@ describe("finding 2b — /api/customers follows VIEW_CUSTOMERS/MANAGE_CUSTOMERS"
     withClient(<SpareVehicleAssignmentsWidget />);
 
     await waitFor(() => expect(calledWith(CUSTOMERS_URL)).toBe(true));
+  });
+});
+
+/**
+ * Task 5 (docs/superpowers/specs/2026-09-21-toegang-design.md, §3) — the
+ * dashboard's own permission is VIEW_DASHBOARD; this widget's own data (the
+ * three tabs) needs the reservation family instead (GET /api/placeholder-
+ * reservations/needing-assignment, routes.ts:5446; GET /api/reservations,
+ * routes.ts:2829). A visible hole (the whole widget), so denied renders
+ * NoDataAccess instead of the tabs.
+ */
+describe("Task 5 — the widget's own data needs view_reservations/manage_reservations", () => {
+  const NEEDING_ASSIGNMENT_URL = "/api/placeholder-reservations/needing-assignment";
+  const RESERVATIONS_URL = "/api/reservations";
+
+  it("fires neither reservation query and shows NoDataAccess without view_reservations or manage_reservations", async () => {
+    role = UserRole.USER;
+    permissions = [];
+    withClient(<SpareVehicleAssignmentsWidget />);
+
+    expect(await screen.findByTestId("no-data-access")).toHaveTextContent("Reserveringen bekijken");
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(calledWith(NEEDING_ASSIGNMENT_URL)).toBe(false);
+    expect(calledWith(RESERVATIONS_URL)).toBe(false);
+  });
+
+  it("fires both reservation queries and renders the tabs with view_reservations alone", async () => {
+    role = UserRole.USER;
+    permissions = [UserPermission.VIEW_RESERVATIONS];
+    withClient(<SpareVehicleAssignmentsWidget />);
+
+    await waitFor(() => expect(calledWith(NEEDING_ASSIGNMENT_URL)).toBe(true));
+    await waitFor(() => expect(calledWith(RESERVATIONS_URL)).toBe(true));
+    expect(screen.queryByTestId("no-data-access")).not.toBeInTheDocument();
+  });
+
+  it("admin gets both reservation queries regardless of the permissions array", async () => {
+    role = UserRole.ADMIN;
+    permissions = [];
+    withClient(<SpareVehicleAssignmentsWidget />);
+
+    await waitFor(() => expect(calledWith(NEEDING_ASSIGNMENT_URL)).toBe(true));
+    await waitFor(() => expect(calledWith(RESERVATIONS_URL)).toBe(true));
   });
 });
 
@@ -122,7 +168,11 @@ describe("Task 4 — spare widget action buttons require manage_reservations", (
 
   it("shows every action button visible-but-disabled for a role without manage_reservations", async () => {
     role = UserRole.USER;
-    permissions = [];
+    // Task 5: VIEW_RESERVATIONS is what makes the widget's own data (and so
+    // these buttons) render at all; MANAGE_RESERVATIONS (still absent here)
+    // is the separate, narrower right Task 4's RequiresPermission wrappers
+    // check for each action.
+    permissions = [UserPermission.VIEW_RESERVATIONS];
     withClient(<SpareVehicleAssignmentsWidget />);
 
     const pendingAssign = await screen.findByTestId("button-assign-vehicle-spare");

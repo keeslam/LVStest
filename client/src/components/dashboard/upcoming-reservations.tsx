@@ -6,8 +6,10 @@ import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate, formatLicensePlate, formatReservationStatus } from "@/lib/format-utils";
-import { Reservation } from "@shared/schema";
+import { Reservation, UserPermission } from "@shared/schema";
 import { ReservationQuickStatusButton } from "@/components/reservations/reservation-quick-status-button";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { NoDataAccess } from "@/components/ui/no-data-access";
 
 // Function to calculate duration between two dates in days
 function getDuration(startDate: string, endDate: string, t: TFunction): string {
@@ -40,10 +42,14 @@ function getStatusBadge(status: string) {
 
 export function UpcomingReservations() {
   const { t } = useTranslation("dashboard");
+  // The dashboard's own permission is VIEW_DASHBOARD; this table's data needs
+  // the reservation family instead (GET /api/reservations/upcoming, routes.ts:2649).
+  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
   const { data: reservations, isLoading } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations/upcoming"],
+    enabled: canViewReservations,
   });
-  
+
   return (
     <Card className="col-span-1 lg:col-span-2">
       <CardHeader className="px-4 py-3 border-b flex-row justify-between items-center space-y-0">
@@ -77,7 +83,13 @@ export function UpcomingReservations() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {isLoading ? (
+              {!canViewReservations ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-4 text-center">
+                    <NoDataAccess permission={UserPermission.VIEW_RESERVATIONS} className="text-center" />
+                  </td>
+                </tr>
+              ) : isLoading ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-4 text-center">
                     <div className="flex justify-center">

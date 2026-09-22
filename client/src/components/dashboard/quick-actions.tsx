@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { RequiresPermission } from "@/components/ui/requires-permission";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
 import {
@@ -522,14 +523,27 @@ export function QuickActions() {
   const documentDialogCloseRef = React.useRef(null);
   const apkDialogCloseRef = React.useRef(null);
   
+  // The dashboard's own permission is VIEW_DASHBOARD; both queries below feed
+  // vehicle-select lists and reservation lookups used ONLY inside dialogs
+  // this file already gates behind a narrower, matching permission via
+  // RequiresPermission (MANAGE_VEHICLES for every vehicle-picking tile,
+  // MANAGE_RESERVATIONS for every reservation tile) — so a user who cannot
+  // reach those dialogs never needed this data either; left out silently,
+  // no NoDataAccess (nothing on the dashboard itself renders these as a
+  // visible list).
+  const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
+  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
+
   // Fetch all vehicles for the selection list
   const { data: vehicles, refetch: refetchVehicles } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
+    enabled: canViewVehicles,
   });
-  
+
   // Fetch upcoming reservations
   const { data: upcomingReservations, isLoading: isLoadingReservations } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations/upcoming"],
+    enabled: canViewReservations,
   });
   
   // Handler for changing a single vehicle's registration

@@ -47,6 +47,8 @@ import { formatReservationStatus } from "@/lib/format-utils";
 import { PlusCircle, Edit, Eye, Calendar, User, Car, CreditCard, Clock, MapPin } from "lucide-react";
 import { ReservationQuickStatusButton } from "@/components/reservations/reservation-quick-status-button";
 import { SpareVehicleAssignmentDialog } from "@/components/reservations/spare-vehicle-assignment-dialog";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { NoDataAccess } from "@/components/ui/no-data-access";
 
 // Days of the week abbreviations
 const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -137,8 +139,13 @@ export function ReservationCalendar() {
   const startDate = format(dateRanges.days[0], "yyyy-MM-dd");
   const endDate = format(dateRanges.days[dateRanges.days.length - 1], "yyyy-MM-dd");
   
+  // The dashboard's own permission is VIEW_DASHBOARD; this mini calendar's
+  // data needs the reservation family instead (GET /api/reservations/range,
+  // routes.ts:2616).
+  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
   const { data: allReservations, isLoading: isLoadingReservations } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations/range", startDate, endDate],
+    enabled: canViewReservations,
     queryFn: async () => {
       const url = `/api/reservations/range?startDate=${startDate}&endDate=${endDate}`;
       const response = await fetch(url, {
@@ -349,6 +356,10 @@ export function ReservationCalendar() {
           <h4 className="text-base font-medium">{dateRanges.rangeText}</h4>
         </div>
         
+        {!canViewReservations ? (
+          <NoDataAccess permission={UserPermission.VIEW_RESERVATIONS} />
+        ) : (
+        <>
         {/* On phones the 7-column month squeezes into unreadable slivers, so
             the whole grid scrolls horizontally at a readable minimum width.
             Desktop (min-w fits) is unchanged. */}
@@ -696,6 +707,8 @@ export function ReservationCalendar() {
         </div>
         </div>
         </div>
+        </>
+        )}
       </CardContent>
 
       {/* View Reservation Dialog */}

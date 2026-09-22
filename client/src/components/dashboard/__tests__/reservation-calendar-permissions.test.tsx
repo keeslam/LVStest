@@ -66,7 +66,10 @@ function renderCalendar() {
 describe("ReservationCalendar (dashboard) — hover card actions require manage_reservations", () => {
   it("shows the inline Edit and Assign controls visible-but-disabled without manage_reservations", async () => {
     role = UserRole.USER;
-    permissions = [];
+    // Task 5: view_reservations is what makes the calendar's own data (and so
+    // this hover card) render at all; manage_reservations (still absent
+    // here) is the separate, narrower right each action button checks.
+    permissions = [UserPermission.VIEW_RESERVATIONS];
     renderCalendar();
 
     const trigger = await screen.findByText("TBD");
@@ -95,5 +98,32 @@ describe("ReservationCalendar (dashboard) — hover card actions require manage_
 
     const assignButton = await screen.findByTestId("button-assign-vehicle");
     expect(assignButton).not.toBeDisabled();
+  });
+});
+
+/**
+ * Task 5 (docs/superpowers/specs/2026-09-21-toegang-design.md, §3) — the
+ * dashboard's own permission is VIEW_DASHBOARD; this mini calendar's own
+ * data needs the reservation family instead (GET /api/reservations/range,
+ * routes.ts:2616). A visible hole (the whole grid), so denied renders
+ * NoDataAccess instead of the calendar.
+ */
+describe("ReservationCalendar (dashboard) — the calendar's own data needs view_reservations/manage_reservations", () => {
+  it("shows NoDataAccess and fires no /api/reservations/range request without either permission", async () => {
+    role = UserRole.USER;
+    permissions = [];
+    renderCalendar();
+
+    expect(await screen.findByTestId("no-data-access")).toHaveTextContent("Reserveringen bekijken");
+    expect(screen.queryByText("TBD")).not.toBeInTheDocument();
+  });
+
+  it("renders the calendar grid with view_reservations alone", async () => {
+    role = UserRole.USER;
+    permissions = [UserPermission.VIEW_RESERVATIONS];
+    renderCalendar();
+
+    expect(await screen.findByText("TBD")).toBeInTheDocument();
+    expect(screen.queryByTestId("no-data-access")).not.toBeInTheDocument();
   });
 });
