@@ -50,10 +50,17 @@ const API_BY_PATH: Record<string, string | null> = {
   // GET /api/transports' guard (server/routes.ts) exactly — the mismatch a
   // previous version of this file reported here is resolved by that change.
   "/delivery": "/api/transports",
-  // B-29 narrowed this row to MANAGE_EMAIL_TEMPLATES only
-  // (shared/page-access.ts), which now matches GET /api/email-templates'
-  // guard (server/index.ts) exactly — the mismatch a previous version of
-  // this file reported here is resolved by that change.
+  // B-29a widened this row to MANAGE_NOTIFICATIONS OR MANAGE_EMAIL_TEMPLATES
+  // (shared/page-access.ts) so an account with only manage_notifications does
+  // not lose the screen. GET /api/email-templates still guards on
+  // MANAGE_EMAIL_TEMPLATES alone (server/index.ts) — a role denied BOTH
+  // permissions (every role this file's own forbidden.spec.ts loop actually
+  // tests here) still gets refused by both the row and this route, so the
+  // 403 assertion below stays valid; a manage_notifications-only role can
+  // open the page but would still get a 403 from this one GET, which is by
+  // design (B-29a keeps template management behind manage_email_templates)
+  // and outside what that loop checks (it only runs for roles the row itself
+  // already refuses).
   "/communications": "/api/email-templates",
   // Finding: reports/index.tsx (client/src/pages/reports/index.tsx, about
   // lines 145 and 150) fetches /api/customers and /api/transports with no

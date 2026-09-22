@@ -2,7 +2,7 @@ import { UserPermission as P, UserRole } from "../../shared/schema";
 
 // A role is only a label in this application; rights are an explicit list per
 // user (server/middleware/permissions.ts; `admin` bypasses the list). These
-// nine profiles are an assumption the E2E suite makes about what each role
+// ten profiles are an assumption the E2E suite makes about what each role
 // should be able to do — Task 9 puts that assumption in front of the owner.
 // "reports-only" is Task 5's own addition (docs/superpowers/specs/
 // 2026-09-21-toegang-design.md, §6): unlike the other seven, it deliberately
@@ -14,7 +14,13 @@ import { UserPermission as P, UserRole } from "../../shared/schema";
 // manage_email_templates but not manage_notifications, to prove the send
 // controls stay visible-disabled-explained rather than the screen itself
 // refusing to open.
-export const ROLES = ["admin", "manager", "user", "cleaner", "viewer", "accountant", "maintenance", "reports-only", "templates-only"] as const;
+// "notifications-only" is B-29a's addition: the owner confirmed accounts
+// exist with manage_notifications but WITHOUT manage_email_templates
+// (templates are admin/manager-only, on purpose). It holds exactly
+// view_dashboard + manage_notifications, to prove the screen now opens for
+// that combination too and that template-management controls (not the send
+// controls) are what stays visible-disabled-explained for it.
+export const ROLES = ["admin", "manager", "user", "cleaner", "viewer", "accountant", "maintenance", "reports-only", "templates-only", "notifications-only"] as const;
 export type Role = (typeof ROLES)[number];
 
 const ALL = Object.values(P) as string[];
@@ -44,6 +50,12 @@ export const PROFILES: Record<Role, string[]> = {
   // it, but the send controls stay behind manage_notifications, which this
   // profile deliberately does not hold.
   "templates-only": [P.VIEW_DASHBOARD, P.MANAGE_EMAIL_TEMPLATES],
+  // B-29a — the other half: an account that may send notifications but not
+  // manage templates, matching real accounts the owner confirmed exist.
+  // Proves /communications now opens on manage_notifications alone, and
+  // that template-management controls (not the send controls) are the ones
+  // that stay visible-disabled-explained for this profile.
+  "notifications-only": [P.VIEW_DASHBOARD, P.MANAGE_NOTIFICATIONS],
 };
 
 export const usernameOf = (role: Role) => `e2e-${role}`;
@@ -58,4 +70,7 @@ export const roleLabel: Record<Role, string> = {
   // Same underlying role label as "user" (a role is only a label); the
   // permissions array above is what makes this profile "templates-only".
   "templates-only": UserRole.USER,
+  // Same underlying role label as "user" (a role is only a label); the
+  // permissions array above is what makes this profile "notifications-only".
+  "notifications-only": UserRole.USER,
 };

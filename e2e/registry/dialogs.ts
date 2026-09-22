@@ -156,24 +156,44 @@ export const DIALOGS: DialogEntry[] = [
   { page: "/expenses", opener: "button-invoice-inbox", anyOf: [P.MANAGE_EXPENSES], source: "client/src/components/expenses/invoice-inbox-dialog.tsx", name: "ontvangen facturen" },
 
   // --- /communications ---------------------------------------------------
-  // 2026-09-21 review, item 6 — B-29's other half: the screen itself opens on
-  // MANAGE_EMAIL_TEMPLATES (shared/page-access.ts), these three "preview &
-  // send" buttons (one per send-mode sub-tab, all three wrapped in
-  // RequiresPermission anyOf={[MANAGE_NOTIFICATIONS]}, all three opening the
-  // same shared email-preview Dialog in this file) separately need
-  // MANAGE_NOTIFICATIONS. The "send" outer tab and its "apk" sub-tab are both
-  // the default, so button-preview-apk needs no `via`; the other two sub-tabs
-  // do. Each Button is ALSO disabled by component state (no vehicle/customer
-  // and no template chosen yet), independent of the permission this registry
-  // proves — the DENIED branch (templates-only, the profile added for this
-  // item) is unaffected by that, since RequiresPermission's own tooltip is
-  // what it asserts, never a click. `allowedPathNeedsState` below is what
-  // keeps the ALLOWED branch (a role that already holds the permission —
-  // today admin/manager) out of this registry's own test: the e2e seed
-  // creates no email_templates rows (the template Select has zero options)
-  // and the vehicle-picker row carries no data-testid, so there is no way to
-  // satisfy that state from Layer A. A Layer B story that seeds a template
-  // and picks a vehicle first is where that proof belongs.
+  // 2026-09-21 review, item 6 — B-29's other half: the screen itself opened
+  // on MANAGE_EMAIL_TEMPLATES alone at the time (shared/page-access.ts),
+  // these three "preview & send" buttons (one per send-mode sub-tab, all
+  // three wrapped in RequiresPermission anyOf={[MANAGE_NOTIFICATIONS]}, all
+  // three opening the same shared email-preview Dialog in this file)
+  // separately need MANAGE_NOTIFICATIONS. The "send" outer tab and its "apk"
+  // sub-tab are both the default, so button-preview-apk needs no `via`; the
+  // other two sub-tabs do. Each Button is ALSO disabled by component state
+  // (no vehicle/customer and no template chosen yet), independent of the
+  // permission this registry proves — the DENIED branch (templates-only, the
+  // profile added for this item) is unaffected by that, since
+  // RequiresPermission's own tooltip is what it asserts, never a click.
+  // `allowedPathNeedsState` below is what keeps the ALLOWED branch (a role
+  // that already holds the permission — today admin/manager) out of this
+  // registry's own test: the e2e seed creates no email_templates rows (the
+  // template Select has zero options) and the vehicle-picker row carries no
+  // data-testid, so there is no way to satisfy that state from Layer A. A
+  // Layer B story that seeds a template and picks a vehicle first is where
+  // that proof belongs.
+  //
+  // B-29a widened the row to MANAGE_NOTIFICATIONS OR MANAGE_EMAIL_TEMPLATES
+  // (the owner confirmed accounts exist with the former but not the latter)
+  // and added the "notifications-only" profile as this section's other half:
+  // it holds MANAGE_NOTIFICATIONS only, so the three entries below stay
+  // ALLOWED for it (RequiresPermission anyOf={[MANAGE_NOTIFICATIONS]}) and
+  // are skipped by `allowedPathNeedsState`, same as for admin/manager. Every
+  // control that mutates a template (new/save/duplicate/edit/delete, plus
+  // the "edit" button inside the template-preview dialog) is now wrapped in
+  // RequiresPermission anyOf={[MANAGE_EMAIL_TEMPLATES]} too
+  // (client/src/pages/CustomerCommunications.tsx), proven by the component
+  // test (client/src/pages/__tests__/customer-communications-query-permissions.test.tsx)
+  // instead of here: none of them open a `[role="dialog"]` this registry's
+  // own pattern can assert on — "new template"/"save template" are inline,
+  // not a dialog, and the per-template card buttons (duplicate/edit/delete)
+  // carry a `${template.id}`-suffixed testid with no seeded template to give
+  // it a stable value (the e2e seed creates no email_templates rows, same
+  // reason `allowedPathNeedsState` gives above), so none qualify for this
+  // registry's "if they have stable test ids" bar.
   {
     page: "/communications", opener: "button-preview-apk", anyOf: [P.MANAGE_NOTIFICATIONS],
     source: "client/src/pages/CustomerCommunications.tsx", name: "e-mailvoorbeeld en verzenden: APK",

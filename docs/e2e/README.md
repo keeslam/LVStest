@@ -10,13 +10,13 @@ begin tot eind na — de baliestroom van telefoontje tot ingeleverde bus — en 
 daarbij hoeveel handelingen dat kost, zodat een latere wijziging die er een klik bij
 doet meteen opvalt.
 
-**Wat laag A niet bewijst.** De rechten worden nagelopen voor negen aangenomen
+**Wat laag A niet bewijst.** De rechten worden nagelopen voor tien aangenomen
 profielen (beheerder, manager, balie, schoonmaak, meekijker, boekhouding, onderhoud,
-`reports-only`, `templates-only`). Een groene run zegt dus dat die negen combinaties
-kloppen — niet dat élke denkbare combinatie van vinkjes klopt. In deze applicatie is
-een rol maar een etiket en staan de rechten per persoon aangevinkt, dus een
-medewerker met een ongebruikelijke mix kan nog steeds op een scherm stuiten dat
-gegevens opvraagt die hij niet mag zien. Of die negen profielen overeenkomen met de
+`reports-only`, `templates-only`, `notifications-only`). Een groene run zegt dus dat die
+tien combinaties kloppen — niet dat élke denkbare combinatie van vinkjes klopt. In deze
+applicatie is een rol maar een etiket en staan de rechten per persoon aangevinkt, dus
+een medewerker met een ongebruikelijke mix kan nog steeds op een scherm stuiten dat
+gegevens opvraagt die hij niet mag zien. Of die tien profielen overeenkomen met de
 echte accounts, is een vraag die in `docs/e2e/werkstromen/01-balie.md` aan de eigenaar
 is voorgelegd.
 
@@ -34,6 +34,13 @@ Het negende profiel, `templates-only` (2026-09-21 review, item 6), houdt
 het scherm zelf gaat open op het eigen recht, maar de drie voorbeeld-en-verzendknoppen
 (één per tabblad: APK, onderhoud, aangepast bericht) blijven zichtbaar, uitgeschakeld en
 leggen uit welk recht ontbreekt, in plaats van het scherm zelf te weigeren.
+
+Het tiende profiel, `notifications-only` (B-29a), houdt **Dashboard bekijken** en
+**Meldingen beheren** aan, uitdrukkelijk zonder **E-mailsjablonen beheren** — de eigenaar
+bevestigde dat zulke accounts echt bestaan (sjablonen zijn met opzet alleen voor admin en
+manager). Dat bewijst B-29a's eigen besluit: het scherm gaat nu ook open op **Meldingen
+beheren** alleen, terwijl de sjabloonbeheerknoppen (nieuw sjabloon, opslaan, sjabloon
+bewerken/verwijderen) zichtbaar, uitgeschakeld blijven en het ontbrekende recht noemen.
 
 **Wat de rechtentests sinds september 2026 controleren.**
 `e2e/layer-a/forbidden.spec.ts` opent voor elke rol elk scherm dat die rol niet mag
@@ -66,21 +73,19 @@ dat automatisch aan het eind.
 
 ## Hoe lang het duurt
 
-Op deze machine, 22 september 2026 (na de doorlichting van de rechten, het negende
-profiel en de nabeoordeling die volgde), één volledige `npm run e2e`:
+Op deze machine, 22 september 2026 (na de doorlichting van de rechten, het tiende
+profiel (B-29a) en de nabeoordeling die volgde), één volledige `npm run e2e`:
 
 ```
-335 geslaagd, 2 bewust overgeslagen, 0 mislukt   (ruim 6 minuten)
+355 geslaagd, 2 bewust overgeslagen, 0 mislukt   (ruim 8 minuten)
 ```
 
-Dat getal is de laatst volledig gemeten run, met de zes tests eraf die
-`allowedPathNeedsState` (zie hieronder) inmiddels niet meer aanmaakt — ze stonden erbij
-als "overgeslagen", niet als "geslaagd", dus het aantal geslaagde tests verandert niet.
-De twee overgebleven overslagen zijn allebei al langer bekend: het `menu-settings`-venster
-voor de beheerder, en de gekwarantaineerde 1280x800-test van het Logboek — beide met hun
-eigen `test.fixme`-reden in de broncode. Reken op **ruim zes minuten**, niet op één exact
-getal: het scheelt of de applicatie opnieuw gebouwd moet worden en wat de machine verder
-te doen heeft.
+De twee overslagen zijn allebei al langer bekend: het `menu-settings`-venster voor de
+beheerder, en de gekwarantaineerde 1280x800-test van het Logboek — beide met hun eigen
+`test.fixme`-reden in de broncode. Reken op **ruim acht minuten**, niet op één exact
+getal: het scheelt of de applicatie opnieuw gebouwd moet worden, wat de machine verder
+te doen heeft, en (sinds het tiende profiel) een tiende rol erbij in elk van de drie
+per-rol specs.
 
 Het dekkingsoverzicht van de vensters (`npm run e2e:coverage`, draait ook automatisch
 aan het eind van `npm run e2e`):
@@ -91,14 +96,13 @@ Vensters: 119 bestanden met een venster, 30 bereikt door een test, 89 nog niet
 
 Dat is precies de vastgelegde grens, dus er is niets achteruitgegaan.
 
-**Ruim zes minuten is meer dan de streefwaarde van vijf.** Het langzaamste deel is met
-afstand `e2e/layer-a/dialogs.spec.ts`: 188 van de 337 tests (`npx playwright test -c
-e2e/playwright.config.ts --project=layer-a --list` telt ze precies) en samen zo'n 800
-seconden testtijd, ruim drie vijfde van de ongeveer 1360 seconden die alle tests bij
-elkaar kosten. Die tests draaien met vier tegelijk, dus in werkelijke tijd is het
-ongeveer drie en een derde minuut. De rest van diezelfde run: de schermen per rol
-(221 s), de schermen zonder rechten (228 s), de bewakingstests (43 s) en alle
-werkstromen samen (52 s).
+**Ruim acht minuten is meer dan de streefwaarde van vijf.** Het langzaamste deel is met
+afstand `e2e/layer-a/dialogs.spec.ts`: 194 van de 357 tests (`npx playwright test -c
+e2e/playwright.config.ts --list` telt ze precies) en samen zo'n 930 seconden testtijd,
+ruim de helft van de ongeveer 1610 seconden die alle tests bij elkaar kosten. Die tests
+draaien met vier tegelijk, dus in werkelijke tijd is het ruim vier minuten. De rest van
+diezelfde run: de schermen per rol (271 s), de schermen zonder rechten (306 s), de
+bewakingstests (47 s) en alle werkstromen samen (56 s).
 
 De vier-tegelijk-grens is bewust gekozen: de applicatie zelf houdt maximaal tien
 databaseverbindingen open, en meer tests tegelijk lopen daar tegenaan. Wie het op een
@@ -110,7 +114,7 @@ andere machine sneller wil proberen, kan `E2E_WORKERS` op een ander getal zetten
   kopie, maar vanaf niets: het schema wordt neergezet en daarna draait de echte
   migratie eroverheen — dezelfde weg die een nieuwe productiedatabase aflegt. Zo valt een
   ontbrekende kolom op vóór een medewerker hem tegenkomt.
-- Daarna wordt er vaste testdata ingezet: negen medewerkers (één per profiel), acht
+- Daarna wordt er vaste testdata ingezet: tien medewerkers (één per profiel), acht
   voertuigen, zes klanten en reserveringen in elke status.
 - De applicatie start op **poort 5010**, apart van alles wat er verder draait. De
   kentekenopzoeking praat met een klein lokaal antwoordapparaat op poort 5011.
