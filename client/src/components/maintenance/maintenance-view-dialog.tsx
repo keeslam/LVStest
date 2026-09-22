@@ -722,7 +722,17 @@ export function MaintenanceViewDialog({
                       description: t('viewDialog.expensesCreatedDescription', { count: expenses.length }),
                     });
                   }}
-                />
+                >
+                  {/* POST /api/expenses/scan (server/routes/expenses.ts) guards on
+                      MANAGE_EXPENSES; the other three tiles in this grid are already
+                      gated, this one was not. */}
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_EXPENSES]}>
+                    <Button variant="outline" size="sm" className="w-full gap-2" data-testid="button-scan-invoice">
+                      <Upload className="h-4 w-4" />
+                      {t('invoiceScanner.scanInvoice', { ns: 'expenses' })}
+                    </Button>
+                  </RequiresPermission>
+                </InvoiceScanner>
 
                 <InlineDocumentUpload
                   vehicleId={vehicle?.id || 0}

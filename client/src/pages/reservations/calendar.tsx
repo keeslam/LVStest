@@ -54,8 +54,7 @@ import { ReservationListDialog } from "@/components/reservations/reservation-lis
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
 import { StatusChangeDialog } from "@/components/reservations/status-change-dialog";
 import { EditContractNumberDialog } from "@/components/reservations/edit-contract-number-dialog";
-import { useAuth } from "@/hooks/use-auth";
-import { UserPermission, UserRole } from "@shared/schema";
+import { UserPermission } from "@shared/schema";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
 import { ColorCodingDialog } from "@/components/calendar/color-coding-dialog";
@@ -196,10 +195,7 @@ export default function ReservationCalendarPage() {
   const [editContractNumberOpen, setEditContractNumberOpen] = useState(false);
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
-  const { user: currentUser } = useAuth();
-  const canManageReservations =
-    currentUser?.role === UserRole.ADMIN ||
-    !!currentUser?.permissions?.includes(UserPermission.MANAGE_RESERVATIONS);
+  const canManageReservations = useHasPermission(UserPermission.MANAGE_RESERVATIONS);
   
   // Day reservations dialog
   const [dayDialogOpen, setDayDialogOpen] = useState(false);

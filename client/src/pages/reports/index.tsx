@@ -1694,6 +1694,10 @@ export default function ReportsPage() {
 
         {/* Expenses Tab */}
         <TabsContent value="expenses" className="space-y-6">
+          {!canViewExpenses ? (
+            <NoDataAccess permission={UserPermission.MANAGE_EXPENSES} />
+          ) : (
+          <>
           {/* Expense Summary */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -1801,8 +1805,10 @@ export default function ReportsPage() {
               <ExpenseChart data={expenseChartData} />
             </CardContent>
           </Card>
+          </>
+          )}
         </TabsContent>
-        
+
         {/* Vehicles Tab */}
         <TabsContent value="vehicles" className="space-y-6">
           {!canViewVehicles ? (

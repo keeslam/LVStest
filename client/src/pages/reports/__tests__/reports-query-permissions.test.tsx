@@ -5,7 +5,9 @@
  * ("server narrower than menu, completely"). Each is the core data of its
  * own report tab, so denied renders NoDataAccess in that tab instead of an
  * empty/misleading report. `/api/expenses` was already gated (Task 6b,
- * canViewExpenses) - unaffected here.
+ * canViewExpenses); the expenses tab itself rendered its ordinary "no
+ * expenses" empty state on denial instead of NoDataAccess until the final
+ * fix wave (2026-09-21 review, item 1) closed that hole.
  *
  * Runs in the jsdom project (plan §8.8).
  */
@@ -75,6 +77,31 @@ describe("/reports — the default operations tab needs view_vehicles and view_r
 
     await waitFor(() => expect(calledWith("/api/vehicles")).toBe(true));
     await waitFor(() => expect(calledWith("/api/reservations")).toBe(true));
+    expect(screen.queryByTestId("no-data-access")).not.toBeInTheDocument();
+  });
+});
+
+describe("/reports — the expenses tab needs manage_expenses", () => {
+  it("shows NoDataAccess in the expenses tab and fires no /api/expenses without manage_expenses", async () => {
+    role = UserRole.USER;
+    permissions = [UserPermission.VIEW_REPORTS];
+    const user = userEvent.setup();
+    withClient(<ReportsPage />);
+
+    await user.click(screen.getByRole("tab", { name: /Kosten/i }));
+    expect(await screen.findByTestId("no-data-access")).toHaveTextContent("Kosten beheren");
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(calledWith("/api/expenses")).toBe(false);
+  });
+
+  it("shows no NoDataAccess in the expenses tab and fires /api/expenses with manage_expenses", async () => {
+    role = UserRole.USER;
+    permissions = [UserPermission.VIEW_REPORTS, UserPermission.MANAGE_EXPENSES];
+    const user = userEvent.setup();
+    withClient(<ReportsPage />);
+
+    await user.click(screen.getByRole("tab", { name: /Kosten/i }));
+    await waitFor(() => expect(calledWith("/api/expenses")).toBe(true));
     expect(screen.queryByTestId("no-data-access")).not.toBeInTheDocument();
   });
 });

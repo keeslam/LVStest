@@ -23,6 +23,7 @@ import { Expense, UserPermission } from "@shared/schema";
 import { MoreVertical, Eye, Pencil, Printer, Calendar, FileCheck } from "lucide-react";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { useHasPermission } from "@/hooks/use-has-permission";
+import { NoDataAccess } from "@/components/ui/no-data-access";
 
 // Function to get expense icon based on category
 function getExpenseIcon(category: string) {
@@ -134,12 +135,6 @@ export function RecentExpenses() {
     setGroupDialogOpen(true);
   };
 
-  // Without MANAGE_EXPENSES the server refuses this data outright; an empty
-  // "no recent expenses" card would misrepresent that as "there are none", so
-  // the whole card is hidden instead (brief: a card that can only ever show
-  // data the user may not see is not rendered).
-  if (!canViewExpenses) return null;
-
   return (
     <Card>
       <CardHeader className="px-4 py-3 border-b flex-row justify-between items-center space-y-0">
@@ -151,7 +146,12 @@ export function RecentExpenses() {
         </Link>
       </CardHeader>
       <CardContent className="p-4">
-        {isLoading ? (
+        {/* Without MANAGE_EXPENSES the server refuses this data outright; an
+            empty "no recent expenses" state would misrepresent that as
+            "there are none", so this shows why instead. */}
+        {!canViewExpenses ? (
+          <NoDataAccess permission={UserPermission.MANAGE_EXPENSES} />
+        ) : isLoading ? (
           <div className="flex justify-center p-4">
             <svg className="animate-spin h-5 w-5 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

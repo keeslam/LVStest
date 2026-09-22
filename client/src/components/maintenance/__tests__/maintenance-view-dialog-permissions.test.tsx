@@ -110,3 +110,34 @@ describe("MaintenanceViewDialog — fix round 2, real-site proof", () => {
     });
   });
 });
+
+/**
+ * 2026-09-21 review, item 2: `InvoiceScanner` sat ungated in this same
+ * four-tile grid, the other three tiles already wrapped in
+ * `RequiresPermission` — its action is `POST /api/expenses/scan`
+ * (server/routes/expenses.ts, `hasPermission(UserPermission.MANAGE_EXPENSES)`),
+ * so it now takes a gated `children` trigger the same way `InlineDocumentUpload`
+ * already does. Same "real-site proof" shape as the upload-photos pair above.
+ */
+describe("MaintenanceViewDialog — button-scan-invoice follows manage_expenses (2026-09-21 review, item 2)", () => {
+  it("a denied user clicking button-scan-invoice does not open the invoice scanner", async () => {
+    renderDialog();
+    const button = await screen.findByTestId("button-scan-invoice");
+    expect(button).toHaveAttribute("aria-disabled", "true");
+
+    await userEvent.click(button, { pointerEventsCheck: 0 });
+
+    expect(screen.queryByTestId("input-invoice-file")).not.toBeInTheDocument();
+  });
+
+  it("an allowed user (manage_expenses) can still open it", async () => {
+    setUser(UserRole.USER, [UserPermission.MANAGE_EXPENSES]);
+    renderDialog();
+    const button = await screen.findByTestId("button-scan-invoice");
+    expect(button).not.toBeDisabled();
+    await userEvent.click(button);
+    await waitFor(() => {
+      expect(screen.getByTestId("input-invoice-file")).toBeInTheDocument();
+    });
+  });
+});

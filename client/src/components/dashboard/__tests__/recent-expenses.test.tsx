@@ -4,10 +4,13 @@
  * unconditionally; the server guards that route with `MANAGE_EXPENSES` alone.
  * `user`, `cleaner`, `viewer` and `maintenance` (the E2E profiles without it)
  * got a "Kon de gegevens niet laden" toast on the dashboard for a card they
- * cannot see data on anyway. Per the brief: a card that can only ever show
- * data the user may not see is not rendered at all, rather than shown empty
- * (an empty "no recent expenses" card would misrepresent "not allowed" as
- * "there are none").
+ * cannot see data on anyway.
+ *
+ * Brought into line with the spec's §3 pattern
+ * (docs/superpowers/specs/2026-09-21-toegang-design.md) and its sibling tabs
+ * in reports/index.tsx: the card stays, its header stays, and the body shows
+ * `NoDataAccess` instead of an empty or broken state (an empty "no recent
+ * expenses" card would misrepresent "not allowed" as "there are none").
  *
  * Runs in the jsdom project (plan §8.8).
  */
@@ -62,24 +65,24 @@ afterEach(() => {
 });
 
 describe("finding 2a — /api/expenses/recent follows MANAGE_EXPENSES", () => {
-  it("never asks for recent expenses without MANAGE_EXPENSES, and renders no card", async () => {
+  it("never asks for recent expenses without MANAGE_EXPENSES, and shows NoDataAccess instead", async () => {
     role = UserRole.CLEANER;
     permissions = [];
-    const { container } = withClient(<RecentExpenses />);
+    const { getByTestId } = withClient(<RecentExpenses />);
 
     // Give the disabled query a tick to (not) settle before asserting.
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(calledWith(EXPENSES_URL)).toBe(false);
-    expect(container).toBeEmptyDOMElement();
+    expect(getByTestId("no-data-access")).toBeTruthy();
   });
 
   it("asks for recent expenses when the user holds MANAGE_EXPENSES", async () => {
     role = UserRole.ACCOUNTANT;
     permissions = [UserPermission.MANAGE_EXPENSES];
-    const { container } = withClient(<RecentExpenses />);
+    const { queryByTestId } = withClient(<RecentExpenses />);
 
     await waitFor(() => expect(calledWith(EXPENSES_URL)).toBe(true));
-    expect(container).not.toBeEmptyDOMElement();
+    expect(queryByTestId("no-data-access")).toBeNull();
   });
 
   it("admin gets the card too, permission list or not", async () => {

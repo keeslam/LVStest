@@ -63,9 +63,11 @@ interface ParsedInvoice {
 interface InvoiceScannerProps {
   selectedVehicleId?: number;
   onExpensesCreated?: (expenses: any[]) => void;
+  /** Custom trigger (e.g. gated by RequiresPermission); falls back to the default button. */
+  children?: React.ReactNode;
 }
 
-export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: InvoiceScannerProps) {
+export function InvoiceScanner({ selectedVehicleId, onExpensesCreated, children }: InvoiceScannerProps) {
   const { t } = useTranslation(["expenses", "common"]);
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
@@ -352,14 +354,20 @@ export function InvoiceScanner({ selectedVehicleId, onExpensesCreated }: Invoice
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
-          className="gap-2" 
-          data-testid="button-scan-invoice"
-        >
-          <Upload className="h-4 w-4" />
-          {t('invoiceScanner.scanInvoice')}
-        </Button>
+        {children ? (
+          <div className="cursor-pointer" onClick={() => setIsOpen(true)}>
+            {children}
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            className="gap-2"
+            data-testid="button-scan-invoice"
+          >
+            <Upload className="h-4 w-4" />
+            {t('invoiceScanner.scanInvoice')}
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
