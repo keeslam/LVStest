@@ -37,14 +37,19 @@ function renderAt(path: string) {
   const client = new QueryClient({
     defaultOptions: { queries: { queryFn: getQueryFn({ on401: "throw" }), retry: false, gcTime: 0 } },
   });
-  const utils = render(
+  const buildUi = () => (
     <QueryClientProvider client={client}>
       <Router hook={hook}>
         <ProtectedRoute path={path} component={PageStub} />
       </Router>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
-  return { ...utils, history };
+  const utils = render(buildUi());
+  // Rebuilds and re-renders the same tree (same client/hook, fresh elements),
+  // which re-invokes every function component's hooks (including the mocked
+  // useAuth()) against whatever authUser/authLoading now hold — used to
+  // simulate a loading state resolving without remounting the tree.
+  return { ...utils, history, rerenderSame: () => utils.rerender(buildUi()) };
 }
 
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -79,6 +84,35 @@ describe("ProtectedRoute — permission check (B-28)", () => {
     // Give any accidental query a tick to fire before asserting it didn't.
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(calledWith(PAGE_URL)).toBe(false);
+  });
+
+  it("while isLoading is true, a user without the right sees the spinner, not the no-access page, and the page never mounts", async () => {
+    authUser = { id: 5, username: "cleaner", role: UserRole.CLEANER, permissions: [UserPermission.VIEW_VEHICLES] };
+    authLoading = true;
+    const { container } = renderAt("/maintenance");
+
+    expect(container.querySelector(".animate-spin")).toBeInTheDocument();
+    expect(screen.queryByTestId("no-access-page")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("page-stub")).not.toBeInTheDocument();
+    // Give any accidental query a tick to fire before asserting it didn't.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(calledWith(PAGE_URL)).toBe(false);
+  });
+
+  it("once loading resolves to a user with the right permission, the page mounts", async () => {
+    authUser = { id: 6, username: "maint", role: UserRole.MAINTENANCE, permissions: [UserPermission.MANAGE_MAINTENANCE] };
+    authLoading = true;
+    const { rerenderSame } = renderAt("/maintenance");
+
+    expect(screen.queryByTestId("page-stub")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("no-access-page")).not.toBeInTheDocument();
+
+    authLoading = false;
+    rerenderSame();
+
+    await waitFor(() => expect(screen.getByTestId("page-stub")).toBeInTheDocument());
+    expect(screen.queryByTestId("no-access-page")).not.toBeInTheDocument();
+    await waitFor(() => expect(calledWith(PAGE_URL)).toBe(true));
   });
 
   it("with the right permission, the page mounts as before and fires its own query", async () => {

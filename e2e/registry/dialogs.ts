@@ -140,6 +140,24 @@ export const DIALOGS: DialogEntry[] = [
   { page: "/portal-admin", opener: "button-import-fines", anyOf: [P.VIEW_PORTAL, P.MANAGE_PORTAL], source: "client/src/components/fines/fine-import-dialog.tsx", name: "boetes importeren" },
 
   { page: "/expenses", opener: "button-invoice-inbox", anyOf: [P.MANAGE_EXPENSES], source: "client/src/components/expenses/invoice-inbox-dialog.tsx", name: "ontvangen facturen" },
+
+  // --- /communications ---------------------------------------------------
+  // 2026-09-21 review, item 6 — B-29's other half: the screen itself opens on
+  // MANAGE_EMAIL_TEMPLATES (shared/page-access.ts), these three "preview &
+  // send" buttons (one per send-mode sub-tab, all three wrapped in
+  // RequiresPermission anyOf={[MANAGE_NOTIFICATIONS]}, all three opening the
+  // same shared email-preview Dialog in this file) separately need
+  // MANAGE_NOTIFICATIONS. The "send" outer tab and its "apk" sub-tab are both
+  // the default, so button-preview-apk needs no `via`; the other two sub-tabs
+  // do. Each Button is ALSO disabled by component state (no vehicle/customer
+  // and no template chosen yet) independent of the permission this registry
+  // proves — dialogs.spec.ts fixmes the "allowed" (admin/manager) case for
+  // exactly these three openers for that reason; the denied case (this task's
+  // own templates-only profile) is unaffected, since RequiresPermission's own
+  // tooltip is what it asserts, not a click.
+  { page: "/communications", opener: "button-preview-apk", anyOf: [P.MANAGE_NOTIFICATIONS], source: "client/src/pages/CustomerCommunications.tsx", name: "e-mailvoorbeeld en verzenden: APK" },
+  { page: "/communications", opener: "button-preview-maintenance", via: "tab-maintenance", anyOf: [P.MANAGE_NOTIFICATIONS], source: "client/src/pages/CustomerCommunications.tsx", name: "e-mailvoorbeeld en verzenden: onderhoud" },
+  { page: "/communications", opener: "button-preview-custom", via: "tab-custom", anyOf: [P.MANAGE_NOTIFICATIONS], source: "client/src/pages/CustomerCommunications.tsx", name: "e-mailvoorbeeld en verzenden: aangepast bericht" },
 ];
 
 /**

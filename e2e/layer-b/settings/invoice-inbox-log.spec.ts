@@ -335,6 +335,32 @@ test.describe("Instellingen: Logboek van het factuurpostvak", () => {
         return dialog;
       });
 
+      // The dedicated "op 1280x800" describe below is quarantined (`test.fixme`,
+      // see the investigation note above it) — its own open sequence, not this
+      // narrower check, is what reliably outlasts a full-suite budget. Rather
+      // than leave the branch with zero 1280x800 coverage of the logbook's
+      // column/action overflow, this reuses this already-open dialog: resize
+      // down, run the same overflow + both-row-actions assertions the
+      // quarantined test would have run on the Facturen tab, then restore the
+      // viewport so the rest of this test continues at 1440x900 as before.
+      await test.step("Op 1280x800 blijft de Facturen-tab binnen de dialoog: geen horizontale scroll, beide acties van de Bandenhuis-regel zichtbaar", async () => {
+        await page.setViewportSize({ width: 1280, height: 800 });
+        await settle(page);
+        await assertNoHorizontalOverflow(logDialog, "Facturen");
+        await assertWithinDialog(
+          logDialog,
+          logDialog.getByTestId(`link-invoice-inbox-log-file-${reviewPlateUnknownId}`),
+          "Facturen: actie 'PDF openen'",
+        );
+        await assertWithinDialog(
+          logDialog,
+          logDialog.getByTestId(`link-invoice-inbox-log-review-${reviewPlateUnknownId}`),
+          "Facturen: actie 'Naar controleren'",
+        );
+        await page.setViewportSize({ width: 1440, height: 900 });
+        await settle(page);
+      });
+
       await test.step("Zoeken op factuurnummer laat alleen de Bandenhuis-regel over", async () => {
         await logDialog.getByTestId("input-invoice-inbox-log-search").fill("f-88213");
         await settle(page);

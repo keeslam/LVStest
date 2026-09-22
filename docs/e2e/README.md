@@ -10,22 +10,30 @@ begin tot eind na — de baliestroom van telefoontje tot ingeleverde bus — en 
 daarbij hoeveel handelingen dat kost, zodat een latere wijziging die er een klik bij
 doet meteen opvalt.
 
-**Wat laag A niet bewijst.** De rechten worden nagelopen voor acht aangenomen
+**Wat laag A niet bewijst.** De rechten worden nagelopen voor negen aangenomen
 profielen (beheerder, manager, balie, schoonmaak, meekijker, boekhouding, onderhoud,
-`reports-only`). Een groene run zegt dus dat die acht combinaties kloppen — niet dat
-élke denkbare combinatie van vinkjes klopt. In deze applicatie is een rol maar een
-etiket en staan de rechten per persoon aangevinkt, dus een medewerker met een
-ongebruikelijke mix kan nog steeds op een scherm stuiten dat gegevens opvraagt die hij
-niet mag zien. Of die acht profielen overeenkomen met de echte accounts, is een vraag
-die in `docs/e2e/werkstromen/01-balie.md` aan de eigenaar is voorgelegd.
+`reports-only`, `templates-only`). Een groene run zegt dus dat die negen combinaties
+kloppen — niet dat élke denkbare combinatie van vinkjes klopt. In deze applicatie is
+een rol maar een etiket en staan de rechten per persoon aangevinkt, dus een
+medewerker met een ongebruikelijke mix kan nog steeds op een scherm stuiten dat
+gegevens opvraagt die hij niet mag zien. Of die negen profielen overeenkomen met de
+echte accounts, is een vraag die in `docs/e2e/werkstromen/01-balie.md` aan de eigenaar
+is voorgelegd.
 
 Het achtste profiel, `reports-only` (`e2e/seed/users.ts`), houdt expres alleen
 **Dashboard bekijken** en **Rapporten bekijken** aan — niets uit de voertuig-,
-reserverings- of klantenfamilie, die de andere zeven toevallig allemaal ook hebben. Dat
+reserverings- of klantenfamilie, die de andere toevallig allemaal ook hebben. Dat
 bewijst de sluitende zaak uit `docs/superpowers/specs/2026-09-21-toegang-design.md` §3:
 een scherm mag nooit onvoorwaardelijk gegevens opvragen die bij een ándere
 rechtenfamilie horen dan het scherm zelf. Dit profiel opent precies `/` en `/reports`
 (zijn eigen `anyOf` in `shared/page-access.ts`) zonder een enkele schending.
+
+Het negende profiel, `templates-only` (2026-09-21 review, item 6), houdt
+**Dashboard bekijken** en **E-mailsjablonen beheren** aan, uitdrukkelijk zonder
+**Meldingen beheren**. Dat bewijst de andere helft van B-29's `/communications`-besluit:
+het scherm zelf gaat open op het eigen recht, maar de drie voorbeeld-en-verzendknoppen
+(één per tabblad: APK, onderhoud, aangepast bericht) blijven zichtbaar, uitgeschakeld en
+leggen uit welk recht ontbreekt, in plaats van het scherm zelf te weigeren.
 
 **Wat de rechtentests sinds september 2026 controleren.**
 `e2e/layer-a/forbidden.spec.ts` opent voor elke rol elk scherm dat die rol niet mag
@@ -58,33 +66,41 @@ dat automatisch aan het eind.
 
 ## Hoe lang het duurt
 
-Op deze machine, 21 september 2026, één volledige `npm run e2e`:
+Op deze machine, 22 september 2026 (na de doorlichting van de rechten en het negende
+profiel), één volledige `npm run e2e`:
 
 ```
-282 geslaagd, 1 bewust overgeslagen, 0 mislukt   (6 minuten en 4 seconden)
+335 geslaagd, 8 bewust overgeslagen, 0 mislukt   (6,4 minuten)
 ```
 
-Een tweede volledige run later diezelfde dag, na een reparatieronde, kwam uit op 6,2
-minuten met dezelfde aantallen. Reken dus op **ruim zes minuten**, niet op één exact
-getal: het scheelt of de applicatie opnieuw gebouwd moet worden en wat de machine verder
-te doen heeft.
+Van de acht overgeslagen tests zijn er twee al langer bekend (het `menu-settings`-venster
+voor de beheerder, en de gekwarantaineerde 1280x800-test van het Logboek — beide met hun
+eigen `test.fixme`-reden in de broncode). De overige zes zijn nieuw, sinds het negende
+profiel: de drie voorbeeld-en-verzendknoppen op **Communicatie** vragen zowel een recht
+(`manage_notifications`) als een keuze van voertuig/klant en sjabloon die deze testsuite
+niet zet, dus voor de beheerder en de manager — die het recht al hebben — legt
+`dialogs.spec.ts` die drie knoppen bewust stil in plaats van er blind op te klikken; het
+`templates-only`-profiel (dat het recht niet heeft) doorloopt gewoon zijn eigen,
+niet-overgeslagen test die laat zien dat de knop zichtbaar, uitgeschakeld en verklarend
+is. Reken op **ruim zes minuten**, niet op één exact getal: het scheelt of de applicatie
+opnieuw gebouwd moet worden en wat de machine verder te doen heeft.
 
 Het dekkingsoverzicht van de vensters (`npm run e2e:coverage`, draait ook automatisch
 aan het eind van `npm run e2e`):
 
 ```
-Vensters: 119 bestanden met een venster, 29 bereikt door een test, 90 nog niet
+Vensters: 119 bestanden met een venster, 30 bereikt door een test, 89 nog niet
 ```
 
 Dat is precies de vastgelegde grens, dus er is niets achteruitgegaan.
 
 **Ruim zes minuten is meer dan de streefwaarde van vijf.** Het langzaamste deel is met
-afstand `e2e/layer-a/dialogs.spec.ts`: in de hierboven gemeten run 163 van de 283 tests
-en samen 783 seconden testtijd, ruim drie vijfde van de 1278 seconden die alle tests bij
+afstand `e2e/layer-a/dialogs.spec.ts`: in de hierboven gemeten run 194 van de 343 tests
+en samen 802 seconden testtijd, ruim drie vijfde van de 1360 seconden die alle tests bij
 elkaar kosten. Die tests draaien met vier tegelijk, dus in werkelijke tijd is het
-ongeveer drie en een halve minuut. De rest van diezelfde run: de schermen per rol
-(226 s), de schermen zonder rechten (158 s), de bewakingstests (42 s) en alle
-werkstromen samen (58 s).
+ongeveer drie en een derde minuut. De rest van diezelfde run: de schermen per rol
+(221 s), de schermen zonder rechten (228 s), de bewakingstests (43 s) en alle
+werkstromen samen (52 s).
 
 De vier-tegelijk-grens is bewust gekozen: de applicatie zelf houdt maximaal tien
 databaseverbindingen open, en meer tests tegelijk lopen daar tegenaan. Wie het op een
