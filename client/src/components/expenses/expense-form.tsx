@@ -31,12 +31,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Vehicle } from "@shared/schema";
+import { Vehicle, UserPermission } from "@shared/schema";
 import { format } from "date-fns";
 import { formatFileSize, formatExpenseCategory, formatVehicleType } from "@/lib/format-utils";
 import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { InvoiceScanner } from "@/components/invoice-scanner";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { NoDataAccess } from "@/components/ui/no-data-access";
 
 
 // Expense categories
@@ -126,9 +128,16 @@ export function ExpenseForm({
   const [formInitialized, setFormInitialized] = useState(false);
   const [recentVehicles, setRecentVehicles] = useState<string[]>([]);
   
+  // This form is only reachable by a user who already holds MANAGE_EXPENSES
+  // (the /expenses/add page's own gate, and every dialog that embeds this
+  // form is itself gated the same way) - but MANAGE_EXPENSES does not imply
+  // vehicle rights, and the server guards GET /api/vehicles with
+  // VIEW_VEHICLES/MANAGE_VEHICLES instead (routes.ts:646). Fact sheet row 9.
+  const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
   // Fetch vehicles for select field
   const { data: vehicles, isLoading: isLoadingVehicles } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
+    enabled: canViewVehicles,
   });
   
   // Create vehicle options for the combobox
@@ -365,16 +374,20 @@ export function ExpenseForm({
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
                     <FormLabel>{t('form.vehicle')}</FormLabel>
-                    <FormControl>
-                      <VehicleSelector
-                        vehicles={vehicles || []}
-                        value={field.value > 0 ? field.value.toString() : ""}
-                        onChange={(value) => field.onChange(parseInt(value))}
-                        placeholder={t('form.searchSelectVehicle')}
-                        disabled={vehicleId !== null}
-                        recentVehicleIds={recentVehicles}
-                      />
-                    </FormControl>
+                    {!canViewVehicles ? (
+                      <NoDataAccess permission={UserPermission.VIEW_VEHICLES} />
+                    ) : (
+                      <FormControl>
+                        <VehicleSelector
+                          vehicles={vehicles || []}
+                          value={field.value > 0 ? field.value.toString() : ""}
+                          onChange={(value) => field.onChange(parseInt(value))}
+                          placeholder={t('form.searchSelectVehicle')}
+                          disabled={vehicleId !== null}
+                          recentVehicleIds={recentVehicles}
+                        />
+                      </FormControl>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
