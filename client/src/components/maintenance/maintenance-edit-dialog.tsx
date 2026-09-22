@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { RequiresPermission } from "@/components/ui/requires-permission";
+import { UserPermission } from "@shared/schema";
 import { Textarea } from "@/components/ui/textarea";
 import { 
   Select,
@@ -637,20 +639,22 @@ export function MaintenanceEditDialog({
               >
                 {t('common:actions.cancel')}
               </Button>
-              <Button
-                type="submit"
-                disabled={updateMutation.isPending}
-                data-testid="button-update-maintenance"
-              >
-                {updateMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t('editDialog.updating')}
-                  </>
-                ) : (
-                  t('editDialog.updateMaintenance')
-                )}
-              </Button>
+              <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                <Button
+                  type="submit"
+                  disabled={updateMutation.isPending}
+                  data-testid="button-update-maintenance"
+                >
+                  {updateMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {t('editDialog.updating')}
+                    </>
+                  ) : (
+                    t('editDialog.updateMaintenance')
+                  )}
+                </Button>
+              </RequiresPermission>
             </DialogFooter>
           </form>
         </Form>

@@ -42,6 +42,7 @@ import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Calendar, AlertTriangle, Wrench, Clock, Car, Filter } from "lucide-react";
 import { officeToday } from "@/lib/office-date";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 
 const scheduleMaintenanceSchema = z.object({
   vehicleId: z.string().min(1, "Please select a vehicle"),
@@ -1290,20 +1291,34 @@ export function ScheduleMaintenanceDialog({
               >
                 {t('common:actions.cancel')}
               </Button>
-              <Button
-                type="submit"
-                disabled={scheduleMaintenanceMutation.isPending}
-                data-testid="button-schedule"
+              {/* Task 4 (docs/superpowers/specs/2026-09-21-toegang-design.md, §5):
+                  create mode submits POST /api/reservations (MANAGE_RESERVATIONS
+                  only — that route is not maintenance-exclusive, so it is not
+                  widened). Edit mode submits PATCH /api/reservations/:id/basic,
+                  which IS reachable only from maintenance-editing flows (grepped:
+                  its only caller anywhere in the client is this dialog's own
+                  edit-mode branch) — the one case the spec allows widening, done
+                  server-side (server/routes.ts) with a server test. */}
+              <RequiresPermission
+                anyOf={editingReservation
+                  ? [UserPermission.MANAGE_RESERVATIONS, UserPermission.MANAGE_MAINTENANCE]
+                  : [UserPermission.MANAGE_RESERVATIONS]}
               >
-                {scheduleMaintenanceMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {editingReservation ? t('scheduleDialog.updating') : t('scheduleDialog.scheduling')}
-                  </>
-                ) : (
-                  editingReservation ? t('scheduleDialog.updateMaintenance') : t('scheduleDialog.scheduleMaintenanceButton')
-                )}
-              </Button>
+                <Button
+                  type="submit"
+                  disabled={scheduleMaintenanceMutation.isPending}
+                  data-testid="button-schedule"
+                >
+                  {scheduleMaintenanceMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {editingReservation ? t('scheduleDialog.updating') : t('scheduleDialog.scheduling')}
+                    </>
+                  ) : (
+                    editingReservation ? t('scheduleDialog.updateMaintenance') : t('scheduleDialog.scheduleMaintenanceButton')
+                  )}
+                </Button>
+              </RequiresPermission>
             </DialogFooter>
           </form>
         </Form>

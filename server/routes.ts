@@ -3590,7 +3590,15 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // Update reservation data (JSON endpoint without file upload)
-  app.patch("/api/reservations/:id/basic", hasPermission(UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
+  // Task 4 (docs/superpowers/specs/2026-09-21-toegang-design.md, §5): the
+  // only caller of this route anywhere in the client is
+  // schedule-maintenance-dialog.tsx's edit-mode submit, itself only reached
+  // from maintenance-block-editing flows (client/src/pages/maintenance/calendar.tsx,
+  // client/src/components/barcodes/scan-panel.tsx's "open maintenance block"
+  // action) — a maintenance action reachable only from maintenance-editing
+  // screens, so per spec §5 it additionally accepts MANAGE_MAINTENANCE (OR),
+  // reported to the owner. Nothing is narrowed.
+  app.patch("/api/reservations/:id/basic", hasPermission(UserPermission.MANAGE_RESERVATIONS, UserPermission.MANAGE_MAINTENANCE), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {

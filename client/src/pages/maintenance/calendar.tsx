@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { Vehicle, Reservation } from "@shared/schema";
+import { Vehicle, Reservation, UserPermission } from "@shared/schema";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 import type { ServiceDueInfo } from "@shared/service-due";
 import { displayLicensePlate } from "@/lib/utils";
 import { isWeekendIso } from "@/lib/format-utils";
@@ -1101,16 +1102,25 @@ export default function MaintenanceCalendar() {
             </svg>
             {t('calendarPage.viewCompletedButton', { count: completedMaintenanceBlocks.length })}
           </Button>
-          <Button
-            onClick={() => {
-              setSelectedScheduleDate(null); // No pre-selected date from header button
-              setIsScheduleDialogOpen(true);
-            }}
-            data-testid="button-schedule-maintenance"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            {t('maintenance:scheduleDialog.scheduleMaintenanceButton')}
-          </Button>
+          {/* Task 4 finding (docs/superpowers/specs/2026-09-21-toegang-design.md, §5):
+              ScheduleMaintenanceDialog's create-mode submit calls
+              POST /api/reservations (server/routes.ts:2966), which accepts
+              MANAGE_RESERVATIONS only — not MANAGE_MAINTENANCE, this page's
+              own access permission. Not maintenance-exclusive (the same
+              route serves every other reservation-creation flow in the
+              app), so per spec §5 it is reported, not widened. */}
+          <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+            <Button
+              onClick={() => {
+                setSelectedScheduleDate(null); // No pre-selected date from header button
+                setIsScheduleDialogOpen(true);
+              }}
+              data-testid="button-schedule-maintenance"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {t('maintenance:scheduleDialog.scheduleMaintenanceButton')}
+            </Button>
+          </RequiresPermission>
         </div>
       </div>
       
@@ -1233,19 +1243,22 @@ export default function MaintenanceCalendar() {
                         {/* Quick add button - only shows on hover for current month days */}
                         {isCurrentMonth && (
                           <div className="absolute top-1 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="h-5 w-5 bg-primary/10 hover:bg-primary/20 rounded-full border border-primary/20 shadow-sm p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const dateStr = safeFormat(day, 'yyyy-MM-dd', '');
-                                setSelectedScheduleDate(dateStr);
-                                setIsScheduleDialogOpen(true);
-                              }}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
+                            <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-5 w-5 bg-primary/10 hover:bg-primary/20 rounded-full border border-primary/20 shadow-sm p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const dateStr = safeFormat(day, 'yyyy-MM-dd', '');
+                                  setSelectedScheduleDate(dateStr);
+                                  setIsScheduleDialogOpen(true);
+                                }}
+                                data-testid={`button-quick-add-maintenance-${safeFormat(day, 'yyyy-MM-dd', 'unknown')}`}
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </RequiresPermission>
                           </div>
                         )}
                         <div className="flex justify-between items-center mb-3">
@@ -1298,34 +1311,36 @@ export default function MaintenanceCalendar() {
                                       {/* Action buttons - only show on hover */}
                                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                         {isMaintenanceBlock && (
-                                          <Button 
-                                            size="icon"
-                                            variant="ghost"
-                                            className="h-4 w-4 p-0"
-                                            onClick={async (e) => {
-                                              e.stopPropagation();
-                                              try {
-                                                const response = await fetch('/api/reservations');
-                                                const allReservations = await response.json();
-                                                const actualReservation = allReservations.find((r: any) => 
-                                                  r.vehicleId === event.vehicleId && 
-                                                  r.type === 'maintenance_block' &&
-                                                  r.startDate === event.date
-                                                );
-                                                
-                                                if (actualReservation) {
-                                                  handleEditMaintenance(actualReservation);
+                                          <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              className="h-4 w-4 p-0"
+                                              onClick={async (e) => {
+                                                e.stopPropagation();
+                                                try {
+                                                  const response = await fetch('/api/reservations');
+                                                  const allReservations = await response.json();
+                                                  const actualReservation = allReservations.find((r: any) =>
+                                                    r.vehicleId === event.vehicleId &&
+                                                    r.type === 'maintenance_block' &&
+                                                    r.startDate === event.date
+                                                  );
+
+                                                  if (actualReservation) {
+                                                    handleEditMaintenance(actualReservation);
+                                                  }
+                                                } catch (error) {
+                                                  console.error('Failed to fetch reservation:', error);
                                                 }
-                                              } catch (error) {
-                                                console.error('Failed to fetch reservation:', error);
-                                              }
-                                            }}
-                                            data-testid={`button-edit-${event.id}`}
-                                          >
-                                            <Edit className="h-3 w-3" />
-                                          </Button>
+                                              }}
+                                              data-testid={`button-edit-${event.id}`}
+                                            >
+                                              <Edit className="h-3 w-3" />
+                                            </Button>
+                                          </RequiresPermission>
                                         )}
-                                        <Button 
+                                        <Button
                                           size="icon"
                                           variant="ghost"
                                           className="h-4 w-4 p-0"
@@ -1371,40 +1386,42 @@ export default function MaintenanceCalendar() {
                                       </p>
                                       <div className="flex items-center pt-2 gap-2">
                                         {isMaintenanceBlock && (
-                                          <Button 
-                                            size="sm" 
-                                            variant="outline"
-                                            onClick={async () => {
-                                              try {
-                                                const response = await fetch('/api/reservations');
-                                                const allReservations = await response.json();
-                                                const actualReservation = allReservations.find((r: any) => 
-                                                  r.vehicleId === event.vehicleId && 
-                                                  r.type === 'maintenance_block' &&
-                                                  r.startDate === event.date
-                                                );
-                                                
-                                                if (actualReservation) {
-                                                  handleEditMaintenance(actualReservation);
+                                          <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={async () => {
+                                                try {
+                                                  const response = await fetch('/api/reservations');
+                                                  const allReservations = await response.json();
+                                                  const actualReservation = allReservations.find((r: any) =>
+                                                    r.vehicleId === event.vehicleId &&
+                                                    r.type === 'maintenance_block' &&
+                                                    r.startDate === event.date
+                                                  );
+
+                                                  if (actualReservation) {
+                                                    handleEditMaintenance(actualReservation);
+                                                  }
+                                                } catch (error) {
+                                                  console.error('Failed to fetch reservation:', error);
                                                 }
-                                              } catch (error) {
-                                                console.error('Failed to fetch reservation:', error);
-                                              }
-                                            }}
-                                            data-testid={`hover-edit-${event.id}`}
-                                          >
-                                            <Edit className="h-3 w-3 mr-1" />
-                                            {t('common:actions.edit')}
-                                          </Button>
+                                              }}
+                                              data-testid={`hover-edit-${event.id}`}
+                                            >
+                                              <Edit className="h-3 w-3 mr-1" />
+                                              {t('common:actions.edit')}
+                                            </Button>
+                                          </RequiresPermission>
                                         )}
                                         {event.type === 'scheduled_maintenance' ? (
-                                          <Button 
-                                            size="sm" 
-                                            variant="outline" 
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
                                             onClick={(e) => {
                                               e.preventDefault();
                                               e.stopPropagation();
-                                              
+
                                               // For scheduled maintenance, extract the reservation ID from the event ID
                                               let reservationId: number;
                                               if (typeof event.id === 'string') {
@@ -1414,7 +1431,7 @@ export default function MaintenanceCalendar() {
                                               } else {
                                                 reservationId = event.id;
                                               }
-                                              
+
                                               if (reservationId && !isNaN(reservationId) && reservationId > 0) {
                                                 setSelectedMaintenanceReservationId(reservationId);
                                                 setMaintenanceReservationDialogOpen(true);
@@ -1432,23 +1449,25 @@ export default function MaintenanceCalendar() {
                                             {t('calendarPage.viewMaintenanceButton')}
                                           </Button>
                                         ) : (
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={(e) => {
-                                              e.preventDefault();
-                                              e.stopPropagation();
-                                              openScheduleFromEvent({
-                                                date: event.date,
-                                                vehicleId: event.vehicleId,
-                                                type: event.type
-                                              });
-                                            }}
-                                            data-testid={`hover-schedule-${event.vehicleId}`}
-                                          >
-                                            <Wrench className="h-3 w-3 mr-1" />
-                                            {t('maintenance:scheduleDialog.scheduleMaintenanceButton')}
-                                          </Button>
+                                          <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                openScheduleFromEvent({
+                                                  date: event.date,
+                                                  vehicleId: event.vehicleId,
+                                                  type: event.type
+                                                });
+                                              }}
+                                              data-testid={`hover-schedule-${event.vehicleId}`}
+                                            >
+                                              <Wrench className="h-3 w-3 mr-1" />
+                                              {t('maintenance:scheduleDialog.scheduleMaintenanceButton')}
+                                            </Button>
+                                          </RequiresPermission>
                                         )}
                                       </div>
                                     </div>
@@ -1525,8 +1544,9 @@ export default function MaintenanceCalendar() {
                         <div className="flex gap-2">
                           {isMaintenanceBlock && (
                             <>
-                              <Button 
-                                size="sm" 
+                              <RequiresPermission anyOf={[UserPermission.MANAGE_MAINTENANCE, UserPermission.MANAGE_RESERVATIONS]}>
+                              <Button
+                                size="sm"
                                 variant="default"
                                 className="bg-green-600 hover:bg-green-700"
                                 onClick={async () => {
@@ -1582,6 +1602,8 @@ export default function MaintenanceCalendar() {
                                 </svg>
                                 {t('calendarPage.completeButton')}
                               </Button>
+                              </RequiresPermission>
+                              <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -1603,12 +1625,15 @@ export default function MaintenanceCalendar() {
                                     console.error('Failed to fetch reservation:', error);
                                   }
                                 }}
+                                data-testid={`button-edit-day-${event.id}`}
                               >
                                 <Edit className="h-4 w-4 mr-1" />
                                 {t('common:actions.edit')}
                               </Button>
-                              <Button 
-                                size="sm" 
+                              </RequiresPermission>
+                              <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                              <Button
+                                size="sm"
                                 variant="outline"
                                 onClick={async () => {
                                   try {
@@ -1620,7 +1645,7 @@ export default function MaintenanceCalendar() {
                                     } else {
                                       reservationId = event.id;
                                     }
-                                    
+
                                     if (reservationId && reservationId > 0) {
                                       // Fetch only the specific reservation instead of all
                                       const response = await fetch(`/api/reservations/${reservationId}`);
@@ -1640,6 +1665,7 @@ export default function MaintenanceCalendar() {
                                 <Trash2 className="h-4 w-4 mr-1" />
                                 {t('common:actions.delete')}
                               </Button>
+                              </RequiresPermission>
                             </>
                           )}
                           {event.type === 'scheduled_maintenance' ? (
@@ -1667,6 +1693,7 @@ export default function MaintenanceCalendar() {
                               {t('calendarPage.viewMaintenanceButton')}
                             </Button>
                           ) : (
+                            <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
                             <Button
                               size="sm"
                               variant="outline"
@@ -1682,6 +1709,7 @@ export default function MaintenanceCalendar() {
                               <Wrench className="h-4 w-4 mr-1" />
                               {t('maintenance:scheduleDialog.scheduleMaintenanceButton')}
                             </Button>
+                            </RequiresPermission>
                           )}
                         </div>
                       </div>
@@ -1689,23 +1717,26 @@ export default function MaintenanceCalendar() {
                   </Card>
                 );
               })}
-              
+
               {getMaintenanceEventsForDate(selectedDay).length === 0 && (
                 <div className="text-center py-8 text-gray-500">
                   <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                   <p>{t('calendarPage.noEventsForDay')}</p>
-                  <Button
-                    className="mt-4"
-                    onClick={() => {
-                      const dateStr = selectedDay ? safeFormat(selectedDay, 'yyyy-MM-dd', '') : null;
-                      setSelectedScheduleDate(dateStr);
-                      closeDayDialog();
-                      setIsScheduleDialogOpen(true);
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    {t('maintenance:scheduleDialog.scheduleMaintenanceButton')}
-                  </Button>
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                    <Button
+                      className="mt-4"
+                      onClick={() => {
+                        const dateStr = selectedDay ? safeFormat(selectedDay, 'yyyy-MM-dd', '') : null;
+                        setSelectedScheduleDate(dateStr);
+                        closeDayDialog();
+                        setIsScheduleDialogOpen(true);
+                      }}
+                      data-testid="button-schedule-maintenance-day-dialog"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      {t('maintenance:scheduleDialog.scheduleMaintenanceButton')}
+                    </Button>
+                  </RequiresPermission>
                 </div>
               )}
             </div>
@@ -2174,48 +2205,52 @@ export default function MaintenanceCalendar() {
                             )}
                           </div>
                           <div className="flex gap-2 ml-4">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={async () => {
-                                try {
-                                  await apiRequest('PATCH', `/api/reservations/${maintenance.id}`, {
-                                    maintenanceStatus: 'in'
-                                  });
-                                  invalidateRelatedQueries('reservations');
-                                  toast({
-                                    title: t('calendarPage.toasts.maintenanceRevertedTitle'),
-                                    description: t('calendarPage.toasts.maintenanceRevertedDescription')
-                                  });
-                                } catch (error) {
-                                  toast({
-                                    title: t('common:status.error'),
-                                    description: t('calendarPage.toasts.revertFailedDescription'),
-                                    variant: "destructive"
-                                  });
-                                }
-                              }}
-                              data-testid={`button-revert-${maintenance.id}`}
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                                <path d="M21 3v5h-5"/>
-                                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                                <path d="M8 16H3v5"/>
-                              </svg>
-                              {t('calendarPage.revertButton')}
-                            </Button>
+                            <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={async () => {
+                                  try {
+                                    await apiRequest('PATCH', `/api/reservations/${maintenance.id}`, {
+                                      maintenanceStatus: 'in'
+                                    });
+                                    invalidateRelatedQueries('reservations');
+                                    toast({
+                                      title: t('calendarPage.toasts.maintenanceRevertedTitle'),
+                                      description: t('calendarPage.toasts.maintenanceRevertedDescription')
+                                    });
+                                  } catch (error) {
+                                    toast({
+                                      title: t('common:status.error'),
+                                      description: t('calendarPage.toasts.revertFailedDescription'),
+                                      variant: "destructive"
+                                    });
+                                  }
+                                }}
+                                data-testid={`button-revert-${maintenance.id}`}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                                  <path d="M21 3v5h-5"/>
+                                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                                  <path d="M8 16H3v5"/>
+                                </svg>
+                                {t('calendarPage.revertButton')}
+                              </Button>
+                            </RequiresPermission>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="text-red-600 hover:text-red-700"
-                                  data-testid={`button-delete-${maintenance.id}`}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-1" />
-                                  {t('common:actions.delete')}
-                                </Button>
+                                <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-red-600 hover:text-red-700"
+                                    data-testid={`button-delete-${maintenance.id}`}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-1" />
+                                    {t('common:actions.delete')}
+                                  </Button>
+                                </RequiresPermission>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>

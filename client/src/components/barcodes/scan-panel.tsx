@@ -22,7 +22,8 @@ import { FuelStatusUpdateDialog } from "@/components/vehicles/fuel-status-update
 import { MileageUpdateDialog } from "@/components/vehicles/mileage-update-dialog";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Vehicle, Reservation, ScanEvent } from "@shared/schema";
+import { Vehicle, Reservation, ScanEvent, UserPermission } from "@shared/schema";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 
 // The lookup endpoint projects reservations down to only what this panel
 // renders (see server/routes.ts GET /api/barcodes/:code) to avoid leaking
@@ -386,9 +387,16 @@ export function ScanPanel({ active = true, intent = null }: ScanPanelProps) {
                   )}
                 </div>
                 {result.activeMaintenance && (
-                  <Button size="sm" variant="outline" className="border-amber-300" onClick={() => openMaintenanceBlock(result.activeMaintenance!.id)} data-testid="button-scan-open-maintenance">
-                    {t("scanPage.maintenance.openButton")}
-                  </Button>
+                  // Edit mode: PATCH /api/reservations/:id/basic, widened this
+                  // task to accept MANAGE_MAINTENANCE too (server/routes.ts,
+                  // server/__tests__/toegang-basic-manage-maintenance.test.ts)
+                  // — its only client caller anywhere is this maintenance-block
+                  // edit flow (ScheduleMaintenanceDialog's edit-mode submit).
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS, UserPermission.MANAGE_MAINTENANCE]}>
+                    <Button size="sm" variant="outline" className="border-amber-300" onClick={() => openMaintenanceBlock(result.activeMaintenance!.id)} data-testid="button-scan-open-maintenance">
+                      {t("scanPage.maintenance.openButton")}
+                    </Button>
+                  </RequiresPermission>
                 )}
               </div>
             )}
@@ -401,14 +409,16 @@ export function ScanPanel({ active = true, intent = null }: ScanPanelProps) {
                   <span>{result.activeTransport.originCity || "?"} → {result.activeTransport.destinationCity || "?"}</span>
                   <Badge variant="outline">{t(`scanPage.transport.status.${result.activeTransport.status}`, { defaultValue: result.activeTransport.status })}</Badge>
                 </div>
-                <Button size="sm" onClick={() => transportMutation.mutate({ id: result.activeTransport!.id, status: result.activeTransport!.status === "scheduled" ? "in_progress" : "completed" })} disabled={transportMutation.isPending} data-testid="button-scan-transport-advance">
-                  {result.activeTransport.status === "scheduled" ? (
-                    <Play className="h-4 w-4 mr-2" />
-                  ) : (
-                    <Check className="h-4 w-4 mr-2" />
-                  )}
-                  {result.activeTransport.status === "scheduled" ? t("scanPage.transport.start") : t("scanPage.transport.complete")}
-                </Button>
+                <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS]}>
+                  <Button size="sm" onClick={() => transportMutation.mutate({ id: result.activeTransport!.id, status: result.activeTransport!.status === "scheduled" ? "in_progress" : "completed" })} disabled={transportMutation.isPending} data-testid="button-scan-transport-advance">
+                    {result.activeTransport.status === "scheduled" ? (
+                      <Play className="h-4 w-4 mr-2" />
+                    ) : (
+                      <Check className="h-4 w-4 mr-2" />
+                    )}
+                    {result.activeTransport.status === "scheduled" ? t("scanPage.transport.start") : t("scanPage.transport.complete")}
+                  </Button>
+                </RequiresPermission>
               </div>
             )}
 
@@ -428,10 +438,12 @@ export function ScanPanel({ active = true, intent = null }: ScanPanelProps) {
                   initialVehicleId={String(result.vehicle.id)}
                   onSuccess={() => { if (result.vehicle.barcode) lookup(result.vehicle.barcode); }}
                 >
-                  <Button variant="outline" className={ACTION_TILE_CLASS} data-testid="button-make-reservation">
-                    <CalendarPlus />
-                    {t("scanPage.makeReservationButton")}
-                  </Button>
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                    <Button variant="outline" className={ACTION_TILE_CLASS} data-testid="button-make-reservation">
+                      <CalendarPlus />
+                      {t("scanPage.makeReservationButton")}
+                    </Button>
+                  </RequiresPermission>
                 </ReservationAddDialog>
               )}
               {/* OPT-002 - one router (`chooseHandover`) instead of three
@@ -440,35 +452,43 @@ export function ScanPanel({ active = true, intent = null }: ScanPanelProps) {
                 const choice = chooseHandover(result);
                 if (!choice) return null;
                 return choice.kind === "return" ? (
-                  <Button variant="default" className={ACTION_TILE_CLASS} onClick={() => startHandover(choice.reservationId, "return")} data-testid="button-scan-return">
-                    <LogIn />
-                    {t("scanPage.actions.startReturn")}
-                  </Button>
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                    <Button variant="default" className={ACTION_TILE_CLASS} onClick={() => startHandover(choice.reservationId, "return")} data-testid="button-scan-return">
+                      <LogIn />
+                      {t("scanPage.actions.startReturn")}
+                    </Button>
+                  </RequiresPermission>
                 ) : (
-                  <Button variant="default" className={ACTION_TILE_CLASS} onClick={() => startHandover(choice.reservationId, "pickup")} data-testid="button-scan-pickup">
-                    <LogOut />
-                    {t("scanPage.actions.startPickup")}
-                  </Button>
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                    <Button variant="default" className={ACTION_TILE_CLASS} onClick={() => startHandover(choice.reservationId, "pickup")} data-testid="button-scan-pickup">
+                      <LogOut />
+                      {t("scanPage.actions.startPickup")}
+                    </Button>
+                  </RequiresPermission>
                 );
               })()}
               <ExpenseAddDialog
                 vehicleId={result.vehicle.id}
                 onSuccess={() => { if (result.vehicle.barcode) lookup(result.vehicle.barcode); }}
               >
-                <Button variant="outline" className={ACTION_TILE_CLASS} data-testid="button-scan-expense">
-                  <Receipt />
-                  {t("scanPage.actions.addExpense")}
-                </Button>
+                <RequiresPermission anyOf={[UserPermission.MANAGE_EXPENSES]}>
+                  <Button variant="outline" className={ACTION_TILE_CLASS} data-testid="button-scan-expense">
+                    <Receipt />
+                    {t("scanPage.actions.addExpense")}
+                  </Button>
+                </RequiresPermission>
               </ExpenseAddDialog>
               <InlineDocumentUpload
                 vehicleId={result.vehicle.id}
                 reservationId={result.activeReservation?.id}
                 onSuccess={() => { if (result.vehicle.barcode) lookup(result.vehicle.barcode); }}
               >
-                <Button variant="outline" className={ACTION_TILE_CLASS} data-testid="button-scan-upload">
-                  <FileUp />
-                  {t("scanPage.actions.uploadDocument")}
-                </Button>
+                <RequiresPermission anyOf={[UserPermission.MANAGE_DOCUMENTS]}>
+                  <Button variant="outline" className={ACTION_TILE_CLASS} data-testid="button-scan-upload">
+                    <FileUp />
+                    {t("scanPage.actions.uploadDocument")}
+                  </Button>
+                </RequiresPermission>
               </InlineDocumentUpload>
               <FuelStatusUpdateDialog
                 key={`fuel-${result.vehicle.id}-${result.vehicle.currentFuelLevel ?? ""}`}
@@ -476,25 +496,42 @@ export function ScanPanel({ active = true, intent = null }: ScanPanelProps) {
                 currentFuelLevel={result.vehicle.currentFuelLevel || undefined}
                 onSuccess={() => { if (result.vehicle.barcode) lookup(result.vehicle.barcode); }}
               >
-                <Button variant="outline" className={ACTION_TILE_CLASS} data-testid="button-scan-fuel">
-                  <Fuel />
-                  {t("scanPage.actions.updateFuel")}
-                </Button>
+                <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+                  <Button variant="outline" className={ACTION_TILE_CLASS} data-testid="button-scan-fuel">
+                    <Fuel />
+                    {t("scanPage.actions.updateFuel")}
+                  </Button>
+                </RequiresPermission>
               </FuelStatusUpdateDialog>
-              <Button variant="outline" className={ACTION_TILE_CLASS} onClick={() => setMileageOpen(true)} data-testid="button-scan-mileage">
-                <Gauge />
-                {t("scanPage.actions.updateMileage")}
-              </Button>
+              <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+                <Button variant="outline" className={ACTION_TILE_CLASS} onClick={() => setMileageOpen(true)} data-testid="button-scan-mileage">
+                  <Gauge />
+                  {t("scanPage.actions.updateMileage")}
+                </Button>
+              </RequiresPermission>
               {(result.vehicle.maintenanceStatus === "ok" || !result.vehicle.maintenanceStatus) ? (
-                <Button variant="outline" className={ACTION_TILE_CLASS} onClick={() => { setEditingMaintenance(null); setScheduleMaintenanceOpen(true); }} data-testid="button-scan-maintenance-start">
-                  <Wrench />
-                  {t("scanPage.actions.startMaintenance")}
-                </Button>
+                // Task 4 finding (docs/superpowers/specs/2026-09-21-toegang-design.md,
+                // §5): this tile always opens ScheduleMaintenanceDialog in CREATE
+                // mode (editingMaintenance is explicitly null), whose submit is
+                // POST /api/reservations — MANAGE_RESERVATIONS only, not
+                // MANAGE_MAINTENANCE. Not maintenance-exclusive, so reported, not
+                // widened (see maintenance/calendar.tsx's button-schedule-maintenance
+                // for the same finding).
+                <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                  <Button variant="outline" className={ACTION_TILE_CLASS} onClick={() => { setEditingMaintenance(null); setScheduleMaintenanceOpen(true); }} data-testid="button-scan-maintenance-start">
+                    <Wrench />
+                    {t("scanPage.actions.startMaintenance")}
+                  </Button>
+                </RequiresPermission>
               ) : (
-                <Button variant="outline" className={ACTION_TILE_CLASS} onClick={() => maintenanceMutation.mutate({ vehicleId: result.vehicle.id, status: "ok" })} disabled={maintenanceMutation.isPending} data-testid="button-scan-maintenance-end">
-                  <Undo2 />
-                  {t("scanPage.actions.endMaintenance")}
-                </Button>
+                // PATCH /api/vehicles/:id/maintenance-status — MANAGE_VEHICLES only
+                // (server/routes.ts:1574), verified directly.
+                <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+                  <Button variant="outline" className={ACTION_TILE_CLASS} onClick={() => maintenanceMutation.mutate({ vehicleId: result.vehicle.id, status: "ok" })} disabled={maintenanceMutation.isPending} data-testid="button-scan-maintenance-end">
+                    <Undo2 />
+                    {t("scanPage.actions.endMaintenance")}
+                  </Button>
+                </RequiresPermission>
               )}
             </div>
           </CardContent>
