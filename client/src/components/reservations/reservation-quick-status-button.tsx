@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 import { StatusChangeDialog } from "@/components/reservations/status-change-dialog";
-import { Reservation } from "@shared/schema";
+import { Reservation, UserPermission } from "@shared/schema";
 import { RotateCcw } from "lucide-react";
 
 interface ReservationQuickStatusButtonProps {
@@ -36,17 +37,20 @@ export function ReservationQuickStatusButton({
 
   return (
     <>
-      <Button
-        variant={variant}
-        size={size}
-        onClick={() => setStatusDialogOpen(true)}
-        className={`text-primary-600 hover:text-primary-800 ${className}`}
-        title={t('quickStatusButton.revertToBooked')}
-      >
-        <RotateCcw className="h-4 w-4" />
-        {withText && <span className="ml-2">{t('quickStatusButton.revertToBooked')}</span>}
-      </Button>
-      
+      <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+        <Button
+          variant={variant}
+          size={size}
+          onClick={() => setStatusDialogOpen(true)}
+          className={`text-primary-600 hover:text-primary-800 ${className}`}
+          title={t('quickStatusButton.revertToBooked')}
+          data-testid={`button-quick-status-${id}`}
+        >
+          <RotateCcw className="h-4 w-4" />
+          {withText && <span className="ml-2">{t('quickStatusButton.revertToBooked')}</span>}
+        </Button>
+      </RequiresPermission>
+
       <StatusChangeDialog
         open={statusDialogOpen}
         onOpenChange={setStatusDialogOpen}

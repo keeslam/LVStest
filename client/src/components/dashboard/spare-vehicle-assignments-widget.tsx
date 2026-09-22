@@ -13,6 +13,7 @@ import { PickupDialog } from "@/components/reservations/pickup-return-dialogs";
 import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/use-has-permission";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 
 type ParentReservationInfo = { parentRes: any; customer: any; vehicle: any } | null;
 type ParentTransportInfo = { transport: VehicleTransport; vehicle: any } | null;
@@ -378,14 +379,17 @@ export function SpareVehicleAssignmentsWidget() {
                           </div>
                         </div>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleAssignClick(placeholder)}
-                        className="text-xs bg-red-500 text-white hover:bg-red-600 border-red-500"
-                      >
-                        {t('spareWidget.assignVehicle')}
-                      </Button>
+                      <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAssignClick(placeholder)}
+                          className="text-xs bg-red-500 text-white hover:bg-red-600 border-red-500"
+                          data-testid="button-assign-vehicle-spare"
+                        >
+                          {t('spareWidget.assignVehicle')}
+                        </Button>
+                      </RequiresPermission>
                     </div>
                   );})
                 )}
@@ -446,38 +450,46 @@ export function SpareVehicleAssignmentsWidget() {
                       {spare.spareVehicleStatus !== 'returned' && (
                         <div className="flex gap-2 mt-2">
                           {spare.spareVehicleStatus === 'assigned' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleStartPickup(spare)}
-                              disabled={updateStatusMutation.isPending}
-                              className="text-xs"
-                              data-testid="button-start-pickup-spare"
-                            >
-                              {t('spareWidget.startPickup')}
-                            </Button>
+                            <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleStartPickup(spare)}
+                                disabled={updateStatusMutation.isPending}
+                                className="text-xs"
+                                data-testid="button-start-pickup-spare"
+                              >
+                                {t('spareWidget.startPickup')}
+                              </Button>
+                            </RequiresPermission>
                           )}
                           {spare.spareVehicleStatus === 'ready' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleStatusChange(spare.id, 'picked_up')}
-                              disabled={updateStatusMutation.isPending}
-                              className="text-xs"
-                            >
-                              {t('spareWidget.markPickedUp')}
-                            </Button>
+                            <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleStatusChange(spare.id, 'picked_up')}
+                                disabled={updateStatusMutation.isPending}
+                                className="text-xs"
+                                data-testid="button-mark-picked-up-spare"
+                              >
+                                {t('spareWidget.markPickedUp')}
+                              </Button>
+                            </RequiresPermission>
                           )}
                           {spare.spareVehicleStatus === 'picked_up' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleStatusChange(spare.id, 'returned')}
-                              disabled={updateStatusMutation.isPending}
-                              className="text-xs"
-                            >
-                              {t('spareWidget.markReturned')}
-                            </Button>
+                            <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleStatusChange(spare.id, 'returned')}
+                                disabled={updateStatusMutation.isPending}
+                                className="text-xs"
+                                data-testid="button-mark-returned-spare-assigned"
+                              >
+                                {t('spareWidget.markReturned')}
+                              </Button>
+                            </RequiresPermission>
                           )}
                         </div>
                       )}
@@ -539,16 +551,18 @@ export function SpareVehicleAssignmentsWidget() {
                       </div>
 
                       <div className="flex gap-2 mt-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleStatusChange(spare.id, 'returned')}
-                          disabled={updateStatusMutation.isPending}
-                          className="text-xs"
-                          data-testid="button-mark-returned-spare"
-                        >
-                          {t('spareWidget.markReturned')}
-                        </Button>
+                        <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleStatusChange(spare.id, 'returned')}
+                            disabled={updateStatusMutation.isPending}
+                            className="text-xs"
+                            data-testid="button-mark-returned-spare"
+                          >
+                            {t('spareWidget.markReturned')}
+                          </Button>
+                        </RequiresPermission>
                       </div>
                     </div>
                   );})

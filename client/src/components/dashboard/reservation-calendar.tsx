@@ -630,29 +630,34 @@ export function ReservationCalendar() {
                                       <Eye className="mr-1 h-3 w-3" />
                                       {t('common:actions.view')}
                                     </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="h-8 text-xs"
-                                      onClick={() => navigate(`/reservations/edit/${res.id}`)}
-                                    >
-                                      <Edit className="mr-1 h-3 w-3" />
-                                      {t('common:actions.edit')}
-                                    </Button>
-                                    {res.placeholderSpare ? (
-                                      <Button 
-                                        size="sm" 
-                                        variant="default"
-                                        className="h-8 text-xs bg-orange-600 hover:bg-orange-700"
-                                        onClick={() => {
-                                          setSelectedPlaceholderReservations([res]);
-                                          setAssignmentDialogOpen(true);
-                                        }}
-                                        data-testid="button-assign-vehicle"
+                                    <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-8 text-xs"
+                                        onClick={() => navigate(`/reservations/edit/${res.id}`)}
+                                        data-testid="button-edit-reservation-hovercard"
                                       >
-                                        <Car className="mr-1 h-3 w-3" />
-                                        {t('reservationCalendar.assign')}
+                                        <Edit className="mr-1 h-3 w-3" />
+                                        {t('common:actions.edit')}
                                       </Button>
+                                    </RequiresPermission>
+                                    {res.placeholderSpare ? (
+                                      <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                                        <Button
+                                          size="sm"
+                                          variant="default"
+                                          className="h-8 text-xs bg-orange-600 hover:bg-orange-700"
+                                          onClick={() => {
+                                            setSelectedPlaceholderReservations([res]);
+                                            setAssignmentDialogOpen(true);
+                                          }}
+                                          data-testid="button-assign-vehicle"
+                                        >
+                                          <Car className="mr-1 h-3 w-3" />
+                                          {t('reservationCalendar.assign')}
+                                        </Button>
+                                      </RequiresPermission>
                                     ) : (
                                       <ReservationQuickStatusButton 
                                         reservation={res}
