@@ -12,6 +12,19 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { UserPermission, UserRole } from "@shared/schema";
+
+// Fix round 1, item 3: RequiresPermission (wrapped around button-handover-retry)
+// reads the signed-in user via useAuth() — this file's existing tests are
+// about the dialog's own states, not permissions, so it defaults to admin
+// (bypasses every check) to keep every existing assertion unaffected. Mutable
+// so the two new permission-focused tests below can override it.
+let mockRole: string = UserRole.ADMIN;
+let mockPermissions: string[] = [];
+vi.mock("@/hooks/use-auth", () => ({
+  useAuth: () => ({ user: { id: 1, username: "tester", role: mockRole, permissions: mockPermissions }, isLoading: false }),
+}));
+
 import { HandoverResultDialog } from "@/components/reservations/handover-result-dialog";
 
 const reservation = {
@@ -45,6 +58,8 @@ let fetchMock: ReturnType<typeof vi.fn>;
 let openMock: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
+  mockRole = UserRole.ADMIN;
+  mockPermissions = [];
   fetchMock = vi.fn(async () =>
     new Response(JSON.stringify({ contractDocument: { ...contract, id: 502, version: 2 } }), {
       status: 200, headers: { "Content-Type": "application/json" },
@@ -121,5 +136,41 @@ describe("OPT-005 — het contract vanuit de ophaaldialoog", () => {
     );
     expect(screen.getByText("Schadeformulier kon niet gemaakt worden")).toBeInTheDocument();
     expect(screen.queryByTestId("button-handover-retry")).toBeNull();
+  });
+
+  describe("fix round 1, item 3 — button-handover-retry needs BOTH permissions the server chains", () => {
+    it("is visible but disabled, and explains itself, holding only one of the two rights", async () => {
+      mockRole = UserRole.USER;
+      mockPermissions = [UserPermission.MANAGE_RESERVATIONS]; // missing MANAGE_DOCUMENTS
+      withClient(
+        <HandoverResultDialog open onOpenChange={() => {}} reservation={reservation} document={null} kind="contract" />,
+      );
+      const button = screen.getByTestId("button-handover-retry");
+      expect(button).toBeVisible();
+      expect(button).toHaveAttribute("aria-disabled", "true");
+      // Focus the wrapping <span> directly rather than via Tab traversal —
+      // the real, already-open Radix Dialog around this control runs its own
+      // focus management on mount, which would otherwise race Tab's landing
+      // spot (unlike requires-permission.test.tsx's bare, dialog-free render).
+      (button.parentElement as HTMLElement).focus();
+      await waitFor(() => {
+        expect(screen.getByRole("tooltip")).toHaveTextContent("Documenten bewerken en genereren");
+      });
+      await userEvent.click(button, { pointerEventsCheck: 0 });
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("is enabled holding both MANAGE_RESERVATIONS and MANAGE_DOCUMENTS", async () => {
+      mockRole = UserRole.USER;
+      mockPermissions = [UserPermission.MANAGE_RESERVATIONS, UserPermission.MANAGE_DOCUMENTS];
+      const user = userEvent.setup();
+      withClient(
+        <HandoverResultDialog open onOpenChange={() => {}} reservation={reservation} document={null} kind="contract" />,
+      );
+      const button = screen.getByTestId("button-handover-retry");
+      expect(button).not.toBeDisabled();
+      await user.click(button);
+      await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    });
   });
 });

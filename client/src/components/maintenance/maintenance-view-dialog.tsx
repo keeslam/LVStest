@@ -8,9 +8,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Reservation, Vehicle, Customer, Driver } from "@shared/schema";
+import { Reservation, Vehicle, Customer, Driver, UserPermission } from "@shared/schema";
 import { 
   Calendar, 
   Car, 
@@ -351,15 +352,20 @@ export function MaintenanceViewDialog({
             <div className="flex items-center gap-2">
               {getStatusBadge(reservation.maintenanceStatus || 'scheduled')}
               {onEdit && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onEdit(reservation)}
-                  data-testid="button-edit-maintenance"
-                >
-                  <Edit className="h-4 w-4 mr-1" />
-                  {t('viewDialog.edit')}
-                </Button>
+                // Fix round 1, item 2 (reviewer): opens MaintenanceEditDialog
+                // via the caller's onEdit -> PATCH /api/reservations/:id
+                // (routes.ts:4118, MANAGE_RESERVATIONS).
+                <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onEdit(reservation)}
+                    data-testid="button-edit-maintenance"
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    {t('viewDialog.edit')}
+                  </Button>
+                </RequiresPermission>
               )}
             </div>
           </div>
@@ -576,34 +582,40 @@ export function MaintenanceViewDialog({
                               placeholder={t('viewDialog.selectSpareVehicle')}
                             />
                             <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  updateSpareMutation.mutate({
-                                    rentalId: rental.id,
-                                    spareVehicleId: null,
-                                    replacementReservationId: replacementReservation?.id,
-                                    placeholder: true,
-                                  });
-                                }}
-                              >
-                                {t('viewDialog.tbdPlaceholder')}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  updateSpareMutation.mutate({
-                                    rentalId: rental.id,
-                                    spareVehicleId: null,
-                                    replacementReservationId: replacementReservation?.id,
-                                    ownTransport: true,
-                                  });
-                                }}
-                              >
-                                {t('viewDialog.ownTransport')}
-                              </Button>
+                              <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    updateSpareMutation.mutate({
+                                      rentalId: rental.id,
+                                      spareVehicleId: null,
+                                      replacementReservationId: replacementReservation?.id,
+                                      placeholder: true,
+                                    });
+                                  }}
+                                  data-testid={`button-spare-tbd-${rental.id}`}
+                                >
+                                  {t('viewDialog.tbdPlaceholder')}
+                                </Button>
+                              </RequiresPermission>
+                              <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    updateSpareMutation.mutate({
+                                      rentalId: rental.id,
+                                      spareVehicleId: null,
+                                      replacementReservationId: replacementReservation?.id,
+                                      ownTransport: true,
+                                    });
+                                  }}
+                                  data-testid={`button-spare-own-transport-${rental.id}`}
+                                >
+                                  {t('viewDialog.ownTransport')}
+                                </Button>
+                              </RequiresPermission>
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -642,14 +654,23 @@ export function MaintenanceViewDialog({
                                 <span className="text-muted-foreground italic">{t('viewDialog.noSpareVehicleAssigned')}</span>
                               )}
                             </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setEditingSpare(rental.id)}
-                              data-testid={`button-edit-spare-${rental.id}`}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
+                            {/* Fix round 1, item 2 (reviewer): reveals the
+                                VehicleSelector + TBD/Own-transport actions
+                                above, all of which end in POST/PATCH/DELETE
+                                /api/reservations* (MANAGE_RESERVATIONS) —
+                                gating this single entry point covers the
+                                VehicleSelector's own onChange too, which
+                                RequiresPermission cannot wrap directly. */}
+                            <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setEditingSpare(rental.id)}
+                                data-testid={`button-edit-spare-${rental.id}`}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </RequiresPermission>
                           </div>
                         )}
                       </div>
@@ -711,9 +732,11 @@ export function MaintenanceViewDialog({
                     invalidateByPrefix(`/api/documents/reservation/${reservation?.id}`);
                   }}
                 >
-                  <Button variant="outline" size="sm" className="w-full" data-testid="button-upload-photos">
-                    {t('viewDialog.servicePhoto')}
-                  </Button>
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_DOCUMENTS]}>
+                    <Button variant="outline" size="sm" className="w-full" data-testid="button-upload-photos">
+                      {t('viewDialog.servicePhoto')}
+                    </Button>
+                  </RequiresPermission>
                 </InlineDocumentUpload>
 
                 <InlineDocumentUpload
@@ -724,9 +747,11 @@ export function MaintenanceViewDialog({
                     invalidateByPrefix(`/api/documents/reservation/${reservation?.id}`);
                   }}
                 >
-                  <Button variant="outline" size="sm" className="w-full" data-testid="button-upload-maintenance-pdf">
-                    {t('viewDialog.serviceReportPdf')}
-                  </Button>
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_DOCUMENTS]}>
+                    <Button variant="outline" size="sm" className="w-full" data-testid="button-upload-maintenance-pdf">
+                      {t('viewDialog.serviceReportPdf')}
+                    </Button>
+                  </RequiresPermission>
                 </InlineDocumentUpload>
 
                 <InlineDocumentUpload
@@ -737,9 +762,11 @@ export function MaintenanceViewDialog({
                     invalidateByPrefix(`/api/documents/reservation/${reservation?.id}`);
                   }}
                 >
-                  <Button variant="outline" size="sm" className="w-full" data-testid="button-upload-other">
-                    {t('viewDialog.other')}
-                  </Button>
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_DOCUMENTS]}>
+                    <Button variant="outline" size="sm" className="w-full" data-testid="button-upload-other">
+                      {t('viewDialog.other')}
+                    </Button>
+                  </RequiresPermission>
                 </InlineDocumentUpload>
               </div>
             </div>

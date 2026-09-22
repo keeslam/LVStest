@@ -19,10 +19,11 @@ import { useMutation } from "@tanstack/react-query";
 import { CheckCircle2, AlertTriangle, Printer, Mail, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { EmailDocumentDialog } from "@/components/documents/email-document-dialog";
-import type { Document, Reservation } from "@shared/schema";
+import { UserPermission, type Document, type Reservation } from "@shared/schema";
 
 export type HandoverDocumentKind = "contract" | "damageCheck";
 
@@ -132,14 +133,19 @@ export function HandoverResultDialog({
               </>
             ) : (
               kind === "contract" && (
-                <Button
-                  onClick={() => retry.mutate()}
-                  disabled={retry.isPending}
-                  data-testid="button-handover-retry"
-                >
-                  <RefreshCw className={`mr-2 h-4 w-4 ${retry.isPending ? "animate-spin" : ""}`} />
-                  {t('pickupReturn.handoverResult.retry')}
-                </Button>
+                // POST /api/reservations/:id/contract chains two hasPermission
+                // middlewares (routes.ts:5135) — both must pass, i.e. an AND,
+                // not an OR: the first real `allOf` case in this codebase.
+                <RequiresPermission allOf={[UserPermission.MANAGE_RESERVATIONS, UserPermission.MANAGE_DOCUMENTS]}>
+                  <Button
+                    onClick={() => retry.mutate()}
+                    disabled={retry.isPending}
+                    data-testid="button-handover-retry"
+                  >
+                    <RefreshCw className={`mr-2 h-4 w-4 ${retry.isPending ? "animate-spin" : ""}`} />
+                    {t('pickupReturn.handoverResult.retry')}
+                  </Button>
+                </RequiresPermission>
               )
             )}
             <Button variant="ghost" onClick={close} data-testid="button-handover-close">
