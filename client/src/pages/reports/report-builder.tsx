@@ -13,7 +13,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Play, Save, Trash2, X, Filter as FilterIcon, Download, Settings, BarChart3 } from "lucide-react";
 import { apiRequest, queryClient, invalidateByPrefix } from "@/lib/queryClient";
-import { 
+import { UserPermission } from "@shared/schema";
+import { RequiresPermission } from "@/components/ui/requires-permission";
+import {
   DATA_SOURCES, 
   type ReportConfiguration, 
   type ReportColumn, 
@@ -277,15 +279,17 @@ export default function ReportBuilder() {
                     <CardDescription>{t('reportBuilderPage.reportConfigDescription')}</CardDescription>
                   </div>
                   <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowSaveDialog(true)}
-                      disabled={columns.length === 0}
-                      data-testid="button-save-report"
-                    >
-                      <Save className="h-4 w-4 mr-2" />
-                      {t('reportBuilderPage.saveButton')}
-                    </Button>
+                    <RequiresPermission anyOf={[UserPermission.MANAGE_REPORTS]}>
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowSaveDialog(true)}
+                        disabled={columns.length === 0}
+                        data-testid="button-save-report"
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        {t('reportBuilderPage.saveButton')}
+                      </Button>
+                    </RequiresPermission>
                     <Button
                       onClick={handleRunReport}
                       disabled={columns.length === 0 || runReportMutation.isPending}
@@ -380,9 +384,11 @@ export default function ReportBuilder() {
             <Button variant="outline" onClick={() => setShowSaveDialog(false)} data-testid="button-cancel-save">
               {t('reportBuilderPage.cancelButton')}
             </Button>
-            <Button onClick={handleSaveReport} disabled={!reportName || saveReportMutation.isPending} data-testid="button-confirm-save">
-              {saveReportMutation.isPending ? t('reportBuilderPage.savingButton') : t('reportBuilderPage.saveReportButton')}
-            </Button>
+            <RequiresPermission anyOf={[UserPermission.MANAGE_REPORTS]}>
+              <Button onClick={handleSaveReport} disabled={!reportName || saveReportMutation.isPending} data-testid="button-confirm-save">
+                {saveReportMutation.isPending ? t('reportBuilderPage.savingButton') : t('reportBuilderPage.saveReportButton')}
+              </Button>
+            </RequiresPermission>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -607,14 +613,16 @@ function SavedReportsTab({
                   <Play className="h-4 w-4 mr-1" />
                   {t('reportBuilderPage.runButton')}
                 </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => onDeleteReport(report.id)}
-                  data-testid={`button-delete-report-${report.id}`}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <RequiresPermission anyOf={[UserPermission.MANAGE_REPORTS]}>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => onDeleteReport(report.id)}
+                    data-testid={`button-delete-report-${report.id}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </RequiresPermission>
               </div>
             </div>
           </CardHeader>
