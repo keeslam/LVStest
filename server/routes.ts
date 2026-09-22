@@ -3597,7 +3597,21 @@ export async function registerRoutes(app: Express): Promise<void> {
   // client/src/components/barcodes/scan-panel.tsx's "open maintenance block"
   // action) — a maintenance action reachable only from maintenance-editing
   // screens, so per spec §5 it additionally accepts MANAGE_MAINTENANCE (OR),
-  // reported to the owner. Nothing is narrowed.
+  // reported to the owner. Nothing is narrowed for MANAGE_RESERVATIONS
+  // holders.
+  //
+  // Fix round 1, CRITICAL (controller ruling): the OR above is not enough on
+  // its own. This route writes vehicleId, customerId, dates, driverId, notes
+  // and `type` on ANY reservation, and — for anything that is not a
+  // maintenance_block — fires onRentalVehicleChanged/onReservationChangedByStaff
+  // (a customer e-mail). The `maintenance_block` branch further down is
+  // conflict handling, not a guard, so a MANAGE_MAINTENANCE-only account
+  // could otherwise move ANY customer rental through this route — further
+  // than spec §5's widening intends. A requester who is not admin and does
+  // not hold MANAGE_RESERVATIONS may therefore only use this route to edit
+  // an EXISTING maintenance_block, and may never change `type` through it;
+  // both checks run before any read of req.body beyond `type` itself and
+  // before any write, transition or notification.
   app.patch("/api/reservations/:id/basic", hasPermission(UserPermission.MANAGE_RESERVATIONS, UserPermission.MANAGE_MAINTENANCE), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -3626,12 +3640,30 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (!existingBasic) {
         return res.status(404).json({ message: "Reservation not found" });
       }
+
+      // Fix round 1, CRITICAL: a MANAGE_MAINTENANCE-only (non-admin,
+      // non-MANAGE_RESERVATIONS) requester may only touch a reservation that
+      // already IS a maintenance block — never a normal customer rental.
+      const requesterManagesReservations =
+        req.user?.role === UserRole.ADMIN ||
+        (req.user?.permissions ?? []).includes(UserPermission.MANAGE_RESERVATIONS);
+      if (!requesterManagesReservations && existingBasic.type !== "maintenance_block") {
+        return res.status(403).json({ message: "Not authorized. This route may only edit an existing maintenance block without 'Reserveringen beheren'." });
+      }
+
       const reservationData = parsePartialUpdate(bodyData, {
         table: reservations,
         schema: insertReservationSchemaBase,
         strip: ["damageCheckPath"],
         message: "Invalid reservation data",
       });
+
+      // Fix round 1, CRITICAL: same requester may never relabel the row away
+      // from (or, redundantly with the check above, into) a maintenance
+      // block through this route.
+      if (!requesterManagesReservations && "type" in reservationData && reservationData.type !== existingBasic.type) {
+        return res.status(403).json({ message: "Not authorized. Changing the reservation type requires 'Reserveringen beheren'." });
+      }
 
       // FIX-H (BUG-016): `/basic` ran the shape validation and then wrote
       // `status` straight through — no enum check, no transition check — so a
