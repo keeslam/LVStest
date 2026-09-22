@@ -22,6 +22,7 @@ import { usePortalAccounts } from "@/hooks/use-portal-accounts";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { X, Filter, ArrowUpDown } from "lucide-react";
 import { subDays } from "date-fns";
+import { useHasPermission } from "@/hooks/use-has-permission";
 
 type EnrichedCustomer = Customer & {
   reservationCount: number;
@@ -49,8 +50,16 @@ export default function CustomersIndex() {
     queryKey: ["/api/customers"],
   });
 
+  // The page's own permission is VIEW_CUSTOMERS/MANAGE_CUSTOMERS; this query
+  // needs the reservation family instead (GET /api/reservations,
+  // routes.ts:2829). It only enriches each row (rental-count/last-rental
+  // stats, fact sheet row 4) - the customer list itself comes from
+  // /api/customers above and stays intact - so a denied user just sees rows
+  // without those stats, left out silently, no NoDataAccess.
+  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
   const { data: reservations } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations"],
+    enabled: canViewReservations,
   });
 
   const { data: drivers } = useQuery<Driver[]>({
