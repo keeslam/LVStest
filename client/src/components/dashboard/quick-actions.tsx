@@ -937,6 +937,34 @@ export function QuickActions() {
                 : action.dialog === "start-return"
                   ? "return"
                   : null;
+              // Fix round 1 (task-3-report.md, Critical finding): the generic
+              // "Scan" tile stays UNGATED, pre-existing behaviour. ScanPanel
+              // (client/src/components/barcodes/scan-panel.tsx) has no
+              // permission gates of its own yet and offers actions from
+              // several permission families beyond MANAGE_RESERVATIONS (a
+              // mileage update -> MANAGE_VEHICLES, starting/ending
+              // maintenance -> MANAGE_RESERVATIONS or MANAGE_MAINTENANCE) —
+              // gating this opener on MANAGE_RESERVATIONS alone took those
+              // away from e.g. the maintenance role, which can use them
+              // today. Gating the panel's own action tiles individually is
+              // Task 4's job. "Start Pickup"/"Start Return" stay gated: both
+              // always lead straight to a MANAGE_RESERVATIONS-only route
+              // (POST /api/reservations/:id/pickup or .../return).
+              if (action.dialog === "scan") {
+                return (
+                  <Button
+                    key={action.label}
+                    variant="outline"
+                    className={actionStyle(action).className}
+                    size={actionStyle(action).size}
+                    onClick={() => openScanDialog(intent)}
+                    data-testid={`button-quick-${action.dialog}`}
+                  >
+                    <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
+                    {t(`quickActions.buttons.${action.dialog}`)}
+                  </Button>
+                );
+              }
               return (
                 <RequiresPermission key={action.label} anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
                   <Button
