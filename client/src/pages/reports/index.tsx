@@ -21,6 +21,7 @@ import { ExpenseChart, type ExpenseChartData } from "@/components/reports/expens
 import { UtilizationChart, type UtilizationChartData } from "@/components/reports/utilization-chart";
 import { Vehicle, Expense, Reservation, Customer, VehicleTransport, UserPermission } from "@shared/schema";
 import { useHasPermission } from "@/hooks/use-has-permission";
+import { NoDataAccess } from "@/components/ui/no-data-access";
 import { formatDate, formatCurrency, formatLicensePlate, sumMoney, plateMatches, formatExpenseCategory } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { isTrueValue } from "@/lib/utils";
@@ -124,30 +125,48 @@ export default function ReportsPage() {
     }
   };
 
+  // The page's own permission is VIEW_REPORTS/MANAGE_REPORTS; none of these
+  // four queries accept it (fact sheet row 13, "server narrower than menu,
+  // completely"). Each feeds its own report tab's core data (operations,
+  // vehicles, customers, transports below), so denied renders NoDataAccess
+  // in that tab instead of an empty/misleading report.
+  const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
+  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
+  const canViewCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
+  // GET /api/transports (routes.ts:8089) accepts either family.
+  const canViewTransports = useHasPermission(
+    UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES,
+    UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS,
+  );
+
   // Fetch all vehicles for filtering
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
+    enabled: canViewVehicles,
   });
-  
+
   // Fetch expenses with date filtering
   const { data: expenses = [] } = useQuery<Expense[]>({
     queryKey: ["/api/expenses"],
     enabled: canViewExpenses,
   });
-  
+
   // Fetch reservations with date filtering
   const { data: reservations = [] } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations"],
+    enabled: canViewReservations,
   });
-  
+
   // Fetch customers
   const { data: customers = [] } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
+    enabled: canViewCustomers,
   });
 
   // Fetch vehicle transports (swaps, tows, repossessions, deliveries)
   const { data: transports = [] } = useQuery<VehicleTransport[]>({
     queryKey: ["/api/transports"],
+    enabled: canViewTransports,
   });
 
   const [transportTypeFilter, setTransportTypeFilter] = useState<string>("all");
@@ -1512,6 +1531,13 @@ export default function ReportsPage() {
         
         {/* Operations Overview Tab */}
         <TabsContent value="operations" className="space-y-6">
+          {!canViewVehicles || !canViewReservations ? (
+            <div className="space-y-2">
+              {!canViewVehicles && <NoDataAccess permission={UserPermission.VIEW_VEHICLES} />}
+              {!canViewReservations && <NoDataAccess permission={UserPermission.VIEW_RESERVATIONS} />}
+            </div>
+          ) : (
+          <>
           {/* Operations Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card>
@@ -1662,8 +1688,10 @@ export default function ReportsPage() {
               </div>
             </CardContent>
           </Card>
+          </>
+          )}
         </TabsContent>
-        
+
         {/* Expenses Tab */}
         <TabsContent value="expenses" className="space-y-6">
           {/* Expense Summary */}
@@ -1777,6 +1805,10 @@ export default function ReportsPage() {
         
         {/* Vehicles Tab */}
         <TabsContent value="vehicles" className="space-y-6">
+          {!canViewVehicles ? (
+            <NoDataAccess permission={UserPermission.VIEW_VEHICLES} />
+          ) : (
+          <>
           {/* Vehicle Utilization Stats */}
           <Card>
             <CardHeader>
@@ -2187,10 +2219,16 @@ export default function ReportsPage() {
               <UtilizationChart data={utilizationChartData} />
             </CardContent>
           </Card>
+          </>
+          )}
         </TabsContent>
-        
+
         {/* Customers Tab */}
         <TabsContent value="customers" className="space-y-6">
+          {!canViewCustomers ? (
+            <NoDataAccess permission={UserPermission.VIEW_CUSTOMERS} />
+          ) : (
+          <>
           {/* Customer Impact Analysis */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -2393,10 +2431,16 @@ export default function ReportsPage() {
               </Table>
             </CardContent>
           </Card>
+          </>
+          )}
         </TabsContent>
 
         {/* Vehicle Transports Tab */}
         <TabsContent value="transports" className="space-y-6">
+          {!canViewTransports ? (
+            <NoDataAccess permission={UserPermission.VIEW_RESERVATIONS} />
+          ) : (
+          <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card>
               <CardContent className="p-4">
@@ -2549,6 +2593,8 @@ export default function ReportsPage() {
               </Table>
             </CardContent>
           </Card>
+          </>
+          )}
         </TabsContent>
       </Tabs>
 
