@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { permissionLabel } from "@shared/permission-labels";
 import { useHasPermission, useHasAllPermissions } from "@/hooks/use-has-permission";
+import { cn } from "@/lib/utils";
 
 export interface RequiresPermissionProps extends React.HTMLAttributes<HTMLElement> {
   /** At least one of these is enough (OR) — mirrors `useHasPermission`. */
@@ -51,6 +52,16 @@ export interface RequiresPermissionProps extends React.HTMLAttributes<HTMLElemen
  * e.g. a `DialogTrigger`'s open handler) are deliberately NOT forwarded in
  * this branch — that is what makes a click on a denied control never open
  * anything, "even when clicked through the wrapper".
+ *
+ * Fix round 1, item 4 (reviewer): the wrapping `<span>` — not the button — is
+ * what a CSS grid/flex parent (e.g. ScanPanel's action grid, a flex action
+ * row with `flex-1` buttons) actually lays out as its item, once this
+ * wrapper is in between. The span only ever carried its own `inline-flex`,
+ * so it never picked up the child's own sizing classes (`w-full`, `flex-1`,
+ * `h-auto`, …) and rendered narrower than an allowed sibling doing the exact
+ * same job. The span's className now also carries the child's own
+ * className (tailwind-merge resolves any overlap, child wins), so it takes
+ * the same box a Slot-forwarded allowed child would have taken.
  */
 export const RequiresPermission = React.forwardRef<HTMLElement, RequiresPermissionProps>(
   ({ anyOf = [], allOf = [], children, ...rest }, ref) => {
@@ -84,7 +95,7 @@ export const RequiresPermission = React.forwardRef<HTMLElement, RequiresPermissi
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <span tabIndex={0} className="inline-flex">
+            <span tabIndex={0} className={cn("inline-flex", children.props.className)}>
               {disabledChild}
             </span>
           </TooltipTrigger>

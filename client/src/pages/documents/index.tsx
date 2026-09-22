@@ -1104,10 +1104,10 @@ export default function DocumentsIndex() {
               <div className="mb-6">
                 <p className="mb-4">{t('indexPage.openBarcodeLabelEditorIntro')}</p>
                 <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
-                <Button onClick={() => setBarcodeLabelEditorDialogOpen(true)} data-testid="button-open-barcode-label-editor">
-                  <FileEdit className="mr-2 h-4 w-4" />
-                  {t('indexPage.openBarcodeLabelEditorButton')}
-                </Button>
+                  <Button onClick={() => setBarcodeLabelEditorDialogOpen(true)} data-testid="button-open-barcode-label-editor">
+                    <FileEdit className="mr-2 h-4 w-4" />
+                    {t('indexPage.openBarcodeLabelEditorButton')}
+                  </Button>
                 </RequiresPermission>
               </div>
 
@@ -1143,16 +1143,16 @@ export default function DocumentsIndex() {
                             {template.labelWidthMm} × {template.labelHeightMm} mm
                           </p>
                           <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-3 w-full"
-                            onClick={() => setBarcodeLabelEditorDialogOpen(true)}
-                            data-testid={`button-edit-barcode-label-${template.id}`}
-                          >
-                            <FileEdit className="h-3 w-3 mr-1" />
-                            {t('indexPage.editButton')}
-                          </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-3 w-full"
+                              onClick={() => setBarcodeLabelEditorDialogOpen(true)}
+                              data-testid={`button-edit-barcode-label-${template.id}`}
+                            >
+                              <FileEdit className="h-3 w-3 mr-1" />
+                              {t('indexPage.editButton')}
+                            </Button>
                           </RequiresPermission>
                         </CardContent>
                       </Card>

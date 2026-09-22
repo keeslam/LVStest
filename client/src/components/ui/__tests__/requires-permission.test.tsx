@@ -171,6 +171,25 @@ describe("RequiresPermission", () => {
       });
     });
 
+    it("fix round 1, item 4 — the wrapping span carries the child's own layout classes, so a disabled tile keeps its grid/flex box", () => {
+      setUser(UserRole.USER, []);
+      const { container } = render(
+        <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+          <Button data-testid="button-scan-mileage" className="h-auto w-full flex-col">
+            Kilometerstand
+          </Button>
+        </RequiresPermission>,
+      );
+      const span = container.firstElementChild as HTMLElement;
+      expect(span.tagName).toBe("SPAN");
+      // The span, not the button, is what a CSS grid/flex parent lays out as
+      // its item once this wrapper sits in between — it must carry the
+      // child's own sizing classes to take the same box an allowed sibling
+      // (rendered without this wrapper via Slot) would take.
+      expect(span.className).toContain("w-full");
+      expect(span.className).toContain("flex-col");
+    });
+
     it("works for a DropdownMenuItem child, disabling it via Radix's own disabled prop", async () => {
       setUser(UserRole.USER, []);
       const onClick = vi.fn();

@@ -1545,126 +1545,126 @@ export default function MaintenanceCalendar() {
                           {isMaintenanceBlock && (
                             <>
                               <RequiresPermission anyOf={[UserPermission.MANAGE_MAINTENANCE, UserPermission.MANAGE_RESERVATIONS]}>
-                              <Button
-                                size="sm"
-                                variant="default"
-                                className="bg-green-600 hover:bg-green-700"
-                                onClick={async () => {
-                                  try {
-                                    const response = await fetch('/api/reservations');
-                                    const allReservations = await response.json();
-                                    const actualReservation = allReservations.find((r: any) => 
-                                      r.vehicleId === event.vehicleId && 
-                                      r.type === 'maintenance_block' &&
-                                      r.startDate === event.date
-                                    );
-                                    
-                                    if (actualReservation) {
-                                      // Always show dialog to allow reviewing APK date and optionally adding warranty date
-                                      setCompletingReservation(actualReservation);
-                                      
-                                      // Check if this is a warranty maintenance to pre-fill warranty date
-                                      const notes = actualReservation.notes?.toLowerCase() || '';
-                                      const isWarranty = notes.includes('warranty') || notes.includes('garantie');
-                                      
-                                      if (isWarranty) {
-                                        setWarrantyDateInput(format(new Date(), 'yyyy-MM-dd'));
-                                      } else {
-                                        setWarrantyDateInput(''); // Leave empty for non-warranty maintenance
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  className="bg-green-600 hover:bg-green-700"
+                                  onClick={async () => {
+                                    try {
+                                      const response = await fetch('/api/reservations');
+                                      const allReservations = await response.json();
+                                      const actualReservation = allReservations.find((r: any) =>
+                                        r.vehicleId === event.vehicleId &&
+                                        r.type === 'maintenance_block' &&
+                                        r.startDate === event.date
+                                      );
+
+                                      if (actualReservation) {
+                                        // Always show dialog to allow reviewing APK date and optionally adding warranty date
+                                        setCompletingReservation(actualReservation);
+
+                                        // Check if this is a warranty maintenance to pre-fill warranty date
+                                        const notes = actualReservation.notes?.toLowerCase() || '';
+                                        const isWarranty = notes.includes('warranty') || notes.includes('garantie');
+
+                                        if (isWarranty) {
+                                          setWarrantyDateInput(format(new Date(), 'yyyy-MM-dd'));
+                                        } else {
+                                          setWarrantyDateInput(''); // Leave empty for non-warranty maintenance
+                                        }
+
+                                        // Pre-fill APK date with current value or calculated value
+                                        const currentApkDate = event.vehicle.apkDate || calculateNextApkDate(event.vehicle, new Date());
+                                        setApkDateInput(currentApkDate);
+
+                                        // Pre-fill current mileage with vehicle's current mileage
+                                        if (event.vehicle.currentMileage) {
+                                          setCurrentMileage(event.vehicle.currentMileage.toString());
+                                        } else {
+                                          setCurrentMileage('');
+                                        }
+
+                                        setWarrantyDateDialogOpen(true);
                                       }
-                                      
-                                      // Pre-fill APK date with current value or calculated value
-                                      const currentApkDate = event.vehicle.apkDate || calculateNextApkDate(event.vehicle, new Date());
-                                      setApkDateInput(currentApkDate);
-                                      
-                                      // Pre-fill current mileage with vehicle's current mileage
-                                      if (event.vehicle.currentMileage) {
-                                        setCurrentMileage(event.vehicle.currentMileage.toString());
-                                      } else {
-                                        setCurrentMileage('');
-                                      }
-                                      
-                                      setWarrantyDateDialogOpen(true);
+                                    } catch (error) {
+                                      console.error('Failed to complete maintenance:', error);
+                                      toast({
+                                        title: t('common:status.error'),
+                                        description: t('calendarPage.toasts.completeFailedDescription'),
+                                        variant: "destructive",
+                                      });
                                     }
-                                  } catch (error) {
-                                    console.error('Failed to complete maintenance:', error);
-                                    toast({
-                                      title: t('common:status.error'),
-                                      description: t('calendarPage.toasts.completeFailedDescription'),
-                                      variant: "destructive",
-                                    });
-                                  }
-                                }}
-                                data-testid={`button-complete-${event.id}`}
-                              >
-                                <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                                {t('calendarPage.completeButton')}
-                              </Button>
+                                  }}
+                                  data-testid={`button-complete-${event.id}`}
+                                >
+                                  <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                                  </svg>
+                                  {t('calendarPage.completeButton')}
+                                </Button>
                               </RequiresPermission>
                               <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={async () => {
-                                  try {
-                                    const response = await fetch('/api/reservations');
-                                    const allReservations = await response.json();
-                                    const actualReservation = allReservations.find((r: any) =>
-                                      r.vehicleId === event.vehicleId &&
-                                      r.type === 'maintenance_block' &&
-                                      r.startDate === event.date
-                                    );
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={async () => {
+                                    try {
+                                      const response = await fetch('/api/reservations');
+                                      const allReservations = await response.json();
+                                      const actualReservation = allReservations.find((r: any) =>
+                                        r.vehicleId === event.vehicleId &&
+                                        r.type === 'maintenance_block' &&
+                                        r.startDate === event.date
+                                      );
 
-                                    if (actualReservation) {
-                                      handleEditMaintenance(actualReservation);
-                                      closeDayDialog();
+                                      if (actualReservation) {
+                                        handleEditMaintenance(actualReservation);
+                                        closeDayDialog();
+                                      }
+                                    } catch (error) {
+                                      console.error('Failed to fetch reservation:', error);
                                     }
-                                  } catch (error) {
-                                    console.error('Failed to fetch reservation:', error);
-                                  }
-                                }}
-                                data-testid={`button-edit-day-${event.id}`}
-                              >
-                                <Edit className="h-4 w-4 mr-1" />
-                                {t('common:actions.edit')}
-                              </Button>
+                                  }}
+                                  data-testid={`button-edit-day-${event.id}`}
+                                >
+                                  <Edit className="h-4 w-4 mr-1" />
+                                  {t('common:actions.edit')}
+                                </Button>
                               </RequiresPermission>
                               <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={async () => {
-                                  try {
-                                    // Extract reservation ID from event ID (format: "scheduled_maintenance_123")
-                                    let reservationId: number;
-                                    if (typeof event.id === 'string') {
-                                      const match = event.id.match(/\d+$/);
-                                      reservationId = match ? parseInt(match[0]) : 0;
-                                    } else {
-                                      reservationId = event.id;
-                                    }
-
-                                    if (reservationId && reservationId > 0) {
-                                      // Fetch only the specific reservation instead of all
-                                      const response = await fetch(`/api/reservations/${reservationId}`);
-                                      if (response.ok) {
-                                        const reservation = await response.json();
-                                        setReservationToDelete(reservation);
-                                        setDeleteDialogOpen(true);
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={async () => {
+                                    try {
+                                      // Extract reservation ID from event ID (format: "scheduled_maintenance_123")
+                                      let reservationId: number;
+                                      if (typeof event.id === 'string') {
+                                        const match = event.id.match(/\d+$/);
+                                        reservationId = match ? parseInt(match[0]) : 0;
+                                      } else {
+                                        reservationId = event.id;
                                       }
+
+                                      if (reservationId && reservationId > 0) {
+                                        // Fetch only the specific reservation instead of all
+                                        const response = await fetch(`/api/reservations/${reservationId}`);
+                                        if (response.ok) {
+                                          const reservation = await response.json();
+                                          setReservationToDelete(reservation);
+                                          setDeleteDialogOpen(true);
+                                        }
+                                      }
+                                    } catch (error) {
+                                      console.error('Failed to fetch reservation:', error);
                                     }
-                                  } catch (error) {
-                                    console.error('Failed to fetch reservation:', error);
-                                  }
-                                }}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                data-testid={`button-delete-${event.id}`}
-                              >
-                                <Trash2 className="h-4 w-4 mr-1" />
-                                {t('common:actions.delete')}
-                              </Button>
+                                  }}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  data-testid={`button-delete-${event.id}`}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  {t('common:actions.delete')}
+                                </Button>
                               </RequiresPermission>
                             </>
                           )}
@@ -1694,21 +1694,21 @@ export default function MaintenanceCalendar() {
                             </Button>
                           ) : (
                             <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                openScheduleFromEvent({
-                                  date: event.date,
-                                  startDate: event.startDate,
-                                  vehicleId: event.vehicleId,
-                                  type: event.type
-                                });
-                              }}
-                            >
-                              <Wrench className="h-4 w-4 mr-1" />
-                              {t('maintenance:scheduleDialog.scheduleMaintenanceButton')}
-                            </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  openScheduleFromEvent({
+                                    date: event.date,
+                                    startDate: event.startDate,
+                                    vehicleId: event.vehicleId,
+                                    type: event.type
+                                  });
+                                }}
+                              >
+                                <Wrench className="h-4 w-4 mr-1" />
+                                {t('maintenance:scheduleDialog.scheduleMaintenanceButton')}
+                              </Button>
                             </RequiresPermission>
                           )}
                         </div>

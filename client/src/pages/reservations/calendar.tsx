@@ -2197,60 +2197,60 @@ export default function ReservationCalendarPage() {
                       { type: 'Other', labelKey: 'form.docTypes.other', accept: '.pdf,.jpg,.jpeg,.png,.doc,.docx' }
                     ].map(({ type, labelKey, accept }) => (
                       <RequiresPermission key={type} anyOf={[UserPermission.MANAGE_DOCUMENTS]}>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        data-testid={`button-upload-${type.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`}
-                        onClick={() => {
-                          const input = document.createElement('input');
-                          input.type = 'file';
-                          input.accept = accept;
-                          input.onchange = async (e) => {
-                            const file = (e.target as HTMLInputElement).files?.[0];
-                            if (!file) return;
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          data-testid={`button-upload-${type.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`}
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = accept;
+                            input.onchange = async (e) => {
+                              const file = (e.target as HTMLInputElement).files?.[0];
+                              if (!file) return;
 
-                            setUploadingDoc(true);
-                            const formData = new FormData();
-                            // Important: append fields BEFORE the file for multer to parse correctly
-                            formData.append('vehicleId', selectedReservation.vehicleId!.toString());
-                            formData.append('reservationId', selectedReservation.id.toString());
-                            formData.append('documentType', type);
-                            formData.append('file', file);
+                              setUploadingDoc(true);
+                              const formData = new FormData();
+                              // Important: append fields BEFORE the file for multer to parse correctly
+                              formData.append('vehicleId', selectedReservation.vehicleId!.toString());
+                              formData.append('reservationId', selectedReservation.id.toString());
+                              formData.append('documentType', type);
+                              formData.append('file', file);
 
-                            try {
-                              const response = await fetch('/api/documents', {
-                                method: 'POST',
-                                body: formData,
-                                credentials: 'include',
-                              });
-                              
-                              if (!response.ok) {
-                                throw new Error('Upload failed');
+                              try {
+                                const response = await fetch('/api/documents', {
+                                  method: 'POST',
+                                  body: formData,
+                                  credentials: 'include',
+                                });
+
+                                if (!response.ok) {
+                                  throw new Error('Upload failed');
+                                }
+
+                                invalidateByPrefix(`/api/documents/reservation/${selectedReservation.id}`);
+                                toast({
+                                  title: t('common:status.success'),
+                                  description: t('calendarPage.documentUploadedDescription', { type: t(labelKey) }),
+                                });
+                              } catch (error) {
+                                console.error('Upload failed:', error);
+                                toast({
+                                  title: t('common:status.error'),
+                                  description: t('calendarPage.documentUploadFailedDescription'),
+                                  variant: "destructive",
+                                });
+                              } finally {
+                                setUploadingDoc(false);
                               }
-                              
-                              invalidateByPrefix(`/api/documents/reservation/${selectedReservation.id}`);
-                              toast({
-                                title: t('common:status.success'),
-                                description: t('calendarPage.documentUploadedDescription', { type: t(labelKey) }),
-                              });
-                            } catch (error) {
-                              console.error('Upload failed:', error);
-                              toast({
-                                title: t('common:status.error'),
-                                description: t('calendarPage.documentUploadFailedDescription'),
-                                variant: "destructive",
-                              });
-                            } finally {
-                              setUploadingDoc(false);
-                            }
-                          };
-                          input.click();
-                        }}
-                        disabled={uploadingDoc}
-                        className="text-[10px] h-7"
-                      >
-                        + {t(labelKey)}
-                      </Button>
+                            };
+                            input.click();
+                          }}
+                          disabled={uploadingDoc}
+                          className="text-[10px] h-7"
+                        >
+                          + {t(labelKey)}
+                        </Button>
                       </RequiresPermission>
                     ))}
                   </div>

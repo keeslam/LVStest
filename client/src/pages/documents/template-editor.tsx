@@ -1328,14 +1328,14 @@ const PDFTemplateEditor = ({ onClose }: PDFTemplateEditorProps = {}) => {
                   <Label>{t('templateEditor.selectTemplateLabel')}</Label>
                   <div className="flex gap-1">
                     <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
-                    <Button variant="ghost" size="sm" className="h-6 px-2" title={t('templateEditor.newTemplateButton')} onClick={() => { setNewTemplateName(''); setIsCreateDialogOpen(true); }} data-testid="button-new-template">
-                      <Plus className="h-4 w-4" />
-                    </Button>
+                      <Button variant="ghost" size="sm" className="h-6 px-2" title={t('templateEditor.newTemplateButton')} onClick={() => { setNewTemplateName(''); setIsCreateDialogOpen(true); }} data-testid="button-new-template">
+                        <Plus className="h-4 w-4" />
+                      </Button>
                     </RequiresPermission>
                     <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
-                    <Button variant="ghost" size="sm" className="h-6 px-2" title={t('templateEditor.renameTemplateButton')} disabled={!currentTemplate} onClick={() => { setRenameValue(currentTemplate?.name || ''); setIsRenameDialogOpen(true); }} data-testid="button-rename-template">
-                      <Pencil className="h-4 w-4" />
-                    </Button>
+                      <Button variant="ghost" size="sm" className="h-6 px-2" title={t('templateEditor.renameTemplateButton')} disabled={!currentTemplate} onClick={() => { setRenameValue(currentTemplate?.name || ''); setIsRenameDialogOpen(true); }} data-testid="button-rename-template">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                     </RequiresPermission>
                   </div>
                 </div>
