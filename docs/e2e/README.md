@@ -10,14 +10,33 @@ begin tot eind na — de baliestroom van telefoontje tot ingeleverde bus — en 
 daarbij hoeveel handelingen dat kost, zodat een latere wijziging die er een klik bij
 doet meteen opvalt.
 
-**Wat laag A niet bewijst.** De rechten worden nagelopen voor zeven aangenomen
-profielen (beheerder, manager, balie, schoonmaak, meekijker, boekhouding, onderhoud).
-Een groene run zegt dus dat die zeven combinaties kloppen — niet dat élke denkbare
-combinatie van vinkjes klopt. In deze applicatie is een rol maar een etiket en staan de
-rechten per persoon aangevinkt, dus een medewerker met een ongebruikelijke mix kan nog
-steeds op een scherm stuiten dat gegevens opvraagt die hij niet mag zien. Of die zeven
-profielen overeenkomen met de echte accounts, is een vraag die in
-`docs/e2e/werkstromen/01-balie.md` aan de eigenaar is voorgelegd.
+**Wat laag A niet bewijst.** De rechten worden nagelopen voor acht aangenomen
+profielen (beheerder, manager, balie, schoonmaak, meekijker, boekhouding, onderhoud,
+`reports-only`). Een groene run zegt dus dat die acht combinaties kloppen — niet dat
+élke denkbare combinatie van vinkjes klopt. In deze applicatie is een rol maar een
+etiket en staan de rechten per persoon aangevinkt, dus een medewerker met een
+ongebruikelijke mix kan nog steeds op een scherm stuiten dat gegevens opvraagt die hij
+niet mag zien. Of die acht profielen overeenkomen met de echte accounts, is een vraag
+die in `docs/e2e/werkstromen/01-balie.md` aan de eigenaar is voorgelegd.
+
+Het achtste profiel, `reports-only` (`e2e/seed/users.ts`), houdt expres alleen
+**Dashboard bekijken** en **Rapporten bekijken** aan — niets uit de voertuig-,
+reserverings- of klantenfamilie, die de andere zeven toevallig allemaal ook hebben. Dat
+bewijst de sluitende zaak uit `docs/superpowers/specs/2026-09-21-toegang-design.md` §3:
+een scherm mag nooit onvoorwaardelijk gegevens opvragen die bij een ándere
+rechtenfamilie horen dan het scherm zelf. Dit profiel opent precies `/` en `/reports`
+(zijn eigen `anyOf` in `shared/page-access.ts`) zonder een enkele schending.
+
+**Wat de rechtentests sinds september 2026 controleren.**
+`e2e/layer-a/forbidden.spec.ts` opent voor elke rol elk scherm dat die rol niet mag
+gebruiken en controleert drie dingen: de pagina met **"U heeft geen toegang tot dit
+scherm"** verschijnt, de tekst noemt het ontbrekende recht met naam, en er gaat geen
+enkel `/api/`-verzoek van het scherm zelf uit (alleen de vaste verzoeken van de
+koptekst — het meldingencentrum — zijn toegestaan, elk gedekt door zijn eigen recht).
+`e2e/layer-a/dialogs.spec.ts` opent voor elke rol elk venster dat die rol niet mag
+gebruiken en controleert dat de openknop **zichtbaar** blijft, **uitgeschakeld** is
+(`aria-disabled`), en bij aanwijzen of focus een tekstballon toont met het ontbrekende
+recht erin — in plaats van, zoals voorheen, die combinatie gewoon over te slaan.
 
 ## Draaien
 
@@ -77,7 +96,7 @@ andere machine sneller wil proberen, kan `E2E_WORKERS` op een ander getal zetten
   kopie, maar vanaf niets: het schema wordt neergezet en daarna draait de echte
   migratie eroverheen — dezelfde weg die een nieuwe productiedatabase aflegt. Zo valt een
   ontbrekende kolom op vóór een medewerker hem tegenkomt.
-- Daarna wordt er vaste testdata ingezet: zeven medewerkers (één per soort), acht
+- Daarna wordt er vaste testdata ingezet: acht medewerkers (één per profiel), acht
   voertuigen, zes klanten en reserveringen in elke status.
 - De applicatie start op **poort 5010**, apart van alles wat er verder draait. De
   kentekenopzoeking praat met een klein lokaal antwoordapparaat op poort 5011.

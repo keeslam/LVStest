@@ -279,6 +279,10 @@ het scherm **Reserveringen**. Wie de facturatiegegevens moet kunnen uitlezen, he
 
 ## 15.8 Wat je ziet als je een recht mist
 
+Dit gaat over het moment dat je ergens terechtkomt of op iets klikt waarvoor je het recht niet
+hebt. Sinds de doorlichting van september 2026 maken de meeste schermen dat al ván tevoren
+duidelijk, met een eigen pagina en grijze knoppen in plaats van een melding achteraf — zie 15.9.
+
 Er zijn drie manieren waarop de app je een ontbrekend recht laat merken.
 
 **1. Het menu-item staat er niet.** Dit is het meest voorkomende. Je ziet **Onderhoud** of
@@ -301,7 +305,88 @@ handeling.
 
 ---
 
-## 15.9 Prijzen verbergen
+## 15.9 De schermmelding en de grijze knoppen (sinds september 2026)
+
+Sinds de doorlichting van de rechten in september 2026 laten de meeste schermen een ontbrekend
+recht al vooraf zien, in plaats van pas na een klik. Drie dingen zijn hierdoor bij gekomen ten
+opzichte van 15.8:
+
+**Een scherm zonder recht toont een duidelijke pagina, niet alleen een lege.** Kom je toch op het
+adres van een scherm waar je het recht niet voor hebt — een overgetikte link, een oude
+snelkoppeling, een collega die het adres doorstuurt — dan opent niet een leeg scherm, maar een
+pagina met de kop **"U heeft geen toegang tot dit scherm"** en een zin die het ontbrekende recht
+met naam noemt, bijvoorbeeld: *"Hiervoor is het recht 'Onderhoud beheren' nodig. Vraag een
+beheerder om het aan te zetten."* Er staat een knop naar het eerste scherm dat je wél mag openen.
+Het scherm zelf vraagt in dit geval helemaal niets bij de server op.
+
+**Een knop die je niet mag gebruiken, blijft zichtbaar maar staat uit.** Op steeds meer schermen
+zie je nu een knop die er wel gewoon staat maar **grijs** is. Wijs je hem aan, of spring je er met
+Tab naartoe, dan verschijnt een tekstballon die het ontbrekende recht noemt, bijvoorbeeld
+*"Hiervoor heeft u het recht 'Reserveringen beheren' nodig."* Klikken doet dan niets: geen
+foutmelding, geen half uitgevoerde actie. Dit vervangt voor deze knoppen de oude melding uit 15.8,
+punt 2 — die melding kan nog wel voorkomen bij een knop die deze behandeling nog niet heeft
+gekregen.
+
+**Een stukje van een scherm dat gegevens uit een ander recht toont, laat dat nu netjes weg.**
+Sommige schermen tonen een detail dat eigenlijk bij een ander recht hoort — bijvoorbeeld een
+klantnaam op een scherm waarvoor je geen klantrecht hebt. Heb je dat andere recht niet, dan
+verschijnt daar de zin **"Geen toegang tot deze gegevens (recht '...')"**, of het stukje wordt
+gewoon weggelaten als het maar een detail was, zoals een naam naast een nummer. Ook hier: geen
+foutmelding en geen scherm dat blijft laden.
+
+## 15.10 Transporten, Communicatie en Onderhoud: wie het scherm ziet
+
+**Transporten** staat in het menu van iedereen die **Reserveringen bekijken/beheren** ÓF
+**Voertuigen bekijken/beheren** heeft — niet pas bij een apart transportrecht. Dat is bewust: het
+scherm toont de overbrengingen die bij een verhuring of een voertuig horen, dus wie een van de
+twee al mag zien, moet dat ook hier kunnen volgen.
+
+**Communicatie** vraagt het recht **E-mailsjablonen beheren** om het scherm te mogen openen. Sta
+je erop, maar wil je ook echt een herinnering versturen (APK, garantie, onderhoud, of een eigen
+bericht), dan heb je daarnaast **Meldingen beheren** nodig. Zonder dat recht staan de
+verstuurknoppen er wel, maar grijs — zie 15.9.
+
+**Onderhoud** vraagt het recht **Onderhoud beheren** om het scherm te mogen openen. Wat dat recht
+daar concreet wel en niet dekt, staat in 15.11.
+
+## 15.11 Onderhoud beheren: wat het wel en niet dekt
+
+Wie alleen **Onderhoud beheren** heeft — en niet ook **Reserveringen beheren** — komt op een grens
+die niet voor de hand ligt. De werkplaatskalender opent gewoon, en een bestaand blok **afronden**
+werkt, maar **nieuw onderhoud inplannen niet**: dat loopt via dezelfde route als een gewone
+boeking, en die vraagt **Reserveringen beheren**.
+
+| Handeling op het onderhoudsscherm | Wat er nodig is | Werkt met alléén 'Onderhoud beheren'? |
+|---|---|---|
+| Nieuw onderhoud inplannen (kop-knop, dag-tegel "+", vanuit een leeg dag-venster) | Reserveringen beheren | Nee |
+| Een bestaand onderhoudsblok bewerken (datum, type, notities) | Reserveringen beheren | Nee |
+| Onderhoud **afronden**: het blok sluiten, de werkplaats-vlag wissen, de vervanger terugzetten | Onderhoud beheren **of** Reserveringen beheren | Ja |
+| Bij het afronden ook de APK-datum, kilometerstand of laatste-onderhoud-datum van het voertuig bijwerken (zelfde formulier, alleen als je die velden invult) | Voertuigen beheren | Nee |
+| Bij het afronden een APK-formulier uploaden (zelfde formulier, alleen als je een bestand kiest) | Documenten bewerken en genereren | Nee |
+| Een onderhoudsblok verwijderen | Reserveringen beheren | Nee |
+| Een afgeronde onderhoudsregistratie terugzetten | Reserveringen beheren | Nee |
+| Bij het bekijken van een onderhoudsblok: een vervanger op "nog te bepalen" of "eigen vervoer" zetten | Reserveringen beheren | Nee |
+| Bij het bekijken: foto's, servicerapport of overige documenten uploaden | Documenten bewerken en genereren | Nee |
+| Bij het bekijken: kosten aanmaken via de factuurscanner | Kosten beheren | Nee |
+| Reservevoertuig toewijzen als een nieuw onderhoudsblok een bestaande verhuring raakt | Onderhoud beheren **of** Reserveringen beheren | Kan pas nadat het blok is aangemaakt — en dat lukt niet zonder Reserveringen beheren (zie regel 1) |
+
+**Kort gezegd:** met alléén **Onderhoud beheren** kun je een bestaand blok afronden, maar geen
+nieuw onderhoud inplannen, geen blok bewerken of verwijderen, en geen afgeronde registratie
+terugzetten — daar is ook **Reserveringen beheren** voor nodig. Wil je dat de werkplaats zelf
+onderhoud kan inplannen, geef dat account dan ook **Reserveringen beheren**.
+
+## 15.12 Etiketsjablonen: bekijken kan iedereen, wijzigen niet
+
+De sjablonen voor kentekenlabels (**Documenten → Barcode-etiketten**) hebben een bijzondere regel.
+**Elke ingelogde medewerker kan de lijst met etiketsjablonen inzien**, ook zonder enig extra
+recht — dat is bewust zo gebouwd, want bij het scannen en printen van een label moet iedereen uit
+die lijst kunnen kiezen. **Een sjabloon wijzigen, aanmaken of verwijderen vraagt wél het recht
+'PDF-sjablonen beheren'**; zonder dat recht is de knop **Barcode-etiketten beheren** onder
+**Documenten** grijs (zie 15.9).
+
+---
+
+## 15.13 Prijzen verbergen
 
 Naast de rechten staat bij elk account een schakelaar **Prijzen verbergen** —
 *"Gebruiker ziet nergens in de app prijzen/geldbedragen"*.
@@ -315,7 +400,7 @@ niets met de tarieven te maken heeft.
 
 ---
 
-## 15.10 Actief en inactief
+## 15.14 Actief en inactief
 
 Bij elk account staat de schakelaar **Actief** — *"Gebruiker kan inloggen wanneer actief"*.
 
@@ -332,7 +417,7 @@ bovendien een kwartier vast (hoofdstuk 12).
 
 ---
 
-## 15.11 Korte vuistregels
+## 15.15 Korte vuistregels
 
 - De rol zegt wat voor werk iemand doet; de **vinkjes** bepalen wat hij mag.
 - **Beheerder** mag alles. Houd het aantal beheerders klein.
@@ -344,3 +429,7 @@ bovendien een kwartier vast (hoofdstuk 12).
 - De drie beheerschermen (**Gebruikers**, **Back-upbeheer**, **App-instellingen**) en de
   **prullenbak** zitten vast aan de rol Beheerder, niet aan een vinkje.
 - Zie je een knop niet, dan is dat bijna altijd een recht — geen storing.
+- Zie je een knop wél maar **grijs**, met een tekstballon die een recht noemt: zelfde verhaal,
+  alleen laat het scherm het nu al vooraf zien in plaats van pas na een klik (15.9).
+- **Onderhoud beheren** dekt niet alles op het onderhoudsscherm: nieuw onderhoud inplannen, een
+  blok bewerken of verwijderen vraagt ook **Reserveringen beheren** (15.11).
