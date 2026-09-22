@@ -12,10 +12,20 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { UserPermission, UserRole } from "@shared/schema";
 
 const toasts: Array<{ title?: string; description?: string; variant?: string }> = [];
 vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({ toast: (t: any) => { toasts.push(t); } }),
+}));
+
+// Task 5 (docs/superpowers/specs/2026-09-21-toegang-design.md, §3): the
+// dialog's own query now checks VIEW_VEHICLES/MANAGE_VEHICLES via
+// useHasPermission(), which reads useAuth() - this file is about the bulk
+// row-result reporting, not permissions, so it grants the vehicle right
+// unconditionally to keep the query firing exactly as before.
+vi.mock("@/hooks/use-auth", () => ({
+  useAuth: () => ({ user: { id: 1, username: "tester", role: UserRole.USER, permissions: [UserPermission.VIEW_VEHICLES] }, isLoading: false }),
 }));
 
 const openRdwApkChangesDialog = vi.fn();
