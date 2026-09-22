@@ -5,23 +5,6 @@ import { permissionLabel } from "../../shared/permission-labels";
 import { pageAccessFor } from "../../shared/page-access";
 
 /**
- * Task 3 (docs/superpowers/specs/2026-09-21-toegang-design.md, §4) only
- * wired `RequiresPermission` into the dashboard ("/") and "/vehicles" —
- * every other page still renders its openers unconditionally for anyone who
- * can see the page (today's pre-B-27 house style), so a role without the
- * opener's own `anyOf` right sees it ENABLED there, not disabled. Asserting
- * "disabled" for those pages would fail for the wrong reason until Task 4
- * gates them too. Remove a page from this list (and eventually the list
- * itself) exactly when Task 4 wraps that page's controls in
- * RequiresPermission.
- */
-const NOT_YET_GATED_PAGES = new Set([
-  "/delivery",
-  "/reports",
-  "/customers",
-]);
-
-/**
  * Whether `role` can open `page` at all, per the same table `ProtectedRoute`
  * uses (shared/page-access.ts, Task 2). A role that cannot open the page gets
  * the no-access page instead of the page component — the opener never
@@ -41,12 +24,20 @@ for (const role of ROLES) {
     test.use({ storageState: authFile(role) });
     for (const entry of DIALOGS) {
       const allowed = can(role, entry.anyOf);
+      // A role that cannot even open the PAGE never reaches the opener at
+      // all, whichever way its own `anyOf` compares — that combination is
+      // forbidden.spec.ts's job (the no-access page, not this control), so it
+      // is skipped regardless of `allowed`. This matters once a control's own
+      // permission differs from the page's (e.g. /maintenance's own gate is
+      // MANAGE_MAINTENANCE, but button-schedule-maintenance needs
+      // MANAGE_RESERVATIONS — a role holding MANAGE_RESERVATIONS but not
+      // MANAGE_MAINTENANCE satisfies the button's `anyOf` yet still cannot
+      // open the page to find it).
+      if (!roleCanOpenPage(role, entry.page)) continue;
       // Hidden-on-purpose openers (admin-only today, B-27 keeps them hidden
-      // rather than disabled), pages Task 4 has not gated yet, and a role
-      // that cannot even open the page (forbidden.spec.ts's job, not this
-      // spec's) keep the old skip: there is nothing meaningful to assert for
-      // this role here.
-      if (!allowed && (entry.hiddenWithoutRight || NOT_YET_GATED_PAGES.has(entry.page) || !roleCanOpenPage(role, entry.page))) continue;
+      // rather than disabled) keep the old skip: there is nothing meaningful
+      // to assert for this role here.
+      if (!allowed && entry.hiddenWithoutRight) continue;
 
       if (allowed) {
         test(`${entry.page}: ${entry.name}`, async ({ page, health }) => {

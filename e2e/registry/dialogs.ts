@@ -108,7 +108,10 @@ export const DIALOGS: DialogEntry[] = [
   { page: "/documents", opener: "button-open-damage-check-studio", via: "tab-damage-check-templates", anyOf: [P.MANAGE_DAMAGE_CHECKS], source: "client/src/pages/documents/index.tsx", name: "schadecontrole-sjablonen-studio" },
 
   // --- /delivery -------------------------------------------------------------
-  { page: "/delivery", opener: "button-new-transport", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], source: "client/src/components/delivery/transport-dialog.tsx", name: "nieuw transport" },
+  // Task 4: wrapped in RequiresPermission anyOf={[MANAGE_VEHICLES, MANAGE_RESERVATIONS]},
+  // matching POST /api/transports (routes.ts:8084).
+  { page: "/delivery", opener: "button-new-transport", anyOf: [P.MANAGE_VEHICLES, P.MANAGE_RESERVATIONS], source: "client/src/components/delivery/transport-dialog.tsx", name: "nieuw transport" },
+  // Read-only (no mutation route) — not wrapped, anyOf unchanged.
   { page: "/delivery", opener: "button-route-optimization", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], source: "client/src/components/delivery/route-optimization-dialog.tsx", name: "routeoptimalisatie" },
 
   // --- /reports --------------------------------------------------------------
@@ -124,7 +127,9 @@ export const DIALOGS: DialogEntry[] = [
   { page: "/reports", opener: "card-maintenance-costs", anyOf: [P.VIEW_REPORTS, P.MANAGE_REPORTS], source: "client/src/pages/reports/index.tsx", name: "onderhoudskosten" },
 
   // --- /customers --------------------------------------------------------
-  { page: "/customers", opener: "button-add-customer", anyOf: [P.VIEW_CUSTOMERS, P.MANAGE_CUSTOMERS], source: "client/src/components/customers/customer-add-dialog.tsx", name: "klant toevoegen" },
+  // Task 4: wrapped in RequiresPermission anyOf={[MANAGE_CUSTOMERS]}, matching
+  // POST /api/customers (routes.ts:2469).
+  { page: "/customers", opener: "button-add-customer", anyOf: [P.MANAGE_CUSTOMERS], source: "client/src/components/customers/customer-add-dialog.tsx", name: "klant toevoegen" },
 
   // --- /portal-admin -------------------------------------------------------
   // Only admin/manager hold VIEW_PORTAL/MANAGE_PORTAL among the seven E2E
