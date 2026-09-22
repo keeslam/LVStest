@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Shield, Wrench, Users, Send, Calendar, Clock, CheckCircle, AlertTriangle, Edit, Trash2, Eye, Copy } from "lucide-react";
 import type { Vehicle, Customer } from "@shared/schema";
+import { UserPermission } from "@shared/schema";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 import { formatLicensePlate, plateMatches, formatVehicleType } from "@/lib/format-utils";
 import { formatDateNl } from "@/lib/format-date-nl";
 
@@ -893,15 +895,17 @@ export default function CustomerCommunications() {
                         data-testid="input-search-apk"
                       />
                     </div>
-                    <Button
-                      disabled={selectedVehicles.length === 0 || !selectedTemplateId}
-                      onClick={generateEmailPreview}
-                      className="bg-orange-600 hover:bg-orange-700"
-                      data-testid="button-preview-apk"
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      {t('customerCommunications.send.apk.previewSendButton', { count: selectedVehicles.length })}
-                    </Button>
+                    <RequiresPermission anyOf={[UserPermission.MANAGE_NOTIFICATIONS]}>
+                      <Button
+                        disabled={selectedVehicles.length === 0 || !selectedTemplateId}
+                        onClick={generateEmailPreview}
+                        className="bg-orange-600 hover:bg-orange-700"
+                        data-testid="button-preview-apk"
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        {t('customerCommunications.send.apk.previewSendButton', { count: selectedVehicles.length })}
+                      </Button>
+                    </RequiresPermission>
                   </div>
 
               {/* Filter Information */}
@@ -1091,15 +1095,17 @@ export default function CustomerCommunications() {
                     data-testid="input-search-maintenance"
                   />
                 </div>
-                <Button
-                  disabled={selectedVehicles.length === 0 || !selectedTemplateId}
-                  onClick={generateEmailPreview}
-                  className="bg-blue-600 hover:bg-blue-700"
-                  data-testid="button-preview-maintenance"
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  {t('customerCommunications.send.maintenance.previewSendButton', { count: selectedVehicles.length })}
-                </Button>
+                <RequiresPermission anyOf={[UserPermission.MANAGE_NOTIFICATIONS]}>
+                  <Button
+                    disabled={selectedVehicles.length === 0 || !selectedTemplateId}
+                    onClick={generateEmailPreview}
+                    className="bg-blue-600 hover:bg-blue-700"
+                    data-testid="button-preview-maintenance"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    {t('customerCommunications.send.maintenance.previewSendButton', { count: selectedVehicles.length })}
+                  </Button>
+                </RequiresPermission>
               </div>
 
               {/* Filter Information */}
@@ -1230,15 +1236,17 @@ export default function CustomerCommunications() {
               </div>
 
               <div className="flex items-center justify-between mb-4">
-                <Button
-                  disabled={(selectedCustomers.length === 0 && selectedVehicles.length === 0) || ((!selectedTemplateId || selectedTemplateId === "none") && (!customMessage.trim() || !customSubject.trim()))}
-                  onClick={generateEmailPreview}
-                  className="bg-green-600 hover:bg-green-700"
-                  data-testid="button-preview-custom"
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  {t('customerCommunications.send.custom.previewSendButton')}
-                </Button>
+                <RequiresPermission anyOf={[UserPermission.MANAGE_NOTIFICATIONS]}>
+                  <Button
+                    disabled={(selectedCustomers.length === 0 && selectedVehicles.length === 0) || ((!selectedTemplateId || selectedTemplateId === "none") && (!customMessage.trim() || !customSubject.trim()))}
+                    onClick={generateEmailPreview}
+                    className="bg-green-600 hover:bg-green-700"
+                    data-testid="button-preview-custom"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    {t('customerCommunications.send.custom.previewSendButton')}
+                  </Button>
+                </RequiresPermission>
                 <div className="text-sm text-muted-foreground">
                   {selectedCustomers.length > 0 && selectedVehicles.length > 0
                     ? t('customerCommunications.send.custom.recipientsSummaryBoth', { customers: selectedCustomers.length, vehicles: selectedVehicles.length })
@@ -2126,13 +2134,16 @@ export default function CustomerCommunications() {
             <Button variant="outline" onClick={() => setPreviewDialogOpen(false)}>
               {t('customerCommunications.dialogs.emailPreview.cancelButton')}
             </Button>
-            <Button
-              onClick={confirmSendNotifications}
-              disabled={isLoadingNotifications}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              {isLoadingNotifications ? t('customerCommunications.dialogs.emailPreview.sendingButton') : t('customerCommunications.dialogs.emailPreview.confirmSendButton')}
-            </Button>
+            <RequiresPermission anyOf={[UserPermission.MANAGE_NOTIFICATIONS]}>
+              <Button
+                onClick={confirmSendNotifications}
+                disabled={isLoadingNotifications}
+                className="bg-green-600 hover:bg-green-700"
+                data-testid="button-confirm-send-notifications"
+              >
+                {isLoadingNotifications ? t('customerCommunications.dialogs.emailPreview.sendingButton') : t('customerCommunications.dialogs.emailPreview.confirmSendButton')}
+              </Button>
+            </RequiresPermission>
           </DialogFooter>
         </DialogContent>
       </Dialog>
