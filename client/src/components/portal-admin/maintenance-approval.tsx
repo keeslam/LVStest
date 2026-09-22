@@ -10,8 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { PeriodPicker } from "@/components/portal/period-picker";
-
-const tomorrow = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); };
+import { officeTomorrow } from "@/lib/office-date";
 
 /** What the customer filled in, for both maintenance and maintenance_change requests. */
 export function MaintenanceSummary({ request: r, blockDate }: { request: PortalRequestDto; blockDate?: string | null }) {
@@ -43,12 +42,12 @@ export function MaintenanceApproval({ request: r, onApproved }: { request: Porta
   const { toast } = useToast();
   const p = r.payload as { issue?: string; mileage?: number; urgent?: boolean; needsReplacement?: boolean; preferredDate?: string; newDate?: string; reason?: string };
   const isChange = r.type === "maintenance_change";
-  const [startDate, setStartDate] = useState((isChange ? p.newDate : p.preferredDate) || tomorrow());
+  const [startDate, setStartDate] = useState((isChange ? p.newDate : p.preferredDate) || officeTomorrow());
   const [days, setDays] = useState(1);
   const [durationStr, setDurationStr] = useState("");
   const [category, setCategory] = useState<"scheduled_maintenance" | "repair">(p.urgent === true ? "repair" : "scheduled_maintenance");
   const [note, setNote] = useState("");
-  useEffect(() => { setStartDate((isChange ? p.newDate : p.preferredDate) || tomorrow()); setDays(1); setDurationStr(""); setNote(""); }, [r.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setStartDate((isChange ? p.newDate : p.preferredDate) || officeTomorrow()); setDays(1); setDurationStr(""); setNote(""); }, [r.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const approve = useMutation({
     mutationFn: async () => (await apiRequest("POST", `/api/portal-requests/${r.id}/approve`, isChange

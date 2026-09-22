@@ -41,6 +41,7 @@ import { TransportViewDialog, type TransportViewData } from "@/components/delive
 import { formatLicensePlate } from "@/lib/format-utils";
 import { Truck, MapPin, Clock, CheckCircle, Package, PackageCheck, Undo2, Navigation, Plus, Pencil, Trash2, Euro, Search, Printer, Loader2, User, Eye } from "lucide-react";
 import { differenceInDays } from "date-fns";
+import { officeToday } from "@/lib/office-date";
 
 export default function DeliveryDashboard() {
   const { t } = useTranslation("delivery");
@@ -246,7 +247,7 @@ export default function DeliveryDashboard() {
     mutationFn: async (id: number) => {
       await apiRequest("PATCH", `/api/transports/${id}`, {
         status: "completed",
-        completedDate: new Date().toISOString().split("T")[0],
+        completedDate: officeToday(),
       });
     },
     onSuccess: () => {
@@ -331,7 +332,7 @@ export default function DeliveryDashboard() {
       const results = await Promise.allSettled(
         ids.map(id => apiRequest("PATCH", `/api/transports/${id}`, {
           status: "completed",
-          completedDate: new Date().toISOString().split("T")[0],
+          completedDate: officeToday(),
         })),
       );
       const succeeded: number[] = [];

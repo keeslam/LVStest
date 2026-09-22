@@ -29,6 +29,7 @@ import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/use-auth";
 import { UserRole } from "@shared/schema";
+import { officeToday } from "@/lib/office-date";
 
 interface BackupSettings {
   id: number;
@@ -194,7 +195,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `car-rental-data-${new Date().toISOString().split('T')[0]}.sql`;
+      a.download = `car-rental-data-${officeToday()}.sql`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -222,7 +223,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `car-rental-code-${new Date().toISOString().split('T')[0]}.tar.gz`;
+      a.download = `car-rental-code-${officeToday()}.tar.gz`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -250,7 +251,7 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `car-rental-files-${new Date().toISOString().split('T')[0]}.tar.gz`;
+      a.download = `car-rental-files-${officeToday()}.tar.gz`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

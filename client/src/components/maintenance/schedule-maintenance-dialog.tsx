@@ -41,6 +41,7 @@ import { Button } from "@/components/ui/button";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Calendar, AlertTriangle, Wrench, Clock, Car, Filter } from "lucide-react";
+import { officeToday } from "@/lib/office-date";
 
 const scheduleMaintenanceSchema = z.object({
   vehicleId: z.string().min(1, "Please select a vehicle"),
@@ -127,7 +128,7 @@ export function ScheduleMaintenanceDialog({
       vehicleId: initialVehicleId?.toString() || "",
       customerId: "",
       maintenanceType: initialMaintenanceType || "breakdown",
-      scheduledDate: initialDate || new Date().toISOString().split('T')[0], // Use initialDate if provided, otherwise today
+      scheduledDate: initialDate || officeToday(), // Use initialDate if provided, otherwise today
       maintenanceDuration: 1, // Default 1 day
       maintenanceStatus: "scheduled",
       description: "",
@@ -170,7 +171,7 @@ export function ScheduleMaintenanceDialog({
         vehicleId: editingReservation.vehicleId?.toString() || "",
         customerId: editingReservation.customerId?.toString() || "none",
         maintenanceType,
-        scheduledDate: editingReservation.startDate || new Date().toISOString().split('T')[0],
+        scheduledDate: editingReservation.startDate || officeToday(),
         maintenanceDuration: duration,
         maintenanceStatus: editingReservation.maintenanceStatus || "in",
         description: descriptionPart,
@@ -183,7 +184,7 @@ export function ScheduleMaintenanceDialog({
         vehicleId: initialVehicleId?.toString() || "",
         customerId: "",
         maintenanceType: initialMaintenanceType || "breakdown",
-        scheduledDate: initialDate || new Date().toISOString().split('T')[0],
+        scheduledDate: initialDate || officeToday(),
         maintenanceDuration: 1,
         maintenanceStatus: "scheduled",
         description: "",
@@ -817,7 +818,7 @@ export function ScheduleMaintenanceDialog({
       }));
       
       // Get default dates from maintenance data
-      const defaultStartDate = maintenanceData?.startDate || new Date().toISOString().split('T')[0];
+      const defaultStartDate = maintenanceData?.startDate || officeToday();
       const defaultEndDate = maintenanceData?.endDate || '';
       
       // Set temp values for the dialog
@@ -1399,7 +1400,7 @@ export function ScheduleMaintenanceDialog({
                                 
                                 // Only open duration dialog if duration not yet set
                                 if (!hasDurationSet) {
-                                  const defaultStartDate = maintenanceData?.startDate || new Date().toISOString().split('T')[0];
+                                  const defaultStartDate = maintenanceData?.startDate || officeToday();
                                   const defaultEndDate = maintenanceData?.endDate || '';
                                   setTempDurationStartDate(defaultStartDate);
                                   setTempDurationEndDate(defaultEndDate);

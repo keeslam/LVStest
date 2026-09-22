@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle } from "lucide-react";
+import { officeToday } from "@/lib/office-date";
 
 const returnFromServiceSchema = z.object({
   returnDate: z.string().min(1, "Return date is required"),
@@ -60,7 +61,7 @@ export function ReturnFromServiceDialog({
   const form = useForm<ReturnFromServiceFormData>({
     resolver: zodResolver(returnFromServiceSchema),
     defaultValues: {
-      returnDate: new Date().toISOString().split('T')[0], // Today's date
+      returnDate: officeToday(), // Today's date
       mileage: "",
       notes: "",
     },

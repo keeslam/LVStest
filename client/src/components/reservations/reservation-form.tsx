@@ -70,6 +70,7 @@ import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
 import { VehicleRemarksWarningDialog } from "@/components/vehicles/vehicle-remarks-warning-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { officeToday } from "@/lib/office-date";
 
 // Extended schema with validation
 const formSchema = insertReservationSchemaBase.extend({
@@ -920,7 +921,7 @@ export function ReservationForm({
               body: JSON.stringify({
                 registeredTo: "true",  // Set to Opnaam
                 company: "false",      // Remove BV status
-                registeredToDate: new Date().toISOString().split('T')[0],
+                registeredToDate: officeToday(),
               }),
             });
             

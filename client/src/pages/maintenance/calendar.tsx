@@ -60,6 +60,7 @@ import { getCustomMaintenanceStyle, getCustomMaintenanceStyleObject } from "@/li
 import { ChevronLeft, ChevronRight, Calendar, Car, Wrench, AlertTriangle, Clock, Plus, Eye, Edit, Trash2, Palette } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTranslation } from "react-i18next";
+import { officeToday } from "@/lib/office-date";
 
 // Holiday names for display
 const DUTCH_HOLIDAY_NAMES: Record<string, string> = {
@@ -2041,7 +2042,7 @@ export default function MaintenanceCalendar() {
                       // Important: append fields before the file for multer to parse correctly
                       formData.append('vehicleId', completingReservation.vehicleId.toString());
                       formData.append('documentType', 'APK Inspection');
-                      formData.append('description', `APK inspection completed on ${apkDateInput || new Date().toISOString().split('T')[0]}`);
+                      formData.append('description', `APK inspection completed on ${apkDateInput || officeToday()}`);
                       formData.append('file', apkFormFile);
 
                       const response = await fetch('/api/documents', {

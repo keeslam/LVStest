@@ -42,6 +42,7 @@ import { SearchableCombobox } from "@/components/ui/searchable-combobox";
 import { SparePickupPromptDialog } from "./spare-pickup-prompt-dialog";
 import { AlertTriangle, Loader2, Search, X } from "lucide-react";
 import { formatLicensePlate } from "@/lib/format-utils";
+import { officeToday } from "@/lib/office-date";
 
 const transportFormSchema = z.object({
   // Required unless isExternalVehicle — enforced below via superRefine, since which
@@ -140,7 +141,7 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
       relatedVehicleId: "",
       transportType: "swap",
       status: "scheduled",
-      scheduledDate: new Date().toISOString().split("T")[0],
+      scheduledDate: officeToday(),
       completedDate: "",
       originAddress: "",
       originCity: "",
@@ -206,7 +207,7 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
         relatedVehicleId: "",
         transportType: "swap",
         status: "scheduled",
-        scheduledDate: new Date().toISOString().split("T")[0],
+        scheduledDate: officeToday(),
         completedDate: "",
         originAddress: settings?.depotAddress || "",
         originCity: settings?.depotCity || "",

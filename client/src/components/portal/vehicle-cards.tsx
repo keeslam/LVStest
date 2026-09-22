@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { PeriodPicker } from "./period-picker";
 import { EmptyState, Plate, SearchBox, Section, btnPrimary, usePortalSearch } from "./ui";
+import { officeToday } from "@/lib/office-date";
 
 const money = (v: string | null | undefined) => (v ? `€ ${Number(v).toLocaleString("nl-NL", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : null);
 
@@ -23,7 +24,7 @@ export function AvailableVehicles() {
   const { me } = usePortalAuth();
   const { openNewRequest } = usePortalDialogs();
   const { query, setQuery, q, hit } = usePortalSearch();
-  const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [startDate, setStartDate] = useState(() => officeToday());
   const [endDate, setEndDate] = useState("");
   const periodOk = /^\d{4}-\d{2}-\d{2}$/.test(startDate) && (!endDate || endDate >= startDate);
   const url = `/api/portal/vehicles?start=${startDate}&end=${endDate}`;
