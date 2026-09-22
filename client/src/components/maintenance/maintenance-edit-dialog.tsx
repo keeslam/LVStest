@@ -95,9 +95,17 @@ export function MaintenanceEditDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Fetch vehicles for the selector
+  // Fetch vehicles for the selector.
+  // Task 5 finding, beyond the fact sheet's scope (same bug class as Task 2's
+  // notification-center-dialog.tsx finding): this is the one query in this
+  // file that never got the `enabled: open` gate every sibling query below
+  // already uses - MaintenanceEditDialog is mounted unconditionally on
+  // /maintenance (client/src/pages/maintenance/calendar.tsx), so this fired
+  // on every page load regardless of the dialog's own visibility, 403-ing
+  // for any role without VIEW_VEHICLES/MANAGE_VEHICLES.
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
+    enabled: open,
   });
 
   // Fetch customers for optional selection

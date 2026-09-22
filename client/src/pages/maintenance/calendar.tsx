@@ -58,6 +58,8 @@ import { apiRequest, invalidateRelatedQueries } from "@/lib/queryClient";
 import { ColorCodingDialog } from "@/components/calendar/color-coding-dialog";
 import { CalendarLegend } from "@/components/calendar/calendar-legend";
 import { getCustomMaintenanceStyle, getCustomMaintenanceStyleObject } from "@/lib/calendar-styling";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { NoDataAccess } from "@/components/ui/no-data-access";
 import { ChevronLeft, ChevronRight, Calendar, Car, Wrench, AlertTriangle, Clock, Plus, Eye, Edit, Trash2, Palette } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTranslation } from "react-i18next";
@@ -358,23 +360,36 @@ export default function MaintenanceCalendar() {
     return { start, end, allDays, rangeText };
   }, [currentDate]);
   
+  // The page's own permission is MANAGE_MAINTENANCE; per the fact sheet
+  // (PAGE x PERMISSION TABLE row 7), none of this page's GETs accept it at
+  // all - they need vehicle/reservation VIEW rights instead. Spec §3/the
+  // task brief: this is the honest outcome for a manage_maintenance-only
+  // account (no server guard is widened here, see §5) - the calendar grid
+  // below renders NoDataAccess instead when either family is missing.
+  const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
+  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
+
   // Fetch vehicles
   const { data: vehicles, isLoading: isLoadingVehicles } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
+    enabled: canViewVehicles,
   });
-  
+
   // Fetch vehicles with maintenance needs
   const { data: apkExpiringVehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ['/api/vehicles/apk-expiring'],
+    enabled: canViewVehicles,
   });
 
   const { data: warrantyExpiringVehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ['/api/vehicles/warranty-expiring'],
+    enabled: canViewVehicles,
   });
 
   // Regular service due / due soon (server applies interval + settings defaults)
   const { data: serviceDueVehicles = [] } = useQuery<ServiceDueVehicle[]>({
     queryKey: ['/api/vehicles/service-due'],
+    enabled: canViewVehicles,
   });
 
   // Fetch reservations for the full calendar view (including adjacent month dates).
@@ -388,11 +403,13 @@ export default function MaintenanceCalendar() {
         endDate: format(dateRanges.allDays[dateRanges.allDays.length - 1], "yyyy-MM-dd")
       }
     ],
+    enabled: canViewReservations,
   });
 
   // Fetch scheduled maintenance blocks (reservations with type maintenance_block)
   const { data: maintenanceBlocks = [] } = useQuery<Reservation[]>({
     queryKey: ['/api/reservations'],
+    enabled: canViewReservations,
     select: (reservations: Reservation[]) =>
       reservations.filter(r => r.type === 'maintenance_block' && r.maintenanceStatus !== 'out') // Exclude completed maintenance
   });
@@ -426,7 +443,8 @@ export default function MaintenanceCalendar() {
   // Fetch completed maintenance blocks separately
   const { data: completedMaintenanceBlocks = [] } = useQuery<Reservation[]>({
     queryKey: ['/api/reservations'],
-    select: (reservations: Reservation[]) => 
+    enabled: canViewReservations,
+    select: (reservations: Reservation[]) =>
       reservations.filter(r => r.type === 'maintenance_block' && r.maintenanceStatus === 'out') // Only completed maintenance
   });
 
@@ -1196,6 +1214,12 @@ export default function MaintenanceCalendar() {
           </div>
           
           {/* Month View */}
+          {!canViewVehicles || !canViewReservations ? (
+            <div className="mb-6 space-y-2">
+              {!canViewVehicles && <NoDataAccess permission={UserPermission.VIEW_VEHICLES} />}
+              {!canViewReservations && <NoDataAccess permission={UserPermission.VIEW_RESERVATIONS} />}
+            </div>
+          ) : (
           <div className="mb-6">
             {/* Calendar Grid */}
             <div className="border rounded-lg overflow-hidden">
@@ -1484,7 +1508,8 @@ export default function MaintenanceCalendar() {
               ))}
             </div>
           </div>
-          
+          )}
+
           {/* Calendar Legend */}
           <CalendarLegend 
             categories={['maintenance-type', 'maintenance-priority']}
