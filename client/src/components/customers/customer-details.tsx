@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RecordHistory } from "@/components/audit/record-history";
 import { Button } from "@/components/ui/button";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 import { Badge } from "@/components/ui/badge";
 import { usePortalAccounts } from "@/hooks/use-portal-accounts";
 import { Input } from "@/components/ui/input";
@@ -539,17 +540,19 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
             }}
           />
           <ReservationAddDialog initialCustomerId={customerId.toString()}>
-            <Button>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-calendar-plus mr-2">
-                <path d="M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8" />
-                <line x1="16" x2="16" y1="2" y2="6" />
-                <line x1="8" x2="8" y1="2" y2="6" />
-                <line x1="3" x2="21" y1="10" y2="10" />
-                <line x1="19" x2="19" y1="16" y2="22" />
-                <line x1="16" x2="22" y1="19" y2="19" />
-              </svg>
-              {t('details.newReservation')}
-            </Button>
+            <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+              <Button data-testid="button-new-reservation-customer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-calendar-plus mr-2">
+                  <path d="M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8" />
+                  <line x1="16" x2="16" y1="2" y2="6" />
+                  <line x1="8" x2="8" y1="2" y2="6" />
+                  <line x1="3" x2="21" y1="10" y2="10" />
+                  <line x1="19" x2="19" y1="16" y2="22" />
+                  <line x1="16" x2="22" y1="19" y2="19" />
+                </svg>
+                {t('details.newReservation')}
+              </Button>
+            </RequiresPermission>
           </ReservationAddDialog>
         </div>
       </div>
@@ -903,15 +906,17 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
                   <CardDescription>{t('details.authorizedDriversDescription')}</CardDescription>
                 </div>
                 <DriverDialog customerId={customerId} onSuccess={() => refetchDrivers()}>
-                  <Button size="sm" data-testid="button-add-driver">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                      <circle cx="9" cy="7" r="4" />
-                      <line x1="19" x2="19" y1="8" y2="14" />
-                      <line x1="22" x2="16" y1="11" y2="11" />
-                    </svg>
-                    {t('driverForm.addDriver')}
-                  </Button>
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_CUSTOMERS]}>
+                    <Button size="sm" data-testid="button-add-driver">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <line x1="19" x2="19" y1="8" y2="14" />
+                        <line x1="22" x2="16" y1="11" y2="11" />
+                      </svg>
+                      {t('driverForm.addDriver')}
+                    </Button>
+                  </RequiresPermission>
                 </DriverDialog>
               </div>
             </CardHeader>
@@ -1080,20 +1085,24 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
                                 {t('common:actions.view')}
                               </Button>
                               <DriverDialog customerId={customerId} driver={driver} onSuccess={() => refetchDrivers()}>
-                                <Button variant="ghost" size="sm" className="text-primary-600 hover:text-primary-800" data-testid={`button-edit-driver-${driver.id}`}>
-                                  {t('common:actions.edit')}
-                                </Button>
+                                <RequiresPermission anyOf={[UserPermission.MANAGE_CUSTOMERS]}>
+                                  <Button variant="ghost" size="sm" className="text-primary-600 hover:text-primary-800" data-testid={`button-edit-driver-${driver.id}`}>
+                                    {t('common:actions.edit')}
+                                  </Button>
+                                </RequiresPermission>
                               </DriverDialog>
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="text-red-600 hover:text-red-800"
-                                    data-testid={`button-delete-driver-${driver.id}`}
-                                  >
-                                    {t('common:actions.delete')}
-                                  </Button>
+                                  <RequiresPermission anyOf={[UserPermission.MANAGE_CUSTOMERS]}>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-red-600 hover:text-red-800"
+                                      data-testid={`button-delete-driver-${driver.id}`}
+                                    >
+                                      {t('common:actions.delete')}
+                                    </Button>
+                                  </RequiresPermission>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
@@ -1274,10 +1283,12 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
                     <CardDescription>{t('details.activeRentalsDescription')}</CardDescription>
                   </div>
                   <ReservationAddDialog initialCustomerId={customerId.toString()}>
-                    <Button size="sm">
-                      <Calendar className="mr-2 h-4 w-4" />
-                      New Reservation
-                    </Button>
+                    <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                      <Button size="sm" data-testid="button-new-reservation-active-rentals">
+                        <Calendar className="mr-2 h-4 w-4" />
+                        New Reservation
+                      </Button>
+                    </RequiresPermission>
                   </ReservationAddDialog>
                 </div>
               </CardHeader>

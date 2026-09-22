@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ColumnDef } from "@tanstack/react-table";
-import { Customer, Reservation, Driver } from "@shared/schema";
+import { Customer, Reservation, Driver, UserPermission } from "@shared/schema";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 import { formatPhoneNumber } from "@/lib/format-utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -292,21 +293,26 @@ export default function CustomersIndex() {
             >
               {t('common:actions.view')}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setReserveCustomerId(customer.id.toString())}
-            >
-              {t('indexPage.newReservationButton')}
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              data-testid={`button-delete-customer-${customer.id}`}
-              onClick={() => setDeleteCustomerTarget(customer)}
-            >
-              {t('common:actions.delete')}
-            </Button>
+            <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid={`button-reserve-customer-${customer.id}`}
+                onClick={() => setReserveCustomerId(customer.id.toString())}
+              >
+                {t('indexPage.newReservationButton')}
+              </Button>
+            </RequiresPermission>
+            <RequiresPermission anyOf={[UserPermission.MANAGE_CUSTOMERS]}>
+              <Button
+                variant="destructive"
+                size="sm"
+                data-testid={`button-delete-customer-${customer.id}`}
+                onClick={() => setDeleteCustomerTarget(customer)}
+              >
+                {t('common:actions.delete')}
+              </Button>
+            </RequiresPermission>
           </div>
         );
       },
