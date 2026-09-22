@@ -35,6 +35,7 @@ import { getTransportSpareStatus } from "@shared/transport-spare-status";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
+import { NoDataAccess } from "@/components/ui/no-data-access";
 import { TransportDialog } from "@/components/delivery/transport-dialog";
 import { RouteOptimizationDialog } from "@/components/delivery/route-optimization-dialog";
 import { SparePickupPromptDialog } from "@/components/delivery/spare-pickup-prompt-dialog";
@@ -54,6 +55,16 @@ export default function DeliveryDashboard() {
   // page - same class of bug, same permission pair, as finding 2b
   // (task-6-report.md).
   const canViewCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
+  // B-29 widened this page's own gate to VIEW_RESERVATIONS/MANAGE_RESERVATIONS
+  // OR VIEW_VEHICLES/MANAGE_VEHICLES (shared/page-access.ts), so a user can
+  // reach this screen via vehicle rights alone, without either reservation
+  // permission GET /api/reservations itself still needs (routes.ts:2829).
+  const canViewReservations = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
+  // GET /api/vehicles (routes.ts:646) needs the vehicle family specifically.
+  // Enrichment only here (getVehicleInfo below falls back to "unknown", a
+  // name next to an id, same pattern as getCustomerName/canViewCustomers) -
+  // left out silently, no NoDataAccess.
+  const canViewVehicles = useHasPermission(UserPermission.VIEW_VEHICLES, UserPermission.MANAGE_VEHICLES);
 
   const TRANSPORT_TYPE_LABELS: Record<string, string> = {
     swap: t('transportDialog.typeLabels.swap'),
@@ -66,6 +77,7 @@ export default function DeliveryDashboard() {
   // Fetch reservations with delivery service
   const { data: reservations = [], isLoading: reservationsLoading } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations"],
+    enabled: canViewReservations,
   });
 
   const { data: customers = [] } = useQuery<Customer[]>({
@@ -75,6 +87,7 @@ export default function DeliveryDashboard() {
 
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
+    enabled: canViewVehicles,
   });
 
   const { data: transports = [], isLoading: transportsLoading } = useQuery<VehicleTransport[]>({
@@ -573,6 +586,10 @@ export default function DeliveryDashboard() {
         />
         <Card className="h-full">
           <CardContent className="p-3 h-full flex flex-col justify-center gap-1.5">
+            {!canViewReservations ? (
+              <NoDataAccess permission={UserPermission.VIEW_RESERVATIONS} />
+            ) : (
+            <>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
               <div className="flex items-baseline gap-1.5">
@@ -607,6 +624,8 @@ export default function DeliveryDashboard() {
                 <p className="text-xs text-muted-foreground">{t('dashboardPage.statDeliveriesCompleted')}</p>
               </div>
             </div>
+            </>
+            )}
           </CardContent>
         </Card>
       </div>
