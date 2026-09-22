@@ -9,9 +9,10 @@
  * Runs in the jsdom project (plan §8.8).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { getQueryFn } from "@/lib/queryClient";
 import { UserPermission, UserRole } from "@shared/schema";
 
 const openScanDialog = vi.fn();
@@ -47,7 +48,15 @@ vi.mock("@/hooks/use-auth", () => ({
 import { QuickActions } from "@/components/dashboard/quick-actions";
 
 function renderQuickActions() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+  // Fix round 1 note: a real default queryFn (wired to the stubbed global
+  // `fetch` below) is what lets the office-date test actually populate
+  // `vehicles` — without one, react-query has nothing to fetch with and
+  // every query stays `undefined` forever (see the "No queryFn was passed"
+  // console warnings other tests in this file already tolerate, since they
+  // never depend on fetched data).
+  const client = new QueryClient({
+    defaultOptions: { queries: { queryFn: getQueryFn({ on401: "throw" }), retry: false, gcTime: 0 } },
+  });
   return render(
     <QueryClientProvider client={client}>
       <QuickActions />
@@ -151,5 +160,83 @@ describe("OPT-002 — de scantegel blijft open voor wie geen reserveringsrecht h
     // this role does not hold — visible but disabled, per B-27.
     expect(screen.getByTestId("button-quick-start-pickup")).toBeDisabled();
     expect(screen.getByTestId("button-quick-start-return")).toBeDisabled();
+  });
+});
+
+/**
+ * Fix round 1, item 2a (review of the merged office-date sweep, commit
+ * 982f20a1) — the APK-report upload tile's vehicle-update PATCH stamps
+ * `apkAttachmentDate` with `officeToday()` (Europe/Amsterdam), not
+ * `new Date().toISOString().split("T")[0]` (UTC). The clock below stands at
+ * 00:30 in Amsterdam on 21 September 2026, which is still 20 September in
+ * UTC — the exact window the old helper got wrong.
+ */
+describe("Kantoordatum bij APK-rapport uploaden (fix round 1)", () => {
+  const OFFICE_TODAY = "2026-09-21";
+  const apkVehicle = {
+    id: 4242,
+    licensePlate: "AB-123-C",
+    brand: "Volkswagen",
+    model: "Crafter",
+    apkDate: "2026-10-01",
+    company: "false",
+    registeredTo: "false",
+  };
+
+  let requests: Array<{ url: string; method: string; body: any }>;
+
+  function json(body: unknown, status = 200) {
+    return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+  }
+
+  beforeEach(() => {
+    requests = [];
+    // Only `Date` is faked: user-event keeps its own real timers, same
+    // approach as office-today-prefill.test.tsx.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-20T22:30:00Z"));
+    vi.stubGlobal("fetch", vi.fn(async (input: any, init?: any) => {
+      const url = typeof input === "string" ? input : input?.url ?? String(input);
+      const method = (init?.method ?? "GET").toUpperCase();
+      let body: any;
+      try { body = typeof init?.body === "string" ? JSON.parse(init.body) : undefined; } catch { body = undefined; }
+      requests.push({ url, method, body });
+      if (url === "/api/vehicles" && method === "GET") return json([apkVehicle]);
+      if (url === "/api/documents" && method === "POST") return json({ id: 999 });
+      if (url === `/api/vehicles/${apkVehicle.id}` && method === "GET") return json(apkVehicle);
+      return json([]);
+    }));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("stamps the vehicle PATCH's apkAttachmentDate with the office day, not the UTC day", async () => {
+    const user = userEvent.setup();
+    renderQuickActions();
+
+    await user.click(screen.getByTestId("button-quick-apk-report"));
+
+    // Open the vehicle-selector popover and pick the (only) vehicle.
+    await user.click(await screen.findByRole("button", { name: "Selecteer een voertuig..." }));
+    const vehicleRow = await screen.findByText("Volkswagen Crafter");
+    await user.click(vehicleRow);
+
+    // apkDate auto-fills from the selected vehicle's own apkDate — attach a
+    // file so only the submit button's disabled condition remains to clear.
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(["dummy"], "apk-report.pdf", { type: "application/pdf" });
+    await user.upload(fileInput, file);
+
+    const submit = await screen.findByRole("button", { name: "APK-rapport uploaden" });
+    await waitFor(() => expect(submit).not.toBeDisabled());
+    await user.click(submit);
+
+    await waitFor(() => {
+      const patch = requests.find((r) => r.url === `/api/vehicles/${apkVehicle.id}` && r.method === "PATCH");
+      expect(patch).toBeTruthy();
+      expect(patch!.body.apkAttachmentDate).toBe(OFFICE_TODAY);
+    });
   });
 });

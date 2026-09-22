@@ -151,6 +151,26 @@ describe("RequiresPermission", () => {
       });
     });
 
+    it("fix round 1, item 3 — combines anyOf and allOf in one tooltip phrase when both are given and both fail", async () => {
+      setUser(UserRole.USER, []);
+      render(
+        <RequiresPermission
+          anyOf={[UserPermission.MANAGE_RESERVATIONS, UserPermission.MANAGE_MAINTENANCE]}
+          allOf={[UserPermission.MANAGE_DOCUMENTS, UserPermission.MANAGE_VEHICLES]}
+        >
+          <Button data-testid="button-combined">Combinatie</Button>
+        </RequiresPermission>,
+      );
+      expect(screen.getByTestId("button-combined")).toBeDisabled();
+      await userEvent.tab();
+      await waitFor(() => {
+        const tooltip = screen.getByRole("tooltip");
+        // anyOf's two options joined with "of", then joined to allOf's two
+        // requirements (joined with "en") with "en" between the two groups.
+        expect(tooltip).toHaveTextContent("Reserveringen beheren' of 'Onderhoud beheren' en 'Documenten bewerken en genereren' en 'Voertuigen beheren");
+      });
+    });
+
     it("works for a DropdownMenuItem child, disabling it via Radix's own disabled prop", async () => {
       setUser(UserRole.USER, []);
       const onClick = vi.fn();
