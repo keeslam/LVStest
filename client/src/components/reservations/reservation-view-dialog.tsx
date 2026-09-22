@@ -15,7 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatDate, formatCurrency, formatLicensePlate, formatReservationStatus, formatFuelLevel } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
-import { Reservation, Vehicle, Customer, Driver, Document } from "@shared/schema";
+import { Reservation, Vehicle, Customer, Driver, Document, UserPermission } from "@shared/schema";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 import { BarcodeSvg } from "@/components/barcodes/barcode-svg";
 import { formatReservationBarcode } from "@shared/barcode";
 import { differenceInDays, parseISO } from "date-fns";
@@ -553,17 +554,23 @@ export function ReservationViewDialog({
                     {/* Quick Actions for Maintenance */}
                     <div className="flex flex-wrap gap-2">
                       {reservation.vehicleId && (
-                        <ExpenseAddDialog 
+                        <ExpenseAddDialog
                           vehicleId={reservation.vehicleId}
                           onSuccess={() => {
                             invalidateByPrefix('/api/expenses');
                             invalidateByPrefix(`/api/vehicles/${reservation.vehicleId}`);
                           }}
                         >
-                          <Button variant="outline" size="sm">
-                            <FileText className="mr-2 h-4 w-4" />
-                            {t('viewDialog.addExpenseButton')}
-                          </Button>
+                          {/* POST /api/expenses (server/routes/expenses.ts) guards on
+                              MANAGE_EXPENSES; this trigger was a plain Button with no
+                              RequiresPermission wrapper, unlike scan-panel.tsx's
+                              button-scan-expense doing the same job. */}
+                          <RequiresPermission anyOf={[UserPermission.MANAGE_EXPENSES]}>
+                            <Button variant="outline" size="sm" data-testid="button-add-expense-maintenance-block">
+                              <FileText className="mr-2 h-4 w-4" />
+                              {t('viewDialog.addExpenseButton')}
+                            </Button>
+                          </RequiresPermission>
                         </ExpenseAddDialog>
                       )}
                       <Button

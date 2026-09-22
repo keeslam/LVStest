@@ -21,9 +21,10 @@ import { Price } from "@/components/ui/price";
 import { isTrueValue } from "@/lib/utils";
 import { getDaysUntil, getUrgencyColorClass } from "@/lib/date-utils";
 import { computeServiceDue, serviceDueDefaultsFromSettings, type ServiceDueSettingsFields } from "@shared/service-due";
-import { Vehicle, Expense, Document, Reservation, UserRole, Customer } from "@shared/schema";
+import { Vehicle, Expense, Document, Reservation, UserRole, UserPermission, Customer } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { InlineDocumentUpload } from "@/components/documents/inline-document-upload";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 import { QuickStatusChangeButton } from "@/components/vehicles/quick-status-change-button";
 import { VehicleDeleteDialog } from "@/components/vehicles/vehicle-delete-dialog";
 import { VehicleBarcodeDialog } from "@/components/barcodes/vehicle-barcode-dialog";
@@ -1745,13 +1746,24 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                       invalidateByPrefix(`/api/vehicles/${vehicleId}`);
                     }}
                   />
-                  <ExpenseAddDialog 
+                  <ExpenseAddDialog
                     vehicleId={vehicleId}
                     onSuccess={() => {
                       invalidateByPrefix(`/api/expenses/vehicle/${vehicleId}`);
                       invalidateByPrefix(`/api/vehicles/${vehicleId}`);
                     }}
-                  />
+                  >
+                    {/* POST /api/expenses (server/routes/expenses.ts) guards on
+                        MANAGE_EXPENSES; this tile was ungated, unlike its
+                        RequiresPermission-wrapped siblings elsewhere (e.g.
+                        scan-panel.tsx's button-scan-expense). */}
+                    <RequiresPermission anyOf={[UserPermission.MANAGE_EXPENSES]}>
+                      <Button size="sm" data-testid={`button-add-expense-${vehicleId}`}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        {t('addDialog.addExpense', { ns: 'expenses' })}
+                      </Button>
+                    </RequiresPermission>
+                  </ExpenseAddDialog>
                 </div>
               </CardHeader>
               <CardContent>
