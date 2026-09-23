@@ -514,7 +514,16 @@ export const customers = pgTable("customers", {
   updatedBy: text("updated_by"),
   createdByUser: integer("created_by_user_id").references(() => users.id),
   updatedByUser: integer("updated_by_user_id").references(() => users.id),
-});
+}, (table) => ({
+  // besluiten B-35 (BUG-045) — unique only when filled. Blank/whitespace-only
+  // numbers are normalised to NULL on write (see routes.ts POST/PATCH
+  // /api/customers), so this partial index never sees them and any number of
+  // customers can have no debtor number. startup-migration.js:migrateCustomerDebtorNumberUniqueness
+  // is the hand-written production step that adds this same index.
+  debtorNumberLowerIdx: uniqueIndex("customers_debtor_number_lower_idx")
+    .on(sql`lower(btrim(${table.debtorNumber}))`)
+    .where(sql`${table.debtorNumber} IS NOT NULL AND btrim(${table.debtorNumber}) <> ''`),
+}));
 
 const optionalEmail = z.string().email("Invalid email address").nullable().optional().or(z.literal(''));
 

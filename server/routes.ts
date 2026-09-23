@@ -202,6 +202,19 @@ async function findVehicleByNormalisedPlate(plate: string): Promise<{ id: number
 }
 
 /**
+ * besluiten B-35 — "" and whitespace-only never count as a debtor number;
+ * both are stored as NULL, so two customers with no number are never a
+ * clash. `undefined` (the field was not part of the request body at all,
+ * relevant to PATCH) passes through untouched.
+ */
+function normaliseDebtorNumber(value: string | null | undefined): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  const trimmed = value.trim();
+  return trimmed === "" ? null : trimmed;
+}
+
+/**
  * BUG-039 - reservations.vehicle_id and customer_id have no FK, so nothing but
  * this check stands between a typo and an orphan row. Returns the 404 body
  * (naming the field) when a referenced row is not there, else null.
@@ -2136,11 +2149,18 @@ export async function registerRoutes(app: Express): Promise<void> {
           // besluiten B-15 (BUG-151, BUG-140) — the reservation and transport
           // halves of the bin.
           reservation_conflict: "Deze reservering kan niet terug: het voertuig is in de tussentijd geboekt voor die periode.",
+          // besluiten B-35 (BUG-045) — fallback text; overridden below with
+          // the name of whoever holds the number now, when we have it.
+          debtor_number_taken: "Another customer already uses this debtor number.",
         };
         const reason = result?.reason || 'not_found';
+        let message = reasons[reason] || "Could not restore this record.";
+        if (reason === 'debtor_number_taken' && result?.conflictingCustomerName) {
+          message = `Another customer (${result.conflictingCustomerName}) already uses this debtor number.`;
+        }
         return res.status(reason === 'not_found' ? 404 : 409).json({
           code: reason.toUpperCase(),
-          message: reasons[reason] || "Could not restore this record.",
+          message,
         });
       }
 
@@ -2467,8 +2487,42 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   app.post("/api/customers", hasPermission(UserPermission.MANAGE_CUSTOMERS), async (req: Request, res: Response) => {
+    let customerData;
     try {
-      const customerData = insertCustomerSchema.parse(req.body);
+      customerData = insertCustomerSchema.parse(req.body);
+    } catch (error) {
+      return res.status(400).json({ message: "Invalid customer data", error });
+    }
+
+    try {
+      // besluiten B-35 (BUG-045) — "" and whitespace-only are never a value;
+      // they are stored as NULL so two customers without one never clash.
+      const debtorNumber = normaliseDebtorNumber(customerData.debtorNumber ?? null);
+
+      if (debtorNumber) {
+        const liveHolder = await storage.findCustomerByDebtorNumber?.(debtorNumber);
+        if (liveHolder) {
+          return res.status(409).json({
+            message: `Another customer (${liveHolder.name}) already uses this debtor number.`,
+            field: "debtorNumber",
+            code: "DEBTOR_NUMBER_TAKEN",
+            conflictingCustomerId: liveHolder.id,
+            conflictingCustomerName: liveHolder.name,
+          });
+        }
+        // besluiten B-35 — a number held by a customer in the recycle bin
+        // stays reserved until that customer is purged (no purge route yet).
+        const binHolder = await storage.findDebtorNumberInRecycleBin?.(debtorNumber);
+        if (binHolder) {
+          return res.status(409).json({
+            message: `This debtor number is held by ${binHolder.name} in the recycle bin.`,
+            field: "debtorNumber",
+            code: "DEBTOR_NUMBER_IN_RECYCLE_BIN",
+            deletedRecordId: binHolder.deletedRecordId,
+            conflictingCustomerName: binHolder.name,
+          });
+        }
+      }
 
       // OPT-019 - look *before* inserting, so the answer names the rows that
       // were already there and not the one just created. Never a refusal: two
@@ -2483,65 +2537,115 @@ export async function registerRoutes(app: Express): Promise<void> {
       const user = req.user;
       const dataWithTracking = {
         ...customerData,
+        debtorNumber,
         createdBy: user ? user.username : null,
         updatedBy: user ? user.username : null
       };
-      
+
       const customer = await storage.createCustomer(dataWithTracking);
-      
+
       // Broadcast real-time update to all connected clients
       realtimeEvents.customers.created(customer);
-      
+
       res.status(201).json({ ...customer, duplicates });
     } catch (error) {
+      // BUG-148 / B-35 — a near-simultaneous create can still slip past the
+      // pre-check above and hit the partial unique index; describeDbError()
+      // turns that raw 23505 into the same named 409 instead of a leak.
+      const dbError = describeDbError(error);
+      if (dbError.recognised) {
+        return res.status(dbError.status).json(dbErrorBody(dbError));
+      }
+      console.error("Error creating customer:", error);
       res.status(400).json({ message: "Invalid customer data", error });
     }
   });
 
   // Update customer
   app.patch("/api/customers/:id", hasPermission(UserPermission.MANAGE_CUSTOMERS), async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid customer ID" });
-      }
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid customer ID" });
+    }
 
-      const customerData = insertCustomerSchema.partial().parse(req.body);
-      
+    let customerData;
+    try {
+      customerData = insertCustomerSchema.partial().parse(req.body);
+    } catch (error) {
+      return res.status(400).json({ message: "Invalid customer data", error });
+    }
+
+    try {
       // Add user tracking information for updates
       const user = req.user;
       const username = user ? user.username : null;
-      
+
       // Get the current customer to check if status has changed
       const existingCustomer = await storage.getCustomer(id);
-      
+
       if (!existingCustomer) {
         return res.status(404).json({ message: "Customer not found" });
       }
-      
+
+      // besluiten B-35 (BUG-045) — only touch debtorNumber when the request
+      // actually sent the field; a PATCH editing something else must never
+      // wipe or re-check it as a side effect. `undefined` here means "the
+      // field was not in the body at all" (normaliseDebtorNumber's contract).
+      const debtorNumber = normaliseDebtorNumber(customerData.debtorNumber);
+      if (debtorNumber) {
+        const liveHolder = await storage.findCustomerByDebtorNumber?.(debtorNumber, id);
+        if (liveHolder) {
+          return res.status(409).json({
+            message: `Another customer (${liveHolder.name}) already uses this debtor number.`,
+            field: "debtorNumber",
+            code: "DEBTOR_NUMBER_TAKEN",
+            conflictingCustomerId: liveHolder.id,
+            conflictingCustomerName: liveHolder.name,
+          });
+        }
+        const binHolder = await storage.findDebtorNumberInRecycleBin?.(debtorNumber);
+        if (binHolder) {
+          return res.status(409).json({
+            message: `This debtor number is held by ${binHolder.name} in the recycle bin.`,
+            field: "debtorNumber",
+            code: "DEBTOR_NUMBER_IN_RECYCLE_BIN",
+            deletedRecordId: binHolder.deletedRecordId,
+            conflictingCustomerName: binHolder.name,
+          });
+        }
+      }
+
       // Add tracking information
       const dataWithTracking = {
         ...customerData,
         updatedBy: username
       };
-      
+      if (debtorNumber !== undefined) {
+        dataWithTracking.debtorNumber = debtorNumber;
+      }
+
       // Specifically track status changes
       if (customerData.status && customerData.status !== existingCustomer.status) {
         dataWithTracking.statusBy = username;
         dataWithTracking.statusDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
       }
-      
+
       const customer = await storage.updateCustomer(id, dataWithTracking);
-      
+
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
       }
-      
+
       // Broadcast real-time update to all connected clients
       realtimeEvents.customers.updated(customer);
-      
+
       res.json(customer);
     } catch (error) {
+      // BUG-148 / B-35 — same fallback as the create route above.
+      const dbError = describeDbError(error);
+      if (dbError.recognised) {
+        return res.status(dbError.status).json(dbErrorBody(dbError));
+      }
       console.error("Customer update error:", error);
       res.status(400).json({ message: "Invalid customer data", error });
     }

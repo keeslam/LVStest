@@ -464,6 +464,69 @@ async function convertTimestampsToTimestamptz(manifest) {
   console.log(`B-22: converted ${converted} column(s) to timestamptz`);
 }
 
+/**
+ * besluiten B-35 (BUG-045) — a debtor number is unique when filled, case-
+ * insensitively and trimmed; "" is stored as NULL. Cleans existing data
+ * first (never destroys a value that was actually there), then only adds
+ * the partial unique index when that leaves zero clashes. A genuine clash
+ * found on a production database is a warning, never an abort: the app's
+ * own pre-checks (POST/PATCH /api/customers in server/routes.ts) already
+ * block *new* duplicates regardless of whether this index exists, so a
+ * skipped index only means the last line of defence is missing until
+ * someone resolves the clash by hand and the app restarts.
+ */
+async function migrateCustomerDebtorNumberUniqueness() {
+  // Blank/whitespace-only is not a value; store it as NULL so it never
+  // collides with another blank one under the partial index below.
+  const blanked = await db.execute(sql`
+    UPDATE customers SET debtor_number = NULL
+    WHERE debtor_number IS NOT NULL AND btrim(debtor_number) = ''
+  `);
+  if (blanked.rowCount) {
+    console.log(`✅ B-35: cleared ${blanked.rowCount} blank debtor number(s) to NULL`);
+  }
+
+  // Trim stray whitespace, so "AB-12" and " AB-12" are not treated as two
+  // different numbers on the next read.
+  const trimmed = await db.execute(sql`
+    UPDATE customers SET debtor_number = btrim(debtor_number)
+    WHERE debtor_number IS NOT NULL AND debtor_number <> btrim(debtor_number)
+  `);
+  if (trimmed.rowCount) {
+    console.log(`✅ B-35: trimmed whitespace on ${trimmed.rowCount} debtor number(s)`);
+  }
+
+  const duplicates = await db.execute(sql`
+    SELECT id, name, debtor_number FROM customers
+    WHERE lower(btrim(debtor_number)) IN (
+      SELECT lower(btrim(debtor_number)) FROM customers
+      WHERE debtor_number IS NOT NULL AND btrim(debtor_number) <> ''
+      GROUP BY lower(btrim(debtor_number))
+      HAVING COUNT(*) > 1
+    )
+    ORDER BY lower(btrim(debtor_number)), id
+  `);
+
+  if (duplicates.rows.length > 0) {
+    console.warn(
+      `⚠️ B-35: ${duplicates.rows.length} customer row(s) share a debtor number — ` +
+      'skipping the unique index until this is resolved by hand:'
+    );
+    for (const row of duplicates.rows) {
+      console.warn(`   - #${row.id} ${row.name}: "${row.debtor_number}"`);
+    }
+    console.warn('   New duplicates are still blocked by the app itself (server/routes.ts); only the database-level index is missing.');
+    return;
+  }
+
+  await db.execute(sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS customers_debtor_number_lower_idx
+    ON customers (lower(btrim(debtor_number)))
+    WHERE debtor_number IS NOT NULL AND btrim(debtor_number) <> ''
+  `);
+  console.log('✅ B-35: customers.debtor_number unique index is in place');
+}
+
 async function runMigrations() {
   try {
     console.log('🔍 Checking database schema...');
@@ -744,7 +807,10 @@ async function runMigrations() {
     // Add missing columns to customers table
     await addColumnIfNotExists('customers', 'created_by_user_id', 'integer');
     await addColumnIfNotExists('customers', 'updated_by_user_id', 'integer');
-    
+
+    // besluiten B-35 (BUG-045) — debtor number unique when filled.
+    await migrateCustomerDebtorNumberUniqueness();
+
     // Create backup_settings table if it doesn't exist
     await createTableIfNotExists(
       'backup_settings',

@@ -104,7 +104,10 @@ export class ReportValidationError extends Error {
  * undone with everything else.
  */
 class RestoreAbort extends Error {
-  constructor(readonly reason: string) {
+  // besluiten B-35 — `detail` carries the extra fact a reason code alone
+  // cannot (which live customer holds the debtor number), so the route can
+  // name them in the message without a second query.
+  constructor(readonly reason: string, readonly detail?: Record<string, unknown>) {
     super(reason);
     this.name = "RestoreAbort";
   }
@@ -804,7 +807,7 @@ export class DatabaseStorage implements IStorage {
   async restoreDeletedRecord(
     id: number,
     actor?: { username?: string | null }
-  ): Promise<{ restored: boolean; reason?: string; record?: DeletedRecord; conflicts?: number[] }> {
+  ): Promise<{ restored: boolean; reason?: string; record?: DeletedRecord; conflicts?: number[]; conflictingCustomerName?: string }> {
     const record = await this.getDeletedRecord(id);
     if (!record) return { restored: false, reason: 'not_found' };
     if (record.restoredAt) return { restored: false, reason: 'already_restored', record };
@@ -1134,7 +1137,7 @@ export class DatabaseStorage implements IStorage {
   private async restoreDeletedCustomer(
     record: DeletedRecord,
     actor?: { username?: string | null }
-  ): Promise<{ restored: boolean; reason?: string; record?: DeletedRecord }> {
+  ): Promise<{ restored: boolean; reason?: string; record?: DeletedRecord; conflictingCustomerName?: string }> {
     const payload = record.payload as any;
     const customer = payload?.customer;
     if (!customer) return { restored: false, reason: 'empty_snapshot', record };
@@ -1150,6 +1153,17 @@ export class DatabaseStorage implements IStorage {
 
         const [idTaken] = await tx.select({ id: customers.id }).from(customers).where(eq(customers.id, customer.id));
         if (idTaken) throw new RestoreAbort('id_taken');
+
+        // besluiten B-35 — the debtor number was reserved for this customer
+        // while it sat in the bin; something else may have claimed it since.
+        const debtorNumber = typeof customer.debtorNumber === 'string' ? customer.debtorNumber.trim() : '';
+        if (debtorNumber) {
+          const [holder] = await tx
+            .select({ id: customers.id, name: customers.name })
+            .from(customers)
+            .where(sql`lower(btrim(${customers.debtorNumber})) = lower(btrim(${debtorNumber}))`);
+          if (holder) throw new RestoreAbort('debtor_number_taken', { conflictingCustomerName: holder.name });
+        }
 
         const revived: any = { ...customer };
         for (const key of Object.keys(revived)) {
@@ -1168,7 +1182,7 @@ export class DatabaseStorage implements IStorage {
       });
     } catch (error) {
       if (error instanceof RestoreAbort) {
-        return { restored: false, reason: error.reason, record };
+        return { restored: false, reason: error.reason, record, ...(error.detail ?? {}) };
       }
       throw error;
     }
@@ -1435,8 +1449,52 @@ export class DatabaseStorage implements IStorage {
       .set(customerData)
       .where(eq(customers.id, id))
       .returning();
-    
+
     return updatedCustomer || undefined;
+  }
+
+  /**
+   * besluiten B-35 — the pre-check that gives POST/PATCH /api/customers a
+   * named 409 instead of letting the partial unique index answer with a raw
+   * 23505 (copied from `findVehicleByNormalisedPlate`, server/routes.ts).
+   * `debtorNumber` must already be trimmed and non-empty; routes.ts never
+   * calls this for a blank one, since blank is never a clash.
+   */
+  async findCustomerByDebtorNumber(
+    debtorNumber: string,
+    excludeId?: number | null
+  ): Promise<{ id: number; name: string } | undefined> {
+    const conditions = [sql`lower(btrim(${customers.debtorNumber})) = lower(btrim(${debtorNumber}))`];
+    if (excludeId != null) conditions.push(ne(customers.id, excludeId));
+    const [row] = await db
+      .select({ id: customers.id, name: customers.name })
+      .from(customers)
+      .where(and(...conditions))
+      .limit(1);
+    return row;
+  }
+
+  /**
+   * besluiten B-35 — a debtor number held by a customer sitting in the
+   * recycle bin stays reserved until that customer is purged (no purge route
+   * exists yet, B-38). `deleted_records.payload` snapshots the customer row
+   * whole (see `deleteCustomer` below), so this reads the same JSON path.
+   */
+  async findDebtorNumberInRecycleBin(
+    debtorNumber: string
+  ): Promise<{ deletedRecordId: number; name: string } | undefined> {
+    const [row] = await db
+      .select({ id: deletedRecords.id, payload: deletedRecords.payload })
+      .from(deletedRecords)
+      .where(and(
+        eq(deletedRecords.entityType, "customer"),
+        isNull(deletedRecords.restoredAt),
+        sql`lower(btrim(${deletedRecords.payload}->'customer'->>'debtorNumber')) = lower(btrim(${debtorNumber}))`
+      ))
+      .limit(1);
+    if (!row) return undefined;
+    const name = (row.payload as any)?.customer?.name ?? "";
+    return { deletedRecordId: row.id, name };
   }
 
   /**

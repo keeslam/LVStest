@@ -25,6 +25,8 @@ const CONSTRAINT_FIELDS: Record<string, string> = {
   reservations_contract_number_unique: "contractNumber",
   users_username_unique: "username",
   customers_email_unique: "email",
+  // besluiten B-35 — the partial unique index on customers.debtor_number.
+  customers_debtor_number_lower_idx: "debtorNumber",
 };
 
 export interface DbErrorDescription {

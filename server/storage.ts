@@ -81,7 +81,7 @@ export interface IStorage {
   getVehicleDeleteImpact?(id: number): Promise<{ vehicle: Vehicle; counts: Record<string, number> } | undefined>;
   getDeletedRecords?(limit?: number): Promise<any[]>;
   getDeletedRecord?(id: number): Promise<any | undefined>;
-  restoreDeletedRecord?(id: number, actor?: { username?: string | null }): Promise<{ restored: boolean; reason?: string; record?: any; conflicts?: number[] }>;
+  restoreDeletedRecord?(id: number, actor?: { username?: string | null }): Promise<{ restored: boolean; reason?: string; record?: any; conflicts?: number[]; conflictingCustomerName?: string }>;
   getAvailableVehicles(): Promise<Vehicle[]>;
   getVehiclesWithApkExpiringSoon(): Promise<Vehicle[]>;
   getVehiclesWithWarrantyExpiringSoon(): Promise<Vehicle[]>;
@@ -95,6 +95,10 @@ export interface IStorage {
   // exists, so the result carries the reason and the blocking rows.
   deleteCustomer(id: number, actor?: { username?: string | null; userId?: number | null }): Promise<{ deleted: boolean; reason?: "not_found" | "has_live_reservations"; blockingReservations?: Reservation[] }>;
   getCustomerDeleteImpact?(id: number): Promise<{ customer: Customer; counts: Record<string, number>; blockingReservations: Reservation[] } | undefined>;
+  // besluiten B-35 — debtor number pre-checks (live customers, then the
+  // recycle bin), used by POST/PATCH /api/customers and by the restore route.
+  findCustomerByDebtorNumber?(debtorNumber: string, excludeId?: number | null): Promise<{ id: number; name: string } | undefined>;
+  findDebtorNumberInRecycleBin?(debtorNumber: string): Promise<{ deletedRecordId: number; name: string } | undefined>;
   
   // Reservation methods
   getAllReservations(): Promise<Reservation[]>;
