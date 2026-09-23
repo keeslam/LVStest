@@ -6,7 +6,7 @@
  * (server/routes.ts `findVehicleByNormalisedPlate`) and `server/utils/db-errors.ts`.
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { eq, like, and } from "drizzle-orm";
+import { eq, like, and, sql } from "drizzle-orm";
 import { db } from "../db";
 import { customers, deletedRecords } from "../../shared/schema";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
@@ -17,7 +17,6 @@ let admin: TestAgent;
 // Unique per test run, so re-running this file never collides with a row a
 // previous (possibly interrupted) run left behind.
 const TAG = `t${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`;
-const createdCustomerIds: number[] = [];
 
 beforeAll(async () => {
   admin = await agentFor("admin");
@@ -40,7 +39,6 @@ async function createCustomer(name: string, debtorNumber?: string | null) {
   const payload: Record<string, unknown> = { name: fixtureName(name), customerType: "business" };
   if (debtorNumber !== undefined) payload.debtorNumber = debtorNumber;
   const res = await admin.post("/api/customers").send(payload);
-  if (res.status === 201) createdCustomerIds.push(res.body.id);
   return res;
 }
 
@@ -143,13 +141,37 @@ describe("B-35 — debtor number uniqueness", () => {
     expect(restore.body.message).toContain(takenBy.body.name);
   });
 
+  it("normalises an un-trimmed debtor number on restore, for a snapshot written before this feature trimmed on write", async () => {
+    const original = await createCustomer("PreFeature", `${TAG}-XY-99`);
+    expect(original.status).toBe(201);
+    const del = await admin.delete(`/api/customers/${original.body.id}`);
+    expect(del.status).toBe(204);
+    const [record] = await db
+      .select()
+      .from(deletedRecords)
+      .where(and(eq(deletedRecords.entityType, "customer"), eq(deletedRecords.entityId, original.body.id)));
+    expect(record).toBeDefined();
+
+    // Stand in for a snapshot written before write-time normalisation
+    // existed: the bin's payload holds a padded value verbatim.
+    const untrimmed = `  ${TAG}-XY-99  `;
+    await db.execute(sql`
+      UPDATE deleted_records
+      SET payload = jsonb_set(payload, '{customer,debtorNumber}', to_jsonb(${untrimmed}::text))
+      WHERE id = ${record.id}
+    `);
+
+    const restore = await admin.post(`/api/deleted-records/${record.id}/restore`).send({});
+    expect(restore.status).toBe(200);
+    const [row] = await db.select().from(customers).where(eq(customers.id, original.body.id));
+    expect(row.debtorNumber).toBe(`${TAG}-XY-99`);
+  });
+
   it("a direct insert that bypasses the app's own pre-check is stopped by the database index", async () => {
     const value = `${TAG}-ZZ-01`;
-    const [row] = await db
+    await db
       .insert(customers)
-      .values({ name: fixtureName("RaceA"), customerType: "business", debtorNumber: value } as any)
-      .returning();
-    createdCustomerIds.push(row.id);
+      .values({ name: fixtureName("RaceA"), customerType: "business", debtorNumber: value } as any);
 
     let caught: any = null;
     try {

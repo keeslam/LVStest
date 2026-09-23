@@ -215,6 +215,50 @@ function normaliseDebtorNumber(value: string | null | undefined): string | null 
 }
 
 /**
+ * besluiten B-35 — the conflict check shared by POST and PATCH /api/customers:
+ * a live customer holding the number, then a customer sitting in the recycle
+ * bin holding it. `excludeId` lets PATCH exclude the row being edited so
+ * keeping your own number never self-clashes. Returns the 409 status/body to
+ * send, or `null` when the number is free — the body shapes are byte-identical
+ * to what both routes returned before this was extracted (see task-3-report.md
+ * "Exact 409 body shapes", which Task 4's client already builds against).
+ */
+async function findDebtorNumberConflict(
+  debtorNumber: string,
+  excludeId?: number | null,
+): Promise<{ status: number; body: Record<string, unknown> } | null> {
+  const liveHolder = await storage.findCustomerByDebtorNumber?.(debtorNumber, excludeId);
+  if (liveHolder) {
+    return {
+      status: 409,
+      body: {
+        message: `Another customer (${liveHolder.name}) already uses this debtor number.`,
+        field: "debtorNumber",
+        code: "DEBTOR_NUMBER_TAKEN",
+        conflictingCustomerId: liveHolder.id,
+        conflictingCustomerName: liveHolder.name,
+      },
+    };
+  }
+  // besluiten B-35 — a number held by a customer in the recycle bin
+  // stays reserved until that customer is purged (no purge route yet).
+  const binHolder = await storage.findDebtorNumberInRecycleBin?.(debtorNumber);
+  if (binHolder) {
+    return {
+      status: 409,
+      body: {
+        message: `This debtor number is held by ${binHolder.name} in the recycle bin.`,
+        field: "debtorNumber",
+        code: "DEBTOR_NUMBER_IN_RECYCLE_BIN",
+        deletedRecordId: binHolder.deletedRecordId,
+        conflictingCustomerName: binHolder.name,
+      },
+    };
+  }
+  return null;
+}
+
+/**
  * BUG-039 - reservations.vehicle_id and customer_id have no FK, so nothing but
  * this check stands between a typo and an orphan row. Returns the 404 body
  * (naming the field) when a referenced row is not there, else null.
@@ -2500,27 +2544,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       const debtorNumber = normaliseDebtorNumber(customerData.debtorNumber ?? null);
 
       if (debtorNumber) {
-        const liveHolder = await storage.findCustomerByDebtorNumber?.(debtorNumber);
-        if (liveHolder) {
-          return res.status(409).json({
-            message: `Another customer (${liveHolder.name}) already uses this debtor number.`,
-            field: "debtorNumber",
-            code: "DEBTOR_NUMBER_TAKEN",
-            conflictingCustomerId: liveHolder.id,
-            conflictingCustomerName: liveHolder.name,
-          });
-        }
-        // besluiten B-35 — a number held by a customer in the recycle bin
-        // stays reserved until that customer is purged (no purge route yet).
-        const binHolder = await storage.findDebtorNumberInRecycleBin?.(debtorNumber);
-        if (binHolder) {
-          return res.status(409).json({
-            message: `This debtor number is held by ${binHolder.name} in the recycle bin.`,
-            field: "debtorNumber",
-            code: "DEBTOR_NUMBER_IN_RECYCLE_BIN",
-            deletedRecordId: binHolder.deletedRecordId,
-            conflictingCustomerName: binHolder.name,
-          });
+        const conflict = await findDebtorNumberConflict(debtorNumber);
+        if (conflict) {
+          return res.status(conflict.status).json(conflict.body);
         }
       }
 
@@ -2593,25 +2619,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       // field was not in the body at all" (normaliseDebtorNumber's contract).
       const debtorNumber = normaliseDebtorNumber(customerData.debtorNumber);
       if (debtorNumber) {
-        const liveHolder = await storage.findCustomerByDebtorNumber?.(debtorNumber, id);
-        if (liveHolder) {
-          return res.status(409).json({
-            message: `Another customer (${liveHolder.name}) already uses this debtor number.`,
-            field: "debtorNumber",
-            code: "DEBTOR_NUMBER_TAKEN",
-            conflictingCustomerId: liveHolder.id,
-            conflictingCustomerName: liveHolder.name,
-          });
-        }
-        const binHolder = await storage.findDebtorNumberInRecycleBin?.(debtorNumber);
-        if (binHolder) {
-          return res.status(409).json({
-            message: `This debtor number is held by ${binHolder.name} in the recycle bin.`,
-            field: "debtorNumber",
-            code: "DEBTOR_NUMBER_IN_RECYCLE_BIN",
-            deletedRecordId: binHolder.deletedRecordId,
-            conflictingCustomerName: binHolder.name,
-          });
+        const conflict = await findDebtorNumberConflict(debtorNumber, id);
+        if (conflict) {
+          return res.status(conflict.status).json(conflict.body);
         }
       }
 

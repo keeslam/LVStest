@@ -1166,6 +1166,12 @@ export class DatabaseStorage implements IStorage {
         }
 
         const revived: any = { ...customer };
+        // besluiten B-35 — normalise the same way POST/PATCH do (trim; ""
+        // becomes null) before reviving. A snapshot taken before this feature
+        // shipped can hold an un-trimmed or blank value verbatim; reinserting
+        // it as-is would let a pre-feature snapshot bypass the write-time
+        // normalisation every other path already enforces.
+        revived.debtorNumber = debtorNumber || null;
         for (const key of Object.keys(revived)) {
           if ((key === 'createdAt' || key === 'updatedAt') && typeof revived[key] === 'string') {
             revived[key] = new Date(revived[key]);
