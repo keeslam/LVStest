@@ -27,6 +27,19 @@ import {
 } from '../../shared/template-fields';
 
 /**
+ * B-34: a configured background that cannot be read is its own recognisable
+ * failure (`TEMPLATE_BACKGROUND_MISSING`) — the fix is "upload the background
+ * again", not "try again" — so callers can tell it apart from any other
+ * render defect (`RENDER_FAILED`) without matching the English message text.
+ */
+export class TemplateBackgroundMissingError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TemplateBackgroundMissingError";
+  }
+}
+
+/**
  * Format a license plate consistently throughout the application
  * Removes dashes and spaces, then formats according to Dutch license plate standards
  */
@@ -213,7 +226,7 @@ async function loadBackgroundBytes(template?: PdfTemplate | null): Promise<Backg
       // BUG-179: five nested catches used to turn this into "use the default
       // layout instead", so a template whose background had been deleted kept
       // producing contracts that looked like somebody else's.
-      throw new Error(
+      throw new TemplateBackgroundMissingError(
         `The background configured for ${label} could not be read (${configuredPath}). ` +
           `Upload the background again before generating contracts with this template.`,
       );

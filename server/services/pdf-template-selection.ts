@@ -2,7 +2,7 @@
  * One picker for the contract template, shared by every endpoint that renders
  * a contract.
  *
- * FIX-N/FIX-P (BUG-028, BUG-156, BUG-181 in part):
+ * FIX-N/FIX-P (BUG-028, BUG-156, BUG-181 in part), decided by B-34:
  *
  *  - `contracts/generate` answered 200 with the *default* layout when the
  *    `templateId` in the query did not exist, so the operator received a
@@ -12,22 +12,26 @@
  *  - three code paths disagreed about what to do with no default template: one
  *    took `allTemplates[0]` (insertion order — effectively random), one fell
  *    through to the legacy fixed-coordinate renderer, one produced a blank
- *    page. They now share this function, which prefers the marked default and
- *    otherwise takes the lowest id, so two endpoints never disagree about
- *    which template a reservation's contract uses.
+ *    page. They now share this function.
  *  - a template with no fields produced a completely blank contract, saved it
  *    as the reservation's contract, and said nothing (BUG-028). That is now a
  *    409 naming the template.
  *
- * Still open for the owner (BUG-181): whether "no template is marked as
- * default" should refuse outright instead of picking the lowest id.
+ * BUG-181a, decided (B-34): "no template is marked as default" no longer
+ * guesses. Exactly one template in existence is used, marked default or not
+ * — there is nothing to choose between. Two or more with none marked default
+ * is a 409 naming how many exist: the owner picks one, this function does
+ * not. (`storage.getDefaultPdfTemplate()` itself used to paper over this with
+ * its own `allTemplates[0]` fallback — fixed alongside this file, or every
+ * call here would still have seen a "default" that nobody had chosen.)
  */
 import { storage } from "../storage";
 import { coerceFieldArray } from "../../shared/template-fields";
+import type { ContractErrorCode } from "../../shared/contract-error-codes";
 
 export type TemplateSelection<T> =
   | { ok: true; template: T }
-  | { ok: false; status: number; message: string };
+  | { ok: false; status: number; message: string; code: ContractErrorCode };
 
 /** Number of field definitions a stored template carries, whatever its shape. */
 export function templateFieldCount(template: { fields?: unknown } | null | undefined): number {
@@ -42,6 +46,7 @@ function withFields<T extends { id: number; name?: string | null; fields?: unkno
     return {
       ok: false,
       status: 409,
+      code: "TEMPLATE_WITHOUT_FIELDS",
       message:
         `The PDF template "${template.name ?? template.id}" has no fields, so the contract would be completely blank. ` +
         `Open it in the template editor, place the fields, and try again.`,
@@ -60,7 +65,7 @@ export async function selectContractTemplate(
   if (templateId !== undefined) {
     const template = await storage.getPdfTemplate(templateId);
     if (!template) {
-      return { ok: false, status: 404, message: "Template not found" };
+      return { ok: false, status: 404, code: "TEMPLATE_NOT_FOUND", message: "Template not found" };
     }
     return withFields(template);
   }
@@ -73,14 +78,23 @@ export async function selectContractTemplate(
     return {
       ok: false,
       status: 409,
+      code: "NO_TEMPLATE",
       message:
         "No contract template has been configured. Create one under Settings → PDF templates before generating a contract.",
     };
   }
-  // Deterministic: the lowest id, not "whatever the query returned first".
-  const fallback = [...all].sort((a, b) => a.id - b.id)[0];
-  console.warn(
-    `[contracts] No PDF template is marked as default; using template #${fallback.id} ("${fallback.name}").`,
-  );
-  return withFields(fallback);
+  if (all.length === 1) {
+    // Exactly one exists: nothing to choose between, marked default or not.
+    return withFields(all[0]);
+  }
+  // B-34/BUG-181a: several templates, none marked default — refuse instead of
+  // guessing which one the operator meant (previously: the lowest id, silently).
+  return {
+    ok: false,
+    status: 409,
+    code: "NO_DEFAULT_TEMPLATE",
+    message:
+      `${all.length} PDF templates exist and none is marked as default. ` +
+      `Mark one as default under Settings → PDF templates before generating a contract.`,
+  };
 }

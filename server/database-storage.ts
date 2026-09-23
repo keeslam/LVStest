@@ -3873,10 +3873,16 @@ export class DatabaseStorage implements IStorage {
       // always received the camelCase drizzle row selected below. Keep that.
       const allTemplates = await db.select().from(pdfTemplates);
 
-      if (allTemplates.length > 0) {
-        // Prefer the template flagged as default, otherwise fall back to the first one
-        const defaultTemplate = allTemplates.find(t => t.isDefault === true) || allTemplates[0];
-
+      // B-34/BUG-181a: this used to fall back to `allTemplates[0]` — whatever
+      // Postgres happened to return first, with no ORDER BY — whenever
+      // nothing was actually flagged default. That silent "insertion order"
+      // guess is exactly the bug `selectContractTemplate()` (FIX-N/FIX-P) was
+      // meant to remove; it kept living here underneath it, so the picker's
+      // own "no default" branch never ran. `undefined` now means what it
+      // says: nothing is marked default. The picker decides what to do about
+      // that (one template: use it; several: refuse).
+      const defaultTemplate = allTemplates.find(t => t.isDefault === true);
+      if (defaultTemplate) {
         console.log(`Using default template: ${defaultTemplate.name} with ID: ${defaultTemplate.id}`);
 
         // Process fields if it is a string
@@ -3893,7 +3899,7 @@ export class DatabaseStorage implements IStorage {
         return defaultTemplate;
       }
 
-      console.log("No templates found at all");
+      console.log("No template is marked as default");
       return undefined;
     } catch (error) {
       console.error("Error getting default template:", error);

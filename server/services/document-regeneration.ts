@@ -17,11 +17,13 @@ import {
 import { selectContractTemplate } from "./pdf-template-selection";
 import { buildDamageCheckReservationData } from "./damage-check-data";
 import { pickBestDamageCheckTemplate } from "./reservation-pdf-regeneration";
+import { HttpError } from "../utils/route-errors";
 import type { Document } from "../../shared/schema";
+import type { ContractErrorCode } from "../../shared/contract-error-codes";
 
 export type RegenerateResult =
   | { ok: true; document: Document }
-  | { ok: false; status: number; message: string };
+  | { ok: false; status: number; message: string; code?: ContractErrorCode };
 
 /** Document types this action knows how to produce again. */
 export const REGENERATABLE_DOCUMENT_TYPES = [
@@ -68,22 +70,31 @@ export async function regenerateDocument(
 
   if (documentType === DOCUMENT_TYPE_CONTRACT_UNSIGNED) {
     const refusal = contractGenerationRefusal(reservation as any);
-    if (refusal) return { ok: false, status: 400, message: refusal };
+    if (refusal) return { ok: false, status: 400, code: refusal.code, message: refusal.message };
 
     const selection = await selectContractTemplate();
     if (!selection.ok) return selection;
 
-    const { generateRentalContractFromTemplate } = await import("../utils/pdf-generator");
-    const bytes = await generateRentalContractFromTemplate(reservation, selection.template);
-    const document = await registerGeneratedDocument({
-      documentType,
-      bytes,
-      vehicleId: reservation.vehicleId ?? null,
-      vehiclePlate: reservation.vehicle?.licensePlate ?? null,
-      reservationId: reservation.id,
-      createdBy: username || "System",
-      notes: `Regenerated on request; replaces version ${existing.version ?? 1}.`,
-    });
+    const { generateRentalContractFromTemplate, TemplateBackgroundMissingError } = await import("../utils/pdf-generator");
+    let document: Document;
+    try {
+      const bytes = await generateRentalContractFromTemplate(reservation, selection.template);
+      document = await registerGeneratedDocument({
+        documentType,
+        bytes,
+        vehicleId: reservation.vehicleId ?? null,
+        vehiclePlate: reservation.vehicle?.licensePlate ?? null,
+        reservationId: reservation.id,
+        createdBy: username || "System",
+        notes: `Regenerated on request; replaces version ${existing.version ?? 1}.`,
+      });
+    } catch (error) {
+      // Same distinction as every other contract endpoint (B-34): a missing
+      // background names the fix (re-upload it); anything else is a defect.
+      const code: ContractErrorCode =
+        error instanceof TemplateBackgroundMissingError ? "TEMPLATE_BACKGROUND_MISSING" : "RENDER_FAILED";
+      throw new HttpError(500, "Failed to regenerate document", { code });
+    }
     return { ok: true, document };
   }
 

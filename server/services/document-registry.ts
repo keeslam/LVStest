@@ -36,6 +36,10 @@ import { db } from "../db";
 import { documents, type Document } from "../../shared/schema";
 import { resolveUploadsPath } from "../../shared/paths";
 import { getRelativePath, resolveDocumentFilePath } from "./document-paths";
+import type { ContractErrorCode } from "../../shared/contract-error-codes";
+
+/** The magic bytes every PDF file starts with. */
+const PDF_MAGIC = Buffer.from("%PDF-");
 
 /** Document types this app generates, as stored in `documents.document_type`. */
 export const DOCUMENT_TYPE_CONTRACT_UNSIGNED = "Contract (Unsigned)";
@@ -117,6 +121,12 @@ export async function registerGeneratedDocument(
 
   if (!Buffer.isBuffer(bytes) || bytes.length === 0) {
     throw new Error(`Refusing to register an empty ${documentType} document`);
+  }
+
+  // B-34: never archive a non-PDF. A renderer defect that produces garbage
+  // bytes must not become a "document" a dossier trusts and later re-sends.
+  if (!bytes.subarray(0, PDF_MAGIC.length).equals(PDF_MAGIC)) {
+    throw new Error(`Refusing to register a ${documentType} document that is not a PDF (missing %PDF- header)`);
   }
 
   const dir = generatedDocumentDir(vehicleId, documentType);
@@ -271,27 +281,52 @@ export interface ContractSubject {
   customer?: unknown;
 }
 
+export interface ContractGenerationRefusal {
+  /**
+   * Absent only for the defensive `!reservation` branch below, which every
+   * current caller already makes unreachable by checking existence first —
+   * so there is no real-world route response to give it a code for.
+   */
+  code?: ContractErrorCode;
+  message: string;
+}
+
 /**
  * BUG-119: the contract endpoints happily rendered a contract for things that
  * are not a rental. A `maintenance_block` has no customer, and a placeholder
  * spare has no vehicle yet, so every field resolved to an empty string and the
  * endpoint answered 200 with a blank A4 sheet — which was then archived as
- * this reservation's contract. Returns the reason to refuse, or null when the
- * reservation really is a rental that can be printed.
+ * this reservation's contract. Returns the reason to refuse (message, plus a
+ * stable code — B-34), or null when the reservation really is a rental that
+ * can be printed.
  */
-export function contractGenerationRefusal(reservation: ContractSubject | null | undefined): string | null {
-  if (!reservation) return "Reservation not found";
+export function contractGenerationRefusal(
+  reservation: ContractSubject | null | undefined,
+): ContractGenerationRefusal | null {
+  if (!reservation) return { message: "Reservation not found" };
   if (reservation.type === "maintenance_block") {
-    return "A maintenance block is not a rental: there is no contract to generate for it.";
+    return {
+      code: "MAINTENANCE_BLOCK",
+      message: "A maintenance block is not a rental: there is no contract to generate for it.",
+    };
   }
   if (reservation.placeholderSpare === true || reservation.vehicleId == null) {
-    return "This reservation has no vehicle assigned yet (placeholder). Assign a vehicle before generating a contract.";
+    return {
+      code: "PLACEHOLDER_RESERVATION",
+      message: "This reservation has no vehicle assigned yet (placeholder). Assign a vehicle before generating a contract.",
+    };
   }
   if (!reservation.vehicle) {
-    return "The vehicle for this reservation could not be loaded, so the contract would be missing its vehicle details.";
+    return {
+      code: "NO_VEHICLE",
+      message: "The vehicle for this reservation could not be loaded, so the contract would be missing its vehicle details.",
+    };
   }
   if (reservation.customerId == null || !reservation.customer) {
-    return "This reservation has no customer, so the contract would be missing the tenant's details.";
+    return {
+      code: "NO_CUSTOMER",
+      message: "This reservation has no customer, so the contract would be missing the tenant's details.",
+    };
   }
   return null;
 }

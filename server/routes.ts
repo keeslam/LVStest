@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { storage } from "./storage";
 import { ReportValidationError } from "./database-storage";
 import { fetchVehicleInfoByLicensePlate, RDWNotFoundError, RDWTimeoutError, RDWUpstreamError } from "./utils/rdw-api";
-import { generateRentalContractFromTemplate, prepareContractData } from "./utils/pdf-generator";
+import { generateRentalContractFromTemplate, prepareContractData, TemplateBackgroundMissingError } from "./utils/pdf-generator";
 import { processInvoiceWithAI, generateInvoiceHash, validateParsedInvoice, type ParsedInvoice } from "./utils/invoice-scanner";
 import path from "path";
 import fs from "fs";
@@ -143,6 +143,7 @@ import {
 } from "./services/contract-generation";
 import { BookingConflictError, warningsForVerdict, type BookingRequest, type BookabilityVerdict } from "./services/bookability";
 import { bookingWarningsFor, type BookingWarning } from "../shared/booking-warnings";
+import type { ContractErrorCode } from "../shared/contract-error-codes";
 import { reservationIsOld, verifyAdminPassword, authorizeMileageDecrease } from "./services/authorization";
 import { isLatestReturnForVehicle } from "./services/reservation-mileage-sync";
 import { assignDriverToReservation } from "./services/driver-assignments";
@@ -5214,6 +5215,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // gegenereerd" either way.
       let contractDocument: Extract<ContractGenerationResult, { ok: true }>["document"] | null = null;
       let contractError: string | null = null;
+      let contractErrorCode: ContractErrorCode | null = null;
       try {
         const pickupTemplateId = templateId ? parseInt(String(templateId), 10) : undefined;
         const generated = await generateContractForReservation(updatedReservation, {
@@ -5225,10 +5227,12 @@ export async function registerRoutes(app: Express): Promise<void> {
           contractDocument = generated.document;
         } else {
           contractError = generated.message;
+          contractErrorCode = generated.code ?? "RENDER_FAILED";
           console.warn(`No contract for reservation ${reservationId}: ${generated.message}`);
         }
       } catch (pdfError) {
         contractError = pdfError instanceof Error ? pdfError.message : "Contract generation failed";
+        contractErrorCode = pdfError instanceof TemplateBackgroundMissingError ? "TEMPLATE_BACKGROUND_MISSING" : "RENDER_FAILED";
         console.error("Error generating contract PDF:", pdfError);
       }
 
@@ -5236,6 +5240,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         ...updatedReservation,
         contractDocument,
         contractError,
+        contractErrorCode,
       });
     } catch (error) {
       // FIX-H (besluiten B-03): the workshop refusal and the override rules
@@ -5290,13 +5295,15 @@ export async function registerRoutes(app: Express): Promise<void> {
         templateId,
       });
       if (!result.ok) {
-        return res.status(result.status).json({ message: result.message });
+        return res.status(result.status).json({ message: result.message, code: result.code });
       }
       realtimeEvents.documents.created(result.document);
       res.json({ contractDocument: result.document });
     } catch (error) {
       console.error("Error generating contract:", error);
-      res.status(500).json({ message: "Failed to generate the contract" });
+      const code: ContractErrorCode =
+        error instanceof TemplateBackgroundMissingError ? "TEMPLATE_BACKGROUND_MISSING" : "RENDER_FAILED";
+      res.status(500).json({ message: "Failed to generate the contract", code });
     }
   });
 
@@ -6575,7 +6582,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       const result = await regenerateDocument(id, req.user ? req.user.username : null);
       if (!result.ok) {
-        return res.status(result.status).json({ message: result.message });
+        return res.status(result.status).json({ message: result.message, code: result.code });
       }
       realtimeEvents.documents.created(result.document);
       res.status(201).json(annotateDocumentFileState(result.document));
@@ -6610,7 +6617,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // BUG-119: refuse the things that are not a rental before rendering.
       const refusal = contractGenerationRefusal(reservation as any);
       if (refusal) {
-        return res.status(400).json({ message: refusal });
+        return res.status(400).json({ message: refusal.message, code: refusal.code });
       }
 
       const rawTemplateId = req.query.templateId;
@@ -6628,7 +6635,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // contract nobody notices (BUG-028).
       const selection = await selectContractTemplate(templateId);
       if (!selection.ok) {
-        return res.status(selection.status).json({ message: selection.message });
+        return res.status(selection.status).json({ message: selection.message, code: selection.code });
       }
 
       const { generateRentalContractFromTemplate } = await import('./utils/pdf-generator');
@@ -6652,13 +6659,16 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename=rental_contract_${reservationId}.pdf`);
       res.setHeader('Content-Length', pdfBuffer.length);
-      
+
       // Send the PDF buffer
       res.send(pdfBuffer);
     } catch (error) {
       console.error("Error generating contract:", error);
-      res.status(500).json({ 
-        message: "Failed to generate contract", 
+      const code: ContractErrorCode =
+        error instanceof TemplateBackgroundMissingError ? "TEMPLATE_BACKGROUND_MISSING" : "RENDER_FAILED";
+      res.status(500).json({
+        message: "Failed to generate contract",
+        code,
       });
     }
   });
@@ -6683,17 +6693,19 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       // Get the specified template or default PDF template
       let template;
+      const templateNotFoundCode: ContractErrorCode = "TEMPLATE_NOT_FOUND";
+      const noTemplateCode: ContractErrorCode = "NO_TEMPLATE";
       if (templateId) {
         template = await storage.getPdfTemplate(templateId);
         if (!template) {
-          return res.status(404).json({ message: "Template not found" });
+          return res.status(404).json({ message: "Template not found", code: templateNotFoundCode });
         }
       } else {
         template = await storage.getDefaultPdfTemplate();
       }
-      
+
       if (!template) {
-        return res.status(404).json({ message: "PDF template not found" });
+        return res.status(404).json({ message: "PDF template not found", code: noTemplateCode });
       }
 
       // Create preview contract data with PENDING placeholder
@@ -6748,8 +6760,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       });
     } catch (error) {
       console.error("Error generating contract preview:", error);
-      res.status(500).json({ 
-        message: "Failed to generate contract preview", 
+      const code: ContractErrorCode =
+        error instanceof TemplateBackgroundMissingError ? "TEMPLATE_BACKGROUND_MISSING" : "RENDER_FAILED";
+      res.status(500).json({
+        message: "Failed to generate contract preview",
+        code,
       });
     }
   });
@@ -6828,7 +6843,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // BUG-119: the same refusal as every other contract endpoint.
       const versionedRefusal = contractGenerationRefusal(reservation as any);
       if (versionedRefusal) {
-        return res.status(400).json({ message: versionedRefusal });
+        return res.status(400).json({ message: versionedRefusal.message, code: versionedRefusal.code });
       }
 
       const rawVersionedTemplateId = req.query.templateId;
@@ -6842,7 +6857,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       const versionedSelection = await selectContractTemplate(versionedTemplateId);
       if (!versionedSelection.ok) {
-        return res.status(versionedSelection.status).json({ message: versionedSelection.message });
+        return res.status(versionedSelection.status).json({ message: versionedSelection.message, code: versionedSelection.code });
       }
 
       // Get driver data if provided
@@ -6891,8 +6906,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.send(pdfBuffer);
     } catch (error) {
       console.error("Error generating versioned contract:", error);
-      res.status(500).json({ 
-        message: "Failed to generate versioned contract", 
+      const code: ContractErrorCode =
+        error instanceof TemplateBackgroundMissingError ? "TEMPLATE_BACKGROUND_MISSING" : "RENDER_FAILED";
+      res.status(500).json({
+        message: "Failed to generate versioned contract",
+        code,
       });
     }
   });
@@ -6922,12 +6940,12 @@ export async function registerRoutes(app: Express): Promise<void> {
       // BUG-119: refuse a maintenance block / placeholder / customer-less row.
       const defaultRefusal = contractGenerationRefusal(reservation as any);
       if (defaultRefusal) {
-        return res.status(400).json({ message: defaultRefusal });
+        return res.status(400).json({ message: defaultRefusal.message, code: defaultRefusal.code });
       }
 
       const defaultSelection = await selectContractTemplate();
       if (!defaultSelection.ok) {
-        return res.status(defaultSelection.status).json({ message: defaultSelection.message });
+        return res.status(defaultSelection.status).json({ message: defaultSelection.message, code: defaultSelection.code });
       }
 
       const { generateRentalContractFromTemplate } = await import('./utils/pdf-generator');
@@ -6956,12 +6974,15 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.send(pdfBuffer);
     } catch (error) {
       console.error("Error generating contract with default template:", error);
-      res.status(500).json({ 
-        message: "Failed to generate contract", 
+      const code: ContractErrorCode =
+        error instanceof TemplateBackgroundMissingError ? "TEMPLATE_BACKGROUND_MISSING" : "RENDER_FAILED";
+      res.status(500).json({
+        message: "Failed to generate contract",
+        code,
       });
     }
   });
-  
+
   // Get contract data as JSON (for display in browser)
   app.get("/api/contracts/data/:reservationId", hasPermission(UserPermission.VIEW_DOCUMENTS, UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
     try {

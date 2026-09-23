@@ -21,10 +21,11 @@ import {
 } from "./document-registry";
 import { selectContractTemplate } from "./pdf-template-selection";
 import type { Document, Reservation } from "../../shared/schema";
+import type { ContractErrorCode } from "../../shared/contract-error-codes";
 
 export type ContractGenerationResult =
   | { ok: true; document: Document }
-  | { ok: false; status: number; message: string };
+  | { ok: false; status: number; message: string; code?: ContractErrorCode };
 
 /**
  * Produces and registers the unsigned contract for `reservation`.
@@ -37,15 +38,21 @@ export async function generateContractForReservation(
   options: { username?: string | null; templateId?: number; notes?: string } = {},
 ): Promise<ContractGenerationResult> {
   if (!reservation.vehicle) {
+    // A placeholder spare has no vehicle assigned yet; anything else missing
+    // its vehicle here is a vehicle that could not be loaded (e.g. deleted
+    // after the reservation was made) — same distinction as
+    // `contractGenerationRefusal` makes below.
+    const placeholder = reservation.placeholderSpare === true || reservation.vehicleId == null;
     return {
       ok: false,
       status: 400,
+      code: placeholder ? "PLACEHOLDER_RESERVATION" : "NO_VEHICLE",
       message: "This reservation has no vehicle, so there is no contract to draw.",
     };
   }
 
   const refusal = contractGenerationRefusal(reservation as any);
-  if (refusal) return { ok: false, status: 400, message: refusal };
+  if (refusal) return { ok: false, status: 400, code: refusal.code, message: refusal.message };
 
   const selection = await selectContractTemplate(
     Number.isInteger(options.templateId as number) && (options.templateId as number) > 0
