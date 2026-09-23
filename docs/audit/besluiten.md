@@ -230,8 +230,9 @@ Raakt: BUG-040, V-10 — dit is de reden waarom zo'n reservering nu elke toekoms
 op dat voertuig blokkeert.
 **Aanvulling (23-09-2026):** een reservering die een maand in het verleden ligt en nooit is
 opgehaald, moet een melding geven. Lezing: status "geboekt", startdatum 30 dagen of langer
-geleden, geen onderhoudsblok; zichtbaar in het meldingencentrum en op het dashboard, met
-openen en annuleren; weg zodra de reservering is opgehaald of geannuleerd.
+geleden, geen onderhoudsblok. Vorm (23-09-2026, tweede aanwijzing): een popup-dialoog in de
+reserveringskalender, niet in het meldingencentrum of op het dashboard; per regel openen en
+annuleren; weg zodra de reservering is opgehaald of geannuleerd.
 
 ### B-33 — Een al opgehaalde verhuring annuleren of verwijderen (V-11, BUG-132)
 **Besluit (letterlijk van Kees):** "dat mag door de admin en manager met een extra vinkje bij
