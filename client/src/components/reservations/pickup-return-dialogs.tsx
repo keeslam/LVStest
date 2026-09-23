@@ -82,9 +82,12 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
   };
 
   // OPT-005: what the pickup produced, shown after the dialog closes.
+  // B-34: `errorCode` travels alongside `errorMessage` so the dialog can show
+  // its own Dutch/English sentence instead of the server's English message.
   const [handoverResult, setHandoverResult] = useState<{
     document: StoredDocument | null;
     errorMessage: string | null;
+    errorCode?: string | null;
   } | null>(null);
 
   // Vehicle remarks warning state - shown when vehicle has remarks before pickup
@@ -311,7 +314,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       // OPT-005: the response says whether the contract exists. Read it before
       // telling the employee anything, instead of the old unconditional
       // "Contract is gegenereerd".
-      let body: { contractDocument?: StoredDocument | null; contractError?: string | null } = {};
+      let body: { contractDocument?: StoredDocument | null; contractError?: string | null; contractErrorCode?: string | null } = {};
       try {
         body = await response.clone().json();
       } catch {
@@ -347,6 +350,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       setHandoverResult({
         document: body.contractDocument ?? null,
         errorMessage: body.contractError ?? null,
+        errorCode: body.contractErrorCode ?? null,
       });
     },
     onError: (error: any) => {
@@ -1262,6 +1266,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
           reservation={reservation}
           document={handoverResult.document}
           errorMessage={handoverResult.errorMessage}
+          errorCode={handoverResult.errorCode}
           kind={"contract" as HandoverDocumentKind}
           onDone={() => setHandoverResult(null)}
         />

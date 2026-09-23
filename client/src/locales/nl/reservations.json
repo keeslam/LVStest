@@ -274,7 +274,18 @@
       "email": "Mail naar klant",
       "retry": "Opnieuw proberen",
       "retrySucceeded": "Contract is alsnog aangemaakt",
-      "retryFailed": "Contract kon nog steeds niet gemaakt worden"
+      "retryFailed": "Contract kon nog steeds niet gemaakt worden",
+      "errorReasons": {
+        "NO_TEMPLATE": "Er is geen contractsjabloon ingesteld. Maak er een aan onder Documenten → Contractsjablonen en klik dan op Opnieuw proberen.",
+        "NO_DEFAULT_TEMPLATE": "Er zijn meerdere sjablonen maar geen standaard. Kies een standaardsjabloon onder Documenten → Contractsjablonen.",
+        "TEMPLATE_WITHOUT_FIELDS": "Het contractsjabloon heeft geen velden. Vul het sjabloon onder Documenten → Contractsjablonen.",
+        "TEMPLATE_BACKGROUND_MISSING": "De achtergrond van het contractsjabloon kon niet worden gelezen. Upload de achtergrond opnieuw onder Documenten → Contractsjablonen.",
+        "NO_VEHICLE": "Het voertuig van deze reservering kon niet worden gevonden. Controleer het voertuig en probeer het opnieuw.",
+        "PLACEHOLDER_RESERVATION": "Aan deze reservering is nog geen voertuig gekoppeld. Ken een voertuig toe en genereer het contract daarna opnieuw.",
+        "NO_CUSTOMER": "Aan deze reservering is geen klant gekoppeld, dus het contract kan niet worden gemaakt. Voeg een klant toe aan de reservering.",
+        "MAINTENANCE_BLOCK": "Dit is een onderhoudsblok, geen verhuur — hier hoort geen contract bij.",
+        "RENDER_FAILED": "Het contract kon niet worden gemaakt door een technische fout. Probeer het opnieuw; blijft het misgaan, meld dan deze tekst: {{detail}}"
+      }
     }
   },
   "addDialog": {

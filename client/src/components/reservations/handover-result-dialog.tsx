@@ -24,8 +24,55 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { EmailDocumentDialog } from "@/components/documents/email-document-dialog";
 import { UserPermission, type Document, type Reservation } from "@shared/schema";
+import { CONTRACT_ERROR_CODES, type ContractErrorCode } from "@shared/contract-error-codes";
 
 export type HandoverDocumentKind = "contract" | "damageCheck";
+
+/**
+ * B-34 — one i18n key per `ContractErrorCode` this dialog knows how to word.
+ * Deliberately a *subset* of `CONTRACT_ERROR_CODES`: `TEMPLATE_NOT_FOUND` has
+ * no entry here on purpose (see `contractFailureText` below) — the pickup and
+ * retry routes this dialog reads never send an explicit `templateId`, so this
+ * dialog cannot ever cause that code, and any sentence for it would need the
+ * template's name, which the server sends only inside its English `message`
+ * (never as its own field) — reading it out of there would be exactly the
+ * "translate by matching English text" the besluiten forbid. Untranslated
+ * codes fall back to the server's own text, same as an unrecognised one.
+ */
+const CONTRACT_ERROR_REASON_KEYS: Partial<Record<ContractErrorCode, string>> = {
+  NO_TEMPLATE: "pickupReturn.handoverResult.errorReasons.NO_TEMPLATE",
+  NO_DEFAULT_TEMPLATE: "pickupReturn.handoverResult.errorReasons.NO_DEFAULT_TEMPLATE",
+  TEMPLATE_WITHOUT_FIELDS: "pickupReturn.handoverResult.errorReasons.TEMPLATE_WITHOUT_FIELDS",
+  TEMPLATE_BACKGROUND_MISSING: "pickupReturn.handoverResult.errorReasons.TEMPLATE_BACKGROUND_MISSING",
+  NO_VEHICLE: "pickupReturn.handoverResult.errorReasons.NO_VEHICLE",
+  PLACEHOLDER_RESERVATION: "pickupReturn.handoverResult.errorReasons.PLACEHOLDER_RESERVATION",
+  NO_CUSTOMER: "pickupReturn.handoverResult.errorReasons.NO_CUSTOMER",
+  MAINTENANCE_BLOCK: "pickupReturn.handoverResult.errorReasons.MAINTENANCE_BLOCK",
+  RENDER_FAILED: "pickupReturn.handoverResult.errorReasons.RENDER_FAILED",
+};
+
+function isContractErrorCode(code: unknown): code is ContractErrorCode {
+  return typeof code === "string" && (CONTRACT_ERROR_CODES as readonly string[]).includes(code);
+}
+
+/**
+ * The text shown for a failed contract: the stable `code` decides it, never
+ * the server's English `message` — that stays only as the untranslated
+ * fallback for a code this dialog does not know (or none at all), exactly as
+ * before B-34.
+ */
+function contractFailureText(
+  t: (key: string, options?: Record<string, unknown>) => string,
+  code: string | null | undefined,
+  detail: string | null | undefined,
+  fallback: string,
+): string {
+  if (isContractErrorCode(code)) {
+    const key = CONTRACT_ERROR_REASON_KEYS[code];
+    if (key) return t(key, { detail: detail ?? "" });
+  }
+  return fallback;
+}
 
 interface HandoverResultDialogProps {
   open: boolean;
@@ -35,6 +82,10 @@ interface HandoverResultDialogProps {
   document: Document | null;
   /** What the server said went wrong, when it said anything. */
   errorMessage?: string | null;
+  /** B-34 — the stable reason `code` alongside `errorMessage`, when the pickup
+   *  route sent one (`contractErrorCode`). Decides which Dutch/English
+   *  sentence is shown; `errorMessage` itself is only ever a fallback. */
+  errorCode?: string | null;
   kind: HandoverDocumentKind;
   /** Called after the employee closes this dialog. */
   onDone?: () => void;
@@ -55,6 +106,7 @@ export function HandoverResultDialog({
   reservation,
   document,
   errorMessage,
+  errorCode,
   kind,
   onDone,
 }: HandoverResultDialogProps) {
@@ -78,10 +130,15 @@ export function HandoverResultDialog({
       toast({ title: t('pickupReturn.handoverResult.retrySucceeded') });
     },
     onError: (error: any) => {
+      // B-34 — `apiRequest` (client/src/lib/queryClient.ts) merges the JSON
+      // body onto the thrown error, so `error.code` is the same stable code
+      // the pickup route sends; translate by that, never by matching
+      // `error.message` (which is the server's own English text — the only
+      // thing shown, unchanged, when the code is missing or not one of ours).
       toast({
         variant: "destructive",
         title: t('pickupReturn.handoverResult.retryFailed'),
-        description: error?.message,
+        description: contractFailureText(t, error?.code, error?.message, error?.message),
       });
     },
   });
@@ -111,7 +168,12 @@ export function HandoverResultDialog({
             <DialogDescription>
               {ready
                 ? t('pickupReturn.handoverResult.readyDescription', { fileName: current!.fileName })
-                : errorMessage || t('pickupReturn.handoverResult.failedDescription')}
+                : contractFailureText(
+                    t,
+                    errorCode,
+                    errorMessage,
+                    errorMessage || t('pickupReturn.handoverResult.failedDescription'),
+                  )}
             </DialogDescription>
           </DialogHeader>
 

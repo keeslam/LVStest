@@ -25,6 +25,16 @@ vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "tester", role: mockRole, permissions: mockPermissions }, isLoading: false }),
 }));
 
+// B-34 — the retry toast's *content* (translated by code, never the raw
+// "409: ..." text) cannot be observed through the real hook: it only updates
+// an in-memory store, and no <Toaster/> is mounted in these tests. Captured
+// the same way client/src/components/vehicles/__tests__/bulk-row-results.test.tsx
+// does it.
+const toasts: any[] = [];
+vi.mock("@/hooks/use-toast", () => ({
+  useToast: () => ({ toast: (t: any) => { toasts.push(t); } }),
+}));
+
 import { HandoverResultDialog } from "@/components/reservations/handover-result-dialog";
 
 const reservation = {
@@ -60,6 +70,7 @@ let openMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
   mockRole = UserRole.ADMIN;
   mockPermissions = [];
+  toasts.length = 0;
   fetchMock = vi.fn(async () =>
     new Response(JSON.stringify({ contractDocument: { ...contract, id: 502, version: 2 } }), {
       status: 200, headers: { "Content-Type": "application/json" },
@@ -171,6 +182,125 @@ describe("OPT-005 — het contract vanuit de ophaaldialoog", () => {
       expect(button).not.toBeDisabled();
       await user.click(button);
       await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    });
+  });
+
+  describe("B-34 — a Dutch reason per contract error code, translated by `code` and never by matching the English message", () => {
+    it.each([
+      ["NO_TEMPLATE", "Er is geen contractsjabloon ingesteld. Maak er een aan onder Documenten → Contractsjablonen en klik dan op Opnieuw proberen."],
+      ["NO_DEFAULT_TEMPLATE", "Er zijn meerdere sjablonen maar geen standaard. Kies een standaardsjabloon onder Documenten → Contractsjablonen."],
+      ["TEMPLATE_WITHOUT_FIELDS", "Het contractsjabloon heeft geen velden. Vul het sjabloon onder Documenten → Contractsjablonen."],
+      ["TEMPLATE_BACKGROUND_MISSING", "De achtergrond van het contractsjabloon kon niet worden gelezen. Upload de achtergrond opnieuw onder Documenten → Contractsjablonen."],
+      ["NO_VEHICLE", "Het voertuig van deze reservering kon niet worden gevonden. Controleer het voertuig en probeer het opnieuw."],
+      ["PLACEHOLDER_RESERVATION", "Aan deze reservering is nog geen voertuig gekoppeld. Ken een voertuig toe en genereer het contract daarna opnieuw."],
+      ["NO_CUSTOMER", "Aan deze reservering is geen klant gekoppeld, dus het contract kan niet worden gemaakt. Voeg een klant toe aan de reservering."],
+      ["MAINTENANCE_BLOCK", "Dit is een onderhoudsblok, geen verhuur — hier hoort geen contract bij."],
+    ])("%s shows its own Dutch sentence, not the raw server message", (code, dutch) => {
+      withClient(
+        <HandoverResultDialog
+          open
+          onOpenChange={() => {}}
+          reservation={reservation}
+          document={null}
+          errorMessage="raw english server text that must not be shown"
+          errorCode={code as any}
+          kind="contract"
+        />,
+      );
+      expect(screen.getByText(dutch)).toBeInTheDocument();
+      expect(screen.queryByText("raw english server text that must not be shown")).toBeNull();
+    });
+
+    it("RENDER_FAILED is the one code that also shows the server's own text, as a technical detail", () => {
+      withClient(
+        <HandoverResultDialog
+          open
+          onOpenChange={() => {}}
+          reservation={reservation}
+          document={null}
+          errorMessage="pdf-lib threw while embedding the background"
+          errorCode={"RENDER_FAILED" as any}
+          kind="contract"
+        />,
+      );
+      expect(
+        screen.getByText(
+          "Het contract kon niet worden gemaakt door een technische fout. Probeer het opnieuw; blijft het misgaan, meld dan deze tekst: pdf-lib threw while embedding the background",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("a code this dialog does not translate (e.g. TEMPLATE_NOT_FOUND) falls back to the server's own text, as today", () => {
+      withClient(
+        <HandoverResultDialog
+          open
+          onOpenChange={() => {}}
+          reservation={reservation}
+          document={null}
+          errorMessage="Template not found"
+          errorCode={"TEMPLATE_NOT_FOUND" as any}
+          kind="contract"
+        />,
+      );
+      expect(screen.getByText("Template not found")).toBeInTheDocument();
+    });
+
+    it("a missing code falls back to the server's own text, as today", () => {
+      withClient(
+        <HandoverResultDialog
+          open
+          onOpenChange={() => {}}
+          reservation={reservation}
+          document={null}
+          errorMessage="Some server text with no code at all"
+          kind="contract"
+        />,
+      );
+      expect(screen.getByText("Some server text with no code at all")).toBeInTheDocument();
+    });
+  });
+
+  describe("B-34 — the retry toast", () => {
+    it("shows the translated sentence for a known code, never a '409: ' prefix", async () => {
+      fetchMock = vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            message: "No contract template has been configured. Create one under Settings → PDF templates before generating a contract.",
+            code: "NO_TEMPLATE",
+          }),
+          { status: 409, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      const user = userEvent.setup();
+      withClient(
+        <HandoverResultDialog open onOpenChange={() => {}} reservation={reservation} document={null} kind="contract" />,
+      );
+      await user.click(screen.getByTestId("button-handover-retry"));
+      await waitFor(() => expect(toasts.length).toBeGreaterThan(0));
+      const last = toasts[toasts.length - 1];
+      expect(last.title).toBe("Contract kon nog steeds niet gemaakt worden");
+      expect(last.description).toBe(
+        "Er is geen contractsjabloon ingesteld. Maak er een aan onder Documenten → Contractsjablonen en klik dan op Opnieuw proberen.",
+      );
+      expect(String(last.description)).not.toMatch(/\b\d{3}:\s/);
+    });
+
+    it("falls back to the server's own text for a code it does not translate", async () => {
+      fetchMock = vi.fn(async () =>
+        new Response(JSON.stringify({ message: "Template not found", code: "TEMPLATE_NOT_FOUND" }), {
+          status: 404, headers: { "Content-Type": "application/json" },
+        }),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      const user = userEvent.setup();
+      withClient(
+        <HandoverResultDialog open onOpenChange={() => {}} reservation={reservation} document={null} kind="contract" />,
+      );
+      await user.click(screen.getByTestId("button-handover-retry"));
+      await waitFor(() => expect(toasts.length).toBeGreaterThan(0));
+      const last = toasts[toasts.length - 1];
+      expect(last.description).toBe("Template not found");
     });
   });
 });
