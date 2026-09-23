@@ -228,6 +228,10 @@ Raakt: OPT-029, V-9, BUG-114, BUG-115.
 niet als die al is afgesloten.
 Raakt: BUG-040, V-10 — dit is de reden waarom zo'n reservering nu elke toekomstige boeking
 op dat voertuig blokkeert.
+**Aanvulling (23-09-2026):** een reservering die een maand in het verleden ligt en nooit is
+opgehaald, moet een melding geven. Lezing: status "geboekt", startdatum 30 dagen of langer
+geleden, geen onderhoudsblok; zichtbaar in het meldingencentrum en op het dashboard, met
+openen en annuleren; weg zodra de reservering is opgehaald of geannuleerd.
 
 ### B-33 — Een al opgehaalde verhuring annuleren of verwijderen (V-11, BUG-132)
 **Besluit (letterlijk van Kees):** "dat mag door de admin en manager met een extra vinkje bij
@@ -253,6 +257,10 @@ Raakt: BUG-163, V-12.
 ### B-35 — Uniciteit van het debiteurnummer (V-13, BUG-045)
 **Besluit:** het veld mag leeg blijven, maar is het ingevuld, dan moet het uniek zijn.
 Raakt: BUG-045, V-13.
+**Aanvulling (23-09-2026):** een debiteurnummer van een klant in de prullenbak blijft bezet
+totdat die klant definitief uit de prullenbak is verwijderd; wie het nummer intussen wil
+gebruiken, krijgt een melding dat het bij een klant in de prullenbak hoort. (Definitief
+verwijderen komt met B-38, deelproject C.)
 
 ### B-36 — Aparte prullenbakken per soort (aanvulling op B-15 en B-33)
 **Besluit (22-09-2026, letterlijk):** "het moeten wel aparte prullenbakken zijn dat houd het
