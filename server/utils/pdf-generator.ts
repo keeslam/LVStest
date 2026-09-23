@@ -25,6 +25,7 @@ import {
   PAGE_WIDTH,
   PAGE_HEIGHT,
 } from '../../shared/template-fields';
+import type { ContractErrorCode } from '../../shared/contract-error-codes';
 
 /**
  * B-34: a configured background that cannot be read is its own recognisable
@@ -37,6 +38,16 @@ export class TemplateBackgroundMissingError extends Error {
     super(message);
     this.name = "TemplateBackgroundMissingError";
   }
+}
+
+/**
+ * B-34 fix round 1: every contract endpoint classified a render throw the
+ * same way (`instanceof TemplateBackgroundMissingError` -> that code, else
+ * `RENDER_FAILED`) but each wrote its own copy of the ternary. One helper, so
+ * a future second distinguishable render error only needs updating here.
+ */
+export function contractErrorCodeForRenderError(error: unknown): ContractErrorCode {
+  return error instanceof TemplateBackgroundMissingError ? "TEMPLATE_BACKGROUND_MISSING" : "RENDER_FAILED";
 }
 
 /**

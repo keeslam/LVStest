@@ -65,6 +65,9 @@ async function pickup(reservationId: number, templateId?: number) {
  * the total count and which row (if any) is marked default, and the test
  * database always carries one baseline template ("gffg") that would otherwise
  * make "zero templates" or "exactly one template" impossible to set up.
+ * Wiping the *whole* table (not just rows this file inserts) is only safe
+ * because `vitest.config.ts` sets `fileParallelism: false`, so no other test
+ * file's `pdf_templates` rows can be touched concurrently.
  */
 async function withOnlyTemplates<T>(
   rows: Array<Partial<typeof pdfTemplates.$inferInsert>>,
@@ -317,6 +320,10 @@ describe("B-34 — reservations that are not a printable rental", () => {
   });
 });
 
+// Characterisation tests: added after the recorded RED run (task-5-report.md
+// records RED/GREEN for the 13 cases above; these two were written once the
+// implementation already existed, so they were never shown failing against
+// the pre-change code). They assert real, currently-passing behaviour.
 describe("B-34 — POST /api/documents/:id/regenerate carries the same codes", () => {
   it("a missing background on regenerate: 500 TEMPLATE_BACKGROUND_MISSING, existing message unchanged", async () => {
     await withOnlyTemplates(
@@ -385,10 +392,13 @@ describe("B-34 — every /api/contracts/* route answers { message, code }", () =
       expect(byDefault.status).toBe(409);
       expect(byDefault.body.code).toBe("NO_TEMPLATE");
 
+      // B-34 fix round 1: preview now goes through the shared picker, whose
+      // "zero templates" status is 409 (was 404, from preview's own inline
+      // lookup) — see the dedicated describe block below for the full matrix.
       const preview = await admin
         .post("/api/contracts/preview")
         .send({ vehicleId: vehicle.id, customerId });
-      expect(preview.status).toBe(404);
+      expect(preview.status).toBe(409);
       expect(preview.body.code).toBe("NO_TEMPLATE");
     });
   });
@@ -399,5 +409,113 @@ describe("B-34 — every /api/contracts/* route answers { message, code }", () =
       .send({ vehicleId: vehicle.id, customerId });
     expect(preview.status).toBe(404);
     expect(preview.body.code).toBe("TEMPLATE_NOT_FOUND");
+  });
+});
+
+/**
+ * B-34 fix round 1 (review finding, Important #2): `POST /api/contracts/preview`
+ * used to have its own inline template lookup instead of `selectContractTemplate()`,
+ * so "several templates, none marked default" answered 200 with an arbitrary,
+ * unrequested template instead of refusing like every other contract route.
+ * These are the tests the review found missing.
+ */
+describe("B-34 fix round 1 — preview goes through the shared picker", () => {
+  it("one template, not marked default: preview still succeeds", async () => {
+    await withOnlyTemplates(
+      [{ name: "FIXT-B34-preview-solo", isDefault: false, fields: [FIELD] as any }],
+      async () => {
+        const res = await admin
+          .post("/api/contracts/preview")
+          .send({ vehicleId: vehicle.id, customerId });
+        expect(res.status).toBe(200);
+        expect(typeof res.body.token).toBe("string");
+        expect(res.body.downloadUrl).toContain(res.body.token);
+      },
+    );
+  });
+
+  it("two templates, neither default: 409 NO_DEFAULT_TEMPLATE (was 200 with the first template)", async () => {
+    await withOnlyTemplates(
+      [
+        { name: "FIXT-B34-preview-a", isDefault: false, fields: [FIELD] as any },
+        { name: "FIXT-B34-preview-b", isDefault: false, fields: [FIELD] as any },
+      ],
+      async () => {
+        const res = await admin
+          .post("/api/contracts/preview")
+          .send({ vehicleId: vehicle.id, customerId });
+        expect(res.status).toBe(409);
+        expect(res.body.code).toBe("NO_DEFAULT_TEMPLATE");
+      },
+    );
+  });
+
+  it("zero templates: 409 NO_TEMPLATE", async () => {
+    await withOnlyTemplates([], async () => {
+      const res = await admin
+        .post("/api/contracts/preview")
+        .send({ vehicleId: vehicle.id, customerId });
+      expect(res.status).toBe(409);
+      expect(res.body.code).toBe("NO_TEMPLATE");
+    });
+  });
+
+  it("an explicit valid templateId still works even with several templates and none default", async () => {
+    await withOnlyTemplates(
+      [
+        { name: "FIXT-B34-preview-explicit-a", isDefault: false, fields: [FIELD] as any },
+        { name: "FIXT-B34-preview-explicit-b", isDefault: false, fields: [FIELD] as any },
+      ],
+      async (ids) => {
+        const res = await admin
+          .post(`/api/contracts/preview?templateId=${ids[1]}`)
+          .send({ vehicleId: vehicle.id, customerId });
+        expect(res.status).toBe(200);
+        expect(typeof res.body.token).toBe("string");
+      },
+    );
+  });
+});
+
+/**
+ * B-34 fix round 1 (review finding, Minor #2): `GET /api/pdf-templates/default`
+ * used `storage.getDefaultPdfTemplate()` directly, so it silently 404'd as
+ * soon as nothing was marked default even when exactly one template existed.
+ * It now shares `resolveDefaultTemplateRow()` with the contract picker
+ * (marked default wins; exactly one resolves regardless; several with none
+ * marked default is refused) but keeps its own pre-existing 404 status.
+ */
+describe("B-34 fix round 1 — GET /api/pdf-templates/default follows the same picker rule", () => {
+  it("exactly one template, not marked default: it is returned", async () => {
+    await withOnlyTemplates(
+      [{ name: "FIXT-B34-default-solo", isDefault: false, fields: [FIELD] as any }],
+      async (ids) => {
+        const res = await admin.get("/api/pdf-templates/default");
+        expect(res.status).toBe(200);
+        expect(res.body.id).toBe(ids[0]);
+      },
+    );
+  });
+
+  it("two templates, neither default: 404 NO_DEFAULT_TEMPLATE", async () => {
+    await withOnlyTemplates(
+      [
+        { name: "FIXT-B34-default-a", isDefault: false, fields: [FIELD] as any },
+        { name: "FIXT-B34-default-b", isDefault: false, fields: [FIELD] as any },
+      ],
+      async () => {
+        const res = await admin.get("/api/pdf-templates/default");
+        expect(res.status).toBe(404);
+        expect(res.body.code).toBe("NO_DEFAULT_TEMPLATE");
+      },
+    );
+  });
+
+  it("zero templates: 404 NO_TEMPLATE", async () => {
+    await withOnlyTemplates([], async () => {
+      const res = await admin.get("/api/pdf-templates/default");
+      expect(res.status).toBe(404);
+      expect(res.body.code).toBe("NO_TEMPLATE");
+    });
   });
 });

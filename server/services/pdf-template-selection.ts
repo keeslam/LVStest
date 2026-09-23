@@ -56,6 +56,46 @@ function withFields<T extends { id: number; name?: string | null; fields?: unkno
 }
 
 /**
+ * The "which row is *the* default" half of the picker rule (BUG-181a), without
+ * the field-count check below — used directly by `GET /api/pdf-templates/default`
+ * (server/routes/pdf-templates.ts), which asks "what row is the default" for
+ * display/editing, not "give me something to render a contract from". A
+ * default template that has no fields yet is still a valid answer there.
+ */
+export async function resolveDefaultTemplateRow(): Promise<
+  | { ok: true; template: any }
+  | { ok: false; status: number; message: string; code: ContractErrorCode }
+> {
+  const preferred = await storage.getDefaultPdfTemplate();
+  if (preferred) return { ok: true, template: preferred };
+
+  const all = await storage.getAllPdfTemplates();
+  if (all.length === 0) {
+    return {
+      ok: false,
+      status: 409,
+      code: "NO_TEMPLATE",
+      message:
+        "No contract template has been configured. Create one under Settings → PDF templates before generating a contract.",
+    };
+  }
+  if (all.length === 1) {
+    // Exactly one exists: nothing to choose between, marked default or not.
+    return { ok: true, template: all[0] };
+  }
+  // B-34/BUG-181a: several templates, none marked default — refuse instead of
+  // guessing which one the operator meant (previously: the lowest id, silently).
+  return {
+    ok: false,
+    status: 409,
+    code: "NO_DEFAULT_TEMPLATE",
+    message:
+      `${all.length} PDF templates exist and none is marked as default. ` +
+      `Mark one as default under Settings → PDF templates before generating a contract.`,
+  };
+}
+
+/**
  * Resolves the template a contract must be rendered with.
  * `templateId` undefined means "use the default".
  */
@@ -70,31 +110,7 @@ export async function selectContractTemplate(
     return withFields(template);
   }
 
-  const preferred = await storage.getDefaultPdfTemplate();
-  if (preferred) return withFields(preferred);
-
-  const all = await storage.getAllPdfTemplates();
-  if (all.length === 0) {
-    return {
-      ok: false,
-      status: 409,
-      code: "NO_TEMPLATE",
-      message:
-        "No contract template has been configured. Create one under Settings → PDF templates before generating a contract.",
-    };
-  }
-  if (all.length === 1) {
-    // Exactly one exists: nothing to choose between, marked default or not.
-    return withFields(all[0]);
-  }
-  // B-34/BUG-181a: several templates, none marked default — refuse instead of
-  // guessing which one the operator meant (previously: the lowest id, silently).
-  return {
-    ok: false,
-    status: 409,
-    code: "NO_DEFAULT_TEMPLATE",
-    message:
-      `${all.length} PDF templates exist and none is marked as default. ` +
-      `Mark one as default under Settings → PDF templates before generating a contract.`,
-  };
+  const resolved = await resolveDefaultTemplateRow();
+  if (!resolved.ok) return resolved;
+  return withFields(resolved.template);
 }

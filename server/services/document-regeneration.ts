@@ -75,7 +75,7 @@ export async function regenerateDocument(
     const selection = await selectContractTemplate();
     if (!selection.ok) return selection;
 
-    const { generateRentalContractFromTemplate, TemplateBackgroundMissingError } = await import("../utils/pdf-generator");
+    const { generateRentalContractFromTemplate, contractErrorCodeForRenderError } = await import("../utils/pdf-generator");
     let document: Document;
     try {
       const bytes = await generateRentalContractFromTemplate(reservation, selection.template);
@@ -91,9 +91,7 @@ export async function regenerateDocument(
     } catch (error) {
       // Same distinction as every other contract endpoint (B-34): a missing
       // background names the fix (re-upload it); anything else is a defect.
-      const code: ContractErrorCode =
-        error instanceof TemplateBackgroundMissingError ? "TEMPLATE_BACKGROUND_MISSING" : "RENDER_FAILED";
-      throw new HttpError(500, "Failed to regenerate document", { code });
+      throw new HttpError(500, "Failed to regenerate document", { code: contractErrorCodeForRenderError(error) });
     }
     return { ok: true, document };
   }

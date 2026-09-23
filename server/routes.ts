@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { storage } from "./storage";
 import { ReportValidationError } from "./database-storage";
 import { fetchVehicleInfoByLicensePlate, RDWNotFoundError, RDWTimeoutError, RDWUpstreamError } from "./utils/rdw-api";
-import { generateRentalContractFromTemplate, prepareContractData, TemplateBackgroundMissingError } from "./utils/pdf-generator";
+import { generateRentalContractFromTemplate, prepareContractData, contractErrorCodeForRenderError } from "./utils/pdf-generator";
 import { processInvoiceWithAI, generateInvoiceHash, validateParsedInvoice, type ParsedInvoice } from "./utils/invoice-scanner";
 import path from "path";
 import fs from "fs";
@@ -5232,7 +5232,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
       } catch (pdfError) {
         contractError = pdfError instanceof Error ? pdfError.message : "Contract generation failed";
-        contractErrorCode = pdfError instanceof TemplateBackgroundMissingError ? "TEMPLATE_BACKGROUND_MISSING" : "RENDER_FAILED";
+        contractErrorCode = contractErrorCodeForRenderError(pdfError);
         console.error("Error generating contract PDF:", pdfError);
       }
 
@@ -5301,8 +5301,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.json({ contractDocument: result.document });
     } catch (error) {
       console.error("Error generating contract:", error);
-      const code: ContractErrorCode =
-        error instanceof TemplateBackgroundMissingError ? "TEMPLATE_BACKGROUND_MISSING" : "RENDER_FAILED";
+      const code = contractErrorCodeForRenderError(error);
       res.status(500).json({ message: "Failed to generate the contract", code });
     }
   });
@@ -6664,21 +6663,29 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.send(pdfBuffer);
     } catch (error) {
       console.error("Error generating contract:", error);
-      const code: ContractErrorCode =
-        error instanceof TemplateBackgroundMissingError ? "TEMPLATE_BACKGROUND_MISSING" : "RENDER_FAILED";
+      const code = contractErrorCodeForRenderError(error);
       res.status(500).json({
         message: "Failed to generate contract",
         code,
       });
     }
   });
-  
+
   // Generate contract preview with form data (returns preview token)
   app.post("/api/contracts/preview", hasPermission(UserPermission.MANAGE_DOCUMENTS), async (req: Request, res: Response) => {
     try {
       const { vehicleId, customerId, startDate, endDate, notes } = req.body;
-      const templateId = req.query.templateId ? parseInt(req.query.templateId as string) : undefined;
-      
+      // Preserve the pre-existing "garbage or absent templateId means use the
+      // default" behaviour: only a value that actually parses is passed on.
+      const rawTemplateId = req.query.templateId;
+      let templateId: number | undefined;
+      if (rawTemplateId) {
+        const parsed = parseInt(rawTemplateId as string, 10);
+        if (!Number.isNaN(parsed)) {
+          templateId = parsed;
+        }
+      }
+
       if (!vehicleId || !customerId) {
         return res.status(400).json({ message: "Vehicle ID and Customer ID are required" });
       }
@@ -6686,27 +6693,21 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Get vehicle and customer data
       const vehicle = await storage.getVehicle(vehicleId);
       const customer = await storage.getCustomer(customerId);
-      
+
       if (!vehicle || !customer) {
         return res.status(404).json({ message: "Vehicle or customer not found" });
       }
 
-      // Get the specified template or default PDF template
-      let template;
-      const templateNotFoundCode: ContractErrorCode = "TEMPLATE_NOT_FOUND";
-      const noTemplateCode: ContractErrorCode = "NO_TEMPLATE";
-      if (templateId) {
-        template = await storage.getPdfTemplate(templateId);
-        if (!template) {
-          return res.status(404).json({ message: "Template not found", code: templateNotFoundCode });
-        }
-      } else {
-        template = await storage.getDefaultPdfTemplate();
+      // B-34 fix round 1: this used to look the template up inline
+      // (`getPdfTemplate`/`getDefaultPdfTemplate`, no zero-fields check), so
+      // "several templates, none marked default" silently rendered with an
+      // arbitrary one instead of refusing. It now goes through the same
+      // picker every other contract route uses.
+      const selection = await selectContractTemplate(templateId);
+      if (!selection.ok) {
+        return res.status(selection.status).json({ message: selection.message, code: selection.code });
       }
-
-      if (!template) {
-        return res.status(404).json({ message: "PDF template not found", code: noTemplateCode });
-      }
+      const template = selection.template;
 
       // Create preview contract data with PENDING placeholder
       const previewData = {
@@ -6760,8 +6761,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       });
     } catch (error) {
       console.error("Error generating contract preview:", error);
-      const code: ContractErrorCode =
-        error instanceof TemplateBackgroundMissingError ? "TEMPLATE_BACKGROUND_MISSING" : "RENDER_FAILED";
+      const code = contractErrorCodeForRenderError(error);
       res.status(500).json({
         message: "Failed to generate contract preview",
         code,
@@ -6906,8 +6906,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.send(pdfBuffer);
     } catch (error) {
       console.error("Error generating versioned contract:", error);
-      const code: ContractErrorCode =
-        error instanceof TemplateBackgroundMissingError ? "TEMPLATE_BACKGROUND_MISSING" : "RENDER_FAILED";
+      const code = contractErrorCodeForRenderError(error);
       res.status(500).json({
         message: "Failed to generate versioned contract",
         code,
@@ -6974,8 +6973,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.send(pdfBuffer);
     } catch (error) {
       console.error("Error generating contract with default template:", error);
-      const code: ContractErrorCode =
-        error instanceof TemplateBackgroundMissingError ? "TEMPLATE_BACKGROUND_MISSING" : "RENDER_FAILED";
+      const code = contractErrorCodeForRenderError(error);
       res.status(500).json({
         message: "Failed to generate contract",
         code,

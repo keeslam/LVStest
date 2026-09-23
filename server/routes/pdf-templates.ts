@@ -9,6 +9,7 @@ import { sendRouteError } from "../utils/route-errors";
 import { storage } from "../storage";
 import { getRelativePath, unlinkStoredFile } from "../services/document-paths";
 import { generateRentalContractFromTemplate } from "../utils/pdf-generator";
+import { resolveDefaultTemplateRow } from "../services/pdf-template-selection";
 import path from "path";
 import fs from "fs";
 import { z } from "zod";
@@ -47,12 +48,17 @@ export function registerPdfTemplateRoutes(app: Express, deps: RouteDeps): void {
   // Get the default PDF template
   app.get("/api/pdf-templates/default", hasPermission(UserPermission.MANAGE_PDF_TEMPLATES), async (req: Request, res: Response) => {
     try {
-      const defaultTemplate = await storage.getDefaultPdfTemplate();
-      if (!defaultTemplate) {
-        return res.status(404).json({ message: "No default template found" });
+      // B-34 fix round 1: same "which row is the default" rule as every
+      // contract route (marked default wins; exactly one template resolves
+      // regardless; several with none marked default is refused) — kept at
+      // this route's existing 404 status rather than the picker's own 409,
+      // since nothing here is being generated.
+      const resolved = await resolveDefaultTemplateRow();
+      if (!resolved.ok) {
+        return res.status(404).json({ message: resolved.message, code: resolved.code });
       }
 
-      res.json(defaultTemplate);
+      res.json(resolved.template);
     } catch (error) {
       console.error("Error fetching default PDF template:", error);
       res.status(500).json({ 
