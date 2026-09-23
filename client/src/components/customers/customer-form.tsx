@@ -181,7 +181,13 @@ export function CustomerForm({
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create customer");
+        const error = new Error(errorData.message || "Failed to create customer");
+        // B-35 — copy the server's fields (field/code/conflictingCustomerName/…)
+        // onto the thrown Error, the same way apiRequest's throwIfResNotOk
+        // (client/src/lib/queryClient.ts) does, so onError below can turn a
+        // specific 409 into a field-level message instead of only a toast.
+        Object.assign(error, errorData);
+        throw error;
       }
       
       return await response.json();
@@ -207,7 +213,22 @@ export function CustomerForm({
         navigate("/customers");
       }
     },
-    onError: (error) => {
+    onError: (error: Error & { code?: string; conflictingCustomerName?: string }) => {
+      // B-35 — the server names exactly which customer already holds the
+      // debtor number (live, or sitting in the recycle bin); show that under
+      // the field itself instead of only in the generic toast below, which
+      // keeps firing unchanged for every other error.
+      if (error.code === "DEBTOR_NUMBER_TAKEN") {
+        form.setError("debtorNumber", {
+          type: "server",
+          message: t('form.debtorNumberTakenError', { name: error.conflictingCustomerName }),
+        });
+      } else if (error.code === "DEBTOR_NUMBER_IN_RECYCLE_BIN") {
+        form.setError("debtorNumber", {
+          type: "server",
+          message: t('form.debtorNumberInRecycleBinError', { name: error.conflictingCustomerName }),
+        });
+      }
       toast({
         title: t('common:status.error'),
         description: editMode
@@ -293,7 +314,21 @@ export function CustomerForm({
                           <FormItem>
                             <FormLabel>{t('details.debtorNumber')}</FormLabel>
                             <FormControl>
-                              <Input placeholder="123456" {...field} />
+                              <Input
+                                placeholder="123456"
+                                data-testid="input-debtor-number"
+                                {...field}
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  // B-35 — a server-side conflict (set manually
+                                  // in onError above) must never survive a
+                                  // correction; clear it the moment the value
+                                  // changes, same instant as the user's own edit.
+                                  if (form.formState.errors.debtorNumber) {
+                                    form.clearErrors("debtorNumber");
+                                  }
+                                }}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

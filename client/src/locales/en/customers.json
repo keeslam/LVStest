@@ -242,6 +242,8 @@
     "savedDescriptionCreated": "The customer has been added to your system.",
     "saveFailedDescriptionUpdate": "Failed to update customer: {{error}}",
     "saveFailedDescriptionCreate": "Failed to create customer: {{error}}",
+    "debtorNumberTakenError": "This debtor number is already in use by customer {{name}}.",
+    "debtorNumberInRecycleBinError": "This debtor number belongs to customer {{name}} in the recycle bin. Restore that customer or permanently delete them from the recycle bin.",
     "licenseNumberPlaceholder": "License number",
     "assignedAccountManagerPlaceholder": "Assigned account manager",
     "notesPlaceholder": "Any additional notes about this customer"

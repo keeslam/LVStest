@@ -242,6 +242,8 @@
     "savedDescriptionCreated": "De klant is toegevoegd aan je systeem.",
     "saveFailedDescriptionUpdate": "Kon klant niet bijwerken: {{error}}",
     "saveFailedDescriptionCreate": "Kon klant niet aanmaken: {{error}}",
+    "debtorNumberTakenError": "Dit debiteurnummer is al in gebruik bij klant {{name}}.",
+    "debtorNumberInRecycleBinError": "Dit debiteurnummer hoort bij klant {{name}} in de prullenbak. Zet die klant terug of verwijder hem definitief uit de prullenbak.",
     "licenseNumberPlaceholder": "Rijbewijsnummer",
     "assignedAccountManagerPlaceholder": "Toegewezen accountmanager",
     "notesPlaceholder": "Eventuele aanvullende notities over deze klant"
