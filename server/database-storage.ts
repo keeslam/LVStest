@@ -51,24 +51,9 @@ import {
 } from "./services/lifecycle";
 
 /**
- * B-32 — every stored spelling that means "picked up" (BUG-129: `active` was
- * written by the pre-enum `createMaintenanceBlock`), derived from lifecycle.ts's
- * alias map rather than retyped here — the same pattern `today-board.ts`'s
- * `storedSpellingsOf` uses. `getOverdueReservationsByVehicle` below is the
- * booking gate's one source of "is the customer still holding this vehicle",
- * so a row written under the old spelling must count too.
- */
-const PICKED_UP_STATUSES: string[] = [
-  "picked_up",
-  ...Object.entries(LEGACY_RESERVATION_STATUS_ALIASES)
-    .filter(([, canonical]) => canonical === "picked_up")
-    .map(([stored]) => stored),
-];
-
-/**
  * B-32 aanvulling (besluiten.md, 2026-09-23) — every stored spelling that
  * means "booked, never picked up" (`confirmed`, `pending`, `scheduled`),
- * derived the same way as `PICKED_UP_STATUSES` above.
+ * derived from `LEGACY_RESERVATION_STATUS_ALIASES` above.
  * `getNotCollectedReservations` below is the only reader of this list.
  */
 const BOOKED_STATUSES: string[] = [
@@ -2349,14 +2334,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Get overdue reservations for a vehicle: a picked-up rental whose end date
-  // is in the past (besluiten B-32 — the same definition as
-  // `getAllOverdueReservations`, the dashboard widget and the pickup
-  // worklist). A `booked` row that was never picked up does NOT count: the
+  // is in the past (besluiten B-32 — reviewed 2026-09-23: the three overdue
+  // surfaces — this gate, `getAllOverdueReservations` (dashboard widget) and
+  // `buildPickupWorklist` (pickup worklist) — now share one definition on
+  // purpose, so status matches the literal `picked_up` only, same as the
+  // other two. Legacy spellings (`active`, `in`) are neither shown nor
+  // blocking anywhere, which is today's behaviour on the widget already. A
+  // `booked` row that was never picked up does NOT count either: the
   // customer never had the car, so it cannot still be "with the customer".
   // Excludes maintenance blocks (BUG-129 wrote some with the legacy status
-  // `active`, which normalises to `picked_up` and would otherwise look like
-  // an overdue rental) and open-ended rentals (null/empty endDate), which
-  // have no defined return date.
+  // `active`, which would otherwise look like an overdue rental if it were
+  // included) and open-ended rentals (null/empty endDate), which have no
+  // defined return date.
   async getOverdueReservationsByVehicle(vehicleId: number, daysOverdue: number = 0): Promise<Reservation[]> {
     // Office time (lifecycle.ts), not `new Date()`: the cutoff must land on
     // the same calendar day the rest of the app calls "today".
@@ -2379,7 +2368,7 @@ export class DatabaseStorage implements IStorage {
           eq(reservations.vehicleId, vehicleId),
           isNull(reservations.deletedAt),
           ne(reservations.type, 'maintenance_block'),
-          inArray(reservations.status, PICKED_UP_STATUSES),
+          eq(reservations.status, 'picked_up'),
           sql`${reservations.endDate} IS NOT NULL`,
           sql`${reservations.endDate} != ''`,
           sql`${reservations.endDate} < ${cutoffDateStr}`

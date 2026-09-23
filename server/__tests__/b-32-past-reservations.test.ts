@@ -88,6 +88,44 @@ describe("B-32 — the booking gate only sees picked-up rentals past their end d
     expect((list.body as Array<{ id: number }>).map((r) => r.id)).not.toContain(stale.id);
   });
 
+  it("a legacy `active`-spelled row past its end date is not overdue (exact parity with the dashboard widget and the pickup worklist)", async () => {
+    const vehicle = await createFixtureVehicle();
+    // Written directly through the db, bypassing the routes' status
+    // normalisation (BUG-129: `active` was the pre-enum spelling for
+    // picked-up). `getAllOverdueReservations` and `buildPickupWorklist`
+    // match the literal status `picked_up` only, so this row must not show
+    // up or block anywhere either — even though it is well past its end date.
+    const legacy = await createFixtureReservation({
+      customerId, vehicleId: vehicle.id, status: "active", startDate: day(-10), endDate: day(-6),
+    });
+
+    const list = await admin.get(`/api/reservations/overdue/${vehicle.id}`);
+    expect(list.status).toBe(200);
+    expect((list.body as Array<{ id: number }>).map((r) => r.id)).not.toContain(legacy.id);
+
+    const future = await admin.post("/api/reservations").send({
+      customerId, vehicleId: vehicle.id, startDate: day(30), endDate: day(32), type: "standard",
+    });
+    expect(future.status).toBe(201);
+  });
+
+  it("a maintenance block past its end date is not overdue, even with status picked_up", async () => {
+    const vehicle = await createFixtureVehicle();
+    const block = await createFixtureReservation({
+      customerId: null, vehicleId: vehicle.id, type: "maintenance_block", status: "picked_up",
+      startDate: day(-10), endDate: day(-6),
+    });
+
+    const list = await admin.get(`/api/reservations/overdue/${vehicle.id}`);
+    expect(list.status).toBe(200);
+    expect((list.body as Array<{ id: number }>).map((r) => r.id)).not.toContain(block.id);
+
+    const future = await admin.post("/api/reservations").send({
+      customerId, vehicleId: vehicle.id, startDate: day(30), endDate: day(32), type: "standard",
+    });
+    expect(future.status).toBe(201);
+  });
+
   it("a running booked reservation still makes the vehicle rented, a finished one does not (B-32 unchanged)", async () => {
     const runningVehicle = await createFixtureVehicle();
     await admin.post("/api/reservations").send({
