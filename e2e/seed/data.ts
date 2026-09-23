@@ -44,6 +44,39 @@ interface SeedCustomer {
   readonly phone: string;
 }
 
+// B-34 — one real PDF template so a pickup actually produces a contract
+// (`selectContractTemplate`, server/services/pdf-template-selection.ts, uses
+// this as "the" default: exactly one template, marked default or not, is
+// used without asking). Fields bound to sources the renderer already
+// recognises (server/utils/pdf-generator.ts CONTRACT_FIELD_SOURCES) and to a
+// real page-1 position (only page 1 is ever drawn, createContractPage) — no
+// background, so the bundled default page is used underneath.
+interface SeedPdfTemplateField {
+  readonly name: string;
+  readonly source: string;
+  readonly x: number;
+  readonly y: number;
+  readonly fontSize?: number;
+}
+
+interface SeedPdfTemplate {
+  readonly name: string;
+  readonly isDefault: boolean;
+  readonly fields: readonly SeedPdfTemplateField[];
+}
+
+const pdfTemplates: SeedPdfTemplate[] = [
+  {
+    name: "E2E contract",
+    isDefault: true,
+    fields: [
+      { name: "Klantnaam", source: "customerName", x: 60, y: 100, fontSize: 12 },
+      { name: "Kenteken", source: "licensePlate", x: 60, y: 130, fontSize: 12 },
+      { name: "Startdatum", source: "startDate", x: 60, y: 160, fontSize: 12 },
+    ],
+  },
+];
+
 interface SeedReservation {
   readonly label: string;
   // Indexes into SEED.vehicles / SEED.customers.
@@ -128,4 +161,5 @@ export const SEED: {
   readonly vehicles: readonly SeedVehicle[];
   readonly customers: readonly SeedCustomer[];
   readonly reservations: readonly SeedReservation[];
-} = deepFreeze({ vehicles, customers, reservations });
+  readonly pdfTemplates: readonly SeedPdfTemplate[];
+} = deepFreeze({ vehicles, customers, reservations, pdfTemplates });

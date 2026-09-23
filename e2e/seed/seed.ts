@@ -20,7 +20,7 @@ export async function runSeed(): Promise<void> {
     active: true,
   })));
 
-  const { vehicles, customers, reservations, expenses } = await import("../../shared/schema");
+  const { vehicles, customers, reservations, expenses, pdfTemplates } = await import("../../shared/schema");
   const { SEED, officeDay } = await import("./data");
   const vehicleRows = await db.insert(vehicles).values(SEED.vehicles.map((v) => ({ ...v }))).returning({ id: vehicles.id });
   const customerRows = await db.insert(customers).values(SEED.customers.map((c) => ({ ...c }))).returning({ id: customers.id });
@@ -31,6 +31,11 @@ export async function runSeed(): Promise<void> {
     notes: `e2e:${label}`,
     type: "standard",
   })));
+
+  // B-34 — a real, usable contract template (name, isDefault, a few text
+  // fields; no background), so a pickup in the layer-a/layer-b suite produces
+  // an actual contract instead of always hitting NO_TEMPLATE.
+  await db.insert(pdfTemplates).values(SEED.pdfTemplates.map((t) => ({ ...t })));
 
   // A raw insert never runs deriveVehicleAvailability (server/services/lifecycle.ts),
   // so vehicles.availabilityStatus would otherwise still say "available" for

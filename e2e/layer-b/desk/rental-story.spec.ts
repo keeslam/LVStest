@@ -259,9 +259,10 @@ test.describe("Balie: van telefoontje tot ingeleverde bus", () => {
 
       // A handover dialog appears automatically, offering to print or e-mail
       // the contract — staff did not ask for it (kind: a confirmation added
-      // nothing). Here it reports failure: this database has no contract PDF
-      // template configured (a fresh install has none, same story as the
-      // vehicle diagram templates above), so "Contract klaar" never fires.
+      // nothing). B-34 (task 6): the E2E seed now carries one real, default
+      // PDF template ("E2E contract", e2e/seed/data.ts), so — unlike a fresh
+      // install, which has none — this pickup actually produces a contract
+      // and "Contract klaar" fires, offering Afdrukken/Mail naar klant.
       //
       // FAULT (not a guard violation, a layout bug this test tripped over
       // directly): the reservation view dialog underneath reopens with fresh
@@ -276,7 +277,11 @@ test.describe("Balie: van telefoontje tot ingeleverde bus", () => {
       // "Schadecheck aanmaken" button, so the story continues from there.
       const handover = page.getByTestId("dialog-handover-result");
       await expect(handover).toBeVisible();
-      await expect(handover.getByText("Contract kon niet gemaakt worden")).toBeVisible();
+      await expect(handover.getByText("Contract klaar")).toBeVisible();
+      // Only asserted, never clicked (task 6 brief): openDocumentForPrint()
+      // opens a real top-level window, which this story has no reason to
+      // follow — proving the button is there is the point, not printing.
+      await expect(handover.getByTestId("button-handover-print")).toBeVisible();
       story.finish();
     });
 

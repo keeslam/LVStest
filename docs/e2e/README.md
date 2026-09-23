@@ -72,6 +72,16 @@ een rij annuleren). Een andere test die op dat moment tegelijk in dezelfde datab
 (`lvs_e2e`) rijen aanmaakt of annuleert, is dan niet meer te onderscheiden van wat deze
 test zelf doet — geen eigen database nodig, wel een eigen plek ná de rest.
 
+**B-34 (taak 6): een tweede staarttest, `e2e/layer-b-tail/contract/template-errors.spec.ts`.**
+De seed zet voortaan één werkend PDF-sjabloon klaar ("E2E contract", standaard, een paar
+echte velden), zodat een ophaling ergens in de rest van de suite ook echt een contract
+oplevert in plaats van steevast `NO_TEMPLATE`. Deze test bewijst de kéérzijde daarvan: een
+tweede sjabloon zonder velden, als standaard ingesteld, moet een nette Nederlandse tekst
+geven — vertaald op de stabiele foutcode (`TEMPLATE_WITHOUT_FIELDS`), nooit op de Engelse
+servertekst — in plaats van een leeg contract (BUG-028). Ook hier `mode: "serial"`: de test
+verandert tijdelijk wélk sjabloon standaard is, wat een `lvs_e2e`-brede instelling is, en
+zet die aan het eind weer terug.
+
 Voorwaarden:
 
 - PostgreSQL moet lokaal draaien (localhost, poort 5432, gebruiker `postgres`).
@@ -125,7 +135,9 @@ andere machine sneller wil proberen, kan `E2E_WORKERS` op een ander getal zetten
   migratie eroverheen — dezelfde weg die een nieuwe productiedatabase aflegt. Zo valt een
   ontbrekende kolom op vóór een medewerker hem tegenkomt.
 - Daarna wordt er vaste testdata ingezet: tien medewerkers (één per profiel), acht
-  voertuigen, zes klanten en reserveringen in elke status.
+  voertuigen, zes klanten, reserveringen in elke status, en (sinds B-34, taak 6) één PDF-
+  sjabloon voor het contract ("E2E contract", standaard, drie velden: klantnaam, kenteken,
+  startdatum — geen achtergrond).
 - De applicatie start op **poort 5010**, apart van alles wat er verder draait. De
   kentekenopzoeking praat met een klein lokaal antwoordapparaat op poort 5011.
 - **Er gaat niets naar buiten.** Geen e-mail, geen echte RDW-bevraging, geen
