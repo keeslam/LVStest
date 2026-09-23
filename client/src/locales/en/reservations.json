@@ -597,6 +597,16 @@
       "failedDescription": "Try again, or reload the page."
     }
   },
+  "notCollectedDialog": {
+    "title": "Never-collected bookings",
+    "description": "These bookings started a month or more ago and were never picked up. They block nothing, but are worth a look.",
+    "empty": "No never-collected bookings.",
+    "periodLabel": "{{start}} to {{end}}",
+    "daysSinceStart_one": "started {{count}} day ago",
+    "daysSinceStart_other": "started {{count}} days ago",
+    "openButton": "View",
+    "cancelButton": "Cancel"
+  },
   "statusChangeDialog": {
     "title": "Revert Reservation to Booked",
     "description": "This will undo the pickup and put the reservation back to the Booked state.",
@@ -975,6 +985,7 @@
     "listViewButton": "List View",
     "viewCompletedButton": "View Completed ({{count}})",
     "overdueButton": "{{count}} Overdue",
+    "notCollectedButton": "{{count}} Never Collected",
     "administrationButton": "Administration",
     "scheduleTitle": "Reservation Schedule",
     "scheduleDescription": "View and manage vehicle reservations",

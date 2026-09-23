@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ReservationForm } from "@/components/reservations/reservation-form";
 import { ReservationListDialog } from "@/components/reservations/reservation-list-dialog";
+import { NotCollectedDialog, NOT_COLLECTED_QUERY_KEY } from "@/components/reservations/not-collected-dialog";
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
 import { StatusChangeDialog } from "@/components/reservations/status-change-dialog";
 import { EditContractNumberDialog } from "@/components/reservations/edit-contract-number-dialog";
@@ -700,6 +701,18 @@ export default function ReservationCalendarPage() {
     queryKey: ['/api/reservations/overdue'],
   });
 
+  // besluiten B-32 aanvulling — never-collected bookings a month old
+  // (server/database-storage.ts getNotCollectedReservations). Same query key
+  // NotCollectedDialog itself reads, so this and the dialog share one cached
+  // request; this copy only drives the toolbar count and the auto-open check
+  // below, never rendered directly.
+  const canViewNotCollected = useHasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS);
+  const { data: notCollectedReservations = [], isLoading: notCollectedLoading } = useQuery<Reservation[]>({
+    queryKey: NOT_COLLECTED_QUERY_KEY,
+    enabled: canViewNotCollected,
+  });
+  const [notCollectedDialogOpen, setNotCollectedDialogOpen] = useState(false);
+
   // Fetch documents for selected reservation
   const { data: reservationDocuments, refetch: refetchDocuments } = useQuery<Document[]>({
     queryKey: [`/api/documents/reservation/${selectedReservation?.id}`],
@@ -823,7 +836,26 @@ export default function ReservationCalendarPage() {
       }
     }
   }, [reservations, viewDialogOpen]);
-  
+
+  // besluiten B-32 aanvulling — the not-collected popup opens itself the
+  // first time this browser session sees a non-empty list, then only via
+  // `button-view-not-collected`. Must not fire while the query is still
+  // loading (an empty array mid-fetch would otherwise look like "no rows")
+  // or once it has genuinely settled empty. `sessionStorage` (not state)
+  // is what makes "once per session" survive a full page reload; wrapped in
+  // try/catch since a private window or blocked site data must not break
+  // the calendar over a courtesy popup.
+  useEffect(() => {
+    if (notCollectedLoading || notCollectedReservations.length === 0) return;
+    try {
+      if (sessionStorage.getItem('notCollectedDialogShown')) return;
+      sessionStorage.setItem('notCollectedDialogShown', '1');
+    } catch {
+      return;
+    }
+    setNotCollectedDialogOpen(true);
+  }, [notCollectedReservations, notCollectedLoading]);
+
   // Memoized maintenance map for O(1) lookups with pre-normalized dates (performance optimization)
   const maintenanceByVehicle = useMemo(() => {
     type NormalizedMaintenance = Reservation & { _normalizedStart: Date; _normalizedEnd: Date };
@@ -1074,6 +1106,12 @@ export default function ReservationCalendarPage() {
             <Button variant="destructive" onClick={() => setOverdueDialogOpen(true)} data-testid="button-view-overdue">
               <AlertTriangle className="h-4 w-4 mr-2" />
               {t('calendarPage.overdueButton', { count: overdueReservations.length })}
+            </Button>
+          )}
+          {notCollectedReservations.length > 0 && (
+            <Button variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50" onClick={() => setNotCollectedDialogOpen(true)} data-testid="button-view-not-collected">
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              {t('calendarPage.notCollectedButton', { count: notCollectedReservations.length })}
             </Button>
           )}
           {/* Task 4: the Administration dialog is a read-only searchable/sortable
@@ -3524,6 +3562,15 @@ export default function ReservationCalendarPage() {
           </div>
         </DialogContent>
       </Dialog>
+      {/* besluiten B-32 aanvulling — never-collected bookings a month old */}
+      <NotCollectedDialog
+        open={notCollectedDialogOpen}
+        onOpenChange={setNotCollectedDialogOpen}
+        onViewReservation={(reservation) => {
+          setSelectedReservation(reservation);
+          setViewDialogOpen(true);
+        }}
+      />
       {/* Administration Dialog for External Invoicing */}
       <Dialog open={adminDialogOpen} onOpenChange={setAdminDialogOpen}>
         <DialogContent className="w-[95vw] max-w-[95vw] max-h-[90vh]">

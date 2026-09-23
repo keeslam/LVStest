@@ -64,6 +64,19 @@ const PICKED_UP_STATUSES: string[] = [
     .filter(([, canonical]) => canonical === "picked_up")
     .map(([stored]) => stored),
 ];
+
+/**
+ * B-32 aanvulling (besluiten.md, 2026-09-23) — every stored spelling that
+ * means "booked, never picked up" (`confirmed`, `pending`, `scheduled`),
+ * derived the same way as `PICKED_UP_STATUSES` above.
+ * `getNotCollectedReservations` below is the only reader of this list.
+ */
+const BOOKED_STATUSES: string[] = [
+  "booked",
+  ...Object.entries(LEGACY_RESERVATION_STATUS_ALIASES)
+    .filter(([, canonical]) => canonical === "booked")
+    .map(([stored]) => stored),
+];
 import {
   overlapWhere,
   partitionOverlaps,
@@ -113,7 +126,7 @@ class RestoreAbort extends Error {
 }
 import { addMonths, addDays, parseISO, isBefore, isAfter, isEqual } from "date-fns";
 import { db } from "./db";
-import { eq, ne, and, gte, lte, desc, sql, inArray, not, or, ilike, isNull, isNotNull, getTableColumns, type SQL } from "drizzle-orm";
+import { eq, ne, and, gte, lte, asc, desc, sql, inArray, not, or, ilike, isNull, isNotNull, getTableColumns, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { IStorage, type CompleteMaintenanceResult } from "./storage";
 import { formatVehicleBarcode, parseBarcode, normalizeScannedCode } from "../shared/barcode";
@@ -2373,6 +2386,45 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(desc(reservations.endDate));
+
+    return result.map(row => ({
+      ...row.reservation,
+      vehicle: row.vehicle ?? undefined,
+      customer: row.customer ?? undefined,
+    }));
+  }
+
+  // Never-collected bookings a month old (besluiten B-32 aanvulling,
+  // 2026-09-23): a `booked` reservation (nobody ever picked it up) whose
+  // start date is 30 days or more in the past. Shown as a popup in the
+  // reservation calendar so it does not sit forgotten forever — unlike the
+  // booking gate above, this never blocks anything: B-32's base decision is
+  // that a never-collected booking stays "booked". Excludes maintenance
+  // blocks and soft-deleted rows, same as `getOverdueReservationsByVehicle`.
+  async getNotCollectedReservations(): Promise<Reservation[]> {
+    const today = isoToday();
+    const cutoff = new Date(`${today}T00:00:00Z`);
+    cutoff.setUTCDate(cutoff.getUTCDate() - 30);
+    const cutoffDateStr = cutoff.toISOString().split('T')[0];
+
+    const result = await db
+      .select({
+        reservation: reservations,
+        vehicle: vehicles,
+        customer: customers,
+      })
+      .from(reservations)
+      .leftJoin(vehicles, eq(reservations.vehicleId, vehicles.id))
+      .leftJoin(customers, eq(reservations.customerId, customers.id))
+      .where(
+        and(
+          isNull(reservations.deletedAt),
+          ne(reservations.type, 'maintenance_block'),
+          inArray(reservations.status, BOOKED_STATUSES),
+          sql`${reservations.startDate} <= ${cutoffDateStr}`
+        )
+      )
+      .orderBy(asc(reservations.startDate));
 
     return result.map(row => ({
       ...row.reservation,

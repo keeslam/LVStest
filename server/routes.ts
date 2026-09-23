@@ -2711,6 +2711,25 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  // Never-collected bookings a month old (besluiten B-32 aanvulling,
+  // 2026-09-23): a `booked` reservation nobody ever picked up, started 30+
+  // days ago. Read by the reservation calendar's popup dialog. Unlike the
+  // two endpoints above, this never blocks a new booking — it is a notice,
+  // not a gate.
+  app.get("/api/reservations/not-collected", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    try {
+      const notCollected = await storage.getNotCollectedReservations();
+      res.json(notCollected);
+    } catch (error) {
+      console.error("Error fetching not-collected reservations:", error);
+      res.status(500).json({ message: "Failed to fetch not-collected reservations" });
+    }
+  });
+
   // Get reservations by customer
   app.get("/api/reservations/customer/:customerId", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req, res) => {
     const customerId = parseInt(req.params.customerId);

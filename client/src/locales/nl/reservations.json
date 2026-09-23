@@ -597,6 +597,16 @@
       "failedDescription": "Probeer het opnieuw, of herlaad de pagina."
     }
   },
+  "notCollectedDialog": {
+    "title": "Niet opgehaalde reserveringen",
+    "description": "Deze boekingen zijn een maand of langer geleden gestart en zijn nooit opgehaald. Ze blokkeren niets, maar verdienen een blik.",
+    "empty": "Geen niet opgehaalde reserveringen.",
+    "periodLabel": "{{start}} t/m {{end}}",
+    "daysSinceStart_one": "{{count}} dag geleden gestart",
+    "daysSinceStart_other": "{{count}} dagen geleden gestart",
+    "openButton": "Bekijken",
+    "cancelButton": "Annuleren"
+  },
   "statusChangeDialog": {
     "title": "Reservering terugzetten naar geboekt",
     "description": "Dit maakt het ophalen ongedaan en zet de reservering terug naar de status Geboekt.",
@@ -975,6 +985,7 @@
     "listViewButton": "Lijstweergave",
     "viewCompletedButton": "Voltooid bekijken ({{count}})",
     "overdueButton": "{{count}} achterstallig",
+    "notCollectedButton": "{{count}} niet opgehaald",
     "administrationButton": "Administratie",
     "scheduleTitle": "Reserveringsschema",
     "scheduleDescription": "Bekijk en beheer voertuigreserveringen",
