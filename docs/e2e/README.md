@@ -57,10 +57,20 @@ recht erin — in plaats van, zoals voorheen, die combinatie gewoon over te slaa
 
 | Commando | Wat het doet |
 |---|---|
-| `npm run e2e` | alles: laag A, laag B en daarna het dekkingsoverzicht van de vensters |
+| `npm run e2e` | alles: laag A, laag B, de staart en daarna het dekkingsoverzicht van de vensters |
 | `npm run e2e:a` | alleen laag A (schermen en vensters per rol) |
 | `npm run e2e:b` | alleen laag B (de werkstromen) |
+| `npm run e2e:tail` | alleen de staart (`layer-b-tail`) |
 | `npm run e2e:coverage` | alleen het dekkingsoverzicht van de vensters |
+
+**De staart (`layer-b-tail`, sinds B-32's aanvulling).** Eén Playwright-project dat pas
+draait nadat laag A én laag B allebei klaar zijn (`dependencies: ["layer-a", "layer-b"]`),
+en met `workers: 1` — nooit tegelijk met een andere test. Reden: een test hier laat het
+"niet opgehaalde reserveringen"-venster (`e2e/layer-b-tail/reservations/past-reservation.spec.ts`)
+een tijd lang open terwijl er meerdere stappen achter elkaar in gebeuren (opnieuw openen,
+een rij annuleren). Een andere test die op dat moment tegelijk in dezelfde database
+(`lvs_e2e`) rijen aanmaakt of annuleert, is dan niet meer te onderscheiden van wat deze
+test zelf doet — geen eigen database nodig, wel een eigen plek ná de rest.
 
 Voorwaarden:
 

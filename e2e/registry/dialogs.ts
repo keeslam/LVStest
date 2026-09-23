@@ -92,6 +92,22 @@ export const DIALOGS: DialogEntry[] = [
   { page: "/reservations", opener: "button-list-view", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], source: "client/src/components/reservations/reservation-list-dialog.tsx", name: "reserveringen als lijst" },
   { page: "/reservations", opener: "button-view-completed", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], source: "client/src/pages/reservations/calendar.tsx", name: "afgeronde verhuringen" },
   { page: "/reservations", opener: "button-administration", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], source: "client/src/pages/reservations/calendar.tsx", name: "administratie" },
+  // besluiten B-32 aanvulling (2026-09-23) — like button-view-overdue right
+  // next to it, this opener only renders once the list it counts is
+  // non-empty (calendar.tsx), which is component state this suite's own
+  // seed never produces (no seeded row is a never-collected booking 30+
+  // days old). allowedPathNeedsState skips the allowed-branch click for a
+  // role that already holds the permission; the DENIED branch (a role
+  // without either right cannot even open /reservations) never applied to
+  // this opener either, same as button-view-completed/button-administration
+  // above. The actual open/auto-open/cancel behaviour is proven by
+  // e2e/layer-b-tail/reservations/past-reservation.spec.ts, which seeds the
+  // row itself.
+  {
+    page: "/reservations", opener: "button-view-not-collected", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS],
+    source: "client/src/components/reservations/not-collected-dialog.tsx", name: "niet opgehaalde reserveringen",
+    allowedPathNeedsState: "needs a booked reservation started 30+ days ago that was never picked up (none seeded) before the toolbar button leaves its own hidden state",
+  },
   // Task 4: wrapped in RequiresPermission anyOf={[MANAGE_RESERVATIONS]},
   // narrower than the page's own gate, matching POST /api/reservations
   // (routes.ts:2966, MANAGE_RESERVATIONS).

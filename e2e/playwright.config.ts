@@ -41,5 +41,14 @@ export default defineConfig({
     { name: "setup", testMatch: /setup[\\/]seed\.setup\.ts/, dependencies: ["auth"] },
     { name: "layer-a", testMatch: /layer-a[\\/].*\.spec\.ts/, dependencies: ["setup"], fullyParallel: true },
     { name: "layer-b", testMatch: /layer-b[\\/].*\.spec\.ts/, dependencies: ["setup"] },
+    // besluiten B-32 aanvulling (2026-09-23) — the tail spec opens the
+    // not-collected popup and leaves it open across several of its own
+    // steps (reopening it, cancelling a row through it); a fullyParallel or
+    // even a merely-concurrent run of layer-a/layer-b against the SAME
+    // `lvs_e2e` database could seed or cancel a different spec's rows while
+    // this modal is up, or vice versa. Running last, alone (workers: 1),
+    // after both other layers have finished with the database, avoids that
+    // without needing a database of its own.
+    { name: "layer-b-tail", testMatch: /layer-b-tail[\\/].*\.spec\.ts/, dependencies: ["layer-a", "layer-b"], workers: 1 },
   ],
 });
