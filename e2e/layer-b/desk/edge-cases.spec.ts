@@ -6,7 +6,7 @@
  * own measured count (there is no "approved flow" for an edge case to stay
  * under — the point is reproducing it, not shrinking it).
  *
- * Two of these deliberately provoke a non-2xx response. Chrome logs every
+ * Several of these deliberately provoke a non-2xx response. Chrome logs every
  * response >= 400 as its own console error regardless of how gracefully the
  * app handles it (see guards.ts); `consumeExpected` removes exactly that one
  * expected entry (and, where the app also raises a destructive toast for it,
@@ -15,6 +15,8 @@
 import { test, expect, settle, type Violation } from "../../support/guards";
 import { authFile } from "../../support/roles";
 import { Story } from "../../support/steps";
+import { request as newApiRequestContext } from "@playwright/test";
+import { E2E } from "../../support/env";
 
 // Taller than Playwright's 720px default: the vehicle popover
 // (vehicle-selector.tsx, opened by the "dubbele boeking" test below) has
@@ -252,6 +254,100 @@ test("net na middernacht: de ophaaldatum volgt de kantoortijdzone, niet UTC", as
 
   // Leave nothing changed.
   await story.click(pickupDialog.getByTestId("button-cancel-pickup"), "Annuleren");
+  story.finish();
+
+  expect(health.violations).toEqual([]);
+});
+
+test("debiteurnummer al in gebruik (B-35): veldfout onder het invoerveld, ook tegen de prullenbak", async ({ page, health }) => {
+  const story = new Story("Debiteurnummer-conflict", 16);
+  await page.goto("/");
+  await settle(page);
+  await story.click(page.getByRole("link", { name: "Klanten" }), "Klanten");
+  await settle(page);
+
+  const dialog = page.getByRole("dialog", { name: "Nieuwe klant toevoegen" });
+
+  // 1. First customer takes "E2E-DEB-1".
+  await story.click(page.getByTestId("button-add-customer"), "Klant toevoegen");
+  await expect(dialog).toBeVisible();
+  await story.fill(dialog.getByLabel("Volledige naam"), "Debiteur Klant Een", "Volledige naam");
+  await story.fill(dialog.getByTestId("input-debtor-number"), "E2E-DEB-1", "Debiteurnummer");
+  await story.click(dialog.getByRole("button", { name: "Klant toevoegen" }), "Klant toevoegen (opslaan)");
+  await settle(page);
+  await expect(page.getByText("Debiteur Klant Een")).toBeVisible();
+
+  // 2. A second customer tries the same number, different case — refused,
+  // the dialog stays open, the field names who already holds it.
+  await story.click(page.getByTestId("button-add-customer"), "Klant toevoegen");
+  await expect(dialog).toBeVisible();
+  await story.fill(dialog.getByLabel("Volledige naam"), "Debiteur Klant Twee", "Volledige naam");
+  await story.fill(dialog.getByTestId("input-debtor-number"), "e2e-deb-1", "Debiteurnummer (kleine letters)");
+  await story.click(dialog.getByRole("button", { name: "Klant toevoegen" }), "Klant toevoegen (opslaan)");
+  await settle(page);
+
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("Dit debiteurnummer is al in gebruik bij klant Debiteur Klant Een.")).toBeVisible();
+  await expect(page.getByText("Kon de gegevens niet laden")).toHaveCount(0);
+  consumeExpected(health, "console", /responded with a status of 409/);
+  consumeExpected(health, "toast", /Kon klant niet aanmaken/);
+
+  // Corrected to a free number — saved, dialog closes.
+  await story.fill(dialog.getByTestId("input-debtor-number"), "E2E-DEB-2", "Debiteurnummer (gecorrigeerd)");
+  await story.click(dialog.getByRole("button", { name: "Klant toevoegen" }), "Klant toevoegen (opslaan)");
+  await settle(page);
+  await expect(page.getByText("Debiteur Klant Twee")).toBeVisible();
+
+  // Not a Story action: staff never does this — an admin deletes the
+  // customer from elsewhere (recycle bin), through the same API the delete
+  // dialog itself calls (DELETE /api/customers/:id), independently of the
+  // desk role this test otherwise uses throughout.
+  const adminApi = await newApiRequestContext.newContext({ baseURL: E2E.baseUrl, storageState: authFile("admin") });
+  let deletedCustomerId: number;
+  try {
+    const customers = await (await adminApi.get("/api/customers")).json();
+    const target = customers.find((c: { debtorNumber?: string | null }) => c.debtorNumber === "E2E-DEB-2");
+    expect(target, 'customer holding "E2E-DEB-2"').toBeTruthy();
+    deletedCustomerId = target.id;
+    // DELETE is a mutation: server/middleware/security/csrf.ts demands
+    // X-CSRF-Token on every non-GET request. An APIRequestContext carries the
+    // cookies from `storageState` but, unlike apiRequest()'s getCsrfToken()
+    // (client/src/lib/queryClient.ts) inside the app itself, never reads one
+    // back into a header on its own — read it from the same storage state.
+    const { cookies } = await adminApi.storageState();
+    const csrfToken = cookies.find((c) => c.name === "XSRF-TOKEN")?.value;
+    expect(csrfToken, "XSRF-TOKEN cookie in the admin storage state").toBeTruthy();
+    const deleteResponse = await adminApi.delete(`/api/customers/${deletedCustomerId}`, {
+      headers: { "X-CSRF-Token": csrfToken! },
+    });
+    expect(deleteResponse.ok()).toBeTruthy();
+  } finally {
+    await adminApi.dispose();
+  }
+
+  // 3. A third customer tries the now-deleted number — the bin, not the
+  // (now empty) live table, is what refuses it.
+  await story.click(page.getByTestId("button-add-customer"), "Klant toevoegen");
+  await expect(dialog).toBeVisible();
+  await story.fill(dialog.getByLabel("Volledige naam"), "Debiteur Klant Drie", "Volledige naam");
+  await story.fill(dialog.getByTestId("input-debtor-number"), "E2E-DEB-2", "Debiteurnummer");
+  await story.click(dialog.getByRole("button", { name: "Klant toevoegen" }), "Klant toevoegen (opslaan)");
+  await settle(page);
+
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByText(
+      "Dit debiteurnummer hoort bij klant Debiteur Klant Twee in de prullenbak. Zet die klant terug of verwijder hem definitief uit de prullenbak.",
+    ),
+  ).toBeVisible();
+  consumeExpected(health, "console", /responded with a status of 409/);
+  consumeExpected(health, "toast", /Kon klant niet aanmaken/);
+
+  // Do not leave a modal open (constraints.md / task-4-brief.md): the
+  // dialog's own close control, not "Annuleren" (customer-form.tsx's cancel
+  // button only resets the embedded form here, it does not close the dialog).
+  await story.click(dialog.getByRole("button", { name: "Sluiten" }), "dialoog sluiten");
+  await expect(dialog).toBeHidden();
   story.finish();
 
   expect(health.violations).toEqual([]);
