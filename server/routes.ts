@@ -2691,10 +2691,12 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
-  // Get overdue reservations for a vehicle (ended 3+ days ago, not completed)
+  // Get overdue reservations for a vehicle: a picked-up rental past its end
+  // date (besluiten B-32). `?days=` is an optional extra grace period on top
+  // of that definition, not a replacement for it — see database-storage.ts.
   app.get("/api/reservations/overdue/:vehicleId", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req, res) => {
     const vehicleId = parseInt(req.params.vehicleId);
-    const daysOverdue = parseInt(req.query.days as string) || 3;
+    const daysOverdue = parseInt(req.query.days as string) || 0;
     
     if (isNaN(vehicleId)) {
       return res.status(400).json({ message: "Invalid vehicle ID" });
@@ -3158,7 +3160,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         // predicate inside the same transaction as the INSERT, behind the
         // vehicle's advisory lock, and throws a BookingConflictError (409).
 
-        // Check for overdue reservations on this vehicle (ended 3+ days ago, not completed)
+        // Check for overdue reservations on this vehicle: a picked-up rental
+        // still past its end date (besluiten B-32). A booked-but-never-
+        // collected row does not block a new booking.
         const overdueReservations = await storage.getOverdueReservationsByVehicle(reservationData.vehicleId!);
         if (overdueReservations.length > 0) {
           return res.status(409).json({

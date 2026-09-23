@@ -501,8 +501,8 @@
     },
     "overdueDialog": {
       "title": "Overdue Reservations Found",
-      "description_one": "This vehicle has {{count}} reservation that ended more than 3 days ago but hasn't been completed. Please resolve this before creating a new reservation.",
-      "description_other": "This vehicle has {{count}} reservations that ended more than 3 days ago but haven't been completed. Please resolve these before creating a new reservation.",
+      "description_one": "This vehicle has {{count}} rental that is overdue and hasn't been returned yet. Please resolve this first before creating a new reservation.",
+      "description_other": "This vehicle has {{count}} rentals that are overdue and haven't been returned yet. Please resolve these first before creating a new reservation.",
       "viewDetailsButton": "View Details",
       "markCompletedButton": "Mark Completed",
       "processingButton": "Processing...",

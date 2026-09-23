@@ -501,8 +501,8 @@
     },
     "overdueDialog": {
       "title": "Achterstallige reserveringen gevonden",
-      "description_one": "Dit voertuig heeft {{count}} reservering die meer dan 3 dagen geleden is geëindigd maar nog niet is voltooid. Los deze op voordat je een nieuwe reservering aanmaakt.",
-      "description_other": "Dit voertuig heeft {{count}} reserveringen die meer dan 3 dagen geleden zijn geëindigd maar nog niet zijn voltooid. Los deze op voordat je een nieuwe reservering aanmaakt.",
+      "description_one": "Dit voertuig heeft {{count}} verhuring die te laat terug is en nog niet is ingenomen. Los deze eerst op voordat je een nieuwe reservering aanmaakt.",
+      "description_other": "Dit voertuig heeft {{count}} verhuringen die te laat terug zijn en nog niet zijn ingenomen. Los deze eerst op voordat je een nieuwe reservering aanmaakt.",
       "viewDetailsButton": "Details bekijken",
       "markCompletedButton": "Markeer als voltooid",
       "processingButton": "Verwerken...",

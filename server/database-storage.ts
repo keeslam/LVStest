@@ -43,11 +43,27 @@ import {
   assertReservationStatusValue,
   normalizeReservationStatus,
   CLOSED_RESERVATION_STATUSES,
+  LEGACY_RESERVATION_STATUS_ALIASES,
   selectMaintenanceBlocksToClose,
   type AvailabilityReservation,
   type VehicleAvailability,
   type HandoverOverride,
 } from "./services/lifecycle";
+
+/**
+ * B-32 — every stored spelling that means "picked up" (BUG-129: `active` was
+ * written by the pre-enum `createMaintenanceBlock`), derived from lifecycle.ts's
+ * alias map rather than retyped here — the same pattern `today-board.ts`'s
+ * `storedSpellingsOf` uses. `getOverdueReservationsByVehicle` below is the
+ * booking gate's one source of "is the customer still holding this vehicle",
+ * so a row written under the old spelling must count too.
+ */
+const PICKED_UP_STATUSES: string[] = [
+  "picked_up",
+  ...Object.entries(LEGACY_RESERVATION_STATUS_ALIASES)
+    .filter(([, canonical]) => canonical === "picked_up")
+    .map(([stored]) => stored),
+];
 import {
   overlapWhere,
   partitionOverlaps,
@@ -2319,13 +2335,23 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  // Get overdue reservations for a vehicle (end date is 3+ days in the past, status NOT completed)
-  // Excludes open-ended rentals (null or empty endDate) since they have no defined return date
-  async getOverdueReservationsByVehicle(vehicleId: number, daysOverdue: number = 3): Promise<Reservation[]> {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysOverdue);
-    const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
-    
+  // Get overdue reservations for a vehicle: a picked-up rental whose end date
+  // is in the past (besluiten B-32 — the same definition as
+  // `getAllOverdueReservations`, the dashboard widget and the pickup
+  // worklist). A `booked` row that was never picked up does NOT count: the
+  // customer never had the car, so it cannot still be "with the customer".
+  // Excludes maintenance blocks (BUG-129 wrote some with the legacy status
+  // `active`, which normalises to `picked_up` and would otherwise look like
+  // an overdue rental) and open-ended rentals (null/empty endDate), which
+  // have no defined return date.
+  async getOverdueReservationsByVehicle(vehicleId: number, daysOverdue: number = 0): Promise<Reservation[]> {
+    // Office time (lifecycle.ts), not `new Date()`: the cutoff must land on
+    // the same calendar day the rest of the app calls "today".
+    const today = isoToday();
+    const cutoff = new Date(`${today}T00:00:00Z`);
+    cutoff.setUTCDate(cutoff.getUTCDate() - daysOverdue);
+    const cutoffDateStr = cutoff.toISOString().split('T')[0];
+
     const result = await db
       .select({
         reservation: reservations,
@@ -2339,18 +2365,15 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(reservations.vehicleId, vehicleId),
           isNull(reservations.deletedAt),
+          ne(reservations.type, 'maintenance_block'),
+          inArray(reservations.status, PICKED_UP_STATUSES),
           sql`${reservations.endDate} IS NOT NULL`,
           sql`${reservations.endDate} != ''`,
-          sql`${reservations.endDate} < ${cutoffDateStr}`,
-          // BUG-113 / besluiten B-02: a rental that went through the return
-          // flow is finished. Counting `returned` as "the customer still has
-          // the car" is what made every normal return block its vehicle on
-          // day four, with a hard 409 on the booking form and the portal.
-          sql`${reservations.status} NOT IN ('completed','cancelled','returned')`
+          sql`${reservations.endDate} < ${cutoffDateStr}`
         )
       )
       .orderBy(desc(reservations.endDate));
-    
+
     return result.map(row => ({
       ...row.reservation,
       vehicle: row.vehicle ?? undefined,
