@@ -89,6 +89,34 @@ describe("NotCollectedDialog — B-32 aanvulling", () => {
     expect(row).toHaveTextContent(/dag(en)? geleden gestart/);
   });
 
+  it("counts days since start on the office calendar (Europe/Amsterdam), not the browser's own zone (task-2-review.md Minor)", async () => {
+    const originalTz = process.env.TZ;
+    vi.useFakeTimers({ toFake: ["Date"] });
+    // 22:30 UTC on 20 Sep 2026 is already 00:30 CEST on 21 Sep in Amsterdam
+    // (summer time, UTC+2) — but still 18:30 on 20 Sep in New York (UTC-4).
+    // A browser sitting in New York must still agree with the office that
+    // 21 Aug -> 21 Sep is 31 days, not the 30 its own local "today" (20 Sep)
+    // would give.
+    vi.setSystemTime(new Date("2026-09-20T22:30:00Z"));
+    process.env.TZ = "America/New_York";
+    try {
+      setUser(UserRole.USER, [UserPermission.VIEW_RESERVATIONS]);
+      fetchMock = vi.fn(async (input: any) => {
+        if (urlOf(input).includes("/api/reservations/not-collected")) {
+          return json([{ ...ROW, id: 777, startDate: "2026-08-21" }]);
+        }
+        return json([]);
+      });
+      vi.stubGlobal("fetch", fetchMock);
+      renderDialog();
+      const row = await screen.findByTestId("not-collected-reservation-777");
+      expect(row).toHaveTextContent("31 dagen geleden gestart");
+    } finally {
+      vi.useRealTimers();
+      process.env.TZ = originalTz;
+    }
+  });
+
   it("shows the empty state when the list has no rows", async () => {
     setUser(UserRole.USER, [UserPermission.VIEW_RESERVATIONS]);
     fetchMock = vi.fn(async () => json([]));
@@ -96,6 +124,20 @@ describe("NotCollectedDialog — B-32 aanvulling", () => {
     renderDialog();
     await screen.findByTestId("not-collected-empty");
     expect(screen.queryByTestId(/not-collected-reservation-/)).not.toBeInTheDocument();
+  });
+
+  it("shows its own unknown-customer text for a row without a customer (task-2-review.md Minor)", async () => {
+    setUser(UserRole.USER, [UserPermission.VIEW_RESERVATIONS]);
+    fetchMock = vi.fn(async (input: any) => {
+      if (urlOf(input).includes("/api/reservations/not-collected")) {
+        return json([{ ...ROW, id: 888, customer: undefined }]);
+      }
+      return json([]);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    renderDialog();
+    const row = await screen.findByTestId("not-collected-reservation-888");
+    expect(row).toHaveTextContent("Onbekende klant");
   });
 
   it("disables the cancel button, with a reason, for a role without manage_reservations", async () => {

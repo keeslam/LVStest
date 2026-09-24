@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { differenceInDays, parseISO } from "date-fns";
 import { AlertTriangle, Calendar, Car, User } from "lucide-react";
+import { officeToday } from "@/lib/office-date";
 import {
   Dialog,
   DialogContent,
@@ -78,8 +79,12 @@ export function NotCollectedDialog({ open, onOpenChange, onViewReservation }: No
           ) : (
             <div className="space-y-3 mt-4">
               {reservations.map((reservation) => {
+                // task-2-review.md Minor — the office calendar
+                // (Europe/Amsterdam), not the browser's own local zone: a
+                // staff member outside Amsterdam must count the same number
+                // of days as the office does.
                 const daysSinceStart = reservation.startDate
-                  ? differenceInDays(new Date(), parseISO(reservation.startDate))
+                  ? differenceInDays(parseISO(officeToday()), parseISO(reservation.startDate))
                   : 0;
 
                 return (
@@ -101,7 +106,7 @@ export function NotCollectedDialog({ open, onOpenChange, onViewReservation }: No
 
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <User className="h-3 w-3" />
-                        <span>{reservation.customer?.name || t("spareVehicleAssignmentDialog.unknownCustomer")}</span>
+                        <span>{reservation.customer?.name || t("notCollectedDialog.unknownCustomer")}</span>
                       </div>
 
                       <div className="flex items-center gap-2 text-sm">

@@ -278,7 +278,8 @@
       "errorReasons": {
         "NO_TEMPLATE": "Er is geen contractsjabloon ingesteld. Maak er een aan onder Documenten → Contractsjablonen en klik dan op Opnieuw proberen.",
         "NO_DEFAULT_TEMPLATE": "Er zijn meerdere sjablonen maar geen standaard. Kies een standaardsjabloon onder Documenten → Contractsjablonen.",
-        "TEMPLATE_WITHOUT_FIELDS": "Het contractsjabloon heeft geen velden. Vul het sjabloon onder Documenten → Contractsjablonen.",
+        "TEMPLATE_WITHOUT_FIELDS": "Het contractsjabloon '{{name}}' heeft geen velden. Vul het sjabloon onder Documenten → Contractsjablonen.",
+        "TEMPLATE_WITHOUT_FIELDS_UNKNOWN": "Het contractsjabloon heeft geen velden. Vul het sjabloon onder Documenten → Contractsjablonen.",
         "TEMPLATE_BACKGROUND_MISSING": "De achtergrond van het contractsjabloon kon niet worden gelezen. Upload de achtergrond opnieuw onder Documenten → Contractsjablonen.",
         "NO_VEHICLE": "Het voertuig van deze reservering kon niet worden gevonden. Controleer het voertuig en probeer het opnieuw.",
         "PLACEHOLDER_RESERVATION": "Aan deze reservering is nog geen voertuig gekoppeld. Ken een voertuig toe en genereer het contract daarna opnieuw.",
@@ -616,7 +617,8 @@
     "daysSinceStart_one": "{{count}} dag geleden gestart",
     "daysSinceStart_other": "{{count}} dagen geleden gestart",
     "openButton": "Bekijken",
-    "cancelButton": "Annuleren"
+    "cancelButton": "Annuleren",
+    "unknownCustomer": "Onbekende klant"
   },
   "statusChangeDialog": {
     "title": "Reservering terugzetten naar geboekt",

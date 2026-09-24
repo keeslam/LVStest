@@ -616,7 +616,8 @@
     "daysSinceStart_one": "started {{count}} day ago",
     "daysSinceStart_other": "started {{count}} days ago",
     "openButton": "View",
-    "cancelButton": "Cancel"
+    "cancelButton": "Cancel",
+    "unknownCustomer": "Unknown customer"
   },
   "statusChangeDialog": {
     "title": "Revert Reservation to Booked",
