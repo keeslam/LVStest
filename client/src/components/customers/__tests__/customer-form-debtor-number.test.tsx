@@ -126,6 +126,25 @@ describe("B-35 — debiteurnummer-conflict onder het veld", () => {
     expect(screen.queryByText(/in de prullenbak/)).not.toBeInTheDocument();
   });
 
+  it("crasht niet en toont alleen de algemene toast bij een 409 zonder code (task-4-review.md Minor 1)", async () => {
+    // The DB-constraint fallback shape from task-3-report.md's "slips past
+    // the pre-check" case: a 409 with `field` but no `code`. Neither lookup
+    // in DEBTOR_NUMBER_CONFLICT_ERROR_KEYS matches `undefined`, so this must
+    // fall through to the generic toast, same as any other unrecognised error
+    // — not crash, and not leak the raw JSON body as the message.
+    nextResponse = {
+      status: 409,
+      body: { message: "Debtor number already exists.", field: "debtorNumber" },
+    };
+    const user = userEvent.setup();
+    renderForm();
+    await fillAndSubmit(user, "E2E-DEB-1");
+
+    expect(await screen.findByText(/Kon klant niet aanmaken/)).toBeInTheDocument();
+    expect(screen.queryByText(/in gebruik bij klant/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/in de prullenbak/)).not.toBeInTheDocument();
+  });
+
   it("wist de veldfout zodra de waarde verandert", async () => {
     nextResponse = {
       status: 409,

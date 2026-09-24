@@ -68,6 +68,16 @@ const formSchema = insertCustomerSchema.extend({
   billingContactPhone: z.string().optional().or(z.literal(""))
 });
 
+// B-35 final wave item 2 — the two 409 debtor-number conflict codes only
+// ever differed in which i18n key they show under the field; a lookup table
+// removes the near-duplicate `if`/`else if` branches. An unrecognised (or
+// missing) `code` finds nothing here and falls through to the generic toast
+// below, unchanged.
+const DEBTOR_NUMBER_CONFLICT_ERROR_KEYS: Record<string, string> = {
+  DEBTOR_NUMBER_TAKEN: 'form.debtorNumberTakenError',
+  DEBTOR_NUMBER_IN_RECYCLE_BIN: 'form.debtorNumberInRecycleBinError',
+};
+
 interface CustomerFormProps {
   editMode?: boolean;
   initialData?: any;
@@ -228,15 +238,11 @@ export function CustomerForm({
       // debtor number (live, or sitting in the recycle bin); show that under
       // the field itself instead of only in the generic toast below, which
       // keeps firing unchanged for every other error.
-      if (error.code === "DEBTOR_NUMBER_TAKEN") {
+      const debtorNumberErrorKey = error.code ? DEBTOR_NUMBER_CONFLICT_ERROR_KEYS[error.code] : undefined;
+      if (debtorNumberErrorKey) {
         form.setError("debtorNumber", {
           type: "server",
-          message: t('form.debtorNumberTakenError', { name: error.conflictingCustomerName }),
-        });
-      } else if (error.code === "DEBTOR_NUMBER_IN_RECYCLE_BIN") {
-        form.setError("debtorNumber", {
-          type: "server",
-          message: t('form.debtorNumberInRecycleBinError', { name: error.conflictingCustomerName }),
+          message: t(debtorNumberErrorKey, { name: error.conflictingCustomerName }),
         });
       }
       toast({
