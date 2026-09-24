@@ -107,6 +107,10 @@ getal: het scheelt of de applicatie opnieuw gebouwd moet worden, wat de machine 
 te doen heeft, en (sinds het tiende profiel) een tiende rol erbij in elk van de drie
 per-rol specs.
 
+**Bijgewerkt (24-09-2026), na de twee staarttests van B-32 en B-34 hierboven:** de staart telt
+mee in `npm run e2e`, dus de tellers zijn iets hoger: `358 geslaagd, 2 bewust overgeslagen, 0
+mislukt` (ruim 8 minuten). De twee overslagen zijn nog dezelfde als hierboven.
+
 Het dekkingsoverzicht van de vensters (`npm run e2e:coverage`, draait ook automatisch
 aan het eind van `npm run e2e`):
 
@@ -114,7 +118,10 @@ aan het eind van `npm run e2e`):
 Vensters: 119 bestanden met een venster, 30 bereikt door een test, 89 nog niet
 ```
 
-Dat is precies de vastgelegde grens, dus er is niets achteruitgegaan.
+Dat is precies de vastgelegde grens, dus er is niets achteruitgegaan. **Bijgewerkt
+(24-09-2026):** met het nieuwe venster **Niet opgehaalde reserveringen** erbij (B-32's
+aanvulling) staat de teller op `120 bestanden met een venster, 31 bereikt door een test, 89 nog
+niet` — de grens van 89 zelf is dus niet veranderd.
 
 **Ruim acht minuten is meer dan de streefwaarde van vijf.** Het langzaamste deel is met
 afstand `e2e/layer-a/dialogs.spec.ts`: 194 van de 357 tests (`npx playwright test -c
