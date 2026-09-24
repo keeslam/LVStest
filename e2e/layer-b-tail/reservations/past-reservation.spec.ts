@@ -33,11 +33,12 @@ const VEHICLE_PLATE = "E2E-07-G";
 const VEHICLE_PLATE_COMPACT = "E2E07G"; // how the vehicle popover renders it, no dashes
 
 // Measured for this spec (there is no prior "approved flow" for a popup that
-// did not exist before this task): stage 2 (close the popup that auto-opened
-// on the first visit — the visit itself is the free navigation, see below),
-// stage 3 (a customer-row booking on the same vehicle) and stage 4 (reopen +
-// cancel the stale row through the popup).
-const BUDGET = { viewAndClose: 1, newBooking: 7, reopenAndCancel: 4 };
+// did not exist before this task): stage 1b (filter the vehicles page down
+// to the one plate), stage 2 (close the popup that auto-opened on the first
+// visit — the visit itself is the free navigation, see below), stage 3 (a
+// customer-row booking on the same vehicle) and stage 4 (reopen + cancel the
+// stale row through the popup).
+const BUDGET = { checkVehiclePage: 1, viewAndClose: 1, newBooking: 7, reopenAndCancel: 4 };
 
 test.describe("Reserveringskalender: niet opgehaalde boeking van een maand oud (B-32 aanvulling)", () => {
   // Same tall viewport as rental-story.spec.ts / edge-cases.spec.ts: the
@@ -112,6 +113,24 @@ test.describe("Reserveringskalender: niet opgehaalde boeking van een maand oud (
       const vehicles = await (await request.get("/api/vehicles")).json();
       const vehicle = vehicles.find((v: { id: number }) => v.id === vehicleId);
       expect(vehicle.availabilityStatus).toBe("available");
+
+      // task-2-review.md Minor 1 — the API read above proves the underlying
+      // fact, but not what a staff member actually looks at: the /vehicles
+      // page's own status badge (client/src/pages/vehicles/index.tsx) for
+      // this exact vehicle. Filtered by plate so this holds regardless of
+      // pagination or how many other vehicles exist by the time this project
+      // runs last in the suite.
+      const story = new Story("Voertuigstatus controleren op de voertuigenpagina", BUDGET.checkVehiclePage);
+      await page.goto("/vehicles");
+      await settle(page);
+      await story.fill(
+        page.getByPlaceholder("Zoeken op kenteken, merk of model..."),
+        VEHICLE_PLATE,
+        "voertuig zoeken",
+      );
+      const row = page.locator("table tr", { hasText: VEHICLE_PLATE_COMPACT });
+      await expect(row).toContainText("Beschikbaar");
+      story.finish();
     });
 
     await test.step("2. the calendar's popup shows it, and closes", async () => {
