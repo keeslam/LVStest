@@ -61,7 +61,10 @@ test.describe("Contract: een standaardsjabloon zonder velden geeft een duidelijk
   test.use({ storageState: authFile("manager"), viewport: { width: 1280, height: 1400 } });
 
   let seededTemplateId: number;
-  let fieldlessTemplateId: number;
+  // Fix round 1 (Important): undefined until step 1's POST actually returns an
+  // id — the `finally` block below checks this before trying to delete a
+  // template that may never have been created.
+  let fieldlessTemplateId: number | undefined;
 
   test("een sjabloon zonder velden geeft de TEMPLATE_WITHOUT_FIELDS-tekst, niet een leeg contract", async ({ page, health, request }) => {
     test.setTimeout(60_000);
@@ -106,89 +109,105 @@ test.describe("Contract: een standaardsjabloon zonder velden geeft een duidelijk
       reservationId = (await created.json()).id;
     });
 
-    await test.step("1. via the API: a second template, no fields, marked default", async () => {
-      const createdTemplate = await request.post("/api/pdf-templates", {
-        headers: { "X-CSRF-Token": csrfToken! },
-        data: { name: FIELDLESS_TEMPLATE_NAME, isDefault: true, fields: [] },
+    // Fix round 1 (Important, task-6-review.md): steps 1 and 2 flip a real,
+    // shared singleton fact — which pdf_templates row is "the" default — that
+    // every other contract-generating spec in this same run depends on. If
+    // either step throws (a failed assertion, a flake), step 3 below MUST
+    // still run, or the fieldless template stays the default for the rest of
+    // the suite and every later pickup in another worker starts failing for
+    // an unrelated reason. `retries: 0` (constraints.md) means there is no
+    // second chance, so the restore goes in `finally`, not after the steps.
+    try {
+      await test.step("1. via the API: a second template, no fields, marked default", async () => {
+        const createdTemplate = await request.post("/api/pdf-templates", {
+          headers: { "X-CSRF-Token": csrfToken! },
+          data: { name: FIELDLESS_TEMPLATE_NAME, isDefault: true, fields: [] },
+        });
+        expect(createdTemplate.status(), await createdTemplate.text()).toBe(201);
+        // Note: POST's own response body has a pre-existing, unrelated bug
+        // (server/database-storage.ts createPdfTemplate() returns the raw
+        // `RETURNING *` row uncast to camelCase, so `isDefault` reads back as
+        // `undefined` here even though the row itself is correct) — confirmed
+        // properly below via GET, which does map it.
+        fieldlessTemplateId = (await createdTemplate.json()).id;
+
+        // createPdfTemplate() un-defaults every other row itself
+        // (server/database-storage.ts) — confirm the seeded template really
+        // lost it, or step 2 below would be proving nothing.
+        const templates = await (await request.get("/api/pdf-templates")).json();
+        const fieldless = templates.find((t: { id: number }) => t.id === fieldlessTemplateId);
+        const seeded = templates.find((t: { id: number }) => t.id === seededTemplateId);
+        expect(fieldless.isDefault).toBe(true);
+        expect(fieldless.fields).toEqual([]);
+        expect(seeded.isDefault).toBe(false);
       });
-      expect(createdTemplate.status(), await createdTemplate.text()).toBe(201);
-      // Note: POST's own response body has a pre-existing, unrelated bug
-      // (server/database-storage.ts createPdfTemplate() returns the raw
-      // `RETURNING *` row uncast to camelCase, so `isDefault` reads back as
-      // `undefined` here even though the row itself is correct) — confirmed
-      // properly below via GET, which does map it.
-      fieldlessTemplateId = (await createdTemplate.json()).id;
 
-      // createPdfTemplate() un-defaults every other row itself
-      // (server/database-storage.ts) — confirm the seeded template really
-      // lost it, or step 2 below would be proving nothing.
-      const templates = await (await request.get("/api/pdf-templates")).json();
-      const fieldless = templates.find((t: { id: number }) => t.id === fieldlessTemplateId);
-      const seeded = templates.find((t: { id: number }) => t.id === seededTemplateId);
-      expect(fieldless.isDefault).toBe(true);
-      expect(fieldless.fields).toEqual([]);
-      expect(seeded.isDefault).toBe(false);
-    });
+      await test.step("2. pickup via the UI: the dialog shows this task's own Dutch sentence, translated by code", async () => {
+        const story = new Story("Ophalen met een leeg standaardsjabloon", BUDGET.pickup);
+        // The one free navigation (constraints.md): straight to the screen
+        // this spec is about.
+        await page.goto("/reservations");
+        await settle(page);
 
-    await test.step("2. pickup via the UI: the dialog shows this task's own Dutch sentence, translated by code", async () => {
-      const story = new Story("Ophalen met een leeg standaardsjabloon", BUDGET.pickup);
-      // The one free navigation (constraints.md): straight to the screen
-      // this spec is about.
-      await page.goto("/reservations");
-      await settle(page);
+        const block = page.locator('[data-testid^="reservation-item-"]', { hasText: CUSTOMER_NAME }).first();
+        await story.click(block, "reservering openen");
 
-      const block = page.locator('[data-testid^="reservation-item-"]', { hasText: CUSTOMER_NAME }).first();
-      await story.click(block, "reservering openen");
+        const viewDialog = page.getByRole("dialog", { name: "Reserveringsdetails" });
+        await expect(viewDialog).toBeVisible();
+        await story.click(viewDialog.getByTestId("button-start-pickup-calendar"), "Ophalen starten");
 
-      const viewDialog = page.getByRole("dialog", { name: "Reserveringsdetails" });
-      await expect(viewDialog).toBeVisible();
-      await story.click(viewDialog.getByTestId("button-start-pickup-calendar"), "Ophalen starten");
+        const pickupDialog = page.getByRole("dialog", { name: "Ophaalproces starten" });
+        await expect(pickupDialog).toBeVisible();
+        await story.fill(pickupDialog.getByTestId("input-contract-number"), `9${reservationId}`, "Contractnummer");
+        await story.click(pickupDialog.getByTestId("button-confirm-pickup"), "Ophalen voltooien & contract genereren");
 
-      const pickupDialog = page.getByRole("dialog", { name: "Ophaalproces starten" });
-      await expect(pickupDialog).toBeVisible();
-      await story.fill(pickupDialog.getByTestId("input-contract-number"), `9${reservationId}`, "Contractnummer");
-      await story.click(pickupDialog.getByTestId("button-confirm-pickup"), "Ophalen voltooien & contract genereren");
-
-      // Same stacking fault as the desk story (rental-story.spec.ts, stage 3):
-      // the reopened reservation view can end up on top of this dialog. Only
-      // visibility is asserted below (Playwright's own definition — a
-      // non-zero box, not `display:none`/`visibility:hidden`), which holds
-      // regardless of what else is drawn on top of it.
-      const handover = page.getByTestId("dialog-handover-result");
-      await expect(handover).toBeVisible();
-      await expect(handover.getByText("Contract kon niet gemaakt worden")).toBeVisible();
-      // Task 6's own point: translated by `code` (TEMPLATE_WITHOUT_FIELDS),
-      // never the server's English message (which names the template and
-      // says to "open it in the template editor" — a sentence this dialog
-      // must not be showing).
-      await expect(
-        handover.getByText(
-          "Het contractsjabloon heeft geen velden. Vul het sjabloon onder Documenten → Contractsjablonen.",
-        ),
-      ).toBeVisible();
-      await expect(handover.getByTestId("button-handover-retry")).toBeVisible();
-      story.finish();
-    });
-
-    await test.step("3. via the API: restore the seeded template as default, and remove this spec's own extra one", async () => {
-      const restored = await request.patch(`/api/pdf-templates/${seededTemplateId}`, {
-        headers: { "X-CSRF-Token": csrfToken! },
-        data: { isDefault: true },
+        // Same stacking fault as the desk story (rental-story.spec.ts, stage 3):
+        // the reopened reservation view can end up on top of this dialog. Only
+        // visibility is asserted below (Playwright's own definition — a
+        // non-zero box, not `display:none`/`visibility:hidden`), which holds
+        // regardless of what else is drawn on top of it.
+        const handover = page.getByTestId("dialog-handover-result");
+        await expect(handover).toBeVisible();
+        await expect(handover.getByText("Contract kon niet gemaakt worden")).toBeVisible();
+        // Task 6's own point: translated by `code` (TEMPLATE_WITHOUT_FIELDS),
+        // never the server's English message (which names the template and
+        // says to "open it in the template editor" — a sentence this dialog
+        // must not be showing).
+        await expect(
+          handover.getByText(
+            `Het contractsjabloon '${FIELDLESS_TEMPLATE_NAME}' heeft geen velden. Vul het sjabloon onder Documenten → Contractsjablonen.`,
+          ),
+        ).toBeVisible();
+        await expect(handover.getByTestId("button-handover-retry")).toBeVisible();
+        story.finish();
       });
-      expect(restored.status(), await restored.text()).toBe(200);
-      // Unlike POST, PATCH's own response body *does* map to camelCase
-      // (server/database-storage.ts updatePdfTemplate()) — trusted directly.
-      expect((await restored.json()).isDefault).toBe(true);
+    } finally {
+      await test.step("3. via the API: restore the seeded template as default, and remove this spec's own extra one", async () => {
+        const restored = await request.patch(`/api/pdf-templates/${seededTemplateId}`, {
+          headers: { "X-CSRF-Token": csrfToken! },
+          data: { isDefault: true },
+        });
+        expect(restored.status(), await restored.text()).toBe(200);
+        // Unlike POST, PATCH's own response body *does* map to camelCase
+        // (server/database-storage.ts updatePdfTemplate()) — trusted directly.
+        expect((await restored.json()).isDefault).toBe(true);
 
-      const deleted = await request.delete(`/api/pdf-templates/${fieldlessTemplateId}`, {
-        headers: { "X-CSRF-Token": csrfToken! },
+        // Only step 1 having actually returned an id makes this deletable —
+        // guards the case where step 1 itself is what threw.
+        if (fieldlessTemplateId !== undefined) {
+          const deleted = await request.delete(`/api/pdf-templates/${fieldlessTemplateId}`, {
+            headers: { "X-CSRF-Token": csrfToken! },
+          });
+          expect(deleted.ok(), await deleted.text()).toBeTruthy();
+        }
+
+        const templates = await (await request.get("/api/pdf-templates")).json();
+        expect(templates.find((t: { id: number }) => t.id === seededTemplateId)?.isDefault).toBe(true);
+        if (fieldlessTemplateId !== undefined) {
+          expect(templates.find((t: { id: number }) => t.id === fieldlessTemplateId)).toBeUndefined();
+        }
       });
-      expect(deleted.ok(), await deleted.text()).toBeTruthy();
-
-      const templates = await (await request.get("/api/pdf-templates")).json();
-      expect(templates.find((t: { id: number }) => t.id === seededTemplateId)?.isDefault).toBe(true);
-      expect(templates.find((t: { id: number }) => t.id === fieldlessTemplateId)).toBeUndefined();
-    });
+    }
 
     expect(health.violations).toEqual([]);
   });
