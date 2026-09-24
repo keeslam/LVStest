@@ -233,7 +233,7 @@ opgehaald, moet een melding geven. Lezing: status "geboekt", startdatum 30 dagen
 geleden, geen onderhoudsblok. Vorm (23-09-2026, tweede aanwijzing): een popup-dialoog in de
 reserveringskalender, niet in het meldingencentrum of op het dashboard; per regel openen en
 annuleren; weg zodra de reservering is opgehaald of geannuleerd.
-**Uitgevoerd (24-09-2026):** commits `ec09f625..e1d82971`. Boekingsgate: `2ac1c6c4`
+**Uitgevoerd (24-09-2026):** commits `ec09f625..e47004e5`. Boekingsgate: `2ac1c6c4`
 (alleen opgehaalde verhuringen tellen), `ae629bb0` (matcht letterlijk status `picked_up`, geen
 legacy-spellingen meer). Popup: `1a5a8cf6` (server + venster + kalenderknop), `29b42499`
 (laag-b-staart `e2e/layer-b-tail/reservations/past-reservation.spec.ts`). Handleiding
@@ -259,7 +259,7 @@ worden).
 **Besluit:** een duidelijke fout. Liever hard mislukken met een begrijpelijke melding dan een
 onbruikbaar bestand afleveren.
 Raakt: BUG-163, V-12.
-**Uitgevoerd (24-09-2026):** commits `ec09f625..e1d82971`. Server: `8300ccef` (falende test),
+**Uitgevoerd (24-09-2026):** commits `ec09f625..e47004e5`. Server: `8300ccef` (falende test),
 `3f7072fb` (stabiele foutcode per mislukking, archief weigert bytes zonder `%PDF-`-kop),
 `e04de4ae` (fix-ronde 1: één helper voor de foutcode, `/api/contracts/preview` volgt dezelfde
 sjabloonkeuze). Client + e2e: `284daad7` (Nederlandse tekst per code in het ophaalvenster),
@@ -273,7 +273,7 @@ Raakt: BUG-045, V-13.
 totdat die klant definitief uit de prullenbak is verwijderd; wie het nummer intussen wil
 gebruiken, krijgt een melding dat het bij een klant in de prullenbak hoort. (Definitief
 verwijderen komt met B-38, deelproject C.)
-**Uitgevoerd (24-09-2026):** commits `ec09f625..e1d82971`. Server: `ce9e0a75` (falende test),
+**Uitgevoerd (24-09-2026):** commits `ec09f625..e47004e5`. Server: `ce9e0a75` (falende test),
 `fa296d1e` (unieke index, ook tegen de prullenbak), `7aca247e` (fix-ronde 1: conflictcheck
 ontdubbeld, herstel normaliseert het nummer). Client + e2e: `aa26340a` (veldfout onder
 Debiteurnummer, ook in het snel-toevoegen-formulier), `4fb794a5` (balie-werkstroom bewijst het
