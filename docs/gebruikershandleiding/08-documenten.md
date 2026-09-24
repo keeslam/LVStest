@@ -87,13 +87,20 @@ Direct daarna verschijnt een venster met de uitslag:
 
 - **Contract klaar** — *"&lt;bestandsnaam&gt; is aangemaakt. Print het of mail het direct naar de
   klant."* Met de knoppen **Afdrukken** en **Mail naar klant**.
-- **Contract kon niet gemaakt worden** — *"De handeling is vastgelegd, maar het document is niet
-  aangemaakt. Probeer het opnieuw of controleer de sjablonen."* Met de knop
-  **Opnieuw proberen**.
+- **Contract kon niet gemaakt worden** — met, sinds kort, een concrete Nederlandse reden erbij in
+  plaats van een kale mededeling. De volledige lijst met redenen en wat je eraan doet staat in
+  8.5. Herkent de app de reden niet, dan staat de algemene tekst *"De handeling is vastgelegd,
+  maar het document is niet aangemaakt. Probeer het opnieuw of controleer de sjablonen."* Beide
+  keren staat de knop **Opnieuw proberen** erbij.
 
 Het ophalen zelf is in beide gevallen wél verwerkt. Een mislukt contract betekent niet dat de
 auto niet is meegegeven; het betekent alleen dat er geen PDF is. Klik op **Opnieuw proberen**,
 of maak het contract later alsnog vanuit de reservering.
+
+> **De archivering bewaart nooit een kapot bestand.** Mislukt het maken van het contract, dan
+> schrijft de app ook geen half of ongeldig bestand naar de documentbibliotheek voor die poging.
+> Zie je geen contract bij deze reservering, dan is er dus ook niets stuk — er is alleen nog
+> niets gemaakt.
 
 > Bij een mislukte **schadecheck** staat er geen knop **Opnieuw proberen**. Maak de schadecheck
 > dan opnieuw vanuit het schadecheckscherm.
@@ -138,26 +145,39 @@ achtergrond. Eén sjabloon is de standaard; die herken je aan het label **Standa
 stelt hem in met **Als standaard instellen**.
 
 **Dit is de belangrijkste regel over sjablonen:** een sjabloon zonder velden levert een blanco
-contract op, en daarom weigert de app het. De melding is:
+contract op, en daarom weigert de app het — liever een duidelijke fout dan een onbruikbaar
+bestand.
 
-> *The PDF template "&lt;naam&gt;" has no fields, so the contract would be completely blank. Open it
-> in the template editor, place the fields, and try again.*
+Mislukt het contract bij het **ophalen** (5.7), dan staat er sinds kort een van deze Nederlandse
+zinnen in het venster **Contract kon niet gemaakt worden**, elk met wat je eraan doet:
 
-Krijg je die melding, dan is er niets mis met de reservering. Er is een leeg sjabloon
-geselecteerd. Kies een ander sjabloon, of laat een collega met het recht **PDF-sjablonen
-beheren** de velden in het sjabloon plaatsen.
+| Zin | Wat je doet |
+|---|---|
+| *Er is geen contractsjabloon ingesteld. Maak er een aan onder Documenten → Contractsjablonen en klik dan op Opnieuw proberen.* | Er is nog helemaal geen contractsjabloon. Maak er één. |
+| *Er zijn meerdere sjablonen maar geen standaard. Kies een standaardsjabloon onder Documenten → Contractsjablonen.* | Zet één van de bestaande sjablonen op **Standaard**. |
+| *Het contractsjabloon heeft geen velden. Vul het sjabloon onder Documenten → Contractsjablonen.* | Open het sjabloon in de sjablooneditor en plaats de velden. |
+| *De achtergrond van het contractsjabloon kon niet worden gelezen. Upload de achtergrond opnieuw onder Documenten → Contractsjablonen.* | Upload de achtergrondafbeelding van het sjabloon opnieuw. |
+| *Het voertuig van deze reservering kon niet worden gevonden. Controleer het voertuig en probeer het opnieuw.* | Controleer of het voertuig bij deze reservering nog bestaat. |
+| *Aan deze reservering is nog geen voertuig gekoppeld. Ken een voertuig toe en genereer het contract daarna opnieuw.* | Wijs eerst een voertuig toe aan de reservering. |
+| *Aan deze reservering is geen klant gekoppeld, dus het contract kan niet worden gemaakt. Voeg een klant toe aan de reservering.* | Voeg een klant toe aan de reservering. |
+| *Dit is een onderhoudsblok, geen verhuur — hier hoort geen contract bij.* | Niets: een onderhoudsblok krijgt terecht geen contract. |
+| *Het contract kon niet worden gemaakt door een technische fout. Probeer het opnieuw; blijft het misgaan, meld dan deze tekst: …* | Probeer het opnieuw. Blijft het misgaan, geef de bijgevoegde tekst door aan wie de sjablonen beheert. |
 
-Twee andere meldingen uit dezelfde hoek:
+Je herkent hieraan dat het altijd om het sjabloon, het voertuig, de klant of de reservering zelf
+gaat — nooit om de kilometerstand, de brandstof of iets anders dat je net bij het ophalen hebt
+ingevuld. Het recht **PDF-sjablonen beheren** heb je nodig om een sjabloon te wijzigen, velden te
+plaatsen of een sjabloon op **Standaard** te zetten; mis je dat recht, haal er dan een collega bij
+die het wel heeft.
 
-- *Template not found* — het gekozen sjabloon bestaat niet meer. Kies een ander sjabloon.
-- *No contract template has been configured. Create one under Settings → PDF templates before
-  generating a contract.* — er is helemaal geen contractsjabloon. Er moet er eerst één gemaakt
-  worden. Die melding wijst naar "Settings"; in de app vind je de sjablonen onder **Documenten →
-  Contractsjablonen**.
+**Let op:** genereer je een contract niet bij het ophalen maar met de knop **Opnieuw genereren**
+uit de documentbibliotheek (8.6), dan zie je bij dezelfde soort fout nog de kale, Engelse
+servertekst — bijvoorbeeld *"Template not found"* of *"No contract template has been configured.
+Create one under Settings → PDF templates before generating a contract."* Dat "Settings" in die
+laatste zin klopt niet met het menu: de sjablonen staan onder **Documenten → Contractsjablonen**.
 
-Staat er geen sjabloon als standaard ingesteld, dan pakt de app zelf het eerste sjabloon uit de
-lijst. Dat kan een verkeerd sjabloon zijn. Zorg dus dat er altijd bewust één sjabloon op
-**Standaard** staat.
+Staat er geen sjabloon als standaard ingesteld, dan geeft de app tegenwoordig een duidelijke fout
+in plaats van zelf een sjabloon te raden — zie de tweede zin in de tabel hierboven. Zorg dus dat
+er, zodra er meer dan één sjabloon is, altijd bewust één op **Standaard** staat.
 
 ---
 

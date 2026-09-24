@@ -302,7 +302,37 @@ ook klanten, reserveringen en transporten (zie 4.12).
 
 ---
 
-## 3.9 Snel naslaan
+## 3.9 Debiteurnummer: als het al bezet is
+
+Vul je op het tabblad **Basisgegevens** een **Debiteurnummer** in dat al bij een andere klant
+hoort, dan weigert de app op te slaan. Dat geldt bij het aanmaken, bij het bewerken, én bij het
+snel toevoegen van een klant vanuit een reservering (hoofdstuk 5) — het is overal hetzelfde
+formulier. Onder het veld verschijnt een rode veldfout:
+
+> *Dit debiteurnummer is al in gebruik bij klant <naam>.*
+
+Dit is een echte blokkade, geen waarschuwing zoals in 3.4: opslaan lukt pas als je een ander
+nummer intypt of het veld leeg maakt. Het maakt niet uit of je het net iets anders schrijft —
+hoofdletters of een spatie erbij maken geen verschil, de app vergelijkt op het kale nummer.
+Verbeter je het veld, dan verdwijnt de foutmelding vanzelf bij de eerstvolgende toets.
+
+**Zit de andere klant in de prullenbak?** Dan blijft zijn nummer toch bezet, en zie je in plaats
+daarvan:
+
+> *Dit debiteurnummer hoort bij klant <naam> in de prullenbak. Zet die klant terug of verwijder
+> hem definitief uit de prullenbak.*
+
+Vandaag kun je zo'n klant alleen **terugzetten** — een beheerder doet dat via **Voertuigen** →
+**Verwijderde voertuigen** (3.8). Definitief verwijderen uit de prullenbak kan nog niet; dat komt
+met een later deelproject. Wil je het nummer echt vrijmaken zonder de klant terug te zetten,
+overleg dan met de beheerder.
+
+**Het veld mag gewoon leeg blijven.** Een debiteurnummer is niet verplicht. Alleen als je er wel
+een invult, moet het uniek zijn.
+
+---
+
+## 3.10 Snel naslaan
 
 | Wat je wilt | Waar |
 |---|---|
@@ -314,4 +344,5 @@ ook klanten, reserveringen en transporten (zie 4.12).
 | Een portaallogin regelen | **Bekijken** → **Portaal** → **Uitnodigen** |
 | Zien wat een klant online mag | **Bekijken** → **Portaal** → **Instellingen voor deze klant** |
 | Een klant verwijderen | **Verwijderen** in de lijst (lukt niet bij een lopende huur) |
+| Debiteurnummer al bezet | Veldfout onder **Debiteurnummer** (ook tegen de prullenbak), zie 3.9 |
 | Een verwijderde klant terughalen | Beheerder: **Voertuigen** → **Verwijderde voertuigen** |

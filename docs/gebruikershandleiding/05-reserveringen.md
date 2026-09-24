@@ -26,6 +26,7 @@ Rechtsboven staan:
 | **Lijstweergave** | Dezelfde reserveringen als lijst, zie 5.2 |
 | **Voltooid bekijken (…)** | De afgesloten verhuringen opzoeken en inzien, zie 5.8 |
 | **… achterstallig** | De verhuringen die over hun einddatum heen zijn (rood) |
+| **… niet opgehaald** | Boekingen die nooit zijn opgehaald en een maand of langer geleden zijn gestart, zie 5.12 — staat er alleen als die er zijn |
 | **Administratie** | De factuurgegevens voor het externe facturatiesysteem |
 | **Nieuwe reservering** | Een nieuwe boeking, zie 5.3 |
 
@@ -107,6 +108,13 @@ daarna filtert de app de voertuiglijst.
 > **Waarom de datums eerst:** de app haalt de lijst met vrije auto's op voor precies die periode.
 > Vul je ze later in, dan staan er auto's in de lijst die in jouw periode al bezet zijn.
 
+> **Een datum in het verleden mag gewoon.** Typ je bij **Startdatum** of **Einddatum** een dag
+> die al voorbij is, dan accepteert de app dat zonder waarschuwing — handig om een verhuring die
+> je vergeten was in te voeren alsnog vast te leggen. Het voertuig telt daarna alleen als
+> **verhuurd** zolang die periode ook echt loopt; is de periode al voorbij, dan staat de auto
+> gewoon weer **beschikbaar** voor een nieuwe boeking, ook als de oude reservering zelf nooit is
+> opgehaald (zie 5.12).
+
 ### Stap 2 — voertuig en klant
 
 Onder **2. Selecteer voertuig en klant** staat in het groen: *Alleen beschikbare voertuigen voor
@@ -160,9 +168,11 @@ Daarna verandert **Annuleren** in **Sluiten**; documenten uploaden kan nu wel.
   achteraf: *Voertuig automatisch gewijzigd van BV naar Opnaam (vereist voor verhuur -
   verzekering & wegenbelasting)*. Lukt dat niet, dan vraagt de app je het zelf te doen op de
   voertuigkaart.
-- Heeft de auto nog oude, niet-afgesloten verhuringen, dan verschijnt eerst **Achterstallige
-  reserveringen gevonden**. Los die eerst op met **Markeer als voltooid** of **Details bekijken**,
-  of ga bewust verder met **Doorgaan met reservering**.
+- Staat er van deze auto nog een **opgehaalde** verhuring die over haar einddatum heen is en nog
+  niet is ingeleverd, dan verschijnt eerst **Achterstallige reserveringen gevonden**. Los die
+  eerst op met **Markeer als voltooid** of **Details bekijken**, of ga bewust verder met
+  **Doorgaan met reservering**. Een oude boeking die nooit is opgehaald, blokkeert dit sinds kort
+  niet meer — die krijgt in plaats daarvan de eigen melding uit 5.12.
 
 ---
 
@@ -519,7 +529,37 @@ verhuurd en kun je hem niet opnieuw inplannen.
 
 ---
 
-## 5.12 De statussen op een rij
+## 5.12 Niet opgehaalde reserveringen: de melding in de kalender
+
+Een boeking die nooit is opgehaald en waarvan de startdatum een maand of langer geleden is,
+blokkeert sinds kort niets meer (zie 5.3) — maar verdwijnt ook niet vanzelf. Ze blijft gewoon op
+**Geboekt** staan totdat iemand ernaar kijkt. Daarvoor is er een eigen melding, los van de
+achterstallige verhuringen in 5.11: dit gaat om auto's die nooit zijn opgehaald, niet om auto's
+die te laat terugkomen.
+
+**De melding komt vanzelf.** Zodra de reserveringskalender zulke boekingen vindt, opent
+automatisch het venster **Niet opgehaalde reserveringen** — *Deze boekingen zijn een maand of
+langer geleden gestart en zijn nooit opgehaald. Ze blokkeren niets, maar verdienen een blik.* Dat
+gebeurt **één keer per sessie**: sluit je het venster, dan komt het pas terug als je de browser
+opnieuw opent of een nieuw tabblad gebruikt. Zolang er nog rijen zijn, staat rechtsboven ook de
+knop **… niet opgehaald**, naast **… achterstallig** (5.1), waarmee je het venster later
+opnieuw opent.
+
+Per regel zie je het voertuig, de klant, de periode en hoe lang geleden de huur had moeten
+beginnen. Twee knoppen per regel:
+
+- **Bekijken** opent de reservering zelf, zodat je kunt corrigeren of alsnog kunt ophalen.
+- **Annuleren** annuleert de boeking meteen, zonder tussenstap. Deze knop staat er alleen voor
+  wie **Reserveringen beheren** heeft; zonder dat recht staat hij er wel, maar grijs (hoofdstuk
+  15, paragraaf 15.9). Iedereen met **Reserveringen bekijken** ziet de melding en de lijst zelf
+  wél, ook zonder dat recht.
+
+Is de lijst leeg, dan staat er *Geen niet opgehaalde reserveringen.* Sluit het venster met
+**Sluiten**.
+
+---
+
+## 5.13 De statussen op een rij
 
 | Status | Wat het betekent | Hoe hij zo wordt |
 |---|---|---|
@@ -534,7 +574,7 @@ Elke stand heeft één naam, in elk scherm: **Geboekt**, **Opgehaald**, **Ingele
 
 ---
 
-## 5.13 Snel naslaan
+## 5.14 Snel naslaan
 
 | Wat je wilt | Waar |
 |---|---|
@@ -549,4 +589,5 @@ Elke stand heeft één naam, in elk scherm: **Geboekt**, **Opgehaald**, **Ingele
 | Het ophalen ongedaan maken | **Terugzetten** → **Ja, terugzetten** |
 | Een boeking annuleren | Zoekveld bovenin → de reservering openen → **Reservering annuleren** (vraagt per gekoppeld record wat er mee moet) |
 | Een oude huur alsnog afsluiten | **Reserveringen** → **… achterstallig** → **Details bekijken** → **Inleveren starten** |
+| Een nooit-opgehaalde boeking uit een maand geleden zien | Opent vanzelf, of **Reserveringen** → **… niet opgehaald**, zie 5.12 |
 | Een verwijderde reservering terughalen | Beheerder: **Voertuigen** → **Verwijderde voertuigen** |
