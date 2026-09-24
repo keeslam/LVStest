@@ -63,11 +63,12 @@ export function CustomerEditDialog({ customerId, children, onSuccess }: Customer
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : customer ? (
-            <CustomerForm 
+            <CustomerForm
               editMode={true}
               initialData={customer}
               onSuccess={handleSuccess}
               redirectToList={false}
+              onCancel={() => setOpen(false)}
             />
           ) : (
             <div className="text-center py-8 text-gray-500">

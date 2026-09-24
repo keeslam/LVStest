@@ -73,13 +73,23 @@ interface CustomerFormProps {
   initialData?: any;
   onSuccess?: (data: any) => void;
   redirectToList?: boolean;
+  /**
+   * Closes the caller's own dialog when "Annuleren" is pressed and
+   * `redirectToList` is false. Without this, an embedded form (a dialog
+   * that mounted it with `onSuccess` and `redirectToList={false}`) had no
+   * way to tell its own dialog to close on cancel — it only reset the form
+   * fields, leaving the dialog open (found while building B-35's E2E test,
+   * see task-4-report.md's "Finding").
+   */
+  onCancel?: () => void;
 }
 
-export function CustomerForm({ 
-  editMode = false, 
-  initialData, 
-  onSuccess, 
-  redirectToList = true 
+export function CustomerForm({
+  editMode = false,
+  initialData,
+  onSuccess,
+  redirectToList = true,
+  onCancel,
 }: CustomerFormProps) {
   const { t } = useTranslation(["customers", "common"]);
   const { toast } = useToast();
@@ -917,12 +927,16 @@ export function CustomerForm({
                 onClick={() => {
                   if (redirectToList) {
                     navigate("/customers");
+                  } else if (onCancel) {
+                    // Embedded form (a dialog): the caller owns the open
+                    // state, so it closes its own dialog. Radix unmounts
+                    // `DialogContent` on close, which discards this form's
+                    // `useForm()` state along with it — nothing else to reset.
+                    onCancel();
                   } else {
-                    // For embedded forms (like in reservations), just close without navigation
-                    if (onSuccess) {
-                      // If onSuccess exists, the parent component will handle closing
-                      form.reset();
-                    }
+                    // No caller-supplied close handler: at least clear the
+                    // fields, matching the pre-existing behaviour.
+                    form.reset();
                   }
                 }}
               >

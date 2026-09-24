@@ -1758,6 +1758,7 @@ export function ReservationForm({
                                     initialData={selectedCustomer}
                                     editMode={true}
                                     redirectToList={false}
+                                    onCancel={() => setCustomerEditDialogOpen(false)}
                                     onSuccess={async (updatedCustomer) => {
                                       // Refresh customers list to show updated data
                                       invalidateRelatedQueries('customers');
@@ -1796,6 +1797,7 @@ export function ReservationForm({
                             <CustomerForm
                               onSuccess={handleCustomerCreated}
                               redirectToList={false}
+                              onCancel={() => setCustomerDialogOpen(false)}
                             />
                           </DialogContent>
                         </Dialog>

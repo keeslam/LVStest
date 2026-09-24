@@ -54,10 +54,11 @@ export function CustomerAddDialog({ children, onSuccess }: CustomerAddDialogProp
           </DialogDescription>
         </DialogHeader>
         <div className="mt-4">
-          <CustomerForm 
+          <CustomerForm
             editMode={false}
             onSuccess={handleSuccess}
             redirectToList={false}
+            onCancel={() => setOpen(false)}
           />
         </div>
       </DialogContent>
