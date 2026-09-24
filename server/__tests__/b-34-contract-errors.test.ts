@@ -180,7 +180,7 @@ describe("B-34 — the picker rule (BUG-181a)", () => {
     );
   });
 
-  it("a template with no fields: TEMPLATE_WITHOUT_FIELDS, 409", async () => {
+  it("a template with no fields: TEMPLATE_WITHOUT_FIELDS, 409, and the client is told which template", async () => {
     await withOnlyTemplates(
       [{ name: "FIXT-B34-empty", isDefault: true, fields: [] as any }],
       async (ids) => {
@@ -188,12 +188,31 @@ describe("B-34 — the picker rule (BUG-181a)", () => {
         const res = await admin.get(`/api/contracts/generate/${rental.id}`);
         expect(res.status).toBe(409);
         expect(res.body.code).toBe("TEMPLATE_WITHOUT_FIELDS");
+        // Fix round 1 (B-34 controller finding #3): `templateName` rides
+        // alongside `code` so the client can say *which* template has no
+        // fields instead of a generic sentence.
+        expect(res.body.templateName).toBe("FIXT-B34-empty");
 
         // Explicit templateId hits the same code through the same function.
         const rental2 = await bookedRental();
         const explicit = await admin.get(`/api/contracts/generate/${rental2.id}?templateId=${ids[0]}`);
         expect(explicit.status).toBe(409);
         expect(explicit.body.code).toBe("TEMPLATE_WITHOUT_FIELDS");
+        expect(explicit.body.templateName).toBe("FIXT-B34-empty");
+
+        // Same field, on the pickup route's own embedded-in-a-200 shape.
+        const rental3 = await bookedRental();
+        const pickupRes = await pickup(rental3.id);
+        expect(pickupRes.status).toBe(200);
+        expect(pickupRes.body.contractErrorCode).toBe("TEMPLATE_WITHOUT_FIELDS");
+        expect(pickupRes.body.contractErrorTemplateName).toBe("FIXT-B34-empty");
+
+        // ...and on the retry route.
+        const rental4 = await bookedRental();
+        await pickup(rental4.id);
+        const retryRes = await admin.post(`/api/reservations/${rental4.id}/contract`).send({});
+        expect(retryRes.body.code).toBe("TEMPLATE_WITHOUT_FIELDS");
+        expect(retryRes.body.templateName).toBe("FIXT-B34-empty");
       },
     );
   });

@@ -31,7 +31,17 @@ import type { ContractErrorCode } from "../../shared/contract-error-codes";
 
 export type TemplateSelection<T> =
   | { ok: true; template: T }
-  | { ok: false; status: number; message: string; code: ContractErrorCode };
+  | {
+      ok: false;
+      status: number;
+      message: string;
+      code: ContractErrorCode;
+      /** Fix round 1 (B-34 controller finding #3): the name of the offending
+       *  template, so the client can say *which* one has no fields instead of
+       *  a generic sentence — set only by `withFields()` below, where a name
+       *  is actually known. */
+      templateName?: string;
+    };
 
 /** Number of field definitions a stored template carries, whatever its shape. */
 export function templateFieldCount(template: { fields?: unknown } | null | undefined): number {
@@ -47,6 +57,10 @@ function withFields<T extends { id: number; name?: string | null; fields?: unkno
       ok: false,
       status: 409,
       code: "TEMPLATE_WITHOUT_FIELDS",
+      // `?? undefined`: a template row's `name` can be `null`, and the field
+      // must be genuinely absent (not `null`) for the client's fallback
+      // sentence to apply.
+      templateName: template.name ?? undefined,
       message:
         `The PDF template "${template.name ?? template.id}" has no fields, so the contract would be completely blank. ` +
         `Open it in the template editor, place the fields, and try again.`,

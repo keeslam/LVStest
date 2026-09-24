@@ -25,7 +25,10 @@ import type { ContractErrorCode } from "../../shared/contract-error-codes";
 
 export type ContractGenerationResult =
   | { ok: true; document: Document }
-  | { ok: false; status: number; message: string; code?: ContractErrorCode };
+  // Fix round 1 (B-34 controller finding #3): `templateName` rides along with
+  // `code` for TEMPLATE_WITHOUT_FIELDS (set by `selectContractTemplate()`'s
+  // `withFields()`), so the pickup and retry routes can pass it on.
+  | { ok: false; status: number; message: string; code?: ContractErrorCode; templateName?: string };
 
 /**
  * Produces and registers the unsigned contract for `reservation`.

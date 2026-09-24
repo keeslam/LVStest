@@ -5216,6 +5216,10 @@ export async function registerRoutes(app: Express): Promise<void> {
       let contractDocument: Extract<ContractGenerationResult, { ok: true }>["document"] | null = null;
       let contractError: string | null = null;
       let contractErrorCode: ContractErrorCode | null = null;
+      // Fix round 1 (B-34 controller finding #3): which template, for
+      // TEMPLATE_WITHOUT_FIELDS only — `undefined` from `generated.templateName`
+      // on every other code, never sent by the render-throw branch below.
+      let contractErrorTemplateName: string | null = null;
       try {
         const pickupTemplateId = templateId ? parseInt(String(templateId), 10) : undefined;
         const generated = await generateContractForReservation(updatedReservation, {
@@ -5228,6 +5232,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         } else {
           contractError = generated.message;
           contractErrorCode = generated.code ?? "RENDER_FAILED";
+          contractErrorTemplateName = generated.templateName ?? null;
           console.warn(`No contract for reservation ${reservationId}: ${generated.message}`);
         }
       } catch (pdfError) {
@@ -5241,6 +5246,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         contractDocument,
         contractError,
         contractErrorCode,
+        contractErrorTemplateName,
       });
     } catch (error) {
       // FIX-H (besluiten B-03): the workshop refusal and the override rules
@@ -5295,7 +5301,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         templateId,
       });
       if (!result.ok) {
-        return res.status(result.status).json({ message: result.message, code: result.code });
+        return res.status(result.status).json({ message: result.message, code: result.code, templateName: result.templateName });
       }
       realtimeEvents.documents.created(result.document);
       res.json({ contractDocument: result.document });
@@ -6634,7 +6640,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // contract nobody notices (BUG-028).
       const selection = await selectContractTemplate(templateId);
       if (!selection.ok) {
-        return res.status(selection.status).json({ message: selection.message, code: selection.code });
+        return res.status(selection.status).json({ message: selection.message, code: selection.code, templateName: selection.templateName });
       }
 
       const { generateRentalContractFromTemplate } = await import('./utils/pdf-generator');
@@ -6705,7 +6711,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // picker every other contract route uses.
       const selection = await selectContractTemplate(templateId);
       if (!selection.ok) {
-        return res.status(selection.status).json({ message: selection.message, code: selection.code });
+        return res.status(selection.status).json({ message: selection.message, code: selection.code, templateName: selection.templateName });
       }
       const template = selection.template;
 
@@ -6857,7 +6863,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       const versionedSelection = await selectContractTemplate(versionedTemplateId);
       if (!versionedSelection.ok) {
-        return res.status(versionedSelection.status).json({ message: versionedSelection.message, code: versionedSelection.code });
+        return res.status(versionedSelection.status).json({
+          message: versionedSelection.message,
+          code: versionedSelection.code,
+          templateName: versionedSelection.templateName,
+        });
       }
 
       // Get driver data if provided
@@ -6944,7 +6954,11 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       const defaultSelection = await selectContractTemplate();
       if (!defaultSelection.ok) {
-        return res.status(defaultSelection.status).json({ message: defaultSelection.message, code: defaultSelection.code });
+        return res.status(defaultSelection.status).json({
+          message: defaultSelection.message,
+          code: defaultSelection.code,
+          templateName: defaultSelection.templateName,
+        });
       }
 
       const { generateRentalContractFromTemplate } = await import('./utils/pdf-generator');
