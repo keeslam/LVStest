@@ -92,4 +92,15 @@ describe("B-32 aanvulling — never-collected bookings a month old", () => {
     const res = await viewOnly.get("/api/reservations/not-collected");
     expect(res.status).toBe(403);
   });
+
+  // task-2-review.md Minor 4 — every positive-path case above ran as `admin`
+  // (the role bypass), which never actually exercises the OR grant itself.
+  // A non-admin role holding only view_reservations (not manage_reservations)
+  // must still get 200 — the route's hasPermission(VIEW_RESERVATIONS,
+  // MANAGE_RESERVATIONS) is an OR, not a requirement for both.
+  it("allows a non-admin role with only view_reservations (200)", async () => {
+    const viewOnly = await agentFor(["view_reservations"]);
+    const res = await viewOnly.get("/api/reservations/not-collected");
+    expect(res.status).toBe(200);
+  });
 });
