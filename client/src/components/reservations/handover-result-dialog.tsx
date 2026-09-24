@@ -51,6 +51,15 @@ const CONTRACT_ERROR_REASON_KEYS: Partial<Record<ContractErrorCode, string>> = {
   RENDER_FAILED: "pickupReturn.handoverResult.errorReasons.RENDER_FAILED",
 };
 
+// Fix round 1 (B-34 controller finding #3): the server now sends the offending
+// template's own name (`templateName`, alongside `code`) for TEMPLATE_WITHOUT_FIELDS
+// — `server/services/pdf-template-selection.ts` `withFields()`. When it is
+// present, `{{name}}` is restored in the sentence above; a name-less fallback
+// key covers the (currently theoretical) case of a template row with no name
+// and the code path with no name at all, so the sentence is never left with a
+// literal, un-interpolated "{{name}}".
+const TEMPLATE_WITHOUT_FIELDS_UNKNOWN_KEY = "pickupReturn.handoverResult.errorReasons.TEMPLATE_WITHOUT_FIELDS_UNKNOWN";
+
 function isContractErrorCode(code: unknown): code is ContractErrorCode {
   return typeof code === "string" && (CONTRACT_ERROR_CODES as readonly string[]).includes(code);
 }
@@ -59,15 +68,21 @@ function isContractErrorCode(code: unknown): code is ContractErrorCode {
  * The text shown for a failed contract: the stable `code` decides it, never
  * the server's English `message` — that stays only as the untranslated
  * fallback for a code this dialog does not know (or none at all), exactly as
- * before B-34.
+ * before B-34. `templateName` is only ever read for TEMPLATE_WITHOUT_FIELDS.
  */
 function contractFailureText(
   t: (key: string, options?: Record<string, unknown>) => string,
   code: string | null | undefined,
   detail: string | null | undefined,
   fallback: string,
+  templateName?: string | null,
 ): string {
   if (isContractErrorCode(code)) {
+    if (code === "TEMPLATE_WITHOUT_FIELDS") {
+      return templateName
+        ? t(CONTRACT_ERROR_REASON_KEYS.TEMPLATE_WITHOUT_FIELDS!, { name: templateName })
+        : t(TEMPLATE_WITHOUT_FIELDS_UNKNOWN_KEY);
+    }
     const key = CONTRACT_ERROR_REASON_KEYS[code];
     if (key) return t(key, { detail: detail ?? "" });
   }
@@ -86,6 +101,9 @@ interface HandoverResultDialogProps {
    *  route sent one (`contractErrorCode`). Decides which Dutch/English
    *  sentence is shown; `errorMessage` itself is only ever a fallback. */
   errorCode?: string | null;
+  /** Fix round 1 (B-34) — the offending template's own name
+   *  (`contractErrorTemplateName`), read only for TEMPLATE_WITHOUT_FIELDS. */
+  errorTemplateName?: string | null;
   kind: HandoverDocumentKind;
   /** Called after the employee closes this dialog. */
   onDone?: () => void;
@@ -107,6 +125,7 @@ export function HandoverResultDialog({
   document,
   errorMessage,
   errorCode,
+  errorTemplateName,
   kind,
   onDone,
 }: HandoverResultDialogProps) {
@@ -138,7 +157,7 @@ export function HandoverResultDialog({
       toast({
         variant: "destructive",
         title: t('pickupReturn.handoverResult.retryFailed'),
-        description: contractFailureText(t, error?.code, error?.message, error?.message),
+        description: contractFailureText(t, error?.code, error?.message, error?.message, error?.templateName),
       });
     },
   });
@@ -173,6 +192,7 @@ export function HandoverResultDialog({
                     errorCode,
                     errorMessage,
                     errorMessage || t('pickupReturn.handoverResult.failedDescription'),
+                    errorTemplateName,
                   )}
             </DialogDescription>
           </DialogHeader>

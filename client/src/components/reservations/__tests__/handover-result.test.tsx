@@ -189,7 +189,6 @@ describe("OPT-005 — het contract vanuit de ophaaldialoog", () => {
     it.each([
       ["NO_TEMPLATE", "Er is geen contractsjabloon ingesteld. Maak er een aan onder Documenten → Contractsjablonen en klik dan op Opnieuw proberen."],
       ["NO_DEFAULT_TEMPLATE", "Er zijn meerdere sjablonen maar geen standaard. Kies een standaardsjabloon onder Documenten → Contractsjablonen."],
-      ["TEMPLATE_WITHOUT_FIELDS", "Het contractsjabloon heeft geen velden. Vul het sjabloon onder Documenten → Contractsjablonen."],
       ["TEMPLATE_BACKGROUND_MISSING", "De achtergrond van het contractsjabloon kon niet worden gelezen. Upload de achtergrond opnieuw onder Documenten → Contractsjablonen."],
       ["NO_VEHICLE", "Het voertuig van deze reservering kon niet worden gevonden. Controleer het voertuig en probeer het opnieuw."],
       ["PLACEHOLDER_RESERVATION", "Aan deze reservering is nog geen voertuig gekoppeld. Ken een voertuig toe en genereer het contract daarna opnieuw."],
@@ -203,7 +202,7 @@ describe("OPT-005 — het contract vanuit de ophaaldialoog", () => {
           reservation={reservation}
           document={null}
           errorMessage="raw english server text that must not be shown"
-          errorCode={code as any}
+          errorCode={code}
           kind="contract"
         />,
       );
@@ -219,7 +218,7 @@ describe("OPT-005 — het contract vanuit de ophaaldialoog", () => {
           reservation={reservation}
           document={null}
           errorMessage="pdf-lib threw while embedding the background"
-          errorCode={"RENDER_FAILED" as any}
+          errorCode={"RENDER_FAILED"}
           kind="contract"
         />,
       );
@@ -230,6 +229,44 @@ describe("OPT-005 — het contract vanuit de ophaaldialoog", () => {
       ).toBeInTheDocument();
     });
 
+    describe("TEMPLATE_WITHOUT_FIELDS — fix round 1: the server now names the offending template", () => {
+      it("names the template when the server sends errorTemplateName", () => {
+        withClient(
+          <HandoverResultDialog
+            open
+            onOpenChange={() => {}}
+            reservation={reservation}
+            document={null}
+            errorMessage="raw english server text that must not be shown"
+            errorCode="TEMPLATE_WITHOUT_FIELDS"
+            errorTemplateName="FIXT-empty"
+            kind="contract"
+          />,
+        );
+        expect(
+          screen.getByText("Het contractsjabloon 'FIXT-empty' heeft geen velden. Vul het sjabloon onder Documenten → Contractsjablonen."),
+        ).toBeInTheDocument();
+        expect(screen.queryByText("raw english server text that must not be shown")).toBeNull();
+      });
+
+      it("falls back to a nameless sentence when no errorTemplateName is sent", () => {
+        withClient(
+          <HandoverResultDialog
+            open
+            onOpenChange={() => {}}
+            reservation={reservation}
+            document={null}
+            errorMessage="raw english server text that must not be shown"
+            errorCode="TEMPLATE_WITHOUT_FIELDS"
+            kind="contract"
+          />,
+        );
+        expect(
+          screen.getByText("Het contractsjabloon heeft geen velden. Vul het sjabloon onder Documenten → Contractsjablonen."),
+        ).toBeInTheDocument();
+      });
+    });
+
     it("a code this dialog does not translate (e.g. TEMPLATE_NOT_FOUND) falls back to the server's own text, as today", () => {
       withClient(
         <HandoverResultDialog
@@ -238,7 +275,7 @@ describe("OPT-005 — het contract vanuit de ophaaldialoog", () => {
           reservation={reservation}
           document={null}
           errorMessage="Template not found"
-          errorCode={"TEMPLATE_NOT_FOUND" as any}
+          errorCode={"TEMPLATE_NOT_FOUND"}
           kind="contract"
         />,
       );
@@ -284,6 +321,30 @@ describe("OPT-005 — het contract vanuit de ophaaldialoog", () => {
         "Er is geen contractsjabloon ingesteld. Maak er een aan onder Documenten → Contractsjablonen en klik dan op Opnieuw proberen.",
       );
       expect(String(last.description)).not.toMatch(/\b\d{3}:\s/);
+    });
+
+    it("fix round 1: names the template for TEMPLATE_WITHOUT_FIELDS, read from the error body's templateName", async () => {
+      fetchMock = vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            message: 'The PDF template "FIXT-empty" has no fields, so the contract would be completely blank.',
+            code: "TEMPLATE_WITHOUT_FIELDS",
+            templateName: "FIXT-empty",
+          }),
+          { status: 409, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      const user = userEvent.setup();
+      withClient(
+        <HandoverResultDialog open onOpenChange={() => {}} reservation={reservation} document={null} kind="contract" />,
+      );
+      await user.click(screen.getByTestId("button-handover-retry"));
+      await waitFor(() => expect(toasts.length).toBeGreaterThan(0));
+      const last = toasts[toasts.length - 1];
+      expect(last.description).toBe(
+        "Het contractsjabloon 'FIXT-empty' heeft geen velden. Vul het sjabloon onder Documenten → Contractsjablonen.",
+      );
     });
 
     it("falls back to the server's own text for a code it does not translate", async () => {

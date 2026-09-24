@@ -278,7 +278,8 @@
       "errorReasons": {
         "NO_TEMPLATE": "No contract template has been set up. Create one under Documents → Contract templates, then click Try again.",
         "NO_DEFAULT_TEMPLATE": "There are multiple templates but none is set as the default. Choose a default template under Documents → Contract templates.",
-        "TEMPLATE_WITHOUT_FIELDS": "The contract template has no fields. Fill in the template under Documents → Contract templates.",
+        "TEMPLATE_WITHOUT_FIELDS": "The contract template '{{name}}' has no fields. Fill in the template under Documents → Contract templates.",
+        "TEMPLATE_WITHOUT_FIELDS_UNKNOWN": "The contract template has no fields. Fill in the template under Documents → Contract templates.",
         "TEMPLATE_BACKGROUND_MISSING": "The contract template's background could not be read. Upload the background again under Documents → Contract templates.",
         "NO_VEHICLE": "The vehicle for this reservation could not be found. Check the vehicle and try again.",
         "PLACEHOLDER_RESERVATION": "No vehicle has been assigned to this reservation yet. Assign a vehicle, then generate the contract again.",
