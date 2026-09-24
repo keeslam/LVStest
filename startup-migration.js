@@ -519,12 +519,20 @@ async function migrateCustomerDebtorNumberUniqueness() {
     return;
   }
 
-  await db.execute(sql`
-    CREATE UNIQUE INDEX IF NOT EXISTS customers_debtor_number_lower_idx
-    ON customers (lower(btrim(debtor_number)))
-    WHERE debtor_number IS NOT NULL AND btrim(debtor_number) <> ''
-  `);
-  console.log('✅ B-35: customers.debtor_number unique index is in place');
+  // The index is a safety net behind the app's own check (server/routes.ts),
+  // so an unexpected failure here (lock timeout, privileges) must not stop the
+  // container: warn, skip, and let the next start try again.
+  try {
+    await db.execute(sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS customers_debtor_number_lower_idx
+      ON customers (lower(btrim(debtor_number)))
+      WHERE debtor_number IS NOT NULL AND btrim(debtor_number) <> ''
+    `);
+    console.log('✅ B-35: customers.debtor_number unique index is in place');
+  } catch (error) {
+    console.warn(`⚠️ B-35: could not create the debtor number unique index, skipping it for now: ${error.message}`);
+    console.warn('   New duplicates are still blocked by the app itself; the index is retried on the next start.');
+  }
 }
 
 async function runMigrations() {

@@ -2811,7 +2811,9 @@ export async function registerRoutes(app: Express): Promise<void> {
   // of that definition, not a replacement for it — see database-storage.ts.
   app.get("/api/reservations/overdue/:vehicleId", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req, res) => {
     const vehicleId = parseInt(req.params.vehicleId);
-    const daysOverdue = parseInt(req.query.days as string) || 0;
+    // A negative grace would move the cutoff into the future and list rentals
+    // that are not late at all; clamp to "today or earlier".
+    const daysOverdue = Math.max(0, parseInt(req.query.days as string) || 0);
     
     if (isNaN(vehicleId)) {
       return res.status(400).json({ message: "Invalid vehicle ID" });

@@ -60,7 +60,7 @@ recht erin — in plaats van, zoals voorheen, die combinatie gewoon over te slaa
 | `npm run e2e` | alles: laag A, laag B, de staart en daarna het dekkingsoverzicht van de vensters |
 | `npm run e2e:a` | alleen laag A (schermen en vensters per rol) |
 | `npm run e2e:b` | alleen laag B (de werkstromen) |
-| `npm run e2e:tail` | alleen de staart (`layer-b-tail`) |
+| `npm run e2e:tail` | de staart (`layer-b-tail`); omdat die van laag A en B afhangt, draait Playwright eerst de hele suite en dan de staart |
 | `npm run e2e:coverage` | alleen het dekkingsoverzicht van de vensters |
 
 **De staart (`layer-b-tail`, sinds B-32's aanvulling).** Eén Playwright-project dat pas
