@@ -237,9 +237,40 @@ describe("MaintenanceViewDialog - removing a spare that has been picked up", () 
     expect(toast.description).not.toMatch(/Not authorized|Reserveringen/);
   });
 
-  it("the same English words under another code are not mistaken for it, and any other failure keeps today's text", async () => {
+  it("the same English words under another code are not mistaken for it: a 409 gets the Dutch conflict sentence", async () => {
     deleteResponse = json({ message: "This rental has already been picked up. Resend with confirmPickedUp: true", code: "SOMETHING_ELSE" }, 409);
     const toast = await removeTheSpare();
-    expect(toast.description).toBe("This rental has already been picked up. Resend with confirmPickedUp: true");
+    expect(toast.description).toBe("Het vervangende voertuig is intussen gewijzigd of niet meer beschikbaar. Vernieuw het scherm en probeer het opnieuw.");
+    expect(toast.description).not.toMatch(/confirmPickedUp|Resend/);
+  });
+
+  // Final wave, item 15: a failure that is none of the picked-up refusals is told by its HTTP status in
+  // Dutch - the server's own sentence is English and technical, and the client never matches on it.
+  it.each([
+    [403, "Not authorized. One of these permissions required: manage_reservations", "Je hebt geen toestemming om het vervangende voertuig te wijzigen."],
+    [404, "Reservation not found", "Deze reservering bestaat niet meer. Vernieuw het scherm en probeer het opnieuw."],
+    [409, "The reservation was changed by someone else", "Het vervangende voertuig is intussen gewijzigd of niet meer beschikbaar. Vernieuw het scherm en probeer het opnieuw."],
+    [500, "Failed to delete reservation", "De server meldt een fout. Probeer het over een moment opnieuw."],
+  ])("%s without a picked-up code: the toast says the Dutch sentence, not the server's text", async (status, english, dutch) => {
+    deleteResponse = json({ message: english }, status);
+    const toast = await removeTheSpare();
+    expect(toast.variant).toBe("destructive");
+    expect(toast.description).toBe(dutch);
+    expect(toast.description).not.toContain(english);
+  });
+
+  it("any other status (here 400) gets the generic 'bijwerken mislukt' sentence, never the raw message", async () => {
+    deleteResponse = json({ message: "Invalid reservation ID" }, 400);
+    const toast = await removeTheSpare();
+    expect(toast.description).toBe("Vervangend voertuig bijwerken mislukt");
+  });
+
+  it("has the four status sentences in both languages", async () => {
+    const nl = (await import("@/locales/nl/maintenance.json")).default as any;
+    const en = (await import("@/locales/en/maintenance.json")).default as any;
+    for (const key of ["spareForbidden", "spareNotFound", "spareConflict", "spareServerError"]) {
+      expect(nl.viewDialog[key], `nl ${key}`).toEqual(expect.any(String));
+      expect(en.viewDialog[key], `en ${key}`).toEqual(expect.any(String));
+    }
   });
 });

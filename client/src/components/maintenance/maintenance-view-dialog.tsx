@@ -259,9 +259,16 @@ export function MaintenanceViewDialog({
       // says so in Dutch, never with the server's English text: the 409 (the account holds the right)
       // points to Reserveringen, where the warning and the confirmation are; the 403 (it does not)
       // names the missing right, as the cancel dialogs do - Reserveringen would refuse it too.
-      let description: string = error.message || t('viewDialog.updateSpareFailedDescription');
+      // Every other failure is told by its HTTP status (the server's own text is English and
+      // technical, and the client never matches on it); anything else gets the generic sentence.
+      let description: string;
       if (pickedUpRefusalOf(error)) description = t('viewDialog.spareAlreadyPickedUp');
       else if (isPickedUpRightRefusal(error)) description = t('reservations:pickedUpWarning.rightRequired');
+      else if (error?.httpStatus === 403) description = t('viewDialog.spareForbidden');
+      else if (error?.httpStatus === 404) description = t('viewDialog.spareNotFound');
+      else if (error?.httpStatus === 409) description = t('viewDialog.spareConflict');
+      else if (error?.httpStatus === 500) description = t('viewDialog.spareServerError');
+      else description = t('viewDialog.updateSpareFailedDescription');
       toast({
         title: t('viewDialog.errorTitle'),
         description,
