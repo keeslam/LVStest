@@ -30,6 +30,19 @@ import {
 import { formatVehicleBarcode } from "../shared/barcode";
 import { addMonths, addDays, parseISO, isBefore, isAfter, isEqual } from "date-fns";
 
+/**
+ * B-37 - the APK file the completion route received (multer has already written
+ * it to disk). `completeMaintenance` owns it from here on: it becomes a
+ * `documents` row in the same transaction, or it is unlinked.
+ */
+export interface CompleteMaintenanceFile {
+  /** Absolute path of the file multer wrote. */
+  path: string;
+  originalName: string;
+  size: number;
+  mimeType: string;
+}
+
 /** OPT-015 — the outcome of "Onderhoud afronden". */
 export type CompleteMaintenanceResult =
   | {
@@ -37,8 +50,18 @@ export type CompleteMaintenanceResult =
       block: Reservation | undefined;
       vehicle: Vehicle | null;
       spareReservation: Reservation | null;
+      /** B-37: the `documents` row made from the APK file, null when none was sent. */
+      documentId: number | null;
     }
-  | { ok: false; status: number; message: string };
+  | {
+      ok: false;
+      status: number;
+      message: string;
+      /** B-37: stable code the client branches on, e.g. MILEAGE_LOWER_THAN_CURRENT. */
+      code?: string;
+      /** B-37: extra fields for the client, merged into the response body. */
+      details?: Record<string, unknown>;
+    };
 
 export interface IStorage {
   // User methods
@@ -154,10 +177,15 @@ export interface IStorage {
   markVehicleForService(vehicleId: number, maintenanceStatus: string, maintenanceNote?: string): Promise<Vehicle | undefined>;
   createMaintenanceBlock(vehicleId: number, startDate: string, endDate?: string, customerId?: number | null): Promise<Reservation>;
   // OPT-015 - "de reparatie is klaar" as ONE transactional action.
+  // B-37: the same transaction also writes the readings the workshop took (APK date,
+  // mileage) and the APK file as a document, so a failure leaves none of it behind.
   completeMaintenance(blockId: number, input: {
     completionDate: string;
     maintenanceCategory?: string | null;
     notes?: string | null;
+    currentMileage?: number | null;
+    apkDate?: string | null;
+    apkFile?: CompleteMaintenanceFile | null;
     username?: string | null;
   }): Promise<CompleteMaintenanceResult>;
   closeMaintenanceBlock(blockReservationId: number, endDate: string): Promise<Reservation | undefined>;

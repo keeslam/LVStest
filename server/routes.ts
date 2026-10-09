@@ -45,6 +45,7 @@ import {
   placeholderNeedingAssignmentQuerySchema,
   assignVehicleToPlaceholderSchema,
   Reservation,
+  type Vehicle,
   UserRole,
   UserPermission,
   DELETED_RECORD_KINDS,
@@ -4969,6 +4970,63 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   /**
+   * Sub-project C, B-37 - the optional APK file of "Onderhoud afronden".
+   *
+   * multer decides the folder and the file name while the stream is read, i.e.
+   * before the handler, and both are the vehicle's plate. So the block's vehicle
+   * is looked up first. When there is no such block (unknown id, an ordinary
+   * rental) nothing is set, multer is skipped and the handler's own 404/400
+   * answers: no file reaches the disk for a request that cannot succeed. The
+   * guard (hasPermission) runs before all of this, so a 403 writes nothing either.
+   */
+  const resolveCompletionVehicle = async (req: Request, _res: Response, next: NextFunction) => {
+    try {
+      const block = await storage.getReservation(parseInt(req.params.id));
+      if (block?.type === 'maintenance_block' && block.vehicleId) {
+        const vehicle = await storage.getVehicle(block.vehicleId);
+        if (vehicle) (req as any).completionVehicle = vehicle;
+      }
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  const completionApkStorage = multer.diskStorage({
+    destination: (req, _file, cb) => {
+      try {
+        const vehicle = (req as any).completionVehicle as Vehicle;
+        // Same folder layout as POST /api/documents for an "APK Inspection".
+        const dir = path.join(getUploadsDir(), vehicle.licensePlate.replace(/[^a-zA-Z0-9]/g, ''), 'apk_inspection');
+        fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+      } catch (error) {
+        console.error('Failed to create the APK upload directory:', error);
+        cb(new UploadRejectedError("Could not determine where to store this document."), '');
+      }
+    },
+    filename: (req, file, cb) => {
+      const vehicle = (req as any).completionVehicle as Vehicle;
+      const plate = vehicle.licensePlate.replace(/[^a-zA-Z0-9]/g, '');
+      const extension = path.extname(sanitizeFilename(file.originalname));
+      cb(null, `${plate}_APK_Inspection_${new Date().toISOString().split('T')[0]}_${Date.now()}${extension}`);
+    },
+  });
+
+  const completionApkUpload = sanitizeUploadedFields(multer({
+    storage: completionApkStorage,
+    limits: { fileSize: 25 * 1024 * 1024 },
+    fileFilter: createSecureMulterFilter('document'),
+  }));
+
+  const parseCompletionUpload = (req: Request, res: Response, next: NextFunction) => {
+    if ((req as any).completionVehicle && req.is('multipart/form-data')) {
+      return completionApkUpload.single('apkFile')(req, res, next);
+    }
+    next();
+  };
+
+  /**
    * OPT-015 - "Onderhoud afronden" as ONE handling.
    *
    * Closing a repair cost three actions across two screens (block to `out`,
@@ -4978,38 +5036,95 @@ export async function registerRoutes(app: Express): Promise<void> {
    * in one transaction, with one date convention: the completion date is the
    * block's end date and the start date is never rewritten.
    */
-  app.post("/api/reservations/:id/complete-maintenance", hasPermission(UserPermission.MANAGE_MAINTENANCE, UserPermission.MANAGE_RESERVATIONS), async (req: Request, res: Response) => {
+  app.post("/api/reservations/:id/complete-maintenance", hasPermission(UserPermission.MANAGE_MAINTENANCE, UserPermission.MANAGE_RESERVATIONS), resolveCompletionVehicle, parseCompletionUpload, async (req: Request, res: Response) => {
+    // Sub-project C, B-37: the optional APK file (field `apkFile`) is already on
+    // disk when this runs. It is dropped again on every way out that does not end
+    // in a committed `documents` row; `completeMaintenance` does the same for the
+    // refusals and failures it sees itself.
+    const upload = req.file ?? null;
+    let committed = false;
+    const dropUpload = () => {
+      if (!upload || committed) return;
+      try {
+        fs.unlinkSync(upload.path);
+      } catch (error: any) {
+        if (error?.code !== 'ENOENT') console.error("Could not remove the unused APK file:", error);
+      }
+    };
+    const refuse = (status: number, body: Record<string, unknown>) => {
+      dropUpload();
+      return res.status(status).json(body);
+    };
+
     try {
       const blockId = parseInt(req.params.id);
       if (isNaN(blockId)) {
-        return res.status(400).json({ message: "Invalid maintenance block ID" });
+        return refuse(400, { message: "Invalid maintenance block ID" });
       }
 
-      const { completionDate, maintenanceCategory, notes } = req.body ?? {};
+      // JSON and multipart both land here: a multipart body carries every field
+      // as a string, a JSON body may carry numbers.
+      const { completionDate, maintenanceCategory, notes, currentMileage: rawMileage, apkDate } = req.body ?? {};
       if (completionDate != null && completionDate !== '' &&
         (typeof completionDate !== 'string' || !isCalendarDate(completionDate))) {
-        return res.status(400).json({
+        return refuse(400, {
           message: "Invalid completion date",
           errors: [{ field: "completionDate", message: "Use a real yyyy-MM-dd date" }],
         });
       }
       if (maintenanceCategory != null && typeof maintenanceCategory !== 'string') {
-        return res.status(400).json({ message: "Invalid maintenance category" });
+        return refuse(400, { message: "Invalid maintenance category" });
       }
       if (notes != null && typeof notes !== 'string') {
-        return res.status(400).json({ message: "Invalid notes" });
+        return refuse(400, { message: "Invalid notes" });
+      }
+      if (apkDate != null && apkDate !== '' && (typeof apkDate !== 'string' || !isCalendarDate(apkDate))) {
+        return refuse(400, {
+          message: "Invalid APK date",
+          errors: [{ field: "apkDate", message: "Use a real yyyy-MM-dd date" }],
+        });
+      }
+      let currentMileage: number | null = null;
+      if (rawMileage != null && rawMileage !== '') {
+        const parsed = typeof rawMileage === 'number' ? rawMileage : Number(String(rawMileage).trim());
+        if (!Number.isInteger(parsed) || parsed <= 0 || parsed > 9_999_999) {
+          return refuse(400, {
+            message: "Invalid mileage",
+            errors: [{ field: "currentMileage", message: "Use a whole number of kilometres above zero" }],
+          });
+        }
+        currentMileage = parsed;
+      }
+
+      if (upload) {
+        // Declared type versus the real bytes. A failing file is deleted by the helper.
+        const fileValidation = await validateAfterUpload(upload.path, upload.originalname, upload.mimetype, 'document');
+        if (!fileValidation.valid) {
+          return res.status(400).json({ message: fileValidation.error });
+        }
       }
 
       const result = await storage.completeMaintenance(blockId, {
         completionDate: completionDate || isoToday(),
         maintenanceCategory: maintenanceCategory ?? null,
         notes: notes ?? null,
+        currentMileage,
+        apkDate: apkDate || null,
+        apkFile: upload
+          ? { path: upload.path, originalName: upload.originalname, size: upload.size, mimeType: upload.mimetype }
+          : null,
         username: (req as any).user?.username ?? null,
       });
 
       if (!result.ok) {
-        return res.status(result.status).json({ message: result.message });
+        // completeMaintenance has already removed the file.
+        return res.status(result.status).json({
+          message: result.message,
+          ...(result.code ? { code: result.code } : {}),
+          ...(result.details ?? {}),
+        });
       }
+      committed = true;
 
       if (result.block) realtimeEvents.reservations.updated(result.block);
       if (result.vehicle) realtimeEvents.vehicles.updated(result.vehicle);
@@ -5018,8 +5133,10 @@ export async function registerRoutes(app: Express): Promise<void> {
         block: result.block,
         vehicle: result.vehicle,
         spareReservation: result.spareReservation,
+        documentId: result.documentId,
       });
     } catch (error) {
+      dropUpload();
       console.error("Error completing maintenance:", error);
       res.status(500).json({ message: "Failed to finish the maintenance" });
     }

@@ -116,7 +116,8 @@ import { addMonths, addDays, parseISO, isBefore, isAfter, isEqual } from "date-f
 import { db } from "./db";
 import { eq, ne, and, gte, lte, asc, desc, sql, inArray, not, or, ilike, isNull, isNotNull, getTableColumns, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { IStorage, type CompleteMaintenanceResult } from "./storage";
+import { IStorage, type CompleteMaintenanceResult, type CompleteMaintenanceFile } from "./storage";
+import { getRelativePath } from "./services/document-paths";
 import { formatVehicleBarcode, parseBarcode, normalizeScannedCode } from "../shared/barcode";
 // besluiten B-16 + B-07: one day count and one total, shared with the form.
 import { recalculateTotalPrice } from "../shared/rental-pricing";
@@ -5210,35 +5211,60 @@ export class DatabaseStorage implements IStorage {
    *
    * All three writes are in one transaction: a failure halfway leaves none of
    * them, which is the acceptance criterion in the plan.
+   *
+   * B-37 puts what the workshop hands over in the same transaction: the APK
+   * date and the odometer reading on the vehicle (`lastServiceDate` /
+   * `lastServiceMileage` too when the job was a scheduled service) and the APK
+   * file as a `documents` row tied to the vehicle and to this block. A mileage
+   * below the vehicle's current reading is refused with
+   * MILEAGE_LOWER_THAN_CURRENT and nothing changes. The file has already been
+   * written by the upload middleware when this runs; it is unlinked again on
+   * every path that does not end in a committed document row.
    */
   async completeMaintenance(blockId: number, input: {
     completionDate: string;
     maintenanceCategory?: string | null;
     notes?: string | null;
+    currentMileage?: number | null;
+    apkDate?: string | null;
+    apkFile?: CompleteMaintenanceFile | null;
     username?: string | null;
   }): Promise<CompleteMaintenanceResult> {
+    const discardFile = () => {
+      if (!input.apkFile) return;
+      try {
+        fs.unlinkSync(input.apkFile.path);
+      } catch (error: any) {
+        if (error?.code !== 'ENOENT') console.error('Could not remove the unused APK file:', error);
+      }
+    };
+    const refuse = (refusal: Extract<CompleteMaintenanceResult, { ok: false }>): CompleteMaintenanceResult => {
+      discardFile();
+      return refusal;
+    };
+
     const [block] = await db.select().from(reservations).where(
       and(eq(reservations.id, blockId), isNull(reservations.deletedAt)),
     );
     if (!block) {
-      return { ok: false, status: 404, message: 'Maintenance block not found' };
+      return refuse({ ok: false, status: 404, message: 'Maintenance block not found' });
     }
     if (block.type !== 'maintenance_block') {
-      return {
+      return refuse({
         ok: false,
         status: 400,
         message: 'This reservation is not a maintenance block, so there is no repair to finish here.',
-      };
+      });
     }
     if (!block.vehicleId) {
-      return { ok: false, status: 400, message: 'This maintenance block has no vehicle.' };
+      return refuse({ ok: false, status: 400, message: 'This maintenance block has no vehicle.' });
     }
     if (block.endDate && input.completionDate < block.startDate) {
-      return {
+      return refuse({
         ok: false,
         status: 400,
         message: 'The completion date cannot be before the block started.',
-      };
+      });
     }
 
     const vehicleId = block.vehicleId;
@@ -5265,7 +5291,52 @@ export class DatabaseStorage implements IStorage {
       ));
     const spare = openSpares[0] ?? null;
 
+    const givenMileage = input.currentMileage ?? null;
+    const isScheduledService = input.maintenanceCategory === 'scheduled_maintenance';
+    // What the workshop hands over, written onto the vehicle in the same transaction.
+    const vehicleReadings: Partial<typeof vehicles.$inferInsert> = {
+      ...(input.apkDate ? { apkDate: input.apkDate } : {}),
+      ...(givenMileage != null ? { currentMileage: givenMileage } : {}),
+      ...(isScheduledService ? { lastServiceDate: input.completionDate } : {}),
+      ...(isScheduledService && givenMileage != null ? { lastServiceMileage: givenMileage } : {}),
+    };
+
     const result = await db.transaction(async (tx) => {
+      // The readings go first, in one statement that carries the mileage rule in
+      // its WHERE clause: a reading below the vehicle's current one touches nothing
+      // (no lock to order against the other writers, and no window between a
+      // check and the write).
+      if (Object.keys(vehicleReadings).length > 0) {
+        const written = await tx
+          .update(vehicles)
+          .set({ ...vehicleReadings, updatedBy: input.username ?? null, updatedAt: new Date() })
+          .where(and(
+            eq(vehicles.id, vehicleId),
+            givenMileage != null
+              ? or(isNull(vehicles.currentMileage), lte(vehicles.currentMileage, givenMileage))
+              : undefined,
+          ))
+          .returning({ id: vehicles.id });
+        if (written.length === 0) {
+          const [current] = await tx
+            .select({ currentMileage: vehicles.currentMileage })
+            .from(vehicles)
+            .where(eq(vehicles.id, vehicleId));
+          if (!current) {
+            return { refusal: { ok: false as const, status: 404, message: 'Vehicle not found' } };
+          }
+          return {
+            refusal: {
+              ok: false as const,
+              status: 400,
+              code: 'MILEAGE_LOWER_THAN_CURRENT',
+              message: "The mileage is lower than the vehicle's current reading.",
+              details: { current: current.currentMileage, given: givenMileage },
+            },
+          };
+        }
+      }
+
       const [closedBlock] = await tx
         .update(reservations)
         .set({
@@ -5279,6 +5350,27 @@ export class DatabaseStorage implements IStorage {
         })
         .where(and(eq(reservations.id, blockId), isNull(reservations.deletedAt)))
         .returning();
+
+      // The APK file: tied to the vehicle AND to this block. Written before the
+      // commit; the catch below unlinks the file when this transaction fails.
+      let documentId: number | null = null;
+      if (input.apkFile) {
+        const [document] = await tx
+          .insert(documents)
+          .values({
+            vehicleId,
+            reservationId: blockId,
+            documentType: 'APK Inspection',
+            fileName: path.basename(input.apkFile.path),
+            filePath: getRelativePath(input.apkFile.path),
+            fileSize: input.apkFile.size,
+            contentType: input.apkFile.mimeType,
+            notes: `APK inspection completed on ${input.completionDate}${input.apkDate ? `; APK valid until ${input.apkDate}` : ''}`,
+            createdBy: input.username ?? null,
+          })
+          .returning({ id: documents.id });
+        documentId = document.id;
+      }
 
       // The workshop flag. besluiten B-03 makes it survive an inname and a
       // completed transport; closing the job is the one moment it is cleared,
@@ -5305,8 +5397,15 @@ export class DatabaseStorage implements IStorage {
         closedSpare = row ?? null;
       }
 
-      return { closedBlock, vehicle, closedSpare };
+      return { closedBlock, vehicle, closedSpare, documentId };
+    }).catch((error) => {
+      // The file was written before this transaction; nothing references it now.
+      discardFile();
+      throw error;
     });
+    if (result.refusal) {
+      return refuse(result.refusal);
+    }
 
     // The derivation is deliberately outside the transaction: it runs on its
     // own connection and would deadlock against the rows just locked. The
@@ -5322,6 +5421,7 @@ export class DatabaseStorage implements IStorage {
       block: result.closedBlock,
       vehicle: result.vehicle ?? null,
       spareReservation: result.closedSpare,
+      documentId: result.documentId,
     };
   }
 

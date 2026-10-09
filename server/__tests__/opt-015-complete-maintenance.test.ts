@@ -54,7 +54,10 @@ async function vehicleRow(id: number) {
 
 /** A car in the workshop, with an open block and a spare out with the customer. */
 async function repairInProgress() {
-  const broken: Vehicle = await createFixtureVehicle({ maintenanceStatus: "in_service" });
+  // `needs_fixing` is what the sweeps derive for a car with an open block; the
+  // completion has to clear it (a regression in the markVehicleForService() call
+  // would leave it, and "bookable again" alone would not notice).
+  const broken: Vehicle = await createFixtureVehicle({ maintenanceStatus: "in_service", availabilityStatus: "needs_fixing" });
   const spareVehicle: Vehicle = await createFixtureVehicle();
 
   const rental = await createFixtureReservation({
@@ -92,6 +95,9 @@ describe("OPT-015 — de reparatie is klaar, in één handeling", () => {
 
     const car = await vehicleRow(broken.id);
     expect(car.maintenanceStatus).toBe("ok");
+    // The workshop flag is gone; what the car is now follows from its rental
+    // (the customer's picked-up rental is on this car, so "rented", not "needs_fixing").
+    expect(car.availabilityStatus).toBe("rented");
 
     const closedSpare = await reservationRow(spare.id);
     expect(normalizeReservationStatus(closedSpare.status)).toBe("completed");
@@ -146,6 +152,7 @@ describe("OPT-015 — de reparatie is klaar, in één handeling", () => {
     expect(untouchedBlock.endDate).toBeNull();
 
     expect((await vehicleRow(broken.id)).maintenanceStatus).toBe("in_service");
+    expect((await vehicleRow(broken.id)).availabilityStatus).toBe("needs_fixing");
 
     const untouchedSpare = await reservationRow(spare.id);
     expect(normalizeReservationStatus(untouchedSpare.status)).toBe("picked_up");
@@ -153,7 +160,7 @@ describe("OPT-015 — de reparatie is klaar, in één handeling", () => {
   });
 
   it("works for a repair without a spare", async () => {
-    const broken = await createFixtureVehicle({ maintenanceStatus: "in_service" });
+    const broken = await createFixtureVehicle({ maintenanceStatus: "in_service", availabilityStatus: "needs_fixing" });
     const block = await createFixtureReservation({
       customerId: null, vehicleId: broken.id, startDate: BLOCK_START, endDate: null,
       status: "booked", type: "maintenance_block",
@@ -165,6 +172,7 @@ describe("OPT-015 — de reparatie is klaar, in één handeling", () => {
     expect(res.status).toBe(200);
     expect(res.body.spareReservation).toBeNull();
     expect((await vehicleRow(broken.id)).maintenanceStatus).toBe("ok");
+    expect((await vehicleRow(broken.id)).availabilityStatus).toBe("available");
   });
 
   it("refuses an ordinary rental, an unknown id and an unreadable date", async () => {
