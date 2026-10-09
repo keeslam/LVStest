@@ -548,8 +548,10 @@ export function ReservationViewDialog({
                 </div>
               )}
 
-              {/* Fiscal mobility check (docs/fiscaal): derived facts, confirmation, latest assessment. */}
-              {reservationId && <UsagePeriodCard reservationId={reservationId} startDate={reservation.actualPickupDate ?? reservation.startDate} />}
+              {/* Fiscal mobility check (docs/fiscaal): derived facts, confirmation, latest assessment.
+                  A maintenance block is never a rental: it has no usage period, and asking for one
+                  only earns the red "Kon de gegevens niet laden" toast. */}
+              {reservationId && reservation.type !== 'maintenance_block' && <UsagePeriodCard reservationId={reservationId} startDate={reservation.actualPickupDate ?? reservation.startDate} />}
 
               {/* Documents Section */}
               <div>

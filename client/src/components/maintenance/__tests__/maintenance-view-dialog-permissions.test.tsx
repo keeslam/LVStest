@@ -17,6 +17,12 @@ import { getQueryFn } from "@/lib/queryClient";
 import { UserPermission, UserRole } from "@shared/schema";
 import { GlobalDialogProvider } from "@/contexts/GlobalDialogContext";
 
+const toastSpy = vi.hoisted(() => vi.fn());
+vi.mock("@/hooks/use-toast", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/hooks/use-toast")>()),
+  useToast: () => ({ toast: toastSpy, toasts: [], dismiss: () => {} }),
+}));
+
 let role: string = UserRole.USER;
 let permissions: string[] = [];
 vi.mock("@/hooks/use-auth", () => ({
@@ -139,5 +145,98 @@ describe("MaintenanceViewDialog — button-scan-invoice follows manage_expenses 
     await waitFor(() => {
       expect(screen.getByTestId("input-invoice-file")).toBeInTheDocument();
     });
+  });
+});
+
+/**
+ * Sub-project C, Task 5 fix round 1: removing the spare of a rental deletes the spare's
+ * reservation (DELETE /api/reservations/:id). Since Task 5 the server refuses that for a spare
+ * that has been picked up - 409 PICKED_UP_CONFIRMATION_REQUIRED, or 403 PICKED_UP_RIGHT_REQUIRED
+ * without the right - and this screen printed the English `message` raw. It now says in Dutch
+ * what happened and where to go (Reserveringen has the warning and the right check); the client
+ * branches on the stable `code`, never on the English words.
+ */
+describe("MaintenanceViewDialog - removing a spare that has been picked up", () => {
+  const rental = {
+    id: 40, vehicleId: 1, customerId: 5, driverId: null, type: "standard", status: "booked",
+    startDate: "2026-10-01", endDate: "2026-10-09", spareAssignmentDecision: null, customer: { id: 5, name: "Jansen BV", phone: null },
+  };
+  const spare = {
+    id: 41, vehicleId: 2, customerId: 5, driverId: null, type: "replacement", status: "picked_up",
+    replacementForReservationId: 40, placeholderSpare: false, startDate: "2026-10-01", endDate: "2026-10-09",
+  };
+  let deleteResponse: Response;
+  let deleteUrls: string[];
+
+  function renderWithSpare() {
+    deleteUrls = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === "string" ? input : (input as Request).url;
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (method === "DELETE") {
+          deleteUrls.push(url);
+          return deleteResponse;
+        }
+        if (url.endsWith(`/api/reservations/${reservation.id}`)) return json(reservation);
+        if (url.endsWith("/api/reservations")) return json([reservation, rental, spare]);
+        if (url.endsWith("/api/vehicles")) return json([vehicle, { id: 2, brand: "Opel", model: "Corsa", licensePlate: "ZZ-999-Z" }]);
+        if (url.includes(`/api/vehicles/${vehicle.id}`)) return json(vehicle);
+        return json([]);
+      }),
+    );
+    const client = new QueryClient({
+      defaultOptions: { queries: { queryFn: getQueryFn({ on401: "throw" }), retry: false, gcTime: 0 } },
+    });
+    return render(
+      <QueryClientProvider client={client}>
+        <GlobalDialogProvider>
+          <MaintenanceViewDialog open onOpenChange={() => {}} reservationId={reservation.id} />
+        </GlobalDialogProvider>
+      </QueryClientProvider>,
+    );
+  }
+
+  async function removeTheSpare() {
+    setUser(UserRole.USER, [UserPermission.MANAGE_RESERVATIONS]);
+    renderWithSpare();
+    await userEvent.click(await screen.findByTestId(`button-edit-spare-${rental.id}`));
+    await userEvent.click(await screen.findByTestId(`button-spare-own-transport-${rental.id}`));
+    await waitFor(() => expect(deleteUrls).toHaveLength(1));
+    await waitFor(() => expect(toastSpy).toHaveBeenCalledTimes(1));
+    return toastSpy.mock.calls[0][0] as { title: string; description: string; variant?: string };
+  }
+
+  beforeEach(() => toastSpy.mockClear());
+
+  it("a 409 PICKED_UP_CONFIRMATION_REQUIRED tells in Dutch to cancel or delete it via Reserveringen", async () => {
+    deleteResponse = json({
+      message: "This rental has already been picked up. Resend with confirmPickedUp: true to cancel or delete it.",
+      code: "PICKED_UP_CONFIRMATION_REQUIRED", actualPickupDate: "2026-10-02", contractNumber: "9300002",
+    }, 409);
+    const toast = await removeTheSpare();
+    expect(deleteUrls[0]).toMatch(/\/api\/reservations\/41$/);
+    expect(toast.variant).toBe("destructive");
+    expect(toast.description).toMatch(/al opgehaald/);
+    expect(toast.description).toMatch(/Reserveringen/);
+    expect(toast.description).not.toMatch(/confirmPickedUp|Resend|\d{3}:/);
+  });
+
+  it("a 403 PICKED_UP_RIGHT_REQUIRED gets the same Dutch sentence", async () => {
+    deleteResponse = json({
+      message: "Not authorized. One of these permissions required: cancel_picked_up_rental",
+      code: "PICKED_UP_RIGHT_REQUIRED", requiredPermission: "cancel_picked_up_rental",
+    }, 403);
+    const toast = await removeTheSpare();
+    expect(toast.description).toMatch(/al opgehaald/);
+    expect(toast.description).toMatch(/Reserveringen/);
+    expect(toast.description).not.toMatch(/Not authorized/);
+  });
+
+  it("the same English words under another code are not mistaken for it, and any other failure keeps today's text", async () => {
+    deleteResponse = json({ message: "This rental has already been picked up. Resend with confirmPickedUp: true", code: "SOMETHING_ELSE" }, 409);
+    const toast = await removeTheSpare();
+    expect(toast.description).toBe("This rental has already been picked up. Resend with confirmPickedUp: true");
   });
 });

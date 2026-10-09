@@ -199,6 +199,7 @@
     "spareVehicleUpdatedDescription": "Spare vehicle assignment updated",
     "errorTitle": "Error",
     "updateSpareFailedDescription": "Failed to update spare vehicle",
+    "spareAlreadyPickedUp": "This spare vehicle has already been picked up, so the assignment cannot be removed here. Cancel or delete the replacement reservation via Reservations, where you get the warning and confirm it.",
     "expensesCreatedTitle": "Expenses created",
     "expensesCreatedDescription_one": "Created {{count}} expense record from invoice",
     "expensesCreatedDescription_other": "Created {{count}} expense records from invoice"

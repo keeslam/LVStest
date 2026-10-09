@@ -22,7 +22,7 @@
  * Spec: docs/superpowers/specs/2026-10-09-terugdraaien-prullenbak-design.md section 3.
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { and, eq } from "drizzle-orm";
+import { and, eq, getTableColumns, inArray, like } from "drizzle-orm";
 import { day } from "./helpers/dates";
 import { db } from "../db";
 import { deletedRecords, reservations, vehicles as vehiclesTable, UserPermission } from "../../shared/schema";
@@ -31,7 +31,7 @@ import { LEGACY_RESERVATION_STATUS_ALIASES, RESERVATION_STATUSES, normalizeReser
 import { requiresPickedUpConfirmation } from "../services/picked-up-cancellation";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import {
-  createFixtureCustomer, createFixtureVehicle, createFixtureReservation, cleanupFixtures,
+  createFixtureCustomer, createFixtureVehicle, createFixtureReservation, cleanupFixtures, FIXTURE_PLATE_PREFIX,
 } from "./helpers/fixtures";
 
 let admin: TestAgent;
@@ -49,7 +49,12 @@ beforeAll(async () => {
 }, 60_000);
 
 afterAll(async () => {
-  await db.delete(deletedRecords).where(eq(deletedRecords.entityType, "reservation"));
+  // Only the bin rows of this file's fixtures: a bin label carries the plate of the vehicle
+  // ("Reservering #12 — FIXT-5 2026-10-09"), and every fixture plate starts with FIXT-.
+  await db.delete(deletedRecords).where(and(
+    inArray(deletedRecords.entityType, ["reservation", "maintenance_block"]),
+    like(deletedRecords.label, `% ${FIXTURE_PLATE_PREFIX}-%`),
+  ));
   await cleanupFixtures();
   await cleanupFixtureUsers();
 });
@@ -270,10 +275,17 @@ describe("C-05 - PATCH /api/reservations/:id {status:'cancelled'} (the edit form
     expect((await rowOf(rental.id)).status).toBe("picked_up");
   });
 
-  it("the confirmation flag is not written to the row", async () => {
+  it("the confirmation flag is a request field only: no column stores it, and the cancellation keeps the pickup data", async () => {
+    // A `select *` row can only hold what the table has, so the schema is the real check.
+    const flagColumns = Object.values(getTableColumns(reservations)).filter((column) => /confirm.*picked/i.test(column.name));
+    expect(flagColumns).toEqual([]);
+
     const { rental } = await pickedUpRental();
     expect((await cancelViaForm(cancelRight, rental.id, { confirmPickedUp: true })).status).toBe(200);
-    expect(Object.keys(await rowOf(rental.id))).not.toContain("confirmPickedUp");
+    const after = await rowOf(rental.id);
+    expect(after.status).toBe("cancelled");
+    expect(after.actualPickupDate).toBe(rental.actualPickupDate);
+    expect(after.contractNumber).toBe(rental.contractNumber);
   });
 });
 

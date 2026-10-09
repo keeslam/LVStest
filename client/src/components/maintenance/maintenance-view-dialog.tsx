@@ -48,6 +48,7 @@ import { InlineDocumentUpload } from "@/components/documents/inline-document-upl
 import { InvoiceScanner } from "@/components/invoice-scanner";
 import { Link } from "wouter";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
+import { isPickedUpRightRefusal, pickedUpRefusalOf } from "@/components/reservations/picked-up-cancellation";
 
 interface MaintenanceViewDialogProps {
   open: boolean;
@@ -253,9 +254,15 @@ export function MaintenanceViewDialog({
     },
     onError: (error: any) => {
       console.error('Spare vehicle update error:', error);
+      // Removing a spare deletes its reservation; a spare that has been picked up is refused with a
+      // stable code (409 confirmation / 403 right, sub-project C task 5). This screen has neither the
+      // warning nor the tick, so it points to Reserveringen - in Dutch, never the server's English text.
+      const pickedUpSpare = !!pickedUpRefusalOf(error) || isPickedUpRightRefusal(error);
       toast({
         title: t('viewDialog.errorTitle'),
-        description: error.message || t('viewDialog.updateSpareFailedDescription'),
+        description: pickedUpSpare
+          ? t('viewDialog.spareAlreadyPickedUp')
+          : error.message || t('viewDialog.updateSpareFailedDescription'),
         variant: "destructive",
       });
     },

@@ -605,7 +605,6 @@
     }
   },
   "pickedUpWarning": {
-    "title": "Deze huur is al opgehaald",
     "text": "Deze huur is al opgehaald op {{date}} met contract {{contract}}.",
     "vehicleNote": "Het voertuig telt daarna weer als beschikbaar en de kilometerstand blijft de stand van het ophalen.",
     "confirmLabel": "Ik weet dat deze huur al is opgehaald en wil doorgaan",

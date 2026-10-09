@@ -199,6 +199,7 @@
     "spareVehicleUpdatedDescription": "Toewijzing vervangend voertuig bijgewerkt",
     "errorTitle": "Fout",
     "updateSpareFailedDescription": "Vervangend voertuig bijwerken mislukt",
+    "spareAlreadyPickedUp": "Dit vervangende voertuig is al opgehaald, dus de toewijzing kan hier niet worden verwijderd. Annuleer of verwijder de vervangreservering via Reserveringen; daar krijg je de waarschuwing en bevestig je het.",
     "expensesCreatedTitle": "Kosten aangemaakt",
     "expensesCreatedDescription_one": "{{count}} kostenpost aangemaakt vanuit factuur",
     "expensesCreatedDescription_other": "{{count}} kostenposten aangemaakt vanuit factuur"

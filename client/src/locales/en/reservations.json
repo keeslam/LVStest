@@ -605,7 +605,6 @@
     }
   },
   "pickedUpWarning": {
-    "title": "This rental has already been picked up",
     "text": "This rental was already picked up on {{date}} with contract {{contract}}.",
     "vehicleNote": "Afterwards the vehicle counts as available again and the odometer keeps the reading from the pickup.",
     "confirmLabel": "I know this rental has already been picked up and want to continue",

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, getQueryFn } from "@/lib/queryClient";
 import { dateLabelNl, formatEuro } from "@shared/fiscal-format";
 import { FISCAL_STATUS_LABELS, MISSING_DATA_LABELS, REVIEW_REASON_LABELS, REPLACEMENT_REASONS, REPLACEMENT_REASON_LABELS, USAGE_PERIOD_DERIVATION_START, USAGE_TYPES, type MissingDataCode, type ReviewReasonCode, type ReplacementReason, type FiscalAssessmentStatus } from "@shared/fiscal-types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { NoDataAccess } from "@/components/ui/no-data-access";
+import { UserPermission } from "@shared/schema";
 import { useFiscalPermissions } from "./use-fiscal-permissions";
 import type { UsagePeriodResponse } from "./types";
 
@@ -36,7 +38,7 @@ function TriRadio({ name, value, onChange, disabled, label, t }: { name: string;
  */
 export function UsagePeriodCard({ reservationId, startDate }: { reservationId: number; startDate?: string | null }) {
   const { t } = useTranslation("fiscal");
-  const { canReview } = useFiscalPermissions();
+  const { canView, canReview } = useFiscalPermissions();
   const queryClient = useQueryClient();
   const key = [`/api/reservations/${reservationId}/usage-period`] as const;
   // Besluit F-10: a reservation that starts (or was picked up) before USAGE_PERIOD_DERIVATION_START
@@ -44,7 +46,24 @@ export function UsagePeriodCard({ reservationId, startDate }: { reservationId: n
   // handler turns into a red "Kon de gegevens niet laden" toast on every opening of the reservation
   // dialog - so a caller that knows the start date says it, and nothing is asked.
   const beforeDerivation = !!startDate && startDate < USAGE_PERIOD_DERIVATION_START;
-  const { data, isLoading, error } = useQuery<UsagePeriodResponse>({ queryKey: key, retry: false, enabled: !beforeDerivation });
+  // GET /api/reservations/:id/usage-period needs view_fiscal (an administrator has it): without it the
+  // server answers 403 - the same red toast, plus a fiscal audit event per opening - so nothing is asked.
+  // A 404 is an answer, not a failure: a reservation can lack a period for reasons only the server knows
+  // (cancelled, no customer, not a rental), so it comes back as `null` and renders the "no period" text.
+  const readPeriod = getQueryFn<UsagePeriodResponse>({ on401: "throw" });
+  const { data, isLoading, error } = useQuery<UsagePeriodResponse | null>({
+    queryKey: key,
+    retry: false,
+    enabled: !beforeDerivation && canView,
+    queryFn: async (context) => {
+      try {
+        return await readPeriod(context);
+      } catch (e) {
+        if ((e as { httpStatus?: number }).httpStatus === 404) return null;
+        throw e;
+      }
+    },
+  });
 
   const [privateUse, setPrivateUse] = useState<Tri>("unknown");
   const [commuting, setCommuting] = useState<Tri>("unknown");
@@ -79,19 +98,20 @@ export function UsagePeriodCard({ reservationId, startDate }: { reservationId: n
     },
     onSuccess: (row) => {
       setServerError(null);
-      queryClient.setQueryData(key, (old: UsagePeriodResponse | undefined) => ({ ...(old ?? row), ...row, latestAssessment: row.latestAssessment ?? old?.latestAssessment ?? null }));
+      queryClient.setQueryData(key, (old: UsagePeriodResponse | null | undefined) => ({ ...(old ?? row), ...row, latestAssessment: row.latestAssessment ?? old?.latestAssessment ?? null }));
       queryClient.invalidateQueries({ queryKey: key });
     },
     onError: (e: Error) => setServerError(e.message.replace(/^\d{3}:\s*/, "")),
   });
 
-  if (beforeDerivation) {
-    return <p className="text-sm text-muted-foreground" data-testid="usage-no-period">{t("usage.noPeriod", { date: dateLabelNl(USAGE_PERIOD_DERIVATION_START) })}</p>;
-  }
+  if (!canView) return <NoDataAccess permission={UserPermission.VIEW_FISCAL} />;
+  const noPeriod = (
+    <p className="text-sm text-muted-foreground" data-testid="usage-no-period">{t("usage.noPeriod", { date: dateLabelNl(USAGE_PERIOD_DERIVATION_START) })}</p>
+  );
+  if (beforeDerivation || data === null) return noPeriod;
   if (isLoading) return <p className="text-sm text-muted-foreground">{t("common.loading")}</p>;
   if (error || !data) {
-    const message = (error as Error | null)?.message ?? "";
-    return <p className="text-sm text-muted-foreground">{message.startsWith("404") ? t("usage.noPeriod", { date: dateLabelNl(USAGE_PERIOD_DERIVATION_START) }) : t("common.error", { message })}</p>;
+    return <p className="text-sm text-muted-foreground">{t("common.error", { message: (error as Error | null)?.message ?? "" })}</p>;
   }
 
   const readOnly = !canReview;

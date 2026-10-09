@@ -242,3 +242,67 @@ describe("ReservationViewDialog - cancelling or deleting a picked-up rental (B-3
     expect(deleteUrls[1]).toMatch(/\/api\/reservations\/88\?confirmPickedUp=true$/);
   });
 });
+
+/**
+ * Sub-project C, Task 5 fix round 1: the fiscal usage block of this dialog asks
+ * GET /api/reservations/:id/usage-period, which needs view_fiscal and answers 404
+ * for what is not a rental. Either answer reaches the global handler as the red
+ * "Kon de gegevens niet laden" toast, so the dialog does not ask for a maintenance
+ * block (never a rental) and the card does not ask without the right.
+ */
+describe("ReservationViewDialog - the fiscal usage block asks only where an answer is possible", () => {
+  const usageRental = {
+    id: 91, vehicleId: 1, customerId: 5, driverId: null, type: "standard", status: "booked",
+    startDate: "2027-03-01", endDate: "2027-03-05", actualPickupDate: null, contractNumber: null, notes: null, portalRequestId: null,
+  };
+  const block = { ...reservation, id: 92, startDate: "2027-03-01", endDate: "2027-03-02", status: "booked" };
+  let requested: string[];
+
+  function renderRow(row: { id: number }) {
+    requested = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === "string" ? input : (input as Request).url;
+        if ((init?.method ?? "GET").toUpperCase() === "GET") requested.push(url);
+        if (url.endsWith("/usage-period")) return json({ message: "No usage period" }, 404);
+        if (url.endsWith(`/api/reservations/${row.id}`)) return json(row);
+        if (url.includes(`/api/vehicles/${vehicle.id}`)) return json(vehicle);
+        return json([]);
+      }),
+    );
+    const client = new QueryClient({
+      defaultOptions: { queries: { queryFn: getQueryFn({ on401: "throw" }), retry: false, gcTime: 0 } },
+    });
+    return render(
+      <QueryClientProvider client={client}>
+        <GlobalDialogProvider>
+          <ReservationViewDialog open onOpenChange={() => {}} reservationId={row.id} />
+        </GlobalDialogProvider>
+      </QueryClientProvider>,
+    );
+  }
+
+  it("does not mount the card, and so asks nothing, for a maintenance block", async () => {
+    setUser(UserRole.USER, [UserPermission.VIEW_FISCAL]);
+    renderRow(block);
+    await screen.findByTestId("button-add-expense-maintenance-block");
+    expect(requested.some((url) => url.includes("usage-period"))).toBe(false);
+    expect(screen.queryByTestId("usage-no-period")).toBeNull();
+    expect(screen.queryByTestId("usage-period-card")).toBeNull();
+  });
+
+  it("asks for a rental of 2027 when the account holds view_fiscal", async () => {
+    setUser(UserRole.USER, [UserPermission.VIEW_FISCAL]);
+    renderRow(usageRental);
+    expect(await screen.findByTestId("usage-no-period")).toBeInTheDocument();
+    expect(requested.some((url) => url.endsWith("/api/reservations/91/usage-period"))).toBe(true);
+  });
+
+  it("asks nothing and names the missing right when the account lacks view_fiscal", async () => {
+    setUser(UserRole.USER, [UserPermission.VIEW_RESERVATIONS]);
+    renderRow(usageRental);
+    expect(await screen.findByTestId("no-data-access")).toHaveTextContent("Fiscaal bekijken");
+    expect(requested.some((url) => url.includes("usage-period"))).toBe(false);
+  });
+});
