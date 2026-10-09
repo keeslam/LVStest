@@ -19,11 +19,17 @@
  * `assertReservationTransition` **without** `allowReversion`, so
  * `completed -> picked_up` was refused every time and the employee only ever
  * saw "Verhuur terugzetten mislukt". `completed -> picked_up` is in
- * `RESERVATION_REVERSIONS` and `/api/reservations/:id/status` has always
- * allowed it; the dialog's own subtitle ("Bekijk, herstel of verwijder") says
+ * `RESERVATION_REVERSIONS` and `/api/reservations/:id/status` used to allow
+ * it; the dialog's own subtitle ("Bekijk, herstel of verwijder") says
  * restoring is meant to work. So the button was pointed at the endpoint that
- * owns reversions — and that endpoint now clears the return data on the way
+ * owned reversions — and that endpoint cleared the return data on the way
  * back, which previously only happened for the legacy `returned` status.
+ *
+ * Sub-project C (besluiten B-30, B-39) moved every reversal to
+ * `POST /api/reservations/:id/revert` (revert_handover right, preview,
+ * restores the vehicle). `/status` now answers 400 USE_REVERT_ROUTE for them;
+ * the item-2 expectations below run against the new route. The full rules table
+ * is covered by c-03-revert.test.ts.
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { isoDay } from "./helpers/dates";
@@ -203,12 +209,25 @@ describe("WAVE 14 item 2 — Terugzetten zet een voltooide verhuur terug", () =>
     expect((await rowOf(id)).status).toBe("completed");
   });
 
-  it("the status endpoint puts it back and wipes the return that never happened", async () => {
+  it("the status endpoint no longer reverts; it points at the revert route", async () => {
+    const vehicle = await createFixtureVehicle({ availabilityStatus: "available" });
+    const customerId = (await createFixtureCustomer("Terug1b")).id;
+    const id = await completedRental(vehicle.id, customerId);
+
+    const res = await admin.patch(`/api/reservations/${id}/status`).send({ status: "picked_up" });
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe("USE_REVERT_ROUTE");
+    expect((await rowOf(id)).status).toBe("completed");
+  });
+
+  it("the revert route puts it back and wipes the return that never happened", async () => {
     const vehicle = await createFixtureVehicle({ availabilityStatus: "available" });
     const customerId = (await createFixtureCustomer("Terug2")).id;
     const id = await completedRental(vehicle.id, customerId);
 
-    const res = await admin.patch(`/api/reservations/${id}/status`).send({ status: "picked_up" });
+    // No before-return reading was stored for this hand-made row, so the vehicle
+    // is left alone and no mileage confirmation is needed.
+    const res = await admin.post(`/api/reservations/${id}/revert`).send({});
     expect(res.status).toBe(200);
 
     const row = await rowOf(id);
@@ -234,7 +253,7 @@ describe("WAVE 14 item 2 — Terugzetten zet een voltooide verhuur terug", () =>
     const customerId = (await createFixtureCustomer("Terug3")).id;
     const id = await completedRental(vehicle.id, customerId);
 
-    const res = await admin.patch(`/api/reservations/${id}/status`).send({ status: "picked_up" });
+    const res = await admin.post(`/api/reservations/${id}/revert`).send({});
     expect(res.status).toBe(200);
     expect((await rowOf(id)).status).toBe("picked_up");
     // And the workshop flag itself is nobody's to clear here (besluiten B-03).
@@ -243,17 +262,19 @@ describe("WAVE 14 item 2 — Terugzetten zet een voltooide verhuur terug", () =>
   });
 
   it("does not ask the early-pickup question while undoing (besluiten B-16 is about pickups)", async () => {
-    // A rental that was closed before it started: undoing it must not move the
-    // period to today, and must not answer 409 PICKUP_BEFORE_START_DATE.
+    // A rental that was picked up and closed by hand before it started: undoing
+    // it must not move the period to today, and must not answer 409
+    // PICKUP_BEFORE_START_DATE. (A hand-closed row that never had a pickup goes
+    // back to booked instead; see c-03-revert.test.ts.)
     const vehicle = await createFixtureVehicle({ availabilityStatus: "available" });
     const customerId = (await createFixtureCustomer("Terug4")).id;
     const r = await createFixtureReservation({
       customerId, vehicleId: vehicle.id, startDate: day(20), endDate: day(25), status: "booked",
     });
-    await db.update(reservations).set({ status: "completed", completionDate: day(0) })
+    await db.update(reservations).set({ status: "completed", actualPickupDate: day(0), completionDate: day(0) })
       .where(eq(reservations.id, r.id));
 
-    const res = await admin.patch(`/api/reservations/${r.id}/status`).send({ status: "picked_up" });
+    const res = await admin.post(`/api/reservations/${r.id}/revert`).send({});
     expect(res.status).toBe(200);
 
     const row = await rowOf(r.id);

@@ -38,6 +38,7 @@ import {
 import {
   deriveVehicleAvailability, assertReservationTransition, assertReservationStatusValue,
   normalizeReservationStatus, StateTransitionError, decideHandover, WorkshopBlockedError,
+  isReservationRevert, isReservationTransitionAllowed,
 } from "../services/lifecycle";
 
 let admin: TestAgent;
@@ -114,6 +115,27 @@ describe("FIX-H — the transition table itself", () => {
   it("still allows the documented undo steps, but only when asked", () => {
     expect(() => assertReservationTransition("completed", "picked_up")).toThrow();
     expect(() => assertReservationTransition("completed", "picked_up", { allowReversion: true })).not.toThrow();
+  });
+
+  it("names the reversal engine's steps apart from allowReversion (sub-project C)", () => {
+    // `PATCH /:id/status` answers USE_REVERT_ROUTE for exactly these steps…
+    for (const [from, to] of [
+      ["picked_up", "booked"], ["returned", "picked_up"], ["completed", "picked_up"],
+      ["completed", "booked"], ["cancelled", "booked"], ["cancelled", "picked_up"],
+    ]) {
+      expect(isReservationRevert(from, to), `${from} -> ${to}`).toBe(true);
+    }
+    // …and a forward move, a no-op or a nonsense jump is not one of them.
+    for (const [from, to] of [
+      ["booked", "picked_up"], ["picked_up", "completed"], ["booked", "booked"],
+      ["cancelled", "completed"], ["completed", "cancelled"], ["booked", "garbage"],
+    ]) {
+      expect(isReservationRevert(from, to), `${from} -> ${to}`).toBe(false);
+    }
+    // The spare-status flow still passes allowReversion; undoing a cancellation
+    // must not become possible through it.
+    expect(isReservationTransitionAllowed("cancelled", "picked_up", { allowReversion: true })).toBe(false);
+    expect(isReservationTransitionAllowed("completed", "picked_up", { allowReversion: true })).toBe(true);
   });
 });
 

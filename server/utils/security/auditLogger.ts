@@ -28,6 +28,8 @@ type KnownAuditAction =
   | 'reservation.return'
   | 'reservation.status'
   | 'reservation.cancel'
+  // Sub-project C: an undone pickup, return or cancellation; details carry the plan.
+  | 'reservation.revert'
   | 'customer.create'
   | 'customer.update'
   | 'customer.delete'

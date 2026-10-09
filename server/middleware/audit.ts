@@ -102,6 +102,9 @@ const SKIPPED_PATH_PATTERNS = [
 const SELF_LOGGED: Array<{ method: string; pattern: RegExp }> = [
   { method: 'DELETE', pattern: /^\/api\/vehicles\/\d+$/ },
   { method: 'POST', pattern: /^\/api\/deleted-records\/\d+\/restore$/ },
+  // Sub-project C: the route writes `reservation.revert` itself, with the plan
+  // (what was cleared, which readings went back, which documents went stale).
+  { method: 'POST', pattern: /^\/api\/reservations\/\d+\/revert$/ },
 ];
 
 const isSecret = (field: string) => SECRET_FIELDS.has(field.toLowerCase());

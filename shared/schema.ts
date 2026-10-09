@@ -1038,6 +1038,14 @@ export const insertReservationSchemaBase = createInsertSchema(reservations).omit
   deletedAt: true,
   deletedBy: true,
   deletedByUser: true,
+  // Server-owned (sub-project C, B-30): the pickup and the return write the
+  // vehicle's readings from before the handover inside their own transaction, and
+  // the reversal engine trusts them. A body must never set them, and an edit form
+  // that echoes the row back must never null them.
+  vehicleMileageBeforePickup: true,
+  vehicleFuelBeforePickup: true,
+  vehicleMileageBeforeReturn: true,
+  vehicleFuelBeforeReturn: true,
 })
 .extend({
   // BUG-054 — this had no bounds at all, and non-numeric input silently became

@@ -90,7 +90,7 @@ import {
   assertVehicleMaintenanceStatus,
   normalizeReservationStatus,
   isReservationTransitionAllowed,
-  RESERVATION_REVERSIONS,
+  isReservationRevert,
   decideHandover,
   StateTransitionError,
   WorkshopBlockedError,
@@ -170,6 +170,8 @@ import { registerReportAndLabelTemplateRoutes } from "./routes/report-and-label-
 import { onMaintenanceBlockChanged, onReplacementAssigned, onRentalVehicleChanged } from "./services/portal-maintenance-events";
 // besluiten B-06 (BUG-134): the other three events of the decision.
 import { onReservationChangedByStaff } from "./services/portal-reservation-events";
+import { previewRevert, applyRevert } from "./services/reservation-revert";
+import { REVERT_CODES } from "../shared/revert-codes";
 import type { RouteDeps } from "./routes/deps";
 import { installIdParamValidation, rejectNullBytesInPath } from "./middleware/parseIntParam";
 import { parsePartialUpdate, parseCreateBody, BodyValidationError, coerceTimestampValue } from "./middleware/validateBody";
@@ -3996,6 +3998,85 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   /**
+   * Sub-project C (besluiten B-30, B-39) - undo a pickup, a return or a
+   * cancellation. The preview is the plan the confirm dialog shows; the POST
+   * plans again inside its own transaction and refuses (409
+   * `REVERT_PLAN_CHANGED`) when the plan is not the one the client confirmed.
+   * The target status is never chosen by the client: it follows from the row.
+   * `PATCH /:id/status` answers 400 `USE_REVERT_ROUTE` for these steps.
+   * Both routes want `revert_handover` (role admin passes), not
+   * `manage_reservations`. Service: server/services/reservation-revert.ts.
+   */
+  app.get("/api/reservations/:id/revert-preview", hasPermission(UserPermission.REVERT_HANDOVER), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid reservation ID" });
+      const result = await previewRevert(id);
+      if (!result.ok) return res.status(result.status).json({ message: result.message, ...(result.code ? { code: result.code } : {}) });
+      res.json(result.plan);
+    } catch (error) {
+      sendRouteError(res, error, "Failed to build the revert preview");
+    }
+  });
+
+  app.post("/api/reservations/:id/revert", hasPermission(UserPermission.REVERT_HANDOVER), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid reservation ID" });
+
+      const { confirmMileageDecrease, planHash } = (req.body ?? {}) as Record<string, unknown>;
+      if (confirmMileageDecrease !== undefined && typeof confirmMileageDecrease !== "boolean") {
+        return res.status(400).json({ message: "confirmMileageDecrease must be true or false", field: "confirmMileageDecrease" });
+      }
+      if (planHash !== undefined && typeof planHash !== "string") {
+        return res.status(400).json({ message: "planHash must be a string", field: "planHash" });
+      }
+
+      const username = req.user?.username ?? "unknown";
+      const result = await applyRevert(id, { username, userId: req.user?.id ?? null }, {
+        confirmMileageDecrease: confirmMileageDecrease === true,
+        expectedPlanHash: planHash,
+      });
+      if (!result.ok) {
+        return res.status(result.status).json({
+          message: result.message,
+          ...(result.code ? { code: result.code } : {}),
+          ...(result.details ?? {}),
+          ...(result.plan ? { plan: result.plan } : {}),
+        });
+      }
+
+      // The customer portal's notice (B-06) is a no-op for these steps today (a
+      // reopened row is not a date or vehicle change) but stays wired like every
+      // other staff write path, so a future event rule sees reversals too.
+      void onReservationChangedByStaff(result.before, result.reservation);
+      realtimeEvents.reservations.updated(result.reservation);
+      if (result.vehicleRestored && result.reservation.vehicleId != null) {
+        const restored = await storage.getVehicle(result.reservation.vehicleId);
+        if (restored) realtimeEvents.vehicles.updated(restored);
+      }
+
+      // Logged here, with the plan, instead of by the generic mutation middleware
+      // (the route is in its SELF_LOGGED list): "who undid what, and what changed".
+      await AuditLogger.logFromRequest(
+        req,
+        "reservation.revert",
+        "reservation",
+        id,
+        {
+          label: result.reservation.contractNumber ? `#${id} (${result.reservation.contractNumber})` : `#${id}`,
+          confirmMileageDecrease: confirmMileageDecrease === true,
+          plan: result.plan,
+        },
+      );
+
+      res.json({ plan: result.plan, reservation: result.reservation });
+    } catch (error) {
+      sendRouteError(res, error, "Failed to revert the reservation");
+    }
+  });
+
+  /**
    * besluiten **B-16** / BUG-144 — the period rule for every writer that can
    * set `picked_up`.
    *
@@ -4048,29 +4129,25 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       
       const currentStatus = existingReservation.status;
-      // `allowReversion` keeps the documented undo steps staff rely on
-      // (picked_up -> booked, completed -> picked_up, …) working on this one
-      // endpoint, exactly as before.
-      const newStatus = assertReservationTransition(currentStatus, status, { allowReversion: true });
-
-      // WAVE 14 item 2 — an undo is not a hand-over.
-      //
-      // `completed -> picked_up` and `returned -> picked_up` are the documented
-      // reversions (RESERVATION_REVERSIONS): the employee is taking back a
-      // mis-clicked return, so the car is where it already was — with the
-      // customer. Running B-03's workshop gate would refuse the correction the
-      // moment somebody had flagged the car for repair after the wrong return,
-      // and running B-16's "does this rental start today?" question would move
-      // a start date that was never in doubt. Neither rule is about undoing.
-      const isReversion = (
-        RESERVATION_REVERSIONS[normalizeReservationStatus(currentStatus) ?? ''] ?? []
-      ).includes(newStatus);
+      // Sub-project C (B-30, B-39): undoing a pickup, a return or a cancellation
+      // is no longer a status change. It needs a preview, a confirmation and the
+      // `revert_handover` right, and it restores the vehicle's readings, so it has
+      // its own route. (WAVE 14 item 2 - "an undo is not a hand-over" - lives there.)
+      if (isReservationRevert(currentStatus, status)) {
+        return res.status(400).json({
+          message: "Undoing a handover or a cancellation goes through POST /api/reservations/:id/revert.",
+          code: REVERT_CODES.USE_REVERT_ROUTE,
+          field: "status",
+          details: { currentStatus, requestedStatus: status },
+        });
+      }
+      const newStatus = assertReservationTransition(currentStatus, status);
 
       // besluiten B-03 (BUG-109 step 5) — `/status` reached `picked_up` with no
       // vehicle check whatsoever, so it walked straight past the `not_for_rental`
       // guard that `/pickup` did apply, and past the workshop flag that neither
       // applied. Same gate, same override, on both paths.
-      if (!isReversion && newStatus === 'picked_up' && normalizeReservationStatus(currentStatus) !== 'picked_up' && existingReservation.vehicleId) {
+      if (newStatus === 'picked_up' && normalizeReservationStatus(currentStatus) !== 'picked_up' && existingReservation.vehicleId) {
         const vehicleForHandover = await storage.getVehicle(existingReservation.vehicleId);
         decideHandover(vehicleForHandover, workshopOverrideFrom(req));
       }
@@ -4080,7 +4157,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // answered the question, in which case the start date (and the total)
       // move to today.
       const pickupShift: Record<string, any> = { status: newStatus };
-      if (!isReversion) await applyPickupPeriodRule(existingReservation, pickupShift, req);
+      await applyPickupPeriodRule(existingReservation, pickupShift, req);
       
       // If status is "completed", check mileage validation
       if (status === "completed" && existingReservation.vehicleId && req.body.departureMileage) {
@@ -4143,40 +4220,11 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
       }
       
-      // When reverting from "picked_up" to "booked", clear pickup data
-      if (existingReservation.status === "picked_up" && status === "booked") {
-        console.log('🔄 Reverting from picked_up to booked - clearing pickup data');
-        dataWithTracking.actualPickupDate = null;
-        dataWithTracking.pickupMileage = null;
-        dataWithTracking.fuelLevelPickup = null;
-        dataWithTracking.contractNumber = null;
-      }
-      
-      // When reverting to "picked_up", clear return data.
-      //
-      // BUG-128b: this also set `endDate = null`, which threw away the planned
-      // end and turned the rental open-ended — conflicting with every future
-      // booking on that vehicle. The planned end is not return data.
-      //
-      // WAVE 14 item 2: `completed` belongs in this rule too. besluiten B-02
-      // made the return write `completed` straight away, so the row a mistaken
-      // return leaves behind is `completed`, not `returned` — and undoing it
-      // has to drop the same six fields, or the rental goes back to
-      // "picked_up" still carrying the return mileage and fuel level of the
-      // return that never happened.
-      if (["returned", "completed"].includes(normalizeReservationStatus(existingReservation.status) ?? "") && newStatus === "picked_up") {
-        dataWithTracking.actualReturnDate = null;
-        dataWithTracking.returnMileage = null;
-        dataWithTracking.fuelLevelReturn = null;
-        dataWithTracking.fuelCost = null;
-        dataWithTracking.fuelCardNumber = null;
-        dataWithTracking.fuelNotes = null;
-      }
-      
-      // When reverting from "completed" to any other status, clear completion data
-      if (normalizeReservationStatus(existingReservation.status) === "completed" && newStatus !== "completed") {
-        dataWithTracking.completionDate = null;
-      }
+      // The reversion blocks that cleared the pickup data, the return data and
+      // completionDate here are gone: every reversal is refused above (400
+      // USE_REVERT_ROUTE) and runs in services/reservation-revert.ts, which keeps
+      // the planned endDate (BUG-128b) and drops the return data of a `completed`
+      // row (WAVE 14 item 2).
       
       // BUG-019 — marking a reservation completed used to overwrite `endDate`
       // with today, so a rental ending 2026-10-05 and closed today came out as

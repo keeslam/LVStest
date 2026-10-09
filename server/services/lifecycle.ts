@@ -155,10 +155,11 @@ export const RESERVATION_TRANSITIONS: Readonly<Record<ReservationStatus, readonl
 });
 
 /**
- * The reversions `PATCH /:id/status` has always allowed so staff can undo a
- * mis-click. They are deliberately kept — removing them would strand a wrongly
- * picked-up rental — but they are now *named* in one place instead of being an
- * inline `||` chain in the route, and every writer honours the same list.
+ * The undo steps `allowReversion` honours: they are *named* in one place instead
+ * of being an inline `||` chain, and every writer that passes the flag honours
+ * the same list. `PATCH /:id/status` no longer passes it (sub-project C: a
+ * reversal has its own route, `POST /api/reservations/:id/revert`); the
+ * spare-status flow still does.
  */
 export const RESERVATION_REVERSIONS: Readonly<Record<string, readonly ReservationStatus[]>> = Object.freeze({
   picked_up: ["booked"],
@@ -166,8 +167,32 @@ export const RESERVATION_REVERSIONS: Readonly<Record<string, readonly Reservatio
   completed: ["picked_up", "booked"],
 });
 
+/**
+ * Sub-project C (besluiten B-30, B-39) - every step the reversal engine
+ * (`services/reservation-revert.ts`, `POST /api/reservations/:id/revert`) can
+ * take: the three documented reversions plus undoing a cancellation.
+ *
+ * Deliberately a separate table: `RESERVATION_REVERSIONS` is what
+ * `allowReversion` honours, and the spare-status flow still passes that flag, so
+ * adding `cancelled` there would let a spare-vehicle button reopen a cancelled
+ * replacement. `PATCH /:id/status` answers every step of THIS table with
+ * 400 `USE_REVERT_ROUTE`.
+ */
+export const RESERVATION_REVERT_TARGETS: Readonly<Record<string, readonly ReservationStatus[]>> = Object.freeze({
+  ...RESERVATION_REVERSIONS,
+  cancelled: ["booked", "picked_up"],
+});
+
+/** True when moving `from` -> `to` is a reversal (and so belongs to the revert route). */
+export function isReservationRevert(from: unknown, to: unknown): boolean {
+  const current = normalizeReservationStatus(from);
+  const target = normalizeReservationStatus(to);
+  if (!current || !target || current === target) return false;
+  return (RESERVATION_REVERT_TARGETS[current] ?? []).includes(target);
+}
+
 export interface TransitionOptions {
-  /** Allow the documented undo steps (the status endpoint's old behaviour). */
+  /** Allow the documented undo steps (`RESERVATION_REVERSIONS`); only the spare-status flow passes it now. */
   allowReversion?: boolean;
 }
 
