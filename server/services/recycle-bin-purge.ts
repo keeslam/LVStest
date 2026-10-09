@@ -56,8 +56,7 @@ import {
   type DeletedRecord,
 } from "../../shared/schema";
 import { getUploadsDir, getUploadsRoot, isInsideUploads } from "../../shared/paths";
-import { isContractDocument, isDamageCheckDocument } from "../../shared/document-types";
-import { DOCUMENT_TYPE_TRANSPORT_REPORT } from "./document-registry";
+import { isContractDocument, isDamageCheckDocument, isTransportReportDocument } from "../../shared/document-types";
 
 /* ------------------------------------------------------------------ *
  * Public shapes
@@ -371,8 +370,6 @@ class FiscalDataPresentError extends Error {
   }
 }
 
-const normaliseType = (documentType: string | null | undefined) => (documentType ?? "").toLowerCase().replace(/[\s_-]+/g, "");
-
 /**
  * A document that belongs to the RESERVATION itself, as opposed to a vehicle document that
  * merely names it: the contract (generated "Contract (Unsigned)", an uploaded "Contract
@@ -384,11 +381,7 @@ const normaliseType = (documentType: string | null | undefined) => (documentType
  * vehicle's APK document) is the vehicle's: it is detached, never deleted.
  */
 function isReservationOwnedDocument(documentType: string | null | undefined): boolean {
-  return (
-    isContractDocument(documentType) ||
-    isDamageCheckDocument(documentType) ||
-    normaliseType(documentType) === normaliseType(DOCUMENT_TYPE_TRANSPORT_REPORT)
-  );
+  return isContractDocument(documentType) || isDamageCheckDocument(documentType) || isTransportReportDocument(documentType);
 }
 
 /** What the audit row lists per document; at most this many per list (counts stay exact). */
@@ -583,8 +576,11 @@ async function audit(hooks: PurgeHooks | undefined, entry: PurgeAuditEntry): Pro
  * counts once). Never throws for one record's sake: a record that is gone or that could
  * not be purged is listed under `failed` and the rest carry on.
  */
-export async function purgeDeletedRecords(ids: number[], _actor?: PurgeActor, hooks?: PurgeHooks): Promise<PurgeResult> {
+export async function purgeDeletedRecords(ids: number[], actor?: PurgeActor, hooks?: PurgeHooks): Promise<PurgeResult> {
   const result: PurgeResult = { purged: 0, failed: [] };
+  // Who did it, in the details of every audit row (the row's own username comes from the request;
+  // this keeps the details complete for a caller that is not one, and when the trail is read on its own).
+  const purgedBy = actor?.username ? { purgedBy: actor.username } : {};
 
   for (const id of [...new Set(ids)]) {
     const one = await purgeOne(id);
@@ -593,7 +589,7 @@ export async function purgeDeletedRecords(ids: number[], _actor?: PurgeActor, ho
       if ((one.failure.code === "PURGE_FAILED" || one.failure.code === "FISCAL_DATA_PRESENT") && one.known) {
         await audit(hooks, {
           action: `${one.known.entityType}.purge`, entityType: one.known.entityType, entityId: one.known.entityId, status: "failure",
-          details: { label: one.known.label, deletedRecordId: id, code: one.failure.code, ...one.auditDetails },
+          details: { label: one.known.label, deletedRecordId: id, code: one.failure.code, ...purgedBy, ...one.auditDetails },
         });
       }
       continue;
@@ -616,7 +612,7 @@ export async function purgeDeletedRecords(ids: number[], _actor?: PurgeActor, ho
     await audit(hooks, {
       action: `${record.entityType}.purge`, entityType: record.entityType, entityId: record.entityId, status: "success",
       details: {
-        label: record.label, deletedRecordId: id, restored: record.restored, removed: record.removed,
+        label: record.label, deletedRecordId: id, ...purgedBy, restored: record.restored, removed: record.removed,
         // Which documents went and which were only detached (not just how many), capped like `notRemoved`.
         ...(record.documents.length > 0 && { documents: record.documents.slice(0, AUDIT_DOCUMENT_CAP) }),
         ...(record.documentsDetached.length > 0 && { documentsDetached: record.documentsDetached.slice(0, AUDIT_DOCUMENT_CAP) }),

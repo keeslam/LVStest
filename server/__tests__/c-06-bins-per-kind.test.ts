@@ -255,6 +255,23 @@ describe("C-06 - GET /api/deleted-records?type=<kind>", () => {
     expect(res.body.code).toBe("INVALID_BIN_KIND");
   });
 
+  it("an EMPTY type (?type=) is a 400 too, not 'every kind'", async () => {
+    const res = await binKeeper.get("/api/deleted-records?type=");
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe("INVALID_BIN_KIND");
+  });
+
+  it("a REPEATED type (?type=a&type=b) is a 400, even when both are known kinds", async () => {
+    const res = await binKeeper.get("/api/deleted-records?type=customer&type=fine");
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe("INVALID_BIN_KIND");
+
+    // The same kind twice is repeated just the same: one value, or none.
+    const twice = await binKeeper.get("/api/deleted-records?type=fine&type=fine");
+    expect(twice.status).toBe(400);
+    expect(twice.body.code).toBe("INVALID_BIN_KIND");
+  });
+
   it("a manage_recycle_bin account lists every kind; manage_reservations alone gets 403", async () => {
     const allowed = await binKeeper.get("/api/deleted-records?type=maintenance_block");
     expect(allowed.status).toBe(200);

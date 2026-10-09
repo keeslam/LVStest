@@ -22,3 +22,12 @@ export function isDamageCheckDocument(documentType?: string | null): boolean {
 export function isContractDocument(documentType?: string | null): boolean {
   return normalize(documentType).startsWith('contract');
 }
+
+/**
+ * A transport report: the whole type, in any spelling (the document registry writes
+ * the slug `transport_report`; server/services/document-registry.ts). Unlike the two
+ * above this is not a prefix - "Transport Report (Signed)" is a different thing.
+ */
+export function isTransportReportDocument(documentType?: string | null): boolean {
+  return normalize(documentType) === 'transportreport';
+}

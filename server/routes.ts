@@ -2291,7 +2291,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       const result = await purgeDeletedRecords([id], purgeActorOf(req), purgeHooksOf(req));
       if (result.purged === 0) {
         const failure = result.failed[0];
-        return res.status(failure?.code === "NOT_FOUND" ? 404 : 500).json({
+        // 404: the bin row is gone. 409: the purge declined because fiscal records stand in the way
+        // (nothing broke, and the same call will keep answering this until they are gone). Anything
+        // else is a fault of ours.
+        const status = failure?.code === "NOT_FOUND" ? 404 : failure?.code === "FISCAL_DATA_PRESENT" ? 409 : 500;
+        return res.status(status).json({
           code: failure?.code ?? "PURGE_FAILED",
           message: failure?.message ?? "This record could not be removed.",
           purged: 0,

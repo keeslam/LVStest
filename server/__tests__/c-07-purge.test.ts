@@ -185,6 +185,17 @@ describe("C-07 - the purge routes: who may call them and what they accept", () =
     expect(await binRowExists(row.id)).toBe(true);
   });
 
+  it("a purge writes who did it into the audit details (purgedBy), on the row's own account too", async () => {
+    const row = await insertBinRow("transport");
+    const res = await binKeeper.delete(`/api/deleted-records/${row.id}`);
+    expect(res.status).toBe(200);
+
+    const audit = await auditRows("transport.purge", row.entityId);
+    expect(audit).toHaveLength(1);
+    expect(audit[0].username).toBe(binKeeper.username);
+    expect(audit[0].details).toMatchObject({ purgedBy: binKeeper.username, deletedRecordId: row.id });
+  });
+
   it("lets manage_recycle_bin and role admin through", async () => {
     const a = await insertBinRow("transport");
     const b = await insertBinRow("transport");
@@ -640,6 +651,8 @@ describe("C-07 fix round - fiscal evidence: a reservation that has any is never 
     expect(audit).toHaveLength(1);
     expect(audit[0].status).toBe("failure");
     expect(audit[0].details).toMatchObject({ deletedRecordId: record.id, code: "FISCAL_DATA_PRESENT", fiscal: { assessments: 1, reviewCases: 0 } });
+    // ...and by whom: the acting account is in the details as well as on the row.
+    expect(audit[0].details).toMatchObject({ purgedBy: binKeeper.username });
   });
 
   it("a review case alone is enough: refused, nothing touched", async () => {
@@ -653,8 +666,9 @@ describe("C-07 fix round - fiscal evidence: a reservation that has any is never 
     });
 
     const res = await binKeeper.delete(`/api/deleted-records/${record.id}`);
-    // The single-record route answers the refusal with its code (the status is the route's business).
-    expect(res.status).toBeGreaterThanOrEqual(400);
+    // A refusal the caller can understand is a 409 (conflict with fiscal records), not a 500: nothing
+    // broke, the purge declined. A record that is simply gone stays a 404.
+    expect(res.status).toBe(409);
     expect(res.body.code).toBe("FISCAL_DATA_PRESENT");
     expect(res.body.purged).toBe(0);
     expect(res.body.failed).toEqual([refusal(record.id)]);
