@@ -319,6 +319,23 @@ zijn voor manager."
 verwijderen, een selectie tegelijk, of alles, telkens met een bevestiging. De prullenbakken
 zelf zijn zichtbaar voor admin en manager (vandaag alleen admin). Volgorde van bouwen: eerst
 deelproject B, direct daarna C.
+
+### B-39 — Uitwerking deelproject C goedgekeurd (09-10-2026)
+**Besluit (letterlijk):** "ja" op het ontwerp van deelproject C en op de drie voorstellen daarin:
+1. Drie nieuwe rechten ("Overdracht terugdraaien", "Opgehaalde huur annuleren of verwijderen",
+   "Prullenbak beheren"); elk account met rol manager krijgt ze één keer automatisch bij de eerste
+   start na de deploy, daarna per account instelbaar. Wie alleen "reserveringen beheren" heeft,
+   kan daarna niet meer terugdraaien of een opgehaalde huur annuleren zonder het vinkje.
+2. Een annulering terugdraaien gaat naar "opgehaald" als de auto al was opgehaald, anders naar
+   "geboekt", mits de auto in die periode nog vrij is; gesloten vervangers en transporten komen
+   niet vanzelf terug.
+3. Prullenbak legen verwijdert ook de bijbehorende bestanden, alleen als geen ander levend
+   record ze nog gebruikt.
+Verder: kilometerstand van de auto gaat bij terugdraaien terug naar de stand van vóór de
+overdracht (vanaf nu bewaard bij elk ophalen en innemen; oude huren zonder die stand laten de
+teller staan), met een apart vinkje als de stand daardoor omlaag gaat; onderhoud afronden in één
+handeling binnen één transactie.
+Raakt: B-30, B-33, B-36, B-37, B-38.
 Raakt: B-15, B-33, B-36, BUG-150.
 
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
