@@ -96,8 +96,12 @@ for (const account of SESSIONS) {
           await expect(dialog).toBeVisible();
           // A dialog can open on top of another one (the fines bin opens from the
           // fines list, which the portal dashboard shows as a dialog): closing it
-          // then leaves that many dialogs minus one, not none.
+          // then leaves the other one standing. So the check is on THIS dialog's
+          // own element - it must leave the page - and not on a count that any
+          // other dialog opening or closing meanwhile would throw off.
           const openCount = await openDialogs.count();
+          const openedDialog = await dialog.elementHandle();
+          if (!openedDialog) throw new Error(`${entry.opener}: the dialog that opened vanished before it could be checked`);
           // `.first()`: some dialogs (e.g. profile-dialog.tsx "eigen profiel",
           // key-audit-dialog.tsx) render their own `<h3>`/`<h4>` section
           // sub-headings inside DialogContent alongside DialogTitle, so more
@@ -112,7 +116,13 @@ for (const account of SESSIONS) {
           } else {
             await page.keyboard.press("Escape");
           }
-          await expect(openDialogs).toHaveCount(openCount - 1);
+          await expect
+            .poll(() => openedDialog.evaluate((element) => element.isConnected), {
+              message: `${entry.opener}: the dialog that was opened must be removed from the page when it is closed`,
+            })
+            .toBe(false);
+          // A dialog that stood on its own leaves none behind (the stricter, old check).
+          if (openCount === 1) await expect(openDialogs).toHaveCount(0);
           expect(health.violations).toEqual([]);
         });
       } else {
