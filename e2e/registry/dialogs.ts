@@ -76,6 +76,13 @@ export const DIALOGS: DialogEntry[] = [
   // MANAGE_VEHICLES (manager and maintenance also hold that permission but do
   // not see this button) — anyOf: [] so can() only passes for admin;
   // hiddenWithoutRight since B-27 keeps this hidden, not disabled.
+  // Sub-project C, Task 1: the SERVER routes behind this dialog now need
+  // manage_recycle_bin (admin and manager hold it), but the opener below is
+  // still gated on role === ADMIN, so this entry stays anyOf: [] +
+  // hiddenWithoutRight until Task 6 wraps the opener. Task 6 then sets
+  // anyOf: [P.MANAGE_RECYCLE_BIN] and drops hiddenWithoutRight in one step;
+  // doing it earlier would make the manager profile expect a button the page
+  // does not render yet.
   { page: "/vehicles", opener: "button-open-recycle-bin", anyOf: [], hiddenWithoutRight: true, source: "client/src/components/vehicles/deleted-vehicles-dialog.tsx", name: "prullenbak voertuigen" },
   { page: "/vehicles", opener: "button-open-barcode-book", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/barcodes/barcode-book-dialog.tsx", name: "barcodeboek" },
   { page: "/vehicles", opener: "button-key-audit", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/barcodes/key-audit-dialog.tsx", name: "sleutelcontrole (hoofdsleutels)" },
