@@ -39,6 +39,13 @@ export type RevertVehicleReason = (typeof REVERT_VEHICLE_REASONS)[number];
 export const REVERT_WARNING_CODES = ["cascade_not_reopened", "no_reading_stored", "later_handover"] as const;
 export type RevertWarningCode = (typeof REVERT_WARNING_CODES)[number];
 
+/**
+ * What a document of `plan.documentsToMarkStale` is, for the screen. The server
+ * classifies it (shared/document-types.ts); the client must not read the free
+ * text `documentType` to find out.
+ */
+export type RevertDocumentKind = "contract" | "damage_check" | "other";
+
 /** The status a reversal can end in. */
 export type RevertTargetStatus = "booked" | "picked_up";
 
@@ -70,7 +77,7 @@ export interface RevertPlan {
     restoreTo: RevertReading | null;
     reason?: RevertVehicleReason;
   };
-  documentsToMarkStale: { id: number; documentType: string }[];
+  documentsToMarkStale: { id: number; documentType: string; kind: RevertDocumentKind }[];
   /** `restoreTo.mileage` is lower than `current.mileage`. */
   requiresMileageConfirmation: boolean;
   /** Stable codes, see `REVERT_WARNING_CODES`. */

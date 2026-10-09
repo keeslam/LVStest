@@ -39,12 +39,14 @@ import {
   type Document, type Reservation, type Vehicle,
 } from "../../shared/schema";
 import {
-  REVERT_CODES, type RevertPlan, type RevertReading, type RevertTargetStatus, type RevertVehicleReason,
+  REVERT_CODES, type RevertDocumentKind, type RevertPlan, type RevertReading, type RevertTargetStatus,
+  type RevertVehicleReason,
 } from "../../shared/revert-codes";
 import { storage } from "../storage";
 import { isoToday, normalizeReservationStatus } from "./lifecycle";
 import { vehicleLockSql, type BookabilityReason, type BookabilityVerdict } from "./bookability";
 import { syncUsagePeriodSafely } from "./fiscal/usage-periods";
+import { isContractDocument, isDamageCheckDocument } from "../../shared/document-types";
 
 /** `documents.stale_reason` written by a reversal. */
 export const REVERT_STALE_REASON = "handover reverted";
@@ -140,6 +142,13 @@ function isReturnDamageCheck(documentType?: string | null): boolean {
   const t = normaliseType(documentType);
   if (!t.startsWith("damagecheck") || t.includes("unsigned") || t.includes("pickup")) return false;
   return t === "damagecheck" || t.includes("return");
+}
+
+/** What the dialog calls a stale document; it never reads `documentType` itself. */
+function documentKindOf(documentType?: string | null): RevertDocumentKind {
+  if (isDamageCheckDocument(documentType)) return "damage_check";
+  if (isContractDocument(documentType)) return "contract";
+  return "other";
 }
 
 const DOCUMENT_MATCHERS: Record<DocumentKind, (documentType?: string | null) => boolean> = {
@@ -260,7 +269,7 @@ export function planRevert(input: PlanRevertInput): RevertPlan {
 
   const documentsToMarkStale = docs
     .filter((d) => !d.isStale && step.documents.some((kind) => DOCUMENT_MATCHERS[kind](d.documentType)))
-    .map((d) => ({ id: d.id, documentType: d.documentType }))
+    .map((d) => ({ id: d.id, documentType: d.documentType, kind: documentKindOf(d.documentType) }))
     .sort((a, b) => a.id - b.id);
 
   const warnings: string[] = [];

@@ -22,7 +22,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { REVERT_CODES, type RevertPlan } from "@shared/revert-codes";
 import nlReservations from "@/locales/nl/reservations.json";
 import enReservations from "@/locales/en/reservations.json";
-import { RevertHandoverDialog } from "@/components/reservations/revert-handover-dialog";
+import { RevertHandoverDialog, isRevertibleReservation } from "@/components/reservations/revert-handover-dialog";
 
 const RESERVATION_ID = 4711;
 const PREVIEW_URL = `/api/reservations/${RESERVATION_ID}/revert-preview`;
@@ -44,7 +44,7 @@ function plan(over: Partial<RevertPlan> = {}): RevertPlan {
       current: { mileage: 61250, fuel: "3/4" },
       restoreTo: { mileage: 61000, fuel: "full" },
     },
-    documentsToMarkStale: [{ id: 77, documentType: "Contract (Unsigned)" }],
+    documentsToMarkStale: [{ id: 77, documentType: "Contract (Unsigned)", kind: "contract" }],
     requiresMileageConfirmation: true,
     warnings: [],
     planHash: "hash-1",
@@ -322,6 +322,8 @@ describe("RevertHandoverDialog - weigeringen van de server, op `code`", () => {
     await confirmWithTick(user);
 
     expect(await screen.findByTestId("revert-error")).toHaveTextContent("intussen gewijzigd");
+    // The error box sits BELOW the overview, so the sentence points up.
+    expect(screen.getByTestId("revert-error")).toHaveTextContent("Hierboven staat het bijgewerkte overzicht");
     expect(screen.queryByText(/changed since/i)).not.toBeInTheDocument();
     // The preview was asked for again, not only taken from the refusal.
     await waitFor(() => expect(previewRequests).toBeGreaterThan(requestsBefore));
@@ -460,5 +462,65 @@ describe("RevertHandoverDialog - teksten in nl en en", () => {
       return out;
     };
     expect(collect((enReservations as any).revertHandover)).toEqual(collect((nlReservations as any).revertHandover));
+  });
+});
+
+describe("RevertHandoverDialog - documenten worden benoemd op hun soort, niet op hun Engelse typetekst", () => {
+  it("labelt een document op zijn kind, ook als de typetekst een andere spelling heeft", async () => {
+    previewPlan = plan({
+      documentsToMarkStale: [
+        // None of these type strings contains "contract" or "damage check": only the kind says what they are.
+        { id: 1, documentType: "retour_controle_pdf", kind: "damage_check" },
+        { id: 2, documentType: "Voertuigovereenkomst", kind: "contract" },
+        { id: 3, documentType: "Bijlage X", kind: "other" },
+      ],
+    });
+    renderDialog();
+
+    const documents = await screen.findByTestId("revert-documents");
+    expect(documents).toHaveTextContent("Schadecheck");
+    expect(documents).toHaveTextContent("Niet-ondertekend contract");
+    // A kind the dialog has no words for shows the stored type as it is.
+    expect(documents).toHaveTextContent("Bijlage X");
+    // And the stored type of a classified document is not shown instead of its label.
+    expect(documents).not.toHaveTextContent("retour_controle_pdf");
+    expect(documents).not.toHaveTextContent("Voertuigovereenkomst");
+  });
+
+  it("een Engelse typetekst alleen zegt niets meer: 'Damage Check (Return)' met kind other blijft zoals opgeslagen", async () => {
+    previewPlan = plan({
+      documentsToMarkStale: [{ id: 5, documentType: "Damage Check (Return)", kind: "other" }],
+    });
+    renderDialog();
+
+    expect(await screen.findByTestId("revert-documents")).toHaveTextContent("Damage Check (Return)");
+  });
+});
+
+describe("isRevertibleReservation - leest de status zoals de server (ook oude spellingen)", () => {
+  it.each(["picked_up", "returned", "completed", "cancelled"])("%s is terug te draaien", (status) => {
+    expect(isRevertibleReservation({ status })).toBe(true);
+  });
+
+  it.each([
+    ["in", "opgehaald (oude spelling)"],
+    ["active", "opgehaald (oude spelling)"],
+    ["out", "afgerond (oude spelling)"],
+    [" Active ", "hoofdletters en spaties"],
+    ["PICKED_UP", "hoofdletters"],
+  ])("oude spelling %j (%s) is terug te draaien", (status) => {
+    expect(isRevertibleReservation({ status })).toBe(true);
+  });
+
+  it.each(["booked", "confirmed", "pending", "scheduled", "garbage", "", null, undefined])(
+    "%j heeft niets om terug te draaien",
+    (status) => {
+      expect(isRevertibleReservation({ status: status as string | null | undefined })).toBe(false);
+    },
+  );
+
+  it("een onderhoudsblok nooit, welke status het ook heeft", () => {
+    expect(isRevertibleReservation({ status: "picked_up", type: "maintenance_block" })).toBe(false);
+    expect(isRevertibleReservation({ status: "active", type: "maintenance_block" })).toBe(false);
   });
 });

@@ -34,6 +34,19 @@
  * not refuse anything new because of one.
  */
 
+// The status vocabulary (the enum, the legacy aliases, the normaliser) lives in
+// shared/ so the client reads a stored status exactly as the server does. It is
+// re-exported here because every server caller has always imported it from this
+// module.
+import {
+  RESERVATION_STATUSES,
+  LEGACY_RESERVATION_STATUS_ALIASES,
+  normalizeReservationStatus,
+  type ReservationStatus,
+} from "../../shared/reservation-status";
+export { RESERVATION_STATUSES, LEGACY_RESERVATION_STATUS_ALIASES, normalizeReservationStatus };
+export type { ReservationStatus };
+
 /* ------------------------------------------------------------------ *
  * Errors
  * ------------------------------------------------------------------ */
@@ -90,39 +103,8 @@ export class WorkshopBlockedError extends Error {
  * Reservation status
  * ------------------------------------------------------------------ */
 
-export const RESERVATION_STATUSES = ["booked", "picked_up", "returned", "completed", "cancelled"] as const;
-export type ReservationStatus = (typeof RESERVATION_STATUSES)[number];
-
 /** Statuses that mean "this row no longer occupies the vehicle". */
 export const CLOSED_RESERVATION_STATUSES: ReadonlySet<string> = new Set(["completed", "cancelled", "returned"]);
-
-/**
- * BUG-129 — 278 live rows carry a status the state machine never knew, written
- * by `createMaintenanceBlock` (`active`), `createReplacementReservation`
- * (`pending`) and a pre-enum era (`confirmed`, `scheduled`, `in`). Those rows
- * could not be closed or cancelled through any UI action, so they kept their
- * vehicles on `rented` forever.
- *
- * The writers are fixed (they write `booked` now); this map is what lets the
- * *existing* rows move again. It is a read-side alias, not a new enum value:
- * nothing writes these strings any more.
- */
-export const LEGACY_RESERVATION_STATUS_ALIASES: Readonly<Record<string, ReservationStatus>> = Object.freeze({
-  active: "picked_up",
-  confirmed: "booked",
-  pending: "booked",
-  scheduled: "booked",
-  in: "picked_up",
-  out: "completed",
-});
-
-/** The canonical status for a stored value, or `null` if it is not one we know. */
-export function normalizeReservationStatus(raw: unknown): ReservationStatus | null {
-  if (typeof raw !== "string") return null;
-  const value = raw.trim().toLowerCase();
-  if ((RESERVATION_STATUSES as readonly string[]).includes(value)) return value as ReservationStatus;
-  return LEGACY_RESERVATION_STATUS_ALIASES[value] ?? null;
-}
 
 /**
  * The enum gate every writer passes. BUG-016: `PATCH /:id` and `/basic` wrote

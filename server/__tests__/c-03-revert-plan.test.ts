@@ -81,7 +81,7 @@ describe("C-03 planRevert - picked_up to booked", () => {
         doc(7, "Damage Check (Unsigned)"),
       ],
     });
-    expect(plan.documentsToMarkStale).toEqual([{ id: 3, documentType: "Contract (Unsigned)" }]);
+    expect(plan.documentsToMarkStale).toEqual([{ id: 3, documentType: "Contract (Unsigned)", kind: "contract" }]);
   });
 
   it("no mileage confirmation when the odometer does not go down", () => {
@@ -148,6 +148,26 @@ describe("C-03 planRevert - returned / completed to picked_up", () => {
       ],
     });
     expect(plan.documentsToMarkStale.map((d) => d.id)).toEqual([1, 2]);
+  });
+
+  it("every stale document carries a kind, so the dialog never has to read the type string", () => {
+    const plan = planRevert({
+      ...base, reservation: returned(), vehicle: vehicle({ currentMileage: 5400 }),
+      documents: [
+        doc(1, "Damage Check"),
+        doc(2, "damage_check_return"), // a slug spelling written by an upload path
+      ],
+    });
+    expect(plan.documentsToMarkStale).toEqual([
+      { id: 1, documentType: "Damage Check", kind: "damage_check" },
+      { id: 2, documentType: "damage_check_return", kind: "damage_check" },
+    ]);
+
+    const pickup = planRevert({
+      ...base, reservation: pickedUp(), vehicle: vehicle(),
+      documents: [doc(3, "Contract (Unsigned)"), doc(4, "contract_unsigned")],
+    });
+    expect(pickup.documentsToMarkStale.map((d) => d.kind)).toEqual(["contract", "contract"]);
   });
 
   it("the legacy 'returned' status takes the same road", () => {

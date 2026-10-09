@@ -36,7 +36,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, getQueryFn, invalidateByPrefix } from "@/lib/queryClient";
 import { formatFuelLevel, formatReservationStatus } from "@/lib/format-utils";
-import { REVERT_CODES, type RevertPlan } from "@shared/revert-codes";
+import { REVERT_CODES, type RevertDocumentKind, type RevertPlan } from "@shared/revert-codes";
+import { normalizeReservationStatus } from "@shared/reservation-status";
 
 /** What `POST /api/reservations/:id/revert` answers on success. */
 export interface RevertResult {
@@ -53,15 +54,20 @@ interface RevertHandoverDialogProps {
 }
 
 /** The statuses the engine can undo: a pickup, a return (also legacy `returned`) and a cancellation. */
-const REVERTIBLE_STATUSES = new Set(["picked_up", "returned", "completed", "cancelled"]);
+const REVERTIBLE_STATUSES: ReadonlySet<string> = new Set(["picked_up", "returned", "completed", "cancelled"]);
 
 /**
  * Whether a reservation row can be offered a reversal at all. Every opener uses
  * this one rule; the server decides the rest (preview, `blocked`).
+ *
+ * The status is read the way the server reads it (shared/reservation-status.ts):
+ * rows written before the state machine carry `in`, `active` or `out`, and the
+ * server's plan treats them as picked up / completed, so the opener must too.
  */
 export function isRevertibleReservation(reservation: { status?: string | null; type?: string | null }): boolean {
   if (reservation.type === "maintenance_block") return false;
-  return REVERTIBLE_STATUSES.has(String(reservation.status ?? "").toLowerCase());
+  const status = normalizeReservationStatus(reservation.status);
+  return status !== null && REVERTIBLE_STATUSES.has(status);
 }
 
 /** `reservations:revertHandover.opener.*` key for the label of an opener. */
@@ -242,10 +248,12 @@ export function RevertHandoverDialog({ reservationId, open, onOpenChange, onReve
   // The vehicle block already says why a reading stays; do not say it twice.
   const warnings = (plan?.warnings ?? []).filter((code) => code !== plan?.vehicle.reason);
 
-  const documentLabel = (documentType: string) => {
-    if (/damage check/i.test(documentType)) return t("revertHandover.documentTypes.damageCheck");
-    if (/contract/i.test(documentType)) return t("revertHandover.documentTypes.contract");
-    return documentType;
+  // The server says what a document is (`kind`); the free-text type is only the
+  // fallback label for a kind we have no words for.
+  const documentLabel = (document: { documentType: string; kind?: RevertDocumentKind }) => {
+    if (document.kind === "damage_check") return t("revertHandover.documentTypes.damageCheck");
+    if (document.kind === "contract") return t("revertHandover.documentTypes.contract");
+    return document.documentType;
   };
 
   return (
@@ -316,7 +324,7 @@ export function RevertHandoverDialog({ reservationId, open, onOpenChange, onReve
                 <p className="font-medium">{t("revertHandover.documentsTitle")}</p>
                 <ul className="list-disc pl-5">
                   {plan.documentsToMarkStale.map((document) => (
-                    <li key={document.id}>{documentLabel(document.documentType)}</li>
+                    <li key={document.id}>{documentLabel(document)}</li>
                   ))}
                 </ul>
               </div>
