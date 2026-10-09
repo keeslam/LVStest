@@ -1,6 +1,6 @@
 /**
  * Sub-project C, task 7 (besluiten B-36, B-38, B-39) - the recycle bins walked end to
- * end as `manager`, the profile that holds `manage_recycle_bin` besides admin:
+ * end as `manager-b`, the twin of `manager` (the profile that holds `manage_recycle_bin` besides admin):
  *
  *   1. a reservation is deleted through the reservations list; it lands in the bin of
  *      Reserveringen (and in no other bin) and "Terugzetten" brings it back;
@@ -20,8 +20,11 @@
  * assumes an empty bin - rows are found by the id the API reports, and the "empty it"
  * button is only ever cancelled.
  *
- * `manager`, not `admin`: both hold the right, but admin is the account layer-a spends
- * its apiLimiter budget on.
+ * `manager-b`, not `admin` and not `manager`: all three hold the right, but admin and
+ * manager are the accounts layer-a and layer-b spend their apiLimiter budget on, and
+ * manager-b is the twin of manager (same rights, own bucket). The tail deals its specs
+ * over the two: template-errors runs as `manager`, this one and past-reservation as
+ * `manager-b` (docs/e2e/README.md, "Het verzoekbudget").
  */
 import { test, expect, settle } from "../../support/guards";
 import { authFile } from "../../support/roles";
@@ -31,7 +34,7 @@ import type { APIRequestContext, Page } from "@playwright/test";
 
 const PLATE = "E2E-PB-1";
 
-test.use({ storageState: authFile("manager"), viewport: { width: 1280, height: 1400 } });
+test.use({ storageState: authFile("manager-b"), viewport: { width: 1280, height: 1400 } });
 
 /**
  * The double-submit CSRF cookie the app's own client echoes back on every mutating

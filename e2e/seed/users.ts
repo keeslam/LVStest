@@ -23,6 +23,28 @@ import { UserPermission as P, UserRole } from "../../shared/schema";
 export const ROLES = ["admin", "manager", "user", "cleaner", "viewer", "accountant", "maintenance", "reports-only", "templates-only", "notifications-only"] as const;
 export type Role = (typeof ROLES)[number];
 
+// Twin sessions: the same profile as `admin` / `manager` / `user` under another
+// username, so a spec can spread its requests over two per-user buckets of the API
+// limiter (1000 requests per user per 15 minutes, one server process and one window
+// per run, counters in memory; server/middleware/security/rateLimiter.ts). The
+// server keeps its production limits and a 429 stays a page-health violation
+// (e2e/support/guards.ts); the remedy for a bucket that runs dry is another seeded
+// user, never a bypass (docs/superpowers/specs/2026-09-20-e2e-browser-tests-design.md,
+// "Rate limits"). Only the three profiles that the later layers also lean on have
+// one; the numbers are in docs/e2e/README.md, "Het verzoekbudget".
+// Twins are NOT part of ROLES: pages/forbidden/dialogs run the role matrix over
+// ROLES, and an extra copy of a role would only spend more requests. They exist
+// as accounts (seed + login) and are picked by name in the specs that need them.
+export const TWIN_OF = { admin: "admin-b", manager: "manager-b", user: "user-b" } as const satisfies Partial<Record<Role, string>>;
+export type Twin = (typeof TWIN_OF)[keyof typeof TWIN_OF];
+export const TWINS: readonly Twin[] = Object.values(TWIN_OF);
+/** Every seeded login: the ten roles plus the twins. */
+export type Account = Role | Twin;
+export const ACCOUNTS: readonly Account[] = [...ROLES, ...TWINS];
+/** The role whose profile (rights, role label) an account carries. */
+export const profileOf = (account: Account): Role =>
+  (Object.keys(TWIN_OF) as Array<keyof typeof TWIN_OF>).find((role) => TWIN_OF[role] === account) ?? (account as Role);
+
 const ALL = Object.values(P) as string[];
 const without = (...denied: string[]) => ALL.filter((permission) => !denied.includes(permission));
 
@@ -58,7 +80,10 @@ export const PROFILES: Record<Role, string[]> = {
   "notifications-only": [P.VIEW_DASHBOARD, P.MANAGE_NOTIFICATIONS],
 };
 
-export const usernameOf = (role: Role) => `e2e-${role}`;
+/** The rights of an account: a twin holds exactly what its profile holds. */
+export const permissionsOf = (account: Account): string[] => PROFILES[profileOf(account)];
+
+export const usernameOf = (account: Account) => `e2e-${account}`;
 export const roleLabel: Record<Role, string> = {
   admin: UserRole.ADMIN, manager: UserRole.MANAGER, user: UserRole.USER, cleaner: UserRole.CLEANER,
   viewer: UserRole.VIEWER, accountant: UserRole.ACCOUNTANT, maintenance: UserRole.MAINTENANCE,

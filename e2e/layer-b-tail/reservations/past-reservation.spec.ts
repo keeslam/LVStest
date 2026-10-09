@@ -46,17 +46,18 @@ test.describe("Reserveringskalender: niet opgehaalde boeking van een maand oud (
   // and is positioned `fixed`, so a clipped popover at the default 720px
   // height cannot be scrolled into view.
   //
-  // Role: `manager` rather than `admin`. Both hold MANAGE_RESERVATIONS (the
-  // only right this spec needs, besides VIEW_RESERVATIONS which both also
-  // hold), but `admin` is the one role `dialogs.spec.ts`/`forbidden.spec.ts`
-  // (layer-a) exercise on every single registry entry — by the time this
-  // project starts (after layer-a AND layer-b finish, same server process,
-  // same 15-minute `apiLimiter` window, server/middleware/security/rateLimiter.ts)
-  // its 1000-request budget is measurably exhausted: a first run authenticated
-  // as `admin` here got a wall of 429s on the very first request. `manager`
-  // is not privileged in any way this spec relies on — it is simply a
-  // different bucket with headroom left.
-  test.use({ storageState: authFile("manager"), viewport: { width: 1280, height: 1400 } });
+  // Role: `manager-b`, the twin of `manager` (same rights, own bucket), rather than
+  // `admin` or `manager`. Both hold MANAGE_RESERVATIONS (the only right this spec
+  // needs, besides VIEW_RESERVATIONS which both also hold), but `admin` and
+  // `manager` are the roles layer-a (dialogs/pages/forbidden) and layer-b exercise
+  // on every single registry entry — by the time this project starts (after
+  // layer-a AND layer-b finish, same server process, same 15-minute `apiLimiter`
+  // window, server/middleware/security/rateLimiter.ts) their 1000-request
+  // budgets are largely spent: a run authenticated as `manager` here got a wall
+  // of 429s with 21 requests left. `manager-b` is not privileged in any way this
+  // spec relies on — it is simply a bucket with headroom left (docs/e2e/README.md,
+  // "Het verzoekbudget").
+  test.use({ storageState: authFile("manager-b"), viewport: { width: 1280, height: 1400 } });
 
   test("popup toont een nooit-opgehaalde boeking, blokkeert niets nieuws, en annuleren maakt de lijst leeg", async ({ page, health, request }) => {
     test.setTimeout(120_000);

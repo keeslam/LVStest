@@ -1,5 +1,5 @@
 import { E2E } from "../support/env";
-import { PROFILES, ROLES, roleLabel, usernameOf } from "./users";
+import { ACCOUNTS, permissionsOf, profileOf, roleLabel, usernameOf } from "./users";
 
 /** Writes the fixed E2E content. DATABASE_URL must already point at lvs_e2e. */
 export async function runSeed(): Promise<void> {
@@ -10,13 +10,15 @@ export async function runSeed(): Promise<void> {
   const { hashPassword } = await import("../../server/auth");
 
   const password = await hashPassword(E2E.password);
-  await db.insert(users).values(ROLES.map((role) => ({
-    username: usernameOf(role),
+  // One login per role, plus the twins (admin-b, manager-b): same rights and role
+  // label as their profile, a bucket of their own in the API limiter.
+  await db.insert(users).values(ACCOUNTS.map((account) => ({
+    username: usernameOf(account),
     password,
-    fullName: `E2E ${role}`,
-    email: `${role}@e2e.invalid`,
-    role: roleLabel[role],
-    permissions: PROFILES[role],
+    fullName: `E2E ${account}`,
+    email: `${account}@e2e.invalid`,
+    role: roleLabel[profileOf(account)],
+    permissions: permissionsOf(account),
     active: true,
   })));
 

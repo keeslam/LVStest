@@ -57,7 +57,10 @@ test.describe("Contract: een standaardsjabloon zonder velden geeft een duidelijk
   // what layer-a's dialogs.spec.ts/forbidden.spec.ts hammer on every registry
   // entry. `manager` holds every permission this spec needs
   // (MANAGE_PDF_TEMPLATES, MANAGE_RESERVATIONS, VIEW_RESERVATIONS) and is a
-  // different, unexhausted bucket.
+  // different bucket. The tail deals its three specs over `manager` (this one,
+  // about 60 requests) and the twin `manager-b` (the other two); the measured
+  // numbers and the rule for a new spec are in docs/e2e/README.md,
+  // "Het verzoekbudget".
   test.use({ storageState: authFile("manager"), viewport: { width: 1280, height: 1400 } });
 
   let seededTemplateId: number;

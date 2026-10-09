@@ -1,9 +1,11 @@
 import { test as setup, expect } from "@playwright/test";
 import { E2E } from "../support/env";
-import { ROLES, authFile } from "../support/roles";
+import { ACCOUNTS, authFile } from "../support/roles";
 import { usernameOf } from "../seed/users";
 
-for (const role of ROLES) {
+// Every seeded login, twins included: each gets its own storage state, so a spec can
+// pick the account whose rate-limit bucket has room (see TWINS in e2e/seed/users.ts).
+for (const role of ACCOUNTS) {
   setup(`log in as ${role}`, async ({ page }) => {
     await page.goto("/auth");
     await page.locator('input[name="username"]').fill(usernameOf(role));

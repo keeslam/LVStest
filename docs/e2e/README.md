@@ -83,7 +83,7 @@ verandert tijdelijk wélk sjabloon standaard is, wat een `lvs_e2e`-brede instell
 zet die aan het eind weer terug.
 
 **Prullenbakken (deelproject C, taak 7): een derde staarttest, `e2e/layer-b-tail/recycle-bin/bins.spec.ts`.**
-Draait als `manager`, het profiel dat naast de beheerder het recht *Prullenbak beheren*
+Draait als `manager-b`, de tweeling van `manager` (zie *Het verzoekbudget* hieronder), het profiel dat naast de beheerder het recht *Prullenbak beheren*
 heeft. Drie verhalen, elk met een eigen handelingenbudget: (1) een reservering verwijderen via
 de lijst, zien dat hij alleen in de prullenbak van Reserveringen staat en terugzetten; (2) een
 klant met een debiteurnummer verwijderen, zien dat het nummer gereserveerd blijft, de klant
@@ -103,12 +103,6 @@ staat uit zolang de prullenbak leeg is (de seed bevat geen verwijderde rijen), e
 het recht kan het prullenbakvenster niet eens openen. `dialogs.spec.ts` maakt voor die ingang
 dus geen test; het bewijs is deze staarttest.
 
-**Kleine aanpassing aan de testserver (taak 6).** `e2e/support/serve.ts` zet
-`API_RATE_LIMIT_MAX` op 20000. Eén run is één serverproces met één venster van 15 minuten, en de
-beheerder (die laag A bijna helemaal draagt) kwam met het standaardbudget van 1000 verzoeken niet
-meer rond zodra het register boven de ~370 tests uitkwam. Alleen de testserver zet dit; in
-productie blijft het 1000.
-
 Voorwaarden:
 
 - PostgreSQL moet lokaal draaien (localhost, poort 5432, gebruiker `postgres`).
@@ -117,6 +111,61 @@ Voorwaarden:
 
 Het dekkingsoverzicht hoef je meestal niet apart te draaien: bij `npm run e2e` gebeurt
 dat automatisch aan het eind.
+
+## Het verzoekbudget (`admin-b`, `manager-b`, `user-b`)
+
+De applicatie geeft elke ingelogde gebruiker 1000 API-verzoeken per 15 minuten (`apiLimiter` in
+`server/middleware/security/rateLimiter.ts`). De tellers staan in het geheugen van het serverproces,
+en één run is één serverproces binnen één venster: alles wat een account in een run doet telt dus
+mee, en elke run begint wel weer op nul. De testserver draait met **precies dezelfde limiet als
+productie**: er is geen schakelaar en geen hoger plafond (regel 2 hieronder; zie ook het ontwerp,
+`docs/superpowers/specs/2026-09-20-e2e-browser-tests-design.md`, "Rate limits"). Een 429 blijft
+ook een fout voor de paginabewaking (`e2e/support/guards.ts`), want het is het enige signaal dat een
+scherm of werkstroom meer verzoeken doet dan een medewerker mag. Komt één account in de buurt van
+de 1000, dan is het middel een **extra gebruiker in de seed**, nooit een ruimere server.
+
+Daarom bestaan er drie *tweelingen* (`e2e/seed/users.ts`, `TWIN_OF`): `admin-b`, `manager-b` en
+`user-b`. Ze hebben dezelfde rechten en hetzelfde roletiket als `admin`, `manager` en `user`
+(gebruikersnaam `e2e-admin-b` enzovoort), een eigen opgeslagen sessie (`e2e/.tmp/auth/<naam>.json`,
+gemaakt door `e2e/setup/auth.setup.ts`) en dus een eigen teller. Ze horen **niet** bij `ROLES`: de
+rollenmatrix van laag A loopt over de tien profielen, en een extra kopie van een rol zou alleen
+meer verzoeken kosten.
+
+- **Laag A, `dialogs.spec.ts`.** De vensters van `admin`, `manager` en `user` worden verdeeld over
+  het profiel zelf en zijn tweeling, op de plek van de ingang in het register
+  (`e2e/registry/dialogs.ts`): even plekken als het profiel, oneven plekken als de tweeling. De
+  verdeling ligt vast, dus een falende test heeft elke run dezelfde naam (`dialogs as admin-b`).
+  Elk ander profiel houdt zijn ene sessie. `pages.spec.ts` en `forbidden.spec.ts` blijven
+  ongewijzigd.
+- **De staart (`layer-b-tail`).** Die draait als laatste, op de resten van hetzelfde venster. De
+  drie specs zijn verdeeld: `template-errors` als `manager` (ongeveer 60 verzoeken), `bins` en
+  `past-reservation` als `manager-b` (ongeveer 125 en 105), omdat de tweeling aan het begin van
+  de staart de meeste ruimte heeft.
+- **De baliewerkstroom en de andere laag-B-verhalen** houden hun rol (`user`, `manager`,
+  `maintenance`, `admin`); zij horen bij hun verhaal, niet bij het budget.
+
+**Gemeten (9 oktober 2026, één volledige run, verzoeken per account van 1000).** Links na laag A en B
+(het begin van de staart), rechts aan het eind van de run:
+
+| Account | begin staart | einde run |
+|---|---|---|
+| `admin` / `admin-b` | 781 / 313 | 784 / 316 |
+| `manager` / `manager-b` | 652 / 285 | 717 / 515 |
+| `user` / `user-b` | 761 / 158 | 764 / 161 |
+| `cleaner`, `viewer`, `accountant`, `maintenance` | 466, 542, 536, 544 | 469, 545, 539, 547 |
+
+Zonder de verdeling had `admin` ongeveer 1094 verzoeken nodig gehad (781 + 313), `manager` 937 en
+`user` 919. De drie profielen die alleen het dashboard en een of twee schermen openen
+(`reports-only`, `templates-only`, `notifications-only`) zitten ver onder de grens.
+
+**Regel voor een nieuwe spec of een groeiend register.** Houd elk account onder de ongeveer 800
+verzoeken (80 procent). Een nieuwe laag-B-spec die veel verzoeken doet, kiest het account met de
+meeste ruimte uit bovenstaande tabel (in de staart: de tweeling) en zet de reden in de spec; groeit
+de staart tot een tweeling te vol raakt, dan krijgt het volgende verhaal een eigen tweeling door een
+regel bij `TWIN_OF` te zetten, zoals de verdeling in `dialogs.spec.ts` er ook een kreeg. Meten kan
+met een tijdelijk testbestand dat per opgeslagen sessie `GET /api/vehicles` doet en
+`1000 - RateLimit-Remaining` afdrukt (`/api/user` staat vóór de limiet en telt niet mee); de
+staarttest `past-reservation` drukt het resterende budget van zijn eigen account al af.
 
 ## Hoe lang het duurt
 
@@ -137,6 +186,10 @@ per-rol specs.
 **Bijgewerkt (24-09-2026), na de twee staarttests van B-32 en B-34 hierboven:** de staart telt
 mee in `npm run e2e`, dus de tellers zijn iets hoger: `358 geslaagd, 2 bewust overgeslagen, 0
 mislukt` (ruim 8 minuten). De twee overslagen zijn nog dezelfde als hierboven.
+
+**Bijgewerkt (09-10-2026), na de prullenbakken van deelproject C en de drie tweelingen:** `398 geslaagd,
+2 bewust overgeslagen, 0 mislukt` (8,3 minuten). Het dekkingsoverzicht staat op `120 bestanden met een venster,
+33 bereikt door een test, 87 nog niet`.
 
 Het dekkingsoverzicht van de vensters (`npm run e2e:coverage`, draait ook automatisch
 aan het eind van `npm run e2e`):
@@ -168,7 +221,7 @@ andere machine sneller wil proberen, kan `E2E_WORKERS` op een ander getal zetten
   kopie, maar vanaf niets: het schema wordt neergezet en daarna draait de echte
   migratie eroverheen — dezelfde weg die een nieuwe productiedatabase aflegt. Zo valt een
   ontbrekende kolom op vóór een medewerker hem tegenkomt.
-- Daarna wordt er vaste testdata ingezet: tien medewerkers (één per profiel), acht
+- Daarna wordt er vaste testdata ingezet: dertien medewerkers (één per profiel, plus de drie tweelingen van het verzoekbudget), acht
   voertuigen, zes klanten, reserveringen in elke status, en (sinds B-34, taak 6) één PDF-
   sjabloon voor het contract ("E2E contract", standaard, drie velden: klantnaam, kenteken,
   startdatum — geen achtergrond).

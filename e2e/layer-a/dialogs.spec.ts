@@ -1,5 +1,5 @@
 import { test, expect, settle } from "../support/guards";
-import { ROLES, authFile, can } from "../support/roles";
+import { ROLES, TWIN_OF, authFile, can, profileOf, type Account } from "../support/roles";
 import { DIALOGS } from "../registry/dialogs";
 import { permissionLabel } from "../../shared/permission-labels";
 import { pageAccessFor } from "../../shared/page-access";
@@ -19,10 +19,33 @@ function roleCanOpenPage(role: (typeof ROLES)[number], page: string): boolean {
   return can(role, access.anyOf);
 }
 
-for (const role of ROLES) {
-  test.describe(`dialogs as ${role}`, () => {
-    test.use({ storageState: authFile(role) });
-    for (const entry of DIALOGS) {
+/**
+ * One API limiter bucket per user: 1000 requests per 15 minutes, one server process
+ * and one window per run (the limiter stays as in production, and a 429 is a
+ * page-health violation). `admin`, `manager` and `user` are the profiles that spend it
+ * fastest: `admin` holds every right, so every registry entry is an allowed-branch
+ * test for it (open, heading check, close, each with the page's own requests),
+ * `manager` holds nearly all of them, `user` meets most of the rest as a denied-branch
+ * page load - and layer-b (the desk stories) and the tail draw on the same buckets.
+ * Their tests are therefore dealt over two seeded accounts with the same rights
+ * (TWIN_OF: `admin` / `admin-b`, `manager` / `manager-b`, `user` / `user-b`) by the
+ * entry's position in the registry: even positions run as the profile itself, odd
+ * ones as its twin. The split is deterministic, so a failing title always names the
+ * same account. Every other profile keeps its single session.
+ * See docs/e2e/README.md, "Het verzoekbudget".
+ */
+const twinOf = (role: (typeof ROLES)[number]): Account | undefined => (TWIN_OF as Partial<Record<string, Account>>)[role];
+const SESSIONS: readonly Account[] = ROLES.flatMap((role): Account[] => {
+  const twin = twinOf(role);
+  return twin ? [role, twin] : [role];
+});
+
+for (const account of SESSIONS) {
+  const role = profileOf(account);
+  test.describe(`dialogs as ${account}`, () => {
+    test.use({ storageState: authFile(account) });
+    for (const [index, entry] of DIALOGS.entries()) {
+      if (twinOf(role) && (account !== role) !== (index % 2 === 1)) continue;
       const allowed = can(role, entry.anyOf);
       // A role that cannot even open the PAGE never reaches the opener at
       // all, whichever way its own `anyOf` compares — that combination is
