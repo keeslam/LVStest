@@ -432,6 +432,7 @@
       "maintenanceScheduledTitle": "Maintenance Scheduled",
       "maintenanceScheduledDescription": "The maintenance has been scheduled and reminders have been updated.",
       "completeFailedDescription": "Failed to complete maintenance. Please try again.",
+      "mileageLowerThanCurrent": "The mileage ({{given}} km) is lower than the vehicle's current reading ({{current}} km). Check the reading; nothing was saved.",
       "maintenanceCompletedTitle": "Maintenance Completed",
       "maintenanceCompletedWithDetails": "Maintenance completed: {{details}}",
       "maintenanceCompletedNoDetails": "Vehicle maintenance tracking has been updated.",

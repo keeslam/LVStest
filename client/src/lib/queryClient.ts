@@ -16,7 +16,7 @@ import { readJsonBody } from "./read-json-body";
 export { fetchWithTimeout, shouldForceLogout, REQUEST_TIMEOUT_MS, RequestTimeoutError };
 export { queryKeyUrl };
 
-async function throwIfResNotOk(res: Response) {
+export async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     // BUG-213: any 401 on a staff endpoint means this tab's session is gone.
     // Clear the cache so no stale row is rendered behind the login page, then

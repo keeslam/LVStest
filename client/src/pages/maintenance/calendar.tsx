@@ -21,7 +21,6 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   HoverCard,
   HoverCardContent,
@@ -49,6 +48,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ScheduleMaintenanceDialog } from "@/components/maintenance/schedule-maintenance-dialog";
 import { MaintenanceEditDialog } from "@/components/maintenance/maintenance-edit-dialog";
+import { CompleteMaintenanceDialog } from "@/components/maintenance/complete-maintenance-dialog";
 import { MaintenanceListDialog } from "@/components/maintenance/maintenance-list-dialog";
 import { RecycleBinDialog } from "@/components/recycle-bin/recycle-bin-dialog";
 import { VehicleViewDialog } from "@/components/vehicles/vehicle-view-dialog";
@@ -64,7 +64,6 @@ import { NoDataAccess } from "@/components/ui/no-data-access";
 import { ChevronLeft, ChevronRight, Calendar, Car, Wrench, AlertTriangle, Clock, Plus, Eye, Edit, Trash2, Palette, Archive } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTranslation } from "react-i18next";
-import { officeToday } from "@/lib/office-date";
 
 // Holiday names for display
 const DUTCH_HOLIDAY_NAMES: Record<string, string> = {
@@ -166,11 +165,10 @@ export default function MaintenanceCalendar() {
   // Warranty date dialog
   const [warrantyDateDialogOpen, setWarrantyDateDialogOpen] = useState(false);
   const [warrantyDateInput, setWarrantyDateInput] = useState<string>('');
+  // The completion dialog's own fields live in the dialog; these are only the
+  // values it opens with.
   const [apkDateInput, setApkDateInput] = useState<string>('');
-  const [completingReservation, setCompletingReservation] = useState<any>(null);
-  const [apkFormFile, setApkFormFile] = useState<File | null>(null);
-  const [maintenanceDetails, setMaintenanceDetails] = useState<string>('');
-  const [maintenanceCategory, setMaintenanceCategory] = useState<string>('scheduled_maintenance');
+  const [completingReservation, setCompletingReservation] = useState<Reservation | null>(null);
   const [currentMileage, setCurrentMileage] = useState<string>('');
   
   // Calculate next APK date based on vehicle type and age
@@ -1916,296 +1914,19 @@ export default function MaintenanceCalendar() {
         }}
       />
 
-      {/* Maintenance Completion Dialog */}
-      <Dialog open={warrantyDateDialogOpen} onOpenChange={setWarrantyDateDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{t('calendarPage.completeMaintenanceDialog.title')}</DialogTitle>
-            <DialogDescription>
-              {t('calendarPage.completeMaintenanceDialog.description')}
-            </DialogDescription>
-          </DialogHeader>
-
-          {/* Vehicle Information Section */}
-          {completingReservation && (() => {
-            const vehicle = vehicles?.find(v => v.id === completingReservation.vehicleId);
-            if (!vehicle) return null;
-
-            // WAVE 13 item 7 — this printed the stored token ("breakdown")
-            // where the desk expects "Pech".
-            const maintenanceType = formatMaintenanceType(completingReservation.notes?.split(':')[0]) || t('calendarPage.maintenanceTypeFallback');
-
-            return (
-              <div className="bg-muted/50 rounded-md p-4 mb-4 space-y-3">
-                <div className="space-y-2">
-                  <h3 className="font-medium text-sm">{t('calendarPage.completeMaintenanceDialog.vehicleInfoHeading')}</h3>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                    <div className="flex items-center">
-                      <span className="text-muted-foreground mr-1">{t('calendarPage.completeMaintenanceDialog.licenseLabel')}</span>
-                      <span className="font-medium">{displayLicensePlate(vehicle.licensePlate)}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-muted-foreground mr-1">{t('calendarPage.completeMaintenanceDialog.vehicleLabel')}</span>
-                      <span className="font-medium">{vehicle.brand} {vehicle.model}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-muted-foreground mr-1">{t('calendarPage.completeMaintenanceDialog.maintenanceTypeLabel')}</span>
-                      <span className="font-medium">{maintenanceType}</span>
-                    </div>
-                    {vehicle.currentMileage !== undefined && vehicle.currentMileage !== null && (
-                      <div className="flex items-center">
-                        <span className="text-muted-foreground mr-1">{t('calendarPage.completeMaintenanceDialog.lastKnownMileageLabel')}</span>
-                        <span className="font-medium">{vehicle.currentMileage.toLocaleString()} km</span>
-                      </div>
-                    )}
-                    {vehicle.apkDate && (
-                      <div className="flex items-center">
-                        <span className="text-muted-foreground mr-1">{t('calendarPage.completeMaintenanceDialog.currentApkLabel')}</span>
-                        <span className="font-medium">{format(parseISO(vehicle.apkDate), 'd MMM yyyy')}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-
-          <div className="space-y-4">
-            {/* Row 1: Dates side by side */}
-            <div className="border rounded-lg p-4 bg-slate-50 space-y-4">
-              <h3 className="font-semibold text-base">{t('calendarPage.completeMaintenanceDialog.completionDetailsHeading')}</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">{t('calendarPage.completeMaintenanceDialog.completionDateLabel')}</label>
-                  <Input
-                    type="date"
-                    value={completingReservation?.startDate ? format(parseISO(completingReservation.startDate), 'yyyy-MM-dd') : ''}
-                    onChange={(e) => {
-                      if (completingReservation) {
-                        setCompletingReservation({
-                          ...completingReservation,
-                          startDate: e.target.value
-                        });
-                      }
-                    }}
-                    className="mt-2 bg-white"
-                    data-testid="input-completion-date"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t('calendarPage.completeMaintenanceDialog.completionDateHint')}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">{t('calendarPage.completeMaintenanceDialog.apkDateLabel')}</label>
-                  <Input
-                    type="date"
-                    value={apkDateInput}
-                    onChange={(e) => setApkDateInput(e.target.value)}
-                    className="mt-2 bg-white"
-                    data-testid="input-apk-date"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t('calendarPage.completeMaintenanceDialog.apkDateHint')}
-                  </p>
-                </div>
-              </div>
-
-              {/* APK Form upload */}
-              <div>
-                <label className="text-sm font-medium">{t('calendarPage.completeMaintenanceDialog.apkFormLabel')}</label>
-                <Input
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setApkFormFile(file);
-                    }
-                  }}
-                  className="mt-2 bg-white"
-                  data-testid="input-apk-form"
-                />
-                {apkFormFile && (
-                  <p className="text-xs text-green-600 mt-1">
-                    {t('calendarPage.completeMaintenanceDialog.selectedFileLabel', { name: apkFormFile.name })}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Service Details Section */}
-            <div className="border rounded-lg p-4 bg-blue-50 space-y-4">
-              <h3 className="font-semibold text-base">{t('calendarPage.completeMaintenanceDialog.serviceDetailsHeading')}</h3>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">{t('calendarPage.completeMaintenanceDialog.serviceCategoryLabel')}</label>
-                  <Select value={maintenanceCategory} onValueChange={setMaintenanceCategory}>
-                    <SelectTrigger className="mt-2 bg-white" data-testid="select-maintenance-category">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="scheduled_maintenance">{t('maintenance:listDialog.scheduledMaintenance')}</SelectItem>
-                      <SelectItem value="repair">{t('calendarPage.completeMaintenanceDialog.repairOption')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t('calendarPage.completeMaintenanceDialog.serviceCategoryHint')}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">{t('calendarPage.completeMaintenanceDialog.currentMileageLabel')}</label>
-                  <Input
-                    type="number"
-                    value={currentMileage}
-                    onChange={(e) => setCurrentMileage(e.target.value)}
-                    placeholder={t('calendarPage.completeMaintenanceDialog.odometerPlaceholder')}
-                    className="mt-2 bg-white"
-                    data-testid="input-current-mileage"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t('calendarPage.completeMaintenanceDialog.currentMileageHint')}
-                  </p>
-                </div>
-              </div>
-
-              {/* Maintenance Details full width */}
-              <div>
-                <label className="text-sm font-medium">{t('calendarPage.completeMaintenanceDialog.maintenanceDetailsLabel')}</label>
-                <Textarea
-                  value={maintenanceDetails}
-                  onChange={(e) => setMaintenanceDetails(e.target.value)}
-                  placeholder={
-                    maintenanceCategory === 'scheduled_maintenance'
-                      ? t('calendarPage.completeMaintenanceDialog.maintenanceDetailsPlaceholderScheduled')
-                      : t('calendarPage.completeMaintenanceDialog.maintenanceDetailsPlaceholderRepair')
-                  }
-                  className="mt-2 bg-white"
-                  rows={3}
-                  data-testid="textarea-maintenance-details"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t('calendarPage.completeMaintenanceDialog.maintenanceDetailsHint')}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setWarrantyDateDialogOpen(false);
-                  setCompletingReservation(null);
-                  setApkDateInput('');
-                  setApkFormFile(null);
-                  setMaintenanceDetails('');
-                  setMaintenanceCategory('scheduled_maintenance');
-                  setCurrentMileage('');
-                }}
-              >
-                {t('common:actions.cancel')}
-              </Button>
-              <Button
-                className="bg-green-600 hover:bg-green-700"
-                onClick={async () => {
-                  try {
-                    if (!completingReservation) {
-                      throw new Error('Missing required data');
-                    }
-
-                    // Upload APK form if provided
-                    if (apkFormFile) {
-                      const formData = new FormData();
-                      // Important: append fields before the file for multer to parse correctly
-                      formData.append('vehicleId', completingReservation.vehicleId.toString());
-                      formData.append('documentType', 'APK Inspection');
-                      formData.append('description', `APK inspection completed on ${apkDateInput || officeToday()}`);
-                      formData.append('file', apkFormFile);
-
-                      const response = await fetch('/api/documents', {
-                        method: 'POST',
-                        body: formData,
-                      });
-
-                      if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.message || 'Failed to upload APK form');
-                      }
-                    }
-
-                    // Get the actual completion date (may be different from scheduled date)
-                    const completionDate = completingReservation.startDate;
-
-                    // OPT-015: the readings the workshop took are the only thing
-                    // that still belongs on the vehicle row; the block, the
-                    // workshop flag and the spare are one action now.
-                    const vehicleUpdates: any = {};
-                    if (apkDateInput) {
-                      vehicleUpdates.apkDate = apkDateInput;
-                    }
-                    if (currentMileage && parseInt(currentMileage) > 0) {
-                      vehicleUpdates.currentMileage = parseInt(currentMileage);
-                      // Only update last service date/mileage for scheduled maintenance
-                      if (maintenanceCategory === 'scheduled_maintenance') {
-                        vehicleUpdates.lastServiceDate = completionDate;
-                        vehicleUpdates.lastServiceMileage = parseInt(currentMileage);
-                      }
-                    }
-                    if (Object.keys(vehicleUpdates).length > 0) {
-                      await apiRequest('PATCH', `/api/vehicles/${completingReservation.vehicleId}`, vehicleUpdates);
-                    }
-
-                    const maintenanceType = completingReservation.notes?.split(':')[0] || t('calendarPage.maintenanceTypeFallback');
-                    const updatedNotes = maintenanceDetails
-                      ? `${maintenanceType}:\n${maintenanceDetails}`
-                      : completingReservation.notes || t('calendarPage.maintenanceCompletedNotesFallback');
-
-                    // OPT-015 - one transactional action: the block closes, the
-                    // workshop flag clears and the spare comes back, or none of
-                    // the three does. This used to be three calls across two
-                    // screens with nothing enforcing the order, and the two
-                    // closing paths wrote different dates.
-                    await apiRequest('POST', `/api/reservations/${completingReservation.id}/complete-maintenance`, {
-                      completionDate,
-                      maintenanceCategory,
-                      notes: updatedNotes,
-                    });
-
-                    invalidateRelatedQueries('reservations', { vehicleId: completingReservation.vehicleId });
-                    invalidateRelatedQueries('vehicles');
-
-                    setWarrantyDateDialogOpen(false);
-                    setCompletingReservation(null);
-                    setApkDateInput('');
-                    setApkFormFile(null);
-                    setMaintenanceDetails('');
-                    setMaintenanceCategory('scheduled_maintenance');
-                    setCurrentMileage('');
-                    closeDayDialog();
-
-                    toast({
-                      title: t('calendarPage.toasts.maintenanceCompletedTitle'),
-                      description: maintenanceDetails
-                        ? t('calendarPage.toasts.maintenanceCompletedWithDetails', { details: `${maintenanceDetails.substring(0, 50)}${maintenanceDetails.length > 50 ? '...' : ''}` })
-                        : t('calendarPage.toasts.maintenanceCompletedNoDetails'),
-                    });
-                  } catch (error) {
-                    console.error('Failed to complete maintenance:', error);
-                    toast({
-                      title: t('common:status.error'),
-                      description: t('calendarPage.toasts.completeFailedDescription'),
-                      variant: "destructive",
-                    });
-                  }
-                }}
-                data-testid="button-complete-maintenance"
-              >
-                {t('calendarPage.completeButton')}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Maintenance Completion Dialog (B-37: one request, see complete-maintenance-dialog.tsx) */}
+      <CompleteMaintenanceDialog
+        open={warrantyDateDialogOpen}
+        onOpenChange={(open) => {
+          setWarrantyDateDialogOpen(open);
+          if (!open) setCompletingReservation(null);
+        }}
+        block={completingReservation}
+        vehicle={vehicles?.find(v => v.id === completingReservation?.vehicleId)}
+        initialApkDate={apkDateInput}
+        initialMileage={currentMileage}
+        onCompleted={closeDayDialog}
+      />
 
       {/* Completed Maintenance Dialog */}
       <Dialog open={completedMaintenanceDialogOpen} onOpenChange={setCompletedMaintenanceDialogOpen}>

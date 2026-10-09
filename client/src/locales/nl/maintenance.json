@@ -432,6 +432,7 @@
       "maintenanceScheduledTitle": "Onderhoud gepland",
       "maintenanceScheduledDescription": "Het onderhoud is gepland en de herinneringen zijn bijgewerkt.",
       "completeFailedDescription": "Onderhoud voltooien mislukt. Probeer het opnieuw.",
+      "mileageLowerThanCurrent": "De kilometerstand ({{given}} km) is lager dan de huidige stand van het voertuig ({{current}} km). Controleer de stand; er is niets opgeslagen.",
       "maintenanceCompletedTitle": "Onderhoud voltooid",
       "maintenanceCompletedWithDetails": "Onderhoud voltooid: {{details}}",
       "maintenanceCompletedNoDetails": "Voertuigonderhoud is bijgewerkt.",
