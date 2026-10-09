@@ -2973,6 +2973,12 @@ export class DatabaseStorage implements IStorage {
           fuelLevelPickup: pickupData.fuelLevelPickup,
           actualPickupDate: pickupDate,
           status: 'picked_up',
+          // The vehicle's readings as they stand right now, from the row locked
+          // above - the pickup is about to overwrite them and a reversal has to
+          // put them back (spec 2026-10-09 section 2.1). Null when the vehicle
+          // had no reading; nothing is invented.
+          vehicleMileageBeforePickup: vehicle.currentMileage ?? null,
+          vehicleFuelBeforePickup: vehicle.currentFuelLevel || null,
           ...(shiftTo ? { startDate: shiftTo } : {}),
           ...(shiftedTotal != null ? { totalPrice: String(shiftedTotal) } : {}),
           // Kept in lockstep with `status` here - the widget's Actief tab reads
@@ -3091,6 +3097,24 @@ export class DatabaseStorage implements IStorage {
       if (!updatedReservation) {
         throw new HttpError(409, 'This reservation has already been returned.', { code: 'ALREADY_RETURNED' });
       }
+
+      // Unlike the pickup, the return did not read the vehicle at all. Lock it
+      // now - after the reservation row, the order this transaction has always
+      // used, so no new lock order appears - and keep the readings the return is
+      // about to overwrite (spec 2026-10-09 section 2.1). The pickup pair on the
+      // row is left alone; rows picked up before this existed keep it null.
+      const [vehicleBefore] = await tx
+        .select({ currentMileage: vehicles.currentMileage, currentFuelLevel: vehicles.currentFuelLevel })
+        .from(vehicles)
+        .where(eq(vehicles.id, vehicleId))
+        .for('update');
+      await tx
+        .update(reservations)
+        .set({
+          vehicleMileageBeforeReturn: vehicleBefore?.currentMileage ?? null,
+          vehicleFuelBeforeReturn: vehicleBefore?.currentFuelLevel || null,
+        })
+        .where(eq(reservations.id, reservationId));
 
       await tx
         .update(vehicles)

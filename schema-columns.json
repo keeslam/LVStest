@@ -4879,6 +4879,34 @@
         "default": null
       },
       {
+        "name": "vehicle_mileage_before_pickup",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "vehicle_fuel_before_pickup",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "vehicle_mileage_before_return",
+        "type": "integer",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
+        "name": "vehicle_fuel_before_return",
+        "type": "text",
+        "notNull": false,
+        "primary": false,
+        "default": null
+      },
+      {
         "name": "is_recurring",
         "type": "boolean",
         "notNull": true,

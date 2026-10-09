@@ -953,6 +953,16 @@ export const reservations = pgTable("reservations", {
   fuelCost: numeric("fuel_cost"), // Calculated fuel cost
   fuelCardNumber: text("fuel_card_number"), // Associated fuel card
   fuelNotes: text("fuel_notes"), // Additional fuel-related notes
+
+  // The vehicle's own readings as they stood just BEFORE the pickup / the return
+  // overwrote them (sub-project C, besluiten B-30). Without these a reversal
+  // cannot put the odometer and fuel gauge back: there is no mileage history.
+  // Nullable, no default: rows handed over before this existed stay null, and a
+  // vehicle without a reading stores none.
+  vehicleMileageBeforePickup: integer("vehicle_mileage_before_pickup"),
+  vehicleFuelBeforePickup: text("vehicle_fuel_before_pickup"),
+  vehicleMileageBeforeReturn: integer("vehicle_mileage_before_return"),
+  vehicleFuelBeforeReturn: text("vehicle_fuel_before_return"),
   
   // Recurring Rental Support
   isRecurring: boolean("is_recurring").default(false).notNull(), // Is this a recurring rental
