@@ -23,6 +23,8 @@ import {
 } from "../../shared/schema";
 import { realtimeEvents } from "../realtime-events";
 import { storage } from "../storage";
+import * as portalEvents from "../services/portal-reservation-events";
+import * as usagePeriods from "../services/fiscal/usage-periods";
 import { agentFor, anonAgent, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import {
   createFixtureCustomer, createFixtureVehicle, createFixtureReservation, cleanupFixtures,
@@ -737,6 +739,33 @@ describe("C-03 - what happens after the transaction", () => {
     }
   });
 
+  it("tells the customer portal hook about the revert, with the row before and after", async () => {
+    // Wired like every other staff write path, so a future event rule sees
+    // reversals too (the call is fire-and-forget: it happens before the answer).
+    const { rental } = await pickedUpRental();
+    const hook = vi.spyOn(portalEvents, "onReservationChangedByStaff");
+    try {
+      expect((await revert(admin, rental.id)).status).toBe(200);
+      expect(hook).toHaveBeenCalledTimes(1);
+      const [before, after] = hook.mock.calls[0];
+      expect(before).toEqual(expect.objectContaining({ id: rental.id, status: "picked_up" }));
+      expect(after).toEqual(expect.objectContaining({ id: rental.id, status: "booked" }));
+    } finally {
+      hook.mockRestore();
+    }
+  });
+
+  it("re-syncs the fiscal usage period of the reservation after the revert", async () => {
+    const { rental } = await pickedUpRental();
+    const sync = vi.spyOn(usagePeriods, "syncUsagePeriodSafely");
+    try {
+      expect((await revert(admin, rental.id)).status).toBe(200);
+      expect(sync).toHaveBeenCalledWith(rental.id);
+    } finally {
+      sync.mockRestore();
+    }
+  });
+
   it("one transaction: a failure after the writes rolls everything back", async () => {
     const { vehicle, rental } = await pickedUpRental({ mileage: 5000, pickupMileage: 5100 });
     const doc = await addDocument(vehicle.id, rental.id, "Contract (Unsigned)");
@@ -780,11 +809,17 @@ describe("C-03 - what happens after the transaction", () => {
   it("a refused revert writes no audit row and sends no event", async () => {
     const { rental } = await pickedUpRental({ mileage: 5000, pickupMileage: 5100 });
     const reservationUpdated = vi.spyOn(realtimeEvents.reservations, "updated");
+    const hook = vi.spyOn(portalEvents, "onReservationChangedByStaff");
+    const sync = vi.spyOn(usagePeriods, "syncUsagePeriodSafely");
     try {
       expect((await revert(admin, rental.id, {})).status).toBe(409);
       expect(reservationUpdated).not.toHaveBeenCalled();
+      expect(hook).not.toHaveBeenCalled();
+      expect(sync).not.toHaveBeenCalled();
     } finally {
       reservationUpdated.mockRestore();
+      hook.mockRestore();
+      sync.mockRestore();
     }
     await new Promise((r) => setTimeout(r, 200));
     const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(auditLogs).where(and(

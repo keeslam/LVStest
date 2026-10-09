@@ -14,7 +14,7 @@
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { isoDay } from "./helpers/dates";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "../db";
 import { reservations, vehicles as vehiclesTable } from "../../shared/schema";
 import { storage } from "../storage";
@@ -180,7 +180,9 @@ describe("C-02 - the vehicle's readings before a handover", () => {
     expect(v.previousMileage).toBe(9000);
   });
 
-  it("a refused pickup stores no readings (they travel inside the transaction)", async () => {
+  it("a pickup refused for a lower mileage stores no readings", async () => {
+    // The refusal happens before the transaction writes anything, so this proves
+    // "no stray readings after a refusal", not atomicity of a failing write.
     const vehicle = await createFixtureVehicle({ currentMileage: 9000, currentFuelLevel: "1/2" });
     const rental = await createFixtureReservation({
       customerId, vehicleId: vehicle.id, startDate: day(-1), endDate: day(2),
@@ -225,4 +227,74 @@ describe("C-02 - the vehicle's readings before a handover", () => {
     expect(after.vehicleMileageBeforeReturn).toBe(3000);
     expect(after.vehicleFuelBeforeReturn).toBe("full");
   });
+
+  it("a vehicle at mileage 0 stores 0 before the pickup, not null (0 is a reading)", async () => {
+    const vehicle = await createFixtureVehicle({ currentMileage: 0, currentFuelLevel: "empty" });
+    const rental = await createFixtureReservation({
+      customerId, vehicleId: vehicle.id, startDate: day(-1), endDate: day(3),
+    });
+
+    expect((await admin.post(`/api/reservations/${rental.id}/pickup`).send({
+      contractNumber: nextContract(), pickupMileage: 10, fuelLevelPickup: "full",
+    })).status).toBe(200);
+
+    const row = await rowOf(rental.id);
+    expect(row.vehicleMileageBeforePickup).toBe(0);
+    expect(row.vehicleFuelBeforePickup).toBe("empty");
+  });
+
+  it("a vehicle at mileage 0 stores 0 before the return, not null", async () => {
+    const vehicle = await createFixtureVehicle({ currentMileage: 50, currentFuelLevel: "full" });
+    const rental = await createFixtureReservation({
+      customerId, vehicleId: vehicle.id, startDate: day(-3), endDate: day(-1),
+    });
+    expect((await admin.post(`/api/reservations/${rental.id}/pickup`).send({
+      contractNumber: nextContract(), pickupMileage: 60, fuelLevelPickup: "full", pickupDate: day(-3),
+    })).status).toBe(200);
+    // The odometer is reset on the vehicle card while the car is out.
+    await db.update(vehiclesTable).set({ currentMileage: 0 }).where(eq(vehiclesTable.id, vehicle.id));
+
+    expect((await admin.post(`/api/reservations/${rental.id}/return`).send({
+      returnMileage: 90, fuelLevelReturn: "1/2", returnDate: day(-1),
+    })).status).toBe(200);
+
+    expect((await rowOf(rental.id)).vehicleMileageBeforeReturn).toBe(0);
+  });
+
+  it("the return locks the vehicle FOR NO KEY UPDATE: a concurrent FOR KEY SHARE (any row referencing the vehicle) does not stall it", async () => {
+    // Inserting or updating a row that references the vehicle takes FOR KEY SHARE
+    // on the vehicle row. The return only needs to be the sole writer of the
+    // readings (the UPDATE it ends with takes FOR NO KEY UPDATE anyway), so it
+    // must not take the stronger FOR UPDATE, which would stall every such write.
+    const vehicle = await createFixtureVehicle({ currentMileage: 1000, currentFuelLevel: "full" });
+    const rental = await createFixtureReservation({
+      customerId, vehicleId: vehicle.id, startDate: day(-3), endDate: day(-1),
+    });
+    expect((await admin.post(`/api/reservations/${rental.id}/pickup`).send({
+      contractNumber: nextContract(), pickupMileage: 1010, fuelLevelPickup: "full", pickupDate: day(-3),
+    })).status).toBe(200);
+
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => { release = resolve; });
+    let locked!: () => void;
+    const lockTaken = new Promise<void>((resolve) => { locked = resolve; });
+    const holder = db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT id FROM vehicles WHERE id = ${vehicle.id} FOR KEY SHARE`);
+      locked();
+      await released;
+    });
+    await lockTaken;
+
+    try {
+      const outcome = await Promise.race([
+        storage.returnReservation(rental.id, { returnMileage: 1200, fuelLevelReturn: "1/2", returnDate: day(-1) })
+          .then(() => "returned" as const),
+        new Promise<"blocked">((resolve) => setTimeout(() => resolve("blocked"), 4000)),
+      ]);
+      expect(outcome).toBe("returned");
+    } finally {
+      release();
+      await holder;
+    }
+  }, 30_000);
 });

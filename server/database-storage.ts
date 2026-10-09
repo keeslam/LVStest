@@ -3118,11 +3118,15 @@ export class DatabaseStorage implements IStorage {
       // used, so no new lock order appears - and keep the readings the return is
       // about to overwrite (spec 2026-10-09 section 2.1). The pickup pair on the
       // row is left alone; rows picked up before this existed keep it null.
+      // FOR NO KEY UPDATE, not FOR UPDATE: it is exactly the strength the
+      // UPDATE of the vehicle below takes anyway, so the lock is no stronger than
+      // before this read existed. FOR UPDATE would also stall every insert or
+      // update of a row that references the vehicle (they take FOR KEY SHARE).
       const [vehicleBefore] = await tx
         .select({ currentMileage: vehicles.currentMileage, currentFuelLevel: vehicles.currentFuelLevel })
         .from(vehicles)
         .where(eq(vehicles.id, vehicleId))
-        .for('update');
+        .for('no key update');
       await tx
         .update(reservations)
         .set({
