@@ -112,3 +112,133 @@ describe("ReservationViewDialog — the maintenance-block add-expense button fol
     });
   });
 });
+
+/**
+ * Sub-project C, Task 5 (besluiten B-33, B-39): the cancel and delete openers of
+ * this dialog follow the row. A rental that has been picked up needs the new
+ * right `cancel_picked_up_rental` (the routes want it on top of
+ * manage_reservations); every other row needs manage_reservations as before. The
+ * delete confirmation then carries the warning and its tick, and the DELETE the
+ * query flag the server insists on.
+ */
+describe("ReservationViewDialog - cancelling or deleting a picked-up rental (B-33)", () => {
+  const rental = {
+    id: 88, vehicleId: 1, customerId: 5, driverId: null, type: "standard", status: "picked_up",
+    startDate: "2026-10-01", endDate: "2026-10-09", actualPickupDate: "2026-10-02", contractNumber: "9300001",
+    pickupMileage: 61000, notes: null, portalRequestId: null,
+  };
+  let current: Record<string, unknown>;
+  let deleteUrls: string[];
+  let deleteResponse: (callIndex: number) => Response;
+
+  function renderRental() {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === "string" ? input : (input as Request).url;
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (method === "DELETE" && url.includes(`/api/reservations/${rental.id}`)) {
+          deleteUrls.push(url);
+          return deleteResponse(deleteUrls.length - 1);
+        }
+        if (url.endsWith(`/api/reservations/${rental.id}`)) return json(current);
+        if (url.includes(`/api/vehicles/${vehicle.id}`)) return json(vehicle);
+        if (url.includes("/cancel-impact")) return json({ transports: [], spares: [], placeholders: [], drivers: [] });
+        return json([]);
+      }),
+    );
+    const client = new QueryClient({
+      defaultOptions: { queries: { queryFn: getQueryFn({ on401: "throw" }), retry: false, gcTime: 0 } },
+    });
+    return render(
+      <QueryClientProvider client={client}>
+        <GlobalDialogProvider>
+          <ReservationViewDialog open onOpenChange={() => {}} reservationId={rental.id} />
+        </GlobalDialogProvider>
+      </QueryClientProvider>,
+    );
+  }
+
+  beforeEach(() => {
+    current = { ...rental };
+    deleteUrls = [];
+    deleteResponse = () => json({ message: "Reservation deleted successfully" });
+  });
+
+  it("without the new right both openers of a picked-up rental are switched off", async () => {
+    setUser(UserRole.USER, [UserPermission.MANAGE_RESERVATIONS]);
+    renderRental();
+    const cancel = await screen.findByTestId("button-cancel-reservation");
+    const remove = screen.getByTestId("button-delete-reservation");
+    expect(cancel).toHaveAttribute("aria-disabled", "true");
+    expect(remove).toHaveAttribute("aria-disabled", "true");
+
+    await userEvent.click(remove, { pointerEventsCheck: 0 });
+    await userEvent.click(cancel, { pointerEventsCheck: 0 });
+    expect(screen.queryByTestId("confirm-dialog")).toBeNull();
+    expect(screen.queryByTestId("dialog-cancel-reservation")).toBeNull();
+    expect(deleteUrls).toHaveLength(0);
+  });
+
+  it("with the right the delete asks first: the warning, a disabled confirm button, then DELETE with the flag", async () => {
+    setUser(UserRole.USER, [UserPermission.MANAGE_RESERVATIONS, UserPermission.CANCEL_PICKED_UP_RENTAL]);
+    renderRental();
+    const remove = await screen.findByTestId("button-delete-reservation");
+    expect(remove).not.toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByTestId("button-cancel-reservation")).not.toHaveAttribute("aria-disabled", "true");
+
+    await userEvent.click(remove);
+    const warning = await screen.findByTestId("warning-picked-up");
+    expect(warning).toHaveTextContent("Deze huur is al opgehaald op 02-10-2026 met contract 9300001.");
+    // The recycle-bin wording replaces "permanent / kan niet ongedaan worden gemaakt".
+    expect(screen.getByTestId("confirm-dialog-description")).toHaveTextContent("naar de prullenbak verplaatst");
+    const confirm = screen.getByTestId("confirm-dialog-confirm");
+    expect(confirm).toBeDisabled();
+
+    await userEvent.click(screen.getByTestId("checkbox-confirm-picked-up"));
+    expect(confirm).toBeEnabled();
+    await userEvent.click(confirm);
+    await waitFor(() => expect(deleteUrls).toHaveLength(1));
+    expect(deleteUrls[0]).toMatch(/\/api\/reservations\/88\?confirmPickedUp=true$/);
+  });
+
+  it("a booked rental needs only manage_reservations, shows no warning and sends no flag", async () => {
+    current = { ...rental, status: "booked", actualPickupDate: null, contractNumber: null };
+    setUser(UserRole.USER, [UserPermission.MANAGE_RESERVATIONS]);
+    renderRental();
+    const remove = await screen.findByTestId("button-delete-reservation");
+    expect(remove).not.toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByTestId("button-cancel-reservation")).not.toHaveAttribute("aria-disabled", "true");
+
+    await userEvent.click(remove);
+    await screen.findByTestId("confirm-dialog");
+    expect(screen.queryByTestId("warning-picked-up")).toBeNull();
+    await userEvent.click(screen.getByTestId("confirm-dialog-confirm"));
+    await waitFor(() => expect(deleteUrls).toHaveLength(1));
+    expect(deleteUrls[0]).toMatch(/\/api\/reservations\/88$/);
+  });
+
+  it("a stale row (read as booked, picked up meanwhile): the 409 reopens the question with the server's facts", async () => {
+    current = { ...rental, status: "booked", actualPickupDate: null, contractNumber: null };
+    deleteResponse = (callIndex) => callIndex === 0
+      ? json({
+          message: "This rental has already been picked up. Resend with confirmPickedUp: true to cancel or delete it.",
+          code: "PICKED_UP_CONFIRMATION_REQUIRED", actualPickupDate: "2026-10-03", contractNumber: "9300777",
+        }, 409)
+      : json({ message: "Reservation deleted successfully" });
+    setUser(UserRole.USER, [UserPermission.MANAGE_RESERVATIONS, UserPermission.CANCEL_PICKED_UP_RENTAL]);
+    renderRental();
+
+    await userEvent.click(await screen.findByTestId("button-delete-reservation"));
+    await userEvent.click(await screen.findByTestId("confirm-dialog-confirm"));
+    const warning = await screen.findByTestId("warning-picked-up");
+    expect(warning).toHaveTextContent("opgehaald op 03-10-2026 met contract 9300777");
+    expect(screen.queryByText(/Resend with confirmPickedUp/)).toBeNull();
+
+    await userEvent.click(screen.getByTestId("checkbox-confirm-picked-up"));
+    await userEvent.click(screen.getByTestId("confirm-dialog-confirm"));
+    await waitFor(() => expect(deleteUrls).toHaveLength(2));
+    expect(deleteUrls[0]).toMatch(/\/api\/reservations\/88$/);
+    expect(deleteUrls[1]).toMatch(/\/api\/reservations\/88\?confirmPickedUp=true$/);
+  });
+});

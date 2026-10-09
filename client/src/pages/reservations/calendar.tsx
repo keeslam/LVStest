@@ -84,6 +84,8 @@ import InteractiveDamageCheckPage from "@/pages/interactive-damage-check";
 import { EmailDocumentDialog } from "@/components/documents/email-document-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ConfirmDeleteReservationDialog } from "@/components/reservations/delete-reservation-confirm";
+import { cancelRightFor, isPickedUpRightRefusal, pickedUpRefusalOf } from "@/components/reservations/picked-up-cancellation";
 import { SpareVehicleDialog } from "@/components/reservations/spare-vehicle-dialog";
 import { ScheduleMaintenanceDialog } from "@/components/maintenance/schedule-maintenance-dialog";
 import { ReturnFromServiceDialog } from "@/components/reservations/return-from-service-dialog";
@@ -248,6 +250,8 @@ export default function ReservationCalendarPage() {
   const [damageCheckToDelete, setDamageCheckToDelete] = useState<number | null>(null);
   const [deleteReservationDialogOpen, setDeleteReservationDialogOpen] = useState(false);
   const [reservationToDelete, setReservationToDelete] = useState<Reservation | null>(null);
+  // The completed-rentals list asks its own question (its own texts and toasts).
+  const [completedToDelete, setCompletedToDelete] = useState<Reservation | null>(null);
   const [deleteDocDialogOpen, setDeleteDocDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
   const [adminHistorySearch, setAdminHistorySearch] = useState('');
@@ -421,15 +425,20 @@ export default function ReservationCalendarPage() {
   
   // Delete mutation with optimistic updates
   const deleteReservationMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await apiRequest('DELETE', `/api/reservations/${id}`);
+    // B-33: `confirmPickedUp` travels as a query flag; the server insists on it for a picked-up rental.
+    mutationFn: async ({ reservation, confirmPickedUp }: { reservation: Reservation; confirmPickedUp: boolean }) => {
+      const response = await apiRequest(
+        'DELETE',
+        `/api/reservations/${reservation.id}${confirmPickedUp ? '?confirmPickedUp=true' : ''}`,
+      );
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to delete reservation');
       }
       return response.json();
     },
-    onMutate: async (reservationId: number) => {
+    onMutate: async ({ reservation }: { reservation: Reservation; confirmPickedUp: boolean }) => {
+      const reservationId = reservation.id;
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ 
         predicate: (query) => {
@@ -467,7 +476,7 @@ export default function ReservationCalendarPage() {
 
       return { previousData };
     },
-    onError: (error: Error, reservationId, context) => {
+    onError: (error: Error, { reservation }, context) => {
       // Rollback on error
       if (context?.previousData) {
         Object.entries(context.previousData).forEach(([keyStr, data]) => {
@@ -476,9 +485,18 @@ export default function ReservationCalendarPage() {
         });
       }
       
+      // 409: the row had been picked up after this screen was loaded. A question,
+      // not a failure - ask again, with the date and the contract the server named.
+      const refusal = pickedUpRefusalOf(error);
+      if (refusal) {
+        setReservationToDelete({ ...reservation, status: 'picked_up', ...refusal });
+        setDeleteReservationDialogOpen(true);
+        return;
+      }
+
       toast({
         title: t('calendarPage.deleteFailedTitle'),
-        description: error.message,
+        description: isPickedUpRightRefusal(error) ? t('pickedUpWarning.rightRequired') : error.message,
         variant: "destructive",
       });
     },
@@ -498,11 +516,38 @@ export default function ReservationCalendarPage() {
     setDeleteReservationDialogOpen(true);
   };
 
-  const confirmDeleteReservation = () => {
+  const confirmDeleteReservation = ({ confirmPickedUp }: { confirmPickedUp: boolean }) => {
     if (reservationToDelete) {
-      deleteReservationMutation.mutate(reservationToDelete.id);
+      deleteReservationMutation.mutate({ reservation: reservationToDelete, confirmPickedUp });
     }
     setReservationToDelete(null);
+  };
+
+  // Deleting a rental from the completed-rentals list (no optimistic update there).
+  const deleteCompletedRental = async (rental: Reservation, confirmPickedUp: boolean) => {
+    try {
+      await apiRequest('DELETE', `/api/reservations/${rental.id}${confirmPickedUp ? '?confirmPickedUp=true' : ''}`);
+      invalidateRelatedQueries('reservations');
+      refetchCalendarData();
+      toast({
+        title: t('calendarPage.completedRentals.toasts.deletedTitle'),
+        description: t('calendarPage.completedRentals.toasts.deletedDescription')
+      });
+    } catch (error) {
+      // 409: picked up after the list was loaded - ask again with the server's facts.
+      const refusal = pickedUpRefusalOf(error);
+      if (refusal) {
+        setCompletedToDelete({ ...rental, status: 'picked_up', ...refusal });
+        return;
+      }
+      toast({
+        title: t('common:status.error'),
+        description: isPickedUpRightRefusal(error)
+          ? t('pickedUpWarning.rightRequired')
+          : t('calendarPage.completedRentals.toasts.deleteFailedDescription'),
+        variant: "destructive"
+      });
+    }
   };
   
   // Day dialog handlers
@@ -2659,7 +2704,8 @@ export default function ReservationCalendarPage() {
                     </Button>
                   </RequiresPermission>
                 )}
-                <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                {/* B-33: a picked-up rental needs the new right, every other row manage_reservations. */}
+                <RequiresPermission anyOf={cancelRightFor(selectedReservation)}>
                   <Button
                     variant="destructive"
                     onClick={() => {
@@ -2951,16 +2997,19 @@ export default function ReservationCalendarPage() {
                           <Edit className="mr-1 h-3 w-3" />
                           {t('common:actions.edit')}
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDeleteReservation(reservation)}
-                          data-testid={`button-delete-${reservation.id}`}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="mr-1 h-3 w-3" />
-                          {t('common:actions.delete')}
-                        </Button>
+                        {/* B-33: a picked-up rental needs the new right, every other row manage_reservations. */}
+                        <RequiresPermission anyOf={cancelRightFor(reservation)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeleteReservation(reservation)}
+                            data-testid={`button-delete-${reservation.id}`}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="mr-1 h-3 w-3" />
+                            {t('common:actions.delete')}
+                          </Button>
+                        </RequiresPermission>
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-4 text-sm text-gray-600">
@@ -3336,52 +3385,19 @@ export default function ReservationCalendarPage() {
                                 </Button>
                               </RequiresPermission>
                             )}
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="text-red-600 hover:text-red-700"
-                                  data-testid={`button-delete-${rental.id}`}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-1" />
-                                  {t('common:actions.delete')}
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>{t('calendarPage.completedRentals.deleteTitle')}</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    {t('calendarPage.completedRentals.deleteDescription')}
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    className="bg-red-600 hover:bg-red-700"
-                                    onClick={async () => {
-                                      try {
-                                        await apiRequest('DELETE', `/api/reservations/${rental.id}`);
-                                        invalidateRelatedQueries('reservations');
-                                        refetchCalendarData();
-                                        toast({
-                                          title: t('calendarPage.completedRentals.toasts.deletedTitle'),
-                                          description: t('calendarPage.completedRentals.toasts.deletedDescription')
-                                        });
-                                      } catch (error) {
-                                        toast({
-                                          title: t('common:status.error'),
-                                          description: t('calendarPage.completedRentals.toasts.deleteFailedDescription'),
-                                          variant: "destructive"
-                                        });
-                                      }
-                                    }}
-                                  >
-                                    {t('common:actions.delete')}
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                            {/* B-33: a picked-up rental needs the new right, every other row manage_reservations. */}
+                            <RequiresPermission anyOf={cancelRightFor(rental)}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-red-600 hover:text-red-700"
+                                onClick={() => setCompletedToDelete(rental)}
+                                data-testid={`button-delete-${rental.id}`}
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                {t('common:actions.delete')}
+                              </Button>
+                            </RequiresPermission>
                           </div>
                         </div>
                       </div>
@@ -4097,15 +4113,27 @@ export default function ReservationCalendarPage() {
         onCancel={() => setDamageCheckToDelete(null)}
       />
 
-      <ConfirmDialog
+      <ConfirmDeleteReservationDialog
         open={deleteReservationDialogOpen}
         onOpenChange={setDeleteReservationDialogOpen}
+        reservation={reservationToDelete}
         title={t('listDialog.deleteDialog.title')}
         description={t('calendarPage.deleteReservationForCustomerDescription', { name: reservationToDelete?.customer?.name || t('calendarPage.thisCustomerFallback') })}
-        variant="danger"
         confirmLabel={t('common:actions.delete')}
         onConfirm={confirmDeleteReservation}
         onCancel={() => setReservationToDelete(null)}
+      />
+
+      <ConfirmDeleteReservationDialog
+        open={completedToDelete !== null}
+        onOpenChange={(next) => { if (!next) setCompletedToDelete(null); }}
+        reservation={completedToDelete}
+        title={t('calendarPage.completedRentals.deleteTitle')}
+        description={t('calendarPage.completedRentals.deleteDescription')}
+        confirmLabel={t('common:actions.delete')}
+        onConfirm={({ confirmPickedUp }) => {
+          if (completedToDelete) void deleteCompletedRental(completedToDelete, confirmPickedUp);
+        }}
       />
 
       <ConfirmDialog

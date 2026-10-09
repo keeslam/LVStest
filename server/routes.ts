@@ -171,6 +171,7 @@ import { onMaintenanceBlockChanged, onReplacementAssigned, onRentalVehicleChange
 // besluiten B-06 (BUG-134): the other three events of the decision.
 import { onReservationChangedByStaff } from "./services/portal-reservation-events";
 import { previewRevert, applyRevert } from "./services/reservation-revert";
+import { checkPickedUpCancellation } from "./services/picked-up-cancellation";
 import { REVERT_CODES } from "../shared/revert-codes";
 import type { RouteDeps } from "./routes/deps";
 import { installIdParamValidation, rejectNullBytesInPath } from "./middleware/parseIntParam";
@@ -3817,6 +3818,13 @@ export async function registerRoutes(app: Express): Promise<void> {
       // literal "garbage". Same gate as `/status` now.
       if ('status' in reservationData) {
         reservationData.status = assertReservationTransition(existingBasic.status, reservationData.status);
+        // Sub-project C (B-33, B-39): no client sends a cancellation through here,
+        // but the route can write `cancelled`, so a picked-up rental is held to the
+        // same rule as on the two other status writers.
+        if (reservationData.status === "cancelled") {
+          const refusal = checkPickedUpCancellation(existingBasic, req.user, bodyData?.confirmPickedUp);
+          if (refusal) return res.status(refusal.status).json(refusal.body);
+        }
         // besluiten B-16 / BUG-144 — no pickup before the period starts.
         await applyPickupPeriodRule(existingBasic, reservationData as Record<string, any>, req);
       }
@@ -4143,6 +4151,15 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       const newStatus = assertReservationTransition(currentStatus, status);
 
+      // Sub-project C (B-33, B-39): a rental that has been picked up is cancelled
+      // only by an account with `cancel_picked_up_rental`, and only after the
+      // warning was confirmed (403 / 409 PICKED_UP_CONFIRMATION_REQUIRED). Checked
+      // before the first write.
+      if (newStatus === "cancelled") {
+        const refusal = checkPickedUpCancellation(existingReservation, req.user, req.body?.confirmPickedUp);
+        if (refusal) return res.status(refusal.status).json(refusal.body);
+      }
+
       // besluiten B-03 (BUG-109 step 5) — `/status` reached `picked_up` with no
       // vehicle check whatsoever, so it walked straight past the `not_for_rental`
       // guard that `/pickup` did apply, and past the workshop flag that neither
@@ -4408,6 +4425,13 @@ export async function registerRoutes(app: Express): Promise<void> {
           existingReservationForDiff.status,
           reservationData.status,
         );
+        // Sub-project C (B-33, B-39): the edit form's "Geannuleerd" is the same
+        // cancellation as the cancel dialog's; a multipart submit sends the flag
+        // as the string "true".
+        if (reservationData.status === "cancelled") {
+          const refusal = checkPickedUpCancellation(existingReservationForDiff, req.user, req.body?.confirmPickedUp);
+          if (refusal) return res.status(refusal.status).json(refusal.body);
+        }
         // besluiten B-16 / BUG-144 — no pickup before the period starts.
         await applyPickupPeriodRule(existingReservationForDiff, reservationData as Record<string, any>, req);
       }
@@ -5751,6 +5775,14 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Check if already deleted
       if (reservation.deletedAt) {
         return res.status(410).json({ message: "Reservation already deleted" });
+      }
+
+      // Sub-project C (B-33, B-39): deleting a rental that has been picked up needs
+      // `cancel_picked_up_rental` and the confirmed warning (?confirmPickedUp=true).
+      // Before the first write: the spares of a maintenance block are closed below.
+      {
+        const refusal = checkPickedUpCancellation(reservation, req.user, req.query.confirmPickedUp);
+        if (refusal) return res.status(refusal.status).json(refusal.body);
       }
       
       const user = req.user;

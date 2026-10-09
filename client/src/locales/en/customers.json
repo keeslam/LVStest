@@ -96,7 +96,7 @@
     "reservationDeletedDescription": "The reservation has been successfully deleted.",
     "reservationDeleteFailed": "Failed to delete reservation",
     "deleteReservationTitle": "Delete Reservation",
-    "deleteReservationConfirm": "Are you sure you want to delete this reservation? This action cannot be undone.",
+    "deleteReservationConfirm": "Are you sure you want to delete this reservation? It is moved to the recycle bin; you can restore it from the recycle bin.",
     "deleteDriverTitle": "Delete Driver",
     "deleteDriverConfirm": "Are you sure you want to delete {{name}}? This action cannot be undone.",
     "customerNotFoundTitle": "Customer not found",

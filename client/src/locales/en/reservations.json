@@ -604,6 +604,13 @@
       "failedDescription": "Try again, or reload the page."
     }
   },
+  "pickedUpWarning": {
+    "title": "This rental has already been picked up",
+    "text": "This rental was already picked up on {{date}} with contract {{contract}}.",
+    "vehicleNote": "Afterwards the vehicle counts as available again and the odometer keeps the reading from the pickup.",
+    "confirmLabel": "I know this rental has already been picked up and want to continue",
+    "rightRequired": "Cancelling or deleting a rental that has been picked up needs the right 'Cancel or delete a picked-up rental'."
+  },
   "notCollectedDialog": {
     "title": "Never-collected bookings",
     "description": "These bookings started a month or more ago and were never picked up. They block nothing, but are worth a look.",
@@ -845,7 +852,7 @@
     "deletingButton": "Deleting...",
     "deleteConfirm": {
       "title": "Are you sure?",
-      "description": "This action cannot be undone. This will permanently delete reservation #{{id}}.",
+      "description": "Reservation #{{id}} is moved to the recycle bin; you can restore it from the recycle bin.",
       "cancelButton": "Cancel"
     },
     "toasts": {
@@ -883,7 +890,7 @@
     "assignVehicleButton": "Assign vehicle",
     "deleteDialog": {
       "title": "Delete Reservation",
-      "description": "Are you sure you want to delete reservation #{{id}}? This action cannot be undone.",
+      "description": "Are you sure you want to delete reservation #{{id}}? It is moved to the recycle bin; you can restore it from the recycle bin.",
       "confirmLabel": "Delete"
     },
     "toasts": {
@@ -902,7 +909,7 @@
     "editReservationButton": "Edit Reservation",
     "viewContractButton": "View Contract",
     "confirmDeleteTitle": "Are you sure you want to delete this reservation?",
-    "confirmDeleteDescription": "This action cannot be undone. This will permanently delete the reservation and remove its data from our servers.",
+    "confirmDeleteDescription": "The reservation is moved to the recycle bin; you can restore it from the recycle bin.",
     "reservationInfoTitle": "Reservation Information",
     "replacementVehicleBadge": "Replacement Vehicle",
     "maintenanceBlockBadge": "Maintenance Block",
@@ -1002,7 +1009,7 @@
     "contractButton": "Contract",
     "deleteButton": "Delete",
     "deleteReservationDialogTitle": "Delete Reservation",
-    "deleteReservationDialogDescription": "Are you sure you want to delete this reservation? This action cannot be undone.",
+    "deleteReservationDialogDescription": "Are you sure you want to delete this reservation? It is moved to the recycle bin; you can restore it from the recycle bin.",
     "cancelButton": "Cancel",
     "deletingButton": "Deleting...",
     "statusTabAll": "All",
@@ -1160,10 +1167,10 @@
       "fuelAtReturnColonLabel": "Fuel at return:",
       "totalColonLabel": "Total:",
       "deleteTitle": "Delete Completed Rental?",
-      "deleteDescription": "This will permanently delete this rental record. This action cannot be undone.",
+      "deleteDescription": "This rental record is moved to the recycle bin; you can restore it from the recycle bin.",
       "toasts": {
         "deletedTitle": "Rental Deleted",
-        "deletedDescription": "The rental record has been permanently deleted",
+        "deletedDescription": "The rental record has been moved to the recycle bin",
         "deleteFailedDescription": "Failed to delete rental"
       }
     },
@@ -1214,7 +1221,7 @@
     "moveReservationFailedFallback": "Failed to move reservation",
     "deleteFailedTitle": "Delete failed",
     "deleteDamageCheckConfirmDescription": "Are you sure you want to delete this damage check? This action cannot be undone.",
-    "deleteReservationForCustomerDescription": "Are you sure you want to delete this reservation for {{name}}? This action cannot be undone.",
+    "deleteReservationForCustomerDescription": "Are you sure you want to delete this reservation for {{name}}? It is moved to the recycle bin; you can restore it from the recycle bin.",
     "thisCustomerFallback": "this customer",
     "damageCheckPdfTitle": "Damage Check PDF",
     "previewLabel": "Preview",

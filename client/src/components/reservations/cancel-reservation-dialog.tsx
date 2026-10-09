@@ -13,6 +13,12 @@
  * been waiting for them — `PATCH /:id/status` with `cascade`. Everything the
  * employee leaves unticked stays exactly as it was, which is the half of the
  * decision that is easy to lose.
+ *
+ * Sub-project C, Task 5 (besluiten B-33, B-39): a rental that has been picked up
+ * gets one more question first - the warning "Deze huur is al opgehaald op <datum>
+ * met contract <nr>." and a tick. The dialog reads the row itself to know; when
+ * the row was picked up after that read (a stale screen) the server answers 409
+ * PICKED_UP_CONFIRMATION_REQUIRED and the warning appears with the server's facts.
  */
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -32,6 +38,11 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { formatDutchDate } from "@shared/booking-warnings";
+import { isPickedUpRental } from "@shared/picked-up-cancellation";
+import type { Reservation } from "@shared/schema";
+import {
+  PickedUpWarning, isPickedUpRightRefusal, pickedUpRefusalOf, type PickedUpFacts,
+} from "@/components/reservations/picked-up-cancellation";
 
 /** The four kinds `getReservationCancelImpact()` reports, in the order it reports them. */
 export const CANCEL_CASCADE_KINDS = ["transports", "spares", "placeholders", "drivers"] as const;
@@ -69,10 +80,29 @@ export function CancelReservationDialog({
   // Default: leave everything standing. Cancelling the rental is the one thing
   // the employee came here to do; every extra close is a deliberate tick.
   const [cascade, setCascade] = useState<Record<CancelCascadeKind, boolean>>(emptyCascade);
+  // B-33: the tick for a picked-up rental, and what the server told us when it
+  // refused a cancellation this screen did not know needed one.
+  const [pickedUpTicked, setPickedUpTicked] = useState(false);
+  const [serverFacts, setServerFacts] = useState<PickedUpFacts | null>(null);
 
   useEffect(() => {
-    if (open) setCascade(emptyCascade);
+    if (open) {
+      setCascade(emptyCascade);
+      setPickedUpTicked(false);
+      setServerFacts(null);
+    }
   }, [open, reservationId]);
+
+  // The same key the reservation view dialog reads, so it is usually already cached.
+  const { data: reservation } = useQuery<Reservation>({
+    queryKey: [`/api/reservations/${reservationId}`],
+    enabled: open && reservationId > 0,
+  });
+  const pickedUp = serverFacts !== null || isPickedUpRental(reservation);
+  const pickedUpFacts: PickedUpFacts = serverFacts ?? {
+    actualPickupDate: reservation?.actualPickupDate,
+    contractNumber: reservation?.contractNumber,
+  };
 
   const { data: impact, isLoading } = useQuery<CancelImpact>({
     queryKey: [`/api/reservations/${reservationId}/cancel-impact`],
@@ -122,6 +152,8 @@ export function CancelReservationDialog({
           placeholders: cascade.placeholders,
           drivers: cascade.drivers,
         },
+        // Only ever sent for a rental that has been picked up and whose box was ticked.
+        ...(pickedUp && pickedUpTicked ? { confirmPickedUp: true } : {}),
       });
       return await response.json();
     },
@@ -137,10 +169,21 @@ export function CancelReservationDialog({
       onSuccess?.();
     },
     onError: (error: any) => {
+      // 409: the row had been picked up after this screen read it. Not a failure -
+      // ask the question, with the date and the contract the server named.
+      const refusal = pickedUpRefusalOf(error);
+      if (refusal) {
+        setServerFacts(refusal);
+        setPickedUpTicked(false);
+        return;
+      }
       toast({
         variant: "destructive",
         title: t('cancelDialog.toasts.failedTitle'),
-        description: error?.message || t('cancelDialog.toasts.failedDescription'),
+        // By code, never the English message of a known refusal.
+        description: isPickedUpRightRefusal(error)
+          ? t('pickedUpWarning.rightRequired')
+          : error?.message || t('cancelDialog.toasts.failedDescription'),
       });
     },
   });
@@ -157,6 +200,15 @@ export function CancelReservationDialog({
             {t('cancelDialog.description', { id: reservationId })}
           </DialogDescription>
         </DialogHeader>
+
+        {pickedUp && (
+          <PickedUpWarning
+            actualPickupDate={pickedUpFacts.actualPickupDate}
+            contractNumber={pickedUpFacts.contractNumber}
+            checked={pickedUpTicked}
+            onCheckedChange={setPickedUpTicked}
+          />
+        )}
 
         <div
           className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
@@ -216,7 +268,7 @@ export function CancelReservationDialog({
           <Button
             variant="destructive"
             onClick={() => cancelMutation.mutate()}
-            disabled={cancelMutation.isPending}
+            disabled={cancelMutation.isPending || (pickedUp && !pickedUpTicked)}
             data-testid="button-confirm-cancel-reservation"
           >
             {cancelMutation.isPending ? (

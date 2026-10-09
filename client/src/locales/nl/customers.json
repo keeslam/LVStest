@@ -96,7 +96,7 @@
     "reservationDeletedDescription": "De reservering is succesvol verwijderd.",
     "reservationDeleteFailed": "Kon reservering niet verwijderen",
     "deleteReservationTitle": "Reservering verwijderen",
-    "deleteReservationConfirm": "Weet je zeker dat je deze reservering wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+    "deleteReservationConfirm": "Weet je zeker dat je deze reservering wilt verwijderen? Ze wordt naar de prullenbak verplaatst; terugzetten kan via Prullenbak.",
     "deleteDriverTitle": "Chauffeur verwijderen",
     "deleteDriverConfirm": "Weet je zeker dat je {{name}} wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
     "customerNotFoundTitle": "Klant niet gevonden",

@@ -13,7 +13,8 @@ import { RequiresPermission } from "@/components/ui/requires-permission";
 import { ReservationViewDialog } from "@/components/reservations/reservation-view-dialog";
 import { ReservationEditDialog } from "@/components/reservations/reservation-edit-dialog";
 import { SpareVehicleAssignmentDialog } from "@/components/reservations/spare-vehicle-assignment-dialog";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ConfirmDeleteReservationDialog } from "@/components/reservations/delete-reservation-confirm";
+import { cancelRightFor, isPickedUpRightRefusal, pickedUpRefusalOf } from "@/components/reservations/picked-up-cancellation";
 import { Eye, Edit, Trash2, Car, History, User, Calendar, FileText, Fuel, MapPin, Phone, Building, Clock, AlertTriangle, CarFront, RotateCcw } from "lucide-react";
 import {
   Dialog,
@@ -71,8 +72,12 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
   
   // Delete reservation mutation
   const deleteReservationMutation = useMutation({
-    mutationFn: async (reservationId: number) => {
-      const response = await apiRequest('DELETE', `/api/reservations/${reservationId}`);
+    // B-33: `confirmPickedUp` travels as a query flag; the server insists on it for a picked-up rental.
+    mutationFn: async ({ reservation, confirmPickedUp }: { reservation: Reservation; confirmPickedUp: boolean }) => {
+      const response = await apiRequest(
+        'DELETE',
+        `/api/reservations/${reservation.id}${confirmPickedUp ? '?confirmPickedUp=true' : ''}`,
+      );
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to delete reservation');
@@ -87,10 +92,20 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
         variant: "default"
       });
     },
-    onError: (error: Error) => {
+    onError: (error: Error, { reservation }) => {
+      // 409: the row had been picked up after this list was loaded. A question,
+      // not a failure - ask again, with the date and the contract the server named.
+      const refusal = pickedUpRefusalOf(error);
+      if (refusal) {
+        setReservationToDelete({ ...reservation, status: 'picked_up', ...refusal });
+        setDeleteDialogOpen(true);
+        return;
+      }
       toast({
         title: t('listDialog.toasts.errorTitle'),
-        description: error.message || t('listDialog.toasts.deleteFailedFallback'),
+        description: isPickedUpRightRefusal(error)
+          ? t('pickedUpWarning.rightRequired')
+          : error.message || t('listDialog.toasts.deleteFailedFallback'),
         variant: "destructive"
       });
     }
@@ -281,9 +296,9 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
     setAssignSpareDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = ({ confirmPickedUp }: { confirmPickedUp: boolean }) => {
     if (reservationToDelete) {
-      deleteReservationMutation.mutate(reservationToDelete.id);
+      deleteReservationMutation.mutate({ reservation: reservationToDelete, confirmPickedUp });
     }
     setReservationToDelete(null);
   };
@@ -394,9 +409,12 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
             <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => handleEdit(e, reservation)} data-testid={`edit-btn-${reservation.id}`}>
               <Edit className="h-3.5 w-3.5" />
             </Button>
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); handleDelete(reservation); }} data-testid={`delete-btn-${reservation.id}`}>
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+            {/* B-33: a picked-up rental needs the new right, every other row manage_reservations (the route's own guards). */}
+            <RequiresPermission anyOf={cancelRightFor(reservation)}>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); handleDelete(reservation); }} data-testid={`delete-btn-${reservation.id}`}>
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </RequiresPermission>
           </div>
         </div>
         
@@ -700,12 +718,12 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
       )}
 
       {/* Delete Reservation Confirmation Dialog */}
-      <ConfirmDialog
+      <ConfirmDeleteReservationDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
+        reservation={reservationToDelete}
         title={t('listDialog.deleteDialog.title')}
         description={t('listDialog.deleteDialog.description', { id: reservationToDelete?.id })}
-        variant="danger"
         confirmLabel={t('listDialog.deleteDialog.confirmLabel')}
         onConfirm={confirmDelete}
         onCancel={() => setReservationToDelete(null)}

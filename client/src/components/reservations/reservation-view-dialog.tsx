@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UsagePeriodCard } from "@/components/fiscal/usage-period-card";
@@ -22,17 +22,6 @@ import { formatReservationBarcode } from "@shared/barcode";
 import { differenceInDays, parseISO } from "date-fns";
 import { Wrench, Car, ArrowRightLeft, Trash2, Edit, FileText, Upload, FileCheck, X, Camera, AlertCircle, Calendar as CalendarIcon, XCircle } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { apiRequest, invalidateRelatedQueries , invalidateByPrefix } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { UploadContractButton } from "@/components/documents/contract-upload-button";
@@ -40,6 +29,10 @@ import { SpareVehicleDialog } from "@/components/reservations/spare-vehicle-dial
 import { ServiceVehicleDialog } from "@/components/reservations/service-vehicle-dialog";
 import { ReturnFromServiceDialog } from "@/components/reservations/return-from-service-dialog";
 import { CancelReservationDialog } from "@/components/reservations/cancel-reservation-dialog";
+import { ConfirmDeleteReservationDialog } from "@/components/reservations/delete-reservation-confirm";
+import {
+  cancelRightFor, isPickedUpRightRefusal, pickedUpRefusalOf, type PickedUpFacts,
+} from "@/components/reservations/picked-up-cancellation";
 import { RecordHistory } from "@/components/audit/record-history";
 import {
   EditDatesDialog,
@@ -75,6 +68,10 @@ export function ReservationViewDialog({
   const { toast } = useToast();
   const { openVehicleDialog, openCustomerDialog } = useGlobalDialog();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  // B-33: what the server told us when it refused a delete of a rental this
+  // screen did not know had been picked up; the confirmation then asks again.
+  const [serverPickedUp, setServerPickedUp] = useState<PickedUpFacts | null>(null);
+  useEffect(() => setServerPickedUp(null), [reservationId]);
   // besluiten B-04 — the cancel action the app never had.
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   // OPT-010 — which micro edit is open, if any.
@@ -102,8 +99,12 @@ export function ReservationViewDialog({
   
   // Delete reservation mutation
   const deleteReservationMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest('DELETE', `/api/reservations/${reservationId}`);
+    // B-33: `confirmPickedUp` travels as a query flag; the server insists on it for a picked-up rental.
+    mutationFn: async ({ confirmPickedUp }: { confirmPickedUp: boolean }) => {
+      const response = await apiRequest(
+        'DELETE',
+        `/api/reservations/${reservationId}${confirmPickedUp ? '?confirmPickedUp=true' : ''}`,
+      );
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to delete reservation');
@@ -126,9 +127,16 @@ export function ReservationViewDialog({
       onOpenChange(false);
     },
     onError: (error: Error) => {
+      // 409: picked up after this screen read the row. A question, not a failure.
+      const refusal = pickedUpRefusalOf(error);
+      if (refusal) {
+        setServerPickedUp(refusal);
+        setIsDeleteDialogOpen(true);
+        return;
+      }
       toast({
         title: t('viewDialog.errorTitle'),
-        description: error.message,
+        description: isPickedUpRightRefusal(error) ? t('pickedUpWarning.rightRequired') : error.message,
         variant: "destructive"
       });
     }
@@ -988,42 +996,35 @@ export function ReservationViewDialog({
                 to cancel was to pick "Geannuleerd" from the status list in the
                 edit form, which cascaded into nothing at all. */}
             {reservation && reservation.status !== 'cancelled' && reservation.status !== 'completed' && (
-              <Button
-                variant="outline"
-                className="text-red-600 border-red-300 hover:bg-red-50"
-                onClick={() => setIsCancelDialogOpen(true)}
-                data-testid="button-cancel-reservation"
-              >
-                <XCircle className="mr-2 h-4 w-4" />
-                {t('cancelDialog.title')}
-              </Button>
+              // B-33: a picked-up rental needs the new right, every other row
+              // `manage_reservations` (the routes' own guards).
+              <RequiresPermission anyOf={cancelRightFor(reservation)}>
+                <Button
+                  variant="outline"
+                  className="text-red-600 border-red-300 hover:bg-red-50"
+                  onClick={() => setIsCancelDialogOpen(true)}
+                  data-testid="button-cancel-reservation"
+                >
+                  <XCircle className="mr-2 h-4 w-4" />
+                  {t('cancelDialog.title')}
+                </Button>
+              </RequiresPermission>
             )}
 
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" data-testid="button-delete-reservation">
+            {/* Only once the row is known: which right it needs depends on its status. */}
+            {reservation && (
+              <RequiresPermission anyOf={cancelRightFor(reservation)}>
+                <Button
+                  variant="destructive"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                  disabled={deleteReservationMutation.isPending}
+                  data-testid="button-delete-reservation"
+                >
                   <Trash2 className="mr-2 h-4 w-4" />
                   {t('viewDialog.deleteButton')}
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>{t('viewDialog.deleteConfirm.title')}</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {t('viewDialog.deleteConfirm.description', { id: reservationId })}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>{t('viewDialog.deleteConfirm.cancelButton')}</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => deleteReservationMutation.mutate()}
-                    disabled={deleteReservationMutation.isPending}
-                  >
-                    {deleteReservationMutation.isPending ? t('viewDialog.deletingButton') : t('viewDialog.deleteButton')}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+              </RequiresPermission>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1074,6 +1075,16 @@ export function ReservationViewDialog({
           invalidateByPrefix(`/api/reservations/${reservationId}/active-replacement`);
           invalidateByPrefix(`/api/reservations`);
         }}
+      />
+
+      <ConfirmDeleteReservationDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        reservation={serverPickedUp && reservation ? { ...reservation, status: 'picked_up', ...serverPickedUp } : reservation}
+        title={t('viewDialog.deleteConfirm.title')}
+        description={t('viewDialog.deleteConfirm.description', { id: reservationId })}
+        confirmLabel={t('viewDialog.deleteButton')}
+        onConfirm={({ confirmPickedUp }) => deleteReservationMutation.mutate({ confirmPickedUp })}
       />
 
       {reservationId ? (

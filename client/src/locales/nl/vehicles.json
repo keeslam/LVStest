@@ -432,7 +432,7 @@
       "openEnded": "Open einde",
       "viewButton": "Bekijken",
       "confirmDeleteTitle": "Weet je het zeker?",
-      "confirmDeleteDescription": "Dit zal deze reservering permanent verwijderen van {{brand}} {{model}} ({{plate}}).",
+      "confirmDeleteDescription": "Deze reservering van {{brand}} {{model}} ({{plate}}) wordt naar de prullenbak verplaatst; terugzetten kan via Prullenbak.",
       "customerLabel": "Klant: {{name}}",
       "blacklist": {
         "title": "Klant zwarte lijst",

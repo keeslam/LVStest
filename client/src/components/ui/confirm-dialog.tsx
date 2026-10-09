@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
@@ -23,6 +23,13 @@ export interface ConfirmDialogProps {
   onConfirm: () => void;
   onCancel?: () => void;
   isLoading?: boolean;
+  /**
+   * Keeps the confirm button off until a condition is met (a ticked box), so the
+   * action behind it cannot be taken without it; cancel and Escape stay available.
+   */
+  confirmDisabled?: boolean;
+  /** Extra content between the description and the buttons (a warning box with its own checkbox). */
+  children?: ReactNode;
 }
 
 export function ConfirmDialog({
@@ -36,6 +43,8 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
   isLoading = false,
+  confirmDisabled = false,
+  children,
 }: ConfirmDialogProps) {
   const { t } = useTranslation("common");
   const finalConfirmLabel = confirmLabel ?? t('actions.confirm');
@@ -90,6 +99,7 @@ export function ConfirmDialog({
             {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {children}
         <AlertDialogFooter>
           <AlertDialogCancel 
             disabled={isLoading}
@@ -99,7 +109,7 @@ export function ConfirmDialog({
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
-            disabled={isLoading}
+            disabled={isLoading || confirmDisabled}
             className={getConfirmButtonClass()}
             data-testid="confirm-dialog-confirm"
           >

@@ -604,6 +604,13 @@
       "failedDescription": "Probeer het opnieuw, of herlaad de pagina."
     }
   },
+  "pickedUpWarning": {
+    "title": "Deze huur is al opgehaald",
+    "text": "Deze huur is al opgehaald op {{date}} met contract {{contract}}.",
+    "vehicleNote": "Het voertuig telt daarna weer als beschikbaar en de kilometerstand blijft de stand van het ophalen.",
+    "confirmLabel": "Ik weet dat deze huur al is opgehaald en wil doorgaan",
+    "rightRequired": "Voor een opgehaalde huur is het recht 'Opgehaalde huur annuleren of verwijderen' nodig."
+  },
   "notCollectedDialog": {
     "title": "Niet opgehaalde reserveringen",
     "description": "Deze boekingen zijn een maand of langer geleden gestart en zijn nooit opgehaald. Ze blokkeren niets, maar verdienen een blik.",
@@ -845,7 +852,7 @@
     "deletingButton": "Verwijderen...",
     "deleteConfirm": {
       "title": "Weet je het zeker?",
-      "description": "Deze actie kan niet ongedaan worden gemaakt. Dit zal reservering #{{id}} permanent verwijderen.",
+      "description": "Reservering #{{id}} wordt naar de prullenbak verplaatst; terugzetten kan via Prullenbak.",
       "cancelButton": "Annuleren"
     },
     "toasts": {
@@ -883,7 +890,7 @@
     "assignVehicleButton": "Voertuig toewijzen",
     "deleteDialog": {
       "title": "Reservering verwijderen",
-      "description": "Weet je zeker dat je reservering #{{id}} wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+      "description": "Weet je zeker dat je reservering #{{id}} wilt verwijderen? Ze wordt naar de prullenbak verplaatst; terugzetten kan via Prullenbak.",
       "confirmLabel": "Verwijderen"
     },
     "toasts": {
@@ -902,7 +909,7 @@
     "editReservationButton": "Reservering bewerken",
     "viewContractButton": "Contract bekijken",
     "confirmDeleteTitle": "Weet je zeker dat je deze reservering wilt verwijderen?",
-    "confirmDeleteDescription": "Deze actie kan niet ongedaan worden gemaakt. Dit verwijdert de reservering permanent en verwijdert de gegevens van onze servers.",
+    "confirmDeleteDescription": "De reservering wordt naar de prullenbak verplaatst; terugzetten kan via Prullenbak.",
     "reservationInfoTitle": "Reserveringsinformatie",
     "replacementVehicleBadge": "Vervangend voertuig",
     "maintenanceBlockBadge": "Onderhoudsblok",
@@ -1002,7 +1009,7 @@
     "contractButton": "Contract",
     "deleteButton": "Verwijderen",
     "deleteReservationDialogTitle": "Reservering verwijderen",
-    "deleteReservationDialogDescription": "Weet je zeker dat je deze reservering wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+    "deleteReservationDialogDescription": "Weet je zeker dat je deze reservering wilt verwijderen? Ze wordt naar de prullenbak verplaatst; terugzetten kan via Prullenbak.",
     "cancelButton": "Annuleren",
     "deletingButton": "Verwijderen...",
     "statusTabAll": "Alle",
@@ -1160,10 +1167,10 @@
       "fuelAtReturnColonLabel": "Brandstof bij inleveren:",
       "totalColonLabel": "Totaal:",
       "deleteTitle": "Voltooide verhuur verwijderen?",
-      "deleteDescription": "Dit verwijdert dit verhuurrecord permanent. Deze actie kan niet ongedaan worden gemaakt.",
+      "deleteDescription": "Dit verhuurrecord wordt naar de prullenbak verplaatst; terugzetten kan via Prullenbak.",
       "toasts": {
         "deletedTitle": "Verhuur verwijderd",
-        "deletedDescription": "Het verhuurrecord is permanent verwijderd",
+        "deletedDescription": "Het verhuurrecord is naar de prullenbak verplaatst",
         "deleteFailedDescription": "Verhuur verwijderen mislukt"
       }
     },
@@ -1214,7 +1221,7 @@
     "moveReservationFailedFallback": "Reservering verplaatsen mislukt",
     "deleteFailedTitle": "Verwijderen mislukt",
     "deleteDamageCheckConfirmDescription": "Weet je zeker dat je deze schadecheck wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
-    "deleteReservationForCustomerDescription": "Weet je zeker dat je deze reservering voor {{name}} wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+    "deleteReservationForCustomerDescription": "Weet je zeker dat je deze reservering voor {{name}} wilt verwijderen? Ze wordt naar de prullenbak verplaatst; terugzetten kan via Prullenbak.",
     "thisCustomerFallback": "deze klant",
     "damageCheckPdfTitle": "Schadecheck-PDF",
     "previewLabel": "Voorbeeld",

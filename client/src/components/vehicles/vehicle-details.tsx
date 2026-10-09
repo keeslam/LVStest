@@ -91,6 +91,8 @@ import {
 } from "@/components/ui/select";
 import { SearchableCombobox } from "@/components/ui/searchable-combobox";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ConfirmDeleteReservationDialog } from "@/components/reservations/delete-reservation-confirm";
+import { cancelRightFor, isPickedUpRightRefusal, pickedUpRefusalOf } from "@/components/reservations/picked-up-cancellation";
 import { format, addDays, parseISO } from "date-fns";
 import { useMemo } from "react";
 
@@ -145,6 +147,8 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  // B-33: the rental whose delete confirmation is open (a picked-up one gets the warning).
+  const [reservationToDelete, setReservationToDelete] = useState<Reservation | null>(null);
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.role === UserRole.ADMIN;
   
@@ -742,8 +746,12 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
   
   // Delete reservation mutation
   const deleteReservationMutation = useMutation({
-    mutationFn: async (reservationId: number) => {
-      const response = await apiRequest('DELETE', `/api/reservations/${reservationId}`);
+    // B-33: `confirmPickedUp` travels as a query flag; the server insists on it for a picked-up rental.
+    mutationFn: async ({ reservation, confirmPickedUp }: { reservation: Reservation; confirmPickedUp: boolean }) => {
+      const response = await apiRequest(
+        'DELETE',
+        `/api/reservations/${reservation.id}${confirmPickedUp ? '?confirmPickedUp=true' : ''}`,
+      );
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to delete reservation');
@@ -764,10 +772,18 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
         description: t('details.toasts.reservationDeletedDescription')
       });
     },
-    onError: (error: Error) => {
+    onError: (error: Error, { reservation }) => {
+      // 409: the row had been picked up after this list was loaded. A question, not a failure.
+      const refusal = pickedUpRefusalOf(error);
+      if (refusal) {
+        setReservationToDelete({ ...reservation, status: 'picked_up', ...refusal });
+        return;
+      }
       toast({
         title: t('details.toasts.genericErrorTitle'),
-        description: error.message || t('details.toasts.reservationDeleteFailedDescription'),
+        description: isPickedUpRightRefusal(error)
+          ? t('reservations:pickedUpWarning.rightRequired')
+          : error.message || t('details.toasts.reservationDeleteFailedDescription'),
         variant: "destructive"
       });
     }
@@ -2465,61 +2481,36 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                 {t('common:actions.edit')}
                               </Button>
                               
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="text-red-600 hover:text-red-800"
-                                    disabled={deleteReservationMutation.isPending}
-                                  >
-                                    {deleteReservationMutation.isPending ? (
-                                      <>
-                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        {t('common:status.deleting')}
-                                      </>
-                                    ) : (
-                                      <>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                                          <path d="M3 6h18"></path>
-                                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                                        </svg>
-                                        {t('common:actions.delete')}
-                                      </>
-                                    )}
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>{t('details.reservations.confirmDeleteTitle')}</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      {t('details.reservations.confirmDeleteDescription', { brand: vehicle.brand, model: vehicle.model, plate: formatLicensePlate(vehicle.licensePlate) })}
-                                      <p className="mt-2 font-medium">
-                                        {formatDate(reservation.startDate)} - {reservation.endDate ? formatDate(reservation.endDate) : t('details.reservations.openEnded')}
-                                      </p>
-                                      <p className="mt-1 text-sm text-gray-500">
-                                        {t('details.reservations.customerLabel', { name: reservation.customer?.name })}
-                                      </p>
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>{t('common:actions.cancel')}</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        deleteReservationMutation.mutate(reservation.id);
-                                      }}
-                                      className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
-                                    >
+                              {/* B-33: a picked-up rental needs the new right, every other row manage_reservations. */}
+                              <RequiresPermission anyOf={cancelRightFor(reservation)}>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-600 hover:text-red-800"
+                                  disabled={deleteReservationMutation.isPending}
+                                  onClick={() => setReservationToDelete(reservation)}
+                                  data-testid={`button-delete-reservation-${reservation.id}`}
+                                >
+                                  {deleteReservationMutation.isPending ? (
+                                    <>
+                                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                      </svg>
+                                      {t('common:status.deleting')}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                                        <path d="M3 6h18"></path>
+                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                      </svg>
                                       {t('common:actions.delete')}
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                                    </>
+                                  )}
+                                </Button>
+                              </RequiresPermission>
                             </div>
                           </td>
                         </tr>
@@ -3644,6 +3635,23 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete reservation confirmation (B-33: a picked-up rental gets the warning and its tick) */}
+      <ConfirmDeleteReservationDialog
+        open={reservationToDelete !== null}
+        onOpenChange={(next) => { if (!next) setReservationToDelete(null); }}
+        reservation={reservationToDelete}
+        title={t('details.reservations.confirmDeleteTitle')}
+        description={reservationToDelete ? [
+          t('details.reservations.confirmDeleteDescription', { brand: vehicle.brand, model: vehicle.model, plate: formatLicensePlate(vehicle.licensePlate) }),
+          `${formatDate(reservationToDelete.startDate)} - ${reservationToDelete.endDate ? formatDate(reservationToDelete.endDate) : t('details.reservations.openEnded')}`,
+          t('details.reservations.customerLabel', { name: reservationToDelete.customer?.name }),
+        ].join(' ') : ''}
+        confirmLabel={t('common:actions.delete')}
+        onConfirm={({ confirmPickedUp }) => {
+          if (reservationToDelete) deleteReservationMutation.mutate({ reservation: reservationToDelete, confirmPickedUp });
+        }}
+      />
 
       {/* Delete Damage Check Confirmation Dialog */}
       <ConfirmDialog

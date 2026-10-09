@@ -432,7 +432,7 @@
       "openEnded": "Open-ended",
       "viewButton": "View",
       "confirmDeleteTitle": "Are you sure?",
-      "confirmDeleteDescription": "This will permanently delete this reservation from {{brand}} {{model}} ({{plate}}).",
+      "confirmDeleteDescription": "This reservation of {{brand}} {{model}} ({{plate}}) is moved to the recycle bin; you can restore it from the recycle bin.",
       "customerLabel": "Customer: {{name}}",
       "blacklist": {
         "title": "Customer Blacklist",

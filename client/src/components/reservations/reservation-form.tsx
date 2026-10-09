@@ -5,6 +5,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest, invalidateByPrefix, invalidateRelatedQueries } from "@/lib/queryClient";
+import { RequiresPermission } from "@/components/ui/requires-permission";
+import { ConfirmDeleteReservationDialog } from "@/components/reservations/delete-reservation-confirm";
+import {
+  cancelRightFor, isPickedUpRightRefusal, pickedUpRefusalOf, type PickedUpFacts,
+} from "@/components/reservations/picked-up-cancellation";
+import { PICKED_UP_CODES } from "@shared/picked-up-cancellation";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { insertReservationSchemaBase } from "@shared/schema";
@@ -308,6 +314,11 @@ export function ReservationForm({
   const [overdueDialogOpen, setOverdueDialogOpen] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<z.infer<typeof formSchema> | null>(null);
   const [processingOverdue, setProcessingOverdue] = useState<number | null>(null);
+  // B-33: the overdue (picked-up) rental whose delete confirmation is open.
+  const [overdueToDelete, setOverdueToDelete] = useState<Reservation | null>(null);
+  // B-33: the edit form's "Geannuleerd" on a picked-up rental - the server asked for the
+  // warning first (409); what the person saw and the data to send again once they tick.
+  const [pickedUpCancel, setPickedUpCancel] = useState<{ facts: PickedUpFacts; data: z.infer<typeof formSchema> } | null>(null);
   
   // Pickup/Return dialog workflow states - when user sets status to picked_up/returned, 
   // we save the reservation first and then open the appropriate dialog
@@ -1044,13 +1055,25 @@ export function ReservationForm({
               throw error;
             }
             
+            // Sub-project C (B-33): cancelling a picked-up rental from the edit form. The
+            // server asks for the warning first (409) or refuses outright (403); carry the
+            // stable code so onError can branch on it.
+            if (errorData.code === PICKED_UP_CODES.CONFIRMATION_REQUIRED || errorData.code === PICKED_UP_CODES.RIGHT_REQUIRED) {
+              const refusal = new Error(errorData.message || errorMessage) as any;
+              refusal.code = errorData.code;
+              refusal.actualPickupDate = errorData.actualPickupDate;
+              refusal.contractNumber = errorData.contractNumber;
+              refusal.isPickedUpRefusal = true;
+              throw refusal;
+            }
+
             errorMessage = errorData.message || errorMessage;
           } else {
             errorMessage = `${errorMessage}: ${response.status} ${response.statusText}`;
           }
         } catch (parseError: any) {
           // If this is our overdue error, rethrow it
-          if (parseError.isOverdueError) {
+          if (parseError.isOverdueError || parseError.isPickedUpRefusal) {
             throw parseError;
           }
           // If we can't parse the error response, use the status text
@@ -1179,7 +1202,22 @@ export function ReservationForm({
         }
       }
     },
-    onError: (error: any) => {
+    onError: (error: any, variables) => {
+      // B-33: 409 is a question, not a failure - show the warning with the server's facts.
+      const pickedUpFacts = pickedUpRefusalOf(error);
+      if (pickedUpFacts) {
+        setPickedUpCancel({ facts: pickedUpFacts, data: variables });
+        return;
+      }
+      if (isPickedUpRightRefusal(error)) {
+        toast({
+          title: t('form.errors.genericTitle'),
+          description: t('pickedUpWarning.rightRequired'),
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Check if this is an overdue error from the backend
       if (error.isOverdueError && error.overdueReservations) {
         setOverdueReservations(error.overdueReservations);
@@ -1300,6 +1338,48 @@ export function ReservationForm({
       console.error("Error checking overdue reservations:", error);
       return [];
     }
+  };
+
+  // Deleting an overdue rental in the "overdue reservations" dialog (B-33: they are
+  // picked-up ones, so this runs after the warning's confirmation).
+  const deleteOverdueReservation = async (reservation: Reservation, confirmPickedUp: boolean) => {
+    setProcessingOverdue(reservation.id);
+    try {
+      await apiRequest("DELETE", `/api/reservations/${reservation.id}${confirmPickedUp ? '?confirmPickedUp=true' : ''}`);
+      toast({
+        title: t('form.toasts.reservationDeletedTitle'),
+        description: t('form.toasts.reservationDeletedDescription'),
+      });
+
+      // Refetch overdue reservations from server to ensure consistency
+      const vehicleId = Number(pendingFormData?.vehicleId);
+      if (vehicleId) {
+        const freshOverdue = await checkOverdueReservations(vehicleId);
+        setOverdueReservations(freshOverdue);
+
+        // If no more overdue, proceed with the pending submission
+        if (freshOverdue.length === 0 && pendingFormData) {
+          setOverdueDialogOpen(false);
+          await processSubmission(pendingFormData);
+          setPendingFormData(null);
+        }
+      }
+
+      invalidateRelatedQueries('reservations');
+    } catch (error) {
+      // 409: the row's state changed since the dialog was filled - ask again with the server's facts.
+      const refusal = pickedUpRefusalOf(error);
+      if (refusal) {
+        setOverdueToDelete({ ...reservation, status: 'picked_up', ...refusal });
+      } else {
+        toast({
+          title: t('form.errors.genericTitle'),
+          description: isPickedUpRightRefusal(error) ? t('pickedUpWarning.rightRequired') : t('form.toasts.failedToDeleteDescription'),
+          variant: "destructive",
+        });
+      }
+    }
+    setProcessingOverdue(null);
   };
 
   // Handle reservation form submission
@@ -2920,46 +3000,18 @@ export function ReservationForm({
                       {processingOverdue === reservation.id ? t('form.overdueDialog.processingButton') : t('form.overdueDialog.markCompletedButton')}
                     </Button>
 
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      disabled={processingOverdue === reservation.id}
-                      onClick={async () => {
-                        setProcessingOverdue(reservation.id);
-                        try {
-                          await apiRequest("DELETE", `/api/reservations/${reservation.id}`);
-                          toast({
-                            title: t('form.toasts.reservationDeletedTitle'),
-                            description: t('form.toasts.reservationDeletedDescription'),
-                          });
-
-                          // Refetch overdue reservations from server to ensure consistency
-                          const vehicleId = Number(pendingFormData?.vehicleId);
-                          if (vehicleId) {
-                            const freshOverdue = await checkOverdueReservations(vehicleId);
-                            setOverdueReservations(freshOverdue);
-
-                            // If no more overdue, proceed with the pending submission
-                            if (freshOverdue.length === 0 && pendingFormData) {
-                              setOverdueDialogOpen(false);
-                              await processSubmission(pendingFormData);
-                              setPendingFormData(null);
-                            }
-                          }
-
-                          invalidateRelatedQueries('reservations');
-                        } catch (error) {
-                          toast({
-                            title: t('form.errors.genericTitle'),
-                            description: t('form.toasts.failedToDeleteDescription'),
-                            variant: "destructive",
-                          });
-                        }
-                        setProcessingOverdue(null);
-                      }}
-                    >
-                      {t('form.overdueDialog.deleteButton')}
-                    </Button>
+                    {/* B-33: the overdue rentals are picked-up ones: deleting needs the new right and the warning. */}
+                    <RequiresPermission anyOf={cancelRightFor(reservation)}>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={processingOverdue === reservation.id}
+                        onClick={() => setOverdueToDelete(reservation)}
+                        data-testid={`button-overdue-delete-${reservation.id}`}
+                      >
+                        {t('form.overdueDialog.deleteButton')}
+                      </Button>
+                    </RequiresPermission>
                   </div>
                 </div>
               </div>
@@ -2991,6 +3043,32 @@ export function ReservationForm({
       </AlertDialogContent>
     </AlertDialog>
     
+    {/* B-33: deleting an overdue (picked-up) rental from the dialog above */}
+    <ConfirmDeleteReservationDialog
+      open={overdueToDelete !== null}
+      onOpenChange={(next) => { if (!next) setOverdueToDelete(null); }}
+      reservation={overdueToDelete}
+      title={t('form.overdueDialog.deleteButton')}
+      description={t('viewDialog.deleteConfirm.description', { id: overdueToDelete?.id })}
+      confirmLabel={t('form.overdueDialog.deleteButton')}
+      onConfirm={({ confirmPickedUp }) => {
+        if (overdueToDelete) void deleteOverdueReservation(overdueToDelete, confirmPickedUp);
+      }}
+    />
+
+    {/* B-33: the edit form cancels a picked-up rental: the same warning and tick as the cancel dialog */}
+    <ConfirmDeleteReservationDialog
+      open={pickedUpCancel !== null}
+      onOpenChange={(next) => { if (!next) setPickedUpCancel(null); }}
+      reservation={pickedUpCancel ? { status: 'picked_up', type: 'standard', ...pickedUpCancel.facts } : null}
+      title={t('cancelDialog.title')}
+      description={t('cancelDialog.description', { id: initialData?.id })}
+      confirmLabel={t('cancelDialog.confirmButton')}
+      onConfirm={({ confirmPickedUp }) => {
+        if (pickedUpCancel && confirmPickedUp) createReservationMutation.mutate({ ...pickedUpCancel.data, confirmPickedUp: true } as any);
+      }}
+    />
+
     {/* Pickup Dialog - triggered when status is set to picked_up */}
     {pendingDialogReservation && (
       <PickupDialog
