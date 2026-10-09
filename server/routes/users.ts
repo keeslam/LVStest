@@ -303,6 +303,15 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         }
       }
       
+      // The users dialog sends `password: ""` when "Nieuw wachtwoord (leeg laten om
+      // te behouden)" is left empty. Only a non-empty string is a password change;
+      // anything else (empty, whitespace-only, null, absent) means "no change", so
+      // the key is dropped and never reaches storage. Without this the empty string
+      // was written as the stored hash and the user could no longer log in.
+      if (typeof userData.password !== "string" || userData.password.trim() === "") {
+        delete userData.password;
+      }
+
       // Handle password separately
       if (userData.password) {
         // Separate password from other data
