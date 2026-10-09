@@ -144,6 +144,7 @@
     "password": "Wachtwoord",
     "newPasswordLeaveEmpty": "Nieuw wachtwoord (leeg laten om te behouden)",
     "passwordPlaceholder": "Voer wachtwoord in",
+    "passwordRequired": "Een wachtwoord is verplicht",
     "fullNamePlaceholder": "Voer volledige naam in",
     "emailPlaceholder": "Voer e-mailadres in",
     "selectRole": "Selecteer rol",

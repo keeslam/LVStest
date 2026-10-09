@@ -144,6 +144,7 @@
     "password": "Password",
     "newPasswordLeaveEmpty": "New Password (leave empty to keep)",
     "passwordPlaceholder": "Enter password",
+    "passwordRequired": "A password is required",
     "fullNamePlaceholder": "Enter full name",
     "emailPlaceholder": "Enter email",
     "selectRole": "Select role",

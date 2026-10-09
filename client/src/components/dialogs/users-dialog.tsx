@@ -527,6 +527,8 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
       const res = await apiRequest("POST", "/api/users", userData);
       if (!res.ok) {
         const errorData = await res.json();
+        // Server messages are English; the client translates by the stable code.
+        if (errorData.code === "PASSWORD_REQUIRED") throw new Error(t('usersDialog.passwordRequired'));
         throw new Error(errorData.message || t('usersDialog.createUserFailed'));
       }
       return res.json();
@@ -563,6 +565,13 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
     if (isEdit) {
       updateMutation.mutate(data);
     } else {
+      // A new account needs a real password (the server answers 400
+      // PASSWORD_REQUIRED for a blank one). Only the edit form treats a blank
+      // password as "keep the current one".
+      if (!data.password || data.password.trim() === "") {
+        form.setError("password", { type: "required", message: t('usersDialog.passwordRequired') });
+        return;
+      }
       createMutation.mutate(data);
     }
   };
