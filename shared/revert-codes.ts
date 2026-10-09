@@ -13,9 +13,16 @@
 export const REVERT_CODES = {
   /** Odometer would go down; resend with `confirmMileageDecrease: true`. 409. */
   MILEAGE_DECREASE_CONFIRMATION_REQUIRED: "MILEAGE_DECREASE_CONFIRMATION_REQUIRED",
-  /** Undoing a cancellation, but the vehicle is no longer free for the period. 409. */
+  /** Undoing a cancellation, but another booking has taken the vehicle for the period. 409. */
   VEHICLE_NOT_FREE: "VEHICLE_NOT_FREE",
-  /** The plan the client confirmed is not the plan the server computes now. 409. */
+  /** Undoing a cancellation, but the vehicle has since been marked "not for rental". 409. */
+  VEHICLE_NOT_FOR_RENTAL: "VEHICLE_NOT_FOR_RENTAL",
+  /** Undoing a cancellation, but the reservation's vehicle no longer exists (recycle bin). 409, not a 404. */
+  VEHICLE_NOT_FOUND: "VEHICLE_NOT_FOUND",
+  /**
+   * The plan the client confirmed is not the plan the server computes now, or the
+   * POST carried no `planHash` at all (it is mandatory). 409, with the current plan.
+   */
   REVERT_PLAN_CHANGED: "REVERT_PLAN_CHANGED",
   /** `PATCH /api/reservations/:id/status` was asked for a reversion. 400. */
   USE_REVERT_ROUTE: "USE_REVERT_ROUTE",
@@ -70,8 +77,9 @@ export interface RevertPlan {
   warnings: string[];
   blocked?: { code: string; message: string };
   /**
-   * sha256 of the rest of the plan. The client sends it back as `planHash` in the
-   * POST body; a different plan at that moment answers 409 `REVERT_PLAN_CHANGED`.
+   * sha256 of the rest of the plan. The client MUST send it back as `planHash` in
+   * the POST body; a missing or different hash answers 409 `REVERT_PLAN_CHANGED`
+   * (with the current plan, so the client can show it and ask again).
    */
   planHash: string;
 }

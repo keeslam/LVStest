@@ -59,6 +59,12 @@ function day(offset: number): string {
   return isoDay(d);
 }
 
+/** What the revert dialog does: the POST carries the hash of the preview it showed (mandatory). */
+async function revertAfterPreview(id: number) {
+  const preview = await admin.get(`/api/reservations/${id}/revert-preview`);
+  return admin.post(`/api/reservations/${id}/revert`).send({ planHash: preview.body.planHash });
+}
+
 async function rowOf(id: number) {
   const [row] = await db.select().from(reservations).where(eq(reservations.id, id));
   return row;
@@ -227,7 +233,7 @@ describe("WAVE 14 item 2 — Terugzetten zet een voltooide verhuur terug", () =>
 
     // No before-return reading was stored for this hand-made row, so the vehicle
     // is left alone and no mileage confirmation is needed.
-    const res = await admin.post(`/api/reservations/${id}/revert`).send({});
+    const res = await revertAfterPreview(id);
     expect(res.status).toBe(200);
 
     const row = await rowOf(id);
@@ -253,7 +259,7 @@ describe("WAVE 14 item 2 — Terugzetten zet een voltooide verhuur terug", () =>
     const customerId = (await createFixtureCustomer("Terug3")).id;
     const id = await completedRental(vehicle.id, customerId);
 
-    const res = await admin.post(`/api/reservations/${id}/revert`).send({});
+    const res = await revertAfterPreview(id);
     expect(res.status).toBe(200);
     expect((await rowOf(id)).status).toBe("picked_up");
     // And the workshop flag itself is nobody's to clear here (besluiten B-03).
@@ -274,7 +280,7 @@ describe("WAVE 14 item 2 — Terugzetten zet een voltooide verhuur terug", () =>
     await db.update(reservations).set({ status: "completed", actualPickupDate: day(0), completionDate: day(0) })
       .where(eq(reservations.id, r.id));
 
-    const res = await admin.post(`/api/reservations/${r.id}/revert`).send({});
+    const res = await revertAfterPreview(r.id);
     expect(res.status).toBe(200);
 
     const row = await rowOf(r.id);

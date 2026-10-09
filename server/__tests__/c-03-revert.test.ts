@@ -3,7 +3,7 @@
  * the routes:
  *
  *   GET  /api/reservations/:id/revert-preview
- *   POST /api/reservations/:id/revert        { confirmMileageDecrease?, planHash? }
+ *   POST /api/reservations/:id/revert        { planHash, confirmMileageDecrease? }
  *
  * One test per row of the rules table (spec section 2.3) plus the rules around
  * it: the vehicle is only restored when this handover is its latest, a missing
@@ -15,7 +15,7 @@
  * Spec: docs/superpowers/specs/2026-10-09-terugdraaien-prullenbak-design.md 2.2, 2.3.
  */
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
-import { isoDay } from "./helpers/dates";
+import { day } from "./helpers/dates";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db";
 import {
@@ -42,13 +42,6 @@ afterAll(async () => {
   await cleanupFixtures();
   await cleanupFixtureUsers();
 });
-
-/** Days relative to today - never a weekday dependency. */
-function day(offset: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  return isoDay(d);
-}
 
 let contractCounter = 0;
 const nextContract = () => `FIXT-C03-${Date.now().toString(36)}-${++contractCounter}`;
@@ -101,8 +94,22 @@ async function returnedRental() {
   return { vehicle, rental };
 }
 
-const revert = (agent: TestAgent, id: number, body: Record<string, unknown> = { confirmMileageDecrease: true }) =>
+/** The POST exactly as given: no preview, no hash added. */
+const revertRaw = (agent: TestAgent, id: number, body: Record<string, unknown> = {}) =>
   agent.post(`/api/reservations/${id}/revert`).send(body);
+
+/**
+ * What the dialog does: ask for the preview, send its `planHash` back with the
+ * confirmation (the hash is mandatory, spec 2.2). A body that names its own
+ * `planHash` is sent as it is. When the preview is refused (403, 404, 400) there
+ * is no hash to send and the POST goes without one.
+ */
+async function revert(agent: TestAgent, id: number, body: Record<string, unknown> = { confirmMileageDecrease: true }) {
+  if ("planHash" in body) return revertRaw(agent, id, body);
+  const preview = await agent.get(`/api/reservations/${id}/revert-preview`);
+  const planHash = typeof preview.body?.planHash === "string" ? preview.body.planHash : undefined;
+  return revertRaw(agent, id, planHash === undefined ? body : { ...body, planHash });
+}
 
 describe("C-03 - who may revert", () => {
   it("answers 401 to an anonymous caller", async () => {
@@ -377,6 +384,25 @@ describe("C-03 - cancelled", () => {
     expect((await rowOf(r.id)).status).toBe("cancelled");
   });
 
+  it("says it is NOT FOR RENTAL, not 'no longer free', when the vehicle was taken out of rental (409; the preview says so)", async () => {
+    const vehicle = await createFixtureVehicle();
+    const r = await createFixtureReservation({ customerId, vehicleId: vehicle.id, startDate: day(5), endDate: day(8) });
+    await db.update(reservations).set({ status: "cancelled" }).where(eq(reservations.id, r.id));
+    await db.update(vehiclesTable).set({ availabilityStatus: "not_for_rental" }).where(eq(vehiclesTable.id, vehicle.id));
+
+    const preview = await admin.get(`/api/reservations/${r.id}/revert-preview`);
+    expect(preview.status).toBe(200);
+    expect(preview.body.blocked.code).toBe("VEHICLE_NOT_FOR_RENTAL");
+
+    const res = await revert(admin, r.id, {});
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe("VEHICLE_NOT_FOR_RENTAL");
+    expect(res.body.message).toContain("not for rental");
+    expect(res.body.message).not.toContain("no longer free");
+    expect(res.body.plan.blocked.code).toBe("VEHICLE_NOT_FOR_RENTAL");
+    expect((await rowOf(r.id)).status).toBe("cancelled");
+  });
+
   it("the cancelled row itself does not count as a conflict", async () => {
     const vehicle = await createFixtureVehicle();
     const r = await createFixtureReservation({ customerId, vehicleId: vehicle.id, startDate: day(5), endDate: day(8) });
@@ -547,6 +573,68 @@ describe("C-03 - the plan the client confirmed", () => {
     expect(res.body.plan.planHash).toBe(preview.body.planHash);
   });
 
+  it("the hash is mandatory: a POST without planHash is 409 REVERT_PLAN_CHANGED with the current plan, and nothing changes", async () => {
+    const { vehicle, rental } = await pickedUpRental({ mileage: 5000, pickupMileage: 5100 });
+    const preview = await admin.get(`/api/reservations/${rental.id}/revert-preview`);
+
+    const bare = await revertRaw(admin, rental.id, { confirmMileageDecrease: true });
+    expect(bare.status).toBe(409);
+    expect(bare.body.code).toBe("REVERT_PLAN_CHANGED");
+    // The body lets the client re-confirm: it is the plan as it stands now.
+    expect(bare.body.plan.planHash).toBe(preview.body.planHash);
+    expect(bare.body.plan.fromStatus).toBe("picked_up");
+    expect(bare.body.plan.toStatus).toBe("booked");
+    expect((await rowOf(rental.id)).status).toBe("picked_up");
+    expect((await vehicleRow(vehicle.id)).currentMileage).toBe(5100);
+
+    // Not even an empty body gets through, and the mileage flag does not stand in for the hash.
+    expect((await revertRaw(admin, rental.id, {})).status).toBe(409);
+    expect((await rowOf(rental.id)).status).toBe("picked_up");
+
+    // Resent with the hash it came back with, it goes through.
+    const again = await revertRaw(admin, rental.id, { confirmMileageDecrease: true, planHash: bare.body.plan.planHash });
+    expect(again.status).toBe(200);
+    expect((await rowOf(rental.id)).status).toBe("booked");
+  });
+
+  it.each([
+    ["a number", 12345],
+    ["null", null],
+    ["an empty string", ""],
+    ["an object", { hash: "x" }],
+    ["a made-up hash", "0".repeat(64)],
+  ])("a planHash that is %s is the same 409 REVERT_PLAN_CHANGED with the current plan", async (_label, planHash) => {
+    const { rental } = await pickedUpRental();
+    const res = await revertRaw(admin, rental.id, { confirmMileageDecrease: true, planHash });
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe("REVERT_PLAN_CHANGED");
+    expect(res.body.plan.planHash).toMatch(/^[0-9a-f]{64}$/);
+    expect((await rowOf(rental.id)).status).toBe("picked_up");
+  });
+
+  it("a stale hash: somebody returned the rental after the preview, so the old confirmation is refused (409)", async () => {
+    // E1 previews 'undo the pickup' (picked_up -> booked). E2 returns the rental.
+    // E1 confirms: without the hash the server would now undo E2's return instead.
+    const { vehicle, rental } = await pickedUpRental({ mileage: 5000, pickupMileage: 5100 });
+    const preview = await admin.get(`/api/reservations/${rental.id}/revert-preview`);
+    expect(preview.body.toStatus).toBe("booked");
+
+    const returned = await admin.post(`/api/reservations/${rental.id}/return`).send({
+      returnMileage: 5400, fuelLevelReturn: "1/4", returnDate: day(0),
+    });
+    expect(returned.status).toBe(200);
+
+    const stale = await revertRaw(admin, rental.id, { confirmMileageDecrease: true, planHash: preview.body.planHash });
+    expect(stale.status).toBe(409);
+    expect(stale.body.code).toBe("REVERT_PLAN_CHANGED");
+    expect(stale.body.plan.fromStatus).toBe("completed");
+    expect(stale.body.plan.toStatus).toBe("picked_up");
+    expect(stale.body.plan.planHash).not.toBe(preview.body.planHash);
+    // E2's return is untouched.
+    expect((await rowOf(rental.id)).status).toBe("completed");
+    expect((await vehicleRow(vehicle.id)).currentMileage).toBe(5400);
+  });
+
   it("409 REVERT_PLAN_CHANGED when the vehicle's odometer moved after the preview; the body carries the new plan", async () => {
     const { vehicle, rental } = await pickedUpRental({ mileage: 5000, pickupMileage: 5100 });
     const preview = await admin.get(`/api/reservations/${rental.id}/revert-preview`);
@@ -672,12 +760,17 @@ describe("C-03 - what happens after the transaction", () => {
     expect((await revert(admin, rental.id)).status).toBe(200);
   });
 
-  it("two simultaneous reverts of one rental: one wins, the other finds nothing left to undo", async () => {
+  it("two simultaneous reverts of one rental: one wins, the other's confirmation is stale", async () => {
     const { vehicle, rental } = await pickedUpRental({ mileage: 5000, pickupMileage: 5100 });
-    const [first, second] = await Promise.all([revert(admin, rental.id), revert(reverter, rental.id)]);
-    expect([first.status, second.status].sort()).toEqual([200, 400]);
-    const loser = first.status === 400 ? first : second;
-    expect(loser.body.code).toBe("INVALID_STATUS_TRANSITION");
+    // Both people looked at the same preview, then both confirm at once.
+    const preview = await admin.get(`/api/reservations/${rental.id}/revert-preview`);
+    const body = { confirmMileageDecrease: true, planHash: preview.body.planHash };
+    const [first, second] = await Promise.all([revertRaw(admin, rental.id, body), revertRaw(reverter, rental.id, body)]);
+    expect([first.status, second.status].sort()).toEqual([200, 409]);
+    const loser = first.status === 409 ? first : second;
+    // The loser's confirmation was for a plan that no longer exists; its new plan says nothing is left to undo.
+    expect(loser.body.code).toBe("REVERT_PLAN_CHANGED");
+    expect(loser.body.plan.blocked.code).toBe("INVALID_STATUS_TRANSITION");
     expect((await rowOf(rental.id)).status).toBe("booked");
     expect((await vehicleRow(vehicle.id)).currentMileage).toBe(5000);
     const notes = (await rowOf(rental.id)).notes ?? "";

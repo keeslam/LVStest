@@ -10,7 +10,8 @@
  */
 import { describe, it, expect } from "vitest";
 import type { Document, Reservation, Vehicle } from "../../shared/schema";
-import { planRevert, revertPlanHash } from "../services/reservation-revert";
+import { planRevert, revertPlanHash, type PlanRevertInput } from "../services/reservation-revert";
+import { RESERVATION_REVERT_TARGETS, isReservationRevert } from "../services/lifecycle";
 
 function reservation(overrides: Partial<Reservation> = {}): Reservation {
   return {
@@ -49,7 +50,8 @@ const returned = () => reservation({
   completionDate: "2026-10-04", vehicleMileageBeforeReturn: 5100, vehicleFuelBeforeReturn: "full",
 });
 
-const base = { laterHandoverExists: false, documents: [] as Document[], vehicleFreeForPeriod: true };
+const free: PlanRevertInput["vehicleVerdict"] = { bookable: true, reason: null };
+const base = { laterHandoverExists: false, documents: [] as Document[], vehicleVerdict: free };
 
 describe("C-03 planRevert - picked_up to booked", () => {
   it("clears the pickup data, restores the before-pickup readings and flags the decrease", () => {
@@ -210,15 +212,47 @@ describe("C-03 planRevert - cancelled", () => {
     expect(plan.blocked).toBeUndefined();
   });
 
-  it("blocked with VEHICLE_NOT_FREE when the vehicle is no longer free for the period", () => {
-    const plan = planRevert({ ...base, reservation: reservation({ status: "cancelled" }), vehicle: vehicle(), vehicleFreeForPeriod: false });
+  it("blocked with VEHICLE_NOT_FREE when another booking took the period", () => {
+    const plan = planRevert({
+      ...base, reservation: reservation({ status: "cancelled" }), vehicle: vehicle(),
+      vehicleVerdict: { bookable: false, reason: "CONFLICT" },
+    });
     expect(plan.toStatus).toBe("booked");
     expect(plan.blocked?.code).toBe("VEHICLE_NOT_FREE");
-    expect(typeof plan.blocked?.message).toBe("string");
+    expect(plan.blocked?.message).toContain("no longer free for this period");
   });
 
-  it("the free-for-period fact is ignored for every other status", () => {
-    const plan = planRevert({ ...base, reservation: pickedUp(), vehicle: vehicle(), vehicleFreeForPeriod: false });
+  it("says why when the refusal is not a clashing booking: not for rental, vehicle gone", () => {
+    const notForRental = planRevert({
+      ...base, reservation: reservation({ status: "cancelled" }), vehicle: vehicle(),
+      vehicleVerdict: { bookable: false, reason: "NOT_FOR_RENTAL" },
+    });
+    expect(notForRental.blocked?.code).toBe("VEHICLE_NOT_FOR_RENTAL");
+    expect(notForRental.blocked?.message).toContain("not for rental");
+    expect(notForRental.blocked?.message).not.toContain("no longer free");
+
+    const gone = planRevert({
+      ...base, reservation: reservation({ status: "cancelled" }), vehicle: null,
+      vehicleVerdict: { bookable: false, reason: "VEHICLE_NOT_FOUND" },
+    });
+    expect(gone.blocked?.code).toBe("VEHICLE_NOT_FOUND");
+    expect(gone.blocked?.message).toContain("can no longer be found");
+    expect(gone.blocked?.message).not.toContain("no longer free");
+  });
+
+  it("the three refusals are three different plans (the hash tells them apart)", () => {
+    const hashes = (["CONFLICT", "NOT_FOR_RENTAL", "VEHICLE_NOT_FOUND"] as const).map((reason) =>
+      planRevert({
+        ...base, reservation: reservation({ status: "cancelled" }), vehicle: vehicle(),
+        vehicleVerdict: { bookable: false, reason },
+      }).planHash);
+    expect(new Set(hashes).size).toBe(3);
+  });
+
+  it("the verdict is ignored for every other status", () => {
+    const plan = planRevert({
+      ...base, reservation: pickedUp(), vehicle: vehicle(), vehicleVerdict: { bookable: false, reason: "CONFLICT" },
+    });
     expect(plan.blocked).toBeUndefined();
   });
 });
@@ -325,5 +359,53 @@ describe("C-03 planRevert - purity and the plan hash", () => {
     expect(revertPlanHash({ ...plan, planHash: "x" })).toBe(planHash);
     const shuffled = Object.fromEntries(Object.entries(rest).reverse()) as typeof rest;
     expect(revertPlanHash(shuffled)).toBe(planHash);
+  });
+});
+
+/**
+ * Two places say "this status change is a reversal": `stepFor` inside the engine
+ * (what the route does) and `RESERVATION_REVERT_TARGETS` in lifecycle.ts (what
+ * `PATCH /:id/status` refuses with USE_REVERT_ROUTE). They are written apart on
+ * purpose, so this pins them together in both directions.
+ */
+describe("C-03 planRevert - agrees with the table PATCH /:id/status refuses", () => {
+  const shapes: Array<[string, Reservation]> = [
+    ["picked_up", pickedUp()],
+    ["legacy active", reservation({ ...pickedUp(), status: "active" })],
+    ["returned (legacy)", reservation({ ...returned(), status: "returned" })],
+    ["completed through a return", returned()],
+    ["completed by hand, picked up earlier", reservation({ ...pickedUp(), status: "completed", completionDate: "2026-10-09" })],
+    ["completed by hand, never picked up", reservation({ status: "completed", completionDate: "2026-10-09" })],
+    ["cancelled after a pickup", reservation({ ...pickedUp(), status: "cancelled" })],
+    ["cancelled before any pickup", reservation({ status: "cancelled" })],
+  ];
+
+  it.each(shapes)("%s: the engine's target is a step /status treats as a reversal", (_label, row) => {
+    const plan = planRevert({ ...base, reservation: row, vehicle: vehicle() });
+    expect(plan.toStatus).not.toBeNull();
+    // The raw status is what the /status route compares; the normalised one is what the plan reports.
+    expect(isReservationRevert(row.status, plan.toStatus)).toBe(true);
+    expect(isReservationRevert(plan.fromStatus, plan.toStatus)).toBe(true);
+  });
+
+  it("every step in the /status table is one the engine takes for some row", () => {
+    const taken = new Set(
+      shapes.map(([, row]) => {
+        const plan = planRevert({ ...base, reservation: row, vehicle: vehicle() });
+        return `${plan.fromStatus}>${plan.toStatus}`;
+      }),
+    );
+    // A legacy 'returned' row reports itself as 'returned', a hand-made one as 'completed'.
+    const listed = Object.entries(RESERVATION_REVERT_TARGETS).flatMap(([from, targets]) => targets.map((to) => `${from}>${to}`));
+    expect(listed.length).toBeGreaterThan(0);
+    for (const step of listed) expect(taken, `no fixture row takes ${step}`).toContain(step);
+  });
+
+  it.each(["booked", "pending", "confirmed", "garbage"])("a '%s' row: no target, and /status calls nothing a reversal", (status) => {
+    const plan = planRevert({ ...base, reservation: reservation({ status }), vehicle: vehicle() });
+    expect(plan.toStatus).toBeNull();
+    for (const to of ["booked", "picked_up", "completed", "cancelled", "returned"]) {
+      expect(isReservationRevert(status, to)).toBe(false);
+    }
   });
 });

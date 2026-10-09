@@ -17,12 +17,16 @@
  *
  * How the "plan the client saw" is compared: every plan carries `planHash`
  * (sha256 over the rest of the plan). The client sends it back as `planHash` in
- * the POST body; a different hash answers 409 `REVERT_PLAN_CHANGED` with the new
- * plan. A whole-plan hash was chosen over comparing fromStatus/toStatus/restoreTo
+ * the POST body; a missing or different hash answers 409 `REVERT_PLAN_CHANGED`
+ * with the new plan. A whole-plan hash was chosen over comparing fromStatus/toStatus/restoreTo
  * because it also covers what the dialog lists besides those (the odometer the
  * decrease is measured against, the documents, the warnings), and the client has
- * nothing to canonicalise. The hash is optional in the body so a caller that did
- * not preview is not locked out; the mileage confirmation still applies to it.
+ * nothing to canonicalise. The hash is MANDATORY (ratified 2026-10-09): a missing,
+ * non-string or different `planHash` answers 409 `REVERT_PLAN_CHANGED` with the
+ * current plan. The client never chooses the target, so without the hash a stale
+ * confirmation would silently perform another undo than the one the user saw
+ * (previewed "undo the pickup", meanwhile somebody returned the rental: the
+ * confirm would undo that return).
  *
  * Documents are never deleted: they are marked stale through the registry's
  * existing `isStale` / `staleReason` / `staleSince` columns (B-05).
@@ -39,7 +43,7 @@ import {
 } from "../../shared/revert-codes";
 import { storage } from "../storage";
 import { isoToday, normalizeReservationStatus } from "./lifecycle";
-import { vehicleLockSql } from "./bookability";
+import { vehicleLockSql, type BookabilityReason, type BookabilityVerdict } from "./bookability";
 import { syncUsagePeriodSafely } from "./fiscal/usage-periods";
 
 /** `documents.stale_reason` written by a reversal. */
@@ -175,16 +179,40 @@ export interface PlanRevertInput {
   /** Another reservation on this vehicle handed over after the handover being undone. */
   laterHandoverExists: boolean;
   documents: Array<Pick<Document, "id" | "documentType" | "isStale">>;
-  /** `isVehicleBookable` for the period, excluding this reservation. Only read for a cancelled row. */
-  vehicleFreeForPeriod: boolean;
+  /**
+   * What `isVehicleBookable` said for the period, excluding this reservation: a
+   * refusal carries its reason, so the plan can say why. Only read for a cancelled row.
+   */
+  vehicleVerdict: Pick<BookabilityVerdict, "bookable" | "reason">;
 }
+
+/**
+ * Undoing a cancellation is refused when the vehicle cannot be booked for the
+ * period. The code and the sentence follow the verdict's reason: "no longer free"
+ * is only true for a clashing booking, not for a vehicle taken out of rental or
+ * one that is gone.
+ */
+const NOT_BOOKABLE_BLOCKS: Record<BookabilityReason, { code: string; message: string }> = {
+  CONFLICT: {
+    code: REVERT_CODES.VEHICLE_NOT_FREE,
+    message: "The vehicle is no longer free for this period, so the cancellation cannot be undone.",
+  },
+  NOT_FOR_RENTAL: {
+    code: REVERT_CODES.VEHICLE_NOT_FOR_RENTAL,
+    message: 'The vehicle is marked as "not for rental", so the cancellation cannot be undone.',
+  },
+  VEHICLE_NOT_FOUND: {
+    code: REVERT_CODES.VEHICLE_NOT_FOUND,
+    message: "The vehicle of this reservation can no longer be found (it may be in the recycle bin), so the cancellation cannot be undone.",
+  },
+};
 
 function withHash(plan: Omit<RevertPlan, "planHash">): RevertPlan {
   return { ...plan, planHash: revertPlanHash(plan) };
 }
 
 export function planRevert(input: PlanRevertInput): RevertPlan {
-  const { reservation, vehicle, laterHandoverExists, documents: docs, vehicleFreeForPeriod } = input;
+  const { reservation, vehicle, laterHandoverExists, documents: docs, vehicleVerdict } = input;
   const from = normalizeReservationStatus(reservation.status);
   const fromStatus = from ?? String(reservation.status);
   const current: RevertReading = {
@@ -239,11 +267,10 @@ export function planRevert(input: PlanRevertInput): RevertPlan {
   if (reason) warnings.push(reason);
   if (from === "cancelled") warnings.push("cascade_not_reopened");
 
-  const blocked = step.needsFreeVehicle && !vehicleFreeForPeriod
-    ? {
-        code: REVERT_CODES.VEHICLE_NOT_FREE,
-        message: "The vehicle is no longer free for this period, so the cancellation cannot be undone.",
-      }
+  // A refusal without a reason cannot happen (the predicate always names one);
+  // if it ever does, "not free" is the safe reading.
+  const blocked = step.needsFreeVehicle && !vehicleVerdict.bookable
+    ? NOT_BOOKABLE_BLOCKS[vehicleVerdict.reason ?? "CONFLICT"]
     : undefined;
 
   return withHash({
@@ -300,7 +327,7 @@ async function loadFacts(executor: Executor, row: Reservation, vehicle: Vehicle 
     .from(documents)
     .where(eq(documents.reservationId, row.id));
 
-  let vehicleFreeForPeriod = true;
+  let vehicleVerdict: PlanRevertInput["vehicleVerdict"] = { bookable: true, reason: null };
   if (step?.needsFreeVehicle && row.vehicleId != null) {
     const verdict = await storage.isVehicleBookable({
       vehicleId: row.vehicleId,
@@ -311,13 +338,13 @@ async function loadFacts(executor: Executor, row: Reservation, vehicle: Vehicle 
       excludeReservationId: row.id,
       isMaintenanceBlock: row.type === "maintenance_block",
     }, executor);
-    vehicleFreeForPeriod = verdict.bookable;
+    vehicleVerdict = { bookable: verdict.bookable, reason: verdict.reason };
   }
 
   return {
     documents: docs as PlanRevertInput["documents"],
     laterHandoverExists: step ? await laterHandoverExists(executor, row, step) : false,
-    vehicleFreeForPeriod,
+    vehicleVerdict,
     vehicle,
   };
 }
@@ -371,8 +398,11 @@ export interface RevertActor {
 export interface RevertOptions {
   /** Explicit confirmation that the odometer may go down. A boolean, not a password flow. */
   confirmMileageDecrease: boolean;
-  /** `planHash` of the preview the client showed; omitted = no comparison. */
-  expectedPlanHash?: string;
+  /**
+   * `planHash` of the preview the client showed. Mandatory: `undefined` (the
+   * client sent none, or not a string) is refused like a different hash.
+   */
+  expectedPlanHash: string | undefined;
 }
 
 /**
@@ -407,14 +437,17 @@ export async function applyRevert(
     const facts = await loadFacts(tx, row, vehicle ?? null);
     const plan = planRevert({ reservation: row, ...facts });
 
-    // The vehicle was swapped between the peek and the lock: the advisory lock we
-    // hold is for the wrong car, and the client has not seen this plan.
-    const planChanged = (options.expectedPlanHash !== undefined && options.expectedPlanHash !== plan.planHash)
-      || row.vehicleId !== peek.vehicleId;
+    // The client must confirm the plan it was shown: a missing hash counts as a
+    // different one. (Also: the vehicle was swapped between the peek and the lock,
+    // so the advisory lock we hold is for the wrong car and the client has not
+    // seen this plan.)
+    const planChanged = options.expectedPlanHash !== plan.planHash || row.vehicleId !== peek.vehicleId;
     if (planChanged) {
       return {
         ok: false, status: 409, code: REVERT_CODES.REVERT_PLAN_CHANGED, plan,
-        message: "The reservation changed since the preview was made. Review the new plan and confirm again.",
+        message: options.expectedPlanHash === undefined
+          ? "The confirmation must carry the planHash of the preview it confirms. Review the plan and confirm again."
+          : "The reservation changed since the preview was made. Review the new plan and confirm again.",
       };
     }
     if (plan.blocked) {

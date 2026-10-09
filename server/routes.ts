@@ -4000,8 +4000,9 @@ export async function registerRoutes(app: Express): Promise<void> {
   /**
    * Sub-project C (besluiten B-30, B-39) - undo a pickup, a return or a
    * cancellation. The preview is the plan the confirm dialog shows; the POST
-   * plans again inside its own transaction and refuses (409
-   * `REVERT_PLAN_CHANGED`) when the plan is not the one the client confirmed.
+   * must carry that plan's `planHash`, plans again inside its own transaction and
+   * refuses (409 `REVERT_PLAN_CHANGED`, with the current plan) when the hash is
+   * missing or is not the plan it computes now.
    * The target status is never chosen by the client: it follows from the row.
    * `PATCH /:id/status` answers 400 `USE_REVERT_ROUTE` for these steps.
    * Both routes want `revert_handover` (role admin passes), not
@@ -4028,14 +4029,13 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (confirmMileageDecrease !== undefined && typeof confirmMileageDecrease !== "boolean") {
         return res.status(400).json({ message: "confirmMileageDecrease must be true or false", field: "confirmMileageDecrease" });
       }
-      if (planHash !== undefined && typeof planHash !== "string") {
-        return res.status(400).json({ message: "planHash must be a string", field: "planHash" });
-      }
 
       const username = req.user?.username ?? "unknown";
       const result = await applyRevert(id, { username, userId: req.user?.id ?? null }, {
         confirmMileageDecrease: confirmMileageDecrease === true,
-        expectedPlanHash: planHash,
+        // Mandatory: a missing or non-string hash reaches the service as undefined and
+        // is refused there with 409 REVERT_PLAN_CHANGED and the current plan.
+        expectedPlanHash: typeof planHash === "string" ? planHash : undefined,
       });
       if (!result.ok) {
         return res.status(result.status).json({
