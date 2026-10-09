@@ -10,13 +10,20 @@
  *   already restored         only the bin row goes: the data is live again and
  *                            nothing in it is ours to remove
  *   reservation / block      the soft-deleted `reservations` row goes after its
- *                            dependants: damage checks (NO ACTION FK) and
- *                            documents of the reservation, scan events and fiscal
- *                            assessments keep their row with a null reservation,
- *                            the self-links on other reservations are nulled; the
- *                            CASCADE / SET NULL foreign keys do the rest. A row that
- *                            is no longer soft-deleted (it is live again) is never
- *                            deleted: only the stale bin row goes
+ *                            dependants: damage checks (NO ACTION FK) and the
+ *                            reservation's OWN documents (contracts, damage checks,
+ *                            transport reports); every other document that names the
+ *                            reservation (an APK certificate, a receipt, ...) is
+ *                            DETACHED, file and row kept. Scan events keep their row
+ *                            with a null reservation, the self-links on other
+ *                            reservations are nulled; the CASCADE / SET NULL foreign
+ *                            keys do the rest. A row that is no longer soft-deleted
+ *                            (it is live again) is never deleted: only the stale bin
+ *                            row goes. A reservation with fiscal evidence (a fiscal
+ *                            assessment or review case of its usage period, or an
+ *                            assessment that names it) is REFUSED, `FISCAL_DATA_PRESENT`:
+ *                            those records are immutable and the cascade would erase
+ *                            them for good
  *   vehicle, customer,       the rows are already gone; the bin row goes, and the
  *   fine, transport          files named in the snapshot
  *
@@ -38,15 +45,19 @@
  */
 import fs from "fs";
 import path from "path";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "../db";
 import {
-  deletedRecords, deliveryTasks, documents, drivers, expenses, fineImportFiles, fines, fiscalAssessments,
-  fiscalReviewCases, interactiveDamageChecks, invoiceInboxItems, portalRequestAttachments, reservationDriverAssignments,
-  reservations, scanEvents, vehicleUsagePeriods, vehicles,
+  backupSettings, damageCheckTemplateBackgrounds, damageCheckTemplates, deletedRecords, deliveryTasks, documents, drivers,
+  expenses, fineImportFiles, fines, fiscalAssessments, fiscalReviewCases, interactiveDamageChecks, invoiceInboxItems,
+  pdfTemplates, portalDocumentAcks, portalRequestAttachments, reservationDriverAssignments, reservations, scanEvents,
+  templateBackgrounds, transportReportTemplateBackgrounds, transportReportTemplates, vehicleDiagramTemplates,
+  vehicleUsagePeriods, vehicles,
   type DeletedRecord,
 } from "../../shared/schema";
 import { getUploadsDir, getUploadsRoot, isInsideUploads } from "../../shared/paths";
+import { isContractDocument, isDamageCheckDocument } from "../../shared/document-types";
+import { DOCUMENT_TYPE_TRANSPORT_REPORT } from "./document-registry";
 
 /* ------------------------------------------------------------------ *
  * Public shapes
@@ -58,7 +69,7 @@ export interface PurgeActor {
 }
 
 /** Stable codes the client translates; the messages stay English. */
-export type PurgeFailureCode = "NOT_FOUND" | "PURGE_FAILED" | "FILE_REMOVAL_FAILED";
+export type PurgeFailureCode = "NOT_FOUND" | "PURGE_FAILED" | "FILE_REMOVAL_FAILED" | "FISCAL_DATA_PRESENT";
 
 export interface PurgeFailure {
   id: number;
@@ -83,6 +94,13 @@ export interface PurgeFileReport {
   outcome: PurgeFileOutcome;
 }
 
+/** A document row a reservation purge deleted or detached; goes into the audit row. */
+export interface PurgedDocument {
+  id: number;
+  documentType: string;
+  fileName: string;
+}
+
 /** What one purged bin row cost; goes into the audit row. */
 export interface PurgedRecord {
   id: number;
@@ -90,8 +108,11 @@ export interface PurgedRecord {
   entityId: number;
   label: string;
   restored: boolean;
-  /** Rows deleted per table, besides the bin row itself. */
+  /** Rows deleted per table, besides the bin row itself (`documents_detached` counts rows that stayed). */
   removed: Record<string, number>;
+  /** The reservation's own documents that were deleted, and the ones that were only detached. */
+  documents: PurgedDocument[];
+  documentsDetached: PurgedDocument[];
   files: PurgeFileReport[];
 }
 
@@ -149,10 +170,27 @@ const SNAPSHOT_FILE_COLUMNS: FileColumn[] = [
   { column: vehicles.damageCheckAttachment, key: "damageCheckAttachment" },
 ];
 
-/** Live rows that can point at a file without ever appearing in a snapshot. */
+/**
+ * Live rows that can point at a file without ever appearing in a snapshot. Defence in
+ * depth: none of these shares a path with a snapshot today, but a column that names a
+ * file under the uploads directory is never one a purge may unlink. A column that cannot
+ * be read keeps every file of the record (see `liveReferences`), so a wrong entry here
+ * costs a file at worst, never loses one.
+ */
 const EXTRA_LIVE_COLUMNS: any[] = [
   invoiceInboxItems.attachmentPath, // a booked invoice's receipt is the inbox attachment
   fineImportFiles.rawPath,
+  // Template backgrounds and previews (rental contract / damage check / transport report).
+  pdfTemplates.backgroundPath, pdfTemplates.backgroundPreviewPath, pdfTemplates.templatePreviewPath,
+  templateBackgrounds.backgroundPath, templateBackgrounds.previewPath,
+  transportReportTemplates.backgroundPath, transportReportTemplates.backgroundPreviewPath, transportReportTemplates.templatePreviewPath,
+  transportReportTemplateBackgrounds.backgroundPath, transportReportTemplateBackgrounds.previewPath,
+  damageCheckTemplates.backgroundPath, damageCheckTemplates.backgroundPreviewPath, damageCheckTemplates.templatePreviewPath,
+  damageCheckTemplateBackgrounds.backgroundPath, damageCheckTemplateBackgrounds.previewPath,
+  vehicleDiagramTemplates.diagramPath, // the legacy local path of a vehicle diagram
+  // An expense can carry a file name or a path in these two besides `receipt_file_path`.
+  expenses.receiptFile, expenses.receiptUrl,
+  backupSettings.localPath, // where local backups are written
 ];
 
 const LIVE_REFERENCE_COLUMNS: any[] = [...SNAPSHOT_FILE_COLUMNS.map((c) => c.column), ...EXTRA_LIVE_COLUMNS];
@@ -325,14 +363,71 @@ const bump = (counts: Record<string, number>, table: string, by: number) => {
   if (by > 0) counts[table] = (counts[table] ?? 0) + by;
 };
 
+/** Thrown inside the transaction, before anything is written, when fiscal evidence stands in the way. */
+class FiscalDataPresentError extends Error {
+  constructor(readonly assessments: number, readonly reviewCases: number) {
+    super("This reservation has fiscal assessments or review cases; they are kept, so it cannot be purged.");
+    this.name = "FiscalDataPresentError";
+  }
+}
+
+const normaliseType = (documentType: string | null | undefined) => (documentType ?? "").toLowerCase().replace(/[\s_-]+/g, "");
+
+/**
+ * A document that belongs to the RESERVATION itself, as opposed to a vehicle document that
+ * merely names it: the contract (generated "Contract (Unsigned)", an uploaded "Contract
+ * (Signed)", a plain "Contract"), a damage check ("Damage Check", "(Pickup)", "(Return)",
+ * "(Unsigned)", "(Signed)", the "- Edited (Previous Version ...)" labels, the legacy slug
+ * "damage_check") and a transport report. Matched on the shape of the type like the rest of
+ * the app does (`shared/document-types.ts`). An APK certificate, an insurance paper, a
+ * receipt, a photo ... that carries the reservation id (a maintenance block owns the
+ * vehicle's APK document) is the vehicle's: it is detached, never deleted.
+ */
+function isReservationOwnedDocument(documentType: string | null | undefined): boolean {
+  return (
+    isContractDocument(documentType) ||
+    isDamageCheckDocument(documentType) ||
+    normaliseType(documentType) === normaliseType(DOCUMENT_TYPE_TRANSPORT_REPORT)
+  );
+}
+
+/** What the audit row lists per document; at most this many per list (counts stay exact). */
+const AUDIT_DOCUMENT_CAP = 25;
+
+interface ReservationPurgeDocuments {
+  removed: PurgedDocument[];
+  detached: PurgedDocument[];
+}
+
 /**
  * Hard-deletes the soft-deleted reservation behind a bin row, dependants first. Returns
- * false (touching nothing) when the row is gone or live again.
+ * false (touching nothing) when the row is gone or live again; throws
+ * `FiscalDataPresentError` (also touching nothing) when fiscal evidence exists.
  */
-async function purgeReservationRows(tx: Tx, reservationId: number, paths: Set<string>, removed: Record<string, number>): Promise<boolean> {
+async function purgeReservationRows(
+  tx: Tx, reservationId: number, paths: Set<string>, removed: Record<string, number>, docs: ReservationPurgeDocuments,
+): Promise<boolean> {
   const [row] = await tx.select().from(reservations).where(eq(reservations.id, reservationId)).for("update");
   // Live again (restored by hand): the reservation is not ours to delete.
   if (!row || row.deletedAt == null) return false;
+
+  // Fiscal evidence first, before ANYTHING is written. The usage period cascades to its
+  // assessments and review cases, which are immutable records the fiscal rules rest on: a
+  // purge must never erase them. The period rows are locked, so an assessment being written
+  // right now either shows in the count or waits for this transaction.
+  const periods = await tx.select({ id: vehicleUsagePeriods.id }).from(vehicleUsagePeriods)
+    .where(eq(vehicleUsagePeriods.reservationId, reservationId)).for("update");
+  const periodIds = periods.map((p) => p.id);
+  const count = sql<number>`count(*)::int`;
+  const [assessmentCount] = await tx.select({ n: count }).from(fiscalAssessments).where(
+    periodIds.length > 0
+      ? or(inArray(fiscalAssessments.usagePeriodId, periodIds), eq(fiscalAssessments.reservationId, reservationId))
+      : eq(fiscalAssessments.reservationId, reservationId),
+  );
+  const [reviewCaseCount] = periodIds.length > 0
+    ? await tx.select({ n: count }).from(fiscalReviewCases).where(inArray(fiscalReviewCases.usagePeriodId, periodIds))
+    : [{ n: 0 }];
+  if (assessmentCount.n > 0 || reviewCaseCount.n > 0) throw new FiscalDataPresentError(assessmentCount.n, reviewCaseCount.n);
 
   if (row.damageCheckPath) paths.add(row.damageCheckPath);
 
@@ -347,29 +442,38 @@ async function purgeReservationRows(tx: Tx, reservationId: number, paths: Set<st
   const assignments = await tx.select({ id: reservationDriverAssignments.id }).from(reservationDriverAssignments)
     .where(eq(reservationDriverAssignments.reservationId, reservationId));
   bump(removed, "reservation_driver_assignments", assignments.length);
-  const periods = await tx.select({ id: vehicleUsagePeriods.id }).from(vehicleUsagePeriods)
-    .where(eq(vehicleUsagePeriods.reservationId, reservationId));
+  // The period itself goes with the reservation (CASCADE); it has no assessments or cases, or we would have stopped above.
   bump(removed, "vehicle_usage_periods", periods.length);
-  if (periods.length > 0) {
-    const periodIds = periods.map((p) => p.id);
-    const assessments = await tx.select({ id: fiscalAssessments.id }).from(fiscalAssessments).where(inArray(fiscalAssessments.usagePeriodId, periodIds));
-    bump(removed, "fiscal_assessments", assessments.length);
-    const cases = await tx.select({ id: fiscalReviewCases.id }).from(fiscalReviewCases).where(inArray(fiscalReviewCases.usagePeriodId, periodIds));
-    bump(removed, "fiscal_review_cases", cases.length);
-  }
 
   // NO ACTION foreign key: it would block the delete.
   const checks = await tx.delete(interactiveDamageChecks).where(eq(interactiveDamageChecks.reservationId, reservationId)).returning({ id: interactiveDamageChecks.id });
   bump(removed, "interactive_damage_checks", checks.length);
 
-  // No foreign key: they would dangle. Their files are collected, removed after the commit.
-  const docs = await tx.delete(documents).where(eq(documents.reservationId, reservationId)).returning({ filePath: documents.filePath });
-  for (const doc of docs) if (doc.filePath) paths.add(doc.filePath);
-  bump(removed, "documents", docs.length);
+  // Documents have no foreign key, so they would dangle. The reservation's own (contracts,
+  // damage checks, transport reports) are deleted and their files collected, removed after
+  // the commit; every other document that names it is detached: the row and the file stay.
+  const named = await tx.select({ id: documents.id, documentType: documents.documentType, fileName: documents.fileName, filePath: documents.filePath })
+    .from(documents).where(eq(documents.reservationId, reservationId)).orderBy(documents.id);
+  const own = named.filter((d) => isReservationOwnedDocument(d.documentType));
+  const others = named.filter((d) => !isReservationOwnedDocument(d.documentType));
+  if (own.length > 0) {
+    const ownIds = own.map((d) => d.id);
+    // The customers' "gezien en akkoord" on those contracts cascades with them (documents FK).
+    const acks = await tx.select({ id: portalDocumentAcks.id }).from(portalDocumentAcks).where(inArray(portalDocumentAcks.documentId, ownIds));
+    bump(removed, "portal_document_acks", acks.length);
+    await tx.delete(documents).where(inArray(documents.id, ownIds));
+    for (const d of own) if (d.filePath) paths.add(d.filePath);
+    bump(removed, "documents", own.length);
+    docs.removed.push(...own.map(({ id, documentType, fileName }) => ({ id, documentType, fileName })));
+  }
+  if (others.length > 0) {
+    await tx.update(documents).set({ reservationId: null }).where(inArray(documents.id, others.map((d) => d.id)));
+    bump(removed, "documents_detached", others.length);
+    docs.detached.push(...others.map(({ id, documentType, fileName }) => ({ id, documentType, fileName })));
+  }
 
   // No foreign key, and the row they describe stays: the link is cleared, nothing else.
   await tx.update(scanEvents).set({ reservationId: null }).where(eq(scanEvents.reservationId, reservationId));
-  await tx.update(fiscalAssessments).set({ reservationId: null }).where(eq(fiscalAssessments.reservationId, reservationId));
 
   // Self-links on other reservations (no foreign keys either).
   const selfLinks =
@@ -379,8 +483,8 @@ async function purgeReservationRows(tx: Tx, reservationId: number, paths: Set<st
     (await tx.update(reservations).set({ recurringParentId: null }).where(eq(reservations.recurringParentId, reservationId)).returning({ id: reservations.id })).length;
   bump(removed, "reservations_unlinked", selfLinks);
 
-  // The CASCADE (assignments, delivery tasks, usage period -> assessments, review cases)
-  // and SET NULL (fines, portal requests, transports) foreign keys do the rest.
+  // The CASCADE (assignments, delivery tasks, the empty usage period) and SET NULL (fines,
+  // portal requests, transports) foreign keys do the rest.
   await tx.delete(reservations).where(eq(reservations.id, reservationId));
   bump(removed, "reservations", 1);
   return true;
@@ -388,7 +492,13 @@ async function purgeReservationRows(tx: Tx, reservationId: number, paths: Set<st
 
 type OneResult =
   | { ok: true; record: PurgedRecord; paths: Set<string> }
-  | { ok: false; failure: PurgeFailure; known?: { entityType: string; entityId: number; label: string } };
+  | {
+      ok: false;
+      failure: PurgeFailure;
+      known?: { entityType: string; entityId: number; label: string };
+      /** Extra audit details for a refusal that is worth a trail (the fiscal one). */
+      auditDetails?: Record<string, unknown>;
+    };
 
 async function purgeOne(id: number): Promise<OneResult> {
   let known = undefined as { entityType: string; entityId: number; label: string } | undefined;
@@ -402,16 +512,17 @@ async function purgeOne(id: number): Promise<OneResult> {
 
       const removed: Record<string, number> = {};
       const paths = new Set<string>();
+      const docs: ReservationPurgeDocuments = { removed: [], detached: [] };
       const restored = bin.restoredAt != null;
       if (!restored) {
         if (bin.entityType === "reservation" || bin.entityType === "maintenance_block") {
-          await purgeReservationRows(tx, bin.entityId, paths, removed);
+          await purgeReservationRows(tx, bin.entityId, paths, removed, docs);
         } else {
           collectSnapshotPaths(bin.payload, paths);
         }
       }
       await tx.delete(deletedRecords).where(eq(deletedRecords.id, id));
-      return { bin, removed, paths, restored };
+      return { bin, removed, paths, restored, docs };
     });
 
     if (!outcome) {
@@ -422,10 +533,20 @@ async function purgeOne(id: number): Promise<OneResult> {
       paths: outcome.paths,
       record: {
         id, entityType: outcome.bin.entityType, entityId: outcome.bin.entityId, label: outcome.bin.label,
-        restored: outcome.restored, removed: outcome.removed, files: [],
+        restored: outcome.restored, removed: outcome.removed,
+        documents: outcome.docs.removed, documentsDetached: outcome.docs.detached, files: [],
       },
     };
   } catch (error) {
+    if (error instanceof FiscalDataPresentError) {
+      // A refusal, not a fault: the transaction rolled back before it wrote anything, the bin row is still there.
+      return {
+        ok: false,
+        failure: { id, code: "FISCAL_DATA_PRESENT", message: "This reservation has fiscal assessments or review cases, which are kept; it cannot be purged." },
+        known,
+        auditDetails: { fiscal: { assessments: error.assessments, reviewCases: error.reviewCases } },
+      };
+    }
     console.error(`[recycle-bin-purge] could not purge deleted record ${id}:`, error);
     return { ok: false, failure: { id, code: "PURGE_FAILED", message: "This record could not be removed." }, known };
   }
@@ -469,10 +590,10 @@ export async function purgeDeletedRecords(ids: number[], _actor?: PurgeActor, ho
     const one = await purgeOne(id);
     if (!one.ok) {
       result.failed.push(one.failure);
-      if (one.failure.code === "PURGE_FAILED" && one.known) {
+      if ((one.failure.code === "PURGE_FAILED" || one.failure.code === "FISCAL_DATA_PRESENT") && one.known) {
         await audit(hooks, {
           action: `${one.known.entityType}.purge`, entityType: one.known.entityType, entityId: one.known.entityId, status: "failure",
-          details: { label: one.known.label, deletedRecordId: id, code: one.failure.code },
+          details: { label: one.known.label, deletedRecordId: id, code: one.failure.code, ...one.auditDetails },
         });
       }
       continue;
@@ -494,7 +615,13 @@ export async function purgeDeletedRecords(ids: number[], _actor?: PurgeActor, ho
     }
     await audit(hooks, {
       action: `${record.entityType}.purge`, entityType: record.entityType, entityId: record.entityId, status: "success",
-      details: { label: record.label, deletedRecordId: id, restored: record.restored, removed: record.removed, files: describeFiles(files) },
+      details: {
+        label: record.label, deletedRecordId: id, restored: record.restored, removed: record.removed,
+        // Which documents went and which were only detached (not just how many), capped like `notRemoved`.
+        ...(record.documents.length > 0 && { documents: record.documents.slice(0, AUDIT_DOCUMENT_CAP) }),
+        ...(record.documentsDetached.length > 0 && { documentsDetached: record.documentsDetached.slice(0, AUDIT_DOCUMENT_CAP) }),
+        files: describeFiles(files),
+      },
     });
   }
   return result;

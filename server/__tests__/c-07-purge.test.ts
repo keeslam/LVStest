@@ -12,10 +12,14 @@
  *
  *   restored record         the bin row only (the data is live again)
  *   reservation / block     the soft-deleted reservations row after its dependants
- *                           (damage checks, documents, delivery tasks, assignments,
- *                           usage period); scan events and fiscal assessments keep
- *                           their row with a null reservation; self-links on other
- *                           reservations are nulled; their files go with them
+ *                           (damage checks, delivery tasks, assignments, the usage
+ *                           period) and its OWN documents (contracts, damage checks,
+ *                           transport reports, with their files); every other document
+ *                           that names it is DETACHED (reservation_id null, file kept);
+ *                           scan events keep their row with a null reservation;
+ *                           self-links on other reservations are nulled. A reservation
+ *                           with fiscal assessments or review cases is refused
+ *                           (FISCAL_DATA_PRESENT), bin row and everything else untouched
  *   vehicle/customer/fine/  the bin row, plus the files named in the snapshot
  *   transport
  *
@@ -42,10 +46,11 @@ const OUTSIDE = fs.mkdtempSync(path.join(os.tmpdir(), "lvs-c07-outside-"));
 const { db } = await import("../db");
 const schema = await import("../../shared/schema");
 const {
-  auditLogs, customers, deletedRecords, deliveryTasks, documents, drivers, expenses, fines,
-  fiscalAssessments, interactiveDamageChecks, portalRequestAttachments, portalRequests,
-  reservationDriverAssignments, reservations, scanEvents, vehicleTransports, vehicleUsagePeriods,
-  vehicles,
+  auditLogs, customers, damageCheckTemplateBackgrounds, damageCheckTemplates, deletedRecords, deliveryTasks,
+  documents, drivers, expenses, fines, fiscalAssessments, fiscalReviewCases, interactiveDamageChecks,
+  pdfTemplates, portalDocumentAcks, portalRequestAttachments, portalRequests, reservationDriverAssignments,
+  reservations, scanEvents, templateBackgrounds, transportReportTemplateBackgrounds, transportReportTemplates,
+  vehicleDiagramTemplates, vehicleTransports, vehicleUsagePeriods, vehicles,
 } = schema;
 const { agentFor, anonAgent, cleanupFixtureUsers } = await import("./helpers/app");
 const {
@@ -97,13 +102,28 @@ async function insertBinRow(entityType: string, over: Partial<typeof deletedReco
   return row;
 }
 
-async function addDocument(over: { vehicleId?: number | null; reservationId?: number | null; filePath: string }) {
+async function addDocument(over: { vehicleId?: number | null; reservationId?: number | null; filePath: string; documentType?: string }) {
   const [doc] = await db.insert(documents).values({
     vehicleId: over.vehicleId ?? null, reservationId: over.reservationId ?? null,
-    documentType: "Test", fileName: path.basename(over.filePath), filePath: over.filePath,
+    documentType: over.documentType ?? "Test", fileName: path.basename(over.filePath), filePath: over.filePath,
     fileSize: 5, contentType: "application/pdf",
   }).returning();
   return doc;
+}
+
+/** The usage period of a reservation (the fiscal engine's anchor), and what hangs off it. */
+async function addPeriod(reservationId: number, vehicleId: number, custId = customerId) {
+  const [period] = await db.insert(vehicleUsagePeriods).values({ reservationId, customerId: custId, vehicleId, startDate: FUTURE.start }).returning();
+  return period;
+}
+async function addAssessment(usagePeriodId: number, vehicleId: number, reservationId: number | null) {
+  const [assessment] = await db.insert(fiscalAssessments).values({
+    usagePeriodId, customerId, vehicleId, reservationId,
+    periodStart: FUTURE.start, periodEndEffective: FUTURE.end, calculationDate: FUTURE.start,
+    ruleKey: "test", status: "ok", months: [], dataQuality: "complete", explanation: "test",
+    inputs: {}, parameters: [], inputHash: unique("hash"), trigger: "test",
+  }).returning();
+  return assessment;
 }
 
 async function auditRows(action: string, resourceId: number) {
@@ -121,6 +141,11 @@ afterAll(async () => {
   vi.restoreAllMocks();
   if (binRowIds.length) await db.delete(deletedRecords).where(inArray(deletedRecords.id, binRowIds));
   await db.delete(deletedRecords).where(like(deletedRecords.label, `${ROW_PREFIX}%`));
+  // Template rows of the file-column tests (their background rows cascade).
+  await db.delete(pdfTemplates).where(like(pdfTemplates.name, `${ROW_PREFIX}%`));
+  await db.delete(transportReportTemplates).where(like(transportReportTemplates.name, `${ROW_PREFIX}%`));
+  await db.delete(damageCheckTemplates).where(like(damageCheckTemplates.name, `${ROW_PREFIX}%`));
+  await db.delete(vehicleDiagramTemplates).where(like(vehicleDiagramTemplates.make, `${ROW_PREFIX}%`));
   await db.delete(fines).where(like(fines.licensePlate, `${FINE_PLATE}%`));
   const vehicleRows = await db.select({ id: vehicles.id }).from(vehicles).where(like(vehicles.licensePlate, "FIXT%"));
   const ids = vehicleRows.map((v) => v.id);
@@ -443,7 +468,7 @@ describe("C-07 - a reservation: the soft-deleted row goes after its dependants",
     const damageUpload = put(`${vehicle.licensePlate}/damage-${unique("s")}.pdf`);
     const photo = put(`${vehicle.licensePlate}/delivery-${unique("t")}.jpg`);
     const vehicleLevel = put(`${vehicle.licensePlate}/apk-${unique("u")}.pdf`);
-    await addDocument({ vehicleId: vehicle.id, reservationId: rental.id, filePath: contract });
+    await addDocument({ vehicleId: vehicle.id, reservationId: rental.id, filePath: contract, documentType: "Contract (Unsigned)" });
     await addDocument({ vehicleId: vehicle.id, reservationId: null, filePath: vehicleLevel });
     await db.update(reservations).set({ damageCheckPath: damageUpload }).where(eq(reservations.id, rental.id));
     await db.insert(interactiveDamageChecks).values({ vehicleId: vehicle.id, reservationId: rental.id, checkType: "pickup", checkDate: new Date() });
@@ -454,14 +479,8 @@ describe("C-07 - a reservation: the soft-deleted row goes after its dependants",
     await db.update(reservations).set({
       replacementForReservationId: rental.id, maintenanceBlockId: rental.id, affectedRentalId: rental.id, recurringParentId: rental.id,
     }).where(eq(reservations.id, sibling.id));
-    // A fiscal assessment of ANOTHER period that names this reservation, and a transport pointing at it.
-    const [siblingPeriod] = await db.insert(vehicleUsagePeriods).values({ reservationId: sibling.id, customerId, vehicleId: vehicle.id, startDate: "2031-05-01" }).returning();
-    const [assessment] = await db.insert(fiscalAssessments).values({
-      usagePeriodId: siblingPeriod.id, customerId, vehicleId: vehicle.id, reservationId: rental.id,
-      periodStart: "2031-05-01", periodEndEffective: "2031-05-03", calculationDate: "2031-05-01",
-      ruleKey: "test", status: "ok", months: [], dataQuality: "complete", explanation: "test",
-      inputs: {}, parameters: [], inputHash: unique("hash"), trigger: "test",
-    }).returning();
+    // A transport pointing at it. (A fiscal assessment that names the reservation would make the
+    // purge refuse: see the fiscal describe below.)
     const [transport] = await db.insert(vehicleTransports).values({
       vehicleId: vehicle.id, transportType: "delivery", scheduledDate: FUTURE.start, status: "scheduled", reservationId: rental.id,
     } as any).returning();
@@ -489,7 +508,6 @@ describe("C-07 - a reservation: the soft-deleted row goes after its dependants",
 
     // Kept, with the link cleared.
     expect((await db.select().from(scanEvents).where(eq(scanEvents.id, scan.id)))[0].reservationId).toBeNull();
-    expect((await db.select().from(fiscalAssessments).where(eq(fiscalAssessments.id, assessment.id)))[0].reservationId).toBeNull();
     expect((await db.select().from(vehicleTransports).where(eq(vehicleTransports.id, transport.id)))[0].reservationId).toBeNull();
     const [after] = await db.select().from(reservations).where(eq(reservations.id, sibling.id));
     expect(after).toBeDefined();
@@ -505,15 +523,24 @@ describe("C-07 - a reservation: the soft-deleted row goes after its dependants",
     const vehicle = await createFixtureVehicle();
     const block = await createFixtureReservation({ customerId: null, vehicleId: vehicle.id, startDate: FUTURE.start, endDate: FUTURE.end, type: "maintenance_block" });
     const apk = put(`${vehicle.licensePlate}/apk-block-${unique("w")}.pdf`);
-    await addDocument({ vehicleId: vehicle.id, reservationId: block.id, filePath: apk });
+    const apkDoc = await addDocument({ vehicleId: vehicle.id, reservationId: block.id, filePath: apk, documentType: "APK Inspection" });
     expect((await admin.delete(`/api/reservations/${block.id}`)).status).toBe(200);
     const record = await binRowFor("maintenance_block", block.id);
 
     const res = await binKeeper.post("/api/deleted-records/purge").send({ ids: [record.id] });
     expect(res.body).toEqual({ purged: 1, failed: [] });
     expect((await db.select().from(reservations).where(eq(reservations.id, block.id))).length).toBe(0);
-    expect(onDisk(apk)).toBe(false);
+    // The vehicle's APK evidence is not the block's: it is detached (reservation_id null), file and row stay.
+    expect(onDisk(apk), "the APK document's file must survive the block").toBe(true);
+    const [kept] = await db.select().from(documents).where(eq(documents.id, apkDoc.id));
+    expect(kept).toBeDefined();
+    expect(kept.reservationId).toBeNull();
+    expect(kept.vehicleId).toBe(vehicle.id);
     expect((await auditRows("maintenance_block.purge", block.id))).toHaveLength(1);
+    expect((await auditRows("maintenance_block.purge", block.id))[0].details).toMatchObject({
+      removed: { documents_detached: 1 },
+      documentsDetached: [{ id: apkDoc.id, documentType: "APK Inspection", fileName: path.basename(apk) }],
+    });
     expect((await auditRows("reservation.purge", block.id))).toHaveLength(0);
   });
 
@@ -521,7 +548,7 @@ describe("C-07 - a reservation: the soft-deleted row goes after its dependants",
     const vehicle = await createFixtureVehicle();
     const rental = await createFixtureReservation({ customerId, vehicleId: vehicle.id, startDate: FUTURE.start, endDate: FUTURE.end });
     const contract = put(`${vehicle.licensePlate}/rollback-${unique("rb")}.pdf`);
-    const doc = await addDocument({ vehicleId: vehicle.id, reservationId: rental.id, filePath: contract });
+    const doc = await addDocument({ vehicleId: vehicle.id, reservationId: rental.id, filePath: contract, documentType: "Contract (Unsigned)" });
     expect((await admin.delete(`/api/reservations/${rental.id}`)).status).toBe(200);
     const record = await binRowFor("reservation", rental.id);
     const other = await insertBinRow("transport");
@@ -563,6 +590,257 @@ describe("C-07 - a reservation: the soft-deleted row goes after its dependants",
     expect(res.body).toEqual({ purged: 1, failed: [] });
     expect(await binRowExists(record.id)).toBe(false);
     expect((await db.select().from(reservations).where(eq(reservations.id, rental.id))).length).toBe(1);
+  });
+});
+
+describe("C-07 fix round - fiscal evidence: a reservation that has any is never purged", () => {
+  /** A soft-deleted reservation with its bin row, after `setup` has hung whatever it wants off it. */
+  async function binned(setup: (rental: { id: number }, vehicle: { id: number; licensePlate: string }) => Promise<void> = async () => {}) {
+    const vehicle = await createFixtureVehicle();
+    const rental = await createFixtureReservation({ customerId, vehicleId: vehicle.id, startDate: FUTURE.start, endDate: FUTURE.end });
+    await setup(rental, vehicle);
+    expect((await admin.delete(`/api/reservations/${rental.id}`)).status).toBe(200);
+    const record = await binRowFor("reservation", rental.id);
+    return { vehicle, rental, record };
+  }
+  const refusal = (id: number) => ({ id, code: "FISCAL_DATA_PRESENT", message: expect.any(String) });
+  const stillThere = async (table: any, col: any, id: number) => (await db.select().from(table).where(eq(col, id))).length;
+
+  it("an assessment of the reservation's own usage period: refused, and the bin row, the reservation, the period, the assessment and the documents are all untouched", async () => {
+    let contract = "";
+    let periodId = 0;
+    let assessmentId = 0;
+    let docId = 0;
+    const { rental, record } = await binned(async (r, v) => {
+      contract = put(`${v.licensePlate}/fiscal-own-${unique("fo")}.pdf`);
+      docId = (await addDocument({ vehicleId: v.id, reservationId: r.id, filePath: contract, documentType: "Contract (Unsigned)" })).id;
+      const period = await addPeriod(r.id, v.id);
+      periodId = period.id;
+      // reservation_id null on purpose: only the period ties the assessment to this reservation.
+      assessmentId = (await addAssessment(period.id, v.id, null)).id;
+    });
+
+    const res = await binKeeper.post("/api/deleted-records/purge").send({ ids: [record.id] });
+    expect(res.status).toBe(200);
+    expect(res.body.purged).toBe(0);
+    expect(res.body.failed).toEqual([refusal(record.id)]);
+    expect(JSON.stringify(res.body)).not.toMatch(/fiscal_assessments|vehicle_usage_periods|select |insert /i);
+
+    expect(await binRowExists(record.id)).toBe(true);
+    const [row] = await db.select().from(reservations).where(eq(reservations.id, rental.id));
+    expect(row, "the reservation row").toBeDefined();
+    expect(row.deletedAt).not.toBeNull();
+    expect(await stillThere(vehicleUsagePeriods, vehicleUsagePeriods.id, periodId)).toBe(1);
+    expect(await stillThere(fiscalAssessments, fiscalAssessments.id, assessmentId)).toBe(1);
+    expect(await stillThere(documents, documents.id, docId), "its documents").toBe(1);
+    expect(onDisk(contract), "and their files").toBe(true);
+
+    // The refusal is on the trail: the owner can see that somebody tried.
+    const audit = await auditRows("reservation.purge", rental.id);
+    expect(audit).toHaveLength(1);
+    expect(audit[0].status).toBe("failure");
+    expect(audit[0].details).toMatchObject({ deletedRecordId: record.id, code: "FISCAL_DATA_PRESENT", fiscal: { assessments: 1, reviewCases: 0 } });
+  });
+
+  it("a review case alone is enough: refused, nothing touched", async () => {
+    let periodId = 0;
+    let caseId = 0;
+    const { rental, record } = await binned(async (r, v) => {
+      const period = await addPeriod(r.id, v.id);
+      periodId = period.id;
+      const [reviewCase] = await db.insert(fiscalReviewCases).values({ usagePeriodId: period.id, customerId, vehicleId: v.id, reasons: ["test"], status: "open" }).returning();
+      caseId = reviewCase.id;
+    });
+
+    const res = await binKeeper.delete(`/api/deleted-records/${record.id}`);
+    // The single-record route answers the refusal with its code (the status is the route's business).
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(res.body.code).toBe("FISCAL_DATA_PRESENT");
+    expect(res.body.purged).toBe(0);
+    expect(res.body.failed).toEqual([refusal(record.id)]);
+
+    expect(await binRowExists(record.id)).toBe(true);
+    expect(await stillThere(reservations, reservations.id, rental.id)).toBe(1);
+    expect(await stillThere(vehicleUsagePeriods, vehicleUsagePeriods.id, periodId)).toBe(1);
+    expect(await stillThere(fiscalReviewCases, fiscalReviewCases.id, caseId)).toBe(1);
+  });
+
+  it("an assessment of ANOTHER period that names the reservation also blocks, and keeps its link", async () => {
+    let assessmentId = 0;
+    const { rental, record } = await binned(async (r, v) => {
+      const sibling = await createFixtureReservation({ customerId, vehicleId: v.id, startDate: "2031-05-01", endDate: "2031-05-03" });
+      const siblingPeriod = await addPeriod(sibling.id, v.id);
+      assessmentId = (await addAssessment(siblingPeriod.id, v.id, r.id)).id;
+    });
+
+    const res = await binKeeper.post("/api/deleted-records/purge").send({ ids: [record.id] });
+    expect(res.body.purged).toBe(0);
+    expect(res.body.failed).toEqual([refusal(record.id)]);
+    expect(await binRowExists(record.id)).toBe(true);
+    expect(await stillThere(reservations, reservations.id, rental.id)).toBe(1);
+    const [assessment] = await db.select().from(fiscalAssessments).where(eq(fiscalAssessments.id, assessmentId));
+    expect(assessment.reservationId, "the link is not cleared by a refused purge").toBe(rental.id);
+  });
+
+  it("a reservation without fiscal rows still purges - its usage period (an empty one) goes with it", async () => {
+    let periodId = 0;
+    const { rental, record } = await binned(async (r, v) => {
+      periodId = (await addPeriod(r.id, v.id)).id;
+    });
+
+    const res = await binKeeper.delete(`/api/deleted-records/${record.id}`);
+    expect(res.body).toEqual({ purged: 1, failed: [] });
+    expect(await binRowExists(record.id)).toBe(false);
+    expect(await stillThere(reservations, reservations.id, rental.id)).toBe(0);
+    expect(await stillThere(vehicleUsagePeriods, vehicleUsagePeriods.id, periodId)).toBe(0);
+    expect((await auditRows("reservation.purge", rental.id))[0].details).toMatchObject({ removed: { reservations: 1, vehicle_usage_periods: 1 } });
+  });
+
+  it("a refusal inside a mixed selection is reported for its own id; the others are purged", async () => {
+    const blocked = await binned(async (r, v) => {
+      await addAssessment((await addPeriod(r.id, v.id)).id, v.id, null);
+    });
+    const plain = await binned();
+    const bin = await insertBinRow("transport");
+
+    const res = await binKeeper.post("/api/deleted-records/purge").send({ ids: [plain.record.id, blocked.record.id, bin.id] });
+    expect(res.status).toBe(200);
+    expect(res.body.purged).toBe(2);
+    expect(res.body.failed).toEqual([refusal(blocked.record.id)]);
+    expect(await binRowExists(plain.record.id)).toBe(false);
+    expect(await stillThere(reservations, reservations.id, plain.rental.id)).toBe(0);
+    expect(await binRowExists(bin.id)).toBe(false);
+    expect(await binRowExists(blocked.record.id)).toBe(true);
+    expect(await stillThere(reservations, reservations.id, blocked.rental.id)).toBe(1);
+  });
+});
+
+describe("C-07 fix round - documents: the reservation's own go, everything else is detached and kept", () => {
+  it("deletes contracts, damage checks and linked transport reports with their files; detaches the rest (rows and files stay, reservation_id null); counts the cascaded acknowledgements", async () => {
+    const vehicle = await createFixtureVehicle();
+    const rental = await createFixtureReservation({ customerId, vehicleId: vehicle.id, startDate: FUTURE.start, endDate: FUTURE.end });
+    const OWNED = [
+      "Contract (Unsigned)", "Contract (Signed)", "Contract",
+      "Damage Check", "Damage Check (Pickup)", "Damage Check (Return)", "Damage Check (Unsigned)", "Damage Check (Signed)",
+      "Damage Check (Return) - Edited (Previous Version 2031-03-04_101500)", "damage_check", "transport_report",
+    ];
+    const OTHERS = ["APK Inspection", "Damage Report Photo", "Damage Report PDF", "Fuel Receipt", "Insurance", "Invoice", "Other"];
+
+    const owned: Array<{ id: number; documentType: string; file: string }> = [];
+    for (const documentType of OWNED) {
+      const file = put(`${vehicle.licensePlate}/own-${unique("own")}.pdf`);
+      owned.push({ id: (await addDocument({ vehicleId: vehicle.id, reservationId: rental.id, filePath: file, documentType })).id, documentType, file });
+    }
+    const others: Array<{ id: number; documentType: string; file: string }> = [];
+    for (const documentType of OTHERS) {
+      const file = put(`${vehicle.licensePlate}/other-${unique("oth")}.pdf`);
+      others.push({ id: (await addDocument({ vehicleId: vehicle.id, reservationId: rental.id, filePath: file, documentType })).id, documentType, file });
+    }
+    // A document with no vehicle at all but this reservation: still not a contract, still detached.
+    const loose = put(`loose/${unique("lo")}.pdf`);
+    const looseDoc = await addDocument({ vehicleId: null, reservationId: rental.id, filePath: loose, documentType: "Other" });
+    // "Gezien en akkoord" on a deleted contract goes with it (FK cascade); on a kept document it stays.
+    await db.insert(portalDocumentAcks).values({ documentId: owned[0].id, customerId, name: "Test Klant" });
+    await db.insert(portalDocumentAcks).values({ documentId: others[0].id, customerId, name: "Test Klant" });
+
+    expect((await admin.delete(`/api/reservations/${rental.id}`)).status).toBe(200);
+    const record = await binRowFor("reservation", rental.id);
+    const res = await binKeeper.delete(`/api/deleted-records/${record.id}`);
+    expect(res.body).toEqual({ purged: 1, failed: [] });
+
+    for (const d of owned) {
+      expect((await db.select().from(documents).where(eq(documents.id, d.id))).length, `${d.documentType} row`).toBe(0);
+      expect(onDisk(d.file), `${d.documentType} file`).toBe(false);
+    }
+    for (const d of [...others, { id: looseDoc.id, documentType: "Other (no vehicle)", file: loose }]) {
+      const [kept] = await db.select().from(documents).where(eq(documents.id, d.id));
+      expect(kept, `${d.documentType} row`).toBeDefined();
+      expect(kept.reservationId, `${d.documentType} reservation_id`).toBeNull();
+      expect(onDisk(d.file), `${d.documentType} file`).toBe(true);
+    }
+    expect((await db.select().from(documents).where(eq(documents.id, others[0].id)))[0].vehicleId).toBe(vehicle.id);
+    expect((await db.select().from(portalDocumentAcks).where(eq(portalDocumentAcks.documentId, owned[0].id))).length).toBe(0);
+    expect((await db.select().from(portalDocumentAcks).where(eq(portalDocumentAcks.documentId, others[0].id))).length).toBe(1);
+
+    const [audit] = await auditRows("reservation.purge", rental.id);
+    const details = audit.details as any;
+    expect(details.removed).toMatchObject({ documents: OWNED.length, documents_detached: OTHERS.length + 1, portal_document_acks: 1 });
+    // Which documents, not only how many (capped, like notRemoved).
+    expect(details.documents).toHaveLength(OWNED.length);
+    expect(details.documents[0]).toEqual({ id: owned[0].id, documentType: "Contract (Unsigned)", fileName: path.basename(owned[0].file) });
+    expect(details.documentsDetached).toHaveLength(OTHERS.length + 1);
+    expect(details.documentsDetached).toContainEqual({ id: others[0].id, documentType: "APK Inspection", fileName: path.basename(others[0].file) });
+    expect(details.files).toMatchObject({ removed: OWNED.length, kept: 0 });
+  });
+
+  it("the audit row names at most 25 documents per list, the counts stay exact", async () => {
+    const vehicle = await createFixtureVehicle();
+    const rental = await createFixtureReservation({ customerId, vehicleId: vehicle.id, startDate: FUTURE.start, endDate: FUTURE.end });
+    for (let i = 0; i < 27; i++) {
+      await addDocument({ vehicleId: vehicle.id, reservationId: rental.id, filePath: `${vehicle.licensePlate}/gone-${i}-${unique("g")}.pdf`, documentType: "Contract (Unsigned)" });
+    }
+    expect((await admin.delete(`/api/reservations/${rental.id}`)).status).toBe(200);
+    const record = await binRowFor("reservation", rental.id);
+    expect((await binKeeper.delete(`/api/deleted-records/${record.id}`)).body).toEqual({ purged: 1, failed: [] });
+
+    const details = (await auditRows("reservation.purge", rental.id))[0].details as any;
+    expect(details.removed.documents).toBe(27);
+    expect(details.documents).toHaveLength(25);
+  });
+});
+
+describe("C-07 fix round - template, background and backup columns also count as live references", () => {
+  const nm = (label: string) => `${ROW_PREFIX}${unique(label)}`;
+  const pdfParent = async () => (await db.insert(pdfTemplates).values({ name: nm("pdf") }).returning())[0].id;
+  const transportParent = async () => (await db.insert(transportReportTemplates).values({ name: nm("trp") }).returning())[0].id;
+  const damageParent = async () => (await db.insert(damageCheckTemplates).values({ name: nm("dmg") }).returning())[0].id;
+
+  const cases: Array<[string, (stored: string) => Promise<unknown>]> = [
+    ["pdf_templates.background_path", (p) => db.insert(pdfTemplates).values({ name: nm("pdf"), backgroundPath: p })],
+    ["pdf_templates.background_preview_path", (p) => db.insert(pdfTemplates).values({ name: nm("pdf"), backgroundPreviewPath: p })],
+    ["pdf_templates.template_preview_path", (p) => db.insert(pdfTemplates).values({ name: nm("pdf"), templatePreviewPath: p })],
+    ["template_backgrounds.background_path", async (p) => db.insert(templateBackgrounds).values({ templateId: await pdfParent(), name: nm("bg"), backgroundPath: p, previewPath: "x.png" })],
+    ["template_backgrounds.preview_path", async (p) => db.insert(templateBackgrounds).values({ templateId: await pdfParent(), name: nm("bg"), backgroundPath: "x.pdf", previewPath: p })],
+    ["transport_report_templates.background_path", (p) => db.insert(transportReportTemplates).values({ name: nm("trp"), backgroundPath: p })],
+    ["transport_report_templates.background_preview_path", (p) => db.insert(transportReportTemplates).values({ name: nm("trp"), backgroundPreviewPath: p })],
+    ["transport_report_templates.template_preview_path", (p) => db.insert(transportReportTemplates).values({ name: nm("trp"), templatePreviewPath: p })],
+    ["transport_report_template_backgrounds.background_path", async (p) => db.insert(transportReportTemplateBackgrounds).values({ templateId: await transportParent(), name: nm("bg"), backgroundPath: p, previewPath: "x.png" })],
+    ["transport_report_template_backgrounds.preview_path", async (p) => db.insert(transportReportTemplateBackgrounds).values({ templateId: await transportParent(), name: nm("bg"), backgroundPath: "x.pdf", previewPath: p })],
+    ["damage_check_templates.background_path", (p) => db.insert(damageCheckTemplates).values({ name: nm("dmg"), backgroundPath: p })],
+    ["damage_check_templates.background_preview_path", (p) => db.insert(damageCheckTemplates).values({ name: nm("dmg"), backgroundPreviewPath: p })],
+    ["damage_check_templates.template_preview_path", (p) => db.insert(damageCheckTemplates).values({ name: nm("dmg"), templatePreviewPath: p })],
+    ["damage_check_template_backgrounds.background_path", async (p) => db.insert(damageCheckTemplateBackgrounds).values({ templateId: await damageParent(), name: nm("bg"), backgroundPath: p, previewPath: "x.png" })],
+    ["damage_check_template_backgrounds.preview_path", async (p) => db.insert(damageCheckTemplateBackgrounds).values({ templateId: await damageParent(), name: nm("bg"), backgroundPath: "x.pdf", previewPath: p })],
+    ["vehicle_diagram_templates.diagram_path", (p) => db.insert(vehicleDiagramTemplates).values({ make: nm("make"), model: "Model", diagramPath: p })],
+    ["expenses.receipt_file", async (p) => db.insert(expenses).values({ vehicleId: (await createFixtureVehicle()).id, category: "test", amount: "1", date: "2031-01-01", description: nm("exp"), receiptFile: p })],
+    ["expenses.receipt_url", async (p) => db.insert(expenses).values({ vehicleId: (await createFixtureVehicle()).id, category: "test", amount: "1", date: "2031-01-01", description: nm("exp"), receiptUrl: p })],
+  ];
+
+  async function keptWhileReferenced(label: string, reference: (stored: string) => Promise<unknown>) {
+    const stored = put(`templates/${unique("bg")}.pdf`);
+    await reference(stored);
+    const bin = await insertBinRow("vehicle", { payload: { documents: [{ filePath: stored }] } });
+    const res = await binKeeper.delete(`/api/deleted-records/${bin.id}`);
+    expect(res.body, label).toEqual({ purged: 1, failed: [] });
+    expect(onDisk(stored), `${label}: a live row still points at the file`).toBe(true);
+    expect((await auditRows("vehicle.purge", bin.entityId))[0].details).toMatchObject({ files: { removed: 0, kept: 1 } });
+  }
+
+  it.each(cases)("%s", async (label, reference) => {
+    await keptWhileReferenced(label, reference);
+  });
+
+  it("backup_settings.local_path", async () => {
+    const { backupSettings } = schema;
+    const before = await db.select().from(backupSettings);
+    const created = before.length === 0 ? (await db.insert(backupSettings).values({}).returning())[0] : null;
+    const target = before[0] ?? created!;
+    try {
+      await keptWhileReferenced("backup_settings.local_path", (p) => db.update(backupSettings).set({ localPath: p }).where(eq(backupSettings.id, target.id)));
+    } finally {
+      if (created) await db.delete(backupSettings).where(eq(backupSettings.id, created.id));
+      else await db.update(backupSettings).set({ localPath: before[0].localPath }).where(eq(backupSettings.id, before[0].id));
+    }
   });
 });
 
@@ -611,7 +889,8 @@ describe("C-07 - a record that was restored: only the bin row goes", () => {
         expect((await db.select().from(drivers).where(eq(drivers.customerId, id))).length).toBe(1);
       } else {
         // The purge won: the restore was refused cleanly, and the file went with the record.
-        expect(restore.status).toBe(409);
+        // 404 when the purge committed before the restore read the bin row, 409 when after.
+        expect([404, 409], JSON.stringify(restore.body)).toContain(restore.status);
         expect(onDisk(licence)).toBe(false);
       }
     }
