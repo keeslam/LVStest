@@ -43,6 +43,18 @@ export interface DialogEntry {
    * The value is the reason, so it lives in the registry, not only in a spec.
    */
   allowedPathNeedsState?: string;
+  /**
+   * The mirror image, for an opener that does not exist on the page until a
+   * record in a certain state has been opened: the DENIED branch of
+   * `dialogs.spec.ts` finds its opener by test id on a bare page load and
+   * expects it visible, disabled and explaining itself, which cannot be true
+   * for a control that only appears inside a dialog opened FROM a record
+   * (a reservation's detail dialog). `dialogs.spec.ts` then generates no
+   * denied-branch test for this entry; the same proof (visible, disabled,
+   * names the right) belongs to a Layer B story or a component test that
+   * opens the record first. The value is the reason, so it lives here.
+   */
+  deniedPathNeedsState?: string;
 }
 
 export const DIALOGS: DialogEntry[] = [
@@ -114,6 +126,31 @@ export const DIALOGS: DialogEntry[] = [
     page: "/reservations", opener: "button-view-not-collected", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS],
     source: "client/src/components/reservations/not-collected-dialog.tsx", name: "niet opgehaalde reserveringen",
     allowedPathNeedsState: "needs a booked reservation started 30+ days ago that was never picked up (none seeded) before the toolbar button leaves its own hidden state",
+  },
+  // Sub-project C, Task 4 (besluiten B-30, B-39): every reversal - undo a
+  // pickup, a return or a cancellation - goes through ONE dialog with a
+  // preview and a confirm (revert-handover-dialog.tsx). Its openers are
+  // wrapped in RequiresPermission anyOf={[REVERT_HANDOVER]}, the right
+  // GET /api/reservations/:id/revert-preview and POST .../revert need:
+  // the calendar's reservation detail dialog (`button-revert-handover`, the
+  // one registered here), the hover card, the completed-rentals list, the
+  // reservation list rows, the dashboard and the vehicle details.
+  // Every one of them sits on a record (a picked-up, completed or cancelled
+  // reservation) that a bare page load of /reservations does not show, so
+  // neither branch of dialogs.spec.ts can reach it from here:
+  //  - allowed: the Layer B story "Overdracht terugdraaien" in
+  //    e2e/layer-b/desk/edge-cases.spec.ts opens the reservation, picks it up
+  //    and undoes it, as `manager`;
+  //  - denied: the same file's "zonder recht" story opens the list as the
+  //    desk role and reads the disabled opener and its tooltip;
+  //    client/src/components/reservations/__tests__/reservation-quick-status-button.test.tsx
+  //    and client/src/components/vehicles/__tests__/quick-status-change-button.test.tsx
+  //    prove it per component.
+  {
+    page: "/reservations", opener: "button-revert-handover", anyOf: [P.REVERT_HANDOVER],
+    source: "client/src/components/reservations/revert-handover-dialog.tsx", name: "overdracht terugdraaien",
+    allowedPathNeedsState: "the opener sits in the detail dialog of a picked-up, completed or cancelled reservation, which has to be opened (and picked up) first; the Layer B story does that",
+    deniedPathNeedsState: "the opener does not exist on a bare load of /reservations: it only renders inside the detail dialog of a reservation, so there is nothing to find until a record is opened",
   },
   // Task 4: wrapped in RequiresPermission anyOf={[MANAGE_RESERVATIONS]},
   // narrower than the page's own gate, matching POST /api/reservations
@@ -244,4 +281,7 @@ export const LAYER_B_SOURCES: string[] = [
   "client/src/components/reservations/handover-result-dialog.tsx",
   // Opened by e2e/layer-b/settings/invoice-inbox-log.spec.ts.
   "client/src/components/expenses/invoice-inbox-log-dialog.tsx",
+  // Opened by the "Overdracht terugdraaien" story in e2e/layer-b/desk/edge-cases.spec.ts
+  // (sub-project C, Task 4): pickup, then undo with the odometer confirmation.
+  "client/src/components/reservations/revert-handover-dialog.tsx",
 ];

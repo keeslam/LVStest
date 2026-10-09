@@ -47,6 +47,11 @@ for (const role of ROLES) {
       // branch below is unaffected and still runs: it only reads
       // RequiresPermission's tooltip, never clicks.
       if (allowed && entry.allowedPathNeedsState) continue;
+      // The mirror image (see `deniedPathNeedsState` on `DialogEntry`): an
+      // opener that only exists inside a dialog opened from a record cannot be
+      // found on a bare page load, so there is no denied-branch test to
+      // generate; the reason is written in the registry entry.
+      if (!allowed && entry.deniedPathNeedsState) continue;
 
       if (allowed) {
         test(`${entry.page}: ${entry.name}`, async ({ page, health }) => {

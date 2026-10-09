@@ -17,6 +17,7 @@ import { authFile } from "../../support/roles";
 import { Story } from "../../support/steps";
 import { request as newApiRequestContext } from "@playwright/test";
 import { E2E } from "../../support/env";
+import { officeDay } from "../../seed/data";
 
 // Taller than Playwright's 720px default: the vehicle popover
 // (vehicle-selector.tsx, opened by the "dubbele boeking" test below) has
@@ -351,4 +352,178 @@ test("debiteurnummer al in gebruik (B-35): veldfout onder het invoerveld, ook te
   story.finish();
 
   expect(health.violations).toEqual([]);
+});
+
+// ---------------------------------------------------------------------------
+// Sub-project C, Task 4 (besluiten B-30, B-39): undoing a handover is ONE
+// dialog with a preview and a confirm, for everyone, and needs the new right
+// `revert_handover`. Two short stories, each with its own budget; the desk
+// story above and its budgets are untouched.
+// ---------------------------------------------------------------------------
+
+test.describe("Overdracht terugdraaien (B-30)", () => {
+  // `manager`, not `admin`: both hold revert_handover (admin by bypass, manager
+  // by the one-time grant and the e2e profile `without(...)`), but `admin` is
+  // the account layer-a spends its whole 15-minute apiLimiter budget on, so by
+  // the time this layer runs it can answer 429 (see past-reservation.spec.ts).
+  // Same tall viewport as the other desk stories (vehicle popovers, stacked
+  // dialogs).
+  test.describe("met het recht", () => {
+    test.use({ storageState: authFile("manager"), viewport: { width: 1280, height: 1400 } });
+
+    // 10 handelingen, gemeten: 3 om de reservering te openen (Reserveringen,
+    // lijst, bekijken), 4 om op te halen (starten, kilometerstand met de
+    // tikfout, contractnummer, voltooien) en 3 om terug te draaien (knop,
+    // vinkje voor de lagere kilometerstand, bevestigen).
+    test("ophalen met een tikfout in de kilometerstand, daarna terugdraaien: status, kilometerstand en voertuig zijn terug", async ({ page, health, request }) => {
+      test.setTimeout(180_000);
+
+      // Not counted: the state this story needs, made through the API the way
+      // the rest of the app would have produced it. A vehicle of its own (no
+      // seeded plate is free of another spec) and a booking whose period is
+      // already over, so that "Beschikbaar" after the undo is a fact about the
+      // undo and not about a booking that still covers today.
+      const cookies = await page.context().cookies();
+      const csrfToken = cookies.find((c) => c.name === "XSRF-TOKEN")?.value;
+      expect(csrfToken, "XSRF-TOKEN cookie from storageState").toBeTruthy();
+      const headers = { "X-CSRF-Token": csrfToken! };
+
+      const vehicleResponse = await request.post("/api/vehicles", {
+        headers,
+        data: { licensePlate: "E2E-RV-1", brand: "Fiat", model: "Doblo", currentMileage: 20000 },
+      });
+      expect(vehicleResponse.ok(), await vehicleResponse.text()).toBeTruthy();
+      const vehicle = await vehicleResponse.json();
+      expect(vehicle.currentMileage).toBe(20000);
+
+      const customers = await (await request.get("/api/customers")).json();
+      const customer = customers.find((c: { email: string }) => c.email === "bakker@e2e.invalid");
+      expect(customer, "seeded customer bakker@e2e.invalid").toBeTruthy();
+
+      const reservationResponse = await request.post("/api/reservations", {
+        headers,
+        data: { customerId: customer.id, vehicleId: vehicle.id, startDate: officeDay(-5), endDate: officeDay(-2), type: "standard" },
+      });
+      expect(reservationResponse.status(), await reservationResponse.text()).toBe(201);
+      const reservation = await reservationResponse.json();
+      expect(reservation.status).toBe("booked");
+
+      const story = new Story("Overdracht terugdraaien", 10);
+      await page.goto("/");
+      await settle(page);
+      await story.click(page.getByRole("link", { name: "Reserveringen" }), "Reserveringen");
+      await settle(page);
+      await story.click(page.getByTestId("button-list-view"), "Reserveringen als lijst");
+      const listDialog = page.getByTestId("dialog-reservation-list");
+      await expect(listDialog).toBeVisible();
+      await story.click(listDialog.getByTestId(`view-btn-${reservation.id}`), "reservering bekijken");
+
+      const viewDialog = page.getByRole("dialog", { name: "Reserveringsdetails" });
+      await expect(viewDialog).toBeVisible();
+      // A booking has nothing to undo yet: no opener (the picked-up state is
+      // what makes it appear), the pickup button is what is offered.
+      await expect(viewDialog.getByTestId("button-revert-handover")).toHaveCount(0);
+      await story.click(viewDialog.getByTestId("button-start-pickup-calendar"), "Ophalen starten");
+
+      // The tikfout: 20350 km typed for a van that stands at 20000 km.
+      const pickupDialog = page.getByRole("dialog", { name: "Ophaalproces starten" });
+      await expect(pickupDialog.getByTestId("input-pickup-mileage")).toHaveValue("20000");
+      await story.fill(pickupDialog.getByTestId("input-pickup-mileage"), "20350", "Kilometerstand bij ophalen (tikfout)");
+      await story.fill(pickupDialog.getByTestId("input-contract-number"), "9300001", "Contractnummer");
+      await story.click(pickupDialog.getByTestId("button-confirm-pickup"), "Ophalen voltooien & contract genereren");
+      await expect(page.getByTestId("dialog-handover-result")).toBeVisible();
+
+      const pickedUp = await (await request.get(`/api/reservations/${reservation.id}`)).json();
+      expect(pickedUp.status).toBe("picked_up");
+      expect(pickedUp.pickupMileage).toBe(20350);
+      const afterPickup = (await (await request.get("/api/vehicles")).json()).find((v: { id: number }) => v.id === vehicle.id);
+      expect(afterPickup.currentMileage).toBe(20350);
+      expect(afterPickup.availabilityStatus).toBe("rented");
+
+      // The reservation view is reopened on top with the picked-up state and
+      // now offers the way back - the same button on every status that can be
+      // undone, always opening the preview, never a one-click revert.
+      await expect(viewDialog.getByTestId("button-start-return-calendar")).toBeVisible();
+      await story.click(viewDialog.getByTestId("button-revert-handover"), "Overdracht terugdraaien");
+
+      const revertDialog = page.getByTestId("dialog-revert-handover");
+      await expect(revertDialog).toBeVisible();
+      // Nothing has been written yet: the dialog only SHOWS what would happen.
+      await expect(revertDialog.getByTestId("revert-status")).toContainText("Opgehaald");
+      await expect(revertDialog.getByTestId("revert-status")).toContainText("Geboekt");
+      await expect(revertDialog.getByTestId("revert-clears")).toContainText("Contractnummer");
+      await expect(revertDialog.getByTestId("revert-vehicle")).toContainText("van 20.350 km naar 20.000 km");
+      await expect(revertDialog.getByTestId("revert-documents")).toContainText("vervallen");
+      const confirm = revertDialog.getByTestId("button-confirm-revert");
+      await expect(confirm).toBeDisabled();
+      expect((await (await request.get(`/api/reservations/${reservation.id}`)).json()).status).toBe("picked_up");
+
+      // The odometer goes DOWN (20350 -> 20000): that needs an explicit tick.
+      await story.click(revertDialog.getByTestId("checkbox-confirm-mileage-decrease"), "bevestigen: kilometerstand gaat omlaag");
+      await expect(confirm).toBeEnabled();
+      await story.click(confirm, "Overdracht terugdraaien (bevestigen)");
+      await expect(revertDialog).toBeHidden();
+      await settle(page);
+      story.finish();
+
+      // The reservation view the revert was opened from shows the new state.
+      await expect(viewDialog.getByTestId("button-start-pickup-calendar")).toBeVisible();
+      await expect(viewDialog.getByTestId("button-revert-handover")).toHaveCount(0);
+
+      // End state via the API, not the screen.
+      const after = await (await request.get(`/api/reservations/${reservation.id}`)).json();
+      expect(after.status).toBe("booked");
+      expect(after.pickupMileage).toBeNull();
+      expect(after.actualPickupDate).toBeNull();
+      expect(after.contractNumber).toBeNull();
+      const vehicleAfter = (await (await request.get("/api/vehicles")).json()).find((v: { id: number }) => v.id === vehicle.id);
+      expect(vehicleAfter.currentMileage).toBe(20000);
+      // Beschikbaar: the booking is in the past, nothing else covers today.
+      expect(vehicleAfter.availabilityStatus).toBe("available");
+      // The generated contract is not deleted, it is marked as expired.
+      const documents = await (await request.get(`/api/documents/reservation/${reservation.id}`)).json();
+      const contract = documents.find((d: { documentType: string }) => /^Contract \(Unsigned\)/.test(d.documentType));
+      expect(contract, "the unsigned contract the pickup generated").toBeTruthy();
+      expect(contract.isStale).toBe(true);
+
+      expect(health.violations).toEqual([]);
+    });
+  });
+
+  // The desk role (`user`) holds manage_reservations but NOT revert_handover:
+  // the way back is still shown, greyed out and with the reason (B-27), and a
+  // click opens nothing. This is the proof the registry cannot give from a bare
+  // page load (deniedPathNeedsState in e2e/registry/dialogs.ts).
+  test.describe("zonder het recht", () => {
+    test.use({ storageState: authFile("user"), viewport: { width: 1280, height: 1400 } });
+
+    test("de balie ziet de knop uitgeschakeld met de reden, en er opent niets", async ({ page, health, request }) => {
+      const reservations = await (await request.get("/api/reservations")).json();
+      const target = reservations.find((r: { notes?: string }) => r.notes === "e2e:picked-up");
+      expect(target, "seeded reservation e2e:picked-up").toBeTruthy();
+
+      const story = new Story("Overdracht terugdraaien zonder recht", 2);
+      await page.goto("/");
+      await settle(page);
+      await story.click(page.getByRole("link", { name: "Reserveringen" }), "Reserveringen");
+      await settle(page);
+      await story.click(page.getByTestId("button-list-view"), "Reserveringen als lijst");
+      const listDialog = page.getByTestId("dialog-reservation-list");
+      await expect(listDialog).toBeVisible();
+
+      const opener = listDialog.getByTestId(`button-revert-handover-${target.id}`);
+      await expect(opener).toBeVisible();
+      await expect(opener).toHaveAttribute("aria-disabled", "true");
+      // Reading the reason, not an action of staff: the tooltip sits on the
+      // wrapper around a disabled control (requires-permission.tsx).
+      await opener.locator("xpath=..").focus();
+      await expect(page.getByRole("tooltip")).toContainText("Overdracht terugdraaien");
+      await opener.click({ force: true });
+      await expect(page.getByTestId("dialog-revert-handover")).toHaveCount(0);
+      story.finish();
+
+      expect((await (await request.get(`/api/reservations/${target.id}`)).json()).status).toBe("picked_up");
+      expect(health.violations).toEqual([]);
+    });
+  });
 });
