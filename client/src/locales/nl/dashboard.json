@@ -180,6 +180,8 @@
   "reservationCalendar": {
     "title": "Reserveringskalender",
     "addReservation": "Reservering toevoegen",
+    "newReservation": "Nieuwe reservering",
+    "fullCalendar": "Volledige kalender",
     "reservationDetails": "Reserveringsdetails",
     "tbdSpareVehicle": "Vervangend voertuig (nog te bepalen)",
     "awaitingAssignment": "Wacht op toewijzing",

@@ -180,6 +180,8 @@
   "reservationCalendar": {
     "title": "Reservation Calendar",
     "addReservation": "Add reservation",
+    "newReservation": "New Reservation",
+    "fullCalendar": "Full Calendar",
     "reservationDetails": "Reservation Details",
     "tbdSpareVehicle": "TBD Spare Vehicle",
     "awaitingAssignment": "Awaiting assignment",

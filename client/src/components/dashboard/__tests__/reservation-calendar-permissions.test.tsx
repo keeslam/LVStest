@@ -127,3 +127,29 @@ describe("ReservationCalendar (dashboard) — the calendar's own data needs view
     expect(screen.queryByTestId("no-data-access")).not.toBeInTheDocument();
   });
 });
+
+/**
+ * Final wave of sub-project C, item 13 - the card header's two buttons used to
+ * be hard-coded English ("New Reservation", "Full Calendar") on a Dutch screen.
+ */
+describe("ReservationCalendar (dashboard) - the header buttons go through i18next", () => {
+  it("reads 'Nieuwe reservering' and 'Volledige kalender' in Dutch, never the English literals", async () => {
+    role = UserRole.USER;
+    permissions = [UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS];
+    renderCalendar();
+
+    expect(await screen.findByTestId("button-dashboard-new-reservation")).toHaveTextContent("Nieuwe reservering");
+    expect(screen.getByRole("button", { name: "Volledige kalender" })).toBeInTheDocument();
+    expect(screen.queryByText("New Reservation")).not.toBeInTheDocument();
+    expect(screen.queryByText("Full Calendar")).not.toBeInTheDocument();
+  });
+
+  it("has both labels in both languages, English as it was", async () => {
+    const nl = (await import("@/locales/nl/dashboard.json")).default as any;
+    const en = (await import("@/locales/en/dashboard.json")).default as any;
+    expect(nl.reservationCalendar.newReservation).toBe("Nieuwe reservering");
+    expect(nl.reservationCalendar.fullCalendar).toBe("Volledige kalender");
+    expect(en.reservationCalendar.newReservation).toBe("New Reservation");
+    expect(en.reservationCalendar.fullCalendar).toBe("Full Calendar");
+  });
+});

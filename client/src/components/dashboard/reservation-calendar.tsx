@@ -324,13 +324,13 @@ export function ReservationCalendar() {
                 data-testid="button-dashboard-new-reservation"
               >
                 <PlusCircle className="mr-1 h-3 w-3" />
-                New Reservation
+                {t('reservationCalendar.newReservation')}
               </Button>
             </RequiresPermission>
           </ReservationAddDialog>
           <Link href="/reservations/calendar">
             <Button variant="link" className="text-primary-600 hover:text-primary-700 text-sm font-medium h-8 px-0">
-              Full Calendar
+              {t('reservationCalendar.fullCalendar')}
             </Button>
           </Link>
         </div>
