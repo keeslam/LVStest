@@ -163,7 +163,9 @@ and the confirm button. Texts nl + en.
   `DELETE /api/reservations/:id` require `hasPermission(CANCEL_PICKED_UP_RENTAL)` (checked in the
   route after the normal guard) and the body/query flag `confirmPickedUp: true`; without the flag:
   409 `PICKED_UP_CONFIRMATION_REQUIRED { actualPickupDate, contractNumber }`; without the right:
-  403 naming the right. Rows in any other status keep today's behaviour.
+  403 naming the right. Rows in any other status keep today's behaviour. The same check sits on `PATCH /api/reservations/:id/basic`, the fourth writer that
+  can set cancelled. Maintenance blocks are exempt: a block was never at a customer, even when a
+  legacy spelling normalises to picked_up (ratified 2026-10-09).
 - Client: `CancelReservationDialog` and every delete confirmation (calendar, view dialog, list
   dialog, completed list) show, for a picked-up row, a warning box "Deze huur is al opgehaald op
   <datum> met contract <nr>." with `checkbox-confirm-picked-up`; the confirm button stays disabled
