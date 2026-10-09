@@ -22,6 +22,10 @@ export const PERMISSION_LABELS: Record<string, string> = {
   [UserPermission.MANAGE_RESERVATIONS]: "Reserveringen beheren",
   [UserPermission.VIEW_RESERVATIONS]: "Reserveringen bekijken",
   [UserPermission.AUTHORIZE_MILEAGE_DECREASE]: "Kilometerverlaging goedkeuren",
+  // Sub-project C - undoing a handover, cancelling a picked-up rental, the recycle bins.
+  [UserPermission.REVERT_HANDOVER]: "Overdracht terugdraaien",
+  [UserPermission.CANCEL_PICKED_UP_RENTAL]: "Opgehaalde huur annuleren of verwijderen",
+  [UserPermission.MANAGE_RECYCLE_BIN]: "Prullenbak beheren",
 
   [UserPermission.MANAGE_MAINTENANCE]: "Onderhoud beheren",
   [UserPermission.MANAGE_EXPENSES]: "Kosten beheren",

@@ -92,6 +92,16 @@ export const UserPermission = {
   // Allows confirming a mileage decrease at pickup with your own account password.
   // Checked strictly - admins need it too, so it can be revoked per user.
   AUTHORIZE_MILEAGE_DECREASE: 'authorize_mileage_decrease',
+
+  // Sub-project C (besluiten B-30, B-33, B-38, B-39). Role admin passes every
+  // check; role manager receives these three once through startup-migration.js
+  // (marker migration:c_manager_rights). Nobody else holds them unless ticked.
+  // Undo a pickup, a return or a cancellation (preview + confirmation).
+  REVERT_HANDOVER: 'revert_handover',
+  // Cancel or delete a rental that has already been picked up.
+  CANCEL_PICKED_UP_RENTAL: 'cancel_picked_up_rental',
+  // See, restore and empty every recycle bin.
+  MANAGE_RECYCLE_BIN: 'manage_recycle_bin',
   
   // Maintenance & Expenses
   MANAGE_MAINTENANCE: 'manage_maintenance',

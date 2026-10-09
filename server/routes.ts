@@ -72,7 +72,7 @@ import { setupAuth, hashPassword, comparePasswords } from "./auth";
 import { backupService } from "./backupService";
 import { ObjectStorageService } from "./objectStorage";
 import { realtimeEvents } from "./realtime-events";
-import { hasPermission, requireAdmin } from "./middleware/permissions.js";
+import { hasPermission } from "./middleware/permissions.js";
 import { describeDbError, dbErrorBody } from "./utils/db-errors.js";
 import { installAsyncErrorHandling } from "./middleware/asyncHandler.js";
 import { AuditLogger } from "./utils/security/auditLogger.js";
@@ -2149,7 +2149,11 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
   // ==================== RECYCLE BIN ROUTES ====================
-  app.get("/api/deleted-records", requireAdmin, async (req: Request, res: Response) => {
+  // Sub-project C (besluit B-38/B-39): the bins are open to admin AND manager,
+  // which in this model means the explicit right manage_recycle_bin (role admin
+  // always passes hasPermission; role manager received the right once through
+  // startup-migration.js). requireAdmin used to make this admin-only.
+  app.get("/api/deleted-records", hasPermission(UserPermission.MANAGE_RECYCLE_BIN), async (req: Request, res: Response) => {
     try {
       const records = (await storage.getDeletedRecords?.(100)) || [];
       // The full snapshot can be megabytes; the list only needs the headline.
@@ -2170,7 +2174,7 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
-  app.post("/api/deleted-records/:id/restore", requireAdmin, async (req: Request, res: Response) => {
+  app.post("/api/deleted-records/:id/restore", hasPermission(UserPermission.MANAGE_RECYCLE_BIN), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {

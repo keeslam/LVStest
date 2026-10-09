@@ -392,6 +392,90 @@ async function grantDocumentPermissions() {
 }
 
 
+// ==================== C: THREE NEW RIGHTS FOR ROLE MANAGER (B-30, B-33, B-38, B-39) ====================
+// Sub-project C adds three per-account rights (shared/schema.ts UserPermission):
+//
+//   revert_handover          undo a pickup, a return, a cancellation
+//   cancel_picked_up_rental  cancel or delete a rental that was already picked up
+//   manage_recycle_bin       see, restore and empty every recycle bin
+//
+// The owner's decision (B-39): admin and manager may do all of this, everybody
+// else only with an explicit tick. Role admin passes every check on its own
+// (hasPermission short-circuits), so it is skipped here. Role manager has no
+// treatment anywhere else, so it is given the three values ONCE; an
+// administrator who later unticks one does not get it back on the next boot,
+// because the app_settings marker below stops a second run.
+//
+// Never aborts the boot: a failure is reported and skipped (no marker, so the
+// next start retries), and a manager row whose permissions are not a JSON list
+// is warned about and left alone.
+// The same mapping lives, testable, in scripts/migrate-manager-rights-c.ts.
+const C_MANAGER_MARKER = 'migration:c_manager_rights';
+
+async function grantManagerRightsC() {
+  try {
+    const tables = await db.execute(sql`
+      SELECT tablename FROM pg_tables
+       WHERE schemaname = 'public' AND tablename IN ('users', 'app_settings')
+    `);
+    if (tables.rows.length < 2) {
+      console.log('⚠️ users or app_settings does not exist yet, skipping manager rights (C)');
+      return;
+    }
+
+    const already = await db.execute(sql`SELECT 1 FROM app_settings WHERE key = ${C_MANAGER_MARKER}`);
+    if (already.rows.length > 0) {
+      console.log('Manager rights (C) already granted, skipping');
+      return;
+    }
+
+    const skipped = await db.execute(sql`
+      SELECT count(*)::int AS n FROM users
+       WHERE role = 'manager' AND jsonb_typeof(COALESCE(permissions, '[]'::jsonb)) <> 'array'
+    `);
+    const skippedCount = skipped.rows[0] ? Number(skipped.rows[0].n) : 0;
+
+    let granted = 0;
+    await db.transaction(async (tx) => {
+      // Appends only the values a manager lacks, in the spec's order, so a
+      // second pass (or a manager who already has some) never duplicates.
+      const result = await tx.execute(sql`
+        UPDATE users
+           SET permissions = COALESCE(permissions, '[]'::jsonb) || (
+                 SELECT COALESCE(jsonb_agg(r.right_name ORDER BY r.ord), '[]'::jsonb)
+                   FROM unnest(ARRAY['revert_handover', 'cancel_picked_up_rental', 'manage_recycle_bin'])
+                        WITH ORDINALITY AS r(right_name, ord)
+                  WHERE NOT (COALESCE(users.permissions, '[]'::jsonb) ? r.right_name)
+               )
+         WHERE role = 'manager'
+           AND jsonb_typeof(COALESCE(permissions, '[]'::jsonb)) = 'array'
+           AND NOT (COALESCE(permissions, '[]'::jsonb) ?& array['revert_handover', 'cancel_picked_up_rental', 'manage_recycle_bin'])
+      `);
+      granted = result.rowCount ?? 0;
+
+      await tx.execute(sql`
+        INSERT INTO app_settings (key, value, category, description)
+        VALUES (
+          ${C_MANAGER_MARKER},
+          ${JSON.stringify({ appliedAt: new Date().toISOString(), granted })}::jsonb,
+          'general',
+          'Sub-project C: revert_handover, cancel_picked_up_rental and manage_recycle_bin granted once to role manager'
+        )
+        ON CONFLICT (key) DO NOTHING
+      `);
+    });
+
+    console.log('Manager rights (C) granted: ' + granted + ' manager account(s) gained revert_handover, cancel_picked_up_rental and manage_recycle_bin');
+    if (skippedCount > 0) {
+      console.log('⚠️ Manager rights (C): ' + skippedCount + ' manager account(s) skipped because their permissions are not a list');
+    }
+  } catch (error) {
+    // Deliberately not rethrown: a failed grant must never stop the deploy.
+    // No marker was written, so the next boot tries again.
+    console.error('⚠️ Manager rights (C) skipped, will retry on the next start:', error && error.message ? error.message : error);
+  }
+}
+
 // ==================== B-22: TIMESTAMPS WITH A TIME ZONE (BUG-224) ====================
 // besluiten.md B-22 - "migreren naar tijdzone-bewuste kolommen, met de
 // aanname dat bestaande waarden Amsterdamse tijd zijn".
@@ -1812,6 +1896,9 @@ async function runMigrations() {
     // B-23 (BUG-167): once the schema is in place, map the document
     // permissions onto the accounts that already had the access.
     await grantDocumentPermissions();
+
+    // Sub-project C: the three new rights, granted once to role manager.
+    await grantManagerRightsC();
 
     // B-22 (BUG-224): report - and, only on the owner's explicit switch,
     // perform - the conversion to time-zone-aware columns.
