@@ -7,6 +7,7 @@ import { ReservationAddDialog } from "@/components/reservations/reservation-add-
 import { CustomerAddDialog } from "@/components/customers/customer-add-dialog";
 import { CustomerViewDialog } from "@/components/customers/customer-view-dialog";
 import { CustomerDeleteDialog } from "@/components/customers/customer-delete-dialog";
+import { RecycleBinDialog } from "@/components/recycle-bin/recycle-bin-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
@@ -20,7 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { usePortalAccounts } from "@/hooks/use-portal-accounts";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { X, Filter, ArrowUpDown } from "lucide-react";
+import { X, Filter, ArrowUpDown, Archive } from "lucide-react";
 import { subDays } from "date-fns";
 import { useHasPermission } from "@/hooks/use-has-permission";
 
@@ -44,6 +45,7 @@ export default function CustomersIndex() {
   // open dialog on its own (e.g. seconds after a save when refreshes land).
   const [reserveCustomerId, setReserveCustomerId] = useState<string | null>(null);
   const [deleteCustomerTarget, setDeleteCustomerTarget] = useState<Customer | null>(null);
+  const [recycleBinOpen, setRecycleBinOpen] = useState(false);
   const queryClient = useQueryClient();
   
   const { data: customers, isLoading } = useQuery<Customer[]>({
@@ -360,8 +362,27 @@ export default function CustomersIndex() {
 
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">{t('indexPage.title')}</h1>
-        <CustomerAddDialog onSuccess={handleCustomerAdded} />
+        <div className="flex flex-wrap gap-2">
+          {/* Sub-project C (B-36, B-38): this screen's own bin; greyed out with the
+              reason unless the account holds "Prullenbak beheren". */}
+          <RequiresPermission anyOf={[UserPermission.MANAGE_RECYCLE_BIN]}>
+            <Button
+              variant="outline"
+              onClick={() => setRecycleBinOpen(true)}
+              data-testid="button-open-recycle-bin-customers"
+            >
+              <Archive className="h-4 w-4 mr-2" />
+              {t('recycleBin:kinds.customer.openButton')}
+            </Button>
+          </RequiresPermission>
+          <CustomerAddDialog onSuccess={handleCustomerAdded} />
+        </div>
       </div>
+      <RecycleBinDialog
+        kind="customer"
+        open={recycleBinOpen}
+        onOpenChange={setRecycleBinOpen}
+      />
 
       <Card>
         <CardHeader>

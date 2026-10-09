@@ -476,6 +476,76 @@ async function grantManagerRightsC() {
   }
 }
 
+// ==================== Sub-project C: maintenance blocks get their own bin kind ====================
+// besluiten B-36 - "aparte prullenbakken per soort, elk scherm zijn eigen". The
+// Onderhoud screen has a bin of its own, so softDeleteReservation now files a
+// deleted workshop block as entity_type 'maintenance_block' with the label
+// "Onderhoud #id - plate start". Rows written before that change hold
+// 'reservation' for a block too; this one-time step relabels them, recognising
+// a block by the snapshot (payload->reservation->type), never by the label.
+//
+// Idempotent twice over: the app_settings marker stops a second pass, and the
+// UPDATE only touches rows that are still 'reservation' with a block snapshot,
+// so even without the marker it never prefixes a label a second time. Never
+// aborts the boot: a failure is reported and skipped (no marker, so the next
+// start retries). A row whose snapshot is not the expected shape simply does
+// not match and stays what it was.
+const C_BIN_LABEL_MARKER = 'migration:c_bin_maintenance_label';
+
+async function relabelMaintenanceBlockBinRows() {
+  try {
+    const tables = await db.execute(sql`
+      SELECT tablename FROM pg_tables
+       WHERE schemaname = 'public' AND tablename IN ('deleted_records', 'app_settings')
+    `);
+    if (tables.rows.length < 2) {
+      console.log('⚠️ deleted_records or app_settings does not exist yet, skipping maintenance-block bin relabel (C)');
+      return;
+    }
+
+    const already = await db.execute(sql`SELECT 1 FROM app_settings WHERE key = ${C_BIN_LABEL_MARKER}`);
+    if (already.rows.length > 0) {
+      console.log('Maintenance-block bin rows already relabeled, skipping');
+      return;
+    }
+
+    let relabeled = 0;
+    await db.transaction(async (tx) => {
+      const result = await tx.execute(sql`
+        UPDATE deleted_records
+           SET entity_type = 'maintenance_block',
+               label = CASE
+                         WHEN label LIKE 'Reservering #%'
+                         THEN 'Onderhoud #' || substr(label, char_length('Reservering #') + 1)
+                         ELSE label
+                       END
+         WHERE entity_type = 'reservation'
+           AND jsonb_typeof(payload) = 'object'
+           AND jsonb_typeof(payload -> 'reservation') = 'object'
+           AND payload -> 'reservation' ->> 'type' = 'maintenance_block'
+      `);
+      relabeled = result.rowCount ?? 0;
+
+      await tx.execute(sql`
+        INSERT INTO app_settings (key, value, category, description)
+        VALUES (
+          ${C_BIN_LABEL_MARKER},
+          ${JSON.stringify({ appliedAt: new Date().toISOString(), relabeled })}::jsonb,
+          'general',
+          'Sub-project C: recycle bin rows of deleted maintenance blocks relabeled from reservation to maintenance_block'
+        )
+        ON CONFLICT (key) DO NOTHING
+      `);
+    });
+
+    console.log('Maintenance-block bin rows relabeled: ' + relabeled + ' row(s) moved from reservation to maintenance_block');
+  } catch (error) {
+    // Deliberately not rethrown: a failed relabel must never stop the deploy.
+    // No marker was written, so the next boot tries again.
+    console.error('⚠️ Maintenance-block bin relabel skipped, will retry on the next start:', error && error.message ? error.message : error);
+  }
+}
+
 // ==================== B-22: TIMESTAMPS WITH A TIME ZONE (BUG-224) ====================
 // besluiten.md B-22 - "migreren naar tijdzone-bewuste kolommen, met de
 // aanname dat bestaande waarden Amsterdamse tijd zijn".
@@ -1899,6 +1969,9 @@ async function runMigrations() {
 
     // Sub-project C: the three new rights, granted once to role manager.
     await grantManagerRightsC();
+
+    // Sub-project C (B-36): deleted maintenance blocks get their own bin kind.
+    await relabelMaintenanceBlockBinRows();
 
     // B-22 (BUG-224): report - and, only on the owner's explicit switch,
     // perform - the conversion to time-zone-aware columns.

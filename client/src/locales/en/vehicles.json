@@ -208,34 +208,6 @@
       "provideOneFieldDescription": "Please provide at least one field to update"
     }
   },
-  "deletedVehiclesDialog": {
-    "title": "Deleted Vehicles",
-    "description": "Every deleted vehicle is kept here with its reservations, documents and expenses, so it can be put back.",
-    "loading": "Loading...",
-    "noDeletedVehicles": "No deleted vehicles.",
-    "restoredBadge": "Restored",
-    "deletedByLabel": "Deleted {{date}} by {{by}}",
-    "unknown": "unknown",
-    "includedLabel": "Included: {{summary}}",
-    "restoredByLabel": "Restored {{date}} by {{by}}",
-    "restoreButton": "Restore",
-    "noLinkedRecords": "no linked records",
-    "toasts": {
-      "restoredTitle": "Restored",
-      "restoredDescription": "The vehicle and its records are back.",
-      "restoreFailedTitle": "Restore failed",
-      "restoreFailedDescription": "Could not restore this record."
-    },
-    "search": "Search by plate, description or name…",
-    "noMatches": "Nothing matches this search.",
-    "entityTypes": {
-      "vehicle": "Vehicle",
-      "customer": "Customer",
-      "reservation": "Reservation",
-      "transport": "Transport",
-      "fine": "Fine"
-    }
-  },
   "editDialog": {
     "title": "Edit Vehicle",
     "description": "Update vehicle information and details",
@@ -1018,7 +990,6 @@
       "openingReservationDetails": "Opening reservation details..."
     },
     "pageTitle": "Vehicle Management",
-    "deletedVehiclesButton": "Deleted Vehicles",
     "fleetCardTitle": "Vehicle Fleet",
     "fleetCardDescription": "Manage your vehicle fleet, view details, and create reservations.",
     "searchPlaceholder": "Search by license plate, brand, or model...",

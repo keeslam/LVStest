@@ -787,11 +787,18 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async getDeletedRecords(limit = 100): Promise<DeletedRecord[]> {
+  /**
+   * Newest first, restored rows included. Sub-project C (B-36): with an
+   * `entityType` the filter runs in the database, so a kind's cap applies to
+   * that kind alone (a bin full of fines no longer pushes the one vehicle out
+   * of the list); without it the list is mixed, as before.
+   */
+  async getDeletedRecords(limit = 100, entityType?: string): Promise<DeletedRecord[]> {
     return await db
       .select()
       .from(deletedRecords)
-      .orderBy(desc(deletedRecords.deletedAt))
+      .where(entityType ? eq(deletedRecords.entityType, entityType) : undefined)
+      .orderBy(desc(deletedRecords.deletedAt), desc(deletedRecords.id))
       .limit(limit);
   }
 
@@ -817,7 +824,11 @@ export class DatabaseStorage implements IStorage {
     if (record.entityType === 'customer') return this.restoreDeletedCustomer(record, actor);
     // besluiten B-15 — and so do a reservation (BUG-151) and a transport
     // (BUG-140), both through the bookability predicate.
-    if (record.entityType === 'reservation') return this.restoreDeletedReservation(record, actor);
+    // Sub-project C (B-36): a maintenance block has a bin kind of its own but is
+    // the same reservation row underneath, restored the same way.
+    if (record.entityType === 'reservation' || record.entityType === 'maintenance_block') {
+      return this.restoreDeletedReservation(record, actor);
+    }
     if (record.entityType === 'transport') return this.restoreDeletedTransport(record, actor);
     if (record.entityType !== 'vehicle') return { restored: false, reason: 'unsupported_type', record };
 
@@ -2115,10 +2126,13 @@ export class DatabaseStorage implements IStorage {
       // nowhere; the only way back was a hand-written UPDATE, which is exactly
       // how the audit produced a double booking (BUG-151).
       const vehicle = row.vehicleId != null ? await this.getVehicle(row.vehicleId) : undefined;
+      // Sub-project C (B-36): the Onderhoud screen has a bin of its own, so a
+      // workshop block is filed as `maintenance_block` and labelled "Onderhoud".
+      const isBlock = row.type === 'maintenance_block';
       await tx.insert(deletedRecords).values({
-        entityType: 'reservation',
+        entityType: isBlock ? 'maintenance_block' : 'reservation',
         entityId: id,
-        label: `Reservering #${id}${vehicle ? ` — ${vehicle.licensePlate}` : ''} ${row.startDate}`.trim(),
+        label: `${isBlock ? 'Onderhoud' : 'Reservering'} #${id}${vehicle ? ` — ${vehicle.licensePlate}` : ''} ${row.startDate}`.trim(),
         payload: { reservation: before ?? row },
         relatedCounts: {},
         deletedBy: actor?.username || null,

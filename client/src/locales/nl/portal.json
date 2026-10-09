@@ -638,12 +638,6 @@
         "filteredByFile": "Uit importbestand #{{id}}",
         "sourceLine": "Bron: CJIB-bestand #{{file}}"
       },
-      "bin": {
-        "button": "Prullenbak",
-        "title": "Verwijderde bekeuringen",
-        "description": "Verwijderde bekeuringen blijven hier bewaard met wie ze wanneer verwijderde, en kunnen worden teruggezet.",
-        "empty": "Geen verwijderde bekeuringen."
-      },
       "exportCsv": "Exporteren (CSV)"
     },
     "requests": {

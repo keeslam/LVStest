@@ -50,6 +50,7 @@ import {
 import { ScheduleMaintenanceDialog } from "@/components/maintenance/schedule-maintenance-dialog";
 import { MaintenanceEditDialog } from "@/components/maintenance/maintenance-edit-dialog";
 import { MaintenanceListDialog } from "@/components/maintenance/maintenance-list-dialog";
+import { RecycleBinDialog } from "@/components/recycle-bin/recycle-bin-dialog";
 import { VehicleViewDialog } from "@/components/vehicles/vehicle-view-dialog";
 import { MaintenanceViewDialog } from "@/components/maintenance/maintenance-view-dialog";
 import { formatLicensePlate, plateMatches, formatMaintenanceType, formatVehicleType } from "@/lib/format-utils";
@@ -60,7 +61,7 @@ import { CalendarLegend } from "@/components/calendar/calendar-legend";
 import { getCustomMaintenanceStyle, getCustomMaintenanceStyleObject } from "@/lib/calendar-styling";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { NoDataAccess } from "@/components/ui/no-data-access";
-import { ChevronLeft, ChevronRight, Calendar, Car, Wrench, AlertTriangle, Clock, Plus, Eye, Edit, Trash2, Palette } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Car, Wrench, AlertTriangle, Clock, Plus, Eye, Edit, Trash2, Palette, Archive } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTranslation } from "react-i18next";
 import { officeToday } from "@/lib/office-date";
@@ -148,6 +149,8 @@ export default function MaintenanceCalendar() {
   
   // Maintenance list dialog
   const [maintenanceListDialogOpen, setMaintenanceListDialogOpen] = useState(false);
+  // Recycle bin of deleted maintenance blocks (sub-project C, B-36)
+  const [recycleBinOpen, setRecycleBinOpen] = useState(false);
   
   // Completed maintenance dialog
   const [completedMaintenanceDialogOpen, setCompletedMaintenanceDialogOpen] = useState(false);
@@ -1120,6 +1123,18 @@ export default function MaintenanceCalendar() {
             </svg>
             {t('calendarPage.viewCompletedButton', { count: completedMaintenanceBlocks.length })}
           </Button>
+          {/* Sub-project C (B-36, B-38): this screen's own bin ("Onderhoud"), greyed
+              out with the reason unless the account holds "Prullenbak beheren". */}
+          <RequiresPermission anyOf={[UserPermission.MANAGE_RECYCLE_BIN]}>
+            <Button
+              variant="outline"
+              onClick={() => setRecycleBinOpen(true)}
+              data-testid="button-open-recycle-bin-maintenance"
+            >
+              <Archive className="mr-2 h-4 w-4" />
+              {t('recycleBin:kinds.maintenance_block.openButton')}
+            </Button>
+          </RequiresPermission>
           {/* Task 4 finding (docs/superpowers/specs/2026-09-21-toegang-design.md, §5):
               ScheduleMaintenanceDialog's create-mode submit calls
               POST /api/reservations (server/routes.ts:2966), which accepts
@@ -1861,6 +1876,12 @@ export default function MaintenanceCalendar() {
       />
 
       {/* Maintenance List Dialog */}
+      <RecycleBinDialog
+        kind="maintenance_block"
+        open={recycleBinOpen}
+        onOpenChange={setRecycleBinOpen}
+      />
+
       <MaintenanceListDialog
         open={maintenanceListDialogOpen}
         onOpenChange={setMaintenanceListDialogOpen}

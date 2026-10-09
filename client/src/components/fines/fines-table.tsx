@@ -11,7 +11,8 @@ import { FineStatus } from "@shared/fines";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DeletedVehiclesDialog } from "@/components/vehicles/deleted-vehicles-dialog";
+import { RecycleBinDialog } from "@/components/recycle-bin/recycle-bin-dialog";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { FineStatusBadge } from "./fine-status-badge";
@@ -42,8 +43,6 @@ export function FinesTable({ customerId, initialPlate, importFileId, preview }: 
   const { t } = useTranslation("portal");
   const { openFineDialog, openNewFineDialog, openFineImportDialog, openFineImportsDialog } = useGlobalDialog();
   const canManage = useCanManageFines();
-  const { user } = useAuth();
-  const isAdmin = user?.role === UserRole.ADMIN;
   const [binOpen, setBinOpen] = useState(false);
   const [status, setStatus] = useState("");
   const [plate, setPlate] = useState(initialPlate ?? "");
@@ -77,14 +76,19 @@ export function FinesTable({ customerId, initialPlate, importFileId, preview }: 
           filtered.map((f) => [formatLicensePlate(f.licensePlate), new Date(f.offenceAt).toLocaleString(), f.description, f.customerName ?? "", f.driverName ?? "", f.totalAmount, t(`admin.fines.status.${f.status}`)]))} data-testid="button-export-fines">
           {t("admin.fines.exportCsv")}
         </Button>
-        {canManage && (<div className="ml-auto flex gap-2">
-          {isAdmin && <Button size="sm" variant="ghost" onClick={() => setBinOpen(true)} data-testid="button-fines-bin">{t("admin.fines.bin.button")}</Button>}
-          <Button size="sm" variant="outline" onClick={openFineImportsDialog} data-testid="button-cjib-imports">{t("admin.fines.cjib.button")}</Button>
-          <Button size="sm" variant="outline" onClick={openFineImportDialog} data-testid="button-import-fines">{t("admin.fines.import.button")}</Button>
-          <Button size="sm" onClick={() => openNewFineDialog({ licensePlate: plate || undefined })} data-testid="button-new-fine">
-            {t("admin.fines.new")}
-          </Button>
-        </div>)}
+        <div className="ml-auto flex gap-2">
+          {/* Sub-project C (B-36, B-38): the bin opens for "Prullenbak beheren" (was: role admin); greyed out with the reason otherwise. */}
+          <RequiresPermission anyOf={[UserPermission.MANAGE_RECYCLE_BIN]}>
+            <Button size="sm" variant="ghost" onClick={() => setBinOpen(true)} data-testid="button-fines-bin">{t("recycleBin:kinds.fine.openButton")}</Button>
+          </RequiresPermission>
+          {canManage && (<>
+            <Button size="sm" variant="outline" onClick={openFineImportsDialog} data-testid="button-cjib-imports">{t("admin.fines.cjib.button")}</Button>
+            <Button size="sm" variant="outline" onClick={openFineImportDialog} data-testid="button-import-fines">{t("admin.fines.import.button")}</Button>
+            <Button size="sm" onClick={() => openNewFineDialog({ licensePlate: plate || undefined })} data-testid="button-new-fine">
+              {t("admin.fines.new")}
+            </Button>
+          </>)}
+        </div>
       </div>}
       {rows.length === 0 ? <p className="text-sm text-muted-foreground">{t("admin.fines.empty")}</p> : (
         <Table>
@@ -113,7 +117,7 @@ export function FinesTable({ customerId, initialPlate, importFileId, preview }: 
         </Table>
       )}
       {preview && filtered.length > 0 && <PreviewFooter shown={rows.length} total={filtered.length} onShowAll={preview.onShowAll} />}
-      {isAdmin && <DeletedVehiclesDialog open={binOpen} onOpenChange={setBinOpen} entityType="fine" title={t("admin.fines.bin.title")} description={t("admin.fines.bin.description")} emptyText={t("admin.fines.bin.empty")} />}
+      <RecycleBinDialog kind="fine" open={binOpen} onOpenChange={setBinOpen} />
     </div>
   );
 }

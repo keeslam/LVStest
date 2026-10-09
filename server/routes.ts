@@ -47,6 +47,7 @@ import {
   Reservation,
   UserRole,
   UserPermission,
+  DELETED_RECORD_KINDS,
   isValidReservationTransition,
   isValidSpareTransition,
   damageCheckFieldsConfigSchema,
@@ -2156,9 +2157,20 @@ export async function registerRoutes(app: Express): Promise<void> {
   // which in this model means the explicit right manage_recycle_bin (role admin
   // always passes hasPermission; role manager received the right once through
   // startup-migration.js). requireAdmin used to make this admin-only.
+  //
+  // B-36: one bin per screen. `?type=<kind>` filters on the server (the cap of
+  // 200 then applies to that kind alone); without it the list is mixed and
+  // capped at 100, as it always was.
   app.get("/api/deleted-records", hasPermission(UserPermission.MANAGE_RECYCLE_BIN), async (req: Request, res: Response) => {
     try {
-      const records = (await storage.getDeletedRecords?.(100)) || [];
+      const type = typeof req.query.type === "string" ? req.query.type : undefined;
+      if (req.query.type !== undefined && !(DELETED_RECORD_KINDS as readonly string[]).includes(type ?? "")) {
+        return res.status(400).json({
+          code: "INVALID_BIN_KIND",
+          message: `Unknown recycle bin kind. Use one of: ${DELETED_RECORD_KINDS.join(", ")}.`,
+        });
+      }
+      const records = (await storage.getDeletedRecords?.(type ? 200 : 100, type)) || [];
       // The full snapshot can be megabytes; the list only needs the headline.
       res.json(records.map((record: any) => ({
         id: record.id,
@@ -2228,7 +2240,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       if (entityType === 'vehicle') realtimeEvents.vehicles.created({ id: result.record?.entityId });
       // besluiten B-15 — the calendar has to see a restored reservation at once,
       // otherwise the row is back but the screen still shows the free slot.
-      if (entityType === 'reservation' && result.record?.entityId != null) {
+      if ((entityType === 'reservation' || entityType === 'maintenance_block') && result.record?.entityId != null) {
         const restoredReservation = await storage.getReservation(result.record.entityId);
         if (restoredReservation) {
           realtimeEvents.reservations.updated(restoredReservation);

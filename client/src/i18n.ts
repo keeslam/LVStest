@@ -19,6 +19,7 @@ import deliveryNl from "./locales/nl/delivery.json";
 import barcodesNl from "./locales/nl/barcodes.json";
 import portalNl from "./locales/nl/portal.json";
 import fiscalNl from "./locales/nl/fiscal.json";
+import recycleBinNl from "./locales/nl/recycleBin.json";
 
 import commonEn from "./locales/en/common.json";
 import navEn from "./locales/en/nav.json";
@@ -37,6 +38,7 @@ import deliveryEn from "./locales/en/delivery.json";
 import barcodesEn from "./locales/en/barcodes.json";
 import portalEn from "./locales/en/portal.json";
 import fiscalEn from "./locales/en/fiscal.json";
+import recycleBinEn from "./locales/en/recycleBin.json";
 
 // Namespaces mirror the domains in the app so each locale file stays small
 // enough to review and edit without merge conflicts across pages.
@@ -65,6 +67,7 @@ i18n
         barcodes: barcodesNl,
         portal: portalNl,
         fiscal: fiscalNl,
+        recycleBin: recycleBinNl,
       },
       en: {
         common: commonEn,
@@ -84,6 +87,7 @@ i18n
         barcodes: barcodesEn,
         portal: portalEn,
         fiscal: fiscalEn,
+        recycleBin: recycleBinEn,
       },
     },
     // Dutch is the primary audience for this app; English stays available
@@ -94,7 +98,7 @@ i18n
     ns: [
       "common", "nav", "dashboard", "vehicles", "customers", "reservations",
       "expenses", "documents", "reports", "notifications", "settings",
-      "auth", "maintenance", "delivery", "barcodes", "portal", "fiscal",
+      "auth", "maintenance", "delivery", "barcodes", "portal", "fiscal", "recycleBin",
     ],
     interpolation: {
       escapeValue: false, // React already escapes output

@@ -7,7 +7,7 @@ import { ReservationViewDialog } from "@/components/reservations/reservation-vie
 import { VehicleViewDialog } from "@/components/vehicles/vehicle-view-dialog";
 import { VehicleEditDialog } from "@/components/vehicles/vehicle-edit-dialog";
 import { VehicleDeleteDialog } from "@/components/vehicles/vehicle-delete-dialog";
-import { DeletedVehiclesDialog } from "@/components/vehicles/deleted-vehicles-dialog";
+import { RecycleBinDialog } from "@/components/recycle-bin/recycle-bin-dialog";
 import { VehicleAddDialog } from "@/components/vehicles/vehicle-add-dialog";
 import { VehicleBulkImportDialog } from "@/components/vehicles/vehicle-bulk-import-dialog";
 import { VehicleRemarksWarningDialog } from "@/components/vehicles/vehicle-remarks-warning-dialog";
@@ -31,8 +31,7 @@ import { displayLicensePlate } from "@/lib/utils";
 import { isTrueValue } from "@/lib/utils";
 import { getDaysUntil } from "@/lib/date-utils";
 import { Search, SlidersHorizontal, Edit, Trash2, Archive, BookOpen, KeyRound } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { UserPermission, UserRole } from "@shared/schema";
+import { UserPermission } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/use-has-permission";
 
@@ -77,8 +76,6 @@ export default function VehiclesIndex() {
   const [barcodeBookOpen, setBarcodeBookOpen] = useState(false);
   const [keyAuditOpen, setKeyAuditOpen] = useState(false);
   const [spareKeyAuditOpen, setSpareKeyAuditOpen] = useState(false);
-  const { user: currentUser } = useAuth();
-  const isAdmin = currentUser?.role === UserRole.ADMIN;
   
   // Vehicle remarks warning dialog state
   const [remarksWarningOpen, setRemarksWarningOpen] = useState(false);
@@ -616,7 +613,8 @@ export default function VehiclesIndex() {
         />
       )}
       
-      <DeletedVehiclesDialog
+      <RecycleBinDialog
+        kind="vehicle"
         open={deletedVehiclesOpen}
         onOpenChange={setDeletedVehiclesOpen}
         onRestored={handleDialogSuccess}
@@ -641,16 +639,19 @@ export default function VehiclesIndex() {
       <div className="flex flex-wrap justify-between items-center gap-2">
         <h1 className="text-2xl font-bold">{t('indexPage.pageTitle')}</h1>
         <div className="flex flex-wrap gap-2">
-          {isAdmin && (
+          {/* Sub-project C (B-36, B-38): visible to everyone who may open this
+              screen, greyed out with the reason unless they hold "Prullenbak
+              beheren" (admin always does; managers received it once). */}
+          <RequiresPermission anyOf={[UserPermission.MANAGE_RECYCLE_BIN]}>
             <Button
               variant="outline"
               onClick={() => setDeletedVehiclesOpen(true)}
               data-testid="button-open-recycle-bin"
             >
               <Archive className="h-4 w-4 mr-2" />
-              {t('indexPage.deletedVehiclesButton')}
+              {t('recycleBin:kinds.vehicle.openButton')}
             </Button>
-          )}
+          </RequiresPermission>
           <Button variant="outline" onClick={() => setBarcodeBookOpen(true)} data-testid="button-open-barcode-book">
             <BookOpen className="h-4 w-4 mr-2" />
             {t("barcodes:book.title")}

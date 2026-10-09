@@ -2317,9 +2317,21 @@ export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 // reservations, documents and expenses, which used to be unrecoverable and
 // left no trace. Every such delete now snapshots the full row set here first,
 // so it can be restored and so there is a record of who removed what.
+//
+// Sub-project C (besluit B-36): one bin per screen, so the kinds are named
+// here once. `maintenance_block` is a reservation row of type maintenance_block
+// (written by softDeleteReservation, restored like a reservation) kept apart so
+// the Onderhoud screen has a bin of its own. Rows written before this change
+// hold 'reservation' for a block too; startup-migration.js relabels them
+// (marker migration:c_bin_maintenance_label).
+export const DELETED_RECORD_KINDS = [
+  "vehicle", "customer", "reservation", "maintenance_block", "transport", "fine",
+] as const;
+export type DeletedRecordKind = (typeof DELETED_RECORD_KINDS)[number];
+
 export const deletedRecords = pgTable("deleted_records", {
   id: serial("id").primaryKey(),
-  entityType: text("entity_type").notNull(), // 'vehicle'
+  entityType: text("entity_type").notNull(), // one of DELETED_RECORD_KINDS
   entityId: integer("entity_id").notNull(), // original primary key
   label: text("label").notNull(), // human-readable, e.g. "HND-55-N Kia Picanto"
   payload: jsonb("payload").$type<Record<string, any>>().notNull(), // full row snapshot incl. related rows

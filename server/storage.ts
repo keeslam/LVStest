@@ -79,7 +79,7 @@ export interface IStorage {
     actor?: { username?: string | null; userId?: number | null },
   ): Promise<{ deleted: boolean; reason?: 'not_found' | 'has_live_reservations'; blockingReservations?: Reservation[] }>;
   getVehicleDeleteImpact?(id: number): Promise<{ vehicle: Vehicle; counts: Record<string, number> } | undefined>;
-  getDeletedRecords?(limit?: number): Promise<any[]>;
+  getDeletedRecords?(limit?: number, entityType?: string): Promise<any[]>;
   getDeletedRecord?(id: number): Promise<any | undefined>;
   restoreDeletedRecord?(id: number, actor?: { username?: string | null }): Promise<{ restored: boolean; reason?: string; record?: any; conflicts?: number[]; conflictingCustomerName?: string }>;
   getAvailableVehicles(): Promise<Vehicle[]>;

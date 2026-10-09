@@ -638,12 +638,6 @@
         "filteredByFile": "From import file #{{id}}",
         "sourceLine": "Source: CJIB file #{{file}}"
       },
-      "bin": {
-        "button": "Recycle bin",
-        "title": "Deleted fines",
-        "description": "Deleted fines are kept here with who deleted them and when, and can be restored.",
-        "empty": "No deleted fines."
-      },
       "exportCsv": "Export (CSV)"
     },
     "requests": {

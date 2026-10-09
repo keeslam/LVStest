@@ -38,10 +38,11 @@ import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { NoDataAccess } from "@/components/ui/no-data-access";
 import { TransportDialog } from "@/components/delivery/transport-dialog";
 import { RouteOptimizationDialog } from "@/components/delivery/route-optimization-dialog";
+import { RecycleBinDialog } from "@/components/recycle-bin/recycle-bin-dialog";
 import { SparePickupPromptDialog } from "@/components/delivery/spare-pickup-prompt-dialog";
 import { TransportViewDialog, type TransportViewData } from "@/components/delivery/transport-view-dialog";
 import { formatLicensePlate } from "@/lib/format-utils";
-import { Truck, MapPin, Clock, CheckCircle, Package, PackageCheck, Undo2, Navigation, Plus, Pencil, Trash2, Euro, Search, Printer, Loader2, User, Eye } from "lucide-react";
+import { Truck, MapPin, Clock, CheckCircle, Package, PackageCheck, Undo2, Navigation, Plus, Pencil, Trash2, Euro, Search, Printer, Loader2, User, Eye, Archive } from "lucide-react";
 import { differenceInDays } from "date-fns";
 import { officeToday } from "@/lib/office-date";
 
@@ -145,6 +146,8 @@ export default function DeliveryDashboard() {
   const [transportStatusFilter, setTransportStatusFilter] = useState<string>("all");
   const [transportSearchQuery, setTransportSearchQuery] = useState("");
   const [routeDialogOpen, setRouteDialogOpen] = useState(false);
+  // Recycle bin of deleted transports (sub-project C, B-36)
+  const [recycleBinOpen, setRecycleBinOpen] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const [reportPreviewOpen, setReportPreviewOpen] = useState(false);
   const [reportToPreview, setReportToPreview] = useState<{ id: number; fileName: string } | null>(null);
@@ -565,6 +568,14 @@ export default function DeliveryDashboard() {
             <Navigation className="h-4 w-4 mr-2" />
             {t('dashboardPage.routeOptimizationButton')}
           </Button>
+          {/* Sub-project C (B-36, B-38): this screen's own bin, greyed out with the
+              reason unless the account holds "Prullenbak beheren". */}
+          <RequiresPermission anyOf={[UserPermission.MANAGE_RECYCLE_BIN]}>
+            <Button variant="outline" onClick={() => setRecycleBinOpen(true)} data-testid="button-open-recycle-bin-transports">
+              <Archive className="h-4 w-4 mr-2" />
+              {t('recycleBin:kinds.transport.openButton')}
+            </Button>
+          </RequiresPermission>
         </div>
       </div>
 
@@ -1022,6 +1033,12 @@ export default function DeliveryDashboard() {
         onClose={() => setPickupPromptTransport(null)}
         onResolved={handlePickupPromptResolved}
         mode={pickupPromptMode}
+      />
+
+      <RecycleBinDialog
+        kind="transport"
+        open={recycleBinOpen}
+        onOpenChange={setRecycleBinOpen}
       />
 
       <RouteOptimizationDialog

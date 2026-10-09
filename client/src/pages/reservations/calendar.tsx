@@ -52,6 +52,7 @@ import {
 import { ReservationForm } from "@/components/reservations/reservation-form";
 import { ReservationListDialog } from "@/components/reservations/reservation-list-dialog";
 import { NotCollectedDialog, NOT_COLLECTED_QUERY_KEY } from "@/components/reservations/not-collected-dialog";
+import { RecycleBinDialog } from "@/components/recycle-bin/recycle-bin-dialog";
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
 import {
   RevertHandoverDialog,
@@ -68,7 +69,7 @@ import { CalendarLegend } from "@/components/calendar/calendar-legend";
 import { formatReservationStatus, formatFuelLevel, formatVehicleType } from "@/lib/format-utils";
 import { formatCurrency } from "@/lib/utils";
 import { getCustomReservationStyle, getCustomReservationStyleObject, getCustomIndicatorStyle, getCustomTBDStyle } from "@/lib/calendar-styling";
-import { Calendar, User, Car, CreditCard, Edit, Eye, ClipboardEdit, Palette, Trash2, Wrench, ClipboardCheck, Mail, Search, FileText, Building, MapPin, Clock, History, AlertTriangle, Phone, RotateCcw, Printer } from "lucide-react";
+import { Calendar, User, Car, CreditCard, Edit, Eye, ClipboardEdit, Palette, Trash2, Wrench, ClipboardCheck, Mail, Search, FileText, Building, MapPin, Clock, History, AlertTriangle, Phone, RotateCcw, Printer, Archive } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -217,6 +218,9 @@ export default function ReservationCalendarPage() {
   // List view dialog
   const [listDialogOpen, setListDialogOpen] = useState(false);
   const [openedFromListView, setOpenedFromListView] = useState(false);
+
+  // Recycle bin of deleted reservations (sub-project C, B-36)
+  const [recycleBinOpen, setRecycleBinOpen] = useState(false);
   
   // Color coding dialog
   const [colorDialogOpen, setColorDialogOpen] = useState(false);
@@ -1171,6 +1175,14 @@ export default function ReservationCalendarPage() {
             <FileText className="h-4 w-4 mr-2" />
             {t('calendarPage.administrationButton')}
           </Button>
+          {/* Sub-project C (B-36, B-38): this screen's own bin, greyed out with
+              the reason unless the account holds "Prullenbak beheren". */}
+          <RequiresPermission anyOf={[UserPermission.MANAGE_RECYCLE_BIN]}>
+            <Button variant="outline" onClick={() => setRecycleBinOpen(true)} data-testid="button-open-recycle-bin-reservations">
+              <Archive className="h-4 w-4 mr-2" />
+              {t('recycleBin:kinds.reservation.openButton')}
+            </Button>
+          </RequiresPermission>
           <ReservationAddDialog
             onSuccess={async (reservation) => {
               // Fetch the full reservation data with related entities
@@ -3496,6 +3508,11 @@ export default function ReservationCalendarPage() {
           </div>
         </DialogContent>
       </Dialog>
+      <RecycleBinDialog
+        kind="reservation"
+        open={recycleBinOpen}
+        onOpenChange={setRecycleBinOpen}
+      />
       {/* besluiten B-32 aanvulling — never-collected bookings a month old */}
       <NotCollectedDialog
         open={notCollectedDialogOpen}

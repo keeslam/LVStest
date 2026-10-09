@@ -208,34 +208,6 @@
       "provideOneFieldDescription": "Geef minstens één veld op om bij te werken"
     }
   },
-  "deletedVehiclesDialog": {
-    "title": "Verwijderde voertuigen",
-    "description": "Elk verwijderd voertuig wordt hier bewaard met zijn reserveringen, documenten en kosten, zodat het teruggezet kan worden.",
-    "loading": "Laden...",
-    "noDeletedVehicles": "Geen verwijderde voertuigen.",
-    "restoredBadge": "Teruggezet",
-    "deletedByLabel": "Verwijderd {{date}} door {{by}}",
-    "unknown": "onbekend",
-    "includedLabel": "Bevat: {{summary}}",
-    "restoredByLabel": "Teruggezet {{date}} door {{by}}",
-    "restoreButton": "Terugzetten",
-    "noLinkedRecords": "geen gekoppelde records",
-    "toasts": {
-      "restoredTitle": "Teruggezet",
-      "restoredDescription": "Het voertuig en zijn gegevens zijn terug.",
-      "restoreFailedTitle": "Terugzetten mislukt",
-      "restoreFailedDescription": "Kon dit record niet terugzetten."
-    },
-    "search": "Zoeken op kenteken, omschrijving of naam…",
-    "noMatches": "Niets gevonden voor deze zoekterm.",
-    "entityTypes": {
-      "vehicle": "Voertuig",
-      "customer": "Klant",
-      "reservation": "Reservering",
-      "transport": "Transport",
-      "fine": "Boete"
-    }
-  },
   "editDialog": {
     "title": "Voertuig bewerken",
     "description": "Werk voertuiginformatie en -gegevens bij",
@@ -1019,7 +991,6 @@
       "openingReservationDetails": "Reserveringsdetails openen..."
     },
     "pageTitle": "Voertuigbeheer",
-    "deletedVehiclesButton": "Verwijderde voertuigen",
     "fleetCardTitle": "Voertuigenpark",
     "fleetCardDescription": "Beheer je voertuigenpark, bekijk details en maak reserveringen aan.",
     "searchPlaceholder": "Zoeken op kenteken, merk of model...",
