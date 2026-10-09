@@ -82,6 +82,33 @@ servertekst — in plaats van een leeg contract (BUG-028). Ook hier `mode: "seri
 verandert tijdelijk wélk sjabloon standaard is, wat een `lvs_e2e`-brede instelling is, en
 zet die aan het eind weer terug.
 
+**Prullenbakken (deelproject C, taak 7): een derde staarttest, `e2e/layer-b-tail/recycle-bin/bins.spec.ts`.**
+Draait als `manager`, het profiel dat naast de beheerder het recht *Prullenbak beheren*
+heeft. Drie verhalen, elk met een eigen handelingenbudget: (1) een reservering verwijderen via
+de lijst, zien dat hij alleen in de prullenbak van Reserveringen staat en terugzetten; (2) een
+klant met een debiteurnummer verwijderen, zien dat het nummer gereserveerd blijft, de klant
+definitief verwijderen (één rij, één bevestiging) en daarna hetzelfde nummer aan een nieuwe
+klant geven; (3) twee rijen aanvinken, met één bevestiging die het aantal en de soort noemt
+verwijderen, en bij *Prullenbak leegmaken* alleen de bevestiging openen en annuleren. De
+benodigde klanten, het voertuig en de boeking komen via de API (zoals de balie ze zou hebben
+gemaakt); alles waar de test om draait — verwijderen, terugzetten, definitief verwijderen —
+gebeurt op het scherm. De test gaat nergens uit van een lege prullenbak: laag B laat zelf
+rijen achter (het debiteurnummer-verhaal), dus rijen worden gevonden op het nummer dat de API
+geeft, en *Prullenbak leegmaken* wordt hier nooit bevestigd.
+
+De bevestiging achter *Prullenbak leegmaken* (`dialog-confirm-purge`) staat in het register
+(`e2e/registry/dialogs.ts`) met **beide** velden `allowedPathNeedsState` en
+`deniedPathNeedsState`, elk met de reden: de knop bestaat alleen binnen het prullenbakvenster en
+staat uit zolang de prullenbak leeg is (de seed bevat geen verwijderde rijen), en een rol zonder
+het recht kan het prullenbakvenster niet eens openen. `dialogs.spec.ts` maakt voor die ingang
+dus geen test; het bewijs is deze staarttest.
+
+**Kleine aanpassing aan de testserver (taak 6).** `e2e/support/serve.ts` zet
+`API_RATE_LIMIT_MAX` op 20000. Eén run is één serverproces met één venster van 15 minuten, en de
+beheerder (die laag A bijna helemaal draagt) kwam met het standaardbudget van 1000 verzoeken niet
+meer rond zodra het register boven de ~370 tests uitkwam. Alleen de testserver zet dit; in
+productie blijft het 1000.
+
 Voorwaarden:
 
 - PostgreSQL moet lokaal draaien (localhost, poort 5432, gebruiker `postgres`).

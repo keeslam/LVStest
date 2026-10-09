@@ -92,7 +92,8 @@ export const DIALOGS: DialogEntry[] = [
   // holds no deleted rows), which is a complete state of the dialog, so none of
   // the six entries needs allowedPathNeedsState. The five entries after this one
   // sit on their own screens (customers, reservations, maintenance, delivery,
-  // portal-admin); restore and purge are proven by the tail spec of Task 7.
+  // portal-admin); restore, purge and the purge confirmation are proven by the tail
+  // spec e2e/layer-b-tail/recycle-bin/bins.spec.ts (Task 7).
   { page: "/vehicles", opener: "button-open-recycle-bin", anyOf: [P.MANAGE_RECYCLE_BIN], source: "client/src/components/recycle-bin/recycle-bin-dialog.tsx", name: "prullenbak voertuigen" },
   { page: "/vehicles", opener: "button-open-barcode-book", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/barcodes/barcode-book-dialog.tsx", name: "barcodeboek" },
   { page: "/vehicles", opener: "button-key-audit", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/barcodes/key-audit-dialog.tsx", name: "sleutelcontrole (hoofdsleutels)" },
@@ -232,6 +233,21 @@ export const DIALOGS: DialogEntry[] = [
   // POST /api/customers (routes.ts:2469).
   { page: "/customers", opener: "button-add-customer", anyOf: [P.MANAGE_CUSTOMERS], source: "client/src/components/customers/customer-add-dialog.tsx", name: "klant toevoegen" },
   { page: "/customers", opener: "button-open-recycle-bin-customers", anyOf: [P.MANAGE_RECYCLE_BIN], source: "client/src/components/recycle-bin/recycle-bin-dialog.tsx", name: "prullenbak klanten" },
+  // Sub-project C, Task 7 (B-38): the confirmation behind "Prullenbak leegmaken" - the
+  // same dialog file, an AlertDialog of its own (`dialog-confirm-purge`). Its opener only
+  // exists inside the bin dialog and only while that bin holds a row (the button is off on
+  // an empty bin, and the e2e seed holds no deleted rows), so neither branch can find it on
+  // a bare page load: the ALLOWED branch has no row to empty, and the DENIED branch never
+  // reaches it (a profile without the right sees `button-open-recycle-bin-customers`
+  // greyed out - proven by that entry - and so cannot open the bin at all). The proof that
+  // it opens, names the count and the kind, cancels and confirms is the tail spec
+  // e2e/layer-b-tail/recycle-bin/bins.spec.ts.
+  {
+    page: "/customers", opener: "button-purge-all", via: "button-open-recycle-bin-customers", anyOf: [P.MANAGE_RECYCLE_BIN],
+    source: "client/src/components/recycle-bin/recycle-bin-dialog.tsx", name: "prullenbak leegmaken (bevestiging)",
+    allowedPathNeedsState: "the opener sits inside the recycle-bin dialog and is off while the bin is empty (the e2e seed holds no deleted rows); the tail spec bins.spec.ts deletes rows first and then opens the confirmation",
+    deniedPathNeedsState: "a role without manage_recycle_bin cannot open the bin (its opener is greyed out, proven by the entry above), so the purge button never exists for it; the tail spec bins.spec.ts runs as manager",
+  },
 
   // --- /portal-admin -------------------------------------------------------
   // Only admin/manager hold VIEW_PORTAL/MANAGE_PORTAL among the seven E2E
