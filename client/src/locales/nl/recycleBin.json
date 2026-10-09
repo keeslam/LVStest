@@ -25,7 +25,8 @@
     "LICENSE_PLATE_TAKEN": "Er bestaat al een voertuig met hetzelfde kenteken. Verwijder of hernoem dat eerst.",
     "BARCODE_TAKEN": "Een ander voertuig gebruikt dezelfde barcode. Maak die daar eerst leeg.",
     "RESERVATION_CONFLICT": "Deze reservering kan niet terug: het voertuig is in de tussentijd geboekt voor die periode.",
-    "DEBTOR_NUMBER_TAKEN": "Een andere klant gebruikt dit debiteurnummer al."
+    "DEBTOR_NUMBER_TAKEN": "Dit debiteurnummer is al in gebruik bij klant {{name}}.",
+    "DEBTOR_NUMBER_TAKEN_UNNAMED": "Een andere klant gebruikt dit debiteurnummer al."
   },
   "kinds": {
     "vehicle": {

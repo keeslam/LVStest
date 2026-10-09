@@ -174,12 +174,21 @@ export function RecycleBinDialog({ kind, open, onOpenChange, onRestored, onPurge
       await invalidateByPrefix("/api/deleted-records");
       onRestored?.();
     },
-    onError: (error: Error & { code?: string }) => {
+    onError: (error: Error & { code?: string; conflictingCustomerName?: string }) => {
       // The client branches on the stable `code`, never on the English message.
       const code = typeof error.code === "string" ? error.code : "";
+      // A taken debtor number also carries who holds it, as a structured field of its
+      // own (besluit B-35); without a name the sentence stays whole instead of
+      // printing an empty placeholder.
+      const holder = typeof error.conflictingCustomerName === "string" ? error.conflictingCustomerName.trim() : "";
+      const description = !RESTORE_ERROR_CODES.has(code)
+        ? t("toasts.restoreFailedDescription")
+        : code === "DEBTOR_NUMBER_TAKEN" && !holder
+          ? t("restoreErrors.DEBTOR_NUMBER_TAKEN_UNNAMED")
+          : t(`restoreErrors.${code}`, { name: holder });
       toast({
         title: t("toasts.restoreFailedTitle"),
-        description: RESTORE_ERROR_CODES.has(code) ? t(`restoreErrors.${code}`) : t("toasts.restoreFailedDescription"),
+        description,
         variant: "destructive",
       });
     },

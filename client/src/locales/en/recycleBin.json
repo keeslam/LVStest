@@ -25,7 +25,8 @@
     "LICENSE_PLATE_TAKEN": "A vehicle with the same license plate already exists. Delete or rename it first.",
     "BARCODE_TAKEN": "Another vehicle already uses the same barcode. Clear it there first.",
     "RESERVATION_CONFLICT": "This reservation cannot come back: the vehicle has been booked for that period in the meantime.",
-    "DEBTOR_NUMBER_TAKEN": "Another customer already uses this debtor number."
+    "DEBTOR_NUMBER_TAKEN": "This debtor number is already in use by customer {{name}}.",
+    "DEBTOR_NUMBER_TAKEN_UNNAMED": "Another customer already uses this debtor number."
   },
   "kinds": {
     "vehicle": {

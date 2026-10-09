@@ -139,6 +139,9 @@ describe("B-35 — debtor number uniqueness", () => {
     expect(restore.status).toBe(409);
     expect(restore.body.code).toBe("DEBTOR_NUMBER_TAKEN");
     expect(restore.body.message).toContain(takenBy.body.name);
+    // Task 6 fix round: the client translates by `code` and never reads the English
+    // message, so the holder also travels as a field of its own.
+    expect(restore.body.conflictingCustomerName).toBe(takenBy.body.name);
   });
 
   it("normalises an un-trimmed debtor number on restore, for a snapshot written before this feature trimmed on write", async () => {

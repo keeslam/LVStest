@@ -2220,12 +2220,18 @@ export async function registerRoutes(app: Express): Promise<void> {
         };
         const reason = result?.reason || 'not_found';
         let message = reasons[reason] || "Could not restore this record.";
+        // The client translates by `code` and never reads the English message, so
+        // whoever holds the number now travels as a field of its own (besluit B-35:
+        // the refusal names the holder, as the customer form does).
+        let conflictingCustomerName: string | undefined;
         if (reason === 'debtor_number_taken' && result?.conflictingCustomerName) {
-          message = `Another customer (${result.conflictingCustomerName}) already uses this debtor number.`;
+          conflictingCustomerName = result.conflictingCustomerName;
+          message = `Another customer (${conflictingCustomerName}) already uses this debtor number.`;
         }
         return res.status(reason === 'not_found' ? 404 : 409).json({
           code: reason.toUpperCase(),
           message,
+          ...(conflictingCustomerName ? { conflictingCustomerName } : {}),
         });
       }
 

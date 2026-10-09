@@ -230,6 +230,38 @@ describe("RecycleBinDialog - restoring", () => {
     expect(screen.getByText("Terugzetten mislukt")).toBeInTheDocument();
   });
 
+  it("a refused debtor number names the customer who holds it, from the structured field", async () => {
+    const user = userEvent.setup();
+    restoreResponse = () =>
+      jsonResponse(
+        {
+          code: "DEBTOR_NUMBER_TAKEN",
+          message: "Another customer (Bakkerij De Wit) already uses this debtor number.",
+          conflictingCustomerName: "Bakkerij De Wit",
+        },
+        409,
+      );
+    renderBin("customer");
+
+    await user.click(await screen.findByTestId("button-restore-2"));
+
+    expect(await screen.findByText("Dit debiteurnummer is al in gebruik bij klant Bakkerij De Wit.")).toBeInTheDocument();
+    // The English server text is never shown, and the name is not parsed out of it.
+    expect(screen.queryByText(/Another customer/)).toBeNull();
+  });
+
+  it("a refused debtor number without a name still reads as a whole Dutch sentence", async () => {
+    const user = userEvent.setup();
+    restoreResponse = () =>
+      jsonResponse({ code: "DEBTOR_NUMBER_TAKEN", message: "Another customer already uses this debtor number." }, 409);
+    renderBin("customer");
+
+    await user.click(await screen.findByTestId("button-restore-2"));
+
+    expect(await screen.findByText("Een andere klant gebruikt dit debiteurnummer al.")).toBeInTheDocument();
+    expect(screen.queryByText(/{{name}}/)).toBeNull();
+  });
+
   it("an unknown refusal falls back to one generic Dutch sentence", async () => {
     const user = userEvent.setup();
     restoreResponse = () => jsonResponse({ code: "SOMETHING_NEW", message: "Server says no." }, 409);
