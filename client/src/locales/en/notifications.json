@@ -281,28 +281,37 @@
     },
     "history": {
       "cardTitle": "Email Log",
-      "cardDescription": "Track sent and failed email notifications",
-      "sentSuccessfully": "Sent Successfully",
-      "failed": "Failed",
-      "successRate": "Success Rate",
+      "cardDescription": "Every sent and failed email, newest first",
+      "loading": "Loading log...",
+      "loadError": "The email log could not be loaded. Please try again later.",
+      "emptyTitle": "No emails have been sent yet",
+      "emptyDescription": "As soon as a notification or email is sent, it appears here with its result.",
+      "recipientLabel": "To:",
+      "recipientsCount_one": "{{count}} recipient",
+      "recipientsCount_other": "{{count}} recipients",
+      "roundCounts": "{{sent}} sent, {{failed}} failed",
+      "kindGps": "GPS activation",
       "failureReasonLabel": "Failure Reason:",
       "statusLabels": {
         "sent": "sent",
         "failed": "failed",
-        "pending": "pending"
+        "partial": "partly failed"
       }
     },
     "analytics": {
-      "totalEmailsSent": "Total Emails Sent",
-      "failedEmails": "Failed Emails",
-      "totalCampaigns": "Total Campaigns",
-      "activeCustomers": "Active Customers",
-      "performanceCardTitle": "Email Performance",
-      "performanceCardDescription": "Track your email communication effectiveness",
+      "totalEmailsSent": "Emails sent",
+      "failedEmails": "Failed emails",
+      "totalCampaigns": "Send runs",
+      "runsWithFailures": "Runs with failures",
+      "performanceCardTitle": "Emails by kind",
+      "performanceCardDescription": "Counted from the email log",
       "apkNotifications": "APK Notifications",
       "maintenanceReminders": "Maintenance Reminders",
       "customMessages": "Custom Messages",
-      "emailsSentLabel": "Emails sent"
+      "otherMessages": "Other emails",
+      "emailsSentLabel": "Emails sent",
+      "failedCount": "{{count}} failed",
+      "basisNote": "Counted from the per-recipient lines in the email log; a send run is counted separately. Failures before sending (such as a customer without an email address) and older sends without a per-recipient line appear only on their run and are not counted here."
     },
     "templates": {
       "sectionTitle": "Email Templates",

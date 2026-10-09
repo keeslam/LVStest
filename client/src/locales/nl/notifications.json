@@ -281,28 +281,37 @@
     },
     "history": {
       "cardTitle": "E-maillogboek",
-      "cardDescription": "Volg verstuurde en mislukte e-mailmeldingen",
-      "sentSuccessfully": "Succesvol verstuurd",
-      "failed": "Mislukt",
-      "successRate": "Slagingspercentage",
+      "cardDescription": "Elke verstuurde en mislukte e-mail, de nieuwste bovenaan",
+      "loading": "Logboek laden...",
+      "loadError": "Het e-maillogboek kon niet worden geladen. Probeer het later opnieuw.",
+      "emptyTitle": "Er zijn nog geen e-mails verstuurd",
+      "emptyDescription": "Zodra een melding of e-mail wordt verstuurd, staat die hier met het resultaat.",
+      "recipientLabel": "Aan:",
+      "recipientsCount_one": "{{count}} ontvanger",
+      "recipientsCount_other": "{{count}} ontvangers",
+      "roundCounts": "{{sent}} verstuurd, {{failed}} mislukt",
+      "kindGps": "GPS-activatie",
       "failureReasonLabel": "Reden van mislukking:",
       "statusLabels": {
         "sent": "verzonden",
         "failed": "mislukt",
-        "pending": "in behandeling"
+        "partial": "deels mislukt"
       }
     },
     "analytics": {
-      "totalEmailsSent": "Totaal aantal verstuurde e-mails",
+      "totalEmailsSent": "Verstuurde e-mails",
       "failedEmails": "Mislukte e-mails",
-      "totalCampaigns": "Totaal aantal campagnes",
-      "activeCustomers": "Actieve klanten",
-      "performanceCardTitle": "E-mailprestaties",
-      "performanceCardDescription": "Volg de effectiviteit van je e-mailcommunicatie",
+      "totalCampaigns": "Verzendrondes",
+      "runsWithFailures": "Rondes met mislukkingen",
+      "performanceCardTitle": "E-mails per soort",
+      "performanceCardDescription": "Geteld uit het e-maillogboek",
       "apkNotifications": "APK-meldingen",
       "maintenanceReminders": "Onderhoudsherinneringen",
       "customMessages": "Aangepaste berichten",
-      "emailsSentLabel": "E-mails verstuurd"
+      "otherMessages": "Overige e-mails",
+      "emailsSentLabel": "E-mails verstuurd",
+      "failedCount": "{{count}} mislukt",
+      "basisNote": "Geteld uit de regels per ontvanger in het e-maillogboek; een verzendronde telt apart. Mislukkingen vóór het versturen (zoals een klant zonder e-mailadres) en oudere verzendingen zonder regel per ontvanger staan alleen bij hun ronde en tellen hier niet mee."
     },
     "templates": {
       "sectionTitle": "E-mailsjablonen",

@@ -18,18 +18,64 @@ import { RequiresPermission } from "@/components/ui/requires-permission";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { NoDataAccess } from "@/components/ui/no-data-access";
 import { formatLicensePlate, plateMatches, formatVehicleType } from "@/lib/format-utils";
-import { formatDateNl } from "@/lib/format-date-nl";
+import { formatDateNl, formatDateTimeNl } from "@/lib/format-date-nl";
 
-interface NotificationHistory {
-  id: string;
-  type: 'apk' | 'maintenance' | 'custom';
+// One row of GET /api/email-logs (shared/schema.ts, emailLogs). Two kinds live
+// in the same table: one row per send attempt (recipient + result set, written
+// by sendEmail) and one summary row per notification run (recipient null, the
+// run's totals and every error it collected).
+interface EmailLogRow {
+  id: number;
+  template: string;
   subject: string;
   recipients: number;
-  sentAt: string;
-  status: 'sent' | 'failed' | 'pending';
-  failureReason?: string;
   emailsSent: number;
   emailsFailed: number;
+  failureReason: string | null;
+  sentAt: string;
+  recipient: string | null;
+  result: string | null;
+}
+
+type EmailLogStatus = 'sent' | 'failed' | 'partial';
+
+function emailLogStatus(row: EmailLogRow): EmailLogStatus {
+  if (row.result === 'sent') return 'sent';
+  if (row.result === 'failed') return 'failed';
+  if (row.emailsFailed > 0) return row.emailsSent > 0 ? 'partial' : 'failed';
+  return 'sent';
+}
+
+function sentAtMs(row: EmailLogRow): number {
+  const ms = Date.parse(row.sentAt);
+  return Number.isNaN(ms) ? 0 : ms;
+}
+
+/** Newest first, whatever order the route used; the id breaks a tie. */
+function newestFirst(rows: EmailLogRow[]): EmailLogRow[] {
+  return [...rows].sort((a, b) => sentAtMs(b) - sentAtMs(a) || b.id - a.id);
+}
+
+type EmailKind = 'apk' | 'maintenance' | 'custom' | 'other';
+
+/** The numbers on the Analyse tab, all counted from the rows themselves. */
+function summariseEmailLog(rows: EmailLogRow[]) {
+  const mails = rows.filter((row) => row.recipient);
+  const runs = rows.filter((row) => !row.recipient);
+  const count = (list: EmailLogRow[], status: EmailLogStatus) =>
+    list.filter((row) => emailLogStatus(row) === status).length;
+  const kind = (name: EmailKind) => {
+    const list = mails.filter((row) =>
+      name === 'other' ? !['apk', 'maintenance', 'custom'].includes(row.template) : row.template === name);
+    return { sent: count(list, 'sent'), failed: count(list, 'failed') };
+  };
+  return {
+    sent: count(mails, 'sent'),
+    failed: count(mails, 'failed'),
+    runs: runs.length,
+    runsWithFailures: runs.filter((row) => row.emailsFailed > 0).length,
+    kinds: { apk: kind('apk'), maintenance: kind('maintenance'), custom: kind('custom'), other: kind('other') },
+  };
 }
 
 interface EmailTemplate {
@@ -183,8 +229,14 @@ export default function CustomerCommunications() {
   });
 
   // Fetch email logs - B-29a: GET /api/email-logs also accepts
-  // MANAGE_EMAIL_TEMPLATES only (server/index.ts:418).
-  const { data: emailLogs = [] } = useQuery({
+  // MANAGE_EMAIL_TEMPLATES only (server/index.ts:418). The E-maillogboek and
+  // Analyse tabs render exactly this, nothing else (audit 2026-10-09, module
+  // 13, finding 1: they used to show hard-coded rows from March 2024).
+  const {
+    data: emailLogData,
+    isLoading: emailLogLoading,
+    isError: emailLogError,
+  } = useQuery<EmailLogRow[]>({
     queryKey: ['/api/email-logs'],
     queryFn: async () => {
       const response = await fetch('/api/email-logs');
@@ -193,41 +245,8 @@ export default function CustomerCommunications() {
     },
     enabled: canManageEmailTemplates,
   });
-
-  // Mock notification history for now - will be replaced with real data
-  const notificationHistory: NotificationHistory[] = [
-    {
-      id: "1",
-      type: "apk",
-      subject: "APK Reminder - Inspection due soon",
-      recipients: 12,
-      sentAt: "2024-03-15T10:30:00Z",
-      status: "sent",
-      emailsSent: 12,
-      emailsFailed: 0
-    },
-    {
-      id: "2", 
-      type: "maintenance",
-      subject: "Scheduled maintenance reminder",
-      recipients: 8,
-      sentAt: "2024-03-14T14:20:00Z",
-      status: "sent",
-      emailsSent: 7,
-      emailsFailed: 1,
-      failureReason: "Invalid email address"
-    },
-    {
-      id: "3",
-      type: "custom",
-      subject: "Important vehicle recall notice",
-      recipients: 25,
-      sentAt: "2024-03-13T09:15:00Z",
-      status: "sent",
-      emailsSent: 25,
-      emailsFailed: 0
-    }
-  ];
+  const emailLogRows = newestFirst(Array.isArray(emailLogData) ? emailLogData : []);
+  const emailLogSummary = summariseEmailLog(emailLogRows);
 
   const filteredVehicles = vehiclesWithReservations.filter((item: any) => {
     const vehicle = item.vehicle;
@@ -1501,163 +1520,196 @@ export default function CustomerCommunications() {
               <CardDescription>{t('customerCommunications.history.cardDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {notificationHistory.map((notification) => {
-                  const info = getTemplateInfo(notification.type);
-                  const Icon = info.icon;
-                  const successRate = notification.emailsSent / (notification.emailsSent + notification.emailsFailed) * 100;
-                  
-                  return (
-                    <div key={notification.id} className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-4">
-                          <Icon className={`h-5 w-5 ${info.color}`} />
-                          <div>
-                            <div className="font-medium">{notification.subject}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {new Date(notification.sentAt).toLocaleDateString('nl-NL')} at {new Date(notification.sentAt).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+              {!canManageEmailTemplates ? (
+                // GET /api/email-logs needs MANAGE_EMAIL_TEMPLATES alone: a
+                // visible hole, not a genuine "nothing sent yet" state.
+                <NoDataAccess permission={UserPermission.MANAGE_EMAIL_TEMPLATES} />
+              ) : emailLogLoading ? (
+                <p className="text-sm text-muted-foreground" data-testid="email-log-loading">
+                  {t('customerCommunications.history.loading')}
+                </p>
+              ) : emailLogError ? (
+                <p className="text-sm text-destructive" data-testid="email-log-error">
+                  {t('customerCommunications.history.loadError')}
+                </p>
+              ) : emailLogRows.length === 0 ? (
+                <div className="text-center py-8" data-testid="email-log-empty">
+                  <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">{t('customerCommunications.history.emptyTitle')}</h3>
+                  <p className="text-muted-foreground">{t('customerCommunications.history.emptyDescription')}</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {emailLogRows.map((row) => {
+                    const status = emailLogStatus(row);
+                    const knownKind = ['apk', 'maintenance', 'custom'].includes(row.template);
+                    const info = knownKind ? getTemplateInfo(row.template) : null;
+                    const Icon = info ? info.icon : Mail;
+                    const kindLabel = info
+                      ? info.title
+                      : row.template === 'gps'
+                        ? t('customerCommunications.history.kindGps')
+                        : row.template;
+
+                    return (
+                      <div key={row.id} className="p-4 border rounded-lg" data-testid="email-log-row">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start space-x-4 min-w-0">
+                            <Icon className={`h-5 w-5 mt-0.5 shrink-0 ${info ? info.color : 'text-muted-foreground'}`} />
+                            <div className="min-w-0">
+                              <div className="font-medium break-words">{row.subject}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {formatDateTimeNl(row.sentAt)} · {kindLabel}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {row.recipient ? (
+                                  <>
+                                    <span>{t('customerCommunications.history.recipientLabel')}</span>{' '}
+                                    <span className="break-all">{row.recipient}</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span>{t('customerCommunications.history.recipientsCount', { count: row.recipients })}</span>
+                                    {' · '}
+                                    <span>{t('customerCommunications.history.roundCounts', { sent: row.emailsSent, failed: row.emailsFailed })}</span>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <Badge variant={notification.status === 'sent' ? 'default' : 'destructive'}>
-                          {t(`customerCommunications.history.statusLabels.${notification.status}`)}
-                        </Badge>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
-                        <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                          <div className="text-sm font-medium text-green-900">{t('customerCommunications.history.sentSuccessfully')}</div>
-                          <div className="text-lg font-bold text-green-700">{notification.emailsSent}</div>
+                          <Badge
+                            variant={status === 'sent' ? 'default' : 'destructive'}
+                            data-testid="email-log-status"
+                          >
+                            {t(`customerCommunications.history.statusLabels.${status}`)}
+                          </Badge>
                         </div>
 
-                        <div className="p-3 bg-red-50 rounded-lg border border-red-200">
-                          <div className="text-sm font-medium text-red-900">{t('customerCommunications.history.failed')}</div>
-                          <div className="text-lg font-bold text-red-700">{notification.emailsFailed}</div>
-                        </div>
-
-                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <div className="text-sm font-medium text-blue-900">{t('customerCommunications.history.successRate')}</div>
-                          <div className="text-lg font-bold text-blue-700">{successRate.toFixed(1)}%</div>
-                        </div>
-                      </div>
-
-                      {notification.failureReason && (
-                        <div className="mt-3 p-2 bg-yellow-50 rounded border border-yellow-200">
-                          <div className="text-sm text-yellow-800">
-                            <strong>{t('customerCommunications.history.failureReasonLabel')}</strong> {notification.failureReason}
+                        {row.failureReason && (
+                          <div className="mt-3 p-2 bg-yellow-50 rounded border border-yellow-200">
+                            <div className="text-sm text-yellow-800 break-words">
+                              <strong>{t('customerCommunications.history.failureReasonLabel')}</strong> {row.failureReason}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {!canManageEmailTemplates ? (
             <Card>
               <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-green-100 rounded-full mr-4">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-green-600">
-                      {notificationHistory.reduce((sum, n) => sum + n.emailsSent, 0)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{t('customerCommunications.analytics.totalEmailsSent')}</p>
-                  </div>
-                </div>
+                <NoDataAccess permission={UserPermission.MANAGE_EMAIL_TEMPLATES} />
               </CardContent>
             </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-red-100 rounded-full mr-4">
-                    <AlertTriangle className="h-6 w-6 text-red-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-red-600">
-                      {notificationHistory.reduce((sum, n) => sum + n.emailsFailed, 0)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{t('customerCommunications.analytics.failedEmails')}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-blue-100 rounded-full mr-4">
-                    <Mail className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-blue-600">
-                      {notificationHistory.length}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{t('customerCommunications.analytics.totalCampaigns')}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-purple-100 rounded-full mr-4">
-                    <Users className="h-6 w-6 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-purple-600">
-                      {vehiclesWithReservations.length}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{t('customerCommunications.analytics.activeCustomers')}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('customerCommunications.analytics.performanceCardTitle')}</CardTitle>
-              <CardDescription>{t('customerCommunications.analytics.performanceCardDescription')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium text-sm mb-2">{t('customerCommunications.analytics.apkNotifications')}</h4>
-                    <div className="text-2xl font-bold text-orange-600">
-                      {notificationHistory.filter(n => n.type === 'apk').reduce((sum, n) => sum + n.emailsSent, 0)}
+          ) : emailLogLoading ? (
+            <p className="text-sm text-muted-foreground">{t('customerCommunications.history.loading')}</p>
+          ) : emailLogError ? (
+            <p className="text-sm text-destructive">{t('customerCommunications.history.loadError')}</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="p-3 bg-green-100 rounded-full mr-4">
+                        <CheckCircle className="h-6 w-6 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-green-600" data-testid="analytics-sent">
+                          {emailLogSummary.sent}
+                        </p>
+                        <p className="text-sm text-muted-foreground">{t('customerCommunications.analytics.totalEmailsSent')}</p>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">{t('customerCommunications.analytics.emailsSentLabel')}</p>
-                  </div>
+                  </CardContent>
+                </Card>
 
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium text-sm mb-2">{t('customerCommunications.analytics.maintenanceReminders')}</h4>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {notificationHistory.filter(n => n.type === 'maintenance').reduce((sum, n) => sum + n.emailsSent, 0)}
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="p-3 bg-red-100 rounded-full mr-4">
+                        <AlertTriangle className="h-6 w-6 text-red-600" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-red-600" data-testid="analytics-failed">
+                          {emailLogSummary.failed}
+                        </p>
+                        <p className="text-sm text-muted-foreground">{t('customerCommunications.analytics.failedEmails')}</p>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">{t('customerCommunications.analytics.emailsSentLabel')}</p>
-                  </div>
+                  </CardContent>
+                </Card>
 
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium text-sm mb-2">{t('customerCommunications.analytics.customMessages')}</h4>
-                    <div className="text-2xl font-bold text-green-600">
-                      {notificationHistory.filter(n => n.type === 'custom').reduce((sum, n) => sum + n.emailsSent, 0)}
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="p-3 bg-blue-100 rounded-full mr-4">
+                        <Mail className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-blue-600" data-testid="analytics-runs">
+                          {emailLogSummary.runs}
+                        </p>
+                        <p className="text-sm text-muted-foreground">{t('customerCommunications.analytics.totalCampaigns')}</p>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">{t('customerCommunications.analytics.emailsSentLabel')}</p>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="p-3 bg-purple-100 rounded-full mr-4">
+                        <Users className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-purple-600" data-testid="analytics-runs-failed">
+                          {emailLogSummary.runsWithFailures}
+                        </p>
+                        <p className="text-sm text-muted-foreground">{t('customerCommunications.analytics.runsWithFailures')}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('customerCommunications.analytics.performanceCardTitle')}</CardTitle>
+                  <CardDescription>{t('customerCommunications.analytics.performanceCardDescription')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {([
+                      ['apk', 'apkNotifications', 'text-orange-600'],
+                      ['maintenance', 'maintenanceReminders', 'text-blue-600'],
+                      ['custom', 'customMessages', 'text-green-600'],
+                      ['other', 'otherMessages', 'text-muted-foreground'],
+                    ] as const).map(([kind, labelKey, color]) => (
+                      <div key={kind} className="p-4 border rounded-lg" data-testid={`analytics-kind-${kind}`}>
+                        <h4 className="font-medium text-sm mb-2">{t(`customerCommunications.analytics.${labelKey}`)}</h4>
+                        <div className={`text-2xl font-bold ${color}`}>{emailLogSummary.kinds[kind].sent}</div>
+                        <p className="text-xs text-muted-foreground">{t('customerCommunications.analytics.emailsSentLabel')}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {t('customerCommunications.analytics.failedCount', { count: emailLogSummary.kinds[kind].failed })}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-4" data-testid="analytics-basis-note">
+                    {t('customerCommunications.analytics.basisNote')}
+                  </p>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="templates" className="space-y-6">
