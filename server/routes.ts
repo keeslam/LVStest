@@ -99,6 +99,7 @@ import {
   assertPickupPeriodStarted,
   PickupBeforeStartError,
   selectMaintenanceBlocksToClose,
+  maintenanceBlockJustClosed,
   type HandoverOverride,
 } from "./services/lifecycle";
 import { currentRenterReservation } from "./services/vehicle-notification-recipients";
@@ -3894,7 +3895,14 @@ export async function registerRoutes(app: Express): Promise<void> {
       // dialog could jump `booked -> completed` in one step, or persist
       // literal "garbage". Same gate as `/status` now.
       if ('status' in reservationData) {
-        reservationData.status = assertReservationTransition(existingBasic.status, reservationData.status);
+        // A maintenance block is not a rental: it may be closed straight from
+        // planned ("Uit" without a "Binnen" save) and it never gets B-16's
+        // pickup question (the period of a block is not shifted to today).
+        const basicIsBlockEdit = existingBasic.type === "maintenance_block" &&
+          (reservationData.type ?? existingBasic.type) === "maintenance_block";
+        reservationData.status = assertReservationTransition(existingBasic.status, reservationData.status, {
+          maintenanceBlock: basicIsBlockEdit,
+        });
         // Sub-project C (B-33, B-39): no client sends a cancellation through here,
         // but the route can write `cancelled`, so a picked-up rental is held to the
         // same rule as on the two other status writers.
@@ -3903,7 +3911,9 @@ export async function registerRoutes(app: Express): Promise<void> {
           if (refusal) return res.status(refusal.status).json(refusal.body);
         }
         // besluiten B-16 / BUG-144 — no pickup before the period starts.
-        await applyPickupPeriodRule(existingBasic, reservationData as Record<string, any>, req);
+        if (!basicIsBlockEdit) {
+          await applyPickupPeriodRule(existingBasic, reservationData as Record<string, any>, req);
+        }
       }
 
       // BUG-017: same blacklist check as the create path and as PATCH /:id.
@@ -3959,6 +3969,9 @@ export async function registerRoutes(app: Express): Promise<void> {
           return res.status(404).json({ message: "Reservation not found" });
         }
         void onMaintenanceBlockChanged(maintBefore ?? null, updatedMaintenance);
+        // Sub-project C, Task 8: "Uit" must free the car like every other writer
+        // that finishes a block. Before the early return below, which skips the sweep.
+        await freeVehicleWhenBlockClosed(maintBefore, updatedMaintenance);
 
         if (customerConflicts.length > 0) {
           return res.status(200).json({
@@ -4160,6 +4173,22 @@ export async function registerRoutes(app: Express): Promise<void> {
       sendRouteError(res, error, "Failed to revert the reservation");
     }
   });
+
+  async function freeVehicleWhenBlockClosed(
+    before: Parameters<typeof maintenanceBlockJustClosed>[0] & { vehicleId?: number | null },
+    after: Parameters<typeof maintenanceBlockJustClosed>[1] & { vehicleId?: number | null },
+  ): Promise<void> {
+    if (!maintenanceBlockJustClosed(before, after)) return;
+    // markVehicleForService(...,'ok') is the one owner of "the job is closed":
+    // it clears the workshop flag and re-derives the availability, which keeps the
+    // car in the workshop when another open block still covers today. The fleet
+    // sweep the PATCH routes end with cannot do this - it keeps a stored
+    // needs_fixing as a manual flag.
+    const vehicleIds = new Set([before?.vehicleId, after?.vehicleId].filter((id): id is number => id != null));
+    for (const vehicleId of vehicleIds) {
+      await storage.markVehicleForService(vehicleId, 'ok');
+    }
+  }
 
   /**
    * besluiten **B-16** / BUG-144 — the period rule for every writer that can
@@ -4498,9 +4527,13 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       // FIX-H (BUG-016) — the enum and the transition table, on this path too.
       if ('status' in reservationData) {
+        // Same block exemption as /basic: closing from planned, no pickup question.
+        const patchIsBlockEdit = existingReservationForDiff.type === "maintenance_block" &&
+          (reservationData.type ?? existingReservationForDiff.type) === "maintenance_block";
         reservationData.status = assertReservationTransition(
           existingReservationForDiff.status,
           reservationData.status,
+          { maintenanceBlock: patchIsBlockEdit },
         );
         // Sub-project C (B-33, B-39): the edit form's "Geannuleerd" is the same
         // cancellation as the cancel dialog's; a multipart submit sends the flag
@@ -4510,7 +4543,9 @@ export async function registerRoutes(app: Express): Promise<void> {
           if (refusal) return res.status(refusal.status).json(refusal.body);
         }
         // besluiten B-16 / BUG-144 — no pickup before the period starts.
-        await applyPickupPeriodRule(existingReservationForDiff, reservationData as Record<string, any>, req);
+        if (!patchIsBlockEdit) {
+          await applyPickupPeriodRule(existingReservationForDiff, reservationData as Record<string, any>, req);
+        }
       }
 
       // BUG-017: the blacklist is checked on create and, until now, on neither
@@ -4661,6 +4696,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(404).json({ message: "Reservation not found" });
       }
       void onMaintenanceBlockChanged(existingReservationForDiff, reservation);
+      // Sub-project C, Task 8: "Uit" must free the car like every other writer
+      // that finishes a block (before the closing sweep, which cannot clear the flag).
+      await freeVehicleWhenBlockClosed(existingReservationForDiff, reservation);
 
       // BUG-127 — the vehicle follows the corrected return reading.
       if (mileageSync) {

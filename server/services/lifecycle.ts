@@ -194,6 +194,15 @@ export function isReservationRevert(from: unknown, to: unknown): boolean {
 export interface TransitionOptions {
   /** Allow the documented undo steps (`RESERVATION_REVERSIONS`); only the spare-status flow passes it now. */
   allowReversion?: boolean;
+  /**
+   * The row is a maintenance block, not a rental. A block is "done" when the
+   * car comes back from the workshop; it is never picked up by a customer, so a
+   * block that was planned (`booked`) may be closed straight to `completed`
+   * (the edit dialogs' "Uit" on a block that never got a "Binnen" save), which
+   * the rental table does not allow. `completeMaintenance` has always written
+   * `completed` from any status for the same reason.
+   */
+  maintenanceBlock?: boolean;
 }
 
 export function isReservationTransitionAllowed(
@@ -206,6 +215,7 @@ export function isReservationTransitionAllowed(
   if (current === to) return true; // idempotent
   if ((RESERVATION_TRANSITIONS[current] ?? []).includes(to)) return true;
   if (opts.allowReversion && (RESERVATION_REVERSIONS[current] ?? []).includes(to)) return true;
+  if (opts.maintenanceBlock && current === "booked" && to === "completed") return true;
   return false;
 }
 
@@ -278,6 +288,46 @@ export function isOpenBlockMaintenanceStatus(raw: unknown): boolean {
   if (raw == null) return true; // an older block without the field counts as scheduled
   const value = String(raw).trim().toLowerCase();
   return value === "scheduled" || value === "in" || value === "in_service";
+}
+
+/** The columns `maintenanceBlockJustClosed` reads. */
+export interface BlockCloseCheckRow {
+  type?: string | null;
+  status?: string | null;
+  maintenanceStatus?: string | null;
+  deletedAt?: Date | string | null;
+}
+
+/**
+ * True when a write moved a maintenance block from open to finished, i.e. the
+ * car is back from the workshop: `maintenanceStatus` went to `out`, or the
+ * status went to `completed`/`returned`.
+ *
+ * Every writer that finishes a block has to ask the one owner to free the car
+ * (`markVehicleForService(id, 'ok')`), because the fleet sweep keeps a stored
+ * `needs_fixing` as a manual flag (`deriveVehicleAvailability`, sticky unless
+ * `clearWorkshopFlag`). `PATCH /api/reservations/:id` and `/basic` forgot.
+ *
+ * A cancellation is deliberately NOT a finish: whether cancelling or deleting
+ * a block should clear a flag that may be a hand-set damage flag is an open
+ * owner question, so this keeps today's behaviour for it.
+ */
+export function maintenanceBlockJustClosed(
+  before: BlockCloseCheckRow | null | undefined,
+  after: BlockCloseCheckRow | null | undefined,
+): boolean {
+  if (!before || !after) return false;
+  if (before.type !== "maintenance_block" || after.type !== "maintenance_block") return false;
+  if (before.deletedAt || after.deletedAt) return false;
+
+  const wasOpen =
+    isOpenBlockMaintenanceStatus(before.maintenanceStatus) &&
+    !CLOSED_RESERVATION_STATUSES.has(normalizeReservationStatus(before.status) ?? "");
+  if (!wasOpen) return false;
+
+  const afterStatus = normalizeReservationStatus(after.status);
+  if (afterStatus === "cancelled") return false;
+  return afterStatus === "completed" || afterStatus === "returned" || !isOpenBlockMaintenanceStatus(after.maintenanceStatus);
 }
 
 /** The shape both "terug uit onderhoud" paths hand to `selectMaintenanceBlocksToClose`. */
