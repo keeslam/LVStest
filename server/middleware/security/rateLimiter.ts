@@ -95,9 +95,30 @@ export function apiLimiterKey(req: Request & { user?: { id?: number } }): string
   return `ip:${ipKeyGenerator(firstUntrustedAddress(req))}`;
 }
 
+/**
+ * The per-user budget of the general API limiter: 1000 requests per 15 minutes,
+ * which is what production runs with (nothing sets the variable there).
+ *
+ * `API_RATE_LIMIT_MAX` exists for the E2E harness only (e2e/support/serve.ts).
+ * One Playwright run is ONE server process and ONE 15-minute window, and the
+ * `admin` account carries most of layer-a's allowed-branch dialog tests, so
+ * every registry entry added to the suite eats into a budget that is also what
+ * keeps a real user from hammering the API. When the budget ran out the late
+ * admin tests failed on 429s that said nothing about the application.
+ */
+export function apiRateLimitMax(): number {
+  const raw = process.env.API_RATE_LIMIT_MAX;
+  if (raw !== undefined && raw !== null && String(raw).trim() !== '') {
+    const parsed = Number.parseInt(String(raw).trim(), 10);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+    console.warn(`⚠️ API_RATE_LIMIT_MAX="${raw}" is not a positive number; falling back to 1000.`);
+  }
+  return 1000;
+}
+
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // per user (or per IP when anonymous)
+  max: apiRateLimitMax(), // per user (or per IP when anonymous)
   message: 'Too many requests, please try again later.',
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers

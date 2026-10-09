@@ -16,9 +16,8 @@ export interface DialogEntry {
   anyOf: string[];
   /**
    * True when the opener is hidden on purpose for a role without the right
-   * (admin-only today: `menu-users`, `menu-backup`, `menu-settings`,
-   * `button-open-recycle-bin`) rather than shown disabled — B-27 keeps these
-   * exactly as they are. `anyOf: []` on such an entry means `can()` only
+   * (admin-only today: `menu-users`, `menu-backup`, `menu-settings`) rather
+   * than shown disabled — B-27 keeps these exactly as they are. `anyOf: []` on such an entry means `can()` only
    * passes for admin (its own bypass), matching the real `isAdmin`/role gate.
    */
   hiddenWithoutRight?: boolean;
@@ -84,18 +83,17 @@ export const DIALOGS: DialogEntry[] = [
   { page: "/", opener: "button-dashboard-new-reservation", anyOf: [P.MANAGE_RESERVATIONS], source: "client/src/components/reservations/reservation-add-dialog.tsx", name: "dashboard: nieuwe reservering" },
 
   // --- /vehicles -------------------------------------------------------------
-  // isAdmin-gated in vehicles/index.tsx (role === UserRole.ADMIN), not
-  // MANAGE_VEHICLES (manager and maintenance also hold that permission but do
-  // not see this button) — anyOf: [] so can() only passes for admin;
-  // hiddenWithoutRight since B-27 keeps this hidden, not disabled.
-  // Sub-project C, Task 1: the SERVER routes behind this dialog now need
-  // manage_recycle_bin (admin and manager hold it), but the opener below is
-  // still gated on role === ADMIN, so this entry stays anyOf: [] +
-  // hiddenWithoutRight until Task 6 wraps the opener. Task 6 then sets
-  // anyOf: [P.MANAGE_RECYCLE_BIN] and drops hiddenWithoutRight in one step;
-  // doing it earlier would make the manager profile expect a button the page
-  // does not render yet.
-  { page: "/vehicles", opener: "button-open-recycle-bin", anyOf: [], hiddenWithoutRight: true, source: "client/src/components/vehicles/deleted-vehicles-dialog.tsx", name: "prullenbak voertuigen" },
+  // Sub-project C (besluiten B-36, B-38, B-39): one recycle bin per screen, all of
+  // them the same kind-aware dialog (recycle-bin-dialog.tsx), every opener wrapped
+  // in RequiresPermission anyOf={[MANAGE_RECYCLE_BIN]} - the right the bin routes
+  // need (admin passes by role, manager holds it). It used to be hidden behind
+  // role === ADMIN; now a profile without the right sees it greyed out, naming
+  // the right. The dialog opens empty for a profile with the right (the e2e seed
+  // holds no deleted rows), which is a complete state of the dialog, so none of
+  // the six entries needs allowedPathNeedsState. The five entries after this one
+  // sit on their own screens (customers, reservations, maintenance, delivery,
+  // portal-admin); restore and purge are proven by the tail spec of Task 7.
+  { page: "/vehicles", opener: "button-open-recycle-bin", anyOf: [P.MANAGE_RECYCLE_BIN], source: "client/src/components/recycle-bin/recycle-bin-dialog.tsx", name: "prullenbak voertuigen" },
   { page: "/vehicles", opener: "button-open-barcode-book", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/barcodes/barcode-book-dialog.tsx", name: "barcodeboek" },
   { page: "/vehicles", opener: "button-key-audit", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES], source: "client/src/components/barcodes/key-audit-dialog.tsx", name: "sleutelcontrole (hoofdsleutels)" },
   // Task 3: both wrapped in RequiresPermission anyOf={[MANAGE_VEHICLES]} —
@@ -182,6 +180,7 @@ export const DIALOGS: DialogEntry[] = [
   // narrower than the page's own gate, matching POST /api/reservations
   // (routes.ts:2966, MANAGE_RESERVATIONS).
   { page: "/reservations", opener: "button-new-reservation", anyOf: [P.MANAGE_RESERVATIONS], source: "client/src/components/reservations/reservation-add-dialog.tsx", name: "nieuwe reservering" },
+  { page: "/reservations", opener: "button-open-recycle-bin-reservations", anyOf: [P.MANAGE_RECYCLE_BIN], source: "client/src/components/recycle-bin/recycle-bin-dialog.tsx", name: "prullenbak reserveringen" },
 
   // --- /maintenance --------------------------------------------------------
   // list-view and view-completed only open a read-only list/history — not
@@ -195,6 +194,7 @@ export const DIALOGS: DialogEntry[] = [
   // access permission. Reported to the owner (task-4-report.md); the route is
   // not maintenance-exclusive, so it is not widened.
   { page: "/maintenance", opener: "button-schedule-maintenance", anyOf: [P.MANAGE_RESERVATIONS], source: "client/src/components/maintenance/schedule-maintenance-dialog.tsx", name: "onderhoud inplannen" },
+  { page: "/maintenance", opener: "button-open-recycle-bin-maintenance", anyOf: [P.MANAGE_RECYCLE_BIN], source: "client/src/components/recycle-bin/recycle-bin-dialog.tsx", name: "prullenbak onderhoud" },
 
   // --- /documents ----------------------------------------------------------
   // All four dialog roots are inline in documents/index.tsx itself, each
@@ -213,6 +213,7 @@ export const DIALOGS: DialogEntry[] = [
   { page: "/delivery", opener: "button-new-transport", anyOf: [P.MANAGE_VEHICLES, P.MANAGE_RESERVATIONS], source: "client/src/components/delivery/transport-dialog.tsx", name: "nieuw transport" },
   // Read-only (no mutation route) — not wrapped, anyOf unchanged.
   { page: "/delivery", opener: "button-route-optimization", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS], source: "client/src/components/delivery/route-optimization-dialog.tsx", name: "routeoptimalisatie" },
+  { page: "/delivery", opener: "button-open-recycle-bin-transports", anyOf: [P.MANAGE_RECYCLE_BIN], source: "client/src/components/recycle-bin/recycle-bin-dialog.tsx", name: "prullenbak transporten" },
 
   // --- /reports --------------------------------------------------------------
   // Both dialog roots (the <Dialog open={reportBuilderOpen}>/<Dialog
@@ -230,6 +231,7 @@ export const DIALOGS: DialogEntry[] = [
   // Task 4: wrapped in RequiresPermission anyOf={[MANAGE_CUSTOMERS]}, matching
   // POST /api/customers (routes.ts:2469).
   { page: "/customers", opener: "button-add-customer", anyOf: [P.MANAGE_CUSTOMERS], source: "client/src/components/customers/customer-add-dialog.tsx", name: "klant toevoegen" },
+  { page: "/customers", opener: "button-open-recycle-bin-customers", anyOf: [P.MANAGE_RECYCLE_BIN], source: "client/src/components/recycle-bin/recycle-bin-dialog.tsx", name: "prullenbak klanten" },
 
   // --- /portal-admin -------------------------------------------------------
   // Only admin/manager hold VIEW_PORTAL/MANAGE_PORTAL among the seven E2E
@@ -238,6 +240,10 @@ export const DIALOGS: DialogEntry[] = [
   { page: "/portal-admin", opener: "button-invite-portal-account", anyOf: [P.VIEW_PORTAL, P.MANAGE_PORTAL], source: "client/src/components/portal-admin/account-dialog.tsx", name: "portalaccount uitnodigen" },
   { page: "/portal-admin", opener: "button-fiscal-overview", anyOf: [P.VIEW_PORTAL, P.MANAGE_PORTAL], source: "client/src/components/fiscal/fiscal-overview-dialog.tsx", name: "fiscaal overzicht" },
   { page: "/portal-admin", opener: "button-import-fines", anyOf: [P.VIEW_PORTAL, P.MANAGE_PORTAL], source: "client/src/components/fines/fine-import-dialog.tsx", name: "boetes importeren" },
+  // The fines bin lives in the toolbar of the fines table, which the portal
+  // dashboard opens as a list dialog from its "Boetes" tile (`via`). Only admin
+  // and manager reach this page, and both hold manage_recycle_bin.
+  { page: "/portal-admin", opener: "button-fines-bin", via: "tile-fines", anyOf: [P.MANAGE_RECYCLE_BIN], source: "client/src/components/recycle-bin/recycle-bin-dialog.tsx", name: "prullenbak boetes" },
 
   { page: "/expenses", opener: "button-invoice-inbox", anyOf: [P.MANAGE_EXPENSES], source: "client/src/components/expenses/invoice-inbox-dialog.tsx", name: "ontvangen facturen" },
 

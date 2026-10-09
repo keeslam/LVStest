@@ -31,6 +31,11 @@ async function main() {
       UPLOADS_DIR: E2E.uploadsDir,
       BACKUP_PATH: E2E.backupDir,
       TRUST_PROXY_HOPS: "0",
+      // One run is one server process and one 15-minute window; the admin
+      // account's default budget of 1000 requests ran out in layer-a once the
+      // registry grew past ~370 tests (late admin tests answered 429). Test
+      // infrastructure only: production keeps the default.
+      API_RATE_LIMIT_MAX: "20000",
       SESSION_SECRET: "e2e-only-session-secret-not-used-anywhere-else",
       DEFAULT_ADMIN_USERNAME: "e2e-bootstrap-admin",
       DEFAULT_ADMIN_PASSWORD: E2E.password,

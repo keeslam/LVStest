@@ -68,8 +68,13 @@ for (const role of ROLES) {
           // precise locator here — no `.first()` needed.
           if (entry.via) await page.getByTestId(entry.via).click();
           await page.getByTestId(entry.opener).click();
-          const dialog = page.locator('[role="dialog"], [role="alertdialog"]').last();
+          const openDialogs = page.locator('[role="dialog"], [role="alertdialog"]');
+          const dialog = openDialogs.last();
           await expect(dialog).toBeVisible();
+          // A dialog can open on top of another one (the fines bin opens from the
+          // fines list, which the portal dashboard shows as a dialog): closing it
+          // then leaves that many dialogs minus one, not none.
+          const openCount = await openDialogs.count();
           // `.first()`: some dialogs (e.g. profile-dialog.tsx "eigen profiel",
           // key-audit-dialog.tsx) render their own `<h3>`/`<h4>` section
           // sub-headings inside DialogContent alongside DialogTitle, so more
@@ -84,7 +89,7 @@ for (const role of ROLES) {
           } else {
             await page.keyboard.press("Escape");
           }
-          await expect(dialog).toBeHidden();
+          await expect(openDialogs).toHaveCount(openCount - 1);
           expect(health.violations).toEqual([]);
         });
       } else {
