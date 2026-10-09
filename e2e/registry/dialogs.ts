@@ -152,6 +152,32 @@ export const DIALOGS: DialogEntry[] = [
     allowedPathNeedsState: "the opener sits in the detail dialog of a picked-up, completed or cancelled reservation, which has to be opened (and picked up) first; the Layer B story does that",
     deniedPathNeedsState: "the opener does not exist on a bare load of /reservations: it only renders inside the detail dialog of a reservation, so there is nothing to find until a record is opened",
   },
+  // Sub-project C, Task 5 (besluiten B-33, B-39): cancelling or deleting a rental
+  // that has been PICKED UP needs the new right `cancel_picked_up_rental` on top
+  // of `manage_reservations` and a confirmed warning ("Deze huur is al opgehaald
+  // op <datum> met contract <nr>."). The openers - `button-cancel-reservation`
+  // and `button-delete-reservation` in the reservation view dialog, the delete
+  // buttons in the list, the calendar's detail card and day dialog, the completed
+  // list and the customer and vehicle details - are wrapped in RequiresPermission
+  // with `cancelRightFor(row)`: the new right for a picked-up row,
+  // `manage_reservations` for every other row (the routes' own guards). The one
+  // registered here is the cancel dialog's opener, the only one of them that opens
+  // a dialog with a root of its own (the delete confirmations are the shared
+  // ConfirmDialog from ui/). Like the revert opener it sits inside a record's view
+  // dialog, so neither branch of dialogs.spec.ts can reach it from a bare page load:
+  //  - allowed: the Layer B story "Opgehaalde huur annuleren" in
+  //    e2e/layer-b/desk/edge-cases.spec.ts opens an overdue picked-up rental from
+  //    the dashboard as `manager`, reads the warning, ticks the box and cancels;
+  //  - denied: the same file's "zonder recht" story reads the disabled delete
+  //    openers (list row, calendar detail card) of a picked-up row as the desk role
+  //    (`user`) and their tooltips; the view dialog's two openers are proven by
+  //    client/src/components/reservations/__tests__/reservation-view-dialog-permissions.test.tsx.
+  {
+    page: "/reservations", opener: "button-cancel-reservation", anyOf: [P.CANCEL_PICKED_UP_RENTAL],
+    source: "client/src/components/reservations/cancel-reservation-dialog.tsx", name: "opgehaalde huur annuleren",
+    allowedPathNeedsState: "the opener sits in the detail dialog of a reservation, which has to be opened (and picked up) first; the Layer B story does that",
+    deniedPathNeedsState: "the opener does not exist on a bare load of /reservations: it only renders inside the detail dialog of a reservation, so there is nothing to find until a record is opened",
+  },
   // Task 4: wrapped in RequiresPermission anyOf={[MANAGE_RESERVATIONS]},
   // narrower than the page's own gate, matching POST /api/reservations
   // (routes.ts:2966, MANAGE_RESERVATIONS).

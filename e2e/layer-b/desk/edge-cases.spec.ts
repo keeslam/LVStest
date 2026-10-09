@@ -527,3 +527,164 @@ test.describe("Overdracht terugdraaien (B-30)", () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Sub-project C, Task 5 (besluiten B-33, B-39): cancelling or deleting a rental
+// that has been PICKED UP needs the new right `cancel_picked_up_rental` and a
+// confirmed warning. Two short stories with their own budgets; the desk story
+// and the stories above are untouched.
+// ---------------------------------------------------------------------------
+
+/** `2026-10-02` -> `02-10-2026`, the way the warning prints a date. */
+function dutchDate(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  return `${d}-${m}-${y}`;
+}
+
+test.describe("Opgehaalde huur annuleren (B-33)", () => {
+  test.describe("met het recht", () => {
+    // `manager`, not `admin`: both hold the right (admin by bypass, manager by
+    // the one-time grant and the e2e profile `without(...)`), but `admin` is the
+    // account layer-a spends its whole apiLimiter budget on (see the revert story).
+    test.use({ storageState: authFile("manager"), viewport: { width: 1280, height: 1400 } });
+
+    // 4 handelingen, gemeten: de te late huur openen vanaf het dashboard, de
+    // knop Annuleren, het vinkje en bevestigen. (De kalender-detailkaart heeft
+    // geen Annuleren; de reserveringsdetails van het dashboard wel.)
+    test("annuleren van een opgehaalde huur: eerst de waarschuwing met datum en contract, pas na het vinkje wordt er geannuleerd", async ({ page, health, request }) => {
+      test.setTimeout(180_000);
+
+      // Not counted: the state this story needs, made through the API the way the
+      // rest of the app would have produced it - a vehicle of its own, a booking
+      // whose period is already over (so the rental is OVERDUE and shows on the
+      // dashboard, and "beschikbaar" afterwards is a fact about the cancellation,
+      // not about a booking that still covers today), and the pickup itself.
+      const cookies = await page.context().cookies();
+      const csrfToken = cookies.find((c) => c.name === "XSRF-TOKEN")?.value;
+      expect(csrfToken, "XSRF-TOKEN cookie from storageState").toBeTruthy();
+      const headers = { "X-CSRF-Token": csrfToken! };
+
+      const vehicleResponse = await request.post("/api/vehicles", {
+        headers,
+        data: { licensePlate: "E2E-PC-1", brand: "Fiat", model: "Doblo", currentMileage: 30000 },
+      });
+      expect(vehicleResponse.ok(), await vehicleResponse.text()).toBeTruthy();
+      const vehicle = await vehicleResponse.json();
+
+      const customers = await (await request.get("/api/customers")).json();
+      const customer = customers.find((c: { email: string }) => c.email === "bakker@e2e.invalid");
+      expect(customer, "seeded customer bakker@e2e.invalid").toBeTruthy();
+
+      const pickupDay = officeDay(-5);
+      const reservationResponse = await request.post("/api/reservations", {
+        headers,
+        data: { customerId: customer.id, vehicleId: vehicle.id, startDate: pickupDay, endDate: officeDay(-2), type: "standard" },
+      });
+      expect(reservationResponse.status(), await reservationResponse.text()).toBe(201);
+      const reservation = await reservationResponse.json();
+
+      const pickupResponse = await request.post(`/api/reservations/${reservation.id}/pickup`, {
+        headers,
+        data: { contractNumber: "9300101", pickupMileage: 30100, fuelLevelPickup: "full", pickupDate: pickupDay },
+      });
+      expect(pickupResponse.status(), await pickupResponse.text()).toBe(200);
+      expect((await (await request.get(`/api/reservations/${reservation.id}`)).json()).status).toBe("picked_up");
+
+      const story = new Story("Opgehaalde huur annuleren", 4);
+      await page.goto("/");
+      await settle(page);
+      const overdueRow = page.getByTestId(`overdue-reservation-${reservation.id}`);
+      await expect(overdueRow).toBeVisible();
+      await story.click(overdueRow.getByTestId(`button-view-reservation-${reservation.id}`), "te late huur bekijken");
+
+      const viewDialog = page.getByRole("dialog", { name: "Reserveringsdetails" });
+      await expect(viewDialog).toBeVisible();
+      // The right is held, so the opener is live (not greyed out) for a picked-up row.
+      const opener = viewDialog.getByTestId("button-cancel-reservation");
+      await expect(opener).toBeEnabled();
+      await story.click(opener, "Reservering annuleren");
+
+      const cancelDialog = page.getByTestId("dialog-cancel-reservation");
+      await expect(cancelDialog).toBeVisible();
+      // The warning names the pickup date and the contract, and says what happens
+      // to the car: nothing is undone, the odometer keeps the pickup reading.
+      const warning = cancelDialog.getByTestId("warning-picked-up");
+      await expect(warning).toContainText(`Deze huur is al opgehaald op ${dutchDate(pickupDay)} met contract 9300101.`);
+      await expect(warning).toContainText("kilometerstand blijft de stand van het ophalen");
+      // Nothing has been written, and the confirm button waits for the tick.
+      const confirm = cancelDialog.getByTestId("button-confirm-cancel-reservation");
+      await expect(confirm).toBeDisabled();
+      expect((await (await request.get(`/api/reservations/${reservation.id}`)).json()).status).toBe("picked_up");
+
+      await story.click(cancelDialog.getByTestId("checkbox-confirm-picked-up"), "bevestigen: deze huur is al opgehaald");
+      await expect(confirm).toBeEnabled();
+      await story.click(confirm, "Reservering annuleren (bevestigen)");
+      await expect(cancelDialog).toBeHidden();
+      await settle(page);
+      story.finish();
+
+      // End state via the API, not the screen: cancelled, and the pickup is NOT
+      // undone - the contract number and the odometer reading stay as they were.
+      const after = await (await request.get(`/api/reservations/${reservation.id}`)).json();
+      expect(after.status).toBe("cancelled");
+      expect(after.contractNumber).toBe("9300101");
+      expect(after.pickupMileage).toBe(30100);
+      const vehicleAfter = (await (await request.get("/api/vehicles")).json()).find((v: { id: number }) => v.id === vehicle.id);
+      expect(vehicleAfter.currentMileage).toBe(30100);
+      // The car counts as available again (the booking is in the past, nothing else covers today).
+      expect(vehicleAfter.availabilityStatus).toBe("available");
+
+      expect(health.violations).toEqual([]);
+    });
+  });
+
+  // The desk role (`user`) holds manage_reservations but NOT cancel_picked_up_rental:
+  // the delete openers of a PICKED-UP row are greyed out with the reason (B-27), while
+  // the same opener of a booked row stays live ("other rows keep today's behaviour").
+  test.describe("zonder het recht", () => {
+    test.use({ storageState: authFile("user"), viewport: { width: 1280, height: 1400 } });
+
+    test("de balie ziet verwijderen van een opgehaalde huur uitgeschakeld met de reden, een geboekte huur niet", async ({ page, health, request }) => {
+      const reservations = await (await request.get("/api/reservations")).json();
+      const pickedUp = reservations.find((r: { notes?: string }) => r.notes === "e2e:picked-up");
+      const booked = reservations.find((r: { notes?: string }) => r.notes === "e2e:next-week");
+      expect(pickedUp, "seeded reservation e2e:picked-up").toBeTruthy();
+      expect(booked, "seeded reservation e2e:next-week").toBeTruthy();
+
+      const story = new Story("Opgehaalde huur verwijderen zonder recht", 3);
+      await page.goto("/");
+      await settle(page);
+      await story.click(page.getByRole("link", { name: "Reserveringen" }), "Reserveringen");
+      await settle(page);
+      await story.click(page.getByTestId("button-list-view"), "Reserveringen als lijst");
+      const listDialog = page.getByTestId("dialog-reservation-list");
+      await expect(listDialog).toBeVisible();
+
+      // The list rows: the picked-up row's delete button is off, the booked row's is live.
+      const listDelete = listDialog.getByTestId(`delete-btn-${pickedUp.id}`);
+      await expect(listDelete).toHaveAttribute("aria-disabled", "true");
+      await expect(listDialog.getByTestId(`delete-btn-${booked.id}`)).toBeVisible();
+      await expect(listDialog.getByTestId(`delete-btn-${booked.id}`)).not.toHaveAttribute("aria-disabled", "true");
+      // Reading the reason, not an action of staff: the tooltip sits on the
+      // wrapper around a disabled control (requires-permission.tsx).
+      await listDelete.locator("xpath=..").focus();
+      await expect(page.getByRole("tooltip")).toContainText("Opgehaalde huur annuleren of verwijderen");
+      await listDelete.click({ force: true });
+      await expect(page.getByTestId("confirm-dialog")).toHaveCount(0);
+
+      // The same row's detail card (the calendar's dialog): its trash button is off too.
+      await story.click(listDialog.getByTestId(`view-btn-${pickedUp.id}`), "reservering bekijken");
+      const viewDialog = page.getByRole("dialog", { name: "Reserveringsdetails" });
+      await expect(viewDialog).toBeVisible();
+      const detailDelete = viewDialog.getByTestId("button-delete-reservation-dialog");
+      await expect(detailDelete).toBeVisible();
+      await expect(detailDelete).toHaveAttribute("aria-disabled", "true");
+      await detailDelete.click({ force: true });
+      await expect(page.getByTestId("confirm-dialog")).toHaveCount(0);
+      story.finish();
+
+      expect((await (await request.get(`/api/reservations/${pickedUp.id}`)).json()).status).toBe("picked_up");
+      expect(health.violations).toEqual([]);
+    });
+  });
+});
