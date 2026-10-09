@@ -60,6 +60,17 @@ async function binEntryFor(entityType: string, entityId: number) {
   return record;
 }
 
+/**
+ * Deletes a reservation through the route and registers its bin row for clean-up
+ * BEFORE any assertion runs, so a failed expectation (or a failing second delete in
+ * the same test) never leaves a row behind in lvs_fixtest.
+ */
+async function deleteReservation(entityType: "reservation" | "maintenance_block", id: number) {
+  const response = await admin.delete(`/api/reservations/${id}`);
+  const record = await binEntryFor(entityType, id);
+  return { response, record };
+}
+
 async function insertBinRow(over: Partial<typeof deletedRecords.$inferInsert> & { entityType: string }) {
   const [row] = await db.insert(deletedRecords).values({
     entityId: 990000 + createdRecordIds.length,
@@ -98,10 +109,12 @@ describe("C-06 - a deleted maintenance block is its own kind in the bin", () => 
       customerId, vehicleId: vehicle.id, startDate: "2030-07-01", endDate: "2030-07-03",
     });
 
-    expect((await admin.delete(`/api/reservations/${block.id}`)).status).toBe(200);
-    expect((await admin.delete(`/api/reservations/${rental.id}`)).status).toBe(200);
+    const blockDelete = await deleteReservation("maintenance_block", block.id);
+    const rentalDelete = await deleteReservation("reservation", rental.id);
+    expect(blockDelete.response.status).toBe(200);
+    expect(rentalDelete.response.status).toBe(200);
 
-    const blockRecord = await binEntryFor("maintenance_block", block.id);
+    const blockRecord = blockDelete.record;
     expect(blockRecord).toBeDefined();
     expect(blockRecord.label).toBe(`Onderhoud #${block.id} — ${vehicle.licensePlate} ${START}`);
     // The snapshot is still the whole row: the restore reads it.
@@ -112,7 +125,7 @@ describe("C-06 - a deleted maintenance block is its own kind in the bin", () => 
       .where(and(eq(deletedRecords.entityType, "reservation"), eq(deletedRecords.entityId, block.id)));
     expect(asReservation).toHaveLength(0);
 
-    const rentalRecord = await binEntryFor("reservation", rental.id);
+    const rentalRecord = rentalDelete.record;
     expect(rentalRecord).toBeDefined();
     expect(rentalRecord.label).toBe(`Reservering #${rental.id} — ${vehicle.licensePlate} 2030-07-01`);
   });
@@ -122,8 +135,8 @@ describe("C-06 - a deleted maintenance block is its own kind in the bin", () => 
     const block = await createFixtureReservation({
       customerId: null, vehicleId: vehicle.id, startDate: START, endDate: END, type: "maintenance_block",
     });
-    expect((await admin.delete(`/api/reservations/${block.id}`)).status).toBe(200);
-    const record = await binEntryFor("maintenance_block", block.id);
+    const { response: deleted, record } = await deleteReservation("maintenance_block", block.id);
+    expect(deleted.status).toBe(200);
 
     const restored = await binKeeper.post(`/api/deleted-records/${record.id}/restore`).send({});
     expect(restored.status).toBe(200);
@@ -149,8 +162,8 @@ describe("C-06 - a deleted maintenance block is its own kind in the bin", () => 
     const block = await createFixtureReservation({
       customerId: null, vehicleId: vehicle.id, startDate: "2030-08-05", endDate: "2030-08-09", type: "maintenance_block",
     });
-    expect((await admin.delete(`/api/reservations/${block.id}`)).status).toBe(200);
-    const record = await binEntryFor("maintenance_block", block.id);
+    const { response: deleted, record } = await deleteReservation("maintenance_block", block.id);
+    expect(deleted.status).toBe(200);
     await createFixtureReservation({
       customerId, vehicleId: vehicle.id, startDate: "2030-08-06", endDate: "2030-08-08",
     });
