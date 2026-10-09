@@ -63,7 +63,7 @@ export function MaintenanceViewDialog({
   reservationId,
   onEdit,
 }: MaintenanceViewDialogProps) {
-  const { t } = useTranslation(["maintenance", "common"]);
+  const { t } = useTranslation(["maintenance", "common", "reservations"]);
   const { t: tp } = useTranslation("portal");
   const { openPortalRequestDialog } = useGlobalDialog();
   const queryClient = useQueryClient();
@@ -255,14 +255,16 @@ export function MaintenanceViewDialog({
     onError: (error: any) => {
       console.error('Spare vehicle update error:', error);
       // Removing a spare deletes its reservation; a spare that has been picked up is refused with a
-      // stable code (409 confirmation / 403 right, sub-project C task 5). This screen has neither the
-      // warning nor the tick, so it points to Reserveringen - in Dutch, never the server's English text.
-      const pickedUpSpare = !!pickedUpRefusalOf(error) || isPickedUpRightRefusal(error);
+      // stable code (sub-project C task 5). This screen has neither the warning nor the tick, so it
+      // says so in Dutch, never with the server's English text: the 409 (the account holds the right)
+      // points to Reserveringen, where the warning and the confirmation are; the 403 (it does not)
+      // names the missing right, as the cancel dialogs do - Reserveringen would refuse it too.
+      let description: string = error.message || t('viewDialog.updateSpareFailedDescription');
+      if (pickedUpRefusalOf(error)) description = t('viewDialog.spareAlreadyPickedUp');
+      else if (isPickedUpRightRefusal(error)) description = t('reservations:pickedUpWarning.rightRequired');
       toast({
         title: t('viewDialog.errorTitle'),
-        description: pickedUpSpare
-          ? t('viewDialog.spareAlreadyPickedUp')
-          : error.message || t('viewDialog.updateSpareFailedDescription'),
+        description,
         variant: "destructive",
       });
     },

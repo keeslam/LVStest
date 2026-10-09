@@ -258,7 +258,7 @@ describe("ReservationViewDialog - the fiscal usage block asks only where an answ
   const block = { ...reservation, id: 92, startDate: "2027-03-01", endDate: "2027-03-02", status: "booked" };
   let requested: string[];
 
-  function renderRow(row: { id: number }) {
+  function renderRow(row: { id: number } & Record<string, unknown>) {
     requested = [];
     vi.stubGlobal(
       "fetch",
@@ -303,6 +303,23 @@ describe("ReservationViewDialog - the fiscal usage block asks only where an answ
     setUser(UserRole.USER, [UserPermission.VIEW_RESERVATIONS]);
     renderRow(usageRental);
     expect(await screen.findByTestId("no-data-access")).toHaveTextContent("Fiscaal bekijken");
+    expect(requested.some((url) => url.includes("usage-period"))).toBe(false);
+  });
+
+  it("names view_fiscal, not another fiscal right, for an account that only reviews", async () => {
+    setUser(UserRole.USER, [UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_FISCAL_REVIEW]);
+    renderRow(usageRental);
+    expect(await screen.findByTestId("no-data-access")).toHaveTextContent("Fiscaal bekijken");
+    expect(requested.some((url) => url.includes("usage-period"))).toBe(false);
+  });
+
+  it("shows no no-access line on an old reservation (before 2027) for an account without view_fiscal", async () => {
+    setUser(UserRole.USER, [UserPermission.VIEW_RESERVATIONS]);
+    renderRow({ ...usageRental, id: 93, startDate: "2026-10-01", endDate: "2026-10-05" });
+    // The dialog is loaded once its delete opener is there.
+    await screen.findByTestId("button-delete-reservation");
+    expect(screen.queryByTestId("no-data-access")).toBeNull();
+    expect(screen.queryByTestId("usage-no-period")).toBeNull();
     expect(requested.some((url) => url.includes("usage-period"))).toBe(false);
   });
 });

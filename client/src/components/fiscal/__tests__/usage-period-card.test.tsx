@@ -149,6 +149,33 @@ describe("gebruiksblok van een reservering", () => {
     expect(toastSpy).not.toHaveBeenCalled();
   });
 
+  // Fix round 2: useFiscalPermissions().canView is true for ANY of the six fiscal rights, but this route
+  // is guarded by view_fiscal alone - so a review-only account still got the 403 and the red toast.
+  it.each(["manage_fiscal_review", "manage_fiscal_configuration", "approve_fiscal_configuration", "publish_fiscal_configuration", "view_fiscal_audit_log"])(
+    "asks nothing and names view_fiscal for an account that holds only %s",
+    async (otherFiscalRight) => {
+      permissions = [otherFiscalRight];
+      renderCardInApp("2027-03-01");
+      expect(await screen.findByTestId("no-data-access")).toHaveTextContent("Fiscaal bekijken");
+      expect(screen.queryByTestId("usage-period-card")).toBeNull();
+      expect(calls).toHaveLength(0);
+      expect(toastSpy).not.toHaveBeenCalled();
+    },
+  );
+
+  // Fix round 2: a reservation before the derivation date has no period for anybody, so an account that
+  // may not look gets no no-access line on every old reservation - nothing at all.
+  it("renders nothing and asks nothing for a reservation before the derivation date when the right is missing", async () => {
+    permissions = ["view_reservations"];
+    const { container } = renderCardInApp("2026-10-02");
+    // Let any (wrongly) started query and render settle before looking.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(container).toBeEmptyDOMElement();
+    expect(screen.queryByTestId("no-data-access")).toBeNull();
+    expect(calls).toHaveLength(0);
+    expect(toastSpy).not.toHaveBeenCalled();
+  });
+
   it("an administrator needs no ticked right", async () => {
     role = "admin";
     permissions = [];

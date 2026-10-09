@@ -223,15 +223,18 @@ describe("MaintenanceViewDialog - removing a spare that has been picked up", () 
     expect(toast.description).not.toMatch(/confirmPickedUp|Resend|\d{3}:/);
   });
 
-  it("a 403 PICKED_UP_RIGHT_REQUIRED gets the same Dutch sentence", async () => {
+  // Fix round 2: the 409 sentence promises "the warning, and you confirm it in Reserveringen" - true only
+  // for an account that HOLDS the right. Without it (403) Reserveringen would refuse too, so this account
+  // is told which right is missing, with the sentence the cancel dialogs use.
+  it("a 403 PICKED_UP_RIGHT_REQUIRED names the missing right in Dutch instead of sending the account to Reserveringen", async () => {
     deleteResponse = json({
       message: "Not authorized. One of these permissions required: cancel_picked_up_rental",
       code: "PICKED_UP_RIGHT_REQUIRED", requiredPermission: "cancel_picked_up_rental",
     }, 403);
     const toast = await removeTheSpare();
-    expect(toast.description).toMatch(/al opgehaald/);
-    expect(toast.description).toMatch(/Reserveringen/);
-    expect(toast.description).not.toMatch(/Not authorized/);
+    expect(toast.variant).toBe("destructive");
+    expect(toast.description).toBe("Voor een opgehaalde huur is het recht 'Opgehaalde huur annuleren of verwijderen' nodig.");
+    expect(toast.description).not.toMatch(/Not authorized|Reserveringen/);
   });
 
   it("the same English words under another code are not mistaken for it, and any other failure keeps today's text", async () => {

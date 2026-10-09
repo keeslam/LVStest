@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { NoDataAccess } from "@/components/ui/no-data-access";
 import { UserPermission } from "@shared/schema";
 import { useFiscalPermissions } from "./use-fiscal-permissions";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import type { UsagePeriodResponse } from "./types";
 
 type Tri = "yes" | "no" | "unknown";
@@ -38,7 +39,10 @@ function TriRadio({ name, value, onChange, disabled, label, t }: { name: string;
  */
 export function UsagePeriodCard({ reservationId, startDate }: { reservationId: number; startDate?: string | null }) {
   const { t } = useTranslation("fiscal");
-  const { canView, canReview } = useFiscalPermissions();
+  const { canReview } = useFiscalPermissions();
+  // Exactly view_fiscal (an administrator has it), NOT useFiscalPermissions().canView: that is true for any
+  // of the six fiscal rights, but GET /api/reservations/:id/usage-period is guarded by view_fiscal alone.
+  const canViewUsagePeriod = useHasPermission(UserPermission.VIEW_FISCAL);
   const queryClient = useQueryClient();
   const key = [`/api/reservations/${reservationId}/usage-period`] as const;
   // Besluit F-10: a reservation that starts (or was picked up) before USAGE_PERIOD_DERIVATION_START
@@ -46,15 +50,14 @@ export function UsagePeriodCard({ reservationId, startDate }: { reservationId: n
   // handler turns into a red "Kon de gegevens niet laden" toast on every opening of the reservation
   // dialog - so a caller that knows the start date says it, and nothing is asked.
   const beforeDerivation = !!startDate && startDate < USAGE_PERIOD_DERIVATION_START;
-  // GET /api/reservations/:id/usage-period needs view_fiscal (an administrator has it): without it the
-  // server answers 403 - the same red toast, plus a fiscal audit event per opening - so nothing is asked.
+  // Without view_fiscal the server answers 403 - the same red toast, plus a fiscal audit event per opening - so nothing is asked.
   // A 404 is an answer, not a failure: a reservation can lack a period for reasons only the server knows
   // (cancelled, no customer, not a rental), so it comes back as `null` and renders the "no period" text.
   const readPeriod = getQueryFn<UsagePeriodResponse>({ on401: "throw" });
   const { data, isLoading, error } = useQuery<UsagePeriodResponse | null>({
     queryKey: key,
     retry: false,
-    enabled: !beforeDerivation && canView,
+    enabled: !beforeDerivation && canViewUsagePeriod,
     queryFn: async (context) => {
       try {
         return await readPeriod(context);
@@ -104,7 +107,9 @@ export function UsagePeriodCard({ reservationId, startDate }: { reservationId: n
     onError: (e: Error) => setServerError(e.message.replace(/^\d{3}:\s*/, "")),
   });
 
-  if (!canView) return <NoDataAccess permission={UserPermission.VIEW_FISCAL} />;
+  // A reservation before the derivation date has no period for anybody: an account that may not look gets
+  // no no-access line on every old reservation, nothing at all.
+  if (!canViewUsagePeriod) return beforeDerivation ? null : <NoDataAccess permission={UserPermission.VIEW_FISCAL} />;
   const noPeriod = (
     <p className="text-sm text-muted-foreground" data-testid="usage-no-period">{t("usage.noPeriod", { date: dateLabelNl(USAGE_PERIOD_DERIVATION_START) })}</p>
   );
