@@ -40,6 +40,7 @@ import { format, addDays, parseISO } from "date-fns";
 import { Reservation, Vehicle, Customer, Driver } from "@shared/schema";
 import { Loader2, User, Car as CarIcon, Phone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { blockStatusForForm } from "@/lib/maintenance-status";
 
 // Form schema for maintenance editing - only fields that can be edited
 const maintenanceEditSchema = z.object({
@@ -185,7 +186,7 @@ export function MaintenanceEditDialog({
       maintenanceDuration: reservation?.maintenanceDuration || 
         (reservation?.startDate && reservation?.endDate ? 
           Math.max(1, Math.ceil((new Date(reservation.endDate).getTime() - new Date(reservation.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1) : 1),
-      maintenanceStatus: (reservation?.maintenanceStatus === "in" || reservation?.maintenanceStatus === "out") ? reservation.maintenanceStatus : "scheduled",
+      maintenanceStatus: blockStatusForForm(reservation?.maintenanceStatus),
       notes: parsed.notes || "",
     },
   });
@@ -296,7 +297,8 @@ export function MaintenanceEditDialog({
         description: parsedNotes.description || "",
         startDate: reservation.startDate,
         maintenanceDuration: duration,
-        maintenanceStatus: (reservation.maintenanceStatus === "in" || reservation.maintenanceStatus === "out") ? reservation.maintenanceStatus : "in",
+        // What is stored, not "in" for everything but in/out: opening a planned block used to show "Binnen".
+        maintenanceStatus: blockStatusForForm(reservation.maintenanceStatus),
         notes: parsedNotes.notes || "",
       });
     }

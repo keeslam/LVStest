@@ -42,6 +42,7 @@ import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Calendar, AlertTriangle, Wrench, Clock, Car, Filter } from "lucide-react";
 import { officeToday } from "@/lib/office-date";
+import { blockStatusForForm } from "@/lib/maintenance-status";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 
 const scheduleMaintenanceSchema = z.object({
@@ -174,7 +175,7 @@ export function ScheduleMaintenanceDialog({
         maintenanceType,
         scheduledDate: editingReservation.startDate || officeToday(),
         maintenanceDuration: duration,
-        maintenanceStatus: editingReservation.maintenanceStatus || "in",
+        maintenanceStatus: blockStatusForForm(editingReservation.maintenanceStatus),
         description: descriptionPart,
         notes: notesPart,
         needsSpareVehicle: false,
