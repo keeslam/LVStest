@@ -172,6 +172,7 @@ import { onMaintenanceBlockChanged, onReplacementAssigned, onRentalVehicleChange
 // besluiten B-06 (BUG-134): the other three events of the decision.
 import { onReservationChangedByStaff } from "./services/portal-reservation-events";
 import { previewRevert, applyRevert } from "./services/reservation-revert";
+import { purgeDeletedRecords, purgeAllOfKind, type PurgeHooks } from "./services/recycle-bin-purge";
 import { checkPickedUpCancellation } from "./services/picked-up-cancellation";
 import { REVERT_CODES } from "../shared/revert-codes";
 import type { RouteDeps } from "./routes/deps";
@@ -2255,6 +2256,64 @@ export async function registerRoutes(app: Express): Promise<void> {
       res.status(500).json({
         message: "Error restoring deleted record",
       });
+    }
+  });
+
+  // Emptying a bin (besluit B-38, approval B-39): one record, a selection, or
+  // everything of one kind. Same right as the list and the restore. Service:
+  // server/services/recycle-bin-purge.ts (one transaction per record; files go after the
+  // commit and only when nothing live still uses them). Both routes write their own audit
+  // rows (`<entityType>.purge`, one per record, as each record is done), so they are in
+  // the SELF_LOGGED list of the mutation middleware.
+  const purgeRequestSchema = z.union([
+    z.object({ ids: z.array(z.number().int().min(1).max(2147483647)).min(1).max(1000) }).strict(),
+    z.object({ entityType: z.enum(DELETED_RECORD_KINDS), all: z.literal(true) }).strict(),
+  ]);
+  const purgeActorOf = (req: Request) => ({ username: req.user?.username ?? null, userId: req.user?.id ?? null });
+  const purgeHooksOf = (req: Request): PurgeHooks => ({
+    audit: (entry) => AuditLogger.logFromRequest(req, entry.action, entry.entityType, entry.entityId, entry.details, entry.status),
+  });
+
+  app.delete("/api/deleted-records/:id", hasPermission(UserPermission.MANAGE_RECYCLE_BIN), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid record ID" });
+      }
+      const result = await purgeDeletedRecords([id], purgeActorOf(req), purgeHooksOf(req));
+      if (result.purged === 0) {
+        const failure = result.failed[0];
+        return res.status(failure?.code === "NOT_FOUND" ? 404 : 500).json({
+          code: failure?.code ?? "PURGE_FAILED",
+          message: failure?.message ?? "This record could not be removed.",
+          purged: 0,
+          failed: result.failed,
+        });
+      }
+      res.json(result);
+    } catch (error) {
+      console.error("Error purging deleted record:", error);
+      res.status(500).json({ message: "Error purging deleted record" });
+    }
+  });
+
+  app.post("/api/deleted-records/purge", hasPermission(UserPermission.MANAGE_RECYCLE_BIN), async (req: Request, res: Response) => {
+    try {
+      const parsed = purgeRequestSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          code: "INVALID_PURGE_REQUEST",
+          message: "Send { ids: number[] } (1-1000 record ids) or { entityType, all: true } for one of: " + DELETED_RECORD_KINDS.join(", ") + ".",
+        });
+      }
+      const body = parsed.data;
+      const result = "ids" in body
+        ? await purgeDeletedRecords(body.ids, purgeActorOf(req), purgeHooksOf(req))
+        : await purgeAllOfKind(body.entityType, purgeActorOf(req), purgeHooksOf(req));
+      res.json(result);
+    } catch (error) {
+      console.error("Error purging deleted records:", error);
+      res.status(500).json({ message: "Error purging deleted records" });
     }
   });
 

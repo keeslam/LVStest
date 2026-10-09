@@ -102,6 +102,10 @@ const SKIPPED_PATH_PATTERNS = [
 const SELF_LOGGED: Array<{ method: string; pattern: RegExp }> = [
   { method: 'DELETE', pattern: /^\/api\/vehicles\/\d+$/ },
   { method: 'POST', pattern: /^\/api\/deleted-records\/\d+\/restore$/ },
+  // Sub-project C task 7: emptying a bin logs one `<entityType>.purge` row per record, as
+  // each one is done (a long purge the client stops waiting for still leaves its trail).
+  { method: 'DELETE', pattern: /^\/api\/deleted-records\/\d+$/ },
+  { method: 'POST', pattern: /^\/api\/deleted-records\/purge$/ },
   // Sub-project C: the route writes `reservation.revert` itself, with the plan
   // (what was cleared, which readings went back, which documents went stale).
   { method: 'POST', pattern: /^\/api\/reservations\/\d+\/revert$/ },
