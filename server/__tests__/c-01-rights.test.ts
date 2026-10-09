@@ -33,9 +33,18 @@ const NEW_RIGHTS = ["revert_handover", "cancel_picked_up_rental", "manage_recycl
 const MARKER = "migration:c_manager_rights";
 const STARTUP_SCRIPT = fileURLToPath(new URL("../../startup-migration.js", import.meta.url));
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
-// The exact form scripts/migrate-manager-rights-c.ts uses: the database name must
-// end the path, so lvs_fixtest_copy or a URL that merely mentions lvs_fixtest fails.
-const FIXTEST_URL = /\/lvs_fixtest(\?|$)/;
+/**
+ * The database name must BE the path of the URL: lvs_fixtest_copy, a path that merely
+ * ends in it (/x/lvs_fixtest) and a query string that mentions it all fail. Parsed, not
+ * pattern-matched, so a `?db=/lvs_fixtest` tail cannot pass for the path.
+ */
+function pointsAtFixtest(url: string): boolean {
+  try {
+    return new URL(url).pathname === "/lvs_fixtest";
+  } catch {
+    return false;
+  }
+}
 
 function runStartupMigration(): string {
   // The child gets the environment of this test run, so it can only ever touch
@@ -66,7 +75,7 @@ function useFixtestMarkerGuard(): void {
   let markerBefore: (typeof appSettings.$inferSelect) | undefined;
 
   beforeAll(async () => {
-    expect(process.env.DATABASE_URL ?? "").toMatch(FIXTEST_URL);
+    expect(pointsAtFixtest(process.env.DATABASE_URL ?? ""), "DATABASE_URL must point at lvs_fixtest").toBe(true);
     const [row] = await db.select().from(appSettings).where(eq(appSettings.key, MARKER));
     markerBefore = row;
     guarded = true;
@@ -75,10 +84,14 @@ function useFixtestMarkerGuard(): void {
 
   afterAll(async () => {
     if (!guarded) return;
-    await cleanupFixtureUsers();
-    // Leave the marker the way this describe found it.
-    await db.delete(appSettings).where(eq(appSettings.key, MARKER));
-    if (markerBefore) await db.insert(appSettings).values(markerBefore).onConflictDoNothing();
+    try {
+      await cleanupFixtureUsers();
+    } finally {
+      // Leave the marker the way this describe found it - also when the cleanup above threw,
+      // or the next boot would grant the three rights to the managers all over again.
+      await db.delete(appSettings).where(eq(appSettings.key, MARKER));
+      if (markerBefore) await db.insert(appSettings).values(markerBefore).onConflictDoNothing();
+    }
   });
 }
 
