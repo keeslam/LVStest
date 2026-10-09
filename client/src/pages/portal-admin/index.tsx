@@ -27,7 +27,7 @@ export default function PortalAdminPage() {
   const canViewFines = useCanViewFines();
   const canManage = useCanManagePortal();
   const canManageFines = useCanManageFines();
-  const { canView: canViewFiscal } = useFiscalPermissions();
+  const { canView: canViewFiscal } = useFiscalPermissions(); // exactly view_fiscal: every fiscal GET these read wants it
   const { t: tFiscal } = useTranslation("fiscal");
   const [fiscalOpen, setFiscalOpen] = useState(false);
   const params = new URLSearchParams(useSearch());

@@ -51,7 +51,7 @@ export default function ReportsPage() {
 
   // Tab state - default to operations tab
   const [activeTab, setActiveTab] = useState("operations");
-  const { canView: canViewFiscal } = useFiscalPermissions();
+  const { canView: canViewFiscal } = useFiscalPermissions(); // exactly view_fiscal: every fiscal GET these read wants it
   // Additional fault surfaced by task 6b (task-6b-report.md): guarded by
   // MANAGE_EXPENSES alone, narrower than the sidebar's VIEW_REPORTS/
   // MANAGE_REPORTS that decides who can open this page - same class of bug
