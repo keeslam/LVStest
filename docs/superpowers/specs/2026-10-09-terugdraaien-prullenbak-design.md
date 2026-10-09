@@ -94,7 +94,10 @@ is needed.
 
 - `GET /api/reservations/:id/revert-preview` and `POST /api/reservations/:id/revert`, both
   `hasPermission(REVERT_HANDOVER)`. Body of the POST: `{ confirmMileageDecrease?: boolean }`.
-  The target status is not chosen by the client; it follows from the row (§2.3).
+  The target status is not chosen by the client; it follows from the row (§2.3). The POST also
+  carries `planHash`, the hash the preview returned; a missing or different hash is refused with
+  409 `REVERT_PLAN_CHANGED` carrying the current plan, so a stale confirmation can never perform
+  an undo the user did not see (ratified 2026-10-09).
 - `server/services/reservation-revert.ts`: a pure `planRevert(reservation, vehicle,
   laterHandovers, documents)` that returns the plan, and `applyRevert(id, actor, options)` that
   runs the plan in one transaction with `FOR UPDATE` on the reservation and the vehicle. The
@@ -120,7 +123,10 @@ is needed.
 - Vehicle readings are restored only when this reservation's handover is the vehicle's latest
   mileage write: no other reservation on the same vehicle has an `actualPickupDate` or
   `actualReturnDate` later than this one's. Otherwise the vehicle is left alone with reason
-  `later_handover`. A missing before-reading (rows from before this change) leaves the vehicle
+  `later_handover`. Dates are calendar days, so a same-day handover on another reservation counts
+  as later (physical order: an undone return is blocked by another rental's pickup the same day;
+  an undone pickup is not blocked by a same-day return of an earlier rental). This errs on the
+  side of leaving the odometer alone (ratified 2026-10-09). A missing before-reading (rows from before this change) leaves the vehicle
   alone with reason `no_reading_stored`.
 - If `restoreTo.mileage < current.mileage`, `requiresMileageConfirmation` is true and the POST
   must carry `confirmMileageDecrease: true`, else 409 `MILEAGE_DECREASE_CONFIRMATION_REQUIRED`
@@ -133,7 +139,9 @@ is needed.
   portal notice (`onReservationChangedByStaff`), audit `reservation.revert` carrying the plan.
 - `PATCH /api/reservations/:id/status` no longer accepts reversions (`allowReversion` removed
   there; the spare-status flow keeps its own use). A reversion attempt there answers 400
-  `USE_REVERT_ROUTE`. Existing tests move to the new route.
+  `USE_REVERT_ROUTE`. Existing tests move to the new route. The engine's own target table
+  (`RESERVATION_REVERT_TARGETS`) is separate from `RESERVATION_REVERSIONS`, which the spare-status
+  flow still uses (ratified 2026-10-09).
 
 ### 2.4 Client
 
