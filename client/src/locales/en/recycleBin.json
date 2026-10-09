@@ -57,7 +57,7 @@
       "badge": "Reservation",
       "noun_one": "reservation",
       "noun_other": "reservations",
-      "purgeNote": "The reservation disappears with its documents, damage checks and delivery tasks. Files that belong to it are removed from disk."
+      "purgeNote": "The reservation disappears with its contracts, damage checks and delivery tasks. Documents of the vehicle stay. The files of what disappears are removed from disk."
     },
     "maintenance_block": {
       "openButton": "Deleted maintenance",
@@ -67,7 +67,7 @@
       "badge": "Maintenance",
       "noun_one": "maintenance entry",
       "noun_other": "maintenance entries",
-      "purgeNote": "The maintenance entry disappears with its documents. Files that belong to it are removed from disk."
+      "purgeNote": "The maintenance entry disappears, with any contracts and damage checks. Documents of the vehicle, such as an APK certificate, stay. The files of what disappears are removed from disk."
     },
     "transport": {
       "openButton": "Deleted transports",
@@ -100,7 +100,8 @@
     "confirmOne": "“{{label}}” will be deleted from the recycle bin permanently.",
     "confirmCount_one": "{{count}} {{noun}} will be deleted from the recycle bin permanently.",
     "confirmCount_other": "{{count}} {{noun}} will be deleted from the recycle bin permanently.",
-    "confirmAllCapped": "All {{noun}} in this recycle bin will be deleted permanently (the list shows at most {{count}}).",
+    "confirmAll": "Everything in this recycle bin will be deleted permanently: all {{noun}}, including entries that are not in the list ({{count}} in the list).",
+    "confirmAllCapped": "Everything in this recycle bin will be deleted permanently: all {{noun}}, including entries that are not in the list (the list shows at most {{count}}).",
     "filesKept": "A file that other data still uses is kept.",
     "irreversible": "This cannot be undone.",
     "confirmButton": "Delete permanently",
@@ -116,7 +117,8 @@
     "errors": {
       "NOT_FOUND": "This record was no longer in the recycle bin.",
       "PURGE_FAILED": "This record could not be deleted and is still in the recycle bin.",
-      "FILE_REMOVAL_FAILED": "The record was deleted, but one or more files could not be removed from disk."
+      "FILE_REMOVAL_FAILED": "The record was deleted, but one or more files could not be removed from disk.",
+      "FISCAL_DATA_PRESENT": "This reservation has fiscal assessments; they are kept, so it cannot be deleted permanently."
     }
   },
   "counts": {

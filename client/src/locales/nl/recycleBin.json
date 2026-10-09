@@ -57,7 +57,7 @@
       "badge": "Reservering",
       "noun_one": "reservering",
       "noun_other": "reserveringen",
-      "purgeNote": "De reservering verdwijnt met haar documenten, schadecontroles en bezorgtaken. Bijbehorende bestanden worden van de schijf gehaald."
+      "purgeNote": "De reservering verdwijnt met haar contracten, schadecontroles en bezorgtaken. Documenten van het voertuig blijven staan. De bestanden van wat verdwijnt worden van de schijf gehaald."
     },
     "maintenance_block": {
       "openButton": "Verwijderd onderhoud",
@@ -67,7 +67,7 @@
       "badge": "Onderhoud",
       "noun_one": "onderhoudsplanning",
       "noun_other": "onderhoudsplanningen",
-      "purgeNote": "De onderhoudsplanning verdwijnt met de bijbehorende documenten. Bijbehorende bestanden worden van de schijf gehaald."
+      "purgeNote": "De onderhoudsplanning verdwijnt, met eventuele contracten en schadecontroles. Documenten van het voertuig, zoals een APK-bewijs, blijven staan. De bestanden van wat verdwijnt worden van de schijf gehaald."
     },
     "transport": {
       "openButton": "Verwijderde transporten",
@@ -100,7 +100,8 @@
     "confirmOne": "“{{label}}” wordt definitief uit de prullenbak verwijderd.",
     "confirmCount_one": "{{count}} {{noun}} wordt definitief uit de prullenbak verwijderd.",
     "confirmCount_other": "{{count}} {{noun}} worden definitief uit de prullenbak verwijderd.",
-    "confirmAllCapped": "Alle {{noun}} in deze prullenbak worden definitief verwijderd (de lijst toont er maximaal {{count}}).",
+    "confirmAll": "Alles in deze prullenbak wordt definitief verwijderd: alle {{noun}}, ook de regels die niet in de lijst staan ({{count}} in de lijst).",
+    "confirmAllCapped": "Alles in deze prullenbak wordt definitief verwijderd: alle {{noun}}, ook de regels die niet in de lijst staan (de lijst toont er maximaal {{count}}).",
     "filesKept": "Een bestand dat nog door andere gegevens wordt gebruikt, blijft staan.",
     "irreversible": "Dit kan niet ongedaan worden gemaakt.",
     "confirmButton": "Definitief verwijderen",
@@ -116,7 +117,8 @@
     "errors": {
       "NOT_FOUND": "Dit record stond al niet meer in de prullenbak.",
       "PURGE_FAILED": "Dit record kon niet worden verwijderd en staat nog in de prullenbak.",
-      "FILE_REMOVAL_FAILED": "Het record is verwijderd, maar een of meer bestanden konden niet van de schijf worden gehaald."
+      "FILE_REMOVAL_FAILED": "Het record is verwijderd, maar een of meer bestanden konden niet van de schijf worden gehaald.",
+      "FISCAL_DATA_PRESENT": "Deze reservering heeft fiscale beoordelingen; die blijven bewaard, dus kan ze niet definitief worden verwijderd."
     }
   },
   "counts": {

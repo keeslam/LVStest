@@ -85,7 +85,26 @@ type PurgeTarget =
   | { mode: "all" };
 
 /** Codes the purge routes answer; anything else gets one generic sentence. */
-const PURGE_ERROR_CODES = new Set(["NOT_FOUND", "PURGE_FAILED", "FILE_REMOVAL_FAILED"]);
+const PURGE_ERROR_CODES = new Set(["NOT_FOUND", "PURGE_FAILED", "FILE_REMOVAL_FAILED", "FISCAL_DATA_PRESENT"]);
+
+/**
+ * What a restore or a purge changes: whatever fed this bin, plus every bin list. One list
+ * for both, so a screen added to the one is never forgotten for the other. Besluiten B-15:
+ * a restored transport has to reappear on the transports page too, not only in the bin.
+ */
+const BIN_CHANGE_PREFIXES = [
+  "/api/vehicles",
+  "/api/reservations",
+  "/api/fines",
+  "/api/transports",
+  "/api/customers",
+  "/api/deleted-records",
+];
+
+/** Refreshes every screen a restore or a purge can change (one batched pass). */
+function invalidateBinScreens() {
+  return Promise.all(BIN_CHANGE_PREFIXES.map((prefix) => invalidateByPrefix(prefix)));
+}
 
 /** The server lists a bin at 200 rows per kind; a full list may be only part of it. */
 const BIN_LIST_CAP = 200;
@@ -164,14 +183,7 @@ export function RecycleBinDialog({ kind, open, onOpenChange, onRestored, onPurge
         title: t("toasts.restoredTitle"),
         description: t("toasts.restoredDescription", { label: record.label }),
       });
-      await invalidateByPrefix("/api/vehicles");
-      await invalidateByPrefix("/api/reservations");
-      await invalidateByPrefix("/api/fines");
-      // besluiten B-15 — a restored transport has to reappear on the transports
-      // page too, not only in the bin.
-      await invalidateByPrefix("/api/transports");
-      await invalidateByPrefix("/api/customers");
-      await invalidateByPrefix("/api/deleted-records");
+      await invalidateBinScreens();
       onRestored?.();
     },
     onError: (error: Error & { code?: string; conflictingCustomerName?: string }) => {
@@ -228,13 +240,8 @@ export function RecycleBinDialog({ kind, open, onOpenChange, onRestored, onPurge
       });
       setConfirmTarget(null);
       setSelected(new Set());
-      // Same screens as a restore: whatever fed this bin, plus the bin lists.
-      await invalidateByPrefix("/api/vehicles");
-      await invalidateByPrefix("/api/reservations");
-      await invalidateByPrefix("/api/fines");
-      await invalidateByPrefix("/api/transports");
-      await invalidateByPrefix("/api/customers");
-      await invalidateByPrefix("/api/deleted-records");
+      // Same screens as a restore.
+      await invalidateBinScreens();
       onPurged?.();
     },
     onError: async (error: Error & { code?: string }) => {
@@ -277,10 +284,14 @@ export function RecycleBinDialog({ kind, open, onOpenChange, onRestored, onPurge
   const confirmSummary = (target: PurgeTarget): string => {
     if (target.mode === "one") return t("purge.confirmOne", { label: target.record.label });
     if (target.mode === "selected") return t("purge.confirmCount", { count: target.ids.length, noun: noun(target.ids.length) });
-    const total = kindRecords?.length ?? 0;
-    return total >= BIN_LIST_CAP
-      ? t("purge.confirmAllCapped", { count: total, noun: noun(total) })
-      : t("purge.confirmCount", { count: total, noun: noun(total) });
+    // "Empty the bin" empties EVERYTHING of the kind on the server, also rows that this
+    // (possibly stale, at most 200 long) list does not show: the text says so and the
+    // count is only what the list shows.
+    const shown = kindRecords?.length ?? 0;
+    const plural = t(`kinds.${kind}.noun_other`);
+    return shown >= BIN_LIST_CAP
+      ? t("purge.confirmAllCapped", { count: shown, noun: plural })
+      : t("purge.confirmAll", { count: shown, noun: plural });
   };
 
   return (

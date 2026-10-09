@@ -14,7 +14,10 @@
  *   - afterwards the bin list (and the screens it feeds) is invalidated, so the rows
  *     are gone without a reload;
  *   - what the server answers is shown by its stable `code`, in Dutch, never by the
- *     English message.
+ *     English message (including FISCAL_DATA_PRESENT: a reservation with fiscal
+ *     assessments is never purged);
+ *   - "empty the bin" says it empties everything of the kind, also rows the list does not
+ *     show; a restore and a purge refresh the same screens.
  *
  * Runs against the app's own query client (`@/lib/queryClient`) so the real
  * `invalidateByPrefix` is what refreshes the list. jsdom project, real i18n.
@@ -24,7 +27,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { DELETED_RECORD_KINDS, type DeletedRecordKind } from "@shared/schema";
-import { queryClient } from "@/lib/queryClient";
+import { invalidateByPrefix, queryClient } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import nlBin from "@/locales/nl/recycleBin.json";
 import enBin from "@/locales/en/recycleBin.json";
@@ -243,7 +246,12 @@ describe("RecycleBinDialog - one confirmation before anything is deleted", () =>
     await user.click(await screen.findByTestId("button-purge-all"));
 
     const confirm = await screen.findByTestId("dialog-confirm-purge");
-    expect(confirm).toHaveTextContent("3 klanten");
+    // Everything of the kind goes, also what this list does not show; the count is only the list's.
+    expect(confirm).toHaveTextContent("Alles in deze prullenbak wordt definitief verwijderd");
+    expect(confirm).toHaveTextContent("alle klanten");
+    expect(confirm).toHaveTextContent("ook de regels die niet in de lijst staan");
+    expect(confirm).toHaveTextContent("3 in de lijst");
+    expect(confirm).toHaveTextContent("niet ongedaan");
     await user.click(within(confirm).getByTestId("button-confirm-purge"));
 
     await waitFor(() => expect(calls).toEqual([{ method: "POST", url: "/api/deleted-records/purge", body: { entityType: "customer", all: true } }]));
@@ -252,8 +260,8 @@ describe("RecycleBinDialog - one confirmation before anything is deleted", () =>
 
   it("each kind speaks of its own things in the confirm", async () => {
     const nouns: Record<DeletedRecordKind, string> = {
-      vehicle: "voertuig", customer: "klant", reservation: "reservering",
-      maintenance_block: "onderhoudsplanning", transport: "transport", fine: "boete",
+      vehicle: "voertuigen", customer: "klanten", reservation: "reserveringen",
+      maintenance_block: "onderhoudsplanningen", transport: "transporten", fine: "boetes",
     };
     const user = userEvent.setup();
     for (const kind of ["vehicle", "reservation", "maintenance_block"] as DeletedRecordKind[]) {
@@ -261,19 +269,36 @@ describe("RecycleBinDialog - one confirmation before anything is deleted", () =>
       queryClient.clear();
       const view = renderBin(kind);
       await user.click(await screen.findByTestId("button-purge-all"));
-      expect(await screen.findByTestId("dialog-confirm-purge")).toHaveTextContent(`1 ${nouns[kind]}`);
+      expect(await screen.findByTestId("dialog-confirm-purge")).toHaveTextContent(`alle ${nouns[kind]}`);
       view.unmount();
     }
   });
 
-  it("a bin at the list cap does not claim to know the count: the confirm says 'all' and the minimum", async () => {
+  it("a bin at the list cap does not claim to know the count: the confirm says 'all' and the list's maximum", async () => {
     serverRows = Array.from({ length: 200 }, (_, i) => row({ id: 1000 + i, entityType: "fine", label: `Boete ${i}` }));
     const user = userEvent.setup();
     renderBin("fine");
     await user.click(await screen.findByTestId("button-purge-all"));
     const confirm = await screen.findByTestId("dialog-confirm-purge");
-    expect(confirm).toHaveTextContent("Alle boetes");
-    expect(confirm).toHaveTextContent("200");
+    expect(confirm).toHaveTextContent("alle boetes");
+    expect(confirm).toHaveTextContent("ook de regels die niet in de lijst staan");
+    expect(confirm).toHaveTextContent("maximaal 200");
+  });
+
+  it("the kinds that take documents along say which: contracts and damage checks go, the vehicle's documents stay", async () => {
+    const user = userEvent.setup();
+    for (const kind of ["reservation", "maintenance_block"] as DeletedRecordKind[]) {
+      serverRows = SEED_ROWS();
+      queryClient.clear();
+      const view = renderBin(kind);
+      await user.click(await screen.findByTestId("button-purge-all"));
+      const confirm = await screen.findByTestId("dialog-confirm-purge");
+      expect(confirm).toHaveTextContent("contracten");
+      expect(confirm).toHaveTextContent("schadecontroles");
+      expect(confirm).toHaveTextContent("Documenten van het voertuig");
+      expect(confirm).toHaveTextContent("blijven staan");
+      view.unmount();
+    }
   });
 });
 
@@ -330,6 +355,49 @@ describe("RecycleBinDialog - what the server answers", () => {
     expect(screen.queryByText(/Server says no/)).toBeNull();
   });
 
+  it("a reservation with fiscal assessments is refused: said in Dutch by its code, the row stays, the rest of a selection goes", async () => {
+    serverRows = [
+      row({ id: 5, entityType: "reservation", label: "Reservering #3387 - AB-123-C 2030-02-01" }),
+      row({ id: 7, entityType: "reservation", label: "Reservering #3391 - AB-123-C 2030-04-01" }),
+    ];
+    purgeAnswer = (call) => {
+      serverRows = serverRows.filter((r) => !call.body.ids.includes(r.id) || r.id === 5);
+      return jsonResponse({
+        purged: 1,
+        failed: [{ id: 5, code: "FISCAL_DATA_PRESENT", message: "This reservation has fiscal assessments or review cases, which are kept; it cannot be purged." }],
+      });
+    };
+    const user = userEvent.setup();
+    renderBin("reservation");
+    await user.click(await screen.findByTestId("checkbox-deleted-select-all"));
+    await user.click(screen.getByTestId("button-purge-selected"));
+    await user.click(await screen.findByTestId("button-confirm-purge"));
+
+    expect(await screen.findByText("Deze reservering heeft fiscale beoordelingen; die blijven bewaard, dus kan ze niet definitief worden verwijderd.", { exact: false })).toBeInTheDocument();
+    expect(screen.getByText("Niet alles is gelukt")).toBeInTheDocument();
+    expect(screen.getByText("1 regel definitief verwijderd.", { exact: false })).toBeInTheDocument();
+    expect(screen.queryByText(/fiscal assessments or review cases/)).toBeNull();
+    await waitFor(() => expect(screen.queryByTestId("deleted-record-7")).toBeNull());
+    expect(screen.getByTestId("deleted-record-5")).toBeInTheDocument();
+  });
+
+  it("the single-record route's refusal (an error status carrying the code) reads the same", async () => {
+    serverRows = [row({ id: 5, entityType: "reservation", label: "Reservering #3387 - AB-123-C 2030-02-01" })];
+    purgeAnswer = () => jsonResponse({
+      code: "FISCAL_DATA_PRESENT", message: "This reservation has fiscal assessments or review cases, which are kept; it cannot be purged.",
+      purged: 0, failed: [{ id: 5, code: "FISCAL_DATA_PRESENT", message: "x" }],
+    }, 409);
+    const user = userEvent.setup();
+    renderBin("reservation");
+    await user.click(await screen.findByTestId("button-purge-5"));
+    await user.click(await screen.findByTestId("button-confirm-purge"));
+
+    expect(await screen.findByText("Deze reservering heeft fiscale beoordelingen; die blijven bewaard, dus kan ze niet definitief worden verwijderd.")).toBeInTheDocument();
+    expect(screen.getByText("Verwijderen mislukt")).toBeInTheDocument();
+    expect(screen.queryByText(/fiscal assessments or review cases/)).toBeNull();
+    expect(screen.getByTestId("deleted-record-5")).toBeInTheDocument();
+  });
+
   it("a bulk answer with several kinds of trouble lists each sentence once", async () => {
     purgeAnswer = () => jsonResponse({
       purged: 1,
@@ -347,6 +415,46 @@ describe("RecycleBinDialog - what the server answers", () => {
     expect(await screen.findByText("1 regel definitief verwijderd.", { exact: false })).toBeInTheDocument();
     expect(screen.getAllByText("Dit record stond al niet meer in de prullenbak.", { exact: false })).toHaveLength(1);
     expect(screen.getByText("Dit record kon niet worden verwijderd en staat nog in de prullenbak.", { exact: false })).toBeInTheDocument();
+  });
+});
+
+describe("RecycleBinDialog - a restore and a purge refresh the same screens", () => {
+  const FED_BY_THE_BIN = ["/api/vehicles", "/api/reservations", "/api/fines", "/api/transports", "/api/customers"];
+
+  /**
+   * Seeds one cached query per screen (plus one that no bin feeds) and returns how to see which
+   * were invalidated. Invalidations are batched at module level, so one a previous test left
+   * pending is flushed first: it must not pass for this test's.
+   */
+  async function seedScreens() {
+    await invalidateByPrefix("/api/__nothing__");
+    for (const key of [...FED_BY_THE_BIN, "/api/documents"]) queryClient.setQueryData([key], []);
+    return (key: string) => queryClient.getQueryState([key])?.isInvalidated === true;
+  }
+
+  it("a purge invalidates every screen the bin feeds and leaves the others alone", async () => {
+    const user = userEvent.setup();
+    renderBin("customer");
+    await screen.findByTestId("deleted-record-2");
+    const invalidated = await seedScreens();
+    await user.click(screen.getByTestId("button-purge-2"));
+    await user.click(await screen.findByTestId("button-confirm-purge"));
+
+    await waitFor(() => expect(invalidated("/api/customers")).toBe(true));
+    for (const key of FED_BY_THE_BIN) expect(invalidated(key), key).toBe(true);
+    expect(invalidated("/api/documents")).toBe(false);
+  });
+
+  it("a restore invalidates exactly the same screens", async () => {
+    const user = userEvent.setup();
+    renderBin("customer");
+    await screen.findByTestId("deleted-record-2");
+    const invalidated = await seedScreens();
+    await user.click(screen.getByTestId("button-restore-2"));
+
+    await waitFor(() => expect(invalidated("/api/customers")).toBe(true));
+    for (const key of FED_BY_THE_BIN) expect(invalidated(key), key).toBe(true);
+    expect(invalidated("/api/documents")).toBe(false);
   });
 });
 
@@ -371,7 +479,7 @@ describe("recycleBin locales - the purge texts", () => {
 
   it("every code the purge routes can answer has a Dutch sentence and an English one", () => {
     for (const bin of [nlBin, enBin] as Array<typeof nlBin>) {
-      for (const code of ["NOT_FOUND", "PURGE_FAILED", "FILE_REMOVAL_FAILED"]) {
+      for (const code of ["NOT_FOUND", "PURGE_FAILED", "FILE_REMOVAL_FAILED", "FISCAL_DATA_PRESENT"]) {
         expect((bin.purge.errors as Record<string, string>)[code], code).toBeTruthy();
       }
     }
