@@ -196,6 +196,27 @@ export const DIALOGS: DialogEntry[] = [
   // not maintenance-exclusive, so it is not widened.
   { page: "/maintenance", opener: "button-schedule-maintenance", anyOf: [P.MANAGE_RESERVATIONS], source: "client/src/components/maintenance/schedule-maintenance-dialog.tsx", name: "onderhoud inplannen" },
   { page: "/maintenance", opener: "button-open-recycle-bin-maintenance", anyOf: [P.MANAGE_RECYCLE_BIN], source: "client/src/components/recycle-bin/recycle-bin-dialog.tsx", name: "prullenbak onderhoud" },
+  // Sub-project C, Task 8 (B-37): "Onderhoud afronden" in ONE request - closes the
+  // block and takes the APK date, the odometer reading and the APK file with it
+  // (client/src/components/maintenance/complete-maintenance-dialog.tsx). The opener
+  // is the green "Afronden" button on an event card of the day dialog, test id
+  // `button-complete-scheduled_maintenance_<reservationId>`, wrapped in
+  // RequiresPermission anyOf={[MANAGE_MAINTENANCE, MANAGE_RESERVATIONS]} (the
+  // endpoint's own guard). It exists only for an open block on the calendar, behind
+  // a click on the day it falls on, and the e2e seed holds no maintenance block - so
+  // neither branch of dialogs.spec.ts can reach it from a bare page load. The proof
+  // is the Layer B story e2e/layer-b/maintenance/complete-maintenance.spec.ts, which
+  // plans a block (through the API of admin-b), opens it as the `maintenance` profile
+  // - which holds manage_maintenance but not manage_documents: the dialog calls neither
+  // /api/documents nor /api/vehicles any more - and completes it with an APK date, a
+  // reading and a PDF; the submit button is checked per right by
+  // client/src/components/maintenance/__tests__/complete-maintenance-dialog.test.tsx.
+  {
+    page: "/maintenance", opener: "button-complete-scheduled_maintenance_<reservationId>", anyOf: [P.MANAGE_MAINTENANCE, P.MANAGE_RESERVATIONS],
+    source: "client/src/components/maintenance/complete-maintenance-dialog.tsx", name: "onderhoud afronden",
+    allowedPathNeedsState: "the opener exists only on the event card of an open maintenance block inside the calendar's day dialog (the e2e seed holds no block); the Layer B story complete-maintenance.spec.ts plans one and completes it",
+    deniedPathNeedsState: "the opener does not exist on a bare load of /maintenance: it only renders for a block, inside the day dialog of a day that has one; the dialog's submit button per right is proven by complete-maintenance-dialog.test.tsx",
+  },
 
   // --- /documents ----------------------------------------------------------
   // All four dialog roots are inline in documents/index.tsx itself, each

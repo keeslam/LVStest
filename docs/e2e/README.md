@@ -103,6 +103,32 @@ staat uit zolang de prullenbak leeg is (de seed bevat geen verwijderde rijen), e
 het recht kan het prullenbakvenster niet eens openen. `dialogs.spec.ts` maakt voor die ingang
 dus geen test; het bewijs is deze staarttest.
 
+**Onderhoud afronden (deelproject C, taak 8): `e2e/layer-b/maintenance/complete-maintenance.spec.ts`.**
+Draait als het profiel `maintenance` (*Onderhoud beheren*, voertuigen bekijken en beheren, reserveringen
+bekijken, documenten bekijken — uitdrukkelijk **niet** *Documenten beheren*, zodat het bewijst dat
+afronden niet meer drie rechten vraagt). Dat profiel heeft *Reserveringen bekijken* al; het is wat het
+onderhoudsscherm nodig heeft om de blokken te tonen (B-37 noemt het als bekende grens). Twee verhalen,
+elk met een budget van 6 handelingen: (1) een gepland blok afronden met een nieuwe APK-datum, een nieuwe
+kilometerstand en een klein pdf-bestand — de test controleert dat er precies één verzoek de deur uit gaat
+(`POST /api/reservations/:id/complete-maintenance`, niets naar `/api/documents` of `/api/vehicles`),
+dat het blok gesloten is, dat het voertuig de nieuwe APK-datum, stand en laatste beurt heeft en weer
+beschikbaar is, en dat de pdf als APK-document bij het voertuig én het blok staat en terug te lezen is;
+(2) een kilometerstand lager dan die van het voertuig: de server weigert (`MILEAGE_LOWER_THAN_CURRENT`),
+het venster noemt beide getallen en blijft open, er is niets opgeslagen, en de gecorrigeerde stand gaat
+daarna wel door. De blokken staan op twee **bestaande** voertuigen uit de seed (`E2E-06-F` en `E2E-07-G`,
+in laag B door niets anders gebruikt), nooit op een voertuig van de spec zelf: de voertuigenlijst
+toont er tien per pagina en het balieverhaal *Voertuig toevoegen* verwacht zijn nieuwe voertuig op de
+eerste pagina — acht seedvoertuigen plus twee van deze spec zetten het op pagina twee (dat gebeurde bij
+de eerste run). Het blok en de werkplaatsvlag komen via de API van `admin-b`
+(het profiel `maintenance` mag zelf geen blok plannen: dat vraagt *Reserveringen beheren*), zodat het
+verzoekbudget van `maintenance` (ongeveer 550 van 1000 na laag A en B) voor de verhalen zelf blijft. De
+verhalen kosten dat account samen ongeveer 60 verzoeken (gemeten: 27 en 28 `/api/`-verzoeken); ruim onder de 800.
+
+Het venster zelf (`complete-maintenance-dialog.tsx`) staat in het register met **beide** velden
+`allowedPathNeedsState` en `deniedPathNeedsState`: de knop `button-complete-scheduled_maintenance_<id>`
+bestaat alleen voor een openstaand blok in het dagvenster van de kalender, en de seed bevat geen blok.
+Het bewijs per recht staat in `complete-maintenance-dialog.test.tsx`.
+
 Voorwaarden:
 
 - PostgreSQL moet lokaal draaien (localhost, poort 5432, gebruiker `postgres`).
@@ -190,6 +216,8 @@ mislukt` (ruim 8 minuten). De twee overslagen zijn nog dezelfde als hierboven.
 **Bijgewerkt (09-10-2026), na de prullenbakken van deelproject C en de drie tweelingen:** `398 geslaagd,
 2 bewust overgeslagen, 0 mislukt` (8,3 minuten). Het dekkingsoverzicht staat op `120 bestanden met een venster,
 33 bereikt door een test, 87 nog niet`.
+Met het venster **Onderhoud afronden** (deelproject C, taak 8) erbij: `121 bestanden met een venster, 34 bereikt door een test, 87 nog niet` — de
+grens van 87 is niet veranderd. Laag B (`npm run e2e:b`) draait nu `30 geslaagd, 1 bewust overgeslagen`.
 
 Het dekkingsoverzicht van de vensters (`npm run e2e:coverage`, draait ook automatisch
 aan het eind van `npm run e2e`):
