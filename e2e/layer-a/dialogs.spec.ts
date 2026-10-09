@@ -99,9 +99,24 @@ for (const role of ROLES) {
           // puts the tooltip and the tab stop on the wrapping <span> around
           // it, not on the control itself (client/src/components/ui/requires-permission.tsx).
           const wrapper = opener.locator("xpath=..");
+          // Radix closes a tooltip on any scroll event that reaches its
+          // trigger, and focusing a control below the fold makes Chrome scroll
+          // one frame AFTER focusin: the tooltip then opens and closes within
+          // ~10 ms and only its 150 ms exit animation keeps the node around
+          // long enough for `toBeVisible` to pass before `toContainText`
+          // finds nothing (seen ~1 in 30 on the dashboard's "Nieuwe
+          // reservering" tile). Scroll first, let the scroll event fire, then
+          // focus, so the tooltip opens on a page that is no longer moving.
+          await wrapper.scrollIntoViewIfNeeded();
+          await page.evaluate(
+            () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
+          );
           await wrapper.focus();
           const tooltip = page.getByRole("tooltip");
           await expect(tooltip).toBeVisible();
+          // A tooltip that is merely fading out still passes `toBeVisible`;
+          // the trigger's state says whether it is really open.
+          await expect(wrapper).toHaveAttribute("data-state", /open/);
           for (const permission of entry.anyOf) {
             await expect(tooltip).toContainText(permissionLabel(permission));
           }
