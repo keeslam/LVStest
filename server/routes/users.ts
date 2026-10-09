@@ -6,7 +6,7 @@ import { z } from "zod";
 import { insertUserSchema, UserRole, UserPermission } from "../../shared/schema";
 import { hashPassword, comparePasswords } from "../auth";
 import { realtimeEvents } from "../realtime-events";
-import { hasPermission, requireAdmin } from "../middleware/permissions.js";
+import { hasPermission } from "../middleware/permissions.js";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
 
@@ -160,6 +160,19 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
     try {
       const userData = insertUserSchema.parse(req.body);
 
+      // A new account needs a real password. An empty or whitespace-only one was
+      // hashed and stored, which gave an account nobody could sign in to with the
+      // intended secret (the edit form already treats a blank password as "no
+      // change", so create must not accept what edit ignores). The create dialog
+      // checks the same thing before it posts; this is the server's own backstop.
+      if (typeof userData.password !== "string" || userData.password.trim() === "") {
+        return res.status(400).json({
+          message: "A password is required to create an account",
+          code: "PASSWORD_REQUIRED",
+          field: "password",
+        });
+      }
+
       // BUG-001: manage_users is a permission you hand a shift leader. It must
       // not be a route to creating administrators — only a real admin may set
       // role:"admin".
@@ -238,6 +251,17 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         message: "Invalid user data",
       }) as Record<string, any>;
 
+      // The users dialog sends `password: ""` when "Nieuw wachtwoord (leeg laten om
+      // te behouden)" is left empty. Only a non-empty string is a password change;
+      // anything else (empty, whitespace-only, null, absent) means "no change", so
+      // the key is dropped here, before anything reads it: the BUG-063 rule below
+      // must not refuse a manager who merely saved a colleague without touching
+      // the password, and the value must never reach storage (it used to be
+      // written as the stored hash, after which the user could not log in).
+      if (typeof patch.password !== "string" || patch.password.trim() === "") {
+        delete patch.password;
+      }
+
       // BUG-063: resetting *another* account's password was reachable for anyone
       // with manage_users. A password may only be set on your own row, or by a
       // real administrator.
@@ -303,16 +327,8 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
         }
       }
       
-      // The users dialog sends `password: ""` when "Nieuw wachtwoord (leeg laten om
-      // te behouden)" is left empty. Only a non-empty string is a password change;
-      // anything else (empty, whitespace-only, null, absent) means "no change", so
-      // the key is dropped and never reaches storage. Without this the empty string
-      // was written as the stored hash and the user could no longer log in.
-      if (typeof userData.password !== "string" || userData.password.trim() === "") {
-        delete userData.password;
-      }
-
-      // Handle password separately
+      // Handle password separately (a blank one was already dropped from `patch`
+      // above, and `userData` is built from `patch`).
       if (userData.password) {
         // Separate password from other data
         const { password, ...otherData } = userData;
@@ -358,76 +374,6 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       });
     }
   });
-  
-  // Original update user for backward compatibility
-  app.patch("/api/users/:id/admin", requireAdmin, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid user ID" });
-      }
-      
-      const user = await storage.getUser(id);
-      
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      // If updating username, check if new username already exists
-      if (req.body.username && req.body.username !== user.username) {
-        const existingUser = await storage.getUserByUsername(req.body.username);
-        if (existingUser) {
-          return res.status(400).json({ message: "Username already exists" });
-        }
-      }
-      
-      // Add audit trail
-      const currentUser = req.user!;
-      const userData = {
-        ...req.body,
-        updatedBy: currentUser.username
-      };
-      
-      // Handle password separately
-      if (userData.password) {
-        // Separate password from other data
-        const { password, ...otherData } = userData;
-        
-        // Update user data without password
-        const updatedUser = await storage.updateUser(id, otherData);
-        
-        // Update password separately with proper hashing
-        const hashedPassword = await hashPassword(password);
-        await storage.updateUserPassword(id, hashedPassword);
-        
-        if (!updatedUser) {
-          return res.status(404).json({ message: "User not found" });
-        }
-        
-        // Don't send password back to client
-        const { password: pwd, ...userWithoutPassword } = updatedUser;
-        return res.json(userWithoutPassword);
-      } else {
-        // Regular update without password change
-        const updatedUser = await storage.updateUser(id, userData);
-        
-        if (!updatedUser) {
-          return res.status(404).json({ message: "User not found" });
-        }
-        
-        // Don't send password back to client
-        const { password, ...userWithoutPassword } = updatedUser;
-        return res.json(userWithoutPassword);
-      }
-    } catch (error) {
-      console.error("Error updating user:", error);
-      res.status(400).json({ 
-        message: "Failed to update user", 
-      });
-    }
-  });
-  
   
   // Delete user (requires MANAGE_USERS permission)
   app.delete("/api/users/:id", requireAuth, hasPermission(UserPermission.MANAGE_USERS), async (req, res) => {

@@ -225,15 +225,15 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
-    // Don't allow updating the password through this method
-    // Password updates should use a dedicated method with proper hashing
-    if (userData.password) {
-      delete userData.password;
-    }
-    
+    // Never write a password through this method, whatever its value. Password
+    // updates go through updateUserPassword / updateUserPasswordIfCurrent, which
+    // are handed an already hashed value. An empty string used to slip through a
+    // truthiness check here and was stored as the hash (user locked out).
+    const { password: _ignoredPassword, ...safeUserData } = userData;
+
     // Add updatedAt timestamp
     const updateData = {
-      ...userData,
+      ...safeUserData,
       updatedAt: new Date()
     };
     
