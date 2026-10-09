@@ -33,15 +33,52 @@ const NEW_RIGHTS = ["revert_handover", "cancel_picked_up_rental", "manage_recycl
 const MARKER = "migration:c_manager_rights";
 const STARTUP_SCRIPT = fileURLToPath(new URL("../../startup-migration.js", import.meta.url));
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
+// The exact form scripts/migrate-manager-rights-c.ts uses: the database name must
+// end the path, so lvs_fixtest_copy or a URL that merely mentions lvs_fixtest fails.
+const FIXTEST_URL = /\/lvs_fixtest(\?|$)/;
 
 function runStartupMigration(): string {
-  // The child gets exactly the environment of this test run, so it can only
-  // ever touch the database the test itself is allowed to touch.
+  // The child gets the environment of this test run, so it can only ever touch
+  // the database the test itself is allowed to touch. TIMESTAMPTZ_MIGRATION is
+  // blanked on purpose: startup-migration.js converts every timestamp column
+  // when it is "apply", and a developer shell must not turn that on here.
   return execFileSync(process.execPath, [STARTUP_SCRIPT], {
     cwd: REPO_ROOT,
-    env: { ...process.env, DATABASE_SSL: "false" },
+    env: { ...process.env, DATABASE_SSL: "false", TIMESTAMPTZ_MIGRATION: "" },
     encoding: "utf8",
     timeout: 60_000,
+  });
+}
+
+/**
+ * For a describe that writes to every manager row and to the one-time marker:
+ * refuse to run anywhere but lvs_fixtest, and leave the marker as it was found.
+ *
+ * Vitest runs a suite's afterAll even when its beforeAll threw (the runner marks
+ * the tests skipped, rethrows into its own catch, then still calls the afterAll
+ * hooks), so the cleanup cannot assume the guard held. `guarded` is set only
+ * once the guard has passed and the marker row is captured; without it a wrong
+ * DATABASE_URL would fail the guard and then delete that database's real marker,
+ * and the next boot would grant the three rights to the managers all over again.
+ */
+function useFixtestMarkerGuard(): void {
+  let guarded = false;
+  let markerBefore: (typeof appSettings.$inferSelect) | undefined;
+
+  beforeAll(async () => {
+    expect(process.env.DATABASE_URL ?? "").toMatch(FIXTEST_URL);
+    const [row] = await db.select().from(appSettings).where(eq(appSettings.key, MARKER));
+    markerBefore = row;
+    guarded = true;
+    await db.delete(appSettings).where(eq(appSettings.key, MARKER));
+  });
+
+  afterAll(async () => {
+    if (!guarded) return;
+    await cleanupFixtureUsers();
+    // Leave the marker the way this describe found it.
+    await db.delete(appSettings).where(eq(appSettings.key, MARKER));
+    if (markerBefore) await db.insert(appSettings).values(markerBefore).onConflictDoNothing();
   });
 }
 
@@ -128,12 +165,10 @@ describe("C-01 - the grant to role manager: pure mapping and its mirror script",
   });
 
   describe("against lvs_fixtest", () => {
-    afterAll(async () => {
-      await cleanupFixtureUsers();
-    });
+    // --apply writes the marker row too; the helper puts it back as found.
+    useFixtestMarkerGuard();
 
     it("a dry run counts and writes nothing; --apply writes once and the second run changes nothing", async () => {
-      expect(process.env.DATABASE_URL ?? "").toMatch(/lvs_fixtest/);
       const manager = await createAccount("manager", []);
       const admin = await createAccount("admin", []);
       const other = await createAccount("user", ["manage_reservations"]);
@@ -157,22 +192,8 @@ describe("C-01 - the grant to role manager: pure mapping and its mirror script",
 });
 
 describe("C-01 - startup-migration.js: the one-time grant (marker migration:c_manager_rights)", () => {
-  let markerBefore: (typeof appSettings.$inferSelect) | undefined;
-
-  beforeAll(async () => {
-    // The step writes to every manager in the database it runs against.
-    expect(process.env.DATABASE_URL ?? "").toMatch(/lvs_fixtest/);
-    const [row] = await db.select().from(appSettings).where(eq(appSettings.key, MARKER));
-    markerBefore = row;
-    await db.delete(appSettings).where(eq(appSettings.key, MARKER));
-  });
-
-  afterAll(async () => {
-    await cleanupFixtureUsers();
-    // Leave the marker the way this test found it.
-    await db.delete(appSettings).where(eq(appSettings.key, MARKER));
-    if (markerBefore) await db.insert(appSettings).values(markerBefore).onConflictDoNothing();
-  });
+  // The step writes to every manager in the database it runs against.
+  useFixtestMarkerGuard();
 
   it("grants the three rights to managers, skips admin and other roles, survives a malformed row, and runs once", async () => {
     const empty = await createAccount("manager", []);

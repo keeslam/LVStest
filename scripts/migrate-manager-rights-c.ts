@@ -33,7 +33,10 @@ import { users, appSettings, UserPermission } from "../shared/schema";
 
 /**
  * The single declaration of the mapping. startup-migration.js repeats it in
- * SQL; server/__tests__/c-01-rights.test.ts asserts the two agree.
+ * SQL. server/__tests__/c-01-rights.test.ts checks that the marker and the three
+ * right names also occur in startup-migration.js, and runs that script against
+ * lvs_fixtest to see which accounts end up with which rights; it does not diff
+ * the two implementations line by line.
  */
 export const MANAGER_RIGHTS_C = {
   /** `app_settings.key` that records the step as done, so it runs exactly once. */

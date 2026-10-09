@@ -40,6 +40,12 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+const NEW_RIGHT_LABELS = {
+  [UserPermission.REVERT_HANDOVER]: "Overdracht terugdraaien",
+  [UserPermission.CANCEL_PICKED_UP_RENTAL]: "Opgehaalde huur annuleren of verwijderen",
+  [UserPermission.MANAGE_RECYCLE_BIN]: "Prullenbak beheren",
+};
+
 describe("users dialog - the three rights of sub-project C", () => {
   it("renders an unticked checkbox for each new right, with its Dutch label, on the add-user form", async () => {
     const user = userEvent.setup();
@@ -47,13 +53,8 @@ describe("users dialog - the three rights of sub-project C", () => {
 
     await user.click(await screen.findByTestId("dialog-add-user-button"));
 
-    const labels = {
-      [UserPermission.REVERT_HANDOVER]: "Overdracht terugdraaien",
-      [UserPermission.CANCEL_PICKED_UP_RENTAL]: "Opgehaalde huur annuleren of verwijderen",
-      [UserPermission.MANAGE_RECYCLE_BIN]: "Prullenbak beheren",
-    };
     const dialog = await screen.findByRole("dialog");
-    for (const [permission, label] of Object.entries(labels)) {
+    for (const [permission, label] of Object.entries(NEW_RIGHT_LABELS)) {
       const checkbox = await within(dialog).findByRole("checkbox", { name: label });
       expect(checkbox, `${permission} must start unticked`).not.toBeChecked();
     }
@@ -71,5 +72,40 @@ describe("users dialog - the three rights of sub-project C", () => {
     expect(checkbox).toBeChecked();
     await user.click(checkbox);
     expect(checkbox).not.toBeChecked();
+  });
+
+  it("renders the three new rights on the edit form too, ticked only where the account holds them", async () => {
+    // The edit form reads the stored list, so a right the account already has
+    // must come up ticked and the others unticked.
+    const account = {
+      id: 7,
+      username: "manager-demo",
+      role: "manager",
+      permissions: [UserPermission.REVERT_HANDOVER],
+      active: true,
+    };
+    const json = (body: unknown) =>
+      new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        return json(url.endsWith("/api/users/7") ? account : url.endsWith("/api/users") ? [account] : []);
+      }),
+    );
+    const user = userEvent.setup();
+    renderDialog();
+
+    await user.click(await screen.findByTestId("dialog-edit-user-7"));
+
+    const dialog = await screen.findByRole("dialog");
+    for (const [permission, label] of Object.entries(NEW_RIGHT_LABELS)) {
+      const checkbox = await within(dialog).findByRole("checkbox", { name: label });
+      if (permission === UserPermission.REVERT_HANDOVER) {
+        expect(checkbox, `${permission} is held by the account`).toBeChecked();
+      } else {
+        expect(checkbox, `${permission} is not held by the account`).not.toBeChecked();
+      }
+    }
   });
 });
