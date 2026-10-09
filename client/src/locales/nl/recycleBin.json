@@ -57,7 +57,7 @@
       "badge": "Reservering",
       "noun_one": "reservering",
       "noun_other": "reserveringen",
-      "purgeNote": "De reservering verdwijnt met haar contracten, schadecontroles en bezorgtaken. Documenten van het voertuig blijven staan. De bestanden van wat verdwijnt worden van de schijf gehaald."
+      "purgeNote": "De reservering verdwijnt met haar contracten, schadecontroles en bezorgtaken. Documenten van het voertuig blijven staan. De bestanden van wat verdwijnt worden van de schijf gehaald. Een reservering met fiscale beoordelingen wordt overgeslagen en blijft in de prullenbak staan."
     },
     "maintenance_block": {
       "openButton": "Verwijderd onderhoud",
@@ -67,7 +67,7 @@
       "badge": "Onderhoud",
       "noun_one": "onderhoudsplanning",
       "noun_other": "onderhoudsplanningen",
-      "purgeNote": "De onderhoudsplanning verdwijnt, met eventuele contracten en schadecontroles. Documenten van het voertuig, zoals een APK-bewijs, blijven staan. De bestanden van wat verdwijnt worden van de schijf gehaald."
+      "purgeNote": "De onderhoudsplanning verdwijnt, met eventuele contracten en schadecontroles. Documenten van het voertuig, zoals een APK-bewijs, blijven staan. De bestanden van wat verdwijnt worden van de schijf gehaald. Een onderhoudsplanning met fiscale beoordelingen wordt overgeslagen en blijft in de prullenbak staan."
     },
     "transport": {
       "openButton": "Verwijderde transporten",

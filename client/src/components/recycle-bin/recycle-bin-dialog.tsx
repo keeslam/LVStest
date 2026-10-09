@@ -91,6 +91,8 @@ const PURGE_ERROR_CODES = new Set(["NOT_FOUND", "PURGE_FAILED", "FILE_REMOVAL_FA
  * What a restore or a purge changes: whatever fed this bin, plus every bin list. One list
  * for both, so a screen added to the one is never forgotten for the other. Besluiten B-15:
  * a restored transport has to reappear on the transports page too, not only in the bin.
+ * Documents too: purging a reservation deletes its own contracts and damage checks and
+ * detaches the others, so an open document list must not keep showing them.
  */
 const BIN_CHANGE_PREFIXES = [
   "/api/vehicles",
@@ -98,6 +100,7 @@ const BIN_CHANGE_PREFIXES = [
   "/api/fines",
   "/api/transports",
   "/api/customers",
+  "/api/documents",
   "/api/deleted-records",
 ];
 

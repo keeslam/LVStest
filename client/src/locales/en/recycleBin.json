@@ -57,7 +57,7 @@
       "badge": "Reservation",
       "noun_one": "reservation",
       "noun_other": "reservations",
-      "purgeNote": "The reservation disappears with its contracts, damage checks and delivery tasks. Documents of the vehicle stay. The files of what disappears are removed from disk."
+      "purgeNote": "The reservation disappears with its contracts, damage checks and delivery tasks. Documents of the vehicle stay. The files of what disappears are removed from disk. A reservation with fiscal assessments is skipped and stays in the bin."
     },
     "maintenance_block": {
       "openButton": "Deleted maintenance",
@@ -67,7 +67,7 @@
       "badge": "Maintenance",
       "noun_one": "maintenance entry",
       "noun_other": "maintenance entries",
-      "purgeNote": "The maintenance entry disappears, with any contracts and damage checks. Documents of the vehicle, such as an APK certificate, stay. The files of what disappears are removed from disk."
+      "purgeNote": "The maintenance entry disappears, with any contracts and damage checks. Documents of the vehicle, such as an APK certificate, stay. The files of what disappears are removed from disk. A maintenance entry with fiscal assessments is skipped and stays in the bin."
     },
     "transport": {
       "openButton": "Deleted transports",

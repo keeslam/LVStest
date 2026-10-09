@@ -300,6 +300,41 @@ describe("RecycleBinDialog - one confirmation before anything is deleted", () =>
       view.unmount();
     }
   });
+
+  // Final wave, item 18: the server refuses to purge a reservation that has fiscal assessments (they are
+  // immutable records), so "empty the bin" cannot honestly say it removes everything.
+  it("the reservation and maintenance bins say up front that reservations with fiscal assessments are skipped and stay", async () => {
+    const user = userEvent.setup();
+    for (const kind of ["reservation", "maintenance_block"] as DeletedRecordKind[]) {
+      serverRows = SEED_ROWS();
+      queryClient.clear();
+      const view = renderBin(kind);
+      await user.click(await screen.findByTestId("button-purge-all"));
+      const confirm = await screen.findByTestId("dialog-confirm-purge");
+      expect(confirm, kind).toHaveTextContent("fiscale beoordelingen");
+      expect(confirm, kind).toHaveTextContent("overgeslagen");
+      expect(confirm, kind).toHaveTextContent("blijft in de prullenbak staan");
+      view.unmount();
+    }
+  });
+
+  it("the other bins do not mention fiscal assessments", async () => {
+    const user = userEvent.setup();
+    for (const kind of ["vehicle", "customer"] as DeletedRecordKind[]) {
+      serverRows = SEED_ROWS();
+      queryClient.clear();
+      const view = renderBin(kind);
+      await user.click(await screen.findByTestId("button-purge-all"));
+      expect(await screen.findByTestId("dialog-confirm-purge"), kind).not.toHaveTextContent("fiscale");
+      view.unmount();
+    }
+  });
+
+  it("has the sentence in English too", () => {
+    for (const kind of ["reservation", "maintenance_block"]) {
+      expect((enBin as any).kinds[kind].purgeNote, kind).toMatch(/fiscal assessments is skipped and stays in the bin/);
+    }
+  });
 });
 
 describe("RecycleBinDialog - what the server answers", () => {
@@ -419,7 +454,11 @@ describe("RecycleBinDialog - what the server answers", () => {
 });
 
 describe("RecycleBinDialog - a restore and a purge refresh the same screens", () => {
-  const FED_BY_THE_BIN = ["/api/vehicles", "/api/reservations", "/api/fines", "/api/transports", "/api/customers"];
+  // Documents too: purging a reservation deletes its contracts and damage checks and detaches the rest,
+  // so a document list that was open behind the bin must not keep showing them.
+  const FED_BY_THE_BIN = ["/api/vehicles", "/api/reservations", "/api/fines", "/api/transports", "/api/customers", "/api/documents"];
+  /** A screen no bin feeds. */
+  const UNRELATED = "/api/notifications";
 
   /**
    * Seeds one cached query per screen (plus one that no bin feeds) and returns how to see which
@@ -428,7 +467,7 @@ describe("RecycleBinDialog - a restore and a purge refresh the same screens", ()
    */
   async function seedScreens() {
     await invalidateByPrefix("/api/__nothing__");
-    for (const key of [...FED_BY_THE_BIN, "/api/documents"]) queryClient.setQueryData([key], []);
+    for (const key of [...FED_BY_THE_BIN, UNRELATED]) queryClient.setQueryData([key], []);
     return (key: string) => queryClient.getQueryState([key])?.isInvalidated === true;
   }
 
@@ -442,7 +481,7 @@ describe("RecycleBinDialog - a restore and a purge refresh the same screens", ()
 
     await waitFor(() => expect(invalidated("/api/customers")).toBe(true));
     for (const key of FED_BY_THE_BIN) expect(invalidated(key), key).toBe(true);
-    expect(invalidated("/api/documents")).toBe(false);
+    expect(invalidated(UNRELATED)).toBe(false);
   });
 
   it("a restore invalidates exactly the same screens", async () => {
@@ -454,7 +493,7 @@ describe("RecycleBinDialog - a restore and a purge refresh the same screens", ()
 
     await waitFor(() => expect(invalidated("/api/customers")).toBe(true));
     for (const key of FED_BY_THE_BIN) expect(invalidated(key), key).toBe(true);
-    expect(invalidated("/api/documents")).toBe(false);
+    expect(invalidated(UNRELATED)).toBe(false);
   });
 });
 
