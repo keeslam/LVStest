@@ -1873,13 +1873,14 @@ export default function MaintenanceCalendar() {
         onOpenChange={setColorDialogOpen}
       />
 
-      {/* Maintenance List Dialog */}
+      {/* Recycle bin */}
       <RecycleBinDialog
         kind="maintenance_block"
         open={recycleBinOpen}
         onOpenChange={setRecycleBinOpen}
       />
 
+      {/* Maintenance List Dialog */}
       <MaintenanceListDialog
         open={maintenanceListDialogOpen}
         onOpenChange={setMaintenanceListDialogOpen}
