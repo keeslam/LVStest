@@ -34,12 +34,17 @@ function TriRadio({ name, value, onChange, disabled, label, t }: { name: string;
  * The fiscal usage of one reservation: derived facts, the questions only
  * people can answer (besluit F-02/F-09), and the latest assessment.
  */
-export function UsagePeriodCard({ reservationId }: { reservationId: number }) {
+export function UsagePeriodCard({ reservationId, startDate }: { reservationId: number; startDate?: string | null }) {
   const { t } = useTranslation("fiscal");
   const { canReview } = useFiscalPermissions();
   const queryClient = useQueryClient();
   const key = [`/api/reservations/${reservationId}/usage-period`] as const;
-  const { data, isLoading, error } = useQuery<UsagePeriodResponse>({ queryKey: key, retry: false });
+  // Besluit F-10: a reservation that starts (or was picked up) before USAGE_PERIOD_DERIVATION_START
+  // never has a period. The server answers 404, which the browser logs and the app's global query
+  // handler turns into a red "Kon de gegevens niet laden" toast on every opening of the reservation
+  // dialog - so a caller that knows the start date says it, and nothing is asked.
+  const beforeDerivation = !!startDate && startDate < USAGE_PERIOD_DERIVATION_START;
+  const { data, isLoading, error } = useQuery<UsagePeriodResponse>({ queryKey: key, retry: false, enabled: !beforeDerivation });
 
   const [privateUse, setPrivateUse] = useState<Tri>("unknown");
   const [commuting, setCommuting] = useState<Tri>("unknown");
@@ -80,6 +85,9 @@ export function UsagePeriodCard({ reservationId }: { reservationId: number }) {
     onError: (e: Error) => setServerError(e.message.replace(/^\d{3}:\s*/, "")),
   });
 
+  if (beforeDerivation) {
+    return <p className="text-sm text-muted-foreground" data-testid="usage-no-period">{t("usage.noPeriod", { date: dateLabelNl(USAGE_PERIOD_DERIVATION_START) })}</p>;
+  }
   if (isLoading) return <p className="text-sm text-muted-foreground">{t("common.loading")}</p>;
   if (error || !data) {
     const message = (error as Error | null)?.message ?? "";

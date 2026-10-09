@@ -541,7 +541,7 @@ export function ReservationViewDialog({
               )}
 
               {/* Fiscal mobility check (docs/fiscaal): derived facts, confirmation, latest assessment. */}
-              {reservationId && <UsagePeriodCard reservationId={reservationId} />}
+              {reservationId && <UsagePeriodCard reservationId={reservationId} startDate={reservation.actualPickupDate ?? reservation.startDate} />}
 
               {/* Documents Section */}
               <div>

@@ -44,11 +44,11 @@ const period = {
 const calls: Array<{ url: string; init?: RequestInit }> = [];
 // The mock keeps state like the server: a successful PATCH changes what the next GET returns.
 let stored = { ...period };
-function renderCard() {
+function renderCard(startDate?: string | null) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0, queryFn: getQueryFn({ on401: "throw" }) } } });
   return render(
     <QueryClientProvider client={client}>
-      <UsagePeriodCard reservationId={99} />
+      <UsagePeriodCard reservationId={99} startDate={startDate} />
     </QueryClientProvider>,
   );
 }
@@ -97,6 +97,23 @@ describe("gebruiksblok van een reservering", () => {
     const patch = calls.filter((c) => c.init?.method === "PATCH").pop();
     expect(patch?.url).toMatch(/\/api\/reservations\/99\/usage-period$/);
     expect(JSON.parse(String(patch?.init?.body))).toMatchObject({ privateUse: "yes", commuting: "no", providedBeforeCutoff: "no", replacementReason: "accident" });
+  });
+
+  // Sub-project C, Task 5: the reservation view dialog mounts this card for EVERY
+  // reservation, and a reservation that starts before 2027-01-01 (besluit F-10) never
+  // has a period. Asking the server anyway answered 404, which the browser logs and
+  // the app's global query handler turns into the red "Kon de gegevens niet laden"
+  // toast on every opening of the dialog.
+  it("does not ask the server for a reservation that starts before the derivation date, and says why", async () => {
+    renderCard("2026-10-02");
+    expect(await screen.findByText(/Geen gebruiksperiode: deze reservering begint vóór 1 januari 2027/)).toBeInTheDocument();
+    expect(calls).toHaveLength(0);
+  });
+
+  it("still asks for a reservation that starts on the derivation date", async () => {
+    renderCard("2027-01-01");
+    expect(await screen.findByText("1 maart 2027 t/m 10 maart 2027")).toBeInTheDocument();
+    expect(calls.length).toBeGreaterThan(0);
   });
 
   it("is read-only without the review right", async () => {
