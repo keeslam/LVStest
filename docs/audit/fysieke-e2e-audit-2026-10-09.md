@@ -233,6 +233,19 @@ Volledige keten op mijn eigen reservering #3200 (voertuig AUDIT1, klant "Audit T
 - Er zijn twee begrippen voor onderhoud: een reserveringsblok (onderhoudsstatus scheduled/in/out) en een eigenschap van het voertuig (maintenanceStatus ok), plus de beschikbaarheid (needs_fixing). Ze lopen uit elkaar (bevindingen 2 en 3); voor de gebruiker is niet te zien welke leidend is.
 - In het onderhoudsoverzicht ontbreken "Afronden" en "Binnen melden" als losse knoppen; alles loopt via het bewerkformulier.
 
+
+### Aanvulling (tweede ronde: vervangend voertuig en Annuleren)
+Getest met een eigen vervangende auto AUDIT3 (id 1670, via de voertuig-API aangemaakt): onderhoud plannen op AUDIT2 voor 3 november, de klantreservering #3203 (3 t/m 5 november) die daardoor geraakt wordt, het dialoog "Vervangende voertuigen toewijzen" met "Annuleren", daarna opnieuw plannen met AUDIT3 als vervanger, en het blok verwijderen.
+
+Werkt:
+- Het dialoog noemt de geraakte reservering ("Audit Testklant B.v., Reservering: 03-11-2026 - 05-11-2026, Oorspronkelijk voertuig AUDIT2") en biedt drie keuzes: "Nu vervangend voertuig toewijzen", "Later vervanger toewijzen (nog te bepalen)" en "Klant regelt eigen vervoer".
+- "Nu vervangend voertuig toewijzen" opent een voertuigkiezer met typefilters en zoekveld; na AUDIT3 kiezen staat "Vervangende verhuur: 3 Nov - 3 Nov" met een knop Bewerken, en bevestigen geeft de toast "Onderhoud gepland. Het onderhoud is gepland en de herinneringen zijn bijgewerkt." Resultaat: onderhoudsblok #3205 op AUDIT2 en vervangreservering #3206 (type replacement, AUDIT3, 3 november, vervanger voor #3203).
+- Verwijderen van een onderhoudsblok vraagt een eigen bevestiging ("Onderhoud verwijderen ... Deze actie kan niet ongedaan worden gemaakt."), geeft de toast "Onderhoud verwijderd" en het blok is daarna 404.
+
+Werkt niet:
+7. **"Annuleren" in het vervangerdialoog plant het onderhoud toch.** Stappen: onderhoud plannen op AUDIT2 voor 3 november, in het dialoog "Annuleren". Verwacht: er wordt niets gepland. Werkelijk: het dialoog sluit zonder melding, maar onderhoudsblok #3204 (type maintenance_block, Geboekt, AUDIT2, 3 november, aan klant 1247 gekoppeld) bestaat al (het wordt aangemaakt vóór de keuze van de vervanger). Reservering #3203 overlapt dan met het onderhoud, heeft geen vervanger en wordt nergens gesignaleerd: de tab Vervangers in het onderhoudsoverzicht toont alleen de twee oude aanvragen en #3203 staat op spareVehicleStatus "assigned". Ernst: **Middel**.
+8. **Na het kiezen van het vervangend voertuig zijn twee klikken op "Vervangers toewijzen & onderhoud plannen" nodig.** De eerste klik sluit alleen de keuzelijst; er verschijnt geen melding en het dialoog blijft staan. Ernst: **Laag**.
+
 ---
 
 ## Module 8 — Transporten (/delivery)
@@ -347,6 +360,223 @@ Documentbibliotheek (10 voertuigen, 22 documenten; uitklappen per voertuig en do
 
 ---
 
+## Module 12 — Boetes (bekeuringen: lijst, toevoegen, koppelen, prullenbak)
+
+> In de app heten ze "Bekeuringen" en staan ze niet in de zijbalk: ze zitten in het Klantenportaal-scherm (/portal-admin, tegel "Bekeuringen" of "Alle bekeuringen"), in het voertuigdetail (knop "Bekeuringen: 1") en in het klantdetail (portaaltab). Een eigen menu-item "Boetes" bestaat niet.
+
+### Getest
+- Lijst (5 bekeuringen bij aanvang): zoeken, filter Status (alle zes), filter Kenteken (met streepjes ingetypt), filters Van en Tot (ook de randdag: Van = Tot = 1 oktober), uitklaplijst, CSV-export.
+- Detaildialoog van een bestaande bekeuring (#73, alleen gelezen) en via de URL-parameters ?fine=<id> en ?tab=fines.
+- Nieuwe bekeuring: leeg formulier opslaan; twee eigen records: #511 (AUDIT2, 10 oktober, door het systeem gekoppeld aan reservering #3202) en #512 (AUDIT1, 8 oktober, niet gekoppeld).
+- Koppelen aan een klant (zoeken op "Audit", kiezen, Koppelen), bewerken (omschrijving en interne notitie), Ontkoppelen, Annuleren, Heractiveren, Verwijderen (beide antwoorden op de bevestiging), Prullenbak en Terugzetten.
+- CJIB-importen en Brieven scannen geopend (alleen lezen). Knop "Bekeuringen: 1" in het voertuigdetail van AUDIT2.
+- Niet getest: brief scannen, CJIB-bestand uploaden (ingebouwde browser kan geen bestand kiezen), "Nu ophalen" bij CJIB-importen (niet geklikt: zou een echte postbus kunnen raadplegen), doorbelasten en betaald markeren (bestaan niet in de interface, zie bevinding 3).
+- Voor bevinding 1 heb ik één eigen bekeuring (#513, AUDIT1, met administratiekosten 12,50) via een directe POST aangemaakt, omdat het formulier geen veld voor administratiekosten heeft; daarna alles via het scherm.
+
+### Werkt
+- Lijst, zoeken, statusfilter, kentekenfilter (ook met streepjes: GET /api/fines?licensePlate=94-XT-184 geeft 200 en de juiste drie regels) en datumfilters (inclusief de randdag) werken en geven 200.
+- CSV-export levert direct een bestand: kopregel Kenteken;Datum;Omschrijving;Klant;Bestuurder;Bedrag;Status, puntkomma als scheidingsteken, kentekens mét streepjes (94-XT-184), 5 regels, 605 bytes, geen fouttoast.
+- Nieuw formulier: de browser meldt "Vul dit veld in." voor kenteken, datum/tijd, bedrag en omschrijving; opslaan geeft 201, daarna opent het detail direct.
+- Automatische koppeling: een bekeuring op AUDIT2 op 10 oktober werd direct aan de lopende reservering #3202 en klant 1247 gekoppeld (status Gekoppeld, "Gekoppeld door system"). Een bekeuring op AUDIT1 zonder lopende reservering bleef netjes "Niet gekoppeld" met de tekst "Geen reserveringen gevonden voor dit kenteken. Kies een klant."
+- Handmatig koppelen: de knop Koppelen is uitgeschakeld tot een klant is gekozen; na kiezen POST /api/fines/512/link 200, status Gekoppeld, "Gekoppeld door e2e-admin".
+- Bewerken, Ontkoppelen, Annuleren (alle velden worden daarna uitgeschakeld) en Heractiveren werken en geven 200 met de toast "Bekeuring opgeslagen.".
+- Verwijderen vraagt eerst "Deze bekeuring naar de prullenbak verplaatsen? Een beheerder kan hem daar terugzetten." Antwoord nee laat alles staan; antwoord ja geeft DELETE 200, toast "Bekeuring naar de prullenbak verplaatst" en het detail is daarna 404 (netjes weg uit de lijst).
+- Prullenbak (alleen beheerders): toont wie wanneer verwijderde; Terugzetten geeft de toast "Teruggezet — ... is teruggezet" en GET /api/fines/513 geeft weer 200.
+- Voertuigdetail van AUDIT2 toont de knop "Bekeuringen: 1" en opent de lijst al gefilterd op dat voertuig.
+- CJIB-importen toont het bestand cjib-levering-demo.csv (Upload, 2 regels, 2 aangemaakt, 2 gekoppeld, Verwerkt) en de knoppen Nu ophalen en Bestand uploaden.
+
+### Werkt niet
+1. **Opslaan in het bekeuringsdetail wist de administratiekosten.** Stappen: bekeuring met administratiekosten (#513: bedrag 100,00 + 12,50 = totaal 112,50), detail openen, alleen een interne notitie typen, "Opslaan". Verwacht: totaal blijft 112,50. Werkelijk: PATCH /api/fines/513 geeft 200 en de toast "Bekeuring opgeslagen."; daarna is administratiekosten 0,00 en het totaal 100,00. Oorzaak in de code: client/src/components/fines/fine-dialog.tsx (knop Opslaan) stuurt altijd `adminFee: 0` mee. Het dialoog toont de administratiekosten niet, dus de beheerder ziet niets. Het formulier "Nieuwe bekeuring" vult de administratiekosten uit de instelling `fineAdminFee` stil in (new-fine-dialog.tsx regel 35), dus zodra die instelling gevuld is, verliest elke bewerkte bekeuring haar kosten (de klant krijgt een te laag bedrag in het portaal, de eigenaar derft 12,50 per bekeuring). In deze testdatabase hebben alleen de oude testbekeuringen #17 en #27 nog administratiekosten (12,50 en 10,00). Verzachtend: de instelling `fineAdminFee` heeft in App-instellingen (tab Klantenportaal) geen invoerveld en staat op 0, dus in de interface zelf ontstaan geen administratiekosten; het risico bestaat alleen als de waarde via de database of een import is gevuld. Ernst: **Middel** (geldverlies per bewerkte bekeuring, kleine kans zolang de instelling niet in gebruik is).
+2. **Klantnaam blijft leeg bij een klant zonder bedrijfsnaam.** Stappen: bekeuring koppelen aan "Audit Testklant B.v." (id 1247). Verwacht: naam in de kolom Klant en op de knop "Klant openen: ...". Werkelijk: kolom Klant is leeg en de knop heet "Klant openen:" zonder naam (ook op de bekeuring van AUDIT2). Oorzaak: de klantenkaart slaat een lege bedrijfsnaam op als tekst "" (niet als leeg veld) en de zoekopdracht gebruikt `coalesce(companyName, name)` zonder `nullif` (server/services/fines-storage.ts regel 15, fine-attribution.ts regel 35, portal-dashboard.ts regel 43, portal-requests-storage.ts regel 17); alleen portal-storage.ts en portal-customer-notifications.ts doen het goed. Daardoor ook lege klantnamen in het portaaldashboard en bij aanvragen. Alle 300 geïmporteerde klanten hebben een leeg veld (NULL), dus het valt pas op bij klanten die via het formulier zijn aangemaakt zonder bedrijfsnaam. Ernst: **Middel**.
+3. **De statussen "Doorbelast" en "Betaald" zijn in de interface niet te bereiken.** Het statusfilter en de badges kennen ze, maar in het detail staan bij een gekoppelde bekeuring alleen Opslaan, Ontkoppelen, Annuleren en Verwijderen. De server weigert ook de overgang: POST /api/fines/511/status met `charged` geeft 400 "Cannot go from linked to charged" (toegestaan: cancelled, new; shared/fines.ts regel 13). Er is dus geen manier om te registreren dat een bekeuring is doorbelast of betaald, terwijl de portal-klant die statussen wel verwacht te zien. "Betwist" komt alleen vanuit het portaal. Ernst: **Middel**.
+4. **De tijd van de overtreding staat 2 uur eerder dan ingevoerd (lokaal).** Stappen: nieuwe bekeuring met 8 oktober 11:30. Verwacht: lijst en detail tonen 11:30. Werkelijk: 09:30:00 (en 10:00 werd 08:00:00). In de database staat het veld `offence_at` als `timestamp without time zone` terwijl shared/schema.ts `timestamp with time zone` zegt; de Node-server draait op deze Windows-computer in Amsterdam-tijd en schrijft UTC zonder tijdzone weg. Zo is ook "Gekoppeld door ... om 18:04" twee uur te vroeg terwijl de nieuwe record-tijd (createdAt) twee uur te laat is. Op een UTC-server (Coolify) valt dit mogelijk weg; niet gecontroleerd. Het kolomtype in de database wijkt wel af van het schema, en raakt elke tijd in de app (bij de dagwisseling kan een bekeuring zo aan de verkeerde reservering gekoppeld worden). Ernst: **Laag/Middel** (lokaal bewezen).
+5. **De knop "Annuleren" in het bekeuringsdetail annuleert de bekeuring, niet het dialoog.** Eén klik zet de status op Geannuleerd zonder bevestiging (alle velden worden uitgeschakeld; terug te draaien met Heractiveren). In elk ander dialoog van de app betekent Annuleren "sluiten zonder opslaan". Ernst: **Laag/Middel** (verwarring).
+6. **Verwijderen gebruikt een native browservenster** (window.confirm) in plaats van het eigen bevestigingsdialoog dat de app bij voertuigen en klanten gebruikt, zonder het kenteken of het bedrag in de tekst. Ernst: **Laag**.
+7. **Notatie loopt uiteen.** In de lijst "€ 95.00" (punt) en "10-10-2026, 08:00:00" (met seconden); in de CSV "95.00" met puntkomma als scheidingsteken (Nederlands Excel leest "95.00" als tekst of datum). Kentekens staan in de lijst zonder streepjes (94XT184), in de CSV met streepjes. Ernst: **Laag**.
+8. **Toasts zijn niet specifiek:** koppelen, ontkoppelen, annuleren en heractiveren geven alle vier "Bekeuring opgeslagen." Ernst: **Laag**.
+9. **Koppelen of aanmaken van een bekeuring mailt de klant direct.** Bij het aanmaken van #511 (automatisch gekoppeld) en het koppelen van #512 vertrok meteen een e-mail "Bekeuring AUDIT2 van 2026-10-10" en "Bekeuring AUDIT1 van 2026-10-08" naar het adres van de klant (e-maillog 4 en 5, nu mislukt door ontbrekende e-mailinstelling). Er staat geen waarschuwing in het scherm en geen vinkje "klant niet mailen"; een typefout in kenteken of datum bereikt de klant dus zonder controle, en de beheerder ziet het niet terug omdat het e-maillogboek in Communicatie nepgegevens toont (module 13). Ernst: **Middel**.
+10. **De instelling voor administratiekosten ontbreekt in de interface.** `fineAdminFee` (server/services/portal-config.ts) bepaalt de kosten die elk nieuw bekeuringsformulier stil invult, maar App-instellingen > Klantenportaal toont wel adres, openingstijden en privacylink, niet dit bedrag. Ernst: **Laag/Middel**.
+
+### UX-opmerkingen
+- Het detaildialoog toont alleen "Bedrag" en nergens administratiekosten of totaal, terwijl de lijst wel het totaal toont (95,00 of 107,50 voor dezelfde overtreding zonder uitleg). Een regel "Administratiekosten" en "Totaal" is nodig.
+- Doorbelasten (aan de klant factureren) en betaald markeren ontbreken als werkstroom; nu is de bekeuring na koppelen niet verder te brengen.
+- Bekeuringen zijn alleen via het Klantenportaal-scherm of het voertuig te vinden; "Boetes" in de zijbalk of onder Kosten zou sneller zijn voor een medewerker die een brief van het CJIB heeft liggen.
+- De prullenbak bevat 30 oude "Annuleertest"-boetes die al zijn teruggezet en nog steeds een knop Terugzetten hebben (ook gezien bij Voertuigen, module 3);.
+- De klantkiezer (zoeken, "8 van 301 getoond, typ om te verfijnen") werkt goed, maar de keuzeregels hebben geen toegankelijke naam (schermlezer leest "optie").
+- Na een hot-reload toonde de knop "Prullenbak" kort de ruwe vertaalsleutel "admin.fines.bin.button"; direct daarna weer "Prullenbak". Waarschijnlijk veroorzaakt door het bouwen aan deelproject C (prullenbakken per soort); niet als bevinding geteld.
+- "Brieven scannen" en "Nieuwe bekeuring" bevatten allebei een brief-uploadveld; de twee routes (direct scannen of eerst invullen) zijn niet duidelijk uit elkaar te houden.
+- In het CJIB-dialoog staat "Automatisch ophalen uit" zonder vervolg (de postbus-instelling is hier leeg), dus een afgebroken zin.
+
+---
+
+## Module 13 — Communicatie (meldingen versturen, sjablonen, e-maillogboek, analyse)
+
+### Getest
+- Pagina /communications (4 hoofdtabs: Meldingen versturen, Sjabloonbouwer, E-maillogboek, Analyse; onder Meldingen versturen 3 subtabs: APK-herinneringen, Onderhoud, Aangepast bericht).
+- APK-herinneringen: sjabloonkeuze, voertuig aanklikken, "Voorvertonen & versturen naar N voertuigen" (voorvertoning geopend, geannuleerd, niets verstuurd).
+- Onderhoud en Aangepast bericht: lijsten gelezen, klantzoeker, voertuigkiezer, onderwerp en bericht, "Voorvertonen & versturen" zonder ontvangers, met ontvanger.
+- Echt verzenden uitsluitend naar het testadres audit@e2e.invalid (klant "Audit Testklant B.v.", POST /api/notifications/send); de overige klanten hebben adressen op example.com en zijn niet gebruikt.
+- Sjabloonbouwer: leeg opslaan, nieuw sjabloon "AUDIT sjabloon" met placeholders, live voorvertoning, Opslaan, Voorvertoning van een opgeslagen sjabloon, Bewerken, Bijwerken, Dupliceren, Verwijderen (annuleren en bevestigen). Het testsjabloon is daarna verwijderd.
+- E-maillogboek en Analyse gelezen en vergeleken met /api/email-logs.
+
+### Werkt
+- De pagina laadt (eerste keer in de dev-server 8 tot 15 seconden zonder laadindicator) en toont 301 klanten.
+- Het verzenden-dialoog is bruikbaar: knop is uitgeschakeld tot er een ontvanger (en een sjabloon of tekst) is; voorvertoning toont ontvangers met hun e-mailadres, het te gebruiken adres per ontvanger en "Annuleren" sluit netjes zonder iets te versturen.
+- Klantzoeker ("Audit" vindt direct de klant met adres) en voertuigkiezer werken; selecties tellen mee ("1 klant(en) + 1 voertuig(en) geselecteerd").
+- Sjabloonbouwer: validatie bij leeg opslaan (toast "Ontbrekende informatie — Vul alle sjabloonvelden in"); Opslaan geeft POST 201 en toast "Sjabloon aangemaakt"; Bijwerken geeft PUT 200 en "Sjabloon bijgewerkt"; Verwijderen toont een eigen bevestigingsdialoog ("Weet je zeker dat je ... wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.") en geeft DELETE 200 plus toast; Annuleren laat het sjabloon staan.
+- Live voorvertoning in de bouwer vervangt placeholders door voorbeeldgegevens (voorbeeldklant, kenteken, merk), dus de bouwer zelf is goed te controleren.
+- Een sjabloon met {customerName} wordt in de voorvertoning van het verzenden-dialoog voor de klant ingevuld ("Beste Audit Testklant B.v.").
+
+### Werkt niet
+1. **E-maillogboek en Analyse tonen verzonnen gegevens in plaats van de echte verzendgeschiedenis.** Stappen: tab E-maillogboek openen. Verwacht: de werkelijk verstuurde en mislukte e-mails. Werkelijk: drie vaste regels uit maart 2024 ("APK Reminder - Inspection due soon", 12 verstuurd, 100%; "Scheduled maintenance reminder", 7 verstuurd, 1 mislukt; "Important vehicle recall notice", 25 verstuurd) en op Analyse vaste totalen (44 verstuurd, 1 mislukt, 3 campagnes, 15 actieve klanten). De regels staan hard in de code (client/src/pages/CustomerCommunications.tsx regel 197, commentaar "Mock notification history for now - will be replaced with real data"); de echte log (GET /api/email-logs, 200) wordt opgehaald maar nergens getoond. Mijn eigen mislukte testmail (log-id 6 en 7) is dus nergens in de interface terug te vinden. De eigenaar ziet nu nooit welke e-mails mislukken. Ernst: **Hoog** (valse gegevens als echt gepresenteerd).
+2. **Een volledig mislukte verzending krijgt een succesmelding.** Stappen: bericht naar audit@e2e.invalid versturen (lokaal is er geen e-mailconfiguratie). Verwacht: foutmelding. Werkelijk: POST /api/notifications/send geeft 200 en de toast luidt "Meldingen succesvol verstuurd — 0 e-mails verstuurd, 1 mislukt"; het dialoog sluit. De log bewaart de reden alleen in het Engels ("No valid email configuration for purpose: custom", "Failed to send to ... for customer ..."). Ernst: **Middel**.
+3. **De voorvertoning is geen voorvertoning.** Zonder sjabloon toont het dialoog het onderwerp en de tekst zoals getypt, met ongewijzigde placeholders; bij de portaalsjablonen zelfs de HTML-bron (`<p>Beste {{name}},</p> ...`). Met een eigen sjabloon wordt {customerName} wel ingevuld maar blijft {vehiclePlate} staan als "[Kenteken]" en {vehicleBrand} als "[Merk]", ook nadat een voertuig is aangevinkt (ontvangerregel zegt "N/A"), terwijl het dialoog belooft dat "elke ontvanger een gepersonaliseerde versie" krijgt. De eigenaar kan dus niet zien wat een klant straks ontvangt. Ernst: **Middel**.
+4. **Na opslaan, bijwerken of verwijderen van een sjabloon blijft de lijst "Opgeslagen sjablonen" oud.** Stappen: sjabloon opslaan. Werkelijk: toast "Sjabloon aangemaakt", POST 201 en daarna een GET, maar de lijst telt nog 11 (API: 12); na bijwerken blijft de oude naam staan en na verwijderen blijft het sjabloon zichtbaar (lijst 12, API 11). Pas een volledige herlaadbeurt toont de waarheid. De pagina heeft geen enkele invalidatie van de sjabloonlijst. Dubbel opslaan ligt voor de hand. Ernst: **Middel**.
+5. **De sjabloonkiezers bij APK en Onderhoud bieden alle sjablonen aan, met ruwe sleutels.** In lvstest zijn er alleen elf portaalsjablonen; de keuzelijst bij "Selecteer een APK-herinneringssjabloon" toont daarom "portal_invite, portal_password_reset, portal_staff_notification ..." (Engelse technische namen) en geen enkel APK-sjabloon. De pagina filtert niet op categorie (apk / onderhoud / aangepast / portaal), zodat een medewerker een portaaluitnodiging als APK-herinnering kan versturen. Ernst: **Laag/Middel**.
+6. **Twee placeholderstijlen door elkaar.** De bouwer biedt {customerName}, {vehiclePlate}, {apkDate} enzovoort aan (server/routes/notifications.ts regel 24 vervangt alleen die vorm); de portaalsjablonen gebruiken {{name}}, {{link}}, {{plate}}. Kiest een medewerker een portaalsjabloon in een gewone melding, dan gaan de dubbele accolades ongewijzigd naar de klant (zie ook bevinding 3, waar {{name}} onvervangen in de voorvertoning staat). Ernst: **Middel**.
+7. **Bewerken en Dupliceren laden het sjabloon in een formulier dat buiten beeld staat.** Na de klik (op de kaart onderaan de pagina) verschijnt alleen een toast; het formulier staat bovenaan, de pagina blijft 1.631 pixels naar beneden gescrold. Gebruikers klikken dan nog eens of denken dat er niets gebeurd is. De kopie heet "... (Copy)" (Engels) en de toast zegt "Sjabloonhoud is gekopieerd naar de editor" (typfout, bedoeld: Sjablooninhoud). Ernst: **Laag**.
+8. **Engelstalige of verzonnen voorbeeldtekst.** De voorvertoning van een opgeslagen sjabloon toont "Van: Car Rental System" en "Aan: customer@example.com"; de live voorvertoning gebruikt "John Doe, Toyota Camry, Car Rental System". Ernst: **Laag**.
+9. **Meervoudsfouten en wisselende teller.** "naar 1 voertuigen", "naar 1 ontvangers", "1 klant(en) + 1 voertuig(en)"; de kop "301 klanten • N voertuigen met reserveringen" verandert per subtab (8, 11, 15) zonder uitleg. Ernst: **Laag**.
+
+### UX-opmerkingen
+- De knop heet "Voorvertonen & versturen" en is uitgeschakeld zonder uitleg waarom (geen ontvangers, geen sjabloon); een regel "Kies minstens één ontvanger" ontbreekt.
+- Eerste keer openen duurt tot 15 seconden zonder laadindicator (grote pagina van 2.300 regels); in productie waarschijnlijk korter.
+- De klantkiezer toont alle 301 klanten in één lange lijst met een knop "Alle" (niet geklikt); een waarschuwing "u verstuurt aan 301 klanten" is niet gezien.
+- Het per ontvanger te kiezen e-mailadres (Primair) in de voorvertoning is een goed idee; hoeveel adressen een klant heeft is hier niet zichtbaar.
+- Er is geen manier om een verzonden e-mail te openen of opnieuw te sturen vanuit het logboek (dat toch de echte log niet toont, zie bevinding 1).
+- Niet getest: een echte e-mail verzenden (geen SMTP lokaal), de knop "Alle", filteren van de klantenlijst op "met/zonder reserveringen" en het versturen van APK-herinneringen aan echte klanten.
+
+---
+
+## Module 14 — Rapporten (standaardrapporten, rapportbouwer, export)
+
+### Getest
+- Pagina /reports: vijf knoppen rechtsboven (APK, Garantie, Kosten, Benutting, Klanten), zeven tabs (Operaties, Kosten, Voertuigen, Klanten, Transporten, Financieel, Fiscaal), filters (datumvoorinstellingen "Alle gegevens", "Deze maand", "Volgende maand", Kostencategorie, Voertuig, "Filters herstellen").
+- Alle vijf afdrukrapporten laten genereren (zie opmerking over afdrukken hieronder) en de inhoud vastgelegd.
+- Aangepaste rapportbouwer: kolommen toevoegen, filter toevoegen (Merk = TOYOTA), Rapport uitvoeren, Opslaan, tabblad Opgeslagen rapporten, Uitvoeren van het opgeslagen rapport, Verwijderen. Het testrapport "AUDIT Toyota-lijst" is daarna verwijderd.
+- Analyse onderhoudskosten (vier tabs), de Fiscale maandrapportage met CSV-download (via een directe aanroep van /api/fiscal/reports/monthly.csv).
+- Controle van de cijfers: totaal Kosten (€ 89.165,54) is gelijk aan de som van alle categorieën plus de AUDIT-kostenpost; Financieel: omzet € 238.641,00 min kosten € 89.165,54 = marge € 149.475,46 (63%) klopt; per voertuig klopt omzet min kosten = marge en omzet / huurdagen = "per huurdag".
+
+### Werkt
+- Alle tabs laden binnen enkele seconden zonder foutmelding; filters "Alle gegevens" (1 jan 2000 tot 31 dec 2050), "Volgende maand" (1 tot 30 november 2026) en "Filters herstellen" werken; het categoriefilter "Onderhoud" geeft het juiste totaal (€ 11.192,10, 52 posten).
+- De vijf afdrukrapporten leveren een volledig document: APK-vervalrapport (48 verlopen, 2 binnen 30 dagen, 8 binnen 2-3 maanden, per voertuig met aantal dagen), Garantievervalrapport (97 voertuigen zonder garantiedatum), Kostenrapport (categorie Brandstof, 1 post € 25,50, detailregel AUDIT1), Voertuigbenuttingsrapport (17% over 56 voertuigen, 98 reserveringen, 511 gereserveerde dagen) en Klantimpactanalyse; getallen komen overeen met het scherm.
+- Rapportbouwer: POST /api/reports/execute geeft 200, toast "Rapport succesvol uitgevoerd — 97 resultaten gevonden" (zonder filter) en 12 Toyota's met het filter; Opslaan geeft 200 en de toast "Rapport succesvol opgeslagen"; het opgeslagen rapport toont "3 kolommen, 1 filter" en voert opnieuw uit met hetzelfde resultaat (12).
+- Fiscaal-tab: standaardjaar 2027, filter Jaar en Klant, CSV levert 200 (text/csv, bestand fiscaal-2026.csv en fiscaal-2027.csv) met Nederlandse komma's ("0,00") en de waarschuwing "geen fiscaal advies"; geen beoordeelde perioden, dus alleen nulregels.
+
+### Werkt niet
+1. **Het resultaat van de rapportbouwer is niet te exporteren of af te drukken.** Stappen: rapport uitvoeren. Verwacht: knoppen voor CSV/Excel of PDF. Werkelijk: het resultatendialoog heeft alleen "Sluiten"; er is geen export, geen afdrukken, geen kopiëren. Alleen de vaste rapporten hebben "Afdrukken" en alleen de fiscale tab een CSV. Een rapportbouwer zonder uitvoer is nauwelijks bruikbaar voor de administratie. Ernst: **Middel**.
+2. **"Analyse onderhoudskosten" telt alle kosten als onderhoud.** Totale kosten € 89.165,54 "over 94 voertuigen" is het totaal van alle kostencategorieën (tol, brandstof, verzekering, parkeren, schoonmaak enzovoort), terwijl onderhoud alleen € 11.192,10 is. De categorielijst toont ruwe Engelse sleutels ("Fuel", "fuel", "cleaning", "toll", "insurance", "maintenance", "tires", "other", "parking") met "Fuel" en "fuel" als twee regels. "Kosten per km € 0,01" is voor een verhuurvloot niet geloofwaardig (waarschijnlijk gedeeld door de som van alle kilometertellers; niet nagerekend). De tab Merkvergelijking geeft "Efficiëntiebeoordeling: Uitstekend" aan merk "AUDIT" met één kostenpost van € 25,50. Ernst: **Middel**.
+3. **Dubbele regel "Brandstof" in het kostenoverzicht (gevolg van module 9).** Op tab Kosten staan "Brandstof 53 items € 14.727,77" en "Brandstof 1 items € 25,50" apart (categoriesleutels "fuel" en "Fuel"); ook in Kosten per categorie en in de grafiek. Ernst: **Middel** (herhaling van een bevinding uit module 9, nu zichtbaar in de rapporten).
+4. **Het categoriefilter en de kostentrends kloppen niet met de gebruikte categorieën.** Het filter "Kostencategorie" biedt alleen Onderhoud, Banden, Voorruit, Schade, Reparatie en Overig aan; de categorieën die in de data voorkomen (Tol, Brandstof, Verzekering, Parkeren, Schoonmaak) kun je niet kiezen. Met "Onderhoud" geselecteerd toont "Kostentrends" nog steeds de totalen van alle categorieën (okt 2026 € 25,50, een brandstofpost). Ernst: **Laag/Middel**.
+5. **Op tab Klanten blijven de kosten per categorie leeg.** "Klantimpactanalyse" toont bij klant 89 B.V. € 732,88 aan kosten, maar "Kostencategorieën per klant" toont alleen streepjes: de kolommen (Banden, Onderhoud, Schade, Reparatie, Overig) dekken de gebruikte categorieën niet. "Recente klantreserveringen" toont statussen in het Engels ("Completed", "Booked", "Picked Up") en toont als "recent" boekingen in november 2026 (de toekomst). Het label "Laag/Gemiddeld" staat zonder scheiding achter het bedrag ("€ 28,19Laag"). Ernst: **Laag/Middel**.
+6. **De rapportbouwer is Engelstalig.** Gegevensbronnen "Vehicles, Customers, Reservations, Expenses, Drivers"; veldnamen "License Plate, Brand, Vehicle Type, Fuel Type, Monthly Price, Daily Price, Current Mileage, APK Date, Warranty End Date, Maintenance Status, Has GPS"; operatoren "equals, not equals, contains, starts with, ends with, is null"; het opgeslagen rapport noemt als bron "vehicles". Ernst: **Laag**.
+7. **Een opgeslagen rapport verwijderen kan met één klik zonder bevestiging.** Het prullenbakpictogram naast "Uitvoeren" heeft geen tekst of tooltip, verwijdert direct (toast "Rapport verwijderd") en het rapport is niet terug te zetten. Ernst: **Laag/Middel**.
+8. **Kleine inconsistenties in de getallen.** De noemers wisselen: "Voor 97 actieve voertuigen", "Gebaseerd op jaarlijkse benutting van 96 voertuigen", "Voor 56 actieve voertuigen", "Voor 38 actieve voertuigen" naargelang de periode (gemiddelde kosten per voertuig delen dus niet door de hele vloot); de kostentrend toont "+100%" als de vorige maand € 0 was; maandnamen in Trends zijn Engels ("May 2026"); de afdrukrapporten tonen "09/10/2026 20:27" terwijl de app elders "9 oktober 2026" gebruikt; de afdruk van het klantimpactrapport bevat alle 301 klanten ook met 0 reserveringen. Ernst: **Laag**.
+
+### UX-opmerkingen
+- De knop "Afdrukken" toont in deze ingebouwde browser geen afdrukvoorbeeld: een eerste klik legde het tabblad stil, waarna ik het tabblad moest sluiten en opnieuw openen (de pagina bleef daarna goed werken). Dat ligt aan de printdialoog van de ingebouwde browser, niet aan de app; om de inhoud toch te beoordelen heb ik het document laten opbouwen met de printaanroep onderschept.
+- De vijf knoppen rechtsboven (APK, Garantie, Kosten, Benutting, Klanten) hebben alleen een pictogram met kort woord en geen uitleg dat ze afdrukken starten; "Afdrukken" zou erbij mogen staan.
+- Bij het wisselen van periode of filter is er geen laadindicator (de cijfers verversen na ongeveer 2 tot 3 seconden).
+- Het rapportfilter "Voertuig" biedt eerst typefilters (SUV, Sedan, Van, ...) en daaronder een lange lijst met zoekveld; met kenteken zoeken zou direct moeten kunnen.
+- Positief: de cijfers in het financiële overzicht (omzet, kosten, marge, per huurdag) en de somcontrole van de kosten kloppen, en het rapport "Fiscaal" vermeldt bij elke uitvoer dat het geen fiscaal advies is.
+- Niet getest: een rapport bewerken ("Bewerken" in Opgeslagen rapporten), datumbereik via de kalender (alleen de voorinstellingen), rapporten met een ander account dan e2e-admin (zie de rechtenronde).
+
+---
+
+## Module 15 — Portaalbeheer (accounts, aanvragen, voertuigen online, blacklist, activiteit)
+
+> Dit is het scherm "Klantenportaal" (/portal-admin) met acht tegels. De bekeuringen daarin staan in module 12, de Fiscale check in module 16. De klantkant (/portaal) is niet doorgelopen: er is geen bekend portaalwachtwoord en uitnodigingsmails kunnen lokaal niet vertrekken.
+
+### Getest
+- Dashboard: tegels Aanvragen, Onderhoud, Bekeuringen, Klanten, Accounts, Voertuigen online, Blacklist en Activiteit, de panelen "Aandacht nodig", "Meldingen", "Aankomende reserveringen" en "Klanten" (alleen gelezen, "Alles gelezen" bewust niet geklikt).
+- Aanvragen: lijst met filters Status en Type, detail van een afgehandelde aanvraag (#11).
+- Accounts: lijst, Uitnodigen (leeg formulier, zonder klant, met klant "Audit Testklant B.v." en adres audit-portal@e2e.invalid), rijmenu (Bewerken en rechten, Uitnodiging opnieuw sturen, Blokkeren/Deblokkeren, Verwijderen), Annuleren in het rechtendialoog. Het testaccount "AUDIT Portaalgebruiker" is daarna verwijderd. Het bestaande account "kees" (keeslam@live.nl, uitnodiging verlopen) is niet aangeraakt: een echt adres.
+- Voertuigen online: lijst van 97 voertuigen, schakelaar "Online aangeboden" aan en uit op AUDIT1.
+- Blacklist: blokkade toevoegen (AUDIT2 en Audit Testklant, reden "AUDIT blokkadetest") en opheffen.
+- Activiteit, Klanten-overzicht, Onderhoud-aanvragen, Aandacht-nodig-lijst, Meldingenlijst, App-instellingen > Klantenportaal (alleen gelezen; "Verbinding testen" is met lege host uitgeschakeld).
+- Behandeling van twee aanvragen: ik heb in de database twee eigen aanvragen voor Audit Testklant ingevoegd (#577 type Overig en #578 Huuraanvraag voor AUDIT1, zonder portaalgebruiker, omdat de klantkant niet te gebruiken was); de afhandeling is daarna volledig via het scherm gedaan.
+
+### Werkt
+- Tegels en panelen tonen de juiste aantallen (bijvoorbeeld "Voertuigen online 4" stijgt naar 5 als ik AUDIT1 aanzet en daalt terug na uitzetten; API en tegel kloppen).
+- Aanvragen: de afgehandelde aanvraag toont type, klant, verzoek, bericht en berichtgeschiedenis. Voor #577 (Overig): "Versturen" stuurt een bericht ("Lam Groep (e2e-admin)" in de draad) en zet de status automatisch op In behandeling; "Beantwoorden en afhandelen" zonder tekst geeft "Vul een antwoord in."; met tekst staat de aanvraag op Afgehandeld, toast "Antwoord verstuurd."
+- Voor #578 (Huuraanvraag): de uitleg "Een huuraanvraag wordt pas afgehandeld via Goedkeuren: reservering aanmaken of Afwijzen" is duidelijk. Het formulier "Reservering aanmaken uit deze aanvraag" waarschuwt dat het gevraagde voertuig (AUDIT1, status Reparatie nodig) niet meer verhuurbaar is en laat een ander voertuig zoeken ("AUDIT2 — Vrij"). Goedkeuren maakte reservering #3203 (3 t/m 5 november 2026, Geboekt) aan en opende die direct; toast "Reservering #3203 aangemaakt; de klant is geïnformeerd."
+- Account uitnodigen: de browser eist e-mailadres en naam, de app zegt "Kies eerst een klant" zonder verzoek; met klant volgt een eerlijke melding "Account aangemaakt, maar de e-mail kon niet worden verstuurd. Controleer de e-mailinstellingen en stuur de uitnodiging opnieuw." en staat het account als "Uitnodiging open". Het rechtendialoog toont acht rechten per account ("Mag online huren (aanvraag)", "Ziet bekeuringen", "Ziet prijzen" enzovoort) met de uitleg dat de klantinstellingen de bovengrens zijn.
+- Blacklist: Blokkade toevoegen (toast "Blokkade toegevoegd."), en Blokkade opheffen vraagt eerst een eigen bevestigingsdialoog ("Audit Testklant B.v. kan Unknown Unknown (AUDIT2) daarna weer zien en aanvragen in het portaal.") en geeft "Blokkade opgeheven."
+- Rechten: als medewerker-sessie geeft /api/portal/me 401 "PORTAL_NOT_AUTHENTICATED": medewerkers- en klantsessies zijn gescheiden.
+
+### Werkt niet
+1. **"Uitnodiging opnieuw sturen" meldt succes terwijl de e-mail niet verstuurd is.** Stappen: rijmenu van het testaccount, Uitnodiging opnieuw sturen (adres audit-portal@e2e.invalid, lokaal geen e-mailconfiguratie). Verwacht: dezelfde foutmelding als bij het eerste uitnodigen. Werkelijk: POST /api/portal-admin/accounts/934/invite geeft 200 en de toast "E-mail verstuurd."; de e-maillog (id 9) zegt "failed — No valid email configuration for purpose: custom". De beheerder gelooft dat de klant een uitnodiging heeft. Het eerste uitnodigen (log 8) meldde de mislukking wel correct. Ernst: **Middel**.
+2. **De klantnaam blijft leeg in het Klanten-overzicht** (en in de bekeuringenlijst, module 12): "Audit Testklant B.v." verschijnt als lege regel met "Aan 0/0 accounts". Oorzaak: lege bedrijfsnaam wordt als "" opgeslagen en `coalesce(companyName, name)` (server/services/portal-dashboard.ts regel 43) valt niet terug op de naam. Ernst: **Middel** (zelfde oorzaak als module 12, bevinding 2).
+3. **Het dashboard laat een voertuig online aanbieden dat niet verhuurbaar is en toont ruwe statussen.** "Voertuigen online" toont de interne waarden "rented", "available", "needs_fixing" (Engels) en laat AUDIT1 (needs_fixing) zonder waarschuwing online zetten; de schakelaar bewaart stil (geen toast). Pas bij het goedkeuren van een huuraanvraag waarschuwt de app dat het voertuig niet verhuurbaar is. Ernst: **Laag/Middel**.
+4. **Blokkeren van een account en verwijderen van een niet geactiveerd account zijn onopvallend.** Blokkeren is één klik zonder bevestiging of melding (alleen de status verandert naar Geblokkeerd, en "Uitnodiging opnieuw sturen" blijft ook bij een geblokkeerd account mogelijk); verwijderen gebruikt een native browservenster ("Dit account is nog niet geactiveerd en wordt definitief verwijderd. Doorgaan?") en geeft daarna geen toast. De blacklist gebruikt wel een mooi eigen bevestigingsdialoog; de accountacties niet. Ernst: **Laag**.
+5. **Activiteit en Meldingen tonen technische codes.** Acties als "login", "request_replied", "request_submitted", "fine_letter_downloaded", "company_emails_updated" en details als `{"by":"admin","status":"done"}`; de melding "heeft via het portaal bijgewerkt: emailForMOT, emailForInvoices, emailGeneral" noemt veldnamen. De lijst Meldingen bevat 34 keer dezelfde testmelding ("__portal_test__Auth BV"), wat de echte meldingen bedekt. Ernst: **Laag**.
+6. **Tijden in twee lijsten van hetzelfde scherm verschillen twee uur.** Dezelfde login van "Portaal Tester" staat in Accounts als 16-9-2026 20:26:40 en in Activiteit als 22:26:40; mijn eigen aanvraag toont 20:41 terwijl een bekeuring van dezelfde minuut twee uur eerder werd getoond (zie module 12, bevinding 4: kolommen met en zonder tijdzone in de lokale database). Ernst: **Laag/Middel** (lokaal bewezen).
+7. **Kleine taal- en bedieningsfouten.** Aanvraagdetail toont "Gevraagde nieuwe einddatum 2026-10-15" en "Vanaf 2026-11-03" (ISO-notatie) naast "6-9-2026, 17:08:23" in de lijst; "Onderwerp" staat als label zonder inhoud bij aanvraag #577; er zijn twee knoppen voor een antwoord zonder afhandelen ("Versturen" bovenaan en "Antwoord sturen (blijft open)" onderaan); de rijmenuknoppen en de pictogrammen in de accounttabel hebben geen toegankelijke naam. In App-instellingen is bij het CJIB-formulier "Automatisch ophalen" aan terwijl de host leeg is en "Verbinding testen" uitgeschakeld zonder uitleg. Ernst: **Laag**.
+
+### UX-opmerkingen
+- Het scherm is een goede centrale plek (tegels, aandachtspunten, meldingen) en elke lijst opent als dialoog zonder paginawissel; de uitleg bij het rechtendialoog en de blacklist is duidelijk.
+- Een aanvraag afhandelen kost vier handelingen (openen, tekst, knop, sluiten); goed zou zijn een standaardantwoord per type ("Goedgekeurd", "Afgewezen").
+- Niet getest: de klantkant van het portaal, "Alles gelezen", Afwijzen van een aanvraag, aanvraagtypen anders dan Overig en Huur, CJIB "Nu ophalen" en uploaden, activeren van een uitnodiging.
+
+---
+
+## Module 16 — Fiscaal (pseudo-eindheffing: overzicht, configuratie, beoordelingen, voertuigprofiel, klantinstellingen)
+
+> De fiscale mobiliteitscheck zit op vijf plekken: de knop "Fiscale check" op het Klantenportaal-scherm (overzicht), App-instellingen > Klantenportaal (configuratie, beoordelingswachtrij, auditlog), de tab Fiscaal in het voertuigdetail (profiel), de portaalinstellingen per klant, en de tab Fiscaal in Rapporten (module 14). Er zijn geen berekeningen om te beoordelen: er staat nog geen gepubliceerde regelversie en de wet geldt pas vanaf 1 januari 2027.
+
+### Getest
+- Overzicht "Fiscale check: overzicht" (tegels per beoordelingsstatus).
+- App-instellingen > Klantenportaal > Fiscale mobiliteitscheck: tabs Configuratie, Beoordelingen, Auditlog; de versie "Belastingplan 2026 (wet) — concept, te verifiëren (versie 1)" geopend (alleen lezen), "Impact tonen"; een eigen concept "AUDIT concept" aangemaakt (versie 2), "Indienen ter beoordeling" (validatie), "Archiveren".
+- Voertuigdetail AUDIT2, tab Fiscaal: handmatige catalogusprijs (ongeldige en geldige waarde, met reden) en "RDW opnieuw ophalen".
+- Klantdetail Audit Testklant, tab Portaal: de zeven fiscale schakelaars (één aan, opgeslagen, weer uit en opgeslagen).
+- Tab Fiscaal in Rapporten en de CSV (zie module 14).
+- Niet getest (bewuste stoppunten): een versie publiceren of goedkeuren, een versie indienen met volledige gegevens, beoordelingszaken afhandelen en wat een klant of bestuurder in het portaal ziet (klantkant niet beschikbaar).
+
+### Werkt
+- Het overzicht legt uit waarom het leeg is: "Geen regelversie beschikbaar: er is nog geen gepubliceerde versie die vandaag geldt. Beoordelingen blijven leeg tot een bevoegde medewerker een versie publiceert." en toont negen tellers (Niet van toepassing, Mogelijk van toepassing, Van toepassing, Handmatige beoordeling nodig, Gegevens ontbreken, Configuratie ongeldig, Geen regelversie beschikbaar, Open perioden, Nog niet beoordeeld) alle op 0, met de vermelding "geen fiscaal advies en geen aangifte".
+- Configuratie: de versie toont reden, bron, wettelijke referentie en per parameter een label WETTELIJK of INTERN met eenheid en uitleg in begrijpelijk Nederlands (bijvoorbeeld "Vul een procent in: 12 betekent 12 %, niet 0,12"). Een concept wordt "pas geldig na indienen, goedkeuren en publiceren" (uitleg in het dialoog "Nieuw concept").
+- "Impact tonen" geeft direct een impactrapport (Huidig totaal, Totaal met concept, Verschil, Jaarimpact, Maandimpact, Handmatige beoordeling, Gegevens ontbreken; venster 1 januari 2027 t/m 1 januari 2028) en schrijft een regel "Impactvoorbeeld" in de auditlog.
+- "Concept aanmaken" is uitgeschakeld tot titel en toelichting zijn ingevuld; aanmaken geeft POST 201 en opent versie 2; "Indienen ter beoordeling" met een leeg concept wordt tegengehouden (POST 400) met "Regelversie is niet compleet" en per ontbrekende parameter een melding; Archiveren zet de versie op Gearchiveerd (POST 200) met de tekst dat die niet meer te wijzigen is.
+- Voertuigprofiel: zes feiten (catalogusprijs, waarde economisch verkeer, datum eerste toelating, brandstofklasse, voertuigcategorie, handgeschakelde lesauto) met herkomst ("handmatig", "voertuigrecord", "onbekend"); een handmatige waarde vraagt een reden. "abc" geeft de inline fout "Ongeldig bedrag"; 25000 wordt opgeslagen en getoond als "€ 25.000,00 — handmatig" met de toast "Waarde opgeslagen; open perioden worden opnieuw beoordeeld."
+- Klantinstellingen: zeven aparte schakelaars (Fiscale check actief, Pseudo-eindheffing beoordelen, Ziet fiscale bedragen (schatting), Ontvangt fiscale waarschuwingen, Ziet fiscale rapporten, Bestuurders zien hun eigen fiscale status), standaard allemaal uit; opslaan geeft PATCH 200.
+- Auditlog: "Alleen toevoegen; niets kan worden gewijzigd of verwijderd." met tijd, wie, actie, wat, was → wordt, reden; mijn handelingen staan erin.
+
+### Werkt niet
+1. **De validatie van een onvolledige regelversie toont technische sleutels.** Na "Indienen ter beoordeling" staat onderaan "Regelversie is niet compleet (submit)" gevolgd door zestien regels als "KM_THRESHOLD_APPLIES: verplichte waarde ontbreekt" en "TRANSITION_EXEMPT_UNTIL: verplichte waarde ontbreekt", terwijl de parameters bovenin wel Nederlandse namen hebben ("Kilometergrens van toepassing"). Ook de geschiedenis van een versie toont regels als "ROUNDING_MODE — → half_up_cents" en "REPLACEMENT_VEHICLE_EXEMPTION_REASONS — → maintenance,repair,accident,tyre_change". Ernst: **Laag**.
+2. **Archiveren is onomkeerbaar en gebruikt een native bevestigingsvenster.** De eerste klik op "Archiveren" deed niets zichtbaars (het browserbevestigingsvenster werd in de ingebouwde browser niet getoond); pas na het onderscheppen van het venster ("Deze versie archiveren?") werd de versie gearchiveerd. In andere onderdelen van dezelfde sectie (Nieuw concept) gebruikt de app wel een eigen dialoog. Ernst: **Laag**.
+3. **De auditlog is niet te filteren en wordt overspoeld.** De lijst toont de laatste 200 regels, waarvan bijna alles "Profiel ververst — fiscal_profile #n" door het systeem (90 regels op één dag), met in de kolom Wat de ruwe sleutel "fiscal_profile #95" zonder kenteken. Een filter op actie of voertuig ontbreekt. Ernst: **Laag**.
+4. **Een mislukte RDW-ophaling meldt "RDW API request timed out".** Stappen: voertuigdetail AUDIT2, tab Fiscaal, "RDW opnieuw ophalen". Werkelijk: toast "RDW-ophaling mislukt: RDW API request timed out" en onder het blok "Laatste RDW-fout: RDW API request timed out" (Engels); de app zegt niet of het kenteken onbekend is of de dienst onbereikbaar. Ernst: **Laag** (in deze omgeving was de RDW niet bereikbaar).
+5. **Opslaan van de fiscale klantinstellingen geeft geen bevestiging.** Schakelaar aan, Opslaan: PATCH 200 maar geen toast en het scherm blijft ongewijzigd; de beheerder kan niet zien dat het gelukt is. Ernst: **Laag**.
+
+### UX-opmerkingen
+- De sectie is zorgvuldig ontworpen (labels WETTELIJK/INTERN, "geen fiscaal advies", audit, stappen indienen-goedkeuren-publiceren); het enige echte nadeel is de verspreiding over vijf schermen zonder één startpunt: een beheerder die "fiscaal" zoekt, vindt het in een dialoog binnen een tab van de App-instellingen.
+- De zeven schakelaars per klant zijn onafhankelijk van elkaar; een combinatie als "Ziet fiscale rapporten" aan terwijl "Fiscale check actief" uit staat is mogelijk (niet getest wat de klant dan ziet).
+- De rapport-tab Fiscaal staat standaard op 2027 (het eerste jaar met een heffing); in 2026 is de lijst dus leeg zonder dat dat wordt uitgelegd behalve "Geen beoordeelde perioden in dit jaar".
+- Testrecords: concept "AUDIT concept" (versie 2, status Gearchiveerd), handmatige catalogusprijs € 25.000 op AUDIT2, regels in de fiscale auditlog.
+
+---
+
+## Rechtenronde bij de modules 13 tot en met 16 (e2e-accountant, e2e-reports-only, e2e-notifications-only)
+
+### Getest
+Ingelogd als drie beperkte testaccounts en gekeken wat zij zien en kunnen: e2e-accountant (o.a. Boetes bekijken, Fiscale check bekijken, Rapporten beheren), e2e-reports-only (alleen Rapporten bekijken) en e2e-notifications-only (alleen Meldingen beheren). Niet getest: e2e-templates-only en e2e-manager. Daarna is uitgelogd.
+
+### Werkt
+- De meldingen zijn duidelijk en noemen het ontbrekende recht in het Nederlands: "U heeft geen toegang tot dit scherm. Hiervoor is het recht 'Klantportaal bekijken' of 'Klantportaal beheren' nodig." en in een rapportblok "Geen toegang tot deze gegevens (recht 'Voertuigen bekijken')".
+- e2e-reports-only ziet alleen Dashboard en Rapporten in de zijbalk; de tab Fiscaal van Rapporten ontbreekt (geen recht Fiscale check bekijken), de overige zes tabs laden (inclusief Financieel). e2e-accountant ziet alle zeven tabs, inclusief Fiscaal, en alle rapportaanroepen geven 200.
+- e2e-notifications-only mag de pagina Communicatie openen; de Sjabloonbouwer is zichtbaar maar "Sjabloon opslaan" is uitgeschakeld en GET /api/email-templates geeft 403: de server en de interface zijn het eens.
+
+### Werkt niet
+1. **De rechten "Boetes bekijken" en "Fiscale check bekijken" hebben geen eigen ingang.** Het bekeuringenoverzicht en het fiscale overzicht bestaan alleen op het scherm Klantenportaal (/portal-admin), dat het recht "Klantportaal bekijken of beheren" vraagt. e2e-accountant heeft Boetes bekijken en Fiscale check bekijken maar geen Klantportaal in de zijbalk en krijgt bij /portal-admin het scherm "geen toegang". Wie alleen die twee rechten krijgt, kan er dus niets mee (de bekeuringen staan wel bij het voertuig en bij de klant, niet getest voor dit account). Ernst: **Middel** (rechtenmodel en schermen sluiten niet op elkaar aan).
+2. **"Meldingen beheren" en "Rapporten bekijken" werken niet zonder andere rechten.** e2e-notifications-only opent Communicatie en ziet "0 klanten • 0 voertuigen met reserveringen" met "Geen toegang tot deze gegevens (recht 'Voertuigen bekijken')": er is geen ontvanger te kiezen, dus de pagina is onbruikbaar. e2e-reports-only ziet bij Operaties twee blokken met "Geen toegang" (Voertuigen en Reserveringen bekijken), terwijl Financieel wel kentekens en omzet per voertuig toont; de knoppen APK, Garantie, Kosten, Benutting en Klanten blijven actief zonder gegevens. In Gebruikersbeheer staat nergens welke rechten bij welk scherm horen. Ernst: **Laag/Middel**.
+3. **Het nepdata-logboek is voor iedereen met het recht zichtbaar.** E-maillogboek en Analyse (module 13) tonen de verzonnen cijfers ook aan e2e-notifications-only. Ernst: **Laag** (zelfde oorzaak als module 13, bevinding 1).
+
+### UX-opmerkingen
+- Overweeg bij het aanvinken van een recht een regel te tonen welke andere rechten het scherm nodig heeft, of rechten te bundelen in rollen met een voorbeeldprofiel ("Boekhouder", "Planner").
+- De meldingen over een ontbrekend recht staan in het midden van het scherm als tekstblok; een knop "Vraag het recht aan" ontbreekt (alleen "Ga naar een scherm dat u wel mag gebruiken").
+
+---
+
 ## Module 17 — Instellingen en beheer (app-instellingen, back-ups, gebruikers en rechten)
 
 > Deze module is bewust vóór de modules 12 tot en met 16 gedaan, omdat de rechtenproef (module 18) het gebruikersbeheer nodig had. De modules Boetes, Communicatie, Rapporten, Portaalbeheer en Fiscaal zijn nog niet doorgelopen.
@@ -375,6 +605,19 @@ Documentbibliotheek (10 voertuigen, 22 documenten; uitklappen per voertuig en do
 - In de gebruikerslijst staat bij elke rij een verwijderknop, ook bij de eigenaar-accounts "admin" en "ike" (niet geklikt).
 - App-instellingen heeft acht tabs in één dialoog met elk een eigen Opslaan-knop; of een wijziging in het ene tab verloren gaat bij wisselen zonder opslaan is niet getest.
 
+
+### Aanvulling (tweede ronde: gebruiker toevoegen en verwijderen, instellingen opslaan)
+Getest: "Gebruiker toevoegen" (leeg formulier, bestaande gebruikersnaam "e2e-user", daarna nieuwe gebruiker "audit-temp" met rol Kijker en e-mail op e2e.invalid), de gebruiker daarna weer verwijderen, en App-instellingen > Klantenportaal opslaan (afhaalinstructie met " AUDIT" achter de tekst, gecontroleerd en weer teruggezet). Niet getest: een back-up herstellen (bewust).
+
+Werkt:
+- Een nieuwe gebruiker verschijnt direct in de lijst met rol Kijker en zonder aanvullende rechten (API: role viewer, permissions leeg); het formulier toont alle 35 rechten met Nederlandse namen, de schakelaars Actief en Prijzen verbergen en een rolkeuze met zeven rollen.
+- Verwijderen vraagt een eigen dialoog ("Weet je zeker dat je gebruiker \"audit-temp\" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.") en geeft de toast "Gelukt — Gebruiker succesvol verwijderd"; daarna zijn er weer 12 gebruikers.
+- Instellingen opslaan werkt: toast "Portaalinstellingen opgeslagen." en de waarde staat daarna in de API; terugzetten werkt op dezelfde manier.
+
+Werkt niet:
+6. **Het formulier "Nieuwe gebruiker toevoegen" meldt fouten in het Engels.** Een leeg formulier toont "Username must be at least 3 characters" (alleen de eerste fout, de andere velden blijven zonder melding), en een bestaande gebruikersnaam geeft de toast "Fout — Username already exists". Ernst: **Laag**.
+7. **Een gebruiker aanmaken geeft geen toast** (herhaling van bevinding 2 voor opslaan): het scherm springt terug naar de lijst. Ernst: **Laag**.
+
 ---
 
 ## Module 18 — Rechten fysiek (admin handelt, rechten strippen, inloggen als die gebruiker, knoppen grijs of verborgen, directe navigatie geblokkeerd)
@@ -401,51 +644,129 @@ Als e2e-admin heb ik drie rechten van e2e-user afgenomen: "Klanten beheren", "Re
 - Doordat een beheerder bij elke bewerking het wachtwoord kwijtraakt (module 17), is deze rechtenproef alleen te herhalen als het wachtwoord telkens opnieuw wordt ingevuld.
 ---
 
-## Module 19 — Generatie (PDF's, exports, back-up, wachtstanden en toasts): tussenstand
+## Module 19 — Generatie (PDF's, exports, back-up, wachtstanden en toasts)
 
-Deze module is nog niet apart doorgelopen; wat al is gezien tijdens de andere modules staat hier bij elkaar. Nog te doen: CSV-export bij klantgeschiedenis, rapport-exports (module 14), back-upbestand downloaden (pg_dump ontbreekt op deze computer, dus een echte back-up is hier niet te maken).
+### Getest
+Alle uitvoer van de app laten genereren en de uitkomst vastgelegd: de PDF's uit de modules 6, 8, 10 en 11, de CSV-exports (bekeuringen, klantgeschiedenis, fiscaal), de vijf afdrukrapporten uit Rapporten, de drie handmatige back-ups (app-gegevens, uploads, code), de PDF van een lege schadecheck, en de e-mails (alleen naar adressen op e2e.invalid). Bestanden zijn niet op de computer opgeslagen: exports zijn onderschept en gelezen (blob), back-ups zijn met een directe aanroep gestart en na de eerste bytes afgebroken.
 
-### Bewezen uitvoer
+### Uitvoer per soort
 | Uitvoer | Waar | Resultaat |
 |---|---|---|
 | Schadecheck-PDF bij inleveren | module 6 | Geldige PDF (722 kB), staat in Documenten |
 | Interactieve schadecheck-PDF | module 11 | Geldige PDF (722 kB), opent in nieuw venster |
+| Schadecheck-PDF van een voertuig (leeg formulier) | /api/vehicles/1669/damage-check-pdf | 200, application/pdf, 722.422 bytes, %PDF |
 | Contract-PDF bij ophalen | module 10 | Geldige PDF (613 kB) nadat het sjabloon een veld kreeg; zonder veld 409 met duidelijke melding |
 | Sjabloonvoorvertoning contract | module 10 | Geldige PDF (613 kB, lege achtergrond zolang er geen velden zijn) |
 | Transportrapport-PDF | module 8 | Geldige PDF (1,5 kB), staat in Documenten |
 | Documentbibliotheek: bekijken | module 10 | GET 200 (opent in een apart venster) |
+| CSV bekeuringen | module 12 | Direct bestand, 605 bytes, puntkomma, bedrag met punt ("95.00"), kentekens met streepjes |
+| CSV klantgeschiedenis | klantdetail, tab Geschiedenis | 128 bytes: Nummer;Kenteken;Voertuig;Van;Tot;Status;Contract;Prijs; datum als 2026-10-09, prijs "150" zonder decimalen, geen toast |
+| CSV fiscale maandrapportage | Rapporten > Fiscaal | 200 text/csv, fiscaal-2026.csv / fiscaal-2027.csv, 344 bytes, Nederlandse komma ("0,00") |
+| Afdrukrapporten APK, Garantie, Kosten, Benutting, Klanten | Rapporten (module 14) | Alle vijf bouwen een volledig document op (cijfers kloppen met het scherm); de native afdrukdialoog legt de ingebouwde browser stil |
+| Rapportbouwer | Rapporten (module 14) | Resultaat alleen op het scherm: geen export, geen afdrukken |
+| Back-up app-gegevens | Back-upbeheer, /api/backups/download-data | 500 "Failed to download app data" (pg_dump ontbreekt op deze computer) |
+| Back-up geüploade bestanden | /api/backups/download-files | 200, application/gzip, car-rental-files-2026-10-09.tar.gz, 448.421.025 bytes (448 MB), geldige gzip-kop, eerste byte na 16,8 seconden |
+| Back-up app-code | /api/backups/download-code | 500 "Failed to download app code" met een veld `details` (zie bevinding 2) |
 | E-mail met bijlage | module 6 | 500, "No email settings configured" (geen SMTP lokaal; Engelse toast) |
-| Back-up maken | module 17 | 500, pg_dump ontbreekt (lokaal; toast met ruwe JSON) |
+| E-mail aan klanten (Communicatie) | module 13 | POST 200 met toast "Meldingen succesvol verstuurd — 0 e-mails verstuurd, 1 mislukt" |
+| Uitnodigingsmail portaal | module 15 | Eerste keer correcte foutmelding, opnieuw sturen meldt "E-mail verstuurd." terwijl de log "failed" zegt |
+| Back-up maken (knop "Nu back-uppen") | module 17 | 500, pg_dump ontbreekt (lokaal; toast met ruwe JSON) |
+| Fiscaal beoordelingsrapport (PDF) | /api/fiscal/assessments/:id/pdf | Niet te testen: er bestaat nog geen beoordeling |
 
 ### Wachtstanden en toasts (algemeen)
-- Eerste keer openen van de meeste dialogen kost 3 tot 6 seconden zonder laadindicator (dev-modus); knoppen lijken dan niets te doen.
-- Toasts verdwijnen na ongeveer 5 seconden; fouttoasts bevatten vaak Engels of ruwe JSON ("Failed to send email", "500: {...}", "Vehicle not found").
-- Opslaan van een gebruiker en na "Check opslaan" geven geen of een verkeerde toast (zie modules 11 en 17).
+- Eerste keer openen van de meeste dialogen en pagina's kost 3 tot 15 seconden zonder laadindicator (dev-modus; Communicatie en Rapporten het langst); knoppen lijken dan niets te doen.
+- Toasts verdwijnen na ongeveer 5 seconden; fouttoasts bevatten vaak Engels of ruwe JSON ("Failed to send email", "500: {...}", "Vehicle not found", "RDW API request timed out").
+- Bevestigingen zijn inconsistent: soms een eigen dialoog (voertuig, klant, blacklist, sjabloon verwijderen), soms een native browservenster (bekeuring verwijderen, portaalaccount verwijderen, regelversie archiveren), soms niets (rapport verwijderen, account blokkeren). Sommige opslagacties geven geen toast (gebruiker opslaan, fiscale klantinstellingen).
+- Succesmeldingen die niet kloppen: "Meldingen succesvol verstuurd" bij 0 verstuurd, "E-mail verstuurd." bij een mislukte uitnodiging, "Check geladen" na "Check opslaan".
+
+### Werkt niet
+1. **De back-up van de app-code mislukt en lekt het serverpad.** Stappen: Back-upbeheer, "App-code" (GET /api/backups/download-code). Verwacht: bestand. Werkelijk: 500 met `{"error":"Failed to download app code","details":"Command failed: tar -czf \"C:\\Users\\kees lam\\Desktop\\LVStest-main\\LVStest-main\\temp\\car-rental-code-2026-10-09.tar.gz\" --exclude=node_modules ..."}`: de volledige opdracht met het absolute pad staat in het antwoord. Er blijft een half bestand achter (temp/car-rental-code-2026-10-09.tar.gz, 26 MB); in dezelfde map staan nog 0-byte bestanden van eerdere mislukte gegevensback-ups (car-rental-data-2026-08-22.sql, -08-23.sql, 2026-09-09.sql). Alleen beheerders kunnen dit aanroepen. Ernst: **Laag/Middel**.
+2. **De bestandenback-up (448 MB) begint pas na bijna 17 seconden te downloaden.** De server bouwt eerst het hele archief op, daarna pas komt de eerste byte; de interface heeft geen voortgang en een proxy met een standaardtimeout (bijvoorbeeld bij Coolify) kan dit afbreken. Bij meer uploads wordt het erger. Ernst: **Laag/Middel**.
+3. **De CSV-exports verschillen in opmaak.** Bekeuringen: puntkomma, bedrag "95.00", datum "1-10-2026, 08:00:00", kenteken met streepjes; klantgeschiedenis: ISO-datum en prijs "150" zonder decimalen; fiscaal: Nederlandse komma ("0,00"). Dezelfde bestanden in Nederlands Excel geven daardoor verschillende resultaten. Geen van de exports toont een toast of een bestandsnaam. Ernst: **Laag**.
+
+### UX-opmerkingen
+- Een gemeenschappelijke uitleg bij uitvoer ("Bestand wordt gemaakt…", "Klaar: bestandsnaam, grootte") ontbreekt; vooral de back-ups en de afdrukrapporten geven geen enkele terugkoppeling tijdens het opbouwen.
+- Een algemene afspraak voor bevestigingen en toasts (zie hierboven) zou de app rustiger maken.
+- Niet getest: een echt bestand uploaden of afdrukken (ingebouwde browser), een back-up herstellen (bewust niet), en de PDF van een fiscale beoordeling.
 
 ---
 
-## Module 20 — UX-samenvatting (voorlopig, gebaseerd op de modules 1 tot en met 11, 17 en 18)
+## Module 20 — UX-samenvatting (alle doorgelopen modules, 1 t/m 19)
 
-### Aantallen (alleen de modules die zijn doorgelopen)
-13 modules doorgeklikt, 74 bevindingen: **3 Hoog, 15 Middel, 56 Laag**.
+### Aantallen
+19 modules doorgeklikt, 123 bevindingen: **4 Hoog, 30 Middel, 89 Laag** (bevindingen die als "Laag/Middel" zijn aangemerkt zijn bij Laag geteld; het zijn er ruim een dozijn). Alleen de modules 9 en 10 blijven "Partial" door testbeperkingen van de ingebouwde browser (geen bestandskeuze, geen afdrukdialoog, geen echte postbus).
+
+| Module | Hoog | Middel | Laag | Totaal |
+|---|---|---|---|---|
+| 1 Auth | 0 | 1 | 3 | 4 |
+| 2 Dashboard | 0 | 0 | 5 | 5 |
+| 3 Voertuigen | 0 | 2 | 5 | 7 |
+| 4 Klanten | 0 | 2 | 3 | 5 |
+| 5 Reserveringen | 0 | 1 | 6 | 7 |
+| 6 Overdracht | 0 | 2 | 4 | 6 |
+| 7 Onderhoud | 2 | 2 | 4 | 8 |
+| 8 Transporten | 0 | 0 | 5 | 5 |
+| 9 Kosten (Partial) | 0 | 3 | 4 | 7 |
+| 10 Documenten (Partial) | 0 | 1 | 6 | 7 |
+| 11 Schadechecks en scannen | 0 | 1 | 5 | 6 |
+| 12 Boetes | 0 | 4 | 6 | 10 |
+| 13 Communicatie | 1 | 4 | 4 | 9 |
+| 14 Rapporten | 0 | 3 | 5 | 8 |
+| 15 Portaalbeheer | 0 | 2 | 5 | 7 |
+| 16 Fiscaal | 0 | 0 | 5 | 5 |
+| Rechtenronde 13 t/m 16 | 0 | 1 | 2 | 3 |
+| 17 Instellingen en beheer | 1 | 0 | 6 | 7 |
+| 18 Rechten fysiek | 0 | 1 | 3 | 4 |
+| 19 Generatie | 0 | 0 | 3 | 3 |
+| **Totaal** | **4** | **30** | **89** | **123** |
 
 ### De ernstigste bevindingen
-1. **Gebruiker opslaan wist het wachtwoord (Hoog, module 17).** Elke beheerder die rechten of naam van een collega wijzigt zonder een nieuw wachtwoord in te vullen, sluit die collega buiten. Aan de code ligt een lege tekst die wordt opgeslagen als wachtwoord (server/routes/users.ts regel 307, server/database-storage.ts regel 229).
-2. **Onderhoud: bewerken zet voertuig en onderhoud ongevraagd op "in onderhoud" en na afronden blijft het voertuig niet verhuurbaar (twee keer Hoog, module 7).** Het formulier toont als status "Binnen" in plaats van de opgeslagen "Gepland"; afronden ("Uit") zet het voertuig niet terug op Beschikbaar en de knop "Terug uit onderhoud" is dan niet bereikbaar.
-3. **Kosten worden niet betrouwbaar geboekt (Middel, modules 3 en 9).** Handmatige kosten krijgen de categoriesleutel "Fuel" naast de bestaande "fuel" (twee tegels, dubbel in de samenvatting), Tol en Parkeren zijn niet te kiezen, en tankkosten uit "Brandstofstatus bijwerken" komen helemaal niet in de kostenadministratie.
-4. **Contract: groene toast "Contract is gegenereerd" terwijl het sjabloon geen velden heeft (Middel, modules 6 en 10).** Een leeg standaardsjabloon blokkeert alle contracten en de app voorkomt dat niet.
-5. **Een naam van een zakelijke klant wordt verminkt tot "B.v." en "Dhl" (Middel, module 4)**, en de prullenbak voor klanten is alleen te vinden onder "Verwijderde voertuigen" op het voertuigenscherm.
-6. **Rechten: grijze knoppen en geen-toegang-schermen zijn goed uitgelegd (module 18), maar "Document uploaden" op de documentenpagina is wel klikbaar zonder recht (Middel).**
+1. **E-maillogboek en Analyse tonen verzonnen gegevens (Hoog, module 13).** Drie vaste regels uit maart 2024 en vaste totalen worden als echte verzendgeschiedenis getoond; de echte log wordt opgehaald maar nergens getoond, dus een mislukte verzending is nergens te zien (CustomerCommunications.tsx regel 197).
+2. **Gebruiker opslaan wist het wachtwoord (Hoog, module 17).** Elke beheerder die rechten of naam van een collega wijzigt zonder een nieuw wachtwoord in te vullen, sluit die collega buiten (server/routes/users.ts regel 307, server/database-storage.ts regel 229; er loopt een reparatie).
+3. **Onderhoud en vervangers (twee keer Hoog, één Middel, module 7).** Bewerken zet voertuig en onderhoud ongevraagd op "in onderhoud", afronden zet het voertuig niet terug op Beschikbaar, en "Annuleren" in het vervangerdialoog laat het onderhoud tóch plannen zonder vervanger of waarschuwing (blok #3204).
+4. **Meldingen die succes zeggen terwijl het misging (Middel, modules 13, 15, 11, 6).** "Meldingen succesvol verstuurd" bij 0 verstuurd, "E-mail verstuurd." bij een mislukte uitnodiging (log "failed"), "Check geladen" na "Check opslaan", groene toast "Contract is gegenereerd" bij een leeg sjabloon.
+5. **Boetes werken maar zijn niet af (module 12).** Opslaan in het bekeuringsdetail wist de administratiekosten (Middel), "Doorbelast" en "Betaald" zijn niet te bereiken, het koppelen mailt de klant meteen zonder waarschuwing, en de klantnaam blijft leeg (zie 6).
+6. **Lege klantnaam in vier zoekopdrachten (Middel, modules 4, 12, 15).** Een klant zonder bedrijfsnaam wordt als lege tekst bewaard en vier zoekopdrachten gebruiken `coalesce(companyName, name)` zonder `nullif` (fines-storage, fine-attribution, portal-dashboard, portal-requests-storage): de bekeuringenlijst, het bekeuringsdetail, het Klanten-overzicht en de aanvragen tonen een lege naam. Twee andere plekken doen het goed; één hulpfunctie zou dit oplossen.
+7. **Kosten en categorieën (Middel, modules 3, 9, 14).** "Fuel" en "fuel" bestaan naast elkaar (twee tegels, twee rijen in elk rapport), Tol en Parkeren zijn in het formulier niet te kiezen, tankkosten uit "Brandstofstatus bijwerken" komen nergens in de administratie, het rapportfilter biedt andere categorieën dan de data bevat, en "Analyse onderhoudskosten" telt alle kosten als onderhoud (€ 89.165,54 in plaats van € 11.192,10).
+8. **Contract en overdracht (Middel, modules 6 en 10).** Een leeg standaardsjabloon blokkeert alle contracten en de app voorkomt dat niet; een zakelijke klantnaam wordt verminkt tot "B.v." en "Dhl" (module 4).
+9. **Rechten en schermen sluiten niet op elkaar aan (Middel, modules 18 en rechtenronde).** "Document uploaden" is klikbaar zonder recht, de rechten "Boetes bekijken" en "Fiscale check bekijken" hebben geen eigen ingang (alleen Klantenportaal), en "Meldingen beheren" of "Rapporten bekijken" werken niet zonder andere rechten.
+10. **Tijden zijn lokaal twee uur verschoven (Laag/Middel, modules 12 en 15).** De database heeft voor de meeste kolommen `timestamp without time zone` terwijl het schema `timestamptz` zegt; een bekeuringstijd van 11:30 toont 09:30, dezelfde login staat in twee lijsten twee uur uit elkaar. Op een UTC-server mogelijk onzichtbaar; niet in productie gecontroleerd.
+
+### Patronen achter de bevindingen (wat het meeste oplevert)
+| Patroon | Voorbeelden | Aanpak |
+|---|---|---|
+| Hardgecodeerde of niet getoonde data | E-maillogboek, Analyse, "Efficiëntiebeoordeling" | Echte log tonen, nepdata verwijderen |
+| Lege tekst in plaats van leeg veld | companyName "", opmerkingen | Bij opslaan "" naar NULL; één hulpfunctie voor weergavenaam |
+| Succesmeldingen zonder controle van het resultaat | zie ernstigste bevinding 4 | Toast alleen na gecontroleerd resultaat; telling "x van y" tonen |
+| Inconsistente bevestigingen | eigen dialoog bij voertuig, klant, blacklist, sjabloon, gebruiker; native venster bij bekeuring, portaalaccount, regelversie; niets bij rapport verwijderen, account blokkeren | Eén bevestigingsdialoog voor alle verwijderen en onomkeerbare acties |
+| Ruwe sleutels en Engels in de interface | "rented", "needs_fixing", "Completed", "portal_invite", "ROUNDING_MODE", validatie "Username must be…", rapportbouwer | Vertaaltabel per statuswaarde en formulier-validatie |
+| Rechten per knop, niet per scherm | zie bevinding 9 | Rechtenlijst koppelen aan schermen, afhankelijke rechten tonen |
+| Geen terugkoppeling bij opslaan | gebruiker aanmaken, fiscale klantinstellingen, fiscaal-CSV | Standaard toast of regel "Opgeslagen" |
 
 ### Sterke punten
-- Beveiligingen bij overdracht: kilometerverlaging met wachtwoord, annuleren van een opgehaalde huur met vinkje, terugdraaien met voorvertoning, typ-bevestiging bij verwijderen van voertuig en klant, waarschuwing bij voertuigopmerkingen.
-- Rechtenmeldingen met de naam van het ontbrekende recht in het Nederlands.
-- Zoeken op kenteken werkt met en zonder streepjes.
+- Beveiligingen bij overdracht en verwijderen: kilometerverlaging met wachtwoord, annuleren van een opgehaalde huur met vinkje, terugdraaien met voorvertoning, typ-bevestiging bij voertuig en klant, waarschuwing bij voertuigopmerkingen, en bij de blacklist een eigen bevestiging met uitleg wat het gevolg is.
+- Rechtenmeldingen noemen het ontbrekende recht in het Nederlands en grijze knoppen leggen bij zweven uit waarom.
+- De fiscale sectie is zorgvuldig ontworpen (WETTELIJK/INTERN, "geen fiscaal advies", audit, stappen indienen-goedkeuren-publiceren, impactvoorbeeld met auditregel).
+- De afhandeling van portaalaanvragen is helder (bericht sturen, beantwoorden en afhandelen, huuraanvraag goedkeuren maakt de reservering en waarschuwt bij een niet-verhuurbaar voertuig).
+- Het vervangerdialoog bij onderhoud noemt de geraakte reservering en biedt drie duidelijke keuzes.
+- De cijfers in Rapporten kloppen (omzet min kosten is marge, de som van de categorieën is het totaal) en de kentekenzoeker normaliseert streepjes.
 
 ### Te veel kliks, ontbrekende bevestigingen, trage terugkoppeling
-- **Te veel kliks:** de interactieve schadecheck heeft circa 50 keuzes zonder "alles goed"; een document uploaden kost vier handelingen vóór de bestandskeuze; een reservering aanmaken ongeveer zes.
-- **Ontbrekende bevestiging:** "RDW APK-datums scannen" start een volledige scan met één klik; "Afronden" van een transport en verwijderen van chauffeur, transport en kostenpost zijn definitief zonder prullenbak.
-- **Trage of ontbrekende terugkoppeling:** geen laadindicator bij eerste keer openen van dialogen; geen toast na gebruiker opslaan; toast na "Check opslaan" zegt "geladen"; foutteksten in het Engels.
-- **Taal:** formuliervalidatie (Zod) staat overal nog in het Engels ("Category is required", "Please select a vehicle"), net als categorieën in widgets ("tires", "fuel"), raw auditcodes ("reservation.pickup") en voorbeeldteksten ("John Doe", "Main Street").
+- **Te veel kliks:** de interactieve schadecheck heeft circa 50 keuzes zonder "alles goed"; een document uploaden kost vier handelingen vóór de bestandskeuze; een aanvraag afhandelen vier; een bekeuring invoeren en koppelen zes; na het kiezen van een vervangend voertuig zijn twee klikken op de bevestigknop nodig.
+- **Ontbrekende of verkeerde bevestiging:** "RDW APK-datums scannen" start een volledige scan met één klik; "Annuleren" bij een bekeuring annuleert de bekeuring zonder vraag; een opgeslagen rapport en een geblokkeerd portaalaccount hebben geen bevestiging; verwijderen van een bekeuring, portaalaccount en archiveren van een regelversie gebruiken een native browservenster (bij het archiveren werd de eerste klik in de ingebouwde browser stil genegeerd); "Afronden" van een transport en verwijderen van chauffeur, transport en kostenpost zijn definitief zonder prullenbak.
+- **Trage of ontbrekende terugkoppeling:** geen laadindicator bij het eerste openen van pagina's en dialogen (3 tot 15 seconden in dev-modus); de bestandenback-up (448 MB) begint na 17 seconden; geen toast bij gebruiker aanmaken en fiscale klantinstellingen; de lijst met e-mailsjablonen ververst niet na opslaan; de pop-up "APK-datums gewijzigd bij de RDW" blijft bij een nieuwe sessie terugkomen tot elk voorstel is beslist.
+- **Taal en notatie:** formuliervalidatie (Zod) en foutmeldingen staan op meerdere plekken nog in het Engels, net als interne waarden ("rented", "Completed", "portal_invite"); datums, bedragen en kentekens wisselen van notatie per scherm ("9 oktober 2026", "09/10/2026", "2026-10-09"; "€ 95.00" tegenover "€ 95,00"; "94XT184" tegenover "94-XT-184"); exports gebruiken per bestand een andere opmaak.
 
-Deze samenvatting wordt aangevuld zodra de modules 12 tot en met 16 en 19 zijn doorgelopen.
+### Wat niet getest kon worden (omgeving), en dus open blijft
+- Een bestand kiezen of uploaden (factuur-PDF scannen, document uploaden, bekeuringsbrieven scannen, CJIB-bestand, foto's en handtekening bij de schadecheck) en afdrukken (printdialoog legt de ingebouwde browser stil).
+- Echte e-mail (geen SMTP lokaal) en de klantkant van het portaal (geen bekend portaalwachtwoord).
+- Bewust niet gedaan: "Nu ophalen" bij Ontvangen facturen en bij CJIB-importen (echte postbussen), een back-up herstellen, een fiscale versie publiceren of goedkeuren, en e-mails naar echte adressen.
+
+### Aanbevolen volgorde om aan te pakken
+1. De twee Hoog-bevindingen (logboek met nepdata, wachtwoord wissen) en de twee Hoog in Onderhoud.
+2. De lege klantnamen (één hulpfunctie) en de succesmeldingen die onwaar zijn.
+3. Eén bevestigingsdialoog en één toastafspraak voor de hele app.
+4. Kostencategorieën en de rapportfilters (module 3, 9, 14) in één keer rechtzetten.
+5. Boetes afmaken: Doorbelast en Betaald, administratiekosten tonen en behouden, klant niet automatisch mailen.
+6. Rechtenlijst koppelen aan schermen en afhankelijke rechten tonen.
+7. Vertalingen en notaties (status- en validatiewaarden, datums, bedragen).
