@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { RequiresPermission } from "@/components/ui/requires-permission";
-import { StatusChangeDialog } from "@/components/reservations/status-change-dialog";
+import { RevertHandoverDialog } from "@/components/reservations/revert-handover-dialog";
 import { Reservation, UserPermission } from "@shared/schema";
 import { RotateCcw } from "lucide-react";
 
@@ -12,60 +12,55 @@ interface ReservationQuickStatusButtonProps {
   variant?: "outline" | "ghost" | "default";
   withText?: boolean;
   className?: string;
-  onStatusChanged?: () => void;
+  onReverted?: () => void;
 }
 
+/**
+ * The dashboard's way into the reversal dialog (sub-project C, Task 4): a
+ * picked-up rental can be undone from here, with a preview and a confirm,
+ * never with one click. Needs `revert_handover`; without it the button stays
+ * visible, disabled, and names the right (B-27).
+ */
 export function ReservationQuickStatusButton({
   reservation,
-  size = "icon", 
+  size = "icon",
   variant = "ghost",
   withText = false,
   className = "",
-  onStatusChanged,
+  onReverted,
 }: ReservationQuickStatusButtonProps) {
   const { t } = useTranslation("reservations");
-  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [revertDialogOpen, setRevertDialogOpen] = useState(false);
 
-  // Extract the necessary information
-  const { id, status, vehicle, customer } = reservation;
+  const { id, status } = reservation;
 
-  // This dialog is only used to revert a picked-up reservation back to booked.
-  // Hide the button for any other status.
+  // The dashboard lists current rentals: only a picked-up one has a handover
+  // to undo from here. Hide the button for any other status.
   if (status !== "picked_up") {
     return null;
   }
 
   return (
     <>
-      <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+      <RequiresPermission anyOf={[UserPermission.REVERT_HANDOVER]}>
         <Button
           variant={variant}
           size={size}
-          onClick={() => setStatusDialogOpen(true)}
+          onClick={() => setRevertDialogOpen(true)}
           className={`text-primary-600 hover:text-primary-800 ${className}`}
-          title={t('quickStatusButton.revertToBooked')}
-          data-testid={`button-quick-status-${id}`}
+          title={t('revertHandover.opener.handover')}
+          data-testid={`button-revert-handover-${id}`}
         >
           <RotateCcw className="h-4 w-4" />
-          {withText && <span className="ml-2">{t('quickStatusButton.revertToBooked')}</span>}
+          {withText && <span className="ml-2">{t('revertHandover.opener.handover')}</span>}
         </Button>
       </RequiresPermission>
 
-      <StatusChangeDialog
-        open={statusDialogOpen}
-        onOpenChange={setStatusDialogOpen}
+      <RevertHandoverDialog
+        open={revertDialogOpen}
+        onOpenChange={setRevertDialogOpen}
         reservationId={id}
-        initialStatus={status || "booked"}
-        vehicle={vehicle}
-        customer={customer}
-        initialFuelData={{
-          fuelLevelPickup: reservation.fuelLevelPickup,
-          fuelLevelReturn: reservation.fuelLevelReturn,
-          fuelCost: reservation.fuelCost ? Number(reservation.fuelCost) : null,
-          fuelCardNumber: reservation.fuelCardNumber,
-          fuelNotes: reservation.fuelNotes,
-        }}
-        onStatusChanged={onStatusChanged}
+        onReverted={() => onReverted?.()}
       />
     </>
   );

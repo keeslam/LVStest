@@ -572,12 +572,7 @@
     "unknownCustomer": "Unknown",
     "openEnded": "Open-ended",
     "noDatesSpecified": "No dates specified",
-    "revertToBookedButton": "Revert to Booked",
-    "noActionPlaceholder": "—",
-    "toasts": {
-      "statusUpdatedTitle": "Status Updated",
-      "statusUpdatedDescription": "Reservation status has been updated successfully."
-    }
+    "noActionPlaceholder": "—"
   },
   "cancelDialog": {
     "title": "Cancel reservation",
@@ -620,34 +615,81 @@
     "cancelButton": "Cancel",
     "unknownCustomer": "Unknown customer"
   },
-  "statusChangeDialog": {
-    "title": "Revert Reservation to Booked",
-    "description": "This will undo the pickup and put the reservation back to the Booked state.",
-    "vehicleLabel": "Vehicle",
-    "licenseLabel": "License:",
-    "vehicleColonLabel": "Vehicle:",
-    "atPickupLabel": "At pickup:",
-    "customerLabel": "Customer",
-    "nameLabel": "Name:",
-    "companyLabel": "Company:",
-    "phoneLabel": "Phone:",
-    "emailLabel": "Email:",
-    "currentStatusLabel": "Current status:",
-    "notPickedUpTitle": "This action is only available for picked-up reservations.",
-    "notPickedUpHint": "You can only revert a reservation that is currently in the Picked Up state.",
-    "confirmTitle": "Are you sure you want to revert this reservation back to Booked?",
-    "confirmHint": "The contract number, pickup mileage and fuel level at pickup will be cleared. The actual pickup date will also be removed. This cannot be undone.",
-    "finalConfirmTitle": "Please confirm one more time.",
-    "finalConfirmHint": "Clicking <1>Yes, revert</1> will immediately undo the pickup.",
+  "revertHandover": {
+    "title": "Undo handover",
+    "titleCancelled": "Undo cancellation",
+    "description": "Check what happens to reservation #{{id}} before you confirm.",
+    "loading": "Loading preview...",
+    "statusLine": "Status: {{from}} becomes {{to}}.",
+    "clearsTitle": "This data will be cleared:",
+    "fields": {
+      "actualPickupDate": "Actual pickup date",
+      "pickupMileage": "Mileage at pickup",
+      "fuelLevelPickup": "Fuel level at pickup",
+      "contractNumber": "Contract number",
+      "actualReturnDate": "Actual return date",
+      "returnMileage": "Mileage at return",
+      "fuelLevelReturn": "Fuel level at return",
+      "fuelCost": "Fuel cost",
+      "fuelCardNumber": "Fuel card number",
+      "fuelNotes": "Fuel notes",
+      "completionDate": "Completion date",
+      "spareVehicleStatus": "Status of the replacement vehicle"
+    },
+    "vehicleTitle": "Vehicle",
+    "mileageChange": "Mileage: from {{from}} km to {{to}} km.",
+    "mileageSame": "Mileage: stays {{km}} km.",
+    "fuelChange": "Fuel level: from {{from}} to {{to}}.",
+    "fuelSame": "Fuel level: stays {{fuel}}.",
+    "unknown": "unknown",
+    "vehicleUnchanged": "The vehicle's mileage and fuel level stay as they are.",
+    "vehicleReason": {
+      "no_reading_stored": "The reading from before this handover was not stored, so the vehicle's mileage and fuel level stay as they are.",
+      "later_handover": "Another handover with this vehicle has taken place since this one, so the vehicle's mileage and fuel level stay as they are."
+    },
+    "documentsTitle": "These documents are marked as expired (they are not deleted):",
+    "documentTypes": {
+      "contract": "Unsigned contract",
+      "damageCheck": "Damage check"
+    },
+    "warningsTitle": "Note",
+    "warnings": {
+      "cascade_not_reopened": "Replacement vehicles, transports and driver assignments that were closed by the cancellation are not reopened.",
+      "unknown": "There is a warning ({{code}}) that this screen does not know."
+    },
+    "blocked": {
+      "VEHICLE_NOT_FREE": "The vehicle is no longer free for this period, so the cancellation cannot be undone.",
+      "VEHICLE_NOT_FOR_RENTAL": "The vehicle has since been set to 'Not for rental', so the cancellation cannot be undone.",
+      "VEHICLE_NOT_FOUND": "The vehicle of this reservation can no longer be found (it may be in the recycle bin), so the cancellation cannot be undone.",
+      "INVALID_STATUS_TRANSITION": "This reservation has no handover or cancellation to undo.",
+      "unknown": "Undoing is not possible right now."
+    },
+    "confirmMileage": "I confirm that the vehicle's mileage goes down, from {{from}} km to {{to}} km.",
     "cancelButton": "Cancel",
-    "revertToBookedButton": "Revert to Booked",
-    "revertingButton": "Reverting...",
-    "confirmRevertButton": "Yes, revert",
+    "confirmButton": "Undo handover",
+    "confirmButtonCancelled": "Undo cancellation",
+    "confirming": "Undoing...",
+    "opener": {
+      "handover": "Undo handover",
+      "cancelled": "Undo cancellation"
+    },
+    "errors": {
+      "previewNotFound": "This reservation no longer exists.",
+      "previewFailed": "The preview could not be loaded. Close this screen and try again.",
+      "MILEAGE_DECREASE_CONFIRMATION_REQUIRED": "The vehicle's mileage goes down, from {{from}} km to {{to}} km. Tick the confirmation to continue.",
+      "REVERT_PLAN_CHANGED": "The reservation or the vehicle has changed in the meantime. The updated overview is shown below; check it and confirm again.",
+      "VEHICLE_NOT_FREE": "The vehicle is no longer free for this period.",
+      "VEHICLE_NOT_FOR_RENTAL": "The vehicle is set to 'Not for rental'.",
+      "VEHICLE_NOT_FOUND": "The vehicle of this reservation can no longer be found (it may be in the recycle bin).",
+      "INVALID_STATUS_TRANSITION": "There is nothing to undo for this reservation.",
+      "forbidden": "You do not have the right to undo a handover.",
+      "notFound": "This reservation no longer exists.",
+      "generic": "Undoing failed. Try again."
+    },
     "toasts": {
-      "successTitle": "Reservation reverted",
-      "successDescription": "The reservation is back to Booked. Pickup data was cleared.",
-      "failedTitle": "Revert failed",
-      "failedFallback": "Could not revert the reservation status."
+      "successTitle": "Handover undone",
+      "successTitleCancelled": "Cancellation undone",
+      "successDescription": "Reservation #{{id}} has the status {{status}} again."
     }
   },
   "spareVehicleDialog": {
@@ -810,9 +852,6 @@
       "reservationDeletedTitle": "Reservation deleted",
       "reservationDeletedDescription": "The reservation has been successfully deleted"
     }
-  },
-  "quickStatusButton": {
-    "revertToBooked": "Revert to Booked"
   },
   "listDialog": {
     "title": "Reservations",
@@ -1056,8 +1095,7 @@
       "endColonLabel": "End:",
       "durationColonLabel": "Duration:",
       "priceColonLabel": "Price:",
-      "statusColonLabel": "Status:",
-      "revertButton": "Revert"
+      "statusColonLabel": "Status:"
     },
     "reservationHashCustomer": "Reservation #{{id}} - {{name}}",
     "viewDetailedInfo": "View detailed reservation information",
@@ -1121,13 +1159,9 @@
       "fuelAtPickupColonLabel": "Fuel at pickup:",
       "fuelAtReturnColonLabel": "Fuel at return:",
       "totalColonLabel": "Total:",
-      "revertButton": "Revert",
       "deleteTitle": "Delete Completed Rental?",
       "deleteDescription": "This will permanently delete this rental record. This action cannot be undone.",
       "toasts": {
-        "revertedTitle": "Rental Reverted",
-        "revertedDescription": "Rental has been marked as picked up (return data cleared)",
-        "revertFailedDescription": "Failed to revert rental",
         "deletedTitle": "Rental Deleted",
         "deletedDescription": "The rental record has been permanently deleted",
         "deleteFailedDescription": "Failed to delete rental"

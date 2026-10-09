@@ -53,7 +53,12 @@ import { ReservationForm } from "@/components/reservations/reservation-form";
 import { ReservationListDialog } from "@/components/reservations/reservation-list-dialog";
 import { NotCollectedDialog, NOT_COLLECTED_QUERY_KEY } from "@/components/reservations/not-collected-dialog";
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
-import { StatusChangeDialog } from "@/components/reservations/status-change-dialog";
+import {
+  RevertHandoverDialog,
+  isRevertibleReservation,
+  revertOpenerLabelKey,
+  type RevertResult,
+} from "@/components/reservations/revert-handover-dialog";
 import { EditContractNumberDialog } from "@/components/reservations/edit-contract-number-dialog";
 import { UserPermission } from "@shared/schema";
 import { RequiresPermission } from "@/components/ui/requires-permission";
@@ -189,7 +194,8 @@ export default function ReservationCalendarPage() {
   // Dialog states
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  // The one reversal dialog (preview, then confirm), for the reservation with this id.
+  const [revertReservationId, setRevertReservationId] = useState<number | null>(null);
   const [pickupDialogOpen, setPickupDialogOpen] = useState(false);
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
@@ -370,14 +376,10 @@ export default function ReservationCalendarPage() {
     setDamageCheckToDelete(null);
   };
   
-  const handleStatusChange = (reservation: Reservation) => {
-    // The status dialog now only reverts a picked_up reservation back to booked.
-    // For any other status, this trigger is a no-op.
-    if (reservation.status !== "picked_up") {
-      return;
-    }
-    setSelectedReservation(reservation);
-    setStatusDialogOpen(true);
+  // Every way to undo a pickup, a return or a cancellation on this page opens
+  // the same dialog: it shows what will happen and waits for a confirm.
+  const handleRevertHandover = (reservation: Reservation) => {
+    setRevertReservationId(reservation.id);
   };
   
   const handleCloseDialogs = () => {
@@ -1727,21 +1729,23 @@ export default function ReservationCalendarPage() {
                                         <Eye className="mr-1 h-3 w-3" />
                                         {t('common:actions.view')}
                                       </Button>
-                                      {res.status === 'picked_up' && (
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="h-8 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
-                                          onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            handleStatusChange(res);
-                                          }}
-                                          title={t('quickStatusButton.revertToBooked')}
-                                        >
-                                          <RotateCcw className="mr-1 h-3 w-3" />
-                                          {t('calendarPage.hoverCard.revertButton')}
-                                        </Button>
+                                      {isRevertibleReservation(res) && (
+                                        <RequiresPermission anyOf={[UserPermission.REVERT_HANDOVER]}>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-8 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+                                              handleRevertHandover(res);
+                                            }}
+                                            data-testid={`button-revert-handover-hover-${res.id}`}
+                                          >
+                                            <RotateCcw className="mr-1 h-3 w-3" />
+                                            {t(revertOpenerLabelKey(res))}
+                                          </Button>
+                                        </RequiresPermission>
                                       )}
                                       <Button
                                         size="sm"
@@ -2623,18 +2627,17 @@ export default function ReservationCalendarPage() {
                     {t('common:actions.edit')}
                   </Button>
                 </RequiresPermission>
-                {selectedReservation.status === 'picked_up' && (
-                  <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
+                {isRevertibleReservation(selectedReservation) && (
+                  <RequiresPermission anyOf={[UserPermission.REVERT_HANDOVER]}>
                     <Button
                       variant="outline"
                       onClick={() => {
-                        handleStatusChange(selectedReservation);
+                        handleRevertHandover(selectedReservation);
                       }}
-                      data-testid="button-change-status-dialog"
-                      title={t('quickStatusButton.revertToBooked')}
+                      data-testid="button-revert-handover"
                     >
                       <RotateCcw className="mr-2 h-4 w-4" />
-                      {t('calendarPage.hoverCard.revertButton')}
+                      {t(revertOpenerLabelKey(selectedReservation))}
                     </Button>
                   </RequiresPermission>
                 )}
@@ -2815,78 +2818,24 @@ export default function ReservationCalendarPage() {
           )}
         </DialogContent>
       </Dialog>
-      {/* Status Change Dialog */}
-      {selectedReservation && (() => {
-        return (
-          <StatusChangeDialog
-            open={statusDialogOpen}
-            onOpenChange={setStatusDialogOpen}
-            reservationId={selectedReservation.id}
-            initialStatus={selectedReservation.status || "booked"}
-            startDate={selectedReservation.startDate}
-            vehicle={selectedReservation.vehicle ? {
-              ...selectedReservation.vehicle,
-              currentMileage: selectedReservation.vehicle.currentMileage ?? undefined,
-              departureMileage: selectedReservation.vehicle.departureMileage ?? undefined,
-              returnMileage: selectedReservation.vehicle.returnMileage ?? undefined
-            } : undefined}
-            customer={selectedReservation.customer ? {
-              ...selectedReservation.customer,
-              firstName: selectedReservation.customer.firstName ?? undefined,
-              lastName: selectedReservation.customer.lastName ?? undefined,
-              companyName: selectedReservation.customer.companyName ?? undefined,
-              phone: selectedReservation.customer.phone ?? undefined,
-              email: selectedReservation.customer.email ?? undefined
-            } : undefined}
-            initialFuelData={{
-              fuelLevelPickup: selectedReservation.fuelLevelPickup,
-              fuelLevelReturn: selectedReservation.fuelLevelReturn,
-              fuelCost: selectedReservation.fuelCost ? Number(selectedReservation.fuelCost) : null,
-              fuelCardNumber: selectedReservation.fuelCardNumber,
-              fuelNotes: selectedReservation.fuelNotes,
-            }}
-            pickupMileage={selectedReservation.pickupMileage ?? null}
-            returnMileage={selectedReservation.returnMileage ?? null}
-            onStatusChanged={async () => {
-              console.log('🔄 onStatusChanged callback started');
-              
-              // Always fetch fresh reservation data and reopen view dialog
-              if (selectedReservation) {
-                try {
-                  console.log('📡 Fetching updated reservation data for ID:', selectedReservation.id);
-                  
-                  // Fetch the updated reservation directly from the API
-                  const response = await fetch(`/api/reservations/${selectedReservation.id}`, {
-                    credentials: 'include',
-                  });
-                  
-                  if (response.ok) {
-                    const updatedReservation = await response.json();
-                    console.log('✅ Fetched updated reservation:', updatedReservation.status);
-                    setSelectedReservation(updatedReservation);
-                    
-                    console.log('🔄 Reopening view dialog');
-                    // Reopen the view dialog to show updated reservation
-                    setViewDialogOpen(true);
-                    console.log('✅ View dialog should be open now');
-                  } else {
-                    console.error('❌ Failed to fetch reservation:', response.status);
-                  }
-                } catch (error) {
-                  console.error('❌ Error fetching updated reservation:', error);
-                }
-              } else {
-                console.warn('⚠️ No selectedReservation available');
-              }
-              
-              console.log('🔄 Refetching calendar data');
-              invalidateRelatedQueries('reservations');
-              refetchCalendarData();
-              console.log('✅ onStatusChanged callback completed');
-            }}
-          />
-        );
-      })()}
+      {/* Reversal dialog: preview of what happens, then confirm (sub-project C, Task 4) */}
+      {revertReservationId !== null && (
+        <RevertHandoverDialog
+          open
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setRevertReservationId(null);
+          }}
+          reservationId={revertReservationId}
+          onReverted={(result: RevertResult) => {
+            // The view dialog may be showing this very rental: give it the new state.
+            if (selectedReservation && selectedReservation.id === result.reservation.id) {
+              setSelectedReservation(result.reservation as unknown as Reservation);
+            }
+            invalidateRelatedQueries('reservations');
+            refetchCalendarData();
+          }}
+        />
+      )}
 
       {/* Edit Contract Number Dialog */}
       {selectedReservation && canManageReservations && (
@@ -3374,50 +3323,19 @@ export default function ReservationCalendarPage() {
                               </svg>
                               {t('common:actions.view')}
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={async () => {
-                                try {
-                                  // PHASE 57 / WAVE 14 item 2 — this used to
-                                  // PATCH `/api/reservations/:id`, which runs
-                                  // `assertReservationTransition` *without*
-                                  // `allowReversion`, so `completed ->
-                                  // picked_up` was refused every single time
-                                  // and the button could only ever say
-                                  // "Verhuur terugzetten mislukt". The undo
-                                  // belongs on `/status`, the endpoint that
-                                  // owns the documented reversions — and which
-                                  // clears the return mileage, fuel level and
-                                  // actual return date itself, so they are no
-                                  // longer sent from here.
-                                  await apiRequest('PATCH', `/api/reservations/${rental.id}/status`, {
-                                    status: 'picked_up',
-                                  });
-                                  invalidateRelatedQueries('reservations');
-                                  refetchCalendarData();
-                                  toast({
-                                    title: t('calendarPage.completedRentals.toasts.revertedTitle'),
-                                    description: t('calendarPage.completedRentals.toasts.revertedDescription')
-                                  });
-                                } catch (error) {
-                                  toast({
-                                    title: t('common:status.error'),
-                                    description: t('calendarPage.completedRentals.toasts.revertFailedDescription'),
-                                    variant: "destructive"
-                                  });
-                                }
-                              }}
-                              data-testid={`button-revert-${rental.id}`}
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                                <path d="M21 3v5h-5"/>
-                                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                                <path d="M8 16H3v5"/>
-                              </svg>
-                              {t('calendarPage.completedRentals.revertButton')}
-                            </Button>
+                            {isRevertibleReservation(rental) && (
+                              <RequiresPermission anyOf={[UserPermission.REVERT_HANDOVER]}>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleRevertHandover(rental)}
+                                  data-testid={`button-revert-handover-${rental.id}`}
+                                >
+                                  <RotateCcw className="mr-1 h-4 w-4" />
+                                  {t(revertOpenerLabelKey(rental))}
+                                </Button>
+                              </RequiresPermission>
+                            )}
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button

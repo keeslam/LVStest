@@ -1,19 +1,18 @@
 /**
- * `ReservationQuickStatusButton` — Task 4 (docs/superpowers/specs/2026-09-21-toegang-design.md,
- * §4), one of the "four dashboard controls Task 3 left" (task-3-report.md §8).
- * Reused on the dashboard (reservation-calendar.tsx) and on `/reservations`
- * (pages/reservations/calendar.tsx); its click ends in `PATCH
- * /api/reservations/:id/status`, guarded server-side by MANAGE_RESERVATIONS
- * alone (server/routes.ts:3846) — verified directly, not copied from the
- * fact sheet.
+ * `ReservationQuickStatusButton` - the dashboard opener of the reversal dialog.
  *
- * Small enough to render standalone (a QueryClientProvider is only needed
- * because StatusChangeDialog declares its mutation unconditionally, even
- * while closed), so this is a real component test, not just an E2E proof.
+ * Toegang Task 4 (docs/superpowers/specs/2026-09-21-toegang-design.md, §4) made
+ * it a visible-but-disabled control; sub-project C, Task 4 (besluiten B-30, B-39)
+ * moved its right from `manage_reservations` to the new `revert_handover` and
+ * made it open the ONE `RevertHandoverDialog` (preview, then confirm) instead of
+ * the old StatusChangeDialog, which is gone.
+ *
+ * Reused on the dashboard (reservation-calendar.tsx, upcoming-reservations.tsx).
+ * A real component test, not just an E2E proof.
  *
  * Runs in the jsdom project (plan §8.8).
  */
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -39,11 +38,41 @@ const pickedUpReservation = {
   customer: { id: 1, name: "Jan Jansen" },
 } as unknown as Reservation;
 
-function renderButton() {
+let requestedUrls: string[];
+
+beforeEach(() => {
+  requestedUrls = [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: any) => {
+      const url = typeof input === "string" ? input : input?.url ?? "";
+      requestedUrls.push(url);
+      return new Response(
+        JSON.stringify({
+          fromStatus: "picked_up",
+          toStatus: "booked",
+          clears: ["contractNumber"],
+          vehicle: { current: { mileage: 1000, fuel: null }, restoreTo: null, reason: "no_reading_stored" },
+          documentsToMarkStale: [],
+          requiresMileageConfirmation: false,
+          warnings: ["no_reading_stored"],
+          planHash: "h",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }),
+  );
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+function renderButton(reservation: Reservation = pickedUpReservation) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <ReservationQuickStatusButton reservation={pickedUpReservation} />
+      <ReservationQuickStatusButton reservation={reservation} />
     </QueryClientProvider>,
   );
 }
@@ -51,35 +80,34 @@ function renderButton() {
 describe("ReservationQuickStatusButton", () => {
   it("renders nothing for a reservation that is not picked_up, regardless of permission", () => {
     setUser(UserRole.ADMIN, []);
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const { container } = render(
-      <QueryClientProvider client={client}>
-        <ReservationQuickStatusButton reservation={{ ...pickedUpReservation, status: "booked" } as unknown as Reservation} />
-      </QueryClientProvider>,
-    );
+    const { container } = renderButton({ ...pickedUpReservation, status: "booked" } as unknown as Reservation);
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("is enabled for a user holding manage_reservations and opens the revert dialog", async () => {
-    setUser(UserRole.USER, [UserPermission.MANAGE_RESERVATIONS]);
+  it("is enabled for a user holding revert_handover and opens the preview dialog, not a one-click revert", async () => {
+    setUser(UserRole.USER, [UserPermission.REVERT_HANDOVER]);
     const user = userEvent.setup();
     renderButton();
-    const button = screen.getByTestId("button-quick-status-42");
+    const button = screen.getByTestId("button-revert-handover-42");
     expect(button).not.toBeDisabled();
     await user.click(button);
-    expect(await screen.findByRole("dialog")).toBeVisible();
+    expect(await screen.findByTestId("dialog-revert-handover")).toBeVisible();
+    // The click only asked for the PREVIEW; nothing was written.
+    await waitFor(() => expect(requestedUrls.some((url) => url.endsWith("/api/reservations/42/revert-preview"))).toBe(true));
+    expect(requestedUrls.some((url) => url.endsWith("/api/reservations/42/revert"))).toBe(false);
+    expect(requestedUrls.some((url) => url.endsWith("/api/reservations/42/status"))).toBe(false);
   });
 
-  it("is visible but disabled, and explains itself, for a user without manage_reservations", async () => {
-    setUser(UserRole.USER, []);
+  it("is visible but disabled, and names the right, for a user with manage_reservations but without revert_handover", async () => {
+    setUser(UserRole.USER, [UserPermission.MANAGE_RESERVATIONS]);
     renderButton();
-    const button = screen.getByTestId("button-quick-status-42");
+    const button = screen.getByTestId("button-revert-handover-42");
     expect(button).toBeVisible();
     expect(button).toBeDisabled();
     expect(button).toHaveAttribute("aria-disabled", "true");
     await userEvent.tab();
     await waitFor(() => {
-      expect(screen.getByRole("tooltip")).toHaveTextContent("Reserveringen beheren");
+      expect(screen.getByRole("tooltip")).toHaveTextContent("Overdracht terugdraaien");
     });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
@@ -87,6 +115,6 @@ describe("ReservationQuickStatusButton", () => {
   it("is allowed for role admin regardless of permissions", () => {
     setUser(UserRole.ADMIN, []);
     renderButton();
-    expect(screen.getByTestId("button-quick-status-42")).not.toBeDisabled();
+    expect(screen.getByTestId("button-revert-handover-42")).not.toBeDisabled();
   });
 });

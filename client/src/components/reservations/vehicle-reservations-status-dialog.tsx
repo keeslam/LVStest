@@ -2,12 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { invalidateByPrefix } from "@/lib/queryClient";
-import { Vehicle, Reservation } from "@shared/schema";
-import { StatusChangeDialog } from "@/components/reservations/status-change-dialog";
+import { Vehicle, Reservation, UserPermission } from "@shared/schema";
+import {
+  RevertHandoverDialog,
+  isRevertibleReservation,
+  revertOpenerLabelKey,
+} from "@/components/reservations/revert-handover-dialog";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { formatDate, formatReservationStatus } from "@/lib/format-utils";
 import { displayLicensePlate } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -37,7 +41,6 @@ export function VehicleReservationsStatusDialog({
   const [activeTab, setActiveTab] = useState<"upcoming" | "all" | "past">("upcoming");
   const [vehicleSearchQuery, setVehicleSearchQuery] = useState<string>("");
   const { t } = useTranslation("reservations");
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   
   // Reset vehicle selection when dialog opens
@@ -90,7 +93,7 @@ export function VehicleReservationsStatusDialog({
     }
   }, [vehicleReservations, activeTab]);
   
-  // Handle reservation status change success
+  // A reversal succeeded (the dialog itself already said so in a toast)
   const handleReservationStatusChanged = () => {
     // Invalidate all relevant queries
     invalidateByPrefix(`/api/reservations/vehicle/${selectedVehicleId}`);
@@ -98,45 +101,22 @@ export function VehicleReservationsStatusDialog({
     // Set selected reservation ID to null
     setSelectedReservationId(null);
     
-    // Show success toast
-    toast({
-      title: t('vehicleReservationsStatusDialog.toasts.statusUpdatedTitle'),
-      description: t('vehicleReservationsStatusDialog.toasts.statusUpdatedDescription'),
-    });
-    
     // Call the callback if provided
     if (onStatusChanged) {
       onStatusChanged();
     }
   };
   
-  // Find the selected vehicle and reservation objects
-  const selectedVehicle = vehicles?.find(v => v.id.toString() === selectedVehicleId);
-  const selectedReservation = vehicleReservations?.find(r => r.id === selectedReservationId);
-  
-  // Get customer for the selected reservation
-  const customer = selectedReservation?.customer;
-  
   return (
     <>
-      {selectedReservationId && selectedReservation && (
-        <StatusChangeDialog
+      {selectedReservationId && (
+        <RevertHandoverDialog
           reservationId={selectedReservationId}
           open={!!selectedReservationId}
           onOpenChange={(open) => {
             if (!open) setSelectedReservationId(null);
           }}
-          initialStatus={selectedReservation.status || ""}
-          vehicle={selectedVehicle}
-          customer={customer}
-          initialFuelData={{
-            fuelLevelPickup: selectedReservation.fuelLevelPickup,
-            fuelLevelReturn: selectedReservation.fuelLevelReturn,
-            fuelCost: selectedReservation.fuelCost ? Number(selectedReservation.fuelCost) : null,
-            fuelCardNumber: selectedReservation.fuelCardNumber,
-            fuelNotes: selectedReservation.fuelNotes,
-          }}
-          onStatusChanged={handleReservationStatusChanged}
+          onReverted={handleReservationStatusChanged}
         />
       )}
       
@@ -290,16 +270,19 @@ export function VehicleReservationsStatusDialog({
                                   </span>
                                 </td>
                                 <td className="px-4 py-3 text-center">
-                                  {reservation.status === 'picked_up' ? (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => setSelectedReservationId(reservation.id)}
-                                      className="bg-primary-50 hover:bg-primary-100 text-primary-600"
-                                    >
-                                      <CalendarClock className="mr-1 h-3 w-3" />
-                                      {t('vehicleReservationsStatusDialog.revertToBookedButton')}
-                                    </Button>
+                                  {isRevertibleReservation(reservation) ? (
+                                    <RequiresPermission anyOf={[UserPermission.REVERT_HANDOVER]}>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setSelectedReservationId(reservation.id)}
+                                        className="bg-primary-50 hover:bg-primary-100 text-primary-600"
+                                        data-testid={`button-revert-handover-${reservation.id}`}
+                                      >
+                                        <CalendarClock className="mr-1 h-3 w-3" />
+                                        {t(revertOpenerLabelKey(reservation))}
+                                      </Button>
+                                    </RequiresPermission>
                                   ) : (
                                     <span className="text-xs text-muted-foreground">{t('vehicleReservationsStatusDialog.noActionPlaceholder')}</span>
                                   )}

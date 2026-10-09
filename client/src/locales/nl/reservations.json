@@ -572,12 +572,7 @@
     "unknownCustomer": "Onbekend",
     "openEnded": "Open einde",
     "noDatesSpecified": "Geen data opgegeven",
-    "revertToBookedButton": "Terugzetten naar geboekt",
-    "noActionPlaceholder": "—",
-    "toasts": {
-      "statusUpdatedTitle": "Status bijgewerkt",
-      "statusUpdatedDescription": "De reserveringsstatus is succesvol bijgewerkt."
-    }
+    "noActionPlaceholder": "—"
   },
   "cancelDialog": {
     "title": "Reservering annuleren",
@@ -620,34 +615,81 @@
     "cancelButton": "Annuleren",
     "unknownCustomer": "Onbekende klant"
   },
-  "statusChangeDialog": {
-    "title": "Reservering terugzetten naar geboekt",
-    "description": "Dit maakt het ophalen ongedaan en zet de reservering terug naar de status Geboekt.",
-    "vehicleLabel": "Voertuig",
-    "licenseLabel": "Kenteken:",
-    "vehicleColonLabel": "Voertuig:",
-    "atPickupLabel": "Bij ophalen:",
-    "customerLabel": "Klant",
-    "nameLabel": "Naam:",
-    "companyLabel": "Bedrijf:",
-    "phoneLabel": "Telefoon:",
-    "emailLabel": "E-mail:",
-    "currentStatusLabel": "Huidige status:",
-    "notPickedUpTitle": "Deze actie is alleen beschikbaar voor opgehaalde reserveringen.",
-    "notPickedUpHint": "Je kunt alleen een reservering terugzetten die zich momenteel in de status Opgehaald bevindt.",
-    "confirmTitle": "Weet je zeker dat je deze reservering wilt terugzetten naar Geboekt?",
-    "confirmHint": "Het contractnummer, de kilometerstand bij ophalen en het brandstofniveau bij ophalen worden gewist. De daadwerkelijke ophaaldatum wordt ook verwijderd. Dit kan niet ongedaan worden gemaakt.",
-    "finalConfirmTitle": "Bevestig nog een laatste keer.",
-    "finalConfirmHint": "Klikken op <1>Ja, terugzetten</1> zal het ophalen onmiddellijk ongedaan maken.",
+  "revertHandover": {
+    "title": "Overdracht terugdraaien",
+    "titleCancelled": "Annulering terugdraaien",
+    "description": "Controleer wat er met reservering #{{id}} gebeurt voordat je bevestigt.",
+    "loading": "Voorvertoning laden...",
+    "statusLine": "Status: {{from}} wordt {{to}}.",
+    "clearsTitle": "Deze gegevens worden gewist:",
+    "fields": {
+      "actualPickupDate": "Daadwerkelijke ophaaldatum",
+      "pickupMileage": "Kilometerstand bij ophalen",
+      "fuelLevelPickup": "Brandstofniveau bij ophalen",
+      "contractNumber": "Contractnummer",
+      "actualReturnDate": "Daadwerkelijke inleverdatum",
+      "returnMileage": "Kilometerstand bij inleveren",
+      "fuelLevelReturn": "Brandstofniveau bij inleveren",
+      "fuelCost": "Brandstofkosten",
+      "fuelCardNumber": "Tankpasnummer",
+      "fuelNotes": "Brandstofnotities",
+      "completionDate": "Afrondingsdatum",
+      "spareVehicleStatus": "Status van het vervangend voertuig"
+    },
+    "vehicleTitle": "Voertuig",
+    "mileageChange": "Kilometerstand: van {{from}} km naar {{to}} km.",
+    "mileageSame": "Kilometerstand: blijft {{km}} km.",
+    "fuelChange": "Brandstofniveau: van {{from}} naar {{to}}.",
+    "fuelSame": "Brandstofniveau: blijft {{fuel}}.",
+    "unknown": "onbekend",
+    "vehicleUnchanged": "De kilometerstand en het brandstofniveau van het voertuig blijven zoals ze zijn.",
+    "vehicleReason": {
+      "no_reading_stored": "De stand van vóór deze overdracht is niet bewaard, dus de kilometerstand en het brandstofniveau van het voertuig blijven zoals ze zijn.",
+      "later_handover": "Er is na deze overdracht al een andere overdracht met dit voertuig geweest, dus de kilometerstand en het brandstofniveau van het voertuig blijven zoals ze zijn."
+    },
+    "documentsTitle": "Deze documenten worden als vervallen gemarkeerd (ze worden niet verwijderd):",
+    "documentTypes": {
+      "contract": "Niet-ondertekend contract",
+      "damageCheck": "Schadecheck"
+    },
+    "warningsTitle": "Let op",
+    "warnings": {
+      "cascade_not_reopened": "Vervangende voertuigen, transporten en chauffeurtoewijzingen die bij de annulering zijn gesloten, worden niet opnieuw geopend.",
+      "unknown": "Er is een waarschuwing ({{code}}) die dit scherm niet kent."
+    },
+    "blocked": {
+      "VEHICLE_NOT_FREE": "Het voertuig is voor deze periode niet meer vrij, dus de annulering kan niet worden teruggedraaid.",
+      "VEHICLE_NOT_FOR_RENTAL": "Het voertuig staat intussen op 'Niet voor verhuur', dus de annulering kan niet worden teruggedraaid.",
+      "VEHICLE_NOT_FOUND": "Het voertuig van deze reservering is niet meer te vinden (mogelijk staat het in de prullenbak), dus de annulering kan niet worden teruggedraaid.",
+      "INVALID_STATUS_TRANSITION": "Deze reservering heeft geen overdracht of annulering om terug te draaien.",
+      "unknown": "Terugdraaien is nu niet mogelijk."
+    },
+    "confirmMileage": "Ik bevestig dat de kilometerstand van het voertuig omlaag gaat, van {{from}} km naar {{to}} km.",
     "cancelButton": "Annuleren",
-    "revertToBookedButton": "Terugzetten naar geboekt",
-    "revertingButton": "Terugzetten...",
-    "confirmRevertButton": "Ja, terugzetten",
+    "confirmButton": "Overdracht terugdraaien",
+    "confirmButtonCancelled": "Annulering terugdraaien",
+    "confirming": "Bezig met terugdraaien...",
+    "opener": {
+      "handover": "Overdracht terugdraaien",
+      "cancelled": "Annulering terugdraaien"
+    },
+    "errors": {
+      "previewNotFound": "Deze reservering bestaat niet meer.",
+      "previewFailed": "De voorvertoning kon niet worden geladen. Sluit dit scherm en probeer het opnieuw.",
+      "MILEAGE_DECREASE_CONFIRMATION_REQUIRED": "De kilometerstand van het voertuig gaat omlaag, van {{from}} km naar {{to}} km. Vink de bevestiging aan om door te gaan.",
+      "REVERT_PLAN_CHANGED": "De reservering of het voertuig is intussen gewijzigd. Hieronder staat het bijgewerkte overzicht; controleer het en bevestig opnieuw.",
+      "VEHICLE_NOT_FREE": "Het voertuig is voor deze periode niet meer vrij.",
+      "VEHICLE_NOT_FOR_RENTAL": "Het voertuig staat op 'Niet voor verhuur'.",
+      "VEHICLE_NOT_FOUND": "Het voertuig van deze reservering is niet meer te vinden (mogelijk staat het in de prullenbak).",
+      "INVALID_STATUS_TRANSITION": "Er is niets om terug te draaien voor deze reservering.",
+      "forbidden": "Je hebt geen recht om een overdracht terug te draaien.",
+      "notFound": "Deze reservering bestaat niet meer.",
+      "generic": "Terugdraaien is mislukt. Probeer het opnieuw."
+    },
     "toasts": {
-      "successTitle": "Reservering teruggezet",
-      "successDescription": "De reservering is terug naar Geboekt. Ophaalgegevens zijn gewist.",
-      "failedTitle": "Terugzetten mislukt",
-      "failedFallback": "Kon de reserveringsstatus niet terugzetten."
+      "successTitle": "Overdracht teruggedraaid",
+      "successTitleCancelled": "Annulering teruggedraaid",
+      "successDescription": "Reservering #{{id}} heeft weer de status {{status}}."
     }
   },
   "spareVehicleDialog": {
@@ -810,9 +852,6 @@
       "reservationDeletedTitle": "Reservering verwijderd",
       "reservationDeletedDescription": "De reservering is succesvol verwijderd"
     }
-  },
-  "quickStatusButton": {
-    "revertToBooked": "Terugzetten naar geboekt"
   },
   "listDialog": {
     "title": "Reserveringen",
@@ -1056,8 +1095,7 @@
       "endColonLabel": "Einde:",
       "durationColonLabel": "Duur:",
       "priceColonLabel": "Prijs:",
-      "statusColonLabel": "Status:",
-      "revertButton": "Terugzetten"
+      "statusColonLabel": "Status:"
     },
     "reservationHashCustomer": "Reservering #{{id}} - {{name}}",
     "viewDetailedInfo": "Bekijk gedetailleerde reserveringsinformatie",
@@ -1121,13 +1159,9 @@
       "fuelAtPickupColonLabel": "Brandstof bij ophalen:",
       "fuelAtReturnColonLabel": "Brandstof bij inleveren:",
       "totalColonLabel": "Totaal:",
-      "revertButton": "Terugzetten",
       "deleteTitle": "Voltooide verhuur verwijderen?",
       "deleteDescription": "Dit verwijdert dit verhuurrecord permanent. Deze actie kan niet ongedaan worden gemaakt.",
       "toasts": {
-        "revertedTitle": "Verhuur teruggezet",
-        "revertedDescription": "Verhuur is gemarkeerd als opgehaald (retourgegevens gewist)",
-        "revertFailedDescription": "Verhuur terugzetten mislukt",
         "deletedTitle": "Verhuur verwijderd",
         "deletedDescription": "Het verhuurrecord is permanent verwijderd",
         "deleteFailedDescription": "Verhuur verwijderen mislukt"

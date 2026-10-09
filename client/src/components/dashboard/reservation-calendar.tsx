@@ -676,7 +676,7 @@ export function ReservationCalendar() {
                                         variant="outline"
                                         withText={true}
                                         className="h-8 text-xs"
-                                        onStatusChanged={() => {
+                                        onReverted={() => {
                                           // Force refresh of reservations data
                                           invalidateByPrefix("/api/reservations/range");
                                         }}

@@ -4,12 +4,17 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { StatusChangeDialog } from "@/components/reservations/status-change-dialog";
+import {
+  RevertHandoverDialog,
+  isRevertibleReservation,
+  revertOpenerLabelKey,
+} from "@/components/reservations/revert-handover-dialog";
+import { RequiresPermission } from "@/components/ui/requires-permission";
 import { ReservationViewDialog } from "@/components/reservations/reservation-view-dialog";
 import { ReservationEditDialog } from "@/components/reservations/reservation-edit-dialog";
 import { SpareVehicleAssignmentDialog } from "@/components/reservations/spare-vehicle-assignment-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Eye, Edit, Trash2, Car, History, User, Calendar, FileText, Fuel, MapPin, Phone, Building, Clock, AlertTriangle, CarFront } from "lucide-react";
+import { Eye, Edit, Trash2, Car, History, User, Calendar, FileText, Fuel, MapPin, Phone, Building, Clock, AlertTriangle, CarFront, RotateCcw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -27,7 +32,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient, invalidateRelatedQueries , invalidateByPrefix } from "@/lib/queryClient";
-import { Reservation, Vehicle } from "@shared/schema";
+import { Reservation, Vehicle, UserPermission } from "@shared/schema";
 import { formatLicensePlate, formatCurrency, plateMatches } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { parseISO, differenceInDays } from "date-fns";
@@ -49,8 +54,8 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
   const [overdueSearch, setOverdueSearch] = useState("");
   const [currentSort, setCurrentSort] = useState<{ column: string; direction: 'asc' | 'desc' }>({ column: 'pickup', direction: 'asc' });
   const [historySort, setHistorySort] = useState<{ column: string; direction: 'asc' | 'desc' }>({ column: 'return', direction: 'desc' });
-  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
-  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+  // The one reversal dialog (preview, then confirm), for the reservation with this id.
+  const [revertReservationId, setRevertReservationId] = useState<number | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedViewReservationId, setSelectedViewReservationId] = useState<number | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -369,6 +374,20 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
                 {t('listDialog.assignVehicleButton')}
               </Button>
             )}
+            {isRevertibleReservation(reservation) && (
+              <RequiresPermission anyOf={[UserPermission.REVERT_HANDOVER]}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  title={t(revertOpenerLabelKey(reservation))}
+                  onClick={(e) => { e.stopPropagation(); setRevertReservationId(reservation.id); }}
+                  data-testid={`button-revert-handover-${reservation.id}`}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </Button>
+              </RequiresPermission>
+            )}
             <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => handleView(e, reservation)} data-testid={`view-btn-${reservation.id}`}>
               <Eye className="h-3.5 w-3.5" />
             </Button>
@@ -607,23 +626,19 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
         </DialogContent>
       </Dialog>
 
-      {/* Status Change Dialog */}
-      <StatusChangeDialog
-        open={statusDialogOpen}
-        onOpenChange={setStatusDialogOpen}
-        reservationId={selectedReservation?.id || 0}
-        initialStatus={selectedReservation?.status || "booked"}
-        initialFuelData={selectedReservation ? {
-          fuelLevelPickup: selectedReservation.fuelLevelPickup,
-          fuelLevelReturn: selectedReservation.fuelLevelReturn,
-          fuelCost: selectedReservation.fuelCost ? Number(selectedReservation.fuelCost) : null,
-          fuelCardNumber: selectedReservation.fuelCardNumber,
-          fuelNotes: selectedReservation.fuelNotes,
-        } : undefined}
-        onStatusChanged={() => {
-          invalidateByPrefix('/api/reservations');
-        }}
-      />
+      {/* Reversal dialog: preview of what happens, then confirm (sub-project C, Task 4) */}
+      {revertReservationId !== null && (
+        <RevertHandoverDialog
+          open
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setRevertReservationId(null);
+          }}
+          reservationId={revertReservationId}
+          onReverted={() => {
+            invalidateByPrefix('/api/reservations');
+          }}
+        />
+      )}
 
       {/* Reservation View Dialog */}
       <ReservationViewDialog
