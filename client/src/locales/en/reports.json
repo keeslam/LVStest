@@ -202,7 +202,11 @@
       "expenseCategoryLabel": "Expense Category",
       "allCategoriesPlaceholder": "All Categories",
       "basisCaption_one": "All figures on this page cover {{period}} and the whole fleet ({{count}} vehicle).",
-      "basisCaption_other": "All figures on this page cover {{period}} and the whole fleet ({{count}} vehicles)."
+      "basisCaption_other": "All figures on this page cover {{period}} and the whole fleet ({{count}} vehicles).",
+      "vehicleSearchPlaceholder": "Search by plate, brand or model",
+      "noVehicleFound": "No vehicle found",
+      "loading": "Updating the figures...",
+      "financialIgnoresCategory": "The category filter ({{category}}) does not apply to the Financial tab: revenue and margin are calculated over all costs."
     },
     "categories": {
       "maintenance": "Maintenance",

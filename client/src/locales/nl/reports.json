@@ -202,7 +202,11 @@
       "expenseCategoryLabel": "Kostencategorie",
       "allCategoriesPlaceholder": "Alle categorieën",
       "basisCaption_one": "Alle cijfers op deze pagina gelden voor {{period}} en de hele vloot ({{count}} voertuig).",
-      "basisCaption_other": "Alle cijfers op deze pagina gelden voor {{period}} en de hele vloot ({{count}} voertuigen)."
+      "basisCaption_other": "Alle cijfers op deze pagina gelden voor {{period}} en de hele vloot ({{count}} voertuigen).",
+      "vehicleSearchPlaceholder": "Zoek op kenteken, merk of model",
+      "noVehicleFound": "Geen voertuig gevonden",
+      "loading": "Cijfers worden bijgewerkt...",
+      "financialIgnoresCategory": "Het categoriefilter ({{category}}) geldt niet voor het tabblad Financieel: omzet en marge worden over alle kosten berekend."
     },
     "categories": {
       "maintenance": "Onderhoud",

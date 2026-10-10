@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useTransition } from "react";
 // FIX-R (BUG-102): every database value that goes into the print HTML is
 // escaped at the point it is interpolated.
 import { escapeHtml as esc } from "@/lib/html-escape";
@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
@@ -23,8 +22,9 @@ import { Vehicle, Expense, Reservation, Customer, VehicleTransport, UserPermissi
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { NoDataAccess } from "@/components/ui/no-data-access";
 import { formatDate, formatDateTime, formatCurrency, formatLicensePlate, sumMoney, plateMatches, formatExpenseCategory } from "@/lib/format-utils";
-import { EXPENSE_CATEGORIES, isMaintenanceExpenseCategory } from "@shared/expense-categories";
-import { monthChange, type MonthChange } from "@/pages/reports/report-helpers";
+import { isMaintenanceExpenseCategory } from "@shared/expense-categories";
+import { monthChange, categoryKey, presentCategories, type MonthChange } from "@/pages/reports/report-helpers";
+import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox";
 import { Price } from "@/components/ui/price";
 import { isTrueValue } from "@/lib/utils";
 import { addDays, subMonths, subDays, startOfMonth, endOfMonth, isWithinInterval, differenceInDays, parseISO, startOfDay } from "date-fns";
@@ -33,7 +33,7 @@ import { addDays, subMonths, subDays, startOfMonth, endOfMonth, isWithinInterval
 import { formatNl as format } from "@/lib/format-date-nl";
 import { 
   Calendar, Download, FileText, TrendingUp, Car, Settings, User, Calculator,
-  DollarSign, AlertTriangle, Printer, Search, ExternalLink, Database, LineChart, X
+  DollarSign, AlertTriangle, Printer, Search, ExternalLink, Database, LineChart, X, Loader2
 } from "lucide-react";
 import { Link } from "wouter";
 import { DateRange } from "react-day-picker";
@@ -111,14 +111,24 @@ function FullReportsPage() {
   const [warrantyFilterStatus, setWarrantyFilterStatus] = useState<string>("all");
   const [warrantyCurrentPage, setWarrantyCurrentPage] = useState(1);
   
+  // A-14-10: changing the period or a filter re-computes every tab, which takes a
+  // moment on a real fleet. The change runs as a transition so the page can say
+  // that the numbers are being updated instead of showing the old ones as current.
+  const [isFilterPending, startFilterTransition] = useTransition();
+  const changeDateRange: React.Dispatch<React.SetStateAction<DateRange>> = (value) => startFilterTransition(() => setDateRange(value));
+  const changeVehicle = (value: string) => startFilterTransition(() => setSelectedVehicle(value));
+  const changeCategory = (value: string) => startFilterTransition(() => setSelectedCategory(value));
+
   // Function to reset all filters to default values
   const resetFilters = () => {
-    setDateRange({
-      from: subDays(new Date(), 30),
-      to: new Date()
+    startFilterTransition(() => {
+      setDateRange({
+        from: subDays(new Date(), 30),
+        to: new Date()
+      });
+      setSelectedVehicle("all");
+      setSelectedCategory("all");
     });
-    setSelectedVehicle("all");
-    setSelectedCategory("all");
   };
   
   // Date range preset options
@@ -128,20 +138,20 @@ function FullReportsPage() {
     switch(preset) {
       case 'all-time':
         // Set a very early start date and far future end date to truly show all data
-        setDateRange({
+        changeDateRange({
           from: new Date('2000-01-01'), // Go way back to cover all historical data
           to: new Date('2050-12-31')    // Go way forward to include all future data
         });
         break;
       case 'this-month':
-        setDateRange({
+        changeDateRange({
           from: startOfMonth(now),
           to: endOfMonth(now)
         });
         break;
       case 'next-month':
         const nextMonth = addDays(endOfMonth(now), 1);
-        setDateRange({
+        changeDateRange({
           from: nextMonth,
           to: endOfMonth(nextMonth)
         });
@@ -164,28 +174,29 @@ function FullReportsPage() {
   );
 
   // Fetch all vehicles for filtering
-  const { data: vehicles = [] } = useQuery<Vehicle[]>({
+  const { data: vehicles = [], isFetching: vehiclesFetching } = useQuery<Vehicle[]>({
     queryKey: ["/api/vehicles"],
     enabled: canViewVehicles,
   });
 
   // Fetch expenses with date filtering
-  const { data: expenses = [] } = useQuery<Expense[]>({
+  const { data: expenses = [], isFetching: expensesFetching } = useQuery<Expense[]>({
     queryKey: ["/api/expenses"],
     enabled: canViewExpenses,
   });
 
   // Fetch reservations with date filtering
-  const { data: reservations = [] } = useQuery<Reservation[]>({
+  const { data: reservations = [], isFetching: reservationsFetching } = useQuery<Reservation[]>({
     queryKey: ["/api/reservations"],
     enabled: canViewReservations,
   });
 
   // Fetch customers
-  const { data: customers = [] } = useQuery<Customer[]>({
+  const { data: customers = [], isFetching: customersFetching } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
     enabled: canViewCustomers,
   });
+  const dataBusy = vehiclesFetching || expensesFetching || reservationsFetching || customersFetching || isFilterPending;
 
   // Fetch vehicle transports (swaps, tows, repossessions, deliveries)
   const { data: transports = [] } = useQuery<VehicleTransport[]>({
@@ -222,7 +233,7 @@ function FullReportsPage() {
       end: dateRange.to
     });
     
-    const matchesCategory = selectedCategory === "all" || expense.category === selectedCategory;
+    const matchesCategory = selectedCategory === "all" || categoryKey(expense.category) === selectedCategory;
     const matchesVehicle = selectedVehicle === "all" || expense.vehicleId.toString() === selectedVehicle;
     
     return withinDateRange && matchesCategory && matchesVehicle;
@@ -250,10 +261,29 @@ function FullReportsPage() {
     return overlapsDateRange && matchesVehicle;
   });
   
+  // The category filter offers what the data holds (A-14-4); a chosen category stays
+  // listed even when a refresh no longer returns it, so the Select never shows a blank.
+  const categoryOptions = presentCategories(expenses);
+  if (selectedCategory !== "all" && !categoryOptions.includes(selectedCategory)) categoryOptions.push(selectedCategory);
+
+  // The vehicle filter is a searchable picker: the plate is the label and the search
+  // also matches the plate typed without dashes (A-14-11).
+  const vehicleFilterOptions: ComboboxOption[] = [
+    { value: "all", label: t('reportsPage.filters.allVehiclesPlaceholder') },
+    ...[...vehicles]
+      .sort((a, b) => a.licensePlate.localeCompare(b.licensePlate))
+      .map((v) => ({
+        value: String(v.id),
+        label: formatLicensePlate(v.licensePlate),
+        description: `${v.brand} ${v.model}`,
+        tags: [v.licensePlate],
+      })),
+  ];
+
   // Calculate expense totals by category
   const expensesByCategory: Record<string, number> = {};
   filteredExpenses.forEach(expense => {
-    const category = expense.category;
+    const category = categoryKey(expense.category);
     if (!expensesByCategory[category]) {
       expensesByCategory[category] = 0;
     }
@@ -540,7 +570,7 @@ function FullReportsPage() {
     const expensesByCategory: Record<string, number> = {};
     const expensesByCategoryGroups: Record<string, Expense[]> = {};
     relatedExpenses.forEach(expense => {
-      const category = expense.category;
+      const category = categoryKey(expense.category);
       if (!expensesByCategoryGroups[category]) {
         expensesByCategoryGroups[category] = [];
       }
@@ -594,18 +624,23 @@ function FullReportsPage() {
     const currentMonth = startOfMonth(now);
     const previousMonth = startOfMonth(subMonths(now, 1));
     const twoMonthsAgo = startOfMonth(subMonths(now, 2));
+    // A-14-4: the trend honours the category and vehicle filters. It does not follow the
+    // period filter on purpose: it compares three calendar months.
+    const trendExpenses = expenses.filter(expense =>
+      (selectedCategory === "all" || categoryKey(expense.category) === selectedCategory) &&
+      (selectedVehicle === "all" || String(expense.vehicleId) === selectedVehicle));
     
-    const currentMonthExpenses = sumMoney(expenses.filter(expense => {
+    const currentMonthExpenses = sumMoney(trendExpenses.filter(expense => {
       const expenseDate = new Date(expense.date);
       return expenseDate >= currentMonth && expenseDate <= endOfMonth(currentMonth);
     }), expense => expense.amount);
 
-    const previousMonthExpenses = sumMoney(expenses.filter(expense => {
+    const previousMonthExpenses = sumMoney(trendExpenses.filter(expense => {
       const expenseDate = new Date(expense.date);
       return expenseDate >= previousMonth && expenseDate < currentMonth;
     }), expense => expense.amount);
 
-    const twoMonthsAgoExpenses = sumMoney(expenses.filter(expense => {
+    const twoMonthsAgoExpenses = sumMoney(trendExpenses.filter(expense => {
       const expenseDate = new Date(expense.date);
       return expenseDate >= twoMonthsAgo && expenseDate < previousMonth;
     }), expense => expense.amount);
@@ -997,7 +1032,7 @@ function FullReportsPage() {
                       .map(([category, amount]) => `
                         <tr>
                           <td>${esc(formatExpenseCategory(category))}</td>
-                          <td>${filteredExpenses.filter(e => e.category === category).length}</td>
+                          <td>${filteredExpenses.filter(e => categoryKey(e.category) === category).length}</td>
                           <td>${formatCurrency(Number(amount))}</td>
                         </tr>
                       `).join('')
@@ -1447,7 +1482,7 @@ function FullReportsPage() {
               <label className="text-sm font-medium">{t('reportsPage.filters.dateRangeLabel')}</label>
               <DatePickerWithRange
                 date={dateRange}
-                setDate={setDateRange}
+                setDate={changeDateRange}
               />
               <div className="flex flex-wrap gap-2 mt-2">
                 <Button
@@ -1479,11 +1514,14 @@ function FullReportsPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('reportsPage.common.vehicle')}</label>
-              <VehicleSelector
-                vehicles={vehicles || []}
+              <SearchableCombobox
+                options={vehicleFilterOptions}
                 value={selectedVehicle}
-                onChange={setSelectedVehicle}
+                onChange={changeVehicle}
                 placeholder={t('reportsPage.filters.allVehiclesPlaceholder')}
+                searchPlaceholder={t('reportsPage.filters.vehicleSearchPlaceholder')}
+                emptyMessage={t('reportsPage.filters.noVehicleFound')}
+                data-testid="select-report-vehicle"
               />
             </div>
             
@@ -1491,20 +1529,17 @@ function FullReportsPage() {
               <label className="text-sm font-medium">{t('reportsPage.filters.expenseCategoryLabel')}</label>
               <Select
                 value={selectedCategory}
-                onValueChange={setSelectedCategory}
+                onValueChange={changeCategory}
               >
-                <SelectTrigger>
+                <SelectTrigger data-testid="select-report-category">
                   <SelectValue placeholder={t('reportsPage.filters.allCategoriesPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('reportsPage.filters.allCategoriesPlaceholder')}</SelectItem>
-                  {/* The canonical list (A-9-1, A-9-2): fuel, toll and parking are the big ones in the real data. */}
-                  {EXPENSE_CATEGORIES.map((category) => (
+                  {/* A-14-4: only what the data holds, in the owner's order (A-9-1, A-9-2). */}
+                  {categoryOptions.map((category) => (
                     <SelectItem key={category} value={category}>{formatExpenseCategory(category)}</SelectItem>
                   ))}
-                  {/* Two labels older data may still carry. */}
-                  <SelectItem value="front window">{t('reportsPage.categories.frontWindow')}</SelectItem>
-                  <SelectItem value="repair">{t('reportsPage.categories.repair')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1513,6 +1548,12 @@ function FullReportsPage() {
       </Card>
       
       {/* A-14-8: one period and one fleet base, said once for every tab. */}
+      {dataBusy && (
+        <div role="status" aria-live="polite" className="flex items-center gap-2 text-sm text-muted-foreground -mt-4" data-testid="reports-loading">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          {t('reportsPage.filters.loading')}
+        </div>
+      )}
       <p className="text-sm text-muted-foreground -mt-4" data-testid="reports-basis-caption">
         {t('reportsPage.filters.basisCaption', {
           count: fleetVehicleCount,
@@ -1564,6 +1605,11 @@ function FullReportsPage() {
 
         {/* Financial Tab: revenue vs expenses per vehicle, km per month */}
         <TabsContent value="financial" className="space-y-6">
+          {selectedCategory !== "all" && (
+            <p className="text-sm text-muted-foreground" data-testid="financial-category-note">
+              {t('reportsPage.filters.financialIgnoresCategory', { category: formatExpenseCategory(selectedCategory) })}
+            </p>
+          )}
           <FinancialTab dateRange={dateRange} selectedVehicle={selectedVehicle} />
         </TabsContent>
         
@@ -1674,6 +1720,7 @@ function FullReportsPage() {
               <CardTitle>{t('reportsPage.operations.expenseTrendsTitle')}</CardTitle>
               <CardDescription>
                 {t('reportsPage.operations.expenseTrendsDesc')}
+                {selectedCategory !== "all" && ` \u00b7 ${formatExpenseCategory(selectedCategory)}`}
               </CardDescription>
             </CardHeader>
             <CardContent data-testid="reports-expense-trend">
@@ -1768,7 +1815,7 @@ function FullReportsPage() {
                         </div>
                         <div className="flex items-center space-x-4">
                           <span className="text-muted-foreground text-sm">
-                            {t('reportsPage.expensesTab.itemsCount', { count: filteredExpenses.filter(e => e.category === category).length })}
+                            {t('reportsPage.expensesTab.itemsCount', { count: filteredExpenses.filter(e => categoryKey(e.category) === category).length })}
                           </span>
                           <span className="font-medium">{<Price value={Number(amount)} />}</span>
                         </div>

@@ -13,3 +13,27 @@ export function monthChange(previous: number, current: number): MonthChange {
   if (!(previous > 0)) return current > 0 ? { kind: "new" } : { kind: "none" };
   return { kind: "pct", value: ((current - previous) / previous) * 100 };
 }
+
+import { EXPENSE_CATEGORIES } from "@shared/expense-categories";
+
+/**
+ * The key a stored category is grouped and filtered on: lower-cased and trimmed,
+ * the client twin of `lower(btrim(category))` on the server (A-14-4). A dump
+ * restored before the startup migration may still hold "Fuel" next to "fuel";
+ * both are one category here.
+ */
+export function categoryKey(raw: string | null | undefined): string {
+  return (raw ?? "").trim().toLowerCase() || "other";
+}
+
+/**
+ * The categories that occur in the data, in the order of the owner's list and
+ * then any unknown ones alphabetically (A-14-4: the filter used to offer a fixed
+ * list, so Tol, Brandstof and Parkeren could not be picked while Voorruit could).
+ */
+export function presentCategories(rows: ReadonlyArray<{ category: string | null | undefined }>): string[] {
+  const present = new Set(rows.map((r) => categoryKey(r.category)));
+  const known = (EXPENSE_CATEGORIES as readonly string[]).filter((c) => present.has(c));
+  const unknown = [...present].filter((c) => !(EXPENSE_CATEGORIES as readonly string[]).includes(c)).sort();
+  return [...known, ...unknown];
+}
