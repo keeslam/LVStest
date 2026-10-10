@@ -97,7 +97,7 @@ describe("invoice scanner: mime type, VAT and plates", () => {
     expect(request.config.responseSchema.properties.documentType.enum)
       .toEqual(["invoice", "credit_note", "quote", "reminder", "other"]);
     expect(request.config.responseSchema.properties.lineItems.items.properties.category.enum)
-      .toContain("Maintenance");
+      .toContain("maintenance");
     expect(String(request.contents[1])).toContain("documentType");
   });
 
