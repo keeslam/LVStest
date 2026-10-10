@@ -280,7 +280,8 @@ Zie hoofdstuk 11 en hoofdstuk 12.
 | `N` | **Nieuwe reservering** |
 | `S` | **Scannen** |
 | `?` | Het overzicht **Sneltoetsen** |
-| `Esc` | Het openstaande venster sluiten |
+| `Esc` | Het openstaande venster sluiten (met niet-opgeslagen wijzigingen eerst **Wijzigingen verwerpen?**) |
+| Pijltjes omhoog/omlaag, `Enter`, `Esc` | In een keuzelijst met zoekveld (klant, voertuig): kiezen, bevestigen, sluiten |
 | `Enter` | Het formulier versturen |
 
 `N`, `S` en `?` werken niet terwijl je in een invoerveld of in het scanveld typt. `Ctrl+K` werkt

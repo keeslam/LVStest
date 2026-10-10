@@ -184,6 +184,14 @@ Heb je het venster geopend vanaf het **Dashboard** (**Snelle acties** → **Nieu
 sluit **Annuleren** alleen dat venster en blijf je op het Dashboard. Vroeger sprong de app daarbij
 naar de reserveringenpagina.
 
+**Sluiten terwijl je al iets hebt ingevuld.** Druk je op Escape, klik je op het kruisje, klik je naast het
+venster of klik je op **Annuleren** terwijl je al iets hebt getypt of gekozen, dan vraagt de app eerst
+**Wijzigingen verwerpen?** — *Je hebt wijzigingen gemaakt die nog niet zijn opgeslagen. Als je sluit, gaan
+ze verloren.* Met **Verder bewerken** ga je terug naar het formulier, met **Verwerpen** sluit je het. Heb je
+nog niets ingevuld, dan sluit het venster gewoon. Vroeger sloten Escape, het kruisje en **Annuleren**
+zonder vraag en alleen een klik naast het venster gaf een melding. Een klein venster binnen het
+formulier, zoals de voertuigkeuze, sluit op zijn eigen Escape en laat het formulier met rust.
+
 **Twee dingen die vanzelf gebeuren:**
 
 - Staat de auto op **BV**, dan zet de app de registratie zelf om naar **Opnaam** en meldt dat
@@ -297,7 +305,9 @@ en **Brandstofkosten (€)**.
 **Reserveringsstatus** biedt hier alle vijf de statussen: **Geboekt**, **Opgehaald**,
 **Ingeleverd**, **Voltooid** en **Geannuleerd**. In het aanmaakvenster zie je er maar twee.
 
-Klik onderaan op **Reservering bijwerken**. Je krijgt **Reservering succesvol bijgewerkt**.
+Klik onderaan op **Reservering bijwerken**. Je krijgt **Reservering succesvol bijgewerkt**. Heb je iets
+gewijzigd en sluit je het venster zonder te bewaren (Escape, het kruisje, naast het venster klikken of
+**Sluiten**), dan vraagt de app **Wijzigingen verwerpen?**, net als bij het aanmaken (5.3).
 
 **Een oude verhuring bewerken vraagt een beheerderswachtwoord.** Is de auto meer dan drie weken
 geleden opgehaald, dan komt het venster **Beheerdersgoedkeuring vereist**: *Deze verhuur is meer

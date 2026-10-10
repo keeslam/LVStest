@@ -206,6 +206,7 @@ na afloop eerlijk wat er gebeurd is. Er zijn drie uitkomsten:
 | **Meldingen verstuurd** — *3 e-mails verstuurd* | Alles is verzonden |
 | **Gedeeltelijk verstuurd** — *3 e-mails verstuurd, 2 e-mails mislukt. De redenen staan in het E-maillogboek.* | Een deel is niet aangekomen; kijk in het logboek (9.4) |
 | **Er is niets verstuurd** — *2 e-mails mislukt* met de reden erachter, in rood | Er is niets uitgegaan |
+| *Er was niemand om naar te mailen.* | Er was geen ontvanger met een bruikbaar adres; er is niets gemaild en ook niets mislukt |
 
 Vroeger stond er altijd **Meldingen succesvol verstuurd**, ook als er geen enkele mail uit was
 gegaan. Dat is verholpen. Bij **Er is niets verstuurd** blijven de ontvangers, het onderwerp en de
@@ -291,6 +292,10 @@ klantenportaal (uitnodiging, wachtwoord, onderhoud, wijziging) zie je daar nooit
 **Sjabloonbouwer** staan ze wel, met een Nederlandse naam zoals *Portaal: uitnodiging*, het label
 **PORTAAL** en een eigen categorie in het filter. Je kunt zo'n portaalsjabloon bewerken en opslaan; een nieuw
 portaalsjabloon maak je er niet.
+
+**Vaste sjablonen hernoemen kan niet.** De systeemsjablonen (zoals de portaalsjablonen) hebben in de
+**Sjabloonbouwer** een naamveld dat grijs staat; je kunt hun tekst wel aanpassen, maar de naam
+blijft zoals hij is.
 
 **Bewerken en dupliceren.** Klik je op **Bewerken** of op dupliceren bij een sjabloon, dan scrolt de
 pagina naar de sjabloonbouwer en staat de cursor in de naam. Een gedupliceerd sjabloon heet *<naam>

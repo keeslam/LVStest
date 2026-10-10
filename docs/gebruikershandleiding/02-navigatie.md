@@ -423,12 +423,18 @@ Er is één kleine, vaste set sneltoetsen. Druk op **?** voor het overzicht **Sn
 | `N` | **Nieuwe reservering** — het boekingsvenster opent |
 | `S` | **Scannen** — het scanvenster opent |
 | `?` | Dit overzicht |
-| `Esc` | Het openstaande venster sluiten |
+| `Esc` | Het openstaande venster sluiten (staat er een formulier met niet-opgeslagen wijzigingen open, dan vraagt de app eerst **Wijzigingen verwerpen?**) |
 | `Enter` | Het formulier versturen |
 
 De losse letters `N`, `S` en `?` werken **nooit** terwijl je in een invoerveld of in het
 scanveld typt. Dat is met opzet: een barcodescanner typt letters als een toetsenbord, en anders
 zou een scan per ongeluk een venster openen. `Ctrl+K` werkt wél overal.
+
+**Een keuzelijst met zoekveld bedien je ook met het toetsenbord.** Dit geldt voor de klantkeuze en de
+voertuigkeuze in het reserveringsformulier en in **Onderhoud plannen**, het voertuigfilter bij **Rapporten**
+en bij **Kosten**. Typ om te zoeken, ga met de pijltjestoetsen omhoog en omlaag door de lijst, kies met
+Enter en sluit de lijst met Escape. Elke optie heeft een naam, zodat een schermlezer hem voorleest.
+Past er niets bij wat je typt, dan staat er een melding in plaats van een lege lijst.
 
 **Dit zijn de enige sneltoetsen in de werkschermen.** In de sjablooneditors bestaan daarnaast de
 gebruikelijke knip-, plak- en pijltjestoetsen, maar die heb je aan de balie niet nodig.

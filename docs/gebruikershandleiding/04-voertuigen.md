@@ -424,7 +424,7 @@ het verschil tussen de hoofdsleutel en de reserve.
 waarschuwt: *"De oude barcode (<code>) werkt daarna niet meer. Reeds afgedrukte labels moeten
 opnieuw worden afgedrukt. Deze actie kan niet ongedaan worden gemaakt."*
 
-**Alle labels tegelijk** druk je af met de knop **Barcodeboek** rechtsboven op het scherm
+**Alle labels tegelijk** (de app meldt dan **Afdrukvenster geopend** — *Het afdrukvenster van je browser is geopend voor het barcodeboek (12 voertuigen). Kies daar de printer.*) druk je af met de knop **Barcodeboek** rechtsboven op het scherm
 **Voertuigbeheer** — *Druk alle voertuigbarcodes af voor in een map of klapper.* Je kiest een
 **Labelsjabloon**, filtert eventueel op status, en klikt op **Alles afdrukken (…)**,
 **Gefilterde afdrukken (…)**, **Selectie afdrukken** of **Stickers afdrukken**.
