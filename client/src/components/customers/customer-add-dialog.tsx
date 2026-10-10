@@ -13,6 +13,8 @@ import {
 import { Plus } from "lucide-react";
 import { UserPermission } from "@shared/schema";
 import { CustomerForm } from "./customer-form";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 
 interface CustomerAddDialogProps {
   children?: React.ReactNode;
@@ -22,6 +24,8 @@ interface CustomerAddDialogProps {
 export function CustomerAddDialog({ children, onSuccess }: CustomerAddDialogProps) {
   const { t } = useTranslation("customers");
   const [open, setOpen] = useState(false);
+  // A-4-8: Escape, a click next to the dialog and Annuleren ask first while something is typed.
+  const guard = useUnsavedChangesGuard({ close: () => setOpen(false), open: () => setOpen(true) });
 
   const handleSuccess = (data: any) => {
     setOpen(false);
@@ -42,7 +46,8 @@ export function CustomerAddDialog({ children, onSuccess }: CustomerAddDialogProp
   );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <>
+    <Dialog open={open} onOpenChange={guard.onOpenChange}>
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
@@ -58,10 +63,13 @@ export function CustomerAddDialog({ children, onSuccess }: CustomerAddDialogProp
             editMode={false}
             onSuccess={handleSuccess}
             redirectToList={false}
-            onCancel={() => setOpen(false)}
+            onCancel={guard.requestClose}
+            onDirtyChange={guard.setDirty}
           />
         </div>
       </DialogContent>
     </Dialog>
+    <ConfirmDialog {...guard.confirmProps} />
+    </>
   );
 }

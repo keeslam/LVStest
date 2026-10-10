@@ -13,6 +13,8 @@ import {
 import { Plus } from "lucide-react";
 import { UserPermission } from "@shared/schema";
 import { VehicleQuickForm } from "./vehicle-quick-form";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 
 interface VehicleAddDialogProps {
   children?: React.ReactNode;
@@ -22,6 +24,8 @@ interface VehicleAddDialogProps {
 export function VehicleAddDialog({ children, onSuccess }: VehicleAddDialogProps) {
   const { t } = useTranslation("vehicles");
   const [open, setOpen] = useState(false);
+  // A-3-10: Escape, a click next to the dialog and Annuleren ask first while something is typed.
+  const guard = useUnsavedChangesGuard({ close: () => setOpen(false), open: () => setOpen(true) });
 
   const handleSuccess = (data: any) => {
     setOpen(false);
@@ -30,9 +34,7 @@ export function VehicleAddDialog({ children, onSuccess }: VehicleAddDialogProps)
     }
   };
 
-  const handleCancel = () => {
-    setOpen(false);
-  };
+  const handleCancel = guard.requestClose;
 
   // Custom trigger or default "Add Vehicle" button — the default is the one
   // gated here (Task 3: dashboard/vehicles pages); a caller-supplied trigger
@@ -47,7 +49,8 @@ export function VehicleAddDialog({ children, onSuccess }: VehicleAddDialogProps)
   );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <>
+    <Dialog open={open} onOpenChange={guard.onOpenChange}>
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
@@ -62,9 +65,12 @@ export function VehicleAddDialog({ children, onSuccess }: VehicleAddDialogProps)
           <VehicleQuickForm 
             onSuccess={handleSuccess}
             onCancel={handleCancel}
+            onDirtyChange={guard.setDirty}
           />
         </div>
       </DialogContent>
     </Dialog>
+    <ConfirmDialog {...guard.confirmProps} />
+    </>
   );
 }

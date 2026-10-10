@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { v } from "@/lib/zod-i18n";
+import { describeApiError } from "@/lib/api-error";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -51,9 +53,9 @@ const handleFieldValue = (value: any): string => {
 
 // Extended schema with validation
 export const formSchema = insertVehicleSchema.extend({
-  licensePlate: z.string().min(1, "License plate is required"),
-  brand: z.string().min(1, "Brand is required"),
-  model: z.string().min(1, "Model is required"),
+  licensePlate: z.string().min(1, v("licensePlateRequired")),
+  brand: z.string().min(1, v("brandRequired")),
+  model: z.string().min(1, v("modelRequired")),
   // Make these fields truly optional
   registeredTo: z.boolean().optional(),
   company: z.boolean().optional(),
@@ -63,20 +65,20 @@ export const formSchema = insertVehicleSchema.extend({
     z.number().optional(),
     z.null()
   ]).optional().transform(val => val === '' ? null : val === null ? null : Number(val))
-    .refine(val => val === null || val === undefined || val >= 0, { message: "Mileage cannot be negative" }),
+    .refine(val => val === null || val === undefined || val >= 0, { message: v("mileageNegative") }),
   returnMileage: z.union([
     z.string().optional(),
     z.number().optional(),
     z.null()
   ]).optional().transform(val => val === '' ? null : val === null ? null : Number(val))
-    .refine(val => val === null || val === undefined || val >= 0, { message: "Mileage cannot be negative" }),
+    .refine(val => val === null || val === undefined || val >= 0, { message: v("mileageNegative") }),
   // Service interval: blank = use the defaults from system settings
   serviceIntervalKm: z.union([z.string(), z.number(), z.null()]).optional()
     .transform(val => val === '' || val === undefined || val === null ? null : Number(val))
-    .refine(val => val === null || (Number.isInteger(val) && val > 0), { message: "Interval must be a positive whole number" }),
+    .refine(val => val === null || (Number.isInteger(val) && val > 0), { message: v("intervalPositiveInteger") }),
   serviceIntervalMonths: z.union([z.string(), z.number(), z.null()]).optional()
     .transform(val => val === '' || val === undefined || val === null ? null : Number(val))
-    .refine(val => val === null || (Number.isInteger(val) && val > 0), { message: "Interval must be a positive whole number" }),
+    .refine(val => val === null || (Number.isInteger(val) && val > 0), { message: v("intervalPositiveInteger") }),
 });
 
 // Vehicle types
@@ -223,6 +225,8 @@ interface VehicleFormProps {
   onSuccess?: (vehicle: any) => void;
   onSubmitOverride?: (data: any) => void; // Optional override for form submission
   customCancelButton?: React.ReactNode;
+  /** Reports whether the form holds unsaved input (see hooks/use-unsaved-changes-guard.ts). */
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 export function VehicleForm({ 
@@ -231,7 +235,8 @@ export function VehicleForm({
   redirectToList = true,
   onSuccess,
   onSubmitOverride,
-  customCancelButton
+  customCancelButton,
+  onDirtyChange,
 }: VehicleFormProps) {
   const { t } = useTranslation("vehicles");
   const [isLookingUp, setIsLookingUp] = useState(false);
@@ -324,6 +329,12 @@ export function VehicleForm({
       createdBy: "",
     },
   });
+
+  // A-3-10 / A-4-8: tell the dialog around us whether something was typed, so closing can ask first.
+  const isDirty = form.formState.isDirty;
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
   
   // Fetch active reservation for this vehicle to suggest current renter name
   const { data: activeReservation } = useQuery<{
@@ -560,7 +571,7 @@ export function VehicleForm({
         title = t('vehicleForm.toasts.serviceUnavailableTitle');
         description = t('vehicleForm.toasts.serviceUnavailableDescription');
       } else {
-        description = error.message || description;
+        description = describeApiError(error, undefined, description);
       }
       
       toast({
@@ -887,8 +898,8 @@ export function VehicleForm({
       toast({
         title: t('vehicleForm.toasts.saveFailedTitle'),
         description: editMode
-          ? t('vehicleForm.toasts.saveFailedDescriptionUpdate', { message: error.message })
-          : t('vehicleForm.toasts.saveFailedDescriptionCreate', { message: error.message }),
+          ? t('vehicleForm.toasts.saveFailedDescriptionUpdate', { message: describeApiError(error) })
+          : t('vehicleForm.toasts.saveFailedDescriptionCreate', { message: describeApiError(error) }),
         variant: "destructive",
       });
     }

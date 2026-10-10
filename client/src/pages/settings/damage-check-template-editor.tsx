@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, Link } from 'wouter';
@@ -93,6 +94,7 @@ export default function DamageCheckTemplateCanvasEditor({
   const [, setLocation] = useLocation();
 
   const [currentId, setCurrentId] = useState<number | null>(null);
+  const [confirmReplaceLayout, setConfirmReplaceLayout] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [language, setLanguage] = useState<'nl' | 'en'>('nl');
@@ -270,7 +272,7 @@ export default function DamageCheckTemplateCanvasEditor({
       }
       toast({ title: t('templateEditorPage.toasts.savedTitle'), description: t('templateEditorPage.toasts.templateSavedDescription') });
     },
-    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.saveFailedTitle'), description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.saveFailedTitle'), description: describeApiError(e), variant: 'destructive' }),
   });
 
   const createMutation = useMutation({
@@ -287,7 +289,7 @@ export default function DamageCheckTemplateCanvasEditor({
       setNewName('');
       loadTemplate({ ...created, canvasFields: [] });
     },
-    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.createFailedTitle'), description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.createFailedTitle'), description: describeApiError(e), variant: 'destructive' }),
   });
 
   const deleteMutation = useMutation({
@@ -307,7 +309,7 @@ export default function DamageCheckTemplateCanvasEditor({
       url.searchParams.delete('id');
       window.history.replaceState({}, '', url.toString());
     },
-    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.deleteFailedTitle'), description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.deleteFailedTitle'), description: describeApiError(e), variant: 'destructive' }),
   });
 
   const uploadBackgroundMutation = useMutation({
@@ -326,7 +328,7 @@ export default function DamageCheckTemplateCanvasEditor({
       await invalidateByPrefix('/api/damage-check-templates');
       toast({ title: t('templateEditorPage.toasts.successTitle'), description: t('templateEditorPage.toasts.backgroundUploadedDescription') });
     },
-    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.errorTitle'), description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.errorTitle'), description: describeApiError(e), variant: 'destructive' }),
   });
 
   const removeBackgroundMutation = useMutation({
@@ -338,7 +340,7 @@ export default function DamageCheckTemplateCanvasEditor({
       await invalidateByPrefix('/api/damage-check-templates');
       toast({ title: t('templateEditorPage.toasts.successTitle'), description: t('templateEditorPage.toasts.backgroundRemovedDescription') });
     },
-    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.errorTitle'), description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.errorTitle'), description: describeApiError(e), variant: 'destructive' }),
   });
 
   const { data: backgroundLibrary = [], refetch: refetchBackgrounds } = useQuery<TemplateBackground[]>({
@@ -364,7 +366,7 @@ export default function DamageCheckTemplateCanvasEditor({
       setBackgroundName('');
       toast({ title: t('templateEditorPage.toasts.successTitle'), description: t('templateEditorPage.toasts.backgroundAddedDescription') });
     },
-    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.errorTitle'), description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.errorTitle'), description: describeApiError(e), variant: 'destructive' }),
   });
 
   const selectBackgroundMutation = useMutation({
@@ -376,7 +378,7 @@ export default function DamageCheckTemplateCanvasEditor({
       await invalidateByPrefix('/api/damage-check-templates');
       toast({ title: t('templateEditorPage.toasts.successTitle'), description: t('templateEditorPage.toasts.backgroundSelectedDescription') });
     },
-    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.errorTitle'), description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.errorTitle'), description: describeApiError(e), variant: 'destructive' }),
   });
 
   const deleteLibraryBackgroundMutation = useMutation({
@@ -387,7 +389,7 @@ export default function DamageCheckTemplateCanvasEditor({
       await refetchBackgrounds();
       toast({ title: t('templateEditorPage.toasts.successTitle'), description: t('templateEditorPage.toasts.backgroundDeletedDescription') });
     },
-    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.errorTitle'), description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast({ title: t('templateEditorPage.toasts.errorTitle'), description: describeApiError(e), variant: 'destructive' }),
   });
 
   async function handleGeneratePreview() {
@@ -413,7 +415,7 @@ export default function DamageCheckTemplateCanvasEditor({
       setPreviewUrl(url);
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (e: any) {
-      toast({ title: t('templateEditorPage.toasts.previewFailedTitle'), description: e.message, variant: 'destructive' });
+      toast({ title: t('templateEditorPage.toasts.previewFailedTitle'), description: describeApiError(e), variant: 'destructive' });
     } finally {
       setPreviewLoading(false);
     }
@@ -611,6 +613,11 @@ export default function DamageCheckTemplateCanvasEditor({
     const next = fields.map(f => f.id === selectedField.id ? { ...f, ...patch } : f);
     updateFields(next);
   }
+
+  const applyDefaultLayout = () => {
+    updateFields(buildDefaultLayout(damageCheckFields));
+    setSelectedIds([]);
+  };
 
   return (
     <div className="container mx-auto p-4 space-y-4">
@@ -896,9 +903,9 @@ export default function DamageCheckTemplateCanvasEditor({
                 variant="secondary"
                 className="w-full justify-start"
                 onClick={() => {
-                  if (fields.length > 0 && !confirm(t('templateEditorPage.confirmReplaceLayout'))) return;
-                  updateFields(buildDefaultLayout(damageCheckFields));
-                  setSelectedIds([]);
+                  // A-19-6: our own dialog; window.confirm is ignored by the built-in browser.
+                  if (fields.length > 0) { setConfirmReplaceLayout(true); return; }
+                  applyDefaultLayout();
                 }}
                 data-testid="button-insert-default-layout"
               >
@@ -1172,6 +1179,16 @@ export default function DamageCheckTemplateCanvasEditor({
         variant="danger"
         onConfirm={() => deleteMutation.mutate()}
         isLoading={deleteMutation.isPending}
+      />
+      <ConfirmDialog
+        open={confirmReplaceLayout}
+        onOpenChange={setConfirmReplaceLayout}
+        title={t('templateEditorPage.confirmTitle')}
+        description={t('templateEditorPage.confirmReplaceLayout')}
+        confirmLabel={t('templateEditorPage.confirmReplaceLayoutButton')}
+        variant="warning"
+        confirmTestId="button-confirm-replace-layout"
+        onConfirm={applyDefaultLayout}
       />
     </div>
   );

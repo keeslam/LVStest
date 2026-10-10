@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { Edit } from "lucide-react";
 import { VehicleForm } from "./vehicle-form";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { Vehicle } from "@shared/schema";
 
 interface VehicleEditDialogProps {
@@ -45,6 +47,8 @@ export function VehicleEditDialog({
       setInternalOpen(next);
     }
   };
+  // A-3-10: Escape, a click next to the dialog and Annuleren ask first while something is typed.
+  const guard = useUnsavedChangesGuard({ close: () => setOpen(false), open: () => setOpen(true) });
 
   // Fetch vehicle data for editing
   const { data: vehicle, isLoading } = useQuery<Vehicle>({
@@ -67,7 +71,8 @@ export function VehicleEditDialog({
   );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <>
+    <Dialog open={open} onOpenChange={guard.onOpenChange}>
       {!isControlled && (
         <DialogTrigger asChild>
           {trigger}
@@ -91,11 +96,12 @@ export function VehicleEditDialog({
               initialData={vehicle}
               onSuccess={handleSuccess}
               redirectToList={false}
+              onDirtyChange={guard.setDirty}
               customCancelButton={
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setOpen(false)}
+                  onClick={guard.requestClose}
                 >
                   {t('editDialog.cancelButton')}
                 </Button>
@@ -109,5 +115,7 @@ export function VehicleEditDialog({
         </div>
       </DialogContent>
     </Dialog>
+    <ConfirmDialog {...guard.confirmProps} />
+    </>
   );
 }

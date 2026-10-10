@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -12,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient, getCsrfToken } from "@/lib/queryClient";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   ArrowLeft, Plus, Trash2, Save, Loader2, ArrowUp, ArrowDown, AlertTriangle, Upload, RotateCcw,
 } from "lucide-react";
@@ -46,6 +48,8 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
   });
 
   const [config, setConfig] = useState<DamageCheckFieldsConfig>(DEFAULT_DAMAGE_CHECK_FIELDS);
+  // A-19-6: which reset waits for an answer (window.confirm is ignored by the built-in browser).
+  const [pendingReset, setPendingReset] = useState<null | 'header' | 'defaults'>(null);
   const [headerCacheBust, setHeaderCacheBust] = useState(Date.now());
   const [uploadingHeader, setUploadingHeader] = useState(false);
 
@@ -65,14 +69,15 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
       setHeaderCacheBust(Date.now());
       toast({ title: t('damageCheckFieldsPage.toasts.headerUpdatedTitle'), description: t('damageCheckFieldsPage.toasts.headerUpdatedDescription') });
     } catch (err: any) {
-      toast({ title: t('damageCheckFieldsPage.toasts.uploadFailedTitle'), description: err?.message || t('damageCheckFieldsPage.toasts.uploadFailedFallback'), variant: 'destructive' });
+      toast({ title: t('damageCheckFieldsPage.toasts.uploadFailedTitle'), description: describeApiError(err, undefined, t('damageCheckFieldsPage.toasts.uploadFailedFallback')), variant: 'destructive' });
     } finally {
       setUploadingHeader(false);
     }
   };
 
-  const handleHeaderReset = async () => {
-    if (!confirm(t('damageCheckFieldsPage.confirmResetHeader'))) return;
+  const handleHeaderReset = () => setPendingReset('header');
+
+  const doHeaderReset = async () => {
     try {
       const csrfToken = getCsrfToken();
       const res = await fetch('/api/damage-check-fields/header', {
@@ -84,7 +89,7 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
       setHeaderCacheBust(Date.now());
       toast({ title: t('damageCheckFieldsPage.toasts.headerResetTitle'), description: t('damageCheckFieldsPage.toasts.headerResetDescription') });
     } catch (err: any) {
-      toast({ title: t('damageCheckFieldsPage.toasts.resetFailedTitle'), description: err?.message || t('damageCheckFieldsPage.toasts.resetFailedFallback'), variant: 'destructive' });
+      toast({ title: t('damageCheckFieldsPage.toasts.resetFailedTitle'), description: describeApiError(err, undefined, t('damageCheckFieldsPage.toasts.resetFailedFallback')), variant: 'destructive' });
     }
   };
 
@@ -103,7 +108,7 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
     onError: (err: any) => {
       toast({
         title: t('damageCheckFieldsPage.toasts.saveFailedTitle'),
-        description: err?.message || t('damageCheckFieldsPage.toasts.saveFailedFallback'),
+        description: describeApiError(err, undefined, t('damageCheckFieldsPage.toasts.saveFailedFallback')),
         variant: "destructive",
       });
     },
@@ -178,8 +183,9 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
     saveMutation.mutate(config);
   };
 
-  const resetToDefaults = () => {
-    if (!confirm(t('damageCheckFieldsPage.confirmResetDefaults'))) return;
+  const resetToDefaults = () => setPendingReset('defaults');
+
+  const doResetToDefaults = () => {
     setConfig(DEFAULT_DAMAGE_CHECK_FIELDS);
   };
 
@@ -392,6 +398,17 @@ export default function DamageCheckFieldsPage({ embedded = false }: { embedded?:
           {t('damageCheckFieldsPage.saveChangesButton')}
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={pendingReset !== null}
+        onOpenChange={(o) => { if (!o) setPendingReset(null); }}
+        title={t('damageCheckFieldsPage.confirmTitle')}
+        description={pendingReset === 'header' ? t('damageCheckFieldsPage.confirmResetHeader') : t('damageCheckFieldsPage.confirmResetDefaults')}
+        confirmLabel={pendingReset === 'header' ? t('damageCheckFieldsPage.confirmResetHeaderButton') : t('damageCheckFieldsPage.confirmResetDefaultsButton')}
+        variant="warning"
+        confirmTestId="button-confirm-reset"
+        onConfirm={() => { if (pendingReset === 'header') void doHeaderReset(); else doResetToDefaults(); }}
+      />
     </div>
   );
 }

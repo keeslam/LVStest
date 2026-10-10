@@ -247,6 +247,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <button 
               className="lg:hidden text-gray-500"
               onClick={() => setSidebarOpen(false)}
+              aria-label={t('common:a11y.closeMenu')}
+              data-testid="button-close-sidebar"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x">
                 <path d="M18 6 6 18"/>
@@ -266,6 +268,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <button 
               className="lg:hidden text-gray-500 mr-4"
               onClick={() => setSidebarOpen(true)}
+              aria-label={t('common:a11y.openMenu')}
+              aria-expanded={sidebarOpen}
+              data-testid="button-open-sidebar"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-menu">
                 <line x1="4" x2="20" y1="12" y2="12"/>
@@ -317,6 +322,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               {searchQuery ? (
                 <button 
                   className="absolute right-3 top-2.5 text-gray-500"
+                  aria-label={t('common:actions.clear')}
                   onClick={() => {
                     setSearchQuery("");
                     setShowResults(false);

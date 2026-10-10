@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { differenceInDays } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { NotificationCenterDialog } from "@/components/notifications/notificatio
 import { useNotificationDataPermissions } from "@/hooks/use-has-permission";
 
 export function NotificationCenter() {
+  const { t } = useTranslation("common");
   const [dialogOpen, setDialogOpen] = useState(false);
   const today = new Date();
   // Task 2 (docs/superpowers/specs/2026-09-21-toegang-design.md, §2; fact
@@ -101,6 +103,8 @@ export function NotificationCenter() {
         size="icon"
         className="relative"
         onClick={() => setDialogOpen(true)}
+        // A-2-12: an icon-only button needs a name; the count is part of it.
+        aria-label={totalNotifications > 0 ? `${t("a11y.notifications")} (${totalNotifications})` : t("a11y.notifications")}
         data-testid="button-notification-center"
       >
         <Bell className="h-5 w-5" />

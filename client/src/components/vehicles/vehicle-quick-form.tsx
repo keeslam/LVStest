@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { VehicleForm } from "@/components/vehicles/vehicle-form";
@@ -11,13 +12,14 @@ import { formSchema } from "./vehicle-form"; // Reuse the form schema from the m
 interface VehicleQuickFormProps {
   onSuccess: (vehicle: Vehicle) => void;
   onCancel: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 /**
  * A standalone wrapper component for vehicle creation in a dialog
  * This bypasses the navigation issues with the main VehicleForm
  */
-export function VehicleQuickForm({ onSuccess, onCancel }: VehicleQuickFormProps) {
+export function VehicleQuickForm({ onSuccess, onCancel, onDirtyChange }: VehicleQuickFormProps) {
   console.log("VehicleQuickForm mounted - standalone implementation");
   const { t } = useTranslation("vehicles");
   const { toast } = useToast();
@@ -61,7 +63,7 @@ export function VehicleQuickForm({ onSuccess, onCancel }: VehicleQuickFormProps)
         error.message?.includes("duplicate key");
 
       const title = isDuplicate ? t('vehicleForm.toasts.duplicateLicensePlateTitle') : t('vehicleForm.toasts.errorTitle');
-      const description = error.message || t('vehicleForm.toasts.genericCreateFailed');
+      const description = describeApiError(error, undefined, t('vehicleForm.toasts.genericCreateFailed'));
 
       toast({
         title,
@@ -82,6 +84,7 @@ export function VehicleQuickForm({ onSuccess, onCancel }: VehicleQuickFormProps)
   return (
     <VehicleForm 
       redirectToList={false}
+      onDirtyChange={onDirtyChange}
       // Override the form submission to use our local mutation
       onSubmitOverride={handleSubmit}
       customCancelButton={

@@ -80,10 +80,18 @@ export interface RequiresPermissionProps extends React.HTMLAttributes<HTMLElemen
  * Radix's `TooltipTrigger` (composed via `asChild` onto this same span)
  * listens for pointer enter/leave and focus/blur, not click/keydown, so
  * swallowing those does not affect the tooltip's own show/hide logic.
+ *
+ * A-18-5 (audit 2026-10-09): the reason used to appear on hover and keyboard
+ * focus only, and a tablet has neither. The tooltip is now controlled: Radix
+ * still opens it on hover and focus and closes it on blur, Escape or an
+ * outside tap, and a tap or click on the wrapper opens it as well. While it is
+ * open Radix points the wrapper's aria-describedby at the tooltip text, so the
+ * reason is also what a screen reader announces.
  */
 export const RequiresPermission = React.forwardRef<HTMLElement, RequiresPermissionProps>(
   ({ anyOf = [], allOf = [], children, ...rest }, ref) => {
     const { t } = useTranslation("common");
+    const [tooltipOpen, setTooltipOpen] = React.useState(false);
     const hasAny = useHasPermission(...anyOf);
     const hasAll = useHasAllPermissions(...allOf);
     const allowed = (anyOf.length === 0 || hasAny) && (allOf.length === 0 || hasAll);
@@ -119,20 +127,25 @@ export const RequiresPermission = React.forwardRef<HTMLElement, RequiresPermissi
       event.preventDefault();
       event.stopPropagation();
     };
+    // A tap or click is how a touch user asks "why is this off?".
+    const showReasonOnTap = (event: React.SyntheticEvent) => {
+      swallowActivation(event);
+      setTooltipOpen(true);
+    };
     const swallowActivationKeys = (event: React.KeyboardEvent) => {
       if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
-        swallowActivation(event);
+        showReasonOnTap(event);
       }
     };
 
     return (
       <TooltipProvider>
-        <Tooltip>
+        <Tooltip open={tooltipOpen} onOpenChange={setTooltipOpen}>
           <TooltipTrigger asChild>
             <span
               tabIndex={0}
               className={cn("inline-flex", children.props.className)}
-              onClick={swallowActivation}
+              onClick={showReasonOnTap}
               onDoubleClick={swallowActivation}
               onPointerDown={swallowActivation}
               onMouseDown={swallowActivation}

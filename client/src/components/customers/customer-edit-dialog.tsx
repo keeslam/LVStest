@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { Edit } from "lucide-react";
 import { CustomerForm } from "./customer-form";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { Customer } from "@shared/schema";
 
 interface CustomerEditDialogProps {
@@ -23,6 +25,7 @@ interface CustomerEditDialogProps {
 export function CustomerEditDialog({ customerId, children, onSuccess }: CustomerEditDialogProps) {
   const { t } = useTranslation(["customers", "common"]);
   const [open, setOpen] = useState(false);
+  const guard = useUnsavedChangesGuard({ close: () => setOpen(false), open: () => setOpen(true) });
 
   // Fetch customer data for editing
   const { data: customer, isLoading } = useQuery<Customer>({
@@ -46,7 +49,8 @@ export function CustomerEditDialog({ customerId, children, onSuccess }: Customer
   );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <>
+    <Dialog open={open} onOpenChange={guard.onOpenChange}>
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
@@ -68,7 +72,8 @@ export function CustomerEditDialog({ customerId, children, onSuccess }: Customer
               initialData={customer}
               onSuccess={handleSuccess}
               redirectToList={false}
-              onCancel={() => setOpen(false)}
+              onCancel={guard.requestClose}
+              onDirtyChange={guard.setDirty}
             />
           ) : (
             <div className="text-center py-8 text-gray-500">
@@ -78,5 +83,7 @@ export function CustomerEditDialog({ customerId, children, onSuccess }: Customer
         </div>
       </DialogContent>
     </Dialog>
+    <ConfirmDialog {...guard.confirmProps} />
+    </>
   );
 }

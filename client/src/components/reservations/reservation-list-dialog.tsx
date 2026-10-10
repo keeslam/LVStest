@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -136,7 +137,7 @@ export function ReservationListDialog({ open, onOpenChange, initialTab, onTabCha
         title: t('listDialog.toasts.errorTitle'),
         description: isPickedUpRightRefusal(error)
           ? t('pickedUpWarning.rightRequired')
-          : error.message || t('listDialog.toasts.deleteFailedFallback'),
+          : describeApiError(error, undefined, t('listDialog.toasts.deleteFailedFallback')),
         variant: "destructive"
       });
     }
@@ -395,6 +396,7 @@ export function ReservationListDialog({ open, onOpenChange, initialTab, onTabCha
                   size="sm"
                   className="h-7 w-7 p-0"
                   title={t(revertOpenerLabelKey(reservation))}
+                  aria-label={t(revertOpenerLabelKey(reservation))}
                   onClick={(e) => { e.stopPropagation(); setRevertReservationId(reservation.id); }}
                   data-testid={`button-revert-handover-${reservation.id}`}
                 >
@@ -402,15 +404,15 @@ export function ReservationListDialog({ open, onOpenChange, initialTab, onTabCha
                 </Button>
               </RequiresPermission>
             )}
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => handleView(e, reservation)} data-testid={`view-btn-${reservation.id}`}>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => handleView(e, reservation)} aria-label={t('common:actions.view')} title={t('common:actions.view')} data-testid={`view-btn-${reservation.id}`}>
               <Eye className="h-3.5 w-3.5" />
             </Button>
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => handleEdit(e, reservation)} data-testid={`edit-btn-${reservation.id}`}>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => handleEdit(e, reservation)} aria-label={t('common:actions.edit')} title={t('common:actions.edit')} data-testid={`edit-btn-${reservation.id}`}>
               <Edit className="h-3.5 w-3.5" />
             </Button>
             {/* B-33: a picked-up rental needs the new right, every other row manage_reservations (the route's own guards). */}
             <RequiresPermission allOf={cancelRightFor(reservation)}>
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); handleDelete(reservation); }} data-testid={`delete-btn-${reservation.id}`}>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); handleDelete(reservation); }} aria-label={t('common:actions.delete')} title={t('common:actions.delete')} data-testid={`delete-btn-${reservation.id}`}>
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </RequiresPermission>

@@ -1,3 +1,6 @@
+import { v } from "@/lib/zod-i18n";
+import { describeApiError } from "@/lib/api-error";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,10 +30,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { capitalizeName, capitalizeWords } from "@/lib/format-utils";
 
 // Extended schema with validation
-const formSchema = insertCustomerSchema.extend({
-  name: z.string().min(2, "Name must be at least 2 characters."),
+export const formSchema = insertCustomerSchema.extend({
+  name: z.string().min(2, v("nameMin", { count: 2 })),
   // Make all fields optional with empty string fallback
-  email: z.string().email("Invalid email address when provided").optional().or(z.literal("")),
+  email: z.string().email(v("invalidEmail")).optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
   debtorNumber: z.string().optional().or(z.literal("")),
   firstName: z.string().optional().or(z.literal("")),
@@ -38,9 +41,9 @@ const formSchema = insertCustomerSchema.extend({
   companyName: z.string().optional().or(z.literal("")),
   driverName: z.string().optional().or(z.literal("")),
   contactPerson: z.string().optional().or(z.literal("")),
-  emailForMOT: z.string().email("Invalid email address when provided").optional().or(z.literal("")),
-  emailForInvoices: z.string().email("Invalid email address when provided").optional().or(z.literal("")),
-  emailGeneral: z.string().email("Invalid email address when provided").optional().or(z.literal("")),
+  emailForMOT: z.string().email(v("invalidEmail")).optional().or(z.literal("")),
+  emailForInvoices: z.string().email(v("invalidEmail")).optional().or(z.literal("")),
+  emailGeneral: z.string().email(v("invalidEmail")).optional().or(z.literal("")),
   driverPhone: z.string().optional().or(z.literal("")),
   streetName: z.string().optional().or(z.literal("")),
   address: z.string().optional().or(z.literal("")),
@@ -64,7 +67,7 @@ const formSchema = insertCustomerSchema.extend({
   paymentTermDays: z.string().optional().or(z.literal("")),
   creditLimit: z.string().optional().or(z.literal("")),
   billingContactName: z.string().optional().or(z.literal("")),
-  billingContactEmail: z.string().email("Invalid email address when provided").optional().or(z.literal("")),
+  billingContactEmail: z.string().email(v("invalidEmail")).optional().or(z.literal("")),
   billingContactPhone: z.string().optional().or(z.literal(""))
 });
 
@@ -92,6 +95,8 @@ interface CustomerFormProps {
    * see task-4-report.md's "Finding").
    */
   onCancel?: () => void;
+  /** Reports whether the form holds unsaved input (see hooks/use-unsaved-changes-guard.ts). */
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 export function CustomerForm({
@@ -100,6 +105,7 @@ export function CustomerForm({
   onSuccess,
   redirectToList = true,
   onCancel,
+  onDirtyChange,
 }: CustomerFormProps) {
   const { t } = useTranslation(["customers", "common"]);
   const { toast } = useToast();
@@ -181,6 +187,12 @@ export function CustomerForm({
     },
   });
 
+  // A-3-10 / A-4-8: tell the dialog around us whether something was typed, so closing can ask first.
+  const isDirty = form.formState.isDirty;
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
   // OPT-019: watched so the duplicate warning appears while the form is being
   // filled in, not after the record has been created.
   const watchedEmail = form.watch("email");
@@ -248,8 +260,8 @@ export function CustomerForm({
       toast({
         title: t('common:status.error'),
         description: editMode
-          ? t('form.saveFailedDescriptionUpdate', { error: error.message })
-          : t('form.saveFailedDescriptionCreate', { error: error.message }),
+          ? t('form.saveFailedDescriptionUpdate', { error: describeApiError(error) })
+          : t('form.saveFailedDescriptionCreate', { error: describeApiError(error) }),
         variant: "destructive",
       });
     },

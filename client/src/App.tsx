@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import Dashboard from "@/pages/dashboard";
 // OPT-001 — the work-day screen. A *sibling* of the dashboard, not a
@@ -9,11 +10,12 @@ import ReservationEdit from "@/pages/reservations/edit/[id]";
 import ReservationCalendar from "@/pages/reservations/calendar";
 import ExpensesIndex from "@/pages/expenses/index";
 import ExpenseAdd from "@/pages/expenses/add";
-import DocumentsIndex from "@/pages/documents/index";
-import ReportsPage from "@/pages/reports/index";
+// A-19-4: the three heaviest screens load on first use; PageLoading shows meanwhile.
+const DocumentsIndex = lazy(() => import("@/pages/documents/index"));
+const ReportsPage = lazy(() => import("@/pages/reports/index"));
 import DeliveryDashboard from "@/pages/delivery/dashboard";
 import ScanPage from "@/pages/scan/index";
-import CustomerCommunications from "@/pages/CustomerCommunications";
+const CustomerCommunications = lazy(() => import("@/pages/CustomerCommunications"));
 import MaintenanceCalendar from "@/pages/maintenance/calendar";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
@@ -30,6 +32,7 @@ import { InactivityPrompt } from "@/components/InactivityPrompt";
 import { ApkDateChangesDialog } from "@/components/vehicles/apk-date-changes-dialog";
 import { apiRequest } from "@/lib/queryClient";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { PageLoading } from "@/components/ui/page-loading";
 
 function AppRoutes() {
   const { user, logoutMutation } = useAuth();
@@ -64,6 +67,7 @@ function AppRoutes() {
         {() => (
           <MainLayout>
             <ErrorBoundary resetKey={location}>
+            <Suspense fallback={<PageLoading />}>
             <Switch>
               <ProtectedRoute path="/" component={Dashboard} />
               <ProtectedRoute path="/vehicles" component={VehiclesIndex} />
@@ -84,6 +88,7 @@ function AppRoutes() {
               <Route path="/auth" component={AuthPage} />
               <Route component={NotFound} />
             </Switch>
+            </Suspense>
             </ErrorBoundary>
           </MainLayout>
         )}
