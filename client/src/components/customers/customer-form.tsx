@@ -299,6 +299,14 @@ export function CustomerForm({
             }} 
             className="space-y-6"
           >
+            {/* A-4-6: only the name is required; say what the other documents need. */}
+            <div
+              className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground"
+              data-testid="text-customer-required-hint"
+            >
+              {t('form.requiredHint')}
+            </div>
+
             <Tabs defaultValue="basic" className="w-full">
               <TabsList className="grid grid-cols-4 mb-6">
                 <TabsTrigger value="basic">{t('form.tabBasicInfo')}</TabsTrigger>
@@ -373,7 +381,7 @@ export function CustomerForm({
                             <FormLabel>{t('details.fullName')}</FormLabel>
                             <FormControl>
                               <Input 
-                                placeholder="John Doe" 
+                                placeholder={t('form.placeholders.fullName')} 
                                 {...field}
                                 onChange={(e) => field.onChange(capitalizeName(e.target.value))}
                               />
@@ -393,7 +401,7 @@ export function CustomerForm({
                             <FormLabel>{t('details.firstName')}</FormLabel>
                             <FormControl>
                               <Input 
-                                placeholder="John" 
+                                placeholder={t('form.placeholders.firstName')} 
                                 {...field}
                                 onChange={(e) => field.onChange(capitalizeName(e.target.value))}
                               />
@@ -411,7 +419,7 @@ export function CustomerForm({
                             <FormLabel>{t('details.lastName')}</FormLabel>
                             <FormControl>
                               <Input 
-                                placeholder="Doe" 
+                                placeholder={t('form.placeholders.lastName')} 
                                 {...field}
                                 onChange={(e) => field.onChange(capitalizeName(e.target.value))}
                               />
@@ -431,7 +439,7 @@ export function CustomerForm({
                             <FormLabel>{t('details.driverName')}</FormLabel>
                             <FormControl>
                               <Input 
-                                placeholder="John Doe" 
+                                placeholder={t('form.placeholders.fullName')} 
                                 {...field}
                                 onChange={(e) => field.onChange(capitalizeName(e.target.value))}
                               />
@@ -469,7 +477,7 @@ export function CustomerForm({
                           <FormLabel>{t('details.streetName')}</FormLabel>
                           <FormControl>
                             <Input 
-                              placeholder="Main Street" 
+                              placeholder={t('form.placeholders.street')} 
                               {...field}
                               onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
                             />
@@ -487,7 +495,7 @@ export function CustomerForm({
                           <FormLabel>{t('form.streetAddress')}</FormLabel>
                           <FormControl>
                             <Input 
-                              placeholder="123 Main St" 
+                              placeholder={t('form.placeholders.streetAddress')} 
                               {...field}
                               onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
                             />
@@ -561,7 +569,7 @@ export function CustomerForm({
                         <FormItem>
                           <FormLabel>{t('details.primaryEmail')}</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="john.doe@example.com" {...field} />
+                            <Input type="email" placeholder={t('form.placeholders.email')} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -670,7 +678,7 @@ export function CustomerForm({
                           <FormLabel>{t('details.companyName')}</FormLabel>
                           <FormControl>
                             <Input 
-                              placeholder="Acme Corporation" 
+                              placeholder={t('form.placeholders.companyName')} 
                               {...field}
                               onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
                             />
@@ -688,7 +696,7 @@ export function CustomerForm({
                           <FormLabel>{t('details.contactPerson')}</FormLabel>
                           <FormControl>
                             <Input 
-                              placeholder="Jane Smith" 
+                              placeholder={t('form.placeholders.contactPerson')} 
                               {...field}
                               onChange={(e) => field.onChange(capitalizeName(e.target.value))}
                             />
@@ -756,7 +764,7 @@ export function CustomerForm({
                           <FormLabel>{t('form.billingContactName')}</FormLabel>
                           <FormControl>
                             <Input 
-                              placeholder="John Smith" 
+                              placeholder={t('form.placeholders.billingContact')} 
                               {...field}
                               onChange={(e) => field.onChange(capitalizeName(e.target.value))}
                             />
@@ -773,7 +781,7 @@ export function CustomerForm({
                         <FormItem>
                           <FormLabel>{t('form.billingContactEmail')}</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="billing@company.com" {...field} />
+                            <Input type="email" placeholder={t('form.placeholders.billingEmail')} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -838,7 +846,7 @@ export function CustomerForm({
                             <FormLabel>{t('form.billingAddress')}</FormLabel>
                             <FormControl>
                               <Input 
-                                placeholder="123 Business Street" 
+                                placeholder={t('form.placeholders.billingAddress')} 
                                 {...field}
                                 onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
                               />

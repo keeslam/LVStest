@@ -1108,7 +1108,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
                                       }}
                                       className="bg-red-600 hover:bg-red-700"
                                     >
-                                      Delete
+                                      {t('common:actions.delete')}
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -1124,7 +1124,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
                   {totalPages > 1 && (
                     <div className="flex items-center justify-between mt-4 pt-4 border-t">
                       <div className="text-sm text-gray-500">
-                        Page {driverPage} of {totalPages} ({totalDrivers} driver{totalDrivers !== 1 ? 's' : ''})
+                        {t('details.driversPageLabel', { page: driverPage, pages: totalPages, count: totalDrivers })}
                       </div>
                       <div className="flex gap-2">
                         <Button
@@ -1134,7 +1134,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
                           disabled={driverPage === 1}
                           data-testid="button-driver-prev-page"
                         >
-                          Previous
+                          {t('common:actions.previous')}
                         </Button>
                         <Button
                           variant="outline"
@@ -1143,7 +1143,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
                           disabled={driverPage === totalPages}
                           data-testid="button-driver-next-page"
                         >
-                          Next
+                          {t('common:actions.next')}
                         </Button>
                       </div>
                     </div>
@@ -1275,7 +1275,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
                     <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
                       <Button size="sm" data-testid="button-new-reservation-active-rentals">
                         <Calendar className="mr-2 h-4 w-4" />
-                        New Reservation
+                        {t('details.newReservation')}
                       </Button>
                     </RequiresPermission>
                   </ReservationAddDialog>

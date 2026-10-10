@@ -25,12 +25,18 @@
     "blockedReservation": "Reservation #{{id}} — {{start}} to {{end}} ({{status}})",
     "blockedHint": "Finish or cancel that reservation first; then the customer can go to the recycle bin.",
     "countLabels": {
-      "reservations": "reservations",
-      "drivers": "drivers",
-      "documents": "documents",
-      "portalSettings": "portal settings",
-      "portalUsers": "portal accounts",
-      "blacklist": "blacklist entries"
+      "reservations_one": "reservation",
+      "reservations_other": "reservations",
+      "drivers_one": "driver",
+      "drivers_other": "drivers",
+      "documents_one": "document",
+      "documents_other": "documents",
+      "portalSettings_one": "portal setting",
+      "portalSettings_other": "portal settings",
+      "portalUsers_one": "portal account",
+      "portalUsers_other": "portal accounts",
+      "blacklist_one": "blacklist entry",
+      "blacklist_other": "blacklist entries"
     }
   },
   "driverView": {
@@ -163,6 +169,8 @@
     "searchDriversPlaceholder": "Search drivers by name, email, phone, or license...",
     "showingDriversOfTotal_one": "Showing {{shown}} of {{count}} driver",
     "showingDriversOfTotal_other": "Showing {{shown}} of {{count}} drivers",
+    "driversPageLabel_one": "Page {{page}} of {{pages}} ({{count}} driver)",
+    "driversPageLabel_other": "Page {{page}} of {{pages}} ({{count}} drivers)",
     "noDriversYet": "No drivers added yet",
     "addDriverToStart": "Add a driver to get started",
     "noDriversMatchSearch": "No drivers match your search",
@@ -207,6 +215,21 @@
     "loadFailed": "Failed to load customer data"
   },
   "form": {
+    "requiredHint": "Only the name is required. For a reservation a phone number or e-mail address helps, to reach the customer and to mail documents. For an invoice or contract the address, postal code and city belong here too, and for a company the company name and VAT number.",
+    "placeholders": {
+      "fullName": "John Doe",
+      "firstName": "John",
+      "lastName": "Doe",
+      "street": "Main Street",
+      "streetAddress": "123 Main St",
+      "email": "john.doe@example.com",
+      "companyName": "Acme Corporation",
+      "contactPerson": "Jane Smith",
+      "billingContact": "John Smith",
+      "billingEmail": "billing@company.com",
+      "billingAddress": "123 Business Street",
+      "driverEmail": "john@example.com"
+    },
     "tabBasicInfo": "Basic Info",
     "tabContact": "Contact",
     "tabCompany": "Company",

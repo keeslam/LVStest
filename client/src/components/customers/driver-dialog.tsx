@@ -273,7 +273,7 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="John Doe"
+                        placeholder={t('form.placeholders.fullName')}
                         data-testid="input-display-name"
                         onChange={(e) => field.onChange(capitalizeName(e.target.value))}
                       />
@@ -293,7 +293,7 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                       <Input 
                         {...field} 
                         value={field.value ?? ""} 
-                        placeholder="John" 
+                        placeholder={t('form.placeholders.firstName')} 
                         data-testid="input-first-name"
                         onChange={(e) => field.onChange(capitalizeName(e.target.value))}
                       />
@@ -313,7 +313,7 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                       <Input 
                         {...field} 
                         value={field.value ?? ""} 
-                        placeholder="Doe" 
+                        placeholder={t('form.placeholders.lastName')} 
                         data-testid="input-last-name"
                         onChange={(e) => field.onChange(capitalizeName(e.target.value))}
                       />
@@ -330,7 +330,7 @@ export function DriverDialog({ customerId, driver, children, onSuccess }: Driver
                   <FormItem>
                     <FormLabel>{t('driverForm.email')}</FormLabel>
                     <FormControl>
-                      <Input {...field} value={field.value ?? ""} type="email" placeholder="john@example.com" data-testid="input-email" />
+                      <Input {...field} value={field.value ?? ""} type="email" placeholder={t('form.placeholders.driverEmail')} data-testid="input-email" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

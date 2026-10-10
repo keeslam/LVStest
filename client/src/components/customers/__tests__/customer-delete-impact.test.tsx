@@ -85,7 +85,8 @@ describe("B-08 — de klant verwijderen begint met de impactlijst", () => {
 
     const impact = await screen.findByTestId("customer-delete-impact");
     await waitFor(() => expect(impact).toHaveTextContent(/6\s+reserveringen/i));
-    expect(impact).toHaveTextContent(/1\s+chauffeurs/i);
+    // A-4-5: one driver is "1 chauffeur" (singular), not "1 chauffeurs".
+    expect(impact).toHaveTextContent(/1\s+chauffeur(?!s)/i);
 
     const confirm = screen.getByTestId(`button-confirm-delete-${CUSTOMER_ID}`);
     expect(confirm).toBeDisabled();

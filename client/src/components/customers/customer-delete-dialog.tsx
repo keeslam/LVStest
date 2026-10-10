@@ -60,8 +60,10 @@ const COUNT_LABEL_KEYS: Record<string, string> = {
   blacklist: "blacklist",
 };
 
-const getCountLabel = (key: string, t: TFunction) =>
+// A-4-5: "1 chauffeurs" read wrong; every label has a singular and a plural (i18next _one/_other).
+const getCountLabel = (key: string, count: number, t: TFunction) =>
   t(`deleteDialog.countLabels.${COUNT_LABEL_KEYS[key] ?? key}`, {
+    count,
     defaultValue: key.replace(/_/g, " "),
   });
 
@@ -244,7 +246,7 @@ export function CustomerDeleteDialog({
                   <ul className="list-disc pl-4">
                     {cascadeEntries.map(([key, count]) => (
                       <li key={key}>
-                        {count} {getCountLabel(key, t)}
+                        {count} {getCountLabel(key, count, t)}
                       </li>
                     ))}
                   </ul>

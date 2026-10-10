@@ -25,12 +25,18 @@
     "blockedReservation": "Reservering #{{id}} — {{start}} t/m {{end}} ({{status}})",
     "blockedHint": "Rond die reservering af of annuleer hem eerst; daarna kan de klant naar de prullenbak.",
     "countLabels": {
-      "reservations": "reserveringen",
-      "drivers": "chauffeurs",
-      "documents": "documenten",
-      "portalSettings": "portaalinstellingen",
-      "portalUsers": "portaalaccounts",
-      "blacklist": "zwarte-lijstitems"
+      "reservations_one": "reservering",
+      "reservations_other": "reserveringen",
+      "drivers_one": "chauffeur",
+      "drivers_other": "chauffeurs",
+      "documents_one": "document",
+      "documents_other": "documenten",
+      "portalSettings_one": "portaalinstelling",
+      "portalSettings_other": "portaalinstellingen",
+      "portalUsers_one": "portaalaccount",
+      "portalUsers_other": "portaalaccounts",
+      "blacklist_one": "zwarte-lijstitem",
+      "blacklist_other": "zwarte-lijstitems"
     }
   },
   "driverView": {
@@ -163,6 +169,8 @@
     "searchDriversPlaceholder": "Zoek chauffeurs op naam, e-mail, telefoon of rijbewijs...",
     "showingDriversOfTotal_one": "{{shown}} van {{count}} chauffeur weergegeven",
     "showingDriversOfTotal_other": "{{shown}} van {{count}} chauffeurs weergegeven",
+    "driversPageLabel_one": "Pagina {{page}} van {{pages}} ({{count}} chauffeur)",
+    "driversPageLabel_other": "Pagina {{page}} van {{pages}} ({{count}} chauffeurs)",
     "noDriversYet": "Nog geen chauffeurs toegevoegd",
     "addDriverToStart": "Voeg een chauffeur toe om te beginnen",
     "noDriversMatchSearch": "Geen chauffeurs komen overeen met je zoekopdracht",
@@ -207,6 +215,21 @@
     "loadFailed": "Kon klantgegevens niet laden"
   },
   "form": {
+    "requiredHint": "Alleen de naam is verplicht. Voor een reservering helpt een telefoonnummer of e-mailadres, om de klant te bereiken en documenten te mailen. Voor een factuur of contract horen ook adres, postcode en plaats erbij, en bij een bedrijf de bedrijfsnaam en het btw-nummer.",
+    "placeholders": {
+      "fullName": "Jan Jansen",
+      "firstName": "Jan",
+      "lastName": "Jansen",
+      "street": "Hoofdstraat",
+      "streetAddress": "Hoofdstraat 1",
+      "email": "jan.jansen@voorbeeld.nl",
+      "companyName": "Voorbeeld Transport B.V.",
+      "contactPerson": "Petra de Vries",
+      "billingContact": "Jan Jansen",
+      "billingEmail": "facturen@voorbeeld.nl",
+      "billingAddress": "Bedrijfsweg 12",
+      "driverEmail": "jan.jansen@voorbeeld.nl"
+    },
     "tabBasicInfo": "Basisgegevens",
     "tabContact": "Contact",
     "tabCompany": "Bedrijf",
