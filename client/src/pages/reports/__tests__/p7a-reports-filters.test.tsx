@@ -101,6 +101,13 @@ describe("tabs that ignore the category filter say so (fix round 1, M-2)", () =>
     const user = userEvent.setup();
     renderWithClient(<ReportsPage />);
     await waitFor(() => expect(screen.getAllByText(/€ 155,00/).length).toBeGreaterThan(0));
+    // before a category is chosen no tab shows the note
+    for (const tab of ["tab-report-transports", "tab-report-fiscal"]) {
+      await user.click(await screen.findByTestId(tab));
+      expect(screen.queryByTestId("category-filter-note")).toBeNull();
+    }
+    await user.click(screen.getByRole("tab", { name: /Voertuigen/ }));
+    expect(screen.queryByTestId("category-filter-note")).toBeNull();
     await openCategories(user);
     await user.click(screen.getByRole("option", { name: "Onderhoud" }));
     for (const tab of ["tab-report-transports", "tab-report-fiscal"]) {

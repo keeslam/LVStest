@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -63,7 +63,10 @@ export default function MaintenanceCostsPage() {
 
   // Fetch maintenance cost analysis data
   const { data: costData, isLoading, isError, error, refetch } = useQuery<MaintenanceCostData>({
-    queryKey: ['/api/reports/maintenance-costs', timeRange, selectedBrand],
+    // The default query function only turns an OBJECT at index 1 into a query string; plain strings
+    // changed the cache entry but not the request, so every selection fetched all-time totals.
+    queryKey: ['/api/reports/maintenance-costs', { timeRange, brand: selectedBrand === 'all' ? undefined : selectedBrand }],
+    placeholderData: keepPreviousData,
   });
 
   if (isLoading) {

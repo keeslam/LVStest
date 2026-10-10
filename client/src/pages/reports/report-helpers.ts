@@ -15,7 +15,6 @@ export function monthChange(previous: number, current: number): MonthChange {
   return { kind: "pct", value: ((current - previous) / previous) * 100 };
 }
 
-
 /**
  * The key a stored category is grouped and filtered on: lower-cased and trimmed,
  * the client twin of `lower(btrim(category))` on the server (A-14-4). A dump
