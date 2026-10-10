@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Loader2, Upload, CheckCircle2, AlertTriangle } from "lucide-react";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -113,7 +113,11 @@ export function FineImportDialog() {
   return (
     <Dialog open={open} onOpenChange={(o) => !o && !creating && closeFineImportDialog()}>
       <DialogContent className="max-w-[95vw] max-h-[90vh] flex flex-col">
-        <DialogHeader><DialogTitle>{t("admin.fines.import.title")}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{t("admin.fines.import.title")}</DialogTitle>
+          {/* A-12-16: says how this differs from "Nieuwe bekeuring" (one fine, checked before it is saved). */}
+          <DialogDescription data-testid="fine-import-intro">{t("admin.fines.import.intro")}</DialogDescription>
+        </DialogHeader>
         <div className="flex-1 overflow-auto space-y-3">
           <label onDragOver={(e) => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={onDrop}
             className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed p-6 text-sm text-muted-foreground ${dragging ? "border-primary bg-muted/50" : ""}`}

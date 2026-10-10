@@ -83,8 +83,8 @@ export function FinesTable({ customerId, initialPlate, importFileId, preview }: 
           </RequiresPermission>
           {canManage && (<>
             <Button size="sm" variant="outline" onClick={openFineImportsDialog} data-testid="button-cjib-imports">{t("admin.fines.cjib.button")}</Button>
-            <Button size="sm" variant="outline" onClick={openFineImportDialog} data-testid="button-import-fines">{t("admin.fines.import.button")}</Button>
-            <Button size="sm" onClick={() => openNewFineDialog({ licensePlate: plate || undefined })} data-testid="button-new-fine">
+            <Button size="sm" variant="outline" onClick={openFineImportDialog} title={t("admin.fines.import.tooltip")} data-testid="button-import-fines">{t("admin.fines.import.button")}</Button>
+            <Button size="sm" onClick={() => openNewFineDialog({ licensePlate: plate || undefined })} title={t("admin.fines.dialog.newTooltip")} data-testid="button-new-fine">
               {t("admin.fines.new")}
             </Button>
           </>)}

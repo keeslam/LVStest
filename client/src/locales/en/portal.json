@@ -593,6 +593,8 @@
       },
       "import": {
         "button": "Scan letters",
+        "tooltip": "Read several letters at once and turn them into fines straight away",
+        "intro": "For several letters at once: each letter is read and you go through the list. Then all fines are created in one go. For a single fine use New fine.",
         "title": "Import fine letters",
         "drop": "Drop letters here or click to choose files (PDF, JPG, PNG). Each letter is read right away.",
         "files": "{{n}} file(s)",
@@ -654,6 +656,8 @@
       "dialog": {
         "title": "Fine #{{id}}",
         "newTitle": "New fine",
+        "newTooltip": "Fill in one fine, optionally with its letter",
+        "newIntro": "For one fine: fill in the fields, or choose the letter and let it be read, which fills the fields for you. You check them before saving. For a stack of letters use Scan letters.",
         "notLinked": "Not linked automatically. Choose the customer below (and optionally the reservation/driver).",
         "covering": "Reservations at the moment of the offence",
         "near": "Reservations around that date",
@@ -722,7 +726,7 @@
         "running": "Fetching…",
         "importsTitle": "CJIB imports",
         "statusOn": "Fetching automatically every {{minutes}} min",
-        "statusOff": "Automatic fetching off",
+        "statusOff": "Automatic fetching is off",
         "lastRun": "Last run {{at}}: {{files}} file(s), {{created}} created, {{errors}} error(s)",
         "noRun": "Not fetched since start-up.",
         "upload": "Upload file",

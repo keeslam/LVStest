@@ -593,6 +593,8 @@
       },
       "import": {
         "button": "Brieven scannen",
+        "tooltip": "Meerdere brieven tegelijk inlezen en er meteen bekeuringen van maken",
+        "intro": "Voor meerdere brieven tegelijk: elke brief wordt gelezen en je loopt de lijst na. Daarna worden er in één keer bekeuringen van gemaakt. Voor één bekeuring gebruik je Nieuwe bekeuring.",
         "title": "Bekeuringsbrieven importeren",
         "drop": "Sleep brieven hierheen of klik om bestanden te kiezen (PDF, JPG, PNG). Elke brief wordt direct gelezen.",
         "files": "{{n}} bestand(en)",
@@ -654,6 +656,8 @@
       "dialog": {
         "title": "Bekeuring #{{id}}",
         "newTitle": "Nieuwe bekeuring",
+        "newTooltip": "Eén bekeuring invullen, eventueel met de brief erbij",
+        "newIntro": "Voor één bekeuring: vul de velden in, of kies de brief en laat hem inlezen, dan worden de velden voor je ingevuld. Jij controleert ze voordat je opslaat. Voor een stapel brieven gebruik je Brieven scannen.",
         "notLinked": "Niet automatisch gekoppeld. Kies hieronder de klant (en eventueel de reservering/bestuurder).",
         "covering": "Reserveringen op het moment van de overtreding",
         "near": "Reserveringen rond die datum",
@@ -722,7 +726,7 @@
         "running": "Bezig met ophalen…",
         "importsTitle": "CJIB-importen",
         "statusOn": "Automatisch ophalen elke {{minutes}} min",
-        "statusOff": "Automatisch ophalen uit",
+        "statusOff": "Automatisch ophalen staat uit",
         "lastRun": "Laatste run {{at}}: {{files}} bestand(en), {{created}} aangemaakt, {{errors}} fout(en)",
         "noRun": "Nog niet opgehaald sinds de start.",
         "upload": "Bestand uploaden",

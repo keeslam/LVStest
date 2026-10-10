@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ScanSearch, Loader2 } from "lucide-react";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -71,7 +71,11 @@ export function NewFineDialog() {
   return (
     <Dialog open={open} onOpenChange={(o) => !o && closeNewFineDialog()}>
       <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>{t("admin.fines.dialog.newTitle")}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{t("admin.fines.dialog.newTitle")}</DialogTitle>
+          {/* A-12-16: says how this differs from "Brieven scannen" (a stack of letters, created straight away). */}
+          <DialogDescription data-testid="new-fine-intro">{t("admin.fines.dialog.newIntro")}</DialogDescription>
+        </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div className="rounded-md border bg-muted/30 p-3 space-y-2">
             <Label htmlFor="nf-letter">{t("admin.fines.fields.letter")}</Label>
