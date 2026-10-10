@@ -1,5 +1,7 @@
 {
   "routeOptimization": {
+    "optimizeDisabledNoStops": "Er is op deze datum niets gepland. Kies een andere datum.",
+    "optimizeDisabledNoAddress": "Geen van de geplande ritten heeft een adres of plaats. Vul die eerst in.",
     "routeOptimizedWithWarnings": "Route geoptimaliseerd met waarschuwingen",
     "stopsNotLocated": "{{count}} stop(s) konden niet worden gevonden en zijn weggelaten.",
     "optimizeFailedTitle": "Route optimaliseren mislukt",
@@ -34,6 +36,14 @@
     "mapTitle": "Routevoorbeeldkaart"
   },
   "transportDialog": {
+    "calculateTitle": "Rijafstand berekenen uit de Van/Naar-adressen",
+    "suggestTitle": "Tolkosten voorstellen op basis van de afstand en het tarief per km",
+    "validation": {
+      "vehicleRequired": "Kies een voertuig.",
+      "licensePlateRequired": "Vul het kenteken in.",
+      "scheduledDateRequired": "Kies een geplande datum.",
+      "transportTypeRequired": "Kies een soort transport."
+    },
     "typeLabels": {
       "swap": "Voertuigwissel",
       "tow": "Slepen",
@@ -121,6 +131,17 @@
     "saveChanges": "Wijzigingen opslaan"
   },
   "dashboardPage": {
+    "deleteButtonTitle": "Verwijderen",
+    "routeUnknownPlace": "onbekend",
+    "completeConfirm": {
+      "title": "Transport afronden?",
+      "description": "Het transport wordt als voltooid gemarkeerd. Dat kun je daarna niet zomaar terugdraaien.",
+      "dateLabel": "Afgerond op",
+      "outcomeLabel": "Uitkomst",
+      "outcomePlaceholder": "Bijvoorbeeld: auto afgeleverd, klant niet thuis, schade gemeld",
+      "outcomePrefix": "Uitkomst:",
+      "confirm": "Afronden"
+    },
     "columnReservation": "Reservering",
     "columnCustomer": "Klant",
     "columnVehicle": "Voertuig",
@@ -140,6 +161,8 @@
     "noDeliveriesInCategory": "Geen leveringen in deze categorie",
     "viewButton": "Bekijken",
     "toasts": {
+      "reportGeneratedTitle": "Rapport gemaakt",
+      "reportGeneratedDescription": "Het rapport staat in Documenten en wordt hieronder getoond.",
       "transportDeleted": "Transport verwijderd",
       "deleteFailedTitle": "Verwijderen van transport mislukt",
       "genericTryAgain": "Probeer het opnieuw.",

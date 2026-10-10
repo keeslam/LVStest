@@ -287,7 +287,13 @@ export function RouteOptimizationDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="items-center">
+          {/* A-8-5: a greyed-out button says nothing - name the reason. */}
+          {stopsWithAddress.length === 0 && (
+            <p className="text-sm text-muted-foreground sm:mr-auto" data-testid="hint-optimize-route-disabled">
+              {stops.length === 0 ? t('routeOptimization.optimizeDisabledNoStops') : t('routeOptimization.optimizeDisabledNoAddress')}
+            </p>
+          )}
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
             {t('common:actions.close')}
           </Button>

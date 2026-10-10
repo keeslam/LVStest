@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { makeTransportFormSchema, type TransportFormData } from "@/lib/transport-form-schema";
 import { apiRequest, invalidateByPrefix, invalidateRelatedQueries } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Customer, Reservation, Settings, Vehicle, VehicleTransport, UserPermission } from "@shared/schema";
@@ -44,52 +44,6 @@ import { AlertTriangle, Loader2, Search, X } from "lucide-react";
 import { formatLicensePlate } from "@/lib/format-utils";
 import { officeToday } from "@/lib/office-date";
 
-const transportFormSchema = z.object({
-  // Required unless isExternalVehicle — enforced below via superRefine, since which
-  // one is required depends on that other field.
-  vehicleId: z.string().optional(),
-  isExternalVehicle: z.boolean().default(false),
-  externalLicensePlate: z.string().optional(),
-  externalBrand: z.string().optional(),
-  externalModel: z.string().optional(),
-  externalColor: z.string().optional(),
-  externalOwnerName: z.string().optional(),
-  externalOwnerPhone: z.string().optional(),
-  spareRequired: z.boolean().default(false),
-  // Empty string = TBD (spare required but not yet picked) — a valid, intentional
-  // state, not a validation error.
-  relatedVehicleId: z.string().optional(),
-  transportType: z.enum(["swap", "tow", "repossession", "delivery", "other"], {
-    required_error: "Please select a transport type",
-  }),
-  status: z.enum(["scheduled", "in_progress", "completed", "cancelled"]).default("scheduled"),
-  scheduledDate: z.string().min(1, "Scheduled date is required"),
-  completedDate: z.string().optional(),
-  originAddress: z.string().optional(),
-  originCity: z.string().optional(),
-  destinationAddress: z.string().optional(),
-  destinationCity: z.string().optional(),
-  distanceKm: z.union([z.string(), z.number()]).optional(),
-  tollCost: z.union([z.string(), z.number()]).optional(),
-  isBreakdownOrMaintenance: z.boolean().default(false),
-  billable: z.boolean().default(false),
-  customerId: z.string().optional(),
-  billableAmount: z.union([z.string(), z.number()]).optional(),
-  invoiced: z.boolean().default(false),
-  driverName: z.string().optional(),
-  reason: z.string().optional(),
-  notes: z.string().optional(),
-}).superRefine((data, ctx) => {
-  if (data.isExternalVehicle) {
-    if (!data.externalLicensePlate || data.externalLicensePlate.trim() === '') {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["externalLicensePlate"], message: "License plate is required" });
-    }
-  } else if (!data.vehicleId || data.vehicleId.trim() === '') {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["vehicleId"], message: "Please select a vehicle" });
-  }
-});
-
-type TransportFormData = z.infer<typeof transportFormSchema>;
 
 const TRANSPORT_TYPE_VALUES = ["swap", "tow", "repossession", "delivery", "other"] as const;
 
@@ -127,7 +81,7 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
   });
 
   const form = useForm<TransportFormData>({
-    resolver: zodResolver(transportFormSchema),
+    resolver: zodResolver(makeTransportFormSchema((key) => t(key))),
     defaultValues: {
       vehicleId: "",
       isExternalVehicle: false,
@@ -867,12 +821,13 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                         size="sm"
                         onClick={() => estimateDistanceMutation.mutate()}
                         disabled={!canEstimateDistance || estimateDistanceMutation.isPending}
+                        title={t('transportDialog.calculateTitle')}
                         data-testid="button-calculate-distance"
                       >
                         {estimateDistanceMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t('transportDialog.calculate')}
                       </Button>
                     </div>
-                    <FormDescription>{t('transportDialog.distanceDescription')}</FormDescription>
+                    <FormDescription className="text-foreground/80">{t('transportDialog.distanceDescription')}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -887,11 +842,11 @@ export function TransportDialog({ open, onOpenChange, editingTransport }: Transp
                       <FormControl>
                         <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} value={field.value ?? ""} />
                       </FormControl>
-                      <Button type="button" variant="outline" size="sm" onClick={applySuggestedTollCost} disabled={!distanceKmWatch}>
+                      <Button type="button" variant="outline" size="sm" onClick={applySuggestedTollCost} disabled={!distanceKmWatch} title={t('transportDialog.suggestTitle')}>
                         {t('transportDialog.suggest')}
                       </Button>
                     </div>
-                    <FormDescription>{t('transportDialog.tollRateDescription', { rate: tollRatePerKm.toFixed(2) })}</FormDescription>
+                    <FormDescription className="text-foreground/80">{t('transportDialog.tollRateDescription', { rate: tollRatePerKm.toFixed(2) })}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -8983,12 +8983,10 @@ export async function registerRoutes(app: Express): Promise<void> {
       let notes: string;
       if (transports.length === 1) {
         const t = transports[0];
+      const { transportReportVehicleLabel } = await import('./utils/transport-report-filename');
         const dateStr = t.scheduledDate ? format(new Date(t.scheduledDate), 'dd-MM-yyyy') : format(new Date(), 'dd-MM-yyyy');
-        const vehicleLabel = t.vehicle
-          ? `${t.vehicle.brand}_${t.vehicle.model}`
-          : t.isExternalVehicle
-            ? `${t.externalBrand || 'External'}_${t.externalModel || t.externalLicensePlate || ''}`
-            : `Vehicle_${t.vehicleId}`;
+        // A-8-4: no "Unknown_Unknown" file names - see transportReportVehicleLabel.
+        const vehicleLabel = transportReportVehicleLabel(t);
         fileName = `Transport_Report_${sanitizeForFilename(vehicleLabel)}_${dateStr}_${uniqueSuffix}.pdf`;
         const route = [t.originCity, t.destinationCity].filter(Boolean).join(' -> ');
         notes = `${transportTypeLabels[t.transportType] || t.transportType} scheduled ${dateStr}${route ? ` — ${route}` : ''}`;

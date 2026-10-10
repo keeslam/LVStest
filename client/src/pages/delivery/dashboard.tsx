@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { ActionIconButton } from "@/components/delivery/action-icon-button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -141,6 +143,12 @@ export default function DeliveryDashboard() {
   // transport afterward; unset for the row/post-assign triggers, which don't chain
   // into completion.
   const [completeAfterPickupPromptId, setCompleteAfterPickupPromptId] = useState<number | null>(null);
+  // A-8-1: "Afronden" asks first, and takes the date and the outcome. What was
+  // entered is kept here while the spare-vehicle prompt (below) runs first.
+  const [completeConfirmTransport, setCompleteConfirmTransport] = useState<VehicleTransport | null>(null);
+  const [completeDate, setCompleteDate] = useState("");
+  const [completeOutcome, setCompleteOutcome] = useState("");
+  const [pendingCompletion, setPendingCompletion] = useState<{ completedDate: string; notes?: string } | null>(null);
   const { openVehicleDialog, openReservationDialog } = useGlobalDialog();
   const [activeTransportType, setActiveTransportType] = useState<string>("all");
   const [transportStatusFilter, setTransportStatusFilter] = useState<string>("all");
@@ -261,10 +269,11 @@ export default function DeliveryDashboard() {
   });
 
   const completeTransportMutation = useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async ({ id, completedDate, notes }: { id: number; completedDate: string; notes?: string }) => {
       await apiRequest("PATCH", `/api/transports/${id}`, {
         status: "completed",
-        completedDate: officeToday(),
+        completedDate,
+        ...(notes !== undefined ? { notes } : {}),
       });
     },
     onSuccess: () => {
@@ -285,20 +294,43 @@ export default function DeliveryDashboard() {
   // instead of completing immediately; anything else (no spare, still TBD, already
   // returned) completes exactly as before.
   const handleCompleteTransportClick = (transport: VehicleTransport) => {
+    setCompleteDate(officeToday());
+    setCompleteOutcome("");
+    setCompleteConfirmTransport(transport);
+  };
+
+  // The question was answered "yes": the outcome is added to the transport's
+  // notes (never replacing them), then the spare-vehicle guard runs as before.
+  const confirmCompleteTransport = () => {
+    const transport = completeConfirmTransport;
+    if (!transport) return;
+    const outcome = completeOutcome.trim();
+    const notes = outcome
+      ? [transport.notes, `${t('dashboardPage.completeConfirm.outcomePrefix')} ${outcome}`].filter(Boolean).join("\n")
+      : undefined;
+    const completion = { completedDate: completeDate || officeToday(), notes };
+    setCompleteConfirmTransport(null);
+
     const spareStatus = getTransportSpareStatus(transport);
     if (spareStatus === 'assigned' || spareStatus === 'picked_up') {
+      setPendingCompletion(completion);
       setPickupPromptMode(spareStatus === 'picked_up' ? 'return' : 'pickup');
       setPickupPromptTransport(transport);
       setCompleteAfterPickupPromptId(transport.id);
     } else {
-      completeTransportMutation.mutate(transport.id);
+      completeTransportMutation.mutate({ id: transport.id, ...completion });
     }
   };
 
   const handlePickupPromptResolved = () => {
     if (completeAfterPickupPromptId != null) {
-      completeTransportMutation.mutate(completeAfterPickupPromptId);
+      completeTransportMutation.mutate({
+        id: completeAfterPickupPromptId,
+        completedDate: pendingCompletion?.completedDate ?? officeToday(),
+        notes: pendingCompletion?.notes,
+      });
       setCompleteAfterPickupPromptId(null);
+      setPendingCompletion(null);
     }
   };
 
@@ -329,6 +361,11 @@ export default function DeliveryDashboard() {
       setReportToPreview(document);
       setReportPreviewOpen(true);
       setSelectedRowKeys([]);
+      // A-8-3: say it in words as well - the preview alone is easy to miss.
+      toast({
+        title: t('dashboardPage.toasts.reportGeneratedTitle'),
+        description: t('dashboardPage.toasts.reportGeneratedDescription'),
+      });
     },
     onError: (error: any) => {
       toast({
@@ -498,6 +535,12 @@ export default function DeliveryDashboard() {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [viewingData, setViewingData] = useState<TransportViewData | null>(null);
 
+  // A-8-4: an incomplete route reads "Eindhoven → onbekend", not "Eindhoven → ?".
+  const routeText = (origin?: string | null, destination?: string | null) =>
+    origin || destination
+      ? `${origin || t('dashboardPage.routeUnknownPlace')} → ${destination || t('dashboardPage.routeUnknownPlace')}`
+      : null;
+
   const openTransportView = (transport: VehicleTransport) => {
     setViewingData({
       title: t('dashboardPage.viewTransportSubtitle'),
@@ -511,9 +554,7 @@ export default function DeliveryDashboard() {
       replacementVehicleLabel: renderReplacementVehicleCell(transport),
       typeLabel: TRANSPORT_TYPE_LABELS[transport.transportType] || transport.transportType,
       statusBadge: getTransportStatusBadge(transport.status),
-      routeLabel: transport.originCity || transport.destinationCity
-        ? `${transport.originCity || '?'} → ${transport.destinationCity || '?'}`
-        : null,
+      routeLabel: routeText(transport.originCity, transport.destinationCity),
       scheduledDate: transport.scheduledDate,
       completedDate: transport.completedDate,
       distanceKm: transport.distanceKm,
@@ -816,15 +857,13 @@ export default function DeliveryDashboard() {
                           </TableCell>
                           <TableCell>{getTransportStatusBadge(rowStatus(row))}</TableCell>
                           <TableCell>
-                            <Button
-                              size="icon"
-                              variant="ghost"
+                            <ActionIconButton
                               onClick={() => openDeliveryView(reservation)}
-                              title={t('dashboardPage.viewButton')}
+                              label={t('dashboardPage.viewButton')}
                               data-testid={`button-view-delivery-${reservation.id}`}
                             >
                               <Eye className="h-4 w-4" />
-                            </Button>
+                            </ActionIconButton>
                           </TableCell>
                         </TableRow>
                       );
@@ -870,7 +909,7 @@ export default function DeliveryDashboard() {
                             {transport.originCity || transport.destinationCity ? (
                               <div className="flex items-center gap-1">
                                 <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-                                {transport.originCity || '?'} → {transport.destinationCity || '?'}
+                                {routeText(transport.originCity, transport.destinationCity)}
                               </div>
                             ) : (
                               <span className="text-muted-foreground">-</span>
@@ -898,29 +937,25 @@ export default function DeliveryDashboard() {
                         <TableCell>{getTransportStatusBadge(transport.status)}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Button
-                              size="icon"
-                              variant="ghost"
+                            <ActionIconButton
                               onClick={() => openTransportView(transport)}
-                              title={t('dashboardPage.viewButton')}
+                              label={t('dashboardPage.viewButton')}
                               data-testid={`button-view-transport-${transport.id}`}
                             >
                               <Eye className="h-4 w-4" />
-                            </Button>
+                            </ActionIconButton>
                             {(() => {
                               const canComplete = transport.status !== "completed" && transport.status !== "cancelled";
                               return (
                                 <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS]}>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
+                                  <ActionIconButton
                                     onClick={() => handleCompleteTransportClick(transport)}
                                     disabled={!canComplete || completeTransportMutation.isPending}
-                                    title={canComplete ? t('dashboardPage.markAsCompletedTitle') : t('dashboardPage.alreadyFinalizedTitle')}
+                                    label={canComplete ? t('dashboardPage.markAsCompletedTitle') : t('dashboardPage.alreadyFinalizedTitle')}
                                     data-testid={`button-complete-transport-${transport.id}`}
                                   >
                                     <CheckCircle className={`h-4 w-4 ${canComplete ? 'text-green-600' : ''}`} />
-                                  </Button>
+                                  </ActionIconButton>
                                 </RequiresPermission>
                               );
                             })()}
@@ -935,16 +970,14 @@ export default function DeliveryDashboard() {
                                 // than the transports-PATCH permission the fact sheet
                                 // assumed for this row.
                                 <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
+                                  <ActionIconButton
                                     onClick={() => { setPickupPromptMode('pickup'); setPickupPromptTransport(transport); }}
                                     disabled={!canMarkPickedUp}
-                                    title={canMarkPickedUp ? t('dashboardPage.markSparePickedUpTitle') : t('dashboardPage.spareNotAssignedTitle')}
+                                    label={canMarkPickedUp ? t('dashboardPage.markSparePickedUpTitle') : t('dashboardPage.spareNotAssignedTitle')}
                                     data-testid={`button-mark-spare-pickup-${transport.id}`}
                                   >
                                     <PackageCheck className={`h-4 w-4 ${canMarkPickedUp ? 'text-blue-600' : ''}`} />
-                                  </Button>
+                                  </ActionIconButton>
                                 </RequiresPermission>
                               );
                             })()}
@@ -954,26 +987,22 @@ export default function DeliveryDashboard() {
                                 // Same finding as mark-spare-pickup above: "Now" hands
                                 // off to ReturnDialog — MANAGE_RESERVATIONS only.
                                 <RequiresPermission anyOf={[UserPermission.MANAGE_RESERVATIONS]}>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
+                                  <ActionIconButton
                                     onClick={() => { setPickupPromptMode('return'); setPickupPromptTransport(transport); }}
                                     disabled={!canMarkReturned}
-                                    title={canMarkReturned ? t('dashboardPage.markSpareReturnedTitle') : t('dashboardPage.spareNotPickedUpTitle')}
+                                    label={canMarkReturned ? t('dashboardPage.markSpareReturnedTitle') : t('dashboardPage.spareNotPickedUpTitle')}
                                     data-testid={`button-mark-spare-return-${transport.id}`}
                                   >
                                     <Undo2 className={`h-4 w-4 ${canMarkReturned ? 'text-orange-600' : ''}`} />
-                                  </Button>
+                                  </ActionIconButton>
                                 </RequiresPermission>
                               );
                             })()}
                             <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS]}>
-                              <Button
-                                size="icon"
-                                variant="ghost"
+                              <ActionIconButton
                                 onClick={() => handlePrintTransportClick(transport)}
                                 disabled={generateReportMutation.isPending || getTransportSpareStatus(transport) === 'tbd'}
-                                title={getTransportSpareStatus(transport) === 'tbd' ? t('dashboardPage.replacementVehicleRequiredForPrint') : t('dashboardPage.printGenerateReportTitle')}
+                                label={getTransportSpareStatus(transport) === 'tbd' ? t('dashboardPage.replacementVehicleRequiredForPrint') : t('dashboardPage.printGenerateReportTitle')}
                                 data-testid={`button-print-transport-${transport.id}`}
                               >
                                 {generateReportMutation.isPending ? (
@@ -981,28 +1010,25 @@ export default function DeliveryDashboard() {
                                 ) : (
                                   <Printer className="h-4 w-4" />
                                 )}
-                              </Button>
+                              </ActionIconButton>
                             </RequiresPermission>
                             <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS]}>
-                              <Button
-                                size="icon"
-                                variant="ghost"
+                              <ActionIconButton
                                 onClick={() => { setEditingTransport(transport); setTransportDialogOpen(true); }}
-                                title={t('dashboardPage.editButtonTitle')}
+                                label={t('dashboardPage.editButtonTitle')}
                                 data-testid={`button-edit-transport-${transport.id}`}
                               >
                                 <Pencil className="h-4 w-4" />
-                              </Button>
+                              </ActionIconButton>
                             </RequiresPermission>
                             <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES, UserPermission.MANAGE_RESERVATIONS]}>
-                              <Button
-                                size="icon"
-                                variant="ghost"
+                              <ActionIconButton
                                 onClick={() => setDeletingTransport(transport)}
+                                label={t('dashboardPage.deleteButtonTitle')}
                                 data-testid={`button-delete-transport-${transport.id}`}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
+                              </ActionIconButton>
                             </RequiresPermission>
                           </div>
                         </TableCell>
@@ -1049,6 +1075,47 @@ export default function DeliveryDashboard() {
         vehicles={vehicles}
         customers={customers}
       />
+
+      {/* A-8-1: finishing a transport is final (it also writes the report), so it asks first
+          and takes the date and, if there is one, the outcome. */}
+      <AlertDialog open={!!completeConfirmTransport} onOpenChange={(open) => !open && setCompleteConfirmTransport(null)}>
+        <AlertDialogContent data-testid="dialog-complete-transport">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('dashboardPage.completeConfirm.title')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('dashboardPage.completeConfirm.description')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label htmlFor="complete-date" className="text-sm font-medium">{t('dashboardPage.completeConfirm.dateLabel')}</label>
+              <Input
+                id="complete-date"
+                type="date"
+                value={completeDate}
+                onChange={(e) => setCompleteDate(e.target.value)}
+                data-testid="input-complete-date"
+              />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="complete-outcome" className="text-sm font-medium">
+                {t('dashboardPage.completeConfirm.outcomeLabel')} <span className="text-muted-foreground font-normal">{t('transportDialog.optional')}</span>
+              </label>
+              <Textarea
+                id="complete-outcome"
+                value={completeOutcome}
+                onChange={(e) => setCompleteOutcome(e.target.value)}
+                placeholder={t('dashboardPage.completeConfirm.outcomePlaceholder')}
+                data-testid="input-complete-outcome"
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-complete-transport">{t('common:actions.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCompleteTransport} data-testid="button-confirm-complete-transport">
+              {t('dashboardPage.completeConfirm.confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!deletingTransport} onOpenChange={(open) => !open && setDeletingTransport(null)}>
         <AlertDialogContent>
@@ -1155,9 +1222,9 @@ function TransportGlanceCard({ title, emptyLabel, transport, t, onView }: {
                   <Badge variant="outline" className="text-[10px] px-1 py-0 shrink-0">{t('dashboardPage.externalVehicleBadge')}</Badge>
                 )}
               </div>
-              <Button size="icon" variant="ghost" className="h-6 w-6 shrink-0" onClick={() => onView(transport)} data-testid={`button-view-glance-${transport.id}`}>
+              <ActionIconButton className="h-6 w-6 shrink-0" onClick={() => onView(transport)} label={t('dashboardPage.viewButton')} data-testid={`button-view-glance-${transport.id}`}>
                 <Eye className="h-3.5 w-3.5" />
-              </Button>
+              </ActionIconButton>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <User className="h-3 w-3 shrink-0" />
@@ -1166,7 +1233,7 @@ function TransportGlanceCard({ title, emptyLabel, transport, t, onView }: {
             {(transport.originCity || transport.destinationCity) && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <MapPin className="h-3 w-3 shrink-0" />
-                <span className="truncate">{transport.originCity || '?'} → {transport.destinationCity || '?'}</span>
+                <span className="truncate">{`${transport.originCity || t('dashboardPage.routeUnknownPlace')} → ${transport.destinationCity || t('dashboardPage.routeUnknownPlace')}`}</span>
               </div>
             )}
             <div className="text-xs text-muted-foreground">

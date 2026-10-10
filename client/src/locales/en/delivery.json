@@ -1,5 +1,7 @@
 {
   "routeOptimization": {
+    "optimizeDisabledNoStops": "Nothing is planned on this date. Pick another date.",
+    "optimizeDisabledNoAddress": "None of the planned jobs has an address or city. Fill those in first.",
     "routeOptimizedWithWarnings": "Route optimized with warnings",
     "stopsNotLocated": "{{count}} stop(s) couldn't be located and were left out.",
     "optimizeFailedTitle": "Failed to optimize route",
@@ -34,6 +36,14 @@
     "mapTitle": "Route preview map"
   },
   "transportDialog": {
+    "calculateTitle": "Calculate the driving distance from the From/To addresses",
+    "suggestTitle": "Suggest toll costs from the distance and the rate per km",
+    "validation": {
+      "vehicleRequired": "Choose a vehicle.",
+      "licensePlateRequired": "Enter the licence plate.",
+      "scheduledDateRequired": "Choose a scheduled date.",
+      "transportTypeRequired": "Choose a transport type."
+    },
     "typeLabels": {
       "swap": "Vehicle Swap",
       "tow": "Tow",
@@ -121,6 +131,17 @@
     "saveChanges": "Save Changes"
   },
   "dashboardPage": {
+    "deleteButtonTitle": "Delete",
+    "routeUnknownPlace": "unknown",
+    "completeConfirm": {
+      "title": "Finish this transport?",
+      "description": "The transport is marked as completed. That cannot simply be undone afterwards.",
+      "dateLabel": "Finished on",
+      "outcomeLabel": "Outcome",
+      "outcomePlaceholder": "For example: vehicle delivered, customer not home, damage reported",
+      "outcomePrefix": "Outcome:",
+      "confirm": "Finish"
+    },
     "columnReservation": "Reservation",
     "columnCustomer": "Customer",
     "columnVehicle": "Vehicle",
@@ -140,6 +161,8 @@
     "noDeliveriesInCategory": "No deliveries in this category",
     "viewButton": "View",
     "toasts": {
+      "reportGeneratedTitle": "Report created",
+      "reportGeneratedDescription": "The report is saved in Documents and shown below.",
       "transportDeleted": "Transport deleted",
       "deleteFailedTitle": "Failed to delete transport",
       "genericTryAgain": "Please try again.",
