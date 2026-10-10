@@ -6,7 +6,7 @@
  * reason apart.
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { agentFor, anonAgent, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
+import { agentFor, anonAgent, cleanupFixtureUsers, FIXTURE_USER_PREFIX, type TestAgent } from "./helpers/app";
 
 describe("POST /api/login — one neutral message for every credential failure", () => {
   let target: TestAgent;
@@ -20,7 +20,7 @@ describe("POST /api/login — one neutral message for every credential failure",
   });
 
   it("an unknown user and a wrong password give the same status and message", async () => {
-    const unknown = await (await anonAgent()).post("/api/login").send({ username: "nobody-p9-xyz", password: "whatever-123" });
+    const unknown = await (await anonAgent()).post("/api/login").send({ username: `${FIXTURE_USER_PREFIX}unknown-p9`, password: "whatever-123" });
     const wrong = await (await anonAgent()).post("/api/login").send({ username: target.username, password: "definitely-wrong-1" });
 
     expect(unknown.status).toBe(401);

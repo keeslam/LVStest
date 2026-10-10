@@ -2853,6 +2853,11 @@ export async function registerRoutes(app: Express): Promise<void> {
   // A-2-6: the dashboard's spare-vehicle widget needs only the open replacement
   // reservations and the rentals they replace, not the whole booking history.
   // Same guard as GET /api/reservations.
+  // Response: Reservation[] shaped like GET /api/reservations (each row with its
+  // embedded `vehicle` and `customer`), holding (1) every live replacement
+  // reservation that has a vehicle, is not cancelled and whose spareVehicleStatus is
+  // NULL or not 'returned', and (2) the live rentals those point at through
+  // replacementForReservationId. Soft-deleted rows are never included.
   app.get("/api/reservations/spare-overview", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req, res) => {
     try {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');

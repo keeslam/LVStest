@@ -4,7 +4,7 @@
  * decided. "Later" closes it and keeps it quiet until tomorrow (office date).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
@@ -26,11 +26,12 @@ function renderDialog() {
   const client = new QueryClient({
     defaultOptions: { queries: { queryFn: getQueryFn({ on401: "throw" }), retry: false, gcTime: 0 } },
   });
-  return render(
+  render(
     <QueryClientProvider client={client}>
       <GlobalDialogProvider><ApkDateChangesDialog /></GlobalDialogProvider>
     </QueryClientProvider>,
   );
+  return client;
 }
 
 beforeEach(() => {
@@ -58,8 +59,11 @@ describe("APK-date changes pop-up — Later", () => {
 
   it("stays closed in a new session while snoozed", async () => {
     localStorage.setItem(APK_DATE_CHANGES_SNOOZE_KEY, officeTomorrow());
-    renderDialog();
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    const client = renderDialog();
+    // The pending changes have arrived (so the auto-open effect had its chance)...
+    await waitFor(() => expect(client.getQueryData(["/api/apk-date-changes"])).toEqual(pending));
+    await waitFor(() => expect(client.isFetching()).toBe(0));
+    // ...and the snooze kept the dialog shut.
     expect(screen.queryByTestId("button-apk-changes-later")).not.toBeInTheDocument();
   });
 

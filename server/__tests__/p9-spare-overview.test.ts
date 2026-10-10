@@ -45,6 +45,20 @@ describe("GET /api/reservations/spare-overview", () => {
     await spare("pickedUp", "picked_up", "picked_up");
     await spare("returned", "returned", "completed");
     await spare("cancelled", "assigned", "cancelled");
+    // No spare status recorded at all (NULL): still an open spare.
+    await spare("noStatus", null);
+    // A soft-deleted spare must not show up...
+    await spare("deletedSpare", "assigned");
+    await db.update(reservations).set({ deletedAt: new Date() } as any).where(eq(reservations.id, ids.deletedSpare));
+    // ...and a soft-deleted parent is left out while its live spare stays.
+    const deletedParent = await createFixtureReservation({ customerId, vehicleId: vehicle.id });
+    await db.update(reservations).set({ deletedAt: new Date() } as any).where(eq(reservations.id, deletedParent.id));
+    ids.deletedParent = deletedParent.id;
+    const orphan = await createFixtureReservation({ customerId, vehicleId: spareVehicle.id, type: "replacement" });
+    await db.update(reservations)
+      .set({ replacementForReservationId: deletedParent.id, spareVehicleStatus: "assigned" } as any)
+      .where(eq(reservations.id, orphan.id));
+    ids.orphanSpare = orphan.id;
   }, 90_000);
 
   afterAll(async () => {
@@ -70,6 +84,15 @@ describe("GET /api/reservations/spare-overview", () => {
     expect(got.has(ids.returned)).toBe(false);
     expect(got.has(ids.cancelled)).toBe(false);
     expect(got.has(ids.unrelated)).toBe(false);
+  });
+
+  it("keeps a spare with no spare status, and skips soft-deleted spares and parents", async () => {
+    const res = await admin.get("/api/reservations/spare-overview");
+    const got = new Set<number>(res.body.map((r: any) => r.id));
+    expect(got.has(ids.noStatus)).toBe(true);
+    expect(got.has(ids.deletedSpare)).toBe(false);
+    expect(got.has(ids.deletedParent)).toBe(false);
+    expect(got.has(ids.orphanSpare)).toBe(true);
   });
 
   it("is guarded like /api/reservations", async () => {
