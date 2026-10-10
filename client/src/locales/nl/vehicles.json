@@ -441,6 +441,7 @@
       "apkInspectionTitle": "APK-keuring",
       "currentApkValidUntil": "Huidige APK geldig tot",
       "notSet": "Niet ingesteld",
+      "noWarrantyDate": "Geen garantiedatum",
       "overdueByLabel": "Te laat met",
       "daysRemainingLabel": "Dagen resterend",
       "expiredBadge": "Verlopen",

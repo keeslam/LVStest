@@ -29,6 +29,11 @@ interface VehicleDeleteDialogProps {
   children?: React.ReactNode;
   onSuccess?: () => void;
   /**
+   * Called first thing after the server confirmed the delete, before any list is refreshed.
+   * A screen that still shows this vehicle uses it to stop asking the server about it (A-3-4).
+   */
+  onDeleted?: () => void;
+  /**
    * Optional controlled mode. When `open`/`onOpenChange` are provided the
    * dialog renders without its own trigger and its open state is owned by the
    * parent (e.g. page-level state that survives table re-renders).
@@ -60,6 +65,7 @@ export function VehicleDeleteDialog({
   vehicleLicensePlate,
   children,
   onSuccess,
+  onDeleted,
   open: controlledOpen,
   onOpenChange,
 }: VehicleDeleteDialogProps) {
@@ -130,6 +136,7 @@ export function VehicleDeleteDialog({
       }
     },
     onSuccess: () => {
+      onDeleted?.();
       // Refresh the vehicles list
       invalidateByPrefix("/api/vehicles");
       invalidateByPrefix("/api/reservations");

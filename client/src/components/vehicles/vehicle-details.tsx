@@ -115,6 +115,11 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
   // Quick edit straight from the info cards, so a single value doesn't require
   // opening the full vehicle form. Fuel has its own dialog (cost + receipt).
   const [quickEditField, setQuickEditField] = useState<'mileage' | 'apk' | 'warranty' | null>(null);
+  // A-3-4: set the moment the delete went through. Every query of this screen that asks the
+  // server about this very vehicle is switched off first, so the refetch that follows the delete
+  // (and the soft invalidation of the websocket) never asks for a vehicle that is gone - that
+  // answered 404 and the global handler turned it into a red toast.
+  const [isDeleted, setIsDeleted] = useState(false);
   const [quickEditValue, setQuickEditValue] = useState("");
   const [mileageOverrideOpen, setMileageOverrideOpen] = useState(false);
   const [isApkReminderOpen, setIsApkReminderOpen] = useState(false);
@@ -275,7 +280,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     error: vehicleError 
   } = useQuery<Vehicle>({
     queryKey: vehicleQueryKey,
-    enabled: !!vehicleId
+    enabled: !!vehicleId && !isDeleted
   });
 
   // Auto-open APK dialog from sessionStorage (from notifications)
@@ -721,6 +726,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     originalReservation: Reservation;
   }>({
     queryKey: ['/api/vehicles', vehicleId, 'spare-assignment'],
+    enabled: !isDeleted,
     queryFn: async () => {
       const response = await fetch(`/api/vehicles/${vehicleId}/spare-assignment`);
       if (response.status === 404) return null;
@@ -738,6 +744,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     customer: Customer | null;
   }>({
     queryKey: ['/api/vehicles', vehicleId, 'acting-as-spare'],
+    enabled: !isDeleted,
     queryFn: async () => {
       const response = await fetch(`/api/vehicles/${vehicleId}/acting-as-spare`);
       if (response.status === 404) return null;
@@ -804,6 +811,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     refetch: refetchBlacklist 
   } = useQuery<any[]>({
     queryKey: [`/api/vehicles/${vehicleId}/blacklist`],
+    enabled: !isDeleted,
   });
 
   // Fetch all customers for the add blacklist dropdown
@@ -1104,6 +1112,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
             vehicleBrand={vehicle.brand}
             vehicleModel={vehicle.model}
             vehicleLicensePlate={vehicle.licensePlate}
+            onDeleted={() => setIsDeleted(true)}
             onSuccess={() => {
               if (inDialogContext && onClose) {
                 onClose();
@@ -3032,7 +3041,10 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                     <div>
                       <p className="text-sm text-gray-500">{t('details.maintenance.daysRemaining')}</p>
                       <div className="flex items-center">
-                        <p className="text-lg font-medium mr-2">{daysUntilWarranty}</p>
+                        {/* A-3-6: without a warranty date there is nothing to count down; "0" read as "expires today". */}
+                        <p className="text-lg font-medium mr-2" data-testid="warranty-days-remaining">
+                          {vehicle.warrantyEndDate ? daysUntilWarranty : t('details.maintenance.noWarrantyDate')}
+                        </p>
                         {vehicle.warrantyEndDate && <Badge className={warrantyUrgencyClass}>{daysUntilWarranty <= 30 ? t('details.maintenance.expiringSoonBadge') : t('details.maintenance.activeBadge')}</Badge>}
                       </div>
                     </div>

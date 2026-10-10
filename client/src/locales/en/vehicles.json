@@ -441,6 +441,7 @@
       "apkInspectionTitle": "APK Inspection",
       "currentApkValidUntil": "Current APK Valid Until",
       "notSet": "Not set",
+      "noWarrantyDate": "No warranty date",
       "overdueByLabel": "Overdue By",
       "daysRemainingLabel": "Days Remaining",
       "expiredBadge": "Expired",
