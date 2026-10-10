@@ -10,7 +10,8 @@
  * (The transport bulk's client half was already converted to `allSettled` in
  * FIX-Q/BUG-053; this is the other half of the proposal.)
  */
-import { describe, it, expect, afterAll } from "vitest";
+import { describe, it, expect, afterAll, vi } from "vitest";
+import { storage } from "../storage";
 import request from "supertest";
 import { eq, inArray } from "drizzle-orm";
 import { db } from "../db";
@@ -108,6 +109,21 @@ describe("OPT-016 — een resultaat per rij", () => {
     expect(res.body.succeeded).toBe(0);
     expect(res.body.failed).toBe(2);
     expect(res.body.results.every((r: any) => r.ok === false)).toBe(true);
+  });
+
+  it("P10: a row that throws reports a fixed message and code, never the exception text", async () => {
+    const a = await pendingChange("2027-05-01");
+    const spy = vi.spyOn(storage, "updateVehicle").mockRejectedValueOnce(new Error("SECRET-DB-DETAIL relation apk_date_changes"));
+    const quiet = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const res = await admin.post("/api/apk-date-changes/bulk-confirm").send({ ids: [a.change.id] });
+      expect(res.status).toBe(200);
+      expect(res.body.results[0]).toMatchObject({ id: a.change.id, ok: false, reason: "error", code: "APK_CHANGE_FAILED" });
+      expect(JSON.stringify(res.body)).not.toContain("SECRET-DB-DETAIL");
+    } finally {
+      spy.mockRestore();
+      quiet.mockRestore();
+    }
   });
 
   it("still refuses a request that is not a list of ids", async () => {

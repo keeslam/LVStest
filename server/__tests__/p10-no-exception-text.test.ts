@@ -12,7 +12,6 @@ import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import express from "express";
 import request from "supertest";
 
-const SECRET = "SECRET-PG-DETAIL relation \"email_logs\" C:\\secret\\path";
 
 vi.mock("../db.js", async (importOriginal) => {
   const original = (await importOriginal()) as Record<string, unknown>;
@@ -76,7 +75,6 @@ describe("P10 — a failed request does not echo the exception", () => {
       expect(wire).not.toContain("SECRET-PG-DETAIL");
       expect(wire).not.toContain("secret");
       expect(wire).not.toContain("relation");
-      expect(SECRET).toContain("SECRET");
     });
   }
 });

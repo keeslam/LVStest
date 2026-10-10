@@ -5200,17 +5200,18 @@ export async function registerRoutes(app: Express): Promise<void> {
     try {
       const replacementReservationId = parseInt(req.params.id);
       if (isNaN(replacementReservationId)) {
-        return res.status(400).json({ message: "Ongeldig reserveringsnummer." });
+        return res.status(400).json({ message: "Ongeldig reserveringsnummer.", code: "INVALID_RESERVATION_ID" });
       }
 
       const { returnDate } = req.body;
 
       if (!returnDate) {
-        return res.status(400).json({ message: "Vul een inleverdatum in." });
+        return res.status(400).json({ message: "Vul een inleverdatum in.", code: "RETURN_DATE_REQUIRED" });
       }
       if (typeof returnDate !== 'string' || !isCalendarDate(returnDate)) {
         return res.status(400).json({
           message: "De inleverdatum is geen bestaande datum.",
+          code: "RETURN_DATE_INVALID",
           errors: [{ field: "returnDate", message: "Gebruik een echte datum (jjjj-mm-dd)" }],
         });
       }
@@ -5220,7 +5221,8 @@ export async function registerRoutes(app: Express): Promise<void> {
       });
 
       if (!result.ok) {
-        return res.status(result.status).json({ message: result.message });
+        // The storage layer words the refusal in Dutch; the client words it by this code.
+        return res.status(result.status).json({ message: result.message, code: "RETURN_FROM_SERVICE_REFUSED" });
       }
 
       if (result.vehicle) realtimeEvents.vehicles.updated(result.vehicle);
@@ -5236,7 +5238,7 @@ export async function registerRoutes(app: Express): Promise<void> {
 
     } catch (error) {
       console.error("Error returning vehicle from service:", error);
-      res.status(500).json({ message: "Terugnemen van onderhoud is niet gelukt." });
+      res.status(500).json({ message: "Terugnemen van onderhoud is niet gelukt.", code: "RETURN_FROM_SERVICE_FAILED" });
     }
   });
 

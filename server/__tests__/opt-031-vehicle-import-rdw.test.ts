@@ -150,6 +150,9 @@ describe("OPT-031 — de kentekenimport haalt de gegevens echt op", () => {
       .send({ licensePlates: ["", plate] });
     expect(res.body.failed).toHaveLength(2);
     expect(res.body.failed[1].error).toContain("already exists");
+    // P10: the client words these by code.
+    expect(res.body.failed[0].code).toBe("LICENSE_PLATE_REQUIRED");
+    expect(res.body.failed[1].code).toBe("VEHICLE_ALREADY_EXISTS");
   });
 });
 

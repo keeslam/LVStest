@@ -116,7 +116,9 @@ describe("portal admin routes", () => {
   it("manages the blacklist and counts blocks per online vehicle", async () => {
     const add = await request(app).post("/api/portal-admin/blacklist").send({ vehicleId, customerId, reason: "Betalingsachterstand" });
     expect(add.status).toBe(201);
-    expect((await request(app).post("/api/portal-admin/blacklist").send({ vehicleId, customerId })).status).toBe(409);
+    const duplicate = await request(app).post("/api/portal-admin/blacklist").send({ vehicleId, customerId });
+    expect(duplicate.status).toBe(409);
+    expect(duplicate.body.code).toBe("ALREADY_BLACKLISTED");
     expect((await request(app).post("/api/portal-admin/blacklist").send({ vehicleId: 999999, customerId })).status).toBe(404);
 
     const list = await request(viewer).get("/api/portal-admin/blacklist");
