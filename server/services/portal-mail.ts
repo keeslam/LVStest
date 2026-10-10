@@ -10,6 +10,7 @@ import { finesStorage } from "./fines-storage";
 import { requestsStorage } from "./portal-requests-storage";
 import { fillPlaceholders } from "../../shared/message-placeholders";
 import { formatDateNL, formatNumberNL } from "../utils/dutch-format";
+import { formatLicensePlate } from "../../shared/license-plate";
 
 export const PORTAL_TEMPLATE = {
   INVITE: "portal_invite",
@@ -258,7 +259,7 @@ export async function sendFineLinkedMail(fineId: number): Promise<boolean> {
     name: customer.contactPerson || customer.companyName || customer.name,
     company: customer.companyName || customer.name,
     // A-12-7 / B-18: Dutch notation. The template writes the euro sign itself, so the amounts are bare numbers ("95,00").
-    plate: fine.licensePlate, date: formatDateNL(fine.offenceAt), description: fine.description,
+    plate: formatLicensePlate(fine.licensePlate), date: formatDateNL(fine.offenceAt), description: fine.description,
     amount: formatNumberNL(fine.amount, 2), adminFee: formatNumberNL(fine.adminFee, 2), total: formatNumberNL(fine.totalAmount, 2),
     link: `${config.portalBaseUrl.replace(/\/$/, "")}/portaal/bekeuringen/${fine.id}`,
   };
@@ -276,7 +277,7 @@ export async function sendMaintenanceMail(customerId: number, vars: { plate: str
   const template = await getPortalTemplate(PORTAL_TEMPLATE.MAINTENANCE);
   const v = {
     name: customer.contactPerson || customer.companyName || customer.name,
-    plate: vars.plate, car: vars.car, event: vars.event, date: vars.date,
+    plate: formatLicensePlate(vars.plate), car: vars.car, event: vars.event, date: vars.date,
     endDate: vars.endDate && vars.endDate !== vars.date ? ` tot en met ${vars.endDate}` : "",
     pickupAddress: config.pickupAddress, openingHours: config.openingHours,
     link: `${config.portalBaseUrl.replace(/\/$/, "")}/portaal/voertuigen`,
@@ -311,6 +312,8 @@ export async function sendPortalCustomerMail(
     name: customer.contactPerson || customer.companyName || customer.name,
     company: customer.companyName || customer.name,
     ...vars,
+    // One plate notation in every mail; a "#123" placeholder (no plate) passes through unchanged.
+    ...(vars.plate ? { plate: formatLicensePlate(vars.plate) } : {}),
     link: `${config.portalBaseUrl.replace(/\/$/, "")}/portaal${portalPath}`,
   };
   const html = renderTemplate(template.content, v);

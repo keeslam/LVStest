@@ -91,6 +91,22 @@ describe("fines routes", () => {
     expect(back.body.status).toBe("new");
   });
 
+  it("the fine-linked mail writes the plate with dashes in the body and the subject", async () => {
+    const v = await createTestVehicle("PT99ZY");
+    await createTestReservation({ customerId, vehicleId: v.id, driverId, startDate: "2026-09-01", endDate: "2026-09-10", status: "picked_up" });
+    sendEmail.mockClear();
+    const res = await request(manager).post("/api/fines")
+      .send({ licensePlate: "PT99ZY", offenceAt: "2026-09-03T10:00:00.000Z", description: "Parkeren", amount: 60 });
+    expect(res.status).toBe(201);
+    expect(res.body.fine.status).toBe("linked");
+    expect(sendEmail).toHaveBeenCalledTimes(1);
+    const mail = sendEmail.mock.calls[0][0] as any;
+    expect(mail.subject).toContain("PT-99-ZY");
+    expect(mail.subject).not.toContain("PT99ZY");
+    expect(mail.html).toContain("PT-99-ZY");
+    expect(mail.html).not.toContain("PT99ZY");
+  });
+
   describe("failures answer a fixed message and a code, never the exception text", () => {
     const SECRET = "SECRET-FTPS 530 login incorrect for ftps.internal.example:990 C:\\secret\\path";
     const quiet = () => vi.spyOn(console, "error").mockImplementation(() => {});
