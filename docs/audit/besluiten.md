@@ -408,6 +408,7 @@ voordat er gepusht wordt. Handleiding bijgewerkt (10-10-2026), de PDF is nog nie
 - **"Pech":** het type `breakdown` heet in de hele app al "Pech", dus een oude omschrijving leest nu "Pech: lekke band". Wil Kees "Storing", dan is het één woord in de vertaling.
 - **"Binnen melden" vraagt "Voertuigen beheren":** de knop volgt de route die de auto in onderhoud zet. "Afronden" vraagt "Onderhoud beheren" of "Reserveringen beheren".
 - **Kosten:** de uitklapbare lijst per categorie is vervangen door één lijst met filter; de snelknoppen "kosten toevoegen" per categorie zijn weg; een kostenpost met een eigen, oude categorienaam wordt bij bewerken "Overig".
+- **Reserveringsvensters:** De reserveringsvensters vragen nu ook bij Escape, het kruisje en Annuleren of je wijzigingen wilt verwerpen (voorheen sloten die stil; alleen een klik buiten het venster gaf een melding). Consistent met A-3-10/A-4-8; Kees kan het terugdraaien.
 - **Hoofdletters:** B.V. en DHL blijven staan. Daardoor wordt een naam die helemaal in hoofdletters is getypt niet meer omgezet.
 - **Eenmalige gegevensopschoning bij de eerste start na de uitrol:** kostencategorieën naar kleine letters (markering `p1_expense_category_lowercase`) en lege bedrijfsnamen naar leeg (`p2_empty_company_name_null`). Controleer vooraf op productie: SELECT lower(btrim(category)), count(*) FROM expenses GROUP BY 1.
 - **Back-uplocatie:** het scherm toont het pad niet meer, alleen dat het vast is ingesteld.
