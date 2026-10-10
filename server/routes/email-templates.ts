@@ -18,7 +18,13 @@ const createTemplateSchema = z.object({
   category: z.enum(['apk', 'maintenance', 'custom']).default('custom'),
 });
 
-const updateTemplateSchema = createTemplateSchema;
+// The portal's system templates (category 'portal', seeded by
+// server/services/portal-mail.ts) are edited in the Sjabloonbouwer too: the
+// editor sends back the category it loaded, so an update has to accept it.
+// Creating a template in that category stays refused.
+const updateTemplateSchema = createTemplateSchema.extend({
+  category: z.enum(['apk', 'maintenance', 'custom', 'portal']).default('custom'),
+});
 
 // Get all email templates
 router.get('/', async (req, res) => {

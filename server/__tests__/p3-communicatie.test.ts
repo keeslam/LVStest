@@ -10,13 +10,16 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { eq, like } from "drizzle-orm";
 import { db } from "../db";
-import { customers, emailLogs } from "../../shared/schema";
+import { customers, emailLogs, emailTemplates } from "../../shared/schema";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureCustomer, cleanupFixtures } from "./helpers/fixtures";
 import { withSmtpStub, decodeBody } from "./helpers/smtpStub";
 import { sendEmail, clearEmailConfigCache } from "../utils/email-service";
 import { storage } from "../storage";
 import { renderTemplate } from "../services/portal-mail";
+import express from "express";
+import request from "supertest";
+import emailTemplatesRoutes from "../routes/email-templates";
 
 const SUBJECT_PREFIX = "FIXT-p3";
 
@@ -27,6 +30,7 @@ beforeAll(async () => {
 }, 60_000);
 
 afterAll(async () => {
+  await db.delete(emailTemplates).where(like(emailTemplates.name, `${SUBJECT_PREFIX}%`));
   await db.delete(emailLogs).where(like(emailLogs.subject, `${SUBJECT_PREFIX}%`));
   await cleanupFixtures();
   await cleanupFixtureUsers();
@@ -139,4 +143,31 @@ describe("A-13-2 - stable codes in the stored reasons", () => {
     expect(res.body.failed).toBe(1);
     expect(res.body.errors[0]).toMatch(/^NO_ADDRESS: No emailForInvoices email for customer /);
   }, 60_000);
+});
+
+describe("A-13-5 follow-up - a system template can be saved again from the Sjabloonbouwer", () => {
+  it("PUT keeps category portal (the editor loads the stored category), POST still refuses it", async () => {
+    const [row] = await db.insert(emailTemplates).values({
+      name: `${SUBJECT_PREFIX}-portal-sjabloon`, subject: "Onderwerp {{name}}", content: "<p>Beste {{name}}</p>",
+      category: "portal", createdAt: new Date().toISOString(),
+    }).returning();
+
+    // The test harness does not mount this router (server/index.ts does, behind
+    // manage_email_templates); the validation under test is the router's own.
+    const app = express();
+    app.use(express.json());
+    app.use("/api/email-templates", emailTemplatesRoutes);
+
+    const updated = await request(app).put(`/api/email-templates/${row.id}`).send({
+      name: row.name, subject: "Nieuw onderwerp {{name}}", content: row.content, category: "portal",
+    });
+    expect(updated.status, JSON.stringify(updated.body)).toBe(200);
+    expect(updated.body.category).toBe("portal");
+    expect(updated.body.subject).toBe("Nieuw onderwerp {{name}}");
+
+    const created = await request(app).post("/api/email-templates").send({
+      name: `${SUBJECT_PREFIX}-nieuw`, subject: "s", content: "c", category: "portal",
+    });
+    expect(created.status).toBe(400);
+  });
 });
