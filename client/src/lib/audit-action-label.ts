@@ -4,48 +4,63 @@ import type { TFunction } from "i18next";
  * Wording for the audit log's action codes ("reservation.pickup").
  *
  * The codes are the server's stable vocabulary, not text for people (A-6-4, and
- * "customer.create" in A-4-5). Known sub-actions have a sentence of their own;
- * the ordinary `<resource>.<verb>` pairs are composed ("Reservering aangemaakt");
- * a code that is neither is returned unchanged, so a new server action shows up
- * as itself instead of vanishing or being worded wrongly.
+ * "customer.create" in A-4-5). The middleware writes `<resource>.<first path
+ * segment after the id>` (server/middleware/audit.ts), or `<resource>.<create|
+ * update|delete>` for a plain write, and the recycle bin writes
+ * `<entityType>.purge`. So:
+ *
+ *  - a known sub-action has a sentence of its own ("Contract gemaakt");
+ *  - an ordinary verb is composed ("Reservering aangemaakt");
+ *  - a known resource with a sub-action nobody has worded yet reads
+ *    "Reservering: <sub>" - recognisable and never the bare code;
+ *  - a code of an unknown resource is returned unchanged, so a new server action
+ *    shows up as itself instead of vanishing or being worded wrongly.
+ *
+ * Not listed on purpose: `reservation.cancel` and `reservation.purge` - no route
+ * writes them as such (cancelling goes through `reservation.status`, a purge
+ * through the generic `<entityType>.purge` verb below).
  *
  * All texts live in the `common` namespace under `recordHistory.actions`.
  */
 
-/** Codes that mean more than their verb. */
-const SPECIAL_ACTIONS: Record<string, string> = {
-  "reservation.pickup": "reservationPickup",
-  "reservation.return": "reservationReturn",
-  "reservation.status": "reservationStatus",
-  "reservation.cancel": "reservationCancel",
-  "reservation.revert": "reservationRevert",
-  "reservation.purge": "reservationPurge",
+/** Sub-actions that have a sentence of their own, per resource. */
+const SUB_ACTIONS: Record<string, readonly string[]> = {
+  reservation: [
+    "pickup", "return", "status", "revert", "contract", "assign-spare", "basic", "usage-period",
+    "spare-status", "complete-maintenance", "mark-needs-service", "return-from-service",
+  ],
+  vehicle: [
+    "mileage", "fuel-status", "maintenance-status", "barcode", "toggle-registration", "fiscal-profile", "blacklist",
+  ],
 };
 
 const RESOURCES = [
-  "reservation", "vehicle", "customer", "document", "expense", "transport", "fine", "driver", "maintenance",
+  "reservation", "vehicle", "customer", "document", "expense", "transport", "fine", "driver", "maintenance", "blacklist",
 ] as const;
 
-const VERBS = ["create", "update", "delete", "restore", "upload"] as const;
+const VERBS = ["create", "update", "delete", "restore", "upload", "purge"] as const;
 
 type Translate = TFunction | ((key: string, options?: Record<string, unknown>) => string);
 
 export function auditActionLabel(t: Translate, action: string): string {
   const translate = t as (key: string, options?: Record<string, unknown>) => string;
 
-  const special = SPECIAL_ACTIONS[action];
-  if (special) return translate(`recordHistory.actions.${special}`);
-
   const dot = action.indexOf(".");
-  if (dot > 0) {
-    const resource = action.slice(0, dot);
-    const verb = action.slice(dot + 1);
-    if ((RESOURCES as readonly string[]).includes(resource) && (VERBS as readonly string[]).includes(verb)) {
-      return translate("recordHistory.actions.composed", {
-        resource: translate(`recordHistory.actions.resources.${resource}`),
-        verb: translate(`recordHistory.actions.verbs.${verb}`),
-      });
-    }
+  if (dot <= 0) return action;
+  const resource = action.slice(0, dot);
+  const sub = action.slice(dot + 1);
+  if (!(RESOURCES as readonly string[]).includes(resource)) return action;
+
+  if (SUB_ACTIONS[resource]?.includes(sub)) {
+    return translate(`recordHistory.actions.subActions.${resource}.${sub}`);
   }
-  return action;
+
+  const resourceLabel = translate(`recordHistory.actions.resources.${resource}`);
+  if ((VERBS as readonly string[]).includes(sub)) {
+    return translate("recordHistory.actions.composed", {
+      resource: resourceLabel,
+      verb: translate(`recordHistory.actions.verbs.${sub}`),
+    });
+  }
+  return translate("recordHistory.actions.unknownSub", { resource: resourceLabel, sub });
 }

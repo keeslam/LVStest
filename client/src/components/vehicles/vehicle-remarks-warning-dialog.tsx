@@ -43,9 +43,10 @@ export function VehicleRemarksWarningDialog({
   const [editedRemarks, setEditedRemarks] = useState("");
   // A-5-2: this is a modal, so a click next to it (typically on the next form
   // field) used to vanish without a sign. `nudged` turns the hint into a
-  // highlighted one for a moment and focus moves to the confirm button.
+  // highlighted one for a moment and focus moves to that line - never to the confirm
+  // button: Enter or Space after a stray click must not acknowledge a safety remark.
   const [nudged, setNudged] = useState(false);
-  const acknowledgeRef = useRef<HTMLButtonElement>(null);
+  const hintRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
     if (vehicle?.remarks) {
@@ -67,7 +68,7 @@ export function VehicleRemarksWarningDialog({
       // Clicks inside the dialog (or a popup it opened) are the employee answering.
       if (target?.closest?.('[role="alertdialog"], [role="dialog"]')) return;
       setNudged(true);
-      acknowledgeRef.current?.focus();
+      hintRef.current?.focus();
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => setNudged(false), 1200);
     };
@@ -228,6 +229,8 @@ export function VehicleRemarksWarningDialog({
 
         {context !== "view" && (
           <p
+            ref={hintRef}
+            tabIndex={-1}
             className={`text-sm ${nudged ? "font-semibold text-amber-700" : "text-muted-foreground"}`}
             data-testid="remarks-choose-hint"
             data-nudged={nudged ? "true" : "false"}
@@ -241,7 +244,6 @@ export function VehicleRemarksWarningDialog({
             {context === "view" ? t('remarksWarningDialog.closeButton') : t('remarksWarningDialog.cancelButton')}
           </AlertDialogCancel>
           <AlertDialogAction
-            ref={acknowledgeRef}
             onClick={handleAcknowledge}
             className="bg-amber-600 hover:bg-amber-700"
             data-testid="button-acknowledge-remarks"

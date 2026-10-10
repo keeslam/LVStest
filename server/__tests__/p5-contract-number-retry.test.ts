@@ -78,6 +78,9 @@ describe("A-10-7 - the contract number belongs to the pickup, not to the contrac
 
     const [afterFailure] = await db.select().from(reservations).where(eq(reservations.id, rental.id));
     expect(afterFailure.contractNumber).toBe(CONTRACT_NUMBER);
+    // What the next pickup form would suggest after the failed contract (round 1): it only
+    // reads the live reservations, so it is whatever it is now - and must not move on retry.
+    const suggestedAfterFailure = (await admin.get("/api/settings/next-contract-number")).body.contractNumber;
 
     // 2. The template is fixed; "Opnieuw proberen" makes the document.
     const retry = await withOnlyTemplates([{ name: "FIXT-P5-template", isDefault: true, fields: [FIELD] as any }], async () =>
@@ -92,5 +95,32 @@ describe("A-10-7 - the contract number belongs to the pickup, not to the contrac
     const carrying = await db.select({ id: reservations.id }).from(reservations)
       .where(eq(reservations.contractNumber, CONTRACT_NUMBER));
     expect(carrying.map((r) => r.id)).toEqual([rental.id]);
+    const suggestedAfterRetry = (await admin.get("/api/settings/next-contract-number")).body.contractNumber;
+    expect(suggestedAfterRetry).toBe(suggestedAfterFailure);
+  }, 40_000);
+
+  it("a cancelled picked-up rental keeps its number, so the next suggestion skips it - the audit's 1012 -> 1013 (B-33)", async () => {
+    // This is the real cause of the gap the audit saw (not the failed contract): decision B-33
+    // keeps the contract number on a picked-up rental that is cancelled afterwards, together
+    // with its pickup. It is by design; the owner should know the pattern remains.
+    const number = (await admin.get("/api/settings/next-contract-number")).body.contractNumber as string;
+    const rental = await createFixtureReservation({
+      customerId, vehicleId: vehicle.id, startDate: "2026-02-01", endDate: "2026-02-28", status: "booked",
+    });
+    const pickup = await admin.post(`/api/reservations/${rental.id}/pickup`).send({
+      contractNumber: number, pickupMileage: 2000, fuelLevelPickup: "full", pickupDate: "2026-02-02",
+    });
+    expect(pickup.status).toBe(200);
+
+    const cancel = await admin.patch(`/api/reservations/${rental.id}/status`).send({
+      status: "cancelled", cascade: {}, confirmPickedUp: true,
+    });
+    expect(cancel.status).toBe(200);
+
+    const [cancelled] = await db.select().from(reservations).where(eq(reservations.id, rental.id));
+    expect(cancelled.status).toBe("cancelled");
+    expect(cancelled.contractNumber).toBe(number);
+    const next = (await admin.get("/api/settings/next-contract-number")).body.contractNumber;
+    expect(Number(next)).toBe(Number(number) + 1);
   }, 40_000);
 });

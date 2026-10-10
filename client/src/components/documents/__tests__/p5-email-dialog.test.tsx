@@ -120,6 +120,19 @@ describe("A-6-3 - a failed send is worded in Dutch", () => {
     expect(String(toast.description)).toMatch(/e-mail/i);
   });
 
+  it("words a non-mail server error without an email-settings hint (round 1)", async () => {
+    sendAnswer = () => json({ message: "Failed to send email", code: "SEND_DOCUMENTS_FAILED" }, 500);
+    const user = userEvent.setup();
+    renderDialog({ id: 5, name: "K", email: "audit@e2e.invalid" });
+    await user.type(await screen.findByTestId("input-email-subject"), "Uw contract");
+    await user.click(screen.getByTestId("button-send-email"));
+
+    await waitFor(() => expect(toastSpy).toHaveBeenCalled());
+    const toast = toastSpy.mock.calls.map((c) => c[0]).find((c) => c.variant === "destructive");
+    expect(String(toast.description)).not.toMatch(/instellingen|settings|failed/i);
+    expect(String(toast.description)).toMatch(/versturen|verstuurd/i);
+  });
+
   it("never shows an unknown server sentence either", async () => {
     sendAnswer = () => json({ message: "Something odd happened on the server" }, 500);
     const user = userEvent.setup();

@@ -199,13 +199,8 @@
     "notPermitted": "You do not have permission to view this record's history.",
     "systemUser": "System",
     "actions": {
-      "reservationPickup": "Pickup",
-      "reservationReturn": "Return",
-      "reservationStatus": "Status changed",
-      "reservationCancel": "Cancelled",
-      "reservationRevert": "Handover reverted",
-      "reservationPurge": "Permanently deleted",
       "composed": "{{resource}} {{verb}}",
+      "unknownSub": "{{resource}}: {{sub}}",
       "resources": {
         "reservation": "Reservation",
         "vehicle": "Vehicle",
@@ -215,14 +210,41 @@
         "transport": "Transport",
         "fine": "Fine",
         "driver": "Driver",
-        "maintenance": "Maintenance"
+        "maintenance": "Maintenance",
+        "blacklist": "Blacklist"
       },
       "verbs": {
         "create": "created",
         "update": "updated",
         "delete": "deleted",
         "restore": "restored",
-        "upload": "uploaded"
+        "upload": "uploaded",
+        "purge": "permanently deleted"
+      },
+      "subActions": {
+        "reservation": {
+          "pickup": "Pickup",
+          "return": "Return",
+          "status": "Status changed",
+          "revert": "Handover reverted",
+          "contract": "Contract generated",
+          "assign-spare": "Replacement vehicle assigned",
+          "basic": "Basic details changed",
+          "usage-period": "Usage period changed",
+          "spare-status": "Replacement vehicle status changed",
+          "complete-maintenance": "Maintenance completed",
+          "mark-needs-service": "Marked as needing service",
+          "return-from-service": "Returned from service"
+        },
+        "vehicle": {
+          "mileage": "Mileage changed",
+          "fuel-status": "Fuel status changed",
+          "maintenance-status": "Maintenance status changed",
+          "barcode": "Barcode changed",
+          "toggle-registration": "Registration changed",
+          "fiscal-profile": "Fiscal profile changed",
+          "blacklist": "Added to the blacklist"
+        }
       }
     }
   },

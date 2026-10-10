@@ -47,7 +47,10 @@ describe("A-5-2 - the remarks warning explains why other clicks do nothing", () 
     const hint = await screen.findByTestId("remarks-choose-hint");
     fireEvent.pointerDown(document.body);
     await waitFor(() => expect(hint).toHaveAttribute("data-nudged", "true"));
-    expect(document.activeElement).toBe(screen.getByTestId("button-acknowledge-remarks"));
+    // Round 1: focus must not land on the confirm button - Enter/Space after a stray click would
+    // acknowledge a safety remark. It goes to the hint itself (read out by screen readers).
+    expect(document.activeElement).toBe(hint);
+    expect(document.activeElement).not.toBe(screen.getByTestId("button-acknowledge-remarks"));
   });
 
   it("does not react to a click inside the dialog", async () => {

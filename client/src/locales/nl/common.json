@@ -199,13 +199,8 @@
     "notPermitted": "Je hebt geen rechten om de geschiedenis van dit record te bekijken.",
     "systemUser": "Systeem",
     "actions": {
-      "reservationPickup": "Ophalen",
-      "reservationReturn": "Inleveren",
-      "reservationStatus": "Status gewijzigd",
-      "reservationCancel": "Geannuleerd",
-      "reservationRevert": "Overdracht teruggedraaid",
-      "reservationPurge": "Definitief verwijderd",
       "composed": "{{resource}} {{verb}}",
+      "unknownSub": "{{resource}}: {{sub}}",
       "resources": {
         "reservation": "Reservering",
         "vehicle": "Voertuig",
@@ -215,14 +210,41 @@
         "transport": "Transport",
         "fine": "Boete",
         "driver": "Chauffeur",
-        "maintenance": "Onderhoud"
+        "maintenance": "Onderhoud",
+        "blacklist": "Zwarte lijst"
       },
       "verbs": {
         "create": "aangemaakt",
         "update": "gewijzigd",
         "delete": "verwijderd",
         "restore": "hersteld",
-        "upload": "geüpload"
+        "upload": "geüpload",
+        "purge": "definitief verwijderd"
+      },
+      "subActions": {
+        "reservation": {
+          "pickup": "Ophalen",
+          "return": "Inleveren",
+          "status": "Status gewijzigd",
+          "revert": "Overdracht teruggedraaid",
+          "contract": "Contract gemaakt",
+          "assign-spare": "Vervangend voertuig toegewezen",
+          "basic": "Basisgegevens gewijzigd",
+          "usage-period": "Gebruiksperiode gewijzigd",
+          "spare-status": "Status vervangend voertuig gewijzigd",
+          "complete-maintenance": "Onderhoud afgerond",
+          "mark-needs-service": "Gemarkeerd als onderhoud nodig",
+          "return-from-service": "Terug uit onderhoud"
+        },
+        "vehicle": {
+          "mileage": "Kilometerstand gewijzigd",
+          "fuel-status": "Brandstofstatus gewijzigd",
+          "maintenance-status": "Onderhoudsstatus gewijzigd",
+          "barcode": "Barcode gewijzigd",
+          "toggle-registration": "Tenaamstelling gewijzigd",
+          "fiscal-profile": "Fiscaal profiel gewijzigd",
+          "blacklist": "Op de zwarte lijst gezet"
+        }
       }
     }
   },

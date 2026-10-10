@@ -37,6 +37,13 @@ const logs = [
   entry(9, "vehicle.restore"),
   entry(10, "document.upload"),
   entry(11, "frobnicator.explode"),
+  entry(12, "reservation.contract"),
+  entry(13, "vehicle.mileage"),
+  entry(14, "customer.purge"),
+  entry(15, "reservation.assign-spare"),
+  entry(16, "reservation.brand-new-step"),
+  entry(17, "vehicle.fuel-status"),
+  entry(18, "fine.purge"),
 ];
 
 beforeEach(() => {
@@ -70,12 +77,31 @@ describe("A-6-4 - audit codes are worded in the record history", () => {
     expect(await text(2)).toContain("Inleveren");
     expect(await text(3)).toContain("Overdracht teruggedraaid");
     expect(await text(4)).toContain("Status gewijzigd");
-    expect(await text(5)).toContain("Geannuleerd");
+    // No route writes reservation.cancel (cancelling is reservation.status); it reads as an unworded sub-action.
+    expect(await text(5)).toContain("Reservering: cancel");
     expect(await text(6)).toContain("Reservering aangemaakt");
     expect(await text(7)).toContain("Reservering gewijzigd");
     expect(await text(8)).toContain("Klant aangemaakt");
     expect(await text(9)).toContain("Voertuig hersteld");
     expect(await text(10)).toContain("Document geüpload");
+  });
+
+  it("words the sub-actions the middleware writes after the id (A-6-4, round 1)", async () => {
+    renderHistory();
+    const text = async (id: number) => (await screen.findByTestId(`record-history-entry-${id}`)).textContent ?? "";
+    expect(await text(12)).toContain("Contract gemaakt");
+    expect(await text(13)).toContain("Kilometerstand gewijzigd");
+    expect(await text(14)).toContain("Klant definitief verwijderd");
+    expect(await text(15)).toContain("Vervangend voertuig toegewezen");
+    expect(await text(17)).toContain("Brandstofstatus gewijzigd");
+    expect(await text(18)).toContain("Boete definitief verwijderd");
+  });
+
+  it("reads a known resource with an unworded sub-action as \"Reservering: <sub>\", not as the bare code", async () => {
+    renderHistory();
+    const row = await screen.findByTestId("record-history-entry-16");
+    expect(row).toHaveTextContent("Reservering: brand-new-step");
+    expect(row.querySelector("[title=\"reservation.brand-new-step\"]")?.textContent).toBe("Reservering: brand-new-step");
   });
 
   it("never shows the raw code for a known action", async () => {

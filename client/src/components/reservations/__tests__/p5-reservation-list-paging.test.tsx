@@ -44,14 +44,20 @@ function json(body: unknown, status = 200) {
 }
 
 let holdReservations: Promise<void> | null;
+let holdOverdue: Promise<void> | null;
 
 beforeEach(() => {
   holdReservations = null;
+  holdOverdue = null;
   vi.stubGlobal("fetch", vi.fn(async (input: any) => {
     const url = typeof input === "string" ? input : input?.url ?? String(input);
     if (url === "/api/reservations") {
       if (holdReservations) await holdReservations;
       return json([...active, ...history]);
+    }
+    if (url === "/api/reservations/overdue") {
+      if (holdOverdue) await holdOverdue;
+      return json([]);
     }
     return json([]);
   }));
@@ -120,6 +126,20 @@ describe("A-5-4 - something is on screen while the list loads", () => {
     expect(loading).toHaveTextContent("Laden");
     release();
     await screen.findByTestId("reservation-card-1");
+    expect(screen.queryByTestId("reservation-list-loading")).toBeNull();
+  });
+});
+
+describe("A-5-4 - the overdue tab loads visibly too (round 1)", () => {
+  it("shows the loading row instead of \"no overdue reservations\" while the query is pending", async () => {
+    let release!: () => void;
+    holdOverdue = new Promise<void>((resolve) => { release = resolve; });
+    renderDialog({ initialTab: "overdue" });
+    const loading = await screen.findByTestId("reservation-list-loading");
+    expect(loading).toHaveAttribute("role", "status");
+    expect(screen.queryByText("Geen achterstallige reserveringen")).toBeNull();
+    release();
+    expect(await screen.findByText("Geen achterstallige reserveringen")).toBeInTheDocument();
     expect(screen.queryByTestId("reservation-list-loading")).toBeNull();
   });
 });

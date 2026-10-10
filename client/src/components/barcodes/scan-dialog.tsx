@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScanLine } from "lucide-react";
@@ -17,6 +17,11 @@ export function ScanDialog({ open, onOpenChange, intent = null }: ScanDialogProp
   // A-6-5: while a pickup/return form is open on top, this window steps aside
   // (hidden, not closed - closing would throw the form away with it).
   const [handoverActive, setHandoverActive] = useState(false);
+  // The panel inside only reports changes while it is mounted; a window closed with a
+  // handover form still open must not come back hidden.
+  useEffect(() => {
+    if (!open) setHandoverActive(false);
+  }, [open]);
 
   const title = intent === "pickup"
     ? t("scanPage.intent.pickupTitle")

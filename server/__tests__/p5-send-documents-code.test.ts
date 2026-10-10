@@ -62,6 +62,19 @@ describe("A-6-3 - POST /api/email/send-documents names a failed send by code", (
     expect(res.body.message).toBe("Failed to send email. Please check your email configuration in Settings.");
   }, 40_000);
 
+  it("a server error that is not a mail failure gets its own code, not the mail one (round 1)", async () => {
+    // A document id the database cannot parse throws inside the route (the generic catch).
+    const res = await admin.post("/api/email/send-documents").send({
+      documentIds: ["not-a-number"],
+      recipientEmail: "klant@fixture-test.invalid",
+      subject: `${SUBJECT} catch ${Date.now()}`,
+      message: "Contract",
+    });
+    expect(res.status).toBe(500);
+    expect(res.body.code).toBe("SEND_DOCUMENTS_FAILED");
+    expect(res.body.message).toBe("Failed to send email");
+  }, 40_000);
+
   it("a send that works carries no error code", async () => {
     const res = await withSmtpStub("ok", async () =>
       admin.post("/api/email/send-documents").send({

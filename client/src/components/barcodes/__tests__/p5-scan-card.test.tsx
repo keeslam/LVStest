@@ -10,8 +10,9 @@
  *
  * Runs in the jsdom project.
  */
+import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -172,6 +173,32 @@ describe("A-6-5 - one dialog at a time after a scan", () => {
     expect(onHandoverActiveChange).toHaveBeenLastCalledWith(true);
     await user.click(screen.getByTestId("stub-pickup-cancel"));
     await waitFor(() => expect(onHandoverActiveChange).toHaveBeenLastCalledWith(false));
+  });
+});
+
+describe("A-6-5 - the scan window never reopens hidden", () => {
+  it("forgets that a handover form was open when the window is closed and opened again", async () => {
+    const user = userEvent.setup();
+    function Host() {
+      const [open, setOpen] = React.useState(true);
+      return (
+        <>
+          <button type="button" data-testid="host-close" onClick={() => setOpen(false)} />
+          <button type="button" data-testid="host-open" onClick={() => setOpen(true)} />
+          <ScanDialog open={open} onOpenChange={setOpen} intent="pickup" />
+        </>
+      );
+    }
+    withProviders(<Host />);
+    await scan(user);
+    await screen.findByTestId("pickup-dialog-open");
+    expect(screen.getByTestId("dialog-scan")).toHaveAttribute("data-handover-active", "true");
+
+    // Closed while the form is still open (Escape, the X, a stray click ...).
+    fireEvent.click(screen.getByTestId("host-close"));
+    await waitFor(() => expect(screen.queryByTestId("dialog-scan")).toBeNull());
+    fireEvent.click(screen.getByTestId("host-open"));
+    expect(await screen.findByTestId("dialog-scan")).toHaveAttribute("data-handover-active", "false");
   });
 });
 

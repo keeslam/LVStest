@@ -6870,7 +6870,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error sending email with multiple documents:", error);
       res.status(500).json({ 
         message: "Failed to send email", 
-        code: "EMAIL_SEND_FAILED",
+        // Not a mail failure (that is the `!emailSent` branch above, code EMAIL_SEND_FAILED): a
+        // database or request problem must not be worded as "check the email settings".
+        code: "SEND_DOCUMENTS_FAILED",
       });
     }
   });

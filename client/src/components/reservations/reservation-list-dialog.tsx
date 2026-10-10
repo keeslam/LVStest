@@ -149,7 +149,7 @@ export function ReservationListDialog({ open, onOpenChange, initialTab, onTabCha
   });
 
   // Fetch overdue reservations
-  const { data: overdueReservations = [] } = useQuery<Reservation[]>({
+  const { data: overdueReservations = [], isLoading: isLoadingOverdue } = useQuery<Reservation[]>({
     queryKey: ['/api/reservations/overdue'],
     enabled: open,
   });
@@ -562,7 +562,12 @@ export function ReservationListDialog({ open, onOpenChange, initialTab, onTabCha
                 <div className="border rounded-md overflow-hidden">
                   <ScrollArea className="h-[calc(70vh-180px)]">
                     <div className="divide-y">
-                      {filteredOverdueReservations.length === 0 ? (
+                      {isLoadingOverdue ? (
+                        <div className="flex items-center justify-center gap-2 py-8 text-gray-500" role="status" data-testid="reservation-list-loading">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          {t('listDialog.loading')}
+                        </div>
+                      ) : filteredOverdueReservations.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">{t('listDialog.noOverdueReservations')}</div>
                       ) : (
                         filteredOverdueReservations.slice(0, overdueLimit).map((reservation) => {
