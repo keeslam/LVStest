@@ -188,15 +188,31 @@ export function AttentionPanel({ attention, canViewFines }: { attention: PortalD
 
 // ---- notifications --------------------------------------------------------------
 
-const COMPANY_FIELDS = ["emailForMOT", "emailForInvoices", "emailGeneral", "email"] as const;
+const COMPANY_FIELDS: readonly string[] = ["emailForMOT", "emailForInvoices", "emailGeneral", "email"];
+
+// The server wrote these as "<name> heeft via het portaal bijgewerkt: <a>, <b>." (server/portal-auth.ts,
+// COMPANY_EMAIL_LABEL, which now writes words itself; this mapping only serves rows stored before that).
+const CHANGED_LIST_MARKER = "bijgewerkt: ";
 
 /**
  * Notifications saved before the server named the changed addresses in words
- * still carry the column names ("emailForMOT"); read them as words here.
+ * still carry the column names ("emailForMOT"); read them as words here. Only
+ * the comma-separated list after "bijgewerkt: " is touched, token by token, so a
+ * word in the person's name or anywhere else in the text is never rewritten
+ * (and no regex lookbehind is needed).
  */
 function notificationText(t: (k: string) => string, n: PortalDashboard["notifications"][number]): string {
   if (n.type !== "portal_customer_update") return n.description;
-  return COMPANY_FIELDS.reduce((text, f) => text.replace(new RegExp(`(?<![A-Za-z])${f}(?![A-Za-z])`, "g"), t(`admin.dashboard.notifications.fields.${f}`)), n.description);
+  const at = n.description.lastIndexOf(CHANGED_LIST_MARKER);
+  if (at < 0) return n.description;
+  const listStart = at + CHANGED_LIST_MARKER.length;
+  const list = n.description.slice(listStart);
+  const closing = list.endsWith(".") ? "." : "";
+  const words = (closing ? list.slice(0, -1) : list)
+    .split(", ")
+    .map((token) => (COMPANY_FIELDS.includes(token) ? t(`admin.dashboard.notifications.fields.${token}`) : token))
+    .join(", ");
+  return n.description.slice(0, listStart) + words + closing;
 }
 
 export function NotificationsPanel({ notifications, unread }: { notifications: PortalDashboard["notifications"]; unread: number }) {

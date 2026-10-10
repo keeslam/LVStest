@@ -68,6 +68,12 @@ describe("GET /api/expenses filters", () => {
 
   it("refuses nonsense parameters with a 400 instead of ignoring them", async () => {
     expect((await list("?vehicleId=abc")).status).toBe(400);
+    // Digits only is not enough: an id beyond the integer column used to reach Postgres and answer 500.
+    expect((await list("?vehicleId=99999999999")).status).toBe(400);
+    expect((await list("?vehicleId=2147483648")).status).toBe(400);
+    expect((await list("?vehicleId=9007199254740993")).status).toBe(400);
+    expect((await list("?vehicleId=0")).status).toBe(400);
+    expect((await list("?vehicleId=2147483647")).status).toBe(200);
     expect((await list("?from=01-10-2026")).status).toBe(400);
     expect((await list("?to=morgen")).status).toBe(400);
   });

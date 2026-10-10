@@ -20,6 +20,7 @@ import { bookInvoiceAsExpenses, receiptFromStoredPath, resolveInvoiceFile, type 
 import { inboxStorage } from "../services/invoice-inbox/inbox-storage";
 import { computeInvoiceHash, invoiceTotalCents, normalizeInvoiceNumber, sha256 } from "../services/invoice-inbox/hash";
 import { INTERRUPTED_BOOKING_MESSAGE, type InboxParsedInvoice } from "../../shared/invoice-inbox";
+import { MAX_INT4 } from "../middleware/parseIntParam";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
 
@@ -178,8 +179,13 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
     const one = (value: unknown): string | undefined => (typeof value === "string" && value.trim() !== "" ? value.trim() : undefined);
     const vehicleParam = one(req.query.vehicleId);
     if (vehicleParam !== undefined) {
-      if (!/^\d+$/.test(vehicleParam)) return res.status(400).json({ message: "Invalid vehicle ID" });
-      filters.vehicleId = parseInt(vehicleParam, 10);
+      // Digits only is not enough: an id past the integer column (vehicles.id is an int4) reached Postgres and
+      // answered 500, and a value beyond 2^53 is silently rounded. Same bounds as every path id (parseIdValue).
+      const vehicleFilter = /^\d+$/.test(vehicleParam) ? Number(vehicleParam) : NaN;
+      if (!Number.isSafeInteger(vehicleFilter) || vehicleFilter < 1 || vehicleFilter > MAX_INT4) {
+        return res.status(400).json({ message: "Invalid vehicle ID" });
+      }
+      filters.vehicleId = vehicleFilter;
     }
     for (const key of ["from", "to"] as const) {
       const value = one(req.query[key]);

@@ -3394,8 +3394,9 @@ export async function registerRoutes(app: Express): Promise<void> {
         );
 
         // Fallback: if the strict status-based check missed an overlapping rental that the broad
-        // check found (e.g. rental still has the vehicle but status was changed to 'returned'),
-        // include those so the user gets the spare prompt instead of silently succeeding.
+        // check found (a rental that is still open under a status the strict check does not list),
+        // include those so the user gets the spare prompt instead of silently succeeding. Closed
+        // rentals (cancelled, completed, returned) never get here: the broad filter above drops them.
         const conflictIds = new Set(customerConflicts.map(r => r.id));
         for (const r of broadOverlapping) {
           if (!conflictIds.has(r.id)) {
