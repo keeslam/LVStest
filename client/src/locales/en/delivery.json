@@ -245,7 +245,7 @@
     "templateEditorTitle": "Transport Report Template Editor",
     "templateEditorDescription": "Design the driver-facing report — drag fields onto the page, one big page per transport",
     "deleteTransportTitle": "Delete this transport?",
-    "deleteTransportDescription": "This will permanently remove this transport record. This action cannot be undone.",
+    "deleteTransportDescription": "This transport record is moved to the recycle bin of this screen (the Deleted transports button); you can restore it there.",
     "reportPreviewDescription": "Report generated and saved to Documents — review and print below",
     "reportPreviewIframeTitle": "Transport Report Preview",
     "previewBlockedMessage": "Your browser blocked the inline preview. You can still open it in a new tab to print it.",

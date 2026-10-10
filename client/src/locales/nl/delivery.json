@@ -245,7 +245,7 @@
     "templateEditorTitle": "Sjablooneditor transportrapport",
     "templateEditorDescription": "Ontwerp het chauffeursrapport — sleep velden op de pagina, één grote pagina per transport",
     "deleteTransportTitle": "Dit transport verwijderen?",
-    "deleteTransportDescription": "Dit verwijdert dit transportrecord permanent. Deze actie kan niet ongedaan worden gemaakt.",
+    "deleteTransportDescription": "Dit transportrecord wordt naar de prullenbak van dit scherm verplaatst (knop Verwijderde transporten); terugzetten kan daar.",
     "reportPreviewDescription": "Rapport gegenereerd en opgeslagen in Documenten — hieronder bekijken en afdrukken",
     "reportPreviewIframeTitle": "Voorvertoning transportrapport",
     "previewBlockedMessage": "Je browser heeft de inline voorvertoning geblokkeerd. Je kunt het nog steeds in een nieuw tabblad openen om af te drukken.",

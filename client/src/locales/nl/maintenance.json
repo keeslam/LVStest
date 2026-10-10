@@ -123,7 +123,7 @@
     "daysRemaining_other": "{{count}} dagen resterend",
     "deleteMaintenanceTitle": "Onderhoud verwijderen",
     "deleteMaintenanceConfirmPrefix": "Weet je zeker dat je deze onderhoudsreservering wilt verwijderen voor ",
-    "deleteMaintenanceConfirmSuffix": "? Deze actie kan niet ongedaan worden gemaakt.",
+    "deleteMaintenanceConfirmSuffix": "? De planning wordt naar de prullenbak van dit scherm verplaatst (knop Verwijderd onderhoud); terugzetten kan daar.",
     "vehiclePlaceholder": "Voertuig {{id}}",
     "deleting": "Verwijderen...",
     "maintenanceDeletedTitle": "Onderhoud verwijderd",
@@ -428,7 +428,7 @@
       "unknownVehicle": "Onbekend voertuig",
       "completedLabel": "Voltooid: {{date}}",
       "deleteConfirmTitle": "Voltooid onderhoud verwijderen?",
-      "deleteConfirmDescription": "Dit verwijdert dit onderhoudsrecord permanent. Deze actie kan niet ongedaan worden gemaakt."
+      "deleteConfirmDescription": "Dit onderhoudsrecord wordt naar de prullenbak van dit scherm verplaatst (knop Verwijderd onderhoud); terugzetten kan daar."
     },
     "toasts": {
       "maintenanceDeletedTitle": "Onderhoud verwijderd",
@@ -443,7 +443,7 @@
       "maintenanceRevertedTitle": "Onderhoud teruggedraaid",
       "maintenanceRevertedDescription": "Onderhoud is weer gemarkeerd als actief",
       "revertFailedDescription": "Onderhoud terugdraaien mislukt",
-      "maintenanceRecordDeletedDescription": "Het onderhoudsrecord is permanent verwijderd",
+      "maintenanceRecordDeletedDescription": "Het onderhoudsrecord is naar de prullenbak verplaatst",
       "deleteMaintenanceFailedDescription": "Onderhoud verwijderen mislukt",
       "cannotFindReservationDescription": "Kan onderhoudsreserveringsgegevens niet vinden"
     }

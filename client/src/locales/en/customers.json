@@ -19,7 +19,7 @@
     "checkingImpact": "Checking what is attached to this customer...",
     "alsoDeletes": "This also deletes:",
     "nothingAttached": "Nothing else is attached to this customer.",
-    "restoreHint": "An administrator can restore the customer from the recycle bin afterwards.",
+    "restoreHint": "Anyone who may manage the recycle bin can restore the customer from it afterwards.",
     "typeToConfirm": "Type <1>{{name}}</1> to confirm",
     "blockedTitle": "Cannot delete: this customer has a current or future reservation.",
     "blockedReservation": "Reservation #{{id}} — {{start}} to {{end}} ({{status}})",

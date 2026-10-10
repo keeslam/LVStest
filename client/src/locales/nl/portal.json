@@ -580,7 +580,7 @@
         "noDriver": "Geen bestuurder gevonden",
         "reactivate": "Heractiveren",
         "delete": "Verwijderen",
-        "deleteConfirm": "Deze bekeuring naar de prullenbak verplaatsen? Een beheerder kan hem daar terugzetten.",
+        "deleteConfirm": "Deze bekeuring naar de prullenbak verplaatsen? Wie de prullenbak mag beheren kan hem daar terugzetten.",
         "deleted": "Bekeuring naar de prullenbak verplaatst",
         "changeCustomer": "Wijzigen",
         "moreCustomers": "{{shown}} van {{total}} getoond, typ om te verfijnen."

@@ -49,7 +49,7 @@
     "checkingImpact": "Controleren wat aan dit voertuig gekoppeld is...",
     "alsoDeletes": "Dit verwijdert ook:",
     "nothingAttached": "Er is niets anders aan dit voertuig gekoppeld.",
-    "restoreHint": "Een beheerder kan het daarna terugzetten vanuit de prullenbak op de voertuigenpagina.",
+    "restoreHint": "Wie de prullenbak mag beheren kan het daarna terugzetten vanuit de prullenbak op de voertuigenpagina.",
     "typeToConfirm": "Typ <1>{{plate}}</1> om te bevestigen",
     "cancelButton": "Annuleren",
     "deletingButton": "Verwijderen...",
@@ -65,7 +65,7 @@
     },
     "toasts": {
       "deletedTitle": "Voertuig verwijderd",
-      "deletedDescription": "{{brand}} {{model}} is verwijderd. Een beheerder kan het terugzetten vanuit de prullenbak.",
+      "deletedDescription": "{{brand}} {{model}} is verwijderd. Wie de prullenbak mag beheren kan het terugzetten vanuit de prullenbak.",
       "errorTitle": "Fout",
       "errorFallback": "Voertuig verwijderen mislukt"
     },

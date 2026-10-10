@@ -49,7 +49,7 @@
     "checkingImpact": "Checking what is attached to this vehicle...",
     "alsoDeletes": "This also deletes:",
     "nothingAttached": "Nothing else is attached to this vehicle.",
-    "restoreHint": "An admin can restore it afterwards from the recycle bin on the vehicles page.",
+    "restoreHint": "Anyone who may manage the recycle bin can restore it afterwards from the recycle bin on the vehicles page.",
     "typeToConfirm": "Type <1>{{plate}}</1> to confirm",
     "cancelButton": "Cancel",
     "deletingButton": "Deleting...",
@@ -65,7 +65,7 @@
     },
     "toasts": {
       "deletedTitle": "Vehicle deleted",
-      "deletedDescription": "{{brand}} {{model}} has been deleted. An admin can restore it from the recycle bin.",
+      "deletedDescription": "{{brand}} {{model}} has been deleted. Anyone who may manage the recycle bin can restore it from the recycle bin.",
       "errorTitle": "Error",
       "errorFallback": "Failed to delete vehicle"
     },

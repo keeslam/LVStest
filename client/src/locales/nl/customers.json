@@ -19,7 +19,7 @@
     "checkingImpact": "Controleren wat aan deze klant gekoppeld is...",
     "alsoDeletes": "Dit verwijdert ook:",
     "nothingAttached": "Er is niets anders aan deze klant gekoppeld.",
-    "restoreHint": "Een beheerder kan de klant daarna terugzetten vanuit de prullenbak.",
+    "restoreHint": "Wie de prullenbak mag beheren kan de klant daarna terugzetten vanuit de prullenbak.",
     "typeToConfirm": "Typ <1>{{name}}</1> om te bevestigen",
     "blockedTitle": "Verwijderen kan niet: deze klant heeft een lopende of toekomstige reservering.",
     "blockedReservation": "Reservering #{{id}} — {{start}} t/m {{end}} ({{status}})",
