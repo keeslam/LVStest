@@ -78,6 +78,22 @@ describe("OPT-013 — de mailstatus op het document", () => {
     expect(line).toHaveTextContent("Connection timed out");
   });
 
+  it("says a coded reason in Dutch (A-13-2: the stored text is English, the code is stable)", async () => {
+    attempts = [{
+      id: 11,
+      recipient: "klant@example.invalid",
+      result: "failed",
+      failureReason: "NO_EMAIL_CONFIG: No valid email configuration for purpose: documents",
+      sentAt: "2026-03-09T14:00:00.000Z",
+      subject: "Contract",
+    }];
+    withClient(<DocumentMailStatus documentId={501} />);
+    const line = await screen.findByTestId("document-mail-status-501");
+    expect(line).toHaveTextContent("Verzenden mislukt");
+    expect(line).toHaveTextContent("Er is geen werkende e-mailconfiguratie");
+    expect(line).not.toHaveTextContent("No valid email configuration");
+  });
+
   it("shows the most recent attempt — a failure after a success is the state it is in", () => {
     const rows = [
       { id: 1, recipient: "a@x", result: "sent", failureReason: null, sentAt: "2026-03-09T10:00:00.000Z", subject: "c" },

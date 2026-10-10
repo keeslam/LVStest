@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Shield, Wrench, Users, Send, Calendar, Clock, CheckCircle, AlertTriangle, Edit, Trash2, Eye, Copy } from "lucide-react";
@@ -19,25 +20,16 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { NoDataAccess } from "@/components/ui/no-data-access";
 import { formatLicensePlate, plateMatches, formatVehicleType } from "@/lib/format-utils";
 import { formatDateNl, formatDateTimeNl } from "@/lib/format-date-nl";
-
-// One row of GET /api/email-logs (shared/schema.ts, emailLogs). Two kinds live
-// in the same table: one row per send attempt (recipient + result set, written
-// by sendEmail) and one summary row per notification run (recipient null, the
-// run's totals and every error it collected).
-interface EmailLogRow {
-  id: number;
-  template: string;
-  subject: string;
-  recipients: number;
-  emailsSent: number;
-  emailsFailed: number;
-  failureReason: string | null;
-  sentAt: string;
-  recipient: string | null;
-  result: string | null;
-}
-
-type EmailLogStatus = 'sent' | 'failed' | 'partial';
+import { fillPlaceholders } from "@shared/message-placeholders";
+import { templatesForMode, isSystemTemplate, systemTemplateLabelKey, htmlToPlainText } from "@/lib/communication-templates";
+import {
+  buildRecipients, renderForRecipient, emptyPlaceholders, unsupportedPlaceholders, MASS_SEND_THRESHOLD,
+  type PreviewRecipient, type EmailField,
+} from "@/lib/communication-preview";
+import { classifySendResult, firstFailureCode } from "@/lib/communication-send";
+import { failureCodeText } from "@/lib/email-failure-text";
+import { EmailFailureReasons } from "@/components/communications/email-failure-reasons";
+import { EmailLogDetailDialog, type EmailLogRow, type EmailLogStatus } from "@/components/communications/email-log-detail-dialog";
 
 function emailLogStatus(row: EmailLogRow): EmailLogStatus {
   if (row.result === 'sent') return 'sent';
@@ -101,20 +93,17 @@ export default function CustomerCommunications() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  // The preview keeps the template text as written and renders it per recipient
+  // (audit A-13-3); every recipient carries its own placeholder values and address.
   const [emailPreview, setEmailPreview] = useState<{
     subject: string;
     content: string;
-    recipients: Array<{
-      name: string, 
-      email: string, 
-      vehicleLicense: string, 
-      emailField: string, 
-      emailOptions: Array<{value: string, label: string, email: string}>,
-      customer?: any, 
-      vehicleId?: number
-    }>;
+    recipients: PreviewRecipient[];
   } | null>(null);
-  
+  const [previewRecipientKey, setPreviewRecipientKey] = useState<string | null>(null);
+  const [massSendAcknowledged, setMassSendAcknowledged] = useState(false);
+  const [logDetailRow, setLogDetailRow] = useState<EmailLogRow | null>(null);
+
   // Vehicle filter is now based on communication mode
   const vehicleFilter = communicationMode === 'custom' ? 'all' : communicationMode;
 
@@ -149,12 +138,12 @@ export default function CustomerCommunications() {
   const [templateName, setTemplateName] = useState<string>("");
   const [templateSubject, setTemplateSubject] = useState<string>("");
   const [templateContent, setTemplateContent] = useState<string>("");
-  const [templateCategory, setTemplateCategory] = useState<'apk' | 'maintenance' | 'custom'>('custom');
+  const [templateCategory, setTemplateCategory] = useState<'apk' | 'maintenance' | 'custom' | 'portal'>('custom');
   const [templates, setTemplates] = useState<Array<{id: string, name: string, subject: string, content: string, createdAt: string}>>([]);
   const [editingTemplate, setEditingTemplate] = useState<string | null>(null);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
   const [templateSearchQuery, setTemplateSearchQuery] = useState<string>("");
-  const [templateCategoryFilter, setTemplateCategoryFilter] = useState<'all' | 'apk' | 'maintenance' | 'custom'>('all');
+  const [templateCategoryFilter, setTemplateCategoryFilter] = useState<'all' | 'apk' | 'maintenance' | 'custom' | 'portal'>('all');
   const [templatePreviewDialog, setTemplatePreviewDialog] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<any>(null);
   const [selectedTemplateForPreview, setSelectedTemplateForPreview] = useState<any>(null);
@@ -163,8 +152,13 @@ export default function CustomerCommunications() {
   // Refs for textarea
   const templateSubjectRef = useRef<HTMLInputElement | null>(null);
   const templateContentRef = useRef<HTMLTextAreaElement | null>(null);
+  // Edit and Duplicate fill a form that sits above the saved-template list; the
+  // page has to bring it into view (audit A-13-7).
+  const templateBuilderRef = useRef<HTMLDivElement | null>(null);
+  const templateNameRef = useRef<HTMLInputElement | null>(null);
 
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch saved email templates - B-29a: GET /api/email-templates accepts
   // MANAGE_EMAIL_TEMPLATES only (server/index.ts:417), narrower than the
@@ -274,9 +268,28 @@ export default function CustomerCommunications() {
     return matchesSearch && matchesReservationFilter;
   });
 
+  // The pickers offer the templates of their own tab, never the portal's system
+  // templates (audit A-13-5).
+  const pickerTemplates = templatesForMode(savedTemplates, communicationMode);
+
+  // Why the preview button is off, in words (audit A-13-10).
+  const templateChosen = Boolean(selectedTemplateId) && selectedTemplateId !== "none";
+  const vehicleModeHint =
+    selectedVehicles.length === 0 && !templateChosen ? t('customerCommunications.send.hints.needTemplateAndVehicle')
+    : selectedVehicles.length === 0 ? t('customerCommunications.send.hints.needVehicle')
+    : !templateChosen ? t('customerCommunications.send.hints.needTemplate')
+    : null;
+  const hasCustomRecipients = selectedCustomers.length > 0 || selectedVehicles.length > 0;
+  const hasCustomMessage = templateChosen || (customMessage.trim() !== "" && customSubject.trim() !== "");
+  const customModeHint =
+    !hasCustomRecipients && !hasCustomMessage ? t('customerCommunications.send.hints.needRecipientAndMessage')
+    : !hasCustomRecipients ? t('customerCommunications.send.hints.needRecipient')
+    : !hasCustomMessage ? t('customerCommunications.send.hints.needMessage')
+    : null;
+
   const handleSendNotifications = async () => {
     // Check if recipients are selected based on mode
-    if (communicationMode === 'custom' && selectedCustomers.length === 0) {
+    if (communicationMode === 'custom' && !hasCustomRecipients) {
       toast({
         title: t('customerCommunications.toasts.noCustomersSelectedTitle'),
         description: t('customerCommunications.toasts.noCustomersSelectedDescription'),
@@ -345,13 +358,22 @@ export default function CustomerCommunications() {
     setIsLoadingNotifications(true);
     
     try {
+      // The address chosen in the preview, for the recipients where the choice
+      // differs from what the route picks by itself. The route reads it per vehicle.
+      const individualEmailSelections: Record<string, EmailField> = {};
+      for (const recipient of emailPreview?.recipients ?? []) {
+        if (recipient.vehicleId !== null && recipient.emailField && recipient.emailField !== recipient.defaultEmailField) {
+          individualEmailSelections[String(recipient.vehicleId)] = recipient.emailField;
+        }
+      }
+
       // Build request body based on communication mode
       const requestBody: any = {
         template: templateType,
         customMessage: emailContent.trim(),
         customSubject: emailSubject.trim(),
         emailFieldSelection: "auto",
-        individualEmailSelections: {},
+        individualEmailSelections,
       };
 
       // For custom mode, send both customerIds and vehicleIds
@@ -377,15 +399,48 @@ export default function CustomerCommunications() {
       });
 
       if (!response.ok) {
-        throw new Error(t('customerCommunications.toasts.sendNotificationsRequestFailed', { status: response.statusText }));
+        throw new Error(t('customerCommunications.toasts.sendNotificationsRequestFailed', { status: response.status }));
       }
 
       const result = await response.json();
 
-      toast({
-        title: t('customerCommunications.toasts.notificationsSentTitle'),
-        description: t('customerCommunications.toasts.notificationsSentDescription', { sent: result.sent, failed: result.failed || 0 }),
-      });
+      // The send wrote to the e-mail log (one row per mail, one for the round);
+      // the log tab and the analysis read it once on load and would never show it.
+      void queryClient.invalidateQueries({ queryKey: ['/api/email-logs'] });
+
+      // The route answers 200 also when nothing could be mailed (no e-mail
+      // configuration, no usable address); only the counts say what happened
+      // (audit A-13-2).
+      const outcome = classifySendResult(result);
+      const sent = Number(result.sent) || 0;
+      const failed = Number(result.failed) || 0;
+      if (outcome === 'failed') {
+        toast({
+          title: t('customerCommunications.toasts.failedTitle'),
+          description: t('customerCommunications.toasts.failedDescription', {
+            failed: t('customerCommunications.toasts.failedCount', { count: failed }),
+            reason: failureCodeText(t as any, firstFailureCode(result.errors)),
+          }),
+          variant: "destructive",
+        });
+        // Nothing went out: keep the recipients and the text so it can be tried again.
+        return;
+      }
+      if (outcome === 'partial') {
+        toast({
+          title: t('customerCommunications.toasts.partialTitle'),
+          description: t('customerCommunications.toasts.partialDescription', {
+            sent: t('customerCommunications.toasts.sentCount', { count: sent }),
+            failed: t('customerCommunications.toasts.failedCount', { count: failed }),
+          }),
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: t('customerCommunications.toasts.notificationsSentTitle'),
+          description: t('customerCommunications.toasts.sentCount', { count: sent }),
+        });
+      }
 
       // Reset form
       setSendDialogOpen(false);
@@ -407,8 +462,8 @@ export default function CustomerCommunications() {
   };
 
   const generateEmailPreview = async () => {
-    // Check if custom message mode and customers are selected
-    if (communicationMode === 'custom' && selectedCustomers.length === 0) {
+    // Check if custom message mode and customers or vehicles are selected
+    if (communicationMode === 'custom' && !hasCustomRecipients) {
       toast({
         title: t('customerCommunications.toasts.noCustomersSelectedTitle'),
         description: t('customerCommunications.toasts.noCustomersSelectedDescription'),
@@ -472,171 +527,22 @@ export default function CustomerCommunications() {
       }
     }
 
-    // Use determined email content (template or custom)
-    const subject = emailSubject.trim();
-    const content = emailContent.trim();
-
-    // Generate recipients list based on communication mode
-    let recipients: any[];
-    let sampleCustomer: any;
-    let sampleVehicle: any;
-
-    if (communicationMode === 'custom') {
-      // For custom messages, work with selected customers
-      recipients = selectedCustomers.map(customer => {
-        // Collect all available email options
-        const emailOptions: Array<{value: string, label: string, email: string}> = [];
-        
-        if (customer.email) {
-          emailOptions.push({
-            value: "email",
-            label: t('customerCommunications.emailOptionLabels.email'),
-            email: customer.email
-          });
-        }
-        if (customer.emailForMOT) {
-          emailOptions.push({
-            value: "emailForMOT",
-            label: t('customerCommunications.emailOptionLabels.emailForMOT'),
-            email: customer.emailForMOT
-          });
-        }
-        if (customer.emailForInvoices) {
-          emailOptions.push({
-            value: "emailForInvoices",
-            label: t('customerCommunications.emailOptionLabels.emailForInvoices'),
-            email: customer.emailForInvoices
-          });
-        }
-        if (customer.emailGeneral) {
-          emailOptions.push({
-            value: "emailGeneral",
-            label: t('customerCommunications.emailOptionLabels.emailGeneral'),
-            email: customer.emailGeneral
-          });
-        }
-
-        // Select default email (prioritize primary email)
-        let selectedEmailField = "none";
-        let selectedEmail = t('customerCommunications.dialogs.emailPreview.noEmailFallback');
-
-        if (emailOptions.length > 0) {
-          const primaryOption = emailOptions.find(opt => opt.value === "email");
-          const defaultOption = primaryOption || emailOptions[0];
-          selectedEmailField = defaultOption.value;
-          selectedEmail = defaultOption.email;
-        }
-
-        return {
-          name: customer?.name || t('customerCommunications.dialogs.emailPreview.customerFallback'),
-          email: selectedEmail,
-          vehicleLicense: "N/A", // No specific vehicle for custom messages
-          emailField: selectedEmailField,
-          emailOptions: emailOptions,
-          customer: customer,
-          customerId: customer.id
-        };
-      });
-
-      sampleCustomer = selectedCustomers[0];
-      sampleVehicle = null; // No vehicle for custom messages
-    } else {
-      // For APK/Maintenance messages, work with selected vehicles
-      recipients = selectedVehicles.map(vehicle => {
-        const reservation = vehiclesWithReservations.find((item: any) => item.vehicle.id === vehicle.id);
-        const customer = reservation?.customer;
-        
-        // Collect all available email options
-        const emailOptions: Array<{value: string, label: string, email: string}> = [];
-        
-        if (customer) {
-          if (customer.email) {
-            emailOptions.push({
-              value: "email",
-              label: t('customerCommunications.emailOptionLabels.email'),
-              email: customer.email
-            });
-          }
-          if (customer.emailForMOT) {
-            emailOptions.push({
-              value: "emailForMOT",
-              label: t('customerCommunications.emailOptionLabels.emailForMOT'),
-              email: customer.emailForMOT
-            });
-          }
-          if (customer.emailForInvoices) {
-            emailOptions.push({
-              value: "emailForInvoices",
-              label: t('customerCommunications.emailOptionLabels.emailForInvoices'),
-              email: customer.emailForInvoices
-            });
-          }
-          if (customer.emailGeneral) {
-            emailOptions.push({
-              value: "emailGeneral",
-              label: t('customerCommunications.emailOptionLabels.emailGeneral'),
-              email: customer.emailGeneral
-            });
-          }
-        }
-        
-        // Select default email (prioritize primary email)
-        let selectedEmailField = "none";
-        let selectedEmail = t('customerCommunications.dialogs.emailPreview.noEmailFallback');
-        
-        if (emailOptions.length > 0) {
-          const primaryOption = emailOptions.find(opt => opt.value === "email");
-          const defaultOption = primaryOption || emailOptions[0];
-          selectedEmailField = defaultOption.value;
-          selectedEmail = defaultOption.email;
-        }
-        
-        return {
-          name: customer?.name || t('customerCommunications.dialogs.emailPreview.customerFallback'),
-          email: selectedEmail,
-          vehicleLicense: vehicle.licensePlate,
-          emailField: selectedEmailField,
-          emailOptions: emailOptions,
-          customer: customer,
-          vehicleId: vehicle.id
-        };
-      });
-
-      sampleVehicle = selectedVehicles[0];
-      const sampleReservation = vehiclesWithReservations.find((item: any) => item.vehicle.id === sampleVehicle.id);
-      sampleCustomer = sampleReservation?.customer;
-    }
-
-    // Format license plate properly and add all placeholders including apkDate
-    const formattedPlate = sampleVehicle?.licensePlate
-      ? formatLicensePlate(sampleVehicle.licensePlate)
-      : t('customerCommunications.dialogs.emailPreview.fallbackLicensePlate');
-
-    const formattedApkDate = sampleVehicle?.apkDate
-      ? new Date(sampleVehicle.apkDate).toLocaleDateString('nl-NL')
-      : t('customerCommunications.dialogs.emailPreview.fallbackApkDate');
-
-    // Replace placeholders in both subject and content
-    const processedSubject = subject
-      .replace(/\{customerName\}/g, sampleCustomer?.name || t('customerCommunications.dialogs.emailPreview.fallbackCustomerName'))
-      .replace(/\{vehiclePlate\}/g, formattedPlate)
-      .replace(/\{vehicleBrand\}/g, sampleVehicle?.brand || t('customerCommunications.dialogs.emailPreview.fallbackBrand'))
-      .replace(/\{vehicleModel\}/g, sampleVehicle?.model || t('customerCommunications.dialogs.emailPreview.fallbackModel'))
-      .replace(/\{apkDate\}/g, formattedApkDate);
-
-    const processedContent = content
-      .replace(/\{customerName\}/g, sampleCustomer?.name || t('customerCommunications.dialogs.emailPreview.fallbackCustomerName'))
-      .replace(/\{vehiclePlate\}/g, formattedPlate)
-      .replace(/\{vehicleBrand\}/g, sampleVehicle?.brand || t('customerCommunications.dialogs.emailPreview.fallbackBrand'))
-      .replace(/\{vehicleModel\}/g, sampleVehicle?.model || t('customerCommunications.dialogs.emailPreview.fallbackModel'))
-      .replace(/\{apkDate\}/g, formattedApkDate);
-
-    setEmailPreview({
-      subject: processedSubject,
-      content: processedContent,
-      recipients
+    // The recipients are resolved the way the send route resolves them, and the
+    // text is rendered per recipient when the dialog shows it (audit A-13-3).
+    const recipients = buildRecipients({
+      mode: communicationMode,
+      selectedVehicles,
+      selectedCustomers,
+      vehicleItems: vehiclesWithReservations,
     });
 
+    setEmailPreview({
+      subject: emailSubject.trim(),
+      content: emailContent.trim(),
+      recipients,
+    });
+    setPreviewRecipientKey(recipients[0]?.key ?? null);
+    setMassSendAcknowledged(false);
     setPreviewDialogOpen(true);
   };
 
@@ -661,9 +567,15 @@ export default function CustomerCommunications() {
       case 'apk': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'maintenance': return 'bg-green-100 text-green-800 border-green-200';
       case 'custom': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'portal': return 'bg-slate-100 text-slate-800 border-slate-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
+
+  const categoryBadgeText = (category?: string | null) =>
+    category === 'portal'
+      ? t('customerCommunications.templates.categoryPortal')
+      : category?.toUpperCase() || t('customerCommunications.templates.defaultCategoryBadge');
 
   const handlePreviewTemplate = (template: any) => {
     setSelectedTemplateForPreview(template);
@@ -684,15 +596,18 @@ export default function CustomerCommunications() {
       });
 
       if (!response.ok) {
-        throw new Error(t('customerCommunications.toasts.deleteTemplateRequestFailed', { status: response.statusText }));
+        throw new Error(t('customerCommunications.toasts.deleteTemplateRequestFailed', { status: response.status }));
       }
 
       toast({
         title: t('customerCommunications.toasts.templateDeletedTitle'),
-        description: t('customerCommunications.toasts.templateDeletedDescription', { name: templateToDelete.name }),
+        description: t('customerCommunications.toasts.templateDeletedDescription', { name: templateDisplayName(templateToDelete) }),
       });
 
-      // Refresh templates - this will happen automatically via react-query
+      // The saved-template list is a query of its own: refresh it, or the
+      // deleted template stays on screen (audit A-13-4).
+      await queryClient.invalidateQueries({ queryKey: ['/api/email-templates'] });
+      if (selectedTemplateId === String(templateToDelete.id)) setSelectedTemplateId("");
       setTemplateToDelete(null);
     } catch (error) {
       console.error('Failed to delete template:', error);
@@ -728,40 +643,51 @@ export default function CustomerCommunications() {
     }
   };
 
-  const duplicateTemplate = async (template: any) => {
-    setEditingTemplate(null);
-    setTemplateName(`${template.name} (Copy)`);
+  // The Dutch name of a system template, the stored name of any other.
+  const templateDisplayName = (template: { name: string }) => {
+    const key = systemTemplateLabelKey(template.name);
+    return key ? t(key) : template.name;
+  };
+
+  // Brings the builder form into view and puts the cursor in its first field:
+  // the saved-template cards sit far below it (audit A-13-7).
+  const showTemplateBuilder = () => {
+    templateBuilderRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => templateNameRef.current?.focus({ preventScroll: true }), 0);
+  };
+
+  const beginEditingTemplate = (template: any) => {
+    setEditingTemplate(template.id);
+    setTemplateName(template.name);
     setTemplateSubject(template.subject);
     setTemplateContent(template.content);
     setTemplateCategory(template.category || "custom");
-    
+    showTemplateBuilder();
+  };
+
+  const duplicateTemplate = async (template: any) => {
+    setEditingTemplate(null);
+    setTemplateName(`${templateDisplayName(template)} ${t('customerCommunications.templates.copySuffix')}`);
+    setTemplateSubject(template.subject);
+    setTemplateContent(template.content);
+    // A copy of a system template is an ordinary template: it must not be
+    // hidden from the pickers as a portal one.
+    setTemplateCategory(template.category && template.category !== 'portal' ? template.category : "custom");
+    showTemplateBuilder();
+
     toast({
       title: t('customerCommunications.toasts.templateDuplicatedTitle'),
       description: t('customerCommunications.toasts.templateDuplicatedDescription'),
     });
   };
 
-  const getPreviewContent = () => {
-    const sampleData = {
-      customerName: "John Doe",
-      vehiclePlate: "AB-123-CD",
-      vehicleBrand: "Toyota",
-      vehicleModel: "Camry",
-      apkDate: "2024-06-15",
-      companyName: "Car Rental Company"
-    };
+  // The sample customer and vehicle of the live preview, from the locale.
+  const sampleValues = t('customerCommunications.templates.sampleValues', { returnObjects: true }) as unknown as Record<string, string>;
 
-    let previewSubject = templateSubject;
-    let previewContent = templateContent;
-
-    Object.entries(sampleData).forEach(([key, value]) => {
-      const placeholder = `{${key}}`;
-      previewSubject = previewSubject.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), value);
-      previewContent = previewContent.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), value);
-    });
-
-    return { subject: previewSubject, content: previewContent };
-  };
+  const getPreviewContent = () => ({
+    subject: fillPlaceholders(templateSubject, sampleValues),
+    content: fillPlaceholders(templateContent, sampleValues),
+  });
 
   // Available placeholders
   const placeholders = [
@@ -778,33 +704,26 @@ export default function CustomerCommunications() {
     { key: 'reservationEnd', label: t('customerCommunications.placeholders.reservationEnd.label'), description: t('customerCommunications.placeholders.reservationEnd.description') }
   ];
 
-  // Function to handle email selection changes in preview dialog
-  const handleEmailSelection = (recipientIndex: number, selectedEmailField: string) => {
+  // The address chosen for one recipient in the preview dialog.
+  const handleEmailSelection = (recipientKey: string, selectedEmailField: string) => {
     if (!emailPreview) return;
-
-    const updatedRecipients = [...emailPreview.recipients];
-    const recipient = updatedRecipients[recipientIndex];
-    
-    // Find the selected email option
-    const selectedOption = recipient.emailOptions.find(opt => opt.value === selectedEmailField);
-    
-    if (selectedOption) {
-      // Update the recipient's email and emailField
-      updatedRecipients[recipientIndex] = {
-        ...recipient,
-        email: selectedOption.email,
-        emailField: selectedEmailField
-      };
-      
-      // Update the email preview state
-      setEmailPreview({
-        ...emailPreview,
-        recipients: updatedRecipients
-      });
-    }
+    setEmailPreview({
+      ...emailPreview,
+      recipients: emailPreview.recipients.map((recipient) => {
+        if (recipient.key !== recipientKey) return recipient;
+        const option = recipient.emailOptions.find((candidate) => candidate.field === selectedEmailField);
+        return option ? { ...recipient, emailField: option.field, email: option.email } : recipient;
+      }),
+    });
   };
 
-
+  // Reading helpers for the e-mail log tab.
+  const logKindLabel = (template: string) => {
+    if (['apk', 'maintenance', 'custom'].includes(template)) return getTemplateInfo(template).title;
+    if (template === 'gps') return t('customerCommunications.history.kindGps');
+    if (template === 'documents') return t('customerCommunications.history.kindDocuments');
+    return t('customerCommunications.history.kindOther');
+  };
 
   const getTemplateInfo = (template: string) => {
     switch (template) {
@@ -850,8 +769,15 @@ export default function CustomerCommunications() {
         </div>
         <div className="flex items-center space-x-2">
           <Users className="h-5 w-5 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
-            {t('customerCommunications.statsLine', { customerCount: customers.length, vehicleCount: vehiclesWithReservations.length })}
+          <span className="text-sm text-muted-foreground" data-testid="stats-line">
+            {t('customerCommunications.statsCustomers', { count: customers.length })}
+            {' • '}
+            {t(
+              communicationMode === 'apk' ? 'customerCommunications.statsVehiclesApk'
+                : communicationMode === 'maintenance' ? 'customerCommunications.statsVehiclesMaintenance'
+                : 'customerCommunications.statsVehiclesCustom',
+              { count: vehiclesWithReservations.length },
+            )}
           </span>
         </div>
       </div>
@@ -918,8 +844,8 @@ export default function CustomerCommunications() {
                         <SelectValue placeholder={t('customerCommunications.send.apk.templatePlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
-                        {savedTemplates.length > 0 ? (
-                          savedTemplates.map((template: any) => (
+                        {pickerTemplates.length > 0 ? (
+                          pickerTemplates.map((template: any) => (
                             <SelectItem key={template.id} value={template.id.toString()}>
                               {template.name}
                             </SelectItem>
@@ -957,12 +883,18 @@ export default function CustomerCommunications() {
                         onClick={generateEmailPreview}
                         className="bg-orange-600 hover:bg-orange-700"
                         data-testid="button-preview-apk"
+                        aria-describedby={vehicleModeHint ? 'hint-preview-apk' : undefined}
                       >
                         <Send className="h-4 w-4 mr-2" />
                         {t('customerCommunications.send.apk.previewSendButton', { count: selectedVehicles.length })}
                       </Button>
                     </RequiresPermission>
                   </div>
+                  {vehicleModeHint && (
+                    <p id="hint-preview-apk" className="-mt-2 text-xs text-muted-foreground" data-testid="hint-preview-apk">
+                      {vehicleModeHint}
+                    </p>
+                  )}
 
               {/* Filter Information */}
               {vehicleFilter !== "all" && (
@@ -1025,6 +957,7 @@ export default function CustomerCommunications() {
                           setSelectedVehicles(prev => [...prev, vehicle]);
                         }
                       }}
+                      data-testid={`vehicle-card-${vehicle.id}`}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="font-medium text-sm">{formatLicensePlate(vehicle.licensePlate)}</div>
@@ -1120,8 +1053,8 @@ export default function CustomerCommunications() {
                     <SelectValue placeholder={t('customerCommunications.send.maintenance.templatePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {savedTemplates.length > 0 ? (
-                      savedTemplates.map((template: any) => (
+                    {pickerTemplates.length > 0 ? (
+                      pickerTemplates.map((template: any) => (
                         <SelectItem key={template.id} value={template.id.toString()}>
                           {template.name}
                         </SelectItem>
@@ -1159,12 +1092,18 @@ export default function CustomerCommunications() {
                     onClick={generateEmailPreview}
                     className="bg-blue-600 hover:bg-blue-700"
                     data-testid="button-preview-maintenance"
+                    aria-describedby={vehicleModeHint ? 'hint-preview-maintenance' : undefined}
                   >
                     <Send className="h-4 w-4 mr-2" />
                     {t('customerCommunications.send.maintenance.previewSendButton', { count: selectedVehicles.length })}
                   </Button>
                 </RequiresPermission>
               </div>
+              {vehicleModeHint && (
+                <p id="hint-preview-maintenance" className="-mt-2 text-xs text-muted-foreground" data-testid="hint-preview-maintenance">
+                  {vehicleModeHint}
+                </p>
+              )}
 
               {/* Filter Information */}
               {vehicleFilter !== "all" && (
@@ -1273,8 +1212,8 @@ export default function CustomerCommunications() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">{t('customerCommunications.send.custom.noTemplateOption')}</SelectItem>
-                    {savedTemplates.length > 0 ? (
-                      savedTemplates.map((template: any) => (
+                    {pickerTemplates.length > 0 ? (
+                      pickerTemplates.map((template: any) => (
                         <SelectItem key={template.id} value={template.id.toString()}>
                           {template.name}
                         </SelectItem>
@@ -1298,25 +1237,35 @@ export default function CustomerCommunications() {
               <div className="flex items-center justify-between mb-4">
                 <RequiresPermission anyOf={[UserPermission.MANAGE_NOTIFICATIONS]}>
                   <Button
-                    disabled={(selectedCustomers.length === 0 && selectedVehicles.length === 0) || ((!selectedTemplateId || selectedTemplateId === "none") && (!customMessage.trim() || !customSubject.trim()))}
+                    disabled={!hasCustomRecipients || !hasCustomMessage}
                     onClick={generateEmailPreview}
                     className="bg-green-600 hover:bg-green-700"
                     data-testid="button-preview-custom"
+                    aria-describedby={customModeHint ? 'hint-preview-custom' : undefined}
                   >
                     <Send className="h-4 w-4 mr-2" />
                     {t('customerCommunications.send.custom.previewSendButton')}
                   </Button>
                 </RequiresPermission>
                 <div className="text-sm text-muted-foreground">
-                  {selectedCustomers.length > 0 && selectedVehicles.length > 0
-                    ? t('customerCommunications.send.custom.recipientsSummaryBoth', { customers: selectedCustomers.length, vehicles: selectedVehicles.length })
-                    : selectedCustomers.length > 0
-                    ? t('customerCommunications.send.custom.recipientsSummaryCustomersOnly', { customers: selectedCustomers.length })
-                    : selectedVehicles.length > 0
-                    ? t('customerCommunications.send.custom.recipientsSummaryVehiclesOnly', { vehicles: selectedVehicles.length })
-                    : t('customerCommunications.send.custom.recipientsSummaryNone')}
+                  {(() => {
+                    const customersText = t('customerCommunications.send.custom.customersCount', { count: selectedCustomers.length });
+                    const vehiclesText = t('customerCommunications.send.custom.vehiclesCount', { count: selectedVehicles.length });
+                    return selectedCustomers.length > 0 && selectedVehicles.length > 0
+                      ? t('customerCommunications.send.custom.recipientsSummaryBoth', { customers: customersText, vehicles: vehiclesText })
+                      : selectedCustomers.length > 0
+                      ? t('customerCommunications.send.custom.recipientsSummaryCustomersOnly', { customers: customersText })
+                      : selectedVehicles.length > 0
+                      ? t('customerCommunications.send.custom.recipientsSummaryVehiclesOnly', { vehicles: vehiclesText })
+                      : t('customerCommunications.send.custom.recipientsSummaryNone');
+                  })()}
                 </div>
               </div>
+              {customModeHint && (
+                <p id="hint-preview-custom" className="-mt-2 text-xs text-muted-foreground" data-testid="hint-preview-custom">
+                  {customModeHint}
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -1545,11 +1494,7 @@ export default function CustomerCommunications() {
                     const knownKind = ['apk', 'maintenance', 'custom'].includes(row.template);
                     const info = knownKind ? getTemplateInfo(row.template) : null;
                     const Icon = info ? info.icon : Mail;
-                    const kindLabel = info
-                      ? info.title
-                      : row.template === 'gps'
-                        ? t('customerCommunications.history.kindGps')
-                        : row.template;
+                    const kindLabel = logKindLabel(row.template);
 
                     return (
                       <div key={row.id} className="p-4 border rounded-lg" data-testid="email-log-row">
@@ -1577,19 +1522,28 @@ export default function CustomerCommunications() {
                               </div>
                             </div>
                           </div>
-                          <Badge
-                            variant={status === 'sent' ? 'default' : 'destructive'}
-                            data-testid="email-log-status"
-                          >
-                            {t(`customerCommunications.history.statusLabels.${status}`)}
-                          </Badge>
+                          <div className="flex shrink-0 flex-col items-end gap-2">
+                            <Badge
+                              variant={status === 'sent' ? 'default' : 'destructive'}
+                              data-testid="email-log-status"
+                            >
+                              {t(`customerCommunications.history.statusLabels.${status}`)}
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => setLogDetailRow(row)}
+                              data-testid={`button-email-log-detail-${row.id}`}
+                            >
+                              {t('customerCommunications.history.detailButton')}
+                            </Button>
+                          </div>
                         </div>
 
                         {row.failureReason && (
                           <div className="mt-3 p-2 bg-yellow-50 rounded border border-yellow-200">
-                            <div className="text-sm text-yellow-800 break-words">
-                              <strong>{t('customerCommunications.history.failureReasonLabel')}</strong> {row.failureReason}
-                            </div>
+                            <EmailFailureReasons reason={row.failureReason} />
                           </div>
                         )}
                       </div>
@@ -1739,7 +1693,7 @@ export default function CustomerCommunications() {
             {/* Template Builder and Live Preview Row */}
             <div className={`${showLivePreview ? 'grid grid-cols-1 xl:grid-cols-3 gap-6' : ''}`}>
               {/* Template Builder */}
-              <Card className={showLivePreview ? 'xl:col-span-2' : ''}>
+              <Card ref={templateBuilderRef} className={showLivePreview ? 'xl:col-span-2' : ''}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
@@ -1766,6 +1720,7 @@ export default function CustomerCommunications() {
                 <div className="space-y-2">
                   <Label htmlFor="template-name">{t('customerCommunications.templates.templateNameLabel')}</Label>
                   <Input
+                    ref={templateNameRef}
                     id="template-name"
                     placeholder={t('customerCommunications.templates.templateNamePlaceholder')}
                     value={templateName}
@@ -1786,7 +1741,7 @@ export default function CustomerCommunications() {
 
                 <div className="space-y-2">
                   <Label htmlFor="template-category">{t('customerCommunications.templates.categoryLabel')}</Label>
-                  <Select value={templateCategory} onValueChange={(value: 'apk' | 'maintenance' | 'custom') => setTemplateCategory(value)}>
+                  <Select value={templateCategory} onValueChange={(value: 'apk' | 'maintenance' | 'custom' | 'portal') => setTemplateCategory(value)}>
                     <SelectTrigger>
                       <SelectValue placeholder={t('customerCommunications.templates.categoryPlaceholder')} />
                     </SelectTrigger>
@@ -1794,6 +1749,9 @@ export default function CustomerCommunications() {
                       <SelectItem value="apk">{t('customerCommunications.templates.categoryApk')}</SelectItem>
                       <SelectItem value="maintenance">{t('customerCommunications.templates.categoryMaintenance')}</SelectItem>
                       <SelectItem value="custom">{t('customerCommunications.templates.categoryCustom')}</SelectItem>
+                      {templateCategory === 'portal' && (
+                        <SelectItem value="portal">{t('customerCommunications.templates.categoryPortalShort')}</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -1876,7 +1834,7 @@ export default function CustomerCommunications() {
                         });
 
                         if (!response.ok) {
-                          throw new Error(t('customerCommunications.toasts.saveTemplateRequestFailed', { status: response.statusText }));
+                          throw new Error(t('customerCommunications.toasts.saveTemplateRequestFailed', { status: response.status }));
                         }
 
                         const result = await response.json();
@@ -1890,10 +1848,12 @@ export default function CustomerCommunications() {
                         setTemplateName("");
                         setTemplateSubject("");
                         setTemplateContent("");
+                        setTemplateCategory("custom");
                         setEditingTemplate(null);
-                        
-                        // Refresh templates list (you'd implement this)
-                        // fetchTemplates();
+
+                        // The saved-template list is a query of its own; without
+                        // this it keeps showing the old state (audit A-13-4).
+                        await queryClient.invalidateQueries({ queryKey: ['/api/email-templates'] });
                       } catch (error) {
                         console.error('Failed to save template:', error);
                         toast({
@@ -1973,10 +1933,10 @@ export default function CustomerCommunications() {
                           <div className="pt-3 border-t text-xs text-gray-500 bg-gray-50 -mx-4 -mb-3 px-4 py-3 rounded-b-lg">
                             <div className="space-y-1">
                               <div><strong>{t('customerCommunications.templates.sampleDataUsedLabel')}</strong></div>
-                              <div>{t('customerCommunications.templates.sampleCustomer')}</div>
-                              <div>{t('customerCommunications.templates.sampleVehicle')}</div>
-                              <div>{t('customerCommunications.templates.sampleApkDate')}</div>
-                              <div>{t('customerCommunications.templates.sampleCompany')}</div>
+                              <div>{t('customerCommunications.templates.sampleCustomer', { value: sampleValues.customerName })}</div>
+                              <div>{t('customerCommunications.templates.sampleVehicle', { brand: sampleValues.vehicleBrand, model: sampleValues.vehicleModel, plate: sampleValues.vehiclePlate })}</div>
+                              <div>{t('customerCommunications.templates.sampleApkDate', { value: sampleValues.apkDate })}</div>
+                              <div>{t('customerCommunications.templates.sampleCompany', { value: sampleValues.companyName })}</div>
                             </div>
                           </div>
                         )}
@@ -2003,7 +1963,7 @@ export default function CustomerCommunications() {
                       className="w-40"
                       data-testid="input-search-templates"
                     />
-                    <Select value={templateCategoryFilter} onValueChange={(value: any) => setTemplateCategoryFilter(value as 'all' | 'apk' | 'maintenance' | 'custom')}>
+                    <Select value={templateCategoryFilter} onValueChange={(value: any) => setTemplateCategoryFilter(value as 'all' | 'apk' | 'maintenance' | 'custom' | 'portal')}>
                       <SelectTrigger className="w-32" data-testid="select-template-category">
                         <SelectValue placeholder={t('customerCommunications.templates.categoryFilterPlaceholder')} />
                       </SelectTrigger>
@@ -2012,6 +1972,7 @@ export default function CustomerCommunications() {
                         <SelectItem value="apk">{t('customerCommunications.templates.categoryApkShort')}</SelectItem>
                         <SelectItem value="maintenance">{t('customerCommunications.templates.categoryMaintenance')}</SelectItem>
                         <SelectItem value="custom">{t('customerCommunications.templates.categoryCustom')}</SelectItem>
+                        <SelectItem value="portal">{t('customerCommunications.templates.categoryPortalShort')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -2056,13 +2017,15 @@ export default function CustomerCommunications() {
                           <div className="flex items-start justify-between">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center space-x-2 mb-2">
-                                <h4 className="font-medium text-sm truncate">{template.name}</h4>
+                                <h4 className="font-medium text-sm truncate">{templateDisplayName(template)}</h4>
                                 <Badge className={`text-xs ${getCategoryBadgeColor(template.category)}`}>
-                                  {template.category?.toUpperCase() || t('customerCommunications.templates.defaultCategoryBadge')}
+                                  {categoryBadgeText(template.category)}
                                 </Badge>
                               </div>
                               <p className="text-xs text-muted-foreground mb-2 truncate">{template.subject}</p>
-                              <p className="text-xs text-gray-500 mb-2 line-clamp-3 leading-relaxed">{template.content}</p>
+                              <p className="text-xs text-gray-500 mb-2 line-clamp-3 leading-relaxed">
+                                {isSystemTemplate(template) ? htmlToPlainText(template.content) : template.content}
+                              </p>
                               <div className="text-xs text-muted-foreground space-y-1">
                                 <div>{t('customerCommunications.templates.createdLabel', { date: new Date(template.createdAt).toLocaleDateString('nl-NL') })}</div>
                                 {template.lastUsed && (
@@ -2101,13 +2064,7 @@ export default function CustomerCommunications() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => {
-                                  setEditingTemplate(template.id);
-                                  setTemplateName(template.name);
-                                  setTemplateSubject(template.subject);
-                                  setTemplateContent(template.content);
-                                  setTemplateCategory(template.category || "custom");
-                                }}
+                                onClick={() => beginEditingTemplate(template)}
                                 data-testid={`button-edit-${template.id}`}
                                 title={t('customerCommunications.templates.editTitle')}
                                 className="h-8 px-2 text-xs"
@@ -2144,127 +2101,206 @@ export default function CustomerCommunications() {
       {/* Email Preview Dialog - Moved outside tabs to be accessible from all tabs */}
       <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{t('customerCommunications.dialogs.emailPreview.title')}</DialogTitle>
-            <DialogDescription>
-              {t('customerCommunications.dialogs.emailPreview.descriptionReview', { count: emailPreview?.recipients.length || 0 })}
-            </DialogDescription>
-          </DialogHeader>
+          {(() => {
+            // Mails, not rows: vehicles nobody rents share one notice to the office.
+            const recipients = emailPreview?.recipients ?? [];
+            const mailCount = recipients.filter((recipient) => !recipient.office).length + (recipients.some((recipient) => recipient.office) ? 1 : 0);
+            const shown = recipients.find((recipient) => recipient.key === previewRecipientKey) ?? recipients[0];
+            const isMassSend = mailCount >= MASS_SEND_THRESHOLD;
+            const sourceText = emailPreview ? `${emailPreview.subject}\n${emailPreview.content}` : '';
+            const emptyFields = shown && !shown.office ? emptyPlaceholders(sourceText, shown) : [];
+            const unsupported = unsupportedPlaceholders(sourceText);
+            const placeholderLabel = (key: string) => t(`customerCommunications.placeholders.${key}.label`, { defaultValue: key });
 
-          {emailPreview && (
-            <div className="space-y-6">
-              {/* Email Content Preview */}
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-sm font-medium">{t('customerCommunications.dialogs.emailPreview.subjectLabel')}</Label>
-                  <div className="mt-1 p-3 bg-gray-50 rounded border">
-                    <p className="font-medium">{emailPreview.subject}</p>
-                  </div>
-                </div>
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle>{t('customerCommunications.dialogs.emailPreview.title')}</DialogTitle>
+                  <DialogDescription>
+                    {t('customerCommunications.dialogs.emailPreview.descriptionReview', { count: mailCount })}
+                  </DialogDescription>
+                </DialogHeader>
 
-                <div>
-                  <Label className="text-sm font-medium">{t('customerCommunications.dialogs.emailPreview.contentLabel')}</Label>
-                  <div className="mt-1 p-4 bg-gray-50 rounded border">
-                    <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans">
-                      {emailPreview.content}
-                    </pre>
-                  </div>
-                </div>
-              </div>
-
-              {/* Recipients List */}
-              <div>
-                <Label className="text-sm font-medium">
-                  {t('customerCommunications.dialogs.emailPreview.recipientsLabel', { count: emailPreview.recipients.length })}
-                </Label>
-                <div className="mt-2 max-h-48 overflow-y-auto border rounded">
-                  <div className="divide-y">
-                    {emailPreview.recipients.map((recipient, index) => (
-                      <div key={index} className="p-3 space-y-2">
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-1 flex-1">
-                            <div className="font-medium text-sm">{recipient.name}</div>
-                            <div className="text-xs text-blue-600 font-mono">
-                              {recipient.vehicleLicense}
-                            </div>
-                          </div>
-                          {recipient.emailField !== "none" && (
-                            <Badge variant="outline" className="text-xs">
-                              {recipient.emailField === "email" && t('customerCommunications.emailOptionLabels.email')}
-                              {recipient.emailField === "emailForMOT" && t('customerCommunications.emailOptionLabels.emailForMOT')}
-                              {recipient.emailField === "emailForInvoices" && t('customerCommunications.emailOptionLabels.emailForInvoices')}
-                              {recipient.emailField === "emailGeneral" && t('customerCommunications.emailOptionLabels.emailGeneral')}
-                            </Badge>
-                          )}
-                        </div>
-                        {/* Email Selection */}
-                        <div className="space-y-2">
-                          {recipient.emailOptions.length > 1 ? (
-                            <div className="space-y-1">
-                              <Label className="text-xs font-medium">{t('customerCommunications.dialogs.emailPreview.selectEmailLabel')}</Label>
-                              <Select 
-                                value={recipient.emailField} 
-                                onValueChange={(value) => handleEmailSelection(index, value)}
-                              >
-                                <SelectTrigger className="w-full h-8 text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {recipient.emailOptions.map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
-                                      <div className="flex items-center justify-between w-full">
-                                        <span className="font-medium">{option.label}</span>
-                                        <span className="text-muted-foreground ml-2">{option.email}</span>
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          ) : (
-                            <div className="text-xs text-muted-foreground">
-                              <span className="font-medium">{t('customerCommunications.dialogs.emailPreview.emailLabel')}</span> {recipient.email}
-                            </div>
-                          )}
+                {emailPreview && shown && (
+                  <div className="space-y-6">
+                    {/* The mail of the chosen recipient */}
+                    <div className="space-y-4">
+                      <p className="text-xs text-muted-foreground" data-testid="preview-showing-for">
+                        {shown.office
+                          ? t('customerCommunications.dialogs.emailPreview.showingForOffice')
+                          : t('customerCommunications.dialogs.emailPreview.showingFor', { name: shown.name })}
+                      </p>
+                      <div>
+                        <Label className="text-sm font-medium">{t('customerCommunications.dialogs.emailPreview.subjectLabel')}</Label>
+                        <div className="mt-1 p-3 bg-gray-50 rounded border">
+                          <p className="font-medium" data-testid="preview-subject">{renderForRecipient(emailPreview.subject, shown)}</p>
                         </div>
                       </div>
-                    ))}
+
+                      <div>
+                        <Label className="text-sm font-medium">{t('customerCommunications.dialogs.emailPreview.contentLabel')}</Label>
+                        <div className="mt-1 p-4 bg-gray-50 rounded border">
+                          <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans" data-testid="preview-content">
+                            {renderForRecipient(emailPreview.content, shown)}
+                          </pre>
+                        </div>
+                      </div>
+
+                      {emptyFields.length > 0 && (
+                        <p className="text-xs text-amber-700" data-testid="preview-empty-note">
+                          {t('customerCommunications.dialogs.emailPreview.emptyNote', { fields: emptyFields.map(placeholderLabel).join(', ') })}
+                        </p>
+                      )}
+                      {unsupported.length > 0 && (
+                        <p className="text-xs text-amber-700" data-testid="preview-unsupported-note">
+                          {t('customerCommunications.dialogs.emailPreview.unsupportedNote', { fields: unsupported.map((key) => `{${key}}`).join(', ') })}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Recipients List */}
+                    <div>
+                      <Label className="text-sm font-medium">
+                        {t('customerCommunications.dialogs.emailPreview.recipientsLabel', { count: mailCount })}
+                      </Label>
+                      <div className="mt-2 max-h-48 overflow-y-auto border rounded">
+                        <div className="divide-y">
+                          {recipients.map((recipient) => (
+                            <div
+                              key={recipient.key}
+                              className={`p-3 space-y-2 cursor-pointer ${recipient.key === shown.key ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                              onClick={() => setPreviewRecipientKey(recipient.key)}
+                              data-testid={`preview-recipient-${recipient.key}`}
+                            >
+                              <div className="flex justify-between items-start">
+                                <div className="space-y-1 flex-1">
+                                  <div className="font-medium text-sm">
+                                    {recipient.office ? t('customerCommunications.dialogs.emailPreview.officeBadge') : recipient.name}
+                                  </div>
+                                  {recipient.vehicleLicense && (
+                                    <div className="text-xs text-blue-600 font-mono">
+                                      {recipient.vehicleLicense}
+                                    </div>
+                                  )}
+                                </div>
+                                {recipient.emailField && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {t(`customerCommunications.emailOptionLabels.${recipient.emailField}`)}
+                                  </Badge>
+                                )}
+                              </div>
+                              {/* Email Selection */}
+                              <div className="space-y-2" onClick={(event) => event.stopPropagation()}>
+                                {recipient.office ? (
+                                  <div className="text-xs text-muted-foreground">
+                                    {t('customerCommunications.dialogs.emailPreview.officeNote')}
+                                  </div>
+                                ) : recipient.vehicleId !== null && recipient.emailOptions.length > 1 ? (
+                                  <div className="space-y-1">
+                                    <Label className="text-xs font-medium">{t('customerCommunications.dialogs.emailPreview.selectEmailLabel')}</Label>
+                                    <Select
+                                      value={recipient.emailField ?? undefined}
+                                      onValueChange={(value) => handleEmailSelection(recipient.key, value)}
+                                    >
+                                      <SelectTrigger className="w-full h-8 text-xs" data-testid={`preview-email-select-${recipient.key}`}>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {recipient.emailOptions.map((option) => (
+                                          <SelectItem key={option.field} value={option.field}>
+                                            <div className="flex items-center justify-between w-full">
+                                              <span className="font-medium">{t(`customerCommunications.emailOptionLabels.${option.field}`)}</span>
+                                              <span className="text-muted-foreground ml-2">{option.email}</span>
+                                            </div>
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                ) : recipient.email ? (
+                                  <div className="text-xs text-muted-foreground">
+                                    <span className="font-medium">{t('customerCommunications.dialogs.emailPreview.emailLabel')}</span> {recipient.email}
+                                  </div>
+                                ) : (
+                                  <div className="text-xs text-red-700">
+                                    {t('customerCommunications.dialogs.emailPreview.noAddressNote')}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Summary */}
+                    <div className="bg-blue-50 border border-blue-200 rounded p-4">
+                      <div className="flex items-center space-x-2">
+                        <Mail className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium text-blue-900">
+                          {t('customerCommunications.dialogs.emailPreview.readyToSend', { count: mailCount })}
+                        </span>
+                      </div>
+                      <p className="text-xs text-blue-700 mt-1">
+                        {t('customerCommunications.dialogs.emailPreview.personalizedNote')}
+                      </p>
+                    </div>
+
+                    {/* A send to many people needs a second, explicit confirmation (audit A-13-12) */}
+                    {isMassSend && (
+                      <div className="bg-amber-50 border border-amber-300 rounded p-4 space-y-3" data-testid="mass-send-warning">
+                        <div className="flex items-center space-x-2">
+                          <AlertTriangle className="h-4 w-4 text-amber-700" />
+                          <span className="text-sm font-medium text-amber-900">
+                            {t('customerCommunications.dialogs.emailPreview.massSendTitle')}
+                          </span>
+                        </div>
+                        <p className="text-sm text-amber-900">
+                          {t('customerCommunications.dialogs.emailPreview.massSendWarning', { count: mailCount })}
+                        </p>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="mass-send-acknowledge"
+                            checked={massSendAcknowledged}
+                            onCheckedChange={(checked) => setMassSendAcknowledged(checked === true)}
+                            data-testid="mass-send-acknowledge"
+                          />
+                          <Label htmlFor="mass-send-acknowledge" className="text-sm text-amber-900">
+                            {t('customerCommunications.dialogs.emailPreview.massSendAcknowledge')}
+                          </Label>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </div>
+                )}
 
-              {/* Summary */}
-              <div className="bg-blue-50 border border-blue-200 rounded p-4">
-                <div className="flex items-center space-x-2">
-                  <Mail className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-900">
-                    {t('customerCommunications.dialogs.emailPreview.readyToSend', { count: emailPreview.recipients.length })}
-                  </span>
-                </div>
-                <p className="text-xs text-blue-700 mt-1">
-                  {t('customerCommunications.dialogs.emailPreview.personalizedNote')}
-                </p>
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPreviewDialogOpen(false)}>
-              {t('customerCommunications.dialogs.emailPreview.cancelButton')}
-            </Button>
-            <RequiresPermission anyOf={[UserPermission.MANAGE_NOTIFICATIONS]}>
-              <Button
-                onClick={confirmSendNotifications}
-                disabled={isLoadingNotifications}
-                className="bg-green-600 hover:bg-green-700"
-                data-testid="button-confirm-send-notifications"
-              >
-                {isLoadingNotifications ? t('customerCommunications.dialogs.emailPreview.sendingButton') : t('customerCommunications.dialogs.emailPreview.confirmSendButton')}
-              </Button>
-            </RequiresPermission>
-          </DialogFooter>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setPreviewDialogOpen(false)}>
+                    {t('customerCommunications.dialogs.emailPreview.cancelButton')}
+                  </Button>
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_NOTIFICATIONS]}>
+                    <Button
+                      onClick={confirmSendNotifications}
+                      disabled={isLoadingNotifications || (isMassSend && !massSendAcknowledged)}
+                      className="bg-green-600 hover:bg-green-700"
+                      data-testid="button-confirm-send-notifications"
+                    >
+                      {isLoadingNotifications ? t('customerCommunications.dialogs.emailPreview.sendingButton') : t('customerCommunications.dialogs.emailPreview.confirmSendButton')}
+                    </Button>
+                  </RequiresPermission>
+                </DialogFooter>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
+
+      <EmailLogDetailDialog
+        row={logDetailRow}
+        status={logDetailRow ? emailLogStatus(logDetailRow) : 'sent'}
+        kindLabel={logDetailRow ? logKindLabel(logDetailRow.template) : ''}
+        onClose={() => setLogDetailRow(null)}
+      />
 
       {/* Template Preview Dialog */}
       <Dialog open={templatePreviewDialog} onOpenChange={setTemplatePreviewDialog}>
@@ -2282,22 +2318,22 @@ export default function CustomerCommunications() {
                   <div className="flex items-center justify-between">
                     <div className="font-medium text-sm text-gray-600">{t('customerCommunications.dialogs.templatePreview.fromLabel')}</div>
                     <Badge className={getCategoryBadgeColor(selectedTemplateForPreview.category)}>
-                      {selectedTemplateForPreview.category?.toUpperCase() || t('customerCommunications.templates.defaultCategoryBadge')}
+                      {categoryBadgeText(selectedTemplateForPreview.category)}
                     </Badge>
                   </div>
                   <div className="font-medium text-sm text-gray-600 mt-1">{t('customerCommunications.dialogs.templatePreview.toLabel')}</div>
                   <div className="font-bold text-lg mt-2">{selectedTemplateForPreview.subject}</div>
                 </div>
                 <div className="whitespace-pre-wrap text-gray-900">
-                  {selectedTemplateForPreview.content}
+                  {isSystemTemplate(selectedTemplateForPreview) ? htmlToPlainText(selectedTemplateForPreview.content) : selectedTemplateForPreview.content}
                 </div>
               </div>
               <div className="text-xs text-muted-foreground">
-                <div><strong>{t('customerCommunications.dialogs.templatePreview.templateLabel')}</strong> {selectedTemplateForPreview.name}</div>
-                <div><strong>{t('customerCommunications.dialogs.templatePreview.categoryLabel')}</strong> {selectedTemplateForPreview.category || t('customerCommunications.dialogs.templatePreview.defaultCategory')}</div>
-                <div><strong>{t('customerCommunications.dialogs.templatePreview.createdLabel')}</strong> {new Date(selectedTemplateForPreview.createdAt).toLocaleDateString()}</div>
+                <div><strong>{t('customerCommunications.dialogs.templatePreview.templateLabel')}</strong> {templateDisplayName(selectedTemplateForPreview)}</div>
+                <div><strong>{t('customerCommunications.dialogs.templatePreview.categoryLabel')}</strong> {selectedTemplateForPreview.category === 'portal' ? t('customerCommunications.templates.categoryPortalShort') : selectedTemplateForPreview.category || t('customerCommunications.dialogs.templatePreview.defaultCategory')}</div>
+                <div><strong>{t('customerCommunications.dialogs.templatePreview.createdLabel')}</strong> {new Date(selectedTemplateForPreview.createdAt).toLocaleDateString('nl-NL')}</div>
                 {selectedTemplateForPreview.lastUsed && (
-                  <div><strong>{t('customerCommunications.dialogs.templatePreview.lastUsedLabel')}</strong> {new Date(selectedTemplateForPreview.lastUsed).toLocaleDateString()}</div>
+                  <div><strong>{t('customerCommunications.dialogs.templatePreview.lastUsedLabel')}</strong> {new Date(selectedTemplateForPreview.lastUsed).toLocaleDateString('nl-NL')}</div>
                 )}
               </div>
             </div>
@@ -2312,11 +2348,7 @@ export default function CustomerCommunications() {
                   data-testid="button-edit-template-from-preview"
                   onClick={() => {
                     setTemplatePreviewDialog(false);
-                    setEditingTemplate(selectedTemplateForPreview.id);
-                    setTemplateName(selectedTemplateForPreview.name);
-                    setTemplateSubject(selectedTemplateForPreview.subject);
-                    setTemplateContent(selectedTemplateForPreview.content);
-                    setTemplateCategory(selectedTemplateForPreview.category || "custom");
+                    beginEditingTemplate(selectedTemplateForPreview);
                   }}
                 >
                   <Edit className="mr-2 h-4 w-4" />
@@ -2334,7 +2366,7 @@ export default function CustomerCommunications() {
           <DialogHeader>
             <DialogTitle>{t('customerCommunications.dialogs.deleteTemplate.title')}</DialogTitle>
             <DialogDescription>
-              {t('customerCommunications.dialogs.deleteTemplate.description', { name: templateToDelete?.name })}
+              {t('customerCommunications.dialogs.deleteTemplate.description', { name: templateToDelete ? templateDisplayName(templateToDelete) : '' })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

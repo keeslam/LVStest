@@ -16,6 +16,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { MailCheck, MailX } from "lucide-react";
 import { formatDateTimeNl } from "@/lib/format-date-nl";
+import { parseFailureReason } from "@shared/email-failure";
+import { failureCodeText } from "@/lib/email-failure-text";
 
 export interface DocumentMailAttempt {
   id: number;
@@ -47,6 +49,7 @@ interface DocumentMailStatusProps {
 
 export function DocumentMailStatus({ documentId, enabled = true }: DocumentMailStatusProps) {
   const { t } = useTranslation("documents");
+  const { t: tn } = useTranslation("notifications");
 
   const { data } = useQuery<{ attempts: DocumentMailAttempt[] }>({
     queryKey: [documentMailStatusUrl(documentId)],
@@ -61,6 +64,12 @@ export function DocumentMailStatus({ documentId, enabled = true }: DocumentMailS
   if (!attempt) return null;
 
   const failed = attempt.result === "failed";
+  // A reason that starts with a stable code is shown as the Dutch sentence for
+  // that code (audit A-13-2); text without one is the server's own, as before.
+  const { code } = parseFailureReason(attempt.failureReason);
+  const reason = attempt.failureReason
+    ? (code ? failureCodeText(tn as any, code) : attempt.failureReason)
+    : t('mailStatus.unknownReason');
 
   return (
     <span
@@ -69,7 +78,7 @@ export function DocumentMailStatus({ documentId, enabled = true }: DocumentMailS
     >
       {failed ? <MailX className="h-3.5 w-3.5" /> : <MailCheck className="h-3.5 w-3.5" />}
       {failed
-        ? t('mailStatus.failed', { reason: attempt.failureReason || t('mailStatus.unknownReason') })
+        ? t('mailStatus.failed', { reason })
         : t('mailStatus.sent', {
             date: formatDateTimeNl(attempt.sentAt),
             recipient: attempt.recipient || t('mailStatus.unknownRecipient'),
