@@ -22,6 +22,8 @@ import { History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTimeNl } from "@/lib/format-date-nl";
 import { auditActionLabel } from "@/lib/audit-action-label";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { UserPermission } from "@shared/schema";
 
 export type RecordHistoryResourceType = "reservation" | "vehicle" | "customer";
 
@@ -65,19 +67,31 @@ interface RecordHistoryProps {
   showHeading?: boolean;
 }
 
+/**
+ * The rights the history route needs (server/routes/users.ts HISTORY_PERMISSIONS): the manage right of the
+ * record's own type, or MANAGE_USERS. Viewing the record is not enough, so without one of these the query is
+ * never made (a 403 would only come back as the global red toast).
+ */
+const HISTORY_PERMISSIONS: Record<RecordHistoryResourceType, string[]> = {
+  reservation: [UserPermission.MANAGE_USERS, UserPermission.MANAGE_RESERVATIONS],
+  vehicle: [UserPermission.MANAGE_USERS, UserPermission.MANAGE_VEHICLES],
+  customer: [UserPermission.MANAGE_USERS, UserPermission.MANAGE_CUSTOMERS],
+};
+
 export function RecordHistory({ resourceType, resourceId, showHeading = true }: RecordHistoryProps) {
   const { t } = useTranslation("common");
+  const mayViewHistory = useHasPermission(...HISTORY_PERMISSIONS[resourceType]);
 
   const { data, isLoading, error } = useQuery<RecordHistoryResponse>({
     queryKey: [recordHistoryUrl(resourceType, resourceId)],
-    enabled: Number.isInteger(resourceId) && resourceId > 0,
+    enabled: mayViewHistory && Number.isInteger(resourceId) && resourceId > 0,
     // The rows never change while a dialog is open unless this employee makes
     // them change, and the dialogs invalidate on save.
     staleTime: 30_000,
     retry: false,
   });
 
-  const forbidden = (error as { httpStatus?: number } | null)?.httpStatus === 403;
+  const forbidden = !mayViewHistory || (error as { httpStatus?: number } | null)?.httpStatus === 403;
 
   const entries = data?.logs ?? [];
 

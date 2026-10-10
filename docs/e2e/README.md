@@ -233,7 +233,7 @@ meer verzoeken kosten.
 
 | Account | begin staart | einde run |
 |---|---|---|
-| `admin` / `admin-b` | 781 / 360 | 784 / 363 |
+| `admin` / `admin-b` | 781 / 360 (berekend) | 784 / 363 (berekend) |
 | `manager` / `manager-b` | 652 / 285 | 717 / 515 |
 | `user` / `user-b` | 761 / 158 | 764 / 161 |
 | `cleaner`, `viewer`, `accountant`, `maintenance` | 466, 542, 536, 544 | 469, 545, 539, 547 |

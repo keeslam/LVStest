@@ -4,9 +4,7 @@ import { useTranslation } from "react-i18next";
 /**
  * A-3-10, A-4-8 (audit 2026-10-09): Escape, a click next to the dialog and
  * "Annuleren" threw away what was typed in the vehicle and customer forms
- * without a word. The reservation dialogs already protect their forms
- * (`components/dialogs/dirty-close-guard.ts`, which blocks the backdrop click
- * with a toast). This hook is the shared version: every way of closing goes
+ * without a word. This hook is the shared answer: every way of closing goes
  * through `requestClose`, which closes at once while the form is clean and
  * asks "Wijzigingen verwerpen?" while it is dirty.
  *

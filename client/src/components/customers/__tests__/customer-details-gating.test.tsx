@@ -38,6 +38,9 @@ beforeEach(() => {
     if (url.includes("/api/reservations/customer/") && !holds(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS)) return json({ message: "Not authorized" }, 403);
     if (/\/api\/customers\/7/.test(url) && !holds(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS)) return json({ message: "Not authorized" }, 403);
     if (/\/api\/customers\/7$/.test(url)) return json(customer);
+    if (url.includes("/api/audit-logs/resource/customer/7")) {
+      return holds(UserPermission.MANAGE_USERS, UserPermission.MANAGE_CUSTOMERS) ? json({ logs: [], total: 0 }) : json({ message: "no" }, 403);
+    }
     return json([]);
   }));
 });
@@ -95,5 +98,23 @@ describe("CustomerDetails for a profile with both rights", () => {
     expect(await screen.findByRole("heading", { name: "Voorbeeld B.V." })).toBeInTheDocument();
     expect(requested.some((url) => url.includes("/api/reservations/customer/7"))).toBe(true);
     role = UserRole.USER;
+  });
+});
+
+describe("the history tab asks for the right the history route needs (final wave A, fix round 1)", () => {
+  it("view_customers + view_reservations: no request and the explanation line, no red toast", async () => {
+    permissions = [UserPermission.VIEW_CUSTOMERS, UserPermission.VIEW_RESERVATIONS];
+    renderDetails("history");
+    expect(await screen.findByTestId("record-history-forbidden")).toBeInTheDocument();
+    expect(requested.some((url) => url.includes("/api/audit-logs"))).toBe(false);
+    expect(screen.queryByText("Kon de gegevens niet laden")).toBeNull();
+  });
+
+  it("manage_customers loads the history", async () => {
+    permissions = [UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS];
+    renderDetails("history");
+    expect(await screen.findByTestId("record-history-empty")).toBeInTheDocument();
+    expect(requested.some((url) => url.includes("/api/audit-logs/resource/customer/7"))).toBe(true);
+    expect(screen.queryByTestId("record-history-forbidden")).toBeNull();
   });
 });

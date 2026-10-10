@@ -7,6 +7,7 @@ import { Link } from "wouter";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter
@@ -286,7 +287,7 @@ export function ReservationViewDialog({
             <div className="flex flex-wrap items-start justify-between gap-4 pr-8">
               <div>
                 <DialogTitle>{t('viewDialog.title')}</DialogTitle>
-                <p className="text-gray-500">{t('viewDialog.reservationHash', { id: reservationId })}</p>
+                <DialogDescription className="text-gray-500">{t('viewDialog.reservationHash', { id: reservationId })}</DialogDescription>
               </div>
               {reservationId && (
                 <BarcodeSvg value={formatReservationBarcode(reservationId)} height={30} className="shrink-0" />

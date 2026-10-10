@@ -4,10 +4,10 @@
  *
  * Wave 9 protected the *new* reservation dialog. The edit dialog had the same
  * defect, and it is the worse of the two: the typing there is on top of a real
- * reservation. The rule itself lives in `dirty-close-guard.ts` and is tested
- * against a bare Radix dialog in `components/__tests__/dirty-dialog.test.tsx`;
- * what this file proves is the **wiring** — the edit dialog really hands the
- * form an `onDirtyChange` and really consults the guard before closing.
+ * reservation. The rule itself lives in the shared hook
+ * `hooks/use-unsaved-changes-guard.ts`; what this file proves is the **wiring**
+ * — the edit dialog really hands the form an `onDirtyChange` and really consults
+ * the guard before closing.
  *
  * The 3 000-line reservation form is replaced by a stub that does what the real
  * one does: it reports dirtiness when something is typed.

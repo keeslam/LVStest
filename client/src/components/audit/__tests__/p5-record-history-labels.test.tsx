@@ -15,6 +15,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RecordHistory } from "@/components/audit/record-history";
 import { getQueryFn } from "@/lib/queryClient";
 
+vi.mock("@/hooks/use-auth", () => ({
+  useAuth: () => ({ user: { id: 1, username: "tester", role: "admin", permissions: [] }, isLoading: false }),
+}));
+
 function entry(id: number, action: string) {
   return {
     id,
@@ -140,7 +144,7 @@ describe("A-6-4 - audit codes are worded in the record history", () => {
       expect(await text(22)).toContain("Fine linked to a customer");
       expect(await text(27)).toContain("Maintenance block permanently deleted");
       const list = await screen.findByTestId("record-history-list");
-      expect(list.textContent).not.toMatch(/.(email|link|purge|regenerate)/);
+      expect(list.textContent).not.toMatch(/\.(email|link|purge|regenerate)\b/);
     } finally {
       await i18n.changeLanguage("nl");
     }

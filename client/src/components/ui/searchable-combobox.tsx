@@ -150,6 +150,14 @@ export function SearchableCombobox({
     // Keys typed in the search box stay in it (a Radix Popover or a form around it must not see them),
     // except the ones this list gives a meaning to.
     e.stopPropagation();
+    // The list is filtered after a typing pause. A key that acts on the list while that pause is still
+    // running would act on the old list (Enter would choose a row that is about to disappear), so the
+    // pending search is applied first and the key waits for the next press.
+    if ((e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter") && searchInput !== searchQuery) {
+      e.preventDefault();
+      setSearchQuery(searchInput);
+      return;
+    }
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setActiveIndex((i) => Math.min(i + 1, flatRows.length - 1));

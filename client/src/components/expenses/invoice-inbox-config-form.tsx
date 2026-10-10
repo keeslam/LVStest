@@ -13,19 +13,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { describeApiError, parseApiError } from "@/lib/api-error";
 
-/**
- * This module's validation answers (400) are Dutch sentences written for the person ("Alleen poort 993 ...")
- * and worth showing; a failure that carries a stable code (IMAP_UNAVAILABLE ...) has English wire text and
- * is worded by its code instead.
- */
-function inboxErrorText(error: unknown, fallback?: string): string {
-  const { code, message } = parseApiError(error);
-  return !code && message ? message : describeApiError(error, undefined, fallback);
-}
 import { InvoiceInboxLogButton } from "./invoice-inbox-log-dialog";
 
 export const INVOICE_INBOX_CONFIG_QUERY_KEY = ["/api/expenses/inbox/config"];
 const STATUS_QUERY_KEY = ["/api/expenses/inbox/status"];
+
+/**
+ * This module's validation answers (400) are Dutch sentences written for the person ("Alleen poort 993 ...")
+ * and worth showing. Everything else (a coded failure such as IMAP_UNAVAILABLE, a 403, a 500, a dropped
+ * connection) has English or technical wire text and is worded by describeApiError instead.
+ */
+function inboxErrorText(error: unknown, fallback?: string): string {
+  const { code, message, status } = parseApiError(error);
+  if (!code && status === 400 && message && !(error instanceof TypeError)) return message;
+  return describeApiError(error, undefined, fallback);
+}
 
 type TextField = "host" | "username" | "password" | "inboxFolder" | "processedFolder" | "authservId";
 type NumberField = "pollMinutes" | "totalTolerance";
@@ -76,7 +78,7 @@ export function InvoiceInboxConfigForm() {
   const test = useMutation({
     mutationFn: async () => (await apiRequest("POST", "/api/expenses/inbox/config/test", payload())).json(),
     onSuccess: (r: { ok: boolean; unseen: number }) => setTestResult(r),
-    onError: (e: Error) => setTestResult({ ok: false, message: inboxErrorText(e, t("invoiceInbox.config.testFailed")) }),
+    onError: (e: Error) => setTestResult({ ok: false, message: inboxErrorText(e) }),
   });
   const run = useMutation({
     mutationFn: async () => (await apiRequest("POST", "/api/expenses/inbox/run")).json(),

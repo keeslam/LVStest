@@ -13,6 +13,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RecordHistory, recordHistoryUrl, formatHistoryValue } from "@/components/audit/record-history";
 import { getQueryFn } from "@/lib/queryClient";
 
+vi.mock("@/hooks/use-auth", () => ({
+  useAuth: () => ({ user: { id: 1, username: "tester", role: "admin", permissions: [] }, isLoading: false }),
+}));
+
 function withClient(ui: React.ReactElement) {
   const client = new QueryClient({
     defaultOptions: { queries: { queryFn: getQueryFn({ on401: "throw" }), retry: false, gcTime: 0 } },

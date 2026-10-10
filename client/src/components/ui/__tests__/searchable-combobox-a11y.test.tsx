@@ -129,6 +129,24 @@ describe("SearchableCombobox, keyboard", () => {
   });
 });
 
+describe("SearchableCombobox, Enter while the search is still settling", () => {
+  it("does not choose a row of the old list: the filter is applied first, then Enter picks the filtered row", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<Harness onChange={onChange} />);
+    await openList(user);
+    const search = screen.getByRole("combobox", { name: "Zoek voertuig" });
+    // Typed and confirmed at once, inside the box's own typing pause: the list still shows all three rows.
+    await user.type(search, "transit{Enter}");
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByRole("option")).toHaveLength(1));
+    await user.keyboard("{Enter}");
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith("2");
+  });
+});
+
 describe("SearchableCombobox, mouse", () => {
   it("still chooses a row by clicking it", async () => {
     const user = userEvent.setup();

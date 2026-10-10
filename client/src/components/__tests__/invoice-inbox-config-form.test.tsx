@@ -140,7 +140,33 @@ describe("InvoiceInboxConfigForm", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Nu ophalen" }));
     expect(await screen.findByText("Ophalen mislukt")).toBeInTheDocument();
-    expect(await screen.findByText(/Postvak onbereikbaar/)).toBeInTheDocument();
+    // A 502 without a code: the server's text is not shown, the status sentence is.
+    expect(await screen.findByText(/De server is tijdelijk niet bereikbaar/)).toBeInTheDocument();
+    expect(screen.queryByText(/Postvak onbereikbaar/)).toBeNull();
+  });
+
+  it("words a codeless 500 on the connection test and a dropped connection in Dutch, never with the wire text", async () => {
+    let mode: "500" | "drop" = "500";
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/api/expenses/inbox/status")) return json(status);
+      if (url.endsWith("/api/expenses/inbox/config/test")) {
+        if (mode === "drop") throw new TypeError("Failed to fetch");
+        return json({ message: "Internal exploded: ECONNRESET" }, { status: 500 });
+      }
+      if (url.endsWith("/api/expenses/inbox/config")) return json(config);
+      return json({}, { status: 404 });
+    }));
+    mount();
+    await screen.findByLabelText("IMAP-server");
+    await userEvent.click(screen.getByRole("button", { name: "Verbinding testen" }));
+    expect(await screen.findByText(/Er ging iets mis op de server/)).toBeInTheDocument();
+    expect(screen.queryByText(/ECONNRESET|exploded/)).toBeNull();
+
+    mode = "drop";
+    await userEvent.click(screen.getByRole("button", { name: "Verbinding testen" }));
+    expect(await screen.findByText(/Geen verbinding met de server/)).toBeInTheDocument();
+    expect(screen.queryByText(/Failed to fetch/)).toBeNull();
   });
 
   /**
