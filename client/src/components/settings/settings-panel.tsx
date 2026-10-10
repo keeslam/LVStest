@@ -86,6 +86,19 @@ export function SettingsPanel() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("business");
+  // A-17-9: a tab that has been opened stays mounted (hidden) while another is shown.
+  // The panel's own fields live in this component and survive anyway; the forms that
+  // are components of their own (Klantenportaal, fiscaal, CJIB, the activity log's
+  // filters) kept their state in themselves and lost it on every switch. A tab nobody
+  // opened is still not mounted, so the dialog opens as light as before.
+  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(() => new Set(["business"]));
+  const selectTab = (tab: string) => {
+    setActiveTab(tab);
+    setVisitedTabs((prev) => (prev.has(tab) ? prev : new Set(prev).add(tab)));
+  };
+  // `hidden` is explicit: a force-mounted panel is no longer hidden by Radix itself.
+  const keepMounted = (tab: string) =>
+    visitedTabs.has(tab) ? { forceMount: true as const, hidden: activeTab !== tab } : {};
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [editingEmail, setEditingEmail] = useState<EmailSetting | null>(null);
   const [deleteEmailDialogOpen, setDeleteEmailDialogOpen] = useState(false);
@@ -825,7 +838,7 @@ export function SettingsPanel() {
         <p className="text-gray-500 mt-2">{t('settingsPage.header.subtitle')}</p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={selectTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-8 lg:w-auto lg:inline-grid">
           <TabsTrigger value="business" className="gap-2">
             <Building2 className="h-4 w-4" />
@@ -869,7 +882,7 @@ export function SettingsPanel() {
         </TabsList>
 
         {/* Customer portal Tab */}
-        <TabsContent value="portal" className="space-y-6">
+        <TabsContent value="portal" {...keepMounted("portal")} className="space-y-6 data-[state=inactive]:hidden">
           <PortalConfigForm />
           {/* Fiscal mobility check (docs/fiscaal, besluit F-13): configuration, review queue, audit log. */}
           <FiscalSettingsSection />
@@ -877,7 +890,7 @@ export function SettingsPanel() {
         </TabsContent>
 
         {/* Business Rules Tab */}
-        <TabsContent value="business" className="space-y-6">
+        <TabsContent value="business" {...keepMounted("business")} className="space-y-6 data-[state=inactive]:hidden">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1025,7 +1038,7 @@ export function SettingsPanel() {
         </TabsContent>
 
         {/* Notifications Tab */}
-        <TabsContent value="notifications" className="space-y-6">
+        <TabsContent value="notifications" {...keepMounted("notifications")} className="space-y-6 data-[state=inactive]:hidden">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1162,7 +1175,7 @@ export function SettingsPanel() {
         </TabsContent>
 
         {/* Documents Tab */}
-        <TabsContent value="documents" className="space-y-6">
+        <TabsContent value="documents" {...keepMounted("documents")} className="space-y-6 data-[state=inactive]:hidden">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1259,7 +1272,7 @@ export function SettingsPanel() {
         </TabsContent>
 
         {/* Document Emails Tab */}
-        <TabsContent value="doc-emails" className="space-y-6">
+        <TabsContent value="doc-emails" {...keepMounted("doc-emails")} className="space-y-6 data-[state=inactive]:hidden">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1566,7 +1579,7 @@ export function SettingsPanel() {
         </TabsContent>
 
         {/* Calendar Tab */}
-        <TabsContent value="calendar" className="space-y-6">
+        <TabsContent value="calendar" {...keepMounted("calendar")} className="space-y-6 data-[state=inactive]:hidden">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1987,7 +2000,7 @@ export function SettingsPanel() {
         </TabsContent>
 
         {/* Email & GPS Tab (existing email configuration) */}
-        <TabsContent value="email" className="space-y-6">
+        <TabsContent value="email" {...keepMounted("email")} className="space-y-6 data-[state=inactive]:hidden">
           {/* Email Configuration Card */}
           <Card>
             <CardHeader>
@@ -2376,7 +2389,7 @@ export function SettingsPanel() {
         </TabsContent>
 
         {/* Activity Log Tab */}
-        <TabsContent value="activity" className="space-y-6">
+        <TabsContent value="activity" {...keepMounted("activity")} className="space-y-6 data-[state=inactive]:hidden">
           <ActivityLogPanel />
         </TabsContent>
       </Tabs>
