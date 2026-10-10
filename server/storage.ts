@@ -63,6 +63,16 @@ export type CompleteMaintenanceResult =
       details?: Record<string, unknown>;
     };
 
+/** A-9-8: what GET /api/expenses can narrow on (all optional, combined with AND). */
+export interface ExpenseFilters {
+  vehicleId?: number;
+  /** Inclusive, YYYY-MM-DD. */
+  from?: string;
+  /** Inclusive, YYYY-MM-DD. */
+  to?: string;
+  category?: string;
+}
+
 export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
@@ -200,7 +210,7 @@ export interface IStorage {
   createPlaceholderReservation(originalReservationId: number, customerId: number, startDate: string, endDate?: string): Promise<Reservation>;
   
   // Expense methods
-  getAllExpenses(): Promise<Expense[]>;
+  getAllExpenses(filters?: ExpenseFilters): Promise<Expense[]>;
   getExpense(id: number): Promise<Expense | undefined>;
   createExpense(expense: InsertExpense): Promise<Expense>;
   updateExpense(id: number, expenseData: Partial<InsertExpense>): Promise<Expense | undefined>;

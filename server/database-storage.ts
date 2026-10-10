@@ -116,7 +116,7 @@ import { addMonths, addDays, parseISO, isBefore, isAfter, isEqual } from "date-f
 import { db } from "./db";
 import { eq, ne, and, gte, lte, asc, desc, sql, inArray, not, or, ilike, isNull, isNotNull, getTableColumns, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { IStorage, type CompleteMaintenanceResult, type CompleteMaintenanceFile } from "./storage";
+import { IStorage, type CompleteMaintenanceResult, type CompleteMaintenanceFile, type ExpenseFilters } from "./storage";
 import { getRelativePath } from "./services/document-paths";
 import { formatVehicleBarcode, parseBarcode, normalizeScannedCode } from "../shared/barcode";
 // besluiten B-16 + B-07: one day count and one total, shared with the form.
@@ -3156,8 +3156,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Expense methods
-  async getAllExpenses(): Promise<Expense[]> {
-    const expensesData = await db.select().from(expenses);
+  async getAllExpenses(filters: ExpenseFilters = {}): Promise<Expense[]> {
+    // A-9-8: the Kosten list narrows on vehicle, period and category. `date` is a
+    // YYYY-MM-DD text column, so the bounds compare lexically; the category is
+    // compared case-insensitively because rows older than A-9-1 may still be capitalised.
+    const conditions: SQL[] = [];
+    if (filters.vehicleId !== undefined) conditions.push(eq(expenses.vehicleId, filters.vehicleId));
+    if (filters.from) conditions.push(gte(expenses.date, filters.from));
+    if (filters.to) conditions.push(lte(expenses.date, filters.to));
+    if (filters.category) conditions.push(sql`lower(btrim(${expenses.category})) = ${filters.category.trim().toLowerCase()}`);
+    const expensesData = conditions.length
+      ? await db.select().from(expenses).where(and(...conditions))
+      : await db.select().from(expenses);
 
     // Batch-load vehicles instead of one query per expense.
     const vehicleIds = Array.from(new Set(

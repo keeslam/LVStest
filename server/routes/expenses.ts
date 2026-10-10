@@ -4,7 +4,7 @@ import multer from "multer";
 // parsed.
 import { sanitizeUploadedFields } from "../middleware/security/sanitization";
 import type { Request, Response } from "express";
-import { storage } from "../storage";
+import { storage, type ExpenseFilters } from "../storage";
 import { processInvoiceWithAI, generateInvoiceHash, validateParsedInvoice } from "../utils/invoice-scanner";
 import path from "path";
 import fs from "fs";
@@ -171,7 +171,25 @@ export function registerExpenseRoutes(app: Express, deps: RouteDeps): void {
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     
-    const expenses = await storage.getAllExpenses();
+    // A-9-8: optional filters for the Kosten list. A parameter that is present but
+    // malformed is refused rather than silently ignored (an ignored filter would
+    // show - and total - every expense as if it were the filtered set).
+    const filters: ExpenseFilters = {};
+    const one = (value: unknown): string | undefined => (typeof value === "string" && value.trim() !== "" ? value.trim() : undefined);
+    const vehicleParam = one(req.query.vehicleId);
+    if (vehicleParam !== undefined) {
+      if (!/^\d+$/.test(vehicleParam)) return res.status(400).json({ message: "Invalid vehicle ID" });
+      filters.vehicleId = parseInt(vehicleParam, 10);
+    }
+    for (const key of ["from", "to"] as const) {
+      const value = one(req.query[key]);
+      if (value === undefined) continue;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return res.status(400).json({ message: `Invalid ${key} date, expected YYYY-MM-DD` });
+      filters[key] = value;
+    }
+    filters.category = one(req.query.category);
+
+    const expenses = await storage.getAllExpenses(filters);
     res.json(expenses);
   });
 
