@@ -113,9 +113,14 @@ const roundMm = (value: number): number => Math.round(value * 10) / 10;
 
 interface BarcodeLabelTemplateEditorProps {
   onClose?: () => void;
+  /** Told whenever the editor holds changes that are not saved yet (A-10-3), so the dialog around it can ask before closing. */
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
-const BarcodeLabelTemplateEditor = ({ onClose }: BarcodeLabelTemplateEditorProps = {}) => {
+/** What makes two versions of a template "the same" for the unsaved-changes check. */
+const comparableTemplate = (template: Template) => JSON.stringify({ ...template, isDefault: !!template.isDefault, fields: template.fields ?? [], updatedAt: undefined, backgroundPath: undefined, backgroundPreviewPath: undefined });
+
+const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemplateEditorProps = {}) => {
   const { t } = useTranslation(["documents", "common"]);
   const DATA_SOURCE_KEYS: string[] = [...BARCODE_LABEL_SOURCES];
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -145,6 +150,8 @@ const BarcodeLabelTemplateEditor = ({ onClose }: BarcodeLabelTemplateEditorProps
   const [isSelecting, setIsSelecting] = useState(false);
   const [dragOffset, setDragOffset] = useState<{x: number, y: number} | null>(null);
   const [deleteTemplateDialogOpen, setDeleteTemplateDialogOpen] = useState(false);
+  // A-10-3: the template the user asked for while the current one still has unsaved changes.
+  const [pendingTemplateSwitch, setPendingTemplateSwitch] = useState<string | null>(null);
 
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -305,6 +312,20 @@ const BarcodeLabelTemplateEditor = ({ onClose }: BarcodeLabelTemplateEditorProps
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedFields, copiedFields, history, historyIndex, currentTemplate]);
+
+  // A-10-3: unsaved changes = the template on screen differs from the one the server last gave us.
+  const savedVersion = currentTemplate ? templates.find((candidate) => candidate.id === currentTemplate.id) : undefined;
+  const isDirty = !!currentTemplate && !!savedVersion && comparableTemplate(currentTemplate) !== comparableTemplate(savedVersion);
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+  // Closing the tab or reloading the page while the editor holds changes would lose them as well.
+  useEffect(() => {
+    if (!isDirty) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [isDirty]);
 
   const addToHistory = (fields: TemplateField[]) => {
     const newHistory = history.slice(0, historyIndex + 1);
@@ -854,6 +875,19 @@ const BarcodeLabelTemplateEditor = ({ onClose }: BarcodeLabelTemplateEditorProps
     if (payload) saveTemplateMutation.mutate(payload);
   };
 
+  const switchToTemplate = (value: string) => {
+    const template = templates.find(t => t.id.toString() === value);
+    if (template) {
+      setCurrentTemplate(template);
+      // Reset all state when switching templates
+      setHistory([{ fields: JSON.parse(JSON.stringify(template.fields)), timestamp: Date.now() }]);
+      setHistoryIndex(0);
+      setSelectedFields([]);
+      setCopiedFields([]);
+      setFieldHistory([]);
+    }
+  };
+
   const handleDeleteTemplate = () => {
     if (!currentTemplate || !currentTemplate.id) return;
     setDeleteTemplateDialogOpen(true);
@@ -975,6 +1009,17 @@ const BarcodeLabelTemplateEditor = ({ onClose }: BarcodeLabelTemplateEditorProps
               <div>
                 <CardTitle>{t('templateEditor.templateSelectionTitle')}</CardTitle>
                 <CardDescription>{t('templateEditor.templateSelectionDescription')}</CardDescription>
+                <p
+                  className={`mt-1 text-sm ${isDirty ? 'text-amber-700' : 'text-muted-foreground'}`}
+                  role="status"
+                  data-testid="template-editor-save-status"
+                >
+                  {isDirty
+                    ? t('templateEditor.saveStatus.unsaved')
+                    : saveTemplateMutation.isSuccess
+                      ? t('templateEditor.saveStatus.saved')
+                      : ''}
+                </p>
               </div>
               <div className="flex space-x-2">
                 <Button onClick={() => handleUndo()} disabled={historyIndex <= 0} variant="outline" size="sm" title={t('templateEditor.undoTitleAttr')}>
@@ -1051,16 +1096,8 @@ const BarcodeLabelTemplateEditor = ({ onClose }: BarcodeLabelTemplateEditorProps
                 <Select
                   value={currentTemplate?.id.toString() || ''}
                   onValueChange={(value) => {
-                    const template = templates.find(t => t.id.toString() === value);
-                    if (template) {
-                      setCurrentTemplate(template);
-                      // Reset all state when switching templates
-                      setHistory([{ fields: JSON.parse(JSON.stringify(template.fields)), timestamp: Date.now() }]);
-                      setHistoryIndex(0);
-                      setSelectedFields([]);
-                      setCopiedFields([]);
-                      setFieldHistory([]);
-                    }
+                    if (isDirty) { setPendingTemplateSwitch(value); return; }
+                    switchToTemplate(value);
                   }}
                 >
                   <SelectTrigger data-testid="select-barcode-label-template">
@@ -1269,6 +1306,7 @@ const BarcodeLabelTemplateEditor = ({ onClose }: BarcodeLabelTemplateEditorProps
                               <Label htmlFor="field-name">{t('templateEditor.fieldNameLabel')}</Label>
                               <Input
                                 id="field-name"
+                                data-testid="input-field-name"
                                 value={newFieldName}
                                 onChange={(e) => setNewFieldName(e.target.value)}
                                 placeholder={t('templateEditor.fieldNamePlaceholder')}
@@ -1277,7 +1315,7 @@ const BarcodeLabelTemplateEditor = ({ onClose }: BarcodeLabelTemplateEditorProps
                             <div>
                               <Label htmlFor="field-source">{t('templateEditor.dataSourceLabel')}</Label>
                               <Select value={newFieldSource} onValueChange={setNewFieldSource}>
-                                <SelectTrigger id="field-source">
+                                <SelectTrigger id="field-source" data-testid="select-field-source">
                                   <SelectValue placeholder={t('templateEditor.dataSourcePlaceholder')} />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1294,7 +1332,7 @@ const BarcodeLabelTemplateEditor = ({ onClose }: BarcodeLabelTemplateEditorProps
                             <Button variant="outline" onClick={() => setIsAddFieldDialogOpen(false)}>
                               {t('templateEditor.cancelButton')}
                             </Button>
-                            <Button onClick={handleAddField}>{t('templateEditor.addFieldButton')}</Button>
+                            <Button onClick={handleAddField} data-testid="button-add-field-confirm">{t('templateEditor.addFieldButton')}</Button>
                           </DialogFooter>
                         </DialogContent>
                       </Dialog>
@@ -1795,6 +1833,21 @@ const BarcodeLabelTemplateEditor = ({ onClose }: BarcodeLabelTemplateEditorProps
           </div>
         )}
       </div>
+
+      {/* Switching template with unsaved changes (A-10-3) */}
+      <ConfirmDialog
+        open={pendingTemplateSwitch !== null}
+        onOpenChange={(open) => { if (!open) setPendingTemplateSwitch(null); }}
+        title={t('templateEditor.unsavedSwitchTitle')}
+        description={t('templateEditor.unsavedSwitchDescription')}
+        confirmLabel={t('templateEditor.unsavedSwitchConfirm')}
+        cancelLabel={t('templateEditor.unsavedKeepEditing')}
+        variant="warning"
+        onConfirm={() => {
+          if (pendingTemplateSwitch !== null) switchToTemplate(pendingTemplateSwitch);
+          setPendingTemplateSwitch(null);
+        }}
+      />
 
       {/* Delete Template Confirmation Dialog */}
       <ConfirmDialog
