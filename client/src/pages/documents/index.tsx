@@ -482,6 +482,7 @@ export default function DocumentsIndex() {
     <div className="space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-2">
         <h1 className="text-2xl font-bold">{t('indexPage.title')}</h1>
+        <RequiresPermission anyOf={[UserPermission.MANAGE_DOCUMENTS]}>
         <Button onClick={() => { setUploadVehicleId(""); setUploadDialogOpen(true); }}>
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-upload mr-2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -490,6 +491,7 @@ export default function DocumentsIndex() {
           </svg>
           {t('indexPage.uploadDocumentButton')}
         </Button>
+        </RequiresPermission>
       </div>
 
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
@@ -520,8 +522,13 @@ export default function DocumentsIndex() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
           <TabsTrigger value="library">{t('indexPage.tabLibrary')}</TabsTrigger>
-          <TabsTrigger value="template-editor" data-testid="tab-contract-templates">{t('indexPage.tabContractTemplates')}</TabsTrigger>
-          <TabsTrigger value="transport-templates" data-testid="tab-transport-templates">{t('indexPage.tabTransportTemplates')}</TabsTrigger>
+          {/* A-18-1: both template lists are served to manage_pdf_templates only; without it the tab stays visible, greyed out, with the reason. */}
+          <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
+            <TabsTrigger value="template-editor" data-testid="tab-contract-templates">{t('indexPage.tabContractTemplates')}</TabsTrigger>
+          </RequiresPermission>
+          <RequiresPermission anyOf={[UserPermission.MANAGE_PDF_TEMPLATES]}>
+            <TabsTrigger value="transport-templates" data-testid="tab-transport-templates">{t('indexPage.tabTransportTemplates')}</TabsTrigger>
+          </RequiresPermission>
           <TabsTrigger value="barcode-labels" data-testid="tab-barcode-labels">{t('indexPage.tabBarcodeLabels')}</TabsTrigger>
           <TabsTrigger value="damage-check" data-testid="tab-damage-check-templates">{t('indexPage.tabDamageCheckTemplates')}</TabsTrigger>
         </TabsList>

@@ -104,6 +104,13 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
         return;
       }
 
+      // A-18-4: an administrator changed THIS account (rights, role, active). The
+      // server enforces it from the next request on; refetch the cached
+      // /api/user so greyed buttons and the sidebar follow at once.
+      if (entityType === 'users' && action === 'updated' && userId !== undefined && data?.id === userId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      }
+
       // Invalidate React Query cache for real-time updates
       // This will automatically refetch active queries and update the UI
       invalidateQueries(entityType, action, data);

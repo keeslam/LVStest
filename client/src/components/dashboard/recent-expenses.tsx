@@ -139,11 +139,14 @@ export function RecentExpenses() {
     <Card>
       <CardHeader className="px-4 py-3 border-b flex-row justify-between items-center space-y-0">
         <CardTitle className="text-base font-medium text-gray-800">{t('recentExpenses.title')}</CardTitle>
-        <Link href="/expenses">
-          <Button variant="link" className="text-primary-600 hover:text-primary-700 text-sm font-medium h-8 px-0">
-            {t('recentExpenses.viewAll')}
-          </Button>
-        </Link>
+        {/* A-18-2: /expenses needs manage_expenses; the body below already explains the missing right. */}
+        {canViewExpenses && (
+          <Link href="/expenses">
+            <Button variant="link" className="text-primary-600 hover:text-primary-700 text-sm font-medium h-8 px-0">
+              {t('recentExpenses.viewAll')}
+            </Button>
+          </Link>
+        )}
       </CardHeader>
       <CardContent className="p-4">
         {/* Without MANAGE_EXPENSES the server refuses this data outright; an
