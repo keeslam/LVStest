@@ -250,6 +250,15 @@ niet-geactiveerd account).
 
 Met **Alles bekijken en zoeken** open je de volledige accountlijst van alle klanten.
 
+**De melding klopt nu met wat er gebeurde.** Stuur je een uitnodiging of een wachtwoord-reset en komt de
+mail niet uit de mailserver, dan staat er in het rood *De e-mail is niet verstuurd. Controleer de
+e-mailinstellingen en probeer het opnieuw.* Vroeger stond er toch **E-mail verstuurd.** **Blokkeren**
+vraagt eerst **Account blokkeren?** — *<naam> kan daarna niet meer inloggen in het portaal. U kunt het
+account later weer deblokkeren.*, en geeft daarna **Account geblokkeerd.** (of **Account gedeblokkeerd.**).
+**Verwijderen** vraagt in hetzelfde soort venster **Account verwijderen?** en geeft **Account
+verwijderd.** Bij een geblokkeerd account staan **Uitnodiging opnieuw sturen** en **Wachtwoord-reset
+sturen** niet in het menu.
+
 ### Wat deze klant online mag
 
 Onder **Instellingen voor deze klant** zet je per onderdeel een schakelaar aan of uit:
@@ -260,6 +269,11 @@ schadeformulieren · Ziet prijzen**
 
 Daaronder is ruimte voor **Interne notities (wat heeft deze klant nodig?)**. Klik op **Opslaan**;
 je krijgt *Instellingen opgeslagen.*
+
+Onder elke schakelaar staat één regel die zegt wat hij doet, bijvoorbeeld bij **Portaal actief**: *Uit:
+niemand van deze klant kan nog inloggen in het portaal.* Zet je een schakelaar om, dan meldt de app
+welke schakelaar je hebt omgezet en staat er blijvend *Opgeslagen om 14:32*. De schakelaars van de
+fiscale check zijn grijs zolang de hoofdschakelaar uit staat, met een regel die dat uitlegt.
 
 Deze instellingen zijn de bovengrens. Staat **Ziet prijzen** hier uit, dan ziet geen enkel
 account van deze klant prijzen, ook niet als dat vinkje bij het account zelf aan staat.
@@ -272,7 +286,18 @@ met **Alles bekijken en zoeken** ga je naar het volledige overzicht op het scher
 **Klantenportaal**.
 
 Het afhandelen van aanvragen doe je niet hier, maar op het scherm **Klantenportaal**, via de
-tegel **Aanvragen**. Een onderhoudsaanvraag staat in hoofdstuk 7.
+tegel **Aanvragen**. Een onderhoudsaanvraag staat in hoofdstuk 7. In een aanvraag kun je met
+**Standaardantwoord invullen** een van de knoppen **Ontvangen**, **Akkoord** of **Afwijzing** kiezen:
+de tekst komt in het antwoordveld en je mag hem nog aanpassen. **Bericht plaatsen** zet een bericht in
+de draad met de klant, *de aanvraag blijft open en er gaat geen e-mail uit*; **Antwoord mailen (blijft
+open)** stuurt wél een e-mail. Datums in dit venster staan als dd-mm-jjjj.
+
+**Voertuigen online** (de tegel op het scherm **Klantenportaal**) toont de status van elke auto in
+woorden. Zet je een auto online die niet verhuurbaar is (bijvoorbeeld **Reparatie nodig** of **Niet voor
+verhuur**), dan vraagt de app eerst *<kenteken> heeft de status "…" en kan niet worden verhuurd. Klanten
+kunnen het dus niet boeken zolang die status zo blijft. Toch online aanbieden?*, met de knop **Toch online
+aanbieden**. Dat geldt ook als je er meerdere tegelijk aanvinkt. De tegel **Activiteit** en de
+meldingen laten acties en velden in gewone woorden zien, niet meer met de interne naam van het veld.
 
 ---
 
