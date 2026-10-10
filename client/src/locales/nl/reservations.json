@@ -203,6 +203,7 @@
       "interactiveDamageCheckPickupTitle": "Interactieve schadecheck - Ophalen",
       "pickupCompletedTitle": "Ophalen voltooid",
       "pickupCompletedDescription": "Voertuig succesvol opgehaald. Contract is gegenereerd.",
+      "pickupCompletedNoContractDescription": "Voertuig succesvol opgehaald.",
       "pickupFailedTitle": "Ophalen mislukt",
       "processPickupFailedFallback": "Ophalen verwerken mislukt. Probeer het opnieuw.",
       "remarksNotAcknowledgedTitle": "Opmerkingen niet bevestigd",

@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import type { Reservation, Vehicle } from "@shared/schema";
 import { formatReservationStatus } from "@/lib/format-utils";
+import { defaultReturnFuelLevel } from "@/lib/handover-fuel";
 import { officeToday } from "@/lib/office-date";
 import { formatDutchDate } from "@shared/booking-warnings";
 import { needsRemarkConfirmation, hasRemarks } from "@shared/remark-confirmation";
@@ -328,9 +329,15 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess }: Pic
       } catch {
         /* a body we cannot read is handled as "no contract" below */
       }
+      // A-6-1: only say the contract exists when the answer carries it. The
+      // pickup has happened either way; the "Contract klaar" / "Contract kon
+      // niet gemaakt worden" dialog below tells the rest, and a green toast that
+      // contradicted it a moment later was the audit's finding.
       toast({
         title: t('pickupReturn.pickup.pickupCompletedTitle'),
-        description: t('pickupReturn.pickup.pickupCompletedDescription'),
+        description: body.contractDocument
+          ? t('pickupReturn.pickup.pickupCompletedDescription')
+          : t('pickupReturn.pickup.pickupCompletedNoContractDescription'),
       });
       await invalidateByPrefix("/api/reservations");
       await invalidateByPrefix("/api/reservations");
@@ -1373,7 +1380,8 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
   const [returnMileage, setReturnMileage] = useState(
     reservation.pickupMileage?.toString() || reservation.vehicle?.currentMileage?.toString() || ""
   );
-  const [fuelLevelReturn, setFuelLevelReturn] = useState("Full");
+  // A-6-6: start on the level the car left with, not on "Vol".
+  const [fuelLevelReturn, setFuelLevelReturn] = useState<string>(defaultReturnFuelLevel(reservation.fuelLevelPickup));
   const [returnDate, setReturnDate] = useState(
     officeToday()
   );
@@ -1464,7 +1472,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess }: Ret
       setReturnMileage(
         reservation.pickupMileage?.toString() || reservation.vehicle?.currentMileage?.toString() || ""
       );
-      setFuelLevelReturn("Full");
+      setFuelLevelReturn(defaultReturnFuelLevel(reservation.fuelLevelPickup));
       setReturnDate(officeToday());
       setReturnNotes("");
     }

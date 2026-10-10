@@ -203,6 +203,7 @@
       "interactiveDamageCheckPickupTitle": "Interactive Damage Check - Pickup",
       "pickupCompletedTitle": "Pickup Completed",
       "pickupCompletedDescription": "Vehicle picked up successfully. Contract has been generated.",
+      "pickupCompletedNoContractDescription": "Vehicle picked up successfully.",
       "pickupFailedTitle": "Pickup Failed",
       "processPickupFailedFallback": "Failed to process pickup. Please try again.",
       "remarksNotAcknowledgedTitle": "Remarks Not Acknowledged",
