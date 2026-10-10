@@ -3,6 +3,10 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+
+// The dialog header shows the Logboek button to a profile that may read the log (A-9-4), which asks who is signed in.
+vi.mock("@/hooks/use-auth", () => ({ useAuth: () => ({ user: { id: 1, username: "kees", role: "admin", permissions: [] } }) }));
+
 import { InvoiceInboxButton, inboxStatusRefetchInterval } from "@/components/expenses/invoice-inbox-dialog";
 
 const item = (over: Record<string, unknown> = {}) => ({

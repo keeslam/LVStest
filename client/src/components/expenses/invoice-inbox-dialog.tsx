@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Inbox, Loader2, RefreshCw } from "lucide-react";
-import type { Vehicle } from "@shared/schema";
+import { UserPermission, type Vehicle } from "@shared/schema";
 import type { InboxStatus, InvoiceInboxRunSummary, ReviewReason } from "@shared/invoice-inbox";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/format-utils";
@@ -13,7 +13,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { InvoiceReviewDialog, type InboxListItem } from "./invoice-review-dialog";
+import { InvoiceInboxLogButton } from "./invoice-inbox-log-dialog";
 
 interface InboxStatusResponse {
   enabled: boolean;
@@ -48,6 +50,9 @@ export function InvoiceInboxButton() {
   const [open, setOpen] = useState(() => new URLSearchParams(window.location.search).get("inbox") === "1");
   const [tab, setTab] = useState<InboxStatus>("review");
   const [openItem, setOpenItem] = useState<InboxListItem | null>(null);
+  // A-9-4: the Logboek used to live only in Instellingen > E-mail. The log routes accept
+  // manage_expenses or manage_settings (server/routes/expense-inbox.ts: canRunOrSeeStatus).
+  const canReadLog = useHasPermission(UserPermission.MANAGE_EXPENSES, UserPermission.MANAGE_SETTINGS);
 
   // Runs regardless of whether the dialog is open: the badge on the trigger needs it.
   const { data: status } = useQuery<InboxStatusResponse>({
@@ -109,10 +114,13 @@ export function InvoiceInboxButton() {
 
           <div className="space-y-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <Button variant="outline" size="sm" onClick={() => run.mutate()} disabled={run.isPending || !status?.enabled} data-testid="button-invoice-inbox-run">
-                {run.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-1.5 h-4 w-4" />}
-                {t("invoiceInbox.fetchNow")}
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => run.mutate()} disabled={run.isPending || !status?.enabled} data-testid="button-invoice-inbox-run">
+                  {run.isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-1.5 h-4 w-4" />}
+                  {t("invoiceInbox.fetchNow")}
+                </Button>
+                {canReadLog && <InvoiceInboxLogButton />}
+              </div>
               <div className="text-right">
                 <div className={`text-xs ${lastRunIsFailure ? "text-red-600" : "text-muted-foreground"}`}>{lastRunText}</div>
                 {lastRun && !lastRunIsFailure && lastRun.errors.length > 0 && (
