@@ -1051,6 +1051,9 @@ export function QuickActions() {
                     </DialogHeader>
                     <div className="py-4">
                       <ReservationForm
+                        // A-2-1: in a dialog, Annuleren closes the dialog. Without this the form
+                        // falls back to its page behaviour and navigates to /reservations.
+                        onCancel={() => setReservationDialogOpen(false)}
                         onSuccess={() => {
                           setReservationDialogOpen(false);
                           invalidateByPrefix("/api/reservations");
