@@ -306,7 +306,13 @@
         "title": "Meldingen",
         "empty": "Nog geen meldingen vanuit het portaal.",
         "markAll": "Alles gelezen",
-        "unread": "{{n}} ongelezen"
+        "unread": "{{n}} ongelezen",
+        "fields": {
+          "email": "primair e-mailadres",
+          "emailForMOT": "APK-adres",
+          "emailForInvoices": "factuuradres",
+          "emailGeneral": "algemeen e-mailadres"
+        }
       },
       "upcoming": {
         "title": "Aankomende reserveringen",
@@ -389,7 +395,15 @@
       "filterAll": "Alle klanten",
       "onlyPending": "Alleen niet-geactiveerd",
       "restricted": "Beperkt",
-      "edit": "Bewerken en rechten"
+      "edit": "Bewerken en rechten",
+      "resendFailed": "De e-mail is niet verstuurd. Controleer de e-mailinstellingen en probeer het opnieuw.",
+      "blockTitle": "Account blokkeren?",
+      "blockConfirm": "{{name}} kan daarna niet meer inloggen in het portaal. U kunt het account later weer deblokkeren.",
+      "blockedToast": "Account geblokkeerd.",
+      "unblockedToast": "Account gedeblokkeerd.",
+      "deleteTitle": "Account verwijderen?",
+      "deletedToast": "Account verwijderd.",
+      "actionsFor": "Acties voor {{name}}"
     },
     "dialog": {
       "title": "Portaalaccount",
@@ -431,7 +445,28 @@
       "fiscalWarningsEnabled": "Ontvangt fiscale waarschuwingen",
       "fiscalReportsEnabled": "Ziet fiscale rapporten",
       "driverFiscalVisibilityEnabled": "Bestuurders zien hun eigen fiscale status",
-      "fiscalTitle": "Fiscale check (wat de klant ziet)"
+      "fiscalTitle": "Fiscale check (wat de klant ziet)",
+      "savedFlag": "{{label}}: {{state}}.",
+      "stateOn": "aan",
+      "stateOff": "uit",
+      "savedInline": "Opgeslagen om {{time}}",
+      "fiscalNeedsMaster": "Zet eerst \"Fiscale check actief\" aan; de andere fiscale schakelaars werken pas daarna.",
+      "help": {
+        "portalEnabled": "Uit: niemand van deze klant kan nog inloggen in het portaal.",
+        "canBook": "De klant kan een huuraanvraag indienen; Lam Groep bevestigt die altijd zelf.",
+        "canManageDrivers": "Beheerders van de klant mogen bestuurders toevoegen en wijzigen.",
+        "canSubmitRequests": "Verlengen, schade melden en vragen stellen via het portaal.",
+        "canReturn": "De klant kan aanvragen om een auto eerder in te leveren.",
+        "canViewFines": "De klant ziet de bekeuringen van zijn voertuigen.",
+        "canViewContracts": "De klant ziet contracten en schadeformulieren van zijn reserveringen.",
+        "showPrices": "Uit: de klant ziet geen bedragen in het portaal.",
+        "fiscalMobilityEnabled": "Hoofdschakelaar: zonder deze beoordeelt het systeem de klant niet en werken de andere fiscale schakelaars niet.",
+        "pseudoEindheffingEnabled": "Het systeem beoordeelt per periode of de pseudo-eindheffing van toepassing is.",
+        "fiscalDashboardEnabled": "De klant ziet een schatting van de fiscale bedragen.",
+        "fiscalWarningsEnabled": "De klant krijgt een waarschuwing als er gegevens ontbreken of een periode bijna verandert.",
+        "fiscalReportsEnabled": "De klant kan de fiscale rapporten bekijken.",
+        "driverFiscalVisibilityEnabled": "Een bestuurder ziet de eigen fiscale status, niet die van collega's."
+      }
     },
     "activity": {
       "title": "Activiteit in het portaal",
@@ -442,7 +477,46 @@
         "user": "Gebruiker",
         "action": "Actie",
         "details": "Details"
-      }
+      },
+      "actions": {
+        "login": "Ingelogd",
+        "logout": "Uitgelogd",
+        "activate": "Account geactiveerd",
+        "password_changed": "Wachtwoord gewijzigd",
+        "email_change_requested": "E-mailwijziging aangevraagd",
+        "email_changed": "E-mailadres gewijzigd",
+        "company_emails_updated": "Bedrijfsadressen bijgewerkt",
+        "driver_assigned": "Bestuurder gekoppeld",
+        "driver_created": "Bestuurder toegevoegd",
+        "driver_updated": "Bestuurder gewijzigd",
+        "driver_license_uploaded": "Rijbewijs geüpload",
+        "document_acknowledged": "Document bevestigd",
+        "document_downloaded": "Document gedownload",
+        "fine_letter_downloaded": "Bekeuringsbrief gedownload",
+        "request_submitted": "Aanvraag ingediend",
+        "request_message": "Bericht bij aanvraag",
+        "request_withdrawn": "Aanvraag ingetrokken",
+        "request_message_staff": "Bericht van medewerker",
+        "request_replied": "Aanvraag beantwoord"
+      },
+      "detailKeys": {
+        "by": "door",
+        "status": "status",
+        "email": "primair e-mailadres",
+        "emailForMOT": "APK-adres",
+        "emailForInvoices": "factuuradres",
+        "emailGeneral": "algemeen e-mailadres"
+      },
+      "entities": {
+        "request": "Aanvraag",
+        "customer": "Klant",
+        "fine": "Bekeuring",
+        "document": "Document",
+        "driver": "Bestuurder",
+        "reservation": "Reservering"
+      },
+      "yes": "ja",
+      "no": "nee"
     },
     "vehicles": {
       "title": "Voertuigen die online worden aangeboden",
@@ -460,7 +534,26 @@
       },
       "blocked": "Geblokkeerd",
       "blockedFor": "{{n}} klant(en)",
-      "blockNone": "Geen"
+      "blockNone": "Geen",
+      "status": {
+        "available": "Beschikbaar",
+        "scheduled": "Gepland",
+        "rented": "Verhuurd",
+        "needs_fixing": "Reparatie nodig",
+        "not_for_rental": "Niet voor verhuur"
+      },
+      "nowOnline": "{{plate}} staat nu online.",
+      "nowOffline": "{{plate}} staat niet meer online.",
+      "descriptionSaved": "Omschrijving van {{plate}} opgeslagen.",
+      "bulkOnDone": "{{n}} voertuig(en) online gezet.",
+      "bulkOffDone": "{{n}} voertuig(en) offline gezet.",
+      "notRentableTitle": "Voertuig niet verhuurbaar",
+      "notRentableConfirm": "{{plate}} heeft de status \"{{status}}\" en kan niet worden verhuurd. Klanten kunnen het dus niet boeken zolang die status zo blijft. Toch online aanbieden?",
+      "notRentableBulk": "{{n}} van de gekozen voertuigen is niet verhuurbaar ({{list}}). Klanten kunnen die niet boeken zolang de status zo blijft. Toch online aanbieden?",
+      "offeredFor": "Online aanbieden: {{plate}}",
+      "selectRow": "Selecteer {{plate}}",
+      "descriptionFor": "Omschrijving voor klanten: {{plate}}",
+      "offerAnyway": "Toch online aanbieden"
     },
     "config": {
       "title": "Klantenportaal",
@@ -636,7 +729,10 @@
         "failed": "Mislukt",
         "download": "Bestand downloaden",
         "filteredByFile": "Uit importbestand #{{id}}",
-        "sourceLine": "Bron: CJIB-bestand #{{file}}"
+        "sourceLine": "Bron: CJIB-bestand #{{file}}",
+        "enabledNeedsHost": "Vul eerst een server (host) in; zonder server kan er niets worden opgehaald.",
+        "saveNeedsHost": "Automatisch ophalen kan niet aan staan zonder server. Vul een server in of zet automatisch ophalen uit.",
+        "testNeedsHost": "Vul een server (host) in om de verbinding te testen of nu op te halen."
       },
       "exportCsv": "Exporteren (CSV)"
     },
@@ -696,12 +792,40 @@
         "startDate": "Vanaf",
         "endDate": "Tot en met",
         "openEnd": "Open einde",
-        "replyOnly": "Antwoord sturen (blijft open)",
+        "replyOnly": "Antwoord mailen (blijft open)",
         "issue": "Melding",
         "mileage": "Kilometerstand",
         "urgent": "dringend",
         "thread": "Berichten met de klant",
-        "threadPlaceholder": "Bericht aan de klant (de aanvraag blijft open)…"
+        "threadPlaceholder": "Bericht aan de klant (de aanvraag blijft open)…",
+        "threadSend": "Bericht plaatsen",
+        "threadHint": "Een bericht komt in de draad en de klant krijgt een melding in het portaal. De aanvraag blijft open en er gaat geen e-mail uit.",
+        "standardTitle": "Standaardantwoord invullen",
+        "standardReceived": "Ontvangen",
+        "standardApproved": "Akkoord",
+        "standardRejected": "Afwijzing"
+      },
+      "standard": {
+        "received": {
+          "damage": "Bedankt voor uw melding. We nemen de schade in behandeling en nemen contact met u op als we meer weten.",
+          "fine_question": "Bedankt voor uw vraag over de bekeuring. We hebben die ontvangen en komen er bij u op terug.",
+          "other": "Bedankt voor uw bericht. We hebben het ontvangen en komen er bij u op terug.",
+          "mileage": "Bedankt voor het doorgeven van de kilometerstand.",
+          "default": "Bedankt voor uw bericht. We hebben het ontvangen."
+        },
+        "approved": {
+          "extension": "Uw verlenging is goedgekeurd.",
+          "early_return": "Het eerder inleveren is akkoord.",
+          "default": "Uw aanvraag is goedgekeurd."
+        },
+        "rejected": {
+          "extension": "Helaas kunnen we de verlenging niet toekennen, omdat het voertuig daarna al is gereserveerd.",
+          "early_return": "Helaas kunnen we het eerder inleveren niet accepteren.",
+          "booking": "Helaas is het gevraagde voertuig in deze periode niet beschikbaar.",
+          "maintenance": "Helaas kunnen we het onderhoud niet op deze manier inplannen.",
+          "maintenance_change": "Helaas kunnen we het onderhoud niet naar deze datum verplaatsen.",
+          "default": "Helaas kunnen we aan deze aanvraag niet voldoen."
+        }
       }
     },
     "alert": {

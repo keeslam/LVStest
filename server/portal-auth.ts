@@ -23,6 +23,14 @@ import { hashInviteToken } from "./services/portal-tokens";
 import { PortalUserRole, type PortalUser, type PortalCustomerSettings, type PortalKnownDevice } from "../shared/schema";
 import { PORTAL_ERROR, type PortalErrorCode, type PortalMe, type PortalSettingsFlags, type PortalCompanyEmails } from "../shared/portal-types";
 
+/** Staff read the notification text, so the changed fields are named in words, not by column name. */
+const COMPANY_EMAIL_LABEL: Record<string, string> = {
+  email: "primair e-mailadres",
+  emailForMOT: "APK-adres",
+  emailForInvoices: "factuuradres",
+  emailGeneral: "algemeen e-mailadres",
+};
+
 export interface PortalRequestContext {
   user: PortalUser;
   customerId: number;
@@ -386,7 +394,7 @@ export function setupPortalAuth(app: Express): { requirePortalUser: RequestHandl
     await notifyStaffOfPortalEvent({
       kind: "portal_customer_update",
       title: `E-mailadressen gewijzigd: ${customer.companyName || customer.name}`,
-      description: `${ctx.user.fullName} heeft via het portaal bijgewerkt: ${Object.keys(data).join(", ")}.`,
+      description: `${ctx.user.fullName} heeft via het portaal bijgewerkt: ${Object.keys(data).map((k) => COMPANY_EMAIL_LABEL[k] ?? k).join(", ")}.`,
       link: `/customers/${ctx.customerId}`, customerId: ctx.customerId,
     });
     const { ctx: fresh } = await loadContext(ctx.user.id);

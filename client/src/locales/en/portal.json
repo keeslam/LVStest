@@ -306,7 +306,13 @@
         "title": "Notifications",
         "empty": "No portal notifications yet.",
         "markAll": "Mark all read",
-        "unread": "{{n}} unread"
+        "unread": "{{n}} unread",
+        "fields": {
+          "email": "primary e-mail address",
+          "emailForMOT": "MOT address",
+          "emailForInvoices": "invoice address",
+          "emailGeneral": "general e-mail address"
+        }
       },
       "upcoming": {
         "title": "Upcoming reservations",
@@ -389,7 +395,15 @@
       "filterAll": "All customers",
       "onlyPending": "Only not activated",
       "restricted": "Restricted",
-      "edit": "Edit and permissions"
+      "edit": "Edit and permissions",
+      "resendFailed": "The e-mail was not sent. Check the e-mail settings and try again.",
+      "blockTitle": "Block account?",
+      "blockConfirm": "{{name}} can no longer log in to the portal. You can unblock the account later.",
+      "blockedToast": "Account blocked.",
+      "unblockedToast": "Account unblocked.",
+      "deleteTitle": "Delete account?",
+      "deletedToast": "Account deleted.",
+      "actionsFor": "Actions for {{name}}"
     },
     "dialog": {
       "title": "Portal account",
@@ -431,7 +445,28 @@
       "fiscalWarningsEnabled": "Receives fiscal warnings",
       "fiscalReportsEnabled": "Sees fiscal reports",
       "driverFiscalVisibilityEnabled": "Drivers see their own fiscal status",
-      "fiscalTitle": "Fiscal check (what the customer sees)"
+      "fiscalTitle": "Fiscal check (what the customer sees)",
+      "savedFlag": "{{label}}: {{state}}.",
+      "stateOn": "on",
+      "stateOff": "off",
+      "savedInline": "Saved at {{time}}",
+      "fiscalNeedsMaster": "Turn on \"Fiscal check active\" first; the other fiscal switches only work after that.",
+      "help": {
+        "portalEnabled": "Off: nobody from this customer can log in to the portal any more.",
+        "canBook": "The customer can submit a rental request; Lam Groep always confirms it itself.",
+        "canManageDrivers": "The customer's administrators may add and change drivers.",
+        "canSubmitRequests": "Extending, reporting damage and asking questions through the portal.",
+        "canReturn": "The customer can request to return a car early.",
+        "canViewFines": "The customer sees the fines for their vehicles.",
+        "canViewContracts": "The customer sees contracts and damage forms of their reservations.",
+        "showPrices": "Off: the customer sees no amounts in the portal.",
+        "fiscalMobilityEnabled": "Main switch: without it the system does not assess this customer and the other fiscal switches do nothing.",
+        "pseudoEindheffingEnabled": "The system assesses per period whether the pseudo final levy applies.",
+        "fiscalDashboardEnabled": "The customer sees an estimate of the fiscal amounts.",
+        "fiscalWarningsEnabled": "The customer gets a warning when data is missing or a period is about to change.",
+        "fiscalReportsEnabled": "The customer can view the fiscal reports.",
+        "driverFiscalVisibilityEnabled": "A driver sees their own fiscal status, not their colleagues'."
+      }
     },
     "activity": {
       "title": "Activity in the portal",
@@ -442,7 +477,46 @@
         "user": "User",
         "action": "Action",
         "details": "Details"
-      }
+      },
+      "actions": {
+        "login": "Logged in",
+        "logout": "Logged out",
+        "activate": "Account activated",
+        "password_changed": "Password changed",
+        "email_change_requested": "E-mail change requested",
+        "email_changed": "E-mail address changed",
+        "company_emails_updated": "Company addresses updated",
+        "driver_assigned": "Driver linked",
+        "driver_created": "Driver added",
+        "driver_updated": "Driver changed",
+        "driver_license_uploaded": "Driving licence uploaded",
+        "document_acknowledged": "Document acknowledged",
+        "document_downloaded": "Document downloaded",
+        "fine_letter_downloaded": "Fine letter downloaded",
+        "request_submitted": "Request submitted",
+        "request_message": "Message on request",
+        "request_withdrawn": "Request withdrawn",
+        "request_message_staff": "Message from staff",
+        "request_replied": "Request answered"
+      },
+      "detailKeys": {
+        "by": "by",
+        "status": "status",
+        "email": "primary e-mail address",
+        "emailForMOT": "MOT address",
+        "emailForInvoices": "invoice address",
+        "emailGeneral": "general e-mail address"
+      },
+      "entities": {
+        "request": "Request",
+        "customer": "Customer",
+        "fine": "Fine",
+        "document": "Document",
+        "driver": "Driver",
+        "reservation": "Reservation"
+      },
+      "yes": "yes",
+      "no": "no"
     },
     "vehicles": {
       "title": "Vehicles offered online",
@@ -460,7 +534,26 @@
       },
       "blocked": "Blocked",
       "blockedFor": "{{n}} customer(s)",
-      "blockNone": "None"
+      "blockNone": "None",
+      "status": {
+        "available": "Available",
+        "scheduled": "Scheduled",
+        "rented": "Rented",
+        "needs_fixing": "Needs repair",
+        "not_for_rental": "Not for rental"
+      },
+      "nowOnline": "{{plate}} is now online.",
+      "nowOffline": "{{plate}} is no longer online.",
+      "descriptionSaved": "Description of {{plate}} saved.",
+      "bulkOnDone": "{{n}} vehicle(s) put online.",
+      "bulkOffDone": "{{n}} vehicle(s) taken offline.",
+      "notRentableTitle": "Vehicle not rentable",
+      "notRentableConfirm": "{{plate}} has the status \"{{status}}\" and cannot be rented. Customers cannot book it as long as that status stays. Offer it online anyway?",
+      "notRentableBulk": "{{n}} of the selected vehicles cannot be rented ({{list}}). Customers cannot book them as long as the status stays. Offer them online anyway?",
+      "offeredFor": "Offer online: {{plate}}",
+      "selectRow": "Select {{plate}}",
+      "descriptionFor": "Description for customers: {{plate}}",
+      "offerAnyway": "Offer online anyway"
     },
     "config": {
       "title": "Customer portal",
@@ -636,7 +729,10 @@
         "failed": "Failed",
         "download": "Download file",
         "filteredByFile": "From import file #{{id}}",
-        "sourceLine": "Source: CJIB file #{{file}}"
+        "sourceLine": "Source: CJIB file #{{file}}",
+        "enabledNeedsHost": "Enter a server (host) first; nothing can be fetched without one.",
+        "saveNeedsHost": "Automatic fetching cannot be on without a server. Enter a server or turn automatic fetching off.",
+        "testNeedsHost": "Enter a server (host) to test the connection or fetch now."
       },
       "exportCsv": "Export (CSV)"
     },
@@ -696,12 +792,40 @@
         "startDate": "From",
         "endDate": "Until",
         "openEnd": "Open end",
-        "replyOnly": "Send reply (stays open)",
+        "replyOnly": "E-mail reply (stays open)",
         "issue": "Report",
         "mileage": "Mileage",
         "urgent": "urgent",
         "thread": "Messages with the customer",
-        "threadPlaceholder": "Message to the customer (the request stays open)…"
+        "threadPlaceholder": "Message to the customer (the request stays open)…",
+        "threadSend": "Post message",
+        "threadHint": "A message goes into the thread and the customer gets a notification in the portal. The request stays open and no e-mail is sent.",
+        "standardTitle": "Fill in a standard answer",
+        "standardReceived": "Received",
+        "standardApproved": "Approved",
+        "standardRejected": "Rejection"
+      },
+      "standard": {
+        "received": {
+          "damage": "Thank you for your report. We will deal with the damage and contact you when we know more.",
+          "fine_question": "Thank you for your question about the fine. We have received it and will get back to you.",
+          "other": "Thank you for your message. We have received it and will get back to you.",
+          "mileage": "Thank you for passing on the mileage.",
+          "default": "Thank you for your message. We have received it."
+        },
+        "approved": {
+          "extension": "Your extension has been approved.",
+          "early_return": "Returning early is fine.",
+          "default": "Your request has been approved."
+        },
+        "rejected": {
+          "extension": "Unfortunately we cannot grant the extension, because the vehicle is already reserved afterwards.",
+          "early_return": "Unfortunately we cannot accept the early return.",
+          "booking": "Unfortunately the requested vehicle is not available in this period.",
+          "maintenance": "Unfortunately we cannot schedule the maintenance this way.",
+          "maintenance_change": "Unfortunately we cannot move the maintenance to this date.",
+          "default": "Unfortunately we cannot grant this request."
+        }
       }
     },
     "alert": {

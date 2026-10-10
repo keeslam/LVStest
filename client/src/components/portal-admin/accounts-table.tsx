@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { AccountDialog, type PortalAccountRow } from "./account-dialog";
 
 export function useCanManagePortal(): boolean {
@@ -25,17 +26,27 @@ export function AccountsTable({ customerId, preview }: { customerId?: number; pr
   const [onlyPending, setOnlyPending] = useState(false);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<PortalAccountRow | null>(null);
+  // Blocking and deleting ask first: both lock someone out or remove the row for good.
+  const [confirming, setConfirming] = useState<{ kind: "block" | "delete"; account: PortalAccountRow } | null>(null);
   const url = customerId ? `/api/portal-admin/customers/${customerId}/accounts` : "/api/portal-admin/accounts";
   const key = customerId ? ["/api/portal-admin/customers", customerId, "accounts"] : ["/api/portal-admin/accounts"];
   const { data = [] } = useQuery<PortalAccountRow[]>({ queryKey: key, queryFn: async () => (await apiRequest("GET", url)).json() });
 
   const act = useMutation({
-    mutationFn: async ({ id, action, body }: { id: number; action: "patch" | "invite" | "delete"; body?: unknown }) => {
-      if (action === "patch") return apiRequest("PATCH", `/api/portal-admin/accounts/${id}`, body);
-      if (action === "invite") return apiRequest("POST", `/api/portal-admin/accounts/${id}/invite`, body);
-      return apiRequest("DELETE", `/api/portal-admin/accounts/${id}`);
+    mutationFn: async ({ id, action, body }: { id: number; action: "patch" | "invite" | "delete"; body?: unknown }): Promise<{ sent?: boolean }> => {
+      if (action === "patch") return (await apiRequest("PATCH", `/api/portal-admin/accounts/${id}`, body)).json();
+      // The server answers 200 { sent } whether or not the mail left; `sent` is the real outcome (audit A-15-1).
+      if (action === "invite") return (await apiRequest("POST", `/api/portal-admin/accounts/${id}/invite`, body)).json();
+      return (await apiRequest("DELETE", `/api/portal-admin/accounts/${id}`)).json();
     },
-    onSuccess: (_r, v) => { invalidateByPrefix("/api/portal-admin"); if (v.action === "invite") toast({ title: t("admin.accounts.sent") }); },
+    onSuccess: (r, v) => {
+      invalidateByPrefix("/api/portal-admin");
+      if (v.action === "invite") toast(r.sent ? { title: t("admin.accounts.sent") } : { title: t("admin.accounts.resendFailed"), variant: "destructive" });
+      else if (v.action === "delete") toast({ title: t("admin.accounts.deletedToast") });
+      else if (v.action === "patch" && typeof (v.body as { active?: unknown })?.active === "boolean") {
+        toast({ title: t((v.body as { active: boolean }).active ? "admin.accounts.unblockedToast" : "admin.accounts.blockedToast") });
+      }
+    },
     onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
   });
 
@@ -77,13 +88,14 @@ export function AccountsTable({ customerId, preview }: { customerId?: number; pr
                 <TableCell className="text-right">
                   {canManage && (
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild><Button size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                      <DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label={t("admin.accounts.actionsFor", { name: a.fullName })} data-testid={`button-account-actions-${a.id}`}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onSelect={() => setEditing(a)} data-testid={`menu-edit-account-${a.id}`}>{t("admin.accounts.edit")}</DropdownMenuItem>
-                        {!a.activated && <DropdownMenuItem onSelect={() => act.mutate({ id: a.id, action: "invite", body: { kind: "invite" } })}>{t("admin.accounts.resend")}</DropdownMenuItem>}
-                        {a.activated && <DropdownMenuItem onSelect={() => act.mutate({ id: a.id, action: "invite", body: { kind: "reset" } })}>{t("admin.accounts.sendReset")}</DropdownMenuItem>}
-                        <DropdownMenuItem onSelect={() => act.mutate({ id: a.id, action: "patch", body: { active: !a.active } })}>{a.active ? t("admin.accounts.block") : t("admin.accounts.unblock")}</DropdownMenuItem>
-                        {!a.activated && <DropdownMenuItem className="text-destructive" onSelect={() => { if (window.confirm(t("admin.accounts.deleteConfirm"))) act.mutate({ id: a.id, action: "delete" }); }}>{t("admin.accounts.delete")}</DropdownMenuItem>}
+                        {/* A blocked account gets no mail: it could not use the link anyway. */}
+                        {a.active && !a.activated && <DropdownMenuItem onSelect={() => act.mutate({ id: a.id, action: "invite", body: { kind: "invite" } })} data-testid={`menu-resend-account-${a.id}`}>{t("admin.accounts.resend")}</DropdownMenuItem>}
+                        {a.active && a.activated && <DropdownMenuItem onSelect={() => act.mutate({ id: a.id, action: "invite", body: { kind: "reset" } })}>{t("admin.accounts.sendReset")}</DropdownMenuItem>}
+                        <DropdownMenuItem onSelect={() => (a.active ? setConfirming({ kind: "block", account: a }) : act.mutate({ id: a.id, action: "patch", body: { active: true } }))} data-testid={`menu-block-account-${a.id}`}>{a.active ? t("admin.accounts.block") : t("admin.accounts.unblock")}</DropdownMenuItem>
+                        {!a.activated && <DropdownMenuItem className="text-destructive" onSelect={() => setConfirming({ kind: "delete", account: a })} data-testid={`menu-delete-account-${a.id}`}>{t("admin.accounts.delete")}</DropdownMenuItem>}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
@@ -94,6 +106,21 @@ export function AccountsTable({ customerId, preview }: { customerId?: number; pr
         </Table>
       )}
       {preview && filtered.length > 0 && <PreviewFooter shown={rows.length} total={filtered.length} onShowAll={preview.onShowAll} />}
+      {confirming && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => { if (!o) setConfirming(null); }}
+          variant={confirming.kind === "delete" ? "danger" : "warning"}
+          title={t(confirming.kind === "delete" ? "admin.accounts.deleteTitle" : "admin.accounts.blockTitle")}
+          description={confirming.kind === "delete" ? t("admin.accounts.deleteConfirm") : t("admin.accounts.blockConfirm", { name: confirming.account.fullName })}
+          confirmLabel={t(confirming.kind === "delete" ? "admin.accounts.delete" : "admin.accounts.block")}
+          cancelLabel={t("admin.dialog.cancel")}
+          onConfirm={() => {
+            const { kind, account } = confirming;
+            act.mutate(kind === "delete" ? { id: account.id, action: "delete" } : { id: account.id, action: "patch", body: { active: false } });
+          }}
+        />
+      )}
       {editing && <AccountDialog key={editing.id} customerId={editing.customerId} account={editing} open onOpenChange={(o) => { if (!o) setEditing(null); }} />}
     </div>
   );

@@ -14,7 +14,7 @@ export type RequestRow = PortalRequest & {
 async function select(where: SQL | undefined, limit = 500): Promise<RequestRow[]> {
   const rows = await db.select({
     r: portalRequests,
-    customerName: sql<string>`coalesce(${customers.companyName}, ${customers.name})`,
+    customerName: sql<string>`coalesce(nullif(${customers.companyName}, ''), ${customers.name})`,
     submittedBy: portalUsers.fullName,
     submitterEmail: portalUsers.email,
     reservationLabel: sql<string | null>`case when ${reservations.id} is null then null else concat(${vehicles.licensePlate}, ' ', ${reservations.startDate}, ' - ', coalesce(${reservations.endDate}, '...')) end`,

@@ -24,7 +24,11 @@ export function CjibConfigForm() {
   useEffect(() => { if (data) setForm(data); }, [data]);
 
   const save = useMutation({
-    mutationFn: async () => (await apiRequest("PUT", CJIB_CONFIG_KEY[0], form)).json(),
+    mutationFn: async () => {
+      // Without a server there is nothing to fetch from; saving "on" would only make the poller fail every round.
+      if (form?.enabled && !form.host.trim()) throw new Error(t("admin.fines.cjib.saveNeedsHost"));
+      return (await apiRequest("PUT", CJIB_CONFIG_KEY[0], form)).json();
+    },
     onSuccess: (saved: CjibConfig) => { queryClient.setQueryData(CJIB_CONFIG_KEY, saved); invalidateByPrefix("/api/fines/imports"); toast({ title: t("admin.config.saved") }); },
     onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
   });
@@ -46,6 +50,7 @@ export function CjibConfigForm() {
   });
 
   if (!form) return null;
+  const hasHost = form.host.trim() !== "";
   const set = <K extends keyof CjibConfig>(k: K, v: CjibConfig[K]) => setForm({ ...form, [k]: v });
   const field = (k: keyof CjibConfig, label: string, type = "text", extra: Record<string, unknown> = {}) => (
     <div>
@@ -62,9 +67,11 @@ export function CjibConfigForm() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center gap-3">
-          <Switch checked={form.enabled} onCheckedChange={(v) => set("enabled", v)} id="cjib-enabled" data-testid="switch-cjib-enabled" />
+          {/* Off without a host stays off; one that is already on can still be turned off. */}
+          <Switch checked={form.enabled} onCheckedChange={(v) => set("enabled", v)} id="cjib-enabled" disabled={!hasHost && !form.enabled} data-testid="switch-cjib-enabled" />
           <Label htmlFor="cjib-enabled">{t("admin.fines.cjib.enabled")}</Label>
         </div>
+        {form.enabled && !hasHost && <p className="text-sm text-destructive" data-testid="cjib-enabled-needs-host">{t("admin.fines.cjib.enabledNeedsHost")}</p>}
         <div className="grid gap-3 md:grid-cols-2">
           {field("host", t("admin.fines.cjib.host"), "text", { placeholder: "ftps.cjib.nl" })}
           <div className="grid grid-cols-2 gap-3">
@@ -86,13 +93,14 @@ export function CjibConfigForm() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button onClick={() => save.mutate()} disabled={save.isPending} data-testid="button-save-cjib">{t("admin.dialog.save")}</Button>
-          <Button variant="outline" onClick={() => { setTestResult(null); test.mutate(); }} disabled={test.isPending || !form.host} data-testid="button-test-cjib">
+          <Button variant="outline" onClick={() => { setTestResult(null); test.mutate(); }} disabled={test.isPending || !hasHost} aria-describedby={hasHost ? undefined : "cjib-needs-host"} data-testid="button-test-cjib">
             {test.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}{t("admin.fines.cjib.test")}
           </Button>
-          <Button variant="outline" onClick={() => run.mutate()} disabled={run.isPending || !form.host} data-testid="button-run-cjib">
+          <Button variant="outline" onClick={() => run.mutate()} disabled={run.isPending || !hasHost} aria-describedby={hasHost ? undefined : "cjib-needs-host"} data-testid="button-run-cjib">
             {run.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}{t("admin.fines.cjib.runNow")}
           </Button>
         </div>
+        {!hasHost && <p id="cjib-needs-host" className="text-xs text-muted-foreground" data-testid="cjib-needs-host">{t("admin.fines.cjib.testNeedsHost")}</p>}
         {testResult && (
           <div className={`rounded-md border p-3 text-sm ${testResult.ok ? "border-green-300 bg-green-50" : "border-red-300 bg-red-50"}`} data-testid="cjib-test-result">
             {testResult.ok ? (

@@ -32,7 +32,7 @@ export async function findCandidates(licensePlate: string, offenceAt: Date): Pro
   const day = isoDay(offenceAt);
   const rows = await db.select({
     id: reservations.id, customerId: reservations.customerId,
-    customerName: sql<string | null>`coalesce(${customers.companyName}, ${customers.name})`,
+    customerName: sql<string | null>`coalesce(nullif(${customers.companyName}, ''), ${customers.name})`,
     startDate: reservations.startDate, endDate: reservations.endDate,
     actualPickupDate: reservations.actualPickupDate, actualReturnDate: reservations.actualReturnDate,
     driverId: reservations.driverId, driverName: drivers.displayName,

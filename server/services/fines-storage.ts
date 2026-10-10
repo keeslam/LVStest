@@ -12,7 +12,7 @@ export interface FineFilters { status?: string; customerId?: number; licensePlat
 async function select(where: SQL | undefined): Promise<FineListRow[]> {
   const rows = await db.select({
     fine: fines,
-    customerName: sql<string | null>`coalesce(${customers.companyName}, ${customers.name})`,
+    customerName: sql<string | null>`coalesce(nullif(${customers.companyName}, ''), ${customers.name})`,
     driverName: drivers.displayName,
   })
     .from(fines)

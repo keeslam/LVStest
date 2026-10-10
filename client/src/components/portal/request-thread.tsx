@@ -12,9 +12,13 @@ import { useToast } from "@/hooks/use-toast";
  * Used by the customer (portal) and by staff; `send` does the actual call and
  * `mine` says which side the reader is on, so their own messages sit right.
  */
-export function RequestThread({ messages, mine, canPost, send, onSent, placeholder, testId = "request-thread" }: {
+export function RequestThread({ messages, mine, canPost, send, onSent, placeholder, testId = "request-thread", sendLabel, hint }: {
   messages: PortalRequestMessageDto[]; mine: "customer" | "staff"; canPost: boolean;
   send: (body: string) => Promise<unknown>; onSent?: () => void; placeholder?: string; testId?: string;
+  /** Staff name this button after what it does, since a second reply button sits further down. */
+  sendLabel?: string;
+  /** One line under the box saying what posting does. */
+  hint?: string;
 }) {
   const { t } = useTranslation("portal");
   const { toast } = useToast();
@@ -45,9 +49,10 @@ export function RequestThread({ messages, mine, canPost, send, onSent, placehold
       {canPost && (
         <form onSubmit={(e) => { e.preventDefault(); if (body.trim()) post.mutate(); }} className="flex items-end gap-2">
           <Textarea rows={2} value={body} onChange={(e) => setBody(e.target.value)} placeholder={placeholder ?? t("thread.placeholder")} className="flex-1" data-testid={`${testId}-input`} />
-          <Button type="submit" size="sm" disabled={!body.trim() || post.isPending} data-testid={`${testId}-send`}><Send className="mr-1 h-4 w-4" />{t("thread.send")}</Button>
+          <Button type="submit" size="sm" disabled={!body.trim() || post.isPending} data-testid={`${testId}-send`}><Send className="mr-1 h-4 w-4" />{sendLabel ?? t("thread.send")}</Button>
         </form>
       )}
+      {canPost && hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }

@@ -130,6 +130,10 @@ describe("portal auth", () => {
     expect(saved.status).toBe(200);
     expect(saved.body.company).toMatchObject({ emailForMOT: `apk@${TEST_EMAIL_DOMAIN}`, emailForInvoices: `factuur@${TEST_EMAIL_DOMAIN}`, emailGeneral: null });
     expect((await storage.getCustomer(customerId))?.emailForMOT).toBe(`apk@${TEST_EMAIL_DOMAIN}`);
+    // The staff notification names the changed addresses in words, not by field name (audit A-15-5).
+    const staffNote = (await storage.getUnreadCustomNotifications()).find((n) => n.type === "portal_customer_update" && n.link === `/customers/${customerId}`);
+    expect(staffNote?.description).toContain("APK-adres");
+    expect(staffNote?.description).not.toContain("emailForMOT");
     expect((await agent.patch("/api/portal/me/company").set("X-CSRF-Token", csrf).send({ emailForMOT: "geen-adres" })).status).toBe(400);
   });
 

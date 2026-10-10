@@ -45,6 +45,15 @@ describe("portal admin routes", () => {
     expect(res.body.account).not.toHaveProperty("inviteTokenHash");
   });
 
+  it("answers the real outcome when an invitation is sent again (audit A-15-1)", async () => {
+    sendEmail.mockResolvedValueOnce(false);
+    const failed = await request(app).post(`/api/portal-admin/accounts/${accountId}/invite`).send({ kind: "invite" });
+    expect(failed.status).toBe(200);
+    expect(failed.body).toEqual({ sent: false });
+    const ok = await request(app).post(`/api/portal-admin/accounts/${accountId}/invite`).send({ kind: "invite" });
+    expect(ok.body).toEqual({ sent: true });
+  });
+
   it("rejects a driver account whose driver belongs to another customer", async () => {
     const other = await createTestCustomer("Adm2");
     const foreign = await createTestDriver(other.id);

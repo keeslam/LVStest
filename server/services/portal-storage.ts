@@ -177,7 +177,7 @@ export const portalStorage = {
         FROM portal_activity_log l LEFT JOIN portal_users u ON u.id = l.portal_user_id
         ORDER BY l.customer_id, l.created_at DESC, l.id DESC
       )
-      SELECT c.id AS customer_id, COALESCE(c.company_name, c.name) AS customer_name,
+      SELECT c.id AS customer_id, COALESCE(NULLIF(c.company_name, ''), c.name) AS customer_name,
              COALESCE(s.portal_enabled, true) AS portal_enabled,
              COALESCE(acc.accounts_total, 0) AS accounts_total, COALESCE(acc.accounts_active, 0) AS accounts_active,
              COALESCE(acc.accounts_blocked, 0) AS accounts_blocked, COALESCE(acc.online_now, 0) AS online_now,

@@ -188,6 +188,17 @@ export function AttentionPanel({ attention, canViewFines }: { attention: PortalD
 
 // ---- notifications --------------------------------------------------------------
 
+const COMPANY_FIELDS = ["emailForMOT", "emailForInvoices", "emailGeneral", "email"] as const;
+
+/**
+ * Notifications saved before the server named the changed addresses in words
+ * still carry the column names ("emailForMOT"); read them as words here.
+ */
+function notificationText(t: (k: string) => string, n: PortalDashboard["notifications"][number]): string {
+  if (n.type !== "portal_customer_update") return n.description;
+  return COMPANY_FIELDS.reduce((text, f) => text.replace(new RegExp(`(?<![A-Za-z])${f}(?![A-Za-z])`, "g"), t(`admin.dashboard.notifications.fields.${f}`)), n.description);
+}
+
 export function NotificationsPanel({ notifications, unread }: { notifications: PortalDashboard["notifications"]; unread: number }) {
   const { t } = useTranslation("portal");
   const queryClient = useQueryClient();
@@ -224,12 +235,12 @@ export function NotificationsPanel({ notifications, unread }: { notifications: P
       action={unread > 0 && <Button size="sm" variant="ghost" onClick={() => markAll.mutate()} data-testid="button-mark-all-read">{t("admin.dashboard.notifications.markAll")}</Button>}>
       <PreviewList items={notifications} keyOf={(n) => String(n.id)} testId="notifications"
         title={t("admin.dashboard.notifications.title")} empty={t("admin.dashboard.notifications.empty")}
-        searchOf={(n) => [n.title, n.description, n.type]}
+        searchOf={(n) => [n.title, notificationText(t, n)]}
         render={(n) => (
           <Row onClick={() => follow(n)} unread={!n.isRead} testId={`notification-${n.id}`}>
             <div className="min-w-0">
               <div className={`truncate ${n.isRead ? "" : "font-medium"}`}>{n.title}</div>
-              <div className="truncate text-xs text-muted-foreground">{n.description}</div>
+              <div className="truncate text-xs text-muted-foreground">{notificationText(t, n)}</div>
             </div>
             <span className="shrink-0 text-xs text-muted-foreground">{ago(n.createdAt, t)}</span>
           </Row>
