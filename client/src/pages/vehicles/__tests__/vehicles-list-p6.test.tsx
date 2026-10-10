@@ -147,6 +147,22 @@ describe("A-3-11 — jump to a page", () => {
     expect(screen.getByText(/Pagina 3 van 3/)).toBeInTheDocument();
   });
 
+  it("an empty or non-numeric entry is ignored and a number below 1 goes to the first page", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    const input = await screen.findByTestId("input-go-to-page");
+    await user.clear(input);
+    await user.type(input, "2{Enter}");
+    await waitFor(() => expect(screen.getByText(/Pagina 2 van 3/)).toBeInTheDocument());
+
+    await user.type(input, "{Enter}"); // empty
+    await user.type(input, "abc{Enter}"); // a number input takes no letters: still empty
+    expect(screen.getByText(/Pagina 2 van 3/)).toBeInTheDocument();
+
+    await user.type(input, "0{Enter}");
+    await waitFor(() => expect(screen.getByText(/Pagina 1 van 3/)).toBeInTheDocument());
+  });
+
   it("a page number beyond the last page goes to the last page", async () => {
     const user = userEvent.setup();
     renderPage();

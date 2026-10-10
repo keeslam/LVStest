@@ -125,6 +125,8 @@ describe("A-4-5 / A-4-6 — the customer form", () => {
     withProviders(<CustomerForm redirectToList={false} />);
     const hint = await screen.findByTestId("text-customer-required-hint");
     expect(hint).toHaveTextContent("Voor een reservering");
-    expect(hint).toHaveTextContent("Voor een factuur");
+    expect(hint).toHaveTextContent("Voor het contract");
+    expect(hint).toHaveTextContent("rijbewijsnummer");
+    expect(hint).not.toHaveTextContent(/btw/i);
   });
 });

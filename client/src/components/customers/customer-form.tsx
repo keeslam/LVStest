@@ -1,6 +1,6 @@
 import { v } from "@/lib/zod-i18n";
 import { describeApiError } from "@/lib/api-error";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -132,6 +132,9 @@ export function CustomerForm({
     return transformed;
   };
 
+  // Controlled so a server error on a field of the first tab can bring that tab to the front.
+  const [activeTab, setActiveTab] = useState("basic");
+
   // Setup form with react-hook-form and zod validation
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -257,6 +260,11 @@ export function CustomerForm({
           type: "server",
           message: t(debtorNumberErrorKey, { name: error.conflictingCustomerName }),
         });
+        // The field lives on the "basic" tab: if the 409 arrives while another tab is open the
+        // message would sit on an unmounted field and the user would see nothing. Show the tab and
+        // focus the field once it is mounted again.
+        setActiveTab("basic");
+        setTimeout(() => form.setFocus("debtorNumber"), 0);
         return;
       }
       toast({
@@ -307,7 +315,7 @@ export function CustomerForm({
               {t('form.requiredHint')}
             </div>
 
-            <Tabs defaultValue="basic" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid grid-cols-4 mb-6">
                 <TabsTrigger value="basic">{t('form.tabBasicInfo')}</TabsTrigger>
                 <TabsTrigger value="contact">{t('form.tabContact')}</TabsTrigger>

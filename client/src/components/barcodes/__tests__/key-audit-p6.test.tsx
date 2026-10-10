@@ -83,6 +83,21 @@ describe("A-3-12 — the key audit shows which keys are scanned and which are mi
 });
 
 describe("A-3-13 — printing a key label says what happened", () => {
+  // jsdom does not implement focus()/print() on the hidden iframe's window and logs an error for
+  // each; give that window no-ops so the output stays clean.
+  beforeEach(() => {
+    const original = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, "contentWindow")!.get!;
+    vi.spyOn(HTMLIFrameElement.prototype, "contentWindow", "get").mockImplementation(function (this: HTMLIFrameElement) {
+      const win = original.call(this) as Window | null;
+      if (win) {
+        win.focus = vi.fn();
+        win.print = vi.fn();
+      }
+      return win;
+    });
+  });
+  afterEach(() => vi.restoreAllMocks());
+
   it("toasts that the browser's print window is opened for the label of that plate", async () => {
     vi.useFakeTimers();
     try {

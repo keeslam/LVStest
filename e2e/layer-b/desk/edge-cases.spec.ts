@@ -291,7 +291,8 @@ test("debiteurnummer al in gebruik (B-35): veldfout onder het invoerveld, ook te
   await expect(dialog.getByText("Dit debiteurnummer is al in gebruik bij klant Debiteur Klant Een.")).toBeVisible();
   await expect(page.getByText("Kon de gegevens niet laden")).toHaveCount(0);
   consumeExpected(health, "console", /responded with a status of 409/);
-  consumeExpected(health, "toast", /Kon klant niet aanmaken/);
+  // A-4-4: the field message is the whole answer; no red "Kon klant niet aanmaken" toast any more.
+  await expect(page.getByText("Kon klant niet aanmaken")).toHaveCount(0);
 
   // Corrected to a free number — saved, dialog closes.
   await story.fill(dialog.getByTestId("input-debtor-number"), "E2E-DEB-2", "Debiteurnummer (gecorrigeerd)");
@@ -342,7 +343,8 @@ test("debiteurnummer al in gebruik (B-35): veldfout onder het invoerveld, ook te
     ),
   ).toBeVisible();
   consumeExpected(health, "console", /responded with a status of 409/);
-  consumeExpected(health, "toast", /Kon klant niet aanmaken/);
+  // A-4-4: same here, field message only.
+  await expect(page.getByText("Kon klant niet aanmaken")).toHaveCount(0);
 
   // Do not leave a modal open (constraints.md / task-4-brief.md): the
   // dialog's own close control, not "Annuleren" (customer-form.tsx's cancel

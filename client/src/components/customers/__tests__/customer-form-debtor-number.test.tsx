@@ -147,6 +147,32 @@ describe("B-35 — debiteurnummer-conflict onder het veld", () => {
     expect(screen.queryByText(/in de prullenbak/)).not.toBeInTheDocument();
   });
 
+  it("springt terug naar Basisgegevens en toont de melding als de 409 binnenkomt vanaf een ander tabblad (review P6)", async () => {
+    nextResponse = {
+      status: 409,
+      body: {
+        message: "Another customer (Jansen BV) already uses this debtor number.",
+        field: "debtorNumber",
+        code: "DEBTOR_NUMBER_TAKEN",
+        conflictingCustomerId: 99,
+        conflictingCustomerName: "Jansen BV",
+      },
+    };
+    const user = userEvent.setup();
+    renderForm();
+    await user.type(screen.getByLabelText("Volledige naam"), "E2E Klant");
+    await user.type(screen.getByTestId("input-debtor-number"), "E2E-DEB-1");
+    await user.click(screen.getByRole("tab", { name: "Contact" }));
+    expect(screen.getByRole("tab", { name: "Contact" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.queryByTestId("input-debtor-number")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Klant toevoegen" }));
+
+    expect(await screen.findByText("Dit debiteurnummer is al in gebruik bij klant Jansen BV.")).toBeVisible();
+    expect(screen.getByRole("tab", { name: "Basisgegevens" })).toHaveAttribute("aria-selected", "true");
+    await waitFor(() => expect(screen.getByTestId("input-debtor-number")).toHaveFocus());
+  });
+
   it("wist de veldfout zodra de waarde verandert", async () => {
     nextResponse = {
       status: 409,

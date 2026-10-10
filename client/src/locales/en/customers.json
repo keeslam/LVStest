@@ -215,7 +215,7 @@
     "loadFailed": "Failed to load customer data"
   },
   "form": {
-    "requiredHint": "Only the name is required. For a reservation a phone number or e-mail address helps, to reach the customer and to mail documents. For an invoice or contract the address, postal code and city belong here too, and for a company the company name and VAT number.",
+    "requiredHint": "Only the name is required. For a reservation you also need a phone number and an e-mail address, to reach the customer and to mail documents. For the contract (PDF) the address, postal code, city, company name and driver's licence number belong here too.",
     "placeholders": {
       "fullName": "John Doe",
       "firstName": "John",

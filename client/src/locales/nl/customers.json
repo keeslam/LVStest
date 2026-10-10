@@ -215,7 +215,7 @@
     "loadFailed": "Kon klantgegevens niet laden"
   },
   "form": {
-    "requiredHint": "Alleen de naam is verplicht. Voor een reservering helpt een telefoonnummer of e-mailadres, om de klant te bereiken en documenten te mailen. Voor een factuur of contract horen ook adres, postcode en plaats erbij, en bij een bedrijf de bedrijfsnaam en het btw-nummer.",
+    "requiredHint": "Alleen de naam is verplicht. Voor een reservering heb je ook een telefoonnummer en e-mailadres nodig, om de klant te bereiken en documenten te mailen. Voor het contract (pdf) horen adres, postcode, plaats, bedrijfsnaam en rijbewijsnummer erbij.",
     "placeholders": {
       "fullName": "Jan Jansen",
       "firstName": "Jan",

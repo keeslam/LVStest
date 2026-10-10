@@ -51,6 +51,7 @@ async function fetchRegistration(plate: string): Promise<Record<string, unknown>
   const normalized = plate.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
   const response = await fetch(`${RDW_BASE_URL}/resource/m9d7-ebf2.json?kenteken=${normalized}`, {
     headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(15000), // one stuck lookup must not hang the whole dry run
   });
   if (!response.ok) throw new Error(`RDW ${response.status}`);
   const data = await response.json();
