@@ -65,7 +65,10 @@ Controleer de verbinding en probeer opnieuw.*
 
 Bovenaan het resultaat staan het merk en model, een statuslabel en het kenteken met de barcode
 eronder. De statuslabels zijn hier dezelfde als in de voertuigenlijst: **Beschikbaar**,
-**Gepland**, **Verhuurd**, **Reparatie nodig** en **Niet voor verhuur**.
+**Gepland**, **Verhuurd**, **Reparatie nodig** en **Niet voor verhuur**. Loopt er vandaag een
+boeking die nog niet is opgehaald, dan staat er **Geboekt, nog niet opgehaald** en niet
+**Verhuurd**: de auto staat immers nog bij ons. **Verhuurd** zie je pas nadat het ophalen is
+afgerond.
 
 Scande je het reservesleutel-label, dan staat er het extra label **Reservesleutel** bij. Zo weet
 je zeker welke sleutel je in handen hebt.
@@ -142,6 +145,18 @@ Wat elke tegel doet:
 Gaat er iets mis, dan meldt de app **Onderhoudsstatus wijzigen mislukt** of **Transportstatus
 wijzigen mislukt**.
 
+**Een venster tegelijk.** Start je **Ophalen starten** of **Inleveren starten** vanaf het scankaartje,
+dan haalt de app het kaartje weg zolang het ophaal- of inleverformulier openstaat (en daarna het
+venster **Contract klaar** of **Schadeformulier klaar**). Je krijgt dus geen drie vensters
+over elkaar. Het scankaartje komt terug zodra je klaar bent, klaar voor de volgende scan. Start je
+vanaf een tegel op het Dashboard, dan sluit het scanvenster zelf zodra je het venster **Contract
+klaar** of **Schadeformulier klaar** sluit.
+
+**Het scanscherm start zelf geen ophaling.** Scan je een auto op het scanscherm zelf, dan zie je
+eerst het kaartje en kies je zelf **Ophalen starten**. Scan je vanaf een tegel op het Dashboard
+(18.7), dan weet de app wat je wilt en opent het ophaalvenster direct. Dat verschil is met opzet:
+op het scanscherm kan iemand ook alleen even iets opzoeken.
+
 ---
 
 ## 18.5 Recente scans
@@ -180,7 +195,9 @@ op een tablet of telefoon op het terrein.
 ## 18.7 Scannen vanuit het dashboard
 
 Op het **Dashboard**, onder **Snelle acties**, staan drie tegels die het scanvenster gebruiken
-als opstapje:
+als opstapje. Elke tegel heeft een regeltje dat zegt wat hij doet: **Ophalen starten** — *Auto
+meegeven aan de klant*, **Innemen starten** — *Auto terugnemen van de klant* en **Scannen** —
+*Alleen opzoeken, niets starten*.
 
 - **Ophalen starten** — je krijgt het venster **Ophalen starten** met de tekst *Scan het
   sleutellabel of typ het kenteken. De juiste handeling wordt meteen geopend.* Na de scan opent
@@ -204,7 +221,12 @@ je daarbij door bij te houden welke sleutels je gescand hebt en welke ontbreken.
    *Scan alle sleutels in de kast; daarna zie je welke ontbreken.*
 3. Onder het invoerveld staat de teller: *0 van 305 verwachte sleutels gescand*. Dat getal is het
    aantal sleutels dat volgens de app in de kast hoort te hangen.
-4. Scan nu één voor één alle sleutels in de kast. De teller loopt mee.
+4. Scan nu één voor één alle sleutels in de kast. De teller loopt mee. Na elke scan staat er in het
+   groen welke sleutel je net hebt gescand (*Gescand: AB-123-C*). Daaronder staan twee lijsten:
+   **Gescand (n)**, met de nieuwste bovenaan, en **Nog niet gescand (n)**, met kenteken, merk en
+   model. Zo zie je terwijl je bezig bent wat er nog moet hangen. Is er nog niets gescand, dan staat
+   er *Nog niets gescand*; is alles gescand, dan staat bij de tweede lijst *Alle verwachte sleutels
+   zijn gescand*.
 5. Ben je door de kast heen, klik dan op **Audit afronden**.
 6. Je krijgt de uitslag te zien:
    - **Ontbrekende sleutels** — de auto's waarvan je het label niet hebt gescand, met kenteken,
@@ -253,7 +275,10 @@ die sleutel terecht niet in de kast hangt.
 2. Klik op **Barcode bekijken**. Het venster **Voertuigbarcode** opent.
 3. Kies bij **Labelsjabloon** de indeling die bij jullie labelprinter hoort — *Kies het
    labelsjabloon voor deze afdruk.*
-4. Klik op **Sleutellabel afdrukken** of op **Reservesleutel-label afdrukken**.
+4. Klik op **Sleutellabel afdrukken** of op **Reservesleutel-label afdrukken**. De app meldt dat er
+   een afdrukvenster van je browser is geopend (**Afdrukvenster geopend** — *Het afdrukvenster van je
+   browser is geopend voor het label van <kenteken>. Kies daar de printer.*). De app maakt hier geen
+   bestand; je kiest zelf de printer.
 
 Op de voertuigkaart staan bovenin ook de knoppen **Sleutellabel** en **Reservesleutel-label**,
 direct naast de barcode. Die doen hetzelfde: ze vragen eerst om het **Labelsjabloon** en dan

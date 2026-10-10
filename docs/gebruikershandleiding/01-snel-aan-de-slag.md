@@ -20,14 +20,20 @@ de handelingen doen die je de eerste week het vaakst nodig hebt.
 Je komt binnen op het **Dashboard**.
 
 **Let op — vijf pogingen.** Na vijf mislukte inlogpogingen binnen een kwartier blokkeert de app
-je werkplek een kwartier lang. De melding die je dan krijgt is Engelse technische tekst:
-*"Too many login attempts from this IP, please try again after 15 minutes."* Dat betekent
-gewoon: wacht een kwartier, of vraag de beheerder om je wachtwoord opnieuw te zetten. Blijf niet
-doorproberen, want elke poging telt mee.
+je werkplek een kwartier lang. De melding die je dan krijgt is *Te veel verzoeken achter elkaar.
+Wacht even en probeer het opnieuw.* Dat betekent gewoon: wacht een kwartier, of vraag de beheerder
+om je wachtwoord opnieuw te zetten. Blijf niet doorproberen, want elke poging telt mee.
+
+Klopt je gebruikersnaam of wachtwoord niet, dan staat er *Ongeldige gebruikersnaam of wachtwoord*.
+De app zegt bewust niet welke van de twee fout is; controleer ze allebei, en let op Caps Lock.
 
 **Je eigen wachtwoord wijzigen.** Klik rechtsboven op je naam → **Profiel** → tabblad
 **Wachtwoord**. Vul **Huidig wachtwoord**, **Nieuw wachtwoord** en **Bevestig nieuw wachtwoord**
-in en klik op **Wachtwoord wijzigen**. Een wachtwoord moet minimaal 6 tekens hebben.
+in en klik op **Wachtwoord wijzigen**. Onder het veld staat wat het wachtwoord moet hebben: *Minimaal 8
+tekens, met een kleine letter, een hoofdletter en een cijfer.* Vergeet je het bevestigingsveld, dan
+staat er *Bevestig je nieuwe wachtwoord.*; typ je twee verschillende wachtwoorden, dan staat er *De
+wachtwoorden komen niet overeen.* Wijzig je het nieuwe wachtwoord nadat je een fout kreeg, dan
+controleert de app het bevestigingsveld opnieuw.
 
 ---
 

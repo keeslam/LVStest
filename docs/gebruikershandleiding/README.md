@@ -65,6 +65,12 @@ woord ook hier — dan weet je zeker dat je het goede knopje hebt.
 Alle achttien hoofdstukken zijn af. De schermafbeeldingen staan in de map `afbeeldingen/` en
 worden vanuit de hoofdstukken zelf getoond.
 
+**Bijgewerkt op 10 oktober 2026.** De tekst volgt de reparaties na de fysieke audit: de Nederlandse
+foutmeldingen, de kostenlijst met filters, de rapporten, de bekeuringen, de documenteneditors en de
+kleine verbeteringen in elk hoofdstuk. De schermafbeeldingen en het PDF-bestand
+(`Gebruikershandleiding-Car-Rental-Manager-v1.0.pdf`) zijn nog niet opnieuw gemaakt; de tekst in de
+hoofdstukken is leidend.
+
 ---
 
 ## Wat er in versie 1.0 bewust níét staat

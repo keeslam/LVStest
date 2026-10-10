@@ -36,6 +36,8 @@ De kolommen zijn: **Voertuig**, **Vervangend voertuig**, **Type**, **Route**, **
 - **Facturatie** toont **Gefactureerd**, **Niet gefactureerd** of **Niet factureerbaar**.
 - **Status** is **Gepland**, **Bezig**, **Voltooid** of **Geannuleerd**.
 - Een auto die niet van ons is, krijgt het label **Extern**.
+- Bij **Route** staat *van → naar*. Is één kant nog niet ingevuld, dan staat daar *onbekend*,
+  bijvoorbeeld *Eindhoven → onbekend*, en geen vraagteken of Engels woord.
 
 ![Het transportdashboard met de tellers en de tabbladen](afbeeldingen/08-transporten.png)
 *Het **Transportdashboard**: bovenaan **Aankomend transport**, **Laatste transport** en de vier
@@ -51,7 +53,10 @@ tellers, daaronder de tabbladen per soort en de tabel **Voertuigtransporten**.*
 | **Vervangend voertuig markeren als teruggebracht** | De vervanger is terug; grijs bij *Vervangend voertuig nog niet opgehaald* |
 | **Afdrukken / rapport genereren** | Het transportrapport maken, zie 6.7 |
 | **Bewerken** | Het transport wijzigen |
-| Prullenbak | Het transport verwijderen |
+| **Verwijderen** (prullenbak) | Het transport verwijderen |
+
+Elk icoontje heeft een naam: staat de muis erop, dan verschijnt er een tekstje, en een
+schermlezer leest hem voor. Dat geldt ook voor het prullenbakje, dat vroeger geen naam had.
 
 Vink je meerdere regels aan, dan verschijnt bovenin een balk met **… geselecteerd**,
 **Afdrukken**, **Markeer voltooid** en **Wissen**.
@@ -175,8 +180,8 @@ nu **Transport afronden**. Op het dashboard staat het transport op **Bezig**.
 > **Let op:** het transport is alleen op het scanscherm te *starten*. Op het transportdashboard
 > zit daar geen knop voor.
 
-Staan er geen adressen bij het transport, dan toont de route **? → ?**. Vul de adressen dan alsnog
-in met **Bewerken**, zodat de chauffeur en de afstandsberekening kloppen.
+Staan er geen adressen bij het transport, dan toont de route *onbekend* bij de ontbrekende kant. Vul
+de adressen dan alsnog in met **Bewerken**, zodat de chauffeur en de afstandsberekening kloppen.
 
 ---
 
@@ -186,9 +191,16 @@ Dat kan op drie manieren:
 
 - **Op het scanscherm:** scan de auto en klik op **Transport afronden**. Je krijgt **Transport
   afgerond**.
-- **Op het dashboard:** klik achter de regel op **Markeren als voltooid**. Je krijgt **Transport
-  gemarkeerd als voltooid**.
-- **In bulk:** vink meerdere regels aan en klik op **Markeer voltooid**.
+- **Op het dashboard:** klik achter de regel op **Markeren als voltooid**. Er opent eerst het venster
+  **Transport afronden?** — *Het transport wordt als voltooid gemarkeerd. Dat kun je daarna niet
+  zomaar terugdraaien.* Je vult **Afgerond op** in (standaard vandaag) en eventueel een
+  **Uitkomst**, bijvoorbeeld *auto afgeleverd, klant niet thuis, schade gemeld*. Die uitkomst wordt
+  aan de notities van het transport toegevoegd, met *Uitkomst:* ervoor. Klik op **Afronden** om het
+  door te zetten, of sluit het venster als je je bedacht hebt. Daarna krijg je **Transport
+  gemarkeerd als voltooid**. Zit er een vervangend voertuig aan het transport, dan volgt daarna
+  nog de vraag hieronder.
+- **In bulk:** vink meerdere regels aan en klik op **Markeer voltooid**. Je hebt dan zelf een
+  selectie gemaakt, en er komt geen extra vraag.
 
 De status wordt **Voltooid** en de voltooiingsdatum wordt vastgelegd.
 
@@ -223,7 +235,8 @@ auto, de route en de datum.
 
 1. Klik op het dashboard achter de regel op **Afdrukken / rapport genereren**. Wil je er meerdere
    in één keer, vink de regels dan aan en klik bovenin op **Afdrukken**.
-2. De app maakt het rapport en slaat het op. Er verschijnt een voorvertoning met de bestandsnaam
+2. De app maakt het rapport en slaat het op. Je krijgt de melding **Rapport gemaakt** — *Het rapport
+   staat in Documenten en wordt hieronder getoond.* Er verschijnt een voorvertoning met de bestandsnaam
    als titel, bijvoorbeeld *Transport_Report_HANDLEIDING_Unknown_18-09-2026_55544.pdf*, en de
    regel: *Rapport gegenereerd en opgeslagen in Documenten — hieronder bekijken en afdrukken.*
 3. Klik op **Afdrukken**, of op **Sluiten** als je het alleen wilde opslaan.
@@ -242,7 +255,9 @@ wat de chauffeur mee had.
 
 Je kunt maximaal 50 transporten in één rapport zetten.
 
-De bestandsnaam is Engels. Dat is alleen de naam van het bestand; de inhoud is Nederlands.
+De bestandsnaam is Engels. Dat is alleen de naam van het bestand; de inhoud is Nederlands. Heeft de
+auto nog geen echt merk en model (hij is een placeholder, of die velden zijn leeg), dan staat het
+kenteken in de bestandsnaam. Eerder stond daar *Unknown_Unknown*.
 
 ---
 
@@ -255,6 +270,9 @@ Heb je meerdere ritten op één dag, dan kun je de volgorde laten uitrekenen.
    rijafstanden.*
 2. Kies de **Datum**.
 3. Klik op **Route optimaliseren**.
+
+Is de knop grijs, dan staat er onder het venster waarom: *Er is op deze datum niets gepland. Kies
+een andere datum.* of *Geen van de geplande ritten heeft een adres of plaats. Vul die eerst in.*
 
 Je krijgt de voorgestelde volgorde met de **Totale afstand**, en met de knop **Openen in Google
 Maps (nieuw tabblad)** zet je de route op de kaart. Staat er *(schatting in rechte lijn)* bij,

@@ -22,11 +22,9 @@ gebruikersnaam gebruikt. De gebruikersnaam is niet je e-mailadres.
 
 | Melding onder **Inloggen mislukt** | Wat er aan de hand is |
 |---|---|
-| *401: Incorrect password* | Het wachtwoord klopt niet |
-| *401: Invalid username* of *Authentication failed* | De gebruikersnaam bestaat niet |
-| *403: Account has been disabled* | Je account staat op inactief |
-| *429: Too many login attempts from this IP, please try again after 15 minutes.* | Er zijn vanaf deze werkplek vijf keer achter elkaar foute inloggegevens ingevuld |
-| *429: Account temporarily locked due to too many failed login attempts. Please try again in N minute(s).* | Dit account zelf is tijdelijk op slot |
+| *Ongeldige gebruikersnaam of wachtwoord* | De gebruikersnaam bestaat niet, of het wachtwoord klopt niet. De app zegt bewust niet welke van de twee, zodat niemand kan uitproberen welke namen bestaan |
+| *Je hebt hier geen recht voor.* | Je account staat op inactief |
+| *Te veel verzoeken achter elkaar. Wacht even en probeer het opnieuw.* | Er zijn vanaf deze werkplek vijf keer achter elkaar foute inloggegevens ingevuld, of dit account zelf is tijdelijk op slot |
 
 #### De blokkade na vijf mislukte pogingen
 
@@ -150,13 +148,13 @@ Stappen:
 
 | Melding | Betekenis | Oplossing |
 |---|---|---|
-| *The PDF template "…" has no fields, so the contract would be completely blank.* | Het gekozen sjabloon is leeg | Kies een ander sjabloon; laat de velden plaatsen |
-| *Template not found* | Het sjabloon bestaat niet meer | Kies een ander sjabloon |
-| *No contract template has been configured.* | Er is helemaal geen sjabloon | Beheerder |
-| *This reservation has no vehicle assigned yet (placeholder).* | Er hangt nog geen auto aan deze reservering | Wijs eerst een voertuig toe |
-| *This reservation has no customer …* | Er hangt geen klant aan | Koppel eerst een klant |
-| *A maintenance block is not a rental: there is no contract to generate for it.* | Je probeert een contract te maken op een onderhoudsblok | Dat hoort niet; er is geen contract |
-| *No damage check template found. Create a default template first.* | Er is geen schadechecksjabloon | Beheerder |
+| *Het contractsjabloon 'naam' heeft geen velden. Vul het sjabloon onder Documenten → Contractsjablonen.* | Het gekozen sjabloon is leeg | Kies een ander sjabloon; laat de velden plaatsen |
+| *Het contractsjabloon bestaat niet meer. Kies een ander sjabloon onder Documenten → Contractsjablonen.* | Het sjabloon bestaat niet meer | Kies een ander sjabloon |
+| *Er is geen contractsjabloon ingesteld. Maak er een aan onder Documenten → Contractsjablonen.* | Er is helemaal geen sjabloon | Beheerder |
+| *Aan deze reservering is nog geen voertuig gekoppeld. Ken een voertuig toe en maak het document daarna opnieuw.* | Er hangt nog geen auto aan deze reservering | Wijs eerst een voertuig toe |
+| *Aan deze reservering is geen klant gekoppeld, dus het document kan niet worden gemaakt.* | Er hangt geen klant aan | Koppel eerst een klant |
+| *Dit is een onderhoudsblok, geen verhuur — hier hoort geen document bij.* | Je probeert een contract te maken op een onderhoudsblok | Dat hoort niet; er is geen contract |
+| *Er is geen schadechecksjabloon. Maak er een aan onder Documenten → Schadecheck-sjablonen.* | Er is geen schadechecksjabloon | Beheerder |
 
 3. Lukt het daarna nog niet, maak het document dan later alsnog vanuit de reservering en meld het
    bij een beheerder.
@@ -173,8 +171,8 @@ Zie hoofdstuk 9 voor de volledige lijst. In het kort:
 2. Staat er **Verzenden mislukt — …**, lees dan de reden.
 3. Staat er niets, dan is er nooit iets verstuurd. Verstuur alsnog.
 
-De reden *No valid email configuration for purpose: …* betekent dat de mailinstellingen
-ontbreken. Dat kan alleen een beheerder oplossen.
+De reden *Er is geen werkende e-mailconfiguratie voor dit soort e-mail* betekent dat de
+mailinstellingen ontbreken. Dat kan alleen een beheerder oplossen.
 
 Gebruik het tabblad **E-maillogboek** onder **Communicatie** hier niet voor — zie 12.12.
 
@@ -212,8 +210,32 @@ wanneer heeft verwijderd, en kan iemand met het vinkje **Prullenbak beheren** he
 
 ## Deel 2 — Foutmeldingen
 
-Een deel van de meldingen is Nederlands, een deel Engels. Dat is niet erg: gebruik deze tabel om
-te zien wat er bedoeld wordt.
+Sinds oktober 2026 spreekt de app bij een fout Nederlands: een korte zin die zegt wat er aan de hand
+is, en waar het kan ook wat je eraan doet. Een rood blok met alleen *Fout* of een stuk technische
+tekst zoals *500: {...}* hoort er niet meer te staan. Een paar meldingen die rechtstreeks van de
+server komen, zijn nog Engels; gebruik de tabellen hieronder om te zien wat er bedoeld wordt.
+
+**De korte zinnen voor wanneer de app zelf niet meer weet dan de soort fout:**
+
+| Je ziet | Wat er aan de hand is |
+|---|---|
+| *De invoer klopt niet. Controleer de velden en probeer het opnieuw.* | Een veld is verkeerd of leeg |
+| *Je sessie is verlopen. Log opnieuw in.* | Je bent uitgelogd |
+| *Je hebt hier geen recht voor.* | Je mist een vinkje (hoofdstuk 15) |
+| *Dit item is niet gevonden. Misschien is het al verwijderd.* | Het record bestaat niet (meer); kijk in de prullenbak |
+| *Dit kan nu niet: het botst met een andere wijziging of een bestaand item.* | Bijvoorbeeld een dubbel nummer, of een collega was je voor |
+| *Het bestand is te groot.* | Kies een kleiner bestand |
+| *Te veel verzoeken achter elkaar. Wacht even en probeer het opnieuw.* | Je hebt in korte tijd erg veel gedaan |
+| *Er ging iets mis op de server. Probeer het opnieuw; blijft het misgaan, meld het dan aan de beheerder.* | Een fout aan de kant van de server |
+| *De server is tijdelijk niet bereikbaar. Probeer het over een minuut opnieuw.* | De server is even weg of wordt herstart |
+| *De server antwoordde niet op tijd. Controleer de verbinding en probeer het opnieuw.* | Het verzoek duurde langer dan 30 seconden |
+| *Geen verbinding met de server. Controleer je internetverbinding en probeer het opnieuw.* | Je computer heeft geen verbinding |
+
+Heeft de fout een eigen oorzaak, dan staat er een nog specifiekere zin, bijvoorbeeld *Dit
+debiteurennummer is al in gebruik.*, *Er loopt al een back-up. Wacht tot die klaar is.* of *Een ander
+heeft dit item net gewijzigd. Open het opnieuw en probeer het nog eens.* Een veldmelding in een
+formulier staat ook in het Nederlands, bijvoorbeeld *Dit veld is verplicht*, *Vul een geldig
+e-mailadres in* of *Minimaal 3 tekens*.
 
 ### Bij ophalen en innemen
 
@@ -284,6 +306,22 @@ te zien wat er bedoeld wordt.
 | *CSRF token missing* of *403* na lang openstaan | Het tabblad stond te lang open | — | **Ja** — vernieuw de pagina en log opnieuw in | Nee |
 | **"Sessie verlopen"** — *"Je bent uitgelogd wegens inactiviteit"* | Een kwartier niets gedaan | — | **Ja** — opnieuw inloggen | Nee |
 
+### Bij bestanden en laden
+
+| Wat je ziet | Wat het betekent |
+|---|---|
+| **Bestand gemaakt** — *<naam>.csv (2 kB)* | Het bestand dat je net hebt gevraagd (een CSV, een PDF of een back-up) is klaar en wordt gedownload. Je ziet de naam en de grootte. Zie je dit niet, kijk dan in de map Downloads van je browser |
+| *Laden…* met een draaiend rondje, in plaats van een leeg scherm | **Documenten**, **Rapporten** en **Communicatie** laden hun scherm bij het openen even na. Wacht tot het rondje weg is |
+
+**Een CSV-bestand openen in Excel.** Een export met **Exporteren (CSV)** (klantgeschiedenis, kosten,
+bekeuringen, de rapportbouwer) is gemaakt voor een Nederlandse Excel: de
+kolommen staan gescheiden door een **puntkomma**, bedragen hebben een **komma** (*112,50*), datums zijn
+**dd-mm-jjjj** en tijden zijn **uu:mm**, en kentekens staan met streepjes. Het bestand heet naar het onderwerp
+en de datum, bijvoorbeeld *boetes-2026-10-10.csv*. Dubbelklik erop en Excel zet de kolommen goed; je hoeft niets te
+importeren. Tekst die met een teken als **=**, **+**, **-** of **@** begint, krijgt een aanhalingsteken
+ervoor, zodat Excel hem niet als formule uitvoert. Het fiscale CSV-rapport heeft ook datums in
+**dd-mm-jjjj** en heet *fiscaal-<jaar>-<datum>.csv*.
+
 ---
 
 ## Deel 3 — Bekende beperkingen
@@ -327,9 +365,10 @@ Bel of mail in die gevallen zelf. Een document stuur je met **E-mailen** of **Ma
 Onder **Communicatie** staat een tabblad **E-maillogboek**. Tot oktober 2026 stonden daar drie vaste
 voorbeeldregels uit maart 2024; sinds die tijd toont het wat de app echt heeft verstuurd, en berekent
 het tabblad **Analyse** zijn cijfers uit diezelfde regels (hoofdstuk 9, paragraaf 9.4). Wat je moet
-weten: de reden van een mislukking staat in het Engels, zoals de log hem bewaart; een soort e-mail
-zonder Nederlandse naam toont zijn ruwe naam; en een mislukking vóór het versturen (bijvoorbeeld een
-klant zonder e-mailadres) staat alleen bij de verzendronde en telt in de Analyse niet mee. Wil je
+weten: de reden van een mislukking staat in het Nederlands (de tekst van de mailserver staat erachter
+als technische melding); een oudere regel zonder vaste code toont *Verzenden mislukt.*; en een
+mislukking vóór het versturen (bijvoorbeeld een klant zonder e-mailadres) staat alleen bij de
+verzendronde en telt in de Analyse niet mee. Achter elke regel opent **Details** meer informatie. Wil je
 weten of een **document** verstuurd is, kijk dan nog steeds in **Reserveringsdocumenten** bij het
 document zelf.
 
@@ -338,8 +377,11 @@ document zelf.
 Onder **Back-up & Herstel → Handmatige back-up & herstel** staan drie kaarten.
 
 - **App-gegevens** werkt: je krijgt een bestand met alle gegevens.
-- **Geüploade bestanden** en **App-code** geven op dit moment een technische foutmelding en
-  leveren geen bestand op.
+- **Geüploade bestanden** en **App-code** gaven bij de doorlichting van oktober 2026 een technische
+  foutmelding en leverden geen bestand op. Sinds de reparaties van die maand wordt het bestand
+  tijdens het downloaden gemaakt. Probeer het eerst op jullie eigen server uit voordat je erop
+  vertrouwt. Mislukt het, dan staat er *De back-up kon niet worden gedownload.* en geen pad of
+  technische tekst.
 
 Dit raakt de nachtelijke back-up **niet**: die maakt elke nacht gewoon zowel de gegevens als de
 geüploade bestanden. Wil je die bestanden op je eigen computer, gebruik dan de knop
@@ -354,22 +396,22 @@ beoordelingen** kan niet definitief worden verwijderd: ze wordt overgeslagen en 
 prullenbak staan. En de lijst toont per soort de nieuwste 200 regels; **Prullenbak leegmaken**
 haalt wel alles van die soort weg, ook wat niet in de lijst staat. Wat je definitief verwijdert, kun je niet terugzetten.
 
-### 12.15 Een deel van de meldingen is Engels
+### 12.15 Een klein deel van de meldingen is nog Engels
 
-De vensters en knoppen zijn Nederlands. Maar een melding die rechtstreeks van de server komt, is
-vaak nog Engels: *Reservation conflicts with existing bookings*, *This customer is blacklisted for
-this vehicle and cannot be booked on it.*, *Not authorized. One of these permissions required: …*
-en de weigeringen bij het terugzetten van een back-up. In één werkstroom kom je daardoor beide
-talen tegen. De tabel in deel 2 vertaalt de meldingen die je het vaakst ziet.
+De vensters, knoppen en foutmeldingen zijn Nederlands. Een enkele melding die rechtstreeks van de
+server komt, is nog Engels: bijvoorbeeld *Reservation conflicts with existing bookings*, *This
+customer is blacklisted for this vehicle and cannot be booked on it.*, *Not authorized. One of these
+permissions required: …* en de weigeringen bij het terugzetten van een back-up. De tabellen in deel 2
+vertalen de meldingen die je het vaakst ziet.
 
 De **labels in de schermen** zijn wél overal Nederlands: de kostencategorieën heten in het
 **Kostenoverzicht** en in de rapporten hetzelfde — **Onderhoud**, **Banden**, **Remmen**,
 **Schade**, **Brandstof**, **Verzekering**, **Registratie**, **Schoonmaak**, **Parkeren**,
 **Tol**, **Accessoires** en **Overig**.
 
-Ook de melding **"Te veel verzoeken"** is kale technische tekst: *429: Too many requests, please
-try again later.* Dat betekent dat je binnen een kwartier heel veel handelingen hebt gedaan.
-Wacht een paar minuten en sluit tabbladen die je niet gebruikt.
+De melding **"Te veel verzoeken"** (*Te veel verzoeken achter elkaar. Wacht even en probeer het
+opnieuw.*) betekent dat je binnen een kwartier heel veel handelingen hebt gedaan. Wacht een paar
+minuten en sluit tabbladen die je niet gebruikt.
 
 ### 12.16 Twee mensen in hetzelfde scherm
 

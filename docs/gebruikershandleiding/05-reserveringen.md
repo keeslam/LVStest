@@ -84,6 +84,17 @@ zijn maar nog bij de klant zijn*, met per regel **… dag(en) te laat** en **Ver
 
 Onderhoudsblokken staan hier **niet** tussen; die vind je op de Onderhoudskalender (hoofdstuk 7).
 
+**De lijst toont een pagina tegelijk.** Per tabblad staan er maximaal 50 regels. Onderaan staat hoeveel
+je ziet, bijvoorbeeld *50 van 366 getoond*, met de knop **Toon 50 meer**. Zoeken gaat over de hele
+lijst, niet alleen over de 50 die je ziet, en begint daarna weer op de eerste pagina. Duurt het laden
+even, dan staat er een regel *Laden...* met een draaiend rondje, zodat je weet dat de app bezig is
+en het venster niet vastzit.
+
+**De lijst heeft een eigen adres.** Het adres in je browser volgt het tabblad waar je op staat
+(**Actief**, **Achterstallig** of **Geschiedenis**). Vernieuw je de pagina, of stuur je de link naar een
+collega, dan opent de lijst op hetzelfde tabblad. Sluit je de lijst, dan verdwijnt het weer uit het
+adres.
+
 ---
 
 ## 5.3 Een nieuwe reservering maken
@@ -145,6 +156,12 @@ je geselecteerde data worden getoond.*
 | Geel: *Let op: dit voertuig staat in deze periode ingepland voor onderhoud (05-10-2026 t/m 07-10-2026). Opslaan mag; het onderhoudsblok blijft staan.* | De werkplaats heeft die auto ook geclaimd | **Ja** — maar zorg dan dat het onderhoud verzet of geregeld wordt |
 | Rood: *De APK (keuring) van dit voertuig is verlopen op <datum>. Bevestig dat het veilig en legaal is om te verhuren voordat je verdergaat.* | De APK is over datum | Technisch wel — doe het niet, laat eerst keuren |
 
+Zo'n auto herken je al in de keuzelijst: er staat een label **APK verlopen** achter, met de datum
+als je er met de muis op gaat staan. De rode waarschuwing verschijnt ook als je het formulier
+opent vanuit een auto (bijvoorbeeld via **Nieuwe reservering** op de voertuigkaart): dan staat de
+auto al ingevuld, en toch zie je de melding. Een verlopen APK blijft een waarschuwing; de app
+houdt je niet tegen.
+
 Staat een klant op de zwarte lijst voor een auto, dan verdwijnt die combinatie stil uit de
 lijstjes. Je krijgt geen melding; de auto is er simpelweg niet.
 
@@ -162,6 +179,10 @@ lijstjes. Je krijgt geen melding; de auto is er simpelweg niet.
 
 Je krijgt **Reservering succesvol aangemaakt** — *Reservering voor <merk> <model> is aangemaakt.*
 Daarna verandert **Annuleren** in **Sluiten**; documenten uploaden kan nu wel.
+
+Heb je het venster geopend vanaf het **Dashboard** (**Snelle acties** → **Nieuwe reservering**), dan
+sluit **Annuleren** alleen dat venster en blijf je op het Dashboard. Vroeger sprong de app daarbij
+naar de reserveringenpagina.
 
 **Twee dingen die vanzelf gebeuren:**
 
@@ -206,6 +227,14 @@ voertuig, de klant, de chauffeur, de documenten, het blok **Voertuigservice** en
 > **Onthoud:** wil je snel alleen de datums, de klant of de auto corrigeren, of wil je de huur
 > annuleren, zoek de reservering dan op via het **zoekveld bovenin**. Vanuit de kalender krijg je
 > die knoppen niet.
+
+In het volledige venster staat in de lijst met documenten bij een document dat niet meer klopt
+met de reservering het label **Verouderd** (hoofdstuk 8, paragraaf 8.6). Je ziet het dus meteen,
+ook zonder naar het scherm Documenten te gaan. Het blok **Geschiedenis** noemt wat er gebeurde in
+gewone woorden: *Ophalen*, *Inleveren*, *Overdracht teruggedraaid*, *Status gewijzigd*, *Contract
+gemaakt*, *Reservering aangemaakt*, *Klant aangemaakt*, *Document gemaild*, *Document opnieuw
+gemaakt* of *definitief verwijderd*. Een actie die de app niet kent, staat er nog altijd, met de
+ruwe naam; wie de muis erop zet, ziet de technische code.
 
 ---
 
@@ -296,7 +325,9 @@ van het voertuig bij ophalen in. Er wordt automatisch een contract gegenereerd.*
 1. Controleer in het blok **Voertuiginformatie** het **Kenteken**, het **Voertuig** en de
    **Klant**. Klopt dit niet, klik dan op **Annuleren**.
 2. **Contractnummer** is al ingevuld (*Automatisch gegenereerd, je kunt het indien nodig
-   bewerken*). Laat het staan tenzij er een reden is om het te wijzigen.
+   bewerken*). Laat het staan tenzij er een reden is om het te wijzigen. Het nummer hoort bij het
+   ophalen: pas daar wordt het vastgelegd. Probeer je een contract opnieuw te maken, dan houdt de
+   reservering haar eigen nummer.
 3. **Ophaaldatum** staat op vandaag.
 4. Vul **Kilometerstand bij ophalen** in. In het veld staat wat de app als laatste stand kent,
    bijvoorbeeld *Huidig: 25.000 km*.
@@ -310,6 +341,23 @@ Je krijgt **Ophalen voltooid** — *Voertuig succesvol opgehaald. Contract is ge
 daarna verschijnt het venster **Contract klaar** met de bestandsnaam en de knoppen **Afdrukken**,
 **Mail naar klant** en **Sluiten**.
 
+De melding belooft het contract alleen als het er ook echt is. Lukt het maken van het contract
+niet, dan staat er alleen *Voertuig succesvol opgehaald.* Kijk dan in hoofdstuk 8 hoe je het contract
+alsnog maakt. De auto is dan wel opgehaald.
+
+**Mail naar klant** stelt het e-mailadres van de klant zelf voor (zoals dat op de klantkaart
+staat), met daarna de andere adressen die de klant heeft. Staat de verzendknop grijs, dan staat
+er onder het venster wat er nog ontbreekt: *Nog nodig om te versturen:* gevolgd door het
+ontbrekende (*kies minstens één document*, *een geldig e-mailadres van de ontvanger* of *een
+onderwerp*). Mislukt het versturen, dan staat er in het Nederlands *De e-mail kon niet verstuurd
+worden. Controleer de e-mailinstellingen onder Instellingen en probeer het opnieuw.* (hoofdstuk 9).
+
+Start je het ophalen vanaf het scanscherm of vanaf het Dashboard, dan ligt er telkens maar één venster
+open: terwijl het ophaalformulier (of daarna het venster **Contract klaar**) openstaat, is het
+scankaartje eronder weggehaald. Start je vanaf een tegel op het Dashboard, dan sluit het scanvenster
+vanzelf zodra je **Contract klaar** sluit. Start je vanaf het scanscherm zelf, dan blijft dat scherm
+staan, klaar voor de volgende scan.
+
 > **Waarom het contract pas hier wordt gemaakt:** op dit moment liggen de kilometerstand, de
 > brandstof, het contractnummer en de ophaaldatum vast. Maak je het contract eerder, dan staan
 > die velden er leeg op en klopt het papier niet met de auto die wegrijdt.
@@ -319,9 +367,12 @@ daarna verschijnt het venster **Contract klaar** met de bestandsnaam en de knopp
 **1. Voertuigopmerkingen.** Staan er opmerkingen bij de auto, dan verschijnt eerst
 **Voertuigopmerkingen - Ophaalwaarschuwing** met de tekst *BELANGRIJK: Bekijk deze opmerkingen
 voordat het voertuig vertrekt:*. Lees ze, bespreek ze met de klant en klik op **Ik bevestig & ga
-door**. Klik je op **Annuleren**, dan sluit het hele ophaalvenster. Sla je de bevestiging over,
-dan meldt de app **Opmerkingen niet bevestigd** — *Je moet de voertuigopmerkingen bevestigen
-voordat je verdergaat met ophalen.*
+door**. Klik je op **Annuleren**, dan sluit het hele ophaalvenster. Klik je ergens naast het
+venster, dan gebeurt er niets: dat is bewust, en onder de tekst staat dat ook: *Kies Annuleren of
+Ik bevestig & ga door om verder te gaan; klikken naast dit venster doet niets.* Het venster licht
+dan even op, zodat je ziet dat je eerst een keuze moet maken. Sla je de bevestiging over, dan meldt de
+app **Opmerkingen niet bevestigd** — *Je moet de voertuigopmerkingen bevestigen voordat je
+verdergaat met ophalen.*
 
 **2. De huur start eerder.** Haal je de auto op vóór de afgesproken startdatum, dan vraagt de
 app:
@@ -364,6 +415,14 @@ Er wordt dan **niets** opgeslagen — ook de startdatum schuift niet.
 Vergelijkbare weigeringen, in hetzelfde venster: *Dit voertuig staat op "reparatie nodig"…*
 (status **Reparatie nodig**) en *Dit voertuig staat op "niet voor verhuur"…*
 
+### Het contractnummer en een gat in de reeks
+
+De app hergebruikt een contractnummer niet. Haal je een auto op met nummer 1012 en annuleer je
+die opgehaalde huur later, dan houdt de geannuleerde huur nummer 1012 en stelt de app voor de volgende
+huur 1013 voor. In de rij nummers zit dan een gat. Dat is met opzet: het nummer is al op een
+contract gedrukt en aan een klant meegegeven, en een verdwenen nummer zou later tot verwarring
+leiden. Zoek je een nummer dat je kwijt bent, kijk dan in de geannuleerde reserveringen.
+
 ### Het ophalen ongedaan maken
 
 Heb je het ophalen op de verkeerde regel afgerond, dan kan dat terug, met de knop **Overdracht
@@ -387,6 +446,8 @@ voertuig bij inleveren in. Er wordt automatisch een schadecheck gegenereerd.*
    de auto gisteren al terug, zet die datum er dan in.
 3. Vul **Kilometerstand bij inleveren** in.
 4. Zet **Brandstofniveau bij inleveren**; het niveau bij ophalen staat eronder ter vergelijking.
+   Het veld begint op het niveau van het ophalen, zodat je alleen hoeft te wijzigen als de tank
+   anders staat. Kende de app dat niveau niet, dan begint het op **Vol**.
 5. Maak eventueel **Inlever-schadecheck aanmaken**, of upload een **Papieren check**.
 6. Zet schade, een ontbrekende sleutel of een vuile auto in **Aanvullende notities (optioneel)**.
 7. Klik op **Inleveren voltooien & schadecheck genereren**.
@@ -547,11 +608,18 @@ opnieuw opent of een nieuw tabblad gebruikt. Zolang er nog rijen zijn, staat rec
 knop **… niet opgehaald**, naast **… achterstallig** (5.1), waarmee je het venster later
 opnieuw opent.
 
+Bovenin staat een zoekveld, *Zoek op kenteken, klant, contractnummer of reserveringsnummer...*,
+met daarnaast hoeveel regels je ziet (*12 van 144*). Past er niets bij je zoekopdracht, dan staat
+er *Geen niet opgehaalde reservering komt overeen met je zoekopdracht.* Bij een lange lijst is
+zoeken de snelste weg naar de juiste auto.
+
 Per regel zie je het voertuig, de klant, de periode en hoe lang geleden de huur had moeten
 beginnen. Twee knoppen per regel:
 
 - **Bekijken** opent de reservering zelf, zodat je kunt corrigeren of alsnog kunt ophalen.
-- **Annuleren** annuleert de boeking meteen, zonder tussenstap. Deze knop staat er alleen voor
+- **Annuleren** opent het venster **Reservering annuleren** van 5.9, met bovenin het kenteken, het
+  merk en model en de klant, zodat je zeker weet welke boeking je annuleert. Pas na jouw
+  bevestiging wordt de boeking geannuleerd. Deze knop staat er alleen voor
   wie **Reserveringen beheren** heeft; zonder dat recht staat hij er wel, maar grijs (hoofdstuk
   15, paragraaf 15.9). Iedereen met **Reserveringen bekijken** ziet de melding en de lijst zelf
   wél, ook zonder dat recht.

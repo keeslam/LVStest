@@ -15,10 +15,14 @@ in het park; het kenteken maar één keer.
    **Voertuigenpark**.
 2. Typ in **Zoeken op kenteken, merk of model...** wat je zoekt. De lijst filtert meteen mee.
    Met het kruisje ernaast wis je de zoekterm.
-3. Met **Sorteren op:** kies je de volgorde: **Standaard (ID)**, **Kenteken**, **Merk**,
+3. Met **Sorteren op:** kies je alleen de volgorde: **Standaard (ID)**, **Kenteken**, **Merk**,
    **APK-datum (eerst vroegste)**, **APK-datum (eerst laatste)**, **Beschikbaarheid (beschikbaar
-   eerst)**, **Beschikbaarheid (gereserveerd eerst)**, **Reparatie nodig**, **Opnaam**, **BV** of
-   **Niet opgegeven**.
+   eerst)** of **Beschikbaarheid (gereserveerd eerst)**.
+   Wil je maar een deel van het park zien, gebruik dan het aparte keuzelijstje **Tonen:**: **Alle
+   voertuigen**, **Reparatie nodig**, **Opnaam**, **BV** of **Niet opgegeven**. Sorteren en tonen
+   werken samen: je kunt bijvoorbeeld alleen de auto's **Opnaam** laten zien, gesorteerd op
+   **Kenteken**. Vroeger stonden die keuzes in één lijstje door elkaar; een keuze als **Opnaam**
+   sorteerde dan niet maar filterde.
 4. Met **Filter functies** zoek je op uitrusting. In het vakje **Filter op functies** vink je aan
    wat de auto moet hebben: **Toegang milieuzone**, **Move IZI**, **GPS**, **GPS gewisseld**,
    **Stoelhoezen**, **Achteruitrijsignalering** of **Reservesleutel**. Kies met **Alles
@@ -27,6 +31,11 @@ in het park; het kenteken maar één keer.
 
 De tabel heeft de kolommen **Acties**, **Kenteken**, **Merk**, **Model**, **Type**, **Status**,
 **Registratie**, **GPS**, **Radiocode**, **Bandenmaat** en **APK verloopt**.
+
+Onder de tabel staat naast **Vorige** en **Volgende** de regel *Pagina 1 van 8* met een invulveld
+**Pagina**. Typ een paginanummer en druk op Enter om er meteen heen te springen, zonder
+tientallen keren op **Volgende** te klikken. Een nummer voorbij de laatste pagina brengt je naar
+de laatste pagina.
 
 - **Registratie** toont **Opnaam** of **BV** met *Sinds: <datum>*, of **Niet opgegeven**.
 - **APK verloopt** toont de datum met eronder hoeveel dagen er nog zijn, of *… dagen te laat*.
@@ -54,7 +63,9 @@ Bovenin staan de barcode van de auto (bijvoorbeeld *VEH-001821*) met de knoppen
 reservering**
 
 Daaronder zes tegels: **Voertuigtype**, **Huidige kilometerstand**, **Huidig brandstofniveau**,
-**APK-vervaldatum** (met het aantal dagen), **Garantievervaldatum** en de statusinformatie.
+**APK-vervaldatum** (met het aantal dagen), **Garantievervaldatum** en de statusinformatie. Heeft
+de auto geen garantiedatum, dan staat er *Geen garantiedatum* en niet meer *Dagen resterend:
+0*.
 
 En zes tabbladen:
 
@@ -94,6 +105,14 @@ Wat je in het formulier wél kunt gebruiken, is het opzoeken bij de RDW:
 3. Wordt de auto gevonden, dan vult de app merk, model, voertuigtype, brandstof, chassisnummer,
    APK-datum en bouwdatum zelf in. Je krijgt **Voertuiggegevens gevonden** —
    *Voertuiggegevens succesvol opgehaald uit de RDW-database.*
+
+   **Hoe de app het voertuigtype kiest.** Een bestelwagen volgens de RDW wordt **Van**. Ook een
+   personenauto met **acht of meer zitplaatsen** wordt **Van**: de RDW registreert een
+   Transporter, Ducato, Boxer, Transit, Vito, Trafic of Scudo met negen zitplaatsen namelijk als
+   personenauto, en zo kwamen ze vroeger onterecht als **SUV** binnen. Een gewone gezinsauto of
+   MPV met minder zitplaatsen blijft **SUV**. Dit geldt voor nieuwe opzoekingen; auto's die er al
+   stonden, veranderen niet vanzelf. Klopt het type van een bestaande auto niet, zet het dan met
+   **Bewerken** goed.
 4. Wordt de auto niet gevonden, dan staat er **Voertuig niet gevonden** — *Geen voertuig gevonden
    met dit kenteken in de RDW-database. Controleer het kenteken en probeer het opnieuw.*
    Controleer dan de schrijfwijze van het kenteken.
@@ -102,7 +121,10 @@ Andere meldingen die je kunt krijgen: **Kenteken vereist**, **Service time-out**
 RDW-service reageert te langzaam*), **Service niet beschikbaar** en **Opzoeken mislukt**. In alle
 gevallen: probeer het later nog eens of typ de gegevens zelf in.
 
-Sluit het venster met **Annuleren**.
+Sluit het venster met **Annuleren**. Heb je al iets ingevuld, dan vraagt de app eerst **Wijzigingen
+verwerpen?** — *Je hebt wijzigingen gemaakt die nog niet zijn opgeslagen. Als je sluit, gaan ze
+verloren.* Kies **Verder bewerken** om terug te gaan, of **Verwerpen** om te sluiten. Dat geldt
+ook voor **Voertuig bewerken** (4.5).
 
 ---
 
@@ -148,14 +170,14 @@ geïmporteerd, <aantal> mislukt.* Daaronder staan twee blokken:
   daarna bij met **Bewerken**.
   Wijken jouw kolommen af van wat de RDW zegt, dan staat er *Afwijkingen ten opzichte van de
   RDW:* met per veld wat er in het blad stond en wat de RDW weet. De RDW-waarde wordt gebruikt.
-- **Mislukte imports (n)** — per regel `KENTEKEN - reden`. Deze redenen zijn Engels:
+- **Mislukte imports (n)** — per regel `KENTEKEN - reden`. De redenen zijn Nederlands:
 
 | Melding | Betekenis |
 |---|---|
-| *License plate is required* | De regel heeft geen kenteken |
-| *Vehicle already exists* | Dit kenteken staat al in het park |
-| *… is not a date we can read (use dd-mm-yyyy or yyyy-MM-dd)* | Een datum in die regel is onleesbaar |
-| *Unknown error* | Onbekende fout; probeer die regel los opnieuw |
+| *Het kenteken ontbreekt.* | De regel heeft geen kenteken |
+| *Dit voertuig bestaat al.* | Dit kenteken staat al in het park |
+| *Een datum kon niet worden gelezen (gebruik dd-mm-jjjj).* | Een datum in die regel is onleesbaar |
+| *Dit voertuig kon niet worden geïmporteerd.* | Onbekende fout; probeer die regel los opnieuw |
 
 Een afgekeurde regel houdt de rest niet tegen: de andere rijen worden gewoon geïmporteerd. Er is
 geen categorie "overgeslagen" — een regel lukt of hij lukt niet.
@@ -185,8 +207,8 @@ De vijf tabbladen:
 | **Overig** | **Interne afspraken** en **Opmerkingen** |
 
 **Verplicht zijn kenteken, merk en model.** Ontbreekt er één, dan meldt de app *Vul alle
-verplichte velden in: kenteken, merk en model.* Onder het veld zelf staat de Engelse tekst
-*License plate is required*, *Brand is required* of *Model is required*.
+verplichte velden in: kenteken, merk en model.* Onder het veld zelf staat dan *Kenteken is
+verplicht*, *Merk is verplicht* of *Model is verplicht*.
 
 **De dagprijs telt bij het boeken.** Vul je op het tabblad **Contract** een **Dagprijs (€)** in,
 dan rekent de app bij een nieuwe reservering het totaalbedrag zelf uit (hoofdstuk 5, paragraaf
@@ -285,7 +307,8 @@ waarschuwing met de onderhoudsperiode erbij (hoofdstuk 5, paragraaf 5.3).
 - Op de voertuigkaart, tegels **APK-vervaldatum** en **Garantievervaldatum**.
 - Op het tabblad **Onderhoud** van de auto, in de blokken **APK-keuring** (met **Huidige APK
   geldig tot**, **Dagen resterend** en de labels **Verlopen**, **Actie binnenkort nodig** of
-  **OK**) en **Garantie-informatie**.
+  **OK**) en **Garantie-informatie**. Is er geen garantiedatum ingevuld, dan staat daar *Geen
+  garantiedatum*.
 - Op het **Dashboard**, in de blokken **APK verloopt binnenkort** en **Garantie verloopt
   binnenkort**.
 - Op de **Onderhoudskalender**, als de signalen **APK-keuring verschuldigd**, **APK Herinnering
@@ -305,7 +328,13 @@ eerst keuren.
 
 **De RDW-scan.** Op het **Dashboard** staat onder **Snelle acties** de knop **RDW APK-datums
 scannen**. Die haalt de APK-datums van het hele park bij de RDW op en werkt ze bij. Dat loopt op
-de achtergrond en is werk voor wie het wagenpark bijhoudt, niet voor de balie.
+de achtergrond en is werk voor wie het wagenpark bijhoudt, niet voor de balie. De app vraagt eerst
+**RDW APK-datums scannen?** — *Dit vraagt de APK-datum van het hele wagenpark op bij de RDW en kan
+enkele minuten duren. Er wordt niets aangepast: verschillen komen als voorstel in een lijst te
+staan, die jij beoordeelt.* Pas na **Scan starten** begint hij. Zo'n voorstel zie je in het
+venster **APK-datums gewijzigd bij de RDW**, met per voertuig **Bevestigen** of **Negeren**. Wil je er
+nu niet naar kijken, klik dan op **Later (morgen opnieuw)**: het venster sluit en komt de volgende
+werkdag terug.
 
 ---
 
@@ -343,7 +372,10 @@ Klik op de voertuigkaart op **Brandstofstatus bijwerken**, of gebruik **Tanken**
 scanscherm. In het venster **Brandstofstatus bijwerken** vul je in:
 
 - **Brandstofniveau** — van **Leeg** tot **Vol**; de huidige stand staat erbij.
-- **Tankkosten (€)**.
+- **Tankkosten (€)** — je mag een komma of een punt typen: *45,50* en *45.50* zijn allebei goed,
+  en ook *1.234,50* wordt gelezen als duizend tweehonderdvierendertig euro vijftig. Staat er iets
+  anders, bijvoorbeeld letters of een bedrag met meer dan twee decimalen, dan verschijnt onder het
+  veld *Vul een geldig bedrag in, bijvoorbeeld 45,50.* en wordt er niets opgeslagen.
 - **Bon (optioneel)** — met **Bon uploaden**.
 - **Notities (optioneel)**.
 
@@ -380,7 +412,10 @@ verkeerde auto mee pakken.
 1. Open de auto met **Bekijken**.
 2. Klik op **Barcode bekijken**. Het venster **Voertuigbarcode** opent.
 3. Kies bij **Labelsjabloon** de indeling die bij jullie labelprinter hoort.
-4. Klik op **Sleutellabel afdrukken** of op **Reservesleutel-label afdrukken**.
+4. Klik op **Sleutellabel afdrukken** of op **Reservesleutel-label afdrukken**. Er opent een
+   afdrukvenster van je browser en de app meldt dat met **Afdrukvenster geopend** — *Het
+   afdrukvenster van je browser is geopend voor het label van <kenteken>. Kies daar de printer.*
+   Je kiest daar zelf de printer; de app maakt geen bestand.
 
 De reservesleutel krijgt een eigen label; de code eindigt dan op **-S**. Zo weet de sleutelkast
 het verschil tussen de hoofdsleutel en de reserve.
@@ -395,7 +430,8 @@ opnieuw worden afgedrukt. Deze actie kan niet ongedaan worden gemaakt."*
 **Gefilterde afdrukken (…)**, **Selectie afdrukken** of **Stickers afdrukken**.
 
 **De sleutelkast nalopen** doe je met **Sleutelkast-audit** en **Reservesleutelkast-audit**.
-Uitgebreid in hoofdstuk 18.
+Tijdens het scannen zie je welke sleutels al gescand zijn en welke nog niet. Uitgebreid in
+hoofdstuk 18.
 
 ---
 
@@ -416,6 +452,10 @@ Uitgebreid in hoofdstuk 18.
 
 Je krijgt **Voertuig verwijderd** — *<merk> <model> is verwijderd. Een beheerder kan het
 terugzetten vanuit de prullenbak.*
+
+Verwijder je de auto vanuit het detailscherm (**Bekijken** → **Verwijderen**), dan sluit dat
+scherm zich en blijft het bij die ene bevestiging. Vroeger verscheen er daarna een rode melding
+*Vehicle not found*; die komt niet meer.
 
 **De app weigert bij een lopende of geplande huur.** Je krijgt dan een rood blok in hetzelfde
 venster:

@@ -67,7 +67,10 @@ Is er niets, dan staat er *Geen onderhoudsevenementen gepland voor deze dag*.
 2. Kies het **Voertuig** via *Selecteer een voertuig...* en typ het kenteken. Onder
    **Voertuigfilters** kun je de lijst inkorten met **Alleen beschikbare voertuigen tonen** en
    **Voertuigen met bestaand onderhoud uitsluiten**.
-3. Kies eventueel een **Klant** — *Wie brengt het voertuig voor onderhoud?* Heeft de auto een
+3. Kies eventueel een **Klant** — *Wie brengt het voertuig voor onderhoud?* Dit is een zoekveld,
+   net als in het reserveringsformulier: typ een deel van de naam, het telefoonnummer of de plaats
+   (*Zoek op naam, telefoon of plaats...*) en klik op de juiste regel. Past er niemand bij, dan
+   staat er *Geen klanten gevonden.* Bovenaan de lijst staat **Geen (geen klant)**. Heeft de auto een
    lopende verhuring, dan staat bij die klant het label **Actieve verhuur**.
 4. Kies het **Onderhoudstype**. Er zijn er veertien, elk met een korte toelichting:
 
@@ -91,14 +94,20 @@ Is er niets, dan staat er *Geen onderhoudsevenementen gepland voor deze dag*.
 5. Vul de **Geplande datum** in — *Wanneer moet dit onderhoud worden uitgevoerd?*
 6. Vul **Duur (dagen)** in — *Hoe lang duurt dit?* Er is geen einddatum; de app rekent die uit
    als startdatum plus duur.
-7. Laat **Status** op **Gepland (voertuig nog niet gearriveerd)** staan. De andere twee zijn
-   **Binnen (voertuig is in onderhoud)** en **Uit (onderhoud voltooid)**.
+7. Een nieuw blok staat altijd op *gepland*: het veld **Status** zie je daarom niet bij het plannen.
+   Het verschijnt pas als je een bestaand blok bewerkt, en heeft dan de keuzes **Gepland (voertuig
+   nog niet gearriveerd)**, **Binnen (voertuig is in onderhoud)** en **Uit (onderhoud voltooid)**.
 8. Vul **Omschrijving** in — kort en concreet, bijvoorbeeld *voorremmen* of *olie- en
    filterwissel*. Extra uitleg zet je in **Notities**.
 9. Klik op **Onderhoud plannen**.
 
 Je krijgt **Onderhoud gepland** — *Het onderhoud is gepland en de herinneringen zijn bijgewerkt.*
 Het blok staat nu in de kalender op de gekozen dagen, met het kenteken en het type.
+
+**Een geannuleerde of afgeronde verhuring telt niet als conflict.** De app kijkt bij het plannen
+alleen naar verhuringen die nog lopen of nog moeten komen. Staat er op die dagen alleen een
+**Geannuleerd**, **Voltooid** of al ingeleverde huur, dan krijg je niet de tweede stap met
+vervangers, en ook geen leeg venster. Je plant gewoon door.
 
 > **Waarom je dit vastlegt en niet alleen afspreekt met de werkplaats:** het blok maakt zichtbaar
 > dat de auto die dagen geclaimd is. Iedereen die de kalender bekijkt, ziet het, en wie in die
@@ -123,7 +132,9 @@ instellen** de start- en einddatum van de vervangende huur in. Laat je de eindda
 het een huur zonder einddatum. De knoppen **Onderhoudsdata gebruiken** en **Open einde maken**
 schelen typwerk.
 
-Sla af met **Vervangers toewijzen & onderhoud plannen**.
+Sla af met **Vervangers toewijzen & onderhoud plannen**. Eén klik op die knop is genoeg, ook als
+de lijst met auto's nog openstaat; die lijst staat los van het venster en houdt je klik niet meer
+tegen.
 
 Vergeet je een keuze te maken, dan meldt de app **Ontbrekende toewijzingen vervangend voertuig** —
 *Kies een specifiek voertuig of 'Nog te bepalen' voor alle betrokken reserveringen.*
@@ -412,8 +423,31 @@ Vier tabbladen:
 |---|---|
 | **APK (…)** | *Voertuigen met APK-keuringen die binnen 60 dagen verlopen*, met de kolom **Urgentie** (*… dagen te laat*, *Vandaag verschuldigd*, *… dagen resterend*) en de knoppen **Plannen** en **Bekijken** |
 | **Garantie (…)** | Hetzelfde voor de garantie |
-| **Gepland (…)** | *Actieve onderhoudsblokken en geplande service-afspraken*, met **Bewerken**, **Verwijderen** en **Voertuig** |
+| **Gepland (…)** | *Actieve onderhoudsblokken en geplande service-afspraken*, met **Afronden**, **Binnen melden**, **Bewerken**, **Verwijderen** en **Voertuig** |
 | **Vervangers (…)** | De nog toe te wijzen vervangers, met **Toewijzen** |
+
+**Afronden en Binnen melden vanuit het overzicht.** Je hoeft niet meer naar de kalender om een blok
+af te handelen. Op het tabblad **Gepland** staat achter elk blok dat nog loopt de knop **Afronden**;
+die opent hetzelfde venster **Onderhoud voltooien** als in 7.6, al ingevuld met de APK-datum en de
+kilometerstand die de app van de auto kent. Staat het blok nog op *gepland* (de auto is er nog niet),
+dan staat er ook **Binnen melden**: die zet in één klik het blok op *Binnen* en de auto op in onderhoud,
+en je krijgt **Voertuig binnen gemeld** — *Het onderhoud staat op Binnen en het voertuig is in
+onderhoud.* Een blok dat al *Binnen* is, heeft alleen **Afronden**; een afgerond of geannuleerd blok
+heeft geen van beide. De twee knoppen vragen elk een eigen recht:
+
+| Knop | Welk vinkje je nodig hebt |
+|---|---|
+| **Afronden** | **Onderhoud beheren** of **Reserveringen beheren** (net als **Voltooien** in de kalender) |
+| **Binnen melden** | **Voertuigen beheren** |
+
+Heb je het vinkje niet, dan staat de knop er wel, maar grijs; tik of klik erop en de app zegt welk
+vinkje je mist (hoofdstuk 15, paragraaf 15.9). Een werkplaatsprofiel heeft beide vinkjes.
+
+**De omschrijving in het overzicht** staat in het Nederlands. Een blok dat als *pech* is
+opgeslagen, toont *Pech: lekke band*, en niet meer het Engelse *breakdown: lekke band*. Oude
+blokken die ooit zonder omschrijving zijn geïmporteerd, heten nu *Onderhoudsblok* in plaats van
+*Vehicle maintenance block*. Je ziet dit ook bij de geschiedenis op de voertuigkaart en bij de
+APK-keuring.
 
 **Voltooide bekijken.** Klik op **Voltooide bekijken (…)**. Je krijgt **Geschiedenis voltooid
 onderhoud** — *Voltooide onderhoudsrecords bekijken, bewerken, terugdraaien of verwijderen*. Per

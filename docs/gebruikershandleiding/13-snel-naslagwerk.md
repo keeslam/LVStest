@@ -65,7 +65,8 @@ Zie hoofdstuk 1, paragraaf 1.4, en hoofdstuk 16.
 | Zien wat er in een periode vrij is | **Nieuwe reservering** → **Startdatum** + **Einddatum** → open de voertuigkeuze |
 | Een reservering opzoeken | Zoekveld → kenteken, klantnaam of contractnummer |
 | De verhuurkalender openen | **Reserveringen** |
-| De reserveringen als lijst zien | **Reserveringen** → **Lijstweergave** |
+| De reserveringen als lijst zien | **Reserveringen** → **Lijstweergave** (50 regels per pagina, **Toon 50 meer**; het adres volgt het tabblad) |
+| Een nooit-opgehaalde boeking zoeken en annuleren | **Reserveringen** → **… niet opgehaald** → zoekveld → **Annuleren** → het venster **Reservering annuleren** bevestigen |
 | Terug naar deze maand | **Reserveringen** → **Vandaag** |
 | Afgesloten verhuringen zien | **Reserveringen** → **Voltooid bekijken (…)** |
 | Achterstallige verhuringen zien | **Reserveringen** → **… achterstallig** |
@@ -98,6 +99,7 @@ Zie hoofdstuk 5 en hoofdstuk 11.
 | Zien welke auto's een klant niet mag huren | Open de klant → **Geblokkeerde voertuigen** |
 | Filteren op onvolledige profielen | **Klanten** → **Filters** → *Onvolledig profiel* |
 | Een klant verwijderen | **Klanten** → **Verwijderen** (lukt niet bij een lopende of toekomstige huur) |
+| Naar een pagina in de lijst springen | Onder de tabel → invulveld **Pagina** → Enter (ook bij **Voertuigen**) |
 
 Zie hoofdstuk 3.
 
@@ -112,6 +114,7 @@ Zie hoofdstuk 3.
 | Een voertuig wijzigen | **Voertuigen** → **Bekijken** → **Bewerken** |
 | Een nieuw voertuig | **Voertuigen** → **Voertuig toevoegen** |
 | Meerdere voertuigen tegelijk inlezen | **Voertuigen** → **Bulk importeren** |
+| Alleen auto's op naam, BV of die gerepareerd moeten worden zien | **Voertuigen** → keuzelijst **Tonen:** (los van **Sorteren op:**) |
 | De brandstofstand bijwerken | **Voertuigen** → **Bekijken** → **Brandstofstatus bijwerken**, of **Scannen** → **Tanken** |
 | De kilometerstand bijwerken | **Scannen** → scan → **Km-stand bijwerken** |
 | De sleutellabels afdrukken | **Voertuigen** → **Barcodeboek** |
@@ -133,7 +136,8 @@ Zie hoofdstuk 4.
 | Een auto direct op onderhoud zetten | Open de reservering → **Voertuig markeren voor onderhoud** → **Onderhoud nodig** of **Momenteel in onderhoud** |
 | Een auto op onderhoud zetten via de scanner | **Scannen** → scan → **Onderhoud inplannen** |
 | Een vervanger toewijzen | **Dashboard** → **Beheer vervangende voertuigen** → **Nog te bepalen** → **Voertuig toewijzen**, of **Onderhoud** → **Lijstweergave** → **Vervangers** → **Toewijzen** |
-| Een onderhoudsblok afsluiten, met APK-datum, formulier en kilometerstand | **Onderhoud** → de dag openen → **Voltooien** |
+| Een onderhoudsblok afsluiten, met APK-datum, formulier en kilometerstand | **Onderhoud** → de dag openen → **Voltooien**, of **Onderhoud** → **Lijstweergave** → **Gepland** → **Afronden** (vraagt **Onderhoud beheren** of **Reserveringen beheren**) |
+| Een auto die in de werkplaats aankomt binnen melden | **Onderhoud** → **Lijstweergave** → **Gepland** → **Binnen melden** (vraagt **Voertuigen beheren**) |
 | Een vervanging afsluiten en de auto vrijgeven | Open de reservering → **Terug van onderhoud** → inleverdatum + km |
 | Een auto vrijgeven via de scanner | **Scannen** → scan → **Terug uit onderhoud** |
 | De werkplaatskalender openen | **Onderhoud** |
@@ -164,7 +168,8 @@ Zie hoofdstuk 6.
 | Alle documenten zien | **Documenten** → **Documentbibliotheek** |
 | De documenten van één auto zien | **Voertuigen** → **Bekijken** → tabblad **Documenten** |
 | De documenten van één huur zien | Open de reservering → de documenten onderaan |
-| Een document uploaden | **Documenten** → **Document uploaden**, of **Scannen** → **Document uploaden** |
+| Een document uploaden | **Documenten** → **Document uploaden** (vraagt **Documenten bewerken en genereren**), of **Scannen** → **Document uploaden** |
+| Een document zoeken op kenteken, merk of model | **Documenten** → **Documenten zoeken...** |
 | Een document afdrukken | Bij het document → **Afdrukken** |
 | Een document downloaden | Bij het document → **Downloaden** |
 | Een document naar de klant mailen | Bij het document → **E-mailen** → adres kiezen → **E-mail versturen** |
@@ -180,7 +185,10 @@ Zie hoofdstuk 8.
 
 | Wat je wilt | Klikpad |
 |---|---|
-| Kosten vastleggen | **Kosten** → **Kosten registreren** |
+| Kosten vastleggen | **Kosten** → **Kosten registreren** (hetzelfde venster ook vanaf het Dashboard; een voertuig is verplicht) |
+| De kosten filteren | **Kosten** → **Voertuig**, **Van**, **Tot en met**, **Categorie** of het zoekveld; **Filters wissen** |
+| De gefilterde kosten naar Excel | **Kosten** → **Exporteren (CSV)** |
+| Het logboek van de factuurpostbus zien | **Kosten** → **Ontvangen facturen** → **Logboek** |
 | Kosten vastleggen bij de auto in je hand | **Scannen** → scan → **Kosten registreren** |
 | Een factuur inlezen | **Kosten** → **Factuur scannen** |
 | De kosten van één auto zien | **Voertuigen** → **Bekijken** → tabblad **Kosten** |
@@ -203,6 +211,8 @@ Zie hoofdstuk 2, paragraaf 2.8.
 | Een klant een portaalaccount geven | **Klantenportaal** → **Account uitnodigen** |
 | Een bekeuring invoeren | **Klantenportaal** → tegel **Bekeuringen** → **Nieuwe bekeuring** |
 | Een bekeuringsbrief inlezen | **Klantenportaal** → **Brieven scannen** |
+| De bekeuringen zien zonder portaalrecht | **Bekeuringen** in het menu (vraagt **Boetes bekijken** of **Boetes beheren**) |
+| Een bekeuring annuleren | Open de bekeuring → **Bekeuring annuleren** → bevestigen (**Nee, laten staan** als je twijfelt) |
 | Een klant voor een auto blokkeren | **Klantenportaal** → tegel **Blacklist** → **Blokkade toevoegen** |
 | Meldingen op gelezen zetten | **Klantenportaal** → **Meldingen** → **Alles gelezen** |
 
@@ -219,6 +229,8 @@ Zie hoofdstuk 2, paragraaf 2.6, en hoofdstuk 16.
 | APK-herinneringen versturen | **Communicatie** → **Meldingen versturen** → **APK-herinneringen** |
 | Een eigen bericht sturen | **Communicatie** → **Meldingen versturen** → **Aangepast bericht** |
 | Zien of een mail verzonden is | Bij het document: **Verzonden op … aan …** |
+| Zien of een mailronde is aangekomen | **Communicatie** → **E-maillogboek** → **Details** |
+| Zien hoe een ontvanger de mail krijgt | **Voorvertonen & versturen** → klik op de ontvanger |
 | Een e-mailsjabloon wijzigen | **Communicatie** → **Sjabloonbouwer** |
 
 Zie hoofdstuk 9.
@@ -233,7 +245,9 @@ Zie hoofdstuk 9.
 | Een rapport afdrukken | **Rapporten** → rechtsboven **APK**, **Garantie**, **Kosten**, **Benutting** of **Klanten** |
 | De periode of de auto instellen | **Rapporten** → **Rapportfilters** |
 | Een eigen rapport maken | **Rapporten** → **Aangepaste rapportbouwer** |
-| De onderhoudskosten analyseren | **Rapporten** → **Analyse onderhoudskosten** |
+| Het resultaat van een eigen rapport naar Excel of op papier | **Aangepaste rapportbouwer** → uitvoeren → **Exporteren naar CSV** of **Afdrukken** |
+| Een opgeslagen rapport verwijderen | **Aangepaste rapportbouwer** → tabblad **Opgeslagen rapporten** → het knopje **Rapport verwijderen: <naam>** → **Verwijderen** |
+| De onderhoudskosten analyseren | **Rapporten** → **Analyse onderhoudskosten** (telt alleen **Onderhoud**, **Banden** en **Remmen**; kosten per km alleen bij **Alle tijd**) |
 
 Zie hoofdstuk 2, paragraaf 2.8.
 
@@ -252,6 +266,7 @@ Zie hoofdstuk 2, paragraaf 2.8.
 | Een verwijderde bekeuring terughalen | **Klantenportaal** → **Bekeuringen** → **Prullenbak** → **Terugzetten** (zelfde vinkje) |
 | Iets definitief uit de prullenbak halen | De prullenbak van het scherm → **Definitief verwijderen**, een selectie, of **Prullenbak leegmaken** — niet terug te draaien |
 | Een contract dat niet meer klopt vervangen | Bij het document → **Opnieuw genereren** |
+| Een foutmelding die je niet snapt | Hoofdstuk 12, deel 2: de korte zinnen en de tabellen per soort fout |
 
 Zie hoofdstuk 11 en hoofdstuk 12.
 
@@ -277,3 +292,7 @@ overal. Zie hoofdstuk 2, paragraaf 2.11.
 
 Dat is meestal geen storing maar een recht dat je mist. Vernieuwen helpt niet. Vraag de beheerder
 om het vinkje en noem erbij wat je wilde doen. Zie hoofdstuk 15.
+
+Staat de knop er wel, maar is hij **grijs**? Klik of tik er dan op: er verschijnt een tekstballon
+met het vinkje dat je mist, bijvoorbeeld *Hiervoor heeft u het recht 'Reserveringen beheren' nodig.*
+Dat werkt ook op een tablet en met alleen het toetsenbord (Tab, dan Enter of spatie).

@@ -77,8 +77,9 @@ Je vult in:
 1. **Selecteer documenten** — de documenten staan gegroepeerd onder **Contracten**,
    **Schadechecks** en **Overige documenten**. Vink aan wat mee moet. Alles wat je aanvinkt gaat
    in **één** e-mail als losse bijlagen.
-2. **E-mailadres ontvanger** — kies **Algemeen**, **Facturen**, of **Aangepast e-mailadres** en
-   typ het adres zelf.
+2. **E-mailadres ontvanger** — kies **Algemeen**, het adres van de klant zelf (*Klant: <adres>*),
+   **Facturen**, of **Aangepast e-mailadres** en typ het adres zelf. Het adres van de klant staat
+   er dus vanzelf bij, ook als de klant geen algemeen adres heeft.
 3. **E-mailsjabloon** — **Contract-e-mail**, **Schadecheck-e-mail** of
    **Gecombineerde documenten-e-mail**. Vink je meer dan één document aan, dan springt de app
    vanzelf naar het gecombineerde sjabloon.
@@ -86,7 +87,9 @@ Je vult in:
    De documenten zelf zijn altijd Nederlands.
 5. **Onderwerp** en **Bericht** kun je aanpassen voordat je verstuurt.
 
-Dan klik je op **E-mail versturen**. Tijdens het versturen staat er *"Versturen..."*.
+Dan klik je op **E-mail versturen**. Tijdens het versturen staat er *"Versturen..."*. Staat de knop
+grijs, dan staat er onder het venster wat er nog ontbreekt: *Nog nodig om te versturen:* met erachter
+*kies minstens één document*, *een geldig e-mailadres van de ontvanger* en/of *een onderwerp*.
 
 Gaat het goed, dan sluit het venster met de melding:
 
@@ -100,9 +103,9 @@ De app controleert vooraf drie dingen en weigert met een duidelijke melding:
 | **Geen documenten** — *"Selecteer minstens één document om te versturen"* | Vink een document aan |
 | *"Geen e-mailadres ontvanger geselecteerd"* | Kies een ontvanger |
 
-> **Let op:** in de keuzelijst staan het algemene adres en het factuuradres van de klant. Het
-> hoofdadres van de klant staat er níét bij. Heeft de klant alleen dat, kies dan
-> **Aangepast e-mailadres** en typ het over.
+> **Let op:** het venster blijft open als het versturen mislukt, en je leest dan in het Nederlands
+> wat er aan de hand is, bijvoorbeeld *De e-mail kon niet verstuurd worden. Controleer de
+> e-mailinstellingen onder Instellingen en probeer het opnieuw.* Zie 9.5.
 
 ---
 
@@ -127,12 +130,27 @@ Onder **Communicatie** staat een tabblad **E-maillogboek** — *Elke verstuurde 
 de nieuwste bovenaan.* Sinds oktober 2026 toont het de **echte verzendgeschiedenis**. (Tot dan stonden
 er drie vaste voorbeeldregels uit maart 2024 in, die niets met jouw werk te maken hadden.)
 
-Per regel zie je het onderwerp, de datum en de tijd, de soort (**APK**, **Onderhoud**, **Aangepast**
-of **GPS-activatie**; een andere soort toont zijn ruwe naam), de ontvanger — of, bij een hele
+Per regel zie je het onderwerp, de datum en de tijd, de soort (**APK**, **Onderhoud**, **Aangepast**,
+**GPS-activatie**, **Document per e-mail** of **Overige e-mail**), de ontvanger — of, bij een hele
 verzendronde, *N ontvangers · X verstuurd, Y mislukt* — en een label **verzonden**, **mislukt** of
-**deels mislukt**. Bij een mislukking staat eronder **Reden van mislukking:**, in de tekst zoals de
-log hem bewaart (meestal Engels). Is er nog niets verstuurd, dan staat er *Er zijn nog geen e-mails
-verstuurd*; lukt het laden niet, dan staat er een eigen foutregel.
+**deels mislukt**. Bij een mislukking staat eronder **Reden van mislukking:**, in het Nederlands,
+bijvoorbeeld *De e-mailserver weigerde de verbinding.* of *Geen geschikt e-mailadres gevonden.* Bij een
+hele ronde staat per reden hoe vaak die voorkwam, bijvoorbeeld *2x Geen geschikt e-mailadres gevonden.*
+De oorspronkelijke tekst van de mailserver blijft bewaard als **Technische melding:** achter de
+Nederlandse zin; heb je hulp van een beheerder nodig, geef dan die tekst door. Een oudere regel die nog
+zonder vaste code is bewaard, toont de algemene zin *Verzenden mislukt.* met de bewaarde tekst
+eronder. Is er nog niets verstuurd, dan staat er *Er zijn nog geen e-mails verstuurd*; lukt
+het laden niet, dan staat er *Het e-maillogboek kon niet worden geladen. Probeer het later
+opnieuw.*
+
+Achter elke regel staat de knop **Details**. Die opent **E-mail in het logboek** met het onderwerp,
+het resultaat, de soort, het tijdstip, de ontvanger (bij een ronde alle ontvangers en voertuigen),
+de reden in het Nederlands en de technische melding. Onderaan staat dat de inhoud van een verstuurde
+e-mail niet wordt bewaard: het logboek houdt alleen het resultaat bij. Wil je dezelfde mail opnieuw
+sturen, doe dat dan via **Meldingen versturen**.
+
+Verstuur je vanuit **Communicatie**, dan staat de nieuwe regel meteen in het logboek; je hoeft de
+pagina niet meer te vernieuwen.
 
 Het tabblad **Analyse** rekent zijn cijfers uit diezelfde regels: **Verstuurde e-mails**,
 **Mislukte e-mails**, **Verzendrondes** en **Rondes met mislukkingen**, en per soort (**APK-meldingen**,
@@ -155,20 +173,21 @@ verzendstatus van e-mail.
 
 ## 9.5 Als versturen mislukt
 
-Mislukken gebeurt buiten de app: bij de mailserver of bij de ontvanger. De app vertelt wat de
-mailserver terugzei. Die tekst is Engels.
+Mislukken gebeurt buiten de app: bij de mailserver of bij de ontvanger. De app vertaalt de reden
+naar een Nederlandse zin; de tekst van de mailserver zelf blijft in het logboek bewaard (9.4).
 
 | Wat je ziet | Wat het betekent | Wat je doet |
 |---|---|---|
-| *No valid email configuration for purpose: …* | Er is voor dit soort mail geen mailinstelling ingevuld | Beheerder: vul de mailinstellingen aan (hoofdstuk 10) |
-| *Email authentication failed. Your username or password is incorrect.* | De gebruikersnaam of het wachtwoord van de mailserver klopt niet | Beheerder |
-| *Your email provider has disabled basic authentication (username + password).* | De mailprovider accepteert deze manier van inloggen niet meer | Beheerder |
-| *Cannot connect to the email server. The server refused the connection.* | De mailserver is niet bereikbaar | Probeer later opnieuw; blijft het: beheerder |
-| *Connection to email server timed out.* | De mailserver reageerde niet op tijd | Probeer later opnieuw |
-| *Email server not found. The hostname could not be resolved.* | De naam van de mailserver klopt niet | Beheerder |
-| *Email was rejected by the server.* | De ontvanger of het bericht is geweigerd | Controleer het e-mailadres |
-| *SSL/TLS certificate validation failed.* | Beveiligingsprobleem met de mailserver | Beheerder |
-| *Failed to send email. Please check your email configuration in Settings.* | Verzamelmelding bij het mailen van documenten | Zie de regels hierboven |
+| *Er is geen werkende e-mailconfiguratie voor dit soort e-mail. Controleer de e-mailinstellingen.* | Er is voor dit soort mail geen mailinstelling ingevuld | Beheerder: vul de mailinstellingen aan (hoofdstuk 10) |
+| *Inloggen bij de e-mailserver is mislukt: gebruikersnaam of wachtwoord klopt niet.* | De gebruikersnaam of het wachtwoord van de mailserver klopt niet | Beheerder |
+| *De e-mailprovider accepteert dit wachtwoord niet; inloggen met alleen een wachtwoord kan zijn uitgeschakeld.* | De mailprovider accepteert deze manier van inloggen niet meer | Beheerder |
+| *De e-mailserver weigerde de verbinding.* of *Er kon geen verbinding worden gemaakt met de e-mailserver.* | De mailserver is niet bereikbaar | Probeer later opnieuw; blijft het: beheerder |
+| *De verbinding met de e-mailserver duurde te lang.* | De mailserver reageerde niet op tijd | Probeer later opnieuw |
+| *De e-mailserver is niet gevonden; controleer de servernaam in de e-mailinstellingen.* | De naam van de mailserver klopt niet | Beheerder |
+| *De e-mailserver heeft het bericht geweigerd; controleer het adres van de ontvanger en de afzender.* | De ontvanger of het bericht is geweigerd | Controleer het e-mailadres |
+| *Geen geschikt e-mailadres gevonden.* | De klant heeft geen bruikbaar adres | Vul het e-mailadres van de klant aan (hoofdstuk 3) |
+| *Het adres of het onderwerp bevat een regeleinde en is daarom niet verstuurd.* | Er zit een regelovergang in het adres of onderwerp | Typ het opnieuw, zonder Enter |
+| *De e-mail kon niet verstuurd worden. Controleer de e-mailinstellingen onder Instellingen en probeer het opnieuw.* | Verzamelmelding bij het mailen van documenten | Zie de regels hierboven |
 
 **Wat je zelf kunt doen bij het mailen van documenten:** het venster blijft openstaan als het
 mislukt. Er is geen wachtrij en de app probeert het niet vanzelf opnieuw. Controleer het
@@ -179,12 +198,35 @@ de mailinstellingen en moet er een beheerder bij.
 verstuurd. Controleer de e-mailinstellingen en stuur de uitnodiging opnieuw."* Het account is
 dan wél aangemaakt. Gebruik daarna de knop **Uitnodiging opnieuw sturen**.
 
-**Bij APK- en onderhoudsherinneringen** meldt de app na afloop
-**Meldingen succesvol verstuurd** met daaronder *"3 e-mails verstuurd, 2 mislukt"*.
+**Bij APK- en onderhoudsherinneringen en vrije berichten** (scherm **Communicatie**) zegt de melding
+na afloop eerlijk wat er gebeurd is. Er zijn drie uitkomsten:
 
-> **Let op:** die kop zegt "succesvol verstuurd" ook als er nul mails uit zijn gegaan. Lees
-> altijd het getal achter "verstuurd". Staat daar 0, dan is er niets verzonden. De reden per
-> mislukte mail wordt in dit scherm niet getoond.
+| Melding | Betekent |
+|---|---|
+| **Meldingen verstuurd** — *3 e-mails verstuurd* | Alles is verzonden |
+| **Gedeeltelijk verstuurd** — *3 e-mails verstuurd, 2 e-mails mislukt. De redenen staan in het E-maillogboek.* | Een deel is niet aangekomen; kijk in het logboek (9.4) |
+| **Er is niets verstuurd** — *2 e-mails mislukt* met de reden erachter, in rood | Er is niets uitgegaan |
+
+Vroeger stond er altijd **Meldingen succesvol verstuurd**, ook als er geen enkele mail uit was
+gegaan. Dat is verholpen. Bij **Er is niets verstuurd** blijven de ontvangers, het onderwerp en de
+tekst in het formulier staan, zodat je niet opnieuw hoeft te beginnen.
+
+**De voorvertoning is persoonlijk.** Klik je op **Voorvertonen & versturen naar … voertuigen**, dan
+laat het venster **E-mailvoorvertoning** de mail zien zoals één ontvanger hem krijgt: klik op een
+ontvanger en je ziet *Zo ziet <naam> de e-mail*, met zijn eigen kenteken en klantnaam en niet meer
+de voorbeeldwaarden. Een voertuig zonder huurder krijgt geen klantmail, maar een melding aan
+kantoor (*Zo ziet kantoor de melding over dit voertuig*). Staat er geen bruikbaar e-mailadres, dan staat
+er *Geen geschikt e-mailadres: wordt niet verstuurd. Kies een ander adres of een andere ontvanger.* Het
+adres dat je in de voorvertoning kiest, is ook het adres waarnaar echt verstuurd wordt. Is een
+veld voor een ontvanger leeg, dan staat er *Leeg voor deze ontvanger:* met de naam van het veld.
+
+**Veel ontvangers.** Verstuur je 25 e-mails of meer in één keer, dan staat er een waarschuwing **Let op: veel
+ontvangers**, en de verzendknop blijft grijs totdat je **Ik heb de tekst en de ontvangers
+gecontroleerd** hebt aangevinkt.
+
+**Een grijze voorvertoonknop** heeft een regel eronder die zegt wat er nog ontbreekt: *Kies minstens één
+ontvanger (klant of voertuig) om te kunnen voorvertonen.* of *Vul een onderwerp en een bericht in, of
+kies een sjabloon, om te kunnen voorvertonen.*
 
 Op de voertuigkaart luidt de foutmelding **Fout bij versturen APK-herinnering** — *"APK-herinnering
 versturen mislukt. Probeer het opnieuw."*
@@ -239,7 +281,26 @@ je met **E-mailsjablonen opslaan**. Vereist het recht **Instellingen beheren**.
 Vereist het recht **E-mailsjablonen beheren**.
 
 De plaatshouders worden bij het versturen automatisch ingevuld met de gegevens van de
-reservering en de klant.
+reservering en de klant. Je mag ze met één accolade (`{customerName}`) of met twee schrijven; beide
+werken, in elk scherm.
+
+**Welk sjabloon je kunt kiezen.** Bij het versturen van **APK-herinneringen** zie je de sjablonen van
+de categorie APK en de algemene sjablonen; bij **Onderhoud** die van Onderhoud en de algemene; bij
+**Aangepast bericht** alle sjablonen behalve de vaste systeemsjablonen. De sjablonen voor het
+klantenportaal (uitnodiging, wachtwoord, onderhoud, wijziging) zie je daar nooit. In de
+**Sjabloonbouwer** staan ze wel, met een Nederlandse naam zoals *Portaal: uitnodiging*, het label
+**PORTAAL** en een eigen categorie in het filter. Je kunt zo'n portaalsjabloon bewerken en opslaan; een nieuw
+portaalsjabloon maak je er niet.
+
+**Bewerken en dupliceren.** Klik je op **Bewerken** of op dupliceren bij een sjabloon, dan scrolt de
+pagina naar de sjabloonbouwer en staat de cursor in de naam. Een gedupliceerd sjabloon heet *<naam>
+(kopie)*. Na opslaan of verwijderen klopt de lijst direct.
+
+**Placeholders die nergens worden ingevuld.** De bouwer biedt een paar velden aan die de app bij het
+versturen niet invult: de naam van het bedrijf, de onderhoudsdatum, het e-mailadres en telefoonnummer van de
+klant, en de begin- en einddatum van de reservering. De voorvertoning waarschuwt daarvoor (*Deze
+placeholders worden nergens ingevuld en gaan zo naar de klant: …*). Gebruik ze dus niet, tot de
+eigenaar heeft besloten of de app ze moet invullen.
 
 ---
 
@@ -378,7 +439,9 @@ Voor het boeken en afwijzen van facturen is het recht *kosten beheren* nodig.
 
 ### Het logboek
 
-Op dezelfde kaart staat naast **Nu ophalen** de knop **Logboek**. Die opent een venster met
+Op dezelfde kaart staat naast **Nu ophalen** de knop **Logboek**. Die staat ook in het venster
+**Ontvangen facturen**, naast **Nu ophalen**, voor wie **Kosten beheren** of **Instellingen beheren**
+heeft. Het opent een venster met
 drie tabbladen dat laat zien wat de app uit het postvak heeft gehaald. Je verandert er
 niets mee; het is alleen om terug te kijken.
 

@@ -57,8 +57,19 @@ en **Schadecheck-sjablonen**.*
 **Documenten → Documentbibliotheek**
 Het volledige overzicht, gegroepeerd per voertuig. Bovenaan zie je het aantal voertuigen, het
 aantal documenten en het aantal documenttypen. Je filtert met **Alle voertuigen** en
-**Alle documenttypen**, of je zoekt op bestandsnaam. Staat er niets: *"Geen documenten gevonden
-die overeenkomen met je filters."*
+**Alle documenttypen**, of je zoekt in **Documenten zoeken...**. Dat zoekveld kijkt niet alleen naar de
+bestandsnaam, maar ook naar het kenteken (met of zonder streepjes), het merk, het model en de naam
+van het documenttype zoals jij die ziet. De groepen die bij je zoekopdracht passen, klappen zelf
+open. Met **Alles uitklappen** en **Alles inklappen** zet je alle voertuiggroepen in één keer
+open of dicht. De groepen staan op kenteken gesorteerd. Filter je zo dat er op de huidige pagina
+niets meer staat, dan springt de lijst terug naar een pagina met inhoud, in plaats van een leeg
+scherm te tonen. Staat er niets: *"Geen documenten gevonden die overeenkomen met je filters."*
+
+**Document uploaden.** Rechtsboven staat de knop **Document uploaden**. Je kiest eerst het
+voertuig; het formulier verschijnt dan meteen in hetzelfde venster, zonder tweede knop of tweede
+venster. Heb je in de bibliotheek al op een voertuig gefilterd, dan staat dat voertuig er al
+ingevuld. De knop is voor wie **Documenten bewerken en genereren** heeft (8.7); zonder dat
+vinkje staat hij grijs, en als je erop tikt of klikt zegt de app welk vinkje je mist.
 
 **Bij het voertuig**
 Open het voertuig en ga naar het tabblad **Documenten**. Je ziet alleen wat bij deze auto hoort.
@@ -68,10 +79,13 @@ Open de reservering en klik op de knop om documenten te openen. Je krijgt het ve
 **Reserveringsdocumenten** — *"Documenten specifiek gekoppeld aan deze reservering (contracten,
 schaderapporten, foto's)"*. Dit is de plek waar je ook ziet of een document gemaild is.
 
-> **Let op:** de kopjes boven de groepen in dit venster zijn nog de interne namen van de app:
-> `Contract (Unsigned)`, `Damage Check (Pickup)`, `transport_report`. Dat is dezelfde lijst als
-> in de documentbibliotheek en er staat niets anders in dan je verwacht — alleen de
-> benaming is niet vertaald.
+De kopjes boven de groepen in dit venster, en de omschrijvingen eronder, staan in het Nederlands:
+**Contract (niet ondertekend)**, **Contract (ondertekend)**, **Schadecheck (ophalen)**,
+**Schadecheck (inleveren)** en **Transportrapport**. Dat geldt ook in de documentbibliotheek, op
+de voertuigkaart en in de lijst met documenten bij de reservering. Kentekens in de titels staan
+met streepjes. De opmerking bij een document, bijvoorbeeld *Automatisch aangemaakt contract (niet
+ondertekend) voor reservering #3366*, is ook Nederlands. Het opgeslagen bestand zelf verandert er
+niet door; alleen wat je op het scherm leest.
 
 ---
 
@@ -126,6 +140,30 @@ De pop-up sluit automatisch."* Lukt dat niet, dan krijg je een van deze twee mel
 Beide zijn een browserinstelling, geen fout in de app. Downloaden en daarna afdrukken werkt
 altijd.
 
+### De interactieve schadecheck invullen
+
+Een schadecheck maak je op het tabblad **Documenten** van de voertuigkaart (knop **Nieuwe check**, hoofdstuk 4,
+paragraaf 4.10) of tijdens het ophalen en inleveren. Wat daarin is verbeterd:
+
+- **Het diagram.** Heeft de auto geen eigen diagram voor zijn model, dan toont de app het diagram van
+  een ander model, met de melding **Geen diagram voor dit model**, waarin staat van welk merk en
+  model het is: markeringen kunnen dan afwijken van de echte carrosserie. Is het opgeslagen diagram
+  onbruikbaar, bijvoorbeeld een te platte strook, dan staat er een rood blok **Dit diagram is niet
+  bruikbaar** met de afmetingen erbij. Wie diagrammen beheert (**Documenten** → **Schadecheck-sjablonen**)
+  kan zo'n plaatje niet meer opslaan: de app weigert een afbeelding die te plat of te klein is om
+  schade op te markeren.
+- **Wat je al hebt aangeklikt.** Een gekozen antwoord heeft een vinkje en een rand, en een leeg veld
+  zegt *niet ingevuld*. Per blok staat hoeveel je al hebt gedaan, bijvoorbeeld *3 van 8 ingevuld*.
+- **Alles goed.** Per blok staat een knop **Alles goed**. Die vult alleen de velden die nog leeg zijn
+  met de normale waarde (bijvoorbeeld schoon, goed, ja). Wat je al had ingevuld, blijft staan.
+- **Opslaan.** Terwijl de check wordt opgeslagen draait er een rondje en staat er *Bezig met
+  opslaan…*. Daarna staat er *Opgeslagen om 14:32. De PDF is klaar.* De PDF zelf open je met de
+  eigen knop of onder **Documenten** bij het voertuig. Je krijgt geen melding **Check geladen** meer
+  voor de check die je net zelf hebt opgeslagen.
+- **Hoe de check bij het inleveren wordt gebruikt.** Boven het formulier staat uitgelegd: *de
+  schadecheck-PDF die bij het inleveren wordt gemaakt, neemt de laatst opgeslagen check van de
+  reservering over: sla de check dus eerst op.*
+
 ---
 
 ## 8.5 Sjablonen: wie ze beheert en wat er mis kan gaan
@@ -140,13 +178,36 @@ tabbladen naast de bibliotheek:
 | **Barcodelabels** | Sleutel- en voertuiglabels | Bekijken mag iedereen; wijzigen vraagt **PDF-sjablonen beheren** |
 | **Schadecheck-sjablonen** | Het schadecheckformulier en de voertuigdiagrammen | Recht **Schadecontroles beheren** |
 
+Heb je het vinkje **PDF-sjablonen beheren** niet, dan zijn de tabbladen **Contractsjablonen** en
+**Transportrapportsjablonen** grijs. Tik of klik erop en de app zegt welk vinkje je mist; er
+opent niets. Zo zie je dat de tabbladen bestaan, en weet je bij wie je ze moet aanvragen. Net zo
+staat **Document uploaden** grijs zonder **Documenten bewerken en genereren**.
+
 Een contractsjabloon open je via **Sjablooneditor openen**. In de editor sleep je velden op de
 achtergrond. Eén sjabloon is de standaard; die herken je aan het label **Standaard**, en je
 stelt hem in met **Als standaard instellen**.
 
 **Dit is de belangrijkste regel over sjablonen:** een sjabloon zonder velden levert een blanco
 contract op, en daarom weigert de app het — liever een duidelijke fout dan een onbruikbaar
-bestand.
+bestand. Je kunt een sjabloon zonder velden dan ook niet op **Als standaard instellen** zetten: er
+staat *Een sjabloon zonder velden kan niet het standaardsjabloon zijn: elk contract dat ermee wordt
+gemaakt zou leeg zijn. Plaats eerst minstens één veld.* En leeg je het standaardsjabloon, dan
+staat er een rood blok **Dit standaardsjabloon heeft geen velden** en krijg je een waarschuwing bij
+het opslaan.
+
+**Een sjabloon bewerken zonder iets kwijt te raken.** In de sjablooneditor staat een regel die zegt
+hoe het ervoor staat: *Er zijn niet-opgeslagen wijzigingen.* of *Alle wijzigingen zijn opgeslagen.*
+Sluit je de editor terwijl er nog niet-opgeslagen wijzigingen zijn (met het kruisje, met Escape
+of door naast het venster te klikken), dan vraagt de app eerst **Wijzigingen
+niet opgeslagen** — *Je hebt wijzigingen aan dit sjabloon die nog niet zijn opgeslagen. Als je de
+editor nu sluit, gaan ze verloren.* Kies **Verder bewerken** of **Wijzigingen weggooien**. Kies je in
+de editor een ander sjabloon terwijl er wijzigingen openstaan, dan komt dezelfde vraag, met dezelfde twee
+knoppen. Dit geldt voor de editor van het contractsjabloon, van het transportrapportsjabloon en van
+het barcodelabel.
+
+> **Escape werkt soms een moment niet.** Direct na **Opslaan** staat er een korte melding in beeld,
+> en die vangt de eerste Escape op. Wacht een paar seconden of klik op **Sluiten**. Heb je net een
+> PDF bekeken, dan gaat het toetsenbord weer naar het venster zelf zodra de PDF geladen is.
 
 Mislukt het contract bij het **ophalen** (5.7), dan staat er sinds kort een van deze Nederlandse
 zinnen in het venster **Contract kon niet gemaakt worden**, elk met wat je eraan doet:
@@ -169,11 +230,12 @@ ingevuld. Het recht **PDF-sjablonen beheren** heb je nodig om een sjabloon te wi
 plaatsen of een sjabloon op **Standaard** te zetten; mis je dat recht, haal er dan een collega bij
 die het wel heeft.
 
-**Let op:** genereer je een contract niet bij het ophalen maar met de knop **Opnieuw genereren**
-uit de documentbibliotheek (8.6), dan zie je bij dezelfde soort fout nog de kale, Engelse
-servertekst — bijvoorbeeld *"Template not found"* of *"No contract template has been configured.
-Create one under Settings → PDF templates before generating a contract."* Dat "Settings" in die
-laatste zin klopt niet met het menu: de sjablonen staan onder **Documenten → Contractsjablonen**.
+Genereer je een contract niet bij het ophalen maar met de knop **Opnieuw genereren** uit de
+documentbibliotheek (8.6), dan krijg je bij dezelfde soort fout ook een Nederlandse zin, bijvoorbeeld
+*Er is geen contractsjabloon ingesteld. Maak er een aan onder Documenten → Contractsjablonen.* of
+*Het contractsjabloon bestaat niet meer. Kies een ander sjabloon onder Documenten →
+Contractsjablonen.* Onder **Opnieuw genereren is niet gelukt** staat dus nooit meer een Engelse tekst met
+*400:* ervoor.
 
 Staat er geen sjabloon als standaard ingesteld, dan geeft de app tegenwoordig een duidelijke fout
 in plaats van zelf een sjabloon te raden — zie de tweede zin in de tabel hierboven. Zorg dus dat
@@ -194,13 +256,12 @@ Een document krijgt de markering **Verouderd** in drie gevallen:
    op het contract staan: het voertuig, de klant, de chauffeur, de datums, de prijs, het
    contractnummer, de kilometerstanden, de brandstofniveaus, de werkelijke ophaal- en
    innamedatum, het afleveradres en de notities. De reden die erbij staat is
-   *"the reservation changed after this document was generated"*.
+   *de reservering is gewijzigd nadat dit document was gemaakt*.
 2. **Er is een nieuwere versie gemaakt.** De vorige versie krijgt dan de reden
-   *"superseded by a newer version"*.
+   *vervangen door een nieuwere versie*.
 3. **Een overdracht is teruggedraaid** (hoofdstuk 5, paragraaf 5.14). Draai je een ophaling terug,
    dan krijgt het niet-ondertekende contract van die reservering de markering; draai je een inname
-   terug, dan krijgt de schadecheck van de inname hem. De reden die erbij staat is *"handover
-   reverted"*. Het document wordt niet verwijderd, en een annulering terugdraaien laat de
+   terug, dan krijgt de schadecheck van de inname hem. De reden die erbij staat is *de overdracht is teruggedraaid*. Het document wordt niet verwijderd, en een annulering terugdraaien laat de
    documenten ongemoeid.
 
 Je herkent het aan een oranje label bij het document:

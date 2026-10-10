@@ -97,7 +97,7 @@ fiscale mobiliteitscheck staan onderaan in een eigen tabel.
 | Vinkje | Wat het toestaat | Welk menu-item je ermee krijgt |
 |---|---|---|
 | **Voertuigen bekijken** | Het wagenpark inzien, een voertuigkaart openen, de barcode bekijken | **Voertuigen**, **Scannen** |
-| **Voertuigen beheren** | Alles hierboven, plus toevoegen, wijzigen, verwijderen, kilometerstand en brandstof bijwerken, bulkimport, de zwarte lijst | **Voertuigen**, **Scannen** |
+| **Voertuigen beheren** | Alles hierboven, plus toevoegen, wijzigen, verwijderen, kilometerstand en brandstof bijwerken, bulkimport, de zwarte lijst, en een auto in de werkplaats **Binnen melden** (hoofdstuk 7, paragraaf 7.8) | **Voertuigen**, **Scannen** |
 | **Klanten bekijken** | De klantendatabase en klantkaarten inzien | **Klanten** |
 | **Klanten beheren** | Alles hierboven, plus klanten en chauffeurs aanmaken, wijzigen en verwijderen | **Klanten** |
 | **Reserveringen bekijken** | De kalender, de lijst en de details van een verhuring lezen | **Reserveringen**, **Transporten** |
@@ -110,7 +110,7 @@ fiscale mobiliteitscheck staan onderaan in een eigen tabel.
 
 | Vinkje | Wat het toestaat | Menu-item |
 |---|---|---|
-| **Onderhoud beheren** | De werkplaatskalender, onderhoud plannen, blokken plaatsen en afronden, vervangers toewijzen | **Onderhoud** |
+| **Onderhoud beheren** | De werkplaatskalender, onderhoud plannen, blokken plaatsen en afronden (ook met **Afronden** in het onderhoudsoverzicht), vervangers toewijzen | **Onderhoud** |
 | **Kosten beheren** | Kosten registreren en inzien, facturen scannen | **Kosten** |
 | **Rapporten bekijken** | De rapportenmodule lezen | **Rapporten** |
 | **Rapporten beheren** | Alles hierboven, plus eigen rapporten opslaan en beheren | **Rapporten** |
@@ -131,8 +131,8 @@ fiscale mobiliteitscheck staan onderaan in een eigen tabel.
 |---|---|---|
 | **Klantportaal bekijken** | Het portaalbeheer lezen: aanvragen, accounts, activiteit | **Klantenportaal** |
 | **Klantportaal beheren** | Alles hierboven, plus aanvragen afhandelen, accounts uitnodigen, auto's online zetten, blokkades beheren | **Klantenportaal** |
-| **Boetes bekijken** | Bekeuringen inzien | — (binnen **Klantenportaal**) |
-| **Boetes beheren** | Bekeuringen invoeren, toewijzen, doorbelasten en verwijderen | — (binnen **Klantenportaal**) |
+| **Boetes bekijken** | Bekeuringen inzien | **Bekeuringen** (en binnen **Klantenportaal**) |
+| **Boetes beheren** | Bekeuringen invoeren, toewijzen, doorbelasten en verwijderen | **Bekeuringen** (en binnen **Klantenportaal**) |
 | **Meldingen beheren** | APK-, garantie- en onderhoudsherinneringen versturen | **Communicatie** |
 | **E-mailsjablonen beheren** | De sjabloonbouwer onder **Communicatie** | **Communicatie** |
 
@@ -154,7 +154,7 @@ opent.
 
 | Vinkje | Wat het toestaat | Waar |
 |---|---|---|
-| **Fiscaal bekijken** | Het overzicht met de tegels per status, het tabblad **Fiscaal** bij een voertuig, de kaart **Fiscaal gebruik** bij een reservering en het fiscale maandrapport | **Klantenportaal** → **Fiscale check**, **Rapporten** → **Fiscaal** |
+| **Fiscaal bekijken** | Het overzicht met de tegels per status, het tabblad **Fiscaal** bij een voertuig, de kaart **Fiscaal gebruik** bij een reservering en het fiscale maandrapport. Heb je dit vinkje maar geen rapportvinkje, dan toont **Rapporten** alleen de fiscale check, met de knop **Fiscale check** | **Klantenportaal** → **Fiscale check**, **Rapporten** → **Fiscaal** |
 | **Fiscale beoordelingen en gegevens beheren** | Een beoordeling bevestigen, een voertuiggegeven corrigeren en de beoordelingswachtrij afwerken | Het tabblad **Fiscaal**, de kaart **Fiscaal gebruik**, de **Wachtrij** |
 | **Fiscale configuratie voorbereiden** | Een nieuwe versie van de fiscale regels voorbereiden | **App-instellingen** → **Klantenportaal** → **Fiscale check** |
 | **Fiscale configuratie goedkeuren** | Een voorbereide versie goedkeuren | Idem |
@@ -353,8 +353,13 @@ scherm.
 **Een knop die je niet mag gebruiken, blijft zichtbaar maar staat uit.** Op steeds meer schermen
 zie je nu een knop die er wel gewoon staat maar **grijs** is. Wijs je hem aan, of spring je er met
 Tab naartoe, dan verschijnt een tekstballon die het ontbrekende recht noemt, bijvoorbeeld
-*"Hiervoor heeft u het recht 'Reserveringen beheren' nodig."* Klikken doet dan niets: geen
-foutmelding, geen half uitgevoerde actie. Dit vervangt voor deze knoppen de oude melding uit 15.8,
+*"Hiervoor heeft u het recht 'Reserveringen beheren' nodig."* Op een tablet of telefoon, waar
+je niets kunt aanwijzen, tik je op de knop: dan verschijnt dezelfde tekstballon. Met het toetsenbord
+spring je er met Tab naartoe en open je hem met Enter of spatie. De ballon noemt het vinkje; er
+gebeurt verder niets: geen foutmelding, geen half uitgevoerde actie. Hetzelfde geldt voor een tabblad
+dat je niet mag openen, zoals **Contractsjablonen** en **Transportrapportsjablonen** bij het scherm
+**Documenten** zonder het vinkje **PDF-sjablonen beheren** (hoofdstuk 8, paragraaf 8.5): het tabblad
+staat er grijs, en tikken of klikken zegt welk vinkje je mist. Dit vervangt voor deze knoppen de oude melding uit 15.8,
 punt 2 — die melding kan nog wel voorkomen bij een knop die deze behandeling nog niet heeft
 gekregen.
 
@@ -397,6 +402,8 @@ boeking, en die vraagt **Reserveringen beheren**.
 | Nieuw onderhoud inplannen (kop-knop, dag-tegel "+", vanuit een leeg dag-venster) | Reserveringen beheren | Nee |
 | Een bestaand onderhoudsblok bewerken (datum, type, notities) | Reserveringen beheren | Nee |
 | Onderhoud **afronden**: het blok sluiten, de werkplaats-vlag wissen, de vervanger terugzetten | Onderhoud beheren **of** Reserveringen beheren | Ja |
+| Vanuit het onderhoudsoverzicht (**Lijstweergave** → **Gepland**): **Afronden** | Onderhoud beheren **of** Reserveringen beheren | Ja |
+| Vanuit het onderhoudsoverzicht: **Binnen melden** (blok op *Binnen*, auto in onderhoud) | Voertuigen beheren | Nee: dit loopt via de route waarmee een auto in onderhoud wordt gezet, en die vraagt dit vinkje. Een werkplaatsprofiel (Voertuigen beheren, Onderhoud beheren, Kosten beheren) heeft het |
 | Bij het afronden ook de APK-datum, kilometerstand of laatste-onderhoud-datum van het voertuig bijwerken (zelfde formulier, dezelfde handeling) | Onderhoud beheren **of** Reserveringen beheren | Ja — sinds oktober 2026; vroeger had je hier ook Voertuigen beheren voor nodig |
 | Bij het afronden een APK-formulier uploaden (zelfde formulier, dezelfde handeling) | Onderhoud beheren **of** Reserveringen beheren | Ja — sinds oktober 2026; vroeger had je hier ook Documenten bewerken en genereren voor nodig |
 | Een onderhoudsblok verwijderen | Reserveringen beheren | Nee |

@@ -28,7 +28,9 @@ Staat er onder het e-mailadres een blauw label **Portaal (1)**, dan heeft deze k
 portaalaccounts (3.7).
 
 Onderaan staat hoeveel regels je ziet, bijvoorbeeld *1-10 van 300 getoond*, met **Vorige** en
-**Volgende**.
+**Volgende**. Ernaast staat *Pagina 1 van 30* met een invulveld **Pagina**: typ een paginanummer
+en druk op Enter om er meteen heen te springen. Typ je een nummer dat niet bestaat, dan kom je
+op de laatste (of eerste) pagina uit.
 
 ![De klantendatabase met het zoekveld en de filters](afbeeldingen/06-klanten.png)
 *De **Klantendatabase**: zoekveld, sorteerkeuze en **Filters** boven de lijst; achter elke regel
@@ -75,7 +77,10 @@ Sluit het venster met **Sluiten** of **Terug**.
 
 1. Klik links op **Klanten**.
 2. Klik rechtsboven op **Klant toevoegen**. Het venster **Nieuwe klant toevoegen** opent.
-3. Vul het tabblad **Basisgegevens** in:
+3. Boven de tabbladen staat een kort blokje dat uitlegt wat je minimaal nodig hebt: alleen de naam
+   is verplicht; voor een reservering heb je ook een telefoonnummer en e-mailadres nodig, en voor
+   het contract (pdf) horen adres, postcode, plaats, bedrijfsnaam en rijbewijsnummer erbij.
+   Vul het tabblad **Basisgegevens** in:
    - **Klanttype** — kies **Zakelijk** of **Particulier**. Standaard staat hij op **Zakelijk**.
    - **Debiteurnummer** — het nummer waarop de boekhouding deze klant kent.
    - **Volledige naam** — het enige veld dat écht verplicht is.
@@ -98,13 +103,21 @@ Je krijgt de melding **Klant succesvol aangemaakt** — *De klant is toegevoegd 
 
 **Twee dingen om te weten:**
 
-- De app zet de naam om naar normale schrijfwijze met hoofdletters per woord. Typ je
-  *HANDLEIDING-KLANT BV*, dan staat er daarna *Handleiding-klant Bv*. Wil je de exacte
-  schrijfwijze van een bedrijfsnaam bewaren, zet die dan ook in **Bedrijfsnaam** op het tabblad
-  **Bedrijf**.
-- Vul je de naam niet of te kort in, dan verschijnt onder het veld de Engelse melding
-  *"Name must be at least 2 characters."* Dat betekent: de naam moet minstens twee tekens
-  hebben.
+- De app zet een naam die je helemaal in kleine letters typt om naar hoofdletters per woord. Typ
+  je *jan van der berg*, dan staat er *Jan van der Berg*; *van*, *de*, *der*, *den*, *het*, *ten*
+  en *ter* blijven klein. Een woord waar je zelf al een hoofdletter midden in of een punt in
+  hebt gezet, laat de app staan zoals je het typte. *DHL Express B.V.*, *ABN AMRO* en *AUDIT
+  Testklant B.V.* blijven dus precies zo staan. Typ je een naam helemaal in hoofdletters, dan
+  blijft die ook zo: de app maakt er niets kleiner van.
+- Vul je de naam niet of te kort in, dan verschijnt onder het veld de melding *De naam moet
+  minimaal 2 tekens bevatten*.
+- De voorbeelden in de lege velden zijn Nederlands, bijvoorbeeld *Jan Jansen*, *Hoofdstraat 1*,
+  *jan.jansen@voorbeeld.nl* en *Voorbeeld Transport B.V.* Het zijn alleen voorbeelden; ze worden
+  niet opgeslagen.
+- Sluit je het venster terwijl je al iets hebt getypt, dan vraagt de app **Wijzigingen
+  verwerpen?** — *Je hebt wijzigingen gemaakt die nog niet zijn opgeslagen. Als je sluit, gaan ze
+  verloren.* Met **Verder bewerken** blijf je in het formulier, met **Verwerpen** sluit je het.
+  Dat geldt ook bij **Klant bewerken**.
 
 ---
 
@@ -186,7 +199,8 @@ niet ongedaan worden gemaakt."* Een chauffeur gaat **niet** naar de prullenbak �
 weg. Twijfel je, zet hem dan op **Inactief** in plaats van hem te verwijderen.
 
 Staan er veel chauffeurs, gebruik dan het zoekveld *Zoek chauffeurs op naam, e-mail, telefoon of
-rijbewijs...* boven de lijst.
+rijbewijs...* boven de lijst. Onder de lijst staat bijvoorbeeld *Pagina 1 van 2 (12 chauffeurs)*
+met **Vorige** en **Volgende**.
 
 ---
 
@@ -269,8 +283,8 @@ aangemaakte kaart. Een klant met geschiedenis laat je staan.
 
 1. Klik in de klantenlijst bij de juiste regel op **Verwijderen**.
 2. Je krijgt het venster **Klant verwijderen**. Daarin staat eerst *Dit verwijdert ook:* met de
-   lijst van wat er aan deze klant hangt — bijvoorbeeld *6 reserveringen*, *1 chauffeurs*,
-   *1 portaalinstellingen*. Hangt er niets aan, dan staat er *Er is niets anders aan deze klant
+   lijst van wat er aan deze klant hangt — bijvoorbeeld *6 reserveringen*, *1 chauffeur*,
+   *1 portaalinstelling*. Hangt er niets aan, dan staat er *Er is niets anders aan deze klant
    gekoppeld.*
 3. Eronder staat *Een beheerder kan de klant daarna terugzetten vanuit de prullenbak.*
 4. Typ de naam van de klant over in het veld **Typ <naam> om te bevestigen**. Zolang die niet
@@ -318,6 +332,10 @@ Dit is een echte blokkade, geen waarschuwing zoals in 3.4: opslaan lukt pas als 
 nummer intypt of het veld leeg maakt. Het maakt niet uit of je het net iets anders schrijft —
 hoofdletters of een spatie erbij maken geen verschil, de app vergelijkt op het kale nummer.
 Verbeter je het veld, dan verdwijnt de foutmelding vanzelf bij de eerstvolgende toets.
+
+Je krijgt alleen deze veldmelding, geen rode melding rechtsboven erbij. Zat je op een ander
+tabblad toen je op **Klant toevoegen** klikte, dan springt de app terug naar **Basisgegevens** en
+staat de cursor in het veld **Debiteurnummer**.
 
 **Zit de andere klant in de prullenbak?** Dan blijft zijn nummer toch bezet, en zie je in plaats
 daarvan:

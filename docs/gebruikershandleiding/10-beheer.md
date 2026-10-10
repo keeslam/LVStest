@@ -37,14 +37,20 @@ Klik op **Gebruiker toevoegen**. Je krijgt het formulier **Nieuwe gebruiker toev
 | Veld | Toelichting |
 |---|---|
 | **Gebruikersnaam** | De inlognaam. Kan later niet meer gewijzigd worden. |
-| **Wachtwoord** | Bij een nieuwe gebruiker verplicht, minimaal 6 tekens; laat je het leeg, dan staat er *Een wachtwoord is verplicht*. Bij het bewerken van een bestaande gebruiker: leeg laten om het huidige wachtwoord te behouden. |
+| **Wachtwoord** | Bij een nieuwe gebruiker verplicht; laat je het leeg, dan staat er *Een wachtwoord is verplicht*. Het formulier controleert de lengte niet, maar kies hier hetzelfde als bij je eigen wachtwoord: minimaal 8 tekens, met een kleine letter, een hoofdletter en een cijfer (de minimale lengte is nog een open vraag aan de eigenaar). Bij het bewerken van een bestaande gebruiker: leeg laten om het huidige wachtwoord te behouden. |
 | **Volledige naam** | De naam die overal in de app bij wijzigingen komt te staan. |
 | **E-mail** | Het adres van de medewerker. |
 | **Rol** | Zie hieronder. |
 | **Actief** | *"Gebruiker kan inloggen wanneer actief"*. Zet je dit uit, dan kan de medewerker niet meer inloggen, maar blijft alles wat hij ooit deed zichtbaar in de geschiedenis. |
 | **Prijzen verbergen** | *"Gebruiker ziet nergens in de app prijzen/geldbedragen"*. |
 
-Opslaan met **Gebruiker aanmaken** of **Gebruiker bijwerken**.
+Opslaan met **Gebruiker aanmaken** of **Gebruiker bijwerken**. Het lukt, dan staat er **Gelukt** met
+de naam erbij, bijvoorbeeld *Gebruiker "jan" is aangemaakt* of *Gebruiker "jan" is opgeslagen*. Lukt
+het niet, dan staat er in het Nederlands waarom. Een gebruikersnaam die al bestaat geeft *Deze
+gebruikersnaam is al in gebruik* onder het veld. Klopt er meer dan één veld niet (bijvoorbeeld de
+gebruikersnaam is te kort en het wachtwoord ontbreekt), dan staan alle meldingen tegelijk onder hun
+veld, zoals *De gebruikersnaam moet minstens 3 tekens hebben* en *Vul een geldig e-mailadres in*. Je
+hoeft ze niet één voor één af te werken.
 
 **Een leeg wachtwoordveld verandert nooit iets.** Sinds oktober 2026 geldt bij het bijwerken van een
 gebruiker: staat het veld leeg (of staan er alleen spaties), dan blijft het wachtwoord zoals het was.
@@ -53,7 +59,11 @@ hersteld. Een nieuw wachtwoord voor een **andere** gebruiker instellen kan allee
 ander account dat het probeert, krijgt *Only an administrator can set another account's password*.
 
 **Een medewerker die weggaat, zet je op inactief.** Verwijderen kan ook, maar dan is de link
-tussen zijn naam en zijn wijzigingen minder duidelijk. De bevestiging is: *"Weet je zeker dat je
+tussen zijn naam en zijn wijzigingen minder duidelijk. Het verwijderknopje achter je **eigen** regel
+en achter elke **beheerder** is grijs en kan niet worden aangeklikt; houd je de muis erboven, dan staat
+er *Je kunt je eigen account niet verwijderen* of *Een beheerdersaccount kan hier niet worden
+verwijderd; wijzig eerst de rol*. Je kunt dus niet per ongeluk de eigenaar uit de app verwijderen.
+Moet er toch een beheerder weg, zet zijn rol dan eerst om. De bevestiging is: *"Weet je zeker dat je
 gebruiker "…" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."*
 
 ### Rollen
@@ -110,7 +120,12 @@ geen van beide vinkjes. Wie contracten moet kunnen uitdraaien, krijgt **Document
 genereren**; dat vinkje geeft automatisch ook inzage.
 
 Met de knop **Bekijken** bij een gebruiker zie je in één oogopslag onder **Rechten** wat hij wel
-en niet mag. Bij een beheerder staat alles aangevinkt.
+en niet mag. Bij een beheerder staat alles aangevinkt. Ook in je eigen **Profiel** staan je rechten
+met dezelfde Nederlandse namen als hier, en niet meer met de interne naam van het vinkje.
+
+**Een wijziging van rechten werkt meteen.** De app leest de rechten bij elke handeling opnieuw. Heb je
+zojuist iemands vinkjes aangepast terwijl hij ingelogd is, dan ziet zijn scherm dat vanzelf; hij hoeft
+niet uit en weer in te loggen.
 
 ---
 
@@ -140,6 +155,27 @@ Twee instellingen komen vaak terug:
 - **Toltarief (€ per km)** — *"Wordt gebruikt om een tolkost voor te stellen op basis van de
   ingevoerde afstand bij een transport"*.
 
+**Wat je typt, blijft staan.** Wissel je tijdens het invullen van tabblad, dan raak je niets kwijt:
+een tabblad dat je eenmaal hebt geopend, houdt wat je erin hebt ingevuld, ook de onderdelen met een
+eigen formulier (**Klantenportaal**, de fiscale check, de CJIB-koppeling en de filters van de
+activiteit). Wat je niet hebt opgeslagen, is natuurlijk wel weg zodra je de instellingen sluit.
+
+**Het klantenportaal en de bekeuringen.** Onder het tabblad **Klantenportaal** staat het veld
+**Standaard administratiekosten per bekeuring (€)** — *Dit bedrag staat bij een nieuwe bekeuring alvast
+ingevuld en komt bovenop het boetebedrag. Vul 0 in voor geen kosten.* Een negatief of leeg bedrag
+wordt geweigerd met *Vul een bedrag van 0 of hoger in, bijvoorbeeld 12,50.* Het bedrag blijft nu ook
+echt bewaard: vroeger werd het bij elke keer opslaan van dit formulier op 0 gezet. De bekeuringen zelf
+staan sinds oktober 2026 ook onder een eigen menu-item **Bekeuringen** (hoofdstuk 2, paragraaf 2.6).
+
+**De CJIB-koppeling** (*Het CJIB levert beschikkingen als XML- of CSV-bestand op een beveiligde
+FTPS-server*) staat bij de bekeuringen, achter **CJIB-importen**. De schakelaar **Automatisch ophalen
+aan** kun je pas aanzetten als er een server (**Server (host)**) is ingevuld; zonder server zijn ook
+**Verbinding testen** en **Nu ophalen** grijs, en onder de knoppen staat waarom. In het overzicht
+leest de status als een zin: *Automatisch ophalen elke 15 min* of *Automatisch ophalen staat uit*.
+Mislukt de test, dan staat er *Verbinding mislukt* met een Nederlandse zin als *De verbinding met het
+CJIB is mislukt. Controleer de instellingen en probeer het opnieuw.* De technische tekst van de
+FTPS-server zelf zie je niet meer in het scherm; een beheerder vindt hem in het serverlog.
+
 Zonder het recht **Instellingen beheren** kun je de instellingen wel openen maar niet opslaan.
 De app antwoordt dan:
 
@@ -161,8 +197,10 @@ De app maakt **elke nacht om 02:00 uur** (Nederlandse tijd) automatisch twee bes
 
 De broncode van de app wordt níét meegenomen in de nachtelijke back-up; die staat elders.
 
-De bestanden worden weggeschreven in mappen per jaar, maand en dag. Waar dat is, zie je in het
-scherm bij **Back-uplocatie:**.
+De bestanden worden weggeschreven in mappen per jaar, maand en dag. In het scherm staat bij
+**Back-uplocatie:** alleen dat de map *vast ingesteld* is via de omgevingsvariabele BACKUP_PATH; het
+pad zelf wordt om veiligheidsredenen niet meer getoond. Wil je weten waar de bestanden staan, vraag
+het dan aan de beheerder van de server.
 
 Draaide de app om 02:00 uur niet, dan wordt de back-up ingehaald: vijf minuten na het opstarten
 maakt de app er alsnog een, als de laatste geslaagde ouder is dan een dag.
@@ -178,7 +216,13 @@ Bovenin het scherm staan drie regels die je regelmatig moet lezen:
 
 - **Laatste back-up** — datum en tijd, of **Nooit** als er nog geen is.
 - **Volgende back-up** — **Vannacht om 02:00 uur**.
-- **Laatste back-upfout:** — staat er alleen als de laatste poging misging.
+- **Laatste back-upfout:** — staat er alleen als de laatste poging misging, als een zin in het
+  Nederlands (bijvoorbeeld *de schijf van de server is vol* of *de server kan de database niet
+  bereiken*). Bij een fout die de app niet kent, staat er dat de reden in het serverlog staat.
+
+Is de laatste geslaagde back-up ouder dan een dag, of is er nog nooit een geslaagde, dan staat er
+bovenaan een gele waarschuwing: *De laatste geslaagde back-up is ouder dan een dag.* Een back-up
+waarvan de datum niet te lezen is, toont **Onbekende datum** in plaats van een datum in 1970.
 
 Daaronder staan de **Recente automatische back-ups**, gesplitst in **Database-back-ups** en
 **Bestand-back-ups**.
@@ -187,13 +231,18 @@ Is er langere tijd geen geverifieerde back-up gemaakt, dan verschijnt er ook op 
 een balk: **Geen geverifieerde back-up in 30 uur** met *"Open Back-up & Herstel om er nu een uit
 te voeren."* Negeer die balk niet.
 
-Met **Nu back-uppen** maak je er meteen een, los van het schema. De schakelaar
+Met **Nu back-uppen** maak je er meteen een, los van het schema. Mislukt dat, dan staat er een
+Nederlandse zin, zoals *De back-up is mislukt.* of, als er al een loopt, *Er loopt al een
+back-up. Wacht tot die klaar is.* De schakelaar
 **Ingeschakeld / Uitgeschakeld** zet het nachtelijke schema aan of uit.
 
 ### Downloaden
 
 Achter elke back-up staat **Downloaden**. Daarmee haal je het bestand naar je eigen computer.
-Bewaar het op een andere plek dan de server.
+Bewaar het op een andere plek dan de server. Het downloaden begint meteen; de app maakt het
+bestand tijdens het downloaden, dus ook een groot archief blijft niet eerst minutenlang hangen. Is
+het bestand klaar, dan meldt de app **Bestand gemaakt** met de naam en de grootte. Mislukt het,
+dan staat er *De back-up kon niet worden gedownload.* en geen pad of technische tekst van de server.
 
 Onder **Handmatige back-up & herstel** staan drie kaarten: **App-gegevens** ("Al je
 bedrijfsgegevens"), **Geüploade bestanden** ("Documenten & contracten") en **App-code**
@@ -264,7 +313,10 @@ Onder het kopje staat: *"Elke wijziging aan dit record, met wie het deed en wann
 
 Per regel zie je:
 
-- **wat er gebeurde** (aanmaken, wijzigen, verwijderen, terugzetten);
+- **wat er gebeurde**, in woorden: bijvoorbeeld *Reservering aangemaakt*, *Ophalen*, *Inleveren*,
+  *Overdracht teruggedraaid*, *Status gewijzigd*, *Klant aangemaakt*, *Document gemaild*,
+  *Kilometerstand gewijzigd*, *definitief verwijderd* en *hersteld*. Een actie die de app niet kent,
+  staat er met de ruwe naam; de technische code zie je als je de muis erop zet;
 - **wie** het deed — de gebruikersnaam, of **Systeem** als de app het zelf deed;
 - **wanneer**, op de minuut;
 - **welk veld** veranderde, met de oude waarde doorgestreept en de nieuwe erachter. Een leeg veld
@@ -328,8 +380,11 @@ twee knoppen om voorgoed te verwijderen (hieronder). Per regel:
 - de knoppen **Terugzetten** en **Definitief verwijderen**.
 
 Per soort staan de nieuwste 200 regels erin, de nieuwste bovenaan. Een regel die al is teruggezet,
-blijft staan met het groene label **Teruggezet** en *Teruggezet &lt;datum&gt; door &lt;naam&gt;*, en zijn knop
-**Terugzetten** is grijs. Is er niets, dan staat er bijvoorbeeld *Geen verwijderde voertuigen.*
+wordt standaard **niet meer getoond**, zodat je alleen ziet wat er nog te doen is. Wil je ze wel zien,
+vink dan **Teruggezette items ook tonen (3)** aan; het getal zegt hoeveel het er zijn, en het vinkje
+staat er alleen als er zijn. Zo'n regel heeft het groene label **Teruggezet** en *Teruggezet
+&lt;datum&gt; door &lt;naam&gt;*, en zijn knop **Terugzetten** is grijs. Is er niets, dan staat er bijvoorbeeld
+*Geen verwijderde voertuigen.*
 
 ### Terugzetten
 
@@ -371,6 +426,9 @@ Sinds oktober 2026 kun je een prullenbak ook leegmaken, op drie manieren:
 3. **Alles van die soort:** klik op **Prullenbak leegmaken**. Dat haalt *alles* uit deze prullenbak
    weg, ook de regels die niet in de lijst staan. Toont de lijst er het maximum van 200, dan zegt
    het venster dat ook.
+
+Staan er teruggezette regels verborgen, dan zegt de bevestiging van **Prullenbak leegmaken** dat ook:
+*Dat zijn ook 3 teruggezette regels die nu verborgen zijn.* Ook die gaan dus weg.
 
 Er verschijnt altijd een bevestiging, **Definitief verwijderen?**, die het aantal en de soort noemt
 — bijvoorbeeld *2 klanten worden definitief uit de prullenbak verwijderd.* — en zegt wat er

@@ -232,7 +232,10 @@ nooit is meegegaan.
 datums, andere prijs, ander voertuig.
 
 **Hoe je het merkt.** Het document krijgt een oranje label **Verouderd**, met de uitleg *"Dit
-document is gemaakt vóór een wijziging aan de reservering en klopt mogelijk niet meer."*
+document is gemaakt vóór een wijziging aan de reservering en klopt mogelijk niet meer."* Je ziet het
+label ook in de lijst met documenten in het venster van de reservering zelf, dus je hoeft er niet
+voor naar het scherm **Documenten**. De reden staat in het Nederlands, bijvoorbeeld *de reservering
+is gewijzigd nadat dit document was gemaakt*.
 
 **Hoe je het voorkomt.** Maak het contract pas als de gegevens definitief zijn. Bij het ophalen
 gebeurt dat vanzelf op het goede moment.
@@ -261,8 +264,12 @@ en rijbewijsnummer.
 **Hoe je het voorkomt.**
 
 - In het venster **Documenten e-mailen naar klant** kies je het adres zelf, uit **Algemeen**,
-  **Facturen** of **Aangepast e-mailadres**. Lees het adres hardop voordat je op
-  **E-mail versturen** klikt.
+  het adres van de klant (*Klant: <adres>*), **Facturen** of **Aangepast e-mailadres**. Lees het
+  adres hardop voordat je op **E-mail versturen** klikt.
+- Bij een mailronde vanuit **Communicatie** laat **Voorvertonen & versturen** per ontvanger zien wat
+  hij krijgt: klik op een ontvanger en controleer zijn kenteken, zijn naam en zijn adres. Bij 25
+  e-mails of meer moet je bovendien aanvinken dat je de tekst en de ontvangers hebt gecontroleerd
+  (hoofdstuk 9, paragraaf 9.5).
 - Controleer bij **Selecteer documenten** dat je alleen de documenten van deze reservering hebt
   aangevinkt.
 - Een APK-herinnering gaat alleen naar de huidige huurder; het venster toont die ene ontvanger
@@ -391,7 +398,10 @@ through POST /api/reservations/:id/revert.*: gebruik de knop.
 
 **Hoe je het voorkomt.** Kijk in het venster **Reservering annuleren** naar het nummer van de
 reservering en naar het lijstje **Hieraan hangt nog:** voordat je bevestigt. Twijfel je, klik dan
-op **Niet annuleren**.
+op **Niet annuleren**. Annuleer je vanuit de lijst **Niet opgehaalde reserveringen**, dan staan het
+kenteken, het merk en model en de klant bovenin het venster, zodat je ziet welke boeking het is;
+bij een lange lijst is een zoekopdracht (*Zoek op kenteken, klant, contractnummer of
+reserveringsnummer...*) de veiligste weg naar de goede.
 
 ---
 
@@ -419,6 +429,8 @@ op **Niet annuleren**.
 
 **Hoe je het herstelt.** Alles wat je verwijdert gaat naar de **prullenbak van het scherm waar je
 het verwijderde** en is terug te zetten, met alles wat eraan hing. Zie hoofdstuk 10, paragraaf 10.6.
+In de prullenbak staan alleen nog de regels die niet zijn teruggezet; wil je ook wat al is
+teruggezet zien, vink dan **Teruggezette items ook tonen** aan.
 
 Terugzetten kan iedereen met het vinkje **Prullenbak beheren**: een beheerder, een manager, of een
 ander account waarbij het is aangezet (hoofdstuk 15, paragraaf 15.16). Heb je het vinkje niet, loop

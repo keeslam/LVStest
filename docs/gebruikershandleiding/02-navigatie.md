@@ -18,6 +18,7 @@ Het menu staat links en blijft altijd staan. Je ziet alleen de items waar je rec
 | **Scannen** | Een sleutellabel scannen en meteen doorwerken | Voertuigen bekijken of beheren |
 | **Klanten** | De klantendatabase | Klanten bekijken of beheren |
 | **Klantenportaal** | Alles wat klanten online doen | Klantportaal bekijken of beheren |
+| **Bekeuringen** | De lijst met bekeuringen, ook voor wie geen portaalrecht heeft | Boetes bekijken of beheren |
 | **Reserveringen** | De verhuurkalender | Reserveringen bekijken of beheren |
 | **Onderhoud** | De werkplaatskalender | Onderhoud beheren |
 | **Kosten** | Kosten per voertuig | Kosten beheren |
@@ -55,7 +56,8 @@ Van boven naar beneden:
 4. **Beheer vervangende voertuigen** met de tabbladen **Nog te bepalen**, **Aankomend** en
    **Actief**. Op **Nog te bepalen** staan de vervangers waarvoor nog geen auto is aangewezen,
    met de knop **Voertuig toewijzen**.
-5. **Recente kosten** met de knop **Alles bekijken**.
+5. **Recente kosten** met de knop **Alles bekijken**; die knop staat er alleen voor wie **Kosten
+   beheren** heeft. Een categorie staat er in het Nederlands, bijvoorbeeld **Banden** en niet *Tires*.
 6. **Aankomende reserveringen** in een tabel: **Voertuig**, **Klant**, **Periode**, **Acties**.
 7. **Reserveringskalender** — een kleine maandkalender, met **Reservering toevoegen**.
 
@@ -197,7 +199,30 @@ lijst.
 panelen eronder tonen de laatste regels.*
 
 In de lijst achter de tegel **Bekeuringen** staat de knop **Prullenbak** voor verwijderde bekeuringen
-(hoofdstuk 10, paragraaf 10.6).
+(hoofdstuk 10, paragraaf 10.6). Dezelfde lijst staat ook als eigen menu-item **Bekeuringen**, voor wie
+**Boetes bekijken** of **Boetes beheren** heeft maar niet bij het klantenportaal hoeft te komen. Het is
+dezelfde tabel met dezelfde vensters; alleen de toegang is los van het portaal. Heb je het vinkje
+**Fiscaal bekijken** maar geen vinkje voor rapporten, dan toont het scherm **Rapporten** voor jou alleen de
+fiscale check, met de knop **Fiscale check** (hoofdstuk 15, paragraaf 15.4).
+
+**Een bekeuring openen.** Klik op een regel. Het venster toont het bedrag, de **Administratiekosten** en het
+**Totaal**, de klant, de reservering en de bestuurder. Wijzig je de administratiekosten en klik je op
+**Opslaan**, dan blijft dat bedrag echt bewaard. Bedragen staan als € 95,00, tijden zonder seconden en
+kentekens met streepjes, ook in het klantenportaal en in de mail aan de klant. Elke handeling meldt
+zichzelf met een eigen zin: *Bekeuring opgeslagen.*, *Bekeuring gekoppeld.*, *Bekeuring ontkoppeld.*,
+*Bekeuring geannuleerd.* of *Bekeuring heractiveerd.* De knop **Bekeuring annuleren** vraagt eerst
+*Bekeuring PT-99-ZY van € 95,00 annuleren? Je kunt hem daarna weer heractiveren.*, met **Nee, laten
+staan** als veilige keuze; **Sluiten** sluit het venster zonder iets te wijzigen. Heb je tekst getypt en
+sluit je het venster, dan vraagt de app **Wijzigingen verwerpen?**
+
+**Nieuwe bekeuring en Brieven scannen** lijken op elkaar maar doen iets anders. **Nieuwe bekeuring** is voor
+één bekeuring: je vult de velden in, of kiest de brief en laat hem inlezen, en controleert alles voordat
+je opslaat. **Brieven scannen** is voor een stapel brieven tegelijk: elke brief wordt gelezen, je loopt
+de lijst na en daarna maakt de app er in één keer bekeuringen van. Beide knoppen hebben een uitleg
+bij het venster en een tekstje als je er met de muis op gaat staan.
+
+**Een bekeuring zonder naam van het bedrijf.** Is bij een klant het veld **Bedrijfsnaam** leeg, dan staat in de
+bekeuringen en in het portaal de naam van de klant zelf, en niet meer een lege regel.
 
 Nieuwe aanvragen handel je hier af, via de tegel **Aanvragen** of het paneel **Aandacht nodig**.
 Als er iets nieuws is, zie je dat bovenin elk scherm aan de portaaltegel en aan het rode bolletje
@@ -251,9 +276,31 @@ maanden)*), met labels als **Vervanger nodig** en **Verhuur komt eraan**. Uitgeb
 hoofdstuk 7.
 
 **Kosten** — het scherm **Kostenbeheer** met **Factuur scannen** en **Kosten registreren**.
-Daaronder het **Kostenoverzicht** per categorie (*Bekijk en beheer alle voertuiggerelateerde
-kosten*) en de **Kostensamenvatting**. Kosten heeft geen eigen hoofdstuk; de klikpaden staan in
-hoofdstuk 13, paragraaf 13.10, en vastleggen met de auto in je hand staat in hoofdstuk 18.
+Daaronder het **Kostenoverzicht** (*Bekijk en beheer alle voertuiggerelateerde kosten*) en de
+**Kostensamenvatting**. Kosten heeft geen eigen hoofdstuk; de klikpaden staan in hoofdstuk 13,
+paragraaf 13.10, en vastleggen met de auto in je hand staat in hoofdstuk 18. Wat je moet weten:
+
+- **Eén lijst met filters.** Het **Kostenoverzicht** is één lijst, nieuwste bovenaan, met de kolommen
+  **Datum**, **Voertuig**, **Categorie**, **Omschrijving** en **Bedrag**. Je filtert op **Voertuig** (typ
+  het kenteken met of zonder streepjes), **Van** en **Tot en met** (allebei meegeteld), **Categorie** en
+  het zoekveld *Zoeken op kenteken, categorie of omschrijving...*; **Filters wissen** zet alles terug.
+  De **Kostensamenvatting** rekent precies over wat je ziet (*Totaal van de gekozen filters*), met een
+  totaal per categorie. De lijst toont er 100 tegelijk; klik op **Meer tonen** voor de volgende. De
+  uitklapbare lijst per categorie is vervangen door deze lijst met een filter.
+- **Exporteren (CSV).** Die knop bewaart precies de gefilterde regels voor Excel (puntkomma's,
+  decimale komma, datums dd-mm-jjjj; zie hoofdstuk 12). De app meldt **Bestand gemaakt**. Heb je
+  **Prijzen verbergen**, dan staat de knop er niet.
+- **Eén formulier voor kosten.** **Kosten registreren** opent altijd hetzelfde venster, **Nieuwe
+  kosten toevoegen**, of je nu vanaf het Dashboard, het scherm **Kosten** of een voertuig komt. Een
+  voertuig is verplicht: *Een voertuig is verplicht: elke kostenpost hoort bij één voertuig.* Laat je
+  het leeg, dan staat er *Kies een voertuig*, en ontbreekt de categorie, *Kies een categorie*.
+- **Categorieën.** Er is één lijst, overal gelijk: **Onderhoud**, **Banden**, **Remmen**, **Schade**,
+  **Brandstof**, **Verzekering**, **Registratie**, **Schoonmaak**, **Accessoires**, **Tol**,
+  **Parkeren** en **Overig**. **Tol** en **Parkeren** zijn nieuw. Een kostenpost die ooit onder een eigen
+  categorienaam is ingevoerd, krijgt bij bewerken de categorie **Overig**; controleer dat als je zo'n
+  kostenpost wijzigt.
+- **Ontvangen facturen.** In het venster **Ontvangen facturen** staat naast **Nu ophalen** de knop
+  **Logboek** (hoofdstuk 9, paragraaf 9.9).
 
 **Documenten** — het scherm **Documentbeheer** met **Document uploaden** en de tabbladen
 **Documentbibliotheek**, **Contractsjablonen**, **Transportrapportsjablonen**, **Barcodelabels**
@@ -278,6 +325,42 @@ autoverhuurbedrijf.* Rechtsboven staan vijf afdrukknoppen: **APK**, **Garantie**
 **Operaties**, **Kosten**, **Voertuigen**, **Klanten**, **Transporten** en **Financieel**.
 Rapporten heeft geen eigen hoofdstuk; de klikpaden staan in hoofdstuk 13, paragraaf 13.13.
 
+**Wat je moet weten:**
+
+- **Wat de cijfers delen.** Onder de filters staat één regel die zegt waar alle cijfers voor gelden:
+  *Alle cijfers op deze pagina gelden voor <periode> en de hele vloot (N voertuigen).* Elk
+  gemiddelde deelt door de hele vloot, ook door auto's zonder verhuur; daarom staat bij de
+  benutting *Gemiddelde over de hele vloot van N voertuigen (M met verhuur)*.
+- **De filters werken.** Het **Voertuig**-filter is een zoekveld (kenteken met of zonder streepjes,
+  merk of model). De **Kostencategorie** biedt alleen de categorieën die in de gegevens voorkomen.
+  Verander je een filter, dan staat er *Cijfers worden bijgewerkt...* totdat de nieuwe cijfers er zijn,
+  zodat je geen oude cijfers voor nieuwe aanziet. Het categoriefilter geldt niet op elk tabblad: bij
+  **Financieel** (omzet en marge worden over alle kosten berekend), **Fiscaal**, **Transporten** en de
+  overzichten **APK** en **Garantie** staat een regel die dat zegt, bijvoorbeeld *Het categoriefilter
+  (Banden) geldt niet voor dit tabblad.*
+- **Afdrukken.** De vijf afdrukknoppen noemen wat ze afdrukken (*Afdrukken: APK*, ...). Het
+  klantenrapport telt alleen klanten met een reservering in de periode.
+- **Een stijging vanaf 0.** Gaat een bedrag van 0 naar iets, dan staat er *nieuw* en geen *+100%*; is
+  er niets om mee te vergelijken, dan staat er een streepje.
+
+**Analyse onderhoudskosten.** Deze analyse telt alleen de kosten die echt onderhoud zijn: de
+categorieën **Onderhoud**, **Banden** en **Remmen**. Schade, brandstof, tol, parkeren, verzekering
+en de rest tellen niet mee; boven de cijfers staat een regel die dat zegt (*Telt alleen
+onderhoudskosten (...)*). De **Kosten per km** deelt de kosten door de totale kilometerstand van de
+voertuigen die kosten hebben, en staat daarom alleen bij **Alle tijd**; bij een andere periode staat er
+een streepje met *alleen bij Alle tijd: de kilometerstand is een totaal*. Een merk krijgt pas een
+beoordeling bij minstens drie kostenregels en twee voertuigen, anders staat er **Onvoldoende
+gegevens**. De maanden staan in het Nederlands (*mei 2026*). Periode en merk werken nu echt: ze
+worden meegestuurd, vroeger toonde de pagina altijd alle tijd.
+
+**De rapportbouwer.** Bij **Aangepaste rapportbouwer** staan bronnen, velden en voorwaarden in het
+Nederlands (de opgeslagen rapporten blijven werken). Het resultaat heeft **Exporteren naar CSV** en
+**Afdrukken**; beide zijn grijs zolang er geen resultaat is. Draai je een opgeslagen rapport, dan
+staan de kolommen van dat rapport boven de resultaten. Het verwijderknopje achter een opgeslagen
+rapport (*Rapport verwijderen: <naam>*) vraagt eerst **Rapport verwijderen?** — *U staat op het punt het
+opgeslagen rapport "<naam>" te verwijderen. Dit kan niet ongedaan worden gemaakt.* Pas na
+**Verwijderen** is het weg.
+
 ![Het scherm Rapporten met de filters en de tabbladen](afbeeldingen/11-rapporten.png)
 *Het scherm **Rapporten**: de afdrukknoppen rechtsboven, daaronder **Rapportfilters** en de
 tabbladen met de cijfers.*
@@ -295,11 +378,16 @@ Daaronder: **Voertuig toevoegen**, **Klant toevoegen** en **RDW APK-datums scann
 rijtje kleinere knoppen: **Document uploaden**, **Kosten registreren**, **Brandstofstatus
 bijwerken**, **Registratie wijzigen**, **APK-rapport uploaden** en **APK-meldingen versturen**.
 
-Twee dingen om te weten:
+Drie dingen om te weten:
 
 - **Ophalen starten** en **Innemen starten** openen eerst het scanvenster. Je scant of typt het
-  kenteken, en de app opent meteen de juiste handeling.
-- **RDW APK-datums scannen** haalt de APK-datums bij de RDW op. Dat loopt op de achtergrond
+  kenteken, en de app opent meteen de juiste handeling. Onder elke tegel staat in één regel wat hij
+  doet: *Auto meegeven aan de klant* bij **Ophalen starten**, *Auto terugnemen van de klant* bij
+  **Innemen starten** en *Alleen opzoeken, niets starten* bij **Scannen**.
+- **Nieuwe reservering** opent het boekingsformulier als een venster. Klik je op **Annuleren**, dan
+  sluit alleen het venster en blijf je op het Dashboard.
+- **RDW APK-datums scannen** vraagt eerst of je het zeker weet (**RDW APK-datums scannen?** met
+  **Scan starten**) en haalt dan de APK-datums bij de RDW op. Dat loopt op de achtergrond
   ("*De scan is gestart en loopt op de achtergrond. Je kunt gewoon doorwerken*") en is werk voor
   wie het wagenpark bijhoudt, niet voor de balie.
 
