@@ -295,6 +295,12 @@ export const DIALOGS: DialogEntry[] = [
   { page: "/portal-admin", opener: "button-fines-bin", via: "tile-fines", anyOf: [P.MANAGE_RECYCLE_BIN], source: "client/src/components/recycle-bin/recycle-bin-dialog.tsx", name: "prullenbak boetes" },
 
   { page: "/expenses", opener: "button-invoice-inbox", anyOf: [P.MANAGE_EXPENSES], source: "client/src/components/expenses/invoice-inbox-dialog.tsx", name: "ontvangen facturen" },
+  // Audit P1 (A-9-7): the Kosten page opens the same dialog as the dashboard (ExpenseAddDialog)
+  // instead of navigating to /expenses/add.
+  { page: "/expenses", opener: "button-record-expense", anyOf: [P.MANAGE_EXPENSES], source: "client/src/components/expenses/expense-add-dialog.tsx", name: "kosten registreren" },
+  // Audit P1 (A-9-4): the Logboek in the header of the Ontvangen facturen dialog. It opens on top of that
+  // dialog (hence `via`); the log dialog itself is also opened by e2e/layer-b/settings/invoice-inbox-log.spec.ts.
+  { page: "/expenses", opener: "button-invoice-inbox-log", via: "button-invoice-inbox", anyOf: [P.MANAGE_EXPENSES], source: "client/src/components/expenses/invoice-inbox-log-dialog.tsx", name: "logboek factuurpostvak (vanuit ontvangen facturen)" },
 
   // --- /communications ---------------------------------------------------
   // 2026-09-21 review, item 6 — B-29's other half: the screen itself opened

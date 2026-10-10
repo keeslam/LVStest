@@ -386,7 +386,7 @@ groene run staat er dus niets.
   ook nog de strenge controle dat er geen enkel venster overblijft.
 
 **Het dekkingsgetal mag alleen omlaag.** In `e2e/registry/coverage-baseline.json` staat
-hoeveel bestanden met een venster nog niet door een test worden geopend (nu 87). Kijk
+hoeveel bestanden met een venster nog niet door een test worden geopend (nu 86). Kijk
 daar voor het getal van vandaag, want het hoort langzaam te dalen.
 Wordt dat getal hoger, dan stopt `npm run e2e` met een fout. Bereik je een venster meer,
 dan zet je het getal één lager. Andersom nooit.
