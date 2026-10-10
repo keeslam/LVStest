@@ -63,6 +63,14 @@
       "start-return": "Innemen starten",
       "scan": "Scannen"
     },
+    "rdwScanConfirmTitle": "RDW APK-datums scannen?",
+    "rdwScanConfirmDescription": "Dit vraagt de APK-datum van het hele wagenpark op bij de RDW en kan enkele minuten duren. Er wordt niets aangepast: verschillen komen als voorstel in een lijst te staan, die jij beoordeelt.",
+    "rdwScanConfirmAction": "Scan starten",
+    "hints": {
+      "start-pickup": "Auto meegeven aan de klant",
+      "start-return": "Auto terugnemen van de klant",
+      "scan": "Alleen opzoeken, niets starten"
+    },
     "rdwScanInProgress": "Scannen...",
     "rdwScanStartedDescription": "De scan is gestart en loopt op de achtergrond. Je kunt gewoon doorwerken - je krijgt een melding zodra deze klaar is.",
     "rdwScanAlreadyRunningDescription": "Er loopt al een scan op de achtergrond.",
@@ -181,6 +189,12 @@
     "title": "Reserveringskalender",
     "addReservation": "Reservering toevoegen",
     "newReservation": "Nieuwe reservering",
+    "today": "Vandaag",
+    "pickupTag": "uit",
+    "returnTag": "in",
+    "weekdays": {
+      "mon": "ma", "tue": "di", "wed": "wo", "thu": "do", "fri": "vr", "sat": "za", "sun": "zo"
+    },
     "fullCalendar": "Volledige kalender",
     "reservationDetails": "Reserveringsdetails",
     "tbdSpareVehicle": "Vervangend voertuig (nog te bepalen)",
@@ -264,5 +278,9 @@
     "expectedReturn": " • Verwachte inlevering: {{date}}",
     "inUse": "In gebruik",
     "viaTransport": "Transport #{{id}}"
+  },
+  "notificationDisplay": {
+    "spareAssignmentTitle": "Vervangend voertuig toewijzen",
+    "spareAssignmentDescription": "Een nog te bepalen vervangend voertuig heeft een toewijzing nodig voor {{period}}."
   }
 }

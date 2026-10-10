@@ -195,6 +195,7 @@ export interface IStorage {
   // Placeholder spare vehicle methods
   getPlaceholderReservations(startDate?: string, endDate?: string): Promise<Reservation[]>;
   getPlaceholderReservationsNeedingAssignment(daysAhead?: number): Promise<Reservation[]>;
+  getSpareOverviewReservations(): Promise<Reservation[]>;
   assignVehicleToPlaceholder(reservationId: number, vehicleId: number, endDate?: string): Promise<Reservation | undefined>;
   createPlaceholderReservation(originalReservationId: number, customerId: number, startDate: string, endDate?: string): Promise<Reservation>;
   

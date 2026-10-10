@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { UserPermission } from "@shared/schema";
+import { officeToday, officeTomorrow } from "@/lib/office-date";
 
 type DirectionFilter = "all" | "later" | "earlier";
 
@@ -54,6 +55,29 @@ export interface BulkActionResponse {
 // component and reset an in-memory ref, popping the dialog open again on
 // every reload for as long as anything stayed unresolved.
 export const APK_DATE_CHANGES_AUTO_OPEN_SESSION_KEY = "apkDateChangesAutoOpened";
+
+// "Later" (A-20-1): the pop-up otherwise returns in every new session until each
+// proposal is decided. The snooze is the office date it stays quiet until, kept
+// in localStorage so it also survives a new login. A per-viewer convenience:
+// without storage the pop-up simply behaves as before.
+export const APK_DATE_CHANGES_SNOOZE_KEY = "apkDateChangesSnoozedUntil";
+
+function isSnoozed(): boolean {
+  try {
+    const until = localStorage.getItem(APK_DATE_CHANGES_SNOOZE_KEY);
+    return !!until && until > officeToday();
+  } catch {
+    return false;
+  }
+}
+
+function snoozeUntilTomorrow(): void {
+  try {
+    localStorage.setItem(APK_DATE_CHANGES_SNOOZE_KEY, officeTomorrow());
+  } catch {
+    /* storage unavailable: the pop-up just comes back next session */
+  }
+}
 
 interface PendingApkChange {
   id: number;
@@ -101,7 +125,7 @@ export function ApkDateChangesDialog() {
   // refresh doesn't reset it - only a real new session (logout, or the tab/
   // browser closing) does.
   useEffect(() => {
-    if (pendingChanges.length > 0 && sessionStorage.getItem(APK_DATE_CHANGES_AUTO_OPEN_SESSION_KEY) !== "true") {
+    if (pendingChanges.length > 0 && !isSnoozed() && sessionStorage.getItem(APK_DATE_CHANGES_AUTO_OPEN_SESSION_KEY) !== "true") {
       openRdwApkChangesDialog();
       sessionStorage.setItem(APK_DATE_CHANGES_AUTO_OPEN_SESSION_KEY, "true");
     }
@@ -407,9 +431,21 @@ export function ApkDateChangesDialog() {
           ) : (
             <span />
           )}
-          <Button variant="outline" onClick={closeRdwApkChangesDialog}>
-            {t("common:actions.close")}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                snoozeUntilTomorrow();
+                closeRdwApkChangesDialog();
+              }}
+              data-testid="button-apk-changes-later"
+            >
+              {t("apkDateChanges.laterButton")}
+            </Button>
+            <Button variant="outline" onClick={closeRdwApkChangesDialog}>
+              {t("common:actions.close")}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

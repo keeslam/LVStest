@@ -3,6 +3,16 @@ import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -449,6 +459,8 @@ export function QuickActions() {
   // held open that long, leaving the button stuck forever waiting on a
   // response that was never coming.
   const [isRdwScanRunning, setIsRdwScanRunning] = useState(false);
+  // A-2-2: the scan covers the whole fleet, so the button asks first.
+  const [rdwScanConfirmOpen, setRdwScanConfirmOpen] = useState(false);
 
   const { data: rdwScanStatus } = useQuery<{
     running: boolean;
@@ -976,6 +988,7 @@ export function QuickActions() {
                   >
                     <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
                     {t(`quickActions.buttons.${action.dialog}`)}
+                    <span className="text-xs font-normal opacity-80" data-testid={`hint-quick-${action.dialog}`}>{t(`quickActions.hints.${action.dialog}`)}</span>
                   </Button>
                 );
               }
@@ -990,6 +1003,7 @@ export function QuickActions() {
                   >
                     <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
                     {t(`quickActions.buttons.${action.dialog}`)}
+                    <span className="text-xs font-normal opacity-80" data-testid={`hint-quick-${action.dialog}`}>{t(`quickActions.hints.${action.dialog}`)}</span>
                   </Button>
                 </RequiresPermission>
               );
@@ -2075,25 +2089,44 @@ export function QuickActions() {
             if (action.dialog === "rdw-apk-scan") {
               const isBusy = startRdwScanMutation.isPending || isRdwScanRunning;
               return (
-                <RequiresPermission key={action.label} anyOf={[UserPermission.MANAGE_VEHICLES]}>
-                  <Button
-                    variant="outline"
-                    className={actionStyle(action).className}
-                    size={actionStyle(action).size}
-                    onClick={() => startRdwScanMutation.mutate()}
-                    disabled={isBusy}
-                    data-testid="button-scan-rdw-apk-dates"
-                  >
-                    {isBusy ? (
-                      <RotateCw className={`${actionStyle(action).iconClassName} animate-spin`} />
-                    ) : (
-                      <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
-                    )}
-                    {isBusy
-                      ? t("quickActions.rdwScanInProgress")
-                      : t(`quickActions.buttons.${action.dialog}`)}
-                  </Button>
-                </RequiresPermission>
+                <React.Fragment key={action.label}>
+                  <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+                    <Button
+                      variant="outline"
+                      className={actionStyle(action).className}
+                      size={actionStyle(action).size}
+                      onClick={() => setRdwScanConfirmOpen(true)}
+                      disabled={isBusy}
+                      data-testid="button-scan-rdw-apk-dates"
+                    >
+                      {isBusy ? (
+                        <RotateCw className={`${actionStyle(action).iconClassName} animate-spin`} />
+                      ) : (
+                        <ActionIcon name={action.icon} className={actionStyle(action).iconClassName} />
+                      )}
+                      {isBusy
+                        ? t("quickActions.rdwScanInProgress")
+                        : t(`quickActions.buttons.${action.dialog}`)}
+                    </Button>
+                  </RequiresPermission>
+                  <AlertDialog open={rdwScanConfirmOpen} onOpenChange={setRdwScanConfirmOpen}>
+                    <AlertDialogContent data-testid="dialog-rdw-scan-confirm">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t("quickActions.rdwScanConfirmTitle")}</AlertDialogTitle>
+                        <AlertDialogDescription>{t("quickActions.rdwScanConfirmDescription")}</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel data-testid="button-cancel-rdw-scan">{t("common:actions.cancel")}</AlertDialogCancel>
+                        <AlertDialogAction
+                          data-testid="button-confirm-rdw-scan"
+                          onClick={() => startRdwScanMutation.mutate()}
+                        >
+                          {t("quickActions.rdwScanConfirmAction")}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </React.Fragment>
               );
             }
 

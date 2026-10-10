@@ -734,6 +734,9 @@
     "chooseVehiclePlaceholder": "Kies voertuig...",
     "cancelButton": "Annuleren",
     "assigningButton": "Toewijzen...",
+    "assignButtonNone": "Kies eerst een voertuig",
+    "selectVehicleRequired": "Kies een voertuig.",
+    "atLeastOneAssignment": "Kies minimaal één voertuig om toe te wijzen.",
     "assignButton_one": "{{count}} voertuig toewijzen",
     "assignButton_other": "{{count}} voertuigen toewijzen",
     "toasts": {

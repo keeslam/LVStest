@@ -2,6 +2,7 @@
   "apkDateChanges": {
     "title": "APK dates changed at the RDW",
     "description": "The following vehicles have an APK expiry date at the RDW that differs from the date on file. Review and confirm the new date, or dismiss to keep the current date.",
+    "laterButton": "Later (remind me tomorrow)",
     "confirmButton": "Confirm",
     "dismissButton": "Dismiss",
     "confirmedDescription": "The vehicle's APK date has been updated.",

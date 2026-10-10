@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { displayNotification } from "@/lib/notification-display";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { differenceInDays } from "date-fns";
 import {
@@ -613,8 +614,8 @@ export function NotificationsPanel() {
                               <TableRow key={`custom-all-${notification.id}`}>
                                 <TableCell>
                                   <div className="flex flex-col">
-                                    <span className="font-medium">{notification.title}</span>
-                                    <span className="text-sm text-muted-foreground">{notification.description}</span>
+                                    <span className="font-medium">{displayNotification(notification, (key, options) => t(key, options)).title}</span>
+                                    <span className="text-sm text-muted-foreground">{displayNotification(notification, (key, options) => t(key, options)).description}</span>
                                   </div>
                                 </TableCell>
                                 <TableCell>{formatDate(notification.date)}</TableCell>
@@ -876,8 +877,8 @@ export function NotificationsPanel() {
                             <TableRow key={`custom-${notification.id}`}>
                               <TableCell>
                                 <div className="flex flex-col">
-                                  <span className="font-medium">{notification.title}</span>
-                                  <span className="text-sm text-muted-foreground">{notification.description}</span>
+                                  <span className="font-medium">{displayNotification(notification, (key, options) => t(key, options)).title}</span>
+                                  <span className="text-sm text-muted-foreground">{displayNotification(notification, (key, options) => t(key, options)).description}</span>
                                 </div>
                               </TableCell>
                               <TableCell>{formatDate(notification.date)}</TableCell>

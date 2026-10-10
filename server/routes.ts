@@ -2850,6 +2850,21 @@ export async function registerRoutes(app: Express): Promise<void> {
     res.json(reservations);
   });
 
+  // A-2-6: the dashboard's spare-vehicle widget needs only the open replacement
+  // reservations and the rentals they replace, not the whole booking history.
+  // Same guard as GET /api/reservations.
+  app.get("/api/reservations/spare-overview", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req, res) => {
+    try {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.json(await storage.getSpareOverviewReservations());
+    } catch (error) {
+      console.error("Error fetching spare overview:", error);
+      res.status(500).json({ message: "Failed to fetch spare overview" });
+    }
+  });
+
   // Get upcoming reservations
   app.get("/api/reservations/upcoming", hasPermission(UserPermission.VIEW_RESERVATIONS, UserPermission.MANAGE_RESERVATIONS), async (req, res) => {
     // Disable HTTP caching to ensure fresh data after deletions
@@ -8968,6 +8983,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       const { generateTransportReportsPdf } = await import('./utils/pdf-generator');
+      const { transportReportVehicleLabel } = await import('./utils/transport-report-filename');
       const pdfBuffer = await generateTransportReportsPdf(transports, template);
 
       const reportsDir = path.join(uploadsDir, 'reports');
@@ -8983,7 +8999,6 @@ export async function registerRoutes(app: Express): Promise<void> {
       let notes: string;
       if (transports.length === 1) {
         const t = transports[0];
-      const { transportReportVehicleLabel } = await import('./utils/transport-report-filename');
         const dateStr = t.scheduledDate ? format(new Date(t.scheduledDate), 'dd-MM-yyyy') : format(new Date(), 'dd-MM-yyyy');
         // A-8-4: no "Unknown_Unknown" file names - see transportReportVehicleLabel.
         const vehicleLabel = transportReportVehicleLabel(t);

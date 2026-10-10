@@ -49,6 +49,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Vehicle, Reservation, Customer, CustomNotification, UserPermission } from "@shared/schema";
 import { formatDate, formatLicensePlate, formatMaintenanceCategory } from "@/lib/format-utils";
+import { displayNotification } from "@/lib/notification-display";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import { useHasPermission, useNotificationDataPermissions } from "@/hooks/use-has-permission";
 import {
@@ -384,6 +385,11 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
     </div>
   );
 
+  // A-2-3: a maintenance block can point at a vehicle that no longer exists;
+  // it used to render as "undefined undefined -".
+  const describeMaintenanceVehicle = (vehicle: Vehicle | undefined) =>
+    vehicle ? `${vehicle.brand} ${vehicle.model} - ${formatLicensePlate(vehicle.licensePlate || "")}` : t('centerDialog.unknownVehicle');
+
   // Builds the description line for a reservation notification card: vehicle,
   // customer (or "spare vehicle for <customer>" when it's a replacement
   // reservation, since those aren't billed to a customer of their own).
@@ -406,6 +412,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
 
   const CustomNotificationCard = ({ notification }: { notification: CustomNotification }) => {
     const link = sameOriginNotificationLink(notification.link);
+    const shown = displayNotification(notification, (key, options) => t(key, options));
     return (
     <div className="flex items-start gap-3 p-3 border-b hover:bg-muted/50 transition-colors group">
       <div className="mt-0.5">
@@ -414,12 +421,12 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <p className={`font-medium text-sm ${notification.isRead ? "text-muted-foreground" : ""}`}>
-            {notification.title}
+            {shown.title}
           </p>
           {renderPriorityBadge(notification.priority || "normal")}
           {!notification.isRead && <Badge className="text-xs">{t('centerDialog.new')}</Badge>}
         </div>
-        <p className="text-xs text-muted-foreground mt-1">{notification.description}</p>
+        <p className="text-xs text-muted-foreground mt-1">{shown.description}</p>
         <p className="text-xs text-muted-foreground mt-1">{formatDate(notification.date)}</p>
         <div className="flex gap-2 mt-2">
           {link && (
@@ -597,7 +604,12 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setSettingsDialogOpen(true)}
+                  onClick={() => {
+                    // A-2-11: one dialog at a time - the centre steps aside, so
+                    // Escape closes what you see (and brings the centre back).
+                    onOpenChange(false);
+                    setSettingsDialogOpen(true);
+                  }}
                   data-testid="button-notification-settings"
                 >
                   <Settings className="h-4 w-4 mr-1" />
@@ -678,7 +690,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                               key={`maint-${m.id}`}
                               icon={<ClipboardCheck className="h-5 w-5 text-purple-500" />}
                               title={t('centerDialog.maintenanceScheduledTitle', { category: formatMaintenanceCategory(m.maintenanceCategory) || t('centerDialog.maintenanceFallback') })}
-                              description={`${vehicle?.brand} ${vehicle?.model} - ${formatLicensePlate(vehicle?.licensePlate || "")}`}
+                              description={describeMaintenanceVehicle(vehicle)}
                               date={m.startDate}
                               onView={() => { if (m.vehicleId) openVehicleDialog(m.vehicleId); }}
                             />
@@ -787,7 +799,7 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
                         key={`maint-tab-${m.id}`}
                         icon={<ClipboardCheck className="h-5 w-5 text-purple-500" />}
                         title={t('centerDialog.maintenanceScheduledTitle', { category: formatMaintenanceCategory(m.maintenanceCategory) || t('centerDialog.maintenanceFallback') })}
-                        description={`${vehicle?.brand} ${vehicle?.model} - ${formatLicensePlate(vehicle?.licensePlate || "")}`}
+                        description={describeMaintenanceVehicle(vehicle)}
                         date={m.startDate}
                         onView={() => { if (m.vehicleId) openVehicleDialog(m.vehicleId); }}
                       />
@@ -938,7 +950,13 @@ export function NotificationCenterDialog({ open, onOpenChange }: NotificationCen
         </AlertDialogContent>
       </AlertDialog>
 
-      <NotificationsDialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen} />
+      <NotificationsDialog
+        open={settingsDialogOpen}
+        onOpenChange={(next) => {
+          setSettingsDialogOpen(next);
+          if (!next) onOpenChange(true);
+        }}
+      />
     </>
   );
 }

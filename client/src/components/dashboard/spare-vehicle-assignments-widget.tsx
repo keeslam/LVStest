@@ -98,9 +98,11 @@ export function SpareVehicleAssignmentsWidget() {
     enabled: canViewReservations,
   });
 
-  // Get all reservations to filter for assigned spare vehicles
+  // The open replacement reservations plus the rentals they stand in for -
+  // not the whole booking history (A-2-6: that was 2.7 MB on every dashboard
+  // load). Same shape as /api/reservations, so the filters below still apply.
   const { data: allReservations, isLoading: isLoadingAssigned } = useQuery<Reservation[]>({
-    queryKey: ["/api/reservations"],
+    queryKey: ["/api/reservations/spare-overview"],
     enabled: canViewReservations,
   });
 

@@ -63,6 +63,14 @@
       "start-return": "Start return",
       "scan": "Scan"
     },
+    "rdwScanConfirmTitle": "Scan RDW APK dates?",
+    "rdwScanConfirmDescription": "This asks the RDW for the APK date of the whole fleet and can take a few minutes. Nothing is changed: differences are put in a list as proposals, which you review.",
+    "rdwScanConfirmAction": "Start scan",
+    "hints": {
+      "start-pickup": "Hand a car to the customer",
+      "start-return": "Take a car back from the customer",
+      "scan": "Look up only, start nothing"
+    },
     "rdwScanInProgress": "Scanning...",
     "rdwScanStartedDescription": "The scan has started and is running in the background. Feel free to keep working - you'll get a notification once it's done.",
     "rdwScanAlreadyRunningDescription": "A scan is already running in the background.",
@@ -181,6 +189,12 @@
     "title": "Reservation Calendar",
     "addReservation": "Add reservation",
     "newReservation": "New Reservation",
+    "today": "Today",
+    "pickupTag": "out",
+    "returnTag": "in",
+    "weekdays": {
+      "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat", "sun": "Sun"
+    },
     "fullCalendar": "Full Calendar",
     "reservationDetails": "Reservation Details",
     "tbdSpareVehicle": "TBD Spare Vehicle",
@@ -264,5 +278,9 @@
     "expectedReturn": " • Expected return: {{date}}",
     "inUse": "In Use",
     "viaTransport": "Transport #{{id}}"
+  },
+  "notificationDisplay": {
+    "spareAssignmentTitle": "Assign a spare vehicle",
+    "spareAssignmentDescription": "A spare vehicle still to be chosen needs an assignment for {{period}}."
   }
 }

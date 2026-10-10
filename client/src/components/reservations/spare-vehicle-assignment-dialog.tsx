@@ -30,15 +30,16 @@ import { formatDate, formatLicensePlate } from "@/lib/format-utils";
 import { Reservation, Vehicle } from "@shared/schema";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
 
-// Form schema for vehicle assignments
-const assignmentSchema = z.object({
+// Form schema for vehicle assignments. Built with the translator so the
+// field message follows the language (it used to be a hard-coded English text).
+const makeAssignmentSchema = (t: (key: string) => string) => z.object({
   assignments: z.array(z.object({
     placeholderReservationId: z.number(),
-    vehicleId: z.number().min(1, "Please select a vehicle"),
-  })).min(1, "At least one assignment is required"),
+    vehicleId: z.number().min(1, t('spareVehicleAssignmentDialog.selectVehicleRequired')),
+  })).min(1, t('spareVehicleAssignmentDialog.atLeastOneAssignment')),
 });
 
-type AssignmentFormType = z.infer<typeof assignmentSchema>;
+type AssignmentFormType = z.infer<ReturnType<typeof makeAssignmentSchema>>;
 
 interface SpareVehicleAssignmentDialogProps {
   open: boolean;
@@ -116,7 +117,7 @@ export function SpareVehicleAssignmentDialog({
 
   // Form setup
   const form = useForm<AssignmentFormType>({
-    resolver: zodResolver(assignmentSchema),
+    resolver: zodResolver(makeAssignmentSchema((key) => t(key))),
     defaultValues: {
       assignments: filteredPlaceholders.map((res: Reservation) => ({
         placeholderReservationId: res.id,
@@ -207,6 +208,9 @@ export function SpareVehicleAssignmentDialog({
   };
 
   const isLoading = isLoadingPlaceholders || isLoadingVehicles;
+
+  // A-2-13: the button counts the vehicles actually picked, not the rows.
+  const selectedCount = (form.watch("assignments") ?? []).filter((a) => a.vehicleId > 0).length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -335,7 +339,7 @@ export function SpareVehicleAssignmentDialog({
                 </Button>
                 <Button
                   type="submit"
-                  disabled={assignVehiclesMutation.isPending}
+                  disabled={assignVehiclesMutation.isPending || selectedCount === 0}
                   data-testid="button-assign-vehicles"
                 >
                   {assignVehiclesMutation.isPending ? (
@@ -344,7 +348,9 @@ export function SpareVehicleAssignmentDialog({
                       {t('spareVehicleAssignmentDialog.assigningButton')}
                     </>
                   ) : (
-                    t('spareVehicleAssignmentDialog.assignButton', { count: filteredPlaceholders.length })
+                    selectedCount === 0
+                      ? t('spareVehicleAssignmentDialog.assignButtonNone')
+                      : t('spareVehicleAssignmentDialog.assignButton', { count: selectedCount })
                   )}
                 </Button>
               </DialogFooter>

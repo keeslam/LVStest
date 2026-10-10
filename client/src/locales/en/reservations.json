@@ -734,6 +734,9 @@
     "chooseVehiclePlaceholder": "Choose vehicle...",
     "cancelButton": "Cancel",
     "assigningButton": "Assigning...",
+    "assignButtonNone": "Choose a vehicle first",
+    "selectVehicleRequired": "Choose a vehicle.",
+    "atLeastOneAssignment": "Choose at least one vehicle to assign.",
     "assignButton_one": "Assign {{count}} Vehicle",
     "assignButton_other": "Assign {{count}} Vehicles",
     "toasts": {

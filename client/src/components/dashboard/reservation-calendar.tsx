@@ -50,8 +50,8 @@ import { SpareVehicleAssignmentDialog } from "@/components/reservations/spare-ve
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { NoDataAccess } from "@/components/ui/no-data-access";
 
-// Days of the week abbreviations
-const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+// Keys of the weekday abbreviations (reservationCalendar.weekdays.*), Monday first.
+const WEEKDAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
 // Holiday names for display
 const DUTCH_HOLIDAY_NAMES: Record<string, string> = {
@@ -345,7 +345,7 @@ export function ReservationCalendar() {
               </svg>
             </Button>
             <Button variant="ghost" size="sm" onClick={goToToday} className="text-xs mx-1">
-              Today
+              {t('reservationCalendar.today')}
             </Button>
             <Button variant="ghost" size="icon" onClick={navigateNext}>
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-right">
@@ -367,9 +367,9 @@ export function ReservationCalendar() {
         <div className="min-w-[640px]">
         {/* Calendar Header */}
         <div className="grid grid-cols-7 mb-2">
-          {daysOfWeek.map((day) => (
+          {WEEKDAY_KEYS.map((day) => (
             <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
-              {day}
+              {t(`reservationCalendar.weekdays.${day}`)}
             </div>
           ))}
         </div>
@@ -490,10 +490,10 @@ export function ReservationCalendar() {
                                         formatLicensePlate(res.vehicle?.licensePlate || '')
                                       }
                                       {isPickupDay && 
-                                        <span className="ml-1 inline-block bg-green-200 text-green-800 text-[8px] px-1 rounded-sm">out</span>
+                                        <span className="ml-1 inline-block bg-green-200 text-green-800 text-[8px] px-1 rounded-sm">{t('reservationCalendar.pickupTag')}</span>
                                       }
                                       {isReturnDay && 
-                                        <span className="ml-1 inline-block bg-blue-200 text-blue-800 text-[8px] px-1 rounded-sm">in</span>
+                                        <span className="ml-1 inline-block bg-blue-200 text-blue-800 text-[8px] px-1 rounded-sm">{t('reservationCalendar.returnTag')}</span>
                                       }
                                     </div>
                                     

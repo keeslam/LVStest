@@ -2,6 +2,7 @@
   "apkDateChanges": {
     "title": "APK-datums gewijzigd bij de RDW",
     "description": "Voor de volgende voertuigen wijkt de APK-vervaldatum bij de RDW af van de datum in het systeem. Controleer en bevestig de nieuwe datum, of negeer de melding om de huidige datum te behouden.",
+    "laterButton": "Later (morgen opnieuw)",
     "confirmButton": "Bevestigen",
     "dismissButton": "Negeren",
     "confirmedDescription": "De APK-datum van het voertuig is bijgewerkt.",

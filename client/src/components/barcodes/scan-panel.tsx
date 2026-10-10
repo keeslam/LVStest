@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { formatNl } from "@/lib/format-date-nl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -587,7 +588,7 @@ export function ScanPanel({ active = true, intent = null }: ScanPanelProps) {
               recentScans.map((scan) => (
                 <div key={scan.id} className="flex items-center gap-3 py-1 text-sm border-t first:border-t-0">
                   <span className="text-muted-foreground tabular-nums">
-                    {scan.createdAt ? format(new Date(scan.createdAt), "HH:mm") : "—"}
+                    {scan.createdAt ? formatNl(new Date(scan.createdAt), "dd-MM-yyyy HH:mm") : "—"}
                   </span>
                   <span className="font-mono">{scan.code}</span>
                   <span className="text-muted-foreground">

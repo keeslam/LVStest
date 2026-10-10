@@ -93,3 +93,22 @@ describe("finding 2a — /api/expenses/recent follows MANAGE_EXPENSES", () => {
     await waitFor(() => expect(calledWith(EXPENSES_URL)).toBe(true));
   });
 });
+
+/**
+ * A-2-5 (fysieke E2E-audit 2026-10-09, module 2) — the card printed the raw
+ * stored category ("tires", "toll", "fuel") on the Dutch dashboard.
+ */
+describe("A-2-5 — categories are shown in the user's language", () => {
+  it("lists a stored 'tires' expense as 'Banden'", async () => {
+    role = UserRole.ADMIN;
+    permissions = [];
+    fetchMock.mockImplementation(async () => json([
+      { id: 7, vehicleId: 1, category: "tires", amount: "120.00", date: "2026-10-01", description: "x",
+        vehicle: { id: 1, licensePlate: "AB-12-CD" } },
+    ]));
+    const { findByText, container } = withClient(<RecentExpenses />);
+
+    expect(await findByText(/Banden/)).toBeTruthy();
+    expect(container.textContent).not.toContain("tires");
+  });
+});

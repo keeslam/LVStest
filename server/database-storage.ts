@@ -4538,6 +4538,49 @@ export class DatabaseStorage implements IStorage {
       .where(and(...conditions));
   }
 
+  /**
+   * A-2-6 — what the dashboard's spare-vehicle widget needs, and nothing more:
+   * the replacement reservations that still have a spare out or coming (a
+   * vehicle assigned, not cancelled, not yet returned) plus the rentals they
+   * stand in for. The widget used to download every reservation to find these.
+   * Rows carry the same embedded `vehicle` / `customer` as getAllReservations.
+   */
+  async getSpareOverviewReservations(): Promise<Reservation[]> {
+    const spares = await db.select().from(reservations).where(and(
+      eq(reservations.type, 'replacement'),
+      isNotNull(reservations.vehicleId),
+      ne(reservations.status, 'cancelled'),
+      isNull(reservations.deletedAt),
+      sql`(${reservations.spareVehicleStatus} IS NULL OR ${reservations.spareVehicleStatus} <> 'returned')`,
+    ));
+
+    const parentIds = Array.from(new Set(
+      spares.map(s => s.replacementForReservationId).filter((id): id is number => id != null),
+    ));
+    const parents = parentIds.length
+      ? await db.select().from(reservations).where(and(inArray(reservations.id, parentIds), isNull(reservations.deletedAt)))
+      : [];
+
+    const rows = [...spares];
+    const seen = new Set(rows.map(r => r.id));
+    for (const p of parents) if (!seen.has(p.id)) rows.push(p);
+
+    const vehicleIds = Array.from(new Set(rows.map(r => r.vehicleId).filter((id): id is number => id != null)));
+    const customerIds = Array.from(new Set(rows.map(r => r.customerId).filter((id): id is number => id != null)));
+    const [vehicleRows, customerRows] = await Promise.all([
+      vehicleIds.length ? db.select().from(vehicles).where(inArray(vehicles.id, vehicleIds)) : Promise.resolve([]),
+      customerIds.length ? db.select().from(customers).where(inArray(customers.id, customerIds)) : Promise.resolve([]),
+    ]);
+    const vehicleById = new Map(vehicleRows.map(v => [v.id, v]));
+    const customerById = new Map(customerRows.map(c => [c.id, c]));
+
+    return rows.map(r => ({
+      ...r,
+      vehicle: r.vehicleId != null ? vehicleById.get(r.vehicleId) : undefined,
+      customer: r.customerId != null ? customerById.get(r.customerId) : undefined,
+    }));
+  }
+
   async getPlaceholderReservationsNeedingAssignment(daysAhead: number = 7): Promise<Reservation[]> {
     const cutoffDate = addDays(new Date(), daysAhead);
     const cutoffDateString = cutoffDate.toISOString().split('T')[0];

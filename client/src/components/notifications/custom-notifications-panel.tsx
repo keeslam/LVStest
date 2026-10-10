@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { displayNotification } from "@/lib/notification-display";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
@@ -685,13 +686,13 @@ export function CustomNotificationsPanel({ onBack }: CustomNotificationsPanelPro
                       <div className="flex items-center gap-2">
                         {notification.icon && iconComponents[notification.icon as IconName]}
                         <span className={!notification.isRead ? "font-semibold" : ""}>
-                          {notification.title}
+                          {displayNotification(notification, (key, options) => t(key, options)).title}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       <span className="text-muted-foreground text-sm line-clamp-1">
-                        {notification.description}
+                        {displayNotification(notification, (key, options) => t(key, options)).description}
                       </span>
                     </TableCell>
                     <TableCell>{renderPriorityBadge(notification.priority)}</TableCell>

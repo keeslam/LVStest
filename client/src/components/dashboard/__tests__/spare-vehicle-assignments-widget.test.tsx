@@ -136,6 +136,28 @@ describe("Task 5 — the widget's own data needs view_reservations/manage_reserv
 });
 
 /**
+ * A-2-6 — the widget must not download the whole reservation list; it asks the
+ * scoped endpoint for the open spares and their parent rentals.
+ */
+describe("A-2-6 — scoped reservation request", () => {
+  function requestedPaths(): string[] {
+    return fetchMock.mock.calls.map(([input]) => {
+      const requestUrl = typeof input === "string" ? input : (input as Request)?.url ?? "";
+      return requestUrl.split("?")[0];
+    });
+  }
+
+  it("asks for /api/reservations/spare-overview and never for the full list", async () => {
+    role = UserRole.ADMIN;
+    permissions = [];
+    withClient(<SpareVehicleAssignmentsWidget />);
+
+    await waitFor(() => expect(calledWith("/api/reservations/spare-overview")).toBe(true));
+    expect(requestedPaths().filter((p) => p.endsWith("/api/reservations"))).toEqual([]);
+  });
+});
+
+/**
  * Task 4 (docs/superpowers/specs/2026-09-21-toegang-design.md, §4) — one of
  * the "four dashboard controls Task 3 left" (task-3-report.md §8): every
  * action button in this widget ends in a mutation guarded server-side by

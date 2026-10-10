@@ -17,7 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { formatDate, formatCurrency, formatLicensePlate, sumMoney } from "@/lib/format-utils";
+import { formatDate, formatCurrency, formatLicensePlate, sumMoney, formatExpenseCategory } from "@/lib/format-utils";
 import { Price } from "@/components/ui/price";
 import { Expense, UserPermission } from "@shared/schema";
 import { MoreVertical, Eye, Pencil, Printer, Calendar, FileCheck } from "lucide-react";
@@ -174,7 +174,7 @@ export function RecentExpenses() {
                   </div>
                   <div className="text-sm truncate">
                     <span className="font-medium">{formatLicensePlate(group.vehicle?.licensePlate || '')}</span>
-                    <span className="text-gray-500">: {group.categories.join(', ')}</span>
+                    <span className="text-gray-500">: {group.categories.map((c) => formatExpenseCategory(c)).join(', ')}</span>
                     {group.expenses.length > 1 && (
                       <span className="text-xs text-gray-400 ml-1">{t('recentExpenses.itemsCount', { count: group.expenses.length })}</span>
                     )}
@@ -193,7 +193,7 @@ export function RecentExpenses() {
                         <div key={expense.id}>
                           <DropdownMenuItem onClick={() => openExpenseDialog(expense.id)}>
                             <Eye className="h-3 w-3 mr-2" />
-                            {t('common:actions.view')} {expense.category} - {<Price value={Number(expense.amount || 0)} />}
+                            {t('common:actions.view')} {formatExpenseCategory(expense.category)} - {<Price value={Number(expense.amount || 0)} />}
                           </DropdownMenuItem>
                         </div>
                       ))}
@@ -235,7 +235,7 @@ export function RecentExpenses() {
                           {getExpenseIcon(expense.category)}
                         </div>
                         <div>
-                          <Badge>{expense.category}</Badge>
+                          <Badge>{formatExpenseCategory(expense.category)}</Badge>
                         </div>
                       </div>
                       
