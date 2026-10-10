@@ -6,13 +6,18 @@ import { eq, and, isNotNull, inArray } from 'drizzle-orm';
 import { sendEmail, EmailTemplates, resolveEmailConfig } from '../utils/email-service.js';
 import { vehicleNotificationTargets } from '../services/vehicle-notification-recipients.js';
 import { formatDateNL } from '../utils/dutch-format.js';
+import { fillPlaceholders } from '../../shared/message-placeholders.js';
+import { EMAIL_FAILURE_CODES as FAILURE, withFailureCode } from '../../shared/email-failure.js';
 import { 
   getApkReminderTemplate, 
   getMaintenanceReminderTemplate,
   getCustomMessageTemplate 
 } from '../utils/email-templates-i18n.js';
 
-// Helper function to replace placeholders in template strings
+// Helper function to replace placeholders in template strings. Audit A-13-6:
+// both styles ({customerName} from the template builder, {{customerName}} as
+// the portal templates are written) go through the one shared replacer, which
+// the preview on screen uses as well.
 function replacePlaceholders(text: string, data: {
   customerName?: string;
   vehiclePlate?: string;
@@ -20,12 +25,13 @@ function replacePlaceholders(text: string, data: {
   vehicleModel?: string;
   apkDate?: string;
 }): string {
-  return text
-    .replace(/\{customerName\}/g, data.customerName || '')
-    .replace(/\{vehiclePlate\}/g, data.vehiclePlate || '')
-    .replace(/\{vehicleBrand\}/g, data.vehicleBrand || '')
-    .replace(/\{vehicleModel\}/g, data.vehicleModel || '')
-    .replace(/\{apkDate\}/g, data.apkDate || '');
+  return fillPlaceholders(text, {
+    customerName: data.customerName,
+    vehiclePlate: data.vehiclePlate,
+    vehicleBrand: data.vehicleBrand,
+    vehicleModel: data.vehicleModel,
+    apkDate: data.apkDate,
+  });
 }
 
 // Format license plate consistently using Dutch license plate patterns
@@ -282,7 +288,7 @@ router.post('/send', async (req, res) => {
       if (!selectedEmail) {
         results.failed++;
         const identifier = vehicle ? `vehicle ${vehicle.licensePlate}` : `customer ${customer?.name || 'Unknown'}`;
-        results.errors.push(`No ${emailField === 'auto' ? 'suitable' : emailField} email for ${identifier}`);
+        results.errors.push(withFailureCode(FAILURE.NO_ADDRESS, `No ${emailField === 'auto' ? 'suitable' : emailField} email for ${identifier}`));
         continue;
       }
 
@@ -359,11 +365,11 @@ router.post('/send', async (req, res) => {
         } else {
           results.failed++;
           const identifier = vehicle ? `vehicle ${vehicle.licensePlate}` : `customer ${customer?.name || 'Unknown'}`;
-          results.errors.push(`Failed to send to ${selectedEmail} for ${identifier}`);
+          results.errors.push(withFailureCode(FAILURE.SEND_FAILED, `Failed to send to ${selectedEmail} for ${identifier}`));
         }
       } catch (error) {
         results.failed++;
-        results.errors.push(`Error sending to ${selectedEmail}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        results.errors.push(withFailureCode(FAILURE.SEND_ERROR, `Error sending to ${selectedEmail}: ${error instanceof Error ? error.message : 'Unknown error'}`));
       }
     }
 
@@ -374,9 +380,10 @@ router.post('/send', async (req, res) => {
       const officeEmail = await resolveOfficeEmail();
       if (!officeEmail) {
         results.failed += unrentedVehicles.length;
-        results.errors.push(
+        results.errors.push(withFailureCode(
+          FAILURE.NO_OFFICE_EMAIL,
           `${unrentedVehicles.length} vehicle(s) are not rented out and there is no office e-mail address configured to report them to.`,
-        );
+        ));
       } else {
         const lines = unrentedVehicles.map((v) => {
           const plate = formatLicensePlate(v.licensePlate);
@@ -398,7 +405,7 @@ router.post('/send', async (req, res) => {
         if (sent) results.sent += 1;
         else {
           results.failed += 1;
-          results.errors.push(`Failed to send the office notice about ${unrentedVehicles.length} unrented vehicle(s).`);
+          results.errors.push(withFailureCode(FAILURE.OFFICE_NOTICE_FAILED, `Failed to send the office notice about ${unrentedVehicles.length} unrented vehicle(s).`));
         }
       }
     }

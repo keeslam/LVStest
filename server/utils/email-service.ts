@@ -2,6 +2,7 @@ import { storage } from "../storage";
 import nodemailer from "nodemailer";
 import { db } from "../db";
 import { emailLogs } from "../../shared/schema";
+import { EMAIL_FAILURE_CODES, withFailureCode } from "../../shared/email-failure";
 
 export interface EmailAttachment {
   filename: string;
@@ -458,13 +459,13 @@ export async function sendEmail(options: EmailOptions, purpose?: 'apk' | 'mainte
     const config = await getEmailConfig(purpose);
 
     if (!config) {
-      failureReason = `No valid email configuration for purpose: ${purpose || 'default'}`;
+      failureReason = withFailureCode(EMAIL_FAILURE_CODES.NO_EMAIL_CONFIG, `No valid email configuration for purpose: ${purpose || 'default'}`);
       console.error(`❌ Cannot send email: ${failureReason}`);
       return false;
     }
 
     if (!isSafeHeaderValue(options.to) || !isSafeHeaderValue(options.subject)) {
-      failureReason = 'Recipient or subject contains a line break';
+      failureReason = withFailureCode(EMAIL_FAILURE_CODES.UNSAFE_HEADER, 'Recipient or subject contains a line break');
       console.error(`❌ Cannot send email: ${failureReason}`);
       return false;
     }

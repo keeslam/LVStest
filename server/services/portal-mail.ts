@@ -8,6 +8,7 @@ import { getPortalConfig } from "./portal-config";
 import { generateInviteToken, INVITE_TTL_MS } from "./portal-tokens";
 import { finesStorage } from "./fines-storage";
 import { requestsStorage } from "./portal-requests-storage";
+import { fillPlaceholders } from "../../shared/message-placeholders";
 
 export const PORTAL_TEMPLATE = {
   INVITE: "portal_invite",
@@ -159,8 +160,11 @@ export function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
+// Audit A-13-6: the same replacer as the notification route, so a template
+// written with {name} (the template builder's style) is filled in as well as
+// one written with {{name}}. Unknown {{keys}} stay blank, as they always did.
 export function renderTemplate(content: string, vars: Record<string, string>): string {
-  return content.replace(/\{\{\s*(\w+)\s*\}\}/g, (_m, key: string) => escapeHtml(String(vars[key] ?? "")));
+  return fillPlaceholders(content, vars, { unknown: "blank", transform: (value) => escapeHtml(value) });
 }
 
 /**
@@ -168,7 +172,7 @@ export function renderTemplate(content: string, vars: Record<string, string>): s
  * `&amp;` would be read literally by every mail client.
  */
 export function renderTemplateText(content: string, vars: Record<string, string>): string {
-  return content.replace(/\{\{\s*(\w+)\s*\}\}/g, (_m, key: string) => String(vars[key] ?? ""));
+  return fillPlaceholders(content, vars, { unknown: "blank" });
 }
 
 export async function getPortalTemplate(name: string): Promise<{ subject: string; content: string }> {
