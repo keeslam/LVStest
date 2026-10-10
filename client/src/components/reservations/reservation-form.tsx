@@ -3001,7 +3001,7 @@ export function ReservationForm({
                     </Button>
 
                     {/* B-33: the overdue rentals are picked-up ones: deleting needs the new right and the warning. */}
-                    <RequiresPermission anyOf={cancelRightFor(reservation)}>
+                    <RequiresPermission allOf={cancelRightFor(reservation)}>
                       <Button
                         size="sm"
                         variant="destructive"

@@ -410,7 +410,7 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
               <Edit className="h-3.5 w-3.5" />
             </Button>
             {/* B-33: a picked-up rental needs the new right, every other row manage_reservations (the route's own guards). */}
-            <RequiresPermission anyOf={cancelRightFor(reservation)}>
+            <RequiresPermission allOf={cancelRightFor(reservation)}>
               <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); handleDelete(reservation); }} data-testid={`delete-btn-${reservation.id}`}>
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>

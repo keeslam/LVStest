@@ -7,9 +7,10 @@
  *  - `PickedUpWarning`: the warning box with the pickup date and the contract
  *    number and the tick (`checkbox-confirm-picked-up`) that unlocks the confirm
  *    button of the dialog it sits in;
- *  - `cancelRightFor`: the permission the opener needs - the new right
- *    `cancel_picked_up_rental` for a picked-up row, `manage_reservations` for
- *    every other row, exactly the guards of the routes behind them;
+ *  - `cancelRightFor`: the permissions the opener needs - for a picked-up row
+ *    BOTH `manage_reservations` and the new right `cancel_picked_up_rental`,
+ *    `manage_reservations` for every other row, exactly the guards of the routes
+ *    behind them;
  *  - `pickedUpRefusalOf` / `isPickedUpRightRefusal`: how a screen that did not
  *    know the row had been picked up (the list was stale) learns it from the
  *    server. The client branches on the stable `code`, never on the English
@@ -74,14 +75,15 @@ export function PickedUpWarning({ actualPickupDate, contractNumber, checked, onC
 }
 
 /**
- * The permissions for an opener that cancels or deletes this row: the new right
- * when the rental has been picked up (the route wants it on top of
- * `manage_reservations`), `manage_reservations` for every other row. Feed it to
- * `RequiresPermission anyOf={...}`.
+ * The permissions for an opener that cancels or deletes this row: when the rental
+ * has been picked up the new right ON TOP OF `manage_reservations` (the routes
+ * check both), `manage_reservations` alone for every other row. Feed it to
+ * `RequiresPermission allOf={...}`: an account holding only the new right then
+ * sees the greyed opener with the reason, not a generic English 403 after a click.
  */
 export function cancelRightFor(reservation: { status?: unknown; type?: unknown } | null | undefined): string[] {
   return isPickedUpRental(reservation)
-    ? [UserPermission.CANCEL_PICKED_UP_RENTAL]
+    ? [UserPermission.MANAGE_RESERVATIONS, UserPermission.CANCEL_PICKED_UP_RENTAL]
     : [UserPermission.MANAGE_RESERVATIONS];
 }
 

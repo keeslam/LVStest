@@ -158,8 +158,9 @@ export const DIALOGS: DialogEntry[] = [
   // and `button-delete-reservation` in the reservation view dialog, the delete
   // buttons in the list, the calendar's detail card and day dialog, the completed
   // list and the customer and vehicle details - are wrapped in RequiresPermission
-  // with `cancelRightFor(row)`: the new right for a picked-up row,
-  // `manage_reservations` for every other row (the routes' own guards). The one
+  // with `allOf={cancelRightFor(row)}`: manage_reservations plus the new right
+  // for a picked-up row, `manage_reservations` for every other row (the routes'
+  // own guards). The one
   // registered here is the cancel dialog's opener, the only one of them that opens
   // a dialog with a root of its own (the delete confirmations are the shared
   // ConfirmDialog from ui/). Like the revert opener it sits inside a record's view

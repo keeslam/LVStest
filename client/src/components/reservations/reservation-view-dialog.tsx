@@ -1000,7 +1000,7 @@ export function ReservationViewDialog({
             {reservation && reservation.status !== 'cancelled' && reservation.status !== 'completed' && (
               // B-33: a picked-up rental needs the new right, every other row
               // `manage_reservations` (the routes' own guards).
-              <RequiresPermission anyOf={cancelRightFor(reservation)}>
+              <RequiresPermission allOf={cancelRightFor(reservation)}>
                 <Button
                   variant="outline"
                   className="text-red-600 border-red-300 hover:bg-red-50"
@@ -1015,7 +1015,7 @@ export function ReservationViewDialog({
 
             {/* Only once the row is known: which right it needs depends on its status. */}
             {reservation && (
-              <RequiresPermission anyOf={cancelRightFor(reservation)}>
+              <RequiresPermission allOf={cancelRightFor(reservation)}>
                 <Button
                   variant="destructive"
                   onClick={() => setIsDeleteDialogOpen(true)}

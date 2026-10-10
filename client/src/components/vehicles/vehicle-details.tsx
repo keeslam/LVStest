@@ -2482,7 +2482,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                               </Button>
                               
                               {/* B-33: a picked-up rental needs the new right, every other row manage_reservations. */}
-                              <RequiresPermission anyOf={cancelRightFor(reservation)}>
+                              <RequiresPermission allOf={cancelRightFor(reservation)}>
                                 <Button
                                   variant="ghost"
                                   size="sm"

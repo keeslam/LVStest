@@ -70,9 +70,10 @@ describe("PickedUpWarning", () => {
 });
 
 describe("cancelRightFor", () => {
-  it("asks for cancel_picked_up_rental on a picked-up row (legacy spellings included) and for manage_reservations otherwise", () => {
-    expect(cancelRightFor(pickedUp)).toEqual([UserPermission.CANCEL_PICKED_UP_RENTAL]);
-    expect(cancelRightFor({ status: "active", type: "standard" })).toEqual([UserPermission.CANCEL_PICKED_UP_RENTAL]);
+  it("asks for manage_reservations AND cancel_picked_up_rental on a picked-up row (legacy spellings included; the routes want both) and for manage_reservations otherwise", () => {
+    const both = [UserPermission.MANAGE_RESERVATIONS, UserPermission.CANCEL_PICKED_UP_RENTAL];
+    expect(cancelRightFor(pickedUp)).toEqual(both);
+    expect(cancelRightFor({ status: "active", type: "standard" })).toEqual(both);
     expect(cancelRightFor(booked)).toEqual([UserPermission.MANAGE_RESERVATIONS]);
     expect(cancelRightFor({ status: "completed", type: "standard" })).toEqual([UserPermission.MANAGE_RESERVATIONS]);
     expect(cancelRightFor(null)).toEqual([UserPermission.MANAGE_RESERVATIONS]);

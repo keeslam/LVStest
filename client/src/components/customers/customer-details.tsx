@@ -440,7 +440,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
                         {t('common:actions.view')}
                       </Button>
                       {/* B-33: a picked-up rental needs the new right, every other row manage_reservations. */}
-                      <RequiresPermission anyOf={cancelRightFor(reservation)}>
+                      <RequiresPermission allOf={cancelRightFor(reservation)}>
                         <Button
                           variant="ghost"
                           size="sm"

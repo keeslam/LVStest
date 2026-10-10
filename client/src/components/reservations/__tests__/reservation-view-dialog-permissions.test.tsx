@@ -180,6 +180,19 @@ describe("ReservationViewDialog - cancelling or deleting a picked-up rental (B-3
     expect(deleteUrls).toHaveLength(0);
   });
 
+  it("the new right alone is not enough: the routes want manage_reservations too, so both openers are switched off with the reason instead of a generic 403", async () => {
+    setUser(UserRole.USER, [UserPermission.CANCEL_PICKED_UP_RENTAL]);
+    renderRental();
+    const cancel = await screen.findByTestId("button-cancel-reservation");
+    const remove = screen.getByTestId("button-delete-reservation");
+    expect(cancel).toHaveAttribute("aria-disabled", "true");
+    expect(remove).toHaveAttribute("aria-disabled", "true");
+
+    await userEvent.click(remove, { pointerEventsCheck: 0 });
+    expect(screen.queryByTestId("confirm-dialog")).toBeNull();
+    expect(deleteUrls).toHaveLength(0);
+  });
+
   it("with the right the delete asks first: the warning, a disabled confirm button, then DELETE with the flag", async () => {
     setUser(UserRole.USER, [UserPermission.MANAGE_RESERVATIONS, UserPermission.CANCEL_PICKED_UP_RENTAL]);
     renderRental();

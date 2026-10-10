@@ -2717,7 +2717,7 @@ export default function ReservationCalendarPage() {
                   </RequiresPermission>
                 )}
                 {/* B-33: a picked-up rental needs the new right, every other row manage_reservations. */}
-                <RequiresPermission anyOf={cancelRightFor(selectedReservation)}>
+                <RequiresPermission allOf={cancelRightFor(selectedReservation)}>
                   <Button
                     variant="destructive"
                     onClick={() => {
@@ -3010,7 +3010,7 @@ export default function ReservationCalendarPage() {
                           {t('common:actions.edit')}
                         </Button>
                         {/* B-33: a picked-up rental needs the new right, every other row manage_reservations. */}
-                        <RequiresPermission anyOf={cancelRightFor(reservation)}>
+                        <RequiresPermission allOf={cancelRightFor(reservation)}>
                           <Button
                             size="sm"
                             variant="outline"
@@ -3398,7 +3398,7 @@ export default function ReservationCalendarPage() {
                               </RequiresPermission>
                             )}
                             {/* B-33: a picked-up rental needs the new right, every other row manage_reservations. */}
-                            <RequiresPermission anyOf={cancelRightFor(rental)}>
+                            <RequiresPermission allOf={cancelRightFor(rental)}>
                               <Button
                                 size="sm"
                                 variant="outline"
