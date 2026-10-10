@@ -12,7 +12,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Vehicle, type Reservation, type DamageCheckFieldsConfig, DEFAULT_DAMAGE_CHECK_FIELDS } from "@shared/schema";
 import { displayLicensePlate } from "@/lib/utils";
 import { apiRequest, queryClient, invalidateRelatedQueries, invalidateByPrefix } from "@/lib/queryClient";
-import { X, Save, Trash2, Plus, Pencil, Eraser, Download, ClipboardCheck, Printer } from "lucide-react";
+import { X, Save, Trash2, Plus, Pencil, Eraser, Download, ClipboardCheck, Printer, Loader2, Check, CheckCheck } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { diagramImageProblem } from "@shared/diagram-image";
+import { applyAllGood, countFilled } from "@/lib/damage-check-all-good";
 import { VehicleSelector } from "@/components/ui/vehicle-selector";
 import { ReservationSelector } from "@/components/ui/reservation-selector";
 import { officeToday } from "@/lib/office-date";
@@ -34,6 +37,8 @@ interface DiagramTemplate {
   yearTo: number | null;
   diagramPath: string;
   description: string | null;
+  /** From GET /api/vehicle-diagram-templates/match: is this diagram really for the vehicle's model (A-11-3)? */
+  fit?: "model" | "fallback";
 }
 
 interface InteractiveDamageCheckProps {
@@ -71,6 +76,13 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
   const [notes, setNotes] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedCheckId, setLastSavedCheckId] = useState<number | null>(null);
+  // A-11-8: when the last save went through, so the form can say so instead of staying silent.
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  // A-11-2: a check this form just created is loaded again by the editing-effect below; that reload
+  // is not news and must not replace the "saved" toast with "Check geladen".
+  const justSavedCheckIdRef = useRef<number | null>(null);
+  // A-11-1: the size of the diagram image as the browser loaded it.
+  const [diagramSize, setDiagramSize] = useState<{ width: number; height: number } | null>(null);
   
   // Comparison mode state
   const [pickupCheckData, setPickupCheckData] = useState<any | null>(null);
@@ -299,10 +311,14 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
           }
         }
 
-        toast({
-          title: t('interactiveDamageCheck.toasts.checkLoadedTitle'),
-          description: t('interactiveDamageCheck.toasts.checkLoadedDescription'),
-        });
+        if (justSavedCheckIdRef.current === editingCheckId) {
+          justSavedCheckIdRef.current = null;
+        } else {
+          toast({
+            title: t('interactiveDamageCheck.toasts.checkLoadedTitle'),
+            description: t('interactiveDamageCheck.toasts.checkLoadedDescription'),
+          });
+        }
       } catch (error) {
         console.error('Error loading damage check:', error);
         toast({
@@ -400,6 +416,8 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
           const template = await response.json();
           setDiagramTemplate(template);
         } else {
+          // The previous vehicle's diagram must not stay on screen as if it fitted this one.
+          setDiagramTemplate(null);
           toast({
             title: t('interactiveDamageCheck.toasts.noDiagramFoundTitle'),
             description: t('interactiveDamageCheck.toasts.noDiagramFoundDescription'),
@@ -424,6 +442,11 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
     }
   }, [selectedReservationId, reservations]);
 
+  // A new diagram starts without a measured size (declared BEFORE the canvas effect below, which sets it).
+  useEffect(() => {
+    setDiagramSize(null);
+  }, [diagramTemplate?.id]);
+
   // Setup canvas drawing
   useEffect(() => {
     if (!canvasRef.current || !imageRef.current || !diagramTemplate) return;
@@ -435,6 +458,12 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
       // Use naturalWidth/naturalHeight for the actual image dimensions
       canvas.width = image.naturalWidth || image.width;
       canvas.height = image.naturalHeight || image.height;
+      if (image.naturalWidth && image.naturalHeight) {
+        setDiagramSize((previous) =>
+          previous && previous.width === image.naturalWidth && previous.height === image.naturalHeight
+            ? previous
+            : { width: image.naturalWidth, height: image.naturalHeight });
+      }
       redrawCanvas();
     };
 
@@ -1025,6 +1054,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
             const created = await postRes.json();
             if (created?.id) {
               savedId = created.id;
+              justSavedCheckIdRef.current = created.id;
               setEditingCheckId(created.id);
             }
           } catch {
@@ -1041,6 +1071,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
               const checks = await existingChecksRes.json();
               const existing = checks.find((c: any) => c.checkType === checkType);
               if (existing) {
+                justSavedCheckIdRef.current = existing.id;
                 setEditingCheckId(existing.id);
                 await apiRequest('PUT', `/api/interactive-damage-checks/${existing.id}`, checkData);
                 savedId = existing.id;
@@ -1059,7 +1090,10 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
           }
         }
       }
-      if (savedId) setLastSavedCheckId(savedId);
+      if (savedId) {
+        setLastSavedCheckId(savedId);
+        setSavedAt(new Date());
+      }
 
       invalidateRelatedQueries('reservations');
       invalidateRelatedQueries('vehicles');
@@ -1088,6 +1122,8 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
   };
 
   const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
+  const diagramProblem = diagramSize ? diagramImageProblem(diagramSize.width, diagramSize.height) : null;
+  const savedTime = savedAt ? savedAt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : '';
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -1100,6 +1136,9 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
             </h1>
             <p className="text-gray-600 mt-1">
               {showComparison ? t('interactiveDamageCheck.pageSubtitleComparison') : t('interactiveDamageCheck.pageSubtitle')}
+            </p>
+            <p className="text-sm text-gray-500 mt-1 max-w-3xl" data-testid="damage-check-relation-note">
+              {t('interactiveDamageCheck.relationNote')}
             </p>
           </div>
           <Button variant="outline" onClick={() => onClose ? onClose() : navigate('/documents')} data-testid="button-close">
@@ -1208,9 +1247,16 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                 className="w-full"
                 data-testid="button-save-check"
               >
-                <Save className="h-4 w-4 mr-2" />
+                {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                 {isSaving ? t('interactiveDamageCheck.savingButton') : t('interactiveDamageCheck.saveCheckButton')}
               </Button>
+              <p className="text-xs min-h-4 text-center text-gray-600" role="status" data-testid="damage-check-save-status">
+                {isSaving
+                  ? t('interactiveDamageCheck.savingProgress')
+                  : savedAt
+                    ? t('interactiveDamageCheck.savedAt', { time: savedTime })
+                    : ''}
+              </p>
               <Button
                 type="button"
                 variant="outline"
@@ -1420,6 +1466,22 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
             </div>
           )}
 
+          {diagramTemplate && diagramTemplate.fit === 'fallback' && (
+            <Alert className="mb-4" data-testid="damage-check-diagram-fallback">
+              <AlertTitle>{t('interactiveDamageCheck.diagramFallbackTitle')}</AlertTitle>
+              <AlertDescription>
+                {t('interactiveDamageCheck.diagramFallbackDescription', { make: diagramTemplate.make, model: diagramTemplate.model })}
+              </AlertDescription>
+            </Alert>
+          )}
+          {diagramTemplate && diagramProblem && diagramSize && (
+            <Alert variant="destructive" className="mb-4" data-testid="damage-check-diagram-unusable">
+              <AlertTitle>{t('interactiveDamageCheck.diagramUnusableTitle')}</AlertTitle>
+              <AlertDescription>
+                {t(diagramProblem === 'too_flat' ? 'interactiveDamageCheck.diagramTooFlat' : 'interactiveDamageCheck.diagramTooSmall', { width: diagramSize.width, height: diagramSize.height })}
+              </AlertDescription>
+            </Alert>
+          )}
           {diagramTemplate ? (
             <div 
               ref={containerRef} 
@@ -1555,7 +1617,24 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           {fieldsConfig.groups.map((group) => (
             <Card key={group.id} className="p-4">
-              <h3 className="font-bold text-center text-lg mb-4 bg-blue-900 text-white py-2 rounded">{group.label}</h3>
+              <h3 className="font-bold text-center text-lg mb-2 bg-blue-900 text-white py-2 rounded">{group.label}</h3>
+              <div className="mb-4 flex items-center justify-between gap-2 text-xs text-gray-600">
+                <span data-testid={`checklist-progress-${group.id}`}>
+                  {t('interactiveDamageCheck.checklistProgress', countFilled(group, checklistItems[group.id] ?? {}))}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7"
+                  title={t('interactiveDamageCheck.allGoodHint')}
+                  onClick={() => setChecklistItems({ ...checklistItems, [group.id]: applyAllGood(group, checklistItems[group.id] ?? {}) as any })}
+                  data-testid={`button-all-good-${group.id}`}
+                >
+                  <CheckCheck className="h-3.5 w-3.5 mr-1" />
+                  {t('interactiveDamageCheck.allGoodButton')}
+                </Button>
+              </div>
               <div className="space-y-3 text-sm">
                 {group.fields.map((field) => {
                   if (field.inputType === 'checkbox') {
@@ -1600,8 +1679,15 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                   };
                   return (
                     <div key={field.key} className="space-y-1.5">
-                      <div className="font-medium text-gray-700">{field.label}</div>
-                      <div className="flex flex-wrap gap-1.5" data-testid={`chips-${group.id}-${field.key}`}>
+                      <div className="flex items-baseline justify-between font-medium text-gray-700">
+                        <span>{field.label}</span>
+                        {selected.length === 0 && (
+                          <span className="text-xs font-normal text-gray-400" data-testid={`unanswered-${group.id}-${field.key}`}>
+                            {t('interactiveDamageCheck.notAnswered')}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5" role="group" aria-label={field.label} data-testid={`chips-${group.id}-${field.key}`}>
                         {field.options.map((opt) => {
                           const isOn = selected.includes(opt);
                           return (
@@ -1609,13 +1695,15 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                               key={opt}
                               type="button"
                               onClick={() => toggle(opt)}
-                              className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-colors ${
+                              aria-pressed={isOn}
+                              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors ${
                                 isOn
-                                  ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                                  ? 'bg-blue-600 border-blue-700 text-white shadow-sm ring-2 ring-blue-300'
                                   : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                               }`}
                               data-testid={`chip-${group.id}-${field.key}-${opt}`}
                             >
+                              {isOn && <Check className="h-3 w-3" aria-hidden="true" />}
                               {opt}
                             </button>
                           );
@@ -1808,7 +1896,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                 data-testid="button-save-check-footer"
                 className="sm:w-auto"
               >
-                <Save className="h-4 w-4 mr-2" />
+                {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                 {isSaving ? t('interactiveDamageCheck.savingButton') : t('interactiveDamageCheck.saveCheckButton')}
               </Button>
             </div>

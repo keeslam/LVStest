@@ -8,10 +8,42 @@ import { resolveUploadsPath } from "../../shared/paths";
 import { hasPermission } from "../middleware/permissions.js";
 import { UserPermission } from "../../shared/schema";
 import type { RouteDeps } from "./deps";
+import { readImageDimensions } from "../utils/image-dimensions";
+import { diagramImageProblem } from "../../shared/diagram-image";
 
 // Moved verbatim out of server/routes.ts (registerRoutes) - see git history for context.
 export function registerVehicleDiagramTemplateRoutes(app: Express, deps: RouteDeps): void {
   const { upload, diagramUpload, uploadsDir, requireAuth } = deps;
+
+  /**
+   * A-11-1: a diagram that is a thin strip (or a thumbnail) cannot be marked on, and the damage
+   * check then loses its core function without saying why. Refuse it at the door, delete the file
+   * multer already wrote, and answer with a stable code the client translates (the message stays
+   * English). A file whose size cannot be read is let through: the type check above already ran.
+   * Returns true when the response has been sent.
+   */
+  const refuseUnusableDiagram = async (req: Request, res: Response): Promise<boolean> => {
+    if (!req.file) return false;
+    let size: { width: number; height: number } | null = null;
+    try {
+      size = readImageDimensions(await fs.promises.readFile(req.file.path));
+    } catch {
+      return false;
+    }
+    if (!size) return false;
+    const problem = diagramImageProblem(size.width, size.height);
+    if (!problem) return false;
+    await fs.promises.unlink(req.file.path).catch(() => {});
+    res.status(400).json({
+      message: problem === "too_flat"
+        ? "This image is too flat to mark damage on. Use a picture of the vehicle from above or from the side."
+        : "This image is too small to mark damage on. Use a larger picture of the vehicle.",
+      code: problem === "too_flat" ? "DIAGRAM_IMAGE_TOO_FLAT" : "DIAGRAM_IMAGE_TOO_SMALL",
+      width: size.width,
+      height: size.height,
+    });
+    return true;
+  };
 
 
   // VEHICLE DIAGRAM TEMPLATE ROUTES
@@ -81,7 +113,16 @@ export function registerVehicleDiagramTemplateRoutes(app: Express, deps: RouteDe
       }
       
       console.log(`Found matching diagram template ${template.id} for vehicle ${vehicleId}`);
-      res.json(template);
+      // A-11-3: the storage layer falls back to any diagram so a check is never blocked; say
+      // whether this one is really for the vehicle, so the screen does not present another
+      // model's picture as if it fitted. "model" = same make and the model matches (exactly or
+      // as a part, like "FIAT DUCATO" / "DUCATO"); anything else is a "fallback".
+      const norm = (value: unknown) => String(value ?? "").trim().toLowerCase();
+      const sameMake = norm(template.make) === norm(vehicle.brand);
+      const a = norm(template.model);
+      const b = norm(vehicle.model);
+      const fit = sameMake && a !== "" && b !== "" && (a === b || a.includes(b) || b.includes(a)) ? "model" : "fallback";
+      res.json({ ...template, fit });
     } catch (error) {
       console.error("Error finding matching diagram template:", error);
       res.status(500).json({ message: "Error finding matching diagram template" });
@@ -105,6 +146,7 @@ export function registerVehicleDiagramTemplateRoutes(app: Express, deps: RouteDe
       if (!fileValidation.valid) {
         return res.status(400).json({ message: fileValidation.error });
       }
+      if (await refuseUnusableDiagram(req, res)) return;
       
       const user = req.user;
       
@@ -162,6 +204,7 @@ export function registerVehicleDiagramTemplateRoutes(app: Express, deps: RouteDe
         if (!fileValidation.valid) {
           return res.status(400).json({ message: fileValidation.error });
         }
+        if (await refuseUnusableDiagram(req, res)) return;
         
         const diagramsDir = resolveUploadsPath('vehicle-diagrams');
         
