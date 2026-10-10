@@ -56,14 +56,38 @@ function formatLicensePlate(normalized: string): string {
 
 
 /**
- * Map the RDW vehicle type to our application's vehicle type
+ * Map the RDW vehicle type to our application's vehicle type.
+ *
+ * The RDW registers nearly every 9-seat passenger van (VW Transporter and Kombi, Fiat Ducato and
+ * Scudo, Peugeot Boxer, Ford Transit/Tourneo, Mercedes Vito, Renault Trafic) as voertuigsoort
+ * "Personenauto", EU category M1, inrichting "MPV" - exactly like a Zafira or a Model Y. The old
+ * rule "MPV means SUV" therefore turned every one of them into an SUV (audit A-3-5). The order
+ * below is: a goods vehicle (EU category N1, or an inrichting that says closed body / delivery
+ * van) is a Van; a passenger vehicle with eight or nine seats (the M1 maximum is nine) is a Van;
+ * only then does the MPV rule give an SUV.
  */
-function mapVehicleType(rdwType: string | undefined, bodyType?: string | undefined): string | null {
+export function mapVehicleType(
+  rdwType: string | undefined,
+  bodyType?: string | undefined,
+  euCategory?: string | undefined,
+  seats?: string | number | undefined,
+): string | null {
   if (!rdwType) return null;
+
+  const body = (bodyType ?? "").toLowerCase();
+  const category = (euCategory ?? "").trim().toUpperCase();
+  const seatCount = Number(seats);
+
+  // Goods vehicles first: N1 is a light goods vehicle, whatever voertuigsoort the registration says.
+  if (category === "N1") return "Van";
+  if (rdwType === "Personenauto" || rdwType === "Bedrijfsauto") {
+    if (body.includes("gesloten opbouw") || body.includes("bestel")) return "Van";
+  }
 
   // A passenger car gets its body type from the RDW "inrichting" when it is known.
   if (rdwType === "Personenauto") {
-    const body = (bodyType ?? "").toLowerCase();
+    // Eight or nine seats is a people carrier van, not a car-shaped MPV.
+    if (Number.isFinite(seatCount) && seatCount >= 8) return "Van";
     if (body.includes("hatchback")) return "Hatchback";
     if (body.includes("stationwagen")) return "Stationwagen";
     if (body.includes("coup")) return "Coupe";
@@ -83,6 +107,18 @@ function mapVehicleType(rdwType: string | undefined, bodyType?: string | undefin
   };
   
   return typeMap[rdwType] || null;
+}
+
+/** The vehicle type of one raw registration row (m9d7-ebf2); shared by the lookup and the re-map script. */
+export function vehicleTypeFromRdwRow(row: Record<string, unknown>): string | null {
+  return row.voertuigsoort
+    ? mapVehicleType(
+        String(row.voertuigsoort),
+        row.inrichting == null ? undefined : String(row.inrichting),
+        row.europese_voertuigcategorie == null ? undefined : String(row.europese_voertuigcategorie),
+        row.aantal_zitplaatsen == null ? undefined : String(row.aantal_zitplaatsen),
+      )
+    : null;
 }
 
 /**
@@ -274,7 +310,7 @@ export async function fetchVehicleInfoByLicensePlate(licensePlate: string): Prom
       licensePlate: formatLicensePlate(normalized),
       brand: rdwVehicle.merk || null,
       model: rdwVehicle.handelsbenaming || null,
-      vehicleType: rdwVehicle.voertuigsoort ? mapVehicleType(rdwVehicle.voertuigsoort, rdwVehicle.inrichting) : null,
+      vehicleType: vehicleTypeFromRdwRow(rdwVehicle),
       chassisNumber: rdwVehicle.chassis || null,
       fuel: fuelFromRdwFuelRows(fuelRows) ?? (rdwVehicle.brandstof_omschrijving ? mapFuelType(rdwVehicle.brandstof_omschrijving) : null),
       euroZone: mapEuroZone(emissionClass),
