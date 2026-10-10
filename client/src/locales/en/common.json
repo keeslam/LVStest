@@ -214,7 +214,8 @@
         "fine": "Fine",
         "driver": "Driver",
         "maintenance": "Maintenance",
-        "blacklist": "Blacklist"
+        "blacklist": "Blacklist",
+        "maintenance_block": "Maintenance block"
       },
       "verbs": {
         "create": "created",
@@ -247,6 +248,20 @@
           "toggle-registration": "Registration changed",
           "fiscal-profile": "Fiscal profile changed",
           "blacklist": "Added to the blacklist"
+        },
+        "document": {
+          "email": "Document emailed",
+          "regenerate": "Document regenerated"
+        },
+        "fine": {
+          "letter": "Fine letter uploaded",
+          "link": "Fine linked to a customer",
+          "unlink": "Fine unlinked from its customer",
+          "reactivate": "Fine reactivated",
+          "status": "Fine status changed"
+        },
+        "expense": {
+          "with-receipt": "Expense saved with receipt"
         }
       }
     }

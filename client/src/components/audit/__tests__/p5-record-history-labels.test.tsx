@@ -7,6 +7,9 @@
  * Runs in the jsdom project.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import i18n from "@/i18n";
+import nlCommon from "@/locales/nl/common.json";
+import enCommon from "@/locales/en/common.json";
 import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RecordHistory } from "@/components/audit/record-history";
@@ -44,6 +47,16 @@ const logs = [
   entry(16, "reservation.brand-new-step"),
   entry(17, "vehicle.fuel-status"),
   entry(18, "fine.purge"),
+  entry(19, "document.email"),
+  entry(20, "document.regenerate"),
+  entry(21, "fine.letter"),
+  entry(22, "fine.link"),
+  entry(23, "fine.unlink"),
+  entry(24, "fine.reactivate"),
+  entry(25, "fine.status"),
+  entry(26, "expense.with-receipt"),
+  entry(27, "maintenance_block.purge"),
+  entry(28, "maintenance_block.create"),
 ];
 
 beforeEach(() => {
@@ -95,6 +108,47 @@ describe("A-6-4 - audit codes are worded in the record history", () => {
     expect(await text(15)).toContain("Vervangend voertuig toegewezen");
     expect(await text(17)).toContain("Brandstofstatus gewijzigd");
     expect(await text(18)).toContain("Boete definitief verwijderd");
+  });
+
+  // Final wave A, item 5: the codes the reviews found still reading "Document: email", "Boete: link" and
+  // the raw "maintenance_block.purge" (an underscore entity type is not a resource the label knew).
+  it("words the document, fine and expense actions and the underscore entity types", async () => {
+    renderHistory();
+    const text = async (id: number) => (await screen.findByTestId(`record-history-entry-${id}`)).textContent ?? "";
+    expect(await text(19)).toContain("Document gemaild");
+    expect(await text(20)).toContain("Document opnieuw gemaakt");
+    expect(await text(21)).toContain("Boetebrief geüpload");
+    expect(await text(22)).toContain("Boete gekoppeld aan een klant");
+    expect(await text(23)).toContain("Koppeling van de boete losgemaakt");
+    expect(await text(24)).toContain("Boete weer actief gemaakt");
+    expect(await text(25)).toContain("Status van de boete gewijzigd");
+    expect(await text(26)).toContain("Kostenpost met bon opgeslagen");
+    expect(await text(27)).toContain("Onderhoudsplanning definitief verwijderd");
+    expect(await text(28)).toContain("Onderhoudsplanning aangemaakt");
+    const list = await screen.findByTestId("record-history-list");
+    for (const code of ["document.email", "fine.link", "maintenance_block.purge", "expense.with-receipt"]) {
+      expect(list.textContent, code).not.toContain(code);
+    }
+  });
+
+  it("words them in English too, and nl and en carry the same recordHistory keys", async () => {
+    await i18n.changeLanguage("en");
+    try {
+      renderHistory();
+      const text = async (id: number) => (await screen.findByTestId(`record-history-entry-${id}`)).textContent ?? "";
+      expect(await text(19)).toContain("Document emailed");
+      expect(await text(22)).toContain("Fine linked to a customer");
+      expect(await text(27)).toContain("Maintenance block permanently deleted");
+      const list = await screen.findByTestId("record-history-list");
+      expect(list.textContent).not.toMatch(/.(email|link|purge|regenerate)/);
+    } finally {
+      await i18n.changeLanguage("nl");
+    }
+    const keysOf = (value: unknown, prefix = ""): string[] =>
+      Object.entries(value as Record<string, unknown>).flatMap(([key, child]) =>
+        child && typeof child === "object" ? keysOf(child, `${prefix}${key}.`) : [`${prefix}${key}`],
+      );
+    expect(keysOf((enCommon as any).recordHistory).sort()).toEqual(keysOf((nlCommon as any).recordHistory).sort());
   });
 
   it("reads a known resource with an unworded sub-action as \"Reservering: <sub>\", not as the bare code", async () => {

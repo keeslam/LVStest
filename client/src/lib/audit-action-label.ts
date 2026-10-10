@@ -32,10 +32,15 @@ const SUB_ACTIONS: Record<string, readonly string[]> = {
   vehicle: [
     "mileage", "fuel-status", "maintenance-status", "barcode", "toggle-registration", "fiscal-profile", "blacklist",
   ],
+  document: ["email", "regenerate"],
+  fine: ["letter", "link", "unlink", "reactivate", "status"],
+  expense: ["with-receipt"],
 };
 
 const RESOURCES = [
   "reservation", "vehicle", "customer", "document", "expense", "transport", "fine", "driver", "maintenance", "blacklist",
+  // The recycle bin writes `<entityType>.purge` with the entity type as it is stored, underscore and all.
+  "maintenance_block",
 ] as const;
 
 const VERBS = ["create", "update", "delete", "restore", "upload", "purge"] as const;

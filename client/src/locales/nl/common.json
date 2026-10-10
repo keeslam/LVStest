@@ -214,7 +214,8 @@
         "fine": "Boete",
         "driver": "Chauffeur",
         "maintenance": "Onderhoud",
-        "blacklist": "Zwarte lijst"
+        "blacklist": "Zwarte lijst",
+        "maintenance_block": "Onderhoudsplanning"
       },
       "verbs": {
         "create": "aangemaakt",
@@ -247,6 +248,20 @@
           "toggle-registration": "Tenaamstelling gewijzigd",
           "fiscal-profile": "Fiscaal profiel gewijzigd",
           "blacklist": "Op de zwarte lijst gezet"
+        },
+        "document": {
+          "email": "Document gemaild",
+          "regenerate": "Document opnieuw gemaakt"
+        },
+        "fine": {
+          "letter": "Boetebrief geüpload",
+          "link": "Boete gekoppeld aan een klant",
+          "unlink": "Koppeling van de boete losgemaakt",
+          "reactivate": "Boete weer actief gemaakt",
+          "status": "Status van de boete gewijzigd"
+        },
+        "expense": {
+          "with-receipt": "Kostenpost met bon opgeslagen"
         }
       }
     }
