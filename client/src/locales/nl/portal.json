@@ -676,7 +676,8 @@
         "deleteConfirm": "Deze bekeuring naar de prullenbak verplaatsen? Wie de prullenbak mag beheren kan hem daar terugzetten.",
         "deleted": "Bekeuring naar de prullenbak verplaatst",
         "changeCustomer": "Wijzigen",
-        "moreCustomers": "{{shown}} van {{total}} getoond, typ om te verfijnen."
+        "moreCustomers": "{{shown}} van {{total}} getoond, typ om te verfijnen.",
+        "noCustomerRight": "Om een klant aan deze bekeuring te koppelen heb je ook het recht Klanten bekijken nodig."
       },
       "cjib": {
         "button": "CJIB-importen",

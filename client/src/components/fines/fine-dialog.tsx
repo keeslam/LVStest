@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useFilePreview } from "@/components/documents/use-file-preview";
-import type { Customer, Driver } from "@shared/schema";
+import { UserPermission, type Customer, type Driver } from "@shared/schema";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { FINE_TRANSITIONS, type FineStatusValue } from "@shared/fines";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
@@ -43,8 +44,13 @@ export function FineDialog() {
   useEffect(() => {
     if (fine) setEdit({ description: fine.description, amount: fine.amount, adminFee: fine.adminFee, reference: fine.reference ?? "", internalNotes: fine.internalNotes ?? "", customerNote: fine.customerNote ?? "" });
   }, [fine]);
-  const { data: customers = [] } = useQuery<Customer[]>({ queryKey: ["/api/customers"], enabled: open && fine?.status === "new" });
-  const { data: drivers = [] } = useQuery<Driver[]>({ queryKey: [`/api/customers/${pick.customerId}/drivers`], enabled: open && pick.customerId !== "" });
+  // Linking a fine to a customer reads the customer list (and a customer's drivers): view_customers or
+  // manage_customers. A view_fines-only account on the Bekeuringen screen must not fire those requests,
+  // or the refused answer shows the red "Kon de gegevens niet laden" toast.
+  const canListCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
+  const canPickCustomer = canManage && canListCustomers;
+  const { data: customers = [] } = useQuery<Customer[]>({ queryKey: ["/api/customers"], enabled: open && fine?.status === "new" && canPickCustomer });
+  const { data: drivers = [] } = useQuery<Driver[]>({ queryKey: [`/api/customers/${pick.customerId}/drivers`], enabled: open && pick.customerId !== "" && canPickCustomer });
 
   const done = () => { queryClient.invalidateQueries({ queryKey: key }); invalidateByPrefix("/api/fines"); };
   const call = useMutation({
@@ -107,6 +113,9 @@ export function FineDialog() {
                   </div>
                 </>)}
                 {fine.candidates && fine.candidates.covering.length + fine.candidates.near.length === 0 && <p className="text-xs text-muted-foreground">{t("admin.fines.dialog.noCandidates")}</p>}
+                {!canPickCustomer ? (
+                  <p className="text-xs text-muted-foreground" data-testid="fine-no-customer-right">{t("admin.fines.dialog.noCustomerRight")}</p>
+                ) : (<>
                 <div className="space-y-3">
                   <div>
                     <Label>{t("admin.fines.dialog.chooseCustomer")}</Label>
@@ -129,6 +138,7 @@ export function FineDialog() {
                   onClick={() => call.mutate({ method: "POST", url: `/api/fines/${id}/link`, body: { customerId: Number(pick.customerId), reservationId: pick.reservationId ? Number(pick.reservationId) : null, driverId: pick.driverId ? Number(pick.driverId) : null } })}>
                   {t("admin.fines.dialog.link")}
                 </Button>
+                </>)}
               </div>
             )}
 

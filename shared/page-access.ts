@@ -54,7 +54,7 @@ export const PAGE_ACCESS: readonly PageAccess[] = [
   { path: "/communications", anyOf: [P.MANAGE_NOTIFICATIONS, P.MANAGE_EMAIL_TEMPLATES] },
   // A-R-1: "Fiscale check bekijken" opens Rapporten too (the fiscal tab is its own screen there).
   { path: "/reports", anyOf: [P.VIEW_REPORTS, P.MANAGE_REPORTS, P.VIEW_FISCAL] },
-  // Screens without a menu entry, listed after the 12 above so
+  // Screens without a menu entry, listed after the menu screens above so
   // firstOpenablePage() only ever offers a menu screen as the way out.
   { path: "/reservations/edit/:id", anyOf: [P.MANAGE_RESERVATIONS] },
   { path: "/expenses/add", anyOf: [P.MANAGE_EXPENSES] },
