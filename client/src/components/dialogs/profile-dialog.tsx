@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient , invalidateByPrefix } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { makePasswordChangeSchema, type PasswordChangeValues } from "@/lib/password-change-schema";
 import {
   Dialog,
   DialogContent,
@@ -49,17 +50,7 @@ const profileFormSchema = z.object({
   email: z.string().email("Invalid email address").optional().or(z.literal("")),
 });
 
-const passwordChangeSchema = z.object({
-  currentPassword: z.string().min(1, "Current password is required"),
-  newPassword: z.string().min(6, "New password must be at least 6 characters"),
-  confirmPassword: z.string().min(6, "Please confirm your new password"),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
-});
-
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
-type PasswordChangeValues = z.infer<typeof passwordChangeSchema>;
 
 export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
   const { t } = useTranslation(["auth", "common"]);
@@ -77,7 +68,8 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
   });
 
   const passwordForm = useForm<PasswordChangeValues>({
-    resolver: zodResolver(passwordChangeSchema),
+    // Built per render so the messages follow the language switch.
+    resolver: zodResolver(makePasswordChangeSchema((key) => t(key))),
     defaultValues: {
       currentPassword: "",
       newPassword: "",
@@ -348,7 +340,18 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                     <FormItem>
                       <FormLabel>{t('profileDialog.newPassword')}</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder={t('profileDialog.newPasswordPlaceholder')} {...field} data-testid="input-new-password" />
+                        <Input
+                          type="password"
+                          placeholder={t('profileDialog.newPasswordPlaceholder')}
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            // The confirm field's message depends on this value: after a
+                            // failed submit, re-check it instead of showing a stale one.
+                            if (passwordForm.formState.isSubmitted) void passwordForm.trigger("confirmPassword");
+                          }}
+                          data-testid="input-new-password"
+                        />
                       </FormControl>
                       <FormDescription>{t('profileDialog.newPasswordHint')}</FormDescription>
                       <FormMessage />

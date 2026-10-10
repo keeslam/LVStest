@@ -93,14 +93,15 @@ function AppRoutes() {
 
 function App() {
   return (
-    <SocketProvider>
-      <AuthProvider>
+    // SocketProvider reads the signed-in user, so it sits inside AuthProvider.
+    <AuthProvider>
+      <SocketProvider>
         <GlobalDialogProvider>
           <AppRoutes />
           <GlobalDialogs />
         </GlobalDialogProvider>
-      </AuthProvider>
-    </SocketProvider>
+      </SocketProvider>
+    </AuthProvider>
   );
 }
 

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { io, Socket } from 'socket.io-client';
 import { queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 // The app's i18n instance, the way format-utils.ts uses it: this hook lives
 // outside any component that could carry a useTranslation().
 import i18n from '@/i18n';
@@ -40,8 +41,16 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const { toast } = useToast();
+  // The handshake is checked against the session (BUG-005), so a socket opened
+  // before sign-in is refused ("Socket connection error: unauthorized", A-1-7).
+  // Connect only once a user is loaded; a sign-out closes it again and the next
+  // sign-in opens a fresh one that carries the new session.
+  const { user } = useAuth();
+  const userId = user?.id;
 
   useEffect(() => {
+    if (userId === undefined) return;
+
     // Create socket connection
     // Polling first, then upgrade to websocket. Reverse order fails hard behind
     // proxies that don't pass the WS upgrade through (e.g. Traefik in Coolify)
@@ -108,8 +117,10 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     return () => {
       console.log('🔌 Cleaning up socket connection...');
       socketInstance.disconnect();
+      setSocket(null);
+      setIsConnected(false);
     };
-  }, [toast]);
+  }, [toast, userId]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>
