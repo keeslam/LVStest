@@ -10,6 +10,7 @@ import { FINE_TRANSITIONS, type FineStatusValue } from "@shared/fines";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +47,8 @@ export function FineDialog() {
   const [pick, setPick] = useState({ customerId: "", reservationId: "", driverId: "" });
   // A-19-6 / A-12-6: the delete asks in our own dialog (window.confirm is ignored by the built-in browser), naming plate and amount.
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // A-12-5: "Bekeuring annuleren" cancels the FINE, so it asks first; closing the dialog is a separate "Sluiten".
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
   useEffect(() => {
     if (fine) setEdit({ description: fine.description, amount: fine.amount, adminFee: fine.adminFee, reference: fine.reference ?? "", internalNotes: fine.internalNotes ?? "", customerNote: fine.customerNote ?? "" });
   }, [fine]);
@@ -58,9 +61,11 @@ export function FineDialog() {
   const { data: drivers = [] } = useQuery<Driver[]>({ queryKey: [`/api/customers/${pick.customerId}/drivers`], enabled: open && pick.customerId !== "" && canPickCustomer });
 
   const done = () => { queryClient.invalidateQueries({ queryKey: key }); invalidateByPrefix("/api/fines"); };
+  // A-12-8: every action names what it did ("gekoppeld", "ontkoppeld", ...) instead of the save text.
+  type Outcome = "saved" | "linked" | "unlinked" | "cancelled" | "reactivated";
   const call = useMutation({
-    mutationFn: async ({ method, url, body }: { method: string; url: string; body?: unknown }) => (await apiRequest(method, url, body)).json(),
-    onSuccess: () => { done(); toast({ title: t("admin.fines.dialog.saved") }); },
+    mutationFn: async ({ method, url, body }: { method: string; url: string; body?: unknown; outcome: Outcome }) => (await apiRequest(method, url, body)).json(),
+    onSuccess: (_data, { outcome }) => { done(); toast({ title: t(`admin.fines.dialog.outcome.${outcome}`) }); },
     onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
   const closed = fine?.status === "cancelled";
@@ -70,14 +75,19 @@ export function FineDialog() {
     onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
   const allowed = fine ? (FINE_TRANSITIONS[fine.status as FineStatusValue] ?? []) : [];
-  const setStatus = (status: string) => call.mutate({ method: "POST", url: `/api/fines/${id}/status`, body: { status } });
+  const setStatus = (status: string, outcome: Outcome) => call.mutate({ method: "POST", url: `/api/fines/${id}/status`, body: { status }, outcome });
   const choose = (c: Candidate) => setPick({ customerId: String(c.customerId ?? ""), reservationId: String(c.id), driverId: c.driverId ? String(c.driverId) : "" });
   const disabled = !canManage || closed;
+  // Unsaved typing in the detail: Escape, the X and "Sluiten" ask before throwing it away (same hook as the other forms).
+  const dirty = !!fine && (edit.description !== fine.description || edit.amount !== fine.amount || edit.reference !== (fine.reference ?? "")
+    || edit.internalNotes !== (fine.internalNotes ?? "") || edit.customerNote !== (fine.customerNote ?? ""));
+  const guard = useUnsavedChangesGuard({ close: closeFineDialog });
+  useEffect(() => { guard.setDirty(dirty); }, [dirty, guard.setDirty]);
 
   if (!open) return null;
   return (<>
     {preview.dialog}
-    <Dialog open={open} onOpenChange={(o) => !o && closeFineDialog()}>
+    <Dialog open={open} onOpenChange={guard.onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">{t("admin.fines.dialog.title", { id })} {fine && <FineStatusBadge status={fine.status} />}</DialogTitle>
@@ -91,6 +101,9 @@ export function FineDialog() {
               <div><Label htmlFor="fd-desc">{t("admin.fines.fields.description")}</Label><Input id="fd-desc" value={edit.description} disabled={disabled} onChange={(e) => setEdit({ ...edit, description: e.target.value })} /></div>
               <div><Label htmlFor="fd-ref">{t("admin.fines.fields.reference")}</Label><Input id="fd-ref" value={edit.reference} disabled={disabled} onChange={(e) => setEdit({ ...edit, reference: e.target.value })} /></div>
               <div><Label htmlFor="fd-amount">{t("admin.fines.fields.amount")}</Label><Input id="fd-amount" type="number" step="0.01" value={edit.amount} disabled={disabled} onChange={(e) => setEdit({ ...edit, amount: e.target.value })} /></div>
+              {/* A-12-11: the list shows the total, so the detail says what it is made of. */}
+              <div><Label>{t("admin.fines.fields.adminFee")}</Label><div data-testid="fine-admin-fee">{formatCurrency(fine.adminFee)}</div></div>
+              <div><Label>{t("admin.fines.fields.total")}</Label><div className="font-medium" data-testid="fine-total">{formatCurrency(fine.totalAmount)}</div></div>
               <div><Label htmlFor="fd-cn">{t("admin.fines.fields.customerNote")}</Label><Textarea id="fd-cn" rows={2} value={edit.customerNote} disabled={disabled} onChange={(e) => setEdit({ ...edit, customerNote: e.target.value })} /></div>
               <div><Label htmlFor="fd-in">{t("admin.fines.fields.internalNotes")}</Label><Textarea id="fd-in" rows={2} value={edit.internalNotes} disabled={disabled} onChange={(e) => setEdit({ ...edit, internalNotes: e.target.value })} /></div>
             </div>
@@ -140,30 +153,45 @@ export function FineDialog() {
                   )}
                 </div>
                 <Button size="sm" disabled={!pick.customerId || call.isPending} data-testid="button-link-fine"
-                  onClick={() => call.mutate({ method: "POST", url: `/api/fines/${id}/link`, body: { customerId: Number(pick.customerId), reservationId: pick.reservationId ? Number(pick.reservationId) : null, driverId: pick.driverId ? Number(pick.driverId) : null } })}>
+                  onClick={() => call.mutate({ method: "POST", url: `/api/fines/${id}/link`, body: { customerId: Number(pick.customerId), reservationId: pick.reservationId ? Number(pick.reservationId) : null, driverId: pick.driverId ? Number(pick.driverId) : null }, outcome: "linked" })}>
                   {t("admin.fines.dialog.link")}
                 </Button>
                 </>)}
               </div>
             )}
 
-            {canManage && (
-              <div className="flex flex-wrap gap-2 border-t pt-3">
-                {!closed && <Button size="sm" onClick={() => call.mutate({ method: "PATCH", url: `/api/fines/${id}`, body: { ...edit, amount: Number(edit.amount), adminFee: 0 } })}>{t("admin.fines.dialog.save")}</Button>}
-                {allowed.includes("new") && fine.status !== "cancelled" && <Button size="sm" variant="outline" onClick={() => call.mutate({ method: "POST", url: `/api/fines/${id}/unlink` })}>{t("admin.fines.dialog.unlink")}</Button>}
-                {allowed.includes("linked") && ["disputed", "charged", "paid"].includes(fine.status) && <Button size="sm" variant="outline" onClick={() => setStatus("linked")}>{t("admin.fines.dialog.link")}</Button>}
-                {allowed.includes("cancelled") && <Button size="sm" variant="destructive" onClick={() => setStatus("cancelled")}>{t("admin.fines.dialog.cancel")}</Button>}
-                {fine.status === "cancelled" && <Button size="sm" onClick={() => call.mutate({ method: "POST", url: `/api/fines/${id}/reactivate` })} data-testid="button-reactivate-fine">{t("admin.fines.dialog.reactivate")}</Button>}
+            <div className="flex flex-wrap gap-2 border-t pt-3">
+              {/* Closes the dialog and nothing else: the fine itself is left as it is (A-12-5). */}
+              <Button size="sm" variant="outline" onClick={guard.requestClose} data-testid="button-close-fine">{t("common:actions.close")}</Button>
+              {canManage && (<>
+                {!closed && <Button size="sm" data-testid="button-save-fine-detail" onClick={() => call.mutate({ method: "PATCH", url: `/api/fines/${id}`, body: { ...edit, amount: Number(edit.amount), adminFee: Number(edit.adminFee) }, outcome: "saved" })}>{t("admin.fines.dialog.save")}</Button>}
+                {allowed.includes("new") && fine.status !== "cancelled" && <Button size="sm" variant="outline" data-testid="button-unlink-fine" onClick={() => call.mutate({ method: "POST", url: `/api/fines/${id}/unlink`, outcome: "unlinked" })}>{t("admin.fines.dialog.unlink")}</Button>}
+                {allowed.includes("linked") && ["disputed", "charged", "paid"].includes(fine.status) && <Button size="sm" variant="outline" onClick={() => setStatus("linked", "linked")}>{t("admin.fines.dialog.link")}</Button>}
+                {allowed.includes("cancelled") && <Button size="sm" variant="destructive" onClick={() => setConfirmingCancel(true)} data-testid="button-cancel-fine">{t("admin.fines.dialog.cancelFine")}</Button>}
+                {fine.status === "cancelled" && <Button size="sm" onClick={() => call.mutate({ method: "POST", url: `/api/fines/${id}/reactivate`, outcome: "reactivated" })} data-testid="button-reactivate-fine">{t("admin.fines.dialog.reactivate")}</Button>}
                 <Button size="sm" variant="ghost" className="ml-auto text-destructive hover:text-destructive" disabled={remove.isPending}
                   onClick={() => setConfirmingDelete(true)} data-testid="button-delete-fine">
                   {t("admin.fines.dialog.delete")}
                 </Button>
-              </div>
-            )}
+              </>)}
+            </div>
           </div>
         )}
       </DialogContent>
     </Dialog>
+    <ConfirmDialog {...guard.confirmProps} />
+    {fine && (
+      <ConfirmDialog
+        open={confirmingCancel}
+        onOpenChange={setConfirmingCancel}
+        title={t("admin.fines.dialog.cancelTitle")}
+        description={t("admin.fines.dialog.cancelConfirmNamed", { plate: formatLicensePlate(fine.licensePlate), amount: formatCurrency(fine.totalAmount ?? fine.amount) })}
+        confirmLabel={t("admin.fines.dialog.cancelFine")}
+        cancelLabel={t("admin.fines.dialog.cancelKeep")}
+        confirmTestId="button-confirm-cancel-fine"
+        onConfirm={() => setStatus("cancelled", "cancelled")}
+      />
+    )}
     {fine && (
       <ConfirmDialog
         open={confirmingDelete}

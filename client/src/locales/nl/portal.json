@@ -642,6 +642,8 @@
         "reference": "Kenmerk (CJIB)",
         "description": "Omschrijving",
         "amount": "Bedrag (€)",
+        "adminFee": "Administratiekosten",
+        "total": "Totaal",
         "letter": "Brief (PDF/JPG/PNG)",
         "internalNotes": "Interne notities",
         "customerNote": "Toelichting voor klant"
@@ -658,7 +660,17 @@
         "link": "Koppelen",
         "unlink": "Ontkoppelen",
         "dispute": "Betwist",
-        "cancel": "Annuleren",
+        "cancelFine": "Bekeuring annuleren",
+        "cancelTitle": "Bekeuring annuleren?",
+        "cancelConfirmNamed": "Bekeuring {{plate}} van {{amount}} annuleren? Je kunt hem daarna weer heractiveren.",
+        "cancelKeep": "Nee, laten staan",
+        "outcome": {
+          "saved": "Bekeuring opgeslagen.",
+          "linked": "Bekeuring gekoppeld.",
+          "unlinked": "Bekeuring ontkoppeld.",
+          "cancelled": "Bekeuring geannuleerd.",
+          "reactivated": "Bekeuring heractiveerd."
+        },
         "viewLetter": "Brief bekijken",
         "save": "Opslaan",
         "saved": "Bekeuring opgeslagen.",

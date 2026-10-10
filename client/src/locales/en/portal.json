@@ -642,6 +642,8 @@
         "reference": "Reference (CJIB)",
         "description": "Description",
         "amount": "Amount (€)",
+        "adminFee": "Administration fee",
+        "total": "Total",
         "letter": "Letter (PDF/JPG/PNG)",
         "internalNotes": "Internal notes",
         "customerNote": "Note for the customer"
@@ -658,7 +660,17 @@
         "link": "Link",
         "unlink": "Unlink",
         "dispute": "Disputed",
-        "cancel": "Cancel",
+        "cancelFine": "Cancel fine",
+        "cancelTitle": "Cancel fine?",
+        "cancelConfirmNamed": "Cancel fine {{plate}} of {{amount}}? You can reactivate it afterwards.",
+        "cancelKeep": "No, keep it",
+        "outcome": {
+          "saved": "Fine saved.",
+          "linked": "Fine linked.",
+          "unlinked": "Fine unlinked.",
+          "cancelled": "Fine cancelled.",
+          "reactivated": "Fine reactivated."
+        },
         "viewLetter": "View letter",
         "save": "Save",
         "saved": "Fine saved.",
