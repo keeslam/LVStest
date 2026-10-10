@@ -246,6 +246,12 @@
       "unknown": "Onbekend",
       "manual_review": "Handmatige beoordeling",
       "other": "Anders"
+    },
+    "validation": {
+      "replacementReasonRequired": "De reden van vervanging is verplicht.",
+      "replacementReasonUnknown": "Deze reden van vervanging bestaat niet.",
+      "answerInvalid": "Beantwoord elke vraag met ja, nee of onbekend.",
+      "usageTypeUnknown": "Dit gebruikstype bestaat niet."
     }
   },
   "vehicle": {

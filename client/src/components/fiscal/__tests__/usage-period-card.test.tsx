@@ -81,7 +81,12 @@ beforeEach(() => {
     if (init?.method === "PATCH") {
       const body = JSON.parse(String(init.body));
       if (body.replacementReason === undefined) {
-        return new Response(JSON.stringify({ message: "Ongeldige invoer: de reden van vervanging is verplicht" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        // What the server sends: the FISCAL_VALIDATION code with the field and a reason code.
+        return new Response(JSON.stringify({
+          message: "Ongeldige invoer: de reden van vervanging is verplicht",
+          code: "FISCAL_VALIDATION", field: "replacementReason", reason: "replacementReasonRequired",
+          errors: [{ field: "replacementReason", reason: "replacementReasonRequired", message: "de reden van vervanging is verplicht" }],
+        }), { status: 400, headers: { "Content-Type": "application/json" } });
       }
       stored = { ...stored, ...body, confirmedByKind: "staff", confirmedByName: "tester", confirmedAt: "2026-09-17T09:00:00.000Z" };
       return new Response(JSON.stringify(stored), { status: 200, headers: { "Content-Type": "application/json" } });
@@ -101,7 +106,7 @@ describe("gebruiksblok van een reservering", () => {
     expect(screen.getByText("Catalogusprijs ontbreekt")).toBeInTheDocument();
   });
 
-  it("sends the confirmation and shows a Dutch objection (worded by status, not the server text) when a reason is missing", async () => {
+  it("sends the confirmation and shows the specific Dutch sentence (worded by code and reason, not the server text) when a reason is missing", async () => {
     const user = userEvent.setup();
     renderCard();
     await screen.findByText("1 maart 2027 t/m 10 maart 2027");
@@ -109,7 +114,8 @@ describe("gebruiksblok van een reservering", () => {
     await user.click(screen.getByLabelText("Nee", { selector: "#usage-commuting-no" }));
     await user.click(screen.getByLabelText("Nee", { selector: "#usage-providedBeforeCutoff-no" }));
     await user.click(screen.getByTestId("button-usage-confirm"));
-    expect(await screen.findByText(/De invoer klopt niet/)).toBeInTheDocument();
+    expect(await screen.findByText("De reden van vervanging is verplicht.")).toBeInTheDocument();
+    expect(screen.queryByText(/Ongeldige invoer/)).not.toBeInTheDocument();
 
     await user.selectOptions(screen.getByTestId("select-usage-replacementReason"), "accident");
     await user.click(screen.getByTestId("button-usage-confirm"));

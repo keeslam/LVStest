@@ -106,7 +106,15 @@ export function UsagePeriodCard({ reservationId, startDate }: { reservationId: n
       queryClient.setQueryData(key, (old: UsagePeriodResponse | null | undefined) => ({ ...(old ?? row), ...row, latestAssessment: row.latestAssessment ?? old?.latestAssessment ?? null }));
       queryClient.invalidateQueries({ queryKey: key });
     },
-    onError: (e: Error) => setServerError(describeApiError(e)),
+    onError: (e: Error) => {
+      // FISCAL_VALIDATION carries the field and a reason code (the server's Dutch text is never shown):
+      // word it from usage.validation.<reason>, and fall back to the generic sentence for anything else.
+      const body = e as Error & { code?: unknown; reason?: unknown };
+      const specific = body.code === "FISCAL_VALIDATION" && typeof body.reason === "string"
+        ? t(`usage.validation.${body.reason}`, { defaultValue: "" })
+        : "";
+      setServerError(specific || describeApiError(e));
+    },
   });
 
   // A reservation before the derivation date has no period for anybody: an account that may not look gets

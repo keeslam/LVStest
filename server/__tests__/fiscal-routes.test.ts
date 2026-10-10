@@ -9,6 +9,7 @@ import { fiscalAuditEvents } from "../../shared/schema";
 import { eq, and } from "drizzle-orm";
 import { makeApp, agentFor, anonAgent, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { createFixtureCustomer, createFixtureVehicle, createFixtureReservation, cleanupFixtures, FIXTURE_PREFIX } from "./helpers/fixtures";
+import { reservations } from "../../shared/schema";
 import { cleanupFiscalFixtures, FIXTURE_ACTOR, FIXTURE_PARAMETER_VALUES } from "./helpers/fiscal";
 import { syncUsagePeriodForReservation, confirmUsage } from "../services/fiscal/usage-periods";
 import { assessUsagePeriod } from "../services/fiscal/assess";
@@ -205,6 +206,26 @@ describe("fiscale API — beoordelingen en gegevens", () => {
     const events = await db.select().from(fiscalAuditEvents).where(and(eq(fiscalAuditEvents.username, reviewer.username), eq(fiscalAuditEvents.action, "usage_confirmed")));
     expect(events.length).toBeGreaterThanOrEqual(1);
     expect((await reviewer.patch(`/api/reservations/${reservation.id}/usage-period`).send({ privateUse: "maybe", commuting: "no", providedBeforeCutoff: "no" })).status).toBe(400);
+  });
+
+  it("a refused usage answer carries FISCAL_VALIDATION with the field and a reason code the screen can word", async () => {
+    await publishedVersion();
+    const customer = await createFixtureCustomer();
+    const vehicle = await createFixtureVehicle({ fuel: "Gasoline", productionDate: "2024-05-01" });
+    const [replacement] = await db.insert(reservations).values({ customerId: customer.id, vehicleId: vehicle.id, startDate: "2027-06-01", endDate: "2027-06-05", status: "booked", type: "replacement" }).returning();
+    await syncUsagePeriodForReservation(replacement.id);
+
+    const noReason = await reviewer.patch(`/api/reservations/${replacement.id}/usage-period`).send({ privateUse: "yes", commuting: "no", providedBeforeCutoff: "no" });
+    expect(noReason.status).toBe(400);
+    expect(noReason.body).toMatchObject({ code: "FISCAL_VALIDATION", field: "replacementReason", reason: "replacementReasonRequired" });
+    expect(noReason.body.errors).toEqual([{ field: "replacementReason", reason: "replacementReasonRequired", message: expect.any(String) }]);
+
+    const badTri = await reviewer.patch(`/api/reservations/${replacement.id}/usage-period`).send({ privateUse: "maybe", commuting: "no", providedBeforeCutoff: "no", replacementReason: "accident" });
+    expect(badTri.status).toBe(400);
+    expect(badTri.body).toMatchObject({ code: "FISCAL_VALIDATION", field: "privateUse", reason: "answerInvalid" });
+
+    const badReason = await reviewer.patch(`/api/reservations/${replacement.id}/usage-period`).send({ privateUse: "yes", commuting: "no", providedBeforeCutoff: "no", replacementReason: "teleport" });
+    expect(badReason.body).toMatchObject({ code: "FISCAL_VALIDATION", field: "replacementReason", reason: "replacementReasonUnknown" });
   });
 
   it("assigns and resolves a review case by hand", async () => {

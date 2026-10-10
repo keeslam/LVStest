@@ -32,7 +32,7 @@ import {
   type UsageType,
 } from "../../../shared/fiscal-types";
 import { addDays, compareIso, isValidIsoDate } from "./calendar";
-import { FiscalNotFoundError, FiscalValidationError } from "./errors";
+import { FiscalNotFoundError, FiscalValidationError, type FiscalValidationIssue } from "./errors";
 import { recordFiscalEvent, type Actor } from "./audit";
 
 /**
@@ -273,14 +273,15 @@ export async function confirmUsage(
 ): Promise<VehicleUsagePeriod> {
   const period = await getUsagePeriodByReservation(reservationId);
   if (!period) throw new FiscalNotFoundError("Geen gebruiksperiode voor deze reservering");
-  const issues = [];
+  // `reason` is the stable code the usage card words in nl/en (usage.validation.<reason>).
+  const issues: FiscalValidationIssue[] = [];
   for (const key of ["privateUse", "commuting", "providedBeforeCutoff"] as const) {
-    if (!TRI_STATES.includes(input[key])) issues.push({ key, message: "moet ja, nee of onbekend zijn" });
+    if (!TRI_STATES.includes(input[key])) issues.push({ key, reason: "answerInvalid", message: "moet ja, nee of onbekend zijn" });
   }
-  if (input.usageType !== undefined && !USAGE_TYPES.includes(input.usageType)) issues.push({ key: "usageType", message: "onbekend gebruikstype" });
-  if (input.replacementReason !== undefined && !REPLACEMENT_REASONS.includes(input.replacementReason)) issues.push({ key: "replacementReason", message: "onbekende reden" });
+  if (input.usageType !== undefined && !USAGE_TYPES.includes(input.usageType)) issues.push({ key: "usageType", reason: "usageTypeUnknown", message: "onbekend gebruikstype" });
+  if (input.replacementReason !== undefined && !REPLACEMENT_REASONS.includes(input.replacementReason)) issues.push({ key: "replacementReason", reason: "replacementReasonUnknown", message: "onbekende reden" });
   const effectiveReason = input.replacementReason ?? period.replacementReason;
-  if (period.isReplacement && effectiveReason === "unknown") issues.push({ key: "replacementReason", message: "de reden van vervanging is verplicht" });
+  if (period.isReplacement && effectiveReason === "unknown") issues.push({ key: "replacementReason", reason: "replacementReasonRequired", message: "de reden van vervanging is verplicht" });
   if (issues.length) throw new FiscalValidationError(`Ongeldige invoer: ${issues.map((i) => i.message).join("; ")}`, issues);
 
   const now = new Date();

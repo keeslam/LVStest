@@ -246,6 +246,12 @@
       "unknown": "Unknown",
       "manual_review": "Manual review",
       "other": "Other"
+    },
+    "validation": {
+      "replacementReasonRequired": "The reason for the replacement is required.",
+      "replacementReasonUnknown": "This replacement reason does not exist.",
+      "answerInvalid": "Answer every question with yes, no or unknown.",
+      "usageTypeUnknown": "This usage type does not exist."
     }
   },
   "vehicle": {

@@ -16,17 +16,27 @@ export class FiscalStateError extends Error {
   }
 }
 
+/**
+ * One problem with a field. `reason` is an optional stable code (for example
+ * "replacementReasonRequired") a screen can word in its own language; `message`
+ * stays the server's text.
+ */
+export type FiscalValidationIssue = ParameterValidationIssue & { reason?: string };
+
 /** Input that does not fit (400), with every problem listed. */
 export class FiscalValidationError extends Error {
   readonly status = 400;
-  readonly issues: ParameterValidationIssue[];
-  constructor(message: string, issues: ParameterValidationIssue[] = []) {
+  readonly issues: FiscalValidationIssue[];
+  constructor(message: string, issues: FiscalValidationIssue[] = []) {
     super(message);
     this.name = "FiscalValidationError";
     this.issues = issues;
   }
   toBody() {
-    return { message: this.message, errors: this.issues.map((i) => ({ field: i.key, message: i.message })) };
+    return {
+      message: this.message,
+      errors: this.issues.map((i) => ({ field: i.key, ...(i.reason ? { reason: i.reason } : {}), message: i.message })),
+    };
   }
 }
 

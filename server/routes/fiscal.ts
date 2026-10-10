@@ -35,6 +35,7 @@ import { getImpactState, startImpactPreview } from "../services/fiscal/impact";
 import { monthlyReport, reportToCsv } from "../services/fiscal/reports";
 import { assessmentPdfContext, renderAssessmentPdf } from "../services/fiscal/assessment-pdf";
 import { FiscalConfigurationError } from "../services/fiscal/parameters";
+import { FiscalValidationError } from "../services/fiscal/errors";
 import { firstUntrustedAddress } from "../middleware/security/rateLimiter";
 import { sendRouteError } from "../utils/route-errors";
 import { isoToday } from "../services/lifecycle";
@@ -594,6 +595,13 @@ export function registerFiscalRoutes(app: Express, _deps: RouteDeps): void {
       await assessUsagePeriod(period.id, { trigger: "event", actor }).catch((e) => console.error("[fiscal] herbeoordeling na bevestiging mislukt:", e));
       res.json(period);
     } catch (error) {
+      // The screen words a refused answer by code: FISCAL_VALIDATION plus the field and a reason code
+      // (usage.validation.<reason> in the fiscal locale), not by the server's Dutch text.
+      if (error instanceof FiscalValidationError) {
+        const first = error.issues.find((issue) => issue.reason);
+        res.status(400).json({ ...error.toBody(), code: "FISCAL_VALIDATION", ...(first ? { field: first.key, reason: first.reason } : {}) });
+        return;
+      }
       fail(res, error, "Gebruik kon niet worden vastgelegd");
     }
   });
