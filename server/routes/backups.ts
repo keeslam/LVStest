@@ -9,6 +9,10 @@ import { validateAfterUpload } from "../utils/security/fileUploadSecurity";
 import type { Express } from "express";
 import type { RouteDeps } from "./deps";
 import { spawn } from "child_process";
+import os from "os";
+import zlib from "zlib";
+import { classifyBackupError } from "../utils/backup-error-code";
+import { streamTarGz, sweepStaleBackupTemp, tarPath } from "../utils/stream-archive";
 import { sanitizeFilename } from "../utils/security/fileUploadSecurity";
 import {
   inspectDump, dumpTargetsForeignDatabase, runPsqlRestore, inspectFilesArchive,
@@ -161,13 +165,22 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   
   // Simple download app data (database only)
   app.get("/api/backups/download-data", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+    // A-19-1: the dump is written into a private directory under the OS temp
+    // dir (never inside the source tree) and removed in `finally`, whichever way
+    // the request ends. Leftovers of older versions in <cwd>/temp are swept once.
+    let workDir: string | null = null;
+    const cleanupWorkDir = () => {
+      if (workDir) {
+        try { fs.rmSync(workDir, { recursive: true, force: true }); } catch { /* best effort */ }
+        workDir = null;
+      }
+    };
     try {
+      sweepStaleBackupTemp(path.join(process.cwd(), 'temp'));
       const timestamp = new Date().toISOString().split('T')[0];
       const filename = `car-rental-data-${timestamp}.sql`;
-      const filepath = path.join(process.cwd(), 'temp', filename);
-
-      // Create temp directory if it doesn't exist
-      await fs.promises.mkdir(path.join(process.cwd(), 'temp'), { recursive: true });
+      workDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'lvs-dump-'));
+      const filepath = path.join(workDir, filename);
 
       // Export database using pg_dump
       const databaseUrl = process.env.DATABASE_URL;
@@ -182,15 +195,9 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
       // and the password travels in PGPASSWORD instead of argv.
       await runPgDump(databaseUrl, filepath);
 
-      // Send file
-      res.download(filepath, filename, async (err) => {
-        // Clean up temp file after download
-        try {
-          await fs.promises.unlink(filepath);
-        } catch (cleanupError) {
-          console.error('Error cleaning up temp file:', cleanupError);
-        }
-        
+      // Send file; the work directory goes as soon as the response is done.
+      res.download(filepath, filename, (err) => {
+        cleanupWorkDir();
         if (err) {
           console.error('Error sending file:', err);
         }
@@ -199,61 +206,39 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
       // BUG-075: the detail is for the container log, never for the client —
       // it is the one place the connection string can still surface.
       console.error("Error downloading app data:", error);
-      res.status(500).json({ error: "Failed to download app data" });
+      cleanupWorkDir();
+      res.status(500).json({ error: "Failed to download app data", code: "BACKUP_DOWNLOAD_FAILED" });
     }
   });
 
   // Simple download app code (source files)
+  //
+  // A-19-1: streamed straight to the response. The old version wrote the archive
+  // into <cwd>/temp (inside the tree it archives), left a half file behind when
+  // tar failed, and answered `details: error.message`, which holds the whole
+  // command line with the absolute server path. A failure now logs the detail
+  // on the server and answers a fixed message plus a code.
   app.get("/api/backups/download-code", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
-    try {
-      const { exec } = await import('child_process');
-      const { promisify } = await import('util');
-      const execAsync = promisify(exec);
-      
-      const timestamp = new Date().toISOString().split('T')[0];
-      const filename = `car-rental-code-${timestamp}.tar.gz`;
-      const filepath = path.join(process.cwd(), 'temp', filename);
-      
-      // Create temp directory if it doesn't exist
-      await fs.promises.mkdir(path.join(process.cwd(), 'temp'), { recursive: true });
-      
-      // Create tar.gz of source code excluding node_modules, .git, temp, backups, uploads
-      const excludes = [
-        '--exclude=node_modules',
-        '--exclude=.git',
-        '--exclude=temp',
-        '--exclude=backups',
-        '--exclude=uploads',
-        '--exclude=*.log',
-        '--exclude=.env',
-        '--exclude=.env.*',
-        '--exclude=cookies.txt',
-        '--exclude=dist',
-        '--exclude=build'
-      ].join(' ');
-      
-      await execAsync(`tar -czf "${filepath}" ${excludes} -C "${process.cwd()}" .`);
-      
-      // Send file
-      res.download(filepath, filename, async (err) => {
-        // Clean up temp file after download
-        try {
-          await fs.promises.unlink(filepath);
-        } catch (cleanupError) {
-          console.error('Error cleaning up temp file:', cleanupError);
-        }
-        
-        if (err) {
-          console.error('Error sending file:', err);
-        }
-      });
-    } catch (error) {
-      console.error("Error downloading app code:", error);
-      res.status(500).json({ 
-        error: "Failed to download app code",
-        details: error instanceof Error ? error.message : "Unknown error"
-      });
-    }
+    const timestamp = new Date().toISOString().split('T')[0];
+    // Excludes node_modules, .git, temp, backups, uploads, logs, env files, build output.
+    const excludes = [
+      '--exclude=node_modules',
+      '--exclude=.git',
+      '--exclude=temp',
+      '--exclude=backups',
+      '--exclude=uploads',
+      '--exclude=*.log',
+      '--exclude=.env',
+      '--exclude=.env.*',
+      '--exclude=cookies.txt',
+      '--exclude=dist',
+      '--exclude=build',
+    ];
+    await streamTarGz(res, {
+      filename: `car-rental-code-${timestamp}.tar.gz`,
+      args: ['-czf', '-', ...excludes, '-C', tarPath(process.cwd()), '.'],
+      failure: { error: "Failed to download app code", code: "BACKUP_DOWNLOAD_FAILED" },
+    });
   });
 
   /**
@@ -484,65 +469,34 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
   });
 
   // Download uploaded files (uploads directory)
+  //
+  // A-19-2 / A-19-1: streamed, so the first byte leaves at once instead of after
+  // the whole archive was built (17 s for 448 MB, which a proxy timeout can cut
+  // off), and there is no archive file to leave behind.
   app.get("/api/backups/download-files", hasPermission(UserPermission.MANAGE_BACKUPS), async (req, res) => {
+    const timestamp = new Date().toISOString().split('T')[0];
+    const filename = `car-rental-files-${timestamp}.tar.gz`;
+    const failure = { error: "Failed to download uploaded files", code: "BACKUP_DOWNLOAD_FAILED" };
+
+    // BUG-209/FIX-B: this archived cwd/uploads while every upload route
+    // writes to getUploadsDir(). With UPLOADS_DIR set the download was an
+    // archive of an empty or stale tree, reported as a successful backup.
+    const uploadsDir = getUploadsDir();
+
     try {
-      const { exec } = await import('child_process');
-      const { promisify } = await import('util');
-      const execAsync = promisify(exec);
-      
-      const timestamp = new Date().toISOString().split('T')[0];
-      const filename = `car-rental-files-${timestamp}.tar.gz`;
-      const filepath = path.join(process.cwd(), 'temp', filename);
-      
-      // Create temp directory if it doesn't exist
-      await fs.promises.mkdir(path.join(process.cwd(), 'temp'), { recursive: true });
-      
-      // BUG-209/FIX-B: this archived cwd/uploads while every upload route
-      // writes to getUploadsDir(). With UPLOADS_DIR set the download was an
-      // archive of an empty or stale tree, reported as a successful backup.
-      const uploadsDir = getUploadsDir();
-      
-      // Check if uploads directory exists
-      try {
-        await fs.promises.access(uploadsDir);
-      } catch {
-        // If uploads directory doesn't exist, create an empty archive
-        await execAsync(`tar -czf "${filepath}" -T /dev/null`);
-        return res.download(filepath, filename, async (err) => {
-          try {
-            await fs.promises.unlink(filepath);
-          } catch (cleanupError) {
-            console.error('Error cleaning up temp file:', cleanupError);
-          }
-          if (err) {
-            console.error('Error sending file:', err);
-          }
-        });
-      }
-      
-      // Create tar.gz of uploads directory
-      await execAsync(`tar -czf "${filepath}" -C "${path.dirname(uploadsDir)}" "${path.basename(uploadsDir)}"`);
-      
-      // Send file
-      res.download(filepath, filename, async (err) => {
-        // Clean up temp file after download
-        try {
-          await fs.promises.unlink(filepath);
-        } catch (cleanupError) {
-          console.error('Error cleaning up temp file:', cleanupError);
-        }
-        
-        if (err) {
-          console.error('Error sending file:', err);
-        }
-      });
-    } catch (error) {
-      console.error("Error downloading uploaded files:", error);
-      res.status(500).json({ 
-        error: "Failed to download uploaded files",
-        details: error instanceof Error ? error.message : "Unknown error"
-      });
+      await fs.promises.access(uploadsDir);
+    } catch {
+      // No uploads directory yet: an empty (but valid) archive, two zero blocks.
+      res.setHeader('Content-Type', 'application/gzip');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      return res.send(zlib.gzipSync(Buffer.alloc(1024)));
     }
+
+    await streamTarGz(res, {
+      filename,
+      args: ['-czf', '-', '-C', tarPath(path.dirname(uploadsDir)), path.basename(uploadsDir)],
+      failure,
+    });
   });
 
   /**
@@ -643,7 +597,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error listing backups:", error);
       res.status(500).json({ 
         error: "Failed to list backups",
-        details: error instanceof Error ? error.message : "Unknown error"
+        code: "BACKUP_LIST_FAILED"
       });
     }
   });
@@ -705,7 +659,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error downloading backup:", error);
       res.status(500).json({
         error: "Failed to download backup",
-        details: error instanceof Error ? error.message : "Unknown error"
+        code: "BACKUP_DOWNLOAD_FAILED"
       });
     }
   });
@@ -746,6 +700,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
       const backupPathError = !backupPathExists
         ? `The backup directory ${pathInfo.path} does not exist.`
         : backupCount === 0 ? `No backups were found in ${pathInfo.path}.` : null;
+      const backupPathErrorCode = !backupPathExists ? "BACKUP_DIR_MISSING" : backupCount === 0 ? "NO_BACKUPS" : null;
 
       // BUG-219: restore depends on psql/pg_dump being startable. Finding that
       // out during an emergency, after a minute-long safety backup, is too late.
@@ -760,6 +715,8 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
         // but the path problem gets its own field so the UI can show both,
         // and so neither can hide the other.
         lastError: status.lastError ?? backupPathError,
+        // A-2-7: what the screens show instead of the English lastError text.
+        lastErrorCode: status.lastError ? status.lastErrorCode ?? "UNKNOWN" : backupPathErrorCode,
         backupPathError,
         backupPath: pathInfo.path,
         backupPathExists,
@@ -803,11 +760,18 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
         res.setHeader('Retry-After', '60');
         return res.status(409).json({
           error: "A backup is already running. Wait for it to finish before starting another.",
+          code: "BACKUP_ALREADY_RUNNING",
           retryAfterSeconds: 60,
         });
       }
       console.error("Error running backup:", error);
-      res.status(500).json({ error: "The backup failed. Check the server log for details." });
+      // A-17-3: the text stays English; the client speaks by `code`, and by `reason`
+      // for the common causes (pg_dump missing, disk full, ...).
+      res.status(500).json({
+        error: "The backup failed. Check the server log for details.",
+        code: "BACKUP_FAILED",
+        reason: classifyBackupError(error instanceof Error ? error.message : String(error)),
+      });
     }
   });
 
@@ -1008,7 +972,7 @@ export function registerBackupRoutes(app: Express, deps: RouteDeps): void {
       console.error("Error uploading backup:", error);
       res.status(500).json({ 
         error: "Failed to upload backup",
-        details: error instanceof Error ? error.message : "Unknown error"
+        code: "BACKUP_UPLOAD_FAILED"
       });
     }
   });

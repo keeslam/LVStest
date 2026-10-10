@@ -12,6 +12,7 @@ import { db } from './db';
 import { backupSettings, backupRuns, type BackupRun } from '@shared/schema';
 import { getUploadsDir, getBackupPathFromEnv } from '@shared/paths';
 import { verifyDatabaseBackup, verifyFilesBackup } from './backupVerification';
+import { classifyBackupError, type BackupErrorCode } from './utils/backup-error-code';
 import {
   inspectDump, dumpTargetsForeignDatabase, databaseNameFromUrl, runPsqlRestore,
   inspectFilesArchive, extractFilesArchive, makeRestoreTempDir, safeUnlink,
@@ -38,6 +39,8 @@ export interface BackupStatus {
   lastRun?: string;
   lastSuccess?: string;
   lastError?: string;
+  /** Stable reason for lastError (A-2-7): the screens show this, not the English text. */
+  lastErrorCode?: BackupErrorCode;
   isRunning: boolean;
   nextScheduled?: string;
 }
@@ -222,6 +225,7 @@ export class BackupService {
         lastError: failureIsCurrent
           ? `${lastFailure!.finishedAt?.toISOString() ?? ''}: ${lastFailure!.error ?? 'unknown error'}`
           : undefined,
+        lastErrorCode: failureIsCurrent ? classifyBackupError(lastFailure!.error) : undefined,
       };
     } catch (error) {
       console.error('Error reading backup status:', error);
@@ -610,6 +614,15 @@ export class BackupService {
   private manifestTime(manifest: BackupManifest, filePath?: string): Date {
     const parsed = new Date(manifest.timestamp);
     if (!Number.isNaN(parsed.getTime())) return parsed;
+    // A-17-4: the old stamp is the ISO date with its ':' and '.' turned into
+    // '-' (2025-10-13T21-49-25-514Z). It still names the moment, so recover it
+    // before falling back to the file's mtime; when the archive itself is gone
+    // (only the manifest is left) the mtime fallback used to end in 1970.
+    const legacy = /^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/.exec(String(manifest.timestamp));
+    if (legacy) {
+      const recovered = new Date(`${legacy[1]}T${legacy[2]}:${legacy[3]}:${legacy[4]}.${legacy[5]}Z`);
+      if (!Number.isNaN(recovered.getTime())) return recovered;
+    }
     if (filePath && existsSync(filePath)) {
       try { return statSync(filePath).mtime; } catch { /* fall through */ }
     }
