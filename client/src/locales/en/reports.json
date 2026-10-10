@@ -218,7 +218,11 @@
     "exportCsvButton": "Export to CSV",
     "printButton": "Print",
     "printSubtitle_one": "Created {{date}}, {{count}} result",
-    "printSubtitle_other": "Created {{date}}, {{count}} results"
+    "printSubtitle_other": "Created {{date}}, {{count}} results",
+    "deleteReportAria": "Delete report: {{name}}",
+    "deleteConfirmTitle": "Delete report?",
+    "deleteConfirmDescription": "You are about to delete the saved report \"{{name}}\". This cannot be undone.",
+    "deleteConfirmButton": "Delete"
   },
   "financialTab": {
     "loading": "Loading...",
@@ -271,7 +275,9 @@
       "expenses": "Expenses",
       "utilization": "Utilization",
       "customers": "Customers",
-      "currentTab": "Current Tab"
+      "currentTab": "Current Tab",
+      "visible": "Print: {{what}}",
+      "aria": "Print: {{report}}"
     },
     "quickNav": {
       "reportBuilderDescription": "Build custom reports with filters and aggregations",

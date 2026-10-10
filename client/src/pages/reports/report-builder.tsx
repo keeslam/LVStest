@@ -16,6 +16,7 @@ import { Plus, Play, Save, Trash2, X, Filter as FilterIcon, Download, Printer, S
 import { apiRequest, queryClient, invalidateByPrefix } from "@/lib/queryClient";
 import { UserPermission } from "@shared/schema";
 import { RequiresPermission } from "@/components/ui/requires-permission";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { downloadCsv } from "@/lib/csv";
 import { formatDateTime } from "@/lib/format-utils";
 import {
@@ -571,6 +572,8 @@ function SavedReportsTab({
   onDeleteReport: (id: number) => void;
 }) {
   const { t } = useTranslation("reports");
+  // A-14-7: a saved report cannot be restored, so deleting it asks first, by name.
+  const [reportToDelete, setReportToDelete] = useState<SavedReport | null>(null);
 
   if (loading) {
     return <div className="text-center py-8 text-muted-foreground">{t('reportBuilderPage.loadingSavedReports')}</div>;
@@ -592,6 +595,15 @@ function SavedReportsTab({
 
   return (
     <div className="grid gap-4">
+      <ConfirmDialog
+        open={reportToDelete !== null}
+        onOpenChange={(open) => { if (!open) setReportToDelete(null); }}
+        title={t('reportBuilderPage.deleteConfirmTitle')}
+        description={t('reportBuilderPage.deleteConfirmDescription', { name: reportToDelete?.name ?? '' })}
+        confirmLabel={t('reportBuilderPage.deleteConfirmButton')}
+        confirmTestId="confirm-delete-saved-report"
+        onConfirm={() => { if (reportToDelete) onDeleteReport(reportToDelete.id); }}
+      />
       {reports.map(report => (
         <Card key={report.id}>
           <CardHeader>
@@ -630,10 +642,12 @@ function SavedReportsTab({
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => onDeleteReport(report.id)}
+                    onClick={() => setReportToDelete(report)}
+                    aria-label={t('reportBuilderPage.deleteReportAria', { name: report.name })}
+                    title={t('reportBuilderPage.deleteReportAria', { name: report.name })}
                     data-testid={`button-delete-report-${report.id}`}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </Button>
                 </RequiresPermission>
               </div>

@@ -218,7 +218,11 @@
     "exportCsvButton": "Exporteren naar CSV",
     "printButton": "Afdrukken",
     "printSubtitle_one": "Gemaakt op {{date}}, {{count}} resultaat",
-    "printSubtitle_other": "Gemaakt op {{date}}, {{count}} resultaten"
+    "printSubtitle_other": "Gemaakt op {{date}}, {{count}} resultaten",
+    "deleteReportAria": "Rapport verwijderen: {{name}}",
+    "deleteConfirmTitle": "Rapport verwijderen?",
+    "deleteConfirmDescription": "U staat op het punt het opgeslagen rapport \"{{name}}\" te verwijderen. Dit kan niet ongedaan worden gemaakt.",
+    "deleteConfirmButton": "Verwijderen"
   },
   "financialTab": {
     "loading": "Laden...",
@@ -271,7 +275,9 @@
       "expenses": "Kosten",
       "utilization": "Benutting",
       "customers": "Klanten",
-      "currentTab": "Huidig tabblad"
+      "currentTab": "Huidig tabblad",
+      "visible": "Afdrukken: {{what}}",
+      "aria": "Afdrukken: {{report}}"
     },
     "quickNav": {
       "reportBuilderDescription": "Bouw aangepaste rapporten met filters en aggregaties",

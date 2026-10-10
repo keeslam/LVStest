@@ -1393,25 +1393,35 @@ function FullReportsPage() {
         
         {/* Print Buttons - Mobile Optimized */}
         <div className="flex flex-wrap gap-2 justify-end">
-          <Button variant="outline" size="sm" onClick={() => printReport('apk')} className="h-8" data-testid="print-report-apk">
-            <Printer className="mr-1 h-3 w-3" />
-            <span className="text-xs">{t('reportsPage.printButtons.apk')}</span>
+          <Button variant="outline" size="sm" onClick={() => printReport('apk')} className="h-8" data-testid="print-report-apk"
+            aria-label={t('reportsPage.printButtons.aria', { report: t('reportsPage.printReport.reportTitles.apk') })}
+            title={t('reportsPage.printButtons.aria', { report: t('reportsPage.printReport.reportTitles.apk') })}>
+            <Printer className="mr-1 h-3 w-3" aria-hidden="true" />
+            <span className="text-xs">{t('reportsPage.printButtons.visible', { what: t('reportsPage.printButtons.apk') })}</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => printReport('warranty')} className="h-8" data-testid="print-report-warranty">
-            <Printer className="mr-1 h-3 w-3" />
-            <span className="text-xs">{t('reportsPage.printButtons.warranty')}</span>
+          <Button variant="outline" size="sm" onClick={() => printReport('warranty')} className="h-8" data-testid="print-report-warranty"
+            aria-label={t('reportsPage.printButtons.aria', { report: t('reportsPage.printReport.reportTitles.warranty') })}
+            title={t('reportsPage.printButtons.aria', { report: t('reportsPage.printReport.reportTitles.warranty') })}>
+            <Printer className="mr-1 h-3 w-3" aria-hidden="true" />
+            <span className="text-xs">{t('reportsPage.printButtons.visible', { what: t('reportsPage.printButtons.warranty') })}</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => printReport('expenses')} className="h-8" data-testid="print-report-expenses">
-            <Printer className="mr-1 h-3 w-3" />
-            <span className="text-xs">{t('reportsPage.printButtons.expenses')}</span>
+          <Button variant="outline" size="sm" onClick={() => printReport('expenses')} className="h-8" data-testid="print-report-expenses"
+            aria-label={t('reportsPage.printButtons.aria', { report: t('reportsPage.printReport.reportTitles.expenses') })}
+            title={t('reportsPage.printButtons.aria', { report: t('reportsPage.printReport.reportTitles.expenses') })}>
+            <Printer className="mr-1 h-3 w-3" aria-hidden="true" />
+            <span className="text-xs">{t('reportsPage.printButtons.visible', { what: t('reportsPage.printButtons.expenses') })}</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => printReport('utilization')} className="h-8" data-testid="print-report-utilization">
-            <Printer className="mr-1 h-3 w-3" />
-            <span className="text-xs">{t('reportsPage.printButtons.utilization')}</span>
+          <Button variant="outline" size="sm" onClick={() => printReport('utilization')} className="h-8" data-testid="print-report-utilization"
+            aria-label={t('reportsPage.printButtons.aria', { report: t('reportsPage.printReport.reportTitles.utilization') })}
+            title={t('reportsPage.printButtons.aria', { report: t('reportsPage.printReport.reportTitles.utilization') })}>
+            <Printer className="mr-1 h-3 w-3" aria-hidden="true" />
+            <span className="text-xs">{t('reportsPage.printButtons.visible', { what: t('reportsPage.printButtons.utilization') })}</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => printReport('customer-impact')} className="h-8" data-testid="print-report-customer-impact">
-            <Printer className="mr-1 h-3 w-3" />
-            <span className="text-xs">{t('reportsPage.printButtons.customers')}</span>
+          <Button variant="outline" size="sm" onClick={() => printReport('customer-impact')} className="h-8" data-testid="print-report-customer-impact"
+            aria-label={t('reportsPage.printButtons.aria', { report: t('reportsPage.printReport.reportTitles.customerImpact') })}
+            title={t('reportsPage.printButtons.aria', { report: t('reportsPage.printReport.reportTitles.customerImpact') })}>
+            <Printer className="mr-1 h-3 w-3" aria-hidden="true" />
+            <span className="text-xs">{t('reportsPage.printButtons.visible', { what: t('reportsPage.printButtons.customers') })}</span>
           </Button>
           {activeTab !== 'operations' && (
             <Button
@@ -1419,9 +1429,12 @@ function FullReportsPage() {
               size="sm"
               className="bg-primary h-8"
               onClick={() => printReport(activeTab)}
+              data-testid="print-report-current-tab"
+              aria-label={t('reportsPage.printButtons.aria', { report: t('reportsPage.printButtons.currentTab').toLowerCase() })}
+              title={t('reportsPage.printButtons.aria', { report: t('reportsPage.printButtons.currentTab').toLowerCase() })}
             >
-              <Printer className="mr-1 h-3 w-3" />
-              <span className="text-xs">{t('reportsPage.printButtons.currentTab')}</span>
+              <Printer className="mr-1 h-3 w-3" aria-hidden="true" />
+              <span className="text-xs">{t('reportsPage.printButtons.visible', { what: t('reportsPage.printButtons.currentTab').toLowerCase() })}</span>
             </Button>
           )}
         </div>
