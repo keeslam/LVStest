@@ -378,7 +378,65 @@ aangemaakt, krijgt de rechten niet vanzelf. In hetzelfde bereik, uit de fysieke 
 wachtwoord bij het bijwerken van een gebruiker verandert niets meer (`6c30516e`, `422c43eb`, `8dc7c80f`) en het
 e-maillogboek toont de echte verzendgeschiedenis (`c3f13460`). Handleiding §15.16.
 
+### B-40 — Auditreparaties (10-10-2026)
+**Opdracht (letterlijk van Kees):** "push en pas daarna alle dingen aan die aan het licht zijn gekomen
+tijdens de audit, ook die voor elke module zijn geconstateerd". Deelproject C stond op main (gepusht
+op 10-10-2026); alle 123 bevindingen van `docs/audit/fysieke-e2e-audit-2026-10-09.md` zijn daarna
+gesorteerd (gerepareerd, bug, UX, besluit, omgeving) en per module afgewerkt op de branch
+`fix/audit-remediation`. Werkwijze en grootboek: `.superpowers/sdd/2026-10-10-audit-reparaties/`.
+**Uitgevoerd (10-10-2026), op branch `fix/audit-remediation`, nog niet op main:** commits
+`42908eb0..HEAD` (ruim 85, onder andere `a7496057`, `826d52dc`, `340ce451`, `9ef74b38`, `be9f9e6d`,
+`0bf28aba`, `dbfa6b4a`, `49a3407a`, `a38fbb41`, `fa36fcb2`, `7288c4a1`, `608bcbe8`, `e887b42a`). Elke module is
+herzien; de laatste ronde (client en e2e) loopt nog, en er komt een beoordeling van de hele branch
+voordat er gepusht wordt. Handleiding bijgewerkt (10-10-2026), de PDF is nog niet opnieuw gemaakt.
+**Resultaat per module (één regel):**
+- Kosten: één kleine-letterlijst van categorieën met Tol en Parkeren, tankbedrag met komma, één kostenvenster, één lijst met filters en CSV, knop Logboek in Ontvangen facturen.
+- Boetes: administratiekosten blijven bewaard en het totaal staat erbij, annuleren vraagt eerst, elke handeling meldt zichzelf, € / datum / kenteken overal gelijk, lege bedrijfsnaam geeft niet langer een lege klantnaam.
+- Communicatie: eerlijke verzendmelding (verstuurd, deels, niets), persoonlijke voorvertoning, logboek in het Nederlands met detailvenster, placeholders met één of twee accolades, extra vinkje bij 25 mails of meer.
+- Onderhoud: geannuleerde of afgeronde huur is geen conflict meer, doorzoekbare klantkeuze, status alleen bij bewerken, Afronden en Binnen melden in het overzicht, Nederlandse omschrijving.
+- Reserveringen, overdracht en scan: lijst per pagina met eigen adres, zoeken en bevestigen bij niet opgehaald, APK-waarschuwing, eerlijke ophaalmelding, brandstof bij inleveren begint op het ophaalniveau, geschiedenis in woorden, scankaart zegt Geboekt, één venster tegelijk.
+- Voertuigen en klanten: RDW-type Van vanaf acht zitplaatsen, sorteren los van tonen, naar een pagina springen, sleutelkastlijsten, B.V. en DHL blijven staan, debiteurnummer alleen als veldmelding, Nederlandse voorbeelden en meervouden.
+- Rapporten: onderhoudsanalyse telt alleen onderhoud, banden en remmen, vaste noemers, werkende filters, CSV en afdrukken in de rapportbouwer, bevestiging bij verwijderen.
+- Portaalbeheer en fiscaal: portaalmail meldt de echte uitkomst, namen en acties in woorden, fiscale schermen leggen uit wat er speelt, RDW-fouten per code.
+- Beheer en rechten: gebruikersmeldingen, beheerders niet verwijderbaar uit het venster, back-upmeldingen zonder serverpad en gestreamde downloads, prullenbak verbergt teruggezet, instellingentabs houden invoer, eigen menu-item Bekeuringen.
+- Dashboard, inloggen en transport: één inlogmelding voor een onbekende gebruiker en een fout wachtwoord, bevestiging bij RDW-scan en transport afronden, benoemde icoonknoppen, lichter dashboard.
+- Teksten en vorm (alle schermen): foutzinnen in het Nederlands op code, Nederlandse validatie, één datum- en bedragnotatie, CSV met puntkomma en decimale komma, vraag bij niet-opgeslagen wijzigingen, uitleg bij een tik op een grijze knop, laadindicator.
+- Documenten en schadechecks: leeg standaardsjabloon geweigerd, editors vragen voor het weggooien, bibliotheek doorzoekbaar, upload in één venster, Nederlandse documentnamen, te plat diagram geweigerd, knop Alles goed.
+- Server (laatste ronde): geen uitzonderingstekst meer naar de client, fiscale CSV tegen formules, één kentekenformatter, FISCAL_VALIDATION met veld en reden.
+**Besluiten van de uitvoerder die Kees moet kennen:**
+- **A-10-7 (gat in contractnummers):** niet gewijzigd. Een geannuleerde opgehaalde huur houdt zijn nummer (B-33), dus 1012 gevolgd door 1013 kan voorkomen; dit is bedoeld. Een test legt het vast.
+- **"Pech":** het type `breakdown` heet in de hele app al "Pech", dus een oude omschrijving leest nu "Pech: lekke band". Wil Kees "Storing", dan is het één woord in de vertaling.
+- **"Binnen melden" vraagt "Voertuigen beheren":** de knop volgt de route die de auto in onderhoud zet. "Afronden" vraagt "Onderhoud beheren" of "Reserveringen beheren".
+- **Kosten:** de uitklapbare lijst per categorie is vervangen door één lijst met filter; de snelknoppen "kosten toevoegen" per categorie zijn weg; een kostenpost met een eigen, oude categorienaam wordt bij bewerken "Overig".
+- **Hoofdletters:** B.V. en DHL blijven staan. Daardoor wordt een naam die helemaal in hoofdletters is getypt niet meer omgezet.
+- **Eenmalige gegevensopschoning bij de eerste start na de uitrol:** kostencategorieën naar kleine letters (markering `p1_expense_category_lowercase`) en lege bedrijfsnamen naar leeg (`p2_empty_company_name_null`). Controleer vooraf op productie: SELECT lower(btrim(category)), count(*) FROM expenses GROUP BY 1.
+- **Back-uplocatie:** het scherm toont het pad niet meer, alleen dat het vast is ingesteld.
+- **Kosten per km** staat alleen nog bij "Alle tijd" (de kilometerstand is een levensduurtotaal).
+**Nog open (aan Kees):**
+1. **D1 (A-3-1, A-9-3)** Moet een tankbedrag dat bij "Brandstofstatus bijwerken" wordt ingevuld automatisch als kostenpost (categorie Brandstof) geboekt worden? Advies: ja, één kostenpost per tankbeurt op dat voertuig; het veld op het voertuig blijft alleen als "laatste tankbedrag".
+2. **D2 (A-3-3)** Bulkimport: een kenteken dat de RDW niet kent, toch als voertuig aanmaken? Advies: nee bij "niet gevonden" (wel bij een RDW-storing, met waarschuwing), tenzij je het vinkje "ook onbekende kentekens aanmaken" aanzet; zulke regels tellen als waarschuwing, niet als geslaagd.
+3. **D3 (A-5-1)** Mag de status van een reservering nog met de hand in het formulier gekozen worden? Advies: nee; nieuw is altijd Geboekt, en de status verandert alleen via Ophalen, Inleveren, Annuleren en Terugdraaien.
+4. **D4 (A-7-7)** Wat doet "Annuleren" in het scherm "Vervangende voertuigen toewijzen"? Advies: het hele plannen ongedaan maken (het al aangemaakte onderhoud weer weghalen); wie zonder vervanger wil plannen kiest "Later vervanger toewijzen".
+5. **D5 (A-7-10)** Moet een onderhoud dat nog op "Gepland" staat maar vandaag loopt de auto al op "Reparatie nodig" zetten? Advies: nee, pas als de auto "Binnen" is; de geplande periode blokkeert wel nieuwe reserveringen.
+6. **D6 (A-7-10)** Als een onderhoud wordt verwijderd of geannuleerd, moet "Reparatie nodig" dan vervallen? Advies: ja, als die stand alleen door dat onderhoud kwam (geen ander open onderhoud, geen handmatige schademelding).
+7. **D7 (A-7-11)** De keuze "Uit (onderhoud voltooid)" in het bewerkscherm vervangen door een knop "Afronden" (APK, km-stand, document, vervanger inleveren in één keer)? Advies: ja.
+8. **D8 (A-4-3, A-9-6)** Moeten chauffeurs en kostenposten bij verwijderen ook naar de prullenbak (zoals voertuigen, klanten, reserveringen, transporten en bekeuringen)? Advies: ja voor allebei.
+9. **D9 (A-12-3)** Bekeuringen: eerder is besloten dat doorbelasten en betalen in de boekhouding gebeuren (de app registreert alleen). Blijft dat zo? Advies: ja; dan halen we "Doorbelast", "Betaald" en "Betwist" uit de filters en keuzes (alleen nog zichtbaar bij oude bekeuringen) en belooft het portaal die statussen niet meer.
+10. **D10 (A-12-9)** Mag het koppelen of aanmaken van een bekeuring de klant meteen mailen? Advies: nee; na het koppelen een knop "Klant informeren" (of vinkje, standaard uit), zodat je eerst controleert; de mail komt in het e-maillogboek.
+11. **D11 (A-12-4, A-15-6)** De tijdzone-omzetting van de database (besluit B-22) nu uitvoeren? Advies: ja, eerst het rapport op een kopie van productie, per kolom bepalen of de waarde Nederlandse tijd of UTC was, dan in een onderhoudsvenster na een verse back-up.
+12. **D12 (A-1-5)** Minimale wachtwoordlengte voor medewerkers? Advies: 10 tekens voor nieuwe wachtwoorden, overal gelijk (nu formulier 6, server 8, aanmaken geen minimum); bestaande wachtwoorden blijven werken.
+13. **D13 (A-R-2, A-R-4)** Rechten die alleen niets kunnen (Meldingen beheren zonder Klanten/Voertuigen bekijken, Rapporten bekijken zonder Voertuigen/Reserveringen bekijken): hoe oplossen? Advies: in Gebruikersbeheer bij elk recht tonen welke leesrechten het scherm nodig heeft, met een knop "benodigde rechten ook aanzetten"; geen stille automatische koppeling.
+14. **D14 (A-R-5)** Een knop "Recht aanvragen" op het scherm "geen toegang", die beheerders een melding stuurt? Advies: ja, een eenvoudige melding in het meldingencentrum van wie Gebruikers beheren heeft.
+15. **D15 (A-13)** De sjabloonbouwer biedt velden aan die de app bij het versturen nergens invult (bedrijfsnaam, onderhoudsdatum, e-mailadres en telefoonnummer van de klant, begin- en einddatum van de reservering). Invullen (en uit welke gegevens), of uit de bouwer halen? De voorvertoning waarschuwt er nu voor.
+16. **D16 (A-11-5)** Moet een gewone scan op het scanscherm de ene mogelijke overdracht direct starten, zoals de tegel op het Dashboard? Nu toont /scan eerst het kaartje, omdat daar ook alleen opgezocht wordt; direct starten zou bij zo'n scan een ophaling kunnen starten.
+17. **D17 (A-3-5)** De RDW-typehermapping toepassen op 32 van de 98 auto's in de testdatabase (31 SUV naar Van, 1 Stationwagen naar Van)? Het script `scripts/remap-vehicle-types.ts` doet alleen een dry-run en schrijft niets; op productie is niets aangeraakt.
+18. **D18 (A-14-4)** Het categoriefilter van Rapporten ook toepassen op het tabblad Financieel? Nu staat daar een regel dat het niet geldt, omdat een marge over maar een deel van de kosten niets zegt.
+19. **D19 (A-17-8)** Een beheerder ook via de API niet verwijderbaar maken, zoals nu in het venster? De server weigert nu alleen dat je jezelf verwijdert.
+20. **Fiscale prullenbak (uit deelproject C):** een reservering met fiscale beoordelingen kan niet definitief uit de prullenbak verwijderd worden, alleen teruggezet. Zo houden, of de fiscale regels loskoppelen en definitief verwijderen toestaan?
+
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
+
+- (zie B-40) De vragen D1 t/m D19 en de fiscale prullenbak uit de auditreparaties staan daar.
 
 - (beslist, zie B-17) OPT-001 — wat telt als "openstaand punt" op het werkdagscherm.
 - OPT-009 — mag de app zelf een vervanger voorstellen/toewijzen, en op welke criteria.
