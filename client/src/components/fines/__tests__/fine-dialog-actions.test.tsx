@@ -90,6 +90,16 @@ describe("FineDialog actions", () => {
     expect(screen.queryByTestId("button-close-fine")).toBeNull();
   });
 
+  it("A-12-5: Escape closes the dialog without touching the fine", async () => {
+    const user = userEvent.setup();
+    renderIt();
+    await user.click(await screen.findByTestId("row-fine-7"));
+    await screen.findByTestId("button-close-fine");
+    await user.keyboard("{Escape}");
+    await vi.waitFor(() => expect(screen.queryByTestId("button-close-fine")).toBeNull());
+    expect(writes()).toEqual([]);
+  });
+
   it("A-12-5: confirming the cancel posts the status change, with its own toast (A-12-8)", async () => {
     const user = userEvent.setup();
     renderIt();

@@ -680,7 +680,6 @@
         },
         "viewLetter": "View letter",
         "save": "Save",
-        "saved": "Fine saved.",
         "openCustomer": "Open customer",
         "openReservation": "Open reservation",
         "linkedBy": "Linked by {{by}} on {{at}}",
