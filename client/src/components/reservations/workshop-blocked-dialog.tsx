@@ -14,8 +14,8 @@
  * the reservation note by `decideHandover()`.
  *
  * The refusal is shown in Dutch, keyed off the `reason` code the server sends
- * (`IN_WORKSHOP`, `NEEDS_FIXING`, `NOT_FOR_RENTAL`); the server's own English
- * sentence is only the fallback for a code we do not know.
+ * (`IN_WORKSHOP`, `NEEDS_FIXING`, `NOT_FOR_RENTAL`); a code we do not know gets the sentence
+ * of the refusal itself (`VEHICLE_IN_WORKSHOP`), never the server's English text.
  */
 import { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -37,7 +37,7 @@ import { UserRole } from "@shared/schema";
 export interface WorkshopRefusal {
   /** `VEHICLE_IN_WORKSHOP`'s `reason`: IN_WORKSHOP | NEEDS_FIXING | NOT_FOR_RENTAL. */
   reason?: string | null;
-  /** What the server said, used when `reason` is a code we do not know. */
+  /** What the server said. Kept for diagnostics only: it is English and is never shown. */
   message?: string | null;
 }
 
@@ -77,8 +77,10 @@ export function WorkshopBlockedDialog({
   }, [open]);
 
   const code = refusal?.reason ?? "";
+  // A reason code this screen does not know is worded by the refusal's own code,
+  // VEHICLE_IN_WORKSHOP: the server's message is English and is never shown.
   const explanation = t(`pickupReturn.workshopBlocked.reasons.${code}`, {
-    defaultValue: refusal?.message || t('pickupReturn.workshopBlocked.reasons.IN_WORKSHOP'),
+    defaultValue: t('pickupReturn.workshopBlocked.reasons.VEHICLE_IN_WORKSHOP'),
   });
 
   return (

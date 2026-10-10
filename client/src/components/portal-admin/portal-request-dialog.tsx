@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useFilePreview } from "@/components/documents/use-file-preview";
 import type { PortalRequestDto } from "@shared/portal-requests";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
+import { describeApiError } from "@/lib/api-error";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { useCanManagePortal } from "@/components/portal-admin/accounts-table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -46,7 +47,7 @@ export function PortalRequestDialog() {
     onSuccess: () => { done(); toast({ title: t("admin.requests.dialog.replied") }); },
     onError: (e: ConflictError) => {
       const c = e.conflicts?.[0];
-      toast({ title: c ? t("admin.requests.dialog.conflict", { id: c.id, from: formatDateNl(c.startDate, "short"), to: c.endDate ? formatDateNl(c.endDate, "short") : "…" }) : e.message, variant: "destructive" });
+      toast({ title: c ? t("admin.requests.dialog.conflict", { id: c.id, from: formatDateNl(c.startDate, "short"), to: c.endDate ? formatDateNl(c.endDate, "short") : "…" }) : describeApiError(e), variant: "destructive" });
     },
   });
   const needReply = () => {

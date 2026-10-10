@@ -8,6 +8,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
+import { Toaster } from "@/components/ui/toaster";
 
 vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: 1, username: "admin", role: "admin", permissions: [] }, isLoading: false }),
@@ -108,5 +109,23 @@ describe("aanvraag behandelen", () => {
     renderDialog();
     await screen.findByTestId("standard-answer-rejected");
     await waitFor(() => expect(screen.queryByTestId("standard-answer-approved")).not.toBeInTheDocument());
+  });
+});
+
+describe("a refused action", () => {
+  // Final wave A, item 4: the toast said e.message, the raw "500: {...}" wire text.
+  it("tells a failed approval in Dutch by its status, not with the server's English text or the raw status line", async () => {
+    requestId = 1;
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0, queryFn: getQueryFn({ on401: "throw" }) } } });
+    render(<QueryClientProvider client={client}><PortalRequestDialog /><Toaster /></QueryClientProvider>);
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, init?: RequestInit) => {
+      const method = init?.method ?? "GET";
+      if (method === "POST") return new Response(JSON.stringify({ message: "Boom: database exploded" }), { status: 500, headers: { "Content-Type": "application/json" } });
+      return new Response(JSON.stringify(requests[1]), { status: 200, headers: { "Content-Type": "application/json" } });
+    }));
+    const user = userEvent.setup();
+    await user.click(await screen.findByTestId("button-approve-request"));
+    expect(await screen.findByText(/Er ging iets mis op de server/)).toBeInTheDocument();
+    expect(screen.queryByText(/Boom|database exploded|500:/)).toBeNull();
   });
 });

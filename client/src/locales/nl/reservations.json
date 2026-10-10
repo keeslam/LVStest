@@ -254,7 +254,8 @@
       "reasons": {
         "IN_WORKSHOP": "Dit voertuig staat in de werkplaats en kan niet worden uitgegeven. Rond de werkplaatsklus eerst af.",
         "NEEDS_FIXING": "Dit voertuig staat op \"reparatie nodig\" en kan niet worden uitgegeven. Los dat eerst op.",
-        "NOT_FOR_RENTAL": "Dit voertuig staat op \"niet voor verhuur\" en kan niet worden uitgegeven."
+        "NOT_FOR_RENTAL": "Dit voertuig staat op \"niet voor verhuur\" en kan niet worden uitgegeven.",
+        "VEHICLE_IN_WORKSHOP": "Dit voertuig kan niet worden uitgegeven: de werkplaatsstatus staat de uitgifte niet toe."
       },
       "adminHint": "Als beheerder mag je de uitgifte toch doorzetten. Geef op waarom; de reden wordt bij de reservering vastgelegd.",
       "notAdminHint": "Alleen een beheerder kan de uitgifte forceren. Los de werkplaatsstatus op, of vraag een beheerder.",

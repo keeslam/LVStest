@@ -254,7 +254,8 @@
       "reasons": {
         "IN_WORKSHOP": "This vehicle is in the workshop and cannot be handed over. Close the workshop job first.",
         "NEEDS_FIXING": "This vehicle is marked as \"needs fixing\" and cannot be handed over. Resolve that first.",
-        "NOT_FOR_RENTAL": "This vehicle is marked as \"not for rental\" and cannot be handed over."
+        "NOT_FOR_RENTAL": "This vehicle is marked as \"not for rental\" and cannot be handed over.",
+        "VEHICLE_IN_WORKSHOP": "This vehicle cannot be handed over: its workshop status does not allow it."
       },
       "adminHint": "As an administrator you may hand it over anyway. State why; the reason is recorded on the reservation.",
       "notAdminHint": "Only an administrator can force the handover. Resolve the workshop status, or ask an administrator.",
