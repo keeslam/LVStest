@@ -36,6 +36,24 @@ interface UsersDialogProps {
 
 type ViewMode = "list" | "add" | "view" | "edit";
 
+/**
+ * Server messages are English; the client translates by the stable `code` the
+ * server sends (apiRequest copies it onto the thrown Error) and never shows the
+ * server's own text.
+ */
+function userErrorText(error: unknown, fallbackKey: string, t: (key: string) => string): string {
+  switch ((error as { code?: string } | null)?.code) {
+    case "PASSWORD_REQUIRED":
+      return t('usersDialog.passwordRequired');
+    case "USERNAME_EXISTS":
+      return t('usersDialog.usernameExists');
+    case "CANNOT_DELETE_SELF":
+      return t('usersDialog.cannotDeleteSelf');
+    default:
+      return t(fallbackKey);
+  }
+}
+
 export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
   const { t } = useTranslation(["settings", "common"]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -72,10 +90,6 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: number) => {
       const response = await apiRequest('DELETE', `/api/users/${userId}`);
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || t('usersDialog.deleteUserFailed'));
-      }
       return response.json();
     },
     onSuccess: () => {
@@ -85,7 +99,7 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
       setUserToDelete(null);
     },
     onError: (error: Error) => {
-      toast({ title: t('usersDialog.errorTitle'), description: error.message, variant: "destructive" });
+      toast({ title: t('usersDialog.errorTitle'), description: userErrorText(error, 'usersDialog.deleteUserFailed', t), variant: "destructive" });
     },
   });
 
@@ -233,7 +247,14 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    disabled={isSelf}
+                    disabled={isSelf || user.role === UserRole.ADMIN}
+                    title={
+                      isSelf
+                        ? t('usersDialog.cannotDeleteSelf')
+                        : user.role === UserRole.ADMIN
+                          ? t('usersDialog.cannotDeleteAdmin')
+                          : undefined
+                    }
                     onClick={() => handleDeleteUser(user)}
                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     data-testid={`dialog-delete-user-${user.id}`}
@@ -463,7 +484,7 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { makeUserFormSchema, type UserFormValues } from "@/lib/user-form-schema";
 import { apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import {
   Form,
@@ -484,19 +505,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 
-const userFormSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().optional(),
-  email: z.string().email("Please enter a valid email address").or(z.literal("")).optional().nullable(),
-  fullName: z.string().or(z.literal("")).optional().nullable(),
-  role: z.string().default(UserRole.USER),
-  permissions: z.array(z.string()).default([]),
-  active: z.boolean().default(true),
-  hidePrices: z.boolean().default(false),
-});
-
-type UserFormValues = z.infer<typeof userFormSchema>;
-
 interface UserFormInDialogProps {
   user?: Omit<User, "password">;
   isEdit?: boolean;
@@ -509,7 +517,8 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
   const queryClient = useQueryClient();
 
   const form = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchema),
+    // Built per render so the messages follow the language switch (A-17-6).
+    resolver: zodResolver(makeUserFormSchema((key) => t(key), isEdit)),
     defaultValues: {
       username: user?.username || "",
       password: "",
@@ -524,21 +533,21 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
 
   const createMutation = useMutation({
     mutationFn: async (userData: UserFormValues) => {
+      // apiRequest throws on a non-2xx answer and carries the body's `code` on the error.
       const res = await apiRequest("POST", "/api/users", userData);
-      if (!res.ok) {
-        const errorData = await res.json();
-        // Server messages are English; the client translates by the stable code.
-        if (errorData.code === "PASSWORD_REQUIRED") throw new Error(t('usersDialog.passwordRequired'));
-        throw new Error(errorData.message || t('usersDialog.createUserFailed'));
-      }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (_created, variables) => {
       invalidateByPrefix("/api/users");
+      // A-17-2 / A-17-7: the form used to close without a word.
+      toast({
+        title: t('usersDialog.successTitle'),
+        description: t('usersDialog.userCreatedDescription', { username: variables.username }),
+      });
       onSuccess();
     },
     onError: (error: Error) => {
-      toast({ title: t('usersDialog.errorTitle'), description: error.message, variant: "destructive" });
+      toast({ title: t('usersDialog.errorTitle'), description: userErrorText(error, 'usersDialog.createUserFailed', t), variant: "destructive" });
     },
   });
 
@@ -546,18 +555,18 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
     mutationFn: async (userData: UserFormValues) => {
       if (!user?.id) throw new Error(t('usersDialog.userIdRequired'));
       const res = await apiRequest("PATCH", `/api/users/${user.id}`, userData);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || t('usersDialog.updateUserFailed'));
-      }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (_updated, variables) => {
       invalidateByPrefix("/api/users");
+      toast({
+        title: t('usersDialog.successTitle'),
+        description: t('usersDialog.userSavedDescription', { username: user?.username ?? variables.username }),
+      });
       onSuccess();
     },
     onError: (error: Error) => {
-      toast({ title: t('usersDialog.errorTitle'), description: error.message, variant: "destructive" });
+      toast({ title: t('usersDialog.errorTitle'), description: userErrorText(error, 'usersDialog.updateUserFailed', t), variant: "destructive" });
     },
   });
 
@@ -565,13 +574,9 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
     if (isEdit) {
       updateMutation.mutate(data);
     } else {
-      // A new account needs a real password (the server answers 400
-      // PASSWORD_REQUIRED for a blank one). Only the edit form treats a blank
-      // password as "keep the current one".
-      if (!data.password || data.password.trim() === "") {
-        form.setError("password", { type: "required", message: t('usersDialog.passwordRequired') });
-        return;
-      }
+      // A new account needs a real password (the schema checks it, and the
+      // server answers 400 PASSWORD_REQUIRED for a blank one). Only the edit
+      // form treats a blank password as "keep the current one".
       createMutation.mutate(data);
     }
   };
@@ -580,7 +585,8 @@ function UserFormInDialog({ user, isEdit = false, onSuccess }: UserFormInDialogP
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      {/* noValidate: the browser's own e-mail check speaks the browser's language; the schema's message is Dutch (A-17-6). */}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}

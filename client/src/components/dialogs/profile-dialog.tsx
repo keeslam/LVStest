@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import { UserRole } from "@shared/schema";
+import { permissionLabel } from "@shared/permission-labels";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -241,7 +242,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                   <div className="flex flex-wrap gap-2">
                     {user.permissions.map((permission) => (
                       <Badge key={permission} variant="outline">
-                        {permission}
+                        {permissionLabel(permission)}
                       </Badge>
                     ))}
                   </div>

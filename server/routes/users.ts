@@ -183,7 +183,7 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(userData.username);
       if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
+        return res.status(400).json({ message: "Username already exists", code: "USERNAME_EXISTS", field: "username" });
       }
       
       // Add audit trail
@@ -276,7 +276,7 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       if (patch.username && patch.username !== user.username) {
         const existingUser = await storage.getUserByUsername(patch.username);
         if (existingUser) {
-          return res.status(400).json({ message: "Username already exists" });
+          return res.status(400).json({ message: "Username already exists", code: "USERNAME_EXISTS", field: "username" });
         }
       }
 
@@ -386,7 +386,7 @@ export function registerUserRoutes(app: Express, deps: RouteDeps): void {
       
       // Prevent deletion of the current user
       if (id === req.user!.id) {
-        return res.status(400).json({ message: "Cannot delete your own account" });
+        return res.status(400).json({ message: "Cannot delete your own account", code: "CANNOT_DELETE_SELF" });
       }
       
       const deleted = await storage.deleteUser(id);

@@ -162,7 +162,16 @@
     "errorTitle": "Error",
     "userIdRequired": "User ID required",
     "createUserFailed": "Failed to create user",
-    "updateUserFailed": "Failed to update user"
+    "updateUserFailed": "Failed to update user",
+    "formErrors": {
+      "usernameTooShort": "The username must be at least 3 characters",
+      "emailInvalid": "Enter a valid email address"
+    },
+    "usernameExists": "This username is already in use",
+    "userCreatedDescription": "User \"{{username}}\" has been created",
+    "userSavedDescription": "User \"{{username}}\" has been saved",
+    "cannotDeleteSelf": "You cannot delete your own account",
+    "cannotDeleteAdmin": "An administrator account cannot be deleted here; change the role first"
   },
   "backupPage": {
     "title": "Backup & Recovery",

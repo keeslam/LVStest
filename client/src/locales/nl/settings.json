@@ -162,7 +162,16 @@
     "errorTitle": "Fout",
     "userIdRequired": "Gebruikers-ID vereist",
     "createUserFailed": "Gebruiker aanmaken mislukt",
-    "updateUserFailed": "Gebruiker bijwerken mislukt"
+    "updateUserFailed": "Gebruiker bijwerken mislukt",
+    "formErrors": {
+      "usernameTooShort": "De gebruikersnaam moet minstens 3 tekens hebben",
+      "emailInvalid": "Vul een geldig e-mailadres in"
+    },
+    "usernameExists": "Deze gebruikersnaam is al in gebruik",
+    "userCreatedDescription": "Gebruiker \"{{username}}\" is aangemaakt",
+    "userSavedDescription": "Gebruiker \"{{username}}\" is opgeslagen",
+    "cannotDeleteSelf": "Je kunt je eigen account niet verwijderen",
+    "cannotDeleteAdmin": "Een beheerdersaccount kan hier niet worden verwijderd; wijzig eerst de rol"
   },
   "backupPage": {
     "title": "Back-up & herstel",
