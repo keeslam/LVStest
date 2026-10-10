@@ -25,6 +25,7 @@ import { MAX_IMPORT_BATCH } from "../services/vehicle-import";
 import { countSql, statementsOfKind } from "./helpers/sqlCounter";
 import { agentFor, cleanupFixtureUsers, type TestAgent } from "./helpers/app";
 import { cleanupFixtures, FIXTURE_PLATE_PREFIX } from "./helpers/fixtures";
+import { storage } from "../storage";
 
 let admin: TestAgent;
 let plateCounter = 0;
@@ -226,6 +227,34 @@ describe("OPT-031 — de CSV-import wordt tegen de RDW gecontroleerd", () => {
     expect(res.body.imported).toHaveLength(1);
     expect(res.body.failed).toHaveLength(1);
     expect(res.body.failed[0].error).toContain("apkDate");
+    // P10: the client words the row by code and names the field.
+    expect(res.body.failed[0].code).toBe("INVALID_DATE");
+    expect(res.body.failed[0].field).toBe("apkDate");
+  });
+
+  it("a row that throws is IMPORT_ROW_FAILED without the exception text (plates and CSV)", async () => {
+    rdwLookup.mockReset();
+    rdwLookup.mockResolvedValue(rdwAnswer());
+    const spy = vi.spyOn(storage, "createVehicle").mockRejectedValue(new Error("SECRET-DB-DETAIL insert into vehicles"));
+    const quiet = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const plates = await admin.post("/api/vehicles/bulk-import-plates").send({ licensePlates: [nextPlate()] });
+      expect(plates.status).toBe(200);
+      expect(plates.body.failed).toHaveLength(1);
+      expect(plates.body.failed[0].code).toBe("IMPORT_ROW_FAILED");
+      expect(JSON.stringify(plates.body)).not.toContain("SECRET-DB-DETAIL");
+
+      const csv = await admin.post("/api/vehicles/bulk-import-csv").send({
+        vehicles: [{ licensePlate: nextPlate(), brand: "DAF", model: "LF" }],
+      });
+      expect(csv.status).toBe(200);
+      expect(csv.body.failed).toHaveLength(1);
+      expect(csv.body.failed[0].code).toBe("IMPORT_ROW_FAILED");
+      expect(JSON.stringify(csv.body)).not.toContain("SECRET-DB-DETAIL");
+    } finally {
+      spy.mockRestore();
+      quiet.mockRestore();
+    }
   });
 
   it("the CSV import has the same batch bound", async () => {
