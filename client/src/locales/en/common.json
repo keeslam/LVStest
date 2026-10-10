@@ -238,5 +238,13 @@
       "escape": "Close dialog",
       "enter": "Submit form"
     }
+  },
+  "documentMail": {
+    "sendFailed": "The email could not be sent. Check the email settings under Settings and try again.",
+    "mainLabel": "Customer: {{email}}",
+    "missingPrefix": "Still needed to send:",
+    "missingDocument": "select at least one document",
+    "missingRecipient": "a valid recipient email address",
+    "missingSubject": "a subject"
   }
 }

@@ -6853,8 +6853,11 @@ export async function registerRoutes(app: Express): Promise<void> {
       }, 'documents');
 
       if (!emailSent) {
+        // A-6-3: the sentence stays English like every server message; the stable
+        // code is what the client words in the employee's language.
         return res.status(500).json({ 
-          message: "Failed to send email. Please check your email configuration in Settings." 
+          message: "Failed to send email. Please check your email configuration in Settings.",
+          code: "EMAIL_SEND_FAILED",
         });
       }
 
@@ -6867,6 +6870,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       console.error("Error sending email with multiple documents:", error);
       res.status(500).json({ 
         message: "Failed to send email", 
+        code: "EMAIL_SEND_FAILED",
       });
     }
   });

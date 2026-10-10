@@ -238,5 +238,13 @@
       "escape": "Dialoog sluiten",
       "enter": "Formulier versturen"
     }
+  },
+  "documentMail": {
+    "sendFailed": "De e-mail kon niet verstuurd worden. Controleer de e-mailinstellingen onder Instellingen en probeer het opnieuw.",
+    "mainLabel": "Klant: {{email}}",
+    "missingPrefix": "Nog nodig om te versturen:",
+    "missingDocument": "kies minstens één document",
+    "missingRecipient": "een geldig e-mailadres van de ontvanger",
+    "missingSubject": "een onderwerp"
   }
 }

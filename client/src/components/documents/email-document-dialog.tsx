@@ -119,9 +119,12 @@ export function EmailDocumentDialog({
   // Set default recipient email when customer changes
   useEffect(() => {
     if (customer) {
-      // Priority: emailGeneral > emailForInvoices > custom
+      // Priority: emailGeneral > email (A-6-3: the plain address was never suggested)
+      // > emailForInvoices > custom
       if (customer.emailGeneral) {
         setRecipientEmail("general");
+      } else if (customer.email) {
+        setRecipientEmail("main");
       } else if (customer.emailForInvoices) {
         setRecipientEmail("invoices");
       } else {
@@ -184,6 +187,7 @@ export function EmailDocumentDialog({
   const getRecipientEmail = (): string => {
     if (recipientEmail === "custom") return customEmail;
     if (recipientEmail === "general") return customer?.emailGeneral || "";
+    if (recipientEmail === "main") return customer?.email || "";
     if (recipientEmail === "invoices") return customer?.emailForInvoices || "";
     return "";
   };
@@ -219,10 +223,18 @@ export function EmailDocumentDialog({
       setSelectedDocIds([]);
       setCustomEmail("");
     },
-    onError: (error: Error) => {
+    onError: (error: Error & { code?: string; httpStatus?: number }) => {
+      // A-6-3: an answer from the server is worded here, by its stable code - never
+      // by showing its English sentence. The messages thrown by this dialog itself
+      // (no recipient, no documents) are already translated.
+      const description = error.code === "EMAIL_SEND_FAILED"
+        ? t('common:documentMail.sendFailed')
+        : error.httpStatus !== undefined
+          ? t('emailDialog.sendEmailFailed')
+          : error.message || t('emailDialog.sendEmailFailed');
       toast({
         title: t('emailDialog.errorTitle'),
-        description: error.message || t('emailDialog.sendEmailFailed'),
+        description,
         variant: "destructive",
       });
     },
@@ -258,6 +270,14 @@ export function EmailDocumentDialog({
       setSelectedDocIds(prev => prev.filter(id => id !== docId));
     }
   };
+
+  // A-6-3: the send button used to be disabled without a word. These are the things
+  // it is waiting for, in the order the form asks for them.
+  const recipientAddress = getRecipientEmail();
+  const missing: string[] = [];
+  if (selectedDocIds.length === 0) missing.push(t('common:documentMail.missingDocument'));
+  if (!recipientAddress || !recipientAddress.includes("@")) missing.push(t('common:documentMail.missingRecipient'));
+  if (!subject.trim()) missing.push(t('common:documentMail.missingSubject'));
 
   // Group documents by type
   const contracts = documents.filter(doc => isContractDocument(doc.documentType));
@@ -363,6 +383,11 @@ export function EmailDocumentDialog({
                     {t('emailDialog.generalLabel', { email: customer.emailGeneral })}
                   </SelectItem>
                 )}
+                {customer?.email && (
+                  <SelectItem value="main">
+                    {t('common:documentMail.mainLabel', { email: customer.email })}
+                  </SelectItem>
+                )}
                 {customer?.emailForInvoices && (
                   <SelectItem value="invoices">
                     {t('emailDialog.invoicesLabel', { email: customer.emailForInvoices })}
@@ -440,6 +465,11 @@ export function EmailDocumentDialog({
         </div>
 
         {/* Actions */}
+        {missing.length > 0 && !sendEmail.isPending && (
+          <p className="text-sm text-muted-foreground" data-testid="email-send-hint">
+            {t('common:documentMail.missingPrefix')} {missing.join("; ")}.
+          </p>
+        )}
         <div className="flex justify-end gap-3 border-t pt-4">
           <Button
             variant="outline"
@@ -451,7 +481,7 @@ export function EmailDocumentDialog({
           </Button>
           <Button
             onClick={handleSend}
-            disabled={sendEmail.isPending || selectedDocIds.length === 0 || !getRecipientEmail()}
+            disabled={sendEmail.isPending || missing.length > 0}
             data-testid="button-send-email"
           >
             {sendEmail.isPending ? (
