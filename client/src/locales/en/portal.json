@@ -971,8 +971,8 @@
       "paid": "Paid",
       "disputed": "Disputed"
     },
-    "openSummary_one": "{{count}} fine, € {{amount}}. Passing it on to the driver is up to you.",
-    "openSummary_other": "{{count}} fines, € {{amount}} in total. Passing them on to the driver is up to you.",
+    "openSummary_one": "{{count}} fine, {{amount}}. Passing it on to the driver is up to you.",
+    "openSummary_other": "{{count}} fines, {{amount}} in total. Passing them on to the driver is up to you.",
     "noneOpen": "No fines.",
     "subtitle": "Fines processed in your company's name. Passing them on to the driver is up to you."
   },

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { formatCurrency } from "@/lib/format-utils";
 import { Receipt } from "lucide-react";
 import type { PortalFineDto } from "@shared/fines";
 import { portalQueryFn } from "@/lib/portal-api";
@@ -17,7 +18,7 @@ export default function PortalFinesPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title={t("fines.title")} subtitle={open.length > 0 ? t("fines.openSummary", { count: open.length, amount: total.toFixed(2) }) : undefined} />
+      <PageHeader title={t("fines.title")} subtitle={open.length > 0 ? t("fines.openSummary", { count: open.length, amount: formatCurrency(total) }) : undefined} />
       {data.length > 0 && <SearchBox value={query} onChange={setQuery} placeholder={t("lists.searchFines")} />}
       {shown.length === 0
         ? <EmptyState icon={<Receipt className="h-6 w-6" />} text={q ? t("lists.noMatch") : t("fines.empty")} />

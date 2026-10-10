@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { formatCurrency, formatDate } from "@/lib/format-utils";
 import type { PortalReservationDto, PortalVehicleDto, PortalDriverDto } from "@shared/portal-types";
 import type { PortalFineDto } from "@shared/fines";
 import { PortalRequestType, REQUEST_NEEDS, type PortalRequestTypeValue } from "@shared/portal-requests";
@@ -102,7 +103,7 @@ export function RequestForm({ initialType, reservationId: initialReservation, fi
           <Label htmlFor="rq-fine">{t("requests.form.fine")}</Label>
           <select id="rq-fine" className="w-full rounded-md border px-3 py-2 text-sm" value={fineId} onChange={(e) => setFineId(e.target.value)} required>
             <option value="">—</option>
-            {fines.map((f) => <option key={f.id} value={f.id}>#{f.id} {f.licensePlate} {new Date(f.offenceAt).toLocaleDateString()} € {f.totalAmount}</option>)}
+            {fines.map((f) => <option key={f.id} value={f.id}>#{f.id} {f.licensePlate} {formatDate(f.offenceAt)} {formatCurrency(f.totalAmount)}</option>)}
           </select>
         </div>
       )}

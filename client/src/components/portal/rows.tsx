@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { formatCurrency, formatDateTime } from "@/lib/format-utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { portalFetch, PortalApiError } from "@/lib/portal-api";
 import { useToast } from "@/hooks/use-toast";
@@ -23,12 +24,12 @@ export function FineRow({ fine: f }: { fine: PortalFineDto }) {
           <Plate value={f.licensePlate} />
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#64748b] sm:text-sm">
-          <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{new Date(f.offenceAt).toLocaleString()}</span>
+          <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{formatDateTime(f.offenceAt)}</span>
           {f.driver && <DriverChip name={f.driver.displayName} />}
         </div>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
-        <span className="text-base font-bold text-[#0f172a]">€ {f.totalAmount}</span>
+        <span className="text-base font-bold text-[#0f172a]">{formatCurrency(f.totalAmount)}</span>
         <ChevronRight className="hidden h-4 w-4 text-[#94a3b8] sm:block" />
       </div>
     </ListCard>

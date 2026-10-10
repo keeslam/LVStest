@@ -971,8 +971,8 @@
       "paid": "Betaald",
       "disputed": "Betwist"
     },
-    "openSummary_one": "{{count}} bekeuring, € {{amount}}. Doorbelasten aan de bestuurder regelt u zelf.",
-    "openSummary_other": "{{count}} bekeuringen, samen € {{amount}}. Doorbelasten aan de bestuurder regelt u zelf.",
+    "openSummary_one": "{{count}} bekeuring, {{amount}}. Doorbelasten aan de bestuurder regelt u zelf.",
+    "openSummary_other": "{{count}} bekeuringen, samen {{amount}}. Doorbelasten aan de bestuurder regelt u zelf.",
     "noneOpen": "Geen bekeuringen.",
     "subtitle": "Bekeuringen die op naam van uw bedrijf zijn verwerkt. Doorbelasten aan de bestuurder regelt u zelf."
   },

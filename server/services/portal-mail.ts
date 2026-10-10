@@ -9,6 +9,7 @@ import { generateInviteToken, INVITE_TTL_MS } from "./portal-tokens";
 import { finesStorage } from "./fines-storage";
 import { requestsStorage } from "./portal-requests-storage";
 import { fillPlaceholders } from "../../shared/message-placeholders";
+import { formatDateNL, formatNumberNL } from "../utils/dutch-format";
 
 export const PORTAL_TEMPLATE = {
   INVITE: "portal_invite",
@@ -256,8 +257,9 @@ export async function sendFineLinkedMail(fineId: number): Promise<boolean> {
   const vars = {
     name: customer.contactPerson || customer.companyName || customer.name,
     company: customer.companyName || customer.name,
-    plate: fine.licensePlate, date: fine.offenceAt.toISOString().slice(0, 10), description: fine.description,
-    amount: fine.amount, adminFee: fine.adminFee, total: fine.totalAmount,
+    // A-12-7 / B-18: Dutch notation. The template writes the euro sign itself, so the amounts are bare numbers ("95,00").
+    plate: fine.licensePlate, date: formatDateNL(fine.offenceAt), description: fine.description,
+    amount: formatNumberNL(fine.amount, 2), adminFee: formatNumberNL(fine.adminFee, 2), total: formatNumberNL(fine.totalAmount, 2),
     link: `${config.portalBaseUrl.replace(/\/$/, "")}/portaal/bekeuringen/${fine.id}`,
   };
   const html = renderTemplate(template.content, vars);
