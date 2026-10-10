@@ -1,3 +1,5 @@
+import { formatDateTime } from "@/lib/format-utils";
+import { describeApiError } from "@/lib/api-error";
 import { useRef } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -30,7 +32,7 @@ export function FineImportsDialog() {
   const run = useMutation({
     mutationFn: async () => (await apiRequest("POST", "/api/fines/imports/run")).json() as Promise<CjibRunSummary>,
     onSuccess: (s) => { done(); toast({ title: t("admin.fines.cjib.runDone", { files: s.files, created: s.created, linked: s.linked }), description: s.errors.join("\n") || undefined, variant: s.errors.length ? "destructive" : "default" }); },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
   const upload = useMutation({
     mutationFn: async (file: File) => {
@@ -43,11 +45,11 @@ export function FineImportsDialog() {
       done();
       toast({ title: skipped ? t("admin.fines.cjib.uploadSkipped") : t("admin.fines.cjib.uploadDone", { created: file.recordsCreated, linked: file.recordsLinked }), variant: file.status === "failed" ? "destructive" : "default", description: file.errorMessage ?? undefined });
     },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
 
   const sourceLabel = (s: string) => t(`admin.fines.cjib.source.${s}`, { defaultValue: s });
-  const fmt = (iso: string | Date | null) => (iso ? new Date(iso).toLocaleString() : "—");
+  const fmt = (iso: string | Date | null) => (iso ? formatDateTime(iso) : "—");
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && closeFineImportsDialog()}>

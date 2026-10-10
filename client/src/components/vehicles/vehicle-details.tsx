@@ -1,3 +1,5 @@
+import { v } from "@/lib/zod-i18n";
+import { describeApiError } from "@/lib/api-error";
 import { useState } from "react";
 // BUG-146: the state machine warning that never reached a screen.
 import { statusChangeWarning } from "@/lib/status-warning";
@@ -208,7 +210,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
       }
       toast({
         title: t('details.quickEdit.errorTitle'),
-        description: error.message,
+        description: describeApiError(error),
         variant: "destructive",
       });
     }
@@ -255,7 +257,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     onError: (error: Error) => {
       toast({
         title: t('details.expenses.expenseDeleteErrorTitle'),
-        description: error.message,
+        description: describeApiError(error),
         variant: "destructive",
       });
     }
@@ -341,7 +343,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     onError: (error: Error) => {
       toast({
         title: t('details.maintenance.toasts.errorTitle'),
-        description: error.message || t('details.maintenance.toasts.reminderFailedDescription'),
+        description: describeApiError(error, undefined, t('details.maintenance.toasts.reminderFailedDescription')),
         variant: "destructive"
       });
     }
@@ -404,7 +406,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     if (!vehicle || !text) return text;
     
     const customerName = customer ? `${customer.firstName} ${customer.lastName}`.trim() : 'Customer';
-    const expiryDate = vehicle.apkDate ? new Date(vehicle.apkDate).toLocaleDateString('nl-NL') : 'Not set';
+    const expiryDate = vehicle.apkDate ? formatDate(vehicle.apkDate) : 'Not set';
     
     return text
       .replace(/\{customerName\}/g, customerName)
@@ -455,12 +457,12 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
 
   // New reservation form schema
   const newReservationSchema = insertReservationSchemaBase.extend({
-    vehicleId: z.number().min(1, "Vehicle is required"),
+    vehicleId: z.number().min(1, v("vehicleRequired")),
     customerId: z.union([
-      z.number().min(1, "Please select a customer"),
-      z.string().min(1, "Please select a customer").transform(val => parseInt(val)),
+      z.number().min(1, v("customerRequired")),
+      z.string().min(1, v("customerRequired")).transform(val => parseInt(val)),
     ]),
-    startDate: z.string().min(1, "Start date is required"),
+    startDate: z.string().min(1, v("startDateRequired")),
     endDate: z.string().optional(),
     isOpenEnded: z.boolean().optional(),
     totalPrice: z.union([
@@ -483,7 +485,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     }
     return true;
   }, {
-    message: "End date is required for non-open-ended rentals",
+    message: v("endDateRequired"),
     path: ["endDate"],
   });
 
@@ -637,7 +639,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     onError: (error: Error) => {
       toast({
         title: t('details.toasts.reservationCreateErrorTitle'),
-        description: error.message || t('details.toasts.reservationCreateErrorDescription'),
+        description: describeApiError(error, undefined, t('details.toasts.reservationCreateErrorDescription')),
         variant: "destructive"
       });
     }
@@ -783,7 +785,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
         title: t('details.toasts.genericErrorTitle'),
         description: isPickedUpRightRefusal(error)
           ? t('reservations:pickedUpWarning.rightRequired')
-          : error.message || t('details.toasts.reservationDeleteFailedDescription'),
+          : describeApiError(error, undefined, t('details.toasts.reservationDeleteFailedDescription')),
         variant: "destructive"
       });
     }
@@ -873,7 +875,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     onError: (error: Error) => {
       toast({
         title: t('details.toasts.genericErrorTitle'),
-        description: error.message || t('details.toasts.blacklistErrorDescription'),
+        description: describeApiError(error, undefined, t('details.toasts.blacklistErrorDescription')),
         variant: "destructive"
       });
     }
@@ -899,7 +901,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
     onError: (error: Error) => {
       toast({
         title: t('details.toasts.genericErrorTitle'),
-        description: error.message || t('details.toasts.removeBlacklistErrorDescription'),
+        description: describeApiError(error, undefined, t('details.toasts.removeBlacklistErrorDescription')),
         variant: "destructive"
       });
     }
@@ -2035,7 +2037,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
                                 {check.checkType === 'pickup' ? t('details.documents.pickupBadge') : t('details.documents.returnBadge')}
                               </Badge>
                               <span className="text-sm text-gray-600">
-                                {new Date(check.checkDate).toLocaleDateString()}
+                                {formatDate(check.checkDate)}
                               </span>
                               {check.completedBy && (
                                 <span className="text-sm text-gray-500">{t('details.documents.byLabel', { name: check.completedBy })}</span>
@@ -3658,7 +3660,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
         open={deleteDamageCheckDialogOpen}
         onOpenChange={setDeleteDamageCheckDialogOpen}
         title={t('details.deleteDamageCheckDialog.title')}
-        description={damageCheckToDelete ? t('details.deleteDamageCheckDialog.descriptionWithCheck', { type: damageCheckToDelete.checkType, date: new Date(damageCheckToDelete.checkDate).toLocaleDateString() }) : t('details.deleteDamageCheckDialog.descriptionFallback')}
+        description={damageCheckToDelete ? t('details.deleteDamageCheckDialog.descriptionWithCheck', { type: damageCheckToDelete.checkType, date: formatDate(damageCheckToDelete.checkDate) }) : t('details.deleteDamageCheckDialog.descriptionFallback')}
         variant="danger"
         confirmLabel={t('common:actions.delete')}
         onConfirm={async () => {
@@ -3731,7 +3733,7 @@ export function VehicleDetails({ vehicleId, inDialogContext = false, onClose }: 
               console.error("Error deleting document:", error);
               toast({
                 title: t('details.deleteDocumentDialog.toasts.errorTitle'),
-                description: error instanceof Error ? error.message : t('details.deleteDocumentDialog.toasts.failedFallback'),
+                description: describeApiError(error, undefined, t('details.deleteDocumentDialog.toasts.failedFallback')),
                 variant: "destructive",
               });
             }
@@ -3866,7 +3868,7 @@ function AvailabilityToggleDialog({
     onError: (error: any) => {
       toast({
         title: t('details.availabilityDialog.toasts.errorTitle'),
-        description: error.message || t('details.availabilityDialog.toasts.errorDescription'),
+        description: describeApiError(error, undefined, t('details.availabilityDialog.toasts.errorDescription')),
         variant: "destructive"
       });
     }

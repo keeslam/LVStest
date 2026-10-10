@@ -1,3 +1,5 @@
+import { formatDate } from "@/lib/format-utils";
+import { describeApiError } from "@/lib/api-error";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -598,7 +600,7 @@ export function SettingsPanel() {
       toast({
         title: t('common:status.error'),
         description: error?.code === 'STALE_WRITE'
-          ? error.message
+          ? describeApiError(error)
           : t('settingsPage.toasts.maintenanceCalendarSaveFailedDescription'),
         variant: "destructive",
       });
@@ -625,7 +627,7 @@ export function SettingsPanel() {
       toast({
         title: t('common:status.error'),
         description: error?.code === 'STALE_WRITE'
-          ? error.message
+          ? describeApiError(error)
           : t('settingsPage.toasts.transportSettingsSaveFailedDescription'),
         variant: "destructive",
       });
@@ -786,7 +788,7 @@ export function SettingsPanel() {
     } catch (error: any) {
       toast({
         title: t('common:status.error'),
-        description: error.message || t('settingsPage.toasts.emailConfigDeleteFailedDescription'),
+        description: describeApiError(error, undefined, t('settingsPage.toasts.emailConfigDeleteFailedDescription')),
         variant: "destructive"
       });
     }
@@ -1680,7 +1682,7 @@ export function SettingsPanel() {
                     <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
                         <p className="font-medium">{holiday.name}</p>
-                        <p className="text-sm text-gray-500">{new Date(holiday.date).toLocaleDateString()}</p>
+                        <p className="text-sm text-gray-500">{formatDate(holiday.date)}</p>
                       </div>
                       <Button
                         variant="ghost"
@@ -1726,7 +1728,7 @@ export function SettingsPanel() {
                       <div>
                         <p className="font-medium">{blocked.reason}</p>
                         <p className="text-sm text-gray-500">
-                          {new Date(blocked.startDate).toLocaleDateString()} - {new Date(blocked.endDate).toLocaleDateString()}
+                          {formatDate(blocked.startDate)} - {formatDate(blocked.endDate)}
                         </p>
                       </div>
                       <Button

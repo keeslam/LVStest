@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/format-utils";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -67,7 +68,7 @@ export function AuditLogPanel() {
               <tbody>
                 {data.map((e) => (
                   <tr key={e.id} className="border-t align-top" data-testid={`audit-event-${e.id}`}>
-                    <td className="py-1 pr-2 whitespace-nowrap">{new Date(e.occurredAt).toLocaleString("nl-NL")}</td>
+                    <td className="py-1 pr-2 whitespace-nowrap">{formatDateTime(e.occurredAt)}</td>
                     <td className="py-1 pr-2">{e.username}{e.role ? <span className="text-muted-foreground"> ({e.role})</span> : null}</td>
                     <td className="py-1 pr-2">{t(`audit.actions.${e.action}`, { defaultValue: e.action })}</td>
                     <td className="py-1 pr-2">

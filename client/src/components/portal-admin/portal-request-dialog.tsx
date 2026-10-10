@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/format-utils";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -77,7 +78,7 @@ export function PortalRequestDialog() {
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-medium">{t(`admin.requests.type.${r.type}`)}</span>
               {r.customerId && <Button size="sm" variant="link" className="px-0" onClick={() => openCustomerDialog(r.customerId!, "portal")}>{r.customerName}</Button>}
-              <span className="text-muted-foreground">· {r.submittedBy ?? "—"} · {new Date(r.createdAt).toLocaleString()}</span>
+              <span className="text-muted-foreground">· {r.submittedBy ?? "—"} · {formatDateTime(r.createdAt)}</span>
             </div>
             {r.reservationId && <div><Label>{t("admin.requests.dialog.reservation")}</Label> <Button size="sm" variant="link" onClick={() => openReservationDialog(r.reservationId!)}>#{r.reservationId} {r.reservationLabel}</Button></div>}
             {r.fineId && <div><Label>{t("admin.requests.dialog.fine")}</Label> <Button size="sm" variant="link" onClick={() => openFineDialog(r.fineId!)}>#{r.fineId}</Button></div>}

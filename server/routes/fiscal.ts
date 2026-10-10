@@ -498,7 +498,7 @@ export function registerFiscalRoutes(app: Express, _deps: RouteDeps): void {
       const query = reportQuery.parse(req.query);
       const csv = reportToCsv(await monthlyReport(query));
       res.setHeader("Content-Type", "text/csv; charset=utf-8");
-      res.setHeader("Content-Disposition", `attachment; filename="fiscaal-${query.year}.csv"`);
+      res.setHeader("Content-Disposition", `attachment; filename="fiscaal-${query.year}-${isoToday()}.csv"`);
       res.send(csv);
     } catch (error) {
       fail(res, error, "CSV kon niet worden gemaakt");

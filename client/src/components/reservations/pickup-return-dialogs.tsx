@@ -1,3 +1,4 @@
+import { UserFacingError, describeApiError } from "@/lib/api-error";
 import { useState, useEffect, useRef } from "react";
 // FIX-R (BUG-072): a stored link is opened through one guard, never raw.
 import { openStoredUrl } from "@/lib/safe-url";
@@ -14,7 +15,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest , invalidateByPrefix } from "@/lib/queryClient";
 import type { Reservation, Vehicle } from "@shared/schema";
-import { formatReservationStatus } from "@/lib/format-utils";
+import { formatReservationStatus, formatDate } from "@/lib/format-utils";
 import { defaultReturnFuelLevel } from "@/lib/handover-fuel";
 import { officeToday } from "@/lib/office-date";
 import { formatDutchDate } from "@shared/booking-warnings";
@@ -408,7 +409,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
       toast({
         variant: "destructive",
         title: t('pickupReturn.pickup.pickupFailedTitle'),
-        description: error.message || t('pickupReturn.pickup.processPickupFailedFallback'),
+        description: describeApiError(error, undefined, t('pickupReturn.pickup.processPickupFailedFallback')),
       });
     },
   });
@@ -435,7 +436,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
       return true;
     } catch (error: any) {
       if (error?.code === "MILEAGE_OVERRIDE_FORBIDDEN") {
-        throw new Error(t('vehicles:mileageOverrideDialog.notAuthorized'));
+        throw new UserFacingError(t('vehicles:mileageOverrideDialog.notAuthorized'));
       }
       if (error?.code === "MILEAGE_OVERRIDE_INVALID_PASSWORD") {
         return false;
@@ -807,7 +808,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
                         <div className="flex items-center justify-between gap-3">
                           <div className="text-sm flex-1">
                             <p className="font-medium">
-                              {t('pickupReturn.common.createdOnAt', { date: new Date(check.createdAt).toLocaleDateString(), time: new Date(check.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
+                              {t('pickupReturn.common.createdOnAt', { date: formatDate(check.createdAt), time: new Date(check.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
                             </p>
                             {check.createdBy && (
                               <p className="text-xs text-muted-foreground">{t('pickupReturn.common.byLabel', { name: check.createdBy })}</p>
@@ -880,7 +881,7 @@ export function PickupDialog({ open, onOpenChange, reservation, onSuccess, onRes
                         <div className="text-sm flex-1">
                           <p className="font-medium">{doc.fileName || t('pickupReturn.common.paperDamageCheckFallbackName')}</p>
                           <p className="text-xs text-muted-foreground">
-                            {t('pickupReturn.common.uploadedOnAt', { date: new Date(doc.createdAt).toLocaleDateString(), time: new Date(doc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
+                            {t('pickupReturn.common.uploadedOnAt', { date: formatDate(doc.createdAt), time: new Date(doc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
                           </p>
                         </div>
                         <div className="flex gap-2">
@@ -1530,7 +1531,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess, onRes
       toast({
         variant: "destructive",
         title: t('pickupReturn.return.returnFailedTitle'),
-        description: error.message || t('pickupReturn.return.processReturnFailedFallback'),
+        description: describeApiError(error, undefined, t('pickupReturn.return.processReturnFailedFallback')),
       });
     },
   });
@@ -1705,7 +1706,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess, onRes
                         <div className="flex items-center justify-between gap-3">
                           <div className="text-sm flex-1">
                             <p className="font-medium">
-                              {t('pickupReturn.common.createdOnAt', { date: new Date(check.createdAt).toLocaleDateString(), time: new Date(check.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
+                              {t('pickupReturn.common.createdOnAt', { date: formatDate(check.createdAt), time: new Date(check.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
                             </p>
                             {check.createdBy && (
                               <p className="text-xs text-muted-foreground">{t('pickupReturn.common.byLabel', { name: check.createdBy })}</p>
@@ -1778,7 +1779,7 @@ export function ReturnDialog({ open, onOpenChange, reservation, onSuccess, onRes
                         <div className="text-sm flex-1">
                           <p className="font-medium">{doc.fileName || t('pickupReturn.common.paperDamageCheckFallbackName')}</p>
                           <p className="text-xs text-muted-foreground">
-                            {t('pickupReturn.common.uploadedOnAt', { date: new Date(doc.createdAt).toLocaleDateString(), time: new Date(doc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
+                            {t('pickupReturn.common.uploadedOnAt', { date: formatDate(doc.createdAt), time: new Date(doc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
                           </p>
                         </div>
                         <div className="flex gap-2">

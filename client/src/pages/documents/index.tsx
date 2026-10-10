@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -153,7 +154,7 @@ export default function DocumentsIndex() {
     onError: (error: any) => {
       toast({
         title: t('indexPage.toasts.errorTitle'),
-        description: error.message || t('indexPage.toasts.deleteDocumentFailed'),
+        description: describeApiError(error, undefined, t('indexPage.toasts.deleteDocumentFailed')),
         variant: "destructive",
       });
     },
@@ -179,7 +180,7 @@ export default function DocumentsIndex() {
     onError: (error: any) => {
       toast({
         title: t('indexPage.toasts.errorTitle'),
-        description: error.message || t('indexPage.toasts.sendEmailFailed'),
+        description: describeApiError(error, undefined, t('indexPage.toasts.sendEmailFailed')),
         variant: "destructive",
       });
     },
@@ -203,7 +204,7 @@ export default function DocumentsIndex() {
     onError: (error: any) => {
       toast({
         title: t('indexPage.toasts.errorTitle'),
-        description: error.message || t('indexPage.toasts.deleteTemplateFailed'),
+        description: describeApiError(error, undefined, t('indexPage.toasts.deleteTemplateFailed')),
         variant: "destructive",
       });
     },
@@ -229,7 +230,7 @@ export default function DocumentsIndex() {
     setEmailMessage(t('indexPage.emailDefaults.message', {
       fileName: document.fileName,
       documentType: documentTypeLabel(t, document.documentType),
-      uploadDate: new Date(document.uploadDate || '').toLocaleDateString(),
+      uploadDate: formatDate(document.uploadDate || ''),
     }));
     setEmailDialogOpen(true);
   };
@@ -1674,7 +1675,7 @@ function DiagramTemplateManager() {
     onError: (error: Error) => {
       toast({
         title: t('indexPage.diagramTemplates.toasts.errorTitle'),
-        description: error.message || t('indexPage.diagramTemplates.toasts.deleteFailed'),
+        description: describeApiError(error, undefined, t('indexPage.diagramTemplates.toasts.deleteFailed')),
         variant: "destructive",
       });
     },

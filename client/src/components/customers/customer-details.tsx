@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -19,8 +20,8 @@ import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { CustomerEditDialog } from "./customer-edit-dialog";
 import { DriverDialog } from "./driver-dialog";
 import { DriverViewDialog } from "./driver-view-dialog";
-import { formatDate, formatCurrency, formatPhoneNumber, formatReservationStatus, formatLicensePlate } from "@/lib/format-utils";
-import { downloadCsv } from "@/lib/csv";
+import { formatDate, formatCurrency, formatPhoneNumber, formatReservationStatus, formatLicensePlate, formatDateTime } from "@/lib/format-utils";
+import { downloadCsv, csvDate, csvNumber } from "@/lib/csv";
 import { PortalEditNote } from "@/components/portal-admin/portal-edit-note";
 import { Price } from "@/components/ui/price";
 import { displayLicensePlate } from "@/lib/utils";
@@ -345,7 +346,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
         title: t('common:status.error'),
         description: isPickedUpRightRefusal(error)
           ? t('reservations:pickedUpWarning.rightRequired')
-          : error.message || t('details.reservationDeleteFailed'),
+          : describeApiError(error, undefined, t('details.reservationDeleteFailed')),
         variant: "destructive"
       });
     }
@@ -790,7 +791,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
 
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.createdAt')}</h4>
-                      <p className="text-base">{customer.createdAt ? new Date(customer.createdAt).toLocaleString() : t('details.notRecorded')}</p>
+                      <p className="text-base">{customer.createdAt ? formatDateTime(customer.createdAt) : t('details.notRecorded')}</p>
                     </div>
 
                     <div>
@@ -800,7 +801,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
 
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-1">{t('details.lastUpdatedAt')}</h4>
-                      <p className="text-base">{customer.updatedAt ? new Date(customer.updatedAt).toLocaleString() : t('details.notRecorded')}</p>
+                      <p className="text-base">{customer.updatedAt ? formatDateTime(customer.updatedAt) : t('details.notRecorded')}</p>
                     </div>
                   </div>
                 </div>
@@ -1413,7 +1414,7 @@ export function CustomerDetails({ customerId, inDialog = false, onClose, initial
                   <CardDescription>{t('details.rentalHistoryDescription')}</CardDescription>
                 </div>
                 <Button size="sm" variant="outline" onClick={() => downloadCsv(`reserveringen-klant-${customerId}`, ["Nummer", "Kenteken", "Voertuig", "Van", "Tot", "Status", "Contract", "Prijs"],
-                  (pastRentals as any[]).map((r) => [r.id, r.vehicle?.licensePlate ? formatLicensePlate(r.vehicle.licensePlate) : "", r.vehicle ? `${r.vehicle.brand} ${r.vehicle.model}` : "", r.startDate, r.endDate ?? "", formatReservationStatus(r.status), r.contractNumber ?? "", r.totalPrice ?? ""]))} data-testid="button-export-reservations">
+                  (pastRentals as any[]).map((r) => [r.id, r.vehicle?.licensePlate ? formatLicensePlate(r.vehicle.licensePlate) : "", r.vehicle ? `${r.vehicle.brand} ${r.vehicle.model}` : "", csvDate(r.startDate), csvDate(r.endDate), formatReservationStatus(r.status), r.contractNumber ?? "", csvNumber(r.totalPrice)]))} data-testid="button-export-reservations">
                   {t('details.exportCsv')}
                 </Button>
               </CardHeader>

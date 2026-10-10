@@ -1,3 +1,5 @@
+import { formatDate } from "@/lib/format-utils";
+import { describeApiError } from "@/lib/api-error";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -881,7 +883,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
 
       toast({
         title: t('interactiveDamageCheck.toasts.checkLoadedTitle'),
-        description: t('interactiveDamageCheck.toasts.checkLoadedWithDateDescription', { date: new Date(savedCheck.checkDate || savedCheck.createdAt).toLocaleDateString() }),
+        description: t('interactiveDamageCheck.toasts.checkLoadedWithDateDescription', { date: formatDate(savedCheck.checkDate || savedCheck.createdAt) }),
       });
     } catch (error) {
       console.error('Error loading damage check:', error);
@@ -1113,7 +1115,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
     } catch (error: any) {
       toast({
         title: t('interactiveDamageCheck.toasts.errorTitle'),
-        description: error.message || t('interactiveDamageCheck.toasts.saveCheckFailedDescription'),
+        description: describeApiError(error, undefined, t('interactiveDamageCheck.toasts.saveCheckFailedDescription')),
         variant: "destructive",
       });
     } finally {
@@ -1160,7 +1162,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                   <div>
                     <span className="text-blue-700 font-medium">{t('interactiveDamageCheck.dateLabel')}</span>
                     <span className="ml-2 text-blue-900">
-                      {pickupCheckData.checkDate ? new Date(pickupCheckData.checkDate).toLocaleDateString() : t('interactiveDamageCheck.notAvailable')}
+                      {pickupCheckData.checkDate ? formatDate(pickupCheckData.checkDate) : t('interactiveDamageCheck.notAvailable')}
                     </span>
                   </div>
                   {pickupCheckData.mileage && (
@@ -1311,7 +1313,7 @@ export default function InteractiveDamageCheck({ onClose, editingCheckId: propEd
                       {existingChecks
                         .sort((a, b) => new Date(b.checkDate || b.createdAt).getTime() - new Date(a.checkDate || a.createdAt).getTime())
                         .map((check) => {
-                          const date = new Date(check.checkDate || check.createdAt).toLocaleDateString();
+                          const date = formatDate(check.checkDate || check.createdAt);
                           const damageCount = check.damageMarkers ? JSON.parse(check.damageMarkers).length : 0;
                           return (
                             <SelectItem key={check.id} value={check.id.toString()}>

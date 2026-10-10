@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/format-utils";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Globe } from "lucide-react";
@@ -17,7 +18,7 @@ export function PortalEditNote({ customerId }: { customerId: number }) {
   const fields = Object.keys(last.details ?? {}).map((k) => t(`account.company.${k}`, { defaultValue: k })).join(", ");
   return (
     <p className="mb-3 inline-flex items-center gap-1.5 rounded-md bg-blue-50 px-2 py-1 text-xs text-blue-900" data-testid="portal-edit-note">
-      <Globe className="h-3.5 w-3.5" />{t("admin.customerTabNote", { name: last.userName ?? "?", date: new Date(last.createdAt).toLocaleString(), fields })}
+      <Globe className="h-3.5 w-3.5" />{t("admin.customerTabNote", { name: last.userName ?? "?", date: formatDateTime(last.createdAt), fields })}
     </p>
   );
 }

@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/format-utils";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -157,7 +158,7 @@ export function VehicleFiscalTab({ vehicleId }: { vehicleId: number }) {
 
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">
-              {t("vehicle.rdw")}: {data.rdwRetrievedAt ? t("vehicle.rdwAt", { at: new Date(data.rdwRetrievedAt).toLocaleString("nl-NL") }) : t("vehicle.rdwNever")}
+              {t("vehicle.rdw")}: {data.rdwRetrievedAt ? t("vehicle.rdwAt", { at: formatDateTime(data.rdwRetrievedAt) }) : t("vehicle.rdwNever")}
               {data.rdwError ? ` — ${t("vehicle.rdwError", { message: rdwReason(data.rdwError) })}` : ""}
             </p>
             {canReview && (

@@ -212,6 +212,12 @@ function csvField(value: string | number | null | undefined): string {
   return /[;"\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
+/** dd-mm-yyyy from an ISO date or timestamp, the same shape as the client's CSV writer (client/src/lib/csv.ts). */
+function csvDate(iso: string | null | undefined): string {
+  const m = iso ? /^([0-9]{4})-([0-9]{2})-([0-9]{2})/.exec(iso) : null;
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : "";
+}
+
 /** Amounts with a decimal comma, so a Dutch spreadsheet reads them as numbers. */
 function csvAmount(amount: string | null): string {
   return amount === null ? "" : amount.replace(".", ",");
@@ -230,8 +236,8 @@ export function reportToCsv(report: FiscalReport): string {
         csvField(r.customerName),
         csvField(r.licensePlate),
         csvField(r.vehicle),
-        r.periodStart,
-        r.periodEnd ?? "",
+        csvDate(r.periodStart),
+        csvDate(r.periodEnd),
         r.month,
         r.days,
         csvField(r.reasonLabel),
@@ -239,7 +245,7 @@ export function reportToCsv(report: FiscalReport): string {
         STATE_NL[r.state],
         csvField(r.statusLabel),
         csvField(r.ruleVersionTitle),
-        r.assessedAt.slice(0, 10),
+        csvDate(r.assessedAt),
       ].join(";"),
     );
   }

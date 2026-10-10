@@ -1,3 +1,5 @@
+import { formatDateTime } from "@/lib/format-utils";
+import { describeApiError } from "@/lib/api-error";
 import { useState } from "react";
 import { type Preview, PreviewFooter, TableSearch, textMatches } from "./preview";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -47,7 +49,7 @@ export function AccountsTable({ customerId, preview }: { customerId?: number; pr
         toast({ title: t((v.body as { active: boolean }).active ? "admin.accounts.unblockedToast" : "admin.accounts.blockedToast") });
       }
     },
-    onError: (e: Error) => toast({ title: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
   });
 
   const status = (a: PortalAccountRow) => !a.active ? "blocked" : a.activated ? "active" : a.invitePending ? "pending" : "notActivated";
@@ -84,7 +86,7 @@ export function AccountsTable({ customerId, preview }: { customerId?: number; pr
                 {!customerId && <TableCell>{a.customerName}</TableCell>}
                 <TableCell>{t(`admin.accounts.role.${a.role}`)}{restricted(a) && <Badge variant="outline" className="ml-2">{t("admin.accounts.restricted")}</Badge>}</TableCell>
                 <TableCell><Badge variant={status(a) === "active" ? "default" : status(a) === "blocked" ? "destructive" : "secondary"}>{t(`admin.accounts.status.${status(a)}`)}</Badge></TableCell>
-                <TableCell>{a.lastLoginAt ? new Date(a.lastLoginAt).toLocaleString() : "—"}</TableCell>
+                <TableCell>{a.lastLoginAt ? formatDateTime(a.lastLoginAt) : "—"}</TableCell>
                 <TableCell className="text-right">
                   {canManage && (
                     <DropdownMenu>

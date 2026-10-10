@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { formatLicensePlate } from "@/lib/format-utils";
+import { formatLicensePlate, formatDateTime, formatCurrency } from "@/lib/format-utils";
 import { type Preview, PreviewFooter, TableSearch, textMatches } from "@/components/portal-admin/preview";
-import { downloadCsv } from "@/lib/csv";
+import { downloadCsv, csvDateTime, csvNumber } from "@/lib/csv";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { apiRequest } from "@/lib/queryClient";
@@ -72,8 +72,8 @@ export function FinesTable({ customerId, initialPlate, importFileId, preview }: 
         <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" aria-label={t("admin.fines.filters.from")} />
         <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" aria-label={t("admin.fines.filters.to")} />
         {importFileId && <Badge variant="secondary" data-testid="badge-import-filter">{t("admin.fines.cjib.filteredByFile", { id: importFileId })}</Badge>}
-        <Button size="sm" variant="ghost" onClick={() => downloadCsv(`bekeuringen${customerId ? `-klant-${customerId}` : ""}`, ["Kenteken", "Datum", "Omschrijving", "Klant", "Bestuurder", "Bedrag", "Status"],
-          filtered.map((f) => [formatLicensePlate(f.licensePlate), new Date(f.offenceAt).toLocaleString(), f.description, f.customerName ?? "", f.driverName ?? "", f.totalAmount, t(`admin.fines.status.${f.status}`)]))} data-testid="button-export-fines">
+        <Button size="sm" variant="ghost" onClick={() => downloadCsv(`boetes${customerId ? `-klant-${customerId}` : ""}`, ["Kenteken", "Datum", "Omschrijving", "Klant", "Bestuurder", "Bedrag", "Status"],
+          filtered.map((f) => [formatLicensePlate(f.licensePlate), csvDateTime(f.offenceAt), f.description, f.customerName ?? "", f.driverName ?? "", csvNumber(f.totalAmount), t(`admin.fines.status.${f.status}`)]))} data-testid="button-export-fines">
           {t("admin.fines.exportCsv")}
         </Button>
         <div className="ml-auto flex gap-2">
@@ -104,12 +104,12 @@ export function FinesTable({ customerId, initialPlate, importFileId, preview }: 
           <TableBody>
             {rows.map((f) => (
               <TableRow key={f.id} className="cursor-pointer hover:bg-muted/40" onClick={() => openFineDialog(f.id)} data-testid={`row-fine-${f.id}`}>
-                <TableCell className="font-mono">{f.licensePlate}</TableCell>
-                <TableCell className="whitespace-nowrap">{new Date(f.offenceAt).toLocaleString()}</TableCell>
+                <TableCell className="font-mono">{formatLicensePlate(f.licensePlate)}</TableCell>
+                <TableCell className="whitespace-nowrap">{formatDateTime(f.offenceAt)}</TableCell>
                 <TableCell>{f.description}</TableCell>
                 {!customerId && <TableCell>{f.customerName ?? "—"}</TableCell>}
                 <TableCell>{f.driverName ?? "—"}</TableCell>
-                <TableCell className="text-right">€ {f.totalAmount}</TableCell>
+                <TableCell className="text-right">{formatCurrency(f.totalAmount)}</TableCell>
                 <TableCell><FineStatusBadge status={f.status} /></TableCell>
               </TableRow>
             ))}

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Vehicle } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
-import { formatLicensePlate } from "@/lib/format-utils";
+import { formatLicensePlate, formatDate } from "@/lib/format-utils";
 
 export interface ReadonlyVehicleDisplayProps {
   vehicleId: string | number;
@@ -53,7 +53,7 @@ export function ReadonlyVehicleDisplay({ vehicleId }: ReadonlyVehicleDisplayProp
         )}
         {vehicle.apkDate && (
           <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200 text-xs">
-            {t('readonlyVehicleDisplay.apkLabel', { date: new Date(vehicle.apkDate).toLocaleDateString() })}
+            {t('readonlyVehicleDisplay.apkLabel', { date: formatDate(vehicle.apkDate) })}
           </Badge>
         )}
       </div>

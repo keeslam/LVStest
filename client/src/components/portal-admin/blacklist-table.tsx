@@ -5,7 +5,7 @@ import { Ban, Plus, Trash2, Pencil } from "lucide-react";
 import type { Customer } from "@shared/schema";
 import type { PortalBlacklistEntryDto } from "@shared/portal-types";
 import { apiRequest } from "@/lib/queryClient";
-import { formatLicensePlate } from "@/lib/format-utils";
+import { formatLicensePlate, formatDate } from "@/lib/format-utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -128,7 +128,7 @@ export function BlacklistTable({ initialPlate, initialCustomerId }: { initialPla
                 <TableCell>{r.brand} {r.model} {r.offeredOnline && <Badge variant="secondary" className="ml-1">{t("admin.vehicles.offered")}</Badge>}</TableCell>
                 <TableCell>{r.customerName}</TableCell>
                 <TableCell className="max-w-xs truncate text-muted-foreground" title={r.reason ?? undefined}>{r.reason || "—"}</TableCell>
-                <TableCell className="whitespace-nowrap text-muted-foreground">{new Date(r.createdAt).toLocaleDateString()}</TableCell>
+                <TableCell className="whitespace-nowrap text-muted-foreground">{formatDate(r.createdAt)}</TableCell>
                 {canManage && (
                   <TableCell className="whitespace-nowrap">
                     <Button size="icon" variant="ghost" title={t("admin.blacklist.edit")} onClick={() => startEdit(r)} data-testid={`button-blacklist-edit-${r.id}`}><Pencil className="h-4 w-4" /></Button>

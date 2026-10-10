@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/format-utils";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -124,7 +125,7 @@ export function UsagePeriodCard({ reservationId, startDate }: { reservationId: n
   const confirmedText =
     data.confirmedByKind === "none"
       ? t("usage.notConfirmed")
-      : t(data.confirmedByKind === "portal" ? "usage.confirmedByPortal" : "usage.confirmedBy", { name: data.confirmedByName ?? "?", date: data.confirmedAt ? new Date(data.confirmedAt).toLocaleDateString("nl-NL") : "" });
+      : t(data.confirmedByKind === "portal" ? "usage.confirmedByPortal" : "usage.confirmedBy", { name: data.confirmedByName ?? "?", date: data.confirmedAt ? formatDate(data.confirmedAt) : "" });
 
   return (
     <Card data-testid="usage-period-card">

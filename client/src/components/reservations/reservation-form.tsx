@@ -1,3 +1,5 @@
+import { describeApiError } from "@/lib/api-error";
+import { v } from "@/lib/zod-i18n";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
@@ -82,18 +84,18 @@ import { officeToday } from "@/lib/office-date";
 // Extended schema with validation
 const formSchema = insertReservationSchemaBase.extend({
   vehicleId: z.union([
-    z.number().min(1, "Please select a vehicle"),
-    z.string().min(1, "Please select a vehicle").transform(val => parseInt(val)),
+    z.number().min(1, v("vehicleRequired")),
+    z.string().min(1, v("vehicleRequired")).transform(val => parseInt(val)),
   ]),
   customerId: z.union([
-    z.number().min(1, "Please select a customer"),
-    z.string().min(1, "Please select a customer").transform(val => parseInt(val)),
+    z.number().min(1, v("customerRequired")),
+    z.string().min(1, v("customerRequired")).transform(val => parseInt(val)),
   ]),
   driverId: z.union([
     z.number(),
     z.string().transform(val => val === "" ? null : parseInt(val)),
   ]).optional().nullable(),
-  startDate: z.string().min(1, "Start date is required"),
+  startDate: z.string().min(1, v("startDateRequired")),
   endDate: z.string().optional(),
   isOpenEnded: z.boolean().optional(),
   // Contract number is assigned during pickup, not during reservation creation
@@ -115,11 +117,11 @@ const formSchema = insertReservationSchemaBase.extend({
   departureMileage: z.union([
     z.number().nullish(),
     z.string().transform(val => val === "" || val === null ? null : parseInt(val) || null),
-  ]).nullish().refine(val => val === null || val === undefined || val >= 0, { message: "Mileage cannot be negative" }),
+  ]).nullish().refine(val => val === null || val === undefined || val >= 0, { message: v("mileageNegative") }),
   startMileage: z.union([
     z.number().nullish(),
     z.string().transform(val => val === "" || val === null ? null : parseInt(val) || null),
-  ]).nullish().refine(val => val === null || val === undefined || val >= 0, { message: "Mileage cannot be negative" }),
+  ]).nullish().refine(val => val === null || val === undefined || val >= 0, { message: v("mileageNegative") }),
   fuelLevelPickup: z.string().nullish(),
   fuelLevelReturn: z.string().nullish(),
   fuelCost: z.union([
@@ -135,7 +137,7 @@ const formSchema = insertReservationSchemaBase.extend({
   }
   return true;
 }, {
-  message: "End date is required for non-open-ended rentals",
+  message: v("endDateRequired"),
   path: ["endDate"],
 }).refine((data) => {
   // End date must be >= start date (when not open-ended)
@@ -144,7 +146,7 @@ const formSchema = insertReservationSchemaBase.extend({
   }
   return true;
 }, {
-  message: "End date cannot be before start date",
+  message: v("endBeforeStart"),
   path: ["endDate"],
 });
 
@@ -1230,8 +1232,8 @@ export function ReservationForm({
       toast({
         title: t('form.errors.genericTitle'),
         description: editMode
-          ? t('form.errors.failedToUpdateReservationDescription', { message: error.message })
-          : t('form.errors.failedToCreateReservationDescription', { message: error.message }),
+          ? t('form.errors.failedToUpdateReservationDescription', { message: describeApiError(error) })
+          : t('form.errors.failedToCreateReservationDescription', { message: describeApiError(error) }),
         variant: "destructive",
       });
     },
@@ -1257,7 +1259,7 @@ export function ReservationForm({
     onError: (error) => {
       toast({
         title: t('form.errors.genericTitle'),
-        description: t('form.errors.failedToUpdateVehicleMileage', { message: error.message }),
+        description: t('form.errors.failedToUpdateVehicleMileage', { message: describeApiError(error) }),
         variant: "destructive",
       });
     }
@@ -2721,7 +2723,7 @@ export function ReservationForm({
                               <div className="text-left">
                                 <div className="text-xs font-semibold">{check.checkType === 'pickup' ? t('form.pickupCheckLabel') : t('form.returnCheckLabel')}</div>
                                 <div className="text-[10px] text-gray-500">
-                                  {new Date(check.checkDate).toLocaleDateString()} • {check.mileage ? t('form.mileageKm', { mileage: check.mileage }) : t('form.noMileage')}
+                                  {formatDate(check.checkDate)} • {check.mileage ? t('form.mileageKm', { mileage: check.mileage }) : t('form.noMileage')}
                                 </div>
                               </div>
                             </Button>
@@ -2762,7 +2764,7 @@ export function ReservationForm({
                               <div className="text-left">
                                 <div className="text-xs">{check.checkType === 'pickup' ? t('form.pickupLabel') : t('form.returnLabel')}</div>
                                 <div className="text-[10px] text-gray-500">
-                                  {new Date(check.checkDate).toLocaleDateString()}
+                                  {formatDate(check.checkDate)}
                                 </div>
                               </div>
                             </Button>

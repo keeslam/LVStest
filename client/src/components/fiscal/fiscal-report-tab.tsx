@@ -1,3 +1,5 @@
+import { notifyFileReady } from "@/lib/file-ready";
+import { csvFileName } from "@/lib/csv";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -90,7 +92,7 @@ export function FiscalReportTab() {
             {t("overviewDialog.button")}
           </Button>
           <Button asChild variant="outline" size="sm">
-            <a href={reportUrl(year, customerId, true)} data-testid="fiscal-report-csv">
+            <a href={reportUrl(year, customerId, true)} onClick={() => notifyFileReady(csvFileName(`fiscaal-${year}`))} data-testid="fiscal-report-csv">
               <Download className="mr-2 h-4 w-4" />
               {t("report.csv")}
             </a>

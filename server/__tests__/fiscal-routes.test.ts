@@ -256,7 +256,7 @@ describe("fiscale API — rapporten en PDF (stap 6)", () => {
     const csv = await viewer.get(`/api/fiscal/reports/monthly.csv?year=2027&customerId=${customer.id}`);
     expect(csv.status).toBe(200);
     expect(csv.headers["content-type"]).toContain("text/csv");
-    expect(csv.headers["content-disposition"]).toContain("fiscaal-2027.csv");
+    expect(csv.headers["content-disposition"]).toMatch(/filename="fiscaal-2027-[0-9]{4}-[0-9]{2}-[0-9]{2}[.]csv"/);
     expect(csv.text).toContain("Klant;Kenteken");
     expect(csv.text).toContain(vehicle.licensePlate);
 

@@ -1,3 +1,4 @@
+import { describeApiError } from "@/lib/api-error";
 import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -18,7 +19,7 @@ import { UserPermission } from "@shared/schema";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { NoDataAccess } from "@/components/ui/no-data-access";
-import { formatLicensePlate, plateMatches, formatVehicleType } from "@/lib/format-utils";
+import { formatLicensePlate, plateMatches, formatVehicleType, formatDate } from "@/lib/format-utils";
 import { formatDateNl, formatDateTimeNl } from "@/lib/format-date-nl";
 import { fillPlaceholders } from "@shared/message-placeholders";
 import { templatesForMode, isSystemTemplate, systemTemplateLabelKey, htmlToPlainText } from "@/lib/communication-templates";
@@ -453,7 +454,7 @@ export default function CustomerCommunications() {
       console.error('Failed to send notifications:', error);
       toast({
         title: t('customerCommunications.toasts.sendFailedTitle'),
-        description: error instanceof Error ? error.message : t('customerCommunications.toasts.genericError'),
+        description: describeApiError(error, undefined, t('customerCommunications.toasts.genericError')),
         variant: "destructive",
       });
     } finally {
@@ -613,7 +614,7 @@ export default function CustomerCommunications() {
       console.error('Failed to delete template:', error);
       toast({
         title: t('customerCommunications.toasts.deleteTemplateFailedTitle'),
-        description: error instanceof Error ? error.message : t('customerCommunications.toasts.genericError'),
+        description: describeApiError(error, undefined, t('customerCommunications.toasts.genericError')),
         variant: "destructive",
       });
     }
@@ -1858,7 +1859,7 @@ export default function CustomerCommunications() {
                         console.error('Failed to save template:', error);
                         toast({
                           title: t('customerCommunications.toasts.saveTemplateFailedTitle'),
-                          description: error instanceof Error ? error.message : t('customerCommunications.toasts.genericError'),
+                          description: describeApiError(error, undefined, t('customerCommunications.toasts.genericError')),
                           variant: "destructive",
                         });
                       } finally {
@@ -2027,9 +2028,9 @@ export default function CustomerCommunications() {
                                 {isSystemTemplate(template) ? htmlToPlainText(template.content) : template.content}
                               </p>
                               <div className="text-xs text-muted-foreground space-y-1">
-                                <div>{t('customerCommunications.templates.createdLabel', { date: new Date(template.createdAt).toLocaleDateString('nl-NL') })}</div>
+                                <div>{t('customerCommunications.templates.createdLabel', { date: formatDate(template.createdAt) })}</div>
                                 {template.lastUsed && (
-                                  <div>{t('customerCommunications.templates.lastUsedLabel', { date: new Date(template.lastUsed).toLocaleDateString('nl-NL') })}</div>
+                                  <div>{t('customerCommunications.templates.lastUsedLabel', { date: formatDate(template.lastUsed) })}</div>
                                 )}
                               </div>
                             </div>
@@ -2331,9 +2332,9 @@ export default function CustomerCommunications() {
               <div className="text-xs text-muted-foreground">
                 <div><strong>{t('customerCommunications.dialogs.templatePreview.templateLabel')}</strong> {templateDisplayName(selectedTemplateForPreview)}</div>
                 <div><strong>{t('customerCommunications.dialogs.templatePreview.categoryLabel')}</strong> {selectedTemplateForPreview.category === 'portal' ? t('customerCommunications.templates.categoryPortalShort') : selectedTemplateForPreview.category || t('customerCommunications.dialogs.templatePreview.defaultCategory')}</div>
-                <div><strong>{t('customerCommunications.dialogs.templatePreview.createdLabel')}</strong> {new Date(selectedTemplateForPreview.createdAt).toLocaleDateString('nl-NL')}</div>
+                <div><strong>{t('customerCommunications.dialogs.templatePreview.createdLabel')}</strong> {formatDate(selectedTemplateForPreview.createdAt)}</div>
                 {selectedTemplateForPreview.lastUsed && (
-                  <div><strong>{t('customerCommunications.dialogs.templatePreview.lastUsedLabel')}</strong> {new Date(selectedTemplateForPreview.lastUsed).toLocaleDateString('nl-NL')}</div>
+                  <div><strong>{t('customerCommunications.dialogs.templatePreview.lastUsedLabel')}</strong> {formatDate(selectedTemplateForPreview.lastUsed)}</div>
                 )}
               </div>
             </div>

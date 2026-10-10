@@ -1,3 +1,6 @@
+import { formatDate } from "@/lib/format-utils";
+import { v } from "@/lib/zod-i18n";
+import { describeApiError } from "@/lib/api-error";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
@@ -46,9 +49,9 @@ interface ProfileDialogProps {
 }
 
 const profileFormSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters").max(50),
+  username: z.string().min(3, v("usernameMin", { count: 3 })).max(50),
   fullName: z.string().optional(),
-  email: z.string().email("Invalid email address").optional().or(z.literal("")),
+  email: z.string().email(v("invalidEmail")).optional().or(z.literal("")),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -115,7 +118,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
     onError: (error: Error) => {
       toast({
         title: t('profileDialog.updateFailedTitle'),
-        description: error.message,
+        description: describeApiError(error),
         variant: "destructive",
       });
     },
@@ -141,13 +144,13 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
     onError: (error: Error) => {
       toast({
         title: t('profileDialog.errorTitle'),
-        description: error.message,
+        description: describeApiError(error),
         variant: "destructive",
       });
     },
   });
 
-  const createdAt = user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : t('profileDialog.unknown');
+  const createdAt = user?.createdAt ? formatDate(user.createdAt) : t('profileDialog.unknown');
 
   // Always render the Dialog to prevent unmounting issues
   return (

@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/format-utils";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { type Preview, PreviewFooter, TableSearch, textMatches } from "./preview";
@@ -60,7 +61,7 @@ export function ActivityTable({ customerId, limit = 50, preview }: { customerId?
       <TableBody>
         {rows.map((r) => (
           <TableRow key={r.id}>
-            <TableCell className="whitespace-nowrap">{new Date(r.createdAt).toLocaleString()}</TableCell>
+            <TableCell className="whitespace-nowrap">{formatDateTime(r.createdAt)}</TableCell>
             {!customerId && <TableCell>{r.customerName}</TableCell>}
             <TableCell>{r.userName ?? "—"}</TableCell>
             <TableCell>{activityLabel(t, r.action)}</TableCell>

@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/format-utils";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -289,7 +290,7 @@ export function VersionDialog({ versionId, onOpenChange, definitions, current }:
                     <Stat label={t("impact.manualReview")} value={String(impact.result.manualReview)} />
                     <Stat label={t("impact.dataInsufficient")} value={String(impact.result.dataInsufficient)} />
                     <div className="col-span-2 text-xs text-muted-foreground">
-                      {t("impact.window", { from: dateLabelNl(impact.result.windowFrom), to: dateLabelNl(impact.result.windowTo) })} · {t("impact.computedAt", { at: new Date(impact.result.computedAt).toLocaleString("nl-NL") })}
+                      {t("impact.window", { from: dateLabelNl(impact.result.windowFrom), to: dateLabelNl(impact.result.windowTo) })} · {t("impact.computedAt", { at: formatDateTime(impact.result.computedAt) })}
                     </div>
                   </div>
                 )}
@@ -330,7 +331,7 @@ export function VersionDialog({ versionId, onOpenChange, definitions, current }:
               <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
                 {detail.audit.slice(0, 50).map((e) => (
                   <li key={e.id}>
-                    {new Date(e.occurredAt).toLocaleString("nl-NL")} · {e.username} · {t(`audit.actions.${e.action}`, { defaultValue: e.action })}
+                    {formatDateTime(e.occurredAt)} · {e.username} · {t(`audit.actions.${e.action}`, { defaultValue: e.action })}
                     {e.parameterKey ? ` · ${parameterLabel(definitions, e.parameterKey)}` : ""}
                     {e.oldValue !== null || e.newValue !== null ? ` · ${auditValueLabel(definitions, e.parameterKey, e.oldValue)} → ${auditValueLabel(definitions, e.parameterKey, e.newValue)}` : ""}
                   </li>

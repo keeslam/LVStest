@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/format-utils";
 import { useState } from "react";
 import { type Preview, PreviewFooter, TableSearch, textMatches } from "./preview";
 import { useQuery } from "@tanstack/react-query";
@@ -59,7 +60,7 @@ export function RequestsTable({ customerId, preview, types }: { customerId?: num
           <TableBody>
             {rows.map((r) => (
               <TableRow key={r.id} className="cursor-pointer hover:bg-muted/40" onClick={() => openPortalRequestDialog(r.id)} data-testid={`row-request-${r.id}`}>
-                <TableCell className="whitespace-nowrap">{new Date(r.createdAt).toLocaleString()}</TableCell>
+                <TableCell className="whitespace-nowrap">{formatDateTime(r.createdAt)}</TableCell>
                 <TableCell>{t(`admin.requests.type.${r.type}`)}</TableCell>
                 {!customerId && <TableCell>{r.customerName}</TableCell>}
                 <TableCell>{r.submittedBy ?? "—"}</TableCell>

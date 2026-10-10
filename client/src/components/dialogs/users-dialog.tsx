@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/format-utils";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -293,8 +294,8 @@ export function UsersDialog({ open, onOpenChange }: UsersDialogProps) {
     }
 
     const isSelf = currentUser?.id === selectedUser.id;
-    const createdAt = selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : t('usersDialog.unknown');
-    const updatedAt = selectedUser.updatedAt ? new Date(selectedUser.updatedAt).toLocaleDateString() : t('usersDialog.unknown');
+    const createdAt = selectedUser.createdAt ? formatDate(selectedUser.createdAt) : t('usersDialog.unknown');
+    const updatedAt = selectedUser.updatedAt ? formatDate(selectedUser.updatedAt) : t('usersDialog.unknown');
 
     return (
       <div className="space-y-4">

@@ -125,7 +125,7 @@ describe("maandrapport", () => {
     const csv = reportToCsv(report);
     expect(csv.charCodeAt(0)).toBe(0xfeff);
     expect(csv).toContain("Klant;Kenteken;Voertuig;Periode van;Periode tot;Maand;Dagen;Reden;Bedrag;Stand;Status;Regelversie;Beoordeeld op");
-    expect(csv).toContain('"Klant; met puntkomma";AB-123-C;Volkswagen Golf;2027-03-01;;2027-03;31;geheven;360,00;voorlopig;Van toepassing;Belastingplan 2026;2027-03-15');
+    expect(csv).toContain('"Klant; met puntkomma";AB-123-C;Volkswagen Golf;01-03-2027;;2027-03;31;geheven;360,00;voorlopig;Van toepassing;Belastingplan 2026;15-03-2027');
     expect(csv).toContain("Totaal;;;;;;;;360,00");
     expect(csv).toContain("geen fiscaal advies");
 

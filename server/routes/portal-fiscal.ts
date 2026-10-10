@@ -12,6 +12,7 @@ import { PORTAL_ERROR } from "../../shared/portal-types";
 import { TRI_STATES, USAGE_TYPES, REPLACEMENT_REASONS } from "../../shared/fiscal-types";
 import { fiscalSummaryForCustomer, getFiscalAssessmentForCustomer, getFiscalReservationForCustomer, listFiscalVehiclesForCustomer } from "../services/fiscal/portal-storage";
 import { monthlyReport, reportToCsv } from "../services/fiscal/reports";
+import { isoToday } from "../services/lifecycle";
 import { assessmentPdfContext, renderAssessmentPdf } from "../services/fiscal/assessment-pdf";
 import { confirmUsage, getUsagePeriodByReservation } from "../services/fiscal/usage-periods";
 import { assessUsagePeriod } from "../services/fiscal/assess";
@@ -102,7 +103,7 @@ export function registerPortalFiscalRoutes(app: Express, deps: PortalFiscalRoute
     const year = parsed.data.year ?? new Date().getFullYear();
     const report = await monthlyReport({ year, customerId: ctx.customerId, scope: ctx.scope }, { withAmounts: withAmounts(req) });
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
-    res.setHeader("Content-Disposition", `attachment; filename="fiscaal-${year}.csv"`);
+    res.setHeader("Content-Disposition", `attachment; filename="fiscaal-${year}-${isoToday()}.csv"`);
     res.send(reportToCsv(report));
   });
 

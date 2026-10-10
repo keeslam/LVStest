@@ -5,7 +5,7 @@ import { useLocation } from "wouter";
 import { AlertCircle, Bell, CalendarClock, Users, ArrowDownToLine, ArrowUpFromLine, Inbox, Receipt, UserCircle, Car, Ban, History, ChevronRight, Wrench } from "lucide-react";
 import type { PortalDashboard } from "@shared/portal-types";
 import { apiRequest } from "@/lib/queryClient";
-import { formatLicensePlate } from "@/lib/format-utils";
+import { formatLicensePlate, formatDate } from "@/lib/format-utils";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -166,7 +166,7 @@ export function AttentionPanel({ attention, canViewFines }: { attention: PortalD
     <Row onClick={() => openFineDialog(i.f.id)} testId={`attention-fine-${i.f.id}`}>
       <div className="min-w-0">
         <div className="truncate">{t("admin.dashboard.attention.fine", { plate: formatLicensePlate(i.f.licensePlate) })}</div>
-        <div className="truncate text-xs text-muted-foreground">{i.f.description} · {new Date(i.f.offenceAt).toLocaleDateString()} · € {i.f.totalAmount}</div>
+        <div className="truncate text-xs text-muted-foreground">{i.f.description} · {formatDate(i.f.offenceAt)} · € {i.f.totalAmount}</div>
       </div>
       <Badge variant="destructive">{t("admin.dashboard.attention.unlinked")}</Badge>
     </Row>

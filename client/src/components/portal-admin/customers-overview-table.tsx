@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/format-utils";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -23,7 +24,7 @@ export function ago(iso: string | null, t: (k: string, o?: Record<string, unknow
   if (minutes < 1) return t("admin.customers.justNow");
   if (minutes < 60) return t("admin.customers.minutesAgo", { n: minutes });
   if (minutes < 60 * 24) return t("admin.customers.hoursAgo", { n: Math.round(minutes / 60) });
-  return new Date(iso).toLocaleDateString();
+  return formatDate(iso);
 }
 
 export function CustomersOverviewTable() {

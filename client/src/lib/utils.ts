@@ -1,3 +1,4 @@
+import { formatLicensePlate } from "./license-plate";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -9,34 +10,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Formats a license plate to ensure consistent display with dashes
- * Handles different formats: XXLL20, XX-LL-20, XXLL-20, etc.
- * Standardizes to XX-LL-20 format
+ * Formats a license plate with dashes (XX-LL-20). One implementation for the
+ * whole client: see lib/license-plate.ts.
  */
-export function formatLicensePlate(licensePlate: string): string {
-  if (!licensePlate) return '';
-  
-  // Remove any existing dashes or spaces
-  const cleanPlate = licensePlate.replace(/[-\s]/g, '');
-  
-  // Dutch license plates typically have formats like XX-XX-XX, XX-XXX-X, etc.
-  // This attempts to add dashes in the most common pattern
-  if (cleanPlate.length === 6) {
-    // Common format: XXLLDD → XX-LL-DD
-    return `${cleanPlate.substring(0, 2)}-${cleanPlate.substring(2, 4)}-${cleanPlate.substring(4, 6)}`;
-  } else if (cleanPlate.length === 7) {
-    // Other formats: XXLLLDD → XX-LLL-DD or XXLLLDDD → XX-LL-LDD
-    // Make a best guess based on Dutch conventions
-    return `${cleanPlate.substring(0, 2)}-${cleanPlate.substring(2, 5)}-${cleanPlate.substring(5, 7)}`;
-  } else if (cleanPlate.length === 8) {
-    // Format: DDLLLLDD → DD-LLL-LDD
-    return `${cleanPlate.substring(0, 2)}-${cleanPlate.substring(2, 5)}-${cleanPlate.substring(5, 8)}`;
-  }
-  
-  // If it doesn't match common patterns, add dashes after every 2 characters
-  // This is a fallback for unusual formats
-  return cleanPlate.match(/.{1,2}/g)?.join('-') || cleanPlate;
-}
+export { formatLicensePlate } from "./license-plate";
 
 /**
  * Removes dashes from a license plate for storage or comparison
@@ -47,11 +24,11 @@ export function normalizeLicensePlate(licensePlate: string): string {
 }
 
 /**
- * Displays a license plate without dashes in uppercase
+ * How a plate reads on screen: with dashes, like everywhere else (A-7-5,
+ * A-10-5). The name predates that rule; every caller is a display.
  */
 export function displayLicensePlate(licensePlate: string): string {
-  if (!licensePlate) return '';
-  return licensePlate.replace(/[-\s]/g, '').toUpperCase();
+  return formatLicensePlate(licensePlate);
 }
 
 /**

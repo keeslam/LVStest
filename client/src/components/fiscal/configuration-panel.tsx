@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/format-utils";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -35,7 +36,7 @@ function VersionRow({ version, onOpen }: { version: VersionDetail; onOpen: (id: 
           {" · "}
           {t("config.by", { name: who })}
           {" · "}
-          {new Date(version.updatedAt).toLocaleDateString("nl-NL")}
+          {formatDate(version.updatedAt)}
         </div>
       </div>
       <Button size="sm" variant="outline" onClick={() => onOpen(version.id)} data-testid={`button-open-version-${version.id}`}>{t("config.view")}</Button>

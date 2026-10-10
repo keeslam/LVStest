@@ -8,20 +8,30 @@ import i18n from '@/i18n';
  * owns the format, and an unreadable value renders as an en dash instead of the
  * literal text "Invalid date".
  */
-export function formatDate(date: string | Date): string {
-  return formatDateNl(date, 'long');
+export function formatDate(date: string | Date | null | undefined): string {
+  // A-2-10: one house style for a date on screen, "9 okt. 2026".
+  return formatDateNl(date, 'medium');
+}
+
+/** "9 okt. 2026 14:05": a moment, without seconds (A-12-7). Unreadable values read as an en dash. */
+export function formatDateTime(value: string | Date | number | null | undefined): string {
+  return formatDateNl(value, "d MMM yyyy HH:mm");
 }
 
 /**
  * Format a number as currency (EUR)
  */
-export function formatCurrency(amount: number): string {
+export function formatCurrency(amount: number | string | null | undefined): string {
+  // A-12-7: "€ 95,00", never "€ 95.00" or "95.00 EUR". A missing or unreadable amount is a dash.
+  if (amount === null || amount === undefined || amount === '') return '–';
+  const value = typeof amount === 'number' ? amount : Number(amount);
+  if (!Number.isFinite(value)) return '–';
   return new Intl.NumberFormat('nl-NL', {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
-  }).format(amount);
+  }).format(value);
 }
 
 /**
@@ -48,41 +58,7 @@ export function plateMatches(licensePlate: string | null | undefined, query: str
   return (licensePlate ?? '').replace(/[-\s]/g, '').toLowerCase().includes(q);
 }
 
-export function formatLicensePlate(licensePlate: string): string {
-  // Remove any existing dashes or spaces
-  const sanitized = licensePlate.replace(/[-\s]/g, '').toUpperCase();
-  
-  // Standard Dutch license plate formats
-  const formats = [
-    { pattern: /^([A-Z]{2})(\d{2})(\d{2})$/, format: '$1-$2-$3' }, // XX-00-00
-    { pattern: /^(\d{2})(\d{2})([A-Z]{2})$/, format: '$1-$2-$3' }, // 00-00-XX
-    { pattern: /^(\d{2})([A-Z]{2})(\d{2})$/, format: '$1-$2-$3' }, // 00-XX-00
-    { pattern: /^([A-Z]{2})([A-Z]{2})(\d{2})$/, format: '$1-$2-$3' }, // XX-XX-00
-    { pattern: /^([A-Z]{2})(\d{2})([A-Z]{2})$/, format: '$1-$2-$3' }, // XX-00-XX
-    { pattern: /^(\d{2})([A-Z]{2})([A-Z]{2})$/, format: '$1-$2-$3' }, // 00-XX-XX
-    { pattern: /^([A-Z])(\d{3})([A-Z]{2})$/, format: '$1-$2-$3' }, // X-000-XX
-    { pattern: /^([A-Z]{2})(\d{3})([A-Z])$/, format: '$1-$2-$3' }, // XX-000-X
-    { pattern: /^([A-Z])(\d{2})([A-Z]{3})$/, format: '$1-$2-$3' }, // X-00-XXX
-    { pattern: /^([A-Z]{3})(\d{2})([A-Z])$/, format: '$1-$2-$3' }, // XXX-00-X
-    { pattern: /^(\d{1})([A-Z]{3})(\d{2})$/, format: '$1-$2-$3' }, // 0-XXX-00
-    { pattern: /^(\d{2})([A-Z]{3})(\d{1})$/, format: '$1-$2-$3' }, // 00-XXX-0
-    { pattern: /^(\d{1})([A-Z]{2})(\d{3})$/, format: '$1-$2-$3' }, // 0-XX-000 (sidecode 13)
-    { pattern: /^(\d{3})([A-Z]{2})(\d{1})$/, format: '$1-$2-$3' }, // 000-XX-0 (sidecode 14)
-  ];
-  
-  // Try to match and format the license plate
-  for (const { pattern, format } of formats) {
-    if (pattern.test(sanitized)) {
-      return sanitized.replace(pattern, format);
-    }
-  }
-  
-  // Anything else made of three alternating letter/digit groups (e.g. 14XT284)
-  // still reads better with dashes; other plates stay as they are.
-  const groups = sanitized.match(/[A-Z]+|\d+/g);
-  if (groups && groups.length === 3 && groups.join('') === sanitized) return groups.join('-');
-  return sanitized;
-}
+export { formatLicensePlate } from './license-plate';
 
 /**
  * True when the ISO date (YYYY-MM-DD) falls on a Saturday or Sunday.

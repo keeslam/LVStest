@@ -1,3 +1,4 @@
+import { notifyFileReady } from "@/lib/file-ready";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import {
@@ -910,6 +911,7 @@ export function MaintenanceViewDialog({
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
+                        notifyFileReady(link.download);
                       }}
                       data-testid={`button-download-${doc.id}`}
                       title={t('viewDialog.downloadDocumentTitle')}
@@ -1000,6 +1002,7 @@ export function MaintenanceViewDialog({
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);
+              notifyFileReady(link.download);
             }}
           >
             <Download className="h-4 w-4 mr-2" />
