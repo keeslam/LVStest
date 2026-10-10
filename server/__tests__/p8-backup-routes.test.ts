@@ -122,6 +122,24 @@ describe("P8 - backup routes", () => {
     }
   });
 
+  it("A-19-1: a failing pg_dump leaves no lvs-dump-* directory and the body has no path", async () => {
+    const dumpDirs = () => fs.readdirSync(os.tmpdir()).filter((n) => n.startsWith("lvs-dump-")).sort();
+    const before = dumpDirs();
+    // pg_dump cannot be started: an empty PATH makes spawn fail with ENOENT (as on the audited machine).
+    const pathKey = Object.keys(process.env).find((k) => k.toLowerCase() === "path") ?? "PATH";
+    const savedPath = process.env[pathKey];
+    process.env[pathKey] = "";
+    try {
+      const res = await admin.get("/api/backups/download-data");
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ error: "Failed to download app data", code: "BACKUP_DOWNLOAD_FAILED" });
+      expect(JSON.stringify(res.body)).not.toMatch(/pg_dump|ENOENT|Users|lvs-dump|details/);
+    } finally {
+      process.env[pathKey] = savedPath;
+    }
+    expect(dumpDirs()).toEqual(before);
+  });
+
   it("A-19-1: when tar fails the answer is a fixed message and a code, with no path, command or details", async () => {
     // tar cannot be started: an empty PATH makes spawn fail with ENOENT, whose text names the command.
     const pathKey = Object.keys(process.env).find((k) => k.toLowerCase() === "path") ?? "PATH";

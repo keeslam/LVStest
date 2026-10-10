@@ -297,9 +297,11 @@ export function RecycleBinDialog({ kind, open, onOpenChange, onRestored, onPurge
     // count is only what the list shows.
     const shown = kindRecords?.length ?? 0;
     const plural = t(`kinds.${kind}.noun_other`);
-    return shown >= BIN_LIST_CAP
+    const base = shown >= BIN_LIST_CAP
       ? t("purge.confirmAllCapped", { count: shown, noun: plural })
       : t("purge.confirmAll", { count: shown, noun: plural });
+    // Restored rows are hidden from the list but belong to "everything": say so (A-3-9 follow-up).
+    return !showRestored && restoredCount > 0 ? `${base} ${t("purge.confirmAllRestoredHidden", { count: restoredCount })}` : base;
   };
 
   return (

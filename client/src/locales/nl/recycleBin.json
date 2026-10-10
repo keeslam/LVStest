@@ -119,7 +119,9 @@
       "PURGE_FAILED": "Dit record kon niet worden verwijderd en staat nog in de prullenbak.",
       "FILE_REMOVAL_FAILED": "Het record is verwijderd, maar een of meer bestanden konden niet van de schijf worden gehaald.",
       "FISCAL_DATA_PRESENT": "Deze reservering heeft fiscale beoordelingen; die blijven bewaard, dus kan ze niet definitief worden verwijderd."
-    }
+    },
+    "confirmAllRestoredHidden_one": "Dat is ook {{count}} teruggezette regel die nu verborgen is.",
+    "confirmAllRestoredHidden_other": "Dat zijn ook {{count}} teruggezette regels die nu verborgen zijn."
   },
   "counts": {
     "unlinked_one": "{{count}} verwijzing in andere gegevens losgekoppeld",

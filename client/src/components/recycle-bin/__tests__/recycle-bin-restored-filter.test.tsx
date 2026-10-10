@@ -81,3 +81,22 @@ describe("RecycleBinDialog - restored rows (A-3-9)", () => {
     expect(screen.queryByTestId("checkbox-show-restored")).toBeNull();
   });
 });
+
+describe("RecycleBinDialog - emptying the whole bin (A-3-9 follow-up)", () => {
+  it("the confirmation says it includes the restored items that are hidden", async () => {
+    const user = userEvent.setup();
+    renderBin();
+    await screen.findByTestId("deleted-record-1");
+    await user.click(screen.getByTestId("button-purge-all"));
+    expect(await screen.findByTestId("text-confirm-purge-summary")).toHaveTextContent("2 teruggezette regels die nu verborgen zijn");
+  });
+
+  it("the sentence is not there when the restored items are shown", async () => {
+    const user = userEvent.setup();
+    renderBin();
+    await screen.findByTestId("deleted-record-1");
+    await user.click(screen.getByTestId("checkbox-show-restored"));
+    await user.click(screen.getByTestId("button-purge-all"));
+    expect(await screen.findByTestId("text-confirm-purge-summary")).not.toHaveTextContent("verborgen");
+  });
+});
