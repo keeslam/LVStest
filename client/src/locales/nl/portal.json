@@ -567,7 +567,10 @@
       "openingHours": "Openingstijden",
       "pickupInstructions": "Wat de klant moet meenemen of weten bij ophalen",
       "privacyUrl": "Link naar de privacyverklaring",
-      "phone": "Telefoonnummer voor klanten"
+      "phone": "Telefoonnummer voor klanten",
+      "fineAdminFee": "Standaard administratiekosten per bekeuring (€)",
+      "fineAdminFeeHelp": "Dit bedrag staat bij een nieuwe bekeuring alvast ingevuld en komt bovenop het boetebedrag. Vul 0 in voor geen kosten.",
+      "fineAdminFeeInvalid": "Vul een bedrag van 0 of hoger in, bijvoorbeeld 12,50."
     },
     "fines": {
       "title": "Bekeuringen",

@@ -27,6 +27,9 @@ export function PortalConfigForm() {
   const [pickupInstructions, setPickupInstructions] = useState("");
   const [privacyUrl, setPrivacyUrl] = useState("");
   const [phone, setPhone] = useState("");
+  // A-12-10: the fee a new fine starts with. Kept as text while typing; validated on save.
+  const [fineAdminFee, setFineAdminFee] = useState("0");
+  const [feeError, setFeeError] = useState(false);
   useEffect(() => {
     if (!data) return;
     setOrigins(data.allowedFrameOrigins.join("\n"));
@@ -34,6 +37,7 @@ export function PortalConfigForm() {
     setBaseUrl(data.portalBaseUrl);
     setPickupAddress(data.pickupAddress ?? ""); setOpeningHours(data.openingHours ?? ""); setPickupInstructions(data.pickupInstructions ?? ""); setPrivacyUrl(data.privacyUrl ?? "");
     setPhone(data.phone ?? "");
+    setFineAdminFee(String(data.fineAdminFee ?? 0)); setFeeError(false);
   }, [data]);
 
   const save = useMutation({
@@ -43,6 +47,7 @@ export function PortalConfigForm() {
       portalBaseUrl: baseUrl.trim().replace(/\/$/, ""),
       pickupAddress: pickupAddress.trim(), openingHours: openingHours.trim(), pickupInstructions: pickupInstructions.trim(), privacyUrl: privacyUrl.trim(),
       phone: phone.trim(),
+      fineAdminFee: Number(fineAdminFee),
     })).json(),
     onSuccess: (saved) => { queryClient.setQueryData(KEY, saved); toast({ title: t("admin.config.saved") }); },
     onError: (e: Error) => toast({ title: describeApiError(e), variant: "destructive" }),
@@ -74,8 +79,17 @@ export function PortalConfigForm() {
           <div><Label htmlFor="pc-privacy">{t("admin.config.privacyUrl")}</Label><Input id="pc-privacy" type="url" value={privacyUrl} onChange={(e) => setPrivacyUrl(e.target.value)} /></div>
           <div><Label htmlFor="pc-phone">{t("admin.config.phone")}</Label><Input id="pc-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
         </div>
+        <div className="border-t pt-4 md:w-1/2">
+          <Label htmlFor="pc-fine-fee">{t("admin.config.fineAdminFee")}</Label>
+          <Input id="pc-fine-fee" type="number" inputMode="decimal" min="0" step="0.01" value={fineAdminFee}
+            onChange={(e) => { setFineAdminFee(e.target.value); setFeeError(false); }} aria-invalid={feeError} aria-describedby="pc-fine-fee-help"
+            data-testid="input-portal-fine-admin-fee" />
+          <p id="pc-fine-fee-help" className={`mt-1 text-xs ${feeError ? "text-destructive" : "text-muted-foreground"}`} data-testid={feeError ? "portal-config-fee-error" : undefined}>
+            {feeError ? t("admin.config.fineAdminFeeInvalid") : t("admin.config.fineAdminFeeHelp")}
+          </p>
+        </div>
         <p className="text-xs text-muted-foreground">{t("admin.config.templatesHint")}</p>
-        <Button onClick={() => save.mutate()} disabled={save.isPending} data-testid="button-save-portal-config">{t("admin.dialog.save")}</Button>
+        <Button onClick={() => { const fee = Number(fineAdminFee); if (fineAdminFee.trim() === "" || !Number.isFinite(fee) || fee < 0) { setFeeError(true); return; } save.mutate(); }} disabled={save.isPending} data-testid="button-save-portal-config">{t("admin.dialog.save")}</Button>
       </CardContent>
     </Card>
   );

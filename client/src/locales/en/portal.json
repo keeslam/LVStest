@@ -567,7 +567,10 @@
       "openingHours": "Opening hours",
       "pickupInstructions": "What the customer should bring or know at pickup",
       "privacyUrl": "Link to the privacy statement",
-      "phone": "Phone number for customers"
+      "phone": "Phone number for customers",
+      "fineAdminFee": "Default administration fee per fine (€)",
+      "fineAdminFeeHelp": "This amount is pre-filled on a new fine and comes on top of the fine amount. Enter 0 for no fee.",
+      "fineAdminFeeInvalid": "Enter an amount of 0 or more, for example 12.50."
     },
     "fines": {
       "title": "Fines",
