@@ -25,6 +25,7 @@ import { Fuel, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { invalidateVehicleData } from "@/lib/cache-utils";
+import { parseMoneyInput } from "@/lib/money-input";
 
 // Older rows stored "full"/"empty" lowercase; the app now writes "Full"/"Empty"
 // everywhere. Normalize so legacy values still preselect in the dropdown.
@@ -57,6 +58,8 @@ export function FuelStatusUpdateDialog({
   const [internalOpen, setInternalOpen] = useState(false);
   const [fuelLevel, setFuelLevel] = useState<string>(normalizeFuelLevel(currentFuelLevel));
   const [cost, setCost] = useState<string>("");
+  // A-3-2: shown under the cost field when what was typed is not an amount.
+  const [costError, setCostError] = useState<string | null>(null);
   const [notes, setNotes] = useState<string>("");
   const [receipt, setReceipt] = useState<File | null>(null);
   const { toast } = useToast();
@@ -79,8 +82,9 @@ export function FuelStatusUpdateDialog({
       if (fuelLevel) {
         formData.append('fuelLevel', fuelLevel);
       }
-      if (cost) {
-        formData.append('cost', cost);
+      if (cost.trim()) {
+        // handleSubmit has already refused anything that is not an amount.
+        formData.append('cost', String(parseMoneyInput(cost)));
       }
       if (notes) {
         formData.append('notes', notes);
@@ -114,6 +118,7 @@ export function FuelStatusUpdateDialog({
       // Reset form
       setFuelLevel(normalizeFuelLevel(currentFuelLevel));
       setCost("");
+      setCostError(null);
       setNotes("");
       setReceipt(null);
       
@@ -135,7 +140,14 @@ export function FuelStatusUpdateDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!fuelLevel && !cost && !notes && !receipt) {
+    // A-3-2: a value that is not an amount is refused out loud; it used to be
+    // dropped from the request while the toast said "Gelukt".
+    if (cost.trim() && parseMoneyInput(cost) === null) {
+      setCostError(t('fuelStatusUpdateDialog.costInvalid'));
+      return;
+    }
+
+    if (!fuelLevel && !cost.trim() && !notes && !receipt) {
       toast({
         title: t('fuelStatusUpdateDialog.toasts.errorTitle'),
         description: t('fuelStatusUpdateDialog.toasts.provideOneFieldDescription'),
@@ -202,14 +214,19 @@ export function FuelStatusUpdateDialog({
             <Label htmlFor="cost">{t('fuelStatusUpdateDialog.refillCostLabel')}</Label>
             <Input
               id="cost"
-              type="number"
-              step="0.01"
-              min="0"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
               placeholder={t('fuelStatusUpdateDialog.refillCostPlaceholder')}
               value={cost}
-              onChange={(e) => setCost(e.target.value)}
+              onChange={(e) => { setCost(e.target.value); setCostError(null); }}
+              aria-invalid={costError ? true : undefined}
+              aria-describedby={costError ? "cost-error" : undefined}
               data-testid="input-fuel-cost"
             />
+            {costError && (
+              <p id="cost-error" className="text-sm font-medium text-destructive" data-testid="error-fuel-cost">{costError}</p>
+            )}
           </div>
 
           <div className="space-y-2">

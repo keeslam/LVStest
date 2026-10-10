@@ -195,6 +195,7 @@
     "fuelFull": "Full",
     "refillCostLabel": "Refill Cost (€)",
     "refillCostPlaceholder": "e.g., 75.50",
+    "costInvalid": "Enter a valid amount, for example 45.50.",
     "receiptLabel": "Receipt (Optional)",
     "changeReceiptButton": "Change Receipt",
     "uploadReceiptButton": "Upload Receipt",

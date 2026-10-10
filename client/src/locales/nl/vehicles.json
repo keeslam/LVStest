@@ -195,6 +195,7 @@
     "fuelFull": "Vol",
     "refillCostLabel": "Tankkosten (€)",
     "refillCostPlaceholder": "bijv. 75,50",
+    "costInvalid": "Vul een geldig bedrag in, bijvoorbeeld 45,50.",
     "receiptLabel": "Bon (optioneel)",
     "changeReceiptButton": "Bon wijzigen",
     "uploadReceiptButton": "Bon uploaden",
