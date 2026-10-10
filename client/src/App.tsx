@@ -19,6 +19,7 @@ import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import PortalApp from "@/pages/portal/index";
 import PortalAdminPage from "@/pages/portal-admin/index";
+import FinesPage from "@/pages/fines/index";
 import MainLayout from "@/layouts/MainLayout";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { SocketProvider } from "@/hooks/use-socket";
@@ -79,6 +80,7 @@ function AppRoutes() {
               <ProtectedRoute path="/delivery" component={DeliveryDashboard} />
               <ProtectedRoute path="/communications" component={CustomerCommunications} />
               <ProtectedRoute path="/portal-admin" component={PortalAdminPage} />
+              <ProtectedRoute path="/fines" component={FinesPage} />
               <Route path="/auth" component={AuthPage} />
               <Route component={NotFound} />
             </Switch>

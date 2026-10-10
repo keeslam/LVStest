@@ -734,7 +734,8 @@
         "saveNeedsHost": "Automatic fetching cannot be on without a server. Enter a server or turn automatic fetching off.",
         "testNeedsHost": "Enter a server (host) to test the connection or fetch now."
       },
-      "exportCsv": "Export (CSV)"
+      "exportCsv": "Export (CSV)",
+      "pageTitle": "Fines"
     },
     "requests": {
       "title": "Requests",

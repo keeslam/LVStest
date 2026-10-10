@@ -39,6 +39,8 @@ export const PAGE_ACCESS: readonly PageAccess[] = [
   { path: "/scan", anyOf: [P.VIEW_VEHICLES, P.MANAGE_VEHICLES] },
   { path: "/customers", anyOf: [P.VIEW_CUSTOMERS, P.MANAGE_CUSTOMERS] },
   { path: "/portal-admin", anyOf: [P.VIEW_PORTAL, P.MANAGE_PORTAL] },
+  // A-R-1: "Boetes bekijken" had no screen of its own; the list only lived in the portal screen.
+  { path: "/fines", anyOf: [P.VIEW_FINES, P.MANAGE_FINES] },
   { path: "/reservations", anyOf: [P.VIEW_RESERVATIONS, P.MANAGE_RESERVATIONS] },
   { path: "/maintenance", anyOf: [P.MANAGE_MAINTENANCE] },
   { path: "/expenses", anyOf: [P.MANAGE_EXPENSES] },
@@ -50,7 +52,8 @@ export const PAGE_ACCESS: readonly PageAccess[] = [
   // beheren" and sending additionally needs "meldingen beheren"
   // (RequiresPermission, §4, on the controls themselves).
   { path: "/communications", anyOf: [P.MANAGE_NOTIFICATIONS, P.MANAGE_EMAIL_TEMPLATES] },
-  { path: "/reports", anyOf: [P.VIEW_REPORTS, P.MANAGE_REPORTS] },
+  // A-R-1: "Fiscale check bekijken" opens Rapporten too (the fiscal tab is its own screen there).
+  { path: "/reports", anyOf: [P.VIEW_REPORTS, P.MANAGE_REPORTS, P.VIEW_FISCAL] },
   // Screens without a menu entry, listed after the 12 above so
   // firstOpenablePage() only ever offers a menu screen as the way out.
   { path: "/reservations/edit/:id", anyOf: [P.MANAGE_RESERVATIONS] },

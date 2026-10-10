@@ -734,7 +734,8 @@
         "saveNeedsHost": "Automatisch ophalen kan niet aan staan zonder server. Vul een server in of zet automatisch ophalen uit.",
         "testNeedsHost": "Vul een server (host) in om de verbinding te testen of nu op te halen."
       },
-      "exportCsv": "Exporteren (CSV)"
+      "exportCsv": "Exporteren (CSV)",
+      "pageTitle": "Bekeuringen"
     },
     "requests": {
       "title": "Aanvragen",

@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { Download } from "lucide-react";
+import { Calculator, Download } from "lucide-react";
 import { USAGE_PERIOD_DERIVATION_START } from "@shared/fiscal-types";
 import { dateLabelNl, formatEuro, monthLabelNl } from "@shared/fiscal-format";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { UserPermission } from "@shared/schema";
+import { FiscalOverviewDialog } from "./fiscal-overview-dialog";
 import type { FiscalReport } from "./types";
 
 interface CustomerOption {
@@ -35,7 +38,12 @@ export function FiscalReportTab() {
   const years = reportYears();
   const [year, setYear] = useState<number>(years.includes(new Date().getFullYear()) ? new Date().getFullYear() : years[0]);
   const [customerId, setCustomerId] = useState<number | null>(null);
-  const { data: customers = [] } = useQuery<CustomerOption[]>({ queryKey: ["/api/customers"] });
+  const [overviewOpen, setOverviewOpen] = useState(false);
+  // The customer filter reads /api/customers (view_customers); without that right the filter just
+  // offers "all customers" instead of firing a refused request (A-R-1: this tab also opens for someone
+  // who holds Fiscale check bekijken alone).
+  const canListCustomers = useHasPermission(UserPermission.VIEW_CUSTOMERS, UserPermission.MANAGE_CUSTOMERS);
+  const { data: customers = [] } = useQuery<CustomerOption[]>({ queryKey: ["/api/customers"], enabled: canListCustomers });
   const { data: report, isLoading, error } = useQuery<FiscalReport>({ queryKey: [reportUrl(year, customerId, false)] });
 
   // Before the law applies there is nothing to assess: say so, instead of an unexplained empty list.
@@ -77,6 +85,10 @@ export function FiscalReportTab() {
               </SelectContent>
             </Select>
           </div>
+          <Button variant="outline" size="sm" onClick={() => setOverviewOpen(true)} data-testid="button-fiscal-overview">
+            <Calculator className="mr-2 h-4 w-4" />
+            {t("overviewDialog.button")}
+          </Button>
           <Button asChild variant="outline" size="sm">
             <a href={reportUrl(year, customerId, true)} data-testid="fiscal-report-csv">
               <Download className="mr-2 h-4 w-4" />
@@ -85,6 +97,8 @@ export function FiscalReportTab() {
           </Button>
         </CardContent>
       </Card>
+
+      <FiscalOverviewDialog open={overviewOpen} onOpenChange={setOverviewOpen} />
 
       {notStarted && (
         <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" data-testid="fiscal-report-not-started">

@@ -33,6 +33,9 @@ const API_BY_PATH: Record<string, string | null> = {
   // on mount (client/src/components/portal-admin/dashboard-panels.tsx); the
   // brief's guessed "/api/portal-admin/users" route does not exist.
   "/portal-admin": "/api/portal-admin/dashboard",
+  // A-R-1: the fines list as a screen of its own; GET /api/fines is guarded by
+  // VIEW_FINES/MANAGE_FINES, the same pair the row lists.
+  "/fines": "/api/fines",
   "/reservations": "/api/reservations",
   // Finding: every GET the maintenance calendar depends on (/api/vehicles/*,
   // /api/reservations, /api/app-settings, /api/system-settings) is guarded by
