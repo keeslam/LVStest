@@ -22,8 +22,9 @@ import { UtilizationChart, type UtilizationChartData } from "@/components/report
 import { Vehicle, Expense, Reservation, Customer, VehicleTransport, UserPermission } from "@shared/schema";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { NoDataAccess } from "@/components/ui/no-data-access";
-import { formatDate, formatCurrency, formatLicensePlate, sumMoney, plateMatches, formatExpenseCategory } from "@/lib/format-utils";
-import { EXPENSE_CATEGORIES } from "@shared/expense-categories";
+import { formatDate, formatDateTime, formatCurrency, formatLicensePlate, sumMoney, plateMatches, formatExpenseCategory } from "@/lib/format-utils";
+import { EXPENSE_CATEGORIES, isMaintenanceExpenseCategory } from "@shared/expense-categories";
+import { monthChange, type MonthChange } from "@/pages/reports/report-helpers";
 import { Price } from "@/components/ui/price";
 import { isTrueValue } from "@/lib/utils";
 import { addDays, subMonths, subDays, startOfMonth, endOfMonth, isWithinInterval, differenceInDays, parseISO, startOfDay } from "date-fns";
@@ -262,13 +263,11 @@ function FullReportsPage() {
   // Calculate total expenses
   const totalExpenses = sumMoney(filteredExpenses, expense => expense.amount);
   
-  // Calculate the number of vehicles with activity (have expenses or reservations) as an alternative to "active" property
-  const vehiclesWithActivity = vehicles.filter(v => 
-    filteredExpenses.some(e => e.vehicleId === v.id) || 
-    filteredReservations.some(r => r.vehicleId === v.id)
-  );
-  const activeVehicleCount = vehiclesWithActivity.length || vehicles.length || 1;
-  const avgExpensePerVehicle = totalExpenses / activeVehicleCount;
+  // A-14-8: one base for every average on this page, the whole fleet. The count of
+  // vehicles "with activity in the period" used to be the divisor, so the same
+  // costs gave a different average per vehicle for every period (97, 56, 38 vehicles).
+  const fleetVehicleCount = vehicles.length;
+  const avgExpensePerVehicle = totalExpenses / (fleetVehicleCount || 1);
   
   // Calculate vehicle utilization data
   const vehicleUtilizationData = vehicles.map(vehicle => {
@@ -350,12 +349,15 @@ function FullReportsPage() {
     }
   }).sort((a, b) => b.utilizationPercentage - a.utilizationPercentage);
   
+  // Vehicles that were rented in the period (the average above still runs over the whole fleet).
+  const rentedVehicleCount = vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length;
+  const isAllDataRange = !!(dateRange.from && dateRange.to && dateRange.from.getFullYear() <= 2000 && dateRange.to.getFullYear() >= 2050);
+
   // Calculate maintenance cost by vehicle
   const maintenanceCostByVehicle = vehicles.map(vehicle => {
     const vehicleExpenses = filteredExpenses.filter(e => e.vehicleId === vehicle.id);
-    const maintenanceExpenses = vehicleExpenses.filter(e => 
-      e.category === 'maintenance' || e.category === 'repair' || e.category === 'tires'
-    );
+    // The one maintenance set of the audit (A-14-2): maintenance, tires, brakes.
+    const maintenanceExpenses = vehicleExpenses.filter(e => isMaintenanceExpenseCategory(e.category));
     
     const totalMaintenanceCost = sumMoney(maintenanceExpenses, expense => expense.amount);
     
@@ -608,14 +610,9 @@ function FullReportsPage() {
       return expenseDate >= twoMonthsAgo && expenseDate < previousMonth;
     }), expense => expense.amount);
     
-    // Calculate month-over-month change percentages
-    const currentVsPrevious = previousMonthExpenses === 0 
-      ? 100 
-      : ((currentMonthExpenses - previousMonthExpenses) / previousMonthExpenses) * 100;
-      
-    const previousVsTwoMonths = twoMonthsAgoExpenses === 0 
-      ? 100 
-      : ((previousMonthExpenses - twoMonthsAgoExpenses) / twoMonthsAgoExpenses) * 100;
+    // Month-over-month change; from nothing to something reads "nieuw", not "+100%" (A-14-8)
+    const currentVsPrevious: MonthChange = monthChange(previousMonthExpenses, currentMonthExpenses);
+    const previousVsTwoMonths: MonthChange = monthChange(twoMonthsAgoExpenses, previousMonthExpenses);
     
     return {
       currentMonth: {
@@ -634,6 +631,15 @@ function FullReportsPage() {
       }
     };
   })();
+
+  const changeLabel = (change: MonthChange): string => {
+    if (change.kind === 'new') return t('reportsPage.operations.trendNew');
+    if (change.kind === 'none') return '\u2013';
+    return `${change.value > 0 ? '+' : ''}${Math.round(change.value)}%`;
+  };
+  const changeClass = (change: MonthChange): string =>
+    change.kind === 'none' ? 'bg-slate-100 text-slate-700'
+      : change.kind === 'new' || change.value > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
 
   // Function to generate APK table for reports
   const generateAPKTable = (vehicles: (Vehicle & { apkStatus: string, daysUntilExpiry: number | null })[]) => `
@@ -812,7 +818,7 @@ function FullReportsPage() {
       
       // Get date range string
       const dateRangeString = dateRange.from && dateRange.to
-        ? `${format(dateRange.from, 'dd/MM/yyyy')} ${t('reportsPage.printReport.dateRangeSeparator')} ${format(dateRange.to, 'dd/MM/yyyy')}`
+        ? `${formatDate(dateRange.from)} ${t('reportsPage.printReport.dateRangeSeparator')} ${formatDate(dateRange.to)}`
         : t('reportsPage.common.allData');
         
       let content = '';
@@ -832,7 +838,7 @@ function FullReportsPage() {
           // APK expiration report
           content = `
             <div class="company-info">
-              <h2>${t('reportsPage.printReport.reportGenerated', { date: format(new Date(), 'dd/MM/yyyy HH:mm') })}</h2>
+              <h2>${t('reportsPage.printReport.reportGenerated', { date: formatDateTime(new Date()) })}</h2>
             </div>
             <h1>${t('reportsPage.printReport.reportTitles.apk')}</h1>
             <div class="report-meta">
@@ -875,7 +881,7 @@ function FullReportsPage() {
           // Vehicle utilization report
           content = `
             <div class="company-info">
-              <h2>${t('reportsPage.printReport.reportGenerated', { date: format(new Date(), 'dd/MM/yyyy HH:mm') })}</h2>
+              <h2>${t('reportsPage.printReport.reportGenerated', { date: formatDateTime(new Date()) })}</h2>
             </div>
             <h1>${t('reportsPage.printReport.reportTitles.utilization')}</h1>
             <div class="report-meta">
@@ -892,9 +898,9 @@ function FullReportsPage() {
                     }
                   </div>
                   <div class="stat-label">
-                    ${dateRange.from && dateRange.to && dateRange.from.getFullYear() <= 2000 && dateRange.to.getFullYear() >= 2050
-                      ? t('reportsPage.operations.vehicleUtilizationSubtitleYearly', { count: vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length })
-                      : t('reportsPage.operations.vehicleUtilizationSubtitle', { count: vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length })
+                    ${isAllDataRange
+                      ? t('reportsPage.operations.vehicleUtilizationSubtitleYearly', { count: fleetVehicleCount, rented: rentedVehicleCount })
+                      : t('reportsPage.operations.vehicleUtilizationSubtitle', { count: fleetVehicleCount, rented: rentedVehicleCount })
                     }
                   </div>
                 </div>
@@ -946,7 +952,7 @@ function FullReportsPage() {
           // Expense report
           content = `
             <div class="company-info">
-              <h2>${t('reportsPage.printReport.reportGenerated', { date: format(new Date(), 'dd/MM/yyyy HH:mm') })}</h2>
+              <h2>${t('reportsPage.printReport.reportGenerated', { date: formatDateTime(new Date()) })}</h2>
             </div>
             <h1>${t('reportsPage.printReport.reportTitles.expenses')}</h1>
             <div class="report-meta">
@@ -1097,7 +1103,7 @@ function FullReportsPage() {
                         <tr>
                           <td>${esc(v.brand)} ${esc(v.model)}</td>
                           <td>${esc(formatLicensePlate(v.licensePlate))}</td>
-                          <td>${v.warrantyEndDate ? format(new Date(v.warrantyEndDate), 'dd/MM/yyyy') : t('reportsPage.common.notApplicable')}</td>
+                          <td>${v.warrantyEndDate ? formatDate(v.warrantyEndDate) : t('reportsPage.common.notApplicable')}</td>
                           <td class="${statusClass}">${daysRemaining !== null
                             ? daysRemaining < 0
                               ? t('reportsPage.common.expiredAgo', { count: Math.abs(daysRemaining) })
@@ -1114,7 +1120,7 @@ function FullReportsPage() {
 
           content = `
             <div class="company-info">
-              <h2>${t('reportsPage.printReport.reportGenerated', { date: format(new Date(), 'dd/MM/yyyy HH:mm') })}</h2>
+              <h2>${t('reportsPage.printReport.reportGenerated', { date: formatDateTime(new Date()) })}</h2>
             </div>
             <h1>${t('reportsPage.printReport.reportTitles.warranty')}</h1>
 
@@ -1160,7 +1166,7 @@ function FullReportsPage() {
           // Customer Impact Report
           content = `
             <div class="company-info">
-              <h2>${t('reportsPage.printReport.reportGenerated', { date: format(new Date(), 'dd/MM/yyyy HH:mm') })}</h2>
+              <h2>${t('reportsPage.printReport.reportGenerated', { date: formatDateTime(new Date()) })}</h2>
             </div>
             <h1>${t('reportsPage.printReport.reportTitles.customerImpact')}</h1>
             <div class="report-meta">
@@ -1180,8 +1186,8 @@ function FullReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                ${customerReservationStats.length > 0
-                  ? customerReservationStats.map(customer => `
+                ${customerReservationStats.filter(c => c.reservationCount > 0).length > 0
+                  ? customerReservationStats.filter(c => c.reservationCount > 0).map(customer => `
                       <tr>
                         <td>${esc(customer.name)}</td>
                         <td>${customer.reservationCount}</td>
@@ -1236,7 +1242,7 @@ function FullReportsPage() {
 
           content = `
             <div class="company-info">
-              <h2>${t('reportsPage.printReport.reportGenerated', { date: format(new Date(), 'dd/MM/yyyy HH:mm') })}</h2>
+              <h2>${t('reportsPage.printReport.reportGenerated', { date: formatDateTime(new Date()) })}</h2>
             </div>
             <h1>${t('reportsPage.printReport.reportTitles.transports')}</h1>
             <div class="report-meta">
@@ -1338,23 +1344,23 @@ function FullReportsPage() {
         
         {/* Print Buttons - Mobile Optimized */}
         <div className="flex flex-wrap gap-2 justify-end">
-          <Button variant="outline" size="sm" onClick={() => printReport('apk')} className="h-8">
+          <Button variant="outline" size="sm" onClick={() => printReport('apk')} className="h-8" data-testid="print-report-apk">
             <Printer className="mr-1 h-3 w-3" />
             <span className="text-xs">{t('reportsPage.printButtons.apk')}</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => printReport('warranty')} className="h-8">
+          <Button variant="outline" size="sm" onClick={() => printReport('warranty')} className="h-8" data-testid="print-report-warranty">
             <Printer className="mr-1 h-3 w-3" />
             <span className="text-xs">{t('reportsPage.printButtons.warranty')}</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => printReport('expenses')} className="h-8">
+          <Button variant="outline" size="sm" onClick={() => printReport('expenses')} className="h-8" data-testid="print-report-expenses">
             <Printer className="mr-1 h-3 w-3" />
             <span className="text-xs">{t('reportsPage.printButtons.expenses')}</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => printReport('utilization')} className="h-8">
+          <Button variant="outline" size="sm" onClick={() => printReport('utilization')} className="h-8" data-testid="print-report-utilization">
             <Printer className="mr-1 h-3 w-3" />
             <span className="text-xs">{t('reportsPage.printButtons.utilization')}</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => printReport('customer-impact')} className="h-8">
+          <Button variant="outline" size="sm" onClick={() => printReport('customer-impact')} className="h-8" data-testid="print-report-customer-impact">
             <Printer className="mr-1 h-3 w-3" />
             <span className="text-xs">{t('reportsPage.printButtons.customers')}</span>
           </Button>
@@ -1506,6 +1512,14 @@ function FullReportsPage() {
         </CardContent>
       </Card>
       
+      {/* A-14-8: one period and one fleet base, said once for every tab. */}
+      <p className="text-sm text-muted-foreground -mt-4" data-testid="reports-basis-caption">
+        {t('reportsPage.filters.basisCaption', {
+          count: fleetVehicleCount,
+          period: isAllDataRange ? t('reportsPage.common.allData') : dateRange.from && dateRange.to ? `${formatDate(dateRange.from)} ${t('reportsPage.printReport.dateRangeSeparator')} ${formatDate(dateRange.to)}` : t('reportsPage.common.allData'),
+        })}
+      </p>
+
       {/* Report Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className={`grid w-full ${canViewFiscal ? "grid-cols-7" : "grid-cols-6"}`}>
@@ -1576,9 +1590,9 @@ function FullReportsPage() {
                   }
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {dateRange.from && dateRange.to && dateRange.from.getFullYear() <= 2000 && dateRange.to.getFullYear() >= 2050
-                    ? t('reportsPage.operations.vehicleUtilizationSubtitleYearly', { count: vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length })
-                    : t('reportsPage.operations.vehicleUtilizationSubtitle', { count: vehicleUtilizationData.filter(v => v.utilizationPercentage > 0).length })
+                  {isAllDataRange
+                    ? t('reportsPage.operations.vehicleUtilizationSubtitleYearly', { count: fleetVehicleCount, rented: rentedVehicleCount })
+                    : t('reportsPage.operations.vehicleUtilizationSubtitle', { count: fleetVehicleCount, rented: rentedVehicleCount })
                   }
                 </p>
               </CardContent>
@@ -1604,8 +1618,8 @@ function FullReportsPage() {
                 <div className="text-2xl font-bold">
                   {<Price value={Number(avgExpensePerVehicle)} />}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t('reportsPage.operations.forActiveVehicles', { count: activeVehicleCount })}
+                <p className="text-xs text-muted-foreground mt-1" data-testid="reports-avg-basis">
+                  {t('reportsPage.operations.avgBasis', { count: fleetVehicleCount })}
                 </p>
               </CardContent>
             </Card>
@@ -1662,7 +1676,7 @@ function FullReportsPage() {
                 {t('reportsPage.operations.expenseTrendsDesc')}
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent data-testid="reports-expense-trend">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -1670,8 +1684,8 @@ function FullReportsPage() {
                       <h4 className="text-sm font-medium">{expenseTrend.currentMonth.name}</h4>
                       <p className="text-2xl font-bold">{<Price value={Number(expenseTrend.currentMonth.total)} />}</p>
                     </div>
-                    <div className={`text-sm px-2 py-1 rounded-md ${expenseTrend.currentMonth.changePercentage > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                      {expenseTrend.currentMonth.changePercentage > 0 ? '+' : ''}{Math.round(expenseTrend.currentMonth.changePercentage)}%
+                    <div className={`text-sm px-2 py-1 rounded-md ${changeClass(expenseTrend.currentMonth.changePercentage)}`} data-testid="trend-change-current">
+                      {changeLabel(expenseTrend.currentMonth.changePercentage)}
                     </div>
                   </div>
                   <Progress value={100} className="h-2" />
@@ -1683,8 +1697,8 @@ function FullReportsPage() {
                       <h4 className="text-sm font-medium">{expenseTrend.previousMonth.name}</h4>
                       <p className="text-2xl font-bold">{<Price value={Number(expenseTrend.previousMonth.total)} />}</p>
                     </div>
-                    <div className={`text-sm px-2 py-1 rounded-md ${expenseTrend.previousMonth.changePercentage > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                      {expenseTrend.previousMonth.changePercentage > 0 ? '+' : ''}{Math.round(expenseTrend.previousMonth.changePercentage)}%
+                    <div className={`text-sm px-2 py-1 rounded-md ${changeClass(expenseTrend.previousMonth.changePercentage)}`} data-testid="trend-change-previous">
+                      {changeLabel(expenseTrend.previousMonth.changePercentage)}
                     </div>
                   </div>
                   <Progress 

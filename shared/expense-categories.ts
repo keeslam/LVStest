@@ -35,3 +35,20 @@ export function normalizeExpenseCategory(raw: unknown): ExpenseCategory {
   const key = raw.trim().toLowerCase();
   return isExpenseCategory(key) ? key : OTHER_EXPENSE_CATEGORY;
 }
+
+/**
+ * What "Analyse onderhoudskosten" (reports) counts as maintenance cost (A-14-2):
+ * the workshop work a vehicle needs to keep running: servicing, tyres and
+ * brakes. Damage repair is left out on purpose (it follows an incident, not the
+ * service schedule, and has its own category and report), as are fuel, toll,
+ * parking, insurance, registration, cleaning and accessories, which are running
+ * costs rather than maintenance. The report used to add up every category, so
+ * EUR 89,165.54 of mostly fuel and toll was shown as "maintenance".
+ */
+export const MAINTENANCE_EXPENSE_CATEGORIES: readonly ExpenseCategory[] = ["maintenance", "tires", "brakes"];
+
+/** True when the stored category (any casing or padding) counts as maintenance cost. */
+export function isMaintenanceExpenseCategory(raw: unknown): boolean {
+  if (typeof raw !== "string") return false;
+  return (MAINTENANCE_EXPENSE_CATEGORIES as readonly string[]).includes(raw.trim().toLowerCase());
+}

@@ -61,7 +61,10 @@
     "notAvailable": "N/A",
     "monthlyCostTrendsTitle": "Monthly Cost Trends",
     "monthlyCostTrendsDescription": "Track maintenance spending over time",
-    "monthlyCostLegend": "Monthly Cost"
+    "monthlyCostLegend": "Monthly Cost",
+    "scopeNote": "Counts maintenance costs only ({{categories}}). Cost per km divides by the odometer of the vehicles that carry costs.",
+    "efficiencyInsufficient": "Insufficient data",
+    "monthColumn": "Month"
   },
   "reportBuilderPage": {
     "toasts": {
@@ -197,7 +200,9 @@
       "nextMonthButton": "Next Month",
       "allVehiclesPlaceholder": "All Vehicles",
       "expenseCategoryLabel": "Expense Category",
-      "allCategoriesPlaceholder": "All Categories"
+      "allCategoriesPlaceholder": "All Categories",
+      "basisCaption_one": "All figures on this page cover {{period}} and the whole fleet ({{count}} vehicle).",
+      "basisCaption_other": "All figures on this page cover {{period}} and the whole fleet ({{count}} vehicles)."
     },
     "categories": {
       "maintenance": "Maintenance",
@@ -236,19 +241,21 @@
       "allData": "All Data"
     },
     "operations": {
-      "vehicleUtilizationSubtitleYearly": "Based on yearly utilization of {{count}} vehicles",
-      "vehicleUtilizationSubtitle_one": "Average across {{count}} vehicle with rentals",
-      "vehicleUtilizationSubtitle_other": "Average across {{count}} vehicles with rentals",
+      "vehicleUtilizationSubtitle_one": "Average over the whole fleet of {{count}} vehicle ({{rented}} with rentals)",
+      "vehicleUtilizationSubtitle_other": "Average over the whole fleet of {{count}} vehicles ({{rented}} with rentals)",
       "acrossExpenseEntries": "Across {{count}} expense entries",
       "avgCostPerVehicleCardTitle": "Avg. Cost Per Vehicle",
-      "forActiveVehicles_one": "For {{count}} active vehicle",
-      "forActiveVehicles_other": "For {{count}} active vehicles",
       "top10YearlyDesc": "Top 10 vehicles by total yearly utilization",
       "top10PeriodDesc": "Top 10 vehicles by utilization rate for selected period",
       "expensesByCategoryTitle": "Expenses by Category",
       "expensesByCategoryDesc": "Distribution of expenses for the selected period",
       "expenseTrendsTitle": "Expense Trends",
-      "expenseTrendsDesc": "Monthly expense comparison"
+      "expenseTrendsDesc": "Monthly expense comparison",
+      "vehicleUtilizationSubtitleYearly_one": "Yearly utilization, average over the whole fleet of {{count}} vehicle ({{rented}} with rentals)",
+      "vehicleUtilizationSubtitleYearly_other": "Yearly utilization, average over the whole fleet of {{count}} vehicles ({{rented}} with rentals)",
+      "avgBasis_one": "Divided over the whole fleet of {{count}} vehicle",
+      "avgBasis_other": "Divided over the whole fleet of {{count}} vehicles",
+      "trendNew": "new"
     },
     "expensesTab": {
       "breakdownTitle": "Expense Breakdown by Category",

@@ -102,7 +102,9 @@ export function buildVehicleFinancials(
     if (!row) continue;
     const amount = money(e.amount);
     row.expenses += amount;
-    row.expensesByCategory[e.category] = (row.expensesByCategory[e.category] || 0) + amount;
+    // lower(btrim(category)): a dump restored before the startup migration must not split one category in two (A-14-2).
+    const category = (e.category ?? "").trim().toLowerCase() || "other";
+    row.expensesByCategory[category] = (row.expensesByCategory[category] || 0) + amount;
   }
 
   const rows = [...rowsById.values()].map((row) => ({

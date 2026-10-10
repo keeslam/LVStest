@@ -4,7 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatCurrency } from "@/lib/format-utils";
+import { formatCurrency, formatExpenseCategory } from "@/lib/format-utils";
+import { formatNl } from "@/lib/format-date-nl";
+import { MAINTENANCE_EXPENSE_CATEGORIES } from "@shared/expense-categories";
 import { Price } from "@/components/ui/price";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { TrendingUp, TrendingDown, DollarSign, Wrench, Car, Calendar } from "lucide-react";
@@ -13,22 +15,40 @@ import { QueryErrorState } from "@/components/ui/query-error-state";
 interface MaintenanceCostData {
   totalCosts: number;
   averageCostPerVehicle: number;
-  averageCostPerKm: number;
+  /** null when the vehicles that carry the costs have no kilometres: there is nothing to divide by. */
+  averageCostPerKm: number | null;
+  categories?: string[];
   totalVehicles: number;
   categoryBreakdown: Array<{category: string, amount: number, percentage: number}>;
-  brandComparison: Array<{brand: string, totalCost: number, avgCost: number, vehicleCount: number}>;
+  brandComparison: Array<{brand: string, totalCost: number, avgCost: number, vehicleCount: number, expenseCount?: number}>;
   vehicleDetails: Array<{
     vehicleId: number;
     licensePlate: string;
     brand: string;
     model: string;
     totalCost: number;
-    costPerKm: number;
+    costPerKm: number | null;
     currentMileage: number;
     expenseCount: number;
   }>;
   monthlyTrend: Array<{month: string, amount: number}>;
 }
+
+/**
+ * A brand is rated "Uitstekend / Goed / Gemiddeld" only when this many cost
+ * lines stand behind it (A-14-2): the brand AUDIT, with a single line of
+ * EUR 25.50, used to come out "Uitstekend" on nothing.
+ */
+const MIN_EXPENSES_FOR_RATING = 3;
+
+/** "2026-05" as "mei 2026". */
+function monthLabel(key: string): string {
+  const [y, m] = key.split("-").map(Number);
+  if (!y || !m) return key;
+  return formatNl(new Date(y, m - 1, 1), "MMM yyyy");
+}
+
+const NO_VALUE = "–";
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
@@ -70,12 +90,18 @@ export default function MaintenanceCostsPage() {
     );
   }
 
+  const trendData = costData.monthlyTrend.map((p) => ({ ...p, label: monthLabel(p.month) }));
+  const scopeCategories = (costData.categories ?? [...MAINTENANCE_EXPENSE_CATEGORIES]).map((c) => formatExpenseCategory(c)).join(", ");
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">{t('maintenanceCostsPage.pageTitle')}</h1>
           <p className="text-gray-600 mt-1">{t('maintenanceCostsPage.pageDescription')}</p>
+          <p className="text-xs text-muted-foreground mt-1" data-testid="maintenance-costs-scope-note">
+            {t('maintenanceCostsPage.scopeNote', { categories: scopeCategories })}
+          </p>
         </div>
         <div className="flex gap-4">
           <Select value={timeRange} onValueChange={setTimeRange}>
@@ -144,7 +170,7 @@ export default function MaintenanceCostsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-cost-per-km">
-              {<Price value={costData.averageCostPerKm} />}
+              {costData.averageCostPerKm == null ? NO_VALUE : <Price value={costData.averageCostPerKm} />}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {t('maintenanceCostsPage.efficiencyMetric')}
@@ -194,7 +220,7 @@ export default function MaintenanceCostsPage() {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={(entry) => `${entry.category} (${entry.percentage.toFixed(1)}%)`}
+                      label={(entry) => `${formatExpenseCategory(entry.category)} (${entry.percentage.toFixed(1)}%)`}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="amount"
@@ -214,7 +240,7 @@ export default function MaintenanceCostsPage() {
                           className="w-3 h-3 rounded-full" 
                           style={{backgroundColor: COLORS[index % COLORS.length]}}
                         />
-                        <span>{cat.category}</span>
+                        <span>{formatExpenseCategory(cat.category)}</span>
                       </div>
                       <span className="font-medium">{<Price value={cat.amount} />}</span>
                     </div>
@@ -305,8 +331,10 @@ export default function MaintenanceCostsPage() {
                       .map((brand) => {
                         const avgCost = brand.avgCost;
                         const overallAvg = costData.averageCostPerVehicle;
-                        const efficiency = avgCost < overallAvg ? t('maintenanceCostsPage.efficiencyExcellent') : avgCost < overallAvg * 1.2 ? t('maintenanceCostsPage.efficiencyGood') : t('maintenanceCostsPage.efficiencyAverage');
-                        const efficiencyColor = avgCost < overallAvg ? 'text-green-600' : avgCost < overallAvg * 1.2 ? 'text-blue-600' : 'text-orange-600';
+                        // A-14-2: no rating on a handful of cost lines; say so instead.
+                        const enoughData = (brand.expenseCount ?? 0) >= MIN_EXPENSES_FOR_RATING && overallAvg > 0;
+                        const efficiency = !enoughData ? t('maintenanceCostsPage.efficiencyInsufficient') : avgCost < overallAvg ? t('maintenanceCostsPage.efficiencyExcellent') : avgCost < overallAvg * 1.2 ? t('maintenanceCostsPage.efficiencyGood') : t('maintenanceCostsPage.efficiencyAverage');
+                        const efficiencyColor = !enoughData ? 'text-muted-foreground' : avgCost < overallAvg ? 'text-green-600' : avgCost < overallAvg * 1.2 ? 'text-blue-600' : 'text-orange-600';
                         
                         return (
                           <tr key={brand.brand} className="border-b hover:bg-gray-50">
@@ -353,8 +381,8 @@ export default function MaintenanceCostsPage() {
                           <td className="p-2 font-medium">{vehicle.licensePlate}</td>
                           <td className="p-2">{vehicle.brand} {vehicle.model}</td>
                           <td className="text-right p-2">{<Price value={vehicle.totalCost} />}</td>
-                          <td className="text-right p-2">{<Price value={vehicle.costPerKm} />}</td>
-                          <td className="text-right p-2">{vehicle.currentMileage?.toLocaleString() || t('maintenanceCostsPage.notAvailable')} km</td>
+                          <td className="text-right p-2">{vehicle.costPerKm == null ? NO_VALUE : <Price value={vehicle.costPerKm} />}</td>
+                          <td className="text-right p-2">{vehicle.currentMileage ? `${vehicle.currentMileage.toLocaleString('nl-NL')} km` : t('maintenanceCostsPage.notAvailable')}</td>
                           <td className="text-right p-2">{vehicle.expenseCount}</td>
                         </tr>
                       ))}
@@ -374,9 +402,9 @@ export default function MaintenanceCostsPage() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={costData.monthlyTrend}>
+                <LineChart data={trendData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
+                  <XAxis dataKey="label" />
                   <YAxis />
                   <Tooltip formatter={(value: number) => formatCurrency(value)} />
                   <Legend />
@@ -389,6 +417,20 @@ export default function MaintenanceCostsPage() {
                   />
                 </LineChart>
               </ResponsiveContainer>
+              <table className="sr-only" data-testid="maintenance-trend-table">
+                <caption>{t('maintenanceCostsPage.monthlyCostTrendsTitle')}</caption>
+                <thead>
+                  <tr>
+                    <th>{t('maintenanceCostsPage.monthColumn')}</th>
+                    <th>{t('maintenanceCostsPage.monthlyCostLegend')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {trendData.map((point) => (
+                    <tr key={point.month}><td>{point.label}</td><td>{formatCurrency(point.amount)}</td></tr>
+                  ))}
+                </tbody>
+              </table>
             </CardContent>
           </Card>
         </TabsContent>

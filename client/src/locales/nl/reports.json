@@ -61,7 +61,10 @@
     "notAvailable": "N.v.t.",
     "monthlyCostTrendsTitle": "Maandelijkse kostentrends",
     "monthlyCostTrendsDescription": "Volg onderhoudsuitgaven in de tijd",
-    "monthlyCostLegend": "Maandelijkse kosten"
+    "monthlyCostLegend": "Maandelijkse kosten",
+    "scopeNote": "Telt alleen onderhoudskosten ({{categories}}). Kosten per km deelt door de kilometerstand van de voertuigen met kosten.",
+    "efficiencyInsufficient": "Onvoldoende gegevens",
+    "monthColumn": "Maand"
   },
   "reportBuilderPage": {
     "toasts": {
@@ -197,7 +200,9 @@
       "nextMonthButton": "Volgende maand",
       "allVehiclesPlaceholder": "Alle voertuigen",
       "expenseCategoryLabel": "Kostencategorie",
-      "allCategoriesPlaceholder": "Alle categorieën"
+      "allCategoriesPlaceholder": "Alle categorieën",
+      "basisCaption_one": "Alle cijfers op deze pagina gelden voor {{period}} en de hele vloot ({{count}} voertuig).",
+      "basisCaption_other": "Alle cijfers op deze pagina gelden voor {{period}} en de hele vloot ({{count}} voertuigen)."
     },
     "categories": {
       "maintenance": "Onderhoud",
@@ -236,19 +241,21 @@
       "allData": "Alle gegevens"
     },
     "operations": {
-      "vehicleUtilizationSubtitleYearly": "Gebaseerd op jaarlijkse benutting van {{count}} voertuigen",
-      "vehicleUtilizationSubtitle_one": "Gemiddelde over {{count}} voertuig met verhuur",
-      "vehicleUtilizationSubtitle_other": "Gemiddelde over {{count}} voertuigen met verhuur",
+      "vehicleUtilizationSubtitle_one": "Gemiddelde over de hele vloot van {{count}} voertuig ({{rented}} met verhuur)",
+      "vehicleUtilizationSubtitle_other": "Gemiddelde over de hele vloot van {{count}} voertuigen ({{rented}} met verhuur)",
       "acrossExpenseEntries": "Over {{count}} kostenposten",
       "avgCostPerVehicleCardTitle": "Gem. kosten per voertuig",
-      "forActiveVehicles_one": "Voor {{count}} actief voertuig",
-      "forActiveVehicles_other": "Voor {{count}} actieve voertuigen",
       "top10YearlyDesc": "Top 10 voertuigen op totale jaarlijkse benutting",
       "top10PeriodDesc": "Top 10 voertuigen op benuttingspercentage voor geselecteerde periode",
       "expensesByCategoryTitle": "Kosten per categorie",
       "expensesByCategoryDesc": "Verdeling van kosten voor de geselecteerde periode",
       "expenseTrendsTitle": "Kostentrends",
-      "expenseTrendsDesc": "Maandelijkse kostenvergelijking"
+      "expenseTrendsDesc": "Maandelijkse kostenvergelijking",
+      "vehicleUtilizationSubtitleYearly_one": "Jaarlijkse benutting, gemiddelde over de hele vloot van {{count}} voertuig ({{rented}} met verhuur)",
+      "vehicleUtilizationSubtitleYearly_other": "Jaarlijkse benutting, gemiddelde over de hele vloot van {{count}} voertuigen ({{rented}} met verhuur)",
+      "avgBasis_one": "Gedeeld door de hele vloot van {{count}} voertuig",
+      "avgBasis_other": "Gedeeld door de hele vloot van {{count}} voertuigen",
+      "trendNew": "nieuw"
     },
     "expensesTab": {
       "breakdownTitle": "Kostenoverzicht per categorie",
