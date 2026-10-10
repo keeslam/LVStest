@@ -909,7 +909,9 @@
       "deleteFailedFallback": "Failed to delete reservation",
       "updatedTitle": "Reservation updated",
       "updatedDescription": "The reservation has been successfully updated"
-    }
+    },
+    "shownOfTotal": "{{shown}} of {{total}} shown",
+    "showMore": "Show {{count}} more"
   },
   "detailsPage": {
     "backToReservations": "Back to Reservations",

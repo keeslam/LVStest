@@ -50,7 +50,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ReservationForm } from "@/components/reservations/reservation-form";
-import { ReservationListDialog } from "@/components/reservations/reservation-list-dialog";
+import { ReservationListDialog, type ReservationListTab } from "@/components/reservations/reservation-list-dialog";
 import { NotCollectedDialog, NOT_COLLECTED_QUERY_KEY } from "@/components/reservations/not-collected-dialog";
 import { RecycleBinDialog } from "@/components/recycle-bin/recycle-bin-dialog";
 import { ReservationAddDialog } from "@/components/reservations/reservation-add-dialog";
@@ -176,6 +176,18 @@ const findMaintenanceForRental = (
   return lastMatch;
 };
 
+/** Query parameter that carries the open tab of the list dialog. */
+const LIST_URL_PARAM = "list";
+
+function listTabFromUrl(): ReservationListTab | null {
+  try {
+    const value = new URLSearchParams(window.location.search).get(LIST_URL_PARAM);
+    return value === "current" || value === "overdue" || value === "history" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function ReservationCalendarPage() {
   const { t } = useTranslation(["reservations", "common"]);
   // Query client for cache invalidation
@@ -215,8 +227,23 @@ export default function ReservationCalendarPage() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   
-  // List view dialog
-  const [listDialogOpen, setListDialogOpen] = useState(false);
+  // List view dialog. A-5-5: it has an address of its own, /reservations?list=current|overdue|history,
+  // so a colleague can be sent straight to the list (and a reload lands on it again).
+  const [listTab, setListTab] = useState<ReservationListTab>(() => listTabFromUrl() ?? "current");
+  const [listDialogOpen, setListDialogOpen] = useState(() => listTabFromUrl() !== null);
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      if (listDialogOpen) url.searchParams.set(LIST_URL_PARAM, listTab);
+      else url.searchParams.delete(LIST_URL_PARAM);
+      const next = url.pathname + url.search + url.hash;
+      if (next !== window.location.pathname + window.location.search + window.location.hash) {
+        window.history.replaceState(window.history.state, "", next);
+      }
+    } catch {
+      /* an address we cannot rewrite only costs the deep link */
+    }
+  }, [listDialogOpen, listTab]);
   const [openedFromListView, setOpenedFromListView] = useState(false);
 
   // Recycle bin of deleted reservations (sub-project C, B-36)
@@ -3111,6 +3138,8 @@ export default function ReservationCalendarPage() {
       <ReservationListDialog
         open={listDialogOpen}
         onOpenChange={setListDialogOpen}
+        initialTab={listTab}
+        onTabChange={setListTab}
         onViewReservation={(reservation) => {
           setSelectedReservation(reservation);
           setOpenedFromListView(true);

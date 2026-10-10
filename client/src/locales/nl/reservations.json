@@ -909,7 +909,9 @@
       "deleteFailedFallback": "Reservering verwijderen mislukt",
       "updatedTitle": "Reservering bijgewerkt",
       "updatedDescription": "De reservering is succesvol bijgewerkt"
-    }
+    },
+    "shownOfTotal": "{{shown}} van {{total}} getoond",
+    "showMore": "Toon {{count}} meer"
   },
   "detailsPage": {
     "backToReservations": "Terug naar reserveringen",

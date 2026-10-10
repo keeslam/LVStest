@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import { ReservationEditDialog } from "@/components/reservations/reservation-edi
 import { SpareVehicleAssignmentDialog } from "@/components/reservations/spare-vehicle-assignment-dialog";
 import { ConfirmDeleteReservationDialog } from "@/components/reservations/delete-reservation-confirm";
 import { cancelRightFor, isPickedUpRightRefusal, pickedUpRefusalOf } from "@/components/reservations/picked-up-cancellation";
-import { Eye, Edit, Trash2, Car, History, User, Calendar, FileText, Fuel, MapPin, Phone, Building, Clock, AlertTriangle, CarFront, RotateCcw } from "lucide-react";
+import { Eye, Edit, Trash2, Car, History, User, Calendar, FileText, Fuel, MapPin, Phone, Building, Clock, AlertTriangle, CarFront, RotateCcw, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -34,27 +34,58 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient, invalidateRelatedQueries , invalidateByPrefix } from "@/lib/queryClient";
 import { Reservation, Vehicle, UserPermission } from "@shared/schema";
-import { formatLicensePlate, formatCurrency, plateMatches } from "@/lib/format-utils";
+import { formatLicensePlate, formatCurrency } from "@/lib/format-utils";
+import { reservationMatchesSearch } from "@/lib/reservation-search";
 import { Price } from "@/components/ui/price";
 import { parseISO, differenceInDays } from "date-fns";
 // BUG-223: Dutch dates on a Dutch screen — formatNl is date-fns' format
 // with the nl locale applied, so every call below writes "11 sep 2026".
 import { formatNl as format } from "@/lib/format-date-nl";
 
+/**
+ * A-5-4 / A-5-5: rows put on screen at once. The audit database had 366 active
+ * reservations; rendering them all is what made the dialog open after seconds
+ * with nothing to see. More are one click away, and a search always looks at the
+ * whole list.
+ */
+export const RESERVATION_LIST_PAGE_SIZE = 50;
+
+export type ReservationListTab = "current" | "overdue" | "history";
+
 interface ReservationListDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Tab to open on (from a link such as /reservations?list=history). */
+  initialTab?: ReservationListTab;
+  /** Called with the tab the employee switches to, so the caller can keep the address in step. */
+  onTabChange?: (tab: ReservationListTab) => void;
   onViewReservation?: (reservation: Reservation) => void;
   onEditReservation?: (reservation: Reservation) => void;
 }
 
-export function ReservationListDialog({ open, onOpenChange, onViewReservation, onEditReservation }: ReservationListDialogProps) {
+export function ReservationListDialog({ open, onOpenChange, initialTab, onTabChange, onViewReservation, onEditReservation }: ReservationListDialogProps) {
   const { t } = useTranslation("reservations");
+  const [tab, setTab] = useState<ReservationListTab>(initialTab ?? "current");
+  const [currentLimit, setCurrentLimit] = useState(RESERVATION_LIST_PAGE_SIZE);
+  const [overdueLimit, setOverdueLimit] = useState(RESERVATION_LIST_PAGE_SIZE);
+  const [historyLimit, setHistoryLimit] = useState(RESERVATION_LIST_PAGE_SIZE);
+  // Opening the list (again) starts on the requested tab and the first page.
+  useEffect(() => {
+    if (!open) return;
+    setTab(initialTab ?? "current");
+    setCurrentLimit(RESERVATION_LIST_PAGE_SIZE);
+    setOverdueLimit(RESERVATION_LIST_PAGE_SIZE);
+    setHistoryLimit(RESERVATION_LIST_PAGE_SIZE);
+  }, [open, initialTab]);
   const [currentSearch, setCurrentSearch] = useState("");
   const [historySearch, setHistorySearch] = useState("");
   const [overdueSearch, setOverdueSearch] = useState("");
   const [currentSort, setCurrentSort] = useState<{ column: string; direction: 'asc' | 'desc' }>({ column: 'pickup', direction: 'asc' });
   const [historySort, setHistorySort] = useState<{ column: string; direction: 'asc' | 'desc' }>({ column: 'return', direction: 'desc' });
+  // A different search or sort starts again from the first page.
+  useEffect(() => { setCurrentLimit(RESERVATION_LIST_PAGE_SIZE); }, [currentSearch, currentSort]);
+  useEffect(() => { setOverdueLimit(RESERVATION_LIST_PAGE_SIZE); }, [overdueSearch]);
+  useEffect(() => { setHistoryLimit(RESERVATION_LIST_PAGE_SIZE); }, [historySearch, historySort]);
   // The one reversal dialog (preview, then confirm), for the reservation with this id.
   const [revertReservationId, setRevertReservationId] = useState<number | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -160,19 +191,7 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
 
   // Filter and sort current reservations
   const filteredCurrentReservations = useMemo(() => {
-    let filtered = currentReservations.filter(res => {
-      if (!currentSearch) return true;
-      const search = currentSearch.toLowerCase();
-      return (
-        plateMatches(res.vehicle?.licensePlate, search) ||
-        res.vehicle?.brand?.toLowerCase().includes(search) ||
-        res.vehicle?.model?.toLowerCase().includes(search) ||
-        res.customer?.companyName?.toLowerCase().includes(search) ||
-        res.customer?.name?.toLowerCase().includes(search) ||
-        res.contractNumber?.toLowerCase().includes(search) ||
-        res.id.toString().includes(search)
-      );
-    });
+    let filtered = currentReservations.filter(res => reservationMatchesSearch(res, currentSearch));
 
     return filtered.sort((a, b) => {
       const dir = currentSort.direction === 'asc' ? 1 : -1;
@@ -192,33 +211,13 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
   }, [currentReservations, currentSearch, currentSort]);
 
   const filteredOverdueReservations = useMemo(() => {
-    const search = overdueSearch.trim().toLowerCase();
-    if (!search) return overdueReservations;
-    return overdueReservations.filter((res) =>
-      plateMatches(res.vehicle?.licensePlate, search) ||
-      res.vehicle?.brand?.toLowerCase().includes(search) ||
-      res.vehicle?.model?.toLowerCase().includes(search) ||
-      res.customer?.companyName?.toLowerCase().includes(search) ||
-      res.customer?.name?.toLowerCase().includes(search) ||
-      res.contractNumber?.toLowerCase().includes(search) ||
-      res.id.toString().includes(search));
+    if (!overdueSearch.trim()) return overdueReservations;
+    return overdueReservations.filter((res) => reservationMatchesSearch(res, overdueSearch));
   }, [overdueReservations, overdueSearch]);
 
   // Filter and sort history reservations
   const filteredHistoryReservations = useMemo(() => {
-    let filtered = historyReservations.filter(res => {
-      if (!historySearch) return true;
-      const search = historySearch.toLowerCase();
-      return (
-        plateMatches(res.vehicle?.licensePlate, search) ||
-        res.vehicle?.brand?.toLowerCase().includes(search) ||
-        res.vehicle?.model?.toLowerCase().includes(search) ||
-        res.customer?.companyName?.toLowerCase().includes(search) ||
-        res.customer?.name?.toLowerCase().includes(search) ||
-        res.contractNumber?.toLowerCase().includes(search) ||
-        res.id.toString().includes(search)
-      );
-    });
+    let filtered = historyReservations.filter(res => reservationMatchesSearch(res, historySearch));
 
     return filtered.sort((a, b) => {
       const dir = historySort.direction === 'asc' ? 1 : -1;
@@ -428,6 +427,35 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
     );
   };
 
+  // "50 van 366" and the button for the next page; nothing when everything is on screen.
+  const renderPager = (
+    name: ReservationListTab,
+    total: number,
+    limit: number,
+    setLimit: (next: number) => void,
+  ) => {
+    if (total === 0) return null;
+    const shown = Math.min(limit, total);
+    const remaining = total - shown;
+    return (
+      <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+        <span data-testid={`list-shown-${name}`}>{t("listDialog.shownOfTotal", { shown, total })}</span>
+        {remaining > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => setLimit(limit + RESERVATION_LIST_PAGE_SIZE)}
+            data-testid={`button-load-more-${name}`}
+          >
+            {t("listDialog.showMore", { count: Math.min(RESERVATION_LIST_PAGE_SIZE, remaining) })}
+          </Button>
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -439,7 +467,14 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs defaultValue="current" className="w-full">
+          <Tabs
+            value={tab}
+            onValueChange={(next) => {
+              setTab(next as ReservationListTab);
+              onTabChange?.(next as ReservationListTab);
+            }}
+            className="w-full"
+          >
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="current" className="flex items-center gap-2">
                 <Car className="h-4 w-4" />
@@ -486,17 +521,21 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
                   <ScrollArea className="h-[calc(70vh-180px)]">
                     <div className="divide-y">
                       {isLoadingReservations ? (
-                        <div className="text-center py-8 text-gray-500">{t('listDialog.loading')}</div>
+                        <div className="flex items-center justify-center gap-2 py-8 text-gray-500" role="status" data-testid="reservation-list-loading">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          {t('listDialog.loading')}
+                        </div>
                       ) : filteredCurrentReservations.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">{t('listDialog.noActiveReservations')}</div>
                       ) : (
-                        filteredCurrentReservations.map((reservation) => (
+                        filteredCurrentReservations.slice(0, currentLimit).map((reservation) => (
                           <ReservationCard key={reservation.id} reservation={reservation} />
                         ))
                       )}
                     </div>
                   </ScrollArea>
                 </div>
+                {renderPager("current", filteredCurrentReservations.length, currentLimit, setCurrentLimit)}
               </div>
             </TabsContent>
 
@@ -526,7 +565,7 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
                       {filteredOverdueReservations.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">{t('listDialog.noOverdueReservations')}</div>
                       ) : (
-                        filteredOverdueReservations.map((reservation) => {
+                        filteredOverdueReservations.slice(0, overdueLimit).map((reservation) => {
                           const daysOverdue = reservation.endDate 
                             ? differenceInDays(new Date(), parseISO(reservation.endDate))
                             : 0;
@@ -587,6 +626,7 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
                     </div>
                   </ScrollArea>
                 </div>
+                {renderPager("overdue", filteredOverdueReservations.length, overdueLimit, setOverdueLimit)}
               </div>
             </TabsContent>
 
@@ -621,17 +661,21 @@ export function ReservationListDialog({ open, onOpenChange, onViewReservation, o
                   <ScrollArea className="h-[calc(70vh-180px)]">
                     <div className="divide-y">
                       {isLoadingReservations ? (
-                        <div className="text-center py-8 text-gray-500">{t('listDialog.loading')}</div>
+                        <div className="flex items-center justify-center gap-2 py-8 text-gray-500" role="status" data-testid="reservation-list-loading">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          {t('listDialog.loading')}
+                        </div>
                       ) : filteredHistoryReservations.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">{t('listDialog.noCompletedReservations')}</div>
                       ) : (
-                        filteredHistoryReservations.map((reservation) => (
+                        filteredHistoryReservations.slice(0, historyLimit).map((reservation) => (
                           <ReservationCard key={reservation.id} reservation={reservation} />
                         ))
                       )}
                     </div>
                   </ScrollArea>
                 </div>
+                {renderPager("history", filteredHistoryReservations.length, historyLimit, setHistoryLimit)}
               </div>
             </TabsContent>
           </Tabs>
