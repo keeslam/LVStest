@@ -904,7 +904,6 @@
       "licensePlateRequiredTitle": "License plate required",
       "licensePlateRequiredDescription": "Please enter a license plate to look up vehicle information.",
       "saveFailedTitle": "Error",
-      "saveFailedDescription": "Failed to {{action}} vehicle: {{message}}",
       "gpsSettingsSavedTitle": "GPS Settings Saved",
       "gpsSettingsSavedDescriptionSwapped": "GPS has been marked as swapped and activated.",
       "gpsSettingsSavedDescriptionActivated": "GPS has been activated.",

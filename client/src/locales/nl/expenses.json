@@ -179,8 +179,7 @@
     "addAnotherExpenseButton": "Nog een kostenpost toevoegen"
   },
   "addPage": {
-    "editExpenseTitle": "Kosten bewerken",
-    "recordNewExpenseTitle": "Nieuwe kosten registreren"
+    "editExpenseTitle": "Kosten bewerken"
   },
   "indexPage": {
     "pageTitle": "Kostenbeheer",
@@ -193,9 +192,6 @@
     "noExpensesFound": "Geen kosten gevonden die overeenkomen met je zoekcriteria.",
     "expenseCount_one": "({{count}} kostenpost)",
     "expenseCount_other": "({{count}} kostenposten)",
-    "filterByLicensePlateOrDescriptionPlaceholder": "Filter op kenteken of omschrijving...",
-    "noExpensesFoundInCategory": "Geen kosten gevonden.",
-    "addCategoryExpenseButton": "{{category}} kosten toevoegen",
     "summaryTitle": "Kostensamenvatting",
     "summaryDescription": "Overzicht van je kosten",
     "totalExpensesLabel": "Totale kosten",

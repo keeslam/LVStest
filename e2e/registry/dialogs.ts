@@ -230,7 +230,11 @@ export const DIALOGS: DialogEntry[] = [
   // list too - the green "Afronden" button on every open row of the "Gepland" tab,
   // test id `button-list-complete-<reservationId>`, same RequiresPermission as the
   // calendar's button. It needs a planned block (the e2e seed holds none) inside the
-  // list dialog, which a role without the right can still open; the per-right proof is
+  // list dialog. A role without manage_maintenance cannot open the list at all: /maintenance
+  // itself needs that right (shared/page-access.ts), so the opener of the list never mounts
+  // for it, and a role that can open it holds the right the button asks for. The per-right
+  // proof (the button disabled and explained for a profile with neither right, as a
+  // component test can mount the dialog directly) is
   // client/src/components/maintenance/__tests__/p4-maintenance-list-actions.test.tsx.
   // "Binnen melden" next to it is a direct action (PATCH /api/vehicles/:id/maintenance-status),
   // not a dialog, so it has no entry of its own.

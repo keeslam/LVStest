@@ -362,7 +362,7 @@
     "empty": "No assessed periods in this year.",
     "open": "open",
     "pdf": "PDF",
-    "notStarted": "The report shows {{first}}, the first year the law applies (from {{date}}). No fiscal periods are assessed in {{current}} yet, so there is nothing to show.",
+    "notStarted": "The law applies from {{date}}; {{first}} is the first year. No fiscal periods are assessed in {{current}} yet, so there is nothing to show.",
     "emptyNotStarted": "There are no assessed periods yet: the fiscal check only calculates from {{date}}."
   }
 }

@@ -362,7 +362,7 @@
     "empty": "Geen beoordeelde perioden in dit jaar.",
     "open": "open",
     "pdf": "PDF",
-    "notStarted": "Het rapport toont {{first}}, het eerste jaar waarin de wet geldt (vanaf {{date}}). In {{current}} worden nog geen fiscale perioden beoordeeld, daarom is er nog niets te tonen.",
+    "notStarted": "De wet geldt vanaf {{date}}; {{first}} is het eerste jaar. In {{current}} worden nog geen fiscale perioden beoordeeld, daarom is er nog niets te tonen.",
     "emptyNotStarted": "Er zijn nog geen beoordeelde perioden: de fiscale check rekent pas vanaf {{date}}."
   }
 }

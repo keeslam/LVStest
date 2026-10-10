@@ -85,8 +85,6 @@
     "addCustomerTitle": "Add New Customer",
     "addCustomerDescription": "Add a new customer to your system.",
     "customerAdded": "Customer added successfully",
-    "logExpenseTitle": "Log New Expense",
-    "logExpenseDescription": "Record a new expense for a vehicle.",
     "expenseLogged": "Expense logged successfully",
     "documentUploadTitle": "Upload Document",
     "documentUploadDescription": "Select a vehicle to upload documents for.",

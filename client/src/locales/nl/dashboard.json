@@ -85,8 +85,6 @@
     "addCustomerTitle": "Nieuwe klant toevoegen",
     "addCustomerDescription": "Voeg een nieuwe klant toe aan je systeem.",
     "customerAdded": "Klant succesvol toegevoegd",
-    "logExpenseTitle": "Nieuwe kosten registreren",
-    "logExpenseDescription": "Registreer nieuwe kosten voor een voertuig.",
     "expenseLogged": "Kosten succesvol geregistreerd",
     "documentUploadTitle": "Document uploaden",
     "documentUploadDescription": "Selecteer een voertuig om documenten voor te uploaden",

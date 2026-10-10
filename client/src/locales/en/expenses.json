@@ -179,8 +179,7 @@
     "addAnotherExpenseButton": "Add Another Expense"
   },
   "addPage": {
-    "editExpenseTitle": "Edit Expense",
-    "recordNewExpenseTitle": "Record New Expense"
+    "editExpenseTitle": "Edit Expense"
   },
   "indexPage": {
     "pageTitle": "Expense Management",
@@ -193,9 +192,6 @@
     "noExpensesFound": "No expenses found matching your search criteria.",
     "expenseCount_one": "({{count}} expense)",
     "expenseCount_other": "({{count}} expenses)",
-    "filterByLicensePlateOrDescriptionPlaceholder": "Filter by license plate or description...",
-    "noExpensesFoundInCategory": "No expenses found.",
-    "addCategoryExpenseButton": "Add {{category}} Expense",
     "summaryTitle": "Expense Summary",
     "summaryDescription": "Overview of your expenses",
     "totalExpensesLabel": "Total Expenses",
