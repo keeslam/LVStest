@@ -207,6 +207,14 @@ zakt de stand door het terugdraaien terug naar 45.000, en juist dat zakken moet 
 bevestigd worden — aansluitend op de toestemming die de applicatie al vraagt voor het
 verlagen van een kilometerstand.
 Raakt: OPT-017, V-6, CQ-005, BUG-019, BUG-159.
+**Uitgevoerd (10-10-2026):** commits `4e5f2496..b1864f49` (deelproject C). Rechten en eenmalige
+toekenning aan managers: `c4eebe3f`. Stand van vóór ophalen en innemen bewaard: `16e8a22b`. Server
+(voorvertoning, bevestiging, `planHash`): `81c4756d`, `1468d563`, fix-ronde `a4708c89`. Eén venster
+**Overdracht terugdraaien** voor alle openers: `2b8949b5`; Layer B: `dc36c630`. Nabeoordeling:
+`64ce0455`, `03cc53ec`, `6f93289a`. Alle drie de omkeringen (ophaling, inname, annulering) lopen via
+`POST /api/reservations/:id/revert`; `PATCH /:id/status` weigert ze met `USE_REVERT_ROUTE`. De kilometerbevestiging
+is een vinkje in het venster, niet het wachtwoord van `authorize_mileage_decrease`. Handleiding §5.14,
+§15.16, §10.2, §11.12–11.14.
 
 ### B-31 — Pechomruil: wat er met de oorspronkelijke huur gebeurt (V-9, OPT-029)
 **Besluit (letterlijk van Kees):** "die blijft op verhuurd staan maar met in werkplaats er
@@ -254,6 +262,12 @@ worden.
 Nog open: wie de prullenbak mag legen, en of dat per soort gaat of in één keer.
 Raakt: BUG-132, V-11, B-15, BUG-150 (de prullenbak kan vandaag niet definitief geleegd
 worden).
+**Uitgevoerd (10-10-2026):** commits `4e5f2496..b1864f49` (deelproject C). Server en client:
+`72673e55` (recht `cancel_picked_up_rental`, 409 `PICKED_UP_CONFIRMATION_REQUIRED` en 403 zonder het recht,
+waarschuwing met vinkje in elk annuleer- en verwijdervenster); bijkomende fix `c0b5f99e`; Layer B:
+`616b595e`; fix-rondes `e0ed1660`, `1b3c42f8`. Twee uitwerkingen die de brief niet noemde, vastgelegd in
+`6ccbc385`: ook `PATCH /api/reservations/:id/basic` bewaakt, en onderhoudsblokken zijn uitgezonderd.
+Verwijderen gaat via de prullenbak van Reserveringen. Handleiding §5.15, §5.10.
 
 ### B-34 — Een contract dat niet gemaakt kan worden (V-12, BUG-163)
 **Besluit:** een duidelijke fout. Liever hard mislukken met een begrijpelijke melding dan een
@@ -289,6 +303,12 @@ Uitwerking: elk scherm krijgt zijn eigen prullenbak met alleen zijn eigen soort 
 Klanten, Reserveringen, Onderhoud (eigen label), Transporten, Boetes (heeft al een gefilterd
 venster). Wordt gebouwd in deelproject C, samen met het legen (B-33).
 Raakt: B-15, B-33, BUG-140, BUG-151.
+**Uitgevoerd (10-10-2026):** commits `4e5f2496..b1864f49` (deelproject C). Zes prullenbakken, elk met zijn
+eigen knop en soort (`DELETED_RECORD_KINDS`, `GET /api/deleted-records?type=`): `fd7cd3f4`; onderhoud
+als eigen soort `maintenance_block`, met een startstap die oude regels verhuist. Layer B: `7b6520e7`.
+Het verzoekbudget van de browsertests is opgelost met tweelingaccounts in de seed, niet met een
+schakelaar in de server: `993f1a45`. Weigering bij het terugzetten noemt weer de klant: `fa627124`.
+Handleiding §10.6 en de schermhoofdstukken 2, 3, 4, 5, 6, 7.
 
 ### B-29a — Aanvulling op B-29: Communicatie voor wie meldingen mag beheren (22-09-2026)
 **Wat Kees zei, letterlijk:** op de vraag of er een account bestaat met "meldingen beheren"
@@ -310,6 +330,13 @@ doet het scherm drie losse aanroepen met drie verschillende rechten, zodat een a
 alleen "onderhoud beheren" halverwege vastloopt. De afrondroute neemt die gegevens zelf mee,
 in één handeling. Wordt gebouwd in deelproject C.
 Raakt: B-27, B-29, handleiding §15.11.
+**Uitgevoerd (10-10-2026):** commits `4e5f2496..b1864f49` (deelproject C). Server (één transactie: blok,
+APK-datum, kilometerstand, APK-document; een lagere stand geeft `MILEAGE_LOWER_THAN_CURRENT` en wijzigt
+niets): `87898c7e`. Client (één verzoek, één foutpad): `c985b03a`. Layer B als profiel `maintenance`:
+`9cfc40c8`. Mee opgelost, uit de fysieke E2E-audit (module 7): het bewerkvenster toont de opgeslagen
+status (`c4b9ea3a`) en **Uit** geeft de auto weer vrij (`b35d135f`); een mislukte wijziging van het
+vervangende voertuig wordt in het Nederlands uitgelegd (`f8186f31`). De handleiding zei ten onrechte dat
+het afronden de werkplaatsstatus niet omzet; dat is gecorrigeerd. Handleiding §7.6, §7.7, §15.11.
 
 ### B-38 — Prullenbak legen, en wie de prullenbakken ziet (22-09-2026)
 **Besluit (letterlijk):** "per stuk en de mogelijkheid om meerdere tegelijk/ alles te
@@ -319,6 +346,12 @@ zijn voor manager."
 verwijderen, een selectie tegelijk, of alles, telkens met een bevestiging. De prullenbakken
 zelf zijn zichtbaar voor admin en manager (vandaag alleen admin). Volgorde van bouwen: eerst
 deelproject B, direct daarna C.
+**Uitgevoerd (10-10-2026):** commits `4e5f2496..b1864f49` (deelproject C). Rechten `manage_recycle_bin`
+(`c4eebe3f`). Legen per regel, per selectie en alles van een soort, met bevestiging, auditregel per record
+en bestanden alleen weg als geen levend record ze nog gebruikt: `92feb772`; Layer B: `a2fd9b38`.
+Een reservering of onderhoudsplanning met fiscale beoordelingen wordt overgeslagen en blijft in de
+prullenbak staan (409 `FISCAL_DATA_PRESENT`); overige documenten van het voertuig, zoals een APK-bewijs,
+worden losgekoppeld en blijven bestaan: `586d6f75`, `98d7db8f`, `a118fba8`, `8e433703`. Handleiding §10.6.
 
 ### B-39 — Uitwerking deelproject C goedgekeurd (09-10-2026)
 **Besluit (letterlijk):** "ja" op het ontwerp van deelproject C en op de drie voorstellen daarin:
@@ -337,6 +370,13 @@ teller staan), met een apart vinkje als de stand daardoor omlaag gaat; onderhoud
 handeling binnen één transactie.
 Raakt: B-30, B-33, B-36, B-37, B-38.
 Raakt: B-15, B-33, B-36, BUG-150.
+**Uitgevoerd (10-10-2026):** commits `4e5f2496..b1864f49` (deelproject C; het besluit zelf: `49292a43`).
+De drie rechten en de eenmalige toekenning aan elke manager (marker `migration:c_manager_rights`): `c4eebe3f`.
+Een annulering terugdraaien gaat naar opgehaald of geboekt, alleen als de auto vrij is (`81c4756d`); het
+legen van de prullenbak haalt ook de bestanden weg (`92feb772`). Een manager die ná de uitrol wordt
+aangemaakt, krijgt de rechten niet vanzelf. In hetzelfde bereik, uit de fysieke E2E-audit: een leeg
+wachtwoord bij het bijwerken van een gebruiker verandert niets meer (`6c30516e`, `422c43eb`, `8dc7c80f`) en het
+e-maillogboek toont de echte verzendgeschiedenis (`c3f13460`). Handleiding §15.16.
 
 ## Nog open (opnieuw vragen voordat er iets aan gebouwd wordt)
 
