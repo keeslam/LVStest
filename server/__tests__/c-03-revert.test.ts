@@ -679,6 +679,29 @@ describe("C-03 - the plan the client confirmed", () => {
     expect(res.body.code).toBe("INVALID_STATUS_TRANSITION");
   });
 
+  it("a maintenance block is never reverted: preview says blocked, POST is 400 and the row stays as it was", async () => {
+    // A completed block carries no handover data, so the status table alone would send it
+    // back to 'booked' while the vehicle stays 'out' - a mix no rule describes.
+    const vehicle = await createFixtureVehicle();
+    const block = await createFixtureReservation({
+      customerId: null, vehicleId: vehicle.id, startDate: day(-5), endDate: day(-1),
+      status: "completed", type: "maintenance_block",
+    });
+    await db.update(reservations).set({ maintenanceStatus: "out" }).where(eq(reservations.id, block.id));
+
+    const preview = await admin.get(`/api/reservations/${block.id}/revert-preview`);
+    expect(preview.status).toBe(200);
+    expect(preview.body.toStatus).toBeNull();
+    expect(preview.body.blocked.code).toBe("INVALID_STATUS_TRANSITION");
+
+    const res = await revert(admin, block.id, {});
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe("INVALID_STATUS_TRANSITION");
+    const after = await rowOf(block.id);
+    expect(after.status).toBe("completed");
+    expect(after.maintenanceStatus).toBe("out");
+  });
+
   it("a soft-deleted reservation is not found", async () => {
     const { rental } = await pickedUpRental();
     await db.update(reservations).set({ deletedAt: new Date() }).where(eq(reservations.id, rental.id));

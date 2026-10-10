@@ -229,7 +229,10 @@ export function planRevert(input: PlanRevertInput): RevertPlan {
     fuel: vehicle?.currentFuelLevel || null,
   };
 
-  const step = from ? stepFor(reservation) : null;
+  // A maintenance block has no handover to undo: its own status table (completed -> booked)
+  // would leave `maintenanceStatus` on 'out', a mix no rule describes. The client never offers
+  // it; this keeps a hand-made request out too.
+  const step = from && reservation.type !== "maintenance_block" ? stepFor(reservation) : null;
   if (!step) {
     return withHash({
       fromStatus,
