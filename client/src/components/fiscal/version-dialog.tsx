@@ -12,7 +12,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useFiscalPermissions } from "./use-fiscal-permissions";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PublishDialog } from "./publish-dialog";
+import { auditValueLabel, parameterLabel } from "./audit-format";
 import type { AuditEvent, FiscalParameterDefinition, ImpactState, VersionDetail } from "./types";
 
 interface VersionDialogProps {
@@ -64,6 +66,7 @@ export function VersionDialog({ versionId, onOpenChange, definitions, current }:
   const [sources, setSources] = useState<Record<string, { sourceUrl: string; sourceReference: string }>>({});
   const [rejectReason, setRejectReason] = useState("");
   const [publishOpen, setPublishOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
   const [impactPolling, setImpactPolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -260,7 +263,7 @@ export function VersionDialog({ versionId, onOpenChange, definitions, current }:
                   <p className="text-amber-700">{t("version.validationIssues")}</p>
                   <ul className="list-disc pl-5 text-muted-foreground">
                     {detail.validation.issues.map((i) => (
-                      <li key={`${i.key}-${i.message}`}>{i.key}: {i.message}</li>
+                      <li key={`${i.key}-${i.message}`}>{parameterLabel(definitions, i.key)}: {i.message}</li>
                     ))}
                   </ul>
                 </div>
@@ -318,7 +321,7 @@ export function VersionDialog({ versionId, onOpenChange, definitions, current }:
                 <Button variant="outline" onClick={() => startImpact.mutate()} disabled={startImpact.isPending || impact?.running} data-testid="button-version-impact">{t("version.impact")}</Button>
               )}
               {canConfigure && ["draft", "rejected"].includes(detail.status) && (
-                <Button variant="ghost" onClick={() => { if (window.confirm(t("version.confirmArchive"))) action.mutate({ name: "archive" }); }} disabled={action.isPending} data-testid="button-version-archive">{t("version.archive")}</Button>
+                <Button variant="ghost" onClick={() => setArchiveOpen(true)} disabled={action.isPending} data-testid="button-version-archive">{t("version.archive")}</Button>
               )}
             </div>
 
@@ -328,12 +331,23 @@ export function VersionDialog({ versionId, onOpenChange, definitions, current }:
                 {detail.audit.slice(0, 50).map((e) => (
                   <li key={e.id}>
                     {new Date(e.occurredAt).toLocaleString("nl-NL")} · {e.username} · {t(`audit.actions.${e.action}`, { defaultValue: e.action })}
-                    {e.parameterKey ? ` · ${e.parameterKey}` : ""}
-                    {e.oldValue !== null || e.newValue !== null ? ` · ${e.oldValue ?? "—"} → ${e.newValue ?? "—"}` : ""}
+                    {e.parameterKey ? ` · ${parameterLabel(definitions, e.parameterKey)}` : ""}
+                    {e.oldValue !== null || e.newValue !== null ? ` · ${auditValueLabel(definitions, e.parameterKey, e.oldValue)} → ${auditValueLabel(definitions, e.parameterKey, e.newValue)}` : ""}
                   </li>
                 ))}
               </ul>
             </section>
+
+            {/* The app's own dialog: a native confirm is not shown in every browser, and then the click did nothing. */}
+            <ConfirmDialog
+              open={archiveOpen}
+              onOpenChange={setArchiveOpen}
+              variant="warning"
+              title={t("version.archiveTitle")}
+              description={t("version.archiveDescription")}
+              confirmLabel={t("version.archive")}
+              onConfirm={() => action.mutate({ name: "archive" }, { onSuccess: () => toast({ title: t("version.archived") }) })}
+            />
 
             {publishOpen && (
               <PublishDialog

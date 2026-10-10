@@ -11,6 +11,7 @@ import type { Express, NextFunction, Request, Response } from "express";
 import { z } from "zod";
 import { UserPermission, UserRole } from "../../shared/schema";
 import { FISCAL_PARAMETER_DEFINITIONS, FISCAL_RULES } from "../services/fiscal/definitions";
+import { formatParameterValue } from "../../shared/fiscal-format";
 import {
   archiveVersion,
   approveVersion,
@@ -360,19 +361,29 @@ export function registerFiscalRoutes(app: Express, _deps: RouteDeps): void {
   app.get("/api/fiscal/audit", AUDIT, async (req, res) => {
     try {
       const q = req.query;
+      const list = (v: unknown) => (typeof v === "string" && v ? v.split(",").map((x) => x.trim()).filter(Boolean) : undefined);
       const num = (v: unknown) => (typeof v === "string" && /^\d+$/.test(v) ? Number(v) : undefined);
+      // The audit tab may be opened with the audit right alone, which cannot read /definitions:
+      // the parameter's name and values in words travel with the row.
+      const labelled = (rows: Awaited<ReturnType<typeof listFiscalAuditEvents>>) => rows.map((row) => {
+        const def = row.parameterKey ? FISCAL_PARAMETER_DEFINITIONS.find((d) => d.key === row.parameterKey) : undefined;
+        const word = (v: string | null) => (v === null || !def ? null : formatParameterValue(def.dataType, def.unit, def.dataType === "list" ? v.split(",").filter(Boolean) : v));
+        return { ...row, parameterLabel: def?.displayName ?? null, oldValueLabel: word(row.oldValue), newValueLabel: word(row.newValue) };
+      });
       res.json(
-        await listFiscalAuditEvents({
+        labelled(await listFiscalAuditEvents({
           ruleVersionId: num(q.ruleVersionId),
           entityType: typeof q.entityType === "string" ? q.entityType : undefined,
           entityId: num(q.entityId),
           customerId: num(q.customerId),
           vehicleId: num(q.vehicleId),
           username: typeof q.username === "string" ? q.username : undefined,
+          actions: list(q.action),
+          excludeActions: list(q.excludeAction),
           from: typeof q.from === "string" ? q.from : undefined,
           to: typeof q.to === "string" ? q.to : undefined,
           limit: num(q.limit),
-        }),
+        })),
       );
     } catch (error) {
       fail(res, error, "Auditlog kon niet worden gelezen");
@@ -553,7 +564,7 @@ export function registerFiscalRoutes(app: Express, _deps: RouteDeps): void {
       if (result.ok) {
         await assessMany({ vehicleId: id }, { trigger: "event", actor }).catch((e) => console.error("[fiscal] herbeoordeling na RDW-verversing mislukt:", e));
       }
-      res.json({ ...result.profile, refresh: { ok: result.ok, error: result.error, changed: result.changed } });
+      res.json({ ...result.profile, refresh: { ok: result.ok, error: result.error, code: result.code, changed: result.changed } });
     } catch (error) {
       fail(res, error, "RDW-gegevens konden niet worden opgehaald");
     }

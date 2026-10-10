@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { dateLabelNl, formatEuro } from "@shared/fiscal-format";
-import { FISCAL_STATUS_LABELS, FUEL_CATEGORIES } from "@shared/fiscal-types";
+import { FISCAL_STATUS_LABELS, FUEL_CATEGORIES, parseRdwErrorCode } from "@shared/fiscal-types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,12 +29,15 @@ export function VehicleFiscalTab({ vehicleId }: { vehicleId: number }) {
   const [reason, setReason] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
+  // The server sends a stable code in front of the technical message; the screen speaks Dutch from the code alone.
+  const rdwReason = (stored: string | null | undefined) => t(`vehicle.rdwErrors.${parseRdwErrorCode(stored) ?? "unknown"}`);
+
   const refresh = useMutation({
-    mutationFn: async () => (await apiRequest("POST", `/api/vehicles/${vehicleId}/fiscal-profile/refresh`)).json() as Promise<FiscalProfileResponse & { refresh: { ok: boolean; error: string | null; changed: string[] } }>,
+    mutationFn: async () => (await apiRequest("POST", `/api/vehicles/${vehicleId}/fiscal-profile/refresh`)).json() as Promise<FiscalProfileResponse & { refresh: { ok: boolean; error: string | null; code?: string | null; changed: string[] } }>,
     onSuccess: (row) => {
       queryClient.invalidateQueries({ queryKey: key });
       queryClient.invalidateQueries({ queryKey: ["/api/fiscal/overview"] });
-      toast(row.refresh.ok ? { title: t("vehicle.refreshed", { count: row.refresh.changed.length }) } : { title: t("vehicle.refreshFailed", { message: row.refresh.error ?? "" }), variant: "destructive" });
+      toast(row.refresh.ok ? { title: t("vehicle.refreshed", { count: row.refresh.changed.length }) } : { title: t("vehicle.refreshFailed", { message: rdwReason(row.refresh.error) }), variant: "destructive" });
     },
     onError: (e: Error) => toast({ title: e.message.replace(/^\d{3}:\s*/, ""), variant: "destructive" }),
   });
@@ -155,7 +158,7 @@ export function VehicleFiscalTab({ vehicleId }: { vehicleId: number }) {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">
               {t("vehicle.rdw")}: {data.rdwRetrievedAt ? t("vehicle.rdwAt", { at: new Date(data.rdwRetrievedAt).toLocaleString("nl-NL") }) : t("vehicle.rdwNever")}
-              {data.rdwError ? ` — ${t("vehicle.rdwError", { message: data.rdwError })}` : ""}
+              {data.rdwError ? ` — ${t("vehicle.rdwError", { message: rdwReason(data.rdwError) })}` : ""}
             </p>
             {canReview && (
               <Button size="sm" variant="outline" disabled={refresh.isPending} onClick={() => refresh.mutate()} data-testid="button-profile-refresh">

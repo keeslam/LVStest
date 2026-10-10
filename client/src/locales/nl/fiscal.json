@@ -81,7 +81,10 @@
     "publishedBy": "Gepubliceerd door",
     "supersededBy": "Vervangen door versie {{n}}",
     "rejectedWith": "Afgewezen: {{reason}}",
-    "confirmArchive": "Deze versie archiveren?"
+    "confirmArchive": "Deze versie archiveren?",
+    "archiveTitle": "Versie archiveren?",
+    "archiveDescription": "Een gearchiveerde versie kan niet meer worden gewijzigd of gepubliceerd. Dit kan niet ongedaan worden gemaakt.",
+    "archived": "Versie gearchiveerd."
   },
   "impact": {
     "title": "Impactvoorbeeld (schatting)",
@@ -181,6 +184,21 @@
       "usage_overridden": "Gebruik overschreven",
       "profile_refreshed": "Profiel ververst",
       "profile_overridden": "Profiel handmatig gezet"
+    },
+    "filterAction": "Actie",
+    "allActions": "Alle acties",
+    "filterVehicle": "Kenteken",
+    "filterVehiclePlaceholder": "Zoek op kenteken",
+    "hideRefreshes": "Automatische profielverversingen verbergen",
+    "shown": "{{count}} gebeurtenissen getoond",
+    "entities": {
+      "rule_version": "Regelversie",
+      "parameter": "Parameter",
+      "assessment": "Beoordeling",
+      "review_case": "Beoordelingszaak",
+      "usage_period": "Gebruiksperiode",
+      "fiscal_profile": "Voertuigprofiel",
+      "route": "Route"
     }
   },
   "usage": {
@@ -274,7 +292,14 @@
     "no": "Nee",
     "refresh": "RDW opnieuw ophalen",
     "refreshed": "RDW-gegevens opgehaald; {{count}} feit(en) bijgewerkt. Open perioden worden opnieuw beoordeeld.",
-    "refreshFailed": "RDW-ophaling mislukt: {{message}}"
+    "refreshFailed": "RDW-ophaling mislukt: {{message}}",
+    "rdwErrors": {
+      "NOT_FOUND": "Dit kenteken is niet gevonden bij de RDW. Controleer het kenteken van het voertuig.",
+      "TIMEOUT": "De RDW reageerde niet op tijd. Probeer het later opnieuw; dit zegt niets over het kenteken.",
+      "UPSTREAM_ERROR": "De RDW-dienst gaf een storing. Probeer het later opnieuw.",
+      "UNREACHABLE": "De RDW is nu niet bereikbaar. Probeer het later opnieuw.",
+      "unknown": "De RDW-gegevens konden niet worden opgehaald."
+    }
   },
   "common": {
     "final": "Eindberekening",
@@ -330,6 +355,8 @@
     "byCustomer": "Per klant",
     "empty": "Geen beoordeelde perioden in dit jaar.",
     "open": "open",
-    "pdf": "PDF"
+    "pdf": "PDF",
+    "notStarted": "Het rapport toont {{first}}, het eerste jaar waarin de wet geldt (vanaf {{date}}). In {{current}} worden nog geen fiscale perioden beoordeeld, daarom is er nog niets te tonen.",
+    "emptyNotStarted": "Er zijn nog geen beoordeelde perioden: de fiscale check rekent pas vanaf {{date}}."
   }
 }

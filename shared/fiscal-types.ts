@@ -327,3 +327,20 @@ export interface PortalFiscalSummaryDto {
   warningsEnabled: boolean;
   reportsEnabled: boolean;
 }
+
+/**
+ * Why an RDW lookup failed, as a stable code the screen translates. The profile
+ * stores it in front of the technical message ("TIMEOUT: RDW API request timed out").
+ */
+export const RDW_ERROR_CODES = ["NOT_FOUND", "TIMEOUT", "UPSTREAM_ERROR", "UNREACHABLE"] as const;
+export type RdwErrorCode = (typeof RDW_ERROR_CODES)[number];
+
+export function formatRdwError(code: RdwErrorCode, message: string): string {
+  return `${code}: ${message}`;
+}
+
+/** The code at the start of a stored RDW error, or null for older rows that hold only the message. */
+export function parseRdwErrorCode(stored: string | null | undefined): RdwErrorCode | null {
+  const match = stored ? /^([A-Z_]+): /.exec(stored) : null;
+  return match && (RDW_ERROR_CODES as readonly string[]).includes(match[1]) ? (match[1] as RdwErrorCode) : null;
+}

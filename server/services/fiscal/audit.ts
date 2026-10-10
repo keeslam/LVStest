@@ -6,9 +6,9 @@
  * transaction as the change, so there is never a published version without
  * its "published" event or the other way round.
  */
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, gte, inArray, lte, notInArray } from "drizzle-orm";
 import { db } from "../../db";
-import { fiscalAuditEvents, type FiscalAuditEvent } from "../../../shared/schema";
+import { fiscalAuditEvents, vehicles, type FiscalAuditEvent } from "../../../shared/schema";
 import type { FiscalAuditAction, FiscalAuditEntityType } from "../../../shared/fiscal-types";
 import { FISCAL_SCOPE_GLOBAL } from "../../../shared/fiscal-types";
 
@@ -80,13 +80,19 @@ export interface AuditFilter {
   customerId?: number;
   vehicleId?: number;
   username?: string;
+  /** One or more actions to show / to leave out (comma separated in the query string). */
+  actions?: string[];
+  excludeActions?: string[];
   from?: string;
   to?: string;
   limit?: number;
 }
 
 /** Reads the trail. The only other thing this module does is insert. */
-export async function listFiscalAuditEvents(filter: AuditFilter = {}): Promise<FiscalAuditEvent[]> {
+/** An audit row plus the plate of the vehicle it is about, so the trail can say "AB-123-C" instead of "fiscal_profile #95". */
+export type FiscalAuditEventRow = FiscalAuditEvent & { licensePlate: string | null };
+
+export async function listFiscalAuditEvents(filter: AuditFilter = {}): Promise<FiscalAuditEventRow[]> {
   const conditions = [];
   if (filter.ruleVersionId !== undefined) conditions.push(eq(fiscalAuditEvents.ruleVersionId, filter.ruleVersionId));
   if (filter.entityType) conditions.push(eq(fiscalAuditEvents.entityType, filter.entityType));
@@ -94,11 +100,14 @@ export async function listFiscalAuditEvents(filter: AuditFilter = {}): Promise<F
   if (filter.customerId !== undefined) conditions.push(eq(fiscalAuditEvents.customerId, filter.customerId));
   if (filter.vehicleId !== undefined) conditions.push(eq(fiscalAuditEvents.vehicleId, filter.vehicleId));
   if (filter.username) conditions.push(eq(fiscalAuditEvents.username, filter.username));
+  if (filter.actions?.length) conditions.push(inArray(fiscalAuditEvents.action, filter.actions));
+  if (filter.excludeActions?.length) conditions.push(notInArray(fiscalAuditEvents.action, filter.excludeActions));
   if (filter.from) conditions.push(gte(fiscalAuditEvents.occurredAt, new Date(filter.from)));
   if (filter.to) conditions.push(lte(fiscalAuditEvents.occurredAt, new Date(filter.to)));
   return db
-    .select()
+    .select({ ...getTableColumns(fiscalAuditEvents), licensePlate: vehicles.licensePlate })
     .from(fiscalAuditEvents)
+    .leftJoin(vehicles, eq(fiscalAuditEvents.vehicleId, vehicles.id))
     .where(conditions.length ? and(...conditions) : undefined)
     .orderBy(desc(fiscalAuditEvents.occurredAt), desc(fiscalAuditEvents.id))
     .limit(Math.min(filter.limit ?? 100, 500));

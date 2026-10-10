@@ -85,6 +85,27 @@ describe("profile refresh from RDW", () => {
     expect(result.profile.fuelCategory).toBe("fossil");
   });
 
+  it("tells an unknown plate from a slow or unreachable service by a stable code (audit A-16-4)", async () => {
+    const vehicle = await createFixtureVehicle({ fuel: "Diesel" });
+    const notFound = await refreshFromRdw(vehicle.id, FIXTURE_ACTOR, rdw(null, []));
+    expect(notFound.code).toBe("NOT_FOUND");
+    expect(notFound.profile.rdwError).toMatch(/^NOT_FOUND: /);
+
+    const abort = Object.assign(new Error("aborted"), { name: "AbortError" });
+    const timedOut = await refreshFromRdw(vehicle.id, FIXTURE_ACTOR, vi.fn(async () => { throw abort; }) as unknown as typeof fetch);
+    expect(timedOut.code).toBe("TIMEOUT");
+    expect(timedOut.profile.rdwError).toMatch(/^TIMEOUT: /);
+
+    const down = await refreshFromRdw(vehicle.id, FIXTURE_ACTOR, vi.fn(async () => { throw new TypeError("fetch failed"); }) as unknown as typeof fetch);
+    expect(down.code).toBe("UNREACHABLE");
+
+    const upstream = await refreshFromRdw(vehicle.id, FIXTURE_ACTOR, rdw(null, [], 503));
+    expect(upstream.code).toBe("UPSTREAM_ERROR");
+
+    const fine = await refreshFromRdw(vehicle.id, FIXTURE_ACTOR, FOSSIL);
+    expect(fine.code).toBeNull();
+  });
+
   it("leaves the catalogue value unknown when RDW has none", async () => {
     const vehicle = await createFixtureVehicle({ fuel: null });
     const { profile } = await refreshFromRdw(vehicle.id, FIXTURE_ACTOR, rdw({ kenteken: "FIXT2", europese_voertuigcategorie: "N1", voertuigsoort: "Bedrijfsauto" }, [{ brandstof_omschrijving: "Diesel" }]));

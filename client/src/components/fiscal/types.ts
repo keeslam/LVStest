@@ -147,6 +147,11 @@ export interface AuditEvent {
   customerId: number | null;
   vehicleId: number | null;
   details: Record<string, unknown> | null;
+  /** Only on /api/fiscal/audit: the plate of the vehicle and the parameter and values in words. */
+  licensePlate?: string | null;
+  parameterLabel?: string | null;
+  oldValueLabel?: string | null;
+  newValueLabel?: string | null;
 }
 
 export interface ReviewCaseRow {

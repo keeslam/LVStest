@@ -269,3 +269,33 @@ describe("fiscale API — rapporten en PDF (stap 6)", () => {
     expect((await nobody.get(`/api/fiscal/assessments/${assessment.id}/pdf`)).status).toBe(403);
   });
 });
+
+describe("fiscale API — auditlog filteren", () => {
+  it("names the plate on vehicle events and can leave out or select an action", async () => {
+    const vehicle = await createFixtureVehicle();
+    const { recordFiscalEvent } = await import("../services/fiscal/audit");
+    await recordFiscalEvent(FIXTURE_ACTOR, { action: "profile_refreshed", entityType: "fiscal_profile", entityId: 987654, vehicleId: vehicle.id });
+    await recordFiscalEvent(FIXTURE_ACTOR, { action: "profile_overridden", entityType: "fiscal_profile", entityId: 987654, vehicleId: vehicle.id, reasonText: "test" });
+
+    const all = await auditor.get(`/api/fiscal/audit?vehicleId=${vehicle.id}`);
+    expect(all.status).toBe(200);
+    expect(all.body).toHaveLength(2);
+    expect(all.body.every((e: any) => e.licensePlate === vehicle.licensePlate)).toBe(true);
+
+    const without = await auditor.get(`/api/fiscal/audit?vehicleId=${vehicle.id}&excludeAction=profile_refreshed`);
+    expect(without.body.map((e: any) => e.action)).toEqual(["profile_overridden"]);
+
+    const only = await auditor.get(`/api/fiscal/audit?vehicleId=${vehicle.id}&action=profile_refreshed`);
+    expect(only.body.map((e: any) => e.action)).toEqual(["profile_refreshed"]);
+  });
+
+  it("names the parameter and its values in words, so the audit tab needs no right beyond its own (A-16-1)", async () => {
+    const { recordFiscalEvent } = await import("../services/fiscal/audit");
+    await recordFiscalEvent(FIXTURE_ACTOR, { action: "draft_edited", entityType: "parameter", parameterKey: "ROUNDING_MODE", oldValue: null, newValue: "half_up_cents" });
+    const res = await auditor.get(`/api/fiscal/audit?action=draft_edited&username=${encodeURIComponent(FIXTURE_ACTOR.username)}`);
+    const row = res.body.find((e: any) => e.parameterKey === "ROUNDING_MODE");
+    expect(row.parameterLabel).toBe("Afronding");
+    expect(row.oldValueLabel).toBeNull();
+    expect(row.newValueLabel).toBe("afronden op centen, halve cent omhoog");
+  });
+});

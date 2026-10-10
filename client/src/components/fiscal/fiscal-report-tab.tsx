@@ -38,6 +38,12 @@ export function FiscalReportTab() {
   const { data: customers = [] } = useQuery<CustomerOption[]>({ queryKey: ["/api/customers"] });
   const { data: report, isLoading, error } = useQuery<FiscalReport>({ queryKey: [reportUrl(year, customerId, false)] });
 
+  // Before the law applies there is nothing to assess: say so, instead of an unexplained empty list.
+  const firstYear = Number(USAGE_PERIOD_DERIVATION_START.slice(0, 4));
+  const currentYear = new Date().getFullYear();
+  const notStarted = currentYear < firstYear;
+  const startLabel = dateLabelNl(USAGE_PERIOD_DERIVATION_START);
+
   const stateTone: Record<string, string> = { final: "bg-emerald-100 text-emerald-900", settled: "bg-slate-100 text-slate-800", provisional: "bg-amber-100 text-amber-900" };
 
   return (
@@ -79,6 +85,12 @@ export function FiscalReportTab() {
           </Button>
         </CardContent>
       </Card>
+
+      {notStarted && (
+        <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" data-testid="fiscal-report-not-started">
+          {t("report.notStarted", { first: firstYear, date: startLabel, current: currentYear })}
+        </p>
+      )}
 
       {isLoading && <p className="text-sm text-muted-foreground">{t("common.loading")}</p>}
       {error && <p className="text-sm text-destructive">{t("common.error", { message: (error as Error).message })}</p>}
@@ -143,7 +155,7 @@ export function FiscalReportTab() {
 
           <Card>
             <CardContent className="pt-4">
-              {report.rows.length === 0 && <p className="text-sm text-muted-foreground">{t("report.empty")}</p>}
+              {report.rows.length === 0 && <p className="text-sm text-muted-foreground">{notStarted && year <= firstYear ? t("report.emptyNotStarted", { date: startLabel }) : t("report.empty")}</p>}
               {report.rows.length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm" data-testid="fiscal-report-rows">

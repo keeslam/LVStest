@@ -11,7 +11,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "../../db";
 import { vehicleFiscalProfiles, vehicles, type VehicleFiscalProfile } from "../../../shared/schema";
-import { FUEL_CATEGORIES, type FuelCategory } from "../../../shared/fiscal-types";
+import { FUEL_CATEGORIES, formatRdwError, type FuelCategory, type RdwErrorCode } from "../../../shared/fiscal-types";
 import { EUROPEAN_CATEGORIES } from "./definitions";
 import { isValidIsoDate } from "./calendar";
 import { FiscalNotFoundError, FiscalValidationError } from "./errors";
@@ -242,10 +242,18 @@ export function normaliseRdwFiscal(data: RdwFiscalData): RdwNormalised {
   };
 }
 
+/** The three errors rdw-api.ts throws carry a code; anything else (a refused connection, DNS) means the service could not be reached. */
+function classifyRdwError(error: unknown): RdwErrorCode {
+  const code = (error as { code?: unknown } | null)?.code;
+  return code === "NOT_FOUND" || code === "TIMEOUT" || code === "UPSTREAM_ERROR" ? code : "UNREACHABLE";
+}
+
 export interface RefreshResult {
   profile: VehicleFiscalProfile;
   ok: boolean;
   error: string | null;
+  /** Stable reason for a failure, for the client to translate; null on success. */
+  code: RdwErrorCode | null;
   changed: string[];
 }
 
@@ -264,8 +272,12 @@ export async function refreshFromRdw(vehicleId: number, actor: Actor, fetchImpl:
     data = await fetchRdwFiscalData(vehicle.licensePlate, fetchImpl);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const [failed] = await db.update(vehicleFiscalProfiles).set({ rdwError: message, updatedAt: new Date() }).where(eq(vehicleFiscalProfiles.id, profile.id)).returning();
-    return { profile: failed, ok: false, error: message, changed: [] };
+    // The code travels in front of the message ("TIMEOUT: ..."), so the screen can say whether the plate
+    // is unknown or the service is slow without matching English text (audit A-16-4).
+    const code = classifyRdwError(error);
+    const stored = formatRdwError(code, message);
+    const [failed] = await db.update(vehicleFiscalProfiles).set({ rdwError: stored, updatedAt: new Date() }).where(eq(vehicleFiscalProfiles.id, profile.id)).returning();
+    return { profile: failed, ok: false, error: stored, code, changed: [] };
   }
 
   const n = normaliseRdwFiscal(data);
@@ -306,6 +318,6 @@ export async function refreshFromRdw(vehicleId: number, actor: Actor, fetchImpl:
       { action: "profile_refreshed", entityType: "fiscal_profile", entityId: profile.id, vehicleId, details: { changed, retrievedAt: data.retrievedAt } },
       tx,
     );
-    return { profile: updated, ok: true, error: null, changed: [...changed] };
+    return { profile: updated, ok: true, error: null, code: null, changed: [...changed] };
   });
 }

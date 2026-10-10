@@ -81,7 +81,10 @@
     "publishedBy": "Published by",
     "supersededBy": "Superseded by version {{n}}",
     "rejectedWith": "Rejected: {{reason}}",
-    "confirmArchive": "Archive this version?"
+    "confirmArchive": "Archive this version?",
+    "archiveTitle": "Archive version?",
+    "archiveDescription": "An archived version can no longer be changed or published. This cannot be undone.",
+    "archived": "Version archived."
   },
   "impact": {
     "title": "Impact preview (estimate)",
@@ -181,6 +184,21 @@
       "usage_overridden": "Usage overridden",
       "profile_refreshed": "Profile refreshed",
       "profile_overridden": "Profile set by hand"
+    },
+    "filterAction": "Action",
+    "allActions": "All actions",
+    "filterVehicle": "Plate",
+    "filterVehiclePlaceholder": "Search by plate",
+    "hideRefreshes": "Hide automatic profile refreshes",
+    "shown": "{{count}} events shown",
+    "entities": {
+      "rule_version": "Rule version",
+      "parameter": "Parameter",
+      "assessment": "Assessment",
+      "review_case": "Review case",
+      "usage_period": "Usage period",
+      "fiscal_profile": "Vehicle profile",
+      "route": "Route"
     }
   },
   "usage": {
@@ -274,7 +292,14 @@
     "no": "No",
     "refresh": "Refresh from RDW",
     "refreshed": "RDW data retrieved; {{count}} fact(s) updated. Open periods are being reassessed.",
-    "refreshFailed": "RDW retrieval failed: {{message}}"
+    "refreshFailed": "RDW retrieval failed: {{message}}",
+    "rdwErrors": {
+      "NOT_FOUND": "This plate was not found at the RDW. Check the vehicle's plate.",
+      "TIMEOUT": "The RDW did not respond in time. Try again later; this says nothing about the plate.",
+      "UPSTREAM_ERROR": "The RDW service reported a fault. Try again later.",
+      "UNREACHABLE": "The RDW cannot be reached right now. Try again later.",
+      "unknown": "The RDW data could not be fetched."
+    }
   },
   "common": {
     "final": "Final calculation",
@@ -330,6 +355,8 @@
     "byCustomer": "Per customer",
     "empty": "No assessed periods in this year.",
     "open": "open",
-    "pdf": "PDF"
+    "pdf": "PDF",
+    "notStarted": "The report shows {{first}}, the first year the law applies (from {{date}}). No fiscal periods are assessed in {{current}} yet, so there is nothing to show.",
+    "emptyNotStarted": "There are no assessed periods yet: the fiscal check only calculates from {{date}}."
   }
 }
