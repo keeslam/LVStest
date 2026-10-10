@@ -12,6 +12,8 @@ import { getUploadsDir } from "../../shared/paths";
 import { UserPermission, customers } from "../../shared/schema";
 import { db } from "../db";
 import { storage } from "../storage";
+import { ftpsClient } from "../services/cjib/ftps-client";
+import { finesStorage } from "../services/fines-storage";
 import { eq } from "drizzle-orm";
 
 const deps = { uploadsDir: getUploadsDir(), requireAuth: (_r: any, _s: any, n: any) => n() } as any;
@@ -87,6 +89,95 @@ describe("fines routes", () => {
     expect(ok.body.status).toBe("linked");
     const back = await request(manager).post(`/api/fines/${id}/unlink`);
     expect(back.body.status).toBe("new");
+  });
+
+  describe("failures answer a fixed message and a code, never the exception text", () => {
+    const SECRET = "SECRET-FTPS 530 login incorrect for ftps.internal.example:990 C:\secret\path";
+    const quiet = () => vi.spyOn(console, "error").mockImplementation(() => {});
+    const wire = (body: unknown) => JSON.stringify(body);
+
+    it("link: a deliberate refusal keeps its sentence and gets a code", async () => {
+      const gone = await request(manager).post("/api/fines/2147483000/link").send({ customerId });
+      expect(gone.status).toBe(400);
+      expect(gone.body).toMatchObject({ message: "Fine not found", code: "FINE_NOT_FOUND" });
+
+      const created = await request(manager).post("/api/fines").send({ licensePlate: plate, offenceAt: "2026-09-21T10:00:00.000Z", description: "Parkeren", amount: 60 });
+      const wrong = await request(manager).post(`/api/fines/${created.body.fine.id}/link`).send({ customerId: otherId, reservationId: resId });
+      expect(wrong.status).toBe(400);
+      expect(wrong.body).toMatchObject({ message: "Reservation does not belong to customer", code: "FINE_RESERVATION_MISMATCH" });
+      const wrongDriver = await request(manager).post(`/api/fines/${created.body.fine.id}/link`).send({ customerId: otherId, driverId });
+      expect(wrongDriver.body).toMatchObject({ message: "Driver does not belong to customer", code: "FINE_DRIVER_MISMATCH" });
+    });
+
+    it("link: a raw exception is FINE_LINK_FAILED", async () => {
+      const spy = vi.spyOn(finesStorage, "getFine").mockRejectedValue(new Error(SECRET));
+      const log = quiet();
+      try {
+        const res = await request(manager).post("/api/fines/1/link").send({ customerId });
+        expect(res.status).toBe(500);
+        expect(res.body.code).toBe("FINE_LINK_FAILED");
+        expect(wire(res.body)).not.toContain("SECRET-FTPS");
+        expect(log).toHaveBeenCalled();
+      } finally { spy.mockRestore(); log.mockRestore(); }
+    });
+
+    it("unlink: a missing fine is a 404 with FINE_NOT_FOUND, a raw exception is FINE_UNLINK_FAILED", async () => {
+      const gone = await request(manager).post("/api/fines/2147483000/unlink");
+      expect(gone.status).toBe(404);
+      expect(gone.body).toMatchObject({ message: "Fine not found", code: "FINE_NOT_FOUND" });
+
+      const spy = vi.spyOn(finesStorage, "updateFine").mockRejectedValue(new Error(SECRET));
+      const log = quiet();
+      try {
+        const res = await request(manager).post("/api/fines/1/unlink");
+        expect(res.status).toBe(500);
+        expect(res.body.code).toBe("FINE_UNLINK_FAILED");
+        expect(wire(res.body)).not.toContain("SECRET-FTPS");
+      } finally { spy.mockRestore(); log.mockRestore(); }
+    });
+
+    it("cjib test: an FTPS failure is 502 CJIB_UNAVAILABLE without the server's text", async () => {
+      const spy = vi.spyOn(ftpsClient, "listInbox").mockRejectedValue(new Error(SECRET));
+      const log = quiet();
+      try {
+        const res = await request(manager).post("/api/fines/cjib-config/test").send({ enabled: true, host: "ftps.cjib.nl", username: "u", password: "p" });
+        expect(res.status).toBe(502);
+        expect(res.body.ok).toBe(false);
+        expect(res.body.code).toBe("CJIB_UNAVAILABLE");
+        expect(wire(res.body)).not.toContain("SECRET-FTPS");
+        expect(wire(res.body)).not.toContain("530");
+        expect(log).toHaveBeenCalled();
+      } finally { spy.mockRestore(); log.mockRestore(); }
+    });
+
+    it("cjib config save: a validation message stays, a storage failure is CJIB_CONFIG_SAVE_FAILED", async () => {
+      const invalid = await request(manager).put("/api/fines/cjib-config").send({ pollMinutes: 1 });
+      expect(invalid.status).toBe(400);
+      expect(typeof invalid.body.message).toBe("string");
+      expect(invalid.body.code).toBeUndefined();
+
+
+      const spies = [
+        vi.spyOn(storage, "updateAppSetting").mockRejectedValue(new Error(SECRET)),
+        vi.spyOn(storage, "createAppSetting").mockRejectedValue(new Error(SECRET)),
+      ];
+      const log = quiet();
+      try {
+        const res = await request(manager).put("/api/fines/cjib-config").send({ enabled: false, host: "", username: "", password: "" });
+        expect(res.status).toBe(500);
+        expect(res.body.code).toBe("CJIB_CONFIG_SAVE_FAILED");
+        expect(wire(res.body)).not.toContain("SECRET-FTPS");
+      } finally { spies.forEach((s) => s.mockRestore()); log.mockRestore(); }
+    });
+
+    it("letter upload: a rejected file keeps the validator's sentence with FINE_LETTER_INVALID, other failures are FINE_LETTER_FAILED", async () => {
+      const bad = await request(manager).post("/api/fines")
+        .field("licensePlate", plate).field("offenceAt", "2026-09-22T10:00:00.000Z").field("description", "x").field("amount", "10")
+        .attach("letterFile", Buffer.from("not a pdf at all"), { filename: "brief.pdf", contentType: "application/pdf" });
+      expect(bad.status).toBe(400);
+      expect(bad.body.code).toBe("FINE_LETTER_INVALID");
+      expect(typeof bad.body.message).toBe("string");
+    });
   });
 
   it("cancels, reactivates, deletes to the recycle bin and restores", async () => {

@@ -70,10 +70,12 @@ describe("fine letter scan", () => {
     expect(res.body.candidates).toEqual({ covering: [], near: [] });
   });
 
-  it("reports a scanner failure as 502", async () => {
+  it("reports a scanner failure as 502 without the scanner's text", async () => {
     processFineLetterWithAI.mockRejectedValueOnce(new Error("GEMINI_API_KEY is not configured"));
     const res = await request(app).post("/api/fines/scan").attach("letterFile", PDF, "brief.pdf");
     expect(res.status).toBe(502);
-    expect(res.body.message).toContain("GEMINI_API_KEY");
+    // Final wave B: the scanner's text (API key names, provider errors) stays in the log.
+    expect(res.body.code).toBe("FINE_SCAN_FAILED");
+    expect(JSON.stringify(res.body)).not.toContain("GEMINI_API_KEY");
   });
 });

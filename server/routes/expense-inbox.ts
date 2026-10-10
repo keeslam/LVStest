@@ -77,7 +77,11 @@ export function registerExpenseInboxRoutes(app: Express): void {
       await AuditLogger.logFromRequest(req, "expense.inbox.config", "settings", 0, { enabled: saved.enabled, host: saved.host, pollMinutes: saved.pollMinutes, senders: saved.allowedSenders.length });
       res.json(maskInvoiceInboxConfig(saved));
     } catch (e) {
-      res.status(400).json({ message: e instanceof z.ZodError ? e.errors[0]?.message ?? "Invalid input" : (e as Error).message });
+      if (e instanceof z.ZodError) return res.status(400).json({ message: e.errors[0]?.message ?? "Invalid input" });
+      // The outbound guard's sentence is fixed and written for the user.
+      if (e instanceof OutboundBlockedError) return res.status(400).json({ message: e.message });
+      console.error("Invoice mailbox settings could not be saved:", e);
+      res.status(500).json({ message: "The mailbox settings could not be saved", code: "IMAP_CONFIG_SAVE_FAILED" });
     }
   });
 
@@ -108,7 +112,9 @@ export function registerExpenseInboxRoutes(app: Express): void {
     } catch (e) {
       // One answer for every refused destination: the route is not a port scanner (cf. BUG-071).
       if (e instanceof OutboundBlockedError) return res.status(400).json({ ok: false, message: OUTBOUND_BLOCKED_MESSAGE });
-      res.status(502).json({ ok: false, message: (e as Error).message });
+      // The mail server's own text (host names, login replies) stays in the log.
+      console.error("Invoice mailbox connection test failed:", e);
+      res.status(502).json({ ok: false, message: "Could not connect to the mailbox", code: "IMAP_UNAVAILABLE" });
     }
   });
 

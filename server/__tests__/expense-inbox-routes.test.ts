@@ -126,6 +126,25 @@ describe("expense inbox routes", () => {
     const bad = await request(admin).put("/api/expenses/inbox/config").send({ port: 25 });
     expect(bad.status).toBe(400);
     expect(bad.body.message).toMatch(/993/);
+    expect(bad.body.code).toBeUndefined();
+  });
+
+  it("answers a failed settings save with a fixed message and a code, not the exception text", async () => {
+    const spies = [
+      vi.spyOn(storage, "updateAppSetting").mockRejectedValue(new Error("SECRET-PG relation app_settings")),
+      vi.spyOn(storage, "createAppSetting").mockRejectedValue(new Error("SECRET-PG relation app_settings")),
+    ];
+    const quiet = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const res = await request(admin).put("/api/expenses/inbox/config").send({ enabled: false, host: "imap.example.test", port: 993, secure: true, username: "u", password: "x", allowedSenders: ["@garage-test.invalid"], pollMinutes: 30 });
+      expect(res.status).toBe(500);
+      expect(res.body.code).toBe("IMAP_CONFIG_SAVE_FAILED");
+      expect(JSON.stringify(res.body)).not.toContain("SECRET-PG");
+      expect(quiet).toHaveBeenCalled();
+    } finally {
+      spies.forEach((s) => s.mockRestore());
+      quiet.mockRestore();
+    }
   });
 
   it("tests the connection with the stored password behind the mask, and gives one answer for a blocked host", async () => {
@@ -154,7 +173,9 @@ describe("expense inbox routes", () => {
     setInvoiceImapClient(mailboxWith([], new Error("Invalid credentials")));
     const refused = await request(admin).post("/api/expenses/inbox/config/test").send({ host: "imap.example.test", username: "u", password: "x" });
     expect(refused.status).toBe(502);
-    expect(refused.body).toEqual({ ok: false, message: "Invalid credentials" });
+    // Final wave B: the mail server's own text stays in the log.
+    expect(refused.body).toEqual({ ok: false, message: "Could not connect to the mailbox", code: "IMAP_UNAVAILABLE" });
+    expect(JSON.stringify(refused.body)).not.toContain("Invalid credentials");
   });
 
   /** M3: the mask means "keep what is stored" only for the server it was stored for. */

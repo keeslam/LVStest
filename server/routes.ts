@@ -182,6 +182,7 @@ import type { RouteDeps } from "./routes/deps";
 import { installIdParamValidation, rejectNullBytesInPath } from "./middleware/parseIntParam";
 import { parsePartialUpdate, parseCreateBody, BodyValidationError, coerceTimestampValue } from "./middleware/validateBody";
 import { sendRouteError, HttpError } from "./utils/route-errors";
+import { isDeliberateStorageRefusal } from "./utils/storage-refusals";
 import { UploadRejectedError } from "./utils/security/fileUploadSecurity";
 import { db } from "./db";
 import { sql, eq, desc } from "drizzle-orm";
@@ -5011,10 +5012,12 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(error.status).json({ message: error.message, code: error.code });
       }
       console.error("Error assigning spare vehicle:", error);
-      if (error instanceof Error) {
+      // A sentence storage wrote on purpose goes out as it is; a raw exception
+      // stays in the log (final wave B, P10 review Minor 5).
+      if (isDeliberateStorageRefusal(error)) {
         res.status(400).json({ message: error.message });
       } else {
-        res.status(500).json({ message: "Error assigning spare vehicle" });
+        res.status(500).json({ message: "Error assigning spare vehicle", code: "SPARE_ASSIGN_FAILED" });
       }
     }
   });
@@ -5623,17 +5626,14 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       console.error("Error during reservation pickup:", error);
 
-      if (error instanceof Error) {
+      if (isDeliberateStorageRefusal(error)) {
         if (error.message.includes('cannot be less than')) {
           return res.status(409).json({ message: error.message });
         }
-        if (error.message.includes('Cannot pickup')) {
-          return res.status(400).json({ message: error.message });
-        }
         return res.status(400).json({ message: error.message });
       }
-      
-      res.status(500).json({ message: "Internal server error" });
+
+      res.status(500).json({ message: "The pickup could not be completed", code: "RESERVATION_PICKUP_FAILED" });
     }
   });
 
@@ -5857,18 +5857,15 @@ export async function registerRoutes(app: Express): Promise<void> {
       });
     } catch (error) {
       console.error("Error during reservation return:", error);
-      
-      if (error instanceof Error) {
+
+      if (isDeliberateStorageRefusal(error)) {
         if (error.message.includes('cannot be less than')) {
           return res.status(409).json({ message: error.message });
         }
-        if (error.message.includes('Cannot return')) {
-          return res.status(400).json({ message: error.message });
-        }
         return res.status(400).json({ message: error.message });
       }
-      
-      res.status(500).json({ message: "Internal server error" });
+
+      res.status(500).json({ message: "The return could not be completed", code: "RESERVATION_RETURN_FAILED" });
     }
   });
 
@@ -5911,8 +5908,10 @@ export async function registerRoutes(app: Express): Promise<void> {
         });
       }
       
-      if (error instanceof Error) {
-        // Map storage errors to proper HTTP status codes
+      if (isDeliberateStorageRefusal(error)) {
+        // Map storage errors to proper HTTP status codes. The client matches
+        // 409 + "already exists" (schedule-maintenance-dialog), so the sentence
+        // stays as it is.
         if (error.message.includes('not found')) {
           return res.status(404).json({ message: error.message });
         }
@@ -5921,8 +5920,8 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
         return res.status(400).json({ message: error.message });
       }
-      
-      res.status(500).json({ message: "Internal server error" });
+
+      res.status(500).json({ message: "The placeholder reservation could not be created", code: "PLACEHOLDER_CREATE_FAILED" });
     }
   });
 
@@ -6026,7 +6025,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         });
       }
       
-      if (error instanceof Error) {
+      if (isDeliberateStorageRefusal(error)) {
         // Map storage errors to proper HTTP status codes
         if (error.message.includes('not found')) {
           return res.status(404).json({ message: error.message });
@@ -6036,8 +6035,8 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
         return res.status(400).json({ message: error.message });
       }
-      
-      res.status(500).json({ message: "Internal server error" });
+
+      res.status(500).json({ message: "The vehicle could not be assigned to the placeholder", code: "PLACEHOLDER_ASSIGN_FAILED" });
     }
   });
 

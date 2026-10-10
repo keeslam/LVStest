@@ -41,6 +41,23 @@ function idParam(req: Request, res: Response): number | null {
   return id;
 }
 
+/** A letter the upload check refused: its sentence is written for the user. */
+class LetterRejectedError extends Error {}
+
+/**
+ * Sentences fine-attribution throws on purpose. They keep their wording and
+ * status and gain a code the client words; any other Error is a raw exception
+ * and never goes on the wire (final wave B, P10 review Minor 5).
+ */
+const FINE_REFUSAL_CODES: Record<string, string> = {
+  "Fine not found": "FINE_NOT_FOUND",
+  "Reservation does not belong to customer": "FINE_RESERVATION_MISMATCH",
+  "Driver does not belong to customer": "FINE_DRIVER_MISMATCH",
+};
+function fineRefusalCode(error: unknown): string | null {
+  return error instanceof Error ? FINE_REFUSAL_CODES[error.message] ?? null : null;
+}
+
 /** Staff side of traffic fines: entry, attribution, linking, charging, letters. */
 export function registerFineRoutes(app: Express, deps: RouteDeps): void {
   const actor = (req: Request) => req.user?.username ?? "system";
@@ -56,8 +73,14 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
   async function storeLetter(req: Request): Promise<string | null> {
     if (!req.file) return null;
     const check = await validateAfterUpload(req.file.path, req.file.originalname, req.file.mimetype, "document");
-    if (!check.valid) { fs.rmSync(req.file.path, { force: true }); throw new Error(check.error ?? "Invalid file"); }
+    if (!check.valid) { fs.rmSync(req.file.path, { force: true }); throw new LetterRejectedError(check.error ?? "Invalid file"); }
     return getRelativePath(req.file.path);
+  }
+
+  function sendLetterFailure(res: Response, error: unknown) {
+    if (error instanceof LetterRejectedError) return res.status(400).json({ message: error.message, code: "FINE_LETTER_INVALID" });
+    console.error("Fine letter could not be stored:", error);
+    return res.status(500).json({ message: "The letter could not be stored", code: "FINE_LETTER_FAILED" });
   }
 
   async function notifyLinked(fineId: number) {
@@ -127,7 +150,11 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
       await AuditLogger.logFromRequest(req, "fine.import.config", "settings", 0, { enabled: saved.enabled, host: saved.host, pollMinutes: saved.pollMinutes });
       res.json(maskCjibConfig(saved));
     } catch (e) {
-      res.status(400).json({ message: e instanceof z.ZodError ? e.errors[0]?.message ?? "Invalid input" : (e as Error).message });
+      if (e instanceof z.ZodError) return res.status(400).json({ message: e.errors[0]?.message ?? "Invalid input" });
+      // The outbound guard's sentence is fixed and written for the user.
+      if (e instanceof OutboundBlockedError) return res.status(400).json({ message: e.message });
+      console.error("CJIB settings could not be saved:", e);
+      res.status(500).json({ message: "The CJIB settings could not be saved", code: "CJIB_CONFIG_SAVE_FAILED" });
     }
   });
 
@@ -148,7 +175,9 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
       if (e instanceof OutboundBlockedError) {
         return res.status(400).json({ ok: false, message: OUTBOUND_BLOCKED_MESSAGE });
       }
-      res.status(502).json({ ok: false, message: (e as Error).message });
+      // The FTPS server's own text (host names, login replies) stays in the log.
+      console.error("CJIB connection test failed:", e);
+      res.status(502).json({ ok: false, message: "Could not connect to the CJIB server", code: "CJIB_UNAVAILABLE" });
     }
   });
 
@@ -177,7 +206,9 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
       };
       res.json(result);
     } catch (e) {
-      res.status(502).json({ message: (e as Error).message });
+      // The scanner's text (API key names, provider errors) stays in the log.
+      console.error("Fine letter scan failed:", e);
+      res.status(502).json({ message: "The letter could not be read", code: "FINE_SCAN_FAILED" });
     } finally {
       fs.rmSync(tempPath, { force: true });
     }
@@ -214,7 +245,7 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
     if (!parsed.success) return res.status(400).json({ message: parsed.error.errors[0]?.message ?? "Invalid input" });
     const adminFee = req.body.adminFee === undefined || req.body.adminFee === "" ? undefined : parsed.data.adminFee;
     let letterFilePath: string | null = null;
-    try { letterFilePath = await storeLetter(req); } catch (e) { return res.status(400).json({ message: (e as Error).message }); }
+    try { letterFilePath = await storeLetter(req); } catch (e) { return sendLetterFailure(res, e); }
     const result = await createFineWithAttribution({
       licensePlate: parsed.data.licensePlate, offenceAt: new Date(parsed.data.offenceAt),
       receivedAt: parsed.data.receivedAt ?? null, reference: parsed.data.reference ?? null, description: parsed.data.description,
@@ -255,7 +286,7 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
     try {
       const letterFilePath = await storeLetter(req);
       res.json(await finesStorage.updateFine(id, { letterFilePath, updatedBy: actor(req) }));
-    } catch (e) { res.status(400).json({ message: (e as Error).message }); }
+    } catch (e) { sendLetterFailure(res, e); }
   });
 
   app.get("/api/fines/:id/letter", canView, async (req, res) => {
@@ -281,7 +312,12 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
       await AuditLogger.logFromRequest(req, "fine.link", "fine", id, parsed.data);
       await notifyLinked(id);
       res.json(fine);
-    } catch (e) { res.status(400).json({ message: (e as Error).message }); }
+    } catch (e) {
+      const code = fineRefusalCode(e);
+      if (code) return res.status(400).json({ message: (e as Error).message, code });
+      console.error("Fine could not be linked:", e);
+      res.status(500).json({ message: "The fine could not be linked", code: "FINE_LINK_FAILED" });
+    }
   });
 
   app.post("/api/fines/:id/unlink", canManage, async (req, res) => {
@@ -290,7 +326,12 @@ export function registerFineRoutes(app: Express, deps: RouteDeps): void {
       const fine = await unlinkFine(id, actor(req));
       await AuditLogger.logFromRequest(req, "fine.unlink", "fine", id);
       res.json(fine);
-    } catch (e) { res.status(404).json({ message: (e as Error).message }); }
+    } catch (e) {
+      const code = fineRefusalCode(e);
+      if (code) return res.status(404).json({ message: (e as Error).message, code });
+      console.error("Fine could not be unlinked:", e);
+      res.status(500).json({ message: "The fine could not be unlinked", code: "FINE_UNLINK_FAILED" });
+    }
   });
 
   // Cancelled by mistake: back to linked (when it has a customer) or new.
