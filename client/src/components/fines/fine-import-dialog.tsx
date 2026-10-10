@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { describeApiError } from "@/lib/api-error";
 import { Loader2, Upload, CheckCircle2, AlertTriangle } from "lucide-react";
 import { apiRequest, invalidateByPrefix } from "@/lib/queryClient";
 import { useGlobalDialog } from "@/contexts/GlobalDialogContext";
@@ -48,7 +49,7 @@ export function FineImportDialog() {
         result, form: scanToForm(result.parsed),
         status: result.duplicateOf ? "duplicate" : "ready", include: !result.duplicateOf,
       }))
-      .catch((e: Error) => update(next.key, { status: "error", error: e.message, include: false }))
+      .catch((e: Error) => update(next.key, { status: "error", error: describeApiError(e), include: false }))
       .finally(() => { busy.current = false; setItems((l) => [...l]); });
   }, [items]);
 

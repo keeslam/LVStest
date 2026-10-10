@@ -7,7 +7,11 @@ export async function scanLetter(file: File): Promise<FineScanResult> {
   const body = new FormData();
   body.append("letterFile", file);
   const res = await fetch("/api/fines/scan", { method: "POST", body, credentials: "include" });
-  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message ?? res.statusText);
+  if (!res.ok) {
+    // Keep the code and the status on the error so the screen can word it (describeApiError); the message is the server's English text.
+    const answer = await res.json().catch(() => ({}));
+    throw Object.assign(new Error(typeof answer.message === "string" ? answer.message : res.statusText), { code: answer.code, httpStatus: res.status });
+  }
   return res.json();
 }
 

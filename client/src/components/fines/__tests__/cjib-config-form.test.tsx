@@ -9,6 +9,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { CjibConfigForm } from "@/components/fines/cjib-config-form";
+import { scanLetter } from "@/components/fines/fine-scan";
+import { describeApiError } from "@/lib/api-error";
 
 const emptyHost = { enabled: false, host: "", port: 990, secure: "implicit", username: "", password: "", inboxDir: "/", processedDir: "", pollMinutes: 60, filePattern: "\.(xml|csv)$" };
 let stored: Record<string, unknown>;
@@ -58,5 +60,29 @@ describe("CJIB-koppeling", () => {
     await user.click(screen.getByTestId("button-save-cjib"));
     expect(await screen.findByText(/Automatisch ophalen kan niet aan staan zonder server/)).toBeInTheDocument();
     expect(calls.some((c) => c.method === "PUT")).toBe(false);
+  });
+});
+
+describe("a refused connection test or letter scan is worded by its code (final wave A, item 4b)", () => {
+  it("shows the Dutch sentence of CJIB_UNAVAILABLE, not the server's English text", async () => {
+    stored = { ...emptyHost, host: "ftps.cjib.nl" };
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
+      if ((init?.method ?? "GET") === "POST" && String(url).endsWith("/cjib-config/test")) {
+        return new Response(JSON.stringify({ ok: false, message: "Could not connect to the CJIB server", code: "CJIB_UNAVAILABLE" }), { status: 502, headers: { "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify(stored), { status: 200, headers: { "Content-Type": "application/json" } });
+    }));
+    renderForm();
+    const user = userEvent.setup();
+    await user.click(await screen.findByTestId("button-test-cjib"));
+    const result = await screen.findByTestId("cjib-test-result");
+    expect(result).toHaveTextContent("De verbinding met het CJIB is mislukt");
+    expect(result).not.toHaveTextContent("Could not connect");
+  });
+
+  it("scanLetter keeps the code, so a failed scan reads as FINE_SCAN_FAILED says", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ message: "The letter could not be read", code: "FINE_SCAN_FAILED" }), { status: 502, headers: { "Content-Type": "application/json" } })));
+    const error = await scanLetter(new File(["x"], "brief.pdf")).then(() => null, (e) => e);
+    expect(describeApiError(error)).toBe("De brief kon niet worden gelezen. Vul de bekeuring handmatig in.");
   });
 });

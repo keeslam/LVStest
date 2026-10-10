@@ -36,10 +36,13 @@ export function CjibConfigForm() {
   const test = useMutation({
     mutationFn: async () => {
       const res = await fetch("/api/fines/cjib-config/test", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form), credentials: "include" });
-      return res.json();
+      const body = await res.json().catch(() => ({}));
+      // A refused test answers an error status with a stable code; the screen words it, the server's English text is never shown.
+      if (!res.ok) throw Object.assign(new Error(typeof body.message === "string" ? body.message : res.statusText), { code: body.code, httpStatus: res.status });
+      return body;
     },
     onSuccess: (r) => setTestResult(r),
-    onError: (e: Error) => setTestResult({ ok: false, message: e.message }),
+    onError: (e: Error) => setTestResult({ ok: false, message: describeApiError(e, undefined, t("admin.fines.cjib.testFailed")) }),
   });
   const run = useMutation({
     mutationFn: async () => (await apiRequest("POST", "/api/fines/imports/run")).json(),
