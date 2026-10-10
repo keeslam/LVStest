@@ -41,7 +41,7 @@ const { storage } = await import("../storage");
 const { resolveDocumentFilePath } = await import("../services/document-paths");
 const { normalizeReservationStatus } = await import("../services/lifecycle");
 const { agentFor, cleanupFixtureUsers } = await import("./helpers/app");
-const { createFixtureVehicle, createFixtureReservation, cleanupFixtures } = await import("./helpers/fixtures");
+const { createFixtureCustomer, createFixtureVehicle, createFixtureReservation, cleanupFixtures } = await import("./helpers/fixtures");
 
 type Agent = Awaited<ReturnType<typeof agentFor>>;
 
@@ -288,6 +288,59 @@ describe("B-37 - one-call maintenance completion", () => {
     expect((await blockRow(block.id)).maintenanceStatus).toBe("in");
     expect((await vehicleRow(vehicle.id)).currentMileage).toBe(40_000);
     expect(await documentsOf(block.id)).toHaveLength(0);
+  });
+
+  it("a failing recompute of the spare AFTER the commit keeps the committed document row and file, and the route still answers 200", async () => {
+    const { vehicle, block } = await carInTheWorkshop();
+    // A spare out with the customer: closing the block closes it, and the spare car
+    // gets its availability recomputed after the commit (the step that throws here).
+    const customerId = (await createFixtureCustomer("C08spare")).id;
+    const spareVehicle = await createFixtureVehicle();
+    const rental = await createFixtureReservation({
+      customerId, vehicleId: vehicle.id, startDate: BLOCK_START, endDate: "2026-12-20", status: "picked_up",
+    });
+    const spare = await createFixtureReservation({
+      customerId, vehicleId: spareVehicle.id, startDate: BLOCK_START, endDate: null,
+      status: "picked_up", type: "replacement",
+    });
+    await db.update(reservations)
+      .set({ replacementForReservationId: rental.id, spareVehicleStatus: "picked_up" })
+      .where(eq(reservations.id, spare.id));
+
+    const original = storage.recomputeVehicleAvailability.bind(storage);
+    let thrown = 0;
+    const spy = vi.spyOn(storage as any, "recomputeVehicleAvailability")
+      .mockImplementation(async (...args: any[]) => {
+        // Only the spare car's recompute, and only once: the vehicle's own one runs inside the transaction.
+        if (args[0] === spareVehicle.id && thrown === 0) {
+          thrown += 1;
+          throw new Error("FIXT-forced recompute failure");
+        }
+        return (original as any)(...args);
+      });
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
+    let res;
+    try {
+      res = await completionRequest(maintenanceOnly, block.id, {
+        completionDate: COMPLETION, currentMileage: "41000", apkDate: APK_DATE,
+      }, pdfFile("FIXT-c08-post-commit"));
+    } finally {
+      spy.mockRestore();
+      errorLog.mockRestore();
+    }
+
+    expect(thrown).toBe(1);
+    expect(res.status).toBe(200);
+
+    // Everything committed stays: the block, the spare, the document row and its file.
+    expect(normalizeReservationStatus((await blockRow(block.id)).status)).toBe("completed");
+    expect(normalizeReservationStatus((await blockRow(spare.id)).status)).toBe("completed");
+    const docs = await documentsOf(block.id);
+    expect(docs).toHaveLength(1);
+    expect(res.body.documentId).toBe(docs[0].id);
+    const onDisk = resolveDocumentFilePath(docs[0].filePath);
+    expect(onDisk).not.toBeNull();
+    expect(fs.existsSync(onDisk!)).toBe(true);
   });
 
   it("a JSON body without a file still works and carries APK date and mileage", async () => {

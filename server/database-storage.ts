@@ -5416,8 +5416,17 @@ export class DatabaseStorage implements IStorage {
     // vehicle's own recompute already ran inside markVehicleForService(); the
     // spare's has to be asked for here, because its reservation only closed a
     // moment ago.
+    //
+    // Everything is committed by now (the block, the spare, the document row the
+    // APK file belongs to), so a failure here must not surface as a failed
+    // completion: the route would answer 500 and unlink a file a committed row
+    // points at. The sweeps derive the spare car's availability again anyway.
     if (result.closedSpare?.vehicleId) {
-      await this.recomputeVehicleAvailability(result.closedSpare.vehicleId);
+      try {
+        await this.recomputeVehicleAvailability(result.closedSpare.vehicleId);
+      } catch (error) {
+        console.error('Could not recompute the availability of the returned spare vehicle after completing maintenance:', error);
+      }
     }
 
     return {
