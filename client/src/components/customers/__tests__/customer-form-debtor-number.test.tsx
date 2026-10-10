@@ -10,7 +10,7 @@
  * Runs in the jsdom project (plan §8.8).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GlobalDialogProvider } from "@/contexts/GlobalDialogContext";
@@ -89,7 +89,9 @@ describe("B-35 — debiteurnummer-conflict onder het veld", () => {
     expect(await screen.findByText("Dit debiteurnummer is al in gebruik bij klant Jansen BV.")).toBeInTheDocument();
     // A-4-4 (audit 2026-10-09): the field message is the whole answer. The extra red toast with the
     // English server sentence ("Another customer (...) already uses this debtor number") is gone.
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // The field message and the toast would come from the same error handler: let React finish what that
+    // handler queued before asserting the toast is absent.
+    await act(async () => { await Promise.resolve(); });
     expect(screen.queryByText(/Kon klant niet aanmaken/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Another customer/)).not.toBeInTheDocument();
     expect(postCalls).toBe(1);

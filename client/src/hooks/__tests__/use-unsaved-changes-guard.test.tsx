@@ -139,3 +139,82 @@ describe("a customer edit dialog stacked inside another open dialog", () => {
     expect(screen.queryByText("Wijzigingen verwerpen?")).not.toBeInTheDocument();
   });
 });
+
+describe("a customer edit dialog stacked inside another open dialog, with typed changes", () => {
+  it("asks on Escape, keeps the input on 'Verder bewerken', and discarding closes only the edit dialog", async () => {
+    const { Dialog, DialogContent, DialogTitle, DialogDescription } = await import("@/components/ui/dialog");
+    const { CustomerEditDialog } = await import("@/components/customers/customer-edit-dialog");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = typeof input === "string" ? input : (input as Request).url;
+        const body = url.includes("/api/customers/5") ? { id: 5, name: "Stapel Klant", email: "", phone: "" } : [];
+        return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+      }),
+    );
+    const user = userEvent.setup();
+    const { queryClient: appClient } = await import("@/lib/queryClient");
+    appClient.clear();
+    render(
+      <QueryClientProvider client={appClient}>
+        <GlobalDialogProvider>
+          <Dialog open>
+            <DialogContent>
+              <DialogTitle>Buitenste dialoog</DialogTitle>
+              <DialogDescription>Klantdetails</DialogDescription>
+              <CustomerEditDialog customerId={5} />
+            </DialogContent>
+          </Dialog>
+        </GlobalDialogProvider>
+      </QueryClientProvider>,
+    );
+    await user.click(screen.getByTestId("button-edit-customer-5"));
+    const name = await screen.findByDisplayValue("Stapel Klant");
+    await user.type(name, " B.V.");
+
+    await user.keyboard("{Escape}");
+    expect(await screen.findByText("Wijzigingen verwerpen?")).toBeInTheDocument();
+    // Neither dialog closed yet.
+    expect(screen.getByDisplayValue("Stapel Klant B.V.")).toBeInTheDocument();
+    expect(screen.getByText("Buitenste dialoog")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Verder bewerken" }));
+    await waitFor(() => expect(screen.queryByText("Wijzigingen verwerpen?")).not.toBeInTheDocument());
+    expect(screen.getByDisplayValue("Stapel Klant B.V.")).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    await user.click(await screen.findByTestId("button-discard-changes"));
+    await waitFor(() => expect(screen.queryByDisplayValue("Stapel Klant B.V.")).not.toBeInTheDocument());
+    // The dialog the edit dialog was stacked on is still there.
+    expect(screen.getByText("Buitenste dialoog")).toBeInTheDocument();
+  });
+});
+
+describe("the wording of the question can be replaced", () => {
+  it("uses the given texts instead of the generic ones", async () => {
+    const { useUnsavedChangesGuard } = await import("@/hooks/use-unsaved-changes-guard");
+    const { ConfirmDialog } = await import("@/components/ui/confirm-dialog");
+    function Harness() {
+      const guard = useUnsavedChangesGuard({
+        close: () => {},
+        texts: { title: "Sjabloon niet opgeslagen", description: "Dit sjabloon heeft wijzigingen.", confirmLabel: "Weggooien", cancelLabel: "Doorgaan" },
+      });
+      return (
+        <>
+          <button type="button" onClick={() => guard.setDirty(true)}>maak vuil</button>
+          <button type="button" onClick={guard.requestClose}>sluit</button>
+          <ConfirmDialog {...guard.confirmProps} />
+        </>
+      );
+    }
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(screen.getByRole("button", { name: "maak vuil" }));
+    await user.click(screen.getByRole("button", { name: "sluit" }));
+    expect(await screen.findByText("Sjabloon niet opgeslagen")).toBeInTheDocument();
+    expect(screen.getByText("Dit sjabloon heeft wijzigingen.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Weggooien" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Doorgaan" })).toBeInTheDocument();
+    expect(screen.queryByText("Wijzigingen verwerpen?")).toBeNull();
+  });
+});

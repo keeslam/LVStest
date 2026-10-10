@@ -38,7 +38,7 @@ async function openDialog() {
 }
 
 describe("fuel cost input", () => {
-  it.each([["45,50", "45.5"], ["45.50", "45.5"], ["  12 ", "12"], ["1.234,50", "1234.5"], ["0,99", "0.99"]])(
+  it.each([["45,50", "45.5"], ["45.50", "45.5"], ["  12 ", "12"], ["1.234,50", "1234.5"], ["0,99", "0.99"], ["1.234", "1234"]])(
     "sends %s as %s",
     async (typed, expected) => {
       const user = await openDialog();
@@ -60,7 +60,8 @@ describe("fuel cost input", () => {
     expect(screen.queryByText("Gelukt")).not.toBeInTheDocument();
   });
 
-  it.each(["4,5,5", "-3", "45,555", "1e3", "€"])("also refuses %s", async (typed) => {
+  // "1.234" is a Dutch thousands grouping (1234), so its English twin "1,234.50" is a second separator of the wrong kind.
+  it.each(["4,5,5", "-3", "45,555", "1e3", "€", "1,234.50"])("also refuses %s", async (typed) => {
     const user = await openDialog();
     await user.type(screen.getByTestId("input-fuel-cost"), typed);
     await user.click(screen.getByTestId("button-submit-fuel-update"));

@@ -12,7 +12,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient as appQueryClient } from "@/lib/queryClient";
+import { queryClient as appQueryClient, scheduleInvalidation } from "@/lib/queryClient";
 import { GlobalDialogProvider } from "@/contexts/GlobalDialogContext";
 
 vi.mock("@/hooks/use-auth", () => ({
@@ -100,8 +100,9 @@ describe("A-3-4 — deleting from the detail screen", () => {
     await user.click(screen.getByTestId(`button-confirm-delete-${vehicle.id}`));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    // Give the batched invalidation (50 ms) and any refetch time to run.
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // The delete schedules its invalidation in the shared 50 ms batch: joining that batch resolves when the
+    // refetch it triggers has finished, which is exactly the moment a wrong GET would have been made.
+    await scheduleInvalidation(() => false);
 
     const destructive = toastSpy.mock.calls.filter(([arg]) => arg?.variant === "destructive");
     expect(destructive).toEqual([]);

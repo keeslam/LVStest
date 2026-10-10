@@ -223,7 +223,10 @@ describe("A-7-1 and A-7-8: the spare vehicle dialog", () => {
   });
 
   it("a reply without any real conflict never opens an empty spare dialog", async () => {
-    const user = userEvent.setup();
+    // Fake time, so the 100 ms the spare dialog is delayed by can be run out without really waiting.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderDialog();
     postResponse = () => json({
       needsSpareVehicle: true,
@@ -235,12 +238,15 @@ describe("A-7-1 and A-7-8: the spare vehicle dialog", () => {
     await user.click(await screen.findByTestId("button-schedule"));
 
     await waitFor(() => expect(reservationPosts()).toHaveLength(1));
-    // The spare dialog is delayed by 100 ms: wait it out before asserting its absence.
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // Planned like any other block: the main dialog is closed again (the positive marker).
+    await waitFor(() => expect(screen.queryByTestId("dialog-schedule-maintenance")).toBeNull());
+    // The spare dialog would open 100 ms after that: run that time out, then assert its absence.
+    await vi.advanceTimersByTimeAsync(300);
     expect(screen.queryByText("Vervangende voertuigen toewijzen")).toBeNull();
     expect(screen.queryByTestId("button-assign-spare-vehicles")).toBeNull();
-    // Planned like any other block: the main dialog is closed again.
-    await waitFor(() => expect(screen.queryByTestId("dialog-schedule-maintenance")).toBeNull());
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("choosing 'klant regelt eigen vervoer' and confirming leaves no dialog behind", async () => {
