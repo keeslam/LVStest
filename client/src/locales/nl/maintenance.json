@@ -131,6 +131,11 @@
     "maintenanceDeletedDescription": "De onderhoudsreservering is succesvol verwijderd.",
     "errorTitle": "Fout",
     "deleteFailedDescription": "Onderhoudsreservering verwijderen mislukt",
+    "completeButton": "Afronden",
+    "checkInButton": "Binnen melden",
+    "checkedInTitle": "Voertuig binnen gemeld",
+    "checkedInDescription": "Het onderhoud staat op Binnen en het voertuig is in onderhoud.",
+    "checkInFailedDescription": "Het voertuig binnen melden is mislukt",
     "maintenanceScheduledTitle": "Onderhoud gepland",
     "maintenanceScheduledDescription": "Het onderhoud is succesvol gepland."
   },

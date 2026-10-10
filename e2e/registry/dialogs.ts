@@ -226,6 +226,20 @@ export const DIALOGS: DialogEntry[] = [
     allowedPathNeedsState: "the opener exists only on the event card of an open maintenance block inside the calendar's day dialog (the e2e seed holds no block); the Layer B story complete-maintenance.spec.ts plans one and completes it",
     deniedPathNeedsState: "the opener does not exist on a bare load of /maintenance: it only renders for a block, inside the day dialog of a day that has one; the dialog's submit button per right is proven by complete-maintenance-dialog.test.tsx",
   },
+  // Audit A-7-11 (package P4): the same dialog opens from the "Onderhoudsoverzicht"
+  // list too - the green "Afronden" button on every open row of the "Gepland" tab,
+  // test id `button-list-complete-<reservationId>`, same RequiresPermission as the
+  // calendar's button. It needs a planned block (the e2e seed holds none) inside the
+  // list dialog, which a role without the right can still open; the per-right proof is
+  // client/src/components/maintenance/__tests__/p4-maintenance-list-actions.test.tsx.
+  // "Binnen melden" next to it is a direct action (PATCH /api/vehicles/:id/maintenance-status),
+  // not a dialog, so it has no entry of its own.
+  {
+    page: "/maintenance", opener: "button-list-complete-<reservationId>", via: "button-maintenance-list-view", anyOf: [P.MANAGE_MAINTENANCE, P.MANAGE_RESERVATIONS],
+    source: "client/src/components/maintenance/complete-maintenance-dialog.tsx", name: "onderhoud afronden vanuit het overzicht",
+    allowedPathNeedsState: "the opener exists only on the row of an open maintenance block in the Gepland tab of the overview (the e2e seed holds no block); the jsdom test p4-maintenance-list-actions.test.tsx plans one and opens the dialog",
+    deniedPathNeedsState: "the opener does not exist on a bare load of /maintenance: it only renders for a block, inside the overview's Gepland tab; its disabled-and-explained state per right is proven by p4-maintenance-list-actions.test.tsx",
+  },
 
   // --- /documents ----------------------------------------------------------
   // All four dialog roots are inline in documents/index.tsx itself, each

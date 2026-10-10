@@ -2,7 +2,7 @@ import { describeApiError } from "@/lib/api-error";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -48,13 +48,18 @@ import {
   Edit,
   Plus,
   Clock,
-  Trash2
+  Trash2,
+  CheckCircle2,
+  LogIn
 } from "lucide-react";
-import { Vehicle, Reservation } from "@shared/schema";
+import { Vehicle, Reservation, UserPermission } from "@shared/schema";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { formatLicensePlate, formatReservationStatus, formatMaintenanceNotes } from "@/lib/format-utils";
 import { MaintenanceEditDialog } from "@/components/maintenance/maintenance-edit-dialog";
 import { ScheduleMaintenanceDialog } from "@/components/maintenance/schedule-maintenance-dialog";
+import { CompleteMaintenanceDialog } from "@/components/maintenance/complete-maintenance-dialog";
+import { RequiresPermission } from "@/components/ui/requires-permission";
+import { calculateNextApkDate } from "@/lib/next-apk-date";
 import { VehicleViewDialog } from "@/components/vehicles/vehicle-view-dialog";
 import { SpareVehicleDialog } from "@/components/reservations/spare-vehicle-dialog";
 import { apiRequest, queryClient, invalidateRelatedQueries, invalidateByPrefix } from "@/lib/queryClient";
@@ -116,6 +121,9 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [reservationToDelete, setReservationToDelete] = useState<Reservation | null>(null);
   
+  // A-7-11: "Afronden" opens the same completion dialog the calendar uses.
+  const [completingBlock, setCompletingBlock] = useState<(Reservation & { vehicle?: Vehicle }) | null>(null);
+
   // State for schedule maintenance dialog
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [selectedVehicleIdForSchedule, setSelectedVehicleIdForSchedule] = useState<number | null>(null);
@@ -192,6 +200,42 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
     }
   };
   
+  // A-7-11: "Binnen melden" - the vehicle arrived at the workshop. The same route the scan
+  // screen uses: it moves the block to "in" and the vehicle to in-service together, and the
+  // blockId keeps it on this row instead of whatever block covers today.
+  const checkInMutation = useMutation({
+    mutationFn: async (block: Reservation) => {
+      const response = await apiRequest("PATCH", `/api/vehicles/${block.vehicleId}/maintenance-status`, {
+        status: "in_service",
+        blockId: block.id,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      invalidateRelatedQueries('reservations');
+      invalidateRelatedQueries('vehicles');
+      toast({
+        title: t('listDialog.checkedInTitle'),
+        description: t('listDialog.checkedInDescription'),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('listDialog.errorTitle'),
+        description: describeApiError(error, undefined, t('listDialog.checkInFailedDescription')),
+        variant: "destructive",
+      });
+    },
+  });
+
+  // An open block: not finished or cancelled. "Binnen melden" only applies to one that has
+  // not arrived yet; "Afronden" to every open one.
+  const isOpenBlock = (reservation: Reservation) =>
+    !["completed", "cancelled", "returned"].includes(String(reservation.status)) &&
+    reservation.maintenanceStatus !== "out";
+  const isWaitingForVehicle = (reservation: Reservation) =>
+    isOpenBlock(reservation) && (!reservation.maintenanceStatus || reservation.maintenanceStatus === "scheduled");
+
   // Helper function to check if active maintenance is already scheduled for a vehicle
   const isMaintenanceScheduled = (vehicleId: number, maintenanceType: 'apk_inspection' | 'warranty_service'): boolean => {
     if (!maintenanceReservations || maintenanceReservations.length === 0) return false;
@@ -636,6 +680,38 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
                               </TableCell>
                               <TableCell>
                                 <div className="flex gap-2">
+                                  {isOpenBlock(reservation) && (
+                                    // Same rights as the calendar's "Voltooien": the completion route
+                                    // accepts manage_maintenance or manage_reservations.
+                                    <RequiresPermission anyOf={[UserPermission.MANAGE_MAINTENANCE, UserPermission.MANAGE_RESERVATIONS]}>
+                                      <Button
+                                        size="sm"
+                                        variant="default"
+                                        className="bg-green-600 hover:bg-green-700"
+                                        onClick={() => setCompletingBlock(reservation)}
+                                        data-testid={`button-list-complete-${reservation.id}`}
+                                      >
+                                        <CheckCircle2 className="h-4 w-4 mr-1" />
+                                        {t('listDialog.completeButton')}
+                                      </Button>
+                                    </RequiresPermission>
+                                  )}
+                                  {isWaitingForVehicle(reservation) && reservation.vehicleId && (
+                                    // PATCH /api/vehicles/:id/maintenance-status is manage_vehicles only
+                                    // (server/routes.ts), so the button asks for exactly that.
+                                    <RequiresPermission anyOf={[UserPermission.MANAGE_VEHICLES]}>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => checkInMutation.mutate(reservation)}
+                                        disabled={checkInMutation.isPending}
+                                        data-testid={`button-list-checkin-${reservation.id}`}
+                                      >
+                                        <LogIn className="h-4 w-4 mr-1" />
+                                        {t('listDialog.checkInButton')}
+                                      </Button>
+                                    </RequiresPermission>
+                                  )}
                                   <Button
                                     size="sm"
                                     variant="outline"
@@ -792,6 +868,22 @@ export function MaintenanceListDialog({ open, onOpenChange }: MaintenanceListDia
           }
         }}
         reservation={selectedMaintenanceReservation}
+      />
+
+      {/* Maintenance Completion Dialog (the calendar's one; B-37) */}
+      <CompleteMaintenanceDialog
+        open={completingBlock !== null}
+        onOpenChange={(open) => {
+          if (!open) setCompletingBlock(null);
+        }}
+        block={completingBlock}
+        vehicle={completingBlock?.vehicle}
+        initialApkDate={
+          completingBlock?.vehicle
+            ? completingBlock.vehicle.apkDate || calculateNextApkDate(completingBlock.vehicle, new Date())
+            : ""
+        }
+        initialMileage={completingBlock?.vehicle?.currentMileage ? String(completingBlock.vehicle.currentMileage) : ""}
       />
 
       {/* Schedule Maintenance Dialog */}

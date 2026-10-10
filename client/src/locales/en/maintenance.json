@@ -131,6 +131,11 @@
     "maintenanceDeletedDescription": "The maintenance reservation has been successfully deleted.",
     "errorTitle": "Error",
     "deleteFailedDescription": "Failed to delete maintenance reservation",
+    "completeButton": "Complete",
+    "checkInButton": "Check in",
+    "checkedInTitle": "Vehicle checked in",
+    "checkedInDescription": "The maintenance is set to In and the vehicle is in maintenance.",
+    "checkInFailedDescription": "Checking the vehicle in failed",
     "maintenanceScheduledTitle": "Maintenance Scheduled",
     "maintenanceScheduledDescription": "The maintenance has been scheduled successfully."
   },
