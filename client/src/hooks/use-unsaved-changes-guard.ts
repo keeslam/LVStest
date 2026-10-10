@@ -20,17 +20,20 @@ import { useTranslation } from "react-i18next";
  * the form clean in the hook; the form itself reports clean again when it mounts,
  * so a reopened dialog never asks about the previous session.
  *
- * Switching the reservation dialogs and the three document editors to this
- * hook is left for the final wave.
+ * Every dialog with an unsaved-changes question goes through this hook: the vehicle, customer,
+ * fine, reservation (add and edit) dialogs and the three document template editors. A dialog
+ * whose question needs its own wording (the template editors name "this template") passes `texts`.
  */
 export interface UnsavedChangesGuardOptions {
   /** Actually closes the dialog. Called straight away when clean, after the user agrees when dirty. */
   close: () => void;
   /** Opens the dialog; only needed for a `<Dialog onOpenChange>` that also has a trigger. */
   open?: () => void;
+  /** Wording of the question, when the generic "Wijzigingen verwerpen?" does not fit the dialog. */
+  texts?: Partial<{ title: string; description: string; confirmLabel: string; cancelLabel: string }>;
 }
 
-export function useUnsavedChangesGuard({ close, open }: UnsavedChangesGuardOptions) {
+export function useUnsavedChangesGuard({ close, open, texts }: UnsavedChangesGuardOptions) {
   const { t } = useTranslation("common");
   // A ref: the form reports dirtiness on every keystroke and the guard reads it
   // only when a close is requested, so no re-render is needed.
@@ -78,10 +81,10 @@ export function useUnsavedChangesGuard({ close, open }: UnsavedChangesGuardOptio
     confirmProps: {
       open: asking,
       onOpenChange: setAsking,
-      title: t("discardChanges.title"),
-      description: t("discardChanges.description"),
-      confirmLabel: t("discardChanges.confirm"),
-      cancelLabel: t("discardChanges.keep"),
+      title: texts?.title ?? t("discardChanges.title"),
+      description: texts?.description ?? t("discardChanges.description"),
+      confirmLabel: texts?.confirmLabel ?? t("discardChanges.confirm"),
+      cancelLabel: texts?.cancelLabel ?? t("discardChanges.keep"),
       variant: "warning" as const,
       onConfirm: finishClose,
       confirmTestId: "button-discard-changes",

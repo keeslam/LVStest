@@ -295,9 +295,7 @@
     "previewInProgressTitle": "Preview in Progress",
     "previewInProgressDescription": "Please finalize the reservation or click 'Back to Edit' before closing.",
     "newReservation": "New Reservation",
-    "description": "Create a new reservation by selecting a vehicle and customer",
-    "unsavedChangesTitle": "Unsaved changes",
-    "unsavedChangesDescription": "Use Cancel or the cross to close; otherwise what you typed is kept."
+    "description": "Create a new reservation by selecting a vehicle and customer"
   },
   "documentsDialog": {
     "title": "Reservation Documents",
@@ -318,9 +316,7 @@
     "description": "Modify reservation details and save changes",
     "reservationHash": "Reservation #{{id}}",
     "errorTitle": "Error",
-    "failedToLoad": "Failed to load reservation details. {{error}}",
-    "unsavedChangesTitle": "Unsaved changes",
-    "unsavedChangesDescription": "Use Close or the cross to close; otherwise what you typed is kept."
+    "failedToLoad": "Failed to load reservation details. {{error}}"
   },
   "form": {
     "driverSearch": {

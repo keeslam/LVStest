@@ -1,5 +1,5 @@
 import { describeApiError } from "@/lib/api-error";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { 
@@ -12,8 +12,8 @@ import {
 import { ReservationForm } from "@/components/reservations/reservation-form";
 import { Reservation } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
-import { createDirtyCloseGuard } from "@/components/dialogs/dirty-close-guard";
-import { useToast } from "@/hooks/use-toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 
 interface ReservationEditDialogProps {
   open: boolean;
@@ -29,31 +29,18 @@ export function ReservationEditDialog({
   onSuccess 
 }: ReservationEditDialogProps) {
   const { t } = useTranslation("reservations");
-  const { toast } = useToast();
   const [initialData, setInitialData] = useState<Reservation | null>(null);
 
-  // BUG-225, one dialog further: the add dialog has protected typed-in data
-  // since wave 9, the edit dialog did not — and an edit is the case where the
-  // typing is on top of a real reservation. Same rule, same helper: an
-  // accidental click on the backdrop is not a decision, the X and Sluiten are.
-  const isFormDirtyRef = useRef(false);
-  const handleDirtyChange = useCallback((dirty: boolean) => {
-    isFormDirtyRef.current = dirty;
-  }, []);
-  const keepOpenBecauseDirty = createDirtyCloseGuard({
-    isDirty: () => isFormDirtyRef.current,
-    onBlocked: () =>
-      toast({
-        title: t('editDialog.unsavedChangesTitle'),
-        description: t('editDialog.unsavedChangesDescription'),
-      }),
-  });
+  // BUG-225, one dialog further: an edit is typing on top of a real reservation, so Escape, the X, a
+  // click next to the dialog and "Sluiten" all ask "Wijzigingen verwerpen?" once something was changed
+  // (the shared guard; a clean form closes at once).
+  const guard = useUnsavedChangesGuard({ close: () => onOpenChange(false), open: () => onOpenChange(true) });
 
-  // A fresh dialog starts clean: the ref outlives the form when the dialog is
-  // reopened for another reservation.
+  // A fresh dialog starts clean: the guard outlives the form when the dialog is reopened for another
+  // reservation.
   useEffect(() => {
-    if (!open) isFormDirtyRef.current = false;
-  }, [open, reservationId]);
+    if (!open) guard.setDirty(false);
+  }, [open, reservationId, guard.setDirty]);
   
   // Fetch reservation data
   const { data: reservation, isLoading, error } = useQuery<Reservation>({
@@ -75,14 +62,12 @@ export function ReservationEditDialog({
   // Always render the Dialog component to prevent unmounting issues during data loading
   // The open prop controls visibility
   return (
-    <Dialog open={open && !!reservationId} onOpenChange={onOpenChange}>
+    <>
+    <Dialog open={open && !!reservationId} onOpenChange={guard.onOpenChange}>
       <DialogContent
         className="max-w-4xl max-h-[90vh] overflow-y-auto"
         data-testid="dialog-reservation-edit"
         onPointerDownOutside={(e) => {
-          // BUG-225: once anything has been typed, a click next to the dialog
-          // no longer throws the edit away.
-          if (keepOpenBecauseDirty(e)) return;
           // Prevent closing when the click target is inside another open dialog/popover
           // (e.g. Quick Add Driver, customer search). Those are portaled outside this
           // dialog so Radix would otherwise treat them as outside clicks.
@@ -92,7 +77,6 @@ export function ReservationEditDialog({
           }
         }}
         onInteractOutside={(e) => {
-          if (keepOpenBecauseDirty(e)) return;
           const target = e.target as HTMLElement | null;
           if (target && target.closest('[role="dialog"], [data-radix-popper-content-wrapper]')) {
             e.preventDefault();
@@ -131,13 +115,15 @@ export function ReservationEditDialog({
               editMode={true}
               initialData={initialData}
               onSuccess={handleSuccess}
-              onDirtyChange={handleDirtyChange}
+              onDirtyChange={guard.setDirty}
               // Inside a dialog "Sluiten" closes the dialog; without this the form navigates to the calendar page.
-              onCancel={() => onOpenChange(false)}
+              onCancel={guard.requestClose}
             />
           )
         )}
       </DialogContent>
     </Dialog>
+    <ConfirmDialog {...guard.confirmProps} />
+    </>
   );
 }

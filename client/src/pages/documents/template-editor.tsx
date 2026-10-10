@@ -44,6 +44,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { UserPermission } from "@shared/schema";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { RequiresPermission } from "@/components/ui/requires-permission";
+import { comparableTemplate } from "./comparable-template";
 
 interface TemplateField {
   id: string;
@@ -105,17 +106,6 @@ interface PDFTemplateEditorProps {
    */
   onDirtyChange?: (dirty: boolean) => void;
 }
-
-/** What makes two versions of a template "the same" for the unsaved-changes check. */
-const comparableTemplate = (template: Template) =>
-  JSON.stringify({
-    name: template.name,
-    isDefault: !!template.isDefault,
-    fields: (template.fields ?? []).map((f) => ({
-      id: f.id, name: f.name, x: f.x, y: f.y, fontSize: f.fontSize, isBold: !!f.isBold,
-      source: f.source, textAlign: f.textAlign, locked: !!f.locked,
-    })),
-  });
 
 const PDFTemplateEditor = ({ onClose, onDirtyChange }: PDFTemplateEditorProps = {}) => {
   const { t } = useTranslation(["documents", "common"]);

@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { ReservationForm } from "@/components/reservations/reservation-form";
 import { PickupDialog, ReturnDialog } from "@/components/reservations/pickup-return-dialogs";
-import { createDirtyCloseGuard } from "@/components/dialogs/dirty-close-guard";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Reservation } from "@shared/schema";
@@ -56,25 +57,16 @@ export function ReservationAddDialog({
   }, [isControlled, controlledOnOpenChange]);
   const [isInPreviewMode, setIsInPreviewMode] = useState(false);
   const [isPickupReturnDialogOpen, setIsPickupReturnDialogOpen] = useState(false);
-  // FIX-Q (BUG-225): once anything has been typed, a click next to the dialog
-  // no longer throws the form away. The X and Cancel buttons still close it —
-  // those are a decision, an accidental click on the backdrop is not.
-  const isFormDirtyRef = useRef(false);
-  const handleDirtyChange = useCallback((dirty: boolean) => {
-    isFormDirtyRef.current = dirty;
-  }, []);
-  // The rule itself lives in `dirty-close-guard.ts` so wave 9 could put a
-  // component test on it without mounting the whole reservation form.
-  const keepOpenBecauseDirty = createDirtyCloseGuard({
-    isDirty: () => isFormDirtyRef.current,
-    onBlocked: () =>
-      // Real keys since wave 10: a missing translation now shows up instead of
-      // hiding behind the inline default.
-      toast({
-        title: t('addDialog.unsavedChangesTitle'),
-        description: t('addDialog.unsavedChangesDescription'),
-      }),
-  });
+  // FIX-Q (BUG-225): once anything has been typed, closing the dialog (Escape, the X, a click next to
+  // it, Annuleren) asks "Wijzigingen verwerpen?" instead of throwing the form away - the shared guard.
+  // A clean form closes at once. Saving and the pickup/return flow close the dialog directly.
+  const closeDialog = () => {
+    isPickupReturnDialogOpenRef.current = false;
+    setIsPickupReturnDialogOpen(false);
+    setIsInPreviewMode(false);
+    setOpen(false);
+  };
+  const guard = useUnsavedChangesGuard({ close: closeDialog, open: () => setOpen(true) });
   // Use ref for synchronous access in event handlers (React state updates are async)
   const isPickupReturnDialogOpenRef = useRef(false);
   const { toast } = useToast();
@@ -113,11 +105,11 @@ export function ReservationAddDialog({
       return;
     }
 
-    setOpen(newOpen);
-
-    if (!newOpen) {
-      setIsInPreviewMode(false);
+    if (newOpen) {
+      setOpen(true);
+      return;
     }
+    guard.requestClose();
   };
   
   // Handler for pickup/return dialog changes - updates both state and ref
@@ -184,7 +176,6 @@ export function ReservationAddDialog({
             e.preventDefault();
             return;
           }
-          if (keepOpenBecauseDirty(e)) return;
           // Prevent closing when the click target is inside another open dialog/popover
           // (e.g. the Quick Add Driver dialog, customer search, etc.) — those are portaled
           // outside this dialog so Radix considers them "outside" clicks.
@@ -198,7 +189,6 @@ export function ReservationAddDialog({
             e.preventDefault();
             return;
           }
-          if (keepOpenBecauseDirty(e)) return;
           const target = e.target as HTMLElement | null;
           if (target && target.closest('[role="dialog"], [data-radix-popper-content-wrapper]')) {
             e.preventDefault();
@@ -223,7 +213,7 @@ export function ReservationAddDialog({
         </DialogHeader>
         <div className="mt-4">
           <ReservationForm 
-            onDirtyChange={handleDirtyChange}
+            onDirtyChange={guard.setDirty}
             initialVehicleId={initialVehicleId}
             initialCustomerId={initialCustomerId}
             initialStartDate={initialStartDate}
@@ -240,16 +230,12 @@ export function ReservationAddDialog({
                 onSuccess(reservation);
               }
             }}
-            onCancel={() => {
-              setIsInPreviewMode(false);
-              isPickupReturnDialogOpenRef.current = false;
-              setIsPickupReturnDialogOpen(false);
-              setOpen(false);
-            }}
+            onCancel={guard.requestClose}
           />
         </div>
       </DialogContent>
     </Dialog>
+    <ConfirmDialog {...guard.confirmProps} />
     
     {/* Render pickup/return dialogs OUTSIDE the parent Dialog to avoid focus/portal conflicts */}
     {/* Use ref fallback if state was reset due to component re-render */}

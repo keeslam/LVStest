@@ -42,6 +42,7 @@ import { UserPermission, UserRole } from "@shared/schema";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 
 export default function DocumentsIndex() {
   const { t } = useTranslation("documents");
@@ -68,28 +69,17 @@ export default function DocumentsIndex() {
   const [transportTemplateEditorDialogOpen, setTransportTemplateEditorDialogOpen] = useState(false);
   const [barcodeLabelEditorDialogOpen, setBarcodeLabelEditorDialogOpen] = useState(false);
   // A-10-3: the three template editors report unsaved changes; closing one (Escape, X, outside click,
-  // back button) then asks first instead of silently throwing them away.
-  const [templateEditorDirty, setTemplateEditorDirty] = useState(false);
-  const [transportEditorDirty, setTransportEditorDirty] = useState(false);
-  const [barcodeEditorDirty, setBarcodeEditorDirty] = useState(false);
-  const [discardEditor, setDiscardEditor] = useState<"contract" | "transport" | "barcode" | null>(null);
-  const requestCloseTemplateEditor = () => {
-    if (templateEditorDirty) { setDiscardEditor("contract"); return; }
-    setTemplateEditorDialogOpen(false);
+  // back button) then asks first instead of silently throwing them away. One shared guard per editor,
+  // with the editors' own wording ("this template").
+  const unsavedTemplateTexts = {
+    title: t('indexPage.unsavedTemplate.title'),
+    description: t('indexPage.unsavedTemplate.description'),
+    confirmLabel: t('indexPage.unsavedTemplate.discard'),
+    cancelLabel: t('indexPage.unsavedTemplate.keepEditing'),
   };
-  const requestCloseTransportEditor = () => {
-    if (transportEditorDirty) { setDiscardEditor("transport"); return; }
-    setTransportTemplateEditorDialogOpen(false);
-  };
-  const requestCloseBarcodeEditor = () => {
-    if (barcodeEditorDirty) { setDiscardEditor("barcode"); return; }
-    setBarcodeLabelEditorDialogOpen(false);
-  };
-  const discardEditorChanges = () => {
-    if (discardEditor === "contract") { setTemplateEditorDirty(false); setTemplateEditorDialogOpen(false); }
-    if (discardEditor === "transport") { setTransportEditorDirty(false); setTransportTemplateEditorDialogOpen(false); }
-    if (discardEditor === "barcode") { setBarcodeEditorDirty(false); setBarcodeLabelEditorDialogOpen(false); }
-  };
+  const contractGuard = useUnsavedChangesGuard({ close: () => setTemplateEditorDialogOpen(false), open: () => setTemplateEditorDialogOpen(true), texts: unsavedTemplateTexts });
+  const transportGuard = useUnsavedChangesGuard({ close: () => setTransportTemplateEditorDialogOpen(false), open: () => setTransportTemplateEditorDialogOpen(true), texts: unsavedTemplateTexts });
+  const barcodeGuard = useUnsavedChangesGuard({ close: () => setBarcodeLabelEditorDialogOpen(false), open: () => setBarcodeLabelEditorDialogOpen(true), texts: unsavedTemplateTexts });
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploadVehicleId, setUploadVehicleId] = useState<string>("");
 
@@ -1455,7 +1445,7 @@ export default function DocumentsIndex() {
       </AlertDialog>
 
       {/* Template Editor Dialog */}
-      <Dialog open={templateEditorDialogOpen} onOpenChange={(open) => { if (open) setTemplateEditorDialogOpen(true); else requestCloseTemplateEditor(); }}>
+      <Dialog open={templateEditorDialogOpen} onOpenChange={contractGuard.onOpenChange}>
         <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] max-h-[95vh] p-0 overflow-hidden flex flex-col">
           <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
             <DialogTitle>{t('indexPage.contractTemplateEditorTitle')}</DialogTitle>
@@ -1464,24 +1454,15 @@ export default function DocumentsIndex() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto overflow-x-hidden">
-            <PDFTemplateEditor onClose={requestCloseTemplateEditor} onDirtyChange={setTemplateEditorDirty} />
+            <PDFTemplateEditor onClose={contractGuard.requestClose} onDirtyChange={contractGuard.setDirty} />
           </div>
         </DialogContent>
       </Dialog>
 
-      <ConfirmDialog
-        open={discardEditor !== null}
-        onOpenChange={(open) => { if (!open) setDiscardEditor(null); }}
-        title={t('indexPage.unsavedTemplate.title')}
-        description={t('indexPage.unsavedTemplate.description')}
-        confirmLabel={t('indexPage.unsavedTemplate.discard')}
-        cancelLabel={t('indexPage.unsavedTemplate.keepEditing')}
-        variant="warning"
-        onConfirm={discardEditorChanges}
-      />
+      <ConfirmDialog {...contractGuard.confirmProps} />
 
       {/* Transport Report Template Editor Dialog */}
-      <Dialog open={transportTemplateEditorDialogOpen} onOpenChange={(open) => { if (open) setTransportTemplateEditorDialogOpen(true); else requestCloseTransportEditor(); }}>
+      <Dialog open={transportTemplateEditorDialogOpen} onOpenChange={transportGuard.onOpenChange}>
         <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] max-h-[95vh] p-0 overflow-hidden flex flex-col">
           <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
             <DialogTitle>{t('indexPage.transportTemplateEditorTitle')}</DialogTitle>
@@ -1490,13 +1471,15 @@ export default function DocumentsIndex() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto overflow-x-hidden">
-            <TransportReportTemplateEditor onClose={requestCloseTransportEditor} onDirtyChange={setTransportEditorDirty} />
+            <TransportReportTemplateEditor onClose={transportGuard.requestClose} onDirtyChange={transportGuard.setDirty} />
           </div>
         </DialogContent>
       </Dialog>
 
+      <ConfirmDialog {...transportGuard.confirmProps} />
+
       {/* Barcode Label Template Editor Dialog */}
-      <Dialog open={barcodeLabelEditorDialogOpen} onOpenChange={(open) => { if (open) setBarcodeLabelEditorDialogOpen(true); else requestCloseBarcodeEditor(); }}>
+      <Dialog open={barcodeLabelEditorDialogOpen} onOpenChange={barcodeGuard.onOpenChange}>
         <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] max-h-[95vh] p-0 overflow-hidden flex flex-col">
           <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
             <DialogTitle>{t('indexPage.barcodeLabelEditorTitle')}</DialogTitle>
@@ -1505,10 +1488,11 @@ export default function DocumentsIndex() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto overflow-x-hidden">
-            <BarcodeLabelTemplateEditor onClose={requestCloseBarcodeEditor} onDirtyChange={setBarcodeEditorDirty} />
+            <BarcodeLabelTemplateEditor onClose={barcodeGuard.requestClose} onDirtyChange={barcodeGuard.setDirty} />
           </div>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog {...barcodeGuard.confirmProps} />
     </div>
   );
 }

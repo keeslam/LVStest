@@ -39,6 +39,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { BarcodeSvg } from "@/components/barcodes/barcode-svg";
+import { comparableTemplate } from "./comparable-template";
 import { BARCODE_LABEL_SOURCES, BarcodeLabelField, resolveBarcodeLabelSource } from "@shared/barcode";
 
 // Same positioned-field editor as the transport report template editor, but the
@@ -118,9 +119,8 @@ interface BarcodeLabelTemplateEditorProps {
   onDirtyChange?: (dirty: boolean) => void;
 }
 
-/** What makes two versions of a template "the same" for the unsaved-changes check. */
-const comparableTemplate = (template: Template) => JSON.stringify({ ...template, isDefault: !!template.isDefault, fields: template.fields ?? [], updatedAt: undefined, backgroundPath: undefined, backgroundPreviewPath: undefined });
-
+/** The label's size and the bar sizes are edited here too, on top of what every template editor compares. */
+const COMPARE = { templateKeys: ["labelWidthMm", "labelHeightMm"], fieldKeys: ["barcodeHeightMm", "barcodeWidthMm"] } as const;
 const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemplateEditorProps = {}) => {
   const { t } = useTranslation(["documents", "common"]);
   const DATA_SOURCE_KEYS: string[] = [...BARCODE_LABEL_SOURCES];
@@ -316,7 +316,7 @@ const BarcodeLabelTemplateEditor = ({ onClose, onDirtyChange }: BarcodeLabelTemp
 
   // A-10-3: unsaved changes = the template on screen differs from the one the server last gave us.
   const savedVersion = currentTemplate ? templates.find((candidate) => candidate.id === currentTemplate.id) : undefined;
-  const isDirty = !!currentTemplate && !!savedVersion && comparableTemplate(currentTemplate) !== comparableTemplate(savedVersion);
+  const isDirty = !!currentTemplate && !!savedVersion && comparableTemplate(currentTemplate, COMPARE) !== comparableTemplate(savedVersion, COMPARE);
   useEffect(() => {
     onDirtyChange?.(isDirty);
   }, [isDirty, onDirtyChange]);

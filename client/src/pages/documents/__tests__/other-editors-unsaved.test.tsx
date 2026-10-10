@@ -61,6 +61,14 @@ async function addField(user: ReturnType<typeof userEvent.setup>, buttonTestId: 
   await user.click(screen.getByTestId("button-add-field-confirm"));
 }
 
+/**
+ * The field the tests add is called "Kenteken" and reads the licence plate: the transport editor shows
+ * its name (list entry or the selected field's name input), the barcode label shows what it prints for
+ * the sample vehicle.
+ */
+const addedFieldShown = () =>
+  screen.queryAllByText("Kenteken").length + screen.queryAllByDisplayValue("Kenteken").length + screen.queryAllByText("12-XT-102").length > 0;
+
 describe.each([
   ["transport report editor", () => TransportReportTemplateEditor, "button-add-field", "Tweede"],
   ["barcode label editor", () => BarcodeLabelTemplateEditor, "button-add-barcode-label-field", "Auto"],
@@ -94,11 +102,19 @@ describe.each([
     await user.click(screen.getByRole("button", { name: "Verder bewerken" }));
     await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
     expect(screen.getByTestId("template-editor-save-status")).toHaveTextContent("niet-opgeslagen");
+    // ...and the added field is still on the canvas, the first template still selected.
+    expect(addedFieldShown()).toBe(true);
+    expect(screen.getAllByRole("combobox")[0]).not.toHaveTextContent(otherName);
 
     // "Wijzigingen weggooien" switches and the editor is clean again.
     await user.click(screen.getAllByRole("combobox")[0]);
     await user.click(await screen.findByRole("option", { name: new RegExp(otherName) }));
     await user.click(await screen.findByRole("button", { name: "Wijzigingen weggooien" }));
     await waitFor(() => expect(onDirtyChange).toHaveBeenLastCalledWith(false));
+    // The discard really did both halves: the other template is the selected one and the added field is gone.
+    await waitFor(() => expect(screen.getAllByRole("combobox")[0]).toHaveTextContent(otherName));
+    expect(addedFieldShown()).toBe(false);
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(screen.getByTestId("template-editor-save-status")).not.toHaveTextContent("niet-opgeslagen");
   });
 });

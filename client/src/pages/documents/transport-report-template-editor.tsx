@@ -43,6 +43,8 @@ import { UserPermission } from "@shared/schema";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { RequiresPermission } from "@/components/ui/requires-permission";
 
+import { comparableTemplate } from "./comparable-template";
+
 interface TemplateField {
   id: string;
   name: string;
@@ -100,9 +102,6 @@ interface TransportReportTemplateEditorProps {
   /** Told whenever the editor holds changes that are not saved yet (A-10-3), so the dialog around it can ask before closing. */
   onDirtyChange?: (dirty: boolean) => void;
 }
-
-/** What makes two versions of a template "the same" for the unsaved-changes check. */
-const comparableTemplate = (template: Template) => JSON.stringify({ ...template, isDefault: !!template.isDefault, fields: template.fields ?? [], updatedAt: undefined, backgroundPath: undefined, backgroundPreviewPath: undefined });
 
 const TransportReportTemplateEditor = ({ onClose, onDirtyChange }: TransportReportTemplateEditorProps = {}) => {
   const { t } = useTranslation(["documents", "common"]);
